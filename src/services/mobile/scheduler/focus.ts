@@ -8,6 +8,7 @@ import type {
   MonthlyFocusStats,
 } from "@shared/types";
 import type { FocusSessionRow } from "@shared/types/database";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const getFocusSessions = async (): Promise<FocusSession[]> => {
   return withClientOptionalUser(async (client, userId) => {
@@ -22,7 +23,7 @@ export const getFocusSessions = async (): Promise<FocusSession[]> => {
       .order("started_at", { ascending: false });
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data as FocusSession[] | null) ?? [];
@@ -47,7 +48,7 @@ export const createFocusSession = async (data: CreateFocusSessionData): Promise<
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as FocusSession;
@@ -67,7 +68,7 @@ export const getUserFocusStats = async (): Promise<UserFocusStats | null> => {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return data as UserFocusStats | null;

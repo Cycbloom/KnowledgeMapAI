@@ -50,6 +50,8 @@
   "exportFailed": "导出失败",
   "webcalCopied": "WebCal 链接已复制!",
   "unknownTask": "未知任务",
+  "noActivityTitle": "暂无活动记录",
+  "noActivityDesc": "开始学习后，活动时间线会显示在这里",
   "weekdays": {
     "sun": "日",
     "mon": "一",

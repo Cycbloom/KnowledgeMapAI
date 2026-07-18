@@ -9,6 +9,7 @@ import {
 } from './types';
 import { DEFAULT_PROMPTS } from './templates';
 import { OUTPUT_SCHEMAS } from './schemas';
+import { logger } from '@/utils/logger';
 
 export class MobilePromptService {
   private templateCache: Map<string, { template: PromptTemplate; timestamp: number }> = new Map();
@@ -170,18 +171,18 @@ export class MobilePromptService {
         try {
           content = TemplateEngine.render(defaultPrompt, context);
         } catch (e) {
-          console.error(`[PromptService] Failed to render default prompt ${code}`, e);
+          logger.error(`[PromptService] Failed to render default prompt ${code}`, e);
           content = defaultPrompt;
         }
       } else {
-        console.warn(`[PromptService] No template found for code: ${code}. Using empty fallback.`);
+        logger.warn(`[PromptService] No template found for code: ${code}. Using empty fallback.`);
         content = '';
       }
     } else {
       try {
         content = TemplateEngine.render(template.template_content, context);
       } catch (e) {
-        console.error(`[PromptService] Failed to render prompt ${code}`, e);
+        logger.error(`[PromptService] Failed to render prompt ${code}`, e);
         content = template.template_content;
       }
     }

@@ -1,5 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { api } from "../../services/api";
+import { createOptimisticMutation } from "../mutations/mutationFactory";
+import { queryKeys } from "../queries/config";
 import type {
   UserTask,
   CreateUserTaskData,
@@ -25,7 +27,7 @@ const defaultQueryConfig = {
 };
 
 const realtimeQueryConfig = {
-  staleTime: 0,
+  staleTime: 30 * 1000,
   gcTime: GC_TIME,
   retry: 1,
 };
@@ -44,21 +46,21 @@ export const schedulerKeys = {
 
 /** Invalidate scheduler queries affected by a task change */
 function invalidateTaskChange(queryClient: ReturnType<typeof useQueryClient>, taskId?: string) {
-  queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-  queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
+  queryClient.invalidateQueries({ queryKey: queryKeys.schedulerTasks() });
+  queryClient.invalidateQueries({ queryKey: queryKeys.queues() });
   if (taskId) {
-    queryClient.invalidateQueries({ queryKey: ["scheduler", "task", taskId] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.schedulerTask(taskId) });
   }
 }
 
 /** Invalidate scheduler queries affected by a task completion */
 function invalidateTaskCompletion(queryClient: ReturnType<typeof useQueryClient>, taskId?: string) {
-  queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-  queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
-  queryClient.invalidateQueries({ queryKey: ["scheduler", "stats"] });
-  queryClient.invalidateQueries({ queryKey: ["scheduler", "heatmap"] });
+  queryClient.invalidateQueries({ queryKey: queryKeys.schedulerTasks() });
+  queryClient.invalidateQueries({ queryKey: queryKeys.queues() });
+  queryClient.invalidateQueries({ queryKey: queryKeys.stats() });
+  queryClient.invalidateQueries({ queryKey: queryKeys.heatmap() });
   if (taskId) {
-    queryClient.invalidateQueries({ queryKey: ["scheduler", "task", taskId] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.schedulerTask(taskId) });
   }
 }
 
@@ -67,6 +69,7 @@ export function useSchedulerTasks(filters?: UserTaskFilters) {
     queryKey: schedulerKeys.tasks(filters),
     queryFn: () => api.scheduler.list(filters),
     ...realtimeQueryConfig,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -159,35 +162,50 @@ export function useDeleteUserTaskMutation() {
 
 export function useStartUserTaskMutation() {
   const queryClient = useQueryClient();
-  return useMutation({
+  return createOptimisticMutation<UserTask, string, UserTask[]>({
     mutationFn: (id: string) =>
       api.scheduler.start(id) as Promise<UserTask>,
-    onSuccess: (_data, id) => {
+    queryKey: queryKeys.schedulerTasks(),
+    optimisticUpdater: (old: UserTask[] | undefined, id: string) => {
+      if (!old) return old;
+      return old.map((t) => (t.id === id ? { ...t, status: "in_progress" } : t));
+    },
+    onSettled: (_data, _error, id) => {
       invalidateTaskChange(queryClient, id);
     },
-  });
+  })();
 }
 
 export function usePauseUserTaskMutation() {
   const queryClient = useQueryClient();
-  return useMutation({
+  return createOptimisticMutation<UserTask, string, UserTask[]>({
     mutationFn: (id: string) =>
       api.scheduler.pause(id) as Promise<UserTask>,
-    onSuccess: (_data, id) => {
+    queryKey: queryKeys.schedulerTasks(),
+    optimisticUpdater: (old: UserTask[] | undefined, id: string) => {
+      if (!old) return old;
+      return old.map((t) => (t.id === id ? { ...t, status: "paused" } : t));
+    },
+    onSettled: (_data, _error, id) => {
       invalidateTaskChange(queryClient, id);
     },
-  });
+  })();
 }
 
 export function useCompleteUserTaskMutation() {
   const queryClient = useQueryClient();
-  return useMutation({
+  return createOptimisticMutation<UserTask, string, UserTask[]>({
     mutationFn: (id: string) =>
       api.scheduler.complete(id) as Promise<UserTask>,
-    onSuccess: (_data, id) => {
+    queryKey: queryKeys.schedulerTasks(),
+    optimisticUpdater: (old: UserTask[] | undefined, id: string) => {
+      if (!old) return old;
+      return old.map((t) => (t.id === id ? { ...t, status: "completed" } : t));
+    },
+    onSettled: (_data, _error, id) => {
       invalidateTaskCompletion(queryClient, id);
     },
-  });
+  })();
 }
 
 export function useDemoteUserTaskMutation() {

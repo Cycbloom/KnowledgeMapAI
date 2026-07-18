@@ -8,6 +8,7 @@ import type {
 import type { User } from '@shared/types/user';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { IAuthApi } from '../api/contracts/IAuthApi';
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 const toUser = (supabaseUser: SupabaseUser | null): User | null => {
   if (!supabaseUser) return null;
@@ -23,7 +24,7 @@ export const mobileAuthApi: IAuthApi = {
   register: async (data: RegisterData): Promise<AuthResponse> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: authData, error } = await client.auth.signUp({
@@ -56,7 +57,7 @@ export const mobileAuthApi: IAuthApi = {
   login: async (data: LoginData): Promise<AuthResponse> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: authData, error } = await client.auth.signInWithPassword({
@@ -92,7 +93,7 @@ export const mobileAuthApi: IAuthApi = {
   getUser: async (): Promise<{ user: User | null }> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -105,7 +106,7 @@ export const mobileAuthApi: IAuthApi = {
   updateProfile: async (data: UpdateProfileData): Promise<{ user: User | null }> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: authData, error } = await client.auth.updateUser({
@@ -113,7 +114,7 @@ export const mobileAuthApi: IAuthApi = {
     });
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return { user: toUser(authData.user) };
@@ -122,7 +123,7 @@ export const mobileAuthApi: IAuthApi = {
   refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data, error } = await client.auth.refreshSession({

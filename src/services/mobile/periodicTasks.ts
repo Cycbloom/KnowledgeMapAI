@@ -1,6 +1,7 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
 import type { PeriodicTaskRow } from "@shared/types/database";
 import type { IPeriodicTasksApi } from "../api/contracts/IPeriodicTasksApi";
+import { logger } from "@/utils/logger";
 
 export interface PeriodicTask {
   id: string;
@@ -259,7 +260,7 @@ export const mobilePeriodicTasksApi: IPeriodicTasksApi = {
       .order("task_type");
 
     if (error) {
-      console.error("Error fetching periodic tasks:", error);
+      logger.error("Error fetching periodic tasks:", error);
       return [];
     }
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { SimilarKnowledgePoint } from '../../types';
+import { useFocusTrap, useEscapeKey } from '../../hooks/common';
 
 interface KnowledgePointReuseDialogProps {
   isOpen: boolean;
@@ -20,13 +21,28 @@ export const KnowledgePointReuseDialog: React.FC<KnowledgePointReuseDialogProps>
   onCancel,
   isLoading = false
 }) => {
+  const contentRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(onCancel, isOpen);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+    >
+      <div
+        ref={contentRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="kp-reuse-dialog-title"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 id="kp-reuse-dialog-title" className="text-lg font-semibold text-gray-900 dark:text-white">
             发现相似知识点
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -54,7 +70,7 @@ export const KnowledgePointReuseDialog: React.FC<KnowledgePointReuseDialogProps>
                     )}
                     <div className="flex items-center gap-2 mt-2">
                       <span className={`text-xs px-2 py-0.5 rounded ${
-                        point.visibility === 'public' 
+                        point.visibility === 'public'
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                           : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                       }`}>
@@ -118,15 +134,30 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   onCancel,
   isLoading = false
 }) => {
+  const contentRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(onCancel, isOpen);
+
   if (!isOpen) return null;
 
   const hasMultipleGraphs = affectedGraphs.length > 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+    >
+      <div
+        ref={contentRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="kp-delete-confirm-dialog-title"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 id="kp-delete-confirm-dialog-title" className="text-lg font-semibold text-gray-900 dark:text-white">
             删除知识点
           </h3>
         </div>

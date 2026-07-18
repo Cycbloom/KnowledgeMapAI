@@ -19,6 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAiPerformanceLogs, useAiPerformanceStats, useClearAiPerformanceLogs } from "@/hooks/queries";
 import { formatDurationMs as formatDuration, formatDate } from "@/utils/formatters";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import { themeClasses } from "@/utils/themeClasses";
 import type { AIPerformanceLog, AIProviderType } from "@shared/types";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 
@@ -60,7 +61,7 @@ const StatCard: React.FC<{
     <div className={`p-1.5 rounded-md ${color} shrink-0`}>{icon}</div>
     <div className="min-w-0">
       <div
-        className={`text-[10px] ${isDark ? "text-slate-400" : "text-gray-500"}`}
+        className={`text-[10px] ${themeClasses.textSecondary(isDark)}`}
       >
         {label}
       </div>
@@ -71,7 +72,7 @@ const StatCard: React.FC<{
       </div>
       {subValue && (
         <div
-          className={`text-[10px] truncate ${isDark ? "text-slate-500" : "text-gray-400"}`}
+          className={`text-[10px] truncate ${themeClasses.textMuted(isDark)}`}
         >
           {subValue}
         </div>
@@ -207,12 +208,12 @@ const SessionGroup: React.FC<SessionGroupProps> = ({
           {isExpanded ? (
             <ChevronDown
               size={14}
-              className={isDark ? "text-slate-400" : "text-gray-500"}
+              className={themeClasses.textSecondary(isDark)}
             />
           ) : (
             <ChevronRight
               size={14}
-              className={isDark ? "text-slate-400" : "text-gray-500"}
+              className={themeClasses.textSecondary(isDark)}
             />
           )}
           <Layers
@@ -225,13 +226,13 @@ const SessionGroup: React.FC<SessionGroupProps> = ({
             {sessionName}
           </span>
           <span
-            className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+            className={`text-xs ${themeClasses.textMuted(isDark)}`}
           >
             ({sessionStats.total} {t("console.performance.requests")})
           </span>
         </div>
         <div className="flex items-center gap-3 text-xs">
-          <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+          <span className={themeClasses.textSecondary(isDark)}>
             {formatTokens(sessionStats.totalTokens)} tokens
           </span>
           <span className={isDark ? "text-amber-400" : "text-amber-600"}>
@@ -301,19 +302,19 @@ const SessionGroup: React.FC<SessionGroupProps> = ({
                     </span>
                   </div>
                   <span
-                    className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                    className={`text-xs ${themeClasses.textMuted(isDark)}`}
                   >
                     {formatTimestamp(log.timestamp)}
                   </span>
                 </div>
                 <div className="flex items-center gap-4 mt-1 text-xs pl-5">
-                  <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                  <span className={themeClasses.textSecondary(isDark)}>
                     {formatTokens(log.totalTokens)} tokens
                   </span>
-                  <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                  <span className={themeClasses.textSecondary(isDark)}>
                     {formatCost(log.estimatedCost)}
                   </span>
-                  <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                  <span className={themeClasses.textSecondary(isDark)}>
                     {formatDuration(log.duration)}
                   </span>
                 </div>
@@ -492,7 +493,7 @@ const LogDetailModal: React.FC<{
           >
             <div className="space-y-1">
               <span
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                className={`text-xs ${themeClasses.textSecondary(isDark)}`}
               >
                 {t("console.performance.detail.operation")}
               </span>
@@ -505,7 +506,7 @@ const LogDetailModal: React.FC<{
 
             <div className="space-y-1">
               <span
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                className={`text-xs ${themeClasses.textSecondary(isDark)}`}
               >
                 {t("console.performance.detail.model")}
               </span>
@@ -518,7 +519,7 @@ const LogDetailModal: React.FC<{
 
             <div className="space-y-1">
               <span
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                className={`text-xs ${themeClasses.textSecondary(isDark)}`}
               >
                 {t("console.performance.detail.provider")}
               </span>
@@ -531,7 +532,7 @@ const LogDetailModal: React.FC<{
 
             <div className="space-y-1">
               <span
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                className={`text-xs ${themeClasses.textSecondary(isDark)}`}
               >
                 {t("console.performance.detail.sessionId")}
               </span>
@@ -550,7 +551,7 @@ const LogDetailModal: React.FC<{
 
             <div className="space-y-1">
               <span
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                className={`text-xs ${themeClasses.textSecondary(isDark)}`}
               >
                 {t("console.performance.detail.status")}
               </span>
@@ -578,7 +579,7 @@ const LogDetailModal: React.FC<{
 
             <div className="space-y-1">
               <span
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                className={`text-xs ${themeClasses.textSecondary(isDark)}`}
               >
                 {t("console.performance.detail.duration")}
               </span>
@@ -592,7 +593,7 @@ const LogDetailModal: React.FC<{
 
             <div className="space-y-1">
               <span
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                className={`text-xs ${themeClasses.textSecondary(isDark)}`}
               >
                 {t("console.performance.detail.time")}
               </span>
@@ -633,7 +634,7 @@ const LogDetailModal: React.FC<{
                     </span>
                     {log.costBreakdown && (
                       <span
-                        className={`ml-2 text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                        className={`ml-2 text-xs ${themeClasses.textSecondary(isDark)}`}
                       >
                         ¥{log.costBreakdown.cachedInputCost.toFixed(4)}
                       </span>
@@ -655,7 +656,7 @@ const LogDetailModal: React.FC<{
                     </span>
                     {log.costBreakdown && (
                       <span
-                        className={`ml-2 text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                        className={`ml-2 text-xs ${themeClasses.textSecondary(isDark)}`}
                       >
                         ¥{log.costBreakdown.uncachedInputCost.toFixed(4)}
                       </span>
@@ -677,7 +678,7 @@ const LogDetailModal: React.FC<{
                     </span>
                     {log.costBreakdown && (
                       <span
-                        className={`ml-2 text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                        className={`ml-2 text-xs ${themeClasses.textSecondary(isDark)}`}
                       >
                         ¥{log.costBreakdown.outputCost.toFixed(4)}
                       </span>
@@ -784,7 +785,7 @@ const LogDetailModal: React.FC<{
               <div>
                 <div
                   className={`text-xs font-semibold mb-2.5 flex items-center gap-1.5 ${
-                    isDark ? "text-slate-400" : "text-gray-500"
+                    themeClasses.textSecondary(isDark)
                   }`}
                 >
                   <Coins size={12} />
@@ -811,7 +812,7 @@ const LogDetailModal: React.FC<{
                       >
                         <span
                           className={`text-xs font-medium shrink-0 w-16 ${
-                            isDark ? "text-slate-400" : "text-gray-500"
+                            themeClasses.textSecondary(isDark)
                           }`}
                         >
                           {label}
@@ -1018,6 +1019,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
               } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+              aria-label={t("console.performance.refresh")}
               title={t("console.performance.refresh")}
             >
               <RefreshCw
@@ -1199,13 +1201,13 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
 
         {isLoading && logs.length === 0 ? (
           <div
-            className={`p-4 text-center ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            className={`p-4 text-center ${themeClasses.textSecondary(isDark)}`}
           >
             {t("console.performance.loading")}
           </div>
         ) : logs.length === 0 ? (
           <div
-            className={`p-8 text-center ${isDark ? "text-slate-500" : "text-gray-400"}`}
+            className={`p-8 text-center ${themeClasses.textMuted(isDark)}`}
           >
             <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p className="text-sm">{t("console.performance.noData")}</p>
@@ -1217,7 +1219,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
           <div>
             {filteredLogs.length === 0 ? (
               <div
-                className={`text-center py-8 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                className={`text-center py-8 ${themeClasses.textSecondary(isDark)}`}
               >
                 <Activity size={24} className="mx-auto mb-2 opacity-50" />
                 <p className="text-sm">{t("console.performance.noLogs")}</p>
@@ -1293,24 +1295,24 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                         </span>
                       </div>
                       <span
-                        className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                        className={`text-xs ${themeClasses.textMuted(isDark)}`}
                       >
                         {formatTimestamp(log.timestamp)}
                       </span>
                     </div>
                     <div className="flex items-center gap-4 mt-1.5 text-xs">
                       <span
-                        className={isDark ? "text-slate-400" : "text-gray-500"}
+                        className={themeClasses.textSecondary(isDark)}
                       >
                         {formatTokens(log.totalTokens)} tokens
                       </span>
                       <span
-                        className={isDark ? "text-slate-400" : "text-gray-500"}
+                        className={themeClasses.textSecondary(isDark)}
                       >
                         {formatCost(log.estimatedCost)}
                       </span>
                       <span
-                        className={isDark ? "text-slate-400" : "text-gray-500"}
+                        className={themeClasses.textSecondary(isDark)}
                       >
                         {formatDuration(log.duration)}
                       </span>

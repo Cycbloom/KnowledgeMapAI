@@ -19,6 +19,7 @@ export const registerServiceWorker = async (config: ServiceWorkerConfig = {}): P
             if (installingWorker.state === 'installed') {
               if (navigator.serviceWorker.controller) {
                 if (import.meta.env.DEV) {
+                  // eslint-disable-next-line no-console
                   console.debug('[SW] New content available, please refresh.');
                 }
                 if (config.onUpdate) {
@@ -26,6 +27,7 @@ export const registerServiceWorker = async (config: ServiceWorkerConfig = {}): P
                 }
               } else {
                 if (import.meta.env.DEV) {
+                  // eslint-disable-next-line no-console
                   console.debug('[SW] Content cached for offline use.');
                 }
                 if (config.onSuccess) {
@@ -39,6 +41,7 @@ export const registerServiceWorker = async (config: ServiceWorkerConfig = {}): P
 
       window.addEventListener('online', () => {
         if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
           console.debug('[SW] Back online');
         }
         if (config.onOnline) {
@@ -48,6 +51,7 @@ export const registerServiceWorker = async (config: ServiceWorkerConfig = {}): P
 
       window.addEventListener('offline', () => {
         if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
           console.debug('[SW] Gone offline');
         }
         if (config.onOffline) {

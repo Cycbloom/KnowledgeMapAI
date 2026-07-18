@@ -1,4 +1,5 @@
 import { request } from './client';
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const tasksApi = {
   create: (data: { type: string; payload: unknown }) => 
@@ -25,7 +26,7 @@ export const dataApi = {
   export: async (graphId: string, format: 'json' | 'pdf' | 'markdown') => {
     const { getApiUrl } = await import('./client');
     const token = (await import('../../store/useStore')).useStore.getState().token;
-    return fetch(`${await getApiUrl()}/data/export/${format}?graph_id=${graphId}`, {
+    return fetch(`${await getApiUrl()}/data/export/${encodeURIComponent(format)}?graph_id=${encodeURIComponent(graphId)}`, {
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       }
@@ -35,7 +36,7 @@ export const dataApi = {
           (await import('../../store/useStore')).useStore.getState().setUser(null, null);
         }
         const text = await res.text();
-        throw new Error(text || 'Export failed');
+        throw new AppError(text || 'Export failed', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
       }
       return res.blob();
     });

@@ -37,6 +37,7 @@ import type { TFunction } from "i18next";
 import type { Graph } from "../types";
 import { formatNumber } from "../utils/formatters";
 import { Skeleton } from "../components/common";
+import { queryKeys } from "../hooks/queries/config";
 
 interface MetricCardProps {
   title: string;
@@ -505,7 +506,7 @@ export const LearningStatsCenter = () => {
   const retention = userData?.user?.profile?.settings?.request_retention || 0.9;
 
   const { data: focusStats } = useQuery({
-    queryKey: ["focus-stats"],
+    queryKey: queryKeys.focusStats(),
     queryFn: async () => {
       try {
         const res = await api.focus.getStats() as { data: FocusStats };

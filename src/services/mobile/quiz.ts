@@ -10,13 +10,14 @@ import type {
 } from "@shared/types/quiz";
 import type { IQuizApi } from "../api/contracts/IQuizApi";
 import type { StudyCard } from "@shared/types/common";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 
 export const mobileQuizApi: IQuizApi = {
   list: async (): Promise<QuizSet[]> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -34,7 +35,7 @@ export const mobileQuizApi: IQuizApi = {
       .order("updated_at", { ascending: false });
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data || []) as QuizSet[];
@@ -43,7 +44,7 @@ export const mobileQuizApi: IQuizApi = {
   get: async (id: string): Promise<QuizSetWithCards> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: quizSet, error: quizError } = await client
@@ -53,7 +54,7 @@ export const mobileQuizApi: IQuizApi = {
       .single();
 
     if (quizError) {
-      throw new Error(quizError.message);
+      throw new AppError(quizError.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const { data: quizSetCards, error: cardsError } = await client
@@ -92,7 +93,7 @@ export const mobileQuizApi: IQuizApi = {
       .order("display_order", { ascending: true });
 
     if (cardsError) {
-      throw new Error(cardsError.message);
+      throw new AppError(cardsError.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const cards: StudyCard[] = (quizSetCards || [])
@@ -108,7 +109,7 @@ export const mobileQuizApi: IQuizApi = {
   create: async (data: CreateQuizSetData): Promise<QuizSet> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -116,7 +117,7 @@ export const mobileQuizApi: IQuizApi = {
     } = await client.auth.getUser();
 
     if (!user) {
-      throw new Error("User not authenticated");
+      throw new AppError("User not authenticated", SharedErrorCodes.AUTH_UNAUTHORIZED, 401);
     }
 
     const { data: result, error } = await client
@@ -133,7 +134,7 @@ export const mobileQuizApi: IQuizApi = {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as QuizSet;
@@ -142,7 +143,7 @@ export const mobileQuizApi: IQuizApi = {
   update: async (id: string, data: UpdateQuizSetData): Promise<QuizSet> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: result, error } = await client
@@ -156,7 +157,7 @@ export const mobileQuizApi: IQuizApi = {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as QuizSet;
@@ -165,20 +166,20 @@ export const mobileQuizApi: IQuizApi = {
   delete: async (id: string): Promise<void> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { error } = await client.from("quiz_sets").delete().eq("id", id);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
   },
 
   generate: async (
     _data: GenerateQuizData,
   ): Promise<{ quiz_set_id: string; task_id: string }> => {
-    throw new Error("Quiz generation is not supported on mobile yet");
+    throw new AppError("Quiz generation is not supported on mobile yet", SharedErrorCodes.VALIDATION_ERROR, 400);
   },
 
   getGenerationProgress: async (
@@ -197,7 +198,7 @@ export const mobileQuizApi: IQuizApi = {
     _cardId: string,
     _data?: RegenerateCardData,
   ): Promise<{ card_id: string; question: string; answer: string }> => {
-    throw new Error("Card regeneration is not supported on mobile yet");
+    throw new AppError("Card regeneration is not supported on mobile yet", SharedErrorCodes.VALIDATION_ERROR, 400);
   },
 
   addCard: async (
@@ -206,7 +207,7 @@ export const mobileQuizApi: IQuizApi = {
   ): Promise<{ success: boolean; message: string }> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { error } = await client.from("quiz_set_cards").insert({
@@ -216,7 +217,7 @@ export const mobileQuizApi: IQuizApi = {
     });
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const { count } = await client
@@ -241,7 +242,7 @@ export const mobileQuizApi: IQuizApi = {
   ): Promise<{ success: boolean; message: string }> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { error } = await client
@@ -251,7 +252,7 @@ export const mobileQuizApi: IQuizApi = {
       .eq("card_id", cardId);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return { success: true, message: "Card removed successfully" };

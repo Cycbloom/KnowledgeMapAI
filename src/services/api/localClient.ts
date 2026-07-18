@@ -1,4 +1,5 @@
 import type { IpcDbRequest, IpcDbResponse, DbStatus } from '@shared/types/ipc';
+import { logger } from '@/utils/logger';
 
 // Cloud-only resources that should never use local IPC
 const CLOUD_ONLY_RESOURCES = new Set([
@@ -64,12 +65,12 @@ export async function localQuery<T = unknown>(request: IpcDbRequest): Promise<T 
   try {
     const response = await electronAPI.db.query(request) as IpcDbResponse<T>;
     if (!response.success) {
-      console.warn(`[LocalClient] IPC query failed: ${response.error}`);
+      logger.warn(`[LocalClient] IPC query failed: ${response.error}`);
       return null;
     }
     return response.data as T;
   } catch (error) {
-    console.warn('[LocalClient] IPC query error:', error);
+    logger.warn('[LocalClient] IPC query error:', error);
     resetLocalDbAvailability();
     return null;
   }
@@ -94,12 +95,12 @@ export async function localBatch<T = unknown>(operations: IpcDbRequest[]): Promi
   try {
     const response = await electronAPI.db.batch(operations) as IpcDbResponse<T[]>;
     if (!response.success) {
-      console.warn(`[LocalClient] IPC batch failed: ${response.error}`);
+      logger.warn(`[LocalClient] IPC batch failed: ${response.error}`);
       return null;
     }
     return response.data as T[];
   } catch (error) {
-    console.warn('[LocalClient] IPC batch error:', error);
+    logger.warn('[LocalClient] IPC batch error:', error);
     resetLocalDbAvailability();
     return null;
   }

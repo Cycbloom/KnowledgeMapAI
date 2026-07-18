@@ -2,14 +2,13 @@
  * Mobile 层笔记 API(P3 块引用/块嵌入只读子集)。
  *
  * 复用 api 层后端的 4 个块引用只读端点(GET),
- * 通过 axios + x-mobile-client 头走移动端鉴权(对齐 mobile/backlinks.ts 风格)。
+ * 通过 fetch + x-mobile-client 头走移动端鉴权(对齐 mobile/backlinks.ts 风格)。
  *
  * 不提供笔记本体 CRUD——移动端笔记 CRUD 由 Supabase 直连实现,
  * 块引用端点为后端聚合查询(含 JOIN 笔记标题),仍走 HTTP。
  *
  * 方法命名与 api 层 notesApi 对齐(api-naming-conventions §6.1)。
  */
-import axios, { type AxiosInstance } from 'axios';
 import { useStore } from '@/store/useStore';
 import { createErrorFromResponse } from '@/utils/errors';
 import { getMobileApiBaseUrl } from '@/config/mobileApiConfig';
@@ -20,45 +19,60 @@ import type {
 } from '@shared/types/note';
 import type { IMobileNotesApi } from '../contracts/IMobileNotesApi';
 
-const createMobileNotesClient = (): AxiosInstance => {
-  const client = axios.create({
-    baseURL: getMobileApiBaseUrl(),
-    withCredentials: true,
-    headers: {
-      'x-mobile-client': 'true',
-    },
-  });
+const baseURL = getMobileApiBaseUrl();
 
-  client.interceptors.request.use(
-    (config) => {
-      const token = useStore.getState().token;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error),
-  );
-
-  client.interceptors.response.use(
-    (response) => response.data,
-    (error) => {
-      const appError = createErrorFromResponse({
-        status: error.response?.status || 0,
-        statusText: error.message,
-        data: error.response?.data as Record<string, unknown>,
-      });
-      return Promise.reject(appError);
-    },
-  );
-
-  return client;
+const buildHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = {
+    'x-mobile-client': 'true',
+  };
+  const token = useStore.getState().token;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
 };
 
-const mobileNotesClient = createMobileNotesClient();
-
 const get = async <T>(url: string): Promise<T> => {
-  return mobileNotesClient.get(url) as unknown as Promise<T>;
+  const fullUrl = url.startsWith('http') ? url : `${baseURL}${url}`;
+  let response: Response;
+  try {
+    response = await fetch(fullUrl, {
+      credentials: 'include',
+      headers: buildHeaders(),
+    });
+  } catch (error) {
+    throw createErrorFromResponse({
+      status: 0,
+      statusText: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  let body: unknown = undefined;
+  const text = await response.text();
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+
+  if (!response.ok) {
+    throw createErrorFromResponse({
+      status: response.status,
+      statusText: response.statusText,
+      data: body as
+        | {
+            message?: string;
+            error?: string;
+            code?: string;
+            details?: Array<{ field: string; message: string }>;
+          }
+        | undefined,
+    });
+  }
+
+  return body as T;
 };
 
 export const mobileNotesApi: IMobileNotesApi = {

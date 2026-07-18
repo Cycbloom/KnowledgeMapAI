@@ -38,6 +38,7 @@ import {
   useBranchSelection,
 } from "../hooks/graphEditor";
 import { useGraphAIOperations } from "../hooks/graphAI";
+import { queryKeys } from "../hooks/queries/config";
 import {
   useTheme,
   useIsMobile,
@@ -961,13 +962,13 @@ export const GraphEditor = () => {
   // --- Extracted callbacks for child components ---
 
   const handleLayoutUpdate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ["graphData", id] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id || "") });
   }, [queryClient, id]);
 
   const handleMarkNodeMastered = useCallback(async (_nodeId: string) => {
     try {
       await queryClient.invalidateQueries({
-        queryKey: ["graphNodeStatus", id],
+        queryKey: queryKeys.graphNodeStatus(id || ""),
       });
       message.success(t("graphEditor.nodeStatusUpdated"));
     } catch (err) {
@@ -1151,10 +1152,10 @@ export const GraphEditor = () => {
 
   const handleConceptsSaved = useCallback(async () => {
     await queryClient.invalidateQueries({
-      queryKey: ["graphData", id],
+      queryKey: queryKeys.graphData(id || ""),
     });
     await queryClient.invalidateQueries({
-      queryKey: ["graphNodeStatus", id],
+      queryKey: queryKeys.graphNodeStatus(id || ""),
     });
   }, [queryClient, id]);
 
@@ -1270,7 +1271,7 @@ export const GraphEditor = () => {
             onClose={() => setContextMenu(null)}
             onExecuteAction={aiOps.handleExecuteAction}
             onRefresh={() => {
-              queryClient.invalidateQueries({ queryKey: ["graph", id] });
+              queryClient.invalidateQueries({ queryKey: queryKeys.graph(id || "") });
               queryClient.invalidateQueries({ queryKey: ["graphNodes", id] });
             }}
           />

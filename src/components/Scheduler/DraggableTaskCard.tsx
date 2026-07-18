@@ -163,6 +163,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
               }}
               className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
               title="开始"
+              aria-label="开始"
             >
               <Play size={12} />
             </button>
@@ -176,6 +177,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
               }}
               className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
               title="继续"
+              aria-label="继续"
             >
               <Play size={12} />
             </button>
@@ -189,6 +191,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
               }}
               className="p-1 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
               title="暂停"
+              aria-label="暂停"
             >
               <Pause size={12} />
             </button>
@@ -205,6 +208,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 }}
                 className="p-1 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
                 title="完成"
+              aria-label="完成"
               >
                 <Check size={12} />
               </button>
@@ -218,6 +222,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
               }}
               className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
               title="详情"
+              aria-label="详情"
             >
               <Info size={12} />
             </button>
@@ -231,6 +236,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
               }}
               className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
               title="编辑"
+              aria-label="编辑"
             >
               <Edit2 size={12} />
             </button>
@@ -244,6 +250,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
               }}
               className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
               title="删除"
+              aria-label="删除"
             >
               <Trash2 size={12} />
             </button>

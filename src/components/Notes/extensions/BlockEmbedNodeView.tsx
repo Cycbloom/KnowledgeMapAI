@@ -171,6 +171,7 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
           <button
             type="button"
             onClick={handleJumpToSource}
+            aria-label={t("notes.editor.blockEmbed.jumpToSource")}
             className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             title={t("notes.editor.blockEmbed.jumpToSource")}
           >
@@ -179,6 +180,7 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
           <button
             type="button"
             onClick={handleUnembed}
+            aria-label={t("notes.editor.blockEmbed.unembed")}
             className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             title={t("notes.editor.blockEmbed.unembed")}
           >

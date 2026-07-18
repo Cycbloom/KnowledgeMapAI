@@ -65,6 +65,8 @@
   "page": "第 {{page}} / {{totalPages}} 页",
   "prevPage": "上一页",
   "nextPage": "下一页",
+  "loadMore": "加载更多",
+  "loadingMore": "加载中...",
   "newNoteDefaultTitle": "无标题笔记",
   "createNoteFailed": "创建笔记失败",
   "createDailyFailed": "创建每日笔记失败",

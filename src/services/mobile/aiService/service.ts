@@ -19,6 +19,8 @@ import {
   getLearningMaterialSystemPrompt,
 } from "./prompts";
 import { isValidProvider } from "../aiClient";
+import { logger } from "@/utils/logger";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const mobileAIService = {
   isConfigured: (): boolean => {
@@ -32,15 +34,15 @@ export const mobileAIService = {
 
   setConfig: (config: MobileAIUserConfig): void => {
     if (!config.apiKey || config.apiKey.trim() === "") {
-      console.error("[MobileAIService.setConfig] API Key 不能为空");
-      throw new Error("API Key 不能为空");
+      logger.error("[MobileAIService.setConfig] API Key 不能为空");
+      throw new AppError("API Key 不能为空", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
     }
     if (!isValidProvider(config.provider)) {
-      console.error(
+      logger.error(
         "[MobileAIService.setConfig] 无效的 Provider:",
         config.provider,
       );
-      throw new Error(`不支持的 AI 服务商: ${config.provider}`);
+      throw new AppError(`不支持的 AI 服务商: ${config.provider}`, SharedErrorCodes.VALIDATION_ERROR, 400);
     }
     storeAIConfig(config);
   },
@@ -137,7 +139,7 @@ Important:
           systemPrompt = renderedPrompt;
         }
       } catch (error) {
-        console.warn(
+        logger.warn(
           "[MobileAIService.generateCards] 获取 Prompt 模板失败，使用默认模板:",
           error,
         );
@@ -163,7 +165,7 @@ Important:
 
       return { cards };
     } catch (error) {
-      console.error("[MobileAIService.generateCards] 生成题目失败:", error);
+      logger.error("[MobileAIService.generateCards] 生成题目失败:", error);
       const classifiedError = classifyError(error);
       throw classifiedError;
     }
@@ -225,7 +227,7 @@ Important:
       .select();
 
     if (error) {
-      console.error(
+      logger.error(
         "[MobileAIService.saveCardsToStudyCards] 数据库写入失败:",
         error,
       );
@@ -268,7 +270,7 @@ Important:
           userId = user.id;
         }
       } catch (error) {
-        console.warn(
+        logger.warn(
           "[MobileAIService.generateAndSaveCards] 获取用户信息失败:",
           error,
         );
@@ -298,7 +300,7 @@ Important:
         savedCount: saveResult.count,
       };
     } catch (saveError) {
-      console.error(
+      logger.error(
         "[MobileAIService.generateAndSaveCards] 保存失败:",
         saveError,
       );
@@ -322,8 +324,8 @@ Important:
   ): Promise<GenerateLearningMaterialResult> => {
     const client = createAIClient();
     if (!client) {
-      console.error("[MobileAIService.generateLearningMaterial] AI 服务未配置");
-      throw new Error("AI 服务未配置，请先在设置中配置 API Key");
+      logger.error("[MobileAIService.generateLearningMaterial] AI 服务未配置");
+      throw new AppError("AI 服务未配置，请先在设置中配置 API Key", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
     }
 
     const isEnglish = options.language === "en-US" || options.language === "en";
@@ -362,12 +364,14 @@ ${options.level ? `知识水平：${options.level}` : ""}
         keywords: normalizedKeywords,
       };
     } catch (error) {
-      console.error(
+      logger.error(
         "[MobileAIService.generateLearningMaterial] 生成学习资料失败:",
         error,
       );
-      throw new Error(
+      throw new AppError(
         `生成学习资料失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        SharedErrorCodes.AI_INVALID_RESPONSE,
+        502,
       );
     }
   },
@@ -384,7 +388,7 @@ ${options.level ? `知识水平：${options.level}` : ""}
   ): Promise<{ suggestions: Array<{ title: string; content: string }> }> => {
     const client = createAIClient();
     if (!client) {
-      throw new Error("AI 服务未配置，请先在设置中配置 API Key");
+      throw new AppError("AI 服务未配置，请先在设置中配置 API Key", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
     }
 
     const existingNodesContext =
@@ -438,12 +442,14 @@ Please respond in Chinese.`;
           : [],
       };
     } catch (error) {
-      console.error(
+      logger.error(
         "[MobileAIService.expandKnowledge] 扩展知识节点失败:",
         error,
       );
-      throw new Error(
+      throw new AppError(
         `扩展知识节点失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        SharedErrorCodes.AI_INVALID_RESPONSE,
+        502,
       );
     }
   },

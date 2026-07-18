@@ -1,5 +1,6 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
 import type { IStatisticsApi } from "../../api/contracts/IStatisticsApi";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 interface StudyCardStateRow {
   fsrs_state: string | null;
@@ -13,7 +14,7 @@ export const mobileStatisticsApi: IStatisticsApi = {
   getStats: async () => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {

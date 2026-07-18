@@ -1,4 +1,5 @@
 import type { SyncDevice } from '../../../shared/sync';
+import { logger } from '@/utils/logger';
 
 const BROADCAST_INTERVAL = 5000;
 const DEVICE_TIMEOUT = 30000;
@@ -58,8 +59,11 @@ class DeviceDiscoveryService {
           }
         }
       }
-    } catch {
-      // 网络不可用时静默失败
+    } catch (error) {
+      logger.warn("Operation failed", {
+        operation: "discoverDevices",
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -75,8 +79,11 @@ class DeviceDiscoveryService {
           deviceName: this.deviceName,
         }),
       });
-    } catch {
-      // 注册失败时静默处理
+    } catch (error) {
+      logger.warn("Operation failed", {
+        operation: "registerDevice",
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 

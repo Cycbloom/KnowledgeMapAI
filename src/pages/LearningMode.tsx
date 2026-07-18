@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../services/api";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { message as msgHelper } from "../utils/messageHelper";
@@ -13,7 +13,12 @@ import {
   useAILanguage,
   useQuoteShortcut,
 } from "../hooks";
-import { useGraph, useGraphData } from "../hooks/queries";
+import {
+  useGraph,
+  useGraphData,
+  queryKeys,
+  defaultQueryConfig,
+} from "../hooks/queries";
 import { useStudyModeLogic } from "../hooks/useStudyModeLogic";
 import { useLearningModeTimer } from "../hooks/useLearningModeTimer";
 import { useLinkedTask } from "../hooks/useLinkedTask";
@@ -140,6 +145,19 @@ export const LearningMode = () => {
   const { data: graphMeta } = useGraph(graphId || "");
   const _nodeStatus = graphData?.nodeStatus;
 
+  // Task 11: 节点详情通过 useQuery 获取,RQ 自动处理 stale 请求与缓存
+  const { data: node, isLoading: isNodeLoading } = useQuery({
+    queryKey: queryKeys.nodeDetail(nodeId ?? ""),
+    queryFn: () => {
+      if (!nodeId) {
+        throw new Error("nodeId is required");
+      }
+      return api.nodes.get(nodeId);
+    },
+    enabled: !!nodeId,
+    ...defaultQueryConfig,
+  });
+
   const handleNodeClick = (id: string) => {
     navigate(`/learning?graph_id=${graphId}&node_id=${id}`);
   };
@@ -174,18 +192,18 @@ export const LearningMode = () => {
       setKeywords([]);
       return;
     }
-    const loadData = async () => {
+    if (!node) return;
+    setNodeTitle(node.title || "");
+    setKeywords(node.keywords || []);
+    if (node.learning_material && node.learning_material.trim().length > 0) {
+      setArticleContent(node.learning_material);
+      setIsGenerating(false);
+      return;
+    }
+    // 节点无学习材料,调用 AI 生成
+    const generateMaterial = async () => {
       try {
         setIsGenerating(true);
-        const node = await api.nodes.get(nodeId);
-        if (!node) { msgHelper.error(t("learning.node.loadFailed")); return; }
-        setNodeTitle(node.title || "");
-        setKeywords(node.keywords || []);
-        if (node.learning_material && node.learning_material.trim().length > 0) {
-          setArticleContent(node.learning_material);
-          setIsGenerating(false);
-          return;
-        }
         const response = await api.ai.generateLearningMaterial({
           topic: node.title || "", context: node.content, level: node.level,
           graph_id: graphId || undefined, language: aiLanguage,
@@ -196,6 +214,7 @@ export const LearningMode = () => {
           setKeywords(responseKeywords);
           try {
             await api.nodes.update(nodeId, { learning_material: response.content, keywords: responseKeywords });
+            queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(nodeId) });
             frontendEventBus.publish("message_show", {
               type: "success", content: t("learning.material.generated"), duration: 8000,
               action: { label: t("learning.material.generateCards"), onClick: () => handleGenerateCards(nodeId) },
@@ -214,10 +233,10 @@ export const LearningMode = () => {
         setIsGenerating(false);
       }
     };
-    loadData();
-    // 仅在 nodeId 变化时加载学习材料；loadData 内部依赖通过闭包在触发时获取最新值
+    generateMaterial();
+    // 依赖 node (来自 useQuery) 触发;其余依赖通过闭包在触发时获取最新值
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeId]);
+  }, [nodeId, node]);
 
   const handleCreateNode = async () => {
     if (!graphId || !newNodeTitle.trim()) { msgHelper.warning(t("learning.node.enterTitle")); return; }
@@ -284,6 +303,7 @@ export const LearningMode = () => {
         setKeywords(response.keywords || []);
         await api.nodes.update(nodeId, { learning_material: response.content, keywords: response.keywords || [] });
         queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(nodeId) });
         msgHelper.success(t("learning.material.regenerated"));
       }
     } catch (error) {
@@ -534,7 +554,7 @@ export const LearningMode = () => {
               <LearningArticleReader
                 isDark={isDark} isMobile={isMobile} nodeId={nodeId} graphId={graphId}
                 nodeTitle={nodeTitle} articleContent={articleContent} keywords={keywords}
-                isGenerating={isGenerating} isOnline={isOnline} isGeneratingCards={isGeneratingCards}
+                isGenerating={isGenerating || isNodeLoading} isOnline={isOnline} isGeneratingCards={isGeneratingCards}
                 studyMode={studyMode} highlightEnabled={highlightEnabled}
                 linkedTask={linkedTask} nodeStatus={_nodeStatus}
                 fontSize={fontSize} readingMode={readingMode} contentWidthMode={contentWidthMode}

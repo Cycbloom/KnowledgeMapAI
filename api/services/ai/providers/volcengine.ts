@@ -80,6 +80,15 @@ export class VolcengineProvider extends BaseAIProvider {
 
       if (!response.ok) {
         const errorText = await response.text();
+        logger.error(
+          `[Volcengine] Multimodal embedding HTTP ${response.status} ${response.statusText}`,
+          {
+            url: endpoint,
+            model: this.embeddingModel,
+            apiKeyPrefix: this.client.apiKey?.slice(0, 8) ?? '',
+            response: errorText.slice(0, 500),
+          },
+        );
         throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
           message: `Volcengine API Error: ${response.status} ${response.statusText} - ${errorText}`,
         });
@@ -100,7 +109,12 @@ export class VolcengineProvider extends BaseAIProvider {
         throw new AppError(ErrorCodes.AI_INVALID_RESPONSE);
       }
     } catch (error) {
-      logger.error('Volcengine Multimodal embedding error:', error);
+      logger.error(
+        'Volcengine Multimodal embedding error',
+        error instanceof Error
+          ? { message: error.message, stack: error.stack, ...(error as { status?: number }).status !== undefined ? { status: (error as { status?: number }).status } : {} }
+          : error,
+      );
       if (error instanceof AppError) {
         throw error;
       }

@@ -11,14 +11,14 @@ interface RegionHeaderProps {
   isDark: boolean;
 }
 
-export const RegionHeader: React.FC<RegionHeaderProps> = ({
+export const RegionHeader = React.memo(({
   region,
   isCollapsed,
   originX,
   originY,
   radius,
   isDark,
-}) => {
+}: RegionHeaderProps) => {
   const midAngle = (region.angleStart + region.angleEnd) / 2;
 
   const labelOffset = 25;
@@ -123,4 +123,4 @@ export const RegionHeader: React.FC<RegionHeaderProps> = ({
       </motion.g>
     </g>
   );
-};
+});

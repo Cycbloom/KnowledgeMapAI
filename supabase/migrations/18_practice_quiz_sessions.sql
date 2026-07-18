@@ -126,3 +126,14 @@ CREATE POLICY "Users can delete own learning session results"
       AND learning_sessions.user_id = auth.uid()
     )
   );
+
+-- Triggers (在 15_triggers.sql 之后执行，需在此创建以避免迁移顺序问题)
+CREATE TRIGGER learning_sessions_updated_at
+  BEFORE UPDATE ON learning_sessions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Grants (在 16_grants.sql 之后执行，需在此创建以避免迁移顺序问题)
+GRANT SELECT ON learning_sessions TO authenticated;
+GRANT ALL PRIVILEGES ON learning_sessions TO authenticated;
+GRANT SELECT ON learning_session_results TO authenticated;
+GRANT ALL PRIVILEGES ON learning_session_results TO authenticated;

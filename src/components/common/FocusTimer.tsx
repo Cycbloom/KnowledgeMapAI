@@ -239,6 +239,7 @@ export const FocusTimer: React.FC = () => {
                     onClick={() =>
                       updateSettings({ soundEnabled: !soundEnabled })
                     }
+                    aria-label={t("focusTimer.soundEnabled")}
                     className={cn("p-2 rounded-lg", soundEnabled ? "bg-primary-100 text-primary-600" : "bg-gray-100 text-gray-400 dark:text-gray-500")}
                   >
                     {soundEnabled ? (
@@ -320,6 +321,7 @@ export const FocusTimer: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <button
                     onClick={handleReset}
+                    aria-label="重置"
                     className="p-3 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                   >
                     <RotateCcw size={20} />
@@ -327,6 +329,7 @@ export const FocusTimer: React.FC = () => {
 
                   <button
                     onClick={handleStartPause}
+                    aria-label={isRunning ? "暂停" : "开始"}
                     className={cn(
                       "p-4 rounded-full shadow-lg transform transition-transform active:scale-95",
                       isRunning
@@ -343,6 +346,7 @@ export const FocusTimer: React.FC = () => {
 
                   <button
                     onClick={handleSkip}
+                    aria-label="跳过"
                     className="p-3 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                   >
                     <SkipForward size={20} />

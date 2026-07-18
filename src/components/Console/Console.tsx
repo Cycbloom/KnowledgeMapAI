@@ -266,6 +266,7 @@ export const Console: React.FC<ConsoleProps> = ({
                   className={`p-1.5 rounded-md transition-colors ${
                     isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
                   }`}
+                  aria-label={t('console.toolbar.close')}
                   title={t('console.toolbar.close')}
                 >
                   <X size={16} />

@@ -64,6 +64,18 @@ export default {
           900: "var(--tertiary-900)",
         },
       },
+      zIndex: {
+        base: "var(--z-base)",
+        dropdown: "var(--z-dropdown)",
+        "modal-overlay": "var(--z-modal-overlay)",
+        modal: "var(--z-modal)",
+        "modal-upper": "var(--z-modal-upper)",
+        fullscreen: "var(--z-fullscreen)",
+        "fullscreen-content": "var(--z-fullscreen-content)",
+        "modal-manager": "var(--z-modal-manager)",
+        tooltip: "var(--z-tooltip)",
+        "skip-link": "var(--z-skip-link)",
+      },
     },
   },
   plugins: [

@@ -37,12 +37,12 @@ const iconMap: Record<BackboneModule, React.ElementType> = {
   [BackboneModule.FUTURE_DIRECTIONS]: Rocket,
 };
 
-export const BackboneNodeIcon: React.FC<BackboneNodeIconProps> = ({
+export const BackboneNodeIcon = React.memo(({
   module,
   size = "medium",
   showTooltip = true,
   className = "",
-}) => {
+}: BackboneNodeIconProps) => {
   const Icon = iconMap[module];
   const iconSize = sizeMap[size];
   const color = BACKBONE_MODULE_COLORS[module];
@@ -56,4 +56,4 @@ export const BackboneNodeIcon: React.FC<BackboneNodeIconProps> = ({
       <Icon size={iconSize} style={{ color }} aria-label={label} />
     </div>
   );
-};
+});

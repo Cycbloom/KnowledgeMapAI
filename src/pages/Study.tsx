@@ -15,6 +15,7 @@ import { CardReviewView } from "../components/Study/CardReviewView";
 import { QuizViewFinished, QuizViewActive } from "../components/Study/QuizView";
 import { ErrorBoundary } from "../components/common/ErrorBoundary";
 import type { WeakPoint, Prediction } from "../components/Study/WeakPointAnalysis";
+import { themeClasses } from "@/utils/themeClasses";
 
 export const Study = () => {
   const { isDark } = useTheme();
@@ -351,7 +352,7 @@ export const Study = () => {
               卡片渲染失败
             </h2>
             <p
-              className={`text-xs mb-4 font-mono break-all ${isDark ? "text-slate-400" : "text-gray-500"}`}
+              className={`text-xs mb-4 font-mono break-all ${themeClasses.textSecondary(isDark)}`}
             >
               {error.message}
             </p>

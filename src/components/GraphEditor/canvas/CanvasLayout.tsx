@@ -7,11 +7,11 @@ interface CanvasLayoutProps {
   height: number;
 }
 
-export const CanvasLayout: React.FC<CanvasLayoutProps> = ({
+export const CanvasLayout = React.memo(({
   layout,
   width,
   height,
-}) => {
+}: CanvasLayoutProps) => {
   if (!layout) return null;
 
   if (layout.type === 'quadrant' && layout.showAxes) {
@@ -223,4 +223,4 @@ export const CanvasLayout: React.FC<CanvasLayoutProps> = ({
   }
 
   return null;
-};
+});

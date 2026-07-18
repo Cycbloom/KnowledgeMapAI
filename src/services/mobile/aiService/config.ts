@@ -5,6 +5,7 @@ import {
   isValidProvider,
 } from "../aiClient";
 import type { AIProviderType } from "@shared/types";
+import { logger } from "@/utils/logger";
 
 export const MOBILE_AI_CONFIG_KEY = "mobile_ai_config";
 
@@ -30,7 +31,7 @@ export function getStoredAIConfig(): MobileAIUserConfig | null {
       return JSON.parse(stored);
     }
   } catch (e) {
-    console.error("[MobileAIService] 加载本地存储配置失败:", e);
+    logger.error("[MobileAIService] 加载本地存储配置失败:", e);
   }
   return null;
 }
@@ -39,7 +40,7 @@ export function storeAIConfig(config: MobileAIUserConfig): void {
   try {
     localStorage.setItem(MOBILE_AI_CONFIG_KEY, JSON.stringify(config));
   } catch (e) {
-    console.error("[MobileAIService] 保存配置到本地存储失败:", e);
+    logger.error("[MobileAIService] 保存配置到本地存储失败:", e);
   }
 }
 
@@ -80,7 +81,7 @@ export function getAIConfigFromUserSettings(): MobileAIUserConfig | null {
       storedConfig.provider) as AIProviderType;
 
     if (!isValidProvider(provider)) {
-      console.error("[MobileAIService] 无效的 Provider:", provider);
+      logger.error("[MobileAIService] 无效的 Provider:", provider);
       return null;
     }
 
@@ -97,14 +98,14 @@ export function getAIConfigFromUserSettings(): MobileAIUserConfig | null {
 export function createAIClient(): MobileAIClient | null {
   const config = getAIConfigFromUserSettings();
   if (!config || !config.apiKey || config.apiKey.trim() === "") {
-    console.warn("[MobileAIService] AI 服务未配置");
+    logger.warn("[MobileAIService] AI 服务未配置");
     return null;
   }
 
   try {
     return createMobileAIClient(config);
   } catch (error) {
-    console.error("[MobileAIService] 创建 AI 客户端失败:", error);
+    logger.error("[MobileAIService] 创建 AI 客户端失败:", error);
     return null;
   }
 }

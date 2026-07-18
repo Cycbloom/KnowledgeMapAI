@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, HashRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query'
+import { defaultQueryConfig } from './hooks/queries/config'
 import App from './App'
 import { ThemeProvider } from './hooks'
 import { registerServiceWorker } from './utils/serviceWorker'
@@ -24,8 +25,7 @@ import 'katex/dist/katex.min.css'
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5,
-      retry: 1,
+      ...defaultQueryConfig,
       refetchOnWindowFocus: false,
     },
   },

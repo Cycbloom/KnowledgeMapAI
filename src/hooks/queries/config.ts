@@ -19,6 +19,7 @@ export const staticQueryConfig = {
 };
 
 export const realtimeQueryConfig = {
+  // Intentional: always-fresh strategy for realtime queries that must refetch on mount.
   staleTime: 0,
   gcTime: GC_TIME,
   retry: 1,
@@ -132,6 +133,82 @@ export const queryKeys = {
   // 独立前缀,避免被 ["notes"] 前缀失效误清(节点详情数据不随笔记列表变更而变)
   nodeBlockRefBacklinks: (nodeId: string) =>
     ["backlinks", nodeId, "block-refs"] as const,
+
+  // === Scheduler 相关 ===
+  // 无参返回短前缀用于 invalidateQueries 前缀匹配;
+  // 有参返回完整键用于 useQuery 精确匹配。
+  scheduler: () => ["scheduler"] as const,
+  schedulerTasks: (filters?: unknown) =>
+    filters === undefined
+      ? (["scheduler", "tasks"] as const)
+      : (["scheduler", "tasks", filters] as const),
+  schedulerTask: (id: string) => ["scheduler", "task", id] as const,
+  queues: () => ["scheduler", "queues"] as const,
+  stats: (period?: string) =>
+    period === undefined
+      ? (["scheduler", "stats"] as const)
+      : (["scheduler", "stats", period] as const),
+  heatmap: (year?: number, month?: number) =>
+    year === undefined
+      ? (["scheduler", "heatmap"] as const)
+      : (["scheduler", "heatmap", year, month] as const),
+  // Task 7: TaskCard 子任务查询键
+  taskSubtasks: (taskId: string) =>
+    ["scheduler", "tasks", "subtasks", taskId] as const,
+
+  // === Learning loops 相关 ===
+  learningLoops: () => ["learning-loops"] as const,
+  activeLearningLoop: () => ["learning-loops", "active"] as const,
+
+  // === GraphMap 相关 ===
+  graphMap: () => ["graphMap"] as const,
+  domainTree: () => ["domainTree"] as const,
+
+  // === Achievements 相关 ===
+  achievements: () => ["achievements"] as const,
+  dailyTasks: () => ["daily-tasks"] as const,
+  periodicTasks: () => ["periodic-tasks"] as const,
+  passProgress: () => ["pass-progress"] as const,
+
+  // === Focus stats 相关 ===
+  focusStats: (range?: string) =>
+    range === undefined
+      ? (["focus-stats"] as const)
+      : (["focus-stats", range] as const),
+
+  // === Graph 附加相关 ===
+  graphTags: (graphId?: string) =>
+    graphId === undefined
+      ? (["graphTags"] as const)
+      : (["graphTags", graphId] as const),
+  graphLearningPath: (graphId: string) =>
+    ["graphLearningPath", graphId] as const,
+  batchGraphNodeStatus: (ids: string[]) =>
+    ["batchGraphNodeStatus", ids.slice().sort().join(",")] as const,
+
+  // === Activities 相关 ===
+  activities: (filters?: unknown) =>
+    filters === undefined
+      ? (["activities"] as const)
+      : (["activities", filters] as const),
+
+  // === Study 相关 ===
+  studyStats: (graphId: string) => ["studyStats", graphId] as const,
+  semanticGroups: (graphId: string) =>
+    ["semanticGroups", graphId] as const,
+
+  // === Graph relation 相关 ===
+  intelligentSuggestions: (graphIds: string[]) =>
+    ["intelligent-suggestions", graphIds] as const,
+
+  // === Task 7-11 预留方法 ===
+  // Task 8: GlobalSearch 查询键
+  search: (query: string) => ["search", query] as const,
+  // Task 9: ModularAnalysisPanel 查询键
+  modularAnalysis: (graphId: string) =>
+    ["modularAnalysis", graphId] as const,
+  // Task 11: LearningMode 节点详情查询键
+  nodeDetail: (nodeId: string) => ["nodes", "detail", nodeId] as const,
 };
 
 export type { Node, Edge, Task, NodeLevel };

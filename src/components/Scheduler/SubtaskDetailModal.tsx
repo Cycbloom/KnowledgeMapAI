@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -169,6 +169,16 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
     return "text-green-500";
   };
 
+  const otherValidTransitions = useMemo(
+    () =>
+      validTransitions
+        ? validTransitions.valid_transitions.filter(
+            (s) => s !== validTransitions.recommended_next
+          )
+        : [],
+    [validTransitions]
+  );
+
   if (!subtask) return null;
 
   return (
@@ -178,7 +188,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-modal-overlay flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm p-4"
           onClick={onClose}
         >
           <motion.div
@@ -338,9 +348,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                     <div>
                       <span className="text-xs text-slate-400 mb-2 block">可转换状态</span>
                       <div className="flex flex-wrap gap-2">
-                        {validTransitions.valid_transitions
-                          .filter((s) => s !== validTransitions.recommended_next)
-                          .map((state) => (
+                        {otherValidTransitions.map((state) => (
                             <button
                               key={state}
                               onClick={() => handleStateTransition(state)}

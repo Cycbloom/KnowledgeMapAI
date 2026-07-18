@@ -18,13 +18,13 @@ export interface NodeBreadcrumbProps {
   className?: string;
 }
 
-export const NodeBreadcrumb: React.FC<NodeBreadcrumbProps> = ({
+export const NodeBreadcrumb = React.memo(({
   graphTitle,
   selectedNode,
   parentChain,
   onSelectNode,
   className,
-}) => {
+}: NodeBreadcrumbProps) => {
   const { isDark } = useTheme();
 
   if (!selectedNode) {
@@ -87,6 +87,6 @@ export const NodeBreadcrumb: React.FC<NodeBreadcrumbProps> = ({
       </span>
     </nav>
   );
-};
+});
 
 export default NodeBreadcrumb;

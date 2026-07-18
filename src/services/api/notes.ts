@@ -142,7 +142,7 @@ export const notesApi: INotesApi = {
     formData.append('file', file);
 
     const apiUrl = await getApiUrl();
-    const response = await fetch(`${apiUrl}/notes/${noteId}/upload-image`, {
+    const response = await fetch(`${apiUrl}/notes/${encodeURIComponent(noteId)}/upload-image`, {
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

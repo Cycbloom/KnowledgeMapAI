@@ -21,13 +21,20 @@
  * debouncedSearch('hello'); // 只有这个会执行
  * ```
  */
-export const debounce = <T extends (...args: unknown[]) => void>(
+export type DebouncedFunction<T extends (...args: never[]) => void> = ((
+  ...args: Parameters<T>
+) => void) & {
+  /** 取消待执行的防抖调用 */
+  cancel: () => void;
+};
+
+export const debounce = <T extends (...args: never[]) => void>(
   fn: T,
   delay: number
-): ((...args: Parameters<T>) => void) => {
+): DebouncedFunction<T> => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  return (...args: Parameters<T>) => {
+  const debounced = (...args: Parameters<T>): void => {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
@@ -37,6 +44,15 @@ export const debounce = <T extends (...args: unknown[]) => void>(
       timeoutId = null;
     }, delay);
   };
+
+  return Object.assign(debounced, {
+    cancel: (): void => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    },
+  });
 };
 
 /**

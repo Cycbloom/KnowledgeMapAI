@@ -2,6 +2,7 @@ import { useStore } from '@/store/useStore';
 import { TokenExpiredError, AppError, SharedErrorCodes } from '@/utils/errors';
 import { authApi } from './auth';
 import type { User } from '@shared/types/user';
+import { logger } from '@/utils/logger';
 
 interface QueueItem {
   resolve: (token: string) => void;
@@ -62,7 +63,7 @@ export class TokenRefreshManager {
       
       return session.access_token;
     } catch (error) {
-      console.error('[TokenRefreshManager] Token 刷新失败:', error);
+      logger.error('[TokenRefreshManager] Token 刷新失败:', error);
       this.processQueue(error, null);
       useStore.getState().setUser(null, null, null);
       throw error;

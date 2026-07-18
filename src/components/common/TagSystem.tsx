@@ -403,6 +403,7 @@ export const TagInput: React.FC<{
             <button
               onClick={() => handleRemoveTag(tag)}
               className="ml-1 hover:bg-white/20 rounded-full p-0.5"
+              aria-label="移除标签"
             >
               <X size={12} />
             </button>

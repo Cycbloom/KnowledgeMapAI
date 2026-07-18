@@ -349,6 +349,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
         {!embedded && (
           <button
             onClick={onClose}
+            aria-label="关闭"
             className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
           >
             <X size={20} className="text-slate-500" />

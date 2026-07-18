@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTasks } from "../hooks/queries";
@@ -9,7 +9,8 @@ import {
 } from "../hooks/mutations";
 import { useStore } from "../store/useStore";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
-import { ConfirmationModal, Skeleton, VirtualList } from "../components/common";
+import { ConfirmationModal, Skeleton } from "../components/common";
+import { VirtualList } from "../components/common/VirtualList";
 import { EmptyState } from "@/components/common/EmptyState";
 import { asyncConfirm } from "../utils/asyncConfirm";
 import { formatDate } from "@/utils/formatters";
@@ -25,8 +26,6 @@ import {
   Trash2,
   RotateCw,
   Download,
-  ChevronLeft,
-  ChevronRight,
   Search,
   CheckSquare,
   Square,
@@ -122,7 +121,6 @@ export const Tasks = () => {
   const [filter, setFilter] = useState<string>("all");
   const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isBatchDeleting, setIsBatchDeleting] = useState(false);
@@ -135,12 +133,16 @@ export const Tasks = () => {
       : 600,
   );
 
-  const { data, isLoading, error, refetch, isFetching } = useTasks(
-    !!token,
-    filter,
-    limit,
-    (page - 1) * limit,
-  );
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+    isFetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useTasks(!!token, filter, limit);
 
   const { data: allData } = useTasks(!!token, "all", 1, 0);
   const { data: pendingData } = useTasks(!!token, "pending", 1, 0);
@@ -150,8 +152,9 @@ export const Tasks = () => {
 
   const statusCounts = useMemo(() => {
     const getCount = (d: typeof allData): number | undefined => {
-      if (d && typeof d === "object" && "total" in d) {
-        return typeof d.total === "number" ? d.total : 0;
+      const firstPage = d?.pages?.[0];
+      if (firstPage && typeof firstPage.total === "number") {
+        return firstPage.total;
       }
       return undefined;
     };
@@ -180,17 +183,10 @@ export const Tasks = () => {
 
   const retryMutation = useRetryTaskMutation();
   const deleteMutation = useDeleteTaskMutation();
-  const { tasks, total } = useMemo(() => {
-    if (data && typeof data === "object" && "tasks" in data) {
-      return {
-        tasks: Array.isArray(data.tasks) ? data.tasks : [],
-        total: typeof data.total === "number" ? data.total : 0,
-      };
-    }
-    return { tasks: [], total: 0 };
+  const tasks = useMemo(() => {
+    if (!data?.pages) return [];
+    return data.pages.flatMap((p) => p.tasks);
   }, [data]);
-
-  const totalPages = Math.ceil(total / limit);
 
   const filteredTasks = useMemo(() => {
     if (!debouncedSearchQuery.trim()) return tasks;
@@ -203,8 +199,13 @@ export const Tasks = () => {
 
   const handleFilterChange = (v: string) => {
     setFilter(v);
-    setPage(1);
   };
+
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleRetry = async (taskId: string) => {
     try {
@@ -535,6 +536,8 @@ export const Tasks = () => {
                 items={filteredTasks}
                 itemHeight={220}
                 containerHeight={listContainerHeight}
+                onEndReached={handleEndReached}
+                endReachedThreshold={3}
                 className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700"
                 renderItem={(task) => {
                   const context = (() => {
@@ -718,68 +721,11 @@ export const Tasks = () => {
                 }}
               />
 
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6 px-2">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {t("tasks.showing", {
-                      start: (page - 1) * limit + 1,
-                      end: Math.min(page * limit, total),
-                      total: total,
-                    })}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="p-2 rounded-md border border-gray-300 dark:border-slate-700 disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                    >
-                      <ChevronLeft
-                        size={20}
-                        className="text-gray-600 dark:text-gray-400"
-                      />
-                    </button>
-
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1)
-                        .filter(
-                          (p) =>
-                            p === 1 ||
-                            p === totalPages ||
-                            Math.abs(p - page) <= 1,
-                        )
-                        .map((p, i, arr) => (
-                          <React.Fragment key={p}>
-                            {i > 0 && arr[i - 1] !== p - 1 && (
-                              <span className="text-gray-400">...</span>
-                            )}
-                            <button
-                              onClick={() => setPage(p)}
-                              className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
-                                page === p
-                                  ? "bg-primary-600 text-white"
-                                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-700"
-                              }`}
-                            >
-                              {p}
-                            </button>
-                          </React.Fragment>
-                        ))}
-                    </div>
-
-                    <button
-                      onClick={() =>
-                        setPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={page === totalPages}
-                      className="p-2 rounded-md border border-gray-300 dark:border-slate-700 disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                    >
-                      <ChevronRight
-                        size={20}
-                        className="text-gray-600 dark:text-gray-400"
-                      />
-                    </button>
-                  </div>
+              {/* 加载更多（无限滚动）指示器 */}
+              {isFetchingNextPage && (
+                <div className="flex items-center justify-center gap-2 py-4 text-sm text-gray-500 dark:text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{t("tasks.refreshing")}</span>
                 </div>
               )}
             </>

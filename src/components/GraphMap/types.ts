@@ -39,6 +39,7 @@ export interface ModularAnalysisPanelProps {
   onViewResult: (moduleId: AnalysisModuleId) => void;
   onEditPrompt?: (moduleId: AnalysisModuleId) => void;
   promptContents?: Record<AnalysisModuleId, string>;
+  graphId?: string;
 }
 
 export interface AnalysisModuleCardProps {

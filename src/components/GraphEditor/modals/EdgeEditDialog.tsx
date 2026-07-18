@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Palette, Minus, ArrowRight } from 'lucide-react';
 import type { Edge, EdgeLineStyle, RelationshipTypeConfig } from '../../../types';
 import { RELATIONSHIP_CATEGORY_LABELS } from '../../../config/relationshipTypes';
+import { useFocusTrap, useEscapeKey } from '../../../hooks/common';
 
 interface UpdateEdgeData {
   custom_label?: string;
@@ -87,6 +88,9 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
     setCustomColor(color);
   };
 
+  const contentRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(onClose, isOpen);
+
   if (!isOpen || !edge) return null;
 
   const groupedRelationshipTypes = relationshipTypes.reduce((acc, type) => {
@@ -99,14 +103,26 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
   }, {} as Record<string, RelationshipTypeConfig[]>);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={contentRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edge-edit-dialog-title"
+        className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-700">
-          <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          <h2 id="edge-edit-dialog-title" className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             编辑边
           </h2>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
           >
             <X size={20} className="text-gray-500 dark:text-gray-400" />

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { message } from "../../../utils/messageHelper";
 import type { ExtractedConcept } from "../../../types";
 import type { UseGraphEditorPanelStateReturn } from "../../../hooks/graphEditor/useGraphEditorPanelState";
+import { queryKeys } from "../../../hooks/queries/config";
 
 interface UseConceptExtractionHandlersParams {
   /** graph id from useParams */
@@ -63,7 +64,7 @@ export const useConceptExtractionHandlers = ({
           message.success(
             `已添加 ${result.addedCount} 个概念，合并 ${result.mergedCount} 个相似概念`,
           );
-          await queryClient.invalidateQueries({ queryKey: ["graphData", id] });
+          await queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id || "") });
         }
       } catch (error) {
         console.error("Failed to apply concepts:", error);

@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
+import { debounce } from "@/utils/performanceUtils";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2, Info } from "lucide-react";
-import { CodeBlock, TermTooltip } from "../common";
+import { TermTooltip } from "../common";
+import { CodeBlock } from "../common/CodeBlock";
 import { preprocessMarkdown } from "../../utils/markdownPreprocessor";
 import { useFocusStore } from "../../store/useFocusStore";
 import { useShallow } from "zustand/react/shallow";
@@ -436,17 +438,20 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
     importanceBreakdown: Record<number, number>;
   } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debouncedSetNeedsHighlight = useMemo(
+    () =>
+      debounce(() => {
+        setNeedsHighlight(true);
+        setIsAnalyzing(true);
+      }, 300),
+    [],
+  );
 
   useEffect(() => {
     if (highlightEnabled && content) {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        setNeedsHighlight(true);
-        setIsAnalyzing(true);
-      }, 300);
+      debouncedSetNeedsHighlight();
     } else {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debouncedSetNeedsHighlight.cancel();
       setHighlightRanges([]);
       setIsAnalyzing(false);
       setNeedsHighlight(false);
@@ -455,7 +460,13 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
         cleanupHighlights(contentRef.current);
       }
     }
-  }, [content, highlightEnabled, highlightIntensity, keywords]);
+  }, [content, highlightEnabled, highlightIntensity, keywords, debouncedSetNeedsHighlight]);
+
+  useEffect(() => {
+    return () => {
+      debouncedSetNeedsHighlight.cancel();
+    };
+  }, [debouncedSetNeedsHighlight]);
 
   useEffect(() => {
     if (!needsHighlight || !contentRef.current) return;

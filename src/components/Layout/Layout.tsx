@@ -364,14 +364,14 @@ export const Layout = () => {
     >
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-skip-link focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
         onKeyDown={handleSkip}
       >
         {t('common.skipToContent')}
       </a>
       {/* Global Drop Zone Overlay */}
       {isDragOver && (
-        <div className="fixed inset-0 z-[9999] bg-primary-500/10 border-2 border-dashed border-primary-400 flex flex-col items-center justify-center backdrop-blur-sm">
+        <div className="fixed inset-0 z-skip-link bg-primary-500/10 border-2 border-dashed border-primary-400 flex flex-col items-center justify-center backdrop-blur-sm">
           <Upload className="w-16 h-16 text-primary-500 mb-4" />
           <p className={`text-xl font-semibold ${isDark ? "text-primary-400" : "text-primary-600"}`}>
             {t("layout.dropZone.title")}

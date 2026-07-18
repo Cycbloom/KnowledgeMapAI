@@ -34,27 +34,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _schema_versions: {
-        Row: {
-          checksum: string | null
-          executed_at: string | null
-          id: number
-          version: string
-        }
-        Insert: {
-          checksum?: string | null
-          executed_at?: string | null
-          id?: number
-          version: string
-        }
-        Update: {
-          checksum?: string | null
-          executed_at?: string | null
-          id?: number
-          version?: string
-        }
-        Relationships: []
-      }
       achievements: {
         Row: {
           category: string
@@ -1046,6 +1025,41 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_graph_contents: {
+        Row: {
+          external_links: Json | null
+          graph_id: string
+          learning_guide: string | null
+          podcast_script: string | null
+          reference_books: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          external_links?: Json | null
+          graph_id: string
+          learning_guide?: string | null
+          podcast_script?: string | null
+          reference_books?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          external_links?: Json | null
+          graph_id?: string
+          learning_guide?: string | null
+          podcast_script?: string | null
+          reference_books?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_graph_contents_graph_id_fkey"
+            columns: ["graph_id"]
+            isOneToOne: true
+            referencedRelation: "knowledge_graphs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_graphs: {
         Row: {
           branch_name: string | null
@@ -1130,41 +1144,6 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "user_tasks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      knowledge_graph_contents: {
-        Row: {
-          graph_id: string
-          podcast_script: string | null
-          reference_books: Json | null
-          external_links: Json | null
-          learning_guide: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          graph_id: string
-          podcast_script?: string | null
-          reference_books?: Json | null
-          external_links?: Json | null
-          learning_guide?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          graph_id?: string
-          podcast_script?: string | null
-          reference_books?: Json | null
-          external_links?: Json | null
-          learning_guide?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "knowledge_graph_contents_graph_id_fkey"
-            columns: ["graph_id"]
-            isOneToOne: true
-            referencedRelation: "knowledge_graphs"
             referencedColumns: ["id"]
           },
         ]

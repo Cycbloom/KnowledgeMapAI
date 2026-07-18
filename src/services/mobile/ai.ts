@@ -1,8 +1,8 @@
-import axios, { AxiosInstance } from "axios";
-import { useStore } from "@/store/useStore";
-import { createErrorFromResponse } from "@/utils/errors";
+﻿import { useStore } from "@/store/useStore";
+import { createErrorFromResponse, AppError, SharedErrorCodes } from "@/utils/errors";
 import { getAIConfig, injectAIConfig } from "../api/client";
-import type { AIAction, TutorMode } from "@shared/types";
+import type { AIAction, TutorMode, BranchSuggestion } from "@shared/types";
+import type { Keyword } from "@shared/types/graph";
 import type { IAiApi, IAiActionsApi } from "../api/contracts/IAiApi";
 import { mobileAIService } from "./aiService";
 import { isCapacitorMobile } from "@/config/mobileApiConfig";
@@ -12,49 +12,85 @@ import {
   createStreamHandler,
   handleUnauthorized,
 } from "../shared/streamHandler";
+import { logger } from "@/utils/logger";
 
 const getCloudApiBaseUrl = (): string => {
   return import.meta.env.VITE_API_URL || "";
 };
 
-const createMobileAiApiClient = (): AxiosInstance => {
-  const baseURL = getCloudApiBaseUrl() || "/api";
+const baseURL = getCloudApiBaseUrl() || "/api";
 
-  const client = axios.create({
-    baseURL,
-    withCredentials: true,
-    headers: {
-      "x-mobile-client": "true",
-    },
-  });
-
-  client.interceptors.request.use(
-    (config) => {
-      const token = useStore.getState().token;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error),
-  );
-
-  client.interceptors.response.use(
-    (response) => response.data,
-    async (error) => {
-      const appError = createErrorFromResponse({
-        status: error.response?.status || 0,
-        statusText: error.message,
-        data: error.response?.data as Record<string, unknown>,
-      });
-      return Promise.reject(appError);
-    },
-  );
-
-  return client;
+const buildHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = {
+    "x-mobile-client": "true",
+    "Content-Type": "application/json",
+  };
+  const token = useStore.getState().token;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
 };
 
-const mobileAiClient = createMobileAiApiClient();
+const request = async <T>(
+  method: string,
+  url: string,
+  body?: unknown,
+): Promise<T> => {
+  const fullUrl = url.startsWith("http") ? url : `${baseURL}${url}`;
+  const init: RequestInit = {
+    method,
+    credentials: "include",
+    headers: buildHeaders(),
+  };
+  if (body !== undefined) {
+    init.body = JSON.stringify(body);
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(fullUrl, init);
+  } catch (error) {
+    throw createErrorFromResponse({
+      status: 0,
+      statusText: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  let data: unknown = undefined;
+  const text = await response.text();
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+  }
+
+  if (!response.ok) {
+    throw createErrorFromResponse({
+      status: response.status,
+      statusText: response.statusText,
+      data: data as
+        | {
+            message?: string;
+            error?: string;
+            code?: string;
+            details?: Array<{ field: string; message: string }>;
+          }
+        | undefined,
+    });
+  }
+
+  return data as T;
+};
+
+const get = <T>(url: string): Promise<T> => request<T>("GET", url);
+const post = <T>(url: string, body?: unknown): Promise<T> =>
+  request<T>("POST", url, body);
+const put = <T>(url: string, body?: unknown): Promise<T> =>
+  request<T>("PUT", url, body);
+const del = <T>(url: string): Promise<T> => request<T>("DELETE", url);
 
 const createMobileStreamHandler = async (
   url: string,
@@ -62,16 +98,19 @@ const createMobileStreamHandler = async (
   onChunk: (content: string) => void,
 ) => {
   const token = useStore.getState().token;
-  const baseURL = getCloudApiBaseUrl() || "";
+  const streamBaseURL = getCloudApiBaseUrl() || "";
   await createStreamHandler(url, payload, onChunk, {
-    baseUrl: baseURL,
+    baseUrl: streamBaseURL,
     token,
     onUnauthorized: handleUnauthorized,
   });
 };
 
 export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
-  status: () => mobileAiClient.get("/ai/status"),
+  status: () =>
+    get<{ available: boolean; enabled?: boolean; providers: string[] }>(
+      "/ai/status",
+    ),
 
   generateContent: (data: {
     topic: string;
@@ -80,7 +119,7 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     model?: string;
   }) => {
     const payload = injectAIConfig(data, "text");
-    return mobileAiClient.post("/ai/generate-content", payload);
+    return post<{ content: string }>("/ai/generate-content", payload);
   },
 
   generateContentStream: async (
@@ -105,7 +144,10 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     model?: string;
   }) => {
     const payload = injectAIConfig(data, "text");
-    return mobileAiClient.post("/ai/annotate-terms", payload);
+    return post<{ terms: Array<{ term: string; definition: string }> }>(
+      "/ai/annotate-terms",
+      payload,
+    );
   },
 
   generateLearningMaterial: async (data: {
@@ -130,7 +172,7 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
         );
         return result;
       } catch (error) {
-        console.error("[Mobile API] generateLearningMaterial 本地服务失败:", {
+        logger.error("[Mobile API] generateLearningMaterial 本地服务失败:", {
           error: error instanceof Error ? error.message : String(error),
           topic: data.topic,
         });
@@ -139,7 +181,11 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     }
 
     const payload = injectAIConfig({ ...data, language }, "text");
-    return mobileAiClient.post("/ai/learning-material", payload);
+    return post<{
+      content: string;
+      keywords?: Keyword[];
+      sections?: Array<{ title: string; content: string }>;
+    }>("/ai/learning-material", payload);
   },
 
   expand: async (data: {
@@ -170,7 +216,7 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
         );
         return result;
       } catch (error) {
-        console.error("[Mobile API] expand 本地服务失败:", {
+        logger.error("[Mobile API] expand 本地服务失败:", {
           error: error instanceof Error ? error.message : String(error),
           node_title: data.node_title,
         });
@@ -179,7 +225,9 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     }
 
     const payload = injectAIConfig(data, "text");
-    return mobileAiClient.post("/ai/expand-knowledge", payload);
+    return post<{
+      suggestions: Array<{ title: string; description?: string; level?: string }>;
+    }>("/ai/expand-knowledge", payload);
   },
 
   getBranchSuggestions: (data: {
@@ -192,7 +240,7 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     model?: string;
   }) => {
     const payload = injectAIConfig(data, "text");
-    return mobileAiClient.post("/ai/branch-suggestions", payload);
+    return post<{ suggestions: BranchSuggestion[] }>("/ai/branch-suggestions", payload);
   },
 
   generateCards: (data: {
@@ -204,9 +252,18 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     model?: string;
   }) => {
     const payload = injectAIConfig(data, "text");
-    return mobileAiClient.post("/ai/generate-cards", payload);
+    return post<{
+      cards: Array<{
+        id?: string;
+        question: string;
+        answer: string;
+        type: string;
+        difficulty: string;
+        explanation?: string;
+        options?: string[];
+      }>;
+    }>("/ai/generate-cards", payload);
   },
-
   batchGenerateCards: async (
     node_ids: string[],
     config: {
@@ -221,12 +278,20 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
 
     if (isMobile) {
       if (!mobileAIService.isConfigured()) {
-        throw new Error("请先在设置中配置 AI API Key");
+        throw new AppError(
+          "请先在设置中配置 AI API Key",
+          SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED,
+          500,
+        );
       }
 
       const client = getMobileSupabaseClient();
       if (!client) {
-        throw new Error("Supabase client not initialized");
+        throw new AppError(
+          "Supabase client not initialized",
+          SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR,
+          500,
+        );
       }
 
       const { data: graphNodes } = await client
@@ -277,7 +342,7 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
             count: result.savedCount,
           });
         } catch (error) {
-          console.error(
+          logger.error(
             `Failed to generate cards for node ${gn.knowledge_point_id}:`,
             error,
           );
@@ -301,27 +366,34 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     const payloadConfig = injectAIConfig(config, "text");
     const payload = { node_ids, config: payloadConfig };
 
-    return mobileAiClient
-      .post("/ai/batch-generate-cards", payload)
-      .then((result) => {
-        return result as unknown as { success: boolean; taskIds: string[]; message: string; error?: string; results?: Array<{ nodeId: string; success: boolean; count: number }> };
-      })
-      .catch((error) => {
-        console.error("[Mobile API] batchGenerateCards 失败:", {
-          error,
-          message: error?.message || String(error),
-          response: error?.response?.data,
-          status: error?.response?.status,
-        });
-        throw error;
+    try {
+      return await post<{
+        success: boolean;
+        taskIds: string[];
+        message: string;
+        error?: string;
+        results?: Array<{ nodeId: string; success: boolean; count: number }>;
+      }>("/ai/batch-generate-cards", payload);
+    } catch (error) {
+      logger.error("[Mobile API] batchGenerateCards 失败:", {
+        error,
+        message: error instanceof Error ? error.message : String(error),
+        statusCode: error instanceof AppError ? error.statusCode : undefined,
+        context: error instanceof AppError ? error.context : undefined,
       });
+      throw error;
+    }
   },
 
-  batchExpandGraph: (node_ids: string[]) => {
-    return mobileAiClient.post("/ai/batch-expand-graph", { node_ids });
-  },
+  batchExpandGraph: (node_ids: string[]) =>
+    post<{ success: boolean; message: string }>("/ai/batch-expand-graph", {
+      node_ids,
+    }),
 
-  getTaskStatus: (id: string) => mobileAiClient.get(`/ai/tasks/${id}`),
+  getTaskStatus: (id: string) =>
+    get<{ status: string; progress?: number; result?: unknown }>(
+      `/ai/tasks/${id}`,
+    ),
 
   textToGraph: (data: {
     text?: string;
@@ -333,12 +405,20 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     model?: string;
   }) => {
     const payload = injectAIConfig(data, "text");
-    return mobileAiClient.post("/ai/text-to-graph", payload);
+    return post<{
+      nodes: Array<{
+        id?: string;
+        title: string;
+        content?: string;
+        level?: string;
+      }>;
+      edges: Array<{ source: string; target: string; type: string }>;
+    }>("/ai/text-to-graph", payload);
   },
 
   documentToGraph: async (data: { graph_id: string; file: File }) => {
     const token = useStore.getState().token;
-    const baseURL = getCloudApiBaseUrl() || "";
+    const fetchBaseURL = getCloudApiBaseUrl() || "";
     const config = getAIConfig("text");
     const formData = new FormData();
     formData.append("graph_id", data.graph_id);
@@ -346,8 +426,8 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     if (config.provider) formData.append("provider", config.provider);
     if (config.model) formData.append("model", config.model);
 
-    const fullUrl = baseURL
-      ? `${baseURL}/ai/document-to-graph`
+    const fullUrl = fetchBaseURL
+      ? `${fetchBaseURL}/ai/document-to-graph`
       : "/ai/document-to-graph";
     const response = await fetch(fullUrl, {
       method: "POST",
@@ -360,7 +440,11 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || "Document to graph failed");
+      throw new AppError(
+        errorText || "Document to graph failed",
+        SharedErrorCodes.AI_PROVIDER_ERROR,
+        502,
+      );
     }
 
     return response.json();
@@ -368,9 +452,9 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
 
   imageToGraph: async (formData: FormData) => {
     const token = useStore.getState().token;
-    const baseURL = getCloudApiBaseUrl() || "";
-    const fullUrl = baseURL
-      ? `${baseURL}/ai/image-to-graph`
+    const fetchBaseURL = getCloudApiBaseUrl() || "";
+    const fullUrl = fetchBaseURL
+      ? `${fetchBaseURL}/ai/image-to-graph`
       : "/ai/image-to-graph";
 
     const response = await fetch(fullUrl, {
@@ -384,19 +468,31 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || "Image to graph failed");
+      throw new AppError(
+        errorText || "Image to graph failed",
+        SharedErrorCodes.AI_PROVIDER_ERROR,
+        502,
+      );
     }
 
     return response.json();
   },
 
-  urlToText: (url: string) => mobileAiClient.post("/ai/url-to-text", { url }),
+  urlToText: (url: string) =>
+    post<{ text: string; title?: string }>("/ai/url-to-text", { url }),
 
   recommendConnections: (data: {
     graph_id: string;
     node_title: string;
     node_content?: string;
-  }) => mobileAiClient.post("/ai/recommend-connections", data),
+  }) =>
+    post<{
+      connections: Array<{
+        target_title: string;
+        relationship: string;
+        reason: string;
+      }>;
+    }>("/ai/recommend-connections", data),
 
   chatStream: async (
     data: {
@@ -437,7 +533,13 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     model?: string;
   }) => {
     const payload = injectAIConfig(data, "text");
-    return mobileAiClient.post("/ai/extract-concepts", payload);
+    return post<{
+      concepts: Array<{
+        title: string;
+        description: string;
+        priority: "high" | "medium" | "low";
+      }>;
+    }>("/ai/extract-concepts", payload);
   },
 
   suggestNextTopic: (data: {
@@ -453,7 +555,14 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     model?: string;
   }) => {
     const payload = injectAIConfig(data, "text");
-    return mobileAiClient.post("/ai/suggest-next-topic", payload);
+    return post<{
+      suggestions: Array<{
+        title: string;
+        description: string;
+        priority: "high" | "medium" | "low";
+        estimatedDifficulty: number;
+      }>;
+    }>("/ai/suggest-next-topic", payload);
   },
 
   generatePodcastScript: (
@@ -462,7 +571,10 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     graph_id?: string,
   ) => {
     const payload = injectAIConfig({ context, language, graph_id }, "text");
-    return mobileAiClient.post("/ai/podcast/script", payload);
+    return post<{
+      script: string;
+      segments: Array<{ speaker: string; text: string }>;
+    }>("/ai/podcast/script", payload);
   },
 
   analyzeCrossGraphConnections: (data: {
@@ -476,21 +588,36 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     model?: string;
   }) => {
     const payload = injectAIConfig(data, "text");
-    return mobileAiClient.post("/ai/cross-graph-connections", payload);
+    return post<{
+      connections: Array<{
+        source: string;
+        target: string;
+        type: string;
+        description: string;
+      }>;
+    }>("/ai/cross-graph-connections", payload);
   },
 
   aiActions: {
     list: (graphId?: string) =>
-      mobileAiClient.get(`/ai-actions${graphId ? `?graph_id=${graphId}` : ""}`),
-    create: (data: Partial<AIAction>) =>
-      mobileAiClient.post("/ai-actions", data),
+      get<AIAction[]>(
+        `/ai-actions${graphId ? `?graph_id=${graphId}` : ""}`,
+      ),
+    create: (data: Partial<AIAction>) => post<AIAction>("/ai-actions", data),
     update: (id: string, data: Partial<AIAction>) =>
-      mobileAiClient.put(`/ai-actions/${id}`, data),
-    delete: (id: string) => mobileAiClient.delete(`/ai-actions/${id}`),
+      put<AIAction>(`/ai-actions/${id}`, data),
+    delete: (id: string) => del<void>(`/ai-actions/${id}`),
     execute: (data: {
       action_id: string;
       node_id: string;
       graph_id?: string;
-    }) => mobileAiClient.post("/ai-actions/execute", data),
+    }) =>
+      post<{
+        data?: {
+          updatedFields?: string[];
+          createdCount?: number;
+        };
+        message?: string;
+      }>("/ai-actions/execute", data),
   },
 };

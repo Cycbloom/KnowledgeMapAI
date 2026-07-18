@@ -84,7 +84,7 @@ const LINE_STYLES: Record<string, string> = {
   default: "solid",
 };
 
-export const QuadrantEdge: React.FC<QuadrantEdgeProps> = ({
+export const QuadrantEdge = React.memo(({
   edge,
   sourceX,
   sourceY,
@@ -93,7 +93,7 @@ export const QuadrantEdge: React.FC<QuadrantEdgeProps> = ({
   isDark,
   highlighted = false,
   hasFocusMode = false,
-}) => {
+}: QuadrantEdgeProps) => {
   const relationType = edge.relationship_type || "default";
   let color = RELATION_COLORS[relationType] || RELATION_COLORS.default;
   let lineStyle = LINE_STYLES[relationType] || LINE_STYLES.default;
@@ -134,4 +134,4 @@ export const QuadrantEdge: React.FC<QuadrantEdgeProps> = ({
       data-relation-type={relationType}
     />
   );
-};
+});

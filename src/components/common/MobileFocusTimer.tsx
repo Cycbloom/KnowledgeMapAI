@@ -181,7 +181,7 @@ export const MobileFocusTimer: React.FC = () => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: isOnRight ? PANEL_WIDTH : -PANEL_WIDTH, opacity: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed z-[99] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden"
+            className="fixed z-modal-upper bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden"
             style={{
               width: PANEL_WIDTH,
               top: Math.max(60, Math.min(ballY - 80, window.innerHeight - 340)),
@@ -291,6 +291,7 @@ export const MobileFocusTimer: React.FC = () => {
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={handleReset}
+                  aria-label="重置"
                   className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
                   <RotateCcw size={18} />
@@ -298,6 +299,7 @@ export const MobileFocusTimer: React.FC = () => {
 
                 <motion.button
                   onClick={handleStartPause}
+                  aria-label={isRunning ? "暂停" : "开始"}
                   className="p-4 rounded-full shadow-lg"
                   style={{ backgroundColor: colors.primary }}
                   whileTap={{ scale: 0.95 }}
@@ -316,6 +318,7 @@ export const MobileFocusTimer: React.FC = () => {
 
                 <button
                   onClick={() => useTimerStore.getState().skipToNext()}
+                  aria-label="跳过"
                   className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
                   <svg aria-hidden="true"
@@ -343,7 +346,7 @@ export const MobileFocusTimer: React.FC = () => {
       </AnimatePresence>
 
       <motion.div
-        className="fixed z-[100] touch-none select-none"
+        className="fixed z-fullscreen touch-none select-none"
         style={{
           top: ballY,
           [isOnRight ? "right" : "left"]: isCollapsed ? 0 : SCREEN_MARGIN,

@@ -7,6 +7,7 @@ import type {
 } from "./types";
 import { DependencyResolver } from "./DependencyResolver";
 import { PluginLifecycleBase } from "@shared/kernel";
+import { logger } from "@/utils/logger";
 
 export class Kernel
   extends PluginLifecycleBase<Plugin, FrontendKernelAPI, PluginEntry>
@@ -37,7 +38,7 @@ export class Kernel
   }
 
   protected override logWarn(message: string): void {
-    console.warn(message);
+    logger.warn(message);
   }
 
   protected override logInfo(_message: string): void {
@@ -118,7 +119,7 @@ export class Kernel
 
   registerRoute(registration: RouteRegistration): void {
     if (this.routeRegistry.has(registration.path)) {
-      console.warn(`[Kernel] Route "${registration.path}" is already registered, overwriting`);
+      logger.warn(`[Kernel] Route "${registration.path}" is already registered, overwriting`);
     }
 
     this.routeRegistry.set(registration.path, registration);
@@ -144,7 +145,7 @@ export class Kernel
 
   registerApiModule(name: string, apiModule: Record<string, unknown>): void {
     if (this.apiRegistry.has(name)) {
-      console.warn(`[Kernel] API module "${name}" is already registered, overwriting`);
+      logger.warn(`[Kernel] API module "${name}" is already registered, overwriting`);
     }
 
     this.apiRegistry.set(name, apiModule);

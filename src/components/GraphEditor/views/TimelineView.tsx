@@ -6,6 +6,7 @@ import { MindMapLink } from '../canvas/MindMapLink';
 import { createMindMapLayout, LayoutResult } from '../../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
 import { useTheme } from "../../../hooks";
+import { useGraphWorker } from "../../../hooks/common/useWorker";
 import { calculateNodeImportance, calculateEdgeStrength } from '../../../lib/graphUtils';
 import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 
@@ -115,13 +116,54 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     return map;
   }, [sortedNodes]);
 
-  const layout = useMemo((): LayoutResult | null => {
-    if (allNodes.length === 0) return null;
-    return createMindMapLayout(allNodes, edges, {
-      width: containerSize.width,
-      height: containerSize.height - 80
-    });
-  }, [allNodes, edges, containerSize]);
+  // 异步布局状态（worker-first + 主线程 fallback，参考 MindMapCanvas）
+  const [layout, setLayout] = useState<LayoutResult | null>(null);
+  const [isLayoutCalculating, setIsLayoutCalculating] = useState(false);
+  const { calculateMindMapLayout } = useGraphWorker();
+
+  useEffect(() => {
+    if (allNodes.length === 0) {
+      setLayout(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsLayoutCalculating(true);
+      try {
+        const result = await calculateMindMapLayout(
+          allNodes as any,
+          edges as any,
+          {
+            width: containerSize.width,
+            height: containerSize.height - 80
+          }
+        );
+        if (result) {
+          setLayout(result as any);
+        } else {
+          // Fallback: Worker 不可用时降级为主线程同步计算
+          console.warn('[TimelineView] Worker layout failed, falling back to main thread');
+          const fallbackResult = createMindMapLayout(allNodes, edges, {
+            width: containerSize.width,
+            height: containerSize.height - 80
+          });
+          setLayout(fallbackResult as any);
+        }
+      } catch (error) {
+        // 错误时也降级到主线程
+        console.warn('[TimelineView] Worker layout error, falling back to main thread', error);
+        const fallbackResult = createMindMapLayout(allNodes, edges, {
+          width: containerSize.width,
+          height: containerSize.height - 80
+        });
+        setLayout(fallbackResult as any);
+      } finally {
+        setIsLayoutCalculating(false);
+      }
+    }, 300); // 300ms 防抖
+
+    return () => clearTimeout(timer);
+  }, [allNodes, edges, containerSize, calculateMindMapLayout]);
 
   const nodeImportanceMap = useMemo(() => {
     if (nodeSizeMode === 'fixed') return new Map<string, number>();
@@ -420,7 +462,21 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         </g>
       </svg>
 
-      <div 
+      {isLayoutCalculating && !layout && (
+        <div
+          className="absolute flex items-center justify-center pointer-events-none"
+          style={{ top: 0, left: 0, right: 0, bottom: 80 }}
+        >
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">
+              {t('graphEditor.mindMap.loading')}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div
         className={`absolute bottom-0 left-0 p-4 ${isDark ? 'bg-slate-800/95' : 'bg-white/95'} backdrop-blur-sm border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}
         style={{ right: rightPanelWidth > 0 ? rightPanelWidth : 0 }}
       >

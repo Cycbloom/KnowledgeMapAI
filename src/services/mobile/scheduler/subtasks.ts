@@ -1,5 +1,6 @@
 import { withClient } from "../utils/clientHelper";
 import type { TaskSubtask } from "@shared/types";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 type SubtaskWithJoin = Omit<TaskSubtask, "mastery_level"> & {
   knowledge_points: { mastery_level: number | null }[] | null;
@@ -22,7 +23,7 @@ export const getSubtasks = async (taskId: string): Promise<TaskSubtask[]> => {
       .order("position", { ascending: true });
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return ((data ?? []) as SubtaskWithJoin[]).map(flattenSubtask);
@@ -46,7 +47,7 @@ export const createSubtask = async (
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return flattenSubtask(result as SubtaskWithJoin);
@@ -72,7 +73,7 @@ export const updateSubtask = async (
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return flattenSubtask(result as SubtaskWithJoin);
@@ -90,7 +91,7 @@ export const deleteSubtask = async (
       .eq("id", subtaskId);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
   });
 };

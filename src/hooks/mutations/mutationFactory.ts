@@ -153,26 +153,33 @@ export function createOptimisticMutation<TData, TVariables, TCache>(
           : (config.queryKey as QueryKey);
 
         await queryClient.cancelQueries({ queryKey });
-        const previousData = queryClient.getQueryData<TCache>(queryKey);
+        // 使用 getQueriesData/setQueriesData 支持前缀匹配:
+        // 当 queryKey 为前缀(如 ["scheduler", "tasks"])时,
+        // 乐观更新会同步应用到所有匹配变体(如不同 filters 的列表缓存),
+        // 并为每个变体保留 previousData 用于失败回滚。
+        const previousEntries = queryClient.getQueriesData<TCache>({ queryKey });
 
-        queryClient.setQueryData<TCache>(queryKey, (old) =>
+        queryClient.setQueriesData<TCache>({ queryKey }, (old) =>
           config.optimisticUpdater(old, variables),
         );
 
-        return { previousData, queryKey };
+        return { previousEntries };
       },
       onError: (_err, _variables, context) => {
-        if (context?.previousData !== undefined && context?.queryKey) {
-          queryClient.setQueryData(context.queryKey, context.previousData);
+        if (context?.previousEntries) {
+          for (const [key, previousData] of context.previousEntries) {
+            queryClient.setQueryData(key, previousData);
+          }
         }
       },
       onSuccess: (data, variables) => {
-        if (config.onSuccessUpdater) {
+        const successUpdater = config.onSuccessUpdater;
+        if (successUpdater) {
           const queryKey = typeof config.queryKey === "function"
             ? config.queryKey(variables)
             : (config.queryKey as QueryKey);
-          queryClient.setQueryData<TCache>(queryKey, (old) =>
-            config.onSuccessUpdater!(old, data, variables),
+          queryClient.setQueriesData<TCache>({ queryKey }, (old) =>
+            successUpdater(old, data, variables),
           );
         }
       },

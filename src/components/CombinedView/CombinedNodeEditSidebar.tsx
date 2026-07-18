@@ -4,6 +4,9 @@ import { Node } from '../../types';
 import { X, ArrowLeft, Save } from 'lucide-react';
 import { useFormDraft } from '../../hooks';
 import { ConfirmationModal } from '../common/ConfirmationModal';
+import { FormInput } from '../common/FormInput';
+import { FormTextarea } from '../common/FormTextarea';
+import { FormSelect } from '../common/FormSelect';
 
 interface NodeFormState {
   title: string;
@@ -111,70 +114,60 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
       </div>
 
       <div className="space-y-4 flex-1 overflow-y-auto pr-1">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">标题</label>
-          <input
-            type="text"
-            value={nodeForm.title}
-            onChange={(e) => setNodeForm({ ...nodeForm, title: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            placeholder="输入节点标题"
-          />
-        </div>
+        <FormInput
+          label="标题"
+          type="text"
+          value={nodeForm.title}
+          onChange={(e) => setNodeForm({ ...nodeForm, title: e.target.value })}
+          placeholder="输入节点标题"
+        />
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             概览
             <span className="ml-1 text-xs font-normal text-gray-400 dark:text-gray-500">(20-30字短概述)</span>
           </label>
-          <input
+          <FormInput
             type="text"
             value={nodeForm.summary}
             onChange={(e) => setNodeForm({ ...nodeForm, summary: e.target.value })}
             maxLength={200}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
+            className="text-sm"
             placeholder="简短概览，概括核心内容..."
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">标签 (逗号分隔)</label>
-          <input
-            type="text"
-            value={nodeForm.tags.join(', ')}
-            onChange={(e) => {
-              const tags = e.target.value.split(/[,，]/).map(t => t.trim()).filter(Boolean);
-              setNodeForm({ ...nodeForm, tags });
-            }}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            placeholder="例如: 重要, 待办, 概念"
-          />
-        </div>
+        <FormInput
+          label="标签 (逗号分隔)"
+          type="text"
+          value={nodeForm.tags.join(', ')}
+          onChange={(e) => {
+            const tags = e.target.value.split(/[,，]/).map(t => t.trim()).filter(Boolean);
+            setNodeForm({ ...nodeForm, tags });
+          }}
+          placeholder="例如: 重要, 待办, 概念"
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">层级</label>
-          <select
-            value={nodeForm.level}
-            onChange={(e) => setNodeForm({ ...nodeForm, level: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          >
-            <option value="root">根节点</option>
-            <option value="core">核心节点</option>
-            <option value="sub">次级节点</option>
-            <option value="normal">普通节点</option>
-            <option value="leaf">叶子节点</option>
-          </select>
-        </div>
+        <FormSelect
+          label="层级"
+          value={nodeForm.level}
+          onChange={(e) => setNodeForm({ ...nodeForm, level: e.target.value })}
+          className="text-sm"
+        >
+          <option value="root">根节点</option>
+          <option value="core">核心节点</option>
+          <option value="sub">次级节点</option>
+          <option value="normal">普通节点</option>
+          <option value="leaf">叶子节点</option>
+        </FormSelect>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">内容</label>
-          <textarea
-            value={nodeForm.content}
-            onChange={(e) => setNodeForm({ ...nodeForm, content: e.target.value })}
-            className="w-full h-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all resize-none font-mono text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            placeholder="支持 Markdown 格式..."
-          />
-        </div>
+        <FormTextarea
+          label="内容"
+          value={nodeForm.content}
+          onChange={(e) => setNodeForm({ ...nodeForm, content: e.target.value })}
+          className="h-64 resize-none font-mono text-sm"
+          placeholder="支持 Markdown 格式..."
+        />
       </div>
 
       <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-900 z-10">

@@ -4,6 +4,9 @@ import { useTranslation } from "react-i18next";
 import { X, Calendar, Clock, Tag } from "lucide-react";
 import { useTheme, useFocusTrap, useEscapeKey, useFormDraft } from "../../hooks";
 import { ConfirmationModal } from "../common/ConfirmationModal";
+import { FormInput } from "../common/FormInput";
+import { FormTextarea } from "../common/FormTextarea";
+import { FormSelect } from "../common/FormSelect";
 
 interface QuickTaskFormData {
   title: string;
@@ -156,34 +159,28 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                   {t("calendar.taskTitle")}{" "}
                   <span className="text-red-500">*</span>
                 </label>
-                <input
+                <FormInput
                   type="text"
                   value={taskForm.title}
                   onChange={(e) =>
                     setTaskForm({ ...taskForm, title: e.target.value })
                   }
                   placeholder={t("calendar.taskTitlePlaceholder")}
-                  className="w-full px-3 py-2 rounded-lg border bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-slate-500"
+                  className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 placeholder-gray-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
               {/* Description */}
-              <div>
-                <label
-                  className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
-                >
-                  {t("calendar.description")}
-                </label>
-                <textarea
-                  value={taskForm.description}
-                  onChange={(e) =>
-                    setTaskForm({ ...taskForm, description: e.target.value })
-                  }
-                  placeholder={t("calendar.descriptionPlaceholder")}
-                  rows={2}
-                  className="w-full px-3 py-2 rounded-lg border resize-none bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-slate-500"
-                />
-              </div>
+              <FormTextarea
+                label={t("calendar.description")}
+                value={taskForm.description}
+                onChange={(e) =>
+                  setTaskForm({ ...taskForm, description: e.target.value })
+                }
+                placeholder={t("calendar.descriptionPlaceholder")}
+                rows={2}
+                className="resize-none bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 placeholder-gray-400 dark:placeholder:text-slate-500"
+              />
 
               {/* Deadline */}
               <div>
@@ -193,7 +190,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                   <Calendar size={14} className="inline mr-1" />
                   {t("calendar.deadline")}
                 </label>
-                <input
+                <FormInput
                   type="datetime-local"
                   value={taskForm.deadline}
                   onChange={(e) =>
@@ -202,7 +199,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                       deadline: e.target.value,
                     })
                   }
-                  className="w-full px-3 py-2 rounded-lg border bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100"
+                  className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600"
                 />
               </div>
 
@@ -215,7 +212,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                     <Clock size={14} className="inline mr-1" />
                     {t("calendar.estimatedDuration")}
                   </label>
-                  <input
+                  <FormInput
                     type="number"
                     value={taskForm.estimated_duration}
                     onChange={(e) =>
@@ -224,32 +221,26 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                         estimated_duration: parseInt(e.target.value) || 30,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-lg border bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100"
+                    className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600"
                   />
                 </div>
-                <div>
-                  <label
-                    className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
-                  >
-                    {t("calendar.priority")}
-                  </label>
-                  <select
-                    value={taskForm.priority}
-                    onChange={(e) =>
-                      setTaskForm({
-                        ...taskForm,
-                        priority: parseInt(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-lg border bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100"
-                  >
-                    {priorityLabels.map((label, index) => (
-                      <option key={index} value={index + 1}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FormSelect
+                  label={t("calendar.priority")}
+                  value={taskForm.priority}
+                  onChange={(e) =>
+                    setTaskForm({
+                      ...taskForm,
+                      priority: parseInt(e.target.value),
+                    })
+                  }
+                  className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600"
+                >
+                  {priorityLabels.map((label, index) => (
+                    <option key={index} value={index + 1}>
+                      {label}
+                    </option>
+                  ))}
+                </FormSelect>
               </div>
 
               {/* Tags */}

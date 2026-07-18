@@ -15,6 +15,8 @@ import type {
 } from "../../../shared/sync";
 import { getSupabaseClient } from "../../lib/supabase";
 import { withRetry } from "../../../shared/utils/retry";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
+import { logger } from "@/utils/logger";
 
 export class MobileSyncService {
   private isRunning = false;
@@ -95,7 +97,11 @@ export class MobileSyncService {
         const { data: { session } } = await supabase.auth.getSession();
         this.userId = session?.user?.id ?? "unknown";
       }
-    } catch {
+    } catch (error) {
+      logger.warn("Operation failed", {
+        operation: "refreshUserId",
+        error: error instanceof Error ? error.message : String(error),
+      });
       this.userId = "unknown";
     }
   }
@@ -269,7 +275,7 @@ export class MobileSyncService {
   private async applyOperation(operation: SyncOperation): Promise<void> {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     // 幂等性检查：若 operation 有 clientOpId，先查询是否已应用

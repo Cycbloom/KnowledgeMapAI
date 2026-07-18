@@ -53,7 +53,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
         ? JSON.parse(localStorage.getItem('auth-storage')!).state?.token 
         : null;
 
-      const response = await fetch(`/api/data/export/pdf?graph_id=${graphId}`, {
+      const response = await fetch(`/api/data/export/pdf?graph_id=${encodeURIComponent(graphId)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

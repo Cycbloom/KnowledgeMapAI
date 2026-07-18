@@ -5,6 +5,7 @@ import type {
   CommandOption,
   OptionValue,
 } from './types';
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export class CommandParser {
   private input: string = '';
@@ -71,7 +72,7 @@ export class CommandParser {
     }
 
     if (!name) {
-      throw new Error('Invalid option name after --');
+      throw new AppError('Invalid option name after --', SharedErrorCodes.VALIDATION_ERROR, 400);
     }
 
     return {
@@ -88,7 +89,7 @@ export class CommandParser {
 
     const char = this.input[this.position];
     if (!char || !/[a-zA-Z]/.test(char)) {
-      throw new Error('Invalid short option');
+      throw new AppError('Invalid short option', SharedErrorCodes.VALIDATION_ERROR, 400);
     }
     this.position++;
 
@@ -138,7 +139,7 @@ export class CommandParser {
       this.position++;
     }
 
-    throw new Error('Unterminated quoted string');
+    throw new AppError('Unterminated quoted string', SharedErrorCodes.VALIDATION_ERROR, 400);
   }
 
   private parseWord(): Token {
@@ -160,12 +161,12 @@ export class CommandParser {
 
   private buildParsedArgs(): ParsedArgs {
     if (this.tokens.length === 0) {
-      throw new Error('No command provided');
+      throw new AppError('No command provided', SharedErrorCodes.VALIDATION_ERROR, 400);
     }
 
     const firstToken = this.tokens[0];
     if (firstToken.type !== 'value' && firstToken.type !== 'command') {
-      throw new Error('Command must start with a command name');
+      throw new AppError('Command must start with a command name', SharedErrorCodes.VALIDATION_ERROR, 400);
     }
 
     const command = firstToken.value;

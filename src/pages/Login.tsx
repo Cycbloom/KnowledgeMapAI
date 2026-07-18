@@ -12,6 +12,7 @@ import { useStore } from "../store/useStore";
 import { useTheme, useFormDraft } from "../hooks";
 import { ConfirmationModal } from "../components/common/ConfirmationModal";
 import { isElectron } from "../config/electronConfig";
+import { logger } from "../utils/logger";
 import type { AIProviderType } from "@shared/types/ai";
 import {
   Database,
@@ -238,8 +239,11 @@ export const Login = () => {
             databaseUrl: db.databaseUrl || prev.databaseUrl,
           }));
         }
-      } catch {
-        // ignore
+      } catch (error) {
+        logger.warn("Login step failed", {
+          step: "loadElectronConfig",
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
@@ -257,8 +261,11 @@ export const Login = () => {
           databaseUrl: response.databaseUrl || prev.databaseUrl,
         }));
       }
-    } catch {
-      // ignore
+    } catch (error) {
+      logger.warn("Login step failed", {
+        step: "loadDatabaseConfig",
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
 
     if (isSupabaseConfigured()) {
@@ -290,8 +297,11 @@ export const Login = () => {
         }
       }
       setConfiguredProviders(providers);
-    } catch {
-      // ignore
+    } catch (error) {
+      logger.warn("Login step failed", {
+        step: "loadConfiguredProviders",
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   };
 
@@ -302,7 +312,11 @@ export const Login = () => {
         status: string;
       };
       setDbStatus(response.status as "empty" | "partial" | "ready");
-    } catch {
+    } catch (error) {
+      logger.warn("Login step failed", {
+        step: "checkDatabaseStatus",
+        error: error instanceof Error ? error.message : String(error),
+      });
       setDbStatus("unknown");
     }
   };
@@ -389,7 +403,11 @@ export const Login = () => {
       }
 
       setShowAuthForm(true);
-    } catch {
+    } catch (error) {
+      logger.warn("Login step failed", {
+        step: "anonymousAuth",
+        error: error instanceof Error ? error.message : String(error),
+      });
       setShowAuthForm(true);
     } finally {
       setAuthenticating(false);
@@ -518,7 +536,11 @@ export const Login = () => {
       setAiTestResult("success");
       setAiTestMessage(t("configPage.aiConfigSaved"));
       loadConfiguredProviders();
-    } catch {
+    } catch (error) {
+      logger.warn("Login step failed", {
+        step: "saveAIConfig",
+        error: error instanceof Error ? error.message : String(error),
+      });
       setAiTestResult("error");
       setAiTestMessage(t("configPage.aiConfigSaveFailed"));
     } finally {
@@ -549,7 +571,11 @@ export const Login = () => {
         setAiTestResult("error");
         setAiTestMessage(response.message || t("configPage.aiTestFailed"));
       }
-    } catch {
+    } catch (error) {
+      logger.warn("Login step failed", {
+        step: "testAIConfig",
+        error: error instanceof Error ? error.message : String(error),
+      });
       setAiTestResult("error");
       setAiTestMessage(t("configPage.aiTestFailed"));
     } finally {
@@ -589,8 +615,11 @@ export const Login = () => {
       if (Array.isArray(response)) {
         setRegions(response);
       }
-    } catch {
-      // ignore
+    } catch (error) {
+      logger.warn("Login step failed", {
+        step: "loadRegions",
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }, [pat]);
 
@@ -714,7 +743,11 @@ export const Login = () => {
       }
 
       setShowAuthForm(true);
-    } catch {
+    } catch (error) {
+      logger.warn("Login step failed", {
+        step: "quickSetupComplete",
+        error: error instanceof Error ? error.message : String(error),
+      });
       setShowAuthForm(true);
     } finally {
       setAuthenticating(false);

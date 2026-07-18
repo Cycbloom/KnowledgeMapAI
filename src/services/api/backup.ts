@@ -1,4 +1,5 @@
 import { useStore } from '@/store/useStore';
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 const API_URL = '/api';
 
@@ -25,7 +26,7 @@ export const backupApi = {
     });
     
     if (!response.ok) {
-      throw new Error('导出失败');
+      throw new AppError('导出失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     return response.blob();
@@ -42,7 +43,7 @@ export const backupApi = {
     });
     
     if (!response.ok) {
-      throw new Error('获取快照列表失败');
+      throw new AppError('获取快照列表失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     const data = await response.json();
@@ -63,7 +64,7 @@ export const backupApi = {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || '创建快照失败');
+      throw new AppError(errorData.error || '创建快照失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     return response.json();
@@ -71,7 +72,7 @@ export const backupApi = {
 
   deleteSnapshot: async (id: string) => {
     const token = useStore.getState().token;
-    const response = await fetch(`${API_URL}/backup/snapshots/${id}`, {
+    const response = await fetch(`${API_URL}/backup/snapshots/${encodeURIComponent(id)}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -81,7 +82,7 @@ export const backupApi = {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || '删除快照失败');
+      throw new AppError(errorData.error || '删除快照失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     return response.json();
@@ -89,7 +90,7 @@ export const backupApi = {
 
   restoreSnapshot: async (id: string) => {
     const token = useStore.getState().token;
-    const response = await fetch(`${API_URL}/backup/restore/${id}`, {
+    const response = await fetch(`${API_URL}/backup/restore/${encodeURIComponent(id)}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -99,7 +100,7 @@ export const backupApi = {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || '恢复快照失败');
+      throw new AppError(errorData.error || '恢复快照失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     return response.json();
@@ -107,7 +108,7 @@ export const backupApi = {
 
   import: async (data: any, mode: 'merge' | 'replace' = 'merge') => {
     const token = useStore.getState().token;
-    const response = await fetch(`${API_URL}/backup/import?mode=${mode}`, {
+    const response = await fetch(`${API_URL}/backup/import?mode=${encodeURIComponent(mode)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ export const backupApi = {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || '导入失败');
+      throw new AppError(errorData.error || '导入失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     return response.json();

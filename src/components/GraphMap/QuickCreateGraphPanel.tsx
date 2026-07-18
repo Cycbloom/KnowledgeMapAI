@@ -408,7 +408,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
 
       {showPromptConfig && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-modal p-4 backdrop-blur-sm"
           onClick={() => setShowPromptConfig(false)}
         >
           <div

@@ -29,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
 import { formatDate } from "../utils/formatters";
 import { message } from "@/utils/messageHelper";
+import { themeClasses } from "@/utils/themeClasses";
 import type { Note, NoteType } from "@shared/types/note";
 
 /** 回收站资源分类：graphs 图谱 / notes 笔记 */
@@ -348,7 +349,7 @@ export const RecycleBin = () => {
               </h1>
             </div>
             <p
-              className={`${isDark ? "text-slate-400" : "text-gray-500"} text-lg max-w-xl`}
+              className={`${themeClasses.textSecondary(isDark)} text-lg max-w-xl`}
             >
               {t("recycleBin.subtitle")}
             </p>
@@ -361,7 +362,7 @@ export const RecycleBin = () => {
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search
-                className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                className={`absolute left-3 top-1/2 -translate-y-1/2 ${themeClasses.textMuted(isDark)}`}
                 size={18}
               />
               <input
@@ -442,7 +443,7 @@ export const RecycleBin = () => {
             {selectedCount > 0 && (
               <>
                 <span
-                  className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                  className={`text-sm ${themeClasses.textSecondary(isDark)}`}
                 >
                   {t("recycleBin.selected", { count: selectedCount })}
                 </span>
@@ -577,7 +578,7 @@ export const RecycleBin = () => {
 
                 <p
                   className={`text-sm line-clamp-2 mb-4 ${
-                    isDark ? "text-slate-400" : "text-gray-500"
+                    themeClasses.textSecondary(isDark)
                   }`}
                 >
                   {graph.description || t("recycleBin.noDescription")}
@@ -627,7 +628,7 @@ export const RecycleBin = () => {
                 {selectedNoteIds.size > 0 && (
                   <>
                     <span
-                      className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                      className={`text-sm ${themeClasses.textSecondary(isDark)}`}
                     >
                       {t("recycleBin.notes.batch.selected", { count: selectedNoteIds.size })}
                     </span>

@@ -65,6 +65,8 @@
   "page": "Page {{page}} / {{totalPages}}",
   "prevPage": "Previous",
   "nextPage": "Next",
+  "loadMore": "Load more",
+  "loadingMore": "Loading...",
   "newNoteDefaultTitle": "Untitled Note",
   "createNoteFailed": "Failed to create note",
   "createDailyFailed": "Failed to create daily note",

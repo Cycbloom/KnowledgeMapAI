@@ -818,6 +818,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 setShowTemplatePromptConfig(true);
               }}
               className={`p-1 rounded-md hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors cursor-pointer`}
+              aria-label={t("autoGraph.editPrompt")}
               title={t("autoGraph.editPrompt")}
             >
               <Settings2
@@ -1470,6 +1471,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         {onClose && (
           <button
             onClick={onClose}
+            aria-label="关闭"
             className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
           >
             <X size={isMobile ? 18 : 20} />

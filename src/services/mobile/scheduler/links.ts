@@ -1,5 +1,6 @@
 import { withClient } from "../utils/clientHelper";
 import type { TaskLink } from "@shared/types";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const getLinks = async (taskId: string): Promise<TaskLink[]> => {
   return withClient(async (client) => {
@@ -10,7 +11,7 @@ export const getLinks = async (taskId: string): Promise<TaskLink[]> => {
       .order("position", { ascending: true });
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data as TaskLink[] | null) ?? [];
@@ -44,7 +45,7 @@ export const createLink = async (
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as TaskLink;
@@ -70,7 +71,7 @@ export const updateLink = async (
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as TaskLink;
@@ -82,7 +83,7 @@ export const deleteLink = async (_taskId: string, linkId: string): Promise<void>
     const { error } = await client.from("task_links").delete().eq("id", linkId);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
   });
 };

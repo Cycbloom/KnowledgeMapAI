@@ -78,10 +78,14 @@ const useBrowserTTS = () => {
       };
 
       loadVoices();
-      
+
       if (window.speechSynthesis.onvoiceschanged !== undefined) {
         window.speechSynthesis.onvoiceschanged = loadVoices;
       }
+
+      return () => {
+        window.speechSynthesis.onvoiceschanged = null;
+      };
     }
   }, []);
 

@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { useCombinedView, useTheme } from '../hooks';
+import { queryKeys, defaultQueryConfig } from '../hooks/queries/config';
 import { CombinedViewCanvas } from '../components/CombinedView/CombinedViewCanvas';
 import { Skeleton } from '../components/common';
 import { api } from '../services/api';
@@ -15,22 +17,11 @@ interface GraphSelectorProps {
 
 const GraphSelector: React.FC<GraphSelectorProps> = ({ selectedIds, onToggle, onConfirm }) => {
   const { t } = useTranslation();
-  const [graphs, setGraphs] = useState<Graph[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadGraphs = async () => {
-      try {
-        const result = await api.graphs.list();
-        setGraphs(result as Graph[]);
-      } catch (err) {
-        console.error('Failed to load graphs:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadGraphs();
-  }, []);
+  const { data: graphs, isLoading } = useQuery<Graph[]>({
+    queryKey: queryKeys.graphs,
+    queryFn: () => api.graphs.list(),
+    ...defaultQueryConfig,
+  });
 
   if (isLoading) {
     return <div className="p-4 text-center text-gray-500">{t('combinedViewPage.loadingGraphs')}</div>;
@@ -40,7 +31,7 @@ const GraphSelector: React.FC<GraphSelectorProps> = ({ selectedIds, onToggle, on
     <div className="p-4">
       <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{t('combinedViewPage.selectGraphsTitle')}</h3>
       <div className="space-y-2 max-h-96 overflow-y-auto">
-        {graphs.map((graph) => (
+        {(graphs ?? []).map((graph) => (
           <label
             key={graph.id}
             className="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"

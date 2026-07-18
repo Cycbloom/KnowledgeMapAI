@@ -2,6 +2,7 @@ import axios, {
   AxiosInstance,
   AxiosError,
   AxiosResponse,
+  AxiosRequestConfig,
   InternalAxiosRequestConfig,
 } from "axios";
 import { useStore } from "@/store/useStore";
@@ -15,6 +16,7 @@ import {
 import { getMobileApiBaseUrl } from "@/config/mobileApiConfig";
 import { localQuery, isCloudOnlyResource } from "./localClient";
 import { captureException } from "@/utils/errorReporter";
+import { logger } from "@/utils/logger";
 
 /**
  * Shape of the error response body returned by the backend.
@@ -26,6 +28,27 @@ interface ApiErrorResponse {
   code?: string;
   details?: Array<{ field: string; message: string }>;
 }
+
+// Module augmentation for in-flight GET request deduplication
+declare module "axios" {
+  interface AxiosRequestConfig {
+    _skipDedupe?: boolean;
+  }
+  interface InternalAxiosRequestConfig {
+    _inflightKey?: string;
+  }
+}
+
+// Module-level Map storing in-flight GET request promises for deduplication
+const inflightRequests = new Map<string, Promise<unknown>>();
+
+// Generate a deduplication key from method + url + params
+const getInflightKey = (config: AxiosRequestConfig): string => {
+  const method = (config.method || "get").toLowerCase();
+  const url = config.url || "";
+  const params = JSON.stringify(config.params || {});
+  return `${method}:${url}:${params}`;
+};
 
 const isMobileClient = (): boolean => {
   return isCapacitorMobile();
@@ -72,7 +95,7 @@ const initCsrf = async (): Promise<void> => {
     });
     csrfInitialized = true;
   } catch (error) {
-    console.warn("Failed to initialize CSRF token", error);
+    logger.warn("Failed to initialize CSRF token", error);
   }
 };
 
@@ -208,6 +231,12 @@ export const createApiClient = (): AxiosInstance => {
         config.headers["x-electron-client"] = "true";
       }
 
+      // Mark in-flight key for GET requests (unless explicitly skipped)
+      const method = (config.method || "get").toLowerCase();
+      if (method === "get" && !config._skipDedupe) {
+        config._inflightKey = getInflightKey(config);
+      }
+
       return config;
     },
     (error) => {
@@ -217,9 +246,19 @@ export const createApiClient = (): AxiosInstance => {
 
   client.interceptors.response.use(
     (response) => {
+      const key = response.config?._inflightKey;
+      if (key) {
+        inflightRequests.delete(key);
+      }
       return response.data;
     },
     async (error: AxiosError) => {
+      // Clean up in-flight entry on error
+      const inflightKey = error.config?._inflightKey;
+      if (inflightKey) {
+        inflightRequests.delete(inflightKey);
+      }
+
       const originalRequest = error.config as InternalAxiosRequestConfig & {
         _retry?: boolean;
       };
@@ -260,7 +299,37 @@ export const createApiClient = (): AxiosInstance => {
     },
   );
 
-  initCsrf().catch((err) => { console.error(err); });
+  initCsrf().catch((err) => { logger.error("Failed to initialize CSRF token", err); });
+
+  // Wrap client.get to enable in-flight GET request deduplication.
+  // Identical concurrent GET requests (same method + url + params) share a
+  // single underlying Promise; subsequent callers receive the same response.
+  const originalGet = client.get.bind(client);
+
+  const dedupedGet = function <T = unknown, R = AxiosResponse<T>, D = unknown>(
+    url: string,
+    config?: AxiosRequestConfig<D>,
+  ): Promise<R> {
+    const mergedConfig: AxiosRequestConfig<D> = {
+      ...config,
+      method: "get",
+      url,
+    };
+    if (mergedConfig._skipDedupe) {
+      return originalGet<T, R, D>(url, config);
+    }
+    const key = getInflightKey(mergedConfig);
+    const existing = inflightRequests.get(key);
+    if (existing) {
+      return existing as Promise<R>;
+    }
+    const promise = originalGet<T, R, D>(url, config);
+    inflightRequests.set(key, promise as Promise<unknown>);
+    // Entry is removed by the response interceptor on success or error.
+    return promise;
+  };
+
+  client.get = dedupedGet as typeof client.get;
 
   return client;
 };

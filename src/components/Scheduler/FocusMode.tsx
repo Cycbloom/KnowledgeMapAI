@@ -63,7 +63,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[100] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
+          className="fixed inset-0 z-fullscreen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
           onMouseMove={() => setShowControls(true)}
           onMouseLeave={() => setShowControls(false)}
         >

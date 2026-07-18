@@ -17,7 +17,7 @@ interface NodeRingProps {
   shadowColor?: string;
 }
 
-export const NodeRing: React.FC<NodeRingProps> = ({
+export const NodeRing = React.memo(({
   radius,
   strokeWidth,
   color,
@@ -31,7 +31,7 @@ export const NodeRing: React.FC<NodeRingProps> = ({
   rotationSpeed = 2,
   shadowBlur = 0,
   shadowColor = 'rgba(0,0,0,0.1)'
-}) => {
+}: NodeRingProps) => {
   const rotationStyle = useMemo(() => {
     if (!enableRotation) return {};
     return {
@@ -83,4 +83,4 @@ export const NodeRing: React.FC<NodeRingProps> = ({
       />
     </g>
   );
-};
+});

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { X, Clock, Tag, Star, AlertCircle, HelpCircle } from 'lucide-react';
@@ -149,6 +149,11 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
   const insertPlaceholder = (placeholder: string) => {
     setFormData(prev => ({ ...prev, titleTemplate: prev.titleTemplate + `{{${placeholder}}}` }));
   };
+
+  const availableCommonTags = useMemo(
+    () => COMMON_TAGS.filter(t => !formData.tags.includes(t)).slice(0, 6),
+    [formData.tags]
+  );
 
   return (
     <motion.div
@@ -347,7 +352,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               ))}
             </div>
             <div className="flex flex-wrap gap-1.5 mb-2">
-              {COMMON_TAGS.filter(t => !formData.tags.includes(t)).slice(0, 6).map(tag => (
+              {availableCommonTags.map(tag => (
                 <button
                   key={tag}
                   type="button"

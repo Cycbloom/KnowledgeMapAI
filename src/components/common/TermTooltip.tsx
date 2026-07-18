@@ -58,7 +58,7 @@ export const TermTooltip: React.FC<TermTooltipProps> = ({ term, explanation }) =
       </span>
       {isVisible && createPortal(
         <div 
-            className="fixed z-[9999] pointer-events-none"
+            className="fixed z-tooltip pointer-events-none"
             style={{
                 top: coords.top - 8, // 8px gap above the term
                 left: coords.left,

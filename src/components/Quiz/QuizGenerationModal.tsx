@@ -275,7 +275,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
       className={`rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200 ${
         showPromptConfig ? 'max-w-5xl' : 'max-w-2xl'
       } ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-white'}`}
-      overlayClassName="z-[60] p-4 backdrop-blur-sm"
+      overlayClassName="z-modal-overlay p-4 backdrop-blur-sm"
     >
         <div
           className={`p-6 border-b ${

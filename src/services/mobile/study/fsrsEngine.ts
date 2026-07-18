@@ -2,6 +2,7 @@ import { fsrs, Card, Rating, State, createEmptyCard, migrateParameters } from "t
 import type { FSRS, FSRSParameters } from "ts-fsrs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StudyCard } from "@/types";
+import { logger } from "@/utils/logger";
 
 /**
  * 将数据库中的 StudyCard 转换为 ts-fsrs 的 Card 对象。
@@ -74,7 +75,7 @@ export const getFSRSForUser = async (
 
     return fsrs(params);
   } catch (e) {
-    console.warn("[Mobile] Failed to fetch user settings for FSRS, using defaults", e);
+    logger.warn("[Mobile] Failed to fetch user settings for FSRS, using defaults", e);
     return fsrs();
   }
 };

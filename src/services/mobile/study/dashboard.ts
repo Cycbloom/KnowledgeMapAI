@@ -1,12 +1,13 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
 import type { StudyCardRow } from "@shared/types/database";
 import type { IDashboardApi } from "../../api/contracts/IDashboardApi";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const mobileDashboardApi: IDashboardApi = {
   getStats: async () => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {

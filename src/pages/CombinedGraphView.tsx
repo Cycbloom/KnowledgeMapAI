@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
+import { queryKeys } from '../hooks/queries/config';
 import { useCombinedGraphAIOperations } from '../hooks/graphAI';
 import { useBatchGraphStatus } from '../hooks/queries/useGraphQueries';
 import { MindMapCanvas } from '../components/GraphEditor/canvas/MindMapCanvas';
@@ -41,7 +42,7 @@ export const CombinedGraphView: React.FC = () => {
   }, [graphStatusData, id1, id2]);
   
   const { data: graph1Data, isLoading: isLoading1, error: error1, refetch: refetch1 } = useQuery<GraphDataResponse>({
-    queryKey: ['graphData', id1],
+    queryKey: queryKeys.graphData(id1 || ""),
     queryFn: async () => {
       if (!id1) return { nodes: [], edges: [] };
       const data = await api.graphs.getNodes(id1);
@@ -54,7 +55,7 @@ export const CombinedGraphView: React.FC = () => {
   });
 
   const { data: graph2Data, isLoading: isLoading2, error: error2, refetch: refetch2 } = useQuery<GraphDataResponse>({
-    queryKey: ['graphData', id2],
+    queryKey: queryKeys.graphData(id2 || ""),
     queryFn: async () => {
       if (!id2) return { nodes: [], edges: [] };
       const data = await api.graphs.getNodes(id2);
@@ -67,7 +68,7 @@ export const CombinedGraphView: React.FC = () => {
   });
 
   const { data: graph1Meta, error: error3, refetch: refetch3 } = useQuery({
-    queryKey: ['graph', id1],
+    queryKey: queryKeys.graph(id1 || ""),
     queryFn: () => {
       if (!id1) return null;
       return api.graphs.get(id1);
@@ -76,7 +77,7 @@ export const CombinedGraphView: React.FC = () => {
   });
 
   const { data: graph2Meta, error: error4, refetch: refetch4 } = useQuery({
-    queryKey: ['graph', id2],
+    queryKey: queryKeys.graph(id2 || ""),
     queryFn: () => {
       if (!id2) return null;
       return api.graphs.get(id2);
@@ -85,7 +86,7 @@ export const CombinedGraphView: React.FC = () => {
   });
 
   const { data: mapData, error: error5, refetch: refetch5 } = useQuery({
-    queryKey: ['graphMap'],
+    queryKey: queryKeys.graphMap(),
     queryFn: () => api.graphs.getMap(),
   });
   
@@ -188,21 +189,21 @@ export const CombinedGraphView: React.FC = () => {
     edges1,
     edges2,
     onRefresh: () => {
-      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
-      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id1 || "") });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id2 || "") });
     },
   });
 
   const nodeOps = {
     handleUpdateNode: async (nodeId: string, updates: Partial<Node>) => {
       await api.nodes.update(nodeId, updates);
-      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
-      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id1 || "") });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id2 || "") });
     },
     handleDeleteNode: async (nodeId: string) => {
       await api.nodes.delete(nodeId);
-      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
-      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id1 || "") });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id2 || "") });
     },
   };
 

@@ -303,7 +303,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
       onClose={onClose}
       titleId="node-selector-modal-title"
       className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-800"
-      overlayClassName="z-[60] p-4 backdrop-blur-sm"
+      overlayClassName="z-modal-overlay p-4 backdrop-blur-sm"
     >
         <div className="p-6 border-b border-slate-100 dark:border-slate-800">
           <div className="flex justify-between items-center">

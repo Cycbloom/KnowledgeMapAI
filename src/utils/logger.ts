@@ -12,6 +12,16 @@ const LEVEL_STYLES: Record<LogLevel, { color: string; icon: string; label: strin
   [LogLevel.DEBUG]: { color: 'color: #9e9e9e', icon: '○', label: 'DEBUG' },
 };
 
+const SENSITIVE_KEYS = [
+  'apiKey', 'apikey', 'api_key',
+  'token', 'accesstoken', 'refreshtoken', 'authtoken',
+  'password', 'passwd', 'pwd',
+  'secret', 'clientsecret',
+  'authorization',
+  'cookie',
+  'sessionid', 'session_id',
+] as const;
+
 export class Logger {
   private level: LogLevel = LogLevel.INFO;
   private prefix?: string;
@@ -39,7 +49,14 @@ export class Logger {
 
   private formatMeta(meta?: unknown): unknown[] {
     if (!meta) return [];
-    return [meta];
+    if (typeof meta !== 'object' || meta === null) return [meta];
+    const redacted: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(meta as Record<string, unknown>)) {
+      const lowerKey = key.toLowerCase();
+      const isSensitive = SENSITIVE_KEYS.some((s) => lowerKey.includes(s.toLowerCase()));
+      redacted[key] = isSensitive ? '[REDACTED]' : value;
+    }
+    return [redacted];
   }
 
   private log(level: LogLevel, message: string, meta?: unknown) {
@@ -69,6 +86,7 @@ export class Logger {
     } else if (level === LogLevel.WARN) {
       console.warn(...logArgs);
     } else {
+      // eslint-disable-next-line no-console
       console.debug(...logArgs);
     }
   }

@@ -172,7 +172,8 @@ export const VersionHistoryModal = ({
             </div>
           </div>
           <button 
-            onClick={onClose} 
+            onClick={onClose}
+            aria-label="关闭"
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <X size={24} />

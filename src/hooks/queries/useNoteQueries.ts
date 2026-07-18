@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
 import { queryKeys, defaultQueryConfig } from "./config";
 import type { Note, NoteListParams, NoteType, NoteTemplate, BlockContent, BlockRef, BlockRefTarget, NodeBlockRefBacklink } from "@shared/types";
@@ -19,14 +19,13 @@ export type NoteView = "all" | "daily" | "note" | "pinned" | "archived";
 export interface UseNotesListArgs {
   view: NoteView;
   enabled?: boolean;
-  page?: number;
   pageSize?: number;
   tag?: string;
   search?: string;
 }
 
-const buildParams = (args: UseNotesListArgs): NoteListParams => {
-  const { view, page = 1, pageSize = 20, tag, search } = args;
+const buildParams = (args: UseNotesListArgs, page: number): NoteListParams => {
+  const { view, pageSize = 20, tag, search } = args;
   switch (view) {
     case "daily":
       return {
@@ -72,20 +71,32 @@ const buildParams = (args: UseNotesListArgs): NoteListParams => {
   }
 };
 
+/**
+ * 笔记列表查询(Infinite Query)。
+ *
+ * 分页通过 pageParam 控制,queryKey 仅含过滤维度(view/tag/search 等),
+ * 所有页共享同一 key,避免每页产生独立缓存项。
+ *
+ * NoteListResult 不含 hasMore 字段,getNextPageParam 基于
+ * total / page / pageSize 推算是否还有下一页。
+ */
 export const useNotesList = (args: UseNotesListArgs) => {
-  const { view, enabled = true, page, pageSize, tag, search } = args;
-  const params = buildParams(args);
-  return useQuery({
+  const { view, enabled = true, tag, search } = args;
+  return useInfiniteQuery({
     queryKey: queryKeys.notes({
       type: view === "daily" || view === "note" ? view : undefined,
       isArchived: view === "archived",
       isPinned: view === "pinned",
       tag,
       search,
-      page,
-      pageSize,
     }),
-    queryFn: async () => api.notes.list(params),
+    queryFn: async ({ pageParam }) =>
+      api.notes.list(buildParams(args, pageParam)),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const seen = lastPage.page * lastPage.pageSize;
+      return seen < lastPage.total ? lastPage.page + 1 : undefined;
+    },
     enabled,
     ...defaultQueryConfig,
   });

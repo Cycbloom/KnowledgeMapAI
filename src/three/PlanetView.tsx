@@ -401,6 +401,14 @@ function Scene({
     return mesh;
   }, [visibleNodes, getNodeColor, sharedSphereGeo, sharedMaterial]);
 
+  // 释放旧 InstancedMesh 的 GPU 资源（instanceMatrix / instanceColor attribute buffer）
+  // 注意：不释放 sharedSphereGeo / sharedMaterial，它们由独立的 useEffect 管理
+  useEffect(() => {
+    return () => {
+      instancedMesh.dispose();
+    };
+  }, [instancedMesh]);
+
   // 居中动画相关
   const animationTargetRef = useRef<THREE.Vector3 | null>(null);
   const animationProgressRef = useRef(0);

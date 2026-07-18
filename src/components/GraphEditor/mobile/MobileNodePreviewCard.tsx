@@ -26,7 +26,7 @@ interface MobileNodePreviewCardProps {
   onClose?: () => void;
 }
 
-export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
+export const MobileNodePreviewCard = React.memo(({
   node,
   nodes,
   edges,
@@ -35,7 +35,7 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
   onMarkMastered,
   onOpenDetail,
   onClose
-}) => {
+}: MobileNodePreviewCardProps) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   
@@ -266,4 +266,4 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
       </div>
     </div>
   );
-};
+});

@@ -6,6 +6,7 @@ import type {
   QueueData,
   UserTask,
 } from "@shared/types";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const getQueues = async (): Promise<Queue[]> => {
   return withClientOptionalUser(async (client, userId) => {
@@ -20,7 +21,7 @@ export const getQueues = async (): Promise<Queue[]> => {
       .order("priority", { ascending: true });
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data as Queue[] | null) ?? [];
@@ -42,7 +43,7 @@ export const createQueue = async (data: CreateQueueData): Promise<Queue> => {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as Queue;
@@ -59,7 +60,7 @@ export const updateQueue = async (id: string, data: UpdateQueueData): Promise<Qu
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as Queue;
@@ -71,7 +72,7 @@ export const deleteQueue = async (id: string): Promise<void> => {
     const { error } = await client.from("queues").delete().eq("id", id);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
   });
 };
@@ -90,7 +91,7 @@ export const getQueueData = async (): Promise<QueueData> => {
       .order("position", { ascending: true });
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const tasks = (data as UserTask[] | null) ?? [];

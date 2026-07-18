@@ -4,7 +4,6 @@ import study from './study.json';
 import promptConfig from './promptConfig.json';
 import errors from './errors.json';
 import common from './common.json';
-import auth from './auth.json';
 import configPage from './configPage.json';
 import quickSetup from './quickSetup.json';
 import settings from './settings.json';
@@ -62,7 +61,6 @@ const enUS = {
   promptConfig,
   errors,
   common,
-  auth,
   configPage,
   quickSetup,
   settings,

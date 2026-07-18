@@ -43,6 +43,8 @@ const MAX_RETRY_COUNT = 3;
 
 class BackgroundSyncManager {
   private isSyncing = false;
+  private onlineHandler: (() => void) | null = null;
+  private offlineHandler: (() => void) | null = null;
 
   constructor() {
     this.initialize();
@@ -68,16 +70,31 @@ class BackgroundSyncManager {
         }
       });
     } else {
-      window.addEventListener('online', async () => {
+      // 保存 handler 引用，便于 destroy 时移除
+      this.onlineHandler = async () => {
         const pendingCount = await getOfflineQueueCount();
         frontendEventBus.publish('sync_queue_updated', { pendingCount, isOnline: true });
         this.checkAndSync();
-      });
+      };
 
-      window.addEventListener('offline', async () => {
+      this.offlineHandler = async () => {
         const pendingCount = await getOfflineQueueCount();
         frontendEventBus.publish('sync_queue_updated', { pendingCount, isOnline: false });
-      });
+      };
+
+      window.addEventListener('online', this.onlineHandler);
+      window.addEventListener('offline', this.offlineHandler);
+    }
+  }
+
+  destroy(): void {
+    if (this.onlineHandler) {
+      window.removeEventListener('online', this.onlineHandler);
+      this.onlineHandler = null;
+    }
+    if (this.offlineHandler) {
+      window.removeEventListener('offline', this.offlineHandler);
+      this.offlineHandler = null;
     }
   }
 

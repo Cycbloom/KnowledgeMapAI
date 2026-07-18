@@ -8,7 +8,7 @@ interface ColorModeLegendProps {
   isDark?: boolean;
 }
 
-export const ColorModeLegend: React.FC<ColorModeLegendProps> = ({ coloringMode, isDark = false }) => {
+export const ColorModeLegend = React.memo(({ coloringMode, isDark = false }: ColorModeLegendProps) => {
   const { t } = useTranslation();
 
   // Only show legend for heatmap and decay modes
@@ -70,4 +70,4 @@ export const ColorModeLegend: React.FC<ColorModeLegendProps> = ({ coloringMode, 
       </div>
     </div>
   );
-};
+});

@@ -6,6 +6,7 @@ import {
   useCallback,
   memo,
 } from "react";
+import { debounce } from "@/utils/performanceUtils";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,8 +22,6 @@ import {
   Plus,
   XCircle,
   Search,
-  ChevronLeft,
-  ChevronRight,
   Hash,
   Loader2,
   LayoutTemplate,
@@ -46,9 +45,9 @@ import {
   Skeleton,
   EmptyState,
   ConfirmationModal,
-  VirtualList,
   ErrorBoundary,
 } from "../../components/common";
+import { VirtualList } from "../../components/common/VirtualList";
 import { NotesListSortDropdown, type SortBy } from "../../components/Notes/NotesListSortDropdown";
 import { NotesBatchActions } from "../../components/Notes/NotesBatchActions";
 import { asyncConfirm } from "../../utils/asyncConfirm";
@@ -410,7 +409,6 @@ export const NotesListPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [view, setView] = useState<NoteView>("all");
-  const [page, setPage] = useState(1);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   // SubTask 10.1: 客户端标题搜索(useState + useMemo);searchInput 为即时输入值,
   // searchKeyword 为 debounce 后的实际过滤值,避免每次按键都触发过滤。
@@ -418,7 +416,15 @@ export const NotesListPage = () => {
   const [searchKeyword, setSearchKeyword] = useState("");
   // SubTask 10.2: 客户端标签筛选(点击列表项 tag chip 时设置)。
   const [filterTag, setFilterTag] = useState<string | null>(null);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedSetSearchKeyword = useMemo(
+    () =>
+      debounce((value: string) => {
+        setSearchKeyword(value);
+      }, 300),
+    [],
+  );
+  // Infinite Query: 底部 sentinel ref,供 IntersectionObserver 观察以自动加载下一页。
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   // 虚拟列表容器高度：基于视口高度估算可用列表区域，resize 时更新。
   const [listContainerHeight, setListContainerHeight] = useState(() =>
     typeof window !== "undefined"
@@ -448,10 +454,18 @@ export const NotesListPage = () => {
   }>({ isOpen: false, count: 0 });
   const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 
-  const { data, isLoading, error, refetch, isFetching } = useNotesList({
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+    isFetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useNotesList({
     view,
     enabled: !!token,
-    page,
     pageSize: PAGE_SIZE,
   });
 
@@ -464,18 +478,18 @@ export const NotesListPage = () => {
   const deleteNoteMutation = useDeleteNoteMutation();
   const restoreNoteMutation = useRestoreNoteMutation();
 
-  const notes = useMemo(() => data?.items ?? [], [data]);
-  const total = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // useInfiniteQuery: data.pages 是各页 NoteListResult 数组,需展平为单层 note 列表。
+  const notes = useMemo(
+    () => data?.pages.flatMap((p) => p.items) ?? [],
+    [data],
+  );
 
   // 卸载时清理 debounce 定时器,避免设置已卸载组件 state 的告警。
   useEffect(() => {
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
+      debouncedSetSearchKeyword.cancel();
     };
-  }, []);
+  }, [debouncedSetSearchKeyword]);
 
   // 虚拟列表容器高度随窗口尺寸变化重新计算。
   useEffect(() => {
@@ -485,22 +499,33 @@ export const NotesListPage = () => {
     return () => window.removeEventListener("resize", updateListHeight);
   }, []);
 
+  // Infinite Query: 底部 sentinel 进入视口时自动加载下一页。
+  // 仅在 hasNextPage 且未在加载中时触发,避免重复请求。
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   // debounce 300ms 后再写入 searchKeyword;回车时立即触发(见 onKeyDown)。
   const handleSearchChange = (value: string) => {
     setSearchInput(value);
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    debounceTimerRef.current = setTimeout(() => {
-      setSearchKeyword(value);
-    }, 300);
+    debouncedSetSearchKeyword(value);
   };
 
   const handleSearchClear = () => {
     setSearchInput("");
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+    debouncedSetSearchKeyword.cancel();
     setSearchKeyword("");
   };
 
@@ -581,7 +606,8 @@ export const NotesListPage = () => {
 
   const handleViewChange = (next: NoteView) => {
     setView(next);
-    setPage(1);
+    // setPage(1) 不再需要:infinite query 在 view 变化(queryKey 变化)时
+    // 会自动从第 1 页重新拉取
   };
 
   const handleCreateNote = async () => {
@@ -998,9 +1024,7 @@ export const NotesListPage = () => {
           onChange={(e) => handleSearchChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              if (debounceTimerRef.current) {
-                clearTimeout(debounceTimerRef.current);
-              }
+              debouncedSetSearchKeyword.cancel();
               setSearchKeyword(searchInput);
             }
           }}
@@ -1170,45 +1194,23 @@ export const NotesListPage = () => {
                 />
               </ErrorBoundary>
 
-              {/* 分页 */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6 px-2">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {t("notes.showing", {
-                      start: (page - 1) * PAGE_SIZE + 1,
-                      end: Math.min(page * PAGE_SIZE, total),
-                      total,
-                    })}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="p-2 rounded-md border border-gray-300 dark:border-slate-700 disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                      aria-label={t("notes.prevPage")}
-                    >
-                      <ChevronLeft
-                        size={20}
-                        className="text-gray-600 dark:text-gray-400"
+              {/* Infinite Query 加载更多:IntersectionObserver 自动触发,显示加载状态 */}
+              {hasNextPage && (
+                <div
+                  ref={loadMoreRef}
+                  className="flex items-center justify-center py-4 text-sm text-gray-500 dark:text-gray-400"
+                >
+                  {isFetchingNextPage ? (
+                    <>
+                      <Loader2
+                        className="w-4 h-4 animate-spin mr-2"
+                        aria-hidden="true"
                       />
-                    </button>
-                    <span className="text-sm text-gray-600 dark:text-gray-300 px-2">
-                      {t("notes.page", { page, totalPages })}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="p-2 rounded-md border border-gray-300 dark:border-slate-700 disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                      aria-label={t("notes.nextPage")}
-                    >
-                      <ChevronRight
-                        size={20}
-                        className="text-gray-600 dark:text-gray-400"
-                      />
-                    </button>
-                  </div>
+                      {t("notes.loadingMore")}
+                    </>
+                  ) : (
+                    t("notes.loadMore")
+                  )}
                 </div>
               )}
             </>

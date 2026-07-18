@@ -5,6 +5,8 @@ import type { StudyCard } from "@shared/types/common";
 import type { GetCardsParams, CardGroup, StudyStats } from "@shared/types/api";
 import type { IStudyApi } from "../../api/contracts/IStudyApi";
 import { fsrsEngine } from "./fsrsEngine";
+import { logger } from "@/utils/logger";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 interface StudyCardInsert {
   user_id: string;
@@ -35,7 +37,7 @@ export const mobileStudyApi: IStudyApi = {
   getCards: async (params?: GetCardsParams) => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -63,7 +65,7 @@ export const mobileStudyApi: IStudyApi = {
     const { data, error } = await query;
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data as StudyCard[]) || [];
@@ -72,7 +74,7 @@ export const mobileStudyApi: IStudyApi = {
   getCardsByKnowledgePoint: async (knowledgePointId: string, _params?: Record<string, unknown>) => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -90,7 +92,7 @@ export const mobileStudyApi: IStudyApi = {
       .eq("knowledge_point_id", knowledgePointId);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data as StudyCard[]) || [];
@@ -103,7 +105,7 @@ export const mobileStudyApi: IStudyApi = {
 
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -111,7 +113,7 @@ export const mobileStudyApi: IStudyApi = {
     } = await client.auth.getUser();
 
     if (!user) {
-      throw new Error("User not authenticated");
+      throw new AppError("User not authenticated", SharedErrorCodes.AUTH_UNAUTHORIZED, 401);
     }
 
     const cardsToInsert = (
@@ -150,7 +152,7 @@ export const mobileStudyApi: IStudyApi = {
       .select();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return { success: true, cards: (data as StudyCard[]) || [] };
@@ -159,7 +161,7 @@ export const mobileStudyApi: IStudyApi = {
   update: async (id: string, data: Partial<StudyCard>) => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: result, error } = await client
@@ -170,7 +172,7 @@ export const mobileStudyApi: IStudyApi = {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return { success: true, card: result as StudyCard };
@@ -179,13 +181,13 @@ export const mobileStudyApi: IStudyApi = {
   delete: async (id: string) => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { error } = await client.from("study_cards").delete().eq("id", id);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return { success: true };
@@ -198,13 +200,13 @@ export const mobileStudyApi: IStudyApi = {
 
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { error } = await client.from("study_cards").delete().in("id", ids);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return { success: true };
@@ -213,14 +215,14 @@ export const mobileStudyApi: IStudyApi = {
   updateProgress: async (id: string, quality: number) => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
       data: { user },
     } = await client.auth.getUser();
     if (!user) {
-      throw new Error("User not authenticated");
+      throw new AppError("User not authenticated", SharedErrorCodes.AUTH_UNAUTHORIZED, 401);
     }
 
     const { data: card, error: fetchError } = await client
@@ -230,7 +232,7 @@ export const mobileStudyApi: IStudyApi = {
       .single();
 
     if (fetchError || !card) {
-      throw new Error(fetchError?.message || "Card not found");
+      throw new AppError(fetchError?.message || "Card not found", SharedErrorCodes.RESOURCE_CARD_NOT_FOUND, 404);
     }
 
     const cardRow = card as StudyCard;
@@ -264,14 +266,14 @@ export const mobileStudyApi: IStudyApi = {
       .single();
 
     if (updateError) {
-      throw new Error(updateError.message);
+      throw new AppError(updateError.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     // mastery_level 重算策略（方案 C 降级）：
     // 移动端无 update_knowledge_point_mastery RPC，mastery 重算由桌面端下次登录时
     // 通过 masteryCalculationService 批量触发，此处仅 warn 不影响主流程。
     if (cardRow.knowledge_point_id) {
-      console.warn(
+      logger.warn(
         "[Mobile] mastery recalc RPC not available, will be synced on desktop login",
       );
     }
@@ -282,7 +284,7 @@ export const mobileStudyApi: IStudyApi = {
   getCardGroups: async (knowledgePointId: string) => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -300,7 +302,7 @@ export const mobileStudyApi: IStudyApi = {
       .eq("knowledge_point_id", knowledgePointId);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const groups: CardGroup[] = [];
@@ -328,7 +330,7 @@ export const mobileStudyApi: IStudyApi = {
   getStats: async (graphId?: string) => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -361,7 +363,7 @@ export const mobileStudyApi: IStudyApi = {
     const { data: cards, error } = await query;
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const allCards = (cards ?? []) as Array<{
@@ -424,7 +426,7 @@ export const mobileStudyApi: IStudyApi = {
   getFsrsParameters: async () => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -448,7 +450,7 @@ export const mobileStudyApi: IStudyApi = {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const settings = (data?.settings as Record<string, unknown>) ?? {};
@@ -469,7 +471,7 @@ export const mobileStudyApi: IStudyApi = {
   setFsrsParameters: async (w: number[]) => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -477,7 +479,7 @@ export const mobileStudyApi: IStudyApi = {
     } = await client.auth.getUser();
 
     if (!user) {
-      throw new Error("User not authenticated");
+      throw new AppError("User not authenticated", SharedErrorCodes.AUTH_UNAUTHORIZED, 401);
     }
 
     const { data: userData } = await client
@@ -499,7 +501,7 @@ export const mobileStudyApi: IStudyApi = {
       .eq("id", user.id);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return { success: true };
@@ -508,7 +510,7 @@ export const mobileStudyApi: IStudyApi = {
   resetFsrsParameters: async () => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -516,7 +518,7 @@ export const mobileStudyApi: IStudyApi = {
     } = await client.auth.getUser();
 
     if (!user) {
-      throw new Error("User not authenticated");
+      throw new AppError("User not authenticated", SharedErrorCodes.AUTH_UNAUTHORIZED, 401);
     }
 
     const { data } = await client
@@ -535,7 +537,7 @@ export const mobileStudyApi: IStudyApi = {
       .eq("id", user.id);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return { success: true };

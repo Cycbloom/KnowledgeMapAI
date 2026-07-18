@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { debounce } from '@/utils/performanceUtils';
 
 interface DeviceInfo {
   isMobile: boolean;
@@ -40,17 +41,13 @@ export function useIsMobile(breakpoint?: number): DeviceInfo | boolean {
     return getDeviceInfo();
   });
 
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const debouncedUpdate = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      setDeviceInfo(getDeviceInfo());
-    }, 100);
-  }, []);
+  const debouncedUpdate = useMemo(
+    () =>
+      debounce(() => {
+        setDeviceInfo(getDeviceInfo());
+      }, 100),
+    [],
+  );
 
   useEffect(() => {
     const handleResize = () => {
@@ -73,9 +70,7 @@ export function useIsMobile(breakpoint?: number): DeviceInfo | boolean {
     mediaQuery.addEventListener('change', handleMediaQueryChange);
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      debouncedUpdate.cancel();
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleOrientationChange);
       mediaQuery.removeEventListener('change', handleMediaQueryChange);

@@ -7,6 +7,7 @@ import type { CollaboratorRole, CollaboratorWithUser } from '@shared/types';
 import { useStore } from '../../../store/useStore';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { copyToClipboard } from '@/utils/clipboard';
+import { useFocusTrap, useEscapeKey } from '../../../hooks/common';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -49,7 +50,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const fetchCollaborators = async () => {
     setCollaboratorsLoading(true);
     try {
-      const response = await fetch(`/api/collaborations/graphs/${graphId}/collaborators`, {
+      const response = await fetch(`/api/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators`, {
         credentials: 'include',
       });
       if (response.ok) {
@@ -95,7 +96,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     
     setInviteLoading(true);
     try {
-      const response = await fetch(`/api/collaborations/graphs/${graphId}/collaborators`, {
+      const response = await fetch(`/api/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -126,7 +127,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     })) return;
     
     try {
-      const response = await fetch(`/api/collaborations/graphs/${graphId}/collaborators/${collaboratorUserId}`, {
+      const response = await fetch(`/api/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators/${encodeURIComponent(collaboratorUserId)}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -146,7 +147,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const handleGenerateShareLink = async () => {
     try {
-      const response = await fetch(`/api/collaborations/graphs/${graphId}/share`, {
+      const response = await fetch(`/api/collaborations/graphs/${encodeURIComponent(graphId)}/share`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -167,6 +168,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   };
 
+  const contentRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(onClose, isOpen);
+
   if (!isOpen) return null;
 
   const publicUrl = `${window.location.origin}/graph/${graphId}`;
@@ -182,11 +186,23 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div
+      className="fixed inset-0 z-fullscreen flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={contentRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="share-modal-title"
+        className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
-          <h2 className="text-lg font-bold text-gray-800 dark:text-white">分享图谱</h2>
+          <h2 id="share-modal-title" className="text-lg font-bold text-gray-800 dark:text-white">分享图谱</h2>
           <button onClick={onClose} aria-label={t('common.aria.close')} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <X size={20} className="text-gray-500 dark:text-gray-400" />
           </button>

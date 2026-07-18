@@ -1,4 +1,5 @@
 import type { Plugin } from "./types";
+import { logger } from "@/utils/logger";
 
 export class DependencyResolver {
   resolve(plugins: Plugin[]): Plugin[] {
@@ -16,7 +17,7 @@ export class DependencyResolver {
           const error = new Error(
             `Missing dependency: "${plugin.name}" requires "${dep}" which is not registered`,
           );
-          console.error(`[DependencyResolver] ${error.message}`);
+          logger.error(`[DependencyResolver] ${error.message}`);
           throw error;
         }
       }
@@ -69,7 +70,7 @@ export class DependencyResolver {
       const error = new Error(
         `Circular dependency detected among plugins: ${remaining.join(", ")}`,
       );
-      console.error(`[DependencyResolver] ${error.message}`);
+      logger.error(`[DependencyResolver] ${error.message}`);
       throw error;
     }
 

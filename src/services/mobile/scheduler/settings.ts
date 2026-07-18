@@ -2,6 +2,7 @@ import { withClientAndUser, withClientOptionalUser } from "../utils/clientHelper
 import type { TaskSettings, UpdateTaskSettingsData } from "@shared/types";
 import type { TaskSettingsRow } from "@shared/types/database";
 import { DEFAULT_TASK_SETTINGS } from "@shared/constants/taskDefaults";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const getSettings = async (): Promise<TaskSettings> => {
   return withClientOptionalUser(async (client, userId) => {
@@ -20,7 +21,7 @@ export const getSettings = async (): Promise<TaskSettings> => {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const row = data as TaskSettingsRow | null;
@@ -57,7 +58,7 @@ export const updateSettings = async (data: UpdateTaskSettingsData): Promise<Task
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as TaskSettings;

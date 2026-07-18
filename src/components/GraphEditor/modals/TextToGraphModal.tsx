@@ -404,6 +404,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
           </div>
           <button 
             onClick={handleClose}
+            aria-label="关闭"
             className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
           >
             <X size={20} />

@@ -1,5 +1,6 @@
 import { withClientAndUser, withClientOptionalUser } from "../utils/clientHelper";
 import type { TaskExecution } from "@shared/types";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const getExecutions = async (filters?: {
   task_id?: string;
@@ -30,7 +31,7 @@ export const getExecutions = async (filters?: {
     const { data, error } = await query;
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data as TaskExecution[] | null) ?? [];
@@ -56,7 +57,7 @@ export const createExecution = async (data: {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as TaskExecution;

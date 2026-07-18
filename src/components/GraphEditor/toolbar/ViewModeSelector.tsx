@@ -9,10 +9,10 @@ interface ViewModeSelectorProps {
   onModeChange: (mode: GraphViewMode) => void;
 }
 
-const ViewModeSelector: React.FC<ViewModeSelectorProps> = ({
+const ViewModeSelector = React.memo(({
   currentMode,
   onModeChange,
-}) => {
+}: ViewModeSelectorProps) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
@@ -83,6 +83,6 @@ const ViewModeSelector: React.FC<ViewModeSelectorProps> = ({
       ))}
     </div>
   );
-};
+});
 
 export { ViewModeSelector };

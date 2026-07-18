@@ -1,6 +1,7 @@
 import { request, getApiUrl } from './client';
 import { useStore } from '@/store/useStore';
 import type { TTSVoice } from '@shared/types';
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const ttsApi = {
   health: () => request('/ai/tts/health'),
@@ -26,7 +27,7 @@ export const ttsApi = {
         useStore.getState().setUser(null, null);
       }
       const errorText = await response.text();
-      throw new Error(errorText || 'TTS synthesis failed');
+      throw new AppError(errorText || 'TTS synthesis failed', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
 
     return response.blob();

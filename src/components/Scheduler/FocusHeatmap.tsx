@@ -240,12 +240,14 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigateYear("prev")}
+            aria-label="上一年"
             className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
           >
             <ChevronLeft size={20} />
           </button>
           <button
             onClick={() => navigateYear("next")}
+            aria-label="下一年"
             className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
           >
             <ChevronRight size={20} />

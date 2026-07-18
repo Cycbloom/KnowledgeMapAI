@@ -4,7 +4,9 @@ import { levelLabels } from "../../config/graphConfig";
 import { getLevel } from "../../lib/graphUtils";
 import { preprocessMarkdown } from "../../utils/markdownPreprocessor";
 import { TermTooltip } from "../common";
-import { CodeBlock, Mermaid, LazyImage } from "../common";
+import { LazyImage } from "../common";
+import { CodeBlock } from "../common/CodeBlock";
+import { Mermaid } from "../common/Mermaid";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -355,6 +357,7 @@ export const CombinedNodeDetailSidebar: React.FC<
         <button
           onClick={onDelete}
           className="w-12 bg-white dark:bg-gray-800 text-red-500 border border-red-100 dark:border-red-900 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center transition-all"
+          aria-label={t("nodeDetail.deleteNode")}
           title={t("nodeDetail.deleteNode")}
         >
           <Trash2 size={18} />

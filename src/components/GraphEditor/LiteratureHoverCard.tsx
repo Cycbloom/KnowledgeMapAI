@@ -67,7 +67,7 @@ export const LiteratureHoverCard: React.FC<LiteratureHoverCardProps> = ({
   return (
     <div
       ref={cardRef}
-      className="fixed z-[9999] transition-opacity duration-200 animate-in fade-in zoom-in-95"
+      className="fixed z-tooltip transition-opacity duration-200 animate-in fade-in zoom-in-95"
       style={{
         left: `${adjustedPosition.x}px`,
         top: `${adjustedPosition.y}px`,

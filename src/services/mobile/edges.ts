@@ -2,6 +2,7 @@ import { getMobileSupabaseClient } from '@/lib/supabase';
 import type { Edge } from '@shared/types/graph';
 import type { CreateEdgeData } from '@shared/types/api';
 import type { IEdgesApi } from '../api/contracts/IEdgesApi';
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const mobileEdgesApi: IEdgesApi & {
   getByGraphId: (graphId: string) => Promise<Edge[]>;
@@ -10,7 +11,7 @@ export const mobileEdgesApi: IEdgesApi & {
   create: async (data: CreateEdgeData): Promise<Edge> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: result, error } = await client
@@ -20,7 +21,7 @@ export const mobileEdgesApi: IEdgesApi & {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as Edge;
@@ -29,7 +30,7 @@ export const mobileEdgesApi: IEdgesApi & {
   delete: async (id: string): Promise<void> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { error } = await client
@@ -38,14 +39,14 @@ export const mobileEdgesApi: IEdgesApi & {
       .eq('id', id);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
   },
 
   getByGraphId: async (graphId: string): Promise<Edge[]> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data, error } = await client
@@ -55,7 +56,7 @@ export const mobileEdgesApi: IEdgesApi & {
       .is('deleted_at', null);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data || []) as Edge[];
@@ -64,7 +65,7 @@ export const mobileEdgesApi: IEdgesApi & {
   update: async (id: string, data: Partial<Edge>): Promise<Edge> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: result, error } = await client
@@ -75,7 +76,7 @@ export const mobileEdgesApi: IEdgesApi & {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as Edge;

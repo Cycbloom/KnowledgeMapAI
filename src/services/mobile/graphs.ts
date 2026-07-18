@@ -17,6 +17,8 @@ import type { IGraphsApi } from "../api/contracts/IGraphsApi";
 import { NotSupportedError } from "../api/contracts/types";
 import { mobileNodesApi } from "./nodes";
 import { mobileEdgesApi } from "./edges";
+import { logger } from "@/utils/logger";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 interface GraphSettings {
   viewMode?: string;
@@ -40,7 +42,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .order("updated_at", { ascending: false });
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       const graphRows = (graphs || []) as KnowledgeGraphRow[];
@@ -77,7 +79,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .order("updated_at", { ascending: false });
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return ((data || []) as KnowledgeGraphRow[]).map(toGraph);
@@ -93,7 +95,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .single();
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return toGraph(data as KnowledgeGraphRow);
@@ -130,7 +132,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .eq("graph_id", graphId);
 
       if (error) {
-        console.error("getNodeStatus error:", error);
+        logger.error("getNodeStatus error:", error);
         return {};
       }
 
@@ -201,7 +203,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .single();
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return toGraph(result as KnowledgeGraphRow);
@@ -220,7 +222,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .single();
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return toGraph(result as KnowledgeGraphRow);
@@ -240,7 +242,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .single();
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return toGraph(result as KnowledgeGraphRow);
@@ -255,7 +257,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .eq("id", id);
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
     });
   },
@@ -270,7 +272,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .single();
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return toGraph(data as KnowledgeGraphRow);
@@ -285,7 +287,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .eq("id", id);
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
     });
   },
@@ -298,7 +300,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .in("id", ids);
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return { count: ids.length };
@@ -313,7 +315,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .in("id", ids);
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return { count: ids.length };
@@ -328,7 +330,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .in("id", ids);
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return { count: ids.length };
@@ -344,7 +346,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .order("order_index", { ascending: true });
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return data || [];
@@ -361,7 +363,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .single();
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return toGraph(data as KnowledgeGraphRow);
@@ -383,9 +385,9 @@ export const mobileGraphsApi: IGraphsApi = {
           return { tags: data as Array<{ name: string; count: number }> };
         }
 
-        console.warn("get_user_graph_tags RPC failed, falling back:", error?.message);
+        logger.warn("get_user_graph_tags RPC failed, falling back:", error?.message);
       } catch (err) {
-        console.warn("get_user_graph_tags RPC error, falling back:", err);
+        logger.warn("get_user_graph_tags RPC error, falling back:", err);
       }
 
       const { data: graphs } = await client
@@ -451,7 +453,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .not("domain", "is", null);
 
       if (error) {
-        console.error("getDomains error:", error);
+        logger.error("getDomains error:", error);
         return { domains: [] };
       }
 
@@ -480,7 +482,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .single();
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return toGraph(data as KnowledgeGraphRow);
@@ -501,7 +503,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .order("updated_at", { ascending: false });
 
       if (graphError) {
-        console.error("getMap graphs error:", graphError);
+        logger.error("getMap graphs error:", graphError);
         return { graphs: [], relations: [] };
       }
 
@@ -579,7 +581,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .single();
 
       if (graphError || !graph) {
-        throw new Error("图谱不存在");
+        throw new AppError("图谱不存在", SharedErrorCodes.RESOURCE_GRAPH_NOT_FOUND, 404);
       }
 
       const graphWithSettings = graph as GraphWithSettings;
@@ -597,7 +599,7 @@ export const mobileGraphsApi: IGraphsApi = {
         .single();
 
       if (updateError) {
-        throw new Error(updateError.message);
+        throw new AppError(updateError.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return toGraph(result as KnowledgeGraphRow);

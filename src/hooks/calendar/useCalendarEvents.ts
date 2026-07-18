@@ -7,7 +7,7 @@ import type { UserTask, UserTaskFilters } from "@shared/types";
 const GC_TIME = 1000 * 60 * 60;
 
 const realtimeQueryConfig = {
-  staleTime: 0,
+  staleTime: 5 * 60 * 1000,
   gcTime: GC_TIME,
   retry: 1,
 };

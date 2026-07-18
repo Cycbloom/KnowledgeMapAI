@@ -1,4 +1,5 @@
 import { request } from '../services/api';
+import { logger } from './logger';
 
 interface PerformanceMetric {
   name: string;
@@ -153,7 +154,7 @@ const reportMetrics = async (): Promise<void> => {
   });
 
   if (import.meta.env.DEV) {
-    console.debug('[Performance] Web Vitals:', webVitals);
+    logger.debug('[Performance] Web Vitals:', webVitals);
   }
 
   try {

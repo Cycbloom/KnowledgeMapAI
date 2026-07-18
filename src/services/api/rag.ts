@@ -1,6 +1,8 @@
 import { request, getAIConfig, getApiUrl } from './client';
 import { useStore } from '@/store/useStore';
 import { getAILanguage } from '@/hooks/useAILanguage';
+import { logger } from '@/utils/logger';
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 interface Source {
   id: string;
@@ -73,7 +75,7 @@ export const ragApi = {
         useStore.getState().setUser(null, null);
       }
       const errorText = await response.text();
-      throw new Error(errorText || 'RAG Chat Stream failed');
+      throw new AppError(errorText || 'RAG Chat Stream failed', SharedErrorCodes.AI_PROVIDER_ERROR, 502);
     }
 
     const reader = response.body?.getReader();
@@ -97,12 +99,12 @@ export const ragApi = {
             const parsed = JSON.parse(dataStr);
             if (parsed.content) onChunk(parsed.content);
             if (parsed.sources && onSources) onSources(parsed.sources as Source[]);
-            if (parsed.error) throw new Error(parsed.error);
+            if (parsed.error) throw new AppError(parsed.error, SharedErrorCodes.AI_INVALID_RESPONSE, 502);
           } catch (e) {
             if (signal?.aborted) {
               throw e;
             }
-            console.error('Stream parse error:', e);
+            logger.error('Stream parse error:', e);
           }
         }
       }

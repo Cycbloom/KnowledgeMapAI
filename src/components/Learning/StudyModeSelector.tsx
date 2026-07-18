@@ -26,7 +26,12 @@ export const StudyModeSelector = ({
   const isDark = document.documentElement.classList.contains("dark");
 
   return (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="relative"
+      role="presentation"
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+    >
       <button
         onClick={onToggleDropdown}
         className={`flex items-center ${isMobile ? "gap-1 px-2 py-1.5" : "gap-1.5 px-3 py-2"} rounded-full font-medium transition-all ${

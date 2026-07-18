@@ -14,6 +14,8 @@ import {
   getKnowledgePoint,
   type GraphNodeRaw,
 } from "@shared/utils/nodeHelpers";
+import { logger } from "@/utils/logger";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const mobileNodesApi: INodesApi & {
   getByGraphId: (graphId: string) => Promise<Node[]>;
@@ -21,7 +23,7 @@ export const mobileNodesApi: INodesApi & {
   create: async (data: CreateNodeData): Promise<Node> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: result, error } = await client
@@ -31,12 +33,12 @@ export const mobileNodesApi: INodesApi & {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const node = buildNodeFromGraphNode(result as GraphNodeRaw);
     if (!node) {
-      throw new Error("Failed to build node from graph node");
+      throw new AppError("Failed to build node from graph node", SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     return node;
   },
@@ -44,7 +46,7 @@ export const mobileNodesApi: INodesApi & {
   get: async (id: string): Promise<Node> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data, error } = await client
@@ -55,17 +57,17 @@ export const mobileNodesApi: INodesApi & {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     if (!data) {
-      throw new Error("Node not found");
+      throw new AppError("Node not found", SharedErrorCodes.RESOURCE_NODE_NOT_FOUND, 404);
     }
 
     const node = buildNodeFromGraphNode(data as GraphNodeRaw);
 
     if (!node) {
-      throw new Error("Failed to build node from graph node");
+      throw new AppError("Failed to build node from graph node", SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     return node;
   },
@@ -76,7 +78,7 @@ export const mobileNodesApi: INodesApi & {
   ): Promise<Node> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: graphNode, error: fetchError } = await client
@@ -87,7 +89,7 @@ export const mobileNodesApi: INodesApi & {
       .single();
 
     if (fetchError) {
-      throw new Error(fetchError.message);
+      throw new AppError(fetchError.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const rawNode = graphNode as GraphNodeRaw;
@@ -113,7 +115,7 @@ export const mobileNodesApi: INodesApi & {
         .eq("id", kp.id);
 
       if (kpError) {
-        console.error("Failed to update knowledge_point:", kpError);
+        logger.error("Failed to update knowledge_point:", kpError);
       }
     }
 
@@ -129,12 +131,12 @@ export const mobileNodesApi: INodesApi & {
       .single();
 
     if (updateError) {
-      throw new Error(updateError.message);
+      throw new AppError(updateError.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const node = buildNodeFromGraphNode(result as GraphNodeRaw);
     if (!node) {
-      throw new Error("Failed to build node from graph node");
+      throw new AppError("Failed to build node from graph node", SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     return node;
   },
@@ -145,7 +147,7 @@ export const mobileNodesApi: INodesApi & {
   ): Promise<DeleteNodeResult> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     if (hardDelete) {
@@ -155,7 +157,7 @@ export const mobileNodesApi: INodesApi & {
         .eq("knowledge_point_id", id);
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return { message: "节点已永久删除" };
@@ -166,7 +168,7 @@ export const mobileNodesApi: INodesApi & {
         .eq("knowledge_point_id", id);
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
       return { message: "节点已移至回收站" };
@@ -179,7 +181,7 @@ export const mobileNodesApi: INodesApi & {
   ) => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     if (options?.hard_delete) {
@@ -189,7 +191,7 @@ export const mobileNodesApi: INodesApi & {
         .in("knowledge_point_id", nodeIds);
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
     } else {
       const { error } = await client
@@ -198,7 +200,7 @@ export const mobileNodesApi: INodesApi & {
         .in("knowledge_point_id", nodeIds);
 
       if (error) {
-        throw new Error(error.message);
+        throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
     }
 
@@ -208,7 +210,7 @@ export const mobileNodesApi: INodesApi & {
   getByGraphId: async (graphId: string): Promise<Node[]> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data, error } = await client
@@ -218,7 +220,7 @@ export const mobileNodesApi: INodesApi & {
       .is("deleted_at", null);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data || [])
@@ -231,7 +233,7 @@ export const mobileNodesApi: INodesApi & {
   ): Promise<void> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { error } = await client.from("graph_nodes").upsert(
@@ -239,7 +241,7 @@ export const mobileNodesApi: INodesApi & {
     );
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
   },
 

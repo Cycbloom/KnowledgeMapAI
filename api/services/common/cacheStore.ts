@@ -1,4 +1,3 @@
-import NodeCache from 'node-cache';
 import { LRUCache } from 'lru-cache';
 import { logger } from '../../utils/logger';
 
@@ -13,7 +12,6 @@ export interface CacheStats {
   hits: number;
   misses: number;
 }
-
 export interface CacheHealthInfo {
   tagCount: number;
   pendingCount: number;
@@ -51,11 +49,14 @@ const stochasticTTL = (baseTTL: number): number => {
   return Math.floor(baseTTL + (Math.random() * variance * 2 - variance));
 };
 
+interface CacheEntry {
+  value: unknown;
+}
+
 /**
- * 基于进程内存的缓存实现，封装 NodeCache + LRU + tag 索引。
+ * 基于进程内存的缓存实现，封装 LRUCache + tag 索引。
  *
- * - NodeCache 提供 TTL 自动过期与 lazy 过期检查
- * - LRUCache 提供 O(1) 淘汰追踪（lruTracker.pop() 取最旧 key）
+ * - LRUCache 同时提供 TTL 自动过期（lazy 检查）与 O(1) LRU 淘汰（max 上限）
  * - tagIndex / keyTags 提供按 tag 批量失效索引
  * - pendingRequests 实现 getOrSet 请求去重（同 key 并发只触发一次 fetchFn）
  *
@@ -64,80 +65,31 @@ const stochasticTTL = (baseTTL: number): number => {
  * 在需要返回删除计数或剩余 TTL 时通过 instanceof 检查后调用，保持向后兼容。
  */
 export class MemoryCacheStore implements CacheInterface {
-  private readonly localCache: NodeCache;
-  // LRU tracker: O(1) eviction via lru-cache, replacing O(N) Map scan.
-  // Value stores the key itself so pop() returns the evicted key for O(1) cleanup.
-  private readonly lruTracker: LRUCache<string, string>;
+  private readonly localCache: LRUCache<string, CacheEntry>;
   private readonly tagIndex: Map<string, Set<string>>;
   private readonly keyTags: Map<string, Set<string>>;
   private readonly pendingRequests: Map<string, Promise<unknown>>;
+  private hits = 0;
+  private misses = 0;
 
   constructor() {
-    this.localCache = new NodeCache({ stdTTL: DEFAULT_TTL, checkperiod: 60 });
-    this.lruTracker = new LRUCache<string, string>({ max: MAX_CACHE_KEYS });
+    this.localCache = new LRUCache<string, CacheEntry>({
+      max: MAX_CACHE_KEYS,
+      ttl: DEFAULT_TTL * 1000,
+      // 自动淘汰/过期时清理 tag 索引；显式 delete/overwrite 由调用方手动清理
+      dispose: (_value, key, reason) => {
+        if (reason === 'evict' || reason === 'expire') {
+          this.cleanupTagsForKey(key);
+        }
+      },
+    });
     this.tagIndex = new Map();
     this.keyTags = new Map();
     this.pendingRequests = new Map();
     logger.info('📦 In-Memory Cache initialized');
   }
 
-  async get<T>(key: string): Promise<T | undefined> {
-    const value = this.localCache.get<T>(key);
-    if (value !== undefined) {
-      // lru-cache get updates access order in O(1); re-add if evicted from tracker
-      if (this.lruTracker.get(key) === undefined) {
-        this.lruTracker.set(key, key);
-      }
-      logger.debug(`[Cache] HIT: ${key}`);
-    } else {
-      logger.debug(`[Cache] MISS: ${key}`);
-    }
-    return value;
-  }
-
-  async set<T>(key: string, value: T, ttl?: number, tags?: string[]): Promise<void> {
-    const effectiveTTL = stochasticTTL(ttl ?? DEFAULT_TTL);
-
-    // LRU eviction: O(1) via lruTracker.pop() instead of O(N) Map scan
-    this.lruTracker.set(key, key);
-    if (this.localCache.keys().length >= MAX_CACHE_KEYS && !this.localCache.has(key)) {
-      const poppedKey = this.lruTracker.pop();
-      if (poppedKey !== undefined) {
-        this.delInternal(poppedKey);
-        logger.debug(`[Cache] LRU evicted: ${poppedKey}`);
-      }
-    }
-
-    const success = this.localCache.set(key, value, effectiveTTL);
-
-    if (success) {
-      if (tags && tags.length > 0) {
-        const tagSet = new Set(tags);
-        this.keyTags.set(key, tagSet);
-
-        for (const tag of tagSet) {
-          const existing = this.tagIndex.get(tag);
-          if (existing) {
-            existing.add(key);
-          } else {
-            this.tagIndex.set(tag, new Set([key]));
-          }
-        }
-      }
-    }
-
-    logger.debug(`[Cache] SET: ${key} (TTL: ${effectiveTTL}s)`);
-  }
-
-  async del(key: string): Promise<void> {
-    this.delInternal(key);
-  }
-
-  /**
-   * 同步删除单个 key 并清理 tag/LRU 索引。
-   * 返回被删除的条目数（0 或 1），与 NodeCache.del 行为一致。
-   */
-  private delInternal(key: string): number {
+  private cleanupTagsForKey(key: string): void {
     const tags = this.keyTags.get(key);
     if (tags) {
       for (const tag of tags) {
@@ -151,8 +103,55 @@ export class MemoryCacheStore implements CacheInterface {
       }
       this.keyTags.delete(key);
     }
-    this.lruTracker.delete(key);
-    return this.localCache.del(key);
+  }
+
+  async get<T>(key: string): Promise<T | undefined> {
+    const entry = this.localCache.get(key);
+    const value = entry?.value;
+    if (value !== undefined) {
+      this.hits++;
+      logger.debug(`[Cache] HIT: ${key}`);
+    } else {
+      this.misses++;
+      logger.debug(`[Cache] MISS: ${key}`);
+    }
+    return value as T | undefined;
+  }
+
+  async set<T>(key: string, value: T, ttl?: number, tags?: string[]): Promise<void> {
+    const effectiveTTL = stochasticTTL(ttl ?? DEFAULT_TTL);
+    // LRU 淘汰由 lru-cache 的 max 选项自动处理（O(1)）
+    this.localCache.set(key, { value }, { ttl: effectiveTTL * 1000 });
+
+    if (tags && tags.length > 0) {
+      const tagSet = new Set(tags);
+      this.keyTags.set(key, tagSet);
+
+      for (const tag of tagSet) {
+        const existing = this.tagIndex.get(tag);
+        if (existing) {
+          existing.add(key);
+        } else {
+          this.tagIndex.set(tag, new Set([key]));
+        }
+      }
+    }
+    logger.debug(`[Cache] SET: ${key} (TTL: ${effectiveTTL}s)`);
+  }
+
+  async del(key: string): Promise<void> {
+    this.delInternal(key);
+  }
+
+  /**
+   * 同步删除单个 key 并清理 tag 索引。
+   * 返回被删除的条目数（0 或 1）。
+   */
+  private delInternal(key: string): number {
+    const existed = this.localCache.has(key);
+    this.localCache.delete(key);
+    this.cleanupTagsForKey(key);
+    return existed ? 1 : 0;
   }
 
   /**
@@ -175,7 +174,6 @@ export class MemoryCacheStore implements CacheInterface {
    */
   async delByTagsWithCount(tags: string[]): Promise<number> {
     const keysToDelete = new Set<string>();
-
     for (const tag of tags) {
       const keys = this.tagIndex.get(tag);
       if (keys) {
@@ -197,14 +195,15 @@ export class MemoryCacheStore implements CacheInterface {
   }
 
   async clear(): Promise<void> {
-    this.localCache.flushAll();
-    this.lruTracker.clear();
+    this.localCache.clear();
     this.tagIndex.clear();
     this.keyTags.clear();
+    this.hits = 0;
+    this.misses = 0;
   }
 
   async keys(): Promise<string[]> {
-    return this.localCache.keys();
+    return [...this.localCache.keys()];
   }
 
   async getOrSet<T>(
@@ -236,17 +235,15 @@ export class MemoryCacheStore implements CacheInterface {
   }
 
   async getRemainingTTL(key: string): Promise<number> {
-    const ttl = this.localCache.getTtl(key);
-    if (ttl === undefined) return 0;
-    return Math.max(0, ttl - Date.now());
+    const remaining = this.localCache.getRemainingTTL(key);
+    return remaining === Infinity ? 0 : remaining;
   }
 
   async getStats(): Promise<CacheStats> {
-    const stats = this.localCache.getStats();
     return {
-      keys: this.localCache.keys().length,
-      hits: stats.hits,
-      misses: stats.misses,
+      keys: this.localCache.size,
+      hits: this.hits,
+      misses: this.misses,
     };
   }
 
@@ -264,7 +261,9 @@ export class MemoryCacheStore implements CacheInterface {
    * 供 cacheService.getOrSetWithRefresh 判断是否触发后台刷新。
    */
   getTtl(key: string): number {
-    return this.localCache.getTtl(key) ?? 0;
+    const remaining = this.localCache.getRemainingTTL(key);
+    if (remaining === 0 || remaining === Infinity) return 0;
+    return Date.now() + remaining;
   }
 
   /**
@@ -272,11 +271,10 @@ export class MemoryCacheStore implements CacheInterface {
    * 供 cacheService.getStats 向后兼容返回。
    */
   getStatsInternal(): { keys: number; hits: number; misses: number } {
-    const stats = this.localCache.getStats();
     return {
-      keys: this.localCache.keys().length,
-      hits: stats.hits,
-      misses: stats.misses,
+      keys: this.localCache.size,
+      hits: this.hits,
+      misses: this.misses,
     };
   }
 

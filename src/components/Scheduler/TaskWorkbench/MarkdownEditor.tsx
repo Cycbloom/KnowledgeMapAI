@@ -5,6 +5,7 @@ import { EmptyState } from "../../common/EmptyState";
 import { ErrorBoundary } from "../../common/ErrorBoundary";
 import { useFormDraft, useAutoSave, useBeforeUnload } from "../../../hooks";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
+import { sanitizeHtml } from "@/utils/sanitize";
 
 interface MarkdownEditorProps {
   value: string;
@@ -146,7 +147,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           return (
             <p
               key={index}
-              dangerouslySetInnerHTML={{ __html: processedLine }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(processedLine) }}
             />
           );
         })}

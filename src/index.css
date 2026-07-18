@@ -358,16 +358,6 @@
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
 
-  /* Scheduler Theme Colors - 三层反馈队列 */
-  --scheduler-q0: #06b6d4;
-  --scheduler-q1: #10b981;
-  --scheduler-q2: #f59e0b;
-
-  /* Scheduler Queue Light Backgrounds */
-  --scheduler-q0-light: rgba(6, 182, 212, 0.1);
-  --scheduler-q1-light: rgba(16, 185, 129, 0.1);
-  --scheduler-q2-light: rgba(245, 158, 11, 0.1);
-
   /* Glow Effects - 霓虹发光效果 */
   --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.5);
   --glow-emerald: 0 0 20px rgba(16, 185, 129, 0.5);
@@ -394,7 +384,7 @@
   --tech-border-active: var(--primary-500);
 
   /* Scheduler Card */
-  --scheduler-card-bg: rgba(15, 23, 42, 0.8);
+  --scheduler-card-bg: rgba(255, 255, 255, 0.95);
   --scheduler-card-border: rgba(51, 65, 85, 0.5);
 
   --primary-50: #f0f9ff;
@@ -430,6 +420,18 @@
   --tertiary-700: #0f766e;
   --tertiary-800: #115e59;
   --tertiary-900: #134e4a;
+
+  /* Z-Index Tokens - 语义化层级 */
+  --z-base: 0;
+  --z-dropdown: 50;
+  --z-modal-overlay: 60;
+  --z-modal: 70;
+  --z-modal-upper: 90;
+  --z-fullscreen: 100;
+  --z-fullscreen-content: 101;
+  --z-modal-manager: 110;
+  --z-tooltip: 9999;
+  --z-skip-link: 9999;
 }
 
 :root.theme-default {
@@ -682,6 +684,11 @@
   --tertiary-700: #6d28d9;
   --tertiary-800: #5b21b6;
   --tertiary-900: #4c1d95;
+}
+
+.dark {
+  /* Scheduler Card - 暗色模式 */
+  --scheduler-card-bg: rgba(15, 23, 42, 0.8);
 }
 
 .dark.theme-default {

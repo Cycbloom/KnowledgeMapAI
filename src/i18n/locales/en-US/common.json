@@ -32,14 +32,12 @@
   "generating": "Generating...",
   "copy": {
     "label": "Copy",
-    "copied": "Copied",
     "idTooltip": "Click to copy full ID"
   },
   "copied": "Copied",
   "copyFailed": "Copy failed",
   "copyError": "Copy error info",
   "copyCode": "Copy code",
-  "clipboardUnavailable": "Clipboard unavailable",
   "backOnline": "Back online, syncing data",
   "slowConnection": "Slow connection, some operations may be delayed",
   "offlineMode": "Offline mode: some AI features are unavailable",
@@ -121,8 +119,7 @@
   },
   "clipboard": {
     "unavailable": "Clipboard unavailable",
-    "copyFailed": "Copy failed",
-    "copySuccess": "Copied successfully"
+    "copyFailed": "Copy failed"
   },
   "confirm": {
     "deleteTitle": "Delete",

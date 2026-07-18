@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { searchApi, SearchResult } from '../../services/api/search';
+import { debounce } from '@/utils/performanceUtils';
 
 export type SearchMode = 'keyword' | 'semantic';
 
@@ -30,7 +31,6 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchResult {
   const [results, setResults] = useState<SearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const performSearch = useCallback(async (searchQuery: string, searchMode: SearchMode) => {
@@ -60,24 +60,31 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchResult {
     }
   }, [minLength]);
 
-  const search = useCallback((searchQuery: string) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
+  const debouncedPerformSearch = useMemo(
+    () =>
+      debounce((searchQuery: string, searchMode: SearchMode) => {
+        performSearch(searchQuery, searchMode);
+      }, debounceMs),
+    [debounceMs, performSearch],
+  );
 
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+  const search = useCallback(
+    (searchQuery: string) => {
+      debouncedPerformSearch.cancel();
 
-    if (!searchQuery.trim() || searchQuery.trim().length < minLength) {
-      setResults(null);
-      return;
-    }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
 
-    debounceRef.current = setTimeout(() => {
-      performSearch(searchQuery, mode);
-    }, debounceMs);
-  }, [debounceMs, minLength, mode, performSearch]);
+      if (!searchQuery.trim() || searchQuery.trim().length < minLength) {
+        setResults(null);
+        return;
+      }
+
+      debouncedPerformSearch(searchQuery, mode);
+    },
+    [debouncedPerformSearch, minLength, mode],
+  );
 
   const clear = useCallback(() => {
     setQuery('');
@@ -85,13 +92,11 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchResult {
     setError(null);
     setIsSearching(false);
 
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
+    debouncedPerformSearch.cancel();
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-  }, []);
+  }, [debouncedPerformSearch]);
 
   useEffect(() => {
     if (autoSearch && query.trim().length >= minLength) {
@@ -113,14 +118,12 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchResult {
 
   useEffect(() => {
     return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+      debouncedPerformSearch.cancel();
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, []);
+  }, [debouncedPerformSearch]);
 
   return {
     query,

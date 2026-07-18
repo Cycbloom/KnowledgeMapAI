@@ -807,7 +807,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[60]"
+        className="fixed inset-0 z-modal-overlay"
         onClick={onClose}
       >
         <div className="absolute inset-0 bg-black/40" />
@@ -887,7 +887,12 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     if (selectedNodeIds.size <= 1) return null;
 
     return (
-      <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="relative"
+        role="presentation"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <button
           onClick={() => setIsBatchMenuOpen(!isBatchMenuOpen)}
           aria-expanded={isBatchMenuOpen}
@@ -1031,6 +1036,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               : "bg-white/20 hover:bg-white/90 text-white hover:text-gray-800"
           }`}
           title="退出专注模式 (Esc)"
+          aria-label="退出专注模式"
         >
           <Minimize size={18} />
         </button>
@@ -1316,7 +1322,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   return (
     <div
       data-tour={dataTour}
-      className={`absolute top-4 left-4 p-2 rounded-xl shadow-lg flex items-center space-x-2 z-10 backdrop-blur-md border transition-transform duration-300 ${themeClasses.container}`}
+      className={`absolute top-4 left-4 p-2 rounded-xl shadow-lg flex items-center space-x-2 z-30 backdrop-blur-md border transition-transform duration-300 ${themeClasses.container}`}
       style={{
         transform: isRAGChatOpen ? `translateX(${ragChatWidth}px)` : undefined,
       }}
@@ -1327,6 +1333,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           onClick={onBack}
           className={`p-2 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.button.default}`}
           title="返回"
+          aria-label="返回"
         >
           <ArrowLeft size={18} />
         </button>
@@ -1337,6 +1344,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             disabled={!canUndo}
             className={`p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${!canUndo ? themeClasses.button.disabled : themeClasses.button.default}`}
             title="撤销"
+            aria-label="撤销"
           >
             <Undo size={18} />
           </button>
@@ -1345,6 +1353,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             disabled={!canRedo}
             className={`p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${!canRedo ? themeClasses.button.disabled : themeClasses.button.default}`}
             title="重做"
+            aria-label="重做"
           >
             <Redo size={18} />
           </button>
@@ -1815,6 +1824,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             : themeClasses.button.default
         }`}
         title="版本历史"
+        aria-label="版本历史"
       >
         <History size={18} />
         <span className="text-sm font-medium hidden xl:inline">版本历史</span>
@@ -1854,7 +1864,12 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
 
       {/* Edge Display Mode Toggle */}
       {setEdgeDisplayMode && (
-        <div className="relative" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="relative"
+          role="presentation"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
           <button
             onClick={() => {
               const next: Record<string, "full" | "simplified" | "hidden"> = {
@@ -1872,6 +1887,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                 : themeClasses.button.default
             }`}
             title={t("graphEditor.toolbar.edgeDisplayMode", "边线显示模式")}
+            aria-label={t("graphEditor.toolbar.edgeDisplayMode", "边线显示模式")}
           >
             <Spline size={18} />
             <span className="text-xs font-medium hidden xl:inline">

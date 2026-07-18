@@ -1,4 +1,6 @@
 import { useStore } from "../../store/useStore";
+import { logger } from "@/utils/logger";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 interface StreamHandlerOptions {
   baseUrl?: string;
@@ -32,7 +34,7 @@ export const createStreamHandler = async (
       onUnauthorized();
     }
     const errorText = await response.text();
-    throw new Error(errorText || "Stream failed");
+    throw new AppError(errorText || "Stream failed", SharedErrorCodes.AI_PROVIDER_ERROR, 502);
   }
 
   const reader = response.body?.getReader();
@@ -55,9 +57,9 @@ export const createStreamHandler = async (
         try {
           const parsed = JSON.parse(dataStr);
           if (parsed.content) onChunk(parsed.content);
-          if (parsed.error) throw new Error(parsed.error);
+          if (parsed.error) throw new AppError(parsed.error, SharedErrorCodes.AI_INVALID_RESPONSE, 502);
         } catch (e) {
-          console.error("Stream parse error:", e);
+          logger.error("Stream parse error:", e);
         }
       }
     }

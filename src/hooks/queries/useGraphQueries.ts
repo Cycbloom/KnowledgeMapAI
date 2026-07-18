@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { api } from "../../services/api/adapter";
 import { Node, Edge, NodeStatus } from "../../types";
 import { queryKeys, defaultQueryConfig, staticQueryConfig, GC_TIME } from "./config";
@@ -24,6 +24,7 @@ export const useGraphs = () => {
     queryKey: queryKeys.graphs,
     queryFn: api.graphs.list,
     ...defaultQueryConfig,
+    placeholderData: keepPreviousData,
   });
 };
 
@@ -123,7 +124,7 @@ export const useAIStatus = (enabled: boolean = true) => {
     queryFn: api.ai.status,
     enabled,
     retry: false,
-    staleTime: 0,
+    staleTime: 60 * 1000,
     gcTime: 1000 * 60 * 60,
     refetchInterval: enabled ? 60_000 : false,
     meta: { silent: true },

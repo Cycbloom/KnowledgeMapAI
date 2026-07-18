@@ -1,4 +1,5 @@
 import { request, getHeaders, getApiUrl } from "./client";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export type RelationType =
   | "prerequisite"
@@ -165,7 +166,7 @@ async function parseSSEStream(
 ): Promise<void> {
   const reader = response.body?.getReader();
   if (!reader) {
-    throw new Error("No response body");
+    throw new AppError("No response body", SharedErrorCodes.AI_INVALID_RESPONSE, 502);
   }
 
   const decoder = new TextDecoder();
@@ -185,7 +186,7 @@ async function parseSSEStream(
           const event: AgentSSEEvent = JSON.parse(line.slice(6));
           onEvent(event);
         } catch {
-          // Skip malformed events
+          // JSON.parse 容错：跳过格式错误的事件
         }
       }
     }
@@ -197,7 +198,7 @@ async function parseSSEStream(
       const event: AgentSSEEvent = JSON.parse(buffer.slice(6));
       onEvent(event);
     } catch {
-      // Skip malformed events
+      // JSON.parse 容错：跳过格式错误的事件
     }
   }
 }
@@ -339,7 +340,7 @@ export const agentApi = {
     const controller = new AbortController();
     const baseUrl = await getApiUrl();
 
-    fetch(`${baseUrl}/agent/sessions/${sessionId}/execute`, {
+    fetch(`${baseUrl}/agent/sessions/${encodeURIComponent(sessionId)}/execute`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -350,7 +351,7 @@ export const agentApi = {
     })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`HTTP error: ${response.status}`);
+          throw new AppError(`HTTP error: ${response.status}`, SharedErrorCodes.AI_PROVIDER_ERROR, 502);
         }
         await parseSSEStream(response, onEvent);
         onComplete?.();
@@ -373,7 +374,7 @@ export const agentApi = {
     const controller = new AbortController();
     const baseUrl = await getApiUrl();
 
-    fetch(`${baseUrl}/agent/sessions/${sessionId}/resume`, {
+    fetch(`${baseUrl}/agent/sessions/${encodeURIComponent(sessionId)}/resume`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -383,7 +384,7 @@ export const agentApi = {
     })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`HTTP error: ${response.status}`);
+          throw new AppError(`HTTP error: ${response.status}`, SharedErrorCodes.AI_PROVIDER_ERROR, 502);
         }
         await parseSSEStream(response, onEvent);
         onComplete?.();
@@ -407,7 +408,7 @@ export const agentApi = {
 
   deleteSession: async (sessionId: string): Promise<void> => {
     const baseUrl = await getApiUrl();
-    await fetch(`${baseUrl}/agent/sessions/${sessionId}`, {
+    await fetch(`${baseUrl}/agent/sessions/${encodeURIComponent(sessionId)}`, {
       method: "DELETE",
       headers: getHeaders(),
     });

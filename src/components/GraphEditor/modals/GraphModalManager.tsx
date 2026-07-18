@@ -95,7 +95,7 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
 
       {/* Image Export Modal */}
       {isExportImageModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-modal-manager flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-700">

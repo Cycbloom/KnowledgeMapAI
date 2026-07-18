@@ -1,6 +1,7 @@
 import { getApiUrl } from './client';
 import { useStore } from '@/store/useStore';
 import type { STTResult } from '@shared/types';
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const sttApi = {
   transcribe: async (file: File, options?: { language?: string }): Promise<STTResult> => {
@@ -24,7 +25,7 @@ export const sttApi = {
         useStore.getState().setUser(null, null);
       }
       const errorText = await response.text();
-      throw new Error(errorText || 'STT transcription failed');
+      throw new AppError(errorText || 'STT transcription failed', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
 
     return response.json();

@@ -1,5 +1,6 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from "react-i18next";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Play, CheckCircle2, AlertCircle, Loader2, Layers } from 'lucide-react';
 import type { ModularAnalysisPanelProps, AnalysisModuleId } from './types';
@@ -10,6 +11,18 @@ import { getScenarioById } from '../PromptConfig';
 import { api } from '../../services/api';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { EmptyState } from '../common/EmptyState';
+import { queryKeys, defaultQueryConfig } from '@/hooks/queries/config';
+
+interface PromptTemplateItem {
+  code: string;
+  template_content: string;
+}
+
+interface PromptListResponse {
+  system: PromptTemplateItem[];
+  user: PromptTemplateItem[];
+  graph: PromptTemplateItem[];
+}
 
 export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
   isOpen,
@@ -20,9 +33,10 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
   onViewResult,
   onEditPrompt: _onEditPrompt,
   promptContents,
+  graphId,
 }) => {
   const [editingPromptModule, setEditingPromptModule] = useState<AnalysisModuleId | null>(null);
-  const [promptTemplates, setPromptTemplates] = useState<Record<string, string>>({});
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const selectedModules = useMemo(
     () => modules.filter(m => m.selected),
@@ -55,26 +69,25 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
     }
   };
 
-  const loadPromptTemplates = async () => {
-    try {
-      const response = await api.prompts.list();
+  const { data: promptTemplates, isLoading: isPromptsLoading } = useQuery({
+    queryKey: queryKeys.modularAnalysis(graphId ?? ''),
+    queryFn: async (): Promise<Record<string, string>> => {
+      const response = (await api.prompts.list(graphId)) as PromptListResponse;
       const templates: Record<string, string> = {};
-      if (Array.isArray(response)) {
-        response.forEach((item: { code: string; template_content: string }) => {
-          templates[item.code] = item.template_content;
-        });
+      // 优先级递增：system < user < graph，后者覆盖前者
+      const merged = [
+        ...(response.system ?? []),
+        ...(response.user ?? []),
+        ...(response.graph ?? []),
+      ];
+      for (const item of merged) {
+        templates[item.code] = item.template_content;
       }
-      setPromptTemplates(templates);
-    } catch (error) {
-      console.error('Failed to load prompt templates:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      loadPromptTemplates();
-    }
-  }, [isOpen]);
+      return templates;
+    },
+    enabled: !!graphId && isOpen,
+    ...defaultQueryConfig,
+  });
 
   const handleSavePrompt = async (moduleId: AnalysisModuleId, content: string) => {
     const scenarioId = MODULE_TO_SCENARIO[moduleId];
@@ -84,10 +97,7 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
         scope: 'user',
         template_content: content,
       });
-      setPromptTemplates(prev => ({
-        ...prev,
-        [scenarioId]: content,
-      }));
+      await queryClient.invalidateQueries({ queryKey: ['modularAnalysis'] });
       frontendEventBus.publish("message_show", {
         type: 'success',
         content: '提示词保存成功',
@@ -109,11 +119,11 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
       return promptContents[moduleId];
     }
     const scenarioId = MODULE_TO_SCENARIO[moduleId];
-    if (promptTemplates[scenarioId]) {
+    if (promptTemplates?.[scenarioId]) {
       return promptTemplates[scenarioId];
     }
     const scenario = getScenarioById(scenarioId);
-    return scenario?.defaultTemplate || '';
+    return scenario?.defaultTemplate ?? '';
   };
 
   const getPromptVariables = (moduleId: AnalysisModuleId): string[] => {
@@ -252,15 +262,22 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
       </motion.div>
 
       {editingPromptModule && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-modal-overlay p-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl h-[80vh] overflow-hidden">
-            <PromptEditor
-              initialContent={getPromptContent(editingPromptModule)}
-              variables={getPromptVariables(editingPromptModule)}
-              onSave={(content) => handleSavePrompt(editingPromptModule, content)}
-              onCancel={() => setEditingPromptModule(null)}
-              title={`${modules.find(m => m.id === editingPromptModule)?.name} - 提示词编辑`}
-            />
+            {isPromptsLoading ? (
+              <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                提示词加载中...
+              </div>
+            ) : (
+              <PromptEditor
+                initialContent={getPromptContent(editingPromptModule)}
+                variables={getPromptVariables(editingPromptModule)}
+                onSave={(content) => handleSavePrompt(editingPromptModule, content)}
+                onCancel={() => setEditingPromptModule(null)}
+                title={`${modules.find(m => m.id === editingPromptModule)?.name} - 提示词编辑`}
+              />
+            )}
           </div>
         </div>
       )}

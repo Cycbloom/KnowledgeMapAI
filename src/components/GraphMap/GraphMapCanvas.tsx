@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, forwardRef } from "react";
+import React, { useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   ColorScheme,
@@ -10,7 +10,8 @@ import type {
 } from "../../types";
 import { CanvasLayout } from "../GraphEditor/canvas/CanvasLayout";
 import { MiniMap } from "../GraphEditor/canvas/MiniMap";
-import { createMindMapLayout } from "../../utils/mindmapLayout";
+import { createMindMapLayout, type LayoutResult } from "../../utils/mindmapLayout";
+import { useGraphWorker } from "../../hooks/common/useWorker";
 import {
   convertGraphsToNodes,
   convertRelationsToEdges,
@@ -144,15 +145,55 @@ export const GraphMapCanvas = forwardRef<
       [filteredRelations],
     );
 
-    const layout = useMemo(() => {
-      if (nodes.length === 0) return null;
+    // 异步布局状态（worker-first + 主线程 fallback，参考 MindMapCanvas）
+    const [layout, setLayout] = useState<LayoutResult | null>(null);
+    const { calculateMindMapLayout } = useGraphWorker();
+
+    useEffect(() => {
+      if (nodes.length === 0) {
+        setLayout(null);
+        return;
+      }
+
       const domainGroups = getDomainGroups(graphs);
-      return createMindMapLayout(nodes, edges, {
-        width: containerSize.width,
-        height: containerSize.height,
-        domainGroups,
-      });
-    }, [nodes, edges, containerSize, graphs]);
+
+      const timer = setTimeout(async () => {
+        try {
+          const result = await calculateMindMapLayout(
+            nodes as any,
+            edges as any,
+            {
+              width: containerSize.width,
+              height: containerSize.height,
+              domainGroups,
+            }
+          );
+          if (result) {
+            setLayout(result as any);
+          } else {
+            // Fallback: Worker 不可用时降级为主线程同步计算
+            console.warn('[GraphMapCanvas] Worker layout failed, falling back to main thread');
+            const fallbackResult = createMindMapLayout(nodes, edges, {
+              width: containerSize.width,
+              height: containerSize.height,
+              domainGroups,
+            });
+            setLayout(fallbackResult as any);
+          }
+        } catch (error) {
+          // 错误时也降级到主线程
+          console.warn('[GraphMapCanvas] Worker layout error, falling back to main thread', error);
+          const fallbackResult = createMindMapLayout(nodes, edges, {
+            width: containerSize.width,
+            height: containerSize.height,
+            domainGroups,
+          });
+          setLayout(fallbackResult as any);
+        }
+      }, 300); // 300ms 防抖
+
+      return () => clearTimeout(timer);
+    }, [nodes, edges, containerSize, graphs, calculateMindMapLayout]);
 
     layoutRef.current = layout;
 

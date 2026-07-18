@@ -32,14 +32,12 @@
   "generating": "生成中...",
   "copy": {
     "label": "复制",
-    "copied": "已复制",
     "idTooltip": "点击复制完整 ID"
   },
   "copied": "已复制",
   "copyFailed": "复制失败",
   "copyError": "复制错误信息",
   "copyCode": "复制代码",
-  "clipboardUnavailable": "剪贴板不可用",
   "backOnline": "已恢复在线，正在同步数据",
   "slowConnection": "网络较慢，部分操作可能延迟",
   "offlineMode": "离线模式：部分 AI 功能不可用",
@@ -121,8 +119,7 @@
   },
   "clipboard": {
     "unavailable": "剪贴板不可用",
-    "copyFailed": "复制失败",
-    "copySuccess": "复制成功"
+    "copyFailed": "复制失败"
   },
   "confirm": {
     "deleteTitle": "删除",

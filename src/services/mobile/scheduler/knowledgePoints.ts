@@ -1,5 +1,6 @@
 import { withClient } from "../utils/clientHelper";
 import type { TaskKnowledgePoint } from "@shared/types";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const getTaskKnowledgePoints = async (taskId: string): Promise<TaskKnowledgePoint[]> => {
   return withClient(async (client) => {
@@ -9,7 +10,7 @@ export const getTaskKnowledgePoints = async (taskId: string): Promise<TaskKnowle
       .eq("task_id", taskId);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data as TaskKnowledgePoint[] | null) ?? [];
@@ -39,7 +40,7 @@ export const addTaskKnowledgePoint = async (
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as TaskKnowledgePoint;
@@ -64,7 +65,7 @@ export const updateTaskKnowledgePoint = async (
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as TaskKnowledgePoint;
@@ -76,7 +77,7 @@ export const removeTaskKnowledgePoint = async (_taskId: string, kpId: string): P
     const { error } = await client.from("task_knowledge_points").delete().eq("id", kpId);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
   });
 };

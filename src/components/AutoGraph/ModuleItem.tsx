@@ -115,6 +115,7 @@ const ModuleItemComponent: React.FC<ModuleItemProps> = ({
                 : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
             }
           `}
+          aria-label={canDelete ? "删除模块" : "至少保留 3 个模块"}
           title={canDelete ? "删除模块" : "至少保留 3 个模块"}
         >
           <Trash2 size={14} />

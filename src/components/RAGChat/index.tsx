@@ -165,6 +165,13 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
     };
   }, []);
 
+  // 组件卸载时取消进行中的流式请求，避免对已卸载组件调用 setState
+  useEffect(() => {
+    return () => {
+      chatState.stopGeneration();
+    };
+  }, [chatState.stopGeneration]);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);

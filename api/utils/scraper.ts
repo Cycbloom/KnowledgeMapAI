@@ -1,4 +1,3 @@
-import axios from "axios";
 import * as cheerio from "cheerio";
 import { Logger } from "./logger";
 import { AppError } from "../middleware/errorHandler";
@@ -65,20 +64,26 @@ export async function scrapeUrl(
     });
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
   try {
     logger.info(`Scraping URL: ${url}`);
 
-    const response = await axios.get(url, {
+    const response = await fetch(url, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
       },
-      timeout: 10000,
-      maxRedirects: 5,
-      validateStatus: (status) => status >= 200 && status < 400,
+      redirect: "follow",
+      signal: controller.signal,
     });
 
-    const html = response.data;
+    if (response.status < 200 || response.status >= 400) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    }
+
+    const html = await response.text();
     const $ = cheerio.load(html);
 
     // 2. Remove clutter
@@ -143,5 +148,7 @@ export async function scrapeUrl(
     logger.error(`Failed to scrape URL ${url}`, error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`无法访问该网页: ${errorMessage}`);
+  } finally {
+    clearTimeout(timeoutId);
   }
 }

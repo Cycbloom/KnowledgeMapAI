@@ -328,14 +328,14 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleOverlayClick}
-              className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm"
+              className="fixed inset-0 z-fullscreen bg-black/50 backdrop-blur-sm"
             />
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-[101] max-h-[90dvh] flex flex-col"
+              className="fixed inset-x-0 bottom-0 z-fullscreen-content max-h-[90dvh] flex flex-col"
             >
               <div className="bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-700 overflow-hidden h-full flex flex-col">
                 <div className="flex items-center justify-center py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
@@ -362,14 +362,14 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleOverlayClick}
-            className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-fullscreen bg-black/50 backdrop-blur-sm"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed inset-0 z-[101] flex items-center justify-center pointer-events-none"
+            className="fixed inset-0 z-fullscreen-content flex items-center justify-center pointer-events-none"
           >
             <div className="w-full max-w-2xl h-[80vh] pointer-events-auto">
               <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden h-full flex flex-col">

@@ -1,4 +1,5 @@
 import type { CommandResult, CommandPermission } from './types';
+import { logger } from '@/utils/logger';
 
 export interface ConsoleLogEntry {
   id: string;
@@ -29,6 +30,7 @@ function loadLogs(): ConsoleLogEntry[] {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch {
+    // JSON.parse 容错：localStorage 数据损坏时返回空数组
     return [];
   }
 }
@@ -37,7 +39,8 @@ function saveLogs(logs: ConsoleLogEntry[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logs.slice(0, MAX_LOG_ENTRIES)));
   } catch {
-    console.error('Failed to save console logs');
+    // eslint-disable-next-line no-console
+    logger.error('Failed to save console logs');
   }
 }
 

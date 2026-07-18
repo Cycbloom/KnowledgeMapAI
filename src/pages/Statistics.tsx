@@ -17,6 +17,7 @@ import { AlertCircle, BookOpen, Brain, Clock, TrendingUp, LucideIcon } from 'luc
 import type { Graph } from '../types';
 import { formatNumber } from '../utils/formatters';
 import { Skeleton } from '../components/common';
+import { themeClasses } from '@/utils/themeClasses';
 
 interface MetricCardProps {
   title: string;
@@ -30,9 +31,9 @@ interface MetricCardProps {
 const MetricCard = ({ title, value, subtext, icon: Icon, color, isDark }: MetricCardProps) => (
   <div className={`p-6 rounded-lg shadow-sm border flex items-start justify-between ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
     <div>
-      <p className={`text-sm font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{title}</p>
+      <p className={`text-sm font-medium mb-1 ${themeClasses.textSecondary(isDark)}`}>{title}</p>
       <h3 className={`text-3xl font-bold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{typeof value === 'number' ? formatNumber(value) : value}</h3>
-      {subtext && <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{subtext}</p>}
+      {subtext && <p className={`text-xs mt-2 ${themeClasses.textMuted(isDark)}`}>{subtext}</p>}
     </div>
     <div className={`p-3 rounded-full ${color}`}>
       <Icon size={24} className="text-white" />
@@ -142,7 +143,7 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability, t, isDark }: {
   return (
     <div className={`p-6 rounded-lg shadow-sm border h-80 flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
       <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{t('statistics.forgettingCurve.title')}</h3>
-      <p className={`text-xs mb-6 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+      <p className={`text-xs mb-6 ${themeClasses.textSecondary(isDark)}`}>
         {t('statistics.forgettingCurve.description', { stability: avgStability > 0 ? avgStability.toFixed(1) : 7 })}
       </p>
       <div className="flex-1 w-full min-h-0">

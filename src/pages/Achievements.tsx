@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
+import { queryKeys } from '../hooks/queries/config';
 import { useStore } from '../store/useStore';
 import { Achievement as BaseAchievement, DailyTask } from '../types';
 import { useTranslation } from 'react-i18next';
@@ -47,22 +48,22 @@ export const Achievements = () => {
   ];
   
   const { data: achievements, isLoading: loadingAchievements, error: achievementsError, refetch: refetchAchievements } = useQuery({
-    queryKey: ['achievements'],
+    queryKey: queryKeys.achievements(),
     queryFn: () => api.achievements.list()
   });
 
   const { data: dailyTasks, isLoading: loadingTasks, error: dailyTasksError, refetch: refetchDailyTasks } = useQuery({
-    queryKey: ['daily-tasks'],
+    queryKey: queryKeys.dailyTasks(),
     queryFn: () => api.achievements.getDailyTasks()
   });
 
   const { data: periodicTasks, isLoading: loadingPeriodicTasks, error: periodicTasksError, refetch: refetchPeriodicTasks } = useQuery({
-    queryKey: ['periodic-tasks'],
+    queryKey: queryKeys.periodicTasks(),
     queryFn: () => api.periodicTasks.list()
   });
 
   const { data: passData, isLoading: loadingPass, error: passDataError, refetch: refetchPassData } = useQuery({
-    queryKey: ['pass-progress'],
+    queryKey: queryKeys.passProgress(),
     queryFn: () => api.periodicTasks.getPass()
   });
 
@@ -70,8 +71,8 @@ export const Achievements = () => {
     mutationFn: ({ passId, level }: { passId: string; level: number }) => 
       api.periodicTasks.claimReward(passId, level),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pass-progress'] });
-      queryClient.invalidateQueries({ queryKey: ['achievements'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.passProgress() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.achievements() });
     },
   });
 

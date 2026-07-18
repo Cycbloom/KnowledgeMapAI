@@ -7,7 +7,6 @@ import React, {
   forwardRef,
 } from "react";
 import { useTranslation } from 'react-i18next';
-import html2canvas from "html2canvas";
 import type {
   Node,
   Edge,
@@ -630,6 +629,8 @@ export const MindMapCanvas = React.memo(
           await new Promise((resolve) => requestAnimationFrame(resolve));
 
           const element = svgRef.current.parentElement as HTMLElement;
+          // 按需动态导入 html2canvas (~200KB)，避免打入主 bundle
+          const { default: html2canvas } = await import("html2canvas");
           const canvas = await html2canvas(element, {
             backgroundColor: options?.transparent
               ? null
@@ -1012,7 +1013,7 @@ export const MindMapCanvas = React.memo(
         className="relative w-full h-full overflow-hidden"
       >
         {semanticLayoutUnavailable && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-lg text-sm text-amber-800 dark:text-amber-200">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-modal-overlay bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-lg text-sm text-amber-800 dark:text-amber-200">
             {t('graphEditor.mindMap.semanticUnavailable', '当前图谱节点缺少语义向量数据，已切换为常规布局。请确保知识点已通过 AI 功能生成向量数据。')}
           </div>
         )}
@@ -1204,6 +1205,7 @@ export const MindMapCanvas = React.memo(
               <button
                 onClick={onNavigateToGraphMap}
                 className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+                aria-label={t('graphEditor.mindMap.viewGraphMap')}
                 title={t('graphEditor.mindMap.viewGraphMap')}
               >
                 <svg aria-hidden="true"
@@ -1254,6 +1256,7 @@ export const MindMapCanvas = React.memo(
             <button
               onClick={interaction.handleZoomIn}
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+              aria-label={t('graphEditor.mindMap.zoomIn')}
               title={t('graphEditor.mindMap.zoomIn')}
             >
               <svg aria-hidden="true"
@@ -1275,6 +1278,7 @@ export const MindMapCanvas = React.memo(
             <button
               onClick={interaction.handleZoomOut}
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+              aria-label={t('graphEditor.mindMap.zoomOut')}
               title={t('graphEditor.mindMap.zoomOut')}
             >
               <svg aria-hidden="true"

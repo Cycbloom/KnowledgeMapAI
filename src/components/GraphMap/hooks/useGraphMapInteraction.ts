@@ -4,7 +4,9 @@ import {
   useRef,
   useCallback,
   useImperativeHandle,
+  useMemo,
 } from "react";
+import { debounce } from "@/utils/performanceUtils";
 import type { Graph } from "../../../types";
 import type { LayoutResult } from "../../../utils/mindmapLayout";
 
@@ -67,7 +69,6 @@ export function useGraphMapInteraction({
   const touchStartOnNodeRef = useRef<string | null>(null);
   const touchStartTransformRef = useRef<Transform | null>(null);
 
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
   const updateTransformDOM = useCallback((t: Transform) => {
@@ -79,14 +80,13 @@ export function useGraphMapInteraction({
     }
   }, [contentRef]);
 
-  const updateTransformState = useCallback((newTransform: Transform) => {
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-    debounceTimeoutRef.current = setTimeout(() => {
-      setTransform(newTransform);
-    }, 100);
-  }, []);
+  const updateTransformState = useMemo(
+    () =>
+      debounce((newTransform: Transform) => {
+        setTransform(newTransform);
+      }, 100),
+    [],
+  );
 
   const animateCamera = useCallback(
     (
@@ -176,8 +176,11 @@ export function useGraphMapInteraction({
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+
+      // 清理未执行的 debounce timer
+      updateTransformState.cancel();
     };
-  }, []);
+  }, [updateTransformState]);
 
   useEffect(() => {
     updateTransformDOM(transformRef.current);

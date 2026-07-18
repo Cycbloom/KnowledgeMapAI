@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
-import { CodeBlock } from "../../common";
+import { CodeBlock } from "../../common/CodeBlock";
 import { useTextToSpeech, useTheme, useFocusTrap, useEscapeKey } from "../../../hooks";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
@@ -159,6 +159,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
             </div>
             <button
               onClick={onClose}
+              aria-label="关闭"
               className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
             >
               <X size={20} className="text-slate-500" />
@@ -246,6 +247,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
             <div className="flex items-center gap-4">
               <button
                 onClick={generateScript}
+                aria-label={t("podcast.regenerate")}
                 disabled={isGenerating || isSpeaking}
                 className="p-2 text-slate-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-full transition-colors disabled:opacity-50"
                 title={t("podcast.regenerate")}
@@ -273,6 +275,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
               {isSpeaking && (
                 <button
                   onClick={cancel}
+                  aria-label={t("podcast.stopPlayback")}
                   className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-slate-800 rounded-full transition-colors"
                   title={t("podcast.stopPlayback")}
                 >

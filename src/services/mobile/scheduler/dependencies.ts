@@ -1,5 +1,6 @@
 import { withClient } from "../utils/clientHelper";
 import type { TaskDependency } from "@shared/types";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const getTaskDependencies = async (taskId: string): Promise<TaskDependency[]> => {
   return withClient(async (client) => {
@@ -9,7 +10,7 @@ export const getTaskDependencies = async (taskId: string): Promise<TaskDependenc
       .eq("task_id", taskId);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data as TaskDependency[] | null) ?? [];
@@ -32,7 +33,7 @@ export const addTaskDependency = async (
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return result as TaskDependency;
@@ -44,7 +45,7 @@ export const removeTaskDependency = async (_taskId: string, dependencyId: string
     const { error } = await client.from("task_dependencies").delete().eq("id", dependencyId);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
   });
 };

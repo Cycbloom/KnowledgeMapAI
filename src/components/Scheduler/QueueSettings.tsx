@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   X, Plus, Trash2, Clock, Palette, AlertTriangle,
@@ -77,6 +77,11 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
 
   const canAddQueue = localQueues.length < MAX_QUEUES;
   const canDeleteQueue = localQueues.length > MIN_QUEUES;
+
+  const targetQueueOptions = useMemo(
+    () => localQueues.filter(q => q.id !== deleteConfirm.queueId),
+    [localQueues, deleteConfirm.queueId]
+  );
 
   const handleReorder = async (newOrder: Queue[]) => {
     setLocalQueues(newOrder);
@@ -434,7 +439,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-modal-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
             onClick={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
           >
             <motion.div
@@ -486,13 +491,11 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
                       focus:outline-none focus:ring-2 focus:ring-primary-500/50
                     "
                   >
-                    {localQueues
-                      .filter(q => q.id !== deleteConfirm.queueId)
-                      .map(q => (
-                        <option key={q.id} value={q.id}>
-                          {q.name}
-                        </option>
-                      ))}
+                    {targetQueueOptions.map(q => (
+                      <option key={q.id} value={q.id}>
+                        {q.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

@@ -1,5 +1,7 @@
 
 
+import { logger } from "@/utils/logger";
+
 // 模拟存储配对设备的函数
 const STORAGE_KEY = 'paired_devices';
 
@@ -8,7 +10,7 @@ const getPairedDevicesFromStorage = (): PairedDevice[] => {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
-    console.warn('Failed to get paired devices from storage:', error);
+    logger.warn('Failed to get paired devices from storage:', error);
     return [];
   }
 };
@@ -17,7 +19,7 @@ const savePairedDevicesToStorage = (devices: PairedDevice[]): void => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(devices));
   } catch (error) {
-    console.warn('Failed to save paired devices to storage:', error);
+    logger.warn('Failed to save paired devices to storage:', error);
   }
 };
 
@@ -42,7 +44,7 @@ class SyncAuthService {
       const devices = getPairedDevicesFromStorage();
       this.pairedDevices = devices || [];
     } catch (error) {
-      console.warn('Failed to load paired devices:', error);
+      logger.warn('Failed to load paired devices:', error);
       this.pairedDevices = [];
     }
   }
@@ -51,7 +53,7 @@ class SyncAuthService {
     try {
       savePairedDevicesToStorage(this.pairedDevices);
     } catch (error) {
-      console.warn('Failed to save paired devices:', error);
+      logger.warn('Failed to save paired devices:', error);
     }
   }
 
@@ -158,7 +160,11 @@ class SyncAuthService {
       
       const expectedSignature = await this.hmacSign(data, device.sharedSecret);
       return signature === expectedSignature;
-    } catch {
+    } catch (error) {
+      logger.warn("Operation failed", {
+        operation: "validateSyncToken",
+        error: error instanceof Error ? error.message : String(error),
+      });
       return false;
     }
   }

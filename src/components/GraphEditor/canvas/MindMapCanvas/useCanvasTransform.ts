@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { debounce } from '@/utils/performanceUtils';
 
 export interface Transform {
   x: number;
@@ -17,16 +18,13 @@ export const useCanvasTransform = (options: UseCanvasTransformOptions) => {
   const [transform, setTransform] = useState<Transform>(initialTransform || { x: 0, y: 0, k: 1 });
   const transformRef = useRef<Transform>(initialTransform || { x: 0, y: 0, k: 1 });
   const animationFrameRef = useRef<number | null>(null);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  const updateTransformState = useCallback((newTransform: Transform) => {
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-    debounceTimeoutRef.current = setTimeout(() => {
-      setTransform(newTransform);
-    }, 100);
-  }, []);
+  const updateTransformState = useMemo(
+    () =>
+      debounce((newTransform: Transform) => {
+        setTransform(newTransform);
+      }, 100),
+    [],
+  );
   
   const updateTransformDOM = useCallback((t: Transform) => {
     if (contentRef.current) {
@@ -83,11 +81,9 @@ export const useCanvasTransform = (options: UseCanvasTransformOptions) => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
+      updateTransformState.cancel();
     };
-  }, []);
+  }, [updateTransformState]);
   
   useEffect(() => {
     if (Math.abs(transform.x - transformRef.current.x) > 0.1 ||

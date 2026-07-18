@@ -16,6 +16,7 @@ import type {
   TaskSubtaskRow,
 } from "@shared/types/database";
 import { toUserTask } from "@shared/types/database";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const create = async (data: CreateUserTaskData) => {
   return withClientAndUser(async (client, userId) => {
@@ -42,7 +43,7 @@ export const create = async (data: CreateUserTaskData) => {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return toUserTask(result as UserTaskRow);
@@ -81,7 +82,7 @@ export const list = async (filters?: UserTaskFilters): Promise<UserTask[]> => {
     const { data, error } = await query;
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return (data || []).map((row) => toUserTask(row as UserTaskRow));
@@ -97,7 +98,7 @@ export const get = async (id: string): Promise<UserTask> => {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return toUserTask(data as UserTaskRow);
@@ -124,7 +125,7 @@ export const getDetail = async (id: string): Promise<UserTaskDetail> => {
       .single();
 
     if (taskError) {
-      throw new Error(taskError.message);
+      throw new AppError(taskError.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     const taskRow = task as UserTaskRow;
@@ -270,7 +271,7 @@ export const update = async (id: string, data: UpdateUserTaskData): Promise<User
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return toUserTask(result as UserTaskRow);
@@ -285,7 +286,7 @@ export const deleteTask = async (id: string): Promise<void> => {
       .eq("id", id);
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
   });
 };
@@ -303,7 +304,7 @@ export const start = async (id: string): Promise<UserTask> => {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return toUserTask(result as UserTaskRow);
@@ -323,7 +324,7 @@ export const pause = async (id: string): Promise<UserTask> => {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return toUserTask(result as UserTaskRow);
@@ -344,7 +345,7 @@ export const complete = async (id: string): Promise<UserTask> => {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return toUserTask(result as UserTaskRow);
@@ -373,7 +374,7 @@ export const demote = async (id: string): Promise<UserTask> => {
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return toUserTask(result as UserTaskRow);
@@ -395,7 +396,7 @@ export const move = async (id: string, targetQueue: number | string): Promise<Us
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return toUserTask(result as UserTaskRow);
@@ -436,7 +437,7 @@ export const updateNotes = async (taskId: string, notes: string): Promise<UserTa
       .single();
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return toUserTask(result as UserTaskRow);

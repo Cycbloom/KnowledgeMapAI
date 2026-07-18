@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { graphsApi, TopicCheckResult } from '../../services/api/graphs';
+import { debounce } from '@/utils/performanceUtils';
 
 interface UseTopicCheckOptions {
   debounceMs?: number;
@@ -22,42 +23,48 @@ export function useTopicCheck(options: UseTopicCheckOptions = {}): UseTopicCheck
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [similarGraphs, setSimilarGraphs] = useState<TopicCheckResult['similar_graphs']>([]);
   
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const checkTopic = useCallback(async (topic: string) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
+  const debouncedCheck = useMemo(
+    () =>
+      debounce(async (topic: string) => {
+        setIsChecking(true);
 
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+        try {
+          abortControllerRef.current = new AbortController();
+          const result = await graphsApi.checkTopic(topic.trim(), excludeGraphId);
 
-    if (!topic.trim() || topic.trim().length < minLength) {
-      setIsDuplicate(false);
-      setSimilarGraphs([]);
-      return;
-    }
-
-    debounceRef.current = setTimeout(async () => {
-      setIsChecking(true);
-      
-      try {
-        abortControllerRef.current = new AbortController();
-        const result = await graphsApi.checkTopic(topic.trim(), excludeGraphId);
-        
-        setIsDuplicate(result.is_duplicate);
-        setSimilarGraphs(result.similar_graphs);
-      } catch (error: unknown) {
-        if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('Failed to check topic:', error);
+          setIsDuplicate(result.is_duplicate);
+          setSimilarGraphs(result.similar_graphs);
+        } catch (error: unknown) {
+          if (error instanceof Error && error.name !== 'AbortError') {
+            console.error('Failed to check topic:', error);
+          }
+        } finally {
+          setIsChecking(false);
         }
-      } finally {
-        setIsChecking(false);
+      }, debounceMs),
+    [debounceMs, excludeGraphId],
+  );
+
+  const checkTopic = useCallback(
+    async (topic: string) => {
+      debouncedCheck.cancel();
+
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
-    }, debounceMs);
-  }, [debounceMs, minLength, excludeGraphId]);
+
+      if (!topic.trim() || topic.trim().length < minLength) {
+        setIsDuplicate(false);
+        setSimilarGraphs([]);
+        return;
+      }
+
+      debouncedCheck(topic);
+    },
+    [debouncedCheck, minLength],
+  );
 
   const reset = useCallback(() => {
     setIsDuplicate(false);
@@ -67,14 +74,12 @@ export function useTopicCheck(options: UseTopicCheckOptions = {}): UseTopicCheck
 
   useEffect(() => {
     return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+      debouncedCheck.cancel();
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, []);
+  }, [debouncedCheck]);
 
   return {
     isChecking,

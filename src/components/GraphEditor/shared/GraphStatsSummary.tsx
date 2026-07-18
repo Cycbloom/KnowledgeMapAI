@@ -9,12 +9,12 @@ interface GraphStatsSummaryProps {
   isolatedCount: number;
 }
 
-export const GraphStatsSummary: React.FC<GraphStatsSummaryProps> = ({
+export const GraphStatsSummary = React.memo(({
   nodes,
   masteredCount,
   dueTodayCount,
   isolatedCount
-}) => {
+}: GraphStatsSummaryProps) => {
   const total = nodes.length;
   if (total === 0) return null;
 
@@ -65,4 +65,4 @@ export const GraphStatsSummary: React.FC<GraphStatsSummaryProps> = ({
       </div>
     </div>
   );
-};
+});

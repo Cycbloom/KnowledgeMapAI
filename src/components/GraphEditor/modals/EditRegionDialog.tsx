@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Palette, Check, Plus, Minus } from "lucide-react";
 import type { Node, CustomRegion } from "@shared/types/graph";
+import { useFocusTrap, useEscapeKey } from "../../../hooks/common";
 
 interface EditRegionDialogProps {
   isOpen: boolean;
@@ -92,13 +93,28 @@ export const EditRegionDialog: React.FC<EditRegionDialogProps> = ({
     onClose();
   };
 
+  const contentRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(handleClose, isOpen);
+
   if (!isOpen || !region) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
+      <div
+        ref={contentRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-region-dialog-title"
+        className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+          <h2 id="edit-region-dialog-title" className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
             <Palette className="text-primary-600" size={20} />
             {t("graphEditor.region.editRegion")}
           </h2>

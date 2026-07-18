@@ -1,49 +1,63 @@
-import axios, { AxiosInstance } from "axios";
 import { useStore } from "@/store/useStore";
 import { createErrorFromResponse } from "@/utils/errors";
 import { getMobileApiBaseUrl } from "@/config/mobileApiConfig";
 import type { BacklinkItem, OutlinkItem, KnowledgePointSearchHit, NodeBlockRefBacklink } from "@shared/types";
 import type { IBacklinksApi } from "../api/contracts/IBacklinksApi";
 
-const createMobileBacklinksClient = (): AxiosInstance => {
-  const client = axios.create({
-    baseURL: getMobileApiBaseUrl(),
-    withCredentials: true,
-    headers: {
-      "x-mobile-client": "true",
-    },
-  });
+const baseURL = getMobileApiBaseUrl();
 
-  client.interceptors.request.use(
-    (config) => {
-      const token = useStore.getState().token;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error),
-  );
-
-  client.interceptors.response.use(
-    (response) => response.data,
-    (error) => {
-      const appError = createErrorFromResponse({
-        status: error.response?.status || 0,
-        statusText: error.message,
-        data: error.response?.data as Record<string, unknown>,
-      });
-      return Promise.reject(appError);
-    },
-  );
-
-  return client;
+const buildHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = {
+    "x-mobile-client": "true",
+  };
+  const token = useStore.getState().token;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
 };
 
-const mobileBacklinksClient = createMobileBacklinksClient();
-
 const get = async <T>(url: string): Promise<T> => {
-  return mobileBacklinksClient.get(url) as unknown as Promise<T>;
+  const fullUrl = url.startsWith("http") ? url : `${baseURL}${url}`;
+  let response: Response;
+  try {
+    response = await fetch(fullUrl, {
+      credentials: "include",
+      headers: buildHeaders(),
+    });
+  } catch (error) {
+    throw createErrorFromResponse({
+      status: 0,
+      statusText: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  let body: unknown = undefined;
+  const text = await response.text();
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+
+  if (!response.ok) {
+    throw createErrorFromResponse({
+      status: response.status,
+      statusText: response.statusText,
+      data: body as
+        | {
+            message?: string;
+            error?: string;
+            code?: string;
+            details?: Array<{ field: string; message: string }>;
+          }
+        | undefined,
+    });
+  }
+
+  return body as T;
 };
 
 export const mobileBacklinksApi: IBacklinksApi = {

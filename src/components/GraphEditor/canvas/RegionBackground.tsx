@@ -9,13 +9,13 @@ interface RegionBackgroundProps {
   originY: number;
 }
 
-export const RegionBackground: React.FC<RegionBackgroundProps> = ({
+export const RegionBackground = React.memo(({
   region,
   opacity,
   radius,
   originX,
   originY,
-}) => {
+}: RegionBackgroundProps) => {
   const startAngle = region.angleStart;
   const endAngle = region.angleEnd;
 
@@ -67,4 +67,4 @@ export const RegionBackground: React.FC<RegionBackgroundProps> = ({
       }}
     />
   );
-};
+});

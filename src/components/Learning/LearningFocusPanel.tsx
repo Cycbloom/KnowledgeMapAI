@@ -319,7 +319,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[100] bg-gradient-to-br from-slate-100 via-slate-50 to-white dark:from-slate-800 dark:via-slate-700 dark:to-slate-800"
+          className="fixed inset-0 z-fullscreen bg-gradient-to-br from-slate-100 via-slate-50 to-white dark:from-slate-800 dark:via-slate-700 dark:to-slate-800"
         >
           <motion.div
             className="absolute inset-0 opacity-30 pointer-events-none"

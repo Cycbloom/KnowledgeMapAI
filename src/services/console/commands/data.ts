@@ -1,6 +1,7 @@
 import type { Command, CommandResult, ParsedArgs, CommandContext } from '../types';
 import { dataApi, tasksApi } from '../../api/tasks';
 import { graphsApi } from '../../api/graphs';
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 const createParentHandler = (_commandName: string, subcommands: Command[]) => {
   return async (_args: ParsedArgs, _context: CommandContext): Promise<CommandResult> => {
@@ -276,7 +277,7 @@ const handleReset = async (args: ParsedArgs, _context: CommandContext): Promise<
           useStore.getState().setUser(null, null);
         }
         const errorText = await response.text();
-        throw new Error(errorText || '重置操作失败');
+        throw new AppError(errorText || '重置操作失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
       }
 
       return response.json();

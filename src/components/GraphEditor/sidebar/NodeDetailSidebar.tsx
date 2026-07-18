@@ -14,7 +14,9 @@ import {
   WikiLinkRenderer,
 } from "../../../utils/wikiLinkRemarkPlugin";
 import { backlinksApi } from "../../../services/api/backlinks";
-import { TermTooltip, CodeBlock, Mermaid, LazyImage, Skeleton } from "../../common";
+import { TermTooltip, LazyImage, Skeleton } from "../../common";
+import { CodeBlock } from "../../common/CodeBlock";
+import { Mermaid } from "../../common/Mermaid";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";

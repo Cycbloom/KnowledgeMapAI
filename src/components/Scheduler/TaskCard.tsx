@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
@@ -28,6 +28,8 @@ import { message } from "../../utils/messageHelper";
 import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { Skeleton } from "../common";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys, defaultQueryConfig } from "@/hooks/queries/config";
 
 interface TaskCardProps {
   task: UserTask;
@@ -106,8 +108,6 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
 }) => {
   const { t } = useTranslation();
   const [showSubtasks, setShowSubtasks] = useState(false);
-  const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
-  const [loadingSubtasks, setLoadingSubtasks] = useState(false);
 
   const queueStyle =
     QUEUE_COLORS[task.queue_level as QueueLevel] ||
@@ -174,26 +174,19 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
     ? Math.round(((task.subtask_completed || 0) / task.subtask_count) * 100)
     : 0;
 
-  const loadSubtasks = async () => {
-    if (!hasSubtasks || subtasks.length > 0) return;
-    setLoadingSubtasks(true);
-    try {
+  const queryClient = useQueryClient();
+  const { data: subtasks, isLoading: isLoadingSubtasks } = useQuery({
+    queryKey: queryKeys.taskSubtasks(task.id),
+    queryFn: async (): Promise<TaskSubtask[]> => {
       const response = await api.scheduler.getSubtasks(task.id);
       if (response.success) {
-        setSubtasks(response.data || []);
+        return response.data ?? [];
       }
-    } catch (error) {
-      console.error("Failed to load subtasks:", error);
-    } finally {
-      setLoadingSubtasks(false);
-    }
-  };
-
-  useEffect(() => {
-    if (showSubtasks && hasSubtasks) {
-      loadSubtasks();
-    }
-  }, [showSubtasks, hasSubtasks]);
+      return [];
+    },
+    enabled: !!task.id && !!hasSubtasks && showSubtasks,
+    ...defaultQueryConfig,
+  });
 
   const handleToggleSubtask = async (subtask: TaskSubtask) => {
     const newStatus = subtask.status === "completed" ? "pending" : "completed";
@@ -202,8 +195,12 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
         status: newStatus,
       });
       if (response.success) {
-        setSubtasks(
-          subtasks.map((st) => (st.id === subtask.id ? response.data : st))
+        queryClient.setQueryData<TaskSubtask[]>(
+          queryKeys.taskSubtasks(task.id),
+          (prev) =>
+            (prev ?? []).map((st) =>
+              st.id === subtask.id ? response.data : st,
+            ),
         );
         onSubtaskUpdate?.();
         message.success(newStatus === "completed" ? t("scheduler.taskCard.subtaskCompleted") : t("scheduler.taskCard.subtaskReopened"));
@@ -344,7 +341,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                   className="overflow-hidden"
                 >
                   <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
-                    {loadingSubtasks ? (
+                    {isLoadingSubtasks ? (
                       <div className="py-2 space-y-1">
                         {Array.from({ length: 3 }).map((_, i) => (
                           <div key={i} className="flex items-center gap-2 p-1.5">
@@ -353,8 +350,8 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                           </div>
                         ))}
                       </div>
-                    ) : subtasks.length > 0 ? (
-                      subtasks.slice(0, 5).map((subtask) => (
+                    ) : (subtasks ?? []).length > 0 ? (
+                      (subtasks ?? []).slice(0, 5).map((subtask) => (
                         <div
                           key={subtask.id}
                           className={`flex items-center gap-2 p-1.5 rounded-lg text-xs transition-colors ${
@@ -369,6 +366,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                               handleToggleSubtask(subtask);
                             }}
                             className="flex-shrink-0 hover:scale-110 transition-transform p-1 flex items-center justify-center"
+                            aria-label="切换子任务状态"
                           >
                             {subtask.status === "completed" ? (
                               <CheckCircle className="w-4 h-4 text-green-500" />
@@ -396,9 +394,9 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                         {t("scheduler.taskCard.noSubtasks")}
                       </div>
                     )}
-                    {subtasks.length > 5 && (
+                    {(subtasks ?? []).length > 5 && (
                       <div className="text-center py-1 text-slate-400 text-xs">
-                        {t("scheduler.taskCard.moreSubtasks", { count: subtasks.length - 5 })}
+                        {t("scheduler.taskCard.moreSubtasks", { count: (subtasks ?? []).length - 5 })}
                       </div>
                     )}
                   </div>
@@ -476,6 +474,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
               }}
               className={`p-2.5 rounded-md transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center ${queueStyle.bg} ${queueStyle.text}`}
               title={t("scheduler.taskCard.actionStart")}
+              aria-label={t("scheduler.taskCard.actionStart")}
             >
               <Play size={14} />
             </button>
@@ -489,6 +488,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
               }}
               className="p-2.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title={t("scheduler.taskCard.actionPause")}
+              aria-label={t("scheduler.taskCard.actionPause")}
             >
               <Pause size={14} />
             </button>
@@ -505,6 +505,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 }}
                 className="p-2.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 title={t("scheduler.taskCard.actionComplete")}
+                aria-label={t("scheduler.taskCard.actionComplete")}
               >
                 <Check size={14} />
               </button>
@@ -518,6 +519,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
               }}
               className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title={t("scheduler.taskCard.actionDetail")}
+              aria-label={t("scheduler.taskCard.actionDetail")}
             >
               <Info size={14} />
             </button>
@@ -531,6 +533,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
               }}
               className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title={t("scheduler.taskCard.actionEdit")}
+              aria-label={t("scheduler.taskCard.actionEdit")}
             >
               <Edit2 size={14} />
             </button>
@@ -544,6 +547,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
               }}
               className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title={t("scheduler.taskCard.actionDelete")}
+              aria-label={t("scheduler.taskCard.actionDelete")}
             >
               <Trash2 size={14} />
             </button>

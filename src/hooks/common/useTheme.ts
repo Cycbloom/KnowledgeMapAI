@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, createContext, useContext } from 'react';
 import type { ThemePreset } from '../../types';
 import { getAvailablePresets } from '../../config/themePresets';
 import { useThemeStore } from '../../store/useThemeStore';
@@ -61,19 +61,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.add(`theme-${themePreset}`);
   }, [resolvedTheme, themeMode, themePreset]);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setThemeMode(resolvedTheme === 'dark' ? 'light' : 'dark');
-  };
+  }, [resolvedTheme, setThemeMode]);
 
-  const setTheme = (mode: ThemeMode) => {
+  const setTheme = useCallback((mode: ThemeMode) => {
     setThemeMode(mode);
-  };
+  }, [setThemeMode]);
 
-  const setThemePreset = (preset: ThemePreset) => {
+  const setThemePreset = useCallback((preset: ThemePreset) => {
     setThemePresetStore(preset);
-  };
+  }, [setThemePresetStore]);
 
-  const value = {
+  const value = useMemo(() => ({
     theme: resolvedTheme,
     themeMode,
     setTheme,
@@ -82,7 +82,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     themePreset,
     setThemePreset,
     availablePresets,
-  };
+  }), [resolvedTheme, themeMode, setTheme, toggleTheme, themePreset, setThemePreset, availablePresets]);
 
   return React.createElement(ThemeContext.Provider, { value }, children);
 }

@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { Search, LayoutGrid, FileText, Loader2, X, Sparkles, Clock, Filter, CheckCircle, Lock, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '../../services/api';
 import { useTheme } from "../../hooks";
+import { queryKeys, defaultQueryConfig } from '@/hooks/queries/config';
 import { formatDate as formatDateUtil } from '../../utils/formatters';
 
 const SEARCH_HISTORY_KEY = 'knowledgeMap_searchHistory';
@@ -80,8 +82,6 @@ export const GlobalSearch = () => {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [searchType, setSearchType] = useState<'keyword' | 'semantic'>('keyword');
-  const [results, setResults] = useState<SearchResult | null>(null);
-  const [loading, setLoading] = useState(false);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
@@ -127,53 +127,49 @@ export const GlobalSearch = () => {
     });
   }, []);
 
-  useEffect(() => {
-    const search = async () => {
-      if (!debouncedQuery.trim()) {
-        setResults(null);
-        return;
-      }
-      setLoading(true);
-      try {
-        const data = await api.search.query(debouncedQuery, searchType) as SearchResult;
+  const { data, isLoading } = useQuery({
+    queryKey: queryKeys.search(debouncedQuery),
+    queryFn: async (): Promise<SearchResult> => {
+      const result = await api.search.query(debouncedQuery, searchType);
+      return result as SearchResult;
+    },
+    enabled: debouncedQuery.trim().length > 0,
+    ...defaultQueryConfig,
+  });
 
-        let filteredNodes = data.nodes || [];
-        
-        if (filters.status !== 'all') {
-          filteredNodes = filteredNodes.filter((node: SearchResultNode) => {
-            const status = node.status || 'new';
-            return status === filters.status;
-          });
-        }
-        
-        if (filters.timeRange !== 'all') {
-          const now = new Date();
-          const ranges: Record<string, number> = {
-            today: 1,
-            week: 7,
-            month: 30
-          };
-          const daysAgo = ranges[filters.timeRange];
-          const cutoff = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-          
-          filteredNodes = filteredNodes.filter((node: SearchResultNode) => {
-            const updatedAt = node.updated_at || node.created_at;
-            return updatedAt && new Date(updatedAt) >= cutoff;
-          });
-        }
-        
-        setResults({
-          ...data,
-          nodes: filteredNodes
-        });
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+  const filteredResults = useMemo<SearchResult | null>(() => {
+    if (!data) return null;
+
+    let filteredNodes = data.nodes || [];
+
+    if (filters.status !== 'all') {
+      filteredNodes = filteredNodes.filter((node: SearchResultNode) => {
+        const status = node.status || 'new';
+        return status === filters.status;
+      });
+    }
+
+    if (filters.timeRange !== 'all') {
+      const now = new Date();
+      const ranges: Record<string, number> = {
+        today: 1,
+        week: 7,
+        month: 30
+      };
+      const daysAgo = ranges[filters.timeRange];
+      const cutoff = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+
+      filteredNodes = filteredNodes.filter((node: SearchResultNode) => {
+        const updatedAt = node.updated_at || node.created_at;
+        return updatedAt && new Date(updatedAt) >= cutoff;
+      });
+    }
+
+    return {
+      ...data,
+      nodes: filteredNodes
     };
-    search();
-  }, [debouncedQuery, searchType, filters.status, filters.timeRange]);
+  }, [data, filters.status, filters.timeRange]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -202,7 +198,6 @@ export const GlobalSearch = () => {
     navigate(path);
     setIsOpen(false);
     setQuery('');
-    setResults(null);
   };
 
   const handleHistoryClick = (item: SearchHistoryItem) => {
@@ -280,7 +275,6 @@ export const GlobalSearch = () => {
             <button
               onClick={() => {
                 setQuery('');
-                setResults(null);
               }}
               className={cn("p-1 rounded-md transition-colors",
                 isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
@@ -394,31 +388,31 @@ export const GlobalSearch = () => {
                 </button>
               ))}
             </div>
-          ) : loading ? (
+          ) : isLoading ? (
             <div className={cn("p-4 text-center flex items-center justify-center gap-2", isDark ? 'text-slate-400' : 'text-gray-500')}>
               <Loader2 size={16} className="animate-spin" />
               <span className="text-sm">搜索中...</span>
             </div>
-          ) : results ? (
+          ) : filteredResults ? (
             <div className="max-h-[60vh] overflow-y-auto custom-scrollbar" aria-live="polite" aria-atomic="true">
-              {results.answer && (
+              {filteredResults.answer && (
                 <div className={cn("p-4 border-b", isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-primary-50/50')}>
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles size={14} className="text-primary-500" />
                     <span className={cn("text-xs font-bold uppercase tracking-wider", isDark ? 'text-primary-400' : 'text-primary-600')}>AI 回答</span>
                   </div>
                   <div className={cn("text-sm leading-relaxed", isDark ? 'text-slate-300' : 'text-gray-700')}>
-                    {results.answer}
+                    {filteredResults.answer}
                   </div>
                 </div>
               )}
 
-              {results.graphs.length > 0 && (
+              {filteredResults.graphs.length > 0 && (
                 <div className="py-2">
                   <div className={cn("px-4 py-1 text-xs font-bold uppercase tracking-wider", isDark ? 'text-slate-500' : 'text-gray-400')}>
-                    图谱 ({results.graphs.length})
+                    图谱 ({filteredResults.graphs.length})
                   </div>
-                  {results.graphs.map((g) => (
+                  {filteredResults.graphs.map((g) => (
                     <button
                       key={g.id}
                       onClick={() => handleSelect(`/graph/${g.id}`)}
@@ -440,12 +434,12 @@ export const GlobalSearch = () => {
                 </div>
               )}
 
-              {results.nodes.length > 0 && (
-                <div className={cn("py-2", results.graphs.length > 0 ? 'border-t' : '', isDark ? 'border-slate-700' : 'border-gray-100')}>
+              {filteredResults.nodes.length > 0 && (
+                <div className={cn("py-2", filteredResults.graphs.length > 0 ? 'border-t' : '', isDark ? 'border-slate-700' : 'border-gray-100')}>
                   <div className={cn("px-4 py-1 text-xs font-bold uppercase tracking-wider", isDark ? 'text-slate-500' : 'text-gray-400')}>
-                    节点 ({results.nodes.length})
+                    节点 ({filteredResults.nodes.length})
                   </div>
-                  {results.nodes.map((n) => (
+                  {filteredResults.nodes.map((n) => (
                     <button
                       key={n.id}
                       onClick={() => handleSelect(`/graph/${n.graph_id}?node_id=${n.id}`)}
@@ -484,7 +478,7 @@ export const GlobalSearch = () => {
                 </div>
               )}
 
-              {results.graphs.length === 0 && results.nodes.length === 0 && (
+              {filteredResults.graphs.length === 0 && filteredResults.nodes.length === 0 && (
                 <div className={cn("p-8 text-center text-sm", isDark ? 'text-slate-500' : 'text-gray-500')}>
                   未找到相关内容
                 </div>

@@ -127,6 +127,11 @@ export const useCanvasInteraction = (options: UseCanvasInteractionOptions) => {
       if (longPressTimeoutRef.current) {
         clearTimeout(longPressTimeoutRef.current);
       }
+      // 清理未完成的 viewport update frame
+      if (viewportUpdateFrameRef.current !== null) {
+        cancelAnimationFrame(viewportUpdateFrameRef.current);
+        viewportUpdateFrameRef.current = null;
+      }
     };
   }, []);
 

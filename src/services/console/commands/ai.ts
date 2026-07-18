@@ -2,6 +2,7 @@ import type { Command, CommandResult, ParsedArgs, CommandContext } from '../type
 import { aiApi } from '../../api/ai';
 import { graphsApi } from '../../api/graphs';
 import { nodesApi } from '../../api/nodes';
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 const createParentHandler = (_commandName: string, subcommands: Command[]) => {
   return async (_args: ParsedArgs, _context: CommandContext): Promise<CommandResult> => {
@@ -197,7 +198,7 @@ const handleAiBatch = async (args: ParsedArgs, _context: CommandContext): Promis
         break;
       }
       default:
-        throw new Error('未知操作');
+        throw new AppError('未知操作', SharedErrorCodes.VALIDATION_ERROR, 400);
     }
 
     return {

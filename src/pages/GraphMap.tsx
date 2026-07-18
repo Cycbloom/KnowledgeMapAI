@@ -348,7 +348,7 @@ export const GraphMap = () => {
     error,
     refetch: refetchMap,
   } = useQuery({
-    queryKey: ["graphMap"],
+    queryKey: queryKeys.graphMap(),
     queryFn: () => api.graphs.getMap(),
   });
 
@@ -357,7 +357,7 @@ export const GraphMap = () => {
     error: domainTreeError,
     refetch: refetchDomainTree,
   } = useQuery({
-    queryKey: ["domainTree"],
+    queryKey: queryKeys.domainTree(),
     queryFn: () => domainsApi.getTree(),
     staleTime: 5 * 60 * 1000,
   });
@@ -537,7 +537,7 @@ export const GraphMap = () => {
       }
       frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.batch.deleteSuccess', { count: ids.length }) });
       setMultiSelectedGraphIds(new Set());
-      queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : t('graphMap.batch.deleteFailed');
@@ -575,7 +575,7 @@ export const GraphMap = () => {
       }
 
       setMultiSelectedGraphIds(new Set());
-      queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       setIsBatchDomainPickerOpen(false);
     } catch (error: unknown) {
@@ -597,7 +597,7 @@ export const GraphMap = () => {
         domainIds.map((id) => ({ domain_id: id })),
       );
       frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.domainPicker.setSuccess') });
-      queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       setSingleGraphDomainPicker({ graphId: '', open: false });
     } catch (error: unknown) {
@@ -625,7 +625,7 @@ export const GraphMap = () => {
       try {
         await api.graphs.createRelation(data);
         frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.relation.createSuccess') });
-        queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.relation.createFailed');
         frontendEventBus.publish("message_show", { type: "error", content: message });
@@ -640,7 +640,7 @@ export const GraphMap = () => {
       try {
         await api.graphs.deleteRelationById(relationId);
         frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.relation.deleteSuccess') });
-        queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.relation.deleteFailed');
         frontendEventBus.publish("message_show", { type: "error", content: message });
@@ -675,7 +675,7 @@ export const GraphMap = () => {
         }
 
         frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.graphCreation.success') });
-        queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
         queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
 
         if (data.auto_generate_content) {
@@ -721,7 +721,7 @@ export const GraphMap = () => {
           errors: [],
         });
 
-        queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
         queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.expansion.startFailed');
@@ -777,7 +777,7 @@ export const GraphMap = () => {
             nodes,
           }) as { nodeMapping?: Record<string, { graphNodeId: string }> };
 
-          queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+          queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
 
           if (saveResult.nodeMapping) {
             const coreNodesWithIds = result.coreNodes.map(
@@ -842,7 +842,7 @@ export const GraphMap = () => {
             nodes,
           });
 
-          queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+          queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
 
           return result.children;
         }
@@ -1015,7 +1015,7 @@ export const GraphMap = () => {
         const key = `${relation.source_graph_id}-${relation.target_graph_id}-${relation.relation_type}`;
         setCreatedRelationIds((prev) => new Set(prev).add(key));
         frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.relation.createSuccess') });
-        queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.relation.createFailed');
         frontendEventBus.publish("message_show", { type: "error", content: message });
@@ -1864,7 +1864,7 @@ export const GraphMap = () => {
               relations: relations,
               domain: domain,
             });
-            queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
             queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
             frontendEventBus.publish("message_show", {
               type: "success",
@@ -1956,6 +1956,7 @@ export const GraphMap = () => {
               setViewingModule(module);
             }
           }}
+          graphId={selectedGraphId ?? undefined}
         />
       </Suspense>
 
@@ -2005,7 +2006,7 @@ export const GraphMap = () => {
           )}
           analysisMode={analysisMode}
           onGraphsMerged={() => {
-            queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
           }}
         />
       </Suspense>

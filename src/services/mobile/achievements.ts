@@ -1,6 +1,7 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
 import type { AchievementRow } from "@shared/types/database";
 import type { IAchievementsApi, Achievement, DailyTask } from "../api/contracts/IAchievementsApi";
+import { logger } from "@/utils/logger";
 
 interface UserAchievementData {
   achievement_id: string;
@@ -28,7 +29,7 @@ export const mobileAchievementsApi: IAchievementsApi = {
       .order("condition_value", { ascending: true });
 
     if (fetchError) {
-      console.error("Error fetching achievements:", fetchError);
+      logger.error("Error fetching achievements:", fetchError);
       return [];
     }
 
@@ -38,7 +39,7 @@ export const mobileAchievementsApi: IAchievementsApi = {
       .eq("user_id", user.id);
 
     if (userError) {
-      console.error("Error fetching user achievements:", userError);
+      logger.error("Error fetching user achievements:", userError);
       return (allAchievements || []) as Achievement[];
     }
 
@@ -143,7 +144,7 @@ export const mobileAchievementsApi: IAchievementsApi = {
       .order("created_at");
 
     if (error) {
-      console.error("Error fetching daily tasks:", error);
+      logger.error("Error fetching daily tasks:", error);
       return [];
     }
 

@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
 import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, Skeleton } from "./components/common";
 import { GlobalErrorBoundary } from "./components/common/GlobalErrorBoundary";
+import { RenderProfiler } from "./components/dev/RenderProfiler";
 import { QueryErrorResetBoundary } from "@tanstack/react-query";
 import { useMobileInit } from "./hooks/useMobileInit";
 import { getSupabaseClient } from "./lib/supabase";
@@ -64,6 +65,22 @@ function LazyRoute({ registration }: { registration: RouteRegistration }) {
 }
 /* eslint-enable react-hooks/static-components */
 
+// Wrap the 4 core route elements with RenderProfiler (dev-only, zero overhead in prod).
+function withProfiler(path: string, element: React.ReactNode): React.ReactNode {
+  switch (path) {
+    case "/":
+      return <RenderProfiler id="Dashboard">{element}</RenderProfiler>;
+    case "/graph/:id":
+      return <RenderProfiler id="GraphEditor">{element}</RenderProfiler>;
+    case "/scheduler":
+      return <RenderProfiler id="Scheduler">{element}</RenderProfiler>;
+    case "/study":
+      return <RenderProfiler id="Study">{element}</RenderProfiler>;
+    default:
+      return element;
+  }
+}
+
 function useKernelRoutes(layoutType: "public" | "protected") {
   return useMemo(() => {
     const allRoutes = frontendKernel.getRoutes();
@@ -116,7 +133,7 @@ function App() {
           if (isDev) {
             try {
               const testEmail = "test@example.com";
-              const testPassword = "test123456";
+              const testPassword = import.meta.env.VITE_DEV_TEST_PASSWORD ?? "";
               const { data } = await client.auth.signInWithPassword({
                 email: testEmail,
                 password: testPassword,
@@ -214,7 +231,10 @@ function App() {
                   <Route
                     key={registration.path}
                     path={registration.path}
-                    element={<LazyRoute registration={registration} />}
+                    element={withProfiler(
+                      registration.path,
+                      <LazyRoute registration={registration} />,
+                    )}
                   />
                 );
               })}
@@ -242,7 +262,10 @@ function App() {
                     <Route
                       key={registration.path}
                       {...(isIndex ? { index: true } : { path: registration.path.replace(/^\//, "") })}
-                      element={<LazyRoute registration={registration} />}
+                      element={withProfiler(
+                        registration.path,
+                        <LazyRoute registration={registration} />,
+                      )}
                     />
                   );
                 })}

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import React, { lazy, Suspense, useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import type { Element } from 'hast';
 import { useTranslation } from 'react-i18next';
 import { message } from '@/utils/messageHelper';
 import { cn } from '@/lib/utils';
+
+const CodeHighlighter = lazy(() => import('./CodeHighlighter'));
 
 interface CodeBlockProps {
   className?: string;
@@ -80,27 +80,14 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
           )}
         </button>
       </div>
-      <SyntaxHighlighter
-        language={language}
-        style={isDark ? oneDark : oneLight}
-        customStyle={{
-          margin: 0,
-          borderTopLeftRadius: 0,
-          borderTopRightRadius: 0,
-          borderBottomLeftRadius: '0.5rem',
-          borderBottomRightRadius: '0.5rem',
-          fontSize: '0.875rem',
-        }}
-        showLineNumbers={codeContent.split('\n').length > 3}
-        lineNumberStyle={{
-          minWidth: '2.5em',
-          paddingRight: '1em',
-          textAlign: 'right',
-          opacity: 0.5,
-        }}
-      >
-        {codeContent}
-      </SyntaxHighlighter>
+      <Suspense fallback={<pre className="p-4 rounded-lg overflow-x-auto text-sm font-mono">{codeContent}</pre>}>
+        <CodeHighlighter
+          language={language}
+          isDark={isDark}
+          codeContent={codeContent}
+          showLineNumbers={codeContent.split('\n').length > 3}
+        />
+      </Suspense>
     </div>
   );
 };

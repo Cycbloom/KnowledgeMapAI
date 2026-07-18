@@ -9,6 +9,8 @@ import type {
 } from '@shared/types/api';
 import type { User } from '@shared/types/user';
 import type { IAuthApi } from './contracts/IAuthApi';
+import { logger } from '@/utils/logger';
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 const localAuthApi = {
   register: (data: RegisterData): Promise<AuthResponse> =>
@@ -37,7 +39,7 @@ const supabaseAuthApi = {
   register: async (data: RegisterData): Promise<AuthResponse> => {
     const client = getSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: authData, error } = await client.auth.signUp({
@@ -70,8 +72,8 @@ const supabaseAuthApi = {
   login: async (data: LoginData): Promise<AuthResponse> => {
     const client = getSupabaseClient();
     if (!client) {
-      console.error('[authApi.login] Supabase client 未初始化');
-      throw new Error('Supabase client not initialized');
+      logger.error('[authApi.login] Supabase client 未初始化');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: authData, error } = await client.auth.signInWithPassword({
@@ -107,7 +109,7 @@ const supabaseAuthApi = {
   getUser: async (): Promise<{ user: User | null }> => {
     const client = getSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const {
@@ -120,7 +122,7 @@ const supabaseAuthApi = {
   updateProfile: async (data: UpdateProfileData): Promise<{ user: User | null }> => {
     const client = getSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data: authData, error } = await client.auth.updateUser({
@@ -128,7 +130,7 @@ const supabaseAuthApi = {
     });
 
     if (error) {
-      throw new Error(error.message);
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
     return { user: authData.user as User | null };
@@ -137,7 +139,7 @@ const supabaseAuthApi = {
   refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
     const client = getSupabaseClient();
     if (!client) {
-      throw new Error('Supabase client not initialized');
+      throw new AppError('Supabase client not initialized', SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
     }
 
     const { data, error } = await client.auth.refreshSession({

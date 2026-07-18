@@ -3,6 +3,7 @@ import { loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
+import { visualizer } from "rollup-plugin-visualizer";
 
 function getChunkStrategy(id: string): string | undefined {
   if (!id.includes("node_modules")) {
@@ -21,7 +22,6 @@ function getChunkStrategy(id: string): string | undefined {
     id.includes("cytoscape") ||
     id.includes("khroma") ||
     id.includes("dompurify") ||
-    id.includes("dayjs") ||
     id.includes("mdast-util-from-markdown") ||
     id.includes("non-layered-tidy-tree-layout") ||
     id.includes("react-markdown") ||
@@ -32,7 +32,6 @@ function getChunkStrategy(id: string): string | undefined {
     id.includes("mdast-") ||
     id.includes("micromark") ||
     id.includes("decode-named-character-reference") ||
-    id.includes("lodash-es") ||
     id.includes("uuid") ||
     id.includes("web-worker")
   ) {
@@ -257,6 +256,13 @@ export default defineConfig({
           }),
         ]
       : []),
+    visualizer({
+      filename: "dist/stats.html",
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
+      emitFile: false,
+    }),
   ],
   build: {
     chunkSizeWarningLimit: 1500,
@@ -395,15 +401,15 @@ export default defineConfig({
       ],
       // Coverage gate: thresholds set just below current baseline to catch regressions
       // while allowing the gate to pass. Raise as coverage improves.
-      // Baseline (2026-07-08, full suite green):
-      //   Lines 11.21% / Stmts 10.98% / Branches 6.57% / Funcs 8.54%
-      // Thresholds set ~1-1.5% below baseline to catch regressions without blocking normal dev.
+      // Baseline (2026-07-17, full suite, reportOnFailure):
+      //   Lines 12.99% / Stmts 12.74% / Branches 7.72% / Funcs 9.96%
+      // Thresholds set ~1.7-2% below baseline to catch regressions without blocking normal dev.
       // Aspirational targets (docs/testing-guidelines.md §7): 40% → 70%.
       thresholds: {
-        statements: 10,
-        branches: 5,
-        functions: 7,
-        lines: 10,
+        statements: 11,
+        branches: 6,
+        functions: 8,
+        lines: 11,
       },
       // Watermarks for HTML report coloring (red < 50%, yellow 50-80%, green > 80%)
       watermarks: {

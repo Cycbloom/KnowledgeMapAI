@@ -1,21 +1,30 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-echo "🔍 运行代码检查..."
+echo "🔍 运行增量代码检查（lint-staged）..."
 
-npm run check
+npx lint-staged
 if [ $? -ne 0 ]; then
-  echo "❌ 类型检查失败，请修复后再提交"
+  echo "❌ 增量检查失败，请修复后再提交"
   exit 1
 fi
 
-npm run lint
-if [ $? -ne 0 ]; then
-  echo "❌ 代码检查失败，请修复后再提交"
-  exit 1
-fi
+echo "✅ 增量检查通过"
 
-echo "✅ 代码检查通过"
+# Optional: run full TypeScript type check before commit (opt-in via CHECK_FULL=1)
+# Set CHECK_FULL=1 to enable, e.g.: CHECK_FULL=1 git commit -m "..."
+# Use SKIP_CHECK=1 to explicitly skip even if CHECK_FULL is set in your shell.
+if [ "$CHECK_FULL" = "1" ] && [ "$SKIP_CHECK" != "1" ]; then
+  echo "🔬 运行全量类型检查... (CHECK_FULL=1)"
+  npm run check
+  if [ $? -ne 0 ]; then
+    echo "❌ 类型检查失败，请修复后再提交（或使用 SKIP_CHECK=1 临时跳过）"
+    exit 1
+  fi
+  echo "✅ 类型检查通过"
+else
+  echo "💡 提示：设置 CHECK_FULL=1 可在提交前运行全量类型检查（推荐大改动时使用）"
+fi
 
 # Optional: run unit tests before commit (opt-in via RUN_TESTS=1)
 # Set RUN_TESTS=1 to enable, e.g.: RUN_TESTS=1 git commit -m "..."

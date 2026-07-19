@@ -11,6 +11,7 @@ import { useUser } from "../hooks/queries";
 import { useStore } from "../store/useStore";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
 import { cn } from "../lib/utils";
+import { isElectron } from "../config/electronConfig";
 import { AvailableModels } from "../types";
 import {
   ArrowLeft,
@@ -39,6 +40,8 @@ import {
 } from "../components/Settings";
 import type { DatabaseConfig } from "../components/Settings/settingsConstants";
 import { DEFAULT_AVAILABLE_MODES } from "../components/Settings/settingsConstants";
+import { PwaInstallButton } from "../components/PwaInstallButton";
+import { PwaDiagnostics } from "../components/PwaDiagnostics";
 
 export const Settings = () => {
   const navigate = useNavigate();
@@ -458,6 +461,24 @@ export const Settings = () => {
               </div>
               <PluginMarketplace />
             </section>
+
+            {/* 仅 Web 端显示 PWA 区块 */}
+            {!isElectron() && (
+              <section
+                data-testid="settings-pwa-section"
+                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    PWA
+                  </h2>
+                </div>
+                <div className="space-y-4">
+                  <PwaInstallButton />
+                  <PwaDiagnostics />
+                </div>
+              </section>
+            )}
           </div>
         </div>
       </div>

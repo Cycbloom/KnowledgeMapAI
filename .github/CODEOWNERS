@@ -1,0 +1,54 @@
+# Knowledge Map CODEOWNERS
+# GitHub 会按文件路径匹配，最后一个匹配的规则生效
+# 团队名使用 @knowledgemap/* 占位，实际使用时替换为真实 GitHub 团队/用户
+
+# 默认所有者（所有未明确匹配的文件）
+*                           @knowledgemap/maintainers
+
+# 前端
+/src/                       @knowledgemap/frontend
+/src/components/            @knowledgemap/frontend
+/src/hooks/                 @knowledgemap/frontend
+/src/pages/                 @knowledgemap/frontend
+/src/store/                 @knowledgemap/frontend
+/src/services/              @knowledgemap/frontend
+/src/styles/                @knowledgemap/frontend
+/src/utils/                 @knowledgemap/frontend
+
+# 后端
+/api/                       @knowledgemap/backend
+/api/services/              @knowledgemap/backend
+/api/routes/                @knowledgemap/backend
+/api/middleware/            @knowledgemap/backend
+/api/utils/                 @knowledgemap/backend
+
+# Electron 桌面端
+/electron/                  @knowledgemap/electron
+
+# 数据库
+/supabase/                  @knowledgemap/backend
+/shared/types/              @knowledgemap/backend
+
+# 共享代码
+/shared/                    @knowledgemap/maintainers
+
+# 测试
+/tests/                     @knowledgemap/qa
+/e2e/                       @knowledgemap/qa
+
+# CI/CD 与工具链
+/.github/                   @knowledgemap/devops
+/.husky/                    @knowledgemap/devops
+/.vscode/                   @knowledgemap/devops
+/scripts/                   @knowledgemap/devops
+/vite.config.ts             @knowledgemap/devops
+/eslint.config.js           @knowledgemap/devops
+/tsconfig*.json             @knowledgemap/devops
+/package.json               @knowledgemap/maintainers
+/package-lock.json          @knowledgemap/devops
+
+# 文档
+/README.md                  @knowledgemap/maintainers
+/DEVELOPMENT.md             @knowledgemap/devops
+/CONTRIBUTING.md            @knowledgemap/maintainers
+/docs/                      @knowledgemap/maintainers

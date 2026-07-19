@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, crashReporter, ipcMain } from "electron";
+import { app, BrowserWindow, shell, crashReporter, ipcMain, Menu, session, screen } from "electron";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import * as http from "http";
@@ -19,6 +19,12 @@ import { SyncEngine } from "./sync/syncEngine";
 import { windowManager } from "./utils/windowManager";
 import { trayManager } from "./utils/trayManager";
 import { logger } from "./utils/logger";
+import { buildAppMenu, MenuAction } from "./utils/appMenu";
+import { loadWindowState, trackWindowState } from "./utils/windowStateManager";
+import { emitDeepLink, emitFileOpen, parseArgv } from "./ipc/deepLinkHandlers";
+import { registerPowerHandlers } from "./ipc/powerHandlers";
+import { registerDialogHandlers } from "./ipc/dialogHandlers";
+import { resetAllBlockers } from "./utils/powerManager";
 
 /** Minimal contract for the loaded API Express application. */
 interface ApiApp {
@@ -67,6 +73,15 @@ const IPC_HANDLE_CHANNELS = new Set([
   "sync:fullSync",
   // shell domain
   "shell:openExternal",
+  // power domain
+  "power:startBlocker",
+  "power:stopBlocker",
+  "power:getActiveReasons",
+  // dialog domain
+  "dialog:showSaveDialog",
+  "dialog:showOpenDialog",
+  "dialog:showMessageBox",
+  "dialog:showErrorBox",
 ]);
 
 // Wrap ipcMain.handle to validate channels against whitelist
@@ -316,11 +331,15 @@ async function createWindow(): Promise<void> {
   // Task 6.2: delegate BrowserWindow construction to windowManager.
   // url/file are intentionally omitted so that the dev-server / packaged
   // load logic below stays in main.ts (it has richer error handling).
+  // Task 9: restore persisted window bounds (position/size/maximized).
+  const savedState = loadWindowState();
   const window = windowManager.createWindow({
     id: "main",
     options: {
-      width: 1400,
-      height: 900,
+      width: savedState?.width ?? 1400,
+      height: savedState?.height ?? 900,
+      x: savedState?.x,
+      y: savedState?.y,
       minWidth: 800,
       minHeight: 600,
       webPreferences: {
@@ -337,6 +356,12 @@ async function createWindow(): Promise<void> {
     },
   });
 
+  if (savedState?.isMaximized) {
+    window.maximize();
+  }
+
+  trackWindowState(window);
+
   mainWindow = window;
 
   if (syncEngine) {
@@ -350,6 +375,33 @@ async function createWindow(): Promise<void> {
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: "deny" };
+  });
+
+  // Task 15: 拦截非允许源的导航，防止 renderer 跳转到外部页面
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    const allowedOrigins = [VITE_DEV_SERVER_URL, "file://"].filter(
+      (origin): origin is string => typeof origin === "string" && origin.length > 0,
+    );
+    const isAllowed = allowedOrigins.some((origin) => url.startsWith(origin));
+    if (!isAllowed) {
+      logger.warn("[Security] Blocked navigation to", url);
+      event.preventDefault();
+    }
+  });
+
+  // Task 14: 右键上下文菜单（中文标签 + 编辑能力位）
+  mainWindow.webContents.on("context-menu", (_event, params) => {
+    const menu = Menu.buildFromTemplate([
+      { label: "撤销", role: "undo", enabled: params.editFlags.canUndo },
+      { label: "重做", role: "redo", enabled: params.editFlags.canRedo },
+      { type: "separator" },
+      { label: "剪切", role: "cut", enabled: params.editFlags.canCut },
+      { label: "复制", role: "copy", enabled: params.editFlags.canCopy },
+      { label: "粘贴", role: "paste", enabled: params.editFlags.canPaste },
+      { type: "separator" },
+      { label: "全选", role: "selectAll", enabled: params.editFlags.canSelectAll },
+    ]);
+    menu.popup({ window: mainWindow ?? undefined });
   });
 
   if (VITE_DEV_SERVER_URL) {
@@ -447,96 +499,184 @@ function configureCrashReporter(): void {
   });
 }
 
-app.whenReady().then(async () => {
-  configureCrashReporter();
+// 单实例锁：防止多实例并发写本地数据库
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  // macOS: open-url 事件必须在 app.whenReady() 之前注册
+  app.on("open-url", (event, url) => {
+    event.preventDefault();
+    emitDeepLink({ getMainWindow: () => mainWindow }, url);
+  });
 
-  // Initialize local SQLite database (before API server)
-  await initializeLocalDatabase();
+  // macOS: open-file 事件必须在 app.whenReady() 之前注册
+  app.on("open-file", (event, filePath) => {
+    event.preventDefault();
+    emitFileOpen({ getMainWindow: () => mainWindow }, filePath);
+  });
 
-  if (app.isPackaged && !VITE_DEV_SERVER_URL) {
-    try {
-      const port = await startApiServer();
-      logger.info(`[Main] API 服务器已启动，端口: ${port}`);
-      // Set API port for sync engine
-      if (syncEngine) {
-        syncEngine.setApiPort(port);
+  // Win/Linux: 第二实例启动时聚焦主窗口并转发 argv
+  app.on("second-instance", (_event, argv, _workingDirectory) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+    const { url, filePath } = parseArgv(argv);
+    if (url) emitDeepLink({ getMainWindow: () => mainWindow }, url);
+    if (filePath) emitFileOpen({ getMainWindow: () => mainWindow }, filePath);
+  });
+
+  app.whenReady().then(async () => {
+    // Task 2: 注册深度链接协议
+    app.setAsDefaultProtocolClient("knowledgemap");
+
+    configureCrashReporter();
+
+    // Task 7: About 面板
+    app.setAboutPanelOptions({
+      applicationName: "KnowledgeMap",
+      applicationVersion: app.getVersion(),
+      copyright: "Copyright © 2025 KnowledgeMap",
+      credits: "Built with Electron, React, TypeScript",
+      authors: ["KnowledgeMap Team"],
+      website: "https://github.com/knowledgemap/knowledgemap-app",
+      iconPath: getResourcePath("public", "favicon.svg"),
+    });
+
+    // Task 16: permission request handler — 仅允许剪贴板，其余拒绝
+    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+      const allowed = new Set(["clipboard-read", "clipboard-sanitized-write"]);
+      if (allowed.has(permission)) {
+        callback(true);
+      } else {
+        logger.warn(`[Security] Denied permission request: ${permission}`);
+        callback(false);
       }
-      // Activate all plugins after server starts
-      if (apiKernel) {
-        try {
-          await apiKernel.activateAll();
-          logger.info("[Main] 所有插件已激活");
-        } catch (error) {
-          logger.error("[Main] 插件激活失败", error);
+    });
+
+    // Initialize local SQLite database (before API server)
+    await initializeLocalDatabase();
+
+    if (app.isPackaged && !VITE_DEV_SERVER_URL) {
+      try {
+        const port = await startApiServer();
+        logger.info(`[Main] API 服务器已启动，端口: ${port}`);
+        // Set API port for sync engine
+        if (syncEngine) {
+          syncEngine.setApiPort(port);
         }
+        // Activate all plugins after server starts
+        if (apiKernel) {
+          try {
+            await apiKernel.activateAll();
+            logger.info("[Main] 所有插件已激活");
+          } catch (error) {
+            logger.error("[Main] 插件激活失败", error);
+          }
+        }
+      } catch (error) {
+        logger.error("[Main] 启动 API 服务器失败", error);
       }
-    } catch (error) {
-      logger.error("[Main] 启动 API 服务器失败", error);
     }
-  }
 
-  // Task 8.3: register per-domain IPC handlers centrally.
-  // (db:* handlers are registered inside initializeLocalDatabase because
-  // they require the DatabaseManager instance.)
-  registerAppHandlers({ getPort: () => apiPort });
-  registerWindowHandlers({ getMainWindow: () => mainWindow });
-  registerShellHandlers();
-  registerUpdateHandlers({ getMainWindow: () => mainWindow });
-  registerConfigHandlers();
-  registerSyncHandlers({ getSyncEngine: () => syncEngine });
+    // Task 8.3: register per-domain IPC handlers centrally.
+    // (db:* handlers are registered inside initializeLocalDatabase because
+    // they require the DatabaseManager instance.)
+    registerAppHandlers({ getPort: () => apiPort });
+    registerWindowHandlers({ getMainWindow: () => mainWindow });
+    registerShellHandlers();
+    registerUpdateHandlers({ getMainWindow: () => mainWindow });
+    registerConfigHandlers();
+    registerSyncHandlers({ getSyncEngine: () => syncEngine });
+    registerPowerHandlers();
+    registerDialogHandlers({ getMainWindow: () => mainWindow });
 
-  await createWindow();
+    await createWindow();
 
-  // Task 6.3: enable system tray. Wrapped in try/catch because the tray icon
-  // (public/favicon.svg) may be missing or in a format Tray cannot load —
-  // failure must not block app startup.
-  if (mainWindow) {
-    try {
-      trayManager.initialize(mainWindow);
-      logger.info("[Main] 系统托盘已初始化");
-    } catch (error) {
-      logger.warn("[Main] 系统托盘初始化失败（图标可能缺失或格式不支持）", error);
+    // Task 6.3: enable system tray. Wrapped in try/catch because the tray icon
+    // (public/favicon.svg) may be missing or in a format Tray cannot load —
+    // failure must not block app startup.
+    if (mainWindow) {
+      try {
+        trayManager.initialize(mainWindow);
+        logger.info("[Main] 系统托盘已初始化");
+      } catch (error) {
+        logger.warn("[Main] 系统托盘初始化失败（图标可能缺失或格式不支持）", error);
+      }
     }
-  }
 
-  // Task 7: auto-updater UX (autoDownload disabled; renderer confirms download
-  // and install via update:confirm-download / update:install-confirmed).
-  configureAutoUpdater({ getMainWindow: () => mainWindow });
+    // Task 6: 注册应用菜单
+    const onMenuAction = (action: MenuAction): void => {
+      switch (action) {
+        case "preferences":
+          mainWindow?.webContents.send("menu:action", { action: "preferences" });
+          break;
+        case "about":
+          app.showAboutPanel();
+          break;
+        case "documentation":
+          shell.openExternal("https://github.com/knowledgemap/knowledgemap-app#readme");
+          break;
+        case "reportIssue":
+          shell.openExternal("https://github.com/knowledgemap/knowledgemap-app/issues/new");
+          break;
+        case "checkUpdates":
+          // 触发自动更新检查（autoUpdater 由 updateHandlers 管理，这里通过 IPC 调用）
+          mainWindow?.webContents.send("menu:action", { action: "checkUpdates" });
+          break;
+      }
+    };
 
-  // Start sync engine in packaged mode
-  if (app.isPackaged && syncEngine) {
-    syncEngine.start();
-  }
+    Menu.setApplicationMenu(
+      buildAppMenu({
+        getMainWindow: () => mainWindow,
+        onMenuAction,
+      }),
+    );
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+    // Task 7: auto-updater UX (autoDownload disabled; renderer confirms download
+    // and install via update:confirm-download / update:install-confirmed).
+    configureAutoUpdater({ getMainWindow: () => mainWindow });
+
+    // Start sync engine in packaged mode
+    if (app.isPackaged && syncEngine) {
+      syncEngine.start();
+    }
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  });
+
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+      app.quit();
     }
   });
-});
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
-
-app.on("will-quit", async () => {
-  if (apiKernel) {
-    try {
-      await apiKernel.deactivateAll();
-      logger.info('[Main] 所有插件已停用');
-    } catch (error) {
-      logger.error('[Main] 插件停用失败', error);
+  app.on("will-quit", async () => {
+    if (apiKernel) {
+      try {
+        await apiKernel.deactivateAll();
+        logger.info('[Main] 所有插件已停用');
+      } catch (error) {
+        logger.error('[Main] 插件停用失败', error);
+      }
     }
-  }
-  if (syncEngine) {
-    syncEngine.stop();
-    logger.info('[Main] 同步引擎已停止');
-  }
-  await stopApiServer();
-  if (dbManager) {
-    dbManager.close();
-    logger.info('[Main] 本地数据库已关闭');
-  }
-});
+    if (syncEngine) {
+      syncEngine.stop();
+      logger.info('[Main] 同步引擎已停止');
+    }
+    resetAllBlockers();
+    logger.info("[Main] 所有电源阻塞器已清理");
+    await stopApiServer();
+    if (dbManager) {
+      dbManager.close();
+      logger.info('[Main] 本地数据库已关闭');
+    }
+  });
+}

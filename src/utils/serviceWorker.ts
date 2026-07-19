@@ -1,147 +1,177 @@
-interface ServiceWorkerConfig {
-  onUpdate?: (registration: ServiceWorkerRegistration) => void;
-  onSuccess?: (registration: ServiceWorkerRegistration) => void;
-  onOffline?: () => void;
-  onOnline?: () => void;
+/**
+ * Service Worker 工具函数
+ *
+ * 注册入口由 `virtual:pwa-register/react` 的 `useRegisterSW`（React Hook）承担，
+ * 在组件层调用。本文件仅提供与 SW / Cache Storage 交互的工具函数，
+ * 供 main.tsx 启动逻辑、UpdatePrompt 组件及其他业务代码使用。
+ */
+
+export interface ServiceWorkerStatus {
+  registered: boolean;
+  active: boolean;
+  waiting: boolean;
+  controller: boolean;
 }
 
-export const registerServiceWorker = async (config: ServiceWorkerConfig = {}): Promise<ServiceWorkerRegistration | null> => {
-  if ('serviceWorker' in navigator) {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/',
-      });
+const isBrowserEnvironment = (): boolean =>
+  typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
 
-      registration.addEventListener('updatefound', () => {
-        const installingWorker = registration.installing;
-        if (installingWorker) {
-          installingWorker.addEventListener('statechange', () => {
-            if (installingWorker.state === 'installed') {
-              if (navigator.serviceWorker.controller) {
-                if (import.meta.env.DEV) {
-                  // eslint-disable-next-line no-console
-                  console.debug('[SW] New content available, please refresh.');
-                }
-                if (config.onUpdate) {
-                  config.onUpdate(registration);
-                }
-              } else {
-                if (import.meta.env.DEV) {
-                  // eslint-disable-next-line no-console
-                  console.debug('[SW] Content cached for offline use.');
-                }
-                if (config.onSuccess) {
-                  config.onSuccess(registration);
-                }
-              }
-            }
-          });
-        }
-      });
+const isCachesSupported = (): boolean =>
+  typeof window !== 'undefined' && 'caches' in window;
 
-      window.addEventListener('online', () => {
-        if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
-          console.debug('[SW] Back online');
-        }
-        if (config.onOnline) {
-          config.onOnline();
-        }
-      });
-
-      window.addEventListener('offline', () => {
-        if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
-          console.debug('[SW] Gone offline');
-        }
-        if (config.onOffline) {
-          config.onOffline();
-        }
-      });
-
-      return registration;
-    } catch (error) {
-      console.error('[SW] Registration failed:', error);
-      return null;
-    }
-  }
-
-  return null;
-};
-
-export const unregisterServiceWorker = async (): Promise<boolean> => {
-  if ('serviceWorker' in navigator) {
-    const registration = await navigator.serviceWorker.ready;
-    return registration.unregister();
-  }
-  return false;
-};
-
-export const updateServiceWorker = async (): Promise<void> => {
-  if ('serviceWorker' in navigator) {
-    const registration = await navigator.serviceWorker.ready;
-    await registration.update();
-  }
-};
-
+/**
+ * 清理 API / Supabase 相关缓存。
+ *
+ * 通过 `caches.keys()` 过滤包含 "api" 或 "supabase" 的缓存并删除。
+ * SSR 安全：仅在浏览器环境且支持 Cache Storage 时执行。
+ */
 export const clearApiCache = async (): Promise<void> => {
-  // API 缓存策略已收敛为“默认不缓存 API”。这里做两件事：
-  // 1) 通知 SW 清理历史遗留的 api 缓存（如果存在）
-  // 2) 在页面侧尽力删除可能残留的 api cache storage
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'clearCache' });
-  }
+  if (!isCachesSupported()) return;
 
-  if ('caches' in window) {
-    try {
-      const names = await caches.keys();
-      await Promise.all(
-        names
-          .filter((name) => name.includes('api') || name.includes('knowledge-map-api'))
-          .map((name) => caches.delete(name)),
-      );
-    } catch {
-      // ignore
-    }
+  try {
+    const names = await caches.keys();
+    await Promise.all(
+      names
+        .filter((name) => name.includes('api') || name.includes('supabase'))
+        .map((name) => caches.delete(name)),
+    );
+  } catch (error) {
+    console.error('[SW] clearApiCache failed:', error);
   }
 };
 
+/**
+ * 通过 Service Worker 预取指定 URL 列表。
+ *
+ * 经 `navigator.serviceWorker.ready` 获取激活的 SW，向其 postMessage
+ * `{ type: 'PREFETCH', urls }` 触发 SW 端的预取逻辑。
+ */
 export const prefetchUrls = async (urls: string[]): Promise<void> => {
-  // 预热请求：只做网络预取，不做持久缓存（与 sw.js 的“API 不缓存”一致）
   const uniqueUrls = Array.from(new Set(urls)).filter(Boolean);
   if (uniqueUrls.length === 0) return;
 
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'prefetch', urls: uniqueUrls });
-    return;
-  }
+  if (!isBrowserEnvironment()) return;
 
-  await Promise.all(
-    uniqueUrls.map((url) =>
-      fetch(url, { credentials: 'include' }).catch(() => undefined),
-    ),
-  );
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const active = registration.active;
+    if (!active) return;
+    active.postMessage({ type: 'PREFETCH', urls: uniqueUrls });
+  } catch (error) {
+    console.error('[SW] prefetchUrls failed:', error);
+  }
 };
 
-export const getServiceWorkerStatus = async (): Promise<{
-  isSupported: boolean;
-  isRegistered: boolean;
-  isControlling: boolean;
-  scope?: string;
-}> => {
-  const result = {
-    isSupported: 'serviceWorker' in navigator,
-    isRegistered: false,
-    isControlling: false,
-    scope: undefined as string | undefined,
+/**
+ * 获取当前 Service Worker 的状态。
+ *
+ * 基于 `navigator.serviceWorker.getRegistration()` 与 `navigator.serviceWorker.controller`。
+ */
+export const getServiceWorkerStatus = async (): Promise<ServiceWorkerStatus> => {
+  const status: ServiceWorkerStatus = {
+    registered: false,
+    active: false,
+    waiting: false,
+    controller: false,
   };
 
-  if (result.isSupported) {
+  if (!isBrowserEnvironment()) return status;
+
+  try {
     const registration = await navigator.serviceWorker.getRegistration();
-    result.isRegistered = !!registration;
-    result.isControlling = !!navigator.serviceWorker.controller;
-    result.scope = registration?.scope;
+    status.registered = !!registration;
+    status.active = !!registration?.active;
+    status.waiting = !!registration?.waiting;
+    status.controller = !!navigator.serviceWorker.controller;
+  } catch (error) {
+    console.error('[SW] getServiceWorkerStatus failed:', error);
   }
 
-  return result;
+  return status;
+};
+
+/**
+ * 触发等待中的 Service Worker 跳过等待并重新加载页面。
+ *
+ * 通过 postMessage `{ type: 'SKIP_WAITING' }` 通知 waiting SW 立即激活，
+ * 随后调用 `window.location.reload()` 加载新版本。
+ */
+export const updateServiceWorker = async (): Promise<void> => {
+  if (!isBrowserEnvironment()) return;
+
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+    registration?.waiting?.postMessage({ type: 'SKIP_WAITING' });
+  } catch (error) {
+    console.error('[SW] updateServiceWorker failed:', error);
+  }
+
+  if (typeof window !== 'undefined') {
+    window.location.reload();
+  }
+};
+
+/**
+ * 注销当前作用域下所有 Service Worker 并清空所有 Cache Storage。
+ *
+ * 通过 `navigator.serviceWorker.getRegistrations()` 获取所有注册，
+ * 逐个调用 `registration.unregister()`，然后清空 Cache Storage。
+ * 用于完全退出 PWA 模式或排查缓存问题。
+ */
+export const unregisterServiceWorker = async (): Promise<void> => {
+  if (!isBrowserEnvironment()) return;
+
+  try {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map((reg) => reg.unregister()));
+  } catch (error) {
+    console.error('[SW] unregisterServiceWorker failed:', error);
+  }
+
+  if (isCachesSupported()) {
+    try {
+      const names = await caches.keys();
+      await Promise.all(names.map((name) => caches.delete(name)));
+    } catch (error) {
+      console.error('[SW] clear caches failed:', error);
+    }
+  }
+};
+
+/**
+ * 注销旧版手写 `/sw.js` Service Worker 及其遗留缓存。
+ *
+ * 该函数用于从历史版本（基于 public/sw.js + 自管 Cache Storage）迁移到
+ * VitePWA + Workbox 注册体系时清理残留：
+ * 1. 通过 `getRegistration('/sw.js')` 查找旧 SW 并注销；
+ * 2. 删除旧缓存：`knowledge-map-v1`、`knowledge-map-static-v1`、
+ *    `workbox-precache-v2-/`（清理 Workbox 残留）。
+ *
+ * 仅在浏览器环境执行；fire-and-forget 调用，不阻塞应用启动。
+ */
+export const unregisterLegacySW = async (): Promise<void> => {
+  if (!isBrowserEnvironment()) return;
+
+  try {
+    const legacyReg = await navigator.serviceWorker.getRegistration('/sw.js');
+    if (legacyReg) {
+      await legacyReg.unregister();
+    }
+  } catch (error) {
+    console.error('[SW] unregister legacy /sw.js failed:', error);
+  }
+
+  if (!isCachesSupported()) return;
+
+  const legacyCacheNames = [
+    'knowledge-map-v1',
+    'knowledge-map-static-v1',
+    'workbox-precache-v2-/',
+  ];
+
+  try {
+    await Promise.all(legacyCacheNames.map((name) => caches.delete(name)));
+  } catch (error) {
+    console.error('[SW] clear legacy caches failed:', error);
+  }
 };

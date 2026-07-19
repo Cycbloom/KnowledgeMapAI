@@ -30,6 +30,11 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "eslint --fix --cache --cache-location node_modules/.cache/eslint"
+    ]
+  },
   "scripts": {
     "client:dev": "vite",
     "build": "tsc -b && vite build",
@@ -67,6 +72,8 @@
     "db:gen-types": "supabase gen types typescript --local > shared/types/database.generated.ts",
     "db:check-types": "node scripts/check-generated-types.mjs",
     "check:i18n": "node scripts/check-i18n.mjs",
+    "check:env": "node scripts/check-env.mjs",
+    "help": "node scripts/help.mjs",
     "dev": "concurrently \"npm run client:dev\" \"npm run server:dev\"",
     "electron:dev": "concurrently \"npm run client:dev\" \"npm run server:dev\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
     "electron:build": "npm run build:electron && electron-builder",
@@ -100,7 +107,10 @@
     "@react-three/postprocessing": "^2.19.1",
     "@supabase/supabase-js": "^2.98.0",
     "@tailwindcss/typography": "^0.5.19",
+    "@tanstack/query-async-storage-persister": "^5.101.2",
+    "@tanstack/query-sync-storage-persister": "^5.101.2",
     "@tanstack/react-query": "^5.90.21",
+    "@tanstack/react-query-persist-client": "^5.101.2",
     "@tiptap/core": "^3.27.1",
     "@tiptap/extension-image": "^3.27.1",
     "@tiptap/extension-link": "^3.27.1",
@@ -140,6 +150,7 @@
     "i18next-browser-languagedetector": "^8.2.1",
     "jsonwebtoken": "^9.0.3",
     "katex": "^0.16.35",
+    "localforage": "^1.10.0",
     "lru-cache": "^11.5.1",
     "lucide-react": "^0.511.0",
     "mermaid": "^11.15.0",
@@ -206,8 +217,10 @@
     "eslint": "^9.39.3",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.26",
+    "fake-indexeddb": "^6.2.5",
     "globals": "^16.5.0",
     "jsdom": "^27.4.0",
+    "lint-staged": "^16.4.0",
     "msw": "^2.14.6",
     "nodemon": "^3.1.14",
     "png-to-ico": "^3.0.1",
@@ -305,6 +318,15 @@
     "asarUnpack": [
       "node_modules/sharp/**/*",
       "node_modules/better-sqlite3/**/*"
+    ],
+    "fileAssociations": [
+      {
+        "ext": "km",
+        "name": "KnowledgeMap File",
+        "description": "KnowledgeMap 导出文件",
+        "role": "Editor",
+        "icon": "build/icon.ico"
+      }
     ],
     "win": {
       "target": [

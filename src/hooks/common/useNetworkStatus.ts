@@ -25,6 +25,7 @@ export interface NetworkStatusOptions {
 }
 
 export interface NetworkStatusResult {
+  online: boolean;
   isOnline: boolean;
   connectionType: string | undefined;
   isSlowConnection?: boolean;
@@ -264,6 +265,7 @@ export function useNetworkStatus(options: NetworkStatusOptions = {}): NetworkSta
   }, [enableSlowDetection, slowThreshold, onOnline, onOffline, onSlowConnection]);
 
   const baseResult: NetworkStatusResult = {
+    online: isOnline,
     isOnline,
     connectionType,
   };
@@ -335,4 +337,78 @@ export const useRetryOnReconnect = <T>(
     retryCount,
     canRetry: isOnline && retryCount < maxRetries,
   };
-};
+}
+
+// 独立的网络状态订阅函数（非 hook），供 React Query onlineManager 等场景使用。
+// 复用 useNetworkStatus 的网络监听逻辑（Capacitor Network + window online/offline）。
+export function subscribeNetworkStatus(
+  callback: (status: NetworkStatusResult) => void,
+): () => void {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  let isCancelled = false;
+  let cleanupListener: (() => void) | undefined;
+
+  const emit = (
+    connected: boolean,
+    connectionType: string | undefined = undefined,
+  ) => {
+    if (isCancelled) return;
+    callback({
+      online: connected,
+      isOnline: connected,
+      connectionType,
+    });
+  };
+
+  const setup = async () => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const status = await Network.getStatus();
+        if (isCancelled) return;
+        emit(status.connected, status.connectionType);
+
+        const handle = await Network.addListener('networkStatusChange', (newStatus) => {
+          if (isCancelled) return;
+          emit(newStatus.connected, newStatus.connectionType);
+        });
+        if (isCancelled) {
+          void handle.remove();
+          return;
+        }
+        cleanupListener = () => {
+          void handle.remove();
+        };
+      } else {
+        emit(navigator.onLine);
+
+        const handleOnline = () => emit(true, 'unknown');
+        const handleOffline = () => emit(false, 'none');
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        cleanupListener = () => {
+          window.removeEventListener('online', handleOnline);
+          window.removeEventListener('offline', handleOffline);
+        };
+      }
+    } catch {
+      if (!isCancelled && typeof navigator !== 'undefined') {
+        emit(navigator.onLine);
+      }
+    }
+  };
+
+  void setup();
+
+  return () => {
+    isCancelled = true;
+    if (cleanupListener) {
+      cleanupListener();
+      cleanupListener = undefined;
+    }
+  };
+}

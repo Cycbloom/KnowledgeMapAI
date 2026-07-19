@@ -6,12 +6,20 @@ import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, Skeleton } 
 import { GlobalErrorBoundary } from "./components/common/GlobalErrorBoundary";
 import { RenderProfiler } from "./components/dev/RenderProfiler";
 import { QueryErrorResetBoundary } from "@tanstack/react-query";
+import { useDeepLink } from "./hooks/useDeepLink";
 import { useMobileInit } from "./hooks/useMobileInit";
+import { useNetworkStatus } from "./hooks/common/useNetworkStatus";
+import toast, { Toaster } from "react-hot-toast";
 import { getSupabaseClient } from "./lib/supabase";
 import { authConfig, isSupabaseConfigured } from "./config/authConfig";
+import { isElectron } from "./config/electronConfig";
 import { toUser } from "@shared/types/database";
 import { initializeFrontendPlugins } from "./services/kernel/plugins";
 import type { RouteRegistration } from "./services/kernel/types";
+import { OfflineBanner } from "@/components/OfflineBanner";
+import { SyncStatusBadge } from "@/components/SyncStatusBadge";
+import { ConflictResolutionDialog } from "@/components/ConflictResolutionDialog";
+import { UpdatePrompt } from "@/components/UpdatePrompt";
 import "./i18n";
 
 const frontendKernel = initializeFrontendPlugins();
@@ -93,6 +101,17 @@ function useKernelRoutes(layoutType: "public" | "protected") {
 
 function App() {
   useMobileInit();
+  useDeepLink();
+  const { online } = useNetworkStatus();
+
+  useEffect(() => {
+    if (!online) {
+      toast.error("网络已断开", { id: "network-status", duration: Infinity });
+    } else {
+      toast.success("网络已恢复", { id: "network-status", duration: 2000 });
+    }
+  }, [online]);
+
   const setUser = useStore((state) => state.setUser);
   const clearAuth = useStore((state) => state.clearAuth);
   const storeToken = useStore((state) => state.token);
@@ -214,6 +233,15 @@ function App() {
         <GlobalErrorBoundary onReset={reset}>
           <LoadingBar />
           <ScrollToTop />
+          {/* Web 端 PWA 组件：Electron 不依赖 SW/IndexedDB，不渲染 */}
+          {!isElectron && (
+            <>
+              <OfflineBanner />
+              <SyncStatusBadge />
+              <ConflictResolutionDialog />
+              <UpdatePrompt />
+            </>
+          )}
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               {/* Public routes (outside Layout) */}
@@ -272,6 +300,7 @@ function App() {
               </Route>
             </Routes>
           </Suspense>
+          <Toaster position="top-right" />
         </GlobalErrorBoundary>
       )}
     </QueryErrorResetBoundary>

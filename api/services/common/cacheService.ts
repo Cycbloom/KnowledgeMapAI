@@ -236,7 +236,7 @@ export const cacheService = {
       const ttlRemaining = await cacheStore.getRemainingTTL(key);
       const ttlTotal = ttl * 1000;
       
-      if (ttlRemaining && (ttlRemaining - Date.now()) < ttlTotal * refreshThreshold) {
+      if (ttlRemaining && ttlRemaining < ttlTotal * refreshThreshold) {
         cacheService.backgroundRefresh(key, fetchFn, ttl).catch(() => {});
       }
       

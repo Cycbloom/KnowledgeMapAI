@@ -113,6 +113,56 @@ const electronAPI = {
       return () => ipcRenderer.removeListener('sync:statusChanged', subscription);
     },
   },
+  dialog: {
+    showSaveDialog: (options: Electron.SaveDialogOptions) =>
+      ipcRenderer.invoke("dialog:showSaveDialog", options),
+    showOpenDialog: (options: Electron.OpenDialogOptions) =>
+      ipcRenderer.invoke("dialog:showOpenDialog", options),
+    showMessageBox: (options: Electron.MessageBoxOptions) =>
+      ipcRenderer.invoke("dialog:showMessageBox", options),
+    showErrorBox: (title: string, content: string) =>
+      ipcRenderer.invoke("dialog:showErrorBox", title, content),
+  },
+  power: {
+    startBlocker: (reason: string) =>
+      ipcRenderer.invoke("power:startBlocker", reason),
+    stopBlocker: (reason: string) =>
+      ipcRenderer.invoke("power:stopBlocker", reason),
+    getActiveReasons: () => ipcRenderer.invoke("power:getActiveReasons"),
+  },
+  deepLink: {
+    onOpenUrl: (callback: (data: { url: string; timestamp: number }) => void) => {
+      const subscription = (
+        _event: Electron.IpcRendererEvent,
+        data: { url: string; timestamp: number },
+      ): void => callback(data);
+      ipcRenderer.on("deepLink:open-url", subscription);
+      return () => ipcRenderer.removeListener("deepLink:open-url", subscription);
+    },
+  },
+  fileAssociation: {
+    onOpenFile: (
+      callback: (data: { path: string; timestamp: number }) => void,
+    ) => {
+      const subscription = (
+        _event: Electron.IpcRendererEvent,
+        data: { path: string; timestamp: number },
+      ): void => callback(data);
+      ipcRenderer.on("fileAssociation:open-file", subscription);
+      return () =>
+        ipcRenderer.removeListener("fileAssociation:open-file", subscription);
+    },
+  },
+  menu: {
+    onAction: (callback: (data: { action: string }) => void) => {
+      const subscription = (
+        _event: Electron.IpcRendererEvent,
+        data: { action: string },
+      ): void => callback(data);
+      ipcRenderer.on("menu:action", subscription);
+      return () => ipcRenderer.removeListener("menu:action", subscription);
+    },
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

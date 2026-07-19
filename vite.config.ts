@@ -1,5 +1,6 @@
 import { defineConfig } from "vitest/config";
 import { loadEnv } from "vite";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
@@ -11,19 +12,12 @@ function getChunkStrategy(id: string): string | undefined {
     return undefined;
   }
 
+  // R16 Task 14: 拆分原 vendor-mermaid 巨型 chunk（937 KB gzip）为多个独立 chunk。
+  // 顺序敏感：更具体的规则必须在 mermaid 通用规则之前，否则会被 mermaid 规则先匹配。
+  // 拆分后即使运行时仍被同时加载（mermaid 内部 import d3/katex 等），也可并行下载。
+  if (id.includes("katex")) return "vendor-katex";
+  if (id.includes("cytoscape")) return "vendor-cytoscape";
   if (
-    id.includes("mermaid") ||
-    id.includes("dagre") ||
-    id.includes("graphlib") ||
-    id.includes("elkjs") ||
-    id.includes("d3-") ||
-    id.includes("d3/") ||
-    id.includes("katex") ||
-    id.includes("cytoscape") ||
-    id.includes("khroma") ||
-    id.includes("dompurify") ||
-    id.includes("mdast-util-from-markdown") ||
-    id.includes("non-layered-tidy-tree-layout") ||
     id.includes("react-markdown") ||
     id.includes("remark-") ||
     id.includes("rehype-") ||
@@ -32,6 +26,24 @@ function getChunkStrategy(id: string): string | undefined {
     id.includes("mdast-") ||
     id.includes("micromark") ||
     id.includes("decode-named-character-reference") ||
+    id.includes("mdast-util-from-markdown")
+  ) {
+    return "vendor-markdown";
+  }
+  if (
+    id.includes("d3-") ||
+    id.includes("d3/") ||
+    id.includes("dagre") ||
+    id.includes("graphlib")
+  ) {
+    return "vendor-d3";
+  }
+  if (
+    id.includes("mermaid") ||
+    id.includes("elkjs") ||
+    id.includes("khroma") ||
+    id.includes("dompurify") ||
+    id.includes("non-layered-tidy-tree-layout") ||
     id.includes("uuid") ||
     id.includes("web-worker")
   ) {
@@ -45,6 +57,10 @@ function getChunkStrategy(id: string): string | undefined {
   if (id.includes("postprocessing")) return "vendor-postprocessing";
 
   if (id.includes("recharts")) return "vendor-charts";
+
+  // R16 Task 4 + Task 6: react-syntax-highlighter 通过 React.lazy 动态加载，
+  // 拆为独立 chunk 避免污染主 entry（且需在 react catch-all 之前匹配）。
+  if (id.includes("react-syntax-highlighter")) return "vendor-syntax";
 
   if (id.includes("lucide-react")) return "vendor-lucide";
   if (id.includes("framer-motion")) return "vendor-framer";
@@ -105,6 +121,11 @@ export default defineConfig({
           VitePWA({
             registerType: "autoUpdate",
             injectRegister: false,
+            // R20: 使用顶层 `filename` 而非 `workbox.swDest`，让 vite-plugin-pwa
+            // 自动 resolve 到 `${root}/${outDir}/pwa-sw.js`（即 dist/pwa-sw.js）。
+            // 直接配置 `workbox.swDest: "pwa-sw.js"` 会被解析为相对 cwd，
+            // 导致 SW 生成在项目根目录而非 dist/，部署后无法注册。
+            filename: "pwa-sw.js",
             includeAssets: ["favicon.svg", "robots.txt", "icons/*.png"],
             manifest: {
               name: "Knowledge Map AI",
@@ -199,7 +220,6 @@ export default defineConfig({
               iarc_rating_id: "",
             },
             workbox: {
-              swDest: "pwa-sw.js",
               globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2,json}"],
               maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
               cleanupOutdatedCaches: true,
@@ -247,6 +267,33 @@ export default defineConfig({
                     },
                   },
                 },
+                {
+                  urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\//,
+                  handler: "NetworkFirst",
+                  options: {
+                    cacheName: "supabase-rest-cache",
+                    networkTimeoutSeconds: 5,
+                    expiration: {
+                      maxEntries: 100,
+                      maxAgeSeconds: 5 * 60, // 5 分钟
+                    },
+                    cacheableResponse: {
+                      statuses: [0, 200],
+                    },
+                  },
+                },
+                {
+                  urlPattern: /^https:\/\/.*\.supabase\.co\/auth\/v1\//,
+                  handler: "NetworkOnly",
+                  options: {
+                    cacheName: "supabase-auth-noop",
+                  },
+                },
+              ],
+              navigateFallbackDenylist: [
+                /^\/api\//,
+                /^https:\/\/.*\.supabase\.co\/rest\/v1\//,
+                /^https:\/\/.*\.supabase\.co\/auth\/v1\//,
               ],
             },
             devOptions: { // NOTE: dev SW 文件名冲突通过 injectRegister: false 缓解；vite-plugin-pwa 不支持单独命名 dev SW
@@ -267,6 +314,18 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
+      // R16 Task 16: 抑制 Circular chunk 警告。
+      // 已验证（2026-07-18）：放开抑制后 `vite build` 仅产生 2 条 Circular chunk 警告，
+      // 均为 node_modules 第三方库 chunk 间循环，无 src/ 内部循环依赖：
+      //   1. vendor-charts -> vendor-react -> vendor-charts
+      //      recharts 与 react 生态（react-is / scheduler 等）相互引用，
+      //      由 manualChunks 将 recharts 拆到独立 chunk 引起。
+      //   2. vendor-react -> vendor-mermaid -> vendor-react
+      //      mermaid 生态（含 react-markdown / remark-* / unified 等）与
+      //      react 生态（@emotion / stylis / react-* 等）相互引用。
+      // 这些循环在运行时由 Rollup 通过 lazy module init 正确处理，无功能影响；
+      // 修复需合并 chunk（与 Task 14 bundle 拆分目标冲突）或重构第三方库（不可行），
+      // 故保留抑制。详见 .trae/specs/polish-ux-r16-perf-bundle-slimming/tasks.md Task 16。
       onwarn(warning, warn) {
         if (warning.message.includes("Circular chunk")) {
           return;
@@ -335,6 +394,14 @@ export default defineConfig({
     // This split eliminates the worker timeout issue caused by slow jsdom initialization.
     environment: "node",
     setupFiles: "./src/setupTests.ts",
+    // R20: Mock virtual:pwa-register/react for vitest — vite-plugin-pwa provides
+    // this virtual module at build/dev time, but vitest cannot resolve it.
+    // Tests that need real SW behavior (UpdatePrompt.test.tsx) override via vi.mock.
+    alias: {
+      "virtual:pwa-register/react": fileURLToPath(
+        new URL("./tests/__mocks__/virtualPwaRegisterReact.ts", import.meta.url),
+      ),
+    },
     // Load env vars from .env / .env.local / .env.test / .env.test.local into
     // process.env BEFORE any test module is evaluated. Without this, modules
     // like tests/helpers/testDb.ts read process.env.SUPABASE_SERVICE_ROLE_KEY

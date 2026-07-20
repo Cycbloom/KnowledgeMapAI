@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-typescript-next",
+    "ms-playwright.playwright",
+    "firsttris.vscode-jest-runner",
+    "redhat.vscode-yaml",
+    "ms-azuretools.vscode-docker",
+    "GitHub.vscode-pull-request-github",
+    "eamodio.gitlens"
+  ],
+  "unwantedRecommendations": ["ms-vscode.vscode-typescript"]
+}

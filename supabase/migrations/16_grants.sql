@@ -34,10 +34,6 @@ GRANT SELECT ON quiz_set_cards TO authenticated;
 GRANT ALL PRIVILEGES ON quiz_set_cards TO authenticated;
 GRANT SELECT ON study_progress TO authenticated;
 GRANT ALL PRIVILEGES ON study_progress TO authenticated;
-GRANT SELECT ON learning_sessions TO authenticated;
-GRANT ALL PRIVILEGES ON learning_sessions TO authenticated;
-GRANT SELECT ON learning_session_results TO authenticated;
-GRANT ALL PRIVILEGES ON learning_session_results TO authenticated;
 
 -- Templates & Settings
 GRANT SELECT ON templates TO authenticated;

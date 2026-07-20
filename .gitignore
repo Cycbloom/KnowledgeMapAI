@@ -50,6 +50,9 @@ data/*.db-wal
 !.vscode/extensions.json
 .idea
 .DS_Store
+
+# TRAE IDE working directory (planning specs, session memory)
+.trae/
 *.suo
 *.ntvs*
 *.njsproj

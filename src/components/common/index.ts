@@ -43,3 +43,4 @@ export type { FormFieldProps } from "./FormField";
 export { ScrollToTop } from "./ScrollToTop";
 export { GlobalCommandPalette } from "./GlobalCommandPalette";
 export type { GlobalCommandPaletteProps } from "./GlobalCommandPalette";
+export { CelebrationOverlay } from "./CelebrationOverlay";

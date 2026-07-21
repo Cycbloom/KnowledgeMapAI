@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { usePersistedListState } from "./common/usePersistedListState";
 import { useSearch } from "./common/useSearch";
+import { useUrlSearchParams } from "./common/useUrlSearchParams";
 import type { Graph } from "@shared/types";
 import type { SearchResult } from "../services/api/search";
 
@@ -91,26 +93,108 @@ export function useDashboardFilters({
   isMobile,
   graphs,
 }: UseDashboardFiltersOptions): UseDashboardFiltersReturn {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedFilterTags, setSelectedFilterTags] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = usePersistedListState<number>(
+    "dashboard-page",
+    1,
+  );
+  const [selectedFilterTags, setSelectedFilterTags] = usePersistedListState<
+    string[]
+  >("dashboard-tags", []);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showFABMenu, setShowFABMenu] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [sortBy, setSortBy] = useState<SortBy>("updatedAt");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [timeRangeFilter, setTimeRangeFilter] = useState<TimeRangeFilter>("all");
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    const saved = localStorage.getItem("dashboard-view-mode");
-    return saved === "card" || saved === "list" ? saved : "card";
-  });
+  const [sortBy, setSortBy] = usePersistedListState<SortBy>(
+    "dashboard-sortBy",
+    "updatedAt",
+  );
+  const [statusFilter, setStatusFilter] = usePersistedListState<StatusFilter>(
+    "dashboard-statusFilter",
+    "all",
+  );
+  const [timeRangeFilter, setTimeRangeFilter] = usePersistedListState<
+    TimeRangeFilter
+  >("dashboard-timeRangeFilter", "all");
+  const [viewMode, setViewMode] = usePersistedListState<ViewMode>(
+    "dashboard-view-mode",
+    "card",
+  );
+
+  // URL 查询参数双向同步：viewMode / sortBy / statusFilter / timeRangeFilter
+  // - 默认值不写入 URL（serialize 返回 undefined）
+  // - mount 时 URL 优先于 localStorage（useUrlSearchParams 内部一次性同步）
+  // - popstate（浏览器后退）反向更新 state
+  type DashboardUrlSyncState = {
+    viewMode: ViewMode;
+    sortBy: SortBy;
+    statusFilter: StatusFilter;
+    timeRangeFilter: TimeRangeFilter;
+  };
+  useUrlSearchParams<DashboardUrlSyncState>(
+    { viewMode, sortBy, statusFilter, timeRangeFilter },
+    (partial) => {
+      if (partial.viewMode !== undefined) setViewMode(partial.viewMode);
+      if (partial.sortBy !== undefined) setSortBy(partial.sortBy);
+      if (partial.statusFilter !== undefined) {
+        setStatusFilter(partial.statusFilter);
+      }
+      if (partial.timeRangeFilter !== undefined) {
+        setTimeRangeFilter(partial.timeRangeFilter);
+      }
+    },
+    {
+      fields: [
+        {
+          key: "viewMode",
+          urlParam: "view",
+          serialize: (v) => (v === "card" ? undefined : String(v)),
+          deserialize: (s) =>
+            s === "list" || s === "card" ? (s as ViewMode) : undefined,
+        },
+        {
+          key: "sortBy",
+          urlParam: "sort",
+          serialize: (v) => (v === "updatedAt" ? undefined : String(v)),
+          deserialize: (s) => {
+            if (
+              s === "updatedAt" ||
+              s === "createdAt" ||
+              s === "title" ||
+              s === "nodeCount"
+            ) {
+              return s as SortBy;
+            }
+            return undefined;
+          },
+        },
+        {
+          key: "statusFilter",
+          urlParam: "status",
+          serialize: (v) => (v === "all" ? undefined : String(v)),
+          deserialize: (s) => {
+            if (s === "all" || s === "active" || s === "archived") {
+              return s as StatusFilter;
+            }
+            return undefined;
+          },
+        },
+        {
+          key: "timeRangeFilter",
+          urlParam: "timeRange",
+          serialize: (v) => (v === "all" ? undefined : String(v)),
+          deserialize: (s) => {
+            if (s === "all" || s === "today" || s === "week" || s === "month") {
+              return s as TimeRangeFilter;
+            }
+            return undefined;
+          },
+        },
+      ],
+    },
+  );
 
   const graphsPerPage = isMobile ? 6 : viewMode === "list" ? 15 : 9;
-
-  useEffect(() => {
-    localStorage.setItem("dashboard-view-mode", viewMode);
-  }, [viewMode]);
 
   const {
     query: searchQuery,

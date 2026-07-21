@@ -53,6 +53,8 @@ import notes from './notes.json';
 import graphAI from './graphAI.json';
 import quiz from './quiz.json';
 import conceptAggregation from './conceptAggregation.json';
+import appearance from './appearance.json';
+import shortcuts from './shortcuts.json';
 
 const enUS = {
   dashboard,
@@ -110,6 +112,8 @@ const enUS = {
   graphAI,
   quiz,
   conceptAggregation,
+  appearance,
+  shortcuts,
 };
 
 export default enUS;

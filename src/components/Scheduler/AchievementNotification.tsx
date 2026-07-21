@@ -4,7 +4,7 @@ import { X, Sparkles } from "lucide-react";
 import { Achievement } from "@shared/types";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import type { AchievementUnlockedPayload } from "../../services/FrontendEventTypes";
-import { useFocusTrap, useEscapeKey } from "../../hooks";
+import { useFocusTrap, useEscapeKey, useCelebration } from "../../hooks";
 
 interface NotificationItem {
   id: string;
@@ -111,6 +111,7 @@ export const AchievementNotification: React.FC<{
   autoDismissMs?: number;
 }> = ({ maxVisible = 3, autoDismissMs = 5000 }) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const { triggerCelebration } = useCelebration();
 
   useEffect(() => {
     const handler = (payload: AchievementUnlockedPayload) => {
@@ -126,6 +127,8 @@ export const AchievementNotification: React.FC<{
         const newNotifications = [...prev, notification];
         return newNotifications.slice(-maxVisible);
       });
+      // 任务 19.3:成就解锁时触发庆祝动画
+      triggerCelebration("achievement-unlocked");
     };
 
     const unsubscribe = frontendEventBus.subscribe(
@@ -133,7 +136,7 @@ export const AchievementNotification: React.FC<{
       handler,
     );
     return unsubscribe;
-  }, [maxVisible]);
+  }, [maxVisible, triggerCelebration]);
 
   const dismissNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));

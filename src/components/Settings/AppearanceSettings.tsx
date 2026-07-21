@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../hooks";
+import { usePreferencesStore } from "../../store/usePreferencesStore";
 import {
   Palette,
   Sun,
@@ -8,12 +9,17 @@ import {
   Monitor,
   SwatchBook,
   Globe,
+  Sparkles,
 } from "lucide-react";
 
 export const AppearanceSettings = React.memo(function AppearanceSettings() {
   const { t, i18n } = useTranslation();
   const { themeMode, setTheme, themePreset, setThemePreset, availablePresets } =
     useTheme();
+  const celebrationEnabled = usePreferencesStore((s) => s.celebrationEnabled);
+  const setCelebrationEnabled = usePreferencesStore(
+    (s) => s.setCelebrationEnabled,
+  );
 
   return (
     <>
@@ -164,6 +170,51 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 微反馈偏好 */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            {t("appearance.celebrationEnabled")}
+          </h2>
+        </div>
+
+        <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+          <div>
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              {t("appearance.celebrationEnabled")}
+            </span>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              {t("appearance.celebrationEnabledDesc")}
+            </p>
+          </div>
+          <div
+            role="switch"
+            aria-checked={celebrationEnabled}
+            aria-label={t("appearance.celebrationEnabled")}
+            tabIndex={0}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+              celebrationEnabled
+                ? "bg-primary-600"
+                : "bg-gray-200 dark:bg-gray-700"
+            }`}
+            onClick={() => setCelebrationEnabled(!celebrationEnabled)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setCelebrationEnabled(!celebrationEnabled);
+              }
+            }}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                celebrationEnabled ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </div>
+        </label>
       </div>
     </>
   );

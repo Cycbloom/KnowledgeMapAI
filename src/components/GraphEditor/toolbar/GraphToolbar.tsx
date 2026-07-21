@@ -57,6 +57,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useTheme } from "../../../hooks";
 import { useIsMobile } from "../../../hooks";
+import { ShortcutHint } from "../../common/ShortcutHint";
 import { GraphSwitcher } from "./GraphSwitcher";
 import {
   Node,
@@ -1329,34 +1330,40 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     >
       {/* 1. Navigation & Basic Info (Always visible) */}
       <div className="flex items-center">
-        <button
-          onClick={onBack}
-          className={`p-2 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.button.default}`}
-          title="返回"
-          aria-label="返回"
-        >
-          <ArrowLeft size={18} />
-        </button>
+        <ShortcutHint actionId="navigate-back">
+          <button
+            onClick={onBack}
+            className={`p-2 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.button.default}`}
+            title="返回"
+            aria-label="返回"
+          >
+            <ArrowLeft size={18} />
+          </button>
+        </ShortcutHint>
         <Divider />
         <div className="flex items-center space-x-1 px-1">
-          <button
-            onClick={onUndo}
-            disabled={!canUndo}
-            className={`p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${!canUndo ? themeClasses.button.disabled : themeClasses.button.default}`}
-            title="撤销"
-            aria-label="撤销"
-          >
-            <Undo size={18} />
-          </button>
-          <button
-            onClick={onRedo}
-            disabled={!canRedo}
-            className={`p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${!canRedo ? themeClasses.button.disabled : themeClasses.button.default}`}
-            title="重做"
-            aria-label="重做"
-          >
-            <Redo size={18} />
-          </button>
+          <ShortcutHint actionId="undo">
+            <button
+              onClick={onUndo}
+              disabled={!canUndo}
+              className={`p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${!canUndo ? themeClasses.button.disabled : themeClasses.button.default}`}
+              title="撤销"
+              aria-label="撤销"
+            >
+              <Undo size={18} />
+            </button>
+          </ShortcutHint>
+          <ShortcutHint actionId="redo">
+            <button
+              onClick={onRedo}
+              disabled={!canRedo}
+              className={`p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${!canRedo ? themeClasses.button.disabled : themeClasses.button.default}`}
+              title="重做"
+              aria-label="重做"
+            >
+              <Redo size={18} />
+            </button>
+          </ShortcutHint>
         </div>
       </div>
 
@@ -1835,14 +1842,16 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         <>
           <Divider />
           <div className="flex items-center gap-0.5">
-            <button
-              onClick={onZoomOut}
-              className={`p-1.5 rounded-lg transition-colors ${themeClasses.button.default}`}
-              title={t("graphEditor.mindMap.zoomOut")}
-              aria-label={t("graphEditor.mindMap.zoomOut")}
-            >
-              <ZoomOut size={18} />
-            </button>
+            <ShortcutHint actionId="zoom-out">
+              <button
+                onClick={onZoomOut}
+                className={`p-1.5 rounded-lg transition-colors ${themeClasses.button.default}`}
+                title={t("graphEditor.mindMap.zoomOut")}
+                aria-label={t("graphEditor.mindMap.zoomOut")}
+              >
+                <ZoomOut size={18} />
+              </button>
+            </ShortcutHint>
             <button
               onClick={() => onZoomReset?.()}
               className={`px-2 py-1 rounded-lg text-xs font-medium tabular-nums min-w-[3.5rem] text-center transition-colors ${themeClasses.button.default}`}
@@ -1850,14 +1859,16 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             >
               {Math.round(zoomLevel * 100)}%
             </button>
-            <button
-              onClick={onZoomIn}
-              className={`p-1.5 rounded-lg transition-colors ${themeClasses.button.default}`}
-              title={t("graphEditor.mindMap.zoomIn")}
-              aria-label={t("graphEditor.mindMap.zoomIn")}
-            >
-              <ZoomIn size={18} />
-            </button>
+            <ShortcutHint actionId="zoom-in">
+              <button
+                onClick={onZoomIn}
+                className={`p-1.5 rounded-lg transition-colors ${themeClasses.button.default}`}
+                title={t("graphEditor.mindMap.zoomIn")}
+                aria-label={t("graphEditor.mindMap.zoomIn")}
+              >
+                <ZoomIn size={18} />
+              </button>
+            </ShortcutHint>
           </div>
         </>
       )}

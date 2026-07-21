@@ -18,6 +18,7 @@ export {
   useTutorOperations,
   useQuoteShortcut,
   useTopicCheck,
+  useCelebration,
 } from "./common";
 
 // Re-exports from scheduler barrel: only hooks actually called through the main barrel

@@ -41,6 +41,7 @@ import {
 import { TemplateSelector } from "./TemplateSelector";
 import { useFormDraft, useBeforeUnload } from "../../hooks";
 import { ConfirmationModal } from "../common/ConfirmationModal";
+import { SaveButton } from "../common/SaveButton";
 
 interface TaskFormProps {
   task?: UserTask;
@@ -333,8 +334,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (): Promise<void> => {
     if (!validate()) return;
 
     if (!isEditing) {
@@ -369,6 +369,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           );
       });
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void handleSave();
   };
 
   const handleCancel = () => {
@@ -1330,14 +1335,17 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           >
             {t("scheduler.taskForm.cancel")}
           </button>
-          <button
-            onClick={handleSubmit}
-            className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-400 hover:to-primary-400 transition-all shadow-lg shadow-primary-500/20 min-h-[44px] touch-target"
-          >
-            {isEditing
-              ? t("scheduler.taskForm.saveChanges")
-              : t("scheduler.taskForm.createTaskBtn")}
-          </button>
+          <SaveButton
+            onSave={handleSave}
+            variant="primary"
+            size="md"
+            className="flex-1 sm:flex-none touch-target"
+            idleLabel={
+              isEditing
+                ? t("scheduler.taskForm.saveChanges")
+                : t("scheduler.taskForm.createTaskBtn")
+            }
+          />
         </div>
       </motion.div>
 

@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { useTheme, useIsMobile } from "../../hooks";
+import { usePersistedListState } from "../../hooks/common/usePersistedListState";
+import { useScrollRestoration } from "../../hooks/common/useScrollRestoration";
 import { useNotesList, type NoteView } from "../../hooks/queries";
 import {
   useCreateNoteMutation,
@@ -408,14 +410,18 @@ export const NotesListPage = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [view, setView] = useState<NoteView>("all");
+  const [view, setView] = usePersistedListState<NoteView>("notes-view", "all");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   // SubTask 10.1: 客户端标题搜索(useState + useMemo);searchInput 为即时输入值,
   // searchKeyword 为 debounce 后的实际过滤值,避免每次按键都触发过滤。
   const [searchInput, setSearchInput] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
   // SubTask 10.2: 客户端标签筛选(点击列表项 tag chip 时设置)。
-  const [filterTag, setFilterTag] = useState<string | null>(null);
+  // R22 Task 5: view/sortBy/filterTag 持久化到 localStorage,跨会话保留。
+  const [filterTag, setFilterTag] = usePersistedListState<string | null>(
+    "notes-filterTag",
+    null,
+  );
   const debouncedSetSearchKeyword = useMemo(
     () =>
       debounce((value: string) => {
@@ -432,18 +438,17 @@ export const NotesListPage = () => {
       : 600,
   );
 
-  // Task 4: 客户端列表排序,持久化到 localStorage。
-  const [sortBy, setSortBy] = useState<SortBy>(() => {
-    if (typeof window === "undefined") return "updatedAt";
-    const saved = window.localStorage.getItem("notes-list-sort");
-    return saved === "createdAt" || saved === "title" || saved === "updatedAt"
-      ? saved
-      : "updatedAt";
+  // R22 Task 5: 客户端列表排序,持久化到 localStorage。
+  const [sortBy, setSortBy] = usePersistedListState<SortBy>(
+    "notes-sortBy",
+    "updatedAt",
+  );
+
+  // R22 Task 7: 滚动位置记忆,卸载时保存 scrollTop,重新进入时恢复;
+  // 筛选/排序/搜索变化时重置到顶部(避免停留在旧位置)。
+  const scrollRef = useScrollRestoration<HTMLDivElement>("notes-list-scroll", {
+    deps: [view, sortBy, filterTag, searchKeyword],
   });
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("notes-list-sort", sortBy);
-  }, [sortBy]);
 
   // Task 5: 批量选择模式
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -897,7 +902,10 @@ export const NotesListPage = () => {
   }, [view, t]);
 
   return (
-    <div className="h-full overflow-y-auto p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
+    <div
+      ref={scrollRef}
+      className="h-full overflow-y-auto p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300"
+    >
       {/* 顶部:标题 + 操作区 */}
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div className="min-w-0">

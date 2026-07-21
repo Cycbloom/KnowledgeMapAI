@@ -5,7 +5,6 @@ import { getLevelColor, getLevelLabel } from "../../../lib/graphUtils";
 import {
   X,
   ArrowLeft,
-  Save,
   Loader2,
   Search,
   ChevronDown,
@@ -39,6 +38,7 @@ import { BacklinksPanel } from "./BacklinksPanel";
 import { NotesPanel } from "../../Notes/NotesPanel";
 import { NodeBlockRefsPanel } from "../../Notes/NodeBlockRefsPanel";
 import { EmptyState } from "../../common/EmptyState";
+import { SaveButton } from "../../common/SaveButton";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 
 interface NodeFormState {
@@ -231,11 +231,16 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     t("common.unsavedChanges"),
   );
 
-  // Manual save: cancel pending auto-save and save with exitToDetail
-  const handleManualSave = useCallback(() => {
+  // Manual save: cancel pending auto-save and save with exitToDetail.
+  // Returns a Promise<void> that resolves when loading transitions back to
+  // false (via the loadingRef effect above), enabling SaveButton's success state.
+  const handleManualSave = useCallback((): Promise<void> => {
     pendingSaveResolveRef.current = null;
     resetAutoSave();
-    onSave({ exitToDetail: true });
+    return new Promise<void>((resolve) => {
+      onSave({ exitToDetail: true });
+      pendingSaveResolveRef.current = resolve;
+    });
   }, [onSave, resetAutoSave]);
 
   const currentNode = useMemo(() => {
@@ -1022,50 +1027,24 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             >
               取消
             </button>
-            <button
-              onClick={handleManualSave}
-              disabled={loading || !nodeForm.title.trim()}
-              className={`flex-1 py-3 rounded-xl flex items-center justify-center font-bold text-white shadow-lg transition-all min-h-[48px] ${
-                loading || !nodeForm.title.trim()
-                  ? "bg-gray-300 dark:bg-gray-700 cursor-not-allowed"
-                  : "bg-gradient-to-r from-primary-600 to-primary-600 hover:shadow-primary-200 dark:hover:shadow-primary-900/30 active:scale-[0.99]"
-              }`}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin mr-2" size={18} />
-                  保存中...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2" size={18} />
-                  保存
-                </>
-              )}
-            </button>
+            <SaveButton
+              onSave={handleManualSave}
+              variant="primary"
+              size="md"
+              disabled={!nodeForm.title.trim()}
+              className="flex-1 min-h-[48px]"
+              idleLabel="保存"
+            />
           </div>
         ) : (
-          <button
-            onClick={handleManualSave}
-            disabled={loading || !nodeForm.title.trim()}
-            className={`w-full py-3 rounded-xl flex items-center justify-center font-bold text-white shadow-lg transition-all ${
-              loading || !nodeForm.title.trim()
-                ? "bg-gray-300 dark:bg-gray-700 cursor-not-allowed"
-                : "bg-gradient-to-r from-primary-600 to-primary-600 hover:shadow-primary-200 dark:hover:shadow-primary-900/30 active:scale-[0.99]"
-            }`}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin mr-2" size={18} />
-                保存中...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2" size={18} />
-                保存节点
-              </>
-            )}
-          </button>
+          <SaveButton
+            onSave={handleManualSave}
+            variant="primary"
+            size="md"
+            fullWidth
+            disabled={!nodeForm.title.trim()}
+            idleLabel="保存节点"
+          />
         )}
       </div>
 

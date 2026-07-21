@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Calendar, Award } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatNumber } from '../../utils/formatters';
+import { useCelebration } from '@/hooks/common';
+
+/** 连续打卡里程碑:命中这些天数时触发庆祝动画 */
+const STREAK_MILESTONES = [7, 30, 100];
 
 interface StreakDisplayProps {
   dailyStreak: number;
@@ -18,7 +22,18 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
   quarterlyStreak,
 }) => {
   const { t } = useTranslation();
-  
+  const { triggerCelebration } = useCelebration();
+  // 记录上次触发过庆祝的天数,避免重复触发(同一里程碑只在首次达成时庆祝)
+  const celebratedRef = useRef<Set<number>>(new Set());
+
+  // 任务 19.4:dailyStreak 命中 7/30/100 里程碑时触发庆祝动画
+  useEffect(() => {
+    if (STREAK_MILESTONES.includes(dailyStreak) && !celebratedRef.current.has(dailyStreak)) {
+      celebratedRef.current.add(dailyStreak);
+      triggerCelebration("streak-milestone");
+    }
+  }, [dailyStreak, triggerCelebration]);
+
   const streakConfig = [
     { key: 'daily', label: t('achievements.streak.daily'), icon: Calendar, color: 'from-orange-500 to-red-500', milestones: [7, 14, 30, 60, 100] },
     { key: 'weekly', label: t('achievements.streak.weekly'), icon: Flame, color: 'from-primary-500 to-primary-500', milestones: [4, 8, 12] },

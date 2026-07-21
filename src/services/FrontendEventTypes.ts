@@ -1,4 +1,8 @@
 import type { TaskStartedPayload } from "../../shared/types/events";
+import type {
+  CelebrationConfig,
+  CelebrationPreset,
+} from "./celebrationService";
 
 export interface SSEStatusChangedPayload {
   status: "connecting" | "connected" | "disconnected" | "error";
@@ -126,6 +130,12 @@ export interface FocusSessionCompletedPayload {
   mode: string;
 }
 
+export interface CelebrationBurstPayload {
+  preset: CelebrationPreset;
+  config: CelebrationConfig;
+  timestamp: number;
+}
+
 export interface FrontendEventMap extends Record<string, unknown> {
   task_started: TaskStartedPayload;
   sse_status_changed: SSEStatusChangedPayload;
@@ -150,4 +160,5 @@ export interface FrontendEventMap extends Record<string, unknown> {
   message_hide: MessageHidePayload;
   achievement_unlocked: AchievementUnlockedPayload;
   focus_session_completed: FocusSessionCompletedPayload;
+  celebration_burst: CelebrationBurstPayload;
 }

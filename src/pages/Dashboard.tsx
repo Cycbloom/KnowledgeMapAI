@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -22,6 +22,7 @@ import { ConfirmationModal, SkeletonCard, ErrorBoundary } from "../components/co
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
 import { useTheme, useIsMobile } from "../hooks";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
+import { useUndoableAction } from "@/hooks/useUndoableAction";
 import { useDashboardFilters } from "../hooks/useDashboardFilters";
 import { useRecentGraphs } from "../hooks/useRecentGraphs";
 import {
@@ -105,33 +106,47 @@ export const Dashboard = () => {
 
   const filters = useDashboardFilters({ isMobile, graphs });
 
-  const handleUndoDeleteGraph = useCallback(
-    async (id: string) => {
-      try {
-        await restoreGraphMutation.mutateAsync(id);
-        queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-        message.success(t("dashboard.undo.restored"));
-      } catch (err: unknown) {
-        console.error(err);
-        message.error(t("dashboard.undo.restoreFailed"));
-      }
+  // 单个图谱删除：6s 撤销 toast，点击撤销调用 restore API
+  const { executeDelete: executeDeleteGraph } = useUndoableAction<
+    { id: string; title: string },
+    string
+  >({
+    deleteFn: async ({ id }) => {
+      await deleteGraphMutation.mutateAsync(id);
+      return id;
     },
-    [restoreGraphMutation, queryClient, t],
-  );
+    restoreFn: (id: string) =>
+      restoreGraphMutation.mutateAsync(id).then(() => undefined),
+    deletedMessage: "",
+    getDeletedMessage: ({ title }) =>
+      t("dashboard.undo.deletedOne", { title }),
+    restoredMessage: t("dashboard.undo.restored"),
+    restoreFailedMessage: t("dashboard.undo.restoreFailed"),
+    onRestored: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+    },
+  });
 
-  const handleUndoBatchDeleteGraphs = useCallback(
-    async (ids: string[]) => {
-      try {
-        await batchRestoreGraphsMutation.mutateAsync(ids);
-        queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-        message.success(t("dashboard.undo.restored"));
-      } catch (err: unknown) {
-        console.error(err);
-        message.error(t("dashboard.undo.restoreFailed"));
-      }
+  // 批量图谱删除：6s 撤销 toast，点击撤销一次性恢复所有
+  const { executeDelete: executeBatchDeleteGraphs } = useUndoableAction<
+    string[],
+    string[]
+  >({
+    deleteFn: async (ids) => {
+      await batchDeleteGraphsMutation.mutateAsync(ids);
+      return ids;
     },
-    [batchRestoreGraphsMutation, queryClient, t],
-  );
+    restoreFn: (ids: string[]) =>
+      batchRestoreGraphsMutation.mutateAsync(ids).then(() => undefined),
+    deletedMessage: "",
+    getDeletedMessage: (ids) =>
+      t("dashboard.undo.deletedMany", { count: ids.length }),
+    restoredMessage: t("dashboard.undo.restored"),
+    restoreFailedMessage: t("dashboard.undo.restoreFailed"),
+    onRestored: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+    },
+  });
 
   const handleBatchDelete = () => {
     if (filters.selectedIds.size === 0) return;
@@ -144,31 +159,19 @@ export const Dashboard = () => {
 
   const handleConfirmBatchDelete = () => {
     const deletedIds = Array.from(filters.selectedIds);
-    batchDeleteGraphsMutation.mutate(deletedIds, {
-      onSuccess: () => {
-        message.success(
-          t("dashboard.undo.deletedMany", { count: deletedIds.length }),
-          {
-            duration: 5000,
-            action: {
-              label: t("common.undo"),
-              onClick: () => {
-                void handleUndoBatchDeleteGraphs(deletedIds);
-              },
-            },
-          },
-        );
+    executeBatchDeleteGraphs(deletedIds)
+      .then(() => {
         filters.clearSelection();
         filters.setIsSelectMode(false);
         setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
-      },
-      onError: (err: unknown) => {
+      })
+      .catch((err: unknown) => {
         console.error(err);
-        const errorMessage = err instanceof Error ? err.message : t("dashboard.batchDeleteFailed");
+        const errorMessage =
+          err instanceof Error ? err.message : t("dashboard.batchDeleteFailed");
         message.error(errorMessage);
         setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
-      },
-    });
+      });
   };
 
   const handleDeleteGraph = (id: string, title: string) => {
@@ -178,29 +181,17 @@ export const Dashboard = () => {
   const handleConfirmDelete = () => {
     if (deleteConfirm.id) {
       const { id, title } = deleteConfirm;
-      deleteGraphMutation.mutate(id, {
-        onSuccess: () => {
-          message.success(
-            t("dashboard.undo.deletedOne", { title }),
-            {
-              duration: 5000,
-              action: {
-                label: t("common.undo"),
-                onClick: () => {
-                  void handleUndoDeleteGraph(id);
-                },
-              },
-            },
-          );
+      executeDeleteGraph({ id, title })
+        .then(() => {
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
-        },
-        onError: (err: unknown) => {
+        })
+        .catch((err: unknown) => {
           console.error(err);
-          const errorMessage = err instanceof Error ? err.message : t("dashboard.deleteFailed");
+          const errorMessage =
+            err instanceof Error ? err.message : t("dashboard.deleteFailed");
           message.error(errorMessage);
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
-        },
-      });
+        });
     } else if (filters.selectedIds.size > 0) {
       handleConfirmBatchDelete();
     }

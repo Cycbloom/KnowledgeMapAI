@@ -7,6 +7,8 @@ import {
   useRetryTaskMutation,
   useDeleteTaskMutation,
 } from "../hooks/mutations";
+import { usePersistedListState } from "../hooks/common/usePersistedListState";
+import { useScrollRestoration } from "../hooks/common/useScrollRestoration";
 import { useStore } from "../store/useStore";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { ConfirmationModal, Skeleton } from "../components/common";
@@ -118,7 +120,10 @@ export const Tasks = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { token } = useStore();
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = usePersistedListState<string>("tasks-filter", "all");
+  const scrollRef = useScrollRestoration<HTMLDivElement>("tasks-list-scroll", {
+    deps: [filter],
+  });
   const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -364,7 +369,10 @@ export const Tasks = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
+    <div
+      ref={scrollRef}
+      className="h-full overflow-y-auto p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300"
+    >
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">

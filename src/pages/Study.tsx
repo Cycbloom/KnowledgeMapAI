@@ -14,6 +14,7 @@ import { StudyHeader } from "../components/Study/StudyHeader";
 import { CardReviewView } from "../components/Study/CardReviewView";
 import { QuizViewFinished, QuizViewActive } from "../components/Study/QuizView";
 import { ErrorBoundary } from "../components/common/ErrorBoundary";
+import { useCelebration } from "@/hooks/common";
 import type { WeakPoint, Prediction } from "../components/Study/WeakPointAnalysis";
 import { themeClasses } from "@/utils/themeClasses";
 
@@ -78,6 +79,14 @@ export const Study = () => {
     semanticSimilarityMap,
     isMobile: isMobile ?? false,
   });
+
+  // 庆祝动画:复习 session 结束时触发(Task 19.2)
+  const { triggerCelebration } = useCelebration();
+  useEffect(() => {
+    if (cardReview.finished) {
+      triggerCelebration("review-finished");
+    }
+  }, [cardReview.finished, triggerCelebration]);
 
   // Compute current options for keyboard shortcuts (UX2-03)
   const currentOptions: string[] = useMemo(() => {

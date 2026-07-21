@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
-import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, Skeleton } from "./components/common";
+import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, Skeleton, CelebrationOverlay } from "./components/common";
 import { GlobalErrorBoundary } from "./components/common/GlobalErrorBoundary";
 import { RenderProfiler } from "./components/dev/RenderProfiler";
 import { QueryErrorResetBoundary } from "@tanstack/react-query";
@@ -301,6 +301,7 @@ function App() {
             </Routes>
           </Suspense>
           <Toaster position="top-right" />
+          <CelebrationOverlay />
         </GlobalErrorBoundary>
       )}
     </QueryErrorResetBoundary>

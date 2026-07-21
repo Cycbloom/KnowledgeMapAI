@@ -14,14 +14,18 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useNote } from "@/hooks/queries";
-import { useUpdateNoteMutation, useDeleteNoteMutation } from "@/hooks/mutations";
+import {
+  useUpdateNoteMutation,
+  useDeleteNoteMutation,
+  useRestoreNoteMutation,
+} from "@/hooks/mutations";
 import { useError } from "@/hooks";
+import { useUndoableAction } from "@/hooks/useUndoableAction";
 import { addRecentNote } from "@/hooks/useRecentNotes";
 import { BlockEditor } from "@/components/Notes/BlockEditor";
 import { InboundBlockRefsPanel } from "@/components/Notes/InboundBlockRefsPanel";
 import { Skeleton, EmptyState, ErrorBoundary } from "@/components/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
-import { message } from "@/utils/messageHelper";
 import { formatDate } from "@/utils/formatters";
 
 /** 标题输入防抖时长（ms）。 */
@@ -48,6 +52,17 @@ const NoteEditorPage: React.FC = () => {
 
   const updateMutation = useUpdateNoteMutation();
   const deleteMutation = useDeleteNoteMutation();
+  const restoreMutation = useRestoreNoteMutation();
+
+  // 软删除笔记后显示 6s 撤销 toast，点击撤销调用 restore API
+  const { executeDelete: executeDeleteNote } = useUndoableAction<string, string>({
+    deleteFn: async (id: string) => {
+      await deleteMutation.mutateAsync(id);
+      return id;
+    },
+    restoreFn: (id: string) => restoreMutation.mutateAsync(id).then(() => undefined),
+    deletedMessage: t("notes.noteDeleted"),
+  });
 
   // 本地标题状态（受控输入，避免远端 refetch 覆盖用户输入）
   const [title, setTitle] = useState<string>("");
@@ -159,8 +174,7 @@ const NoteEditorPage: React.FC = () => {
     });
     if (!confirmed) return;
     try {
-      await deleteMutation.mutateAsync(note.id);
-      message.success(t("notes.noteDeleted"));
+      await executeDeleteNote(note.id);
       navigate("/notes");
     } catch (err) {
       handleError(err, {

@@ -15,3 +15,6 @@ export { useAutoSave } from './useAutoSave';
 export { useFormDraft } from './useFormDraft';
 export { useEscapeKey } from './useEscapeKey';
 export { useBeforeUnload } from './useBeforeUnload';
+export { useShortcutLabel, formatShortcutKeys } from './useShortcutLabel';
+export type { ShortcutPlatform, UseShortcutLabelOptions } from './useShortcutLabel';
+export { useCelebration } from './useCelebration';

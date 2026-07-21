@@ -38,12 +38,13 @@ import {
 } from "../hooks";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
-import { useFocusTrap, useEscapeKey } from "@/hooks/common";
+import { useFocusTrap, useEscapeKey, useCelebration } from "@/hooks/common";
 import { message } from "../utils/messageHelper";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { UserTask, CreateUserTaskData, QueueData } from "@shared/types";
 import { api } from "../services/api";
 import { SkeletonCard, ErrorBoundary } from "../components/common";
+import { ShortcutHint } from "../components/common/ShortcutHint";
 
 const HorizontalQueueView = lazy(() =>
   import("../components/Scheduler/HorizontalQueueView").then((module) => ({
@@ -116,6 +117,7 @@ const QueueDataDefault: QueueData = { q0: [], q1: [], q2: [] };
 export const Scheduler: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { triggerCelebration } = useCelebration();
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<UserTask | null>(null);
   const [defaultQueueLevel, setDefaultQueueLevel] = useState<number>(2);
@@ -407,12 +409,13 @@ export const Scheduler: React.FC = () => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskCompleted"));
+      triggerCelebration("task-completed");
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : t("scheduler.completeTaskFailed");
       message.error(errorMessage);
     }
-  }, [completeTaskMutation, t]);
+  }, [completeTaskMutation, t, triggerCelebration]);
 
   const openAddTaskForm = (queueLevel: number = 2) => {
     setDefaultQueueLevel(queueLevel);
@@ -540,16 +543,18 @@ export const Scheduler: React.FC = () => {
                   />
                 </button>
 
-                <button
-                  onClick={() => setShowSettings(!showSettings)}
-                  className={`p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 ${
-                    showSettings
-                      ? "bg-primary-100 dark:bg-primary-500/20 border-primary-300 dark:border-primary-500/50 text-primary-600 dark:text-primary-400"
-                      : "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600"
-                  }`}
-                >
-                  <Settings size={16} />
-                </button>
+                <ShortcutHint actionId="settings">
+                  <button
+                    onClick={() => setShowSettings(!showSettings)}
+                    className={`p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 ${
+                      showSettings
+                        ? "bg-primary-100 dark:bg-primary-500/20 border-primary-300 dark:border-primary-500/50 text-primary-600 dark:text-primary-400"
+                        : "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600"
+                    }`}
+                  >
+                    <Settings size={16} />
+                  </button>
+                </ShortcutHint>
               </div>
             </div>
 

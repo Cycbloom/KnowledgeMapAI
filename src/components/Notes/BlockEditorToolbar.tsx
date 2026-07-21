@@ -40,6 +40,7 @@ import {
   useExtractConceptsMutation,
 } from "@/hooks/mutations";
 import { message } from "@/utils/messageHelper";
+import { ShortcutHint } from "../common/ShortcutHint";
 import { ExtractConceptsDialog } from "./ExtractConceptsDialog";
 import { markdownToTiptap } from "./markdownSerializer";
 import type { NoteType, NoteExtractedConcept, WritingAssistAction } from "@shared/types/note";
@@ -56,6 +57,8 @@ interface ToolbarButtonProps {
   isActive?: boolean;
   disabled?: boolean;
   loading?: boolean;
+  /** 由 ShortcutHint 通过 cloneElement 注入,转发到 DOM 以满足 SR 可访问性 */
+  "aria-keyshortcuts"?: string;
 }
 
 const ToolbarButton: React.FC<ToolbarButtonProps> = ({
@@ -65,11 +68,13 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   isActive = false,
   disabled = false,
   loading = false,
+  "aria-keyshortcuts": ariaKeyshortcuts,
 }) => (
   <button
     type="button"
     title={label}
     aria-label={label}
+    aria-keyshortcuts={ariaKeyshortcuts}
     onClick={onClick}
     disabled={disabled || loading}
     className={cn(
@@ -279,18 +284,22 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
         disabled={!editor.can().toggleCode()}
       />
       <ToolbarDivider />
-      <ToolbarButton
-        icon={Undo2}
-        label={t("notes.editor.toolbar.undo")}
-        onClick={() => editor.chain().focus().undo().run()}
-        disabled={!editor.can().undo()}
-      />
-      <ToolbarButton
-        icon={Redo2}
-        label={t("notes.editor.toolbar.redo")}
-        onClick={() => editor.chain().focus().redo().run()}
-        disabled={!editor.can().redo()}
-      />
+      <ShortcutHint actionId="undo">
+        <ToolbarButton
+          icon={Undo2}
+          label={t("notes.editor.toolbar.undo")}
+          onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().undo()}
+        />
+      </ShortcutHint>
+      <ShortcutHint actionId="redo">
+        <ToolbarButton
+          icon={Redo2}
+          label={t("notes.editor.toolbar.redo")}
+          onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().redo()}
+        />
+      </ShortcutHint>
       <ToolbarDivider />
       <ToolbarButton
         icon={ChevronUp}

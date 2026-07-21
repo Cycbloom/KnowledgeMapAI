@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { message } from "@/utils/messageHelper";
+import { useMicrofeedback } from "@/hooks/common/useMicrofeedback";
 
 interface CopyButtonProps {
   text: string;
@@ -9,14 +9,12 @@ interface CopyButtonProps {
 
 export function CopyButton({ text }: CopyButtonProps) {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const { isSuccess, run } = useMicrofeedback({ resetMs: 2000 });
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
+      await run(navigator.clipboard.writeText(text));
       message.success(t("common.copied"));
-      setTimeout(() => setCopied(false), 2000);
     } catch {
       console.error("Failed to copy");
       message.error(t("common.copyFailed"));
@@ -30,7 +28,7 @@ export function CopyButton({ text }: CopyButtonProps) {
       title={t("common.copyError")}
       aria-label={t("common.copyError")}
     >
-      {copied ? (
+      {isSuccess ? (
         <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
       ) : (
         <Copy className="w-4 h-4 text-gray-600 dark:text-gray-300" />

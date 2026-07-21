@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { useStore } from "../../store/useStore";
-import { Task } from "../../types";
+import { Task, TaskRuntimeProgress } from "../../types";
 import {
   isElectronProduction,
   getElectronApiUrl,
@@ -13,6 +13,57 @@ import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 const SSE_HEARTBEAT_TIMEOUT = 300000;
 const SSE_RECONNECT_DELAY_BASE = 1000;
 const SSE_RECONNECT_MAX_ATTEMPTS = 10;
+
+/**
+ * 将后端 SSE 推送的 progress payload（字段名：stage/progress/current_node/processed/total）
+ * 映射为前端 TaskRuntimeProgress（字段名：stage/percent/current/completed/total）。
+ *
+ * 后端 TaskProgress 接口带 [key: string]: unknown 索引签名，processor 可能传任意字段组合。
+ * 同时兼容前端字段名（percent/current/completed），便于未来后端统一命名后无需改动此处。
+ * 返回 undefined 表示无可识别的进度字段（前端降级为原 spinner，不抛错）。
+ */
+const mapToRuntimeProgress = (
+  raw: unknown,
+): TaskRuntimeProgress | undefined => {
+  if (!raw || typeof raw !== "object") {
+    return undefined;
+  }
+
+  const p = raw as Record<string, unknown>;
+
+  const stage = typeof p.stage === "string" ? p.stage : undefined;
+  const stageLabel =
+    typeof p.stageLabel === "string" ? p.stageLabel : undefined;
+  const percent =
+    typeof p.progress === "number"
+      ? p.progress
+      : typeof p.percent === "number"
+        ? p.percent
+        : undefined;
+  const current =
+    typeof p.current_node === "string"
+      ? p.current_node
+      : typeof p.current === "string"
+        ? p.current
+        : undefined;
+  const completed =
+    typeof p.processed === "number"
+      ? p.processed
+      : typeof p.completed === "number"
+        ? p.completed
+        : undefined;
+  const total = typeof p.total === "number" ? p.total : undefined;
+
+  const runtime: TaskRuntimeProgress = {};
+  if (stage !== undefined) runtime.stage = stage;
+  if (stageLabel !== undefined) runtime.stageLabel = stageLabel;
+  if (percent !== undefined) runtime.percent = percent;
+  if (current !== undefined) runtime.current = current;
+  if (completed !== undefined) runtime.completed = completed;
+  if (total !== undefined) runtime.total = total;
+
+  return Object.keys(runtime).length > 0 ? runtime : undefined;
+};
 
 export const useTaskEvents = () => {
   const queryClient = useQueryClient();
@@ -132,6 +183,7 @@ export const useTaskEvents = () => {
 
             if (data.type === "task_update") {
               const { taskId, status } = data;
+              const runtimeProgress = mapToRuntimeProgress(data.progress);
 
               const cachedTasks = queryClient.getQueryData<Task[]>(["tasks"]);
               const existingTask = cachedTasks?.find((t) => t.id === taskId);
@@ -161,6 +213,9 @@ export const useTaskEvents = () => {
                       ...newTasks[existingTaskIndex],
                       status,
                       updated_at: new Date().toISOString(),
+                      ...(runtimeProgress !== undefined
+                        ? { runtime_progress: runtimeProgress }
+                        : {}),
                     };
                     return newTasks;
                   } else {

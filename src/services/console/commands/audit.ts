@@ -1,5 +1,6 @@
 import type { Command, CommandResult, ParsedArgs, CommandContext } from '../types';
 import { consoleLogger } from '../ConsoleLogger';
+import i18n from '../../../i18n';
 
 const handleAuditList = async (args: ParsedArgs, _context: CommandContext): Promise<CommandResult> => {
   const limit = (args.options.limit as number) || 10;
@@ -9,7 +10,7 @@ const handleAuditList = async (args: ParsedArgs, _context: CommandContext): Prom
   if (logs.length === 0) {
     return {
       success: true,
-      message: '暂无审计日志',
+      message: i18n.t('console.noAuditLogs'),
     };
   }
 

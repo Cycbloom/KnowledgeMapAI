@@ -115,6 +115,12 @@ export interface MessageHidePayload {
   id?: string;
 }
 
+export interface MessageDismissPayload {
+  id: string;
+}
+
+export type MessageDismissAllPayload = Record<string, never>;
+
 export interface AchievementUnlockedPayload {
   id: string;
   title: string;
@@ -158,6 +164,8 @@ export interface FrontendEventMap extends Record<string, unknown> {
   focus_exit: FocusExitPayload;
   message_show: MessageShowPayload;
   message_hide: MessageHidePayload;
+  message_dismiss: MessageDismissPayload;
+  message_dismiss_all: MessageDismissAllPayload;
   achievement_unlocked: AchievementUnlockedPayload;
   focus_session_completed: FocusSessionCompletedPayload;
   celebration_burst: CelebrationBurstPayload;

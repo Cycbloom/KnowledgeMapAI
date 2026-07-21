@@ -155,5 +155,8 @@
   "discard": "Discard",
   "saving": "Saving...",
   "saved": "Saved",
-  "saveFailed": "Save failed"
+  "saveFailed": "Save failed",
+  "tutor": {
+    "empty": "No learning suggestions"
+  }
 }

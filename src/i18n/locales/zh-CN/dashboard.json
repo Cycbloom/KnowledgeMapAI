@@ -66,6 +66,11 @@
     "createOrImport": "创建一个新的知识图谱，或导入现有的 Markdown/JSON/OPML 文件。",
     "createFirst": "创建第一个图谱"
   },
+  "firstRunHint": {
+    "title": "欢迎使用 KnowledgeMap",
+    "description": "点击这里创建你的第一个知识图谱",
+    "dismiss": "知道了"
+  },
   "list": {
     "title": "标题",
     "description": "描述",

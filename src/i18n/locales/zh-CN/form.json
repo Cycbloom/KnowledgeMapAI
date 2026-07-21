@@ -1,0 +1,26 @@
+{
+  "validation": {
+    "required": "此项为必填",
+    "emailInvalid": "邮箱格式无效",
+    "emailRequired": "请输入邮箱",
+    "passwordRequired": "请输入密码",
+    "passwordTooShort": "密码至少 {{count}} 个字符",
+    "passwordMismatch": "两次输入的密码不一致",
+    "urlInvalid": "URL 格式无效",
+    "urlRequired": "请输入 URL",
+    "minLength": "至少需要 {{count}} 个字符",
+    "maxLength": "最多 {{count}} 个字符",
+    "numberRange": "数值应在 {{min}} 到 {{max}} 之间",
+    "yearInvalid": "请输入有效的 4 位年份",
+    "selectAtLeastOne": "请至少选择一项",
+    "selectKnowledgePoints": "请选择至少一个知识点",
+    "selectCardTypes": "请选择至少一种题型",
+    "titleRequired": "请输入标题",
+    "titleTooShort": "标题至少需要 {{count}} 个字符",
+    "patternMismatch": "格式不正确"
+  },
+  "error": {
+    "title": "加载失败",
+    "retry": "重试"
+  }
+}

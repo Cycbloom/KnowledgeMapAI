@@ -14,6 +14,7 @@ import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { ConfirmationModal, Skeleton } from "../components/common";
 import { VirtualList } from "../components/common/VirtualList";
 import { EmptyState } from "@/components/common/EmptyState";
+import { TaskProgressBar } from "@/components/common/TaskProgressBar";
 import { asyncConfirm } from "../utils/asyncConfirm";
 import { formatDate } from "@/utils/formatters";
 import { copyToClipboard } from "@/utils/clipboard";
@@ -129,6 +130,10 @@ export const Tasks = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+  const [batchDeleteProgress, setBatchDeleteProgress] = useState<{
+    completed: number;
+    total: number;
+  } | null>(null);
   const [showErrorDetails, setShowErrorDetails] = useState(false);
   const limit = 10;
   // 虚拟列表容器高度：基于视口高度估算可用列表区域，resize 时更新。
@@ -291,21 +296,23 @@ export const Tasks = () => {
     if (!confirmed) return;
 
     setIsBatchDeleting(true);
+    const ids = Array.from(selectedIds);
+    const total = ids.length;
+    setBatchDeleteProgress({ completed: 0, total });
     let successCount = 0;
     let failCount = 0;
 
-    const ids = Array.from(selectedIds);
-    await Promise.all(
-      ids.map(async (id) => {
-        try {
-          await deleteMutation.mutateAsync(id);
-          successCount++;
-        } catch {
-          failCount++;
-        }
-      }),
-    );
+    for (const [index, id] of ids.entries()) {
+      try {
+        await deleteMutation.mutateAsync(id);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+      setBatchDeleteProgress({ completed: index + 1, total });
+    }
 
+    setBatchDeleteProgress(null);
     setIsBatchDeleting(false);
     setSelectedIds(new Set());
     setIsSelectMode(false);
@@ -603,6 +610,13 @@ export const Tasks = () => {
                             </button>
                           </div>
 
+                          {task.status === "in_progress" && (
+                            <TaskProgressBar
+                              progress={task.runtime_progress}
+                              className="mb-2"
+                            />
+                          )}
+
                           <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1.5 pl-1">
                             <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
                               <span className="flex items-center gap-1">
@@ -765,7 +779,14 @@ export const Tasks = () => {
               ) : (
                 <Trash2 className="w-4 h-4" />
               )}
-              <span>{t("tasks.batchDelete")}</span>
+              <span>
+                {batchDeleteProgress !== null
+                  ? t("tasks.progress.deleting", {
+                      completed: batchDeleteProgress.completed,
+                      total: batchDeleteProgress.total,
+                    })
+                  : t("tasks.batchDelete")}
+              </span>
             </button>
             <button
               onClick={clearSelection}

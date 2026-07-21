@@ -29,7 +29,7 @@ import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
 import { EmptyState } from "@/components/common/EmptyState";
-import { SkeletonCard } from "@/components/common";
+import { SkeletonCard, FormError, ErrorState } from "@/components/common";
 
 const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
   knowledge: <GraduationCap size={20} />,
@@ -45,7 +45,7 @@ export const Templates = () => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { data: templates, isLoading } = useTemplates();
+  const { data: templates, isLoading, isFetching, isError, error, refetch } = useTemplates();
   const createTemplateMutation = useCreateTemplateMutation();
   const updateTemplateMutation = useUpdateTemplateMutation();
   const deleteTemplateMutation = useDeleteTemplateMutation();
@@ -342,12 +342,17 @@ export const Templates = () => {
               </div>
             </div>
 
-            {isLoading ? (
+            {isLoading && !isFetching ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <SkeletonCard key={i} />
                 ))}
               </div>
+            ) : isError ? (
+              <ErrorState
+                message={(error as Error).message}
+                onRetry={() => refetch()}
+              />
             ) : filteredTemplates.length === 0 ? (
               <EmptyState
                 title={t("templates.empty.noTemplates")}
@@ -510,6 +515,13 @@ export const Templates = () => {
                       : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
                   autoFocus
+                />
+                <FormError
+                  message={
+                    !newTemplateName
+                      ? t("form.validation.titleRequired")
+                      : undefined
+                  }
                 />
               </div>
 

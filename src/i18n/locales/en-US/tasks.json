@@ -36,7 +36,13 @@
   "embeddingComplete": "Embedding generation complete:",
   "successCount": "{{count}} successful",
   "failedCount": ", {{count}} failed",
-  "progress": "Progress:",
+  "progress": {
+    "label": "Progress:",
+    "deleting": "Deleting {{completed}}/{{total}}",
+    "completed": "Completed {{completed}}/{{total}}",
+    "current": "Current: {{current}}",
+    "indeterminate": "Processing"
+  },
   "depth": "Depth:",
   "graphsCreated": "{{count}} graphs created",
   "openGraph": "Open Graph",

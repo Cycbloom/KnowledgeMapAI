@@ -78,6 +78,31 @@ export interface Task {
   deleted_at: string;
   input_data?: Record<string, unknown> | string;
   error_message?: string;
+  /**
+   * 运行时进度数据（通过 SSE 推送，仅 in_progress 状态有值）。
+   * 与 progress_percentage 区分：后者是长期任务的计划完成百分比，
+   * 前者是当前运行中的 task processor 实时计算的进度（stage/percent/completed/total 等）。
+   */
+  runtime_progress?: TaskRuntimeProgress;
+}
+
+/**
+ * 任务运行时进度，由后端 task processor 计算并通过 SSE 推送到前端。
+ * 所有字段可选，processor 可只提供部分字段（如只传 percent 不传 completed/total）。
+ */
+export interface TaskRuntimeProgress {
+  /** 阶段标识（init / generating / expanding / deep_expanding 等） */
+  stage?: string;
+  /** 阶段中文文案，便于前端直接展示 */
+  stageLabel?: string;
+  /** 进度百分比 0-100 */
+  percent?: number;
+  /** 当前处理的项标识（如节点名） */
+  current?: string;
+  /** 已完成数 */
+  completed?: number;
+  /** 总数 */
+  total?: number;
 }
 
 export interface PeriodicTask {

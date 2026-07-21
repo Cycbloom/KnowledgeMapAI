@@ -12,7 +12,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useTheme } from "../../hooks";
-import { SkeletonCard } from "../../components/common";
+import { SkeletonCard, EmptyState } from "../../components/common";
 import { useQuizSets, useDeleteQuizSetMutation } from '../../hooks/queries';
 import { useGraphs } from '../../hooks/queries/useGraphQueries';
 import { QuizCard } from './QuizCard';
@@ -253,25 +253,14 @@ export const QuizList: React.FC<QuizListProps> = ({
 
       <div className="p-4">
         {filteredQuizzes.length === 0 ? (
-          <div
-            className={`p-16 text-center flex flex-col items-center justify-center gap-4 ${
-              isDark ? 'text-slate-500' : 'text-gray-500'
-            }`}
-          >
-            <div className={`p-4 rounded-full ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
-              <Layers size={32} className="opacity-50" />
-            </div>
-            <p>{t('study.quizList.noQuizzesFound')}</p>
-            {onCreateQuiz && (
-              <button
-                onClick={onCreateQuiz}
-                className="mt-2 flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-              >
-                <PlusCircle size={18} />
-                {t('study.quizList.createFirstQuiz')}
-              </button>
-            )}
-          </div>
+          <EmptyState
+            icon={<Layers />}
+            iconWrapper
+            size="md"
+            illustration="empty"
+            title={t('study.quizList.noQuizzesFound')}
+            action={onCreateQuiz ? { label: t('study.quizList.createFirstQuiz'), onClick: onCreateQuiz } : undefined}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <AnimatePresence mode="popLayout">

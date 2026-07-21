@@ -269,6 +269,10 @@ export class AsyncTaskService {
         status,
         result,
         error: errorMsg,
+        // 透传 processor 计算的运行时进度（stage/percent/completed/total 等），
+        // 前端 useTaskEvents 将其写入 task.runtime_progress 字段。
+        // progress 为 undefined/null 时 JSON.stringify 会省略该字段，前端降级为原 spinner。
+        progress: progress ?? undefined,
       });
     }
   }

@@ -1,0 +1,28 @@
+{
+  "graph": {
+    "snapshotCreated": "Snapshot created",
+    "snapshotCreateFailed": "Failed to create snapshot",
+    "snapshotRestored": "Snapshot restored",
+    "snapshotRestoreFailed": "Failed to restore snapshot",
+    "snapshotDeleted": "Snapshot deleted",
+    "snapshotDeleteFailed": "Failed to delete snapshot",
+    "snapshotListLoaded": "Snapshot list loaded",
+    "snapshotListLoadFailed": "Failed to load snapshot list",
+    "relationDeleted": "Relation deleted",
+    "branchCreated": "Branch created",
+    "branchCreateFailed": "Failed to create branch",
+    "branchMerged": "Merge successful",
+    "branchMergeFailed": "Merge failed",
+    "branchDeleted": "Branch deleted",
+    "branchDeleteFailed": "Failed to delete branch"
+  },
+  "network": {
+    "offline": "Network disconnected",
+    "restored": "Network restored"
+  },
+  "update": {
+    "newVersionAvailable": "New version available, refresh to update",
+    "refreshNow": "Refresh now",
+    "later": "Later"
+  }
+}

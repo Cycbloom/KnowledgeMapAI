@@ -6,6 +6,7 @@ import { GraphEditorState } from "../graphEditor";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from "../../services/api";
 import { useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { UseMutationResult } from "@tanstack/react-query";
 
 interface TutorChatMessage {
@@ -50,6 +51,8 @@ export const useTutorOperations = ({
   } = state;
 
   const { createNodeMutation, createEdgeMutation } = mutations;
+
+  const { t } = useTranslation();
 
   const chatSessionIdRef = useRef<string>(crypto.randomUUID());
 
@@ -299,7 +302,7 @@ export const useTutorOperations = ({
       } else {
         frontendEventBus.publish("message_show", {
           type: "info",
-          content: "暂无学习建议",
+          content: t("common.tutor.empty"),
         });
       }
     } catch (error: unknown) {

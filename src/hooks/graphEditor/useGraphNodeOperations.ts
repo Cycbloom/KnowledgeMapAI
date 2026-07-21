@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { Node, Edge, NodeLevel } from '../../types';
 import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
 import { HistoryAction } from '../common/useHistory';
@@ -52,6 +52,8 @@ export const useGraphNodeOperations = ({
     deleteEdgeMutation,
     batchDeleteNodesMutation
   } = mutations;
+
+  const [batchDeleteProgress, setBatchDeleteProgress] = useState<{ completed: number; total: number } | null>(null);
 
   const handleSaveNode = async (options?: { exitToDetail?: boolean }) => {
     if (!id) return;
@@ -244,12 +246,12 @@ export const useGraphNodeOperations = ({
 
   const handleBatchDelete = () => {
     if (!id || selectedNodeIds.size === 0) return;
-    
+
     const batchAction: HistoryAction = {
       type: 'BATCH',
       payload: []
     };
-    
+
     Array.from(selectedNodeIds).forEach(nodeId => {
       const node = nodes.find(n => n.id === nodeId);
       if (node) {
@@ -260,17 +262,28 @@ export const useGraphNodeOperations = ({
         });
       }
     });
-    
+
     setConfirmModal({
       isOpen: true,
       title: '批量删除',
       message: `确定要删除选中的 ${selectedNodeIds.size} 个节点吗?`,
       onConfirm: () => {
         const nodeIds = Array.from(selectedNodeIds);
-        
+        const total = nodeIds.length;
+        setBatchDeleteProgress({ completed: 0, total });
+
         asyncHandler(
           async () => {
-            await batchDeleteNodesMutation.mutateAsync({ nodeIds, graphId: id });
+            let completed = 0;
+            for (const nodeId of nodeIds) {
+              try {
+                await batchDeleteNodesMutation.mutateAsync({ nodeIds: [nodeId], graphId: id });
+              } catch (err) {
+                console.error(err);
+              }
+              completed += 1;
+              setBatchDeleteProgress({ completed, total });
+            }
             if (batchAction.payload.length > 0) {
               record(batchAction);
             }
@@ -283,7 +296,10 @@ export const useGraphNodeOperations = ({
             loadingSetter: setLoading,
             successMessage: '批量删除成功',
             errorMessage: '批量删除失败',
-            onFinally: () => setConfirmModal({ ...state.confirmModal, isOpen: false })
+            onFinally: () => {
+              setConfirmModal({ ...state.confirmModal, isOpen: false });
+              setBatchDeleteProgress(null);
+            }
           }
         );
       }
@@ -386,6 +402,7 @@ export const useGraphNodeOperations = ({
     handleUpdateNode,
     handleCloseSidebar,
     handleToggleCollapse,
+    batchDeleteProgress,
     handleStartCreate: () => {
       setNodeForm({
         title: '',

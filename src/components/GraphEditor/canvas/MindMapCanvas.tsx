@@ -32,6 +32,8 @@ import { NodePreviewCard } from "../shared/NodePreviewCard";
 import { MobileNodePreviewCard } from "../mobile/MobileNodePreviewCard";
 import { EdgeContextMenu } from "../context-menu/EdgeContextMenu";
 import { EdgeEditDialog } from "../modals/EdgeEditDialog";
+import { EmptyState } from "../../common";
+import { Network } from "lucide-react";
 import {
   useSpatialGrid,
   useViewportBounds,
@@ -966,15 +968,15 @@ export const MindMapCanvas = React.memo(
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             {nodes.length === 0 ? (
-              <>
-                <div className="text-6xl mb-4">📊</div>
-                <p className="text-gray-600 dark:text-gray-400 mb-2">
-                  {t('graphEditor.mindMap.noNodes')}
-                </p>
-                <p className="text-gray-500 dark:text-gray-500 text-sm">
-                  {t('graphEditor.mindMap.addNodeHint')}
-                </p>
-              </>
+              <EmptyState
+                variant="panel"
+                size="lg"
+                icon={<Network className="w-8 h-8 text-gray-400 dark:text-gray-500" />}
+                iconWrapper
+                illustration="empty"
+                title={t('graphEditor.mindMap.noNodes')}
+                description={t('graphEditor.mindMap.addNodeHint')}
+              />
             ) : isLayoutCalculating ? (
               <>
                 <div className="flex flex-col items-center gap-3 mx-auto mb-4">
@@ -990,15 +992,12 @@ export const MindMapCanvas = React.memo(
                 </p>
               </>
             ) : (
-              <>
-                <div className="text-5xl mb-4">⚠️</div>
-                <p className="text-gray-600 dark:text-gray-400 mb-2">
-                  {t('graphEditor.mindMap.layoutFailed', '布局计算失败，请刷新重试')}
-                </p>
-                <p className="text-gray-500 dark:text-gray-500 text-sm">
-                  {t('graphEditor.mindMap.layoutFailedHint', '正在使用备用方案重新计算...')}
-                </p>
-              </>
+              <EmptyState
+                variant="panel"
+                illustration="error"
+                title={t('graphEditor.mindMap.layoutFailed', '布局计算失败，请刷新重试')}
+                description={t('graphEditor.mindMap.layoutFailedHint', '正在使用备用方案重新计算...')}
+              />
             )}
           </div>
         </div>

@@ -36,7 +36,13 @@
   "embeddingComplete": "嵌入生成完成:",
   "successCount": "成功 {{count}} 个",
   "failedCount": "，失败 {{count}} 个",
-  "progress": "进度:",
+  "progress": {
+    "label": "进度:",
+    "deleting": "删除中 {{completed}}/{{total}}",
+    "completed": "已完成 {{completed}}/{{total}}",
+    "current": "当前：{{current}}",
+    "indeterminate": "处理中"
+  },
   "depth": "深度:",
   "graphsCreated": "已创建 {{count}} 个图谱",
   "openGraph": "打开图谱",

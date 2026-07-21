@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
@@ -111,6 +111,14 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [citationText, setCitationText] = useState("");
   const [isHovered, setIsHovered] = useState(false);
+  const [yearInput, setYearInput] = useState<string>(
+    metadata.year?.toString() ?? "",
+  );
+  const [yearError, setYearError] = useState<string>("");
+
+  useEffect(() => {
+    setYearInput(metadata.year?.toString() ?? "");
+  }, [metadata.year]);
 
   const status = getFieldStatus(metadata);
 
@@ -151,14 +159,27 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
 
   const handleYearChange = useCallback(
     (value: string) => {
-      const year = value ? parseInt(value, 10) : undefined;
-      if (value && (isNaN(year!) || year! < 1000 || year! > 9999)) {
+      setYearInput(value);
+      if (!value) {
+        setYearError("");
+        handleFieldChange("year", undefined);
         return;
       }
-      handleFieldChange("year", year);
+      if (/^\d{4}$/.test(value)) {
+        setYearError("");
+        handleFieldChange("year", parseInt(value, 10));
+      } else {
+        setYearError(t("form.validation.yearInvalid"));
+      }
     },
-    [handleFieldChange],
+    [handleFieldChange, t],
   );
+
+  const handleYearBlur = useCallback(() => {
+    if (yearInput && !/^\d{4}$/.test(yearInput)) {
+      setYearError(t("form.validation.yearInvalid"));
+    }
+  }, [yearInput, t]);
 
   const handleAutoDetect = useCallback(async () => {
     if (!citationText.trim()) {
@@ -448,6 +469,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
     icon: React.ElementType,
     children: React.ReactNode,
     hintKey?: string,
+    error?: string,
   ) => {
     const Icon = icon;
     return (
@@ -464,12 +486,21 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
           {t(labelKey)}
         </label>
         {children}
-        {hintKey && (
+        {error ? (
           <p
-            className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+            role="alert"
+            className="text-xs text-red-500 dark:text-red-400"
           >
-            {t(hintKey)}
+            {error}
           </p>
+        ) : (
+          hintKey && (
+            <p
+              className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+            >
+              {t(hintKey)}
+            </p>
+          )
         )}
       </div>
     );
@@ -604,23 +635,28 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
               "literatureExtract.metadata.fields.year",
               Calendar,
               <input
-                type="number"
-                value={metadata.year || ""}
+                type="text"
+                inputMode="numeric"
+                value={yearInput}
                 onChange={(e) => handleYearChange(e.target.value)}
+                onBlur={handleYearBlur}
                 placeholder={t("literatureExtract.metadata.placeholders.year")}
                 disabled={disabled}
-                min={1000}
-                max={9999}
+                aria-invalid={!!yearError}
                 className={`
                   w-full px-3 py-2 text-sm border rounded-lg transition-colors
                   ${
-                    isDark
-                      ? "border-gray-600 bg-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                      : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-100 dark:placeholder-slate-500"
+                    yearError
+                      ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                      : isDark
+                        ? "border-gray-600 bg-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                        : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-100 dark:placeholder-slate-500"
                   }
                   ${disabled ? "opacity-50 cursor-not-allowed" : ""}
                 `}
               />,
+              undefined,
+              yearError,
             )}
 
             {renderFormField(

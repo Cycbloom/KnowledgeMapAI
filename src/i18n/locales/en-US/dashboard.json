@@ -66,6 +66,11 @@
     "createOrImport": "Create a new knowledge graph, or import existing Markdown/JSON/OPML files.",
     "createFirst": "Create First Graph"
   },
+  "firstRunHint": {
+    "title": "Welcome to KnowledgeMap",
+    "description": "Click here to create your first knowledge graph",
+    "dismiss": "Got it"
+  },
   "list": {
     "title": "Title",
     "description": "Description",

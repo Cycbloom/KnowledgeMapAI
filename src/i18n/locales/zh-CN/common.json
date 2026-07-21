@@ -155,5 +155,8 @@
   "discard": "丢弃",
   "saving": "保存中...",
   "saved": "已保存",
-  "saveFailed": "保存失败"
+  "saveFailed": "保存失败",
+  "tutor": {
+    "empty": "暂无学习建议"
+  }
 }

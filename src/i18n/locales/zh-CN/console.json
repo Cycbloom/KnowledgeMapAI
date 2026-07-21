@@ -31,6 +31,8 @@
   },
   "noHistoryTitle": "暂无历史记录",
   "noHistoryDesc": "执行的命令将出现在这里",
+  "noHistory": "暂无命令历史记录",
+  "noAuditLogs": "暂无审计日志",
   "noSearchResultsTitle": "没有匹配的历史记录",
   "noSearchResultsDesc": "尝试更换搜索关键词",
   "performance": {

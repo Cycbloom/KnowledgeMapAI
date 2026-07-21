@@ -21,6 +21,7 @@ import { useGraphEditorPreferencesStore } from './store/useGraphEditorPreference
 import { offlineMutationQueue, OfflineError } from './utils/offlineMutations'
 import { migrateLegacyQueue } from './utils/backgroundSync'
 import { queryPersister } from './utils/queryPersister'
+import { message } from './utils/messageHelper'
 import './store/storeIntegrations'
 import './index.css'
 import 'katex/dist/katex.min.css'
@@ -51,9 +52,14 @@ export const queryClient = new QueryClient({
         throw new OfflineError();
       }
     },
-    onError: (error) => {
-      // OfflineError 已入队，不是真正的错误，不触发 captureException
+    onError: (error, _variables, _context, mutation) => {
+      // OfflineError 已入队，不是真正的错误，不触发 captureException / toast
       if (error instanceof OfflineError) return;
+      // meta.toastOnError：mutation 声明失败时自动弹错误 toast
+      if (mutation?.meta?.toastOnError) {
+        const msg = error instanceof Error ? error.message : String(error);
+        message.error(msg);
+      }
       captureException(error);
     },
   }),

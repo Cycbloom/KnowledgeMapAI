@@ -30,7 +30,7 @@ import { useTheme } from "../hooks";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/formatters";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
-import { SkeletonCard } from "@/components/common";
+import { EmptyState, ErrorState, SkeletonCard } from "@/components/common";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
 
 type PathStatus = LearningPathStatus | "all";
@@ -92,7 +92,7 @@ export const LearningPaths = () => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { data: paths, isLoading } = useLearningPaths();
+  const { data: paths, isLoading, isError, error, refetch, isFetching } = useLearningPaths();
   const createMutation = useCreateLearningPathMutation();
   const updateMutation = useUpdateLearningPathMutation();
   const deleteMutation = useDeleteLearningPathMutation();
@@ -289,34 +289,35 @@ export const LearningPaths = () => {
           </div>
         </div>
 
-        {isLoading ? (
+        {isLoading && !isFetching ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <SkeletonCard key={i} />
             ))}
           </div>
+        ) : isError ? (
+          <ErrorState message={(error as Error).message} onRetry={() => refetch()} />
         ) : filteredPaths.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-            <Route className="w-16 h-16 mb-4 opacity-30" />
-            <p className="text-lg mb-2">
-              {searchQuery || selectedStatus !== "all"
-                ? t("learningPaths.empty.noResults")
-                : t("learningPaths.empty.noPaths")}
-            </p>
-            <p className="text-sm mb-4">
-              {searchQuery || selectedStatus !== "all"
-                ? t("learningPaths.empty.tryDifferent")
-                : t("learningPaths.empty.createFirst")}
-            </p>
-            {!searchQuery && selectedStatus === "all" && (
-              <button
-                onClick={() => setIsCreating(true)}
-                className="px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors"
-              >
-                {t("learningPaths.actions.createPath")}
-              </button>
-            )}
-          </div>
+          searchQuery || selectedStatus !== "all" ? (
+            <EmptyState
+              illustration="search"
+              title={t("learningPaths.empty.noResults")}
+              description={t("learningPaths.empty.tryDifferent")}
+            />
+          ) : (
+            <EmptyState
+              icon={<Route />}
+              iconWrapper
+              size="md"
+              illustration="empty"
+              title={t("learningPaths.empty.noPaths")}
+              description={t("learningPaths.empty.tryDifferent")}
+              action={{
+                label: t("learningPaths.empty.createFirst"),
+                onClick: () => setIsCreating(true),
+              }}
+            />
+          )
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPaths.map((path) => (

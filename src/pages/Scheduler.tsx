@@ -43,7 +43,7 @@ import { message } from "../utils/messageHelper";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { UserTask, CreateUserTaskData, QueueData } from "@shared/types";
 import { api } from "../services/api";
-import { SkeletonCard, ErrorBoundary } from "../components/common";
+import { SkeletonCard, ErrorBoundary, ErrorState } from "../components/common";
 import { ShortcutHint } from "../components/common/ShortcutHint";
 
 const HorizontalQueueView = lazy(() =>
@@ -102,6 +102,14 @@ const LoadingFallback = () => (
       ))}
     </div>
   </div>
+);
+
+const SectionErrorFallback = (error: Error, resetErrorBoundary: () => void) => (
+  <ErrorState
+    message={error.message}
+    onRetry={resetErrorBoundary}
+    variant="panel"
+  />
 );
 
 type ViewType = "queue" | "kanban" | "list" | "timeline";
@@ -654,7 +662,7 @@ export const Scheduler: React.FC = () => {
         )}
 
         <main ref={mainRef} className="flex-1 min-h-0 flex flex-col p-3 sm:p-6">
-          {isLoading ? (
+          {isLoading && !isFetching ? (
             <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="max-w-7xl mx-auto p-3 sm:p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -726,26 +734,7 @@ export const Scheduler: React.FC = () => {
                       timeline: (
                         <Suspense fallback={<LoadingFallback />}>
                           <ErrorBoundary
-                            fallbackRender={(error, resetErrorBoundary) => (
-                              <div className="p-6 border border-red-300 rounded-xl bg-red-50 dark:bg-red-900/20 dark:border-red-700 text-center">
-                                <div className="flex items-center justify-center gap-2 text-red-700 dark:text-red-400 font-medium">
-                                  <AlertCircle size={20} />
-                                  <span>视图加载失败</span>
-                                </div>
-                                <p className="text-sm text-red-600 dark:text-red-300 mt-2 break-words">
-                                  {error.message}
-                                </p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                                  可点击下方视图切换按钮切换到其他视图
-                                </p>
-                                <button
-                                  onClick={resetErrorBoundary}
-                                  className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
-                                >
-                                  重试
-                                </button>
-                              </div>
-                            )}
+                            fallbackRender={SectionErrorFallback}
                           >
                             <TimelineView
                               tasks={allTasks}
@@ -757,26 +746,7 @@ export const Scheduler: React.FC = () => {
                       kanban: (
                         <Suspense fallback={<LoadingFallback />}>
                           <ErrorBoundary
-                            fallbackRender={(error, resetErrorBoundary) => (
-                              <div className="p-6 border border-red-300 rounded-xl bg-red-50 dark:bg-red-900/20 dark:border-red-700 text-center">
-                                <div className="flex items-center justify-center gap-2 text-red-700 dark:text-red-400 font-medium">
-                                  <AlertCircle size={20} />
-                                  <span>视图加载失败</span>
-                                </div>
-                                <p className="text-sm text-red-600 dark:text-red-300 mt-2 break-words">
-                                  {error.message}
-                                </p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                                  可点击下方视图切换按钮切换到其他视图
-                                </p>
-                                <button
-                                  onClick={resetErrorBoundary}
-                                  className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
-                                >
-                                  重试
-                                </button>
-                              </div>
-                            )}
+                            fallbackRender={SectionErrorFallback}
                           >
                             <KanbanView
                               tasks={allTasks}
@@ -788,26 +758,7 @@ export const Scheduler: React.FC = () => {
                       list: (
                         <Suspense fallback={<LoadingFallback />}>
                           <ErrorBoundary
-                            fallbackRender={(error, resetErrorBoundary) => (
-                              <div className="p-6 border border-red-300 rounded-xl bg-red-50 dark:bg-red-900/20 dark:border-red-700 text-center">
-                                <div className="flex items-center justify-center gap-2 text-red-700 dark:text-red-400 font-medium">
-                                  <AlertCircle size={20} />
-                                  <span>视图加载失败</span>
-                                </div>
-                                <p className="text-sm text-red-600 dark:text-red-300 mt-2 break-words">
-                                  {error.message}
-                                </p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                                  可点击下方视图切换按钮切换到其他视图
-                                </p>
-                                <button
-                                  onClick={resetErrorBoundary}
-                                  className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
-                                >
-                                  重试
-                                </button>
-                              </div>
-                            )}
+                            fallbackRender={SectionErrorFallback}
                           >
                             <ListView
                               tasks={allTasks}

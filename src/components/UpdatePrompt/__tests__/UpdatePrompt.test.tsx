@@ -1,159 +1,101 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { useState, useEffect } from "react";
-import type { ReactNode } from "react";
-import toast from "react-hot-toast";
+import { render } from "@testing-library/react";
 import { UpdatePrompt } from "../UpdatePrompt";
 
 // 共享 mock 状态：通过 vi.hoisted 确保 vi.mock 工厂可访问
 const swState = vi.hoisted(() => ({
   needRefresh: false,
-  setNeedRefresh: vi.fn(),
   updateServiceWorker: vi.fn().mockResolvedValue(undefined),
 }));
 
-// toast 共享状态：捕获 toast 回调内容并通知 ToastContainer 重渲染
-const toastShared = vi.hoisted(() => ({
-  currentContent: null as ReactNode | null,
-  listeners: new Set<() => void>(),
+// message helper mock：spy info/dismiss 调用
+const messageMock = vi.hoisted(() => ({
+  info: vi.fn(),
+  dismiss: vi.fn(),
 }));
 
 vi.mock("virtual:pwa-register/react", () => ({
   useRegisterSW: () => ({
-    needRefresh: [swState.needRefresh, swState.setNeedRefresh],
+    needRefresh: [swState.needRefresh, vi.fn()],
     updateServiceWorker: swState.updateServiceWorker,
   }),
 }));
 
-vi.mock("react-hot-toast", () => {
-  const defaultFn = Object.assign(
-    vi.fn((content: unknown, options?: { id?: string }) => {
-      const id = options?.id ?? "test-toast-id";
-      if (typeof content === "function") {
-        toastShared.currentContent = (
-          content as (t: { id: string; visible: boolean }) => ReactNode
-        )({ id, visible: true });
-      } else {
-        toastShared.currentContent = content as ReactNode;
-      }
-      toastShared.listeners.forEach((l) => l());
-      return id;
-    }),
-    {
-      dismiss: vi.fn(() => {
-        toastShared.currentContent = null;
-        toastShared.listeners.forEach((l) => l());
-      }),
-    },
-  );
-  return { default: defaultFn };
-});
+vi.mock("@/utils/messageHelper", () => ({
+  message: {
+    info: messageMock.info,
+    dismiss: messageMock.dismiss,
+  },
+}));
 
-// 辅助组件：将 mock 捕获的 toast 内容渲染到 DOM 以便测试交互
-function ToastContainer() {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const listener = () => setTick((t) => t + 1);
-    toastShared.listeners.add(listener);
-    // 若 UpdatePrompt 的 useEffect 已先于本组件注册监听器而调用 toast，
-    // currentContent 已被设置但本组件尚未收到通知，这里主动触发一次重渲染。
-    if (toastShared.currentContent !== null) {
-      listener();
-    }
-    return () => {
-      toastShared.listeners.delete(listener);
-    };
-  }, []);
-  if (!toastShared.currentContent) return null;
-  return <>{toastShared.currentContent}</>;
-}
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+    i18n: { language: "zh-CN" },
+  }),
+}));
 
 describe("UpdatePrompt", () => {
   beforeEach(() => {
     swState.needRefresh = false;
-    swState.setNeedRefresh = vi.fn();
     swState.updateServiceWorker = vi.fn().mockResolvedValue(undefined);
-    toastShared.currentContent = null;
-    toastShared.listeners.clear();
+    messageMock.info.mockClear();
+    messageMock.dismiss.mockClear();
   });
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it("应该 needRefresh 为 false 时不显示 toast", () => {
+  it("应该 needRefresh 为 false 时不调用 message.info", () => {
     swState.needRefresh = false;
 
-    render(
-      <>
-        <UpdatePrompt />
-        <ToastContainer />
-      </>,
-    );
+    render(<UpdatePrompt />);
 
-    expect(screen.queryByTestId("update-prompt-toast")).not.toBeInTheDocument();
-    expect(toast).not.toHaveBeenCalled();
+    expect(messageMock.info).not.toHaveBeenCalled();
   });
 
-  it("应该 needRefresh 为 true 时显示含新版本可用文本的 toast", async () => {
+  it("应该 needRefresh 为 true 时调用 message.info 并传入新版本可用文本与 id", () => {
     swState.needRefresh = true;
 
-    render(
-      <>
-        <UpdatePrompt />
-        <ToastContainer />
-      </>,
-    );
+    render(<UpdatePrompt />);
 
-    const toastEl = await screen.findByTestId("update-prompt-toast");
-    expect(toastEl).toBeVisible();
-    expect(screen.getByText("新版本可用")).toBeVisible();
+    expect(messageMock.info).toHaveBeenCalledTimes(1);
+    expect(messageMock.info).toHaveBeenCalledWith(
+      "toast.update.newVersionAvailable",
+      expect.objectContaining({
+        id: "sw-update",
+        duration: Infinity,
+        action: expect.objectContaining({
+          label: "toast.update.refreshNow",
+        }),
+      }),
+    );
   });
 
-  it("应该点击立即刷新后调用 updateServiceWorker(true)", async () => {
+  it("应该 action.onClick 调用 updateServiceWorker(true)", () => {
     swState.needRefresh = true;
 
-    render(
-      <>
-        <UpdatePrompt />
-        <ToastContainer />
-      </>,
-    );
+    render(<UpdatePrompt />);
 
-    const refreshButton = await screen.findByTestId("update-prompt-refresh");
-    fireEvent.click(refreshButton);
+    expect(messageMock.info).toHaveBeenCalledTimes(1);
+    const options = messageMock.info.mock.calls[0][1] as {
+      action: { onClick: () => void };
+    };
+    options.action.onClick();
 
-    await waitFor(() => {
-      expect(swState.updateServiceWorker).toHaveBeenCalledWith(true);
-    });
+    expect(swState.updateServiceWorker).toHaveBeenCalledWith(true);
   });
 
-  it("应该点击稍后后 toast 消失", async () => {
+  it("应该卸载时调用 message.dismiss('sw-update')", () => {
     swState.needRefresh = true;
 
-    render(
-      <>
-        <UpdatePrompt />
-        <ToastContainer />
-      </>,
-    );
+    const { unmount } = render(<UpdatePrompt />);
+    expect(messageMock.dismiss).not.toHaveBeenCalledWith("sw-update");
 
-    // 等待 toast 显示
-    await screen.findByTestId("update-prompt-toast");
+    unmount();
 
-    // 点击"稍后"
-    const dismissButton = screen.getByTestId("update-prompt-dismiss");
-    fireEvent.click(dismissButton);
-
-    // toast 应消失
-    await waitFor(() => {
-      expect(
-        screen.queryByTestId("update-prompt-toast"),
-      ).not.toBeInTheDocument();
-    });
-
-    // 应调用 setNeedRefresh(false)
-    expect(swState.setNeedRefresh).toHaveBeenCalledWith(false);
+    expect(messageMock.dismiss).toHaveBeenCalledWith("sw-update");
   });
 });

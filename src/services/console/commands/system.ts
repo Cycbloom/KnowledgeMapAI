@@ -1,5 +1,6 @@
 import type { Command, CommandResult, ParsedArgs, CommandContext, CommandHistoryItem } from '../types';
 import { commandRegistry } from '../CommandRegistry';
+import i18n from '../../../i18n';
 
 const VERSION = '1.0.0';
 const APP_NAME = 'KnowledgeMap 控制台';
@@ -104,7 +105,7 @@ const handleHistory = async (args: ParsedArgs, _context: CommandContext): Promis
   let historyText = '📜 命令历史\n\n';
 
   if (historyList.length === 0) {
-    historyText += '暂无命令历史记录';
+    historyText += i18n.t('console.noHistory');
   } else {
     historyText += `┌────┬───────────────────────────────┬───────────┬──────┐\n`;
     historyText += `│ #  │ 命令                          │ 时间      │ 状态  │\n`;

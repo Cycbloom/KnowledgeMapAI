@@ -13,13 +13,13 @@ interface Achievement extends BaseAchievement {
 }
 import {
   Trophy, Medal, Target, Flame, Zap, Crown, Timer, Brain,
-  GraduationCap, BookOpen, Star, Lock, CheckCircle2, Award, Calendar, Ticket, LucideIcon, AlertCircle
+  GraduationCap, BookOpen, Star, Lock, CheckCircle2, Award, Calendar, Ticket, LucideIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PeriodicTaskList } from '../components/Achievements/PeriodicTaskList';
 import { PassProgress } from '../components/Achievements/PassProgress';
 import { StreakDisplay } from '../components/Achievements/StreakDisplay';
-import { Skeleton, SkeletonCard } from '../components/common';
+import { Skeleton, SkeletonCard, ErrorState } from '../components/common';
 
 const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   Flame, Zap, Crown, Timer, Brain, GraduationCap, BookOpen, Trophy, Medal, Target, Star
@@ -133,19 +133,20 @@ export const Achievements = () => {
     );
   }
 
-  if (hasError) return (
-    <div className="p-8 flex flex-col items-center justify-center text-center">
-      <AlertCircle size={48} className="text-red-500 mb-4" />
-      <p className="text-red-600 dark:text-red-400 mb-4">{t('achievements.loadError')}</p>
-      <button
-        type="button"
-        onClick={() => { void refetchAchievements(); void refetchDailyTasks(); void refetchPeriodicTasks(); void refetchPassData(); }}
-        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-      >
-        {t('achievements.retry')}
-      </button>
-    </div>
-  );
+  if (hasError) {
+    const firstError = achievementsError || dailyTasksError || periodicTasksError || passDataError;
+    return (
+      <ErrorState
+        message={(firstError as Error).message}
+        onRetry={() => {
+          void refetchAchievements();
+          void refetchDailyTasks();
+          void refetchPeriodicTasks();
+          void refetchPassData();
+        }}
+      />
+    );
+  }
 
   const groupedAchievements = achievements?.reduce((acc: Record<string, Achievement[]>, curr: Achievement) => {
     if (!acc[curr.category]) acc[curr.category] = [];

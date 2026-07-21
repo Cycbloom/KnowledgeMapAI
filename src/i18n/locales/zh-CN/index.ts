@@ -55,6 +55,8 @@ import quiz from './quiz.json';
 import conceptAggregation from './conceptAggregation.json';
 import appearance from './appearance.json';
 import shortcuts from './shortcuts.json';
+import form from './form.json';
+import toast from './toast.json';
 
 const zhCN = {
   dashboard,
@@ -114,6 +116,8 @@ const zhCN = {
   conceptAggregation,
   appearance,
   shortcuts,
+  form,
+  toast,
 };
 
 export default zhCN;

@@ -8,6 +8,7 @@ interface DashboardBatchActionsProps {
   isPartialSelected: boolean;
   selectedCount: number;
   isBatchDeleting: boolean;
+  batchDeleteProgress?: { completed: number; total: number } | null;
   onToggleSelectAll: () => void;
   onBatchDelete: () => void;
   onClearSelection: () => void;
@@ -19,6 +20,7 @@ export const DashboardBatchActions: React.FC<DashboardBatchActionsProps> = ({
   isPartialSelected,
   selectedCount,
   isBatchDeleting,
+  batchDeleteProgress,
   onToggleSelectAll,
   onBatchDelete,
   onClearSelection,
@@ -78,9 +80,14 @@ export const DashboardBatchActions: React.FC<DashboardBatchActionsProps> = ({
             aria-label={t("dashboard.batch.batchDelete")}
           >
             <Trash2 size={16} aria-hidden="true" />
-            {isBatchDeleting
-              ? t("dashboard.batch.deleting")
-              : t("dashboard.batch.batchDelete")}
+            {batchDeleteProgress
+              ? t("tasks.progress.deleting", {
+                  completed: batchDeleteProgress.completed,
+                  total: batchDeleteProgress.total,
+                })
+              : isBatchDeleting
+                ? t("dashboard.batch.deleting")
+                : t("dashboard.batch.batchDelete")}
           </button>
           <button
             onClick={onClearSelection}

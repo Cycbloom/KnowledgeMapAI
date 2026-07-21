@@ -29,7 +29,7 @@ import { PromptConfigContent } from '../PromptConfig';
 import type { QuizSetConfig } from '@shared/types/quiz';
 import type { User } from '@shared/types/user';
 import { asyncConfirm } from '@/utils/asyncConfirm';
-import { ModalShell } from '../common';
+import { ModalShell, FormError } from '../common';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 
 interface LearningPathStageNode {
@@ -148,6 +148,17 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
       totalQuestions > 0
     );
   }, [title, config.cardTypes, selectedKnowledgePoints, totalQuestions]);
+
+  const disabledReason = useMemo(() => {
+    if (isGenerating) return undefined;
+    if (selectedKnowledgePoints.length === 0) {
+      return t('form.validation.selectKnowledgePoints');
+    }
+    if (config.cardTypes.length === 0) {
+      return t('form.validation.selectCardTypes');
+    }
+    return undefined;
+  }, [isGenerating, selectedKnowledgePoints, config.cardTypes, t]);
 
   const resetForm = useCallback(() => {
     setFormData({
@@ -572,42 +583,45 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                 )}
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={handleClose}
-                  disabled={isGenerating}
-                  className={`px-6 py-2.5 rounded-xl font-medium transition-colors ${
-                    isDark
-                      ? 'text-slate-400 hover:bg-slate-800'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  取消
-                </button>
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleClose}
+                    disabled={isGenerating}
+                    className={`px-6 py-2.5 rounded-xl font-medium transition-colors ${
+                      isDark
+                        ? 'text-slate-400 hover:bg-slate-800'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    取消
+                  </button>
 
-                <button
-                  onClick={handleGenerate}
-                  disabled={!canGenerate || isGenerating || (aiStatus && !aiStatus.enabled)}
-                  className={`flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold transition-all ${
-                    canGenerate && !isGenerating && aiStatus?.enabled
-                      ? 'bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white shadow-lg shadow-primary-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]'
-                      : isDark
-                        ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      生成中...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={18} />
-                      开始生成
-                    </>
-                  )}
-                </button>
+                  <button
+                    onClick={handleGenerate}
+                    disabled={!canGenerate || isGenerating || (aiStatus && !aiStatus.enabled)}
+                    className={`flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold transition-all ${
+                      canGenerate && !isGenerating && aiStatus?.enabled
+                        ? 'bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white shadow-lg shadow-primary-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]'
+                        : isDark
+                          ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        生成中...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={18} />
+                        开始生成
+                      </>
+                    )}
+                  </button>
+                </div>
+                <FormError message={disabledReason} />
               </div>
             </div>
           </>

@@ -11,7 +11,7 @@ import {
   Network
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from '../../utils/messageHelper';
 import { useError } from "../../hooks";
 import { EmptyState } from '../common/EmptyState';
 
@@ -77,7 +77,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
   const handleDeleteRelation = async (relationId: string) => {
     try {
       await api.graphs.deleteRelation(graphId, relationId);
-      frontendEventBus.publish("message_show", { type: 'success', content: '已删除关联' });
+      message.success(t('toast.graph.relationDeleted'));
       fetchRelations();
     } catch (error) {
       handleError(error, { context: 'DeleteRelation', fallbackMessage: '删除关联失败' });

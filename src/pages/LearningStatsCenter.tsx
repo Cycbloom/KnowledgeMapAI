@@ -36,7 +36,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import type { Graph } from "../types";
 import { formatNumber } from "../utils/formatters";
-import { Skeleton } from "../components/common";
+import { Skeleton, ErrorState } from "../components/common";
 import { queryKeys } from "../hooks/queries/config";
 
 interface MetricCardProps {
@@ -485,6 +485,7 @@ export const LearningStatsCenter = () => {
     data: stats,
     isLoading,
     error,
+    refetch,
   } = useStatistics() as unknown as {
     data?: {
       distribution: Array<{ name: string; value: number; color: string }>;
@@ -500,6 +501,7 @@ export const LearningStatsCenter = () => {
     } | null;
     isLoading: boolean;
     error: Error | null;
+    refetch: () => void;
   };
   const { data: userData } = useUser();
   const { data: graphsData } = useGraphs();
@@ -577,9 +579,10 @@ export const LearningStatsCenter = () => {
     );
   if (error)
     return (
-      <div className="p-8 text-center text-red-500">
-        {t("learningStats.error")}
-      </div>
+      <ErrorState
+        message={(error as Error).message}
+        onRetry={() => refetch()}
+      />
     );
   if (!stats) return null;
 

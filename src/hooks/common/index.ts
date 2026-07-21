@@ -18,3 +18,5 @@ export { useBeforeUnload } from './useBeforeUnload';
 export { useShortcutLabel, formatShortcutKeys } from './useShortcutLabel';
 export type { ShortcutPlatform, UseShortcutLabelOptions } from './useShortcutLabel';
 export { useCelebration } from './useCelebration';
+export { useFirstRunHint } from './useFirstRunHint';
+export type { UseFirstRunHintOptions, UseFirstRunHintResult } from './useFirstRunHint';

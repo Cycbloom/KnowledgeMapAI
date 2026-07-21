@@ -8,7 +8,6 @@ import {
   useDeleteGraphMutation,
   useToggleFavoriteMutation,
   usePrefetchGraph,
-  useBatchDeleteGraphsMutation,
   useRestoreGraphMutation,
   useBatchRestoreGraphsMutation,
 } from "../hooks/mutations";
@@ -18,10 +17,10 @@ import { message } from "../utils/messageHelper";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
 import { formatDate } from "@/utils/formatters";
-import { ConfirmationModal, SkeletonCard, ErrorBoundary } from "../components/common";
+import { ConfirmationModal, SkeletonCard, ErrorBoundary, EmptyState } from "../components/common";
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
 import { useTheme, useIsMobile } from "../hooks";
-import { useFocusTrap, useEscapeKey } from "@/hooks/common";
+import { useFocusTrap, useEscapeKey, useFirstRunHint } from "@/hooks/common";
 import { useUndoableAction } from "@/hooks/useUndoableAction";
 import { useDashboardFilters } from "../hooks/useDashboardFilters";
 import { useRecentGraphs } from "../hooks/useRecentGraphs";
@@ -43,12 +42,11 @@ export const Dashboard = () => {
   const { isMobile, isTablet } = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: graphsData, isLoading, error, refetch } = useGraphs();
+  const { data: graphsData, isLoading, isFetching, error, refetch } = useGraphs();
   const { data: statsData } = useDashboardStats();
   const importGraphMutation = useImportGraphMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
   const toggleFavoriteMutation = useToggleFavoriteMutation();
-  const batchDeleteGraphsMutation = useBatchDeleteGraphsMutation();
   const restoreGraphMutation = useRestoreGraphMutation();
   const batchRestoreGraphsMutation = useBatchRestoreGraphsMutation();
   const prefetchGraph = usePrefetchGraph();
@@ -68,6 +66,11 @@ export const Dashboard = () => {
 
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
 
+  const [batchDeleteProgress, setBatchDeleteProgress] = useState<{
+    completed: number;
+    total: number;
+  } | null>(null);
+
   const aiGeneratorRef = useFocusTrap<HTMLDivElement>({ enabled: isAIGeneratorOpen });
   useEscapeKey(() => setIsAIGeneratorOpen(false), isAIGeneratorOpen);
 
@@ -76,6 +79,11 @@ export const Dashboard = () => {
     x: number;
     y: number;
   } | null>(null);
+
+  // 首次访问提示：仅在未 dismiss 时显示，引导用户创建第一个图谱
+  const firstRunHint = useFirstRunHint({
+    storageKey: "dashboard-first-run-hint-dismissed",
+  });
 
   const graphs = useMemo(
     () => (Array.isArray(graphsData) ? graphsData : []),
@@ -133,8 +141,22 @@ export const Dashboard = () => {
     string[]
   >({
     deleteFn: async (ids) => {
-      await batchDeleteGraphsMutation.mutateAsync(ids);
-      return ids;
+      setBatchDeleteProgress({ completed: 0, total: ids.length });
+      const deletedIds: string[] = [];
+      for (let i = 0; i < ids.length; i++) {
+        try {
+          await deleteGraphMutation.mutateAsync(ids[i]);
+          deletedIds.push(ids[i]);
+        } catch (err) {
+          console.error(err);
+        }
+        setBatchDeleteProgress({ completed: i + 1, total: ids.length });
+      }
+      setBatchDeleteProgress(null);
+      if (deletedIds.length === 0) {
+        throw new Error(t("dashboard.batchDeleteFailed"));
+      }
+      return deletedIds;
     },
     restoreFn: (ids: string[]) =>
       batchRestoreGraphsMutation.mutateAsync(ids).then(() => undefined),
@@ -269,6 +291,8 @@ export const Dashboard = () => {
   };
 
   const handleOpenAIGenerator = () => {
+    // 用户已点击 CTA，隐藏首次访问提示
+    firstRunHint.dismiss();
     setIsAIGeneratorOpen(true);
     filters.setShowMoreMenu(false);
     filters.setShowFABMenu(false);
@@ -299,7 +323,7 @@ export const Dashboard = () => {
     handleDeleteGraph(id, graph?.title ?? "");
   };
 
-  if (isLoading)
+  if (isLoading && !isFetching)
     return (
       <div
         className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
@@ -469,7 +493,8 @@ export const Dashboard = () => {
             isAllSelected={filters.isAllSelected}
             isPartialSelected={filters.isPartialSelected}
             selectedCount={filters.selectedCount}
-            isBatchDeleting={batchDeleteGraphsMutation.isPending}
+            isBatchDeleting={batchDeleteProgress !== null}
+            batchDeleteProgress={batchDeleteProgress}
             onToggleSelectAll={filters.toggleSelectAll}
             onBatchDelete={handleBatchDelete}
             onClearSelection={filters.clearSelection}
@@ -482,38 +507,62 @@ export const Dashboard = () => {
         >
           {filters.filteredGraphs.length === 0 ? (
             <div
-              className={`col-span-full flex flex-col items-center justify-center py-16 sm:py-20 rounded-3xl border-2 border-dashed ${
+              className={`col-span-full rounded-3xl border-2 border-dashed ${
                 isDark
                   ? "border-slate-800 bg-slate-800/30"
                   : "border-gray-200 bg-gray-50"
               }`}
             >
-              <div
-                className={`p-6 rounded-full mb-4 ${isDark ? "bg-slate-800 text-slate-600" : "bg-white text-gray-300"}`}
-              >
-                <Network size={48} />
-              </div>
-              <h3
-                className={`text-lg sm:text-xl font-bold mb-2 ${isDark ? "text-slate-300" : "text-gray-900"}`}
-              >
-                {filters.searchQuery
-                  ? t("dashboard.empty.noResults")
-                  : t("dashboard.empty.startJourney")}
-              </h3>
-              <p
-                className={`text-center max-w-md mb-6 sm:mb-8 px-4 text-sm ${isDark ? "text-slate-500" : "text-gray-500"}`}
-              >
-                {filters.searchQuery
-                  ? t("dashboard.empty.tryDifferent")
-                  : t("dashboard.empty.createOrImport")}
-              </p>
-              {!filters.searchQuery && (
-                <button
-                  onClick={handleOpenAIGenerator}
-                  className="min-h-[48px] px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-600 hover:to-primary-600 transition-colors shadow-lg"
-                >
-                  {t("dashboard.empty.createFirst")}
-                </button>
+              {filters.searchQuery ? (
+                <EmptyState
+                  illustration="search"
+                  title={t("dashboard.empty.noResults")}
+                  description={t("dashboard.empty.tryDifferent")}
+                />
+              ) : (
+                <div className="relative">
+                  <EmptyState
+                    icon={<Network size={48} />}
+                    iconWrapper
+                    size="lg"
+                    illustration="empty"
+                    title={t("dashboard.empty.startJourney")}
+                    description={t("dashboard.empty.createOrImport")}
+                    action={{
+                      label: t("dashboard.empty.createFirst"),
+                      onClick: handleOpenAIGenerator,
+                    }}
+                  />
+                  {firstRunHint.isVisible && (
+                    <div
+                      data-testid="dashboard-first-run-hint"
+                      className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 w-full max-w-xs px-4 pointer-events-auto"
+                    >
+                      <div className="relative bg-primary-600 text-white rounded-lg shadow-lg p-3">
+                        <p className="font-semibold text-sm mb-1">
+                          {t("dashboard.firstRunHint.title")}
+                        </p>
+                        <p className="text-xs text-primary-50 mb-2">
+                          {t("dashboard.firstRunHint.description")}
+                        </p>
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={firstRunHint.dismiss}
+                            className="text-xs font-medium px-2 py-1 rounded bg-white/20 hover:bg-white/30 transition-colors"
+                          >
+                            {t("dashboard.firstRunHint.dismiss")}
+                          </button>
+                        </div>
+                        {/* 小箭头指向下方 CTA 按钮 */}
+                        <div
+                          aria-hidden="true"
+                          className="absolute left-1/2 -translate-x-1/2 -bottom-2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-primary-600"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           ) : filters.viewMode === "list" ? (

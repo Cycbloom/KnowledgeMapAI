@@ -31,6 +31,8 @@
   },
   "noHistoryTitle": "No History",
   "noHistoryDesc": "Executed commands will appear here",
+  "noHistory": "No command history",
+  "noAuditLogs": "No audit logs",
   "noSearchResultsTitle": "No Matching History",
   "noSearchResultsDesc": "Try different search keywords",
   "performance": {

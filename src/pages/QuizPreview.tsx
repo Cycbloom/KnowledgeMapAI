@@ -10,11 +10,10 @@ import {
   FileQuestion,
   Layers,
   Clock,
-  AlertCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../hooks';
-import { Skeleton, SkeletonCard } from '../components/common';
+import { Skeleton, SkeletonCard, ErrorState } from '../components/common';
 import { useQuizSet, useDeleteQuizSetMutation, useRegenerateCardMutation } from '../hooks/queries';
 import { QuestionList } from '../components/Quiz';
 import { QuestionForm, type QuestionFormData } from '../components/Study/QuestionForm';
@@ -72,7 +71,7 @@ export const QuizPreview: React.FC = () => {
   const regeneratingModalRef = useFocusTrap<HTMLDivElement>({ enabled: !!regeneratingCardId });
   useEscapeKey(() => setRegeneratingCardId(null), !!regeneratingCardId);
 
-  const { data: quizSet, isLoading, error } = useQuizSet(quizSetId!, !!quizSetId);
+  const { data: quizSet, isLoading, error, refetch } = useQuizSet(quizSetId!, !!quizSetId);
   const deleteMutation = useDeleteQuizSetMutation();
   const regenerateMutation = useRegenerateCardMutation();
 
@@ -233,18 +232,11 @@ export const QuizPreview: React.FC = () => {
 
   if (error || !quizSet) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <AlertCircle size={48} className="text-red-400 mx-auto mb-4" />
-          <p className="text-red-500 mb-4">{t('study.quizPreview.loadFailed')}</p>
-          <button
-            onClick={() => navigate('/study')}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-          >
-            {t('study.quizPreview.backToStudy')}
-          </button>
-        </div>
-      </div>
+      <ErrorState
+        message={error ? (error as Error).message : t('study.quizPreview.loadFailed')}
+        onRetry={() => refetch()}
+        variant="panel"
+      />
     );
   }
 

@@ -122,6 +122,7 @@ interface GraphToolbarProps {
   selectedNodeIds: Set<string>;
   onDeleteSelected: () => void;
   onBatchDelete: () => void;
+  batchDeleteProgress?: { completed: number; total: number } | null;
   onBatchColorUpdate?: (color: string) => void;
   onBatchLevelUpdate?: (level: string) => void;
 
@@ -324,6 +325,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   selectedNodeIds,
   onDeleteSelected,
   onBatchDelete,
+  batchDeleteProgress,
   onBatchColorUpdate,
   onBatchLevelUpdate,
   isStyleSettingsOpen,
@@ -995,10 +997,18 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                   onBatchDelete();
                   setIsBatchMenuOpen(false);
                 }}
-                className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 transition-colors font-semibold"
+                disabled={!!batchDeleteProgress}
+                className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 transition-colors font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Trash2 size={16} />
-                <span>批量删除选中</span>
+                <span>
+                  {batchDeleteProgress
+                    ? t('tasks.progress.deleting', {
+                        completed: batchDeleteProgress.completed,
+                        total: batchDeleteProgress.total,
+                      })
+                    : '批量删除选中'}
+                </span>
               </button>
             </div>
           </div>

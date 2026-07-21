@@ -9,7 +9,8 @@ import { QueryErrorResetBoundary } from "@tanstack/react-query";
 import { useDeepLink } from "./hooks/useDeepLink";
 import { useMobileInit } from "./hooks/useMobileInit";
 import { useNetworkStatus } from "./hooks/common/useNetworkStatus";
-import toast, { Toaster } from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { message } from "@/utils/messageHelper";
 import { getSupabaseClient } from "./lib/supabase";
 import { authConfig, isSupabaseConfigured } from "./config/authConfig";
 import { isElectron } from "./config/electronConfig";
@@ -102,15 +103,16 @@ function useKernelRoutes(layoutType: "public" | "protected") {
 function App() {
   useMobileInit();
   useDeepLink();
+  const { t } = useTranslation();
   const { online } = useNetworkStatus();
 
   useEffect(() => {
     if (!online) {
-      toast.error("网络已断开", { id: "network-status", duration: Infinity });
+      message.error(t('toast.network.offline'), { id: 'network-status', duration: Infinity });
     } else {
-      toast.success("网络已恢复", { id: "network-status", duration: 2000 });
+      message.success(t('toast.network.restored'), { id: 'network-status', duration: 2000 });
     }
-  }, [online]);
+  }, [online, t]);
 
   const setUser = useStore((state) => state.setUser);
   const clearAuth = useStore((state) => state.clearAuth);
@@ -300,7 +302,6 @@ function App() {
               </Route>
             </Routes>
           </Suspense>
-          <Toaster position="top-right" />
           <CelebrationOverlay />
         </GlobalErrorBoundary>
       )}

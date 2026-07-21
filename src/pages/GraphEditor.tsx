@@ -1489,6 +1489,7 @@ export const GraphEditor = () => {
         selectedNodeIds={selectedNodeIds}
         onDeleteSelected={nodeOps.handleDeleteNode}
         onBatchDelete={nodeOps.handleBatchDelete}
+        batchDeleteProgress={nodeOps.batchDeleteProgress}
         onBatchLevelUpdate={nodeOps.handleBatchLevelUpdate}
         isStyleSettingsOpen={panelState.isStyleSettingsOpen}
         setIsStyleSettingsOpen={panelState.setIsStyleSettingsOpen}

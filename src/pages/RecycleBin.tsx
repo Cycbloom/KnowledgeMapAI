@@ -23,7 +23,7 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
-import { ConfirmationModal, SkeletonCard, EmptyState } from "../components/common";
+import { ConfirmationModal, SkeletonCard, EmptyState, ErrorState } from "../components/common";
 import { useTheme } from "../hooks";
 import { useNavigate } from "react-router-dom";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
@@ -47,7 +47,7 @@ export const RecycleBin = () => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { data: trashData, isLoading, error } = useTrashGraphs();
+  const { data: trashData, isLoading, isFetching, error, refetch } = useTrashGraphs();
   const restoreGraphMutation = useRestoreGraphMutation();
   const permanentDeleteGraphMutation = usePermanentDeleteGraphMutation();
   const batchRestoreMutation = useBatchRestoreGraphsMutation();
@@ -61,7 +61,13 @@ export const RecycleBin = () => {
   const [category, setCategory] = useState<RecycleBinCategory>("graphs");
 
   // 笔记回收站查询（仅在切换到 notes 分类时启用，避免无谓请求）
-  const { data: trashNotesData, isLoading: trashNotesLoading, error: trashNotesError } = useTrashNotes({
+  const {
+    data: trashNotesData,
+    isLoading: trashNotesLoading,
+    isFetching: trashNotesFetching,
+    error: trashNotesError,
+    refetch: refetchNotes,
+  } = useTrashNotes({
     enabled: category === "notes",
   });
   const restoreNoteMutation = useRestoreNoteMutation();
@@ -304,7 +310,10 @@ export const RecycleBin = () => {
     }
   };
 
-  if ((category === "graphs" && isLoading) || (category === "notes" && trashNotesLoading))
+  if (
+    (category === "graphs" && isLoading && !isFetching) ||
+    (category === "notes" && trashNotesLoading && !trashNotesFetching)
+  )
     return (
       <div
         className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
@@ -318,14 +327,16 @@ export const RecycleBin = () => {
         </div>
       </div>
     );
-  if ((category === "graphs" && error) || (category === "notes" && trashNotesError))
+  if ((category === "graphs" && error) || (category === "notes" && trashNotesError)) {
+    const activeError = category === "graphs" ? error : trashNotesError;
+    const handleRetry = category === "graphs" ? refetch : refetchNotes;
     return (
-      <div className="p-8 text-red-600">
-        {t("common.error")}:{" "}
-        {(category === "graphs" ? (error as Error) : (trashNotesError as Error))?.message ||
-          t("recycleBin.loadFailed")}
-      </div>
+      <ErrorState
+        message={(activeError as Error)?.message || t("recycleBin.loadFailed")}
+        onRetry={() => handleRetry()}
+      />
     );
+  }
 
   return (
     <div

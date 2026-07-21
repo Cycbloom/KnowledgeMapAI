@@ -74,9 +74,11 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
     },
   });
   const [newTag, setNewTag] = useState("");
+  const [titleError, setTitleError] = useState<string | undefined>(undefined);
 
   const handleCreate = async () => {
     if (!taskForm.title.trim()) {
+      setTitleError(t("form.validation.titleRequired"));
       return;
     }
     setSaving(true);
@@ -162,10 +164,14 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                 <FormInput
                   type="text"
                   value={taskForm.title}
-                  onChange={(e) =>
-                    setTaskForm({ ...taskForm, title: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setTaskForm({ ...taskForm, title: e.target.value });
+                    if (titleError) {
+                      setTitleError(undefined);
+                    }
+                  }}
                   placeholder={t("calendar.taskTitlePlaceholder")}
+                  error={titleError}
                   className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 placeholder-gray-400 dark:placeholder:text-slate-500"
                 />
               </div>

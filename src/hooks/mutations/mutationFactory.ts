@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 
 /**
  * 查询键，可以是静态值或基于 mutation 变量的函数
@@ -185,6 +187,82 @@ export function createOptimisticMutation<TData, TVariables, TCache>(
       },
       onSettled: (data, error, variables) => {
         config.onSettled?.(data, error, variables);
+      },
+    });
+  };
+}
+
+/**
+ * Toast mutation 配置
+ */
+export interface ToastMutationOptions<TData, TVariables> {
+  /** 执行 mutation 的函数 */
+  mutationFn: (variables: TVariables) => Promise<TData>;
+  /** 成功时显示的 toast 文案 i18n key（字符串）或基于返回数据动态生成 key 的函数 */
+  successMessage?: string | ((data: TData) => string);
+  /** 失败时显示的 toast 文案 i18n key（字符串）或基于错误动态生成 key 的函数 */
+  errorMessage?: string | ((error: Error) => string);
+  /** 成功后需要失效的查询键列表 */
+  invalidateQueries?: QueryKey[];
+  /** 成功回调（在 toast 与失效缓存之后调用） */
+  onSuccess?: (data: TData, variables: TVariables) => void;
+  /** 失败回调（在 toast 之后调用） */
+  onError?: (error: Error, variables: TVariables) => void;
+}
+
+/**
+ * createToastMutation — 创建自动显示 toast 的 mutation
+ *
+ * - 成功时：根据 successMessage 显示成功 toast，并失效指定的查询键
+ * - 失败时：根据 errorMessage 显示错误 toast
+ * - successMessage / errorMessage 支持字符串（i18n key）或函数（基于 data/error 动态返回 key）
+ *
+ * @example
+ * export const useUpdateProfileMutation = createToastMutation({
+ *   mutationFn: (data: UpdateProfileData) => api.user.updateProfile(data),
+ *   successMessage: "profile.updateSuccess",
+ *   errorMessage: "profile.updateError",
+ *   invalidateQueries: [["user"]],
+ * });
+ *
+ * @example
+ * // 动态 successMessage：基于返回数据选择 key
+ * export const useImportGraphMutation = createToastMutation({
+ *   mutationFn: (file: File) => api.graphs.import(file),
+ *   successMessage: (data) => data.imported > 0 ? "import.success" : "import.empty",
+ *   errorMessage: "import.error",
+ * });
+ */
+export function createToastMutation<TData, TVariables>(
+  options: ToastMutationOptions<TData, TVariables>,
+) {
+  return () => {
+    const queryClient = useQueryClient();
+    const { t } = useTranslation();
+    return useMutation<TData, Error, TVariables>({
+      mutationFn: options.mutationFn,
+      onSuccess: (data, variables) => {
+        if (options.successMessage) {
+          const key = typeof options.successMessage === "function"
+            ? options.successMessage(data)
+            : options.successMessage;
+          message.success(t(key));
+        }
+        if (options.invalidateQueries) {
+          for (const qk of options.invalidateQueries) {
+            queryClient.invalidateQueries({ queryKey: qk });
+          }
+        }
+        options.onSuccess?.(data, variables);
+      },
+      onError: (error, variables) => {
+        if (options.errorMessage) {
+          const key = typeof options.errorMessage === "function"
+            ? options.errorMessage(error)
+            : options.errorMessage;
+          message.error(t(key));
+        }
+        options.onError?.(error, variables);
       },
     });
   };

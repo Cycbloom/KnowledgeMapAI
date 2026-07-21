@@ -1,80 +1,54 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api/adapter";
 import { queryKeys } from "../queries/config";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import toast from "react-hot-toast";
+import { createToastMutation } from "./mutationFactory";
 
-export const useCreateSnapshot = (graphId: string) => {
-  const queryClient = useQueryClient();
-  return useMutation({
+export const useCreateSnapshot = (graphId: string) =>
+  createToastMutation({
     mutationFn: (description?: string) =>
       api.graphVersions.createSnapshot(graphId, description),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.graphSnapshots(graphId),
-      });
-      toast.success("快照创建成功");
-    },
-    onError: () => {
-      toast.error("快照创建失败");
-    },
-  });
-};
+    successMessage: "toast.graph.snapshotCreated",
+    errorMessage: "toast.graph.snapshotCreateFailed",
+    invalidateQueries: [queryKeys.graphSnapshots(graphId)],
+  })();
 
-export const useRollback = (graphId: string) => {
-  const queryClient = useQueryClient();
-  return useMutation({
+export const useRollback = (graphId: string) =>
+  createToastMutation({
     mutationFn: (snapshotId: string) =>
       api.graphVersions.rollback(graphId, snapshotId),
+    successMessage: "toast.graph.snapshotRestored",
+    errorMessage: "toast.graph.snapshotRestoreFailed",
+    invalidateQueries: [
+      queryKeys.graphSnapshots(graphId),
+      ["graphData", graphId],
+      ["graph", graphId],
+      ["graphs"],
+    ],
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.graphSnapshots(graphId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["graphData", graphId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["graph", graphId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["graphs"],
-      });
       frontendEventBus.publish("graph_data_changed", {
         graphId,
         changeType: "graph_rollback",
       });
-      toast.success("回滚成功");
     },
-    onError: () => {
-      toast.error("回滚失败");
-    },
-  });
-};
+  })();
 
-export const useCreateBranch = (graphId: string) => {
-  const queryClient = useQueryClient();
-  return useMutation({
+export const useCreateBranch = (graphId: string) =>
+  createToastMutation({
     mutationFn: (branchName: string) =>
       api.graphVersions.createBranch(graphId, branchName),
+    successMessage: "toast.graph.branchCreated",
+    errorMessage: "toast.graph.branchCreateFailed",
+    invalidateQueries: [queryKeys.graphBranches(graphId)],
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.graphBranches(graphId),
-      });
       frontendEventBus.publish("graph_list_changed", {
         graphId,
         changeType: "graph_created",
       });
-      toast.success("分支创建成功");
     },
-    onError: () => {
-      toast.error("分支创建失败");
-    },
-  });
-};
+  })();
 
-export const useMergeBranch = (graphId: string) => {
-  const queryClient = useQueryClient();
-  return useMutation({
+export const useMergeBranch = (graphId: string) =>
+  createToastMutation({
     mutationFn: (params: {
       branchGraphId: string;
       selectedChanges?: { nodeIds?: string[]; edgeIds?: string[] };
@@ -86,38 +60,27 @@ export const useMergeBranch = (graphId: string) => {
         params.selectedChanges,
         params.conflictResolutions,
       ),
+    successMessage: "toast.graph.branchMerged",
+    errorMessage: "toast.graph.branchMergeFailed",
+    invalidateQueries: [["graphData", graphId]],
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["graphData", graphId],
-      });
       frontendEventBus.publish("graph_data_changed", {
         graphId,
         changeType: "ai_action_executed",
       });
-      toast.success("合并成功");
     },
-    onError: () => {
-      toast.error("合并失败");
-    },
-  });
-};
+  })();
 
-export const useDeleteBranch = (graphId: string) => {
-  const queryClient = useQueryClient();
-  return useMutation({
+export const useDeleteBranch = (graphId: string) =>
+  createToastMutation({
     mutationFn: (branchId: string) => api.graphs.delete(branchId),
+    successMessage: "toast.graph.branchDeleted",
+    errorMessage: "toast.graph.branchDeleteFailed",
+    invalidateQueries: [queryKeys.graphBranches(graphId)],
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.graphBranches(graphId),
-      });
       frontendEventBus.publish("graph_list_changed", {
         graphId,
         changeType: "graph_deleted",
       });
-      toast.success("分支已删除");
     },
-    onError: () => {
-      toast.error("分支删除失败");
-    },
-  });
-};
+  })();

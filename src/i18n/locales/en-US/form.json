@@ -1,0 +1,26 @@
+{
+  "validation": {
+    "required": "This field is required",
+    "emailInvalid": "Email format is invalid",
+    "emailRequired": "Please enter email",
+    "passwordRequired": "Please enter password",
+    "passwordTooShort": "Password must be at least {{count}} characters",
+    "passwordMismatch": "Passwords do not match",
+    "urlInvalid": "URL format is invalid",
+    "urlRequired": "Please enter URL",
+    "minLength": "At least {{count}} characters required",
+    "maxLength": "At most {{count}} characters allowed",
+    "numberRange": "Value should be between {{min}} and {{max}}",
+    "yearInvalid": "Please enter a valid 4-digit year",
+    "selectAtLeastOne": "Please select at least one item",
+    "selectKnowledgePoints": "Please select at least one knowledge point",
+    "selectCardTypes": "Please select at least one card type",
+    "titleRequired": "Please enter a title",
+    "titleTooShort": "Title must be at least {{count}} characters",
+    "patternMismatch": "Format is invalid"
+  },
+  "error": {
+    "title": "Loading failed",
+    "retry": "Retry"
+  }
+}

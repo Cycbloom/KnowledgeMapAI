@@ -1,0 +1,28 @@
+{
+  "graph": {
+    "snapshotCreated": "快照创建成功",
+    "snapshotCreateFailed": "快照创建失败",
+    "snapshotRestored": "快照恢复成功",
+    "snapshotRestoreFailed": "快照恢复失败",
+    "snapshotDeleted": "快照删除成功",
+    "snapshotDeleteFailed": "快照删除失败",
+    "snapshotListLoaded": "快照列表加载成功",
+    "snapshotListLoadFailed": "快照列表加载失败",
+    "relationDeleted": "已删除关联",
+    "branchCreated": "分支创建成功",
+    "branchCreateFailed": "分支创建失败",
+    "branchMerged": "合并成功",
+    "branchMergeFailed": "合并失败",
+    "branchDeleted": "分支已删除",
+    "branchDeleteFailed": "分支删除失败"
+  },
+  "network": {
+    "offline": "网络已断开",
+    "restored": "网络已恢复"
+  },
+  "update": {
+    "newVersionAvailable": "发现新版本，刷新页面以更新",
+    "refreshNow": "立即刷新",
+    "later": "稍后"
+  }
+}

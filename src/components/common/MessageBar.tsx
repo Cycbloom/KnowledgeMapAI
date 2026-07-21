@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { cn } from '@/lib/utils';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import type { MessageShowPayload } from "../../services/FrontendEventTypes";
+import type {
+  MessageShowPayload,
+  MessageHidePayload,
+  MessageDismissPayload,
+} from "../../services/FrontendEventTypes";
+import type { MessageType } from "../../utils/messageHelper";
 import { useTheme } from "../../hooks";
 import {
   CheckCircle,
@@ -9,60 +14,115 @@ import {
   Info,
   AlertCircle,
   Loader2,
+  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-interface CurrentMessage {
+interface MessageItem {
   id: string;
-  type: MessageShowPayload["type"];
+  type: MessageType;
   content: string;
+  duration: number;
   action?: MessageShowPayload["action"];
+  createdAt: number;
 }
 
 interface MessageBarProps {
   bottomOffset?: number;
 }
 
+const MAX_VISIBLE = 3;
+const DEFAULT_DURATION = 3000;
+
 export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
-  const [currentMessage, setCurrentMessage] = useState<CurrentMessage | null>(null);
+  const [messages, setMessages] = useState<MessageItem[]>([]);
   const { isDark } = useTheme();
 
   const handleMessageShow = useCallback((payload: MessageShowPayload) => {
     const id = payload.id ?? Math.random().toString(36).substring(7);
-    setCurrentMessage({
+    const duration = payload.duration ?? DEFAULT_DURATION;
+    const createdAt = Date.now();
+    const newItem: MessageItem = {
       id,
       type: payload.type,
       content: payload.content,
+      duration,
       action: payload.action,
+      createdAt,
+    };
+
+    setMessages((prev) => {
+      // 去重：相同 id 替换原有项（保留位置）
+      const existingIndex = prev.findIndex((m) => m.id === id);
+      let next: MessageItem[];
+      if (existingIndex >= 0) {
+        next = [...prev];
+        next[existingIndex] = newItem;
+      } else {
+        next = [...prev, newItem];
+      }
+      // FIFO：超过最大可见数时移除最早的
+      if (next.length > MAX_VISIBLE) {
+        next = next.slice(next.length - MAX_VISIBLE);
+      }
+      return next;
     });
 
-    if (payload.duration !== 0) {
+    // 自动关闭定时器（duration 为 0 或 Infinity 时不启动）
+    if (duration !== 0 && duration !== Infinity) {
       setTimeout(() => {
-        setCurrentMessage((prev) => (prev?.id === id ? null : prev));
-      }, payload.duration ?? 3000);
+        setMessages((prev) =>
+          prev.filter((m) => !(m.id === id && m.createdAt === createdAt)),
+        );
+      }, duration);
     }
   }, []);
 
-  const handleMessageHide = useCallback((payload: { id?: string }) => {
-    if (payload.id) {
-      setCurrentMessage((prev) => (prev?.id === payload.id ? null : prev));
-    } else {
-      setCurrentMessage(null);
-    }
+  const removeMessage = useCallback((id: string) => {
+    setMessages((prev) => prev.filter((m) => m.id !== id));
   }, []);
+
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+  }, []);
+
+  const handleMessageDismiss = useCallback(
+    (payload: MessageDismissPayload) => {
+      removeMessage(payload.id);
+    },
+    [removeMessage],
+  );
+
+  const handleMessageDismissAll = useCallback(() => {
+    clearMessages();
+  }, [clearMessages]);
+
+  // 向后兼容：useGraphAIOperations 仍通过 message_hide 关闭 loading 消息
+  const handleMessageHide = useCallback(
+    (payload: MessageHidePayload) => {
+      if (payload.id) {
+        removeMessage(payload.id);
+      } else {
+        clearMessages();
+      }
+    },
+    [removeMessage, clearMessages],
+  );
 
   useEffect(() => {
     const unsubShow = frontendEventBus.subscribe("message_show", handleMessageShow);
+    const unsubDismiss = frontendEventBus.subscribe("message_dismiss", handleMessageDismiss);
+    const unsubDismissAll = frontendEventBus.subscribe("message_dismiss_all", handleMessageDismissAll);
     const unsubHide = frontendEventBus.subscribe("message_hide", handleMessageHide);
     return () => {
       unsubShow();
+      unsubDismiss();
+      unsubDismissAll();
       unsubHide();
     };
-  }, [handleMessageShow, handleMessageHide]);
+  }, [handleMessageShow, handleMessageDismiss, handleMessageDismissAll, handleMessageHide]);
 
-  const getBackgroundColor = (
-    type?: "info" | "success" | "warning" | "error" | "loading",
-  ) => {
+  const getBackgroundColor = (type: MessageType) => {
     switch (type) {
       case "error":
         return "bg-red-600";
@@ -77,9 +137,7 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
     }
   };
 
-  const getIcon = (
-    type?: "info" | "success" | "warning" | "error" | "loading",
-  ) => {
+  const getIcon = (type: MessageType) => {
     switch (type) {
       case "error":
         return <AlertCircle className="w-3.5 h-3.5" />;
@@ -88,7 +146,12 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
       case "success":
         return <CheckCircle className="w-3.5 h-3.5" />;
       case "loading":
-        return <Loader2 className="w-3.5 h-3.5 animate-spin" />;
+        return (
+          <Loader2
+            data-testid="loading-spinner"
+            className="w-3.5 h-3.5 animate-spin"
+          />
+        );
       default:
         return <Info className="w-3.5 h-3.5" />;
     }
@@ -100,37 +163,46 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
       style={{ bottom: bottomOffset }}
     >
       <AnimatePresence>
-        {currentMessage && (
+        {messages.map((msg) => (
           <motion.div
+            key={msg.id}
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={cn('w-full h-8', getBackgroundColor(currentMessage.type), 'text-white flex items-center px-4 text-xs select-none shadow-lg pointer-events-auto')}
+            className={cn(
+              'w-full h-8',
+              getBackgroundColor(msg.type),
+              'text-white flex items-center px-4 text-xs select-none shadow-lg pointer-events-auto'
+            )}
           >
             <div className="flex items-center gap-2 flex-1 overflow-hidden">
-              <motion.div
-                key={currentMessage.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-2 truncate"
-              >
-                {getIcon(currentMessage.type)}
+              <div className="flex items-center gap-2 truncate">
+                {getIcon(msg.type)}
                 <span className="font-medium tracking-wide">
-                  {currentMessage.content}
+                  {msg.content}
                 </span>
-                {currentMessage.action && (
+                {msg.action && (
                   <button
-                    onClick={currentMessage.action.onClick}
+                    onClick={msg.action.onClick}
                     className="ml-3 underline hover:text-white/80 transition-colors font-semibold"
                   >
-                    {currentMessage.action.label}
+                    {msg.action.label}
                   </button>
                 )}
-              </motion.div>
+              </div>
             </div>
+            {msg.type !== "loading" && (
+              <button
+                onClick={() => removeMessage(msg.id)}
+                aria-label="关闭"
+                className="ml-2 hover:text-white/80 transition-colors flex-shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </motion.div>
-        )}
+        ))}
       </AnimatePresence>
     </div>
   );

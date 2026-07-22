@@ -316,7 +316,7 @@ export class SyncEngine {
           if (!op) continue;
 
           if (pushResult.success) {
-            syncedOpIds.push(batchOpIds[batch.indexOf(op)]!);
+            syncedOpIds.push(batchOpIds[batch.indexOf(op)] ?? op.id);
             syncedRecordIds.push({ table: op.table, id: op.id });
           } else if (pushResult.conflict) {
             // Conflict: cloud wins, update local with server data
@@ -332,7 +332,7 @@ export class SyncEngine {
               });
             }
             // Mark operation as synced since we've resolved it (cloud wins)
-            syncedOpIds.push(batchOpIds[batch.indexOf(op)]!);
+            syncedOpIds.push(batchOpIds[batch.indexOf(op)] ?? op.id);
             syncedRecordIds.push({ table: op.table, id: op.id });
           }
         }

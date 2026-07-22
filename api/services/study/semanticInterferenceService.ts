@@ -127,7 +127,10 @@ class SemanticInterferenceService {
     for (const id of knowledgePointIds) {
       const root = find(id);
       if (!groupMap.has(root)) groupMap.set(root, []);
-      groupMap.get(root)!.push(id);
+      const list = groupMap.get(root);
+      if (list) {
+        list.push(id);
+      }
     }
 
     // Filter to groups with 2+ members, compute avg similarity

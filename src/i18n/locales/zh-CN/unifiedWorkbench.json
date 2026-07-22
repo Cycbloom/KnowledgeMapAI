@@ -54,24 +54,6 @@
     "todayToReview": "今日待复习",
     "daysLater": "{{count}}天后"
   },
-  "messages": {
-    "taskCreateSuccess": "任务创建成功",
-    "taskCreateFailed": "创建任务失败",
-    "taskUpdateSuccess": "任务更新成功",
-    "taskUpdateFailed": "更新任务失败",
-    "taskDeleted": "任务已删除",
-    "taskDeleteFailed": "删除任务失败",
-    "taskStarted": "任务已开始",
-    "taskStartFailed": "开始任务失败",
-    "taskPaused": "任务已暂停",
-    "taskPauseFailed": "暂停任务失败",
-    "taskCompleted": "任务已完成",
-    "taskCompleteFailed": "完成任务失败",
-    "knowledgePointLinked": "知识点关联成功",
-    "knowledgePointLinkFailed": "关联知识点失败",
-    "loadFailed": "加载失败: {{message}}",
-    "loadingWorkbench": "加载工作台..."
-  },
   "tips": {
     "clickTaskHint": "点击任务卡片可查看详情和关联知识点",
     "quickCreateHint": "支持快速创建任务和关联知识点",

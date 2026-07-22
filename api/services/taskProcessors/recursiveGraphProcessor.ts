@@ -13,11 +13,26 @@ import { pricingService } from "../ai/pricingService";
 import { graphLockService } from "../common/graphLockService";
 import { notDeleted } from '../common/softDeleteHelper';
 
+interface RecursiveGraphPayload {
+  graph_id: string;
+  topic: string;
+  depth?: number;
+  style?: string;
+  batchSessionId?: string;
+  [key: string]: unknown;
+}
+
+interface CoreNodeRef {
+  title: string;
+  content?: string;
+  [key: string]: unknown;
+}
+
 export class RecursiveGraphProcessor implements TaskProcessor {
   async process(
     taskId: string,
     userId: string,
-    payload: any,
+    payload: RecursiveGraphPayload,
     supabase: SupabaseClient,
     updateTaskStatus: UpdateTaskStatusFunction,
   ): Promise<void> {
@@ -175,11 +190,11 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           '{"root": null, "coreNodes": []}',
       );
 
+      const coreNodes: CoreNodeRef[] = initParsed.coreNodes || [];
       const rootData = initParsed.root || {
         title: topic,
         content: `${topic}的核心概念`,
       };
-      const coreNodes = initParsed.coreNodes || [];
 
       const rootNodeResult = await createKnowledgePointWithGraphNode(
         supabase,
@@ -389,7 +404,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           ([title]) => {
             return (
               title !== rootData.title &&
-              !coreNodes.some((c: any) => c.title === title)
+              !coreNodes.some((c) => c.title === title)
             );
           },
         );
@@ -537,7 +552,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         undefined,
         userId,
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error(
         `Recursive graph generation failed for task ${taskId}:`,
         error,
@@ -548,7 +563,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         "failed",
         null,
         undefined,
-        error.message,
+        error instanceof Error ? error.message : String(error),
         userId,
       );
     } finally {

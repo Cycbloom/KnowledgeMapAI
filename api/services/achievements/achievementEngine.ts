@@ -50,7 +50,7 @@ export class AchievementEngine {
           const newlyUnlockedIds: string[] = []
 
           for (const achievement of achievements) {
-            if (existingMap.has(achievement.id) && existingMap.get(achievement.id)! >= achievement.condition_value) {
+            if (existingMap.has(achievement.id) && (existingMap.get(achievement.id) ?? 0) >= achievement.condition_value) {
               continue
             }
 
@@ -211,7 +211,7 @@ export class AchievementEngine {
     unlocked: Achievement[],
   ): Promise<void> {
     for (const achievement of achievements) {
-      if (existingMap.has(achievement.id) && existingMap.get(achievement.id)! >= achievement.condition_value) {
+      if (existingMap.has(achievement.id) && (existingMap.get(achievement.id) ?? 0) >= achievement.condition_value) {
         continue
       }
 

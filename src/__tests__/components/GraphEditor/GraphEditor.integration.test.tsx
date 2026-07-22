@@ -226,8 +226,8 @@ describe("GraphEditor Integration", () => {
       ),
     );
 
-    const { getByText } = renderGraphEditor();
-    expect(getByText("正在加载数据...")).toBeInTheDocument();
+    const { getByTestId } = renderGraphEditor();
+    expect(getByTestId("graph-loading")).toBeInTheDocument();
   });
 
   it("displays the graph title and nodes after loading", async () => {

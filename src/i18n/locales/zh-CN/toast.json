@@ -24,5 +24,164 @@
     "newVersionAvailable": "发现新版本，刷新页面以更新",
     "refreshNow": "立即刷新",
     "later": "稍后"
+  },
+  "scheduler": {
+    "taskCreated": "任务创建成功",
+    "taskUpdated": "任务更新成功",
+    "taskDeleted": "任务已删除",
+    "taskMoved": "任务已移动到 Q{{queue}}",
+    "taskStarted": "任务已开始",
+    "taskPaused": "任务已暂停",
+    "taskCompleted": "任务已完成",
+    "createTaskFailed": "创建任务失败",
+    "updateTaskFailed": "更新任务失败",
+    "deleteTaskFailed": "删除任务失败",
+    "moveTaskFailed": "移动任务失败",
+    "startTaskFailed": "开始任务失败",
+    "pauseTaskFailed": "暂停任务失败",
+    "completeTaskFailed": "完成任务失败",
+    "reorderFailed": "排序失败"
+  },
+  "graphAI": {
+    "nodeTitleRequired": "节点标题不能为空",
+    "expandComplete": "拓展完成",
+    "noNewRelations": "未发现新的关联",
+    "cardGenerateFailed": "AI 未能生成有效的卡片",
+    "cardGenerateSuccess": "成功生成并保存了 {{count}} 张复习卡片",
+    "noCardGenerated": "未能生成卡片",
+    "submitting": "正在提交...",
+    "submitSuccess": "任务提交成功",
+    "branchSwitched": "已切换分支",
+    "actionSuccess": "动作执行成功",
+    "actionFailed": "执行失败",
+    "expandFailed": "拓展失败",
+    "mergeGraphs": {
+      "selectNodeFirst": "请先选择一个节点",
+      "cannotDetermineGraph": "无法确定节点所属图谱",
+      "nodeTitleEmpty": "节点标题不能为空",
+      "expandComplete": "拓展完成：新增 {{nodesCount}} 个节点，{{edgesCount}} 条连线",
+      "noNewRelations": "未发现新的关联",
+      "expandFailed": "拓展失败"
+    },
+    "generateContent": {
+      "started": "AI 内容生成任务已开始...",
+      "completed": "AI 内容生成完成",
+      "failed": "AI 生成失败"
+    },
+    "batchGenerate": {
+      "selectNodeFirst": "请先选择一个节点",
+      "cannotDetermineGraph": "无法确定节点所属图谱",
+      "noCardsGenerated": "AI 未能生成有效的卡片",
+      "success": "成功生成并保存了复习卡片！",
+      "successWithCount": "成功生成并保存了 {{count}} 张复习卡片！",
+      "failed": "生成卡片失败"
+    },
+    "analyzeCrossDomain": {
+      "analysisComplete": "跨图谱连接分析完成",
+      "analysisFailed": "跨图谱连接分析失败"
+    },
+    "branch": {
+      "getSuggestionsFailed": "获取分支建议失败",
+      "created": "已创建分支：{{title}}",
+      "createFailed": "创建分支失败",
+      "switched": "已切换分支：{{title}}",
+      "switchFailed": "切换分支失败"
+    },
+    "content": {
+      "started": "AI 内容生成任务已开始...",
+      "completed": "AI 内容生成完成",
+      "networkError": "网络连接失败，请检查网络",
+      "failed": "AI 生成失败"
+    }
+  },
+  "templates": {
+    "createSuccess": "模板创建成功!",
+    "updateSuccess": "模板更新成功!",
+    "deleteSuccess": "模板已删除",
+    "duplicateSuccess": "模板已复制",
+    "applySuccess": "任务已创建!",
+    "saveToLibrarySuccess": "模板已保存到模板库",
+    "createFailed": "创建模板失败",
+    "updateFailed": "更新模板失败",
+    "deleteFailed": "删除模板失败",
+    "duplicateFailed": "复制模板失败",
+    "applyFailed": "应用模板失败",
+    "saveFailed": "保存模板失败",
+    "systemTemplateCannotDelete": "系统预设模板不能删除",
+    "systemTemplateCannotEdit": "系统预设模板不能编辑",
+    "nameAndTitleRequired": "请填写模板名称和标题模板",
+    "selectTemplate": "请选择模板",
+    "enterCustomRules": "请输入自定义生成规则",
+    "enterTopic": "请输入主题"
+  },
+  "workbench": {
+    "taskCreateSuccess": "任务创建成功",
+    "taskCreateFailed": "创建任务失败",
+    "taskUpdateSuccess": "任务更新成功",
+    "taskUpdateFailed": "更新任务失败",
+    "taskDeleted": "任务已删除",
+    "taskDeleteFailed": "删除任务失败",
+    "taskStarted": "任务已开始",
+    "taskStartFailed": "开始任务失败",
+    "taskPaused": "任务已暂停",
+    "taskPauseFailed": "暂停任务失败",
+    "taskCompleted": "任务已完成",
+    "taskCompleteFailed": "完成任务失败",
+    "knowledgePointLinked": "知识点关联成功",
+    "knowledgePointLinkFailed": "关联知识点失败",
+    "loadFailed": "加载失败: {{message}}",
+    "loadingWorkbench": "加载工作台..."
+  },
+  "dashboard": {
+    "loadError": "加载图谱失败",
+    "batchDeleteFailed": "批量删除失败",
+    "deleteFailed": "删除失败",
+    "favoriteAdded": "收藏成功",
+    "favoriteRemoved": "已取消收藏",
+    "operationFailed": "操作失败",
+    "formatError": "格式错误",
+    "importSuccess": "导入成功！",
+    "importFailed": "导入失败: {{message}}",
+    "nodesGenerated": "成功生成 {{count}} 个节点！"
+  },
+  "autoGraph": {
+    "rulesOptimized": "规则已优化",
+    "optimizeFailed": "优化失败",
+    "initSuccess": "知识图谱初始化成功！点击 ✨ 展开节点",
+    "initFailed": "初始化失败",
+    "expandFailed": "展开失败",
+    "graphSaved": "知识图谱已保存",
+    "saveFailed": "保存失败",
+    "createGraphFailed": "创建图谱失败",
+    "promptSaved": "提示词已保存",
+    "promptSaveFailed": "提示词保存失败"
+  },
+  "tasks": {
+    "loadTasksFailed": "加载任务失败，请稍后重试",
+    "taskRetried": "任务已重新提交",
+    "retryFailed": "重试失败",
+    "taskDeleted": "任务已删除",
+    "deleteFailed": "删除失败",
+    "noTasksToExport": "暂无任务可导出",
+    "tasksExported": "任务列表已导出",
+    "batchDeleteSuccess": "已成功删除 {{count}} 个任务"
+  },
+  "calendar": {
+    "taskCreated": "任务创建成功!",
+    "taskCreateFailed": "创建任务失败",
+    "taskTimeUpdated": "任务时间已更新!",
+    "taskTimeUpdateFailed": "更新任务时间失败",
+    "calendarExported": "日历已导出!",
+    "exportFailed": "导出失败",
+    "webcalCopied": "WebCal 链接已复制!"
+  },
+  "common": {
+    "copied": "已复制",
+    "copyFailed": "复制失败",
+    "backOnline": "已恢复在线，正在同步数据",
+    "slowConnection": "网络较慢，部分操作可能延迟",
+    "offlineMode": "离线模式：部分 AI 功能不可用",
+    "saved": "已保存",
+    "saveFailed": "保存失败"
   }
 }

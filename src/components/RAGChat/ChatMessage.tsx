@@ -78,7 +78,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const handleCopyMessage = useCallback(async () => {
     if (!message.content) return;
-    const success = await copyToClipboard(message.content, t("common.copied"));
+    const success = await copyToClipboard(message.content, t("toast.common.copied"));
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

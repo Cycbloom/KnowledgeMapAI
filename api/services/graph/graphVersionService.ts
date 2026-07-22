@@ -1012,19 +1012,31 @@ export class GraphVersionService {
       }
 
       const mainModifiedEdgeKeys = new Set(
-        mainToSourceDiff.edges.modified.map(e => this.getEdgeKey(e.after ?? e.before!)),
+        mainToSourceDiff.edges.modified
+          .map(e => e.after ?? e.before)
+          .filter((e): e is SnapshotEdgeData => e !== null)
+          .map(e => this.getEdgeKey(e)),
       );
       const branchModifiedEdgeKeys = new Set(
-        branchToSourceDiff.edges.modified.map(e => this.getEdgeKey(e.after ?? e.before!)),
+        branchToSourceDiff.edges.modified
+          .map(e => e.after ?? e.before)
+          .filter((e): e is SnapshotEdgeData => e !== null)
+          .map(e => this.getEdgeKey(e)),
       );
 
       for (const edgeKey of mainModifiedEdgeKeys) {
         if (branchModifiedEdgeKeys.has(edgeKey)) {
           const mainChange = mainToSourceDiff.edges.modified.find(
-            e => this.getEdgeKey(e.after ?? e.before!) === edgeKey,
+            e => {
+              const edge = e.after ?? e.before;
+              return edge !== null && this.getEdgeKey(edge) === edgeKey;
+            },
           );
           const branchChange = branchToSourceDiff.edges.modified.find(
-            e => this.getEdgeKey(e.after ?? e.before!) === edgeKey,
+            e => {
+              const edge = e.after ?? e.before;
+              return edge !== null && this.getEdgeKey(edge) === edgeKey;
+            },
           );
           if (mainChange && branchChange) {
             conflicts.push({
@@ -1151,7 +1163,9 @@ export class GraphVersionService {
 
         // 应用修改边
         for (const edgeDiff of mergeResult.diff.edges.modified) {
-          const edgeKey = this.getEdgeKey(edgeDiff.after ?? edgeDiff.before!);
+          const edge = edgeDiff.after ?? edgeDiff.before;
+          if (!edge) continue;
+          const edgeKey = this.getEdgeKey(edge);
           if (selectedEdgeIds.has(edgeKey)) {
             const branchEdge = edgeDiff.after;
             if (branchEdge) {
@@ -1347,7 +1361,9 @@ export class GraphVersionService {
       }
 
       for (const edgeDiff of mergeResult.diff.edges.modified) {
-        const edgeKey = this.getEdgeKey(edgeDiff.after ?? edgeDiff.before!);
+        const edge = edgeDiff.after ?? edgeDiff.before;
+        if (!edge) continue;
+        const edgeKey = this.getEdgeKey(edge);
         if (selectedEdgeIds.has(edgeKey)) {
           const branchEdge = edgeDiff.after;
           if (branchEdge) {

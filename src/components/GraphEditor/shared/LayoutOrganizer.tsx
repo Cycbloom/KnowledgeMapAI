@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { LayoutGrid, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from "../../../hooks";
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message } from "../../../utils/messageHelper";
 import { api } from '../../../services/api';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Node, Edge } from '../../../types';
@@ -30,7 +30,7 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
 
   const organizeLayout = async () => {
     if (!nodes || nodes.length === 0) {
-      frontendEventBus.publish("message_show", { type: 'warning', content: t('graphEditor.layout.noNodes') });
+      message.warning(t('graphEditor.layout.noNodes'));
       return;
     }
 
@@ -50,11 +50,11 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
       onLayoutUpdate(positions);
       
       queryClient.invalidateQueries({ queryKey: ['graphData', graphId] });
-      
-      frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.layout.organized') });
+
+      message.success(t('graphEditor.layout.organized'));
     } catch (error) {
       console.error('Layout organize error:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.layout.organizeFailed') });
+      message.error(t('graphEditor.layout.organizeFailed'));
     } finally {
       setIsApplying(false);
     }
@@ -93,7 +93,7 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
       if (!levelNodesMap.has(level)) {
         levelNodesMap.set(level, []);
       }
-      levelNodesMap.get(level)!.push(nodeId);
+      levelNodesMap.get(level)?.push(nodeId);
       
       const children = childrenMap.get(nodeId) || [];
       children.forEach(childId => calculateLevel(childId, level + 1));
@@ -108,7 +108,7 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
         if (!levelNodesMap.has(maxLevel + 1)) {
           levelNodesMap.set(maxLevel + 1, []);
         }
-        levelNodesMap.get(maxLevel + 1)!.push(node.id);
+        levelNodesMap.get(maxLevel + 1)?.push(node.id);
       }
     });
 
@@ -159,8 +159,9 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
             const force = (minNodeGap - dist) / 2;
             const fx = (dx / dist) * force;
             const fy = (dy / dist) * force;
-            
-            const d1 = displacements.get(id1)!;
+
+            const d1 = displacements.get(id1);
+            if (!d1) return;
             displacements.set(id1, { dx: d1.dx + fx, dy: d1.dy + fy });
           }
         });

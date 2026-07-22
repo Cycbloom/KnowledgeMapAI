@@ -24,7 +24,7 @@ export const OfflineIndicator: React.FC = () => {
       )}
     >
       <WifiOff size={18} />
-      <span className="text-sm font-medium">{t('common.offlineMode')}</span>
+      <span className="text-sm font-medium">{t('toast.common.offlineMode')}</span>
     </div>
   );
 };

@@ -370,7 +370,7 @@ export const Achievements = () => {
 
         {activeTab === 'achievements' && (
           <div className="space-y-8">
-            {Object.entries(groupedAchievements || {}).map(([category, items]: [string, any]) => {
+            {Object.entries(groupedAchievements || {}).map(([category, items]: [string, Achievement[]]) => {
               const CatIcon = getCategoryIcon(category);
               return (
                 <div key={category} className="space-y-4">

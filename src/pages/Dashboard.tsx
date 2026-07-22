@@ -154,7 +154,7 @@ export const Dashboard = () => {
       }
       setBatchDeleteProgress(null);
       if (deletedIds.length === 0) {
-        throw new Error(t("dashboard.batchDeleteFailed"));
+        throw new Error(t("toast.dashboard.batchDeleteFailed"));
       }
       return deletedIds;
     },
@@ -190,7 +190,7 @@ export const Dashboard = () => {
       .catch((err: unknown) => {
         console.error(err);
         const errorMessage =
-          err instanceof Error ? err.message : t("dashboard.batchDeleteFailed");
+          err instanceof Error ? err.message : t("toast.dashboard.batchDeleteFailed");
         message.error(errorMessage);
         setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
       });
@@ -210,7 +210,7 @@ export const Dashboard = () => {
         .catch((err: unknown) => {
           console.error(err);
           const errorMessage =
-            err instanceof Error ? err.message : t("dashboard.deleteFailed");
+            err instanceof Error ? err.message : t("toast.dashboard.deleteFailed");
           message.error(errorMessage);
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         });
@@ -224,11 +224,11 @@ export const Dashboard = () => {
       { id, is_favorite: !currentFavorite },
       {
         onSuccess: () => {
-          message.success(currentFavorite ? t("dashboard.favoriteRemoved") : t("dashboard.favoriteAdded"));
+          message.success(currentFavorite ? t("toast.dashboard.favoriteRemoved") : t("toast.dashboard.favoriteAdded"));
         },
         onError: (err: unknown) => {
           console.error(err);
-          const errorMessage = err instanceof Error ? err.message : t("dashboard.operationFailed");
+          const errorMessage = err instanceof Error ? err.message : t("toast.dashboard.operationFailed");
           message.error(errorMessage);
         },
       },
@@ -278,11 +278,11 @@ export const Dashboard = () => {
         }
 
         await importGraphMutation.mutateAsync(importData);
-        message.success(t("dashboard.importSuccess"));
+        message.success(t("toast.dashboard.importSuccess"));
       } catch (err: unknown) {
         console.error(err);
-        const errorMessage = err instanceof Error ? err.message : t("dashboard.formatError");
-        message.error(t("dashboard.importFailed", { message: errorMessage }));
+        const errorMessage = err instanceof Error ? err.message : t("toast.dashboard.formatError");
+        message.error(t("toast.dashboard.importFailed", { message: errorMessage }));
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
@@ -343,7 +343,7 @@ export const Dashboard = () => {
     return (
       <div className="p-8 flex flex-col items-center justify-center text-center">
         <AlertCircle size={48} className="text-red-500 mb-4" />
-        <p className="text-red-600 dark:text-red-400 mb-4">{t('dashboard.loadError')}</p>
+        <p className="text-red-600 dark:text-red-400 mb-4">{t('toast.dashboard.loadError')}</p>
         <button
           type="button"
           onClick={() => { void refetch(); }}
@@ -477,7 +477,7 @@ export const Dashboard = () => {
                     queryClient.invalidateQueries({
                       queryKey: queryKeys.dashboardStats,
                     });
-                    message.success(t("dashboard.nodesGenerated", { count: nodes.length }));
+                    message.success(t("toast.dashboard.nodesGenerated", { count: nodes.length }));
                   }}
                 />
               </ErrorBoundary>

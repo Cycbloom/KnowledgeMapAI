@@ -243,7 +243,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white">{t('graphStyleSettings.colorScheme.currentScheme')}</h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {colorSchemes.find(s => s.key === currentColorScheme)?.name}
+                      {t(colorSchemes.find(s => s.key === currentColorScheme)?.name ?? '')}
                     </p>
                   </div>
                   <div className="flex space-x-2">
@@ -462,7 +462,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       className="flex items-center space-x-2 p-2 rounded-lg border border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="w-4 h-4 rounded" style={{ backgroundColor: type.color }} />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{type.display_name}</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{t(type.display_name)}</span>
                     </div>
                   ))}
                 </div>

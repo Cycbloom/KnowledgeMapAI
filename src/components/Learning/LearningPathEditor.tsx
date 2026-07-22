@@ -34,7 +34,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useTheme, useBeforeUnload } from "../../hooks";
 import { api } from '../../services/api';
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { formatDate } from "../../utils/formatters";
 import { asyncConfirm } from '@/utils/asyncConfirm';
 
@@ -263,12 +263,12 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
     
     try {
       await api.learningPaths.updateNodeStatus(learningPath.id, nodeRefId, status);
-      setPathNodes(prev => prev.map(pn => 
+      setPathNodes(prev => prev.map(pn =>
         pn.id === nodeRefId ? { ...pn, status } : pn
       ));
-      frontendEventBus.publish("message_show", { type: 'success', content: t('learning.path.nodeUpdated') });
+      message.success(t('learning.path.nodeUpdated'));
     } catch (_error) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('learning.path.nodeUpdateFailed') });
+      message.error(t('learning.path.nodeUpdateFailed'));
     }
   }, [learningPath, t]);
 
@@ -285,10 +285,10 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
     try {
       await api.learningPaths.removeNode(learningPath.id, nodeRefId);
       setPathNodes(prev => prev.filter(pn => pn.id !== nodeRefId));
-      frontendEventBus.publish("message_show", { type: 'success', content: t('learning.path.nodeRemoved') });
+      message.success(t('learning.path.nodeRemoved'));
       onRefresh();
     } catch (_error) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('learning.path.nodeRemoveFailed') });
+      message.error(t('learning.path.nodeRemoveFailed'));
     }
   }, [learningPath, onRefresh, t]);
 
@@ -304,10 +304,10 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       });
       setSelectedNewNode('');
       setIsAddingNode(false);
-      frontendEventBus.publish("message_show", { type: 'success', content: t('learning.path.nodeAdded') });
+      message.success(t('learning.path.nodeAdded'));
       onRefresh();
     } catch (_error) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('learning.path.nodeAddFailed') });
+      message.error(t('learning.path.nodeAddFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -319,10 +319,10 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
     setIsSaving(true);
     try {
       await api.learningPaths.reorderNodes(learningPath.id, pathNodes.map(pn => pn.id));
-      frontendEventBus.publish("message_show", { type: 'success', content: t('learning.path.pathSaved') });
+      message.success(t('learning.path.pathSaved'));
       onRefresh();
     } catch (_error) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('learning.path.pathSaveFailed') });
+      message.error(t('learning.path.pathSaveFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -364,14 +364,14 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
           nodes,
         });
         
-        frontendEventBus.publish("message_show", { type: 'success', content: t('learning.path.generated') });
+        message.success(t('learning.path.generated'));
         onRefresh();
       } else {
-        frontendEventBus.publish("message_show", { type: 'warning', content: t('learning.path.generateFailedNoNodes') });
+        message.warning(t('learning.path.generateFailedNoNodes'));
       }
     } catch (error) {
       console.error('Generate path error:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('learning.path.generateFailed') });
+      message.error(t('learning.path.generateFailed'));
     } finally {
       setIsGenerating(false);
     }

@@ -47,7 +47,7 @@ export function SaveButton({
 
   const idleText = idleLabel ?? t('common.save');
   const savingText = savingLabel ?? t('common.saving');
-  const savedText = savedLabel ?? t('common.saved');
+  const savedText = savedLabel ?? t('toast.common.saved');
 
   const handleSave = async () => {
     try {
@@ -56,7 +56,7 @@ export function SaveButton({
       const errorMsg =
         err instanceof Error && err.message
           ? err.message
-          : t('common.saveFailed');
+          : t('toast.common.saveFailed');
       message.error(
         errorMsg,
         errorToastDuration !== undefined

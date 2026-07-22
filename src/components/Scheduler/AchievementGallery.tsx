@@ -457,16 +457,16 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
                   </div>
                 )}
 
-                {userAchievementMap.has(selectedAchievement.id) && (
-                  <p className="mt-4 text-xs text-slate-400">
-                    解锁于{" "}
-                    {formatDate(
-                      userAchievementMap.get(selectedAchievement.id)!
-                        .unlocked_at,
-                      'short',
-                    )}
-                  </p>
-                )}
+                {userAchievementMap.has(selectedAchievement.id) && (() => {
+                  const ua = userAchievementMap.get(selectedAchievement.id);
+                  if (!ua) return null;
+                  return (
+                    <p className="mt-4 text-xs text-slate-400">
+                      解锁于{" "}
+                      {formatDate(ua.unlocked_at, 'short')}
+                    </p>
+                  );
+                })()}
               </div>
             </motion.div>
           </motion.div>

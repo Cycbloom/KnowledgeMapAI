@@ -104,7 +104,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
     layoutNodes.forEach(node => {
       const graph = graphs.find(g => g.id === node.id);
 
-      const domainIds = (graph as any)?.domainIds || [];
+      const domainIds = graph?.domainIds || [];
       const legacyDomain = graph?.domain;
 
       const ids = domainIds.length > 0 ? domainIds : (legacyDomain ? [legacyDomain] : []);
@@ -123,7 +123,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
           });
         }
 
-        groups.get(domainIdentifier)!.nodes.push(node);
+        groups.get(domainIdentifier)?.nodes.push(node);
       });
     });
 
@@ -163,12 +163,14 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
 
   const getColorsForDomain = (domainId: string): typeof DOMAIN_COLORS[0] => {
     if (domainIdToInfo?.has(domainId)) {
-      const info = domainIdToInfo.get(domainId)!;
-      const color = info.color;
-      return {
-        bg: `${color}21`,
-        text: color,
-      };
+      const info = domainIdToInfo.get(domainId);
+      if (info) {
+        const color = info.color;
+        return {
+          bg: `${color}21`,
+          text: color,
+        };
+      }
     }
     const index = domainGroups.findIndex(g => g.domainId === domainId);
     return DOMAIN_COLORS[index % DOMAIN_COLORS.length];

@@ -217,8 +217,8 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               {onSave && autoSaveStatus !== "idle" && (
                 <span className="text-xs text-gray-500 dark:text-gray-400">
                   {autoSaveStatus === "saving" && t("common.saving")}
-                  {autoSaveStatus === "saved" && t("common.saved")}
-                  {autoSaveStatus === "error" && t("common.saveFailed")}
+                  {autoSaveStatus === "saved" && t("toast.common.saved")}
+                  {autoSaveStatus === "error" && t("toast.common.saveFailed")}
                 </span>
               )}
               {onSave && (

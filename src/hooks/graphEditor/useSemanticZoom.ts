@@ -80,7 +80,8 @@ export const useSemanticZoom = ({
         const visited = new Set<string>();
         const queue = childMap.get(coreNode.id) || [];
         while (queue.length > 0) {
-          const currentId = queue.shift()!;
+          const currentId = queue.shift();
+          if (!currentId) break;
           if (visited.has(currentId)) continue;
           visited.add(currentId);
           const currentNode = nodes.find((n) => n.id === currentId);

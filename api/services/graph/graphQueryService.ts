@@ -5,6 +5,7 @@ import {
   GRAPH_NODES_SELECT,
   GRAPH_NODES_SELECT_WITH_EMBEDDING,
 } from "../../utils/nodeHelpers";
+import type { GraphNodeRaw } from "../../../shared/utils/nodeHelpers";
 import { logger } from "../../utils/logger";
 import { getLevelIndex } from "../../utils/levelUtils";
 import { withRpcFallback } from "../../utils/rpcFallback";
@@ -139,7 +140,12 @@ export class GraphQueryService {
         if (!tagsMap.has(gn.graph_id)) {
           tagsMap.set(gn.graph_id, new Set());
         }
-        tags.forEach((tag: string) => tagsMap.get(gn.graph_id)!.add(tag));
+        tags.forEach((tag: string) => {
+          const tagSet = tagsMap.get(gn.graph_id);
+          if (tagSet) {
+            tagSet.add(tag);
+          }
+        });
       },
     );
 
@@ -292,7 +298,7 @@ export class GraphQueryService {
           }
 
           const nodes = (graphNodes || [])
-            .map((gn: any) => {
+            .map((gn: GraphNodeRaw) => {
               const node = buildNodeFromGraphNode(gn);
               if (!node) return null;
               return {
@@ -362,7 +368,7 @@ export class GraphQueryService {
         }
 
         const nodes = (graphNodes || [])
-          .map((gn: any) => {
+          .map((gn: GraphNodeRaw) => {
             const node = buildNodeFromGraphNode(gn);
             if (!node) return null;
             return {
@@ -450,7 +456,8 @@ export class GraphQueryService {
           if (!cardGroups.has(kpId)) {
             cardGroups.set(kpId, { cards: [], stabilitySum: 0, weightedRetrievabilitySum: 0, reviewCountSum: 0 });
           }
-          const group = cardGroups.get(kpId)!;
+          const group = cardGroups.get(kpId);
+          if (!group) return;
           group.cards.push(card);
           const stability = card.fsrs_stability ?? 0;
           const retrievability = card.fsrs_retrievability ?? 0;
@@ -559,12 +566,14 @@ export class GraphQueryService {
       if (!graphGroups.has(gId)) {
         graphGroups.set(gId, new Map());
       }
-      const kpMap = graphGroups.get(gId)!;
+      const kpMap = graphGroups.get(gId);
+      if (!kpMap) return;
 
       if (!kpMap.has(kpId)) {
         kpMap.set(kpId, { cards: [], stabilitySum: 0, weightedRetrievabilitySum: 0, reviewCountSum: 0 });
       }
-      const group = kpMap.get(kpId)!;
+      const group = kpMap.get(kpId);
+      if (!group) return;
       group.cards.push(card);
       const stability = card.fsrs_stability ?? 0;
       const retrievability = card.fsrs_retrievability ?? 0;
@@ -848,7 +857,10 @@ export class GraphQueryService {
       if (!kpGraphMap.has(kpId)) {
         kpGraphMap.set(kpId, []);
       }
-      kpGraphMap.get(kpId)!.push(gn);
+      const list = kpGraphMap.get(kpId);
+      if (list) {
+        list.push(gn);
+      }
     });
 
     kpGraphMap.forEach((nodes, kpId) => {

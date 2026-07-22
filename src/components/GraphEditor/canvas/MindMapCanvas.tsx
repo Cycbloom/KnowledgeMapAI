@@ -19,8 +19,10 @@ import type {
   EdgeWidthMode,
   LayoutNode,
   GraphColorMode,
+  NodeStatus,
 } from "../../../types";
 import type { Node as GraphNode } from "../../../types";
+import type { GraphRef } from "../../../hooks/graphEditor";
 import { MindMapNode } from "./MindMapNode";
 import { MindMapLink } from "./MindMapLink";
 import { AlternativeBranches } from "../shared/AlternativeBranches";
@@ -111,7 +113,7 @@ function areEqual(prev: MindMapCanvasProps, next: MindMapCanvasProps): boolean {
 interface MindMapCanvasProps {
   nodes: Node[];
   edges: Edge[];
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   selectedNodeId: string | null;
   onNodeClick: (node: GraphNode) => void;
   width?: number;
@@ -183,7 +185,7 @@ interface MindMapCanvasProps {
 }
 
 export const MindMapCanvas = React.memo(
-  forwardRef<any, MindMapCanvasProps>(
+  forwardRef<GraphRef | null, MindMapCanvasProps>(
   (
     {
       nodes,
@@ -327,15 +329,18 @@ export const MindMapCanvas = React.memo(
         setIsLayoutCalculating(true);
         try {
           if (isSemanticMode) {
+            if (!embeddings) {
+              return;
+            }
             // Semantic layout: convert Map to Record for Worker serialization
             const embeddingsRecord: Record<string, number[]> = {};
-            embeddings!.forEach((value, key) => {
+            embeddings.forEach((value, key) => {
               embeddingsRecord[key] = value;
             });
 
             const result = await calculateSemanticLayout(
-              nodes as any,
-              edges as any,
+              nodes,
+              edges as unknown as Array<Record<string, unknown>>,
               embeddingsRecord,
               {
                 width: containerSize.width,
@@ -343,28 +348,28 @@ export const MindMapCanvas = React.memo(
               }
             );
             if (result) {
-              setLayout(result as any);
+              setLayout(result as unknown as LayoutResult);
             } else {
               // Fallback: Worker 不可用时降级为主线程同步计算
               console.warn('[MindMapCanvas] Worker semantic layout failed, falling back to main thread');
-              const fallbackResult = createSemanticLayout(nodes, edges, embeddings!, {
+              const fallbackResult = createSemanticLayout(nodes, edges, embeddings, {
                 width: containerSize.width,
                 height: containerSize.height,
               });
-              setLayout(fallbackResult as any);
+              setLayout(fallbackResult);
             }
           } else {
             // Force-directed layout (default)
             const result = await calculateMindMapLayout(
-              nodes as any,
-              edges as any,
+              nodes,
+              edges as unknown as Array<Record<string, unknown>>,
               {
                 width: containerSize.width,
                 height: containerSize.height,
               }
             );
             if (result) {
-              setLayout(result as any);
+              setLayout(result as unknown as LayoutResult);
             } else {
               // Fallback: Worker 不可用时降级为主线程同步计算
               console.warn('[MindMapCanvas] Worker layout failed, falling back to main thread');
@@ -372,24 +377,27 @@ export const MindMapCanvas = React.memo(
                 width: containerSize.width,
                 height: containerSize.height,
               });
-              setLayout(fallbackResult as any);
+              setLayout(fallbackResult);
             }
           }
         } catch (error) {
           // 错误时也降级到主线程
           console.warn('[MindMapCanvas] Worker layout error, falling back to main thread', error);
           if (isSemanticMode) {
-            const fallbackResult = createSemanticLayout(nodes, edges, embeddings!, {
+            if (!embeddings) {
+              return;
+            }
+            const fallbackResult = createSemanticLayout(nodes, edges, embeddings, {
               width: containerSize.width,
               height: containerSize.height,
             });
-            setLayout(fallbackResult as any);
+            setLayout(fallbackResult);
           } else {
             const fallbackResult = createMindMapLayout(nodes, edges, {
               width: containerSize.width,
               height: containerSize.height,
             });
-            setLayout(fallbackResult as any);
+            setLayout(fallbackResult);
           }
         } finally {
           setIsLayoutCalculating(false);
@@ -1407,22 +1415,26 @@ export const MindMapCanvas = React.memo(
             />
           )}
 
-        {isMobilePreviewMode && selectedNodeId && (
-          <MobileNodePreviewCard
-            node={nodes.find((n) => n.id === selectedNodeId)!}
-            nodes={nodes}
-            edges={edges}
-            nodeStatus={nodeStatus}
-            onNavigateToNode={(node) => {
-              onNodeClick(node);
-            }}
-            onMarkMastered={onMarkNodeMastered}
-            onOpenDetail={onOpenDetail}
-            onClose={() => {
-              if (onCanvasClick) onCanvasClick();
-            }}
-          />
-        )}
+        {isMobilePreviewMode && selectedNodeId && (() => {
+          const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+          if (!selectedNode) return null;
+          return (
+            <MobileNodePreviewCard
+              node={selectedNode}
+              nodes={nodes}
+              edges={edges}
+              nodeStatus={nodeStatus}
+              onNavigateToNode={(node) => {
+                onNodeClick(node);
+              }}
+              onMarkMastered={onMarkNodeMastered}
+              onOpenDetail={onOpenDetail}
+              onClose={() => {
+                if (onCanvasClick) onCanvasClick();
+              }}
+            />
+          );
+        })()}
 
         {edgeMgmt.contextMenuPosition && edgeMgmt.selectedEdge && (
           <EdgeContextMenu

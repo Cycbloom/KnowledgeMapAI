@@ -230,8 +230,8 @@ export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: s
   );
 };
 
-export const WeakPointsAnalysis: React.FC<{ 
-  nodes: any[]; 
+export const WeakPointsAnalysis: React.FC<{
+  nodes: Array<{ id: string; title: string }>;
   nodeStatus: Record<string, NodeStatusInfo>;
   graphTitle?: string;
 }> = ({ nodes, nodeStatus, graphTitle }) => {

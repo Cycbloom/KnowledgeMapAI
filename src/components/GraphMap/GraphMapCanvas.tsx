@@ -160,8 +160,8 @@ export const GraphMapCanvas = forwardRef<
       const timer = setTimeout(async () => {
         try {
           const result = await calculateMindMapLayout(
-            nodes as any,
-            edges as any,
+            nodes,
+            edges as unknown as Array<Record<string, unknown>>,
             {
               width: containerSize.width,
               height: containerSize.height,
@@ -169,7 +169,7 @@ export const GraphMapCanvas = forwardRef<
             }
           );
           if (result) {
-            setLayout(result as any);
+            setLayout(result as unknown as LayoutResult);
           } else {
             // Fallback: Worker 不可用时降级为主线程同步计算
             console.warn('[GraphMapCanvas] Worker layout failed, falling back to main thread');
@@ -178,7 +178,7 @@ export const GraphMapCanvas = forwardRef<
               height: containerSize.height,
               domainGroups,
             });
-            setLayout(fallbackResult as any);
+            setLayout(fallbackResult);
           }
         } catch (error) {
           // 错误时也降级到主线程
@@ -188,7 +188,7 @@ export const GraphMapCanvas = forwardRef<
             height: containerSize.height,
             domainGroups,
           });
-          setLayout(fallbackResult as any);
+          setLayout(fallbackResult);
         }
       }, 300); // 300ms 防抖
 

@@ -168,7 +168,7 @@ async function exportGraphNodes(supabase: SupabaseClient, data: ExportedData, op
   }
 
   const batchSize = 500;
-  const allNodes: any[] = [];
+  const allNodes: Record<string, unknown>[] = [];
 
   for (let i = 0; i < graphIds.length; i += batchSize) {
     const batch = graphIds.slice(i, i + batchSize);
@@ -200,7 +200,7 @@ async function exportEdges(supabase: SupabaseClient, data: ExportedData, options
   }
 
   const batchSize = 500;
-  const allEdges: any[] = [];
+  const allEdges: Record<string, unknown>[] = [];
 
   for (let i = 0; i < graphIds.length; i += batchSize) {
     const batch = graphIds.slice(i, i + batchSize);

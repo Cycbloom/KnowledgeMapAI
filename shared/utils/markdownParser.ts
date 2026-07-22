@@ -1,10 +1,12 @@
 import { extractWikiLinks } from './wikiLink';
 
+export type ParsedNodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
+
 export interface ParsedNode {
   id: string;
   title: string;
   content: string;
-  level: string;
+  level: ParsedNodeLevel;
   color: string;
   x_position: number;
   y_position: number;
@@ -40,7 +42,7 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
   let firstHeaderFound = false;
 
   // Helper to determine color based on level
-  const getLevelInfo = (depth: number) => {
+  const getLevelInfo = (depth: number): { level: ParsedNodeLevel; color: string } => {
     switch (depth) {
       case 1: return { level: 'root', color: '#8B5CF6' };   // Purple
       case 2: return { level: 'core', color: '#EF4444' };   // Red

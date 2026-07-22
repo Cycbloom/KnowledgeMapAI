@@ -21,6 +21,11 @@ import {
 
 export type CardDifficulty = "easy" | "medium" | "hard" | "mixed";
 
+export interface GeneratedCard {
+  type: string;
+  [key: string]: unknown;
+}
+
 export interface GenerateCardsOptions {
   type?: string;
   types?: string[];
@@ -217,11 +222,11 @@ Please respond with a valid JSON object.`;
               "Generate Cards",
             );
 
-            let cards = parsed.cards || [];
+            let cards = (parsed.cards || []) as GeneratedCard[];
             const originalCount = cards.length;
 
             if (originalCount > 0) {
-              cards = cards.filter((card: any) => {
+              cards = cards.filter((card) => {
                 const cardType = card.type;
                 return types.includes(cardType);
               });

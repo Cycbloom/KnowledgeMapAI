@@ -113,26 +113,6 @@
     "createTask": "Create Task",
     "skip": "Skip, Create Empty Graph"
   },
-  "message": {
-    "createSuccess": "Template created successfully!",
-    "updateSuccess": "Template updated successfully!",
-    "deleteSuccess": "Template deleted",
-    "duplicateSuccess": "Template duplicated",
-    "applySuccess": "Task created!",
-    "saveToLibrarySuccess": "Template saved to library",
-    "createFailed": "Failed to create template",
-    "updateFailed": "Failed to update template",
-    "deleteFailed": "Failed to delete template",
-    "duplicateFailed": "Failed to duplicate template",
-    "applyFailed": "Failed to apply template",
-    "saveFailed": "Failed to save template",
-    "systemTemplateCannotDelete": "System templates cannot be deleted",
-    "systemTemplateCannotEdit": "System templates cannot be edited",
-    "nameAndTitleRequired": "Please fill in template name and title template",
-    "selectTemplate": "Please select a template",
-    "enterCustomRules": "Please enter custom generation rules",
-    "enterTopic": "Please enter a topic"
-  },
   "empty": {
     "noTemplates": "No matching templates found",
     "noTemplatesHint": "Try different search keywords or category",
@@ -227,5 +207,79 @@
   "edgeList": "Edge List ({{count}})",
   "basicInfo": "Basic Information",
   "noNodesClickToAdd": "No nodes yet, click the button above to add",
-  "createFirst": "New Template"
+  "createFirst": "New Template",
+  "preset": {
+    "templates": {
+      "template-concept-learning": {
+        "name": "Concept Learning",
+        "description": "A complete learning path from definition to application, suitable for learning new concepts"
+      },
+      "template-problem-solving": {
+        "name": "Problem Solving",
+        "description": "A systematic flow from problem analysis to solution"
+      },
+      "template-programming": {
+        "name": "Programming Learning",
+        "description": "A systematic learning path for programming languages and technologies"
+      },
+      "template-history": {
+        "name": "History Learning",
+        "description": "A systematic learning framework for historical events"
+      },
+      "template-scientific-experiment": {
+        "name": "Scientific Experiment",
+        "description": "A complete recording and analysis framework for scientific experiments"
+      },
+      "template-quadrant-analysis": {
+        "name": "Quadrant Analysis",
+        "description": "Four-quadrant analysis suitable for SWOT analysis, priority management, etc."
+      }
+    },
+    "nodes": {
+      "template-concept-learning": {
+        "node-1": "Topic",
+        "node-2": "Definition",
+        "node-3": "Characteristics",
+        "node-4": "Examples",
+        "node-5": "Application"
+      },
+      "template-problem-solving": {
+        "node-1": "Problem",
+        "node-2": "Cause Analysis",
+        "node-3": "Solution",
+        "node-4": "Implementation Steps",
+        "node-5": "Expected Outcome"
+      },
+      "template-programming": {
+        "node-1": "Topic",
+        "node-2": "Core Concepts",
+        "node-3": "Syntax Rules",
+        "node-4": "Code Examples",
+        "node-5": "Common Mistakes",
+        "node-6": "Best Practices"
+      },
+      "template-history": {
+        "node-1": "Event",
+        "node-2": "Process",
+        "node-3": "Impact",
+        "node-4": "Key Figures",
+        "node-5": "Related Events"
+      },
+      "template-scientific-experiment": {
+        "node-1": "Experiment Purpose",
+        "node-2": "Hypothesis",
+        "node-3": "Materials",
+        "node-4": "Steps",
+        "node-5": "Results",
+        "node-6": "Conclusion"
+      },
+      "template-quadrant-analysis": {
+        "node-1": "Topic",
+        "node-2": "First Quadrant",
+        "node-3": "Second Quadrant",
+        "node-4": "Third Quadrant",
+        "node-5": "Fourth Quadrant"
+      }
+    }
+  }
 }

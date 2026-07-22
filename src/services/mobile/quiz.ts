@@ -98,7 +98,7 @@ export const mobileQuizApi: IQuizApi = {
 
     const cards: StudyCard[] = (quizSetCards || [])
       .filter((item) => item.study_cards && item.study_cards.length > 0)
-      .map((item) => item.study_cards![0]) as StudyCard[];
+      .map((item) => item.study_cards?.[0]) as StudyCard[];
 
     return {
       ...(quizSet as QuizSet),

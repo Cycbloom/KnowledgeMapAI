@@ -34,13 +34,8 @@
     "label": "复制",
     "idTooltip": "点击复制完整 ID"
   },
-  "copied": "已复制",
-  "copyFailed": "复制失败",
   "copyError": "复制错误信息",
   "copyCode": "复制代码",
-  "backOnline": "已恢复在线，正在同步数据",
-  "slowConnection": "网络较慢，部分操作可能延迟",
-  "offlineMode": "离线模式：部分 AI 功能不可用",
   "undo": "撤销",
   "restored": "已恢复",
   "restoreFailed": "恢复失败，请前往回收站手动恢复",
@@ -154,8 +149,6 @@
   "restore": "恢复",
   "discard": "丢弃",
   "saving": "保存中...",
-  "saved": "已保存",
-  "saveFailed": "保存失败",
   "tutor": {
     "empty": "暂无学习建议"
   }

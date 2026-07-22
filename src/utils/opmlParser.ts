@@ -1,16 +1,34 @@
 
+export type ParsedGraphNodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
+
+export interface ParsedGraphNode {
+  id: string;
+  title: string;
+  content: string;
+  level: ParsedGraphNodeLevel;
+  color: string;
+  x_position: number;
+  y_position: number;
+}
+
+export interface ParsedGraphEdge {
+  source: string;
+  target: string;
+  relationship: string;
+}
+
 export interface ParsedGraph {
   graph_title: string;
-  nodes: any[];
-  edges: any[];
+  nodes: ParsedGraphNode[];
+  edges: ParsedGraphEdge[];
 }
 
 export const parseOpmlToGraph = (xmlText: string): ParsedGraph => {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-  
-  const nodes: any[] = [];
-  const edges: any[] = [];
+
+  const nodes: ParsedGraphNode[] = [];
+  const edges: ParsedGraphEdge[] = [];
   let graphTitle = 'Untitled MindMap';
 
   // Try to get title from <head><title> or first outline text
@@ -26,7 +44,7 @@ export const parseOpmlToGraph = (xmlText: string): ParsedGraph => {
   }
 
   // Helper to determine color/level based on depth
-  const getLevelInfo = (depth: number) => {
+  const getLevelInfo = (depth: number): { level: ParsedGraphNodeLevel; color: string } => {
     switch (depth) {
       case 0: return { level: 'root', color: '#8B5CF6' };   // Purple
       case 1: return { level: 'core', color: '#EF4444' };   // Red

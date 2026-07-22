@@ -393,9 +393,9 @@ const applyHighlightsToDom = (
               bubbles: true,
               detail: {
                 term: part.text,
-                importance: part.range!.importance,
-                category: part.range!.category,
-                explanation: part.range!.reason,
+                importance: part.range?.importance,
+                category: part.range?.category,
+                explanation: part.range?.reason,
               },
             });
             span.dispatchEvent(event);

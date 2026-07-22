@@ -20,7 +20,7 @@ import {
   useGraphLearningPath,
   useUser,
 } from '../../hooks/queries';
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { useStore } from '../../store/useStore';
 import { KnowledgePointSelector } from './KnowledgePointSelector';
 import { QuizTypeConfig } from './QuizTypeConfig';
@@ -200,12 +200,12 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
 
   useEffect(() => {
     if (progress?.status === 'completed' && createdQuizSetId) {
-      frontendEventBus.publish("message_show", { type: 'success', content: t('quiz.generation.completed') });
+      message.success(t('quiz.generation.completed'));
       clearDraft();
       onComplete(createdQuizSetId);
       handleClose();
     } else if (progress?.status === 'failed') {
-      frontendEventBus.publish("message_show", { type: 'error', content: progress.error || t('quiz.generation.failed') });
+      message.error(progress.error || t('quiz.generation.failed'));
       setTaskId(null);
     }
   }, [progress, createdQuizSetId, onComplete, handleClose, t, clearDraft]);
@@ -262,11 +262,11 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
       });
 
       setTaskId(result.task_id);
-      frontendEventBus.publish("message_show", { type: 'info', content: t('quiz.generation.started') });
+      message.info(t('quiz.generation.started'));
     } catch (error: unknown) {
       console.error('Failed to generate quiz:', error);
-      const message = error instanceof Error ? error.message : t('quiz.generation.createFailed');
-      frontendEventBus.publish("message_show", { type: 'error', content: message });
+      const errorMessage = error instanceof Error ? error.message : t('quiz.generation.createFailed');
+      message.error(errorMessage);
     }
   };
 

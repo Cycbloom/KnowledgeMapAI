@@ -26,7 +26,6 @@ import { QUEUE_COLORS, STATUS_CONFIG, type QueueLevel } from "@/constants/schedu
 import { api } from "../../services/api";
 import { message } from "../../utils/messageHelper";
 import { formatDurationMinutes, formatDate } from "../../utils/formatters";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { Skeleton } from "../common";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys, defaultQueryConfig } from "@/hooks/queries/config";
@@ -207,7 +206,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t("scheduler.taskCard.updateSubtaskFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      message.error(errorMessage);
     }
   };
 

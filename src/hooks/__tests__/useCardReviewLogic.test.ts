@@ -1,18 +1,12 @@
-﻿// @vitest-environment jsdom
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useCardReviewLogic } from "../useCardReviewLogic";
+import { message } from "../../utils/messageHelper";
 import type { StudyCard } from "@shared/types";
 
 const mocks = vi.hoisted(() => ({
-  publish: vi.fn(),
   mutateAsync: vi.fn(),
-}));
-
-vi.mock("../../services/timer/FrontendEventBus", () => ({
-  frontendEventBus: {
-    publish: mocks.publish,
-  },
 }));
 
 vi.mock("react-i18next", () => ({
@@ -43,6 +37,7 @@ function makeCard(overrides: Partial<StudyCard> = {}): StudyCard {
 describe("useCardReviewLogic", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(message, "error").mockReturnValue("test-id");
     mocks.mutateAsync.mockResolvedValue(undefined);
   });
 
@@ -157,10 +152,7 @@ describe("useCardReviewLogic", () => {
     const { result } = renderHook_();
     act(() => { result.current.startCardReview([makeCard({ id: "1" }), makeCard({ id: "2" })]); });
     await act(async () => { await result.current.handleRate(3); });
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "error",
-      content: "study.messages.saveProgressFailed",
-    });
+    expect(message.error).toHaveBeenCalledWith("study.messages.saveProgressFailed");
     expect(result.current.currentCardIndex).toBe(0);
   });
 

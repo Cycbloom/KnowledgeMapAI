@@ -14,8 +14,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
 import { EmptyState } from "../../common/EmptyState";
-import { TaskKnowledgePoint } from "../../../types";
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { TaskKnowledgePoint, type SimilarKnowledgePoint } from "../../../types";
+import { message } from "../../../utils/messageHelper";
 
 interface KnowledgePointAssociationProps {
   taskId: string;
@@ -32,7 +32,7 @@ export const KnowledgePointAssociation: React.FC<
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SimilarKnowledgePoint[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
@@ -89,11 +89,11 @@ export const KnowledgePointAssociation: React.FC<
         setIsAdding(false);
         setSearchQuery("");
         setSearchResults([]);
-        frontendEventBus.publish("message_show", { type: "success", content: "知识点已关联" });
+        message.success("知识点已关联");
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "关联知识点失败";
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errorMessage = error instanceof Error ? error.message : "关联知识点失败";
+      message.error(errorMessage);
     }
   };
 
@@ -105,11 +105,11 @@ export const KnowledgePointAssociation: React.FC<
       );
       if (response.success) {
         setAssociations(associations.filter((a) => a.id !== kpId));
-        frontendEventBus.publish("message_show", { type: "success", content: "已取消关联" });
+        message.success("已取消关联");
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "取消关联失败";
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errorMessage = error instanceof Error ? error.message : "取消关联失败";
+      message.error(errorMessage);
     }
   };
 
@@ -127,11 +127,11 @@ export const KnowledgePointAssociation: React.FC<
             is_primary: a.id === kpId,
           })),
         );
-        frontendEventBus.publish("message_show", { type: "success", content: "已设为主要知识点" });
+        message.success("已设为主要知识点");
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "设置失败";
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errorMessage = error instanceof Error ? error.message : "设置失败";
+      message.error(errorMessage);
     }
   };
 

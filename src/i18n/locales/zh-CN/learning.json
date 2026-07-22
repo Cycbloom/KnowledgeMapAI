@@ -598,5 +598,23 @@
       "title": "移除节点",
       "message": "确定要将该节点从学习路径中移除吗？"
     }
+  },
+  "progress": {
+    "noPath": "尚未创建学习路径",
+    "completed": "已完成",
+    "inProgress": "进行中",
+    "pending": "待学习",
+    "paused": "已暂停",
+    "totalHours": "总时长(h)",
+    "learningProgress": "学习进度",
+    "currentLearning": "当前学习",
+    "knowledgePointIndex": "第 {{current}} / {{total}} 个知识点",
+    "continue": "继续",
+    "pathPreview": "学习路径预览",
+    "more": "+{{count}} 更多",
+    "dailyTarget": "每日目标",
+    "minutesPerDay": "{{minutes}} 分钟/天",
+    "completedCount": "{{completed}}/{{total}} 已完成",
+    "remainingCount": "{{count}} 剩余"
   }
 }

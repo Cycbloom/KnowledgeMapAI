@@ -52,31 +52,46 @@ interface AIExpansionPanelProps {
   hasNodes?: boolean;
 }
 
-const styleOptions = [
-  { 
-    value: 'academic' as const, 
-    label: '学术风格', 
-    icon: GraduationCap, 
-    details: '专业术语，理论框架'
+const styleOptionDefs: Array<{
+  value: DepthStyle;
+  labelKey: string;
+  detailsKey: string;
+  icon: typeof GraduationCap;
+}> = [
+  {
+    value: 'academic',
+    labelKey: 'graphEditor.graphMap.aiExpansion.styleAcademic',
+    detailsKey: 'graphEditor.graphMap.aiExpansion.styleAcademicDetails',
+    icon: GraduationCap,
   },
-  { 
-    value: 'practical' as const, 
-    label: '实用风格', 
-    icon: Briefcase, 
-    details: '通俗易懂，实际应用'
+  {
+    value: 'practical',
+    labelKey: 'graphEditor.graphMap.aiExpansion.stylePractical',
+    detailsKey: 'graphEditor.graphMap.aiExpansion.stylePracticalDetails',
+    icon: Briefcase,
   },
-  { 
-    value: 'beginner' as const, 
-    label: '入门风格', 
-    icon: BookOpen, 
-    details: '简单易懂，循序渐进'
+  {
+    value: 'beginner',
+    labelKey: 'graphEditor.graphMap.aiExpansion.styleBeginner',
+    detailsKey: 'graphEditor.graphMap.aiExpansion.styleBeginnerDetails',
+    icon: BookOpen,
   },
-  { 
-    value: 'custom' as const, 
-    label: '自定义', 
-    icon: PenTool, 
-    details: '自己编写生成规则'
+  {
+    value: 'custom',
+    labelKey: 'graphEditor.graphMap.aiExpansion.styleCustom',
+    detailsKey: 'graphEditor.graphMap.aiExpansion.styleCustomDetails',
+    icon: PenTool,
   },
+];
+
+const relationTypeOptionDefs: Array<{
+  value: GraphRelationType;
+  labelKey: string;
+  color: string;
+}> = [
+  { value: 'prerequisite', labelKey: 'graphEditor.graphMap.aiExpansion.relationPrerequisite', color: 'bg-primary-500' },
+  { value: 'extension', labelKey: 'graphEditor.graphMap.aiExpansion.relationExtension', color: 'bg-green-500' },
+  { value: 'related', labelKey: 'graphEditor.graphMap.aiExpansion.relationRelated', color: 'bg-amber-500' },
 ];
 
 export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
@@ -117,11 +132,16 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
     error?: string;
   }>({ status: 'idle', currentStep: '', nodesCreated: 0 });
 
-  const relationTypeOptions: Array<{ value: GraphRelationType; label: string; color: string }> = [
-    { value: 'prerequisite', label: '前置知识', color: 'bg-primary-500' },
-    { value: 'extension', label: '扩展知识', color: 'bg-green-500' },
-    { value: 'related', label: '相关知识', color: 'bg-amber-500' },
-  ];
+  const styleOptions = styleOptionDefs.map((opt) => ({
+    ...opt,
+    label: t(opt.labelKey),
+    details: t(opt.detailsKey),
+  }));
+
+  const relationTypeOptions = relationTypeOptionDefs.map((opt) => ({
+    ...opt,
+    label: t(opt.labelKey),
+  }));
 
   const toggleRelationType = (type: GraphRelationType) => {
     setSelectedRelationTypes(prev => 
@@ -151,24 +171,24 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
           return;
         }
         
-        setDepthProgress({ status: 'init', currentStep: '正在初始化图谱...', nodesCreated: 0 });
-        
+        setDepthProgress({ status: 'init', currentStep: t('graphEditor.graphMap.aiExpansion.initGraph'), nodesCreated: 0 });
+
         const result = await onDepthExpand({
           style: depthStyle,
           customPrompt: depthStyle === 'custom' ? customPrompt : undefined,
           sources: sources.length > 0 ? sources : undefined,
           depth: depthLevel,
         });
-        
+
         if (result && onDepthExpandNode && depthLevel > 1) {
-          setDepthProgress({ status: 'expanding', currentStep: '正在展开核心节点...', nodesCreated: result.coreNodes.length });
-          
+          setDepthProgress({ status: 'expanding', currentStep: t('graphEditor.graphMap.aiExpansion.expandingCore'), nodesCreated: result.coreNodes.length });
+
           for (const coreNode of result.coreNodes) {
-            setDepthProgress(prev => ({ 
-              ...prev, 
-              currentStep: `正在展开「${coreNode.title}」...` 
+            setDepthProgress(prev => ({
+              ...prev,
+              currentStep: t('graphEditor.graphMap.aiExpansion.expandingNode', { title: coreNode.title }),
             }));
-            
+
             const children = await onDepthExpandNode({
               nodeId: coreNode.id || coreNode.title,
               nodeTitle: coreNode.title,
@@ -178,17 +198,17 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
               customPrompt: depthStyle === 'custom' ? customPrompt : undefined,
               existingChildren: [],
             });
-            
+
             if (children) {
-              setDepthProgress(prev => ({ 
-                ...prev, 
-                nodesCreated: prev.nodesCreated + children.length 
+              setDepthProgress(prev => ({
+                ...prev,
+                nodesCreated: prev.nodesCreated + children.length
               }));
             }
           }
         }
-        
-        setDepthProgress({ status: 'completed', currentStep: '完成', nodesCreated: result?.coreNodes.length || 0 });
+
+        setDepthProgress({ status: 'completed', currentStep: t('graphEditor.graphMap.aiExpansion.completed'), nodesCreated: result?.coreNodes.length || 0 });
       } else {
         if (selectedRelationTypes.length === 0) return;
         await onWidthExpand({
@@ -351,7 +371,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                 {depthStyle === 'custom' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      自定义生成规则
+                      {t('graphEditor.graphMap.aiExpansion.customRules')}
                     </label>
                     <textarea
                       value={customPrompt}
@@ -359,14 +379,14 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                       disabled={isRunning}
                       rows={3}
                       className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
-                      placeholder="描述你希望如何生成知识点..."
+                      placeholder={t('graphEditor.graphMap.aiExpansion.customRulesPlaceholder')}
                     />
                   </div>
                 )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    参考来源（可选）
+                    {t('graphEditor.graphMap.aiExpansion.referenceSources')}
                   </label>
                   <div className="space-y-2">
                     <div className="flex gap-2">
@@ -377,7 +397,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                         onKeyDown={e => e.key === 'Enter' && handleAddSource()}
                         disabled={isRunning}
                         className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
-                        placeholder="输入 URL 或文本..."
+                        placeholder={t('graphEditor.graphMap.aiExpansion.referenceSourcesPlaceholder')}
                       />
                       <button
                         onClick={handleAddSource}
@@ -408,7 +428,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    生成深度：{depthLevel} 层
+                    {t('graphEditor.graphMap.aiExpansion.depthLevel', { count: depthLevel })}
                   </label>
                   <input
                     type="range"
@@ -420,17 +440,14 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                     className="w-full h-2 bg-primary-200 dark:bg-primary-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                   />
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    <span>1 层</span>
-                    <span>4 层</span>
+                    <span>{t('graphEditor.graphMap.aiExpansion.depthLevelMin')}</span>
+                    <span>{t('graphEditor.graphMap.aiExpansion.depthLevelMax')}</span>
                   </div>
                 </div>
 
                 <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
                   <p className="text-xs text-primary-600 dark:text-primary-400">
-                    {depthLevel === 1 && '生成根节点和核心节点，适合快速构建知识框架。'}
-                    {depthLevel === 2 && '生成根节点、核心节点和一级子节点，适合中等详细程度的知识图谱。'}
-                    {depthLevel === 3 && '生成根节点、核心节点和两级子节点，适合详细的知识图谱。'}
-                    {depthLevel === 4 && '生成根节点、核心节点和三级子节点，适合非常详细的知识图谱，内容最丰富。'}
+                    {t(`graphEditor.graphMap.aiExpansion.depthHint${depthLevel}`)}
                   </p>
                 </div>
 
@@ -443,11 +460,11 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                         <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
                       )}
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {depthProgress.status === 'completed' ? '生成完成' : depthProgress.currentStep}
+                        {depthProgress.status === 'completed' ? t('graphEditor.graphMap.aiExpansion.generationComplete') : depthProgress.currentStep}
                       </span>
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      已创建 {depthProgress.nodesCreated} 个知识点
+                      {t('graphEditor.graphMap.aiExpansion.nodesCreated', { count: depthProgress.nodesCreated })}
                     </div>
                     {depthProgress.error && (
                       <div className="text-sm text-red-500 mt-1">{depthProgress.error}</div>
@@ -466,7 +483,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
               >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    关系类型
+                    {t('graphEditor.graphMap.aiExpansion.relationType')}
                   </label>
                   <div className="flex gap-2">
                     {relationTypeOptions.map(option => (
@@ -493,7 +510,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    扩展深度：{maxDepth} 层
+                    {t('graphEditor.graphMap.aiExpansion.widthDepth', { count: maxDepth })}
                   </label>
                   <input
                     type="range"
@@ -505,8 +522,8 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                     className="w-full h-2 bg-emerald-200 dark:bg-emerald-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                   />
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    <span>1 层</span>
-                    <span>5 层</span>
+                    <span>{t('graphEditor.graphMap.aiExpansion.depthLevelMin')}</span>
+                    <span>{t('graphEditor.graphMap.aiExpansion.widthDepthMax')}</span>
                   </div>
                 </div>
 
@@ -515,7 +532,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                   className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                 >
                   {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  高级选项
+                  {t('graphEditor.graphMap.aiExpansion.advancedOptions')}
                 </button>
 
                 {showAdvanced && (
@@ -527,7 +544,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                   >
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        每层最大图谱数：{maxGraphsPerLevel}
+                        {t('graphEditor.graphMap.aiExpansion.maxGraphsPerLevel', { count: maxGraphsPerLevel })}
                       </label>
                       <input
                         type="range"
@@ -551,14 +568,14 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                       />
                       <label htmlFor="autoGenerateNodes" className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
                         <Sparkles className="w-4 h-4 text-emerald-500" />
-                        <span>自动生成图谱内的知识点</span>
+                        <span>{t('graphEditor.graphMap.aiExpansion.autoGenerateNodes')}</span>
                       </label>
                     </div>
 
                     {autoGenerateNodes && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          知识点深度：{nodeDepth} 层
+                          {t('graphEditor.graphMap.aiExpansion.nodeDepth', { count: nodeDepth })}
                         </label>
                         <input
                           type="range"
@@ -576,15 +593,11 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
 
                 <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                   <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                    {maxDepth === 1 && '创建与当前图谱直接相关的知识图谱，适合快速扩展知识网络。'}
-                    {maxDepth === 2 && '创建两层相关知识图谱，适合中等规模的知识网络扩展。'}
-                    {maxDepth === 3 && '创建三层相关知识图谱，适合较大规模的知识网络扩展。'}
-                    {maxDepth === 4 && '创建四层相关知识图谱，适合大规模的知识网络扩展。'}
-                    {maxDepth === 5 && '创建五层相关知识图谱，适合最大规模的知识网络扩展，覆盖面最广。'}
+                    {t(`graphEditor.graphMap.aiExpansion.widthHint${maxDepth}`)}
                   </p>
                   {autoGenerateNodes && (
                     <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">
-                      同时为每个新图谱生成 {nodeDepth} 层深度的知识点。
+                      {t('graphEditor.graphMap.aiExpansion.autoGenerateNodesHint', { count: nodeDepth })}
                     </p>
                   )}
                 </div>
@@ -596,26 +609,26 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                 <div className="flex items-center gap-3 mb-3">
                   <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    正在拓展...
+                    {t('graphEditor.graphMap.aiExpansion.expanding')}
                   </span>
                 </div>
-                
+
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                    <span>当前深度</span>
+                    <span>{t('graphEditor.graphMap.aiExpansion.currentDepth')}</span>
                     <span>{progress.current_depth} / {maxDepth}</span>
                   </div>
                   <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                    <span>已创建图谱</span>
+                    <span>{t('graphEditor.graphMap.aiExpansion.graphsCreated')}</span>
                     <span>{progress.total_graphs_created}</span>
                   </div>
                   <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                    <span>已创建知识点</span>
+                    <span>{t('graphEditor.graphMap.aiExpansion.nodesCreatedLabel')}</span>
                     <span>{progress.total_nodes_created}</span>
                   </div>
                   {progress.current_graph_title && (
                     <div className="text-xs text-gray-500 dark:text-gray-500 truncate">
-                      正在处理：{progress.current_graph_title}
+                      {t('graphEditor.graphMap.aiExpansion.processing', { title: progress.current_graph_title })}
                     </div>
                   )}
                 </div>
@@ -623,7 +636,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                 {progress.created_graphs.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                      已创建的图谱
+                      {t('graphEditor.graphMap.aiExpansion.createdGraphs')}
                     </p>
                     <div className="max-h-24 overflow-y-auto space-y-1">
                       {progress.created_graphs.slice(-5).map((g, idx) => (
@@ -633,7 +646,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                             g.relation_type === 'extension' ? 'bg-green-500' : 'bg-amber-500'
                           }`} />
                           <span className="text-gray-700 dark:text-gray-300 truncate">{g.title}</span>
-                          <span className="text-gray-400">({g.node_count ?? 0} 节点)</span>
+                          <span className="text-gray-400">{t('graphEditor.graphMap.aiExpansion.nodeCountShort', { count: g.node_count ?? 0 })}</span>
                         </div>
                       ))}
                     </div>
@@ -646,10 +659,13 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-2">
                   <Check className="w-5 h-5" />
-                  <span className="font-medium">拓展完成！</span>
+                  <span className="font-medium">{t('graphEditor.graphMap.aiExpansion.expandComplete')}</span>
                 </div>
                 <div className="text-sm text-green-600 dark:text-green-400">
-                  共创建 {progress.total_graphs_created} 个图谱，{progress.total_nodes_created} 个知识点
+                  {t('graphEditor.graphMap.aiExpansion.expandCompleteDesc', {
+                    graphs: progress.total_graphs_created,
+                    nodes: progress.total_nodes_created,
+                  })}
                 </div>
               </div>
             )}
@@ -660,7 +676,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
-              {progress?.status === 'completed' ? '关闭' : '取消'}
+              {progress?.status === 'completed' ? t('graphEditor.graphMap.aiExpansion.close') : t('graphEditor.graphMap.aiExpansion.cancel')}
             </button>
             {progress?.status !== 'completed' && progress?.status !== 'running' && (
               <button
@@ -671,12 +687,12 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    启动中...
+                    {t('graphEditor.graphMap.aiExpansion.starting')}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    开始拓展
+                    {t('graphEditor.graphMap.aiExpansion.startExpand')}
                   </>
                 )}
               </button>

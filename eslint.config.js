@@ -34,8 +34,8 @@ export default tseslint.config(
       }],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'warn',
       'no-var': 'error',
@@ -46,12 +46,30 @@ export default tseslint.config(
       'no-useless-return': 'warn',
       'prefer-template': 'warn',
       'object-shorthand': ['warn', 'properties'],
+      'no-restricted-syntax': ['warn', {
+        selector: "CallExpression[callee.object.name='frontendEventBus'][callee.property.name='publish'][arguments.0.value='message_show']",
+        message: 'Use `message.*` from `@/utils/messageHelper` instead of `frontendEventBus.publish("message_show", ...)`.',
+      }, {
+        selector: "CallExpression[callee.object.name='frontendEventBus'][callee.property.name='publish'][arguments.0.value='message_hide']",
+        message: 'Use `message.dismiss(id)` from `@/utils/messageHelper` instead of `frontendEventBus.publish("message_hide", ...)`.',
+      }],
     },
   },
   {
     files: ['test-*.ts', 'vite.config.ts', 'src/utils/serviceWorker.ts', 'src/utils/performance.ts'],
     rules: {
       'no-console': 'off',
+    },
+  },
+  {
+    // R28: messageHelper 与 MessageBar 是 toast 系统底层，允许直接 publish
+    files: [
+      'src/utils/messageHelper.ts',
+      'src/components/common/MessageBar.tsx',
+      'src/components/common/__tests__/MessageBar.test.tsx',
+    ],
+    rules: {
+      'no-restricted-syntax': 'off',
     },
   },
   {
@@ -63,6 +81,20 @@ export default tseslint.config(
       'react-hooks/rules-of-hooks': 'off',
       'react-hooks/exhaustive-deps': 'off',
       'no-empty-pattern': 'off',
+    },
+  },
+  {
+    // R31: Test files use `as any` casts for mock factories and partial
+    // test fixtures. Exempt them from the strict `no-explicit-any` rule
+    // (now `error`) so CI does not block test authoring.
+    files: [
+      '**/__tests__/**/*.{ts,tsx}',
+      '**/*.test.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
 )

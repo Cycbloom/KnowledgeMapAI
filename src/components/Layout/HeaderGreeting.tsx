@@ -21,9 +21,10 @@ export const HeaderGreeting: React.FC = () => {
   };
 
   const userName =
-    (user?.user_metadata as any)?.name || user?.email?.split("@")[0] || t('layout.greeting.user');
+    user?.user_metadata?.name || user?.email?.split("@")[0] || t('layout.greeting.user');
   const dueToday = (statsData as { metrics?: { dueToday?: number } } | null | undefined)?.metrics?.dueToday || 0;
-  const streak = (user?.user_metadata as any)?.study_streak || 0;
+  const rawStreak = user?.user_metadata?.study_streak;
+  const streak = typeof rawStreak === 'number' ? rawStreak : 0;
 
   return (
     <div className="flex items-center gap-4 text-sm">

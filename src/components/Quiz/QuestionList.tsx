@@ -71,7 +71,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
       if (!groups[card.card_type]) {
         groups[card.card_type] = [];
       }
-      groups[card.card_type]!.push({ ...card, _index: index } as StudyCard & { _index: number });
+      groups[card.card_type]?.push({ ...card, _index: index } as StudyCard & { _index: number });
     });
     return groups;
   }, [cards]);

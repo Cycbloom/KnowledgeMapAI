@@ -86,6 +86,24 @@ interface AIGeneratedCard {
   options?: string[];
 }
 
+interface CardToInsert {
+  knowledge_point_id: string;
+  question: string;
+  answer: string;
+  explanation?: string;
+  card_type: string;
+  difficulty: number;
+  options: string | null;
+  next_review: string;
+  user_id?: string;
+  graph_id?: string;
+  quiz_set_id?: string;
+}
+
+interface QuizSetCardWithStudyCard {
+  study_cards: StudyCard[];
+}
+
 const PRACTICE_WEIGHT = 0.1;
 const PRACTICE_MAX_IMPROVEMENT = 0.3;
 const QUIZ_WEIGHT = 0.2;
@@ -453,8 +471,7 @@ export class SubtaskQuizIntegrationService {
     }
 
     const cards: StudyCard[] = (quizSetCards ?? [])
-      .map((item: any) => item.study_cards)
-      .filter(Boolean);
+      .flatMap((item: QuizSetCardWithStudyCard) => item.study_cards ?? []);
 
     if (cards.length === 0) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
@@ -642,7 +659,10 @@ export class SubtaskQuizIntegrationService {
     );
 
     try {
-      const aiResult = await this.aiProviderService!.generateCards(
+      if (!this.aiProviderService) {
+        throw new Error("AI provider service not configured");
+      }
+      const aiResult = await this.aiProviderService.generateCards(
         knowledgePoint.title,
         knowledgePoint.content || "",
         {
@@ -655,7 +675,7 @@ export class SubtaskQuizIntegrationService {
       );
 
       const newCards: StudyCard[] = [];
-      const cardsToInsert: any[] = [];
+      const cardsToInsert: CardToInsert[] = [];
 
       for (const card of aiResult.cards as AIGeneratedCard[]) {
         if (existingQuestions.has(card.question)) {
@@ -687,8 +707,10 @@ export class SubtaskQuizIntegrationService {
           });
         } else {
           for (let i = 0; i < cardsToInsert.length; i++) {
+            const inserted = insertedCards[i];
+            if (!inserted) continue;
             newCards.push({
-              id: insertedCards[i].id,
+              id: inserted.id,
               knowledge_point_id: knowledgePointId,
               question: cardsToInsert[i].question,
               answer: cardsToInsert[i].answer,
@@ -697,7 +719,9 @@ export class SubtaskQuizIntegrationService {
               explanation: cardsToInsert[i].explanation,
               difficulty: cardsToInsert[i].difficulty,
               next_review: cardsToInsert[i].next_review,
-            } as StudyCard);
+              user_id: cardsToInsert[i].user_id ?? "",
+              graph_id: cardsToInsert[i].graph_id ?? knowledgePoint.graph_id ?? "",
+            } as unknown as StudyCard);
           }
         }
       }
@@ -763,6 +787,9 @@ export class SubtaskQuizIntegrationService {
     }
 
     try {
+      if (!this.aiProviderService) {
+        throw new Error("AI provider service not configured");
+      }
       const difficultyMap: Record<string, CardDifficulty> = {
         easy: "easy",
         medium: "medium",
@@ -770,7 +797,7 @@ export class SubtaskQuizIntegrationService {
         mixed: "mixed",
       };
 
-      const aiResult = await this.aiProviderService!.generateCards(
+      const aiResult = await this.aiProviderService.generateCards(
         knowledgePoint.title,
         knowledgePoint.content || "",
         {
@@ -786,7 +813,7 @@ export class SubtaskQuizIntegrationService {
         },
       );
 
-      const cardsToInsert = aiResult.cards.map((card: any) => ({
+      const cardsToInsert: CardToInsert[] = (aiResult.cards as AIGeneratedCard[]).map((card) => ({
         knowledge_point_id: knowledgePointId,
         user_id: userId,
         graph_id: knowledgePoint.graph_id,
@@ -817,7 +844,7 @@ export class SubtaskQuizIntegrationService {
       }
 
       const quizSetCardsToInsert = insertedCards.map(
-        (card: any, index: number) => ({
+        (card: { id: string }, index: number) => ({
           quiz_set_id: quizSetId,
           card_id: card.id,
           display_order: index + 1,

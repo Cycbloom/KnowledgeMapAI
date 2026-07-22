@@ -5,7 +5,6 @@ import { useUser } from '../hooks/queries';
 import { useLogoutMutation } from '../hooks/mutations';
 import { queryKeys } from '../hooks/queries/config';
 import { useStore } from '../store/useStore';
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { LogOut, User, Settings as SettingsIcon, ExternalLink, Database, Download, Upload, AlertTriangle, Trash2, RotateCcw, Clock, Plus, RefreshCw } from 'lucide-react';
 import { backupApi, BackupSnapshot } from '../services/api/backup';
 import { queryClient } from '../main';
@@ -72,7 +71,7 @@ export const Profile = () => {
       message.error(t('profile.logoutFailed'));
     }
     setUser(null, null);
-    frontendEventBus.publish("message_show", { type: 'success', content: t('profile.messages.logoutSuccess') });
+    message.success(t('profile.messages.logoutSuccess'));
     navigate('/login');
   };
 
@@ -88,10 +87,10 @@ export const Profile = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      frontendEventBus.publish("message_show", { type: 'success', content: t('profile.messages.exportSuccess') });
+      message.success(t('profile.messages.exportSuccess'));
     } catch (e) {
       console.error(e);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('profile.messages.exportFailed') });
+      message.error(t('profile.messages.exportFailed'));
     } finally {
       setIsExporting(false);
     }
@@ -105,27 +104,24 @@ export const Profile = () => {
     try {
       const text = await file.text();
       const data = JSON.parse(text);
-      
+
       if (!data.version || !data.data) {
         throw new Error(t('profile.messages.invalidBackupFormat'));
       }
 
       const result = await backupApi.import(data, importMode);
-      frontendEventBus.publish("message_show", { 
-        type: 'success', 
-        content: t('profile.messages.importSuccess', {
-          message: result.message,
-          graphs: result.stats.graphs,
-          nodes: result.stats.nodes,
-          cards: result.stats.study_cards
-        })
-      });
+      message.success(t('profile.messages.importSuccess', {
+        message: result.message,
+        graphs: result.stats.graphs,
+        nodes: result.stats.nodes,
+        cards: result.stats.study_cards
+      }));
       await refreshAllData();
       loadSnapshots();
     } catch (e: unknown) {
       console.error(e);
-      const message = e instanceof Error ? e.message : t('profile.messages.importFailed');
-      frontendEventBus.publish("message_show", { type: 'error', content: message });
+      const errorMessage = e instanceof Error ? e.message : t('profile.messages.importFailed');
+      message.error(errorMessage);
     } finally {
       setIsImporting(false);
       if (fileInputRef.current) {
@@ -138,11 +134,11 @@ export const Profile = () => {
     setIsCreatingSnapshot(true);
     try {
       await backupApi.createSnapshot('manual');
-      frontendEventBus.publish("message_show", { type: 'success', content: t('profile.messages.snapshotCreateSuccess') });
+      message.success(t('profile.messages.snapshotCreateSuccess'));
       loadSnapshots();
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : t('profile.messages.snapshotCreateFailed');
-      frontendEventBus.publish("message_show", { type: 'error', content: message });
+      const errorMessage = e instanceof Error ? e.message : t('profile.messages.snapshotCreateFailed');
+      message.error(errorMessage);
     } finally {
       setIsCreatingSnapshot(false);
     }
@@ -150,22 +146,19 @@ export const Profile = () => {
 
   const handleRestoreSnapshot = async (id: string) => {
     if (!await asyncConfirm({ title: t('profile.backup.restoreSnapshot'), message: t('profile.messages.confirmRestore'), isDangerous: true })) return;
-    
+
     setRestoringId(id);
     try {
       const result = await backupApi.restoreSnapshot(id);
-      frontendEventBus.publish("message_show", { 
-        type: 'success', 
-        content: t('profile.messages.snapshotRestoreSuccess', {
-          message: result.message,
-          graphs: result.stats.graphs,
-          nodes: result.stats.nodes
-        })
-      });
+      message.success(t('profile.messages.snapshotRestoreSuccess', {
+        message: result.message,
+        graphs: result.stats.graphs,
+        nodes: result.stats.nodes
+      }));
       await refreshAllData();
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : t('profile.messages.snapshotRestoreFailed');
-      frontendEventBus.publish("message_show", { type: 'error', content: message });
+      const errorMessage = e instanceof Error ? e.message : t('profile.messages.snapshotRestoreFailed');
+      message.error(errorMessage);
     } finally {
       setRestoringId(null);
     }
@@ -173,15 +166,15 @@ export const Profile = () => {
 
   const handleDeleteSnapshot = async (id: string) => {
     if (!await asyncConfirm({ title: t('profile.backup.deleteSnapshot'), message: t('profile.messages.confirmDelete'), isDangerous: true })) return;
-    
+
     setDeletingId(id);
     try {
       await backupApi.deleteSnapshot(id);
-      frontendEventBus.publish("message_show", { type: 'success', content: t('profile.messages.snapshotDeleteSuccess') });
+      message.success(t('profile.messages.snapshotDeleteSuccess'));
       setSnapshots(prev => prev.filter(s => s.id !== id));
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : t('profile.messages.snapshotDeleteFailed');
-      frontendEventBus.publish("message_show", { type: 'error', content: message });
+      const errorMessage = e instanceof Error ? e.message : t('profile.messages.snapshotDeleteFailed');
+      message.error(errorMessage);
     } finally {
       setDeletingId(null);
     }

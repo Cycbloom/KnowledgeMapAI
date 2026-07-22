@@ -21,10 +21,14 @@ export function getPaginationParams(options?: PaginationOptions): PaginationResu
   };
 }
 
-export function buildPaginationQuery<T>(
+interface RangeableQuery<T> {
+  range(from: number, to: number): T;
+}
+
+export function buildPaginationQuery<T extends RangeableQuery<T>>(
   query: T,
   options?: PaginationOptions
 ): T {
   const { offset, end } = getPaginationParams(options);
-  return (query as any).range(offset, end);
+  return query.range(offset, end);
 }

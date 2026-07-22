@@ -1,6 +1,6 @@
 import { Node, Edge } from '../../types';
 import { getLevel } from '../../lib/graphUtils';
-import { frontendEventBus } from '../../services/timer/FrontendEventBus';
+import { message } from '../../utils/messageHelper';
 import { api } from '../../services/api';
 import { useStore } from '../../store/useStore';
 import { queryKeys } from '../queries/config';
@@ -61,33 +61,33 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   
   const handleExpandNode = async (prompt?: string) => {
     if (!selectedNode) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.selectNodeFirst') });
+      message.error(t('toast.graphAI.mergeGraphs.selectNodeFirst'));
       return null;
     }
-    
+
     const currentGraphId = getCurrentGraphId();
     if (!currentGraphId) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.cannotDetermineGraph') });
+      message.error(t('toast.graphAI.mergeGraphs.cannotDetermineGraph'));
       return null;
     }
-    
+
     if (!selectedNode.title) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.nodeTitleEmpty') });
+      message.error(t('toast.graphAI.mergeGraphs.nodeTitleEmpty'));
       return null;
     }
-    
+
     return await asyncHandler(
       async () => {
         const nodes = getNodesForGraph(currentGraphId);
         const edges = getEdgesForGraph(currentGraphId);
-        
+
         const parentLevel = getLevel(selectedNode, edges);
-        
+
         const existingTitles = getExistingTitles(nodes);
         const currentChildrenTitles = getCurrentChildrenTitles(selectedNode.id, nodes, edges);
-        
+
         const expandPrompt = prompt || buildDefaultExpandPrompt(selectedNode.title);
-        
+
         const res = await aiExpandMutation.mutateAsync({
           node_title: selectedNode.title,
           node_content: selectedNode.content,
@@ -97,7 +97,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
           expand_prompt: expandPrompt,
           graph_id: currentGraphId
         });
-        
+
         const result = await processExpandSuggestions({
           selectedNode,
           nodes,
@@ -113,44 +113,44 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
             return edge;
           }
         });
-        
+
         onRefresh();
-        
+
         return result;
       },
       {
         onSuccess: (result) => {
           if (result && (result.newNodesCount > 0 || result.newEdgesCount > 0)) {
-            frontendEventBus.publish("message_show", { type: 'success', content: t('graphAI.mergeGraphs.expandComplete', { nodesCount: result.newNodesCount, edgesCount: result.newEdgesCount }) });
+            message.success(t('toast.graphAI.mergeGraphs.expandComplete', { nodesCount: result.newNodesCount, edgesCount: result.newEdgesCount }));
           } else {
-            frontendEventBus.publish("message_show", { type: 'info', content: t('graphAI.mergeGraphs.noNewRelations') });
+            message.info(t('toast.graphAI.mergeGraphs.noNewRelations'));
           }
         },
-        errorMessage: t('graphAI.mergeGraphs.expandFailed')
+        errorMessage: t('toast.graphAI.mergeGraphs.expandFailed')
       }
     );
   };
   
   const handleGenerateContent = async (prompt?: string) => {
     if (!selectedNode) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.selectNodeFirst') });
+      message.error(t('toast.graphAI.mergeGraphs.selectNodeFirst'));
       return null;
     }
-    
+
     const currentGraphId = getCurrentGraphId();
     if (!currentGraphId) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.cannotDetermineGraph') });
+      message.error(t('toast.graphAI.mergeGraphs.cannotDetermineGraph'));
       return null;
     }
-    
-    frontendEventBus.publish("message_show", { content: t('graphAI.content.started'), type: 'info' });
-    
+
+    message.info(t('toast.graphAI.content.started'));
+
     return await asyncHandler(
       async () => {
         const contextPrompt = prompt || `请详细解释 ${selectedNode.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如"好的"、"作为..."）、结束语或无关的对话内容。`;
-        
+
         let generatedContent = '';
-        
+
         await api.ai.generateContentStream(
           {
             topic: selectedNode.title || '',
@@ -161,45 +161,45 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
             generatedContent += chunk;
           }
         );
-        
+
         if (generatedContent) {
           await updateNodeMutation.mutateAsync({
             id: selectedNode.id,
             data: { content: generatedContent }
           });
-          
+
           queryClient.invalidateQueries({ queryKey: queryKeys.graphData(currentGraphId) });
           onRefresh();
         }
-        
+
         return generatedContent;
       },
       {
-        successMessage: t('graphAI.content.completed'),
-        errorMessage: t('graphAI.content.failed')
+        successMessage: t('toast.graphAI.content.completed'),
+        errorMessage: t('toast.graphAI.content.failed')
       }
     );
   };
   
   const handleGenerateCards = async () => {
     if (!selectedNode) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.selectNodeFirst') });
+      message.error(t('toast.graphAI.mergeGraphs.selectNodeFirst'));
       return null;
     }
-    
+
     const currentGraphId = getCurrentGraphId();
     if (!currentGraphId) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.cannotDetermineGraph') });
+      message.error(t('toast.graphAI.mergeGraphs.cannotDetermineGraph'));
       return null;
     }
-    
+
     return await asyncHandler(
       async () => {
         const res = await aiGenerateCardsMutation.mutateAsync({
           node_title: selectedNode.title,
           node_content: selectedNode.content || ''
         });
-        
+
         const cards = res.cards.map((c: { question: string; answer: string; type: string; options?: string[] }) => ({
           node_id: selectedNode.id,
           question: c.question,
@@ -207,23 +207,23 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
           type: c.type,
           options: c.options
         }));
-        
+
         if (cards.length === 0) {
-          frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.batchGenerate.noCardsGenerated') });
+          message.error(t('toast.graphAI.batchGenerate.noCardsGenerated'));
           return null;
         }
-        
+
         await createCardsBatchMutation.mutateAsync(cards);
         queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(currentGraphId) });
-        
+
         return cards.length;
       },
       {
-        successMessage: t('graphAI.batchGenerate.success'),
-        errorMessage: t('graphAI.batchGenerate.failed'),
+        successMessage: t('toast.graphAI.batchGenerate.success'),
+        errorMessage: t('toast.graphAI.batchGenerate.failed'),
         onSuccess: (result) => {
           if (result && typeof result === 'number') {
-            frontendEventBus.publish("message_show", { type: 'success', content: t('graphAI.batchGenerate.successWithCount', { count: result }) });
+            message.success(t('toast.graphAI.batchGenerate.successWithCount', { count: result }));
           }
         }
       }
@@ -232,24 +232,24 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   
   const handleStartLevelTest = () => {
     if (!selectedNode) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.selectNodeFirst') });
+      message.error(t('toast.graphAI.mergeGraphs.selectNodeFirst'));
       return;
     }
-    
+
     const currentGraphId = getCurrentGraphId();
     navigate(`/study?node_id=${selectedNode.id}&graph_id=${currentGraphId || ''}`);
   };
-  
+
   const handleStartLearningMode = () => {
     if (!selectedNode) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.selectNodeFirst') });
+      message.error(t('toast.graphAI.mergeGraphs.selectNodeFirst'));
       return;
     }
-    
+
     const currentGraphId = getCurrentGraphId();
     navigate(`/learning?node_id=${selectedNode.id}&graph_id=${currentGraphId || ''}`);
   };
-  
+
   const handleAnalyzeCrossGraphConnections = async () => {
     return await asyncHandler(
       async () => {
@@ -257,10 +257,10 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
         const aiConfig = user?.profile?.settings?.ai_config?.text;
         const provider = aiConfig?.provider;
         const model = aiConfig?.model;
-        
+
         const allNodes1 = nodes1.map(n => ({ id: n.id, title: n.title, content: n.content }));
         const allNodes2 = nodes2.map(n => ({ id: n.id, title: n.title, content: n.content }));
-        
+
         const result = await api.ai.analyzeCrossGraphConnections({
           graph1_id: graph1Id,
           graph1_nodes: allNodes1,
@@ -269,12 +269,12 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
           provider,
           model
         });
-        
+
         return result;
       },
       {
-        successMessage: t('graphAI.analyzeCrossDomain.analysisComplete'),
-        errorMessage: t('graphAI.analyzeCrossDomain.analysisFailed')
+        successMessage: t('toast.graphAI.analyzeCrossDomain.analysisComplete'),
+        errorMessage: t('toast.graphAI.analyzeCrossDomain.analysisFailed')
       }
     );
   };

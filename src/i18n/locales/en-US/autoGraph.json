@@ -21,23 +21,15 @@
   "customRulesDesc": "Describe how you want AI to generate knowledge graph nodes",
   "enterCustomRules": "Please enter custom generation rules",
   "aiOptimize": "AI Optimize",
-  "rulesOptimized": "Rules optimized",
-  "optimizeFailed": "Optimization failed",
   "referenceSources": "Reference Sources",
   "sourcePlaceholder": "Enter URL or text content",
   "initializing": "Initializing...",
   "startGenerate": "Start Generation",
-  "initSuccess": "Knowledge graph initialized! Click ✨ to expand nodes",
-  "initFailed": "Initialization failed",
   "generateResult": "Generation Result",
   "clickToExpand": "Click ✨ to expand any node",
   "aiExpandNode": "AI expand this node",
-  "expandFailed": "Expansion failed",
   "saveToCurrentGraph": "Save to Current Graph",
   "createAndSave": "Create New Graph and Save",
-  "graphSaved": "Knowledge graph saved",
-  "saveFailed": "Save failed",
-  "createGraphFailed": "Failed to create graph",
   "styleLabels": {
     "academic": "Academic",
     "practical": "Practical",
@@ -55,8 +47,6 @@
   "changeTemplate": "Change",
   "templateType": "Template Type",
   "editPrompt": "Edit Prompt",
-  "promptSaved": "Prompt saved",
-  "promptSaveFailed": "Failed to save prompt",
   "templatePromptConfig": "Template Prompt Configuration",
   "selectTemplateType": "Select a template type from the left",
   "graphLevel": "Graph Level",
@@ -80,5 +70,11 @@
   "storyTitle": "Story Title",
   "storyTitlePlaceholder": "e.g., Harry Potter and the Philosopher's Stone, The Three-Body Problem, Dream of the Red Chamber",
   "storySynopsis": "Story Synopsis (optional)",
-  "storySynopsisPlaceholder": "Briefly describe the overall setting, world-building, or main plot direction"
+  "storySynopsisPlaceholder": "Briefly describe the overall setting, world-building, or main plot direction",
+  "module": {
+    "namePlaceholder": "Module name",
+    "descriptionPlaceholder": "Module description (optional)",
+    "deleteModule": "Delete module",
+    "keepAtLeast3": "Keep at least 3 modules"
+  }
 }

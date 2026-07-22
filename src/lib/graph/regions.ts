@@ -108,7 +108,7 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
         if (!levelGroups.has(level)) {
           levelGroups.set(level, []);
         }
-        levelGroups.get(level)!.push(node);
+        levelGroups.get(level)?.push(node);
       });
 
       const levels = Array.from(levelGroups.keys());

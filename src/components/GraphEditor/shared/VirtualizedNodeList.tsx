@@ -1,5 +1,5 @@
 import { useMemo, useRef, useCallback, useEffect, memo } from 'react';
-import type { LayoutNode, Edge, ColorScheme, GraphColorMode, NodeSizeMode, Node } from '../../../types';
+import type { LayoutNode, Edge, ColorScheme, GraphColorMode, NodeSizeMode, Node, NodeStatus } from '../../../types';
 import { MindMapNode } from '../canvas/MindMapNode';
 
 interface ViewportBounds {
@@ -12,7 +12,7 @@ interface ViewportBounds {
 interface VirtualizedNodeListProps {
   nodes: LayoutNode[];
   edges: Edge[];
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   selectedNodeId: string | null;
   isDark: boolean;
   zoomLevel: number;
@@ -58,7 +58,7 @@ function createSpatialGrid(nodes: LayoutNode[], cellSize: number): SpatialGrid {
     if (!cells.has(key)) {
       cells.set(key, []);
     }
-    cells.get(key)!.push(node);
+    cells.get(key)?.push(node);
   });
   
   return { cells, cellSize };
@@ -106,7 +106,7 @@ function getViewportBounds(
 interface NodeRendererProps {
   node: LayoutNode;
   edges: Edge[];
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   selected: boolean;
   isDark: boolean;
   zoomLevel: number;
@@ -266,20 +266,22 @@ function VirtualizedNodeListComponent(props: VirtualizedNodeListProps) {
     if (lastHoveredNodeRef.current === nodeId) return;
     lastHoveredNodeRef.current = nodeId;
     
-    if (hoverTimeoutRef.current.has(nodeId)) {
-      clearTimeout(hoverTimeoutRef.current.get(nodeId)!);
+    const existingTimeout = hoverTimeoutRef.current.get(nodeId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
     }
-    
+
     const timeout = setTimeout(() => {
       onNodeHover(nodeId, { x: e.clientX, y: e.clientY });
     }, previewDelay);
-    
+
     hoverTimeoutRef.current.set(nodeId, timeout);
   }, [onNodeHover, previewDelay]);
-  
+
   const handleNodeMouseLeave = useCallback((nodeId: string) => {
-    if (hoverTimeoutRef.current.has(nodeId)) {
-      clearTimeout(hoverTimeoutRef.current.get(nodeId)!);
+    const existingTimeout = hoverTimeoutRef.current.get(nodeId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
       hoverTimeoutRef.current.delete(nodeId);
     }
     

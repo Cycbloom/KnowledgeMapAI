@@ -157,7 +157,8 @@ export function avoidCollisions(
   for (let iter = 0; iter < iterations; iter++) {
     for (let i = 0; i < entries.length; i++) {
       const idA = entries[i][0];
-      const currentA = adjustedPositions.get(idA)!;
+      const currentA = adjustedPositions.get(idA);
+      if (!currentA) continue;
 
       let forceX = 0;
       let forceY = 0;
@@ -166,7 +167,8 @@ export function avoidCollisions(
         if (i === j) continue;
 
         const idB = entries[j][0];
-        const currentB = adjustedPositions.get(idB)!;
+        const currentB = adjustedPositions.get(idB);
+        if (!currentB) continue;
 
         const dx = currentA.x - currentB.x;
         const dy = currentA.y - currentB.y;

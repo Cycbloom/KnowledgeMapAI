@@ -15,6 +15,7 @@ import type {
   GraphColorMode,
   LayoutNode,
   LayoutLink,
+  NodeStatus,
 } from "@shared/types/graph";
 import type { ColorScheme } from "@shared/types/styles";
 import {
@@ -30,6 +31,7 @@ import { RegionHeader } from "./RegionHeader";
 import { QuadrantNode } from "./QuadrantNode";
 import { QuadrantEdge } from "./QuadrantEdge";
 import { useTheme } from "../../../hooks";
+import type { GraphRef } from "../../../hooks/graphEditor";
 import { THEME_COLORS } from "../../../config/learningStatusColors";
 import { avoidCollisions } from "../../../utils/quadrantLayout";
 
@@ -49,7 +51,7 @@ interface QuadrantCanvasProps {
   onRegionToggle: (regionId: string) => void;
   onNodeClick: (node: Node) => void;
   selectedNodeId?: string | null;
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   colorScheme?: ColorScheme;
   coloringMode?: GraphColorMode;
   width?: number;
@@ -115,7 +117,7 @@ function getNodePosition(
   };
 }
 
-export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
+export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
   (
     {
       nodes: _nodes,

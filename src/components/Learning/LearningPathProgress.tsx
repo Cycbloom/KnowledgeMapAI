@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { 
-  CheckCircle2, 
-  Circle, 
-  Clock, 
+import { useTranslation } from 'react-i18next';
+import {
+  CheckCircle2,
+  Circle,
+  Clock,
   Play,
   ChevronRight,
   Target,
@@ -48,6 +49,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
   compact = false
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const stats = useMemo(() => {
     if (!learningPath) return null;
@@ -84,7 +86,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
       <div className={`p-4 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-gray-50'}`}>
         <div className="flex items-center gap-3 text-gray-500">
           <Target className="w-5 h-5" />
-          <span className="text-sm">尚未创建学习路径</span>
+          <span className="text-sm">{t("learning.progress.noPath")}</span>
         </div>
       </div>
     );
@@ -104,8 +106,8 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
           />
         </div>
         <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-          <span>{stats?.completed}/{learningPath.total_nodes ?? 0} 已完成</span>
-          <span>{stats?.remainingNodes ?? 0} 剩余</span>
+          <span>{t("learning.progress.completedCount", { completed: stats?.completed ?? 0, total: learningPath.total_nodes ?? 0 })}</span>
+          <span>{t("learning.progress.remainingCount", { count: stats?.remainingNodes ?? 0 })}</span>
         </div>
       </div>
     );
@@ -126,7 +128,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
               ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
               : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
           }`}>
-            {learningPath.status === 'active' ? '进行中' : learningPath.status === 'completed' ? '已完成' : '已暂停'}
+            {learningPath.status === 'active' ? t("learning.progress.inProgress") : learningPath.status === 'completed' ? t("learning.progress.completed") : t("learning.progress.paused")}
           </span>
         </div>
       </div>
@@ -138,34 +140,34 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <div className="text-xl font-bold">{stats?.completed}</div>
-            <div className="text-xs text-gray-500">已完成</div>
+            <div className="text-xs text-gray-500">{t("learning.progress.completed")}</div>
           </div>
           <div className={`text-center p-3 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
             <div className="flex items-center justify-center gap-1 text-primary-500 mb-1">
               <Play className="w-4 h-4" />
             </div>
             <div className="text-xl font-bold">{stats?.inProgress}</div>
-            <div className="text-xs text-gray-500">进行中</div>
+            <div className="text-xs text-gray-500">{t("learning.progress.inProgress")}</div>
           </div>
           <div className={`text-center p-3 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
             <div className="flex items-center justify-center gap-1 text-gray-400 mb-1">
               <Circle className="w-4 h-4" />
             </div>
             <div className="text-xl font-bold">{stats?.pending}</div>
-            <div className="text-xs text-gray-500">待学习</div>
+            <div className="text-xs text-gray-500">{t("learning.progress.pending")}</div>
           </div>
           <div className={`text-center p-3 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
             <div className="flex items-center justify-center gap-1 text-primary-500 mb-1">
               <Clock className="w-4 h-4" />
             </div>
             <div className="text-xl font-bold">{Math.round((stats?.totalMinutes || 0) / 60)}</div>
-            <div className="text-xs text-gray-500">总时长(h)</div>
+            <div className="text-xs text-gray-500">{t("learning.progress.totalHours")}</div>
           </div>
         </div>
 
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-500">学习进度</span>
+            <span className="text-sm text-gray-500">{t("learning.progress.learningProgress")}</span>
             <span className="text-sm font-medium">{(learningPath.progress_percentage ?? 0).toFixed(1)}%</span>
           </div>
           <div className={`h-3 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
@@ -180,20 +182,20 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
           <div className={`p-3 rounded-lg border-2 border-primary-500 ${isDark ? 'bg-primary-900/20' : 'bg-primary-50'}`}>
             <div className="flex items-center gap-2 mb-2">
               <Zap className="w-4 h-4 text-primary-500" />
-              <span className="text-sm font-medium text-primary-600 dark:text-primary-400">当前学习</span>
+              <span className="text-sm font-medium text-primary-600 dark:text-primary-400">{t("learning.progress.currentLearning")}</span>
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-medium">{stats.currentNode.node?.title}</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  第 {(stats.currentNodeIndex ?? 0) + 1} / {learningPath.total_nodes ?? 0} 个知识点
+                  {t("learning.progress.knowledgePointIndex", { current: (stats.currentNodeIndex ?? 0) + 1, total: learningPath.total_nodes ?? 0 })}
                 </div>
               </div>
               <button
                 onClick={() => stats.currentNode?.node && onNodeClick(stats.currentNode.node.id)}
                 className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700"
               >
-                继续
+                {t("learning.progress.continue")}
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -201,7 +203,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
         )}
 
         <div className="mt-4">
-          <h4 className="text-sm font-medium mb-3">学习路径预览</h4>
+          <h4 className="text-sm font-medium mb-3">{t("learning.progress.pathPreview")}</h4>
           <div className="flex items-center gap-1 overflow-x-auto pb-2">
             {(learningPath.nodes || []).slice(0, 10).map((node, index) => (
               <React.Fragment key={node.id}>
@@ -229,7 +231,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
               </React.Fragment>
             ))}
             {(learningPath.nodes || []).length > 10 && (
-              <span className="text-xs text-gray-500 ml-2">+{(learningPath.nodes || []).length - 10} 更多</span>
+              <span className="text-xs text-gray-500 ml-2">{t("learning.progress.more", { count: (learningPath.nodes || []).length - 10 })}</span>
             )}
           </div>
         </div>
@@ -239,9 +241,9 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-green-500" />
-                <span className="text-sm">每日目标</span>
+                <span className="text-sm">{t("learning.progress.dailyTarget")}</span>
               </div>
-              <span className="text-sm font-medium">{learningPath.daily_minutes_target} 分钟/天</span>
+              <span className="text-sm font-medium">{t("learning.progress.minutesPerDay", { minutes: learningPath.daily_minutes_target })}</span>
             </div>
           </div>
         )}

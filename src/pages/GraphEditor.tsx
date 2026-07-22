@@ -1217,9 +1217,10 @@ export const GraphEditor = () => {
   });
 
   if (graphMeta?.template_type === "story_creation") {
+    if (!id) return null;
     return (
       <Suspense fallback={<ViewLoader />}>
-        <StoryEditor graphId={id!} graphMeta={graphMeta} />
+        <StoryEditor graphId={id} graphMeta={graphMeta} />
       </Suspense>
     );
   }
@@ -1251,7 +1252,10 @@ export const GraphEditor = () => {
         className={`flex-1 h-full relative ${isDeleteMode ? "cursor-not-allowed" : ""} ${isMobile ? "pb-14" : ""}`}
       >
         {isGraphLoading && (
-          <div className="absolute inset-0 flex items-center justify-center z-50 bg-white/50 backdrop-blur-sm">
+          <div
+            data-testid="graph-loading"
+            className="absolute inset-0 flex items-center justify-center z-50 bg-white/50 backdrop-blur-sm"
+          >
             <div className="space-y-4 p-6 w-full max-w-md">
               <Skeleton variant="rectangular" className="h-8 w-64" />
               <Skeleton variant="rectangular" className="h-32 w-full" />

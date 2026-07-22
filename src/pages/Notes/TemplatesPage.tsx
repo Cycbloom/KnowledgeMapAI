@@ -20,7 +20,7 @@ import {
   useDeleteNoteTemplateMutation,
   useSetDefaultNoteTemplateMutation,
 } from "../../hooks/mutations";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { Skeleton, EmptyState } from "../../components/common";
 import { asyncConfirm } from "../../utils/asyncConfirm";
 import type { NoteTemplate } from "@shared/types/note";
@@ -101,7 +101,11 @@ const TemplatesPage = () => {
     type: "success" | "error",
     content: string,
   ): void => {
-    frontendEventBus.publish("message_show", { type, content });
+    if (type === "success") {
+      message.success(content);
+    } else {
+      message.error(content);
+    }
   };
 
   const openCreate = () => {

@@ -49,11 +49,11 @@ export const getDomainGroups = (
   
   graphs.forEach(graph => {
     if (!graph.domain) return;
-    
+
     if (!groups.has(graph.domain)) {
       groups.set(graph.domain, []);
     }
-    groups.get(graph.domain)!.push(graph.id);
+    groups.get(graph.domain)?.push(graph.id);
   });
   
   return groups;

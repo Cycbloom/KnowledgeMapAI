@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { StudyCard } from "@shared/types";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
+import { message } from "../utils/messageHelper";
 
 interface UseQuizLogicParams {
   showAnswer: boolean;
@@ -31,10 +31,7 @@ export const useQuizLogic = ({
       const selected = mode === "due" ? dueCards : allCards;
 
       if (selected.length === 0) {
-        frontendEventBus.publish("message_show", {
-          content: t("study.messages.noCardsToReview"),
-          type: "info",
-        });
+        message.info(t("study.messages.noCardsToReview"));
         return;
       }
 

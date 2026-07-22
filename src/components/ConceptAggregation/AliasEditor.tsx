@@ -68,20 +68,20 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
       const trimmed = newAlias.trim();
 
       if (!trimmed) {
-        return '别名不能为空';
+        return t('conceptAggregation.alias.empty');
       }
 
       if (aliases.includes(trimmed)) {
-        return '该别名已存在';
+        return t('conceptAggregation.alias.duplicate');
       }
 
       if (aliases.length >= maxAliases) {
-        return `最多只能添加 ${maxAliases} 个别名`;
+        return t('conceptAggregation.alias.maxExceeded', { count: maxAliases });
       }
 
       return null;
     },
-    [aliases, maxAliases]
+    [aliases, maxAliases, t]
   );
 
   const handleAddAlias = useCallback(
@@ -144,7 +144,7 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
           <Tag size={14} />
-          <span>别名</span>
+          <span>{t('conceptAggregation.alias.label')}</span>
         </div>
         {aliases.length === 0 ? (
           <EmptyState
@@ -172,7 +172,7 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
           <Tag size={14} />
-          <span>别名管理</span>
+          <span>{t('conceptAggregation.alias.manageTitle')}</span>
           {!showInMergeContext && (
             <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">
               ({aliases.length}/{maxAliases})
@@ -217,7 +217,7 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
           }}
           onKeyDown={handleKeyDown}
           placeholder={
-            aliases.length === 0 ? '输入新别名，按回车添加...' : ''
+            aliases.length === 0 ? t('conceptAggregation.alias.inputPlaceholder') : ''
           }
           disabled={aliases.length >= maxAliases || isSaving}
           className={`flex-1 min-w-[120px] bg-transparent outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-800 dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed ${showInMergeContext ? 'min-w-[100px]' : ''}`}
@@ -227,7 +227,7 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
           <button
             onClick={() => handleAddAlias()}
             className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-500 hover:bg-primary-600 text-white transition-colors"
-            aria-label="添加别名"
+            aria-label={t('conceptAggregation.alias.addButton')}
           >
             <Plus size={12} />
           </button>
@@ -243,13 +243,13 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
 
       {showInMergeContext && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          合并后，以上概念将作为目标节点的别名保留
+          {t('conceptAggregation.alias.mergeHint')}
         </p>
       )}
 
       {!showInMergeContext && aliases.length >= maxAliases && (
         <p className="text-xs text-amber-600 dark:text-amber-400">
-          已达到最大别名数量限制
+          {t('conceptAggregation.alias.limitReached')}
         </p>
       )}
     </div>

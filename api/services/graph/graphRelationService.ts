@@ -1,4 +1,4 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+﻿import { SupabaseClient } from '@supabase/supabase-js';
 
 export type GraphRelationType = 'prerequisite' | 'extension' | 'related' | 'cross_domain';
 
@@ -8,7 +8,7 @@ export interface GraphRelation {
   target_graph_id: string;
   relation_type: GraphRelationType;
   context: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
   target_graph?: {
     id: string;
@@ -35,7 +35,7 @@ export interface CreateRelationData {
   target_graph_id: string;
   relation_type: GraphRelationType;
   context?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class GraphRelationService {

@@ -72,7 +72,7 @@ export const convertToIndexedResponse = <T extends { id: string }>(
   const reverseIndexMap = buildReverseIndexMap(items);
   
   const indexedItems = items.map((item, idx) => {
-    const { id, ...rest } = item as any;
+    const { id: _id, ...rest } = item;
     return {
       ...rest,
       idx,

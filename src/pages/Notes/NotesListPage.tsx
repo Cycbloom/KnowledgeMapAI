@@ -42,7 +42,6 @@ import {
   useRestoreNoteMutation,
 } from "../../hooks/mutations";
 import { api } from "../../services/api";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import {
   Skeleton,
   EmptyState,
@@ -621,37 +620,25 @@ export const NotesListPage = () => {
         title: t("notes.newNoteDefaultTitle"),
         type: "note",
       });
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("notes.noteCreated"),
-      });
+      message.success(t("notes.noteCreated"));
       // Task 8 完成后可在此处跳转 /notes/:id 打开编辑器。
     } catch (err: unknown) {
-      const message =
+      const errorMessage =
         err instanceof Error ? err.message : t("notes.createNoteFailed");
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      message.error(errorMessage);
     }
   };
 
   const handleCreateDaily = async () => {
     try {
       const note = await manualCreateDailyMutation.mutateAsync();
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("notes.dailyCreated"),
-      });
+      message.success(t("notes.dailyCreated"));
       // SubTask 9.2: 跳转到当日 daily 编辑器(无论新建还是已存在都打开)
       navigate(`/notes/${note.id}`);
     } catch (err: unknown) {
-      const message =
+      const errorMessage =
         err instanceof Error ? err.message : t("notes.createDailyFailed");
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      message.error(errorMessage);
     }
   };
 
@@ -663,12 +650,9 @@ export const NotesListPage = () => {
         data: { isPinned: !note.isPinned },
       });
     } catch (err: unknown) {
-      const message =
+      const errorMessage =
         err instanceof Error ? err.message : t("notes.updateFailed");
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      message.error(errorMessage);
     } finally {
       setPendingAction(null);
     }
@@ -682,12 +666,9 @@ export const NotesListPage = () => {
         data: { isArchived: !note.isArchived },
       });
     } catch (err: unknown) {
-      const message =
+      const errorMessage =
         err instanceof Error ? err.message : t("notes.updateFailed");
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      message.error(errorMessage);
     } finally {
       setPendingAction(null);
     }
@@ -708,11 +689,9 @@ export const NotesListPage = () => {
     setPendingAction(note.id);
     try {
       await deleteNoteMutation.mutateAsync(note.id);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("notes.undo.deletedOne", {
-          title: note.title || t("notes.fields.untitled"),
-        }),
+      message.success(t("notes.undo.deletedOne", {
+        title: note.title || t("notes.fields.untitled"),
+      }), {
         duration: 5000,
         action: {
           label: t("common.undo"),
@@ -722,12 +701,9 @@ export const NotesListPage = () => {
         },
       });
     } catch (err: unknown) {
-      const message =
+      const errorMessage =
         err instanceof Error ? err.message : t("notes.deleteFailed");
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      message.error(errorMessage);
     } finally {
       setPendingAction(null);
     }
@@ -740,15 +716,9 @@ export const NotesListPage = () => {
       try {
         await restoreNoteMutation.mutateAsync(id);
         await queryClient.invalidateQueries({ queryKey: ["notes"] });
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("notes.undo.restored"),
-        });
+        message.success(t("notes.undo.restored"));
       } catch {
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("notes.undo.restoreFailed"),
-        });
+        message.error(t("notes.undo.restoreFailed"));
       }
     },
     [restoreNoteMutation, queryClient, t],
@@ -773,9 +743,7 @@ export const NotesListPage = () => {
       setSelectedIds(new Set());
       setIsSelectMode(false);
       if (failedCount === 0) {
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("notes.undo.deletedMany", { count: ids.length }),
+        message.success(t("notes.undo.deletedMany", { count: ids.length }), {
           duration: 5000,
           action: {
             label: t("common.undo"),
@@ -785,17 +753,11 @@ export const NotesListPage = () => {
           },
         });
       } else {
-        frontendEventBus.publish("message_show", {
-          type: "warning",
-          content: t("notes.batch.partialDeleteFailed"),
-        });
+        message.warning(t("notes.batch.partialDeleteFailed"));
       }
     } catch {
       // allSettled 不会 reject,此分支仅作防御。
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("notes.deleteFailed"),
-      });
+      message.error(t("notes.deleteFailed"));
     } finally {
       setIsBatchDeleting(false);
     }
@@ -813,21 +775,12 @@ export const NotesListPage = () => {
         ).length;
         await queryClient.invalidateQueries({ queryKey: ["notes"] });
         if (failedCount === 0) {
-          frontendEventBus.publish("message_show", {
-            type: "success",
-            content: t("notes.undo.restored"),
-          });
+          message.success(t("notes.undo.restored"));
         } else {
-          frontendEventBus.publish("message_show", {
-            type: "error",
-            content: t("notes.undo.restoreFailed"),
-          });
+          message.error(t("notes.undo.restoreFailed"));
         }
       } catch {
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("notes.undo.restoreFailed"),
-        });
+        message.error(t("notes.undo.restoreFailed"));
       }
     },
     [queryClient, t],

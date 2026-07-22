@@ -149,7 +149,8 @@ export const mobileGraphsApi: IGraphsApi = {
         if (!cardGroups.has(kpId)) {
           cardGroups.set(kpId, { stabilitySum: 0, retrievabilitySum: 0, reviewCountSum: 0, count: 0, firstCard: card });
         }
-        const group = cardGroups.get(kpId)!;
+        const group = cardGroups.get(kpId);
+        if (!group) return;
         group.stabilitySum += card.fsrs_stability ?? 0;
         group.retrievabilitySum += card.fsrs_retrievability ?? 0;
         group.reviewCountSum += card.review_count ?? 0;

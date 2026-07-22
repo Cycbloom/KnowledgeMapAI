@@ -54,7 +54,7 @@ function calculateLayout(
       if (!graphGroups.has(primaryGraph)) {
         graphGroups.set(primaryGraph, []);
       }
-      graphGroups.get(primaryGraph)!.push(node);
+      graphGroups.get(primaryGraph)?.push(node);
     });
     
     const numGroups = graphGroups.size;

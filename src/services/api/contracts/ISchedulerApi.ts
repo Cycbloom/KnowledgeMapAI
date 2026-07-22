@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// R31: Public API contract file. The actual `schedulerApi` export has inferred
+// return types; this contract is only used for compile-time satisfaction check.
 import type {
   CreateUserTaskData,
   UpdateUserTaskData,

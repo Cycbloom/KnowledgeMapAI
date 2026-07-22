@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { graphsApi } from '../services/api/graphs';
-import { frontendEventBus } from '../services/timer/FrontendEventBus';
-import type { 
+import { message } from '../utils/messageHelper';
+import type {
   DiscoveryResult, 
   IntelligentSuggestion, 
   DiscoveredRelation,
@@ -25,16 +25,10 @@ export function useGraphRelationDiscovery(options: UseGraphRelationDiscoveryOpti
       graphsApi.discoverRelations(opts),
     onSuccess: (data: DiscoveryResult) => {
       setDiscoveryResult(data);
-      frontendEventBus.publish("message_show", {
-        type: 'success',
-        content: `发现 ${data.analysis_summary.relations_discovered} 个潜在关系`,
-      });
+      message.success(`发现 ${data.analysis_summary.relations_discovered} 个潜在关系`);
     },
     onError: (error: Error) => {
-      frontendEventBus.publish("message_show", {
-        type: 'error',
-        content: `关系发现失败: ${error.message}`,
-      });
+      message.error(`关系发现失败: ${error.message}`);
     },
   });
 
@@ -51,16 +45,10 @@ export function useGraphRelationDiscovery(options: UseGraphRelationDiscoveryOpti
     onSuccess: (_, relation) => {
       const key = `${relation.source_graph_id}-${relation.target_graph_id}-${relation.relation_type}`;
       setCreatedRelationIds(prev => new Set(prev).add(key));
-      frontendEventBus.publish("message_show", {
-        type: 'success',
-        content: `已创建关系: ${relation.source_graph_title} → ${relation.target_graph_title}`,
-      });
+      message.success(`已创建关系: ${relation.source_graph_title} → ${relation.target_graph_title}`);
     },
     onError: (error: Error) => {
-      frontendEventBus.publish("message_show", {
-        type: 'error',
-        content: `创建关系失败: ${error.message}`,
-      });
+      message.error(`创建关系失败: ${error.message}`);
     },
   });
 

@@ -15,7 +15,7 @@ import {
   Link2
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { useError } from "../../hooks";
 
 interface ExistingGraph {
@@ -54,7 +54,7 @@ const LEARNING_STYLES = [
   { value: 'sequential', label: '顺序学习', description: '按顺序逐步学习' },
   { value: 'exploratory', label: '探索学习', description: '自由探索感兴趣的内容' },
   { value: 'focused', label: '专注学习', description: '专注于核心知识点' },
-];
+] as const;
 
 export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
   graphId,
@@ -144,7 +144,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
 
   const handleCreatePrerequisiteGraphs = async () => {
     if (selectedPrerequisites.size === 0) {
-      frontendEventBus.publish("message_show", { type: 'warning', content: '请选择要创建图谱的前置知识' });
+      message.warning('请选择要创建图谱的前置知识');
       return;
     }
 
@@ -155,7 +155,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
         mastery_level: '不了解'
       }));
 
-      const result = await api.graphs.createPrerequisiteGraphs(graphId, { 
+      const result = await api.graphs.createPrerequisiteGraphs(graphId, {
         topics,
         depth: 2,
         style: 'academic'
@@ -173,24 +173,21 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
       };
 
       setCreatedGraphs(typedResult.created);
-      
+
       const newCount = typedResult.created.filter((g) => g.isNew).length;
       const linkedCount = typedResult.created.filter((g) => !g.isNew).length;
-      
-      let message = '';
+
+      let resultMessage = '';
       if (newCount > 0 && linkedCount > 0) {
-        message = `已创建 ${newCount} 个新图谱，关联 ${linkedCount} 个现有图谱`;
+        resultMessage = `已创建 ${newCount} 个新图谱，关联 ${linkedCount} 个现有图谱`;
       } else if (newCount > 0) {
-        message = `已创建 ${newCount} 个前置知识图谱`;
+        resultMessage = `已创建 ${newCount} 个前置知识图谱`;
       } else if (linkedCount > 0) {
-        message = `已关联 ${linkedCount} 个现有图谱`;
+        resultMessage = `已关联 ${linkedCount} 个现有图谱`;
       }
-      
-      frontendEventBus.publish("message_show", { 
-        type: 'success', 
-        content: message 
-      });
-      
+
+      message.success(resultMessage);
+
       setSelectedPrerequisites(new Set());
     } catch (error) {
       console.error('Create prerequisite graphs error:', error);
@@ -202,14 +199,14 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
 
   const handleComplete = async () => {
     const finalGoal = selectedGoal === 'custom' ? customGoal : selectedGoal;
-    
+
     if (!finalGoal.trim()) {
-      frontendEventBus.publish("message_show", { type: 'warning', content: '请选择或输入学习目标' });
+      message.warning('请选择或输入学习目标');
       return;
     }
 
     setIsGenerating(true);
-    frontendEventBus.publish("message_show", { type: 'info', content: '已收到请求，AI 正在为您规划学习路径，请稍候...' });
+    message.info('已收到请求，AI 正在为您规划学习路径，请稍候...');
     try {
       onComplete({
         targetGoal: finalGoal,
@@ -566,7 +563,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                   {LEARNING_STYLES.map((style) => (
                     <button
                       key={style.value}
-                      onClick={() => setLearningStyle(style.value as any)}
+                      onClick={() => setLearningStyle(style.value)}
                       className={`w-full p-3 rounded-lg text-left transition-all ${
                         learningStyle === style.value
                           ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500'

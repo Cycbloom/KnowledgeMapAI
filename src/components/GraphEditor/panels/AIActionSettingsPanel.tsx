@@ -132,7 +132,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                     <label className="block text-sm font-medium mb-1">{t('aiAction.mode')}</label>
                     <select 
                         value={editingAction.target_mode}
-                        onChange={e => setEditingAction({...editingAction, target_mode: e.target.value as any})}
+                        onChange={e => setEditingAction({...editingAction, target_mode: e.target.value as AIAction['target_mode']})}
                         className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
                     >
                         {[('show_result'), ('update_node'), ('spawn_children')].map((k) => (

@@ -65,15 +65,24 @@ describe('MemoryCacheStore', () => {
 
   describe('TTL 过期', () => {
     it('key 在 TTL 到期后返回 undefined', async () => {
-      vi.useFakeTimers();
+      // lru-cache v11 在模块加载时捕获全局 performance 引用，vi.useFakeTimers
+      // 会替换 performance 对象导致 spy 失效；且 lru-cache 用 ttlResolution(=1ms)
+      // debounce 缓存 now 值。故用 spyOn 控制 performance.now，并在推进时间后
+      // 等待 debounce 失效。
+      const startPerf = 1_000_000;
+      const perfSpy = vi.spyOn(performance, 'now');
+      perfSpy.mockReturnValue(startPerf);
 
       await store.set('ttl_key', 'value', 100);
       expect(await store.get<string>('ttl_key')).toBe('value');
 
       // stochasticTTL 在 100s 上下浮动 ±20%（80~120s），推进 200s 确保过期
-      vi.advanceTimersByTime(200 * 1000);
+      perfSpy.mockReturnValue(startPerf + 200 * 1000);
+      await new Promise(resolve => setTimeout(resolve, 5));
 
       expect(await store.get<string>('ttl_key')).toBeUndefined();
+
+      perfSpy.mockRestore();
     });
 
     it('未过期的 key 仍可读取', async () => {
@@ -88,15 +97,24 @@ describe('MemoryCacheStore', () => {
     });
 
     it('使用默认 TTL 的 key 也会过期', async () => {
-      vi.useFakeTimers();
+      // lru-cache v11 在模块加载时捕获全局 performance 引用，vi.useFakeTimers
+      // 会替换 performance 对象导致 spy 失效；且 lru-cache 用 ttlResolution(=1ms)
+      // debounce 缓存 now 值。故用 spyOn 控制 performance.now，并在推进时间后
+      // 等待 debounce 失效。
+      const startPerf = 1_000_000;
+      const perfSpy = vi.spyOn(performance, 'now');
+      perfSpy.mockReturnValue(startPerf);
 
       // 不传 ttl，使用 DEFAULT_TTL=300，stochasticTTL 范围 240~360s
       await store.set('default_ttl_key', 'value');
 
       // 推进 400s，超过最大方差
-      vi.advanceTimersByTime(400 * 1000);
+      perfSpy.mockReturnValue(startPerf + 400 * 1000);
+      await new Promise(resolve => setTimeout(resolve, 5));
 
       expect(await store.get<string>('default_ttl_key')).toBeUndefined();
+
+      perfSpy.mockRestore();
     });
   });
 

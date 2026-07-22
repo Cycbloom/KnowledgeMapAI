@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { taskTemplatesApi } from "../../services/api/taskTemplates";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { useTheme, useFocusTrap, useEscapeKey, useFormDraft } from "../../hooks";
 import { ConfirmationModal } from "../common/ConfirmationModal";
 
@@ -112,7 +112,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.titleTemplate) {
-      frontendEventBus.publish("message_show", { type: "error", content: "请填写模板名称和标题模板" });
+      message.error("请填写模板名称和标题模板");
       return;
     }
 
@@ -129,12 +129,12 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
         priority: formData.priority,
       });
       clearDraft();
-      frontendEventBus.publish("message_show", { type: "success", content: "模板保存成功!" });
+      message.success("模板保存成功!");
       onSuccess?.();
       onClose();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "保存模板失败";
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errorMessage = error instanceof Error ? error.message : "保存模板失败";
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }

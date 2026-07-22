@@ -46,7 +46,7 @@ export function useSpatialGrid(
       if (!cells.has(key)) {
         cells.set(key, []);
       }
-      cells.get(key)!.push(node);
+      cells.get(key)?.push(node);
     });
     
     return { cells, cellSize };

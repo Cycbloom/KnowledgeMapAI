@@ -10,7 +10,7 @@ export interface UpdateTaskStatusOptions {
   taskId: string;
   status: string;
   progress?: TaskProgress | null;
-  result?: any;
+  result?: Record<string, unknown>;
   error?: string;
   userId?: string;
   client?: SupabaseClient;
@@ -21,13 +21,13 @@ export type UpdateTaskStatusFunction = (
   arg2?: string,
   arg3?: string,
   arg4?: TaskProgress | null,
-  arg5?: any,
+  arg5?: Record<string, unknown>,
   arg6?: string,
   arg7?: string,
 ) => Promise<void>;
 
 export interface TaskProcessor {
-  process(taskId: string, userId: string, payload: any, supabase: SupabaseClient, updateTaskStatus: UpdateTaskStatusFunction): Promise<void>;
+  process(taskId: string, userId: string, payload: unknown, supabase: SupabaseClient, updateTaskStatus: UpdateTaskStatusFunction): Promise<void>;
 }
 
 export const taskProcessors: Record<string, TaskProcessor> = {};

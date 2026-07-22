@@ -120,8 +120,10 @@ export async function buildProgressMap(
         difficulty: 0,
       });
     } else {
-      const progress = progressMap.get(node.id)!;
-      progress.nodeTitle = node.title;
+      const progress = progressMap.get(node.id);
+      if (progress) {
+        progress.nodeTitle = node.title;
+      }
     }
   });
 
@@ -288,7 +290,9 @@ export function findPath(
   const visited = new Set<string>([startId]);
 
   while (queue.length > 0) {
-    const { id, path } = queue.shift()!;
+    const item = queue.shift();
+    if (!item) break;
+    const { id, path } = item;
 
     if (id === endId) return path;
 
@@ -655,8 +659,11 @@ export function topologicalSortNodes(nodes: LearningPathNode[]): LearningPathNod
   const result: LearningPathNode[] = [];
 
   while (queue.length > 0) {
-    const nodeId = queue.shift()!;
-    result.push(nodeMap.get(nodeId)!);
+    const nodeId = queue.shift();
+    if (nodeId === undefined) break;
+    const node = nodeMap.get(nodeId);
+    if (!node) continue;
+    result.push(node);
 
     const neighbors = adjacency.get(nodeId) || [];
     neighbors.sort((a, b) => {

@@ -127,11 +127,11 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 if (!shortcuts) return null;
                 return (
                   <div key={category} className="bg-primary-50/50 dark:bg-primary-900/20 rounded-xl p-4 space-y-2 border border-primary-100 dark:border-primary-800">
-                    <h4 className="font-semibold text-sm text-primary-700 dark:text-primary-300">{CATEGORY_LABELS[category]}</h4>
+                    <h4 className="font-semibold text-sm text-primary-700 dark:text-primary-300">{t(CATEGORY_LABELS[category])}</h4>
                     <div className="space-y-2">
                       {shortcuts.map(shortcut => (
                         <div key={shortcut.id} className="flex justify-between items-center gap-2">
-                          <span className="text-gray-700 dark:text-gray-300 font-medium text-sm">{shortcut.name}</span>
+                          <span className="text-gray-700 dark:text-gray-300 font-medium text-sm">{t(shortcut.name)}</span>
                           <kbd className="bg-white dark:bg-slate-700 px-2 py-1 rounded border border-gray-300 dark:border-slate-600 text-xs font-mono text-gray-600 dark:text-gray-300 shadow-sm text-center whitespace-nowrap">
                             {formatShortcutKey(shortcut.defaultKeys)}
                           </kbd>

@@ -49,7 +49,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
   const startTime = Date.now();
   const originalEnd = res.end;
 
-  (res as any).end = function (this: Response, ...args: unknown[]): void {
+  const patchedEnd = function (this: Response, ...args: unknown[]): void {
     const duration = Date.now() - startTime;
     const userId = req.user?.id;
 
@@ -80,7 +80,9 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
     }
 
     (originalEnd as (...args: unknown[]) => void).apply(this, args);
-  };
+  } as Response['end'];
+
+  res.end = patchedEnd;
 
   next();
 };

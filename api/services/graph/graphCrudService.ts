@@ -264,7 +264,10 @@ export class GraphCrudService {
     (graphs || []).forEach((g) => {
       const key = g.title.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, "");
       if (!titleGroups.has(key)) titleGroups.set(key, []);
-      titleGroups.get(key)!.push(g.id);
+      const list = titleGroups.get(key);
+      if (list) {
+        list.push(g.id);
+      }
     });
 
     titleGroups.forEach((ids, _key) => {

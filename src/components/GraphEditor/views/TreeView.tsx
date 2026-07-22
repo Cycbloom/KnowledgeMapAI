@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
-import type { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, BranchSuggestion, NodeSizeMode, EdgeWidthMode, Node as GraphNode } from '../../../types';
+import type { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, BranchSuggestion, NodeSizeMode, EdgeWidthMode, Node as GraphNode, NodeStatus } from '../../../types';
 import type { HistoricalBranchItem } from '../../../hooks/graphEditor/useExplorationState';
 import { MindMapNode } from '../canvas/MindMapNode';
 import { MindMapLink } from '../canvas/MindMapLink';
@@ -12,7 +12,7 @@ import { calculateNodeImportance, calculateEdgeStrength } from '../../../lib/gra
 interface TreeViewProps {
   nodes: Node[];
   edges: Edge[];
-  nodeStatus?: Record<string, { mastered?: boolean }>;
+  nodeStatus?: Record<string, NodeStatus>;
   selectedNodeId: string | null;
   onNodeClick: (node: GraphNode) => void;
   onCanvasClick?: () => void;

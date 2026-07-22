@@ -84,7 +84,7 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
   };
 
   const handleCopy = async () => {
-    const success = await copyToClipboard(formatCitationText(), t("common.copied"));
+    const success = await copyToClipboard(formatCitationText(), t("toast.common.copied"));
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -163,7 +163,7 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
                     ? "hover:bg-slate-600 text-slate-400 hover:text-slate-300"
                     : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
               }`}
-              title={copied ? t("common.copied") : t("common.copy.label")}
+              title={copied ? t("toast.common.copied") : t("common.copy.label")}
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
             </button>
@@ -361,7 +361,7 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
                     ? "hover:bg-slate-700 text-slate-400 hover:text-slate-300"
                     : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"
               }`}
-              title={copied ? t("common.copied") : t("common.copy.label")}
+              title={copied ? t("toast.common.copied") : t("common.copy.label")}
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
             </button>

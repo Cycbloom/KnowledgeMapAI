@@ -1,7 +1,6 @@
 {
   "title": "My Knowledge Graphs",
   "subtitle": "Build, visualize, and explore your personalized knowledge network.",
-  "loadError": "Failed to load graphs",
   "retry": "Retry",
   "stats": {
     "graphs": "graphs",
@@ -129,14 +128,5 @@
     "restored": "Restored",
     "restoreFailed": "Restore failed. Please restore manually from the recycle bin."
   },
-  "batchDeleteFailed": "Batch delete failed",
-  "deleteFailed": "Delete failed",
-  "favoriteAdded": "Added to favorites",
-  "favoriteRemoved": "Removed from favorites",
-  "operationFailed": "Operation failed",
-  "formatError": "Format error",
-  "importSuccess": "Import successful!",
-  "importFailed": "Import failed: {{message}}",
-  "nodesGenerated": "Successfully generated {{count}} nodes!",
   "deleteGraphTitle": "Delete Graph"
 }

@@ -34,9 +34,15 @@ function buildTree(domains: DomainRecord[]): DomainTreeNode[] {
   });
 
   domains.forEach((domain) => {
-    const node = domainMap.get(domain.id)!;
+    const node = domainMap.get(domain.id);
+    if (!node) return;
     if (domain.parent_id && domainMap.has(domain.parent_id)) {
-      domainMap.get(domain.parent_id)!.children.push(node);
+      const parent = domainMap.get(domain.parent_id);
+      if (parent) {
+        parent.children.push(node);
+      } else {
+        roots.push(node);
+      }
     } else {
       roots.push(node);
     }

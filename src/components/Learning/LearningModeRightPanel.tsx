@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { RAGChatPanel } from "../RAGChat";
 import { LearningPathPanel } from "./LearningPathPanel";
 import { LiteratureExtractPanel } from "../LiteratureExtract/LiteratureExtractPanel";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 
 const ConceptAggregationPanel = lazy(() =>
   import("../ConceptAggregation/ConceptAggregationPanel").then(
@@ -205,15 +205,12 @@ export const LearningModeRightPanel = ({
                     graphId={graphId || ""}
                     onExtractComplete={(result) => {
                       if (result.concepts.length > 0) {
-                        frontendEventBus.publish("message_show", {
-                          type: "success",
-                          content: t(
-                            "literatureExtract.success.extracted",
-                            {
-                              count: result.concepts.length,
-                            },
-                          ),
-                        });
+                        message.success(t(
+                          "literatureExtract.success.extracted",
+                          {
+                            count: result.concepts.length,
+                          },
+                        ));
                       }
                     }}
                     onConceptsSaved={async () => {

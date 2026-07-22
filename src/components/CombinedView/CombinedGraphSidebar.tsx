@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, ChevronRight, ChevronDown, X, List, Link, Sparkles } from 'lucide-react';
-import type { Node, Edge, CrossGraphNodeConnection } from '../../types';
+import type { Node, Edge, CrossGraphNodeConnection, NodeLevel } from '../../types';
 import { CombinedNodeDetailSidebar } from './CombinedNodeDetailSidebar';
 import { CombinedNodeEditSidebar } from './CombinedNodeEditSidebar';
 import { EmptyState } from '../common/EmptyState';
@@ -143,7 +143,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
           if (!childrenMap.has(edge.source_knowledge_point_id)) {
             childrenMap.set(edge.source_knowledge_point_id, []);
           }
-          childrenMap.get(edge.source_knowledge_point_id)!.push(target);
+          childrenMap.get(edge.source_knowledge_point_id)?.push(target);
           hasParent.add(edge.target_knowledge_point_id);
         }
       }
@@ -238,7 +238,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
         title: nodeForm.title,
         content: nodeForm.content,
         summary: nodeForm.summary,
-        level: nodeForm.level as any,
+        level: nodeForm.level as NodeLevel,
         tags: nodeForm.tags
       });
       setSidebarMode('detail');

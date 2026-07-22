@@ -385,14 +385,18 @@ export class ConceptAnalysisService {
         );
 
         if (similarity >= threshold) {
-          if (!adjacencyList.has(node1.id)) {
-            adjacencyList.set(node1.id, []);
+          let list1 = adjacencyList.get(node1.id);
+          if (!list1) {
+            list1 = [];
+            adjacencyList.set(node1.id, list1);
           }
-          if (!adjacencyList.has(node2.id)) {
-            adjacencyList.set(node2.id, []);
+          let list2 = adjacencyList.get(node2.id);
+          if (!list2) {
+            list2 = [];
+            adjacencyList.set(node2.id, list2);
           }
 
-          adjacencyList.get(node1.id)!.push({
+          list1.push({
             id: node2.id,
             title: node2.title,
             similarity,
@@ -400,7 +404,7 @@ export class ConceptAnalysisService {
             level: node2.level || "normal",
           });
 
-          adjacencyList.get(node2.id)!.push({
+          list2.push({
             id: node1.id,
             title: node1.title,
             similarity,
@@ -438,14 +442,18 @@ export class ConceptAnalysisService {
         );
 
         if (similarity >= threshold) {
-          if (!adjacencyList.has(node1.id)) {
-            adjacencyList.set(node1.id, []);
+          let list1 = adjacencyList.get(node1.id);
+          if (!list1) {
+            list1 = [];
+            adjacencyList.set(node1.id, list1);
           }
-          if (!adjacencyList.has(node2.id)) {
-            adjacencyList.set(node2.id, []);
+          let list2 = adjacencyList.get(node2.id);
+          if (!list2) {
+            list2 = [];
+            adjacencyList.set(node2.id, list2);
           }
 
-          adjacencyList.get(node1.id)!.push({
+          list1.push({
             id: node2.id,
             title: node2.title,
             similarity,
@@ -453,7 +461,7 @@ export class ConceptAnalysisService {
             level: node2.level || "normal",
           });
 
-          adjacencyList.get(node2.id)!.push({
+          list2.push({
             id: node1.id,
             title: node1.title,
             similarity,
@@ -485,7 +493,8 @@ export class ConceptAnalysisService {
       const queue = [...neighbors.map((n) => n.id)];
 
       while (queue.length > 0) {
-        const currentId = queue.shift()!;
+        const currentId = queue.shift();
+        if (currentId === undefined) break;
         if (groupMembers.has(currentId)) continue;
 
         groupMembers.add(currentId);
@@ -608,8 +617,8 @@ export class ConceptAnalysisService {
     if (members.length < 2) return 0;
 
     const similarities = members
-      .filter((m) => m.similarity !== undefined)
-      .map((m) => m.similarity!);
+      .map((m) => m.similarity)
+      .filter((s): s is number => s !== undefined);
 
     const avgSimilarity =
       similarities.length > 0

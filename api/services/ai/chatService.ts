@@ -370,7 +370,12 @@ export class ChatService {
         return;
       }
 
-      const { nodes, edges } = await this.graphQueryService!.getGraphNodes(
+      if (!this.graphQueryService) {
+        sendStreamError(res, "图谱服务未配置", ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        return;
+      }
+
+      const { nodes, edges } = await this.graphQueryService.getGraphNodes(
         supabase,
         req.user.id,
         options.graphId,
@@ -471,7 +476,11 @@ export class ChatService {
           sendStreamError(res, "未授权", ErrorCodes.AUTH_UNAUTHORIZED);
           return;
         }
-        const { nodes } = await this.graphQueryService!.getGraphNodes(
+        if (!this.graphQueryService) {
+          sendStreamError(res, "图谱服务未配置", ErrorCodes.SYSTEM_INTERNAL_ERROR);
+          return;
+        }
+        const { nodes } = await this.graphQueryService.getGraphNodes(
           supabase,
           req.user.id,
           options.graphId,

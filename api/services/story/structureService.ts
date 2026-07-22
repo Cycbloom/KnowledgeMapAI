@@ -37,13 +37,18 @@ function buildTree(structures: StoryStructure[]): StoryStructure[] {
   });
 
   structures.forEach((structure) => {
-    const node = map.get(structure.id)!;
+    const node = map.get(structure.id);
+    if (!node) return;
     if (
       structure.parent_structure_id &&
       map.has(structure.parent_structure_id)
     ) {
-      const parent = map.get(structure.parent_structure_id)!;
-      parent.children!.push(node);
+      const parent = map.get(structure.parent_structure_id);
+      if (parent && parent.children) {
+        parent.children.push(node);
+      } else {
+        roots.push(node);
+      }
     } else {
       roots.push(node);
     }

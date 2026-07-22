@@ -8,14 +8,14 @@ export interface UserProfile {
   email: string;
   name: string;
   role?: 'admin' | 'user';
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface UpdateProfileData {
   name?: string;
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
 }
 
 export class AuthService {
@@ -35,7 +35,7 @@ export class AuthService {
   }
 
   async updateProfile(userId: string, updates: UpdateProfileData): Promise<UserProfile> {
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, unknown> = {};
     
     if (updates.name !== undefined) updateData.name = updates.name;
     if (updates.settings !== undefined) updateData.settings = updates.settings;

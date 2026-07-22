@@ -2,9 +2,9 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload, Globe, Link, Image as ImageIcon, WifiOff } from 'lucide-react';
 import { parseMarkdownToGraph } from '../../../utils/markdownParser';
-import { parseOpmlToGraph } from '../../../utils/opmlParser';
+import { parseOpmlToGraph, type ParsedGraph } from '../../../utils/opmlParser';
 import { useTextToGraphMutation, useDocumentToGraphMutation, useImageToGraphMutation } from '../../../hooks/mutations';
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message } from "../../../utils/messageHelper";
 import { api } from '../../../services/api';
 import { useNetworkStatus, useFocusTrap, useEscapeKey } from "../../../hooks";
 
@@ -87,11 +87,11 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
 
     if (activeTab === 'url') {
       if (!isOnline) {
-        frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.offlineUrlParse') });
+        message.error(t('textToGraph.messages.offlineUrlParse'));
         return;
       }
       if (!url.trim()) {
-        frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.invalidUrl') });
+        message.error(t('textToGraph.messages.invalidUrl'));
         return;
       }
       try {
@@ -103,30 +103,30 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         if (!contentToAnalyze) throw new Error(t('textToGraph.messages.urlExtractFailed'));
       } catch (err: unknown) {
         console.error(err);
-        frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : t('textToGraph.messages.urlParseFailed') });
+        message.error(err instanceof Error ? err.message : t('textToGraph.messages.urlParseFailed'));
         setIsUrlLoading(false);
         return;
       } finally {
         setIsUrlLoading(false);
       }
     } else if (!contentToAnalyze.trim()) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.emptyText') });
+      message.error(t('textToGraph.messages.emptyText'));
       return;
     }
     
     if (contentToAnalyze.length < 10) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.textTooShort') });
+      message.error(t('textToGraph.messages.textTooShort'));
       return;
     }
 
     if (!isOnline) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.offlineAiAnalysis') });
+      message.error(t('textToGraph.messages.offlineAiAnalysis'));
       return;
     }
 
     try {
       if (aiEnabled === false) {
-        frontendEventBus.publish("message_show", { type: 'warning', content: t('textToGraph.messages.aiNotConfiguredSimulated') });
+        message.warning(t('textToGraph.messages.aiNotConfiguredSimulated'));
       }
       const result = await textToGraphMutation.mutateAsync({ 
         text: contentToAnalyze, 
@@ -139,25 +139,25 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         setSelectedNodeIds(new Set((result.nodes as PreviewNode[]).map((n) => n.id)));
       }
       setStep('preview');
-      frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.analysisCompleted') });
+      message.success(t('textToGraph.messages.analysisCompleted'));
     } catch (error: unknown) {
       console.error(error);
-      frontendEventBus.publish("message_show", { type: 'error', content: error instanceof Error ? error.message : t('textToGraph.messages.analysisFailed') });
+      message.error(error instanceof Error ? error.message : t('textToGraph.messages.analysisFailed'));
     }
   };
 
   const processImage = async (file: File) => {
     if (!isOnline) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.offlineImageRecognition') });
+      message.error(t('textToGraph.messages.offlineImageRecognition'));
       return;
     }
 
     if (aiEnabled === false) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.aiNotConfiguredImage') });
+      message.error(t('textToGraph.messages.aiNotConfiguredImage'));
       return;
     }
 
-    frontendEventBus.publish("message_show", { type: 'info', content: t('textToGraph.messages.analyzingImage') });
+    message.info(t('textToGraph.messages.analyzingImage'));
 
     try {
       const formData = new FormData();
@@ -173,10 +173,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       setPreviewData(result as unknown as TextToGraphResult);
       setSelectedNodeIds(new Set((result.nodes as PreviewNode[]).map((n) => n.id)));
       setStep('preview');
-      frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.imageAnalysisSuccess') });
+      message.success(t('textToGraph.messages.imageAnalysisSuccess'));
     } catch (err: unknown) {
       console.error(err);
-      frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : t('textToGraph.messages.imageAnalysisFailed') });
+      message.error(err instanceof Error ? err.message : t('textToGraph.messages.imageAnalysisFailed'));
     }
   };
 
@@ -188,16 +188,16 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
 
     if (file.name.endsWith('.pdf')) {
         if (!isOnline) {
-          frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.offlinePdfParse') });
+          message.error(t('textToGraph.messages.offlinePdfParse'));
           return;
         }
 
         if (aiEnabled === false) {
-          frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.aiNotConfiguredPdf') });
+          message.error(t('textToGraph.messages.aiNotConfiguredPdf'));
           return;
         }
 
-        frontendEventBus.publish("message_show", { type: 'info', content: t('textToGraph.messages.parsingPdf') });
+        message.info(t('textToGraph.messages.parsingPdf'));
 
         try {
           const result = await documentToGraphMutation.mutateAsync({
@@ -212,10 +212,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
           setPreviewData(result as unknown as TextToGraphResult);
           setSelectedNodeIds(new Set((result.nodes as PreviewNode[]).map((n) => n.id)));
           setStep('preview');
-          frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.pdfParseSuccess') });
+          message.success(t('textToGraph.messages.pdfParseSuccess'));
         } catch (err: unknown) {
           console.error(err);
-          frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : t('textToGraph.messages.pdfParseError') });
+          message.error(err instanceof Error ? err.message : t('textToGraph.messages.pdfParseError'));
         }
     } else {
        // Local parsing for MD/OPML/TXT
@@ -223,7 +223,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
        reader.onload = async (e) => {
          try {
            const content = e.target?.result as string;
-           let parsed;
+           let parsed: ParsedGraph;
 
            if (file.name.endsWith('.opml')) {
              parsed = parseOpmlToGraph(content);
@@ -233,19 +233,19 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
              // TXT: Switch to text tab and fill content
              setText(content);
              setActiveTab('text');
-             frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.textImported') });
+             message.success(t('textToGraph.messages.textImported'));
              return;
            }
 
            // Convert parsed format to preview format
-           const previewNodes = parsed.nodes.map((n: any) => ({
+           const previewNodes = parsed.nodes.map((n) => ({
              id: n.id,
              title: n.title,
              content: n.content,
              level: n.level || 'leaf'
            }));
 
-           const previewEdges = parsed.edges.map((e: any) => ({
+           const previewEdges = parsed.edges.map((e) => ({
              source: e.source,
              target: e.target,
              relationship: e.relationship || 'related'
@@ -254,10 +254,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
            setPreviewData({ nodes: previewNodes, edges: previewEdges });
            setSelectedNodeIds(new Set(previewNodes.map(n => n.id)));
            setStep('preview');
-           frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.fileParseSuccess') });
-         } catch (err: any) {
+           message.success(t('textToGraph.messages.fileParseSuccess'));
+         } catch (err: unknown) {
            console.error(err);
-           frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.fileParseError', { message: err.message }) });
+           message.error(t('textToGraph.messages.fileParseError', { message: err instanceof Error ? err.message : String(err) }));
          }
        };
        reader.readAsText(file);
@@ -313,7 +313,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       const validExtensions = ['.pdf', '.txt', '.md', '.opml', '.png', '.jpg', '.jpeg', '.webp'];
       const isValid = validExtensions.some(type => file.name.toLowerCase().endsWith(type));
       if (!isValid) {
-        frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.unsupportedFileType') });
+        message.error(t('textToGraph.messages.unsupportedFileType'));
         return;
       }
       await processFile(file);
@@ -333,7 +333,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       );
 
       if (nodesToSave.length === 0) {
-        frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.noNodeSelected') });
+        message.error(t('textToGraph.messages.noNodeSelected'));
         return;
       }
 
@@ -344,11 +344,12 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         edges: edgesToSave
       });
 
-      frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.generateSuccess', { nodes: nodesToSave.length, edges: edgesToSave.length }) });
+      message.success(t('textToGraph.messages.generateSuccess', { nodes: nodesToSave.length, edges: edgesToSave.length }));
       handleClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      frontendEventBus.publish("message_show", { type: 'error', content: error.message || t('textToGraph.messages.saveFailed') });
+      const errMsg = error instanceof Error ? error.message : String(error);
+      message.error(errMsg || t('textToGraph.messages.saveFailed'));
     }
   };
 

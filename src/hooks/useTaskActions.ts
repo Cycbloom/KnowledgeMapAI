@@ -8,7 +8,7 @@ import {
   usePauseUserTaskMutation,
   useCompleteUserTaskMutation,
 } from "./scheduler/useScheduler";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
+import { message } from "../utils/messageHelper";
 import { api } from "../services/api";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import type { UserTask, CreateUserTaskData, KnowledgePoint } from "@shared/types";
@@ -62,11 +62,11 @@ export const useTaskActions = (refetchQueues: () => void): TaskActions => {
   const handleCreateTask = async (data: CreateUserTaskData) => {
     try {
       await createTaskMutation.mutateAsync(data);
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskCreateSuccess") });
+      message.success(t("toast.workbench.taskCreateSuccess"));
       setShowTaskForm(false);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskCreateFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      const errorMessage = err instanceof Error ? err.message : t("toast.workbench.taskCreateFailed");
+      message.error(errorMessage);
     }
   };
 
@@ -74,12 +74,12 @@ export const useTaskActions = (refetchQueues: () => void): TaskActions => {
     if (!editingTask) return;
     try {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskUpdateSuccess") });
+      message.success(t("toast.workbench.taskUpdateSuccess"));
       setEditingTask(null);
       setShowTaskForm(false);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskUpdateFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      const errorMessage = err instanceof Error ? err.message : t("toast.workbench.taskUpdateFailed");
+      message.error(errorMessage);
     }
   };
 
@@ -92,40 +92,40 @@ export const useTaskActions = (refetchQueues: () => void): TaskActions => {
     if (!confirmed) return;
     try {
       await deleteTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskDeleted") });
+      message.success(t("toast.workbench.taskDeleted"));
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskDeleteFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      const errorMessage = err instanceof Error ? err.message : t("toast.workbench.taskDeleteFailed");
+      message.error(errorMessage);
     }
   };
 
   const handleStartTask = async (task: UserTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskStarted") });
+      message.success(t("toast.workbench.taskStarted"));
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskStartFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      const errorMessage = err instanceof Error ? err.message : t("toast.workbench.taskStartFailed");
+      message.error(errorMessage);
     }
   };
 
   const handlePauseTask = async (task: UserTask) => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskPaused") });
+      message.success(t("toast.workbench.taskPaused"));
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskPauseFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      const errorMessage = err instanceof Error ? err.message : t("toast.workbench.taskPauseFailed");
+      message.error(errorMessage);
     }
   };
 
   const handleCompleteTask = async (task: UserTask) => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskCompleted") });
+      message.success(t("toast.workbench.taskCompleted"));
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskCompleteFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      const errorMessage = err instanceof Error ? err.message : t("toast.workbench.taskCompleteFailed");
+      message.error(errorMessage);
     }
   };
 
@@ -145,14 +145,14 @@ export const useTaskActions = (refetchQueues: () => void): TaskActions => {
       await api.scheduler.addTaskKnowledgePoint(taskId, {
         knowledge_point_id: knowledgePointId,
       });
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.knowledgePointLinked") });
+      message.success(t("toast.workbench.knowledgePointLinked"));
       setLinkingTaskId(null);
       setKnowledgePointSearch("");
       setSearchResults([]);
       refetchQueues();
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.knowledgePointLinkFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      const errorMessage = err instanceof Error ? err.message : t("toast.workbench.knowledgePointLinkFailed");
+      message.error(errorMessage);
     }
   };
 

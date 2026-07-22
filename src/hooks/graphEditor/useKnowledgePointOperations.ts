@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { api } from '../../services/api';
-import { frontendEventBus } from '../../services/timer/FrontendEventBus';
+import { message } from '../../utils/messageHelper';
 import { createAsyncHandler } from '../../utils/asyncHandler';
 import type { 
   SimilarKnowledgePoint, 
@@ -151,10 +151,7 @@ export const useKnowledgePointOperations = ({
           const result = await api.nodes.delete(nodeId, true);
           
           if (result.affected_graphs && result.affected_graphs.length > 1) {
-            frontendEventBus.publish("message_show", { 
-              type: 'warning', 
-              content: `此知识点已在 ${result.affected_graphs.length} 个图谱中删除` 
-            });
+            message.warning(`此知识点已在 ${result.affected_graphs.length} 个图谱中删除`);
           }
         } else {
           await api.nodes.delete(nodeId, false);

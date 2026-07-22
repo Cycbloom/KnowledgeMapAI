@@ -22,8 +22,8 @@ import {
   CheckSquare,
   Sparkles,
 } from "lucide-react";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
+import { message } from "../utils/messageHelper";
 import { TaskTemplates } from "../components/Templates/TaskTemplates";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
@@ -119,25 +119,19 @@ export const Templates = () => {
       setNewTemplateName("");
       setNewTemplateDescription("");
       setIsCreating(false);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("templates.message.createSuccess"),
-      });
+      message.success(t("toast.templates.createSuccess"));
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error
           ? err.message
-          : t("templates.message.createFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+          : t("toast.templates.createFailed");
+      message.error(errorMessage);
     }
   };
 
   const handleDeleteTemplate = async (template: Template) => {
     if (template.is_system) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("templates.message.systemTemplateCannotDelete"),
-      });
+      message.error(t("toast.templates.systemTemplateCannotDelete"));
       return;
     }
 
@@ -148,25 +142,19 @@ export const Templates = () => {
 
     try {
       await deleteTemplateMutation.mutateAsync(template.id);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("templates.message.deleteSuccess"),
-      });
+      message.success(t("toast.templates.deleteSuccess"));
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error
           ? err.message
-          : t("templates.message.deleteFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+          : t("toast.templates.deleteFailed");
+      message.error(errorMessage);
     }
   };
 
   const handleEditTemplate = (template: Template) => {
     if (template.is_system) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("templates.message.systemTemplateCannotEdit"),
-      });
+      message.error(t("toast.templates.systemTemplateCannotEdit"));
       return;
     }
     setEditingTemplate(template);
@@ -196,16 +184,13 @@ export const Templates = () => {
       setIsEditing(false);
       setNewTemplateName("");
       setNewTemplateDescription("");
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("templates.message.updateSuccess"),
-      });
+      message.success(t("toast.templates.updateSuccess"));
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error
           ? err.message
-          : t("templates.message.updateFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+          : t("toast.templates.updateFailed");
+      message.error(errorMessage);
     }
   };
 

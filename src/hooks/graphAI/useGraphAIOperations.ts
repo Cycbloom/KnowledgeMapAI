@@ -7,7 +7,6 @@ import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
 import { HistoryAction } from '../common/useHistory';
 import { GraphEditorState } from '../graphEditor';
 import { message } from '../../utils/messageHelper';
-import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 import { api } from '../../services/api';
 import { useStore } from '../../store/useStore';
 import { queryKeys } from '../queries/config';
@@ -183,7 +182,7 @@ export const useGraphAIOperations = ({
     if (!selectedNode || !id) return;
     
     if (!selectedNode.title) {
-      message.error(t('graphAI.nodeTitleRequired'));
+      message.error(t('toast.graphAI.nodeTitleRequired'));
       return;
     }
     
@@ -229,12 +228,12 @@ export const useGraphAIOperations = ({
         loadingSetter: setLoading,
         onSuccess: (result) => {
           if (result && (result.newNodesCount > 0 || result.newEdgesCount > 0)) {
-            message.success(t('graphAI.expandComplete'));
+            message.success(t('toast.graphAI.expandComplete'));
           } else {
-            message.info(t('graphAI.noNewRelations'));
+            message.info(t('toast.graphAI.noNewRelations'));
           }
         },
-        errorMessage: t('graphAI.expandFailed')
+        errorMessage: t('toast.graphAI.expandFailed')
       }
     );
   };
@@ -258,7 +257,7 @@ export const useGraphAIOperations = ({
         }));
 
         if (cards.length === 0) {
-          message.error(t('graphAI.cardGenerateFailed'));
+          message.error(t('toast.graphAI.cardGenerateFailed'));
           return null;
         }
 
@@ -268,10 +267,10 @@ export const useGraphAIOperations = ({
       },
       {
         loadingSetter: setLoading,
-        errorMessage: t('graphAI.cardGenerateFailed'),
+        errorMessage: t('toast.graphAI.cardGenerateFailed'),
         onSuccess: (result) => {
           if (result && typeof result === 'number') {
-            message.success(t('graphAI.cardGenerateSuccess', { count: result }));
+            message.success(t('toast.graphAI.cardGenerateSuccess', { count: result }));
           }
         }
       }
@@ -296,7 +295,7 @@ export const useGraphAIOperations = ({
         const model = aiConfig?.model;
 
         if (type === 'batch_generate_questions') {
-          message.info(t('graphAI.submitting'), { duration: 2000 });
+          message.info(t('toast.graphAI.submitting'), { duration: 2000 });
 
           const nodeIds = nodesToProcess.map(n => n.id);
 
@@ -309,7 +308,7 @@ export const useGraphAIOperations = ({
             model
           });
 
-          message.success(t('graphAI.submitSuccess'), { duration: 3000 });
+          message.success(t('toast.graphAI.submitSuccess'), { duration: 3000 });
           return true;
         }
 
@@ -349,10 +348,10 @@ export const useGraphAIOperations = ({
         return true;
       },
       {
-        successMessage: t('graphAI.submitSuccess'),
-        errorMessage: t('graphAI.actionFailed'),
+        successMessage: t('toast.graphAI.submitSuccess'),
+        errorMessage: t('toast.graphAI.actionFailed'),
         onSuccess: () => {
-          message.success(t('graphAI.submitSuccess'), { duration: 3000 });
+          message.success(t('toast.graphAI.submitSuccess'), { duration: 3000 });
         }
       }
     );
@@ -463,8 +462,8 @@ export const useGraphAIOperations = ({
       },
       {
         loadingSetter: setLoading,
-        successMessage: t('graphAI.branchSwitched'),
-        errorMessage: t('graphAI.expandFailed')
+        successMessage: t('toast.graphAI.branchSwitched'),
+        errorMessage: t('toast.graphAI.expandFailed')
       }
     );
   };
@@ -554,7 +553,7 @@ export const useGraphAIOperations = ({
         errorMessage: '切换分支失败',
         onSuccess: (result) => {
           if (result) {
-            message.success(t('graphAI.branchSwitched'));
+            message.success(t('toast.graphAI.branchSwitched'));
           }
         }
       }
@@ -564,14 +563,8 @@ export const useGraphAIOperations = ({
   const handleGenerateNodeContent = async () => {
     if (!selectedNode || !id) return;
     
-    const loadingId = `loading-${Date.now()}`;
-    frontendEventBus.publish("message_show", { 
-      id: loadingId,
-      content: 'AI 内容生成任务已开始...', 
-      type: 'loading',
-      duration: 0
-    });
-    
+    const loadingId = message.loading('AI 内容生成任务已开始...');
+
     await asyncHandler(
       async () => {
         const prompt = `请详细解释 ${selectedNode.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如"好的"、"作为..."）、结束语或无关的对话内容。`;
@@ -606,7 +599,7 @@ export const useGraphAIOperations = ({
         successMessage: 'AI 内容生成完成',
         errorMessage: 'AI 生成失败',
         onFinally: () => {
-          frontendEventBus.publish("message_hide", { id: loadingId });
+          message.dismiss(loadingId);
         }
       }
     );
@@ -614,7 +607,7 @@ export const useGraphAIOperations = ({
 
   const handleExecuteAction = async (action: AIAction, nodeId: string) => {
     try {
-      message.info(t('graphAI.submitting'));
+      message.info(t('toast.graphAI.submitting'));
       const res = await api.aiActions.execute({
         action_id: action.id,
         node_id: nodeId,
@@ -626,12 +619,12 @@ export const useGraphAIOperations = ({
           title: action.name,
           content: typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2),
         });
-        message.success(t('graphAI.actionSuccess'));
+        message.success(t('toast.graphAI.actionSuccess'));
       } else {
         await queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
         await queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(id) });
 
-        let feedback = `${t('graphAI.actionSuccess')}: ${action.name}`;
+        let feedback = `${t('toast.graphAI.actionSuccess')}: ${action.name}`;
         if (res.message) feedback += ` (${res.message})`;
 
         if (action.target_mode === "update_node" && res.data?.updatedFields) {
@@ -644,7 +637,7 @@ export const useGraphAIOperations = ({
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : '未知错误';
-      message.error(`${t('graphAI.actionFailed')}: ${errorMessage}`);
+      message.error(`${t('toast.graphAI.actionFailed')}: ${errorMessage}`);
     }
   };
 

@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useCallback, Suspense, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Stars, Line, Billboard, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -58,7 +59,10 @@ function PlanetNode({
   node,
   isDark,
 }: PlanetNodeProps) {
+  const { t } = useTranslation();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const titleTextRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tagTextRef = useRef<any>(null);
   const { camera } = useThree();
   const nodePosRef = useRef(new THREE.Vector3(node.x, node.z, node.y));
@@ -78,7 +82,7 @@ function PlanetNode({
     return node.data.properties?.tags || [];
   }, [node.data.properties?.tags]);
 
-  const titleInfo = useMemo(() => truncateText(node.data.title || '未命名'), [node.data.title]);
+  const titleInfo = useMemo(() => truncateText(node.data.title || t('graphEditor.mindMap.unnamed')), [node.data.title, t]);
 
   useFrame((_, delta) => {
     const distance = camera.position.distanceTo(nodePosRef.current);
@@ -268,6 +272,7 @@ function Scene({
 }) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const { gl, camera } = useThree();
+  const { t } = useTranslation();
 
   // 共享球体几何体：所有节点复用同一份
   const sharedSphereGeo = useMemo(() => new THREE.SphereGeometry(1, 32, 32), []);
@@ -461,8 +466,8 @@ function Scene({
 
       camera.position.lerpVectors(animationStartCameraPosRef.current, desiredCameraPos, easedT);
 
-      if (controlsRef.current) {
-        controlsRef.current.target.lerpVectors(animationStartTargetPosRef.current!, target, easedT);
+      if (controlsRef.current && animationStartTargetPosRef.current) {
+        controlsRef.current.target.lerpVectors(animationStartTargetPosRef.current, target, easedT);
         controlsRef.current.update();
       }
 
@@ -658,8 +663,8 @@ function Scene({
 
   const hoveredTitleInfo = useMemo(() => {
     if (!hoveredNode) return null;
-    return truncateText(hoveredNode.data.title || '未命名');
-  }, [hoveredNode]);
+    return truncateText(hoveredNode.data.title || t('graphEditor.mindMap.unnamed'));
+  }, [hoveredNode, t]);
 
   // Scene 卸载时清理共享资源
   useEffect(() => {

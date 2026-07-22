@@ -25,7 +25,7 @@ import {
   Copy,
 } from "lucide-react";
 import { useError, useIsMobile, useFormDraft } from "../../hooks";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { literatureApi } from "../../services/api/literature";
 import {
   CONCEPT_TYPE_COLORS,
@@ -276,10 +276,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   const handleAutoDetectMetadata = useCallback(
     async (citationText: string) => {
       if (!citationText.trim()) {
-        frontendEventBus.publish("message_show", {
-          type: "warning",
-          content: t("literatureExtract.errors.noCitationText"),
-        });
+        message.warning(t("literatureExtract.errors.noCitationText"));
         return;
       }
 
@@ -301,12 +298,9 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
 
         setDraft((prev) => ({ ...prev, metadata: detectedMetadata }));
 
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("literatureExtract.success.metadataDetected", {
-            confidence: (result.confidence * 100).toFixed(0),
-          }),
-        });
+        message.success(t("literatureExtract.success.metadataDetected", {
+          confidence: (result.confidence * 100).toFixed(0),
+        }));
       } catch (error) {
         handleError(error, {
           context: "AutoDetectMetadata",
@@ -440,44 +434,29 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     switch (inputMode) {
       case "text":
         if (!textContent.trim()) {
-          frontendEventBus.publish("message_show", {
-            type: "warning",
-            content: t("literatureExtract.errors.textRequired"),
-          });
+          message.warning(t("literatureExtract.errors.textRequired"));
           return false;
         }
         if (textContent.trim().length < 100) {
-          frontendEventBus.publish("message_show", {
-            type: "warning",
-            content: t("literatureExtract.errors.textTooShort"),
-          });
+          message.warning(t("literatureExtract.errors.textTooShort"));
           return false;
         }
         break;
       case "file":
         if (!fileState.file) {
-          frontendEventBus.publish("message_show", {
-            type: "warning",
-            content: t("literatureExtract.errors.fileRequired"),
-          });
+          message.warning(t("literatureExtract.errors.fileRequired"));
           return false;
         }
         break;
       case "url":
         if (!urlInput.trim()) {
-          frontendEventBus.publish("message_show", {
-            type: "warning",
-            content: t("literatureExtract.errors.urlRequired"),
-          });
+          message.warning(t("literatureExtract.errors.urlRequired"));
           return false;
         }
         try {
           new URL(urlInput);
         } catch {
-          frontendEventBus.publish("message_show", {
-            type: "warning",
-            content: t("literatureExtract.errors.invalidUrl"),
-          });
+          message.warning(t("literatureExtract.errors.invalidUrl"));
           return false;
         }
         break;
@@ -574,12 +553,9 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         }
       }
 
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("literatureExtract.success.extracted", {
-          count: result.concepts.length,
-        }),
-      });
+      message.success(t("literatureExtract.success.extracted", {
+        count: result.concepts.length,
+      }));
 
       onExtractComplete?.(result);
     } catch (error) {
@@ -625,13 +601,10 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         literature: extractedResult.literature,
       });
 
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("literatureExtract.success.saved", {
-          addedCount: result.addedCount,
-          mergedCount: result.mergedCount,
-        }),
-      });
+      message.success(t("literatureExtract.success.saved", {
+        addedCount: result.addedCount,
+        mergedCount: result.mergedCount,
+      }));
 
       onConceptsSaved?.({
         addedCount: result.addedCount,
@@ -686,10 +659,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("literatureExtract.success.exported"),
-      });
+      message.success(t("literatureExtract.success.exported"));
     } catch (error) {
       handleError(error, {
         context: "ExportData",
@@ -712,7 +682,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       `${t("literatureExtract.result.relationsCount")}: ${extractedResult.relations.length}`,
     ].join("\n");
 
-    const success = await copyToClipboard(summaryText, t("common.copied"));
+    const success = await copyToClipboard(summaryText, t("toast.common.copied"));
     if (success) {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 1000);
@@ -728,16 +698,10 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
           inputMode: "text",
           textContent: clipboardText,
         }));
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("literatureExtract.success.pasted"),
-        });
+        message.success(t("literatureExtract.success.pasted"));
       }
     } catch (error) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("literatureExtract.errors.pasteFailed"),
-      });
+      message.error(t("literatureExtract.errors.pasteFailed"));
     }
   }, [t, setDraft]);
 
@@ -1351,7 +1315,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   };
 
   const formatRelationType = (type: string): string => {
-    return getRelationshipTypeDisplayName(type) || type;
+    return t(getRelationshipTypeDisplayName(type) || type);
   };
 
   const renderEnhancedRelationList = () => {

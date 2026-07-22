@@ -19,7 +19,7 @@ const ViewModeSelector = React.memo(({
   const viewModes: Array<{
     mode: GraphViewMode;
     labelKey: string;
-    icon: React.ComponentType<any>;
+    icon: React.ComponentType<Record<string, unknown>>;
     descriptionKey: string;
   }> = [
     {

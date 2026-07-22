@@ -22,7 +22,6 @@ import {
   NotebookPen,
   CalendarDays,
 } from "lucide-react";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { ConfirmationModal, SkeletonCard, EmptyState, ErrorState } from "../components/common";
 import { useTheme } from "../hooks";
 import { useNavigate } from "react-router-dom";
@@ -187,28 +186,24 @@ export const RecycleBin = () => {
   const handleRestoreNote = async (note: Note) => {
     try {
       await restoreNoteMutation.mutateAsync(note.id);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("recycleBin.notes.restoreSuccess"),
-        duration: 6000,
-      });
+      message.success(t("recycleBin.notes.restoreSuccess"), { duration: 6000 });
     } catch (err: unknown) {
       console.error(err);
       message.error(t("recycleBin.restoreFailed"));
       const errorMessage = err instanceof Error ? err.message : t("recycleBin.notes.restoreFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      message.error(errorMessage);
     }
   };
 
   const handleRestore = async (id: string) => {
     try {
       await restoreGraphMutation.mutateAsync(id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("recycleBin.messages.restoreSuccess") });
+      message.success(t("recycleBin.messages.restoreSuccess"));
     } catch (err: unknown) {
       console.error(err);
       message.error(t("recycleBin.restoreFailed"));
       const errorMessage = err instanceof Error ? err.message : t("recycleBin.messages.restoreFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      message.error(errorMessage);
     }
   };
 
@@ -218,9 +213,7 @@ export const RecycleBin = () => {
     try {
       const ids = Array.from(selectedIds);
       await batchRestoreMutation.mutateAsync(ids);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("recycleBin.messages.batchRestoreSuccess", { count: ids.length }),
+      message.success(t("recycleBin.messages.batchRestoreSuccess", { count: ids.length }), {
         action: {
           label: t("recycleBin.messages.view"),
           onClick: () => navigate("/dashboard"),
@@ -232,7 +225,7 @@ export const RecycleBin = () => {
       console.error(err);
       message.error(t("recycleBin.restoreFailed"));
       const errorMessage = err instanceof Error ? err.message : t("recycleBin.messages.batchRestoreFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      message.error(errorMessage);
     }
   };
 
@@ -246,15 +239,9 @@ export const RecycleBin = () => {
     );
     const failed = results.filter((r) => r.status === "rejected");
     if (failed.length === 0) {
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("recycleBin.notes.batch.restored", { count: ids.length }),
-      });
+      message.success(t("recycleBin.notes.batch.restored", { count: ids.length }));
     } else {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("recycleBin.notes.batch.partialFailed"),
-      });
+      message.warning(t("recycleBin.notes.batch.partialFailed"));
     }
     setSelectedNoteIds(new Set());
   };
@@ -278,17 +265,14 @@ export const RecycleBin = () => {
       const ids = Array.from(selectedIds);
       batchPermanentDeleteMutation.mutate(ids, {
         onSuccess: () => {
-          frontendEventBus.publish("message_show", {
-            type: "success",
-            content: t("recycleBin.messages.batchDeleteSuccess", { count: ids.length }),
-          });
+          message.success(t("recycleBin.messages.batchDeleteSuccess", { count: ids.length }));
           setSelectedIds(new Set());
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
         onError: (err: unknown) => {
           console.error(err);
-          const message = err instanceof Error ? err.message : t("recycleBin.messages.batchDeleteFailed");
-          frontendEventBus.publish("message_show", { type: "error", content: message });
+          const errorMessage = err instanceof Error ? err.message : t("recycleBin.messages.batchDeleteFailed");
+          message.error(errorMessage);
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
       });
@@ -297,13 +281,13 @@ export const RecycleBin = () => {
 
       permanentDeleteGraphMutation.mutate(deleteConfirm.id, {
         onSuccess: () => {
-          frontendEventBus.publish("message_show", { type: "success", content: t("recycleBin.messages.deleteSuccess") });
+          message.success(t("recycleBin.messages.deleteSuccess"));
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
         onError: (err: unknown) => {
           console.error(err);
-          const message = err instanceof Error ? err.message : t("recycleBin.messages.deleteFailed");
-          frontendEventBus.publish("message_show", { type: "error", content: message });
+          const errorMessage = err instanceof Error ? err.message : t("recycleBin.messages.deleteFailed");
+          message.error(errorMessage);
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
       });

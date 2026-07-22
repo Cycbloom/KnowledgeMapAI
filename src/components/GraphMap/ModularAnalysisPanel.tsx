@@ -9,7 +9,7 @@ import { PromptEditor } from '../GraphEditor/panels/PromptEditor';
 import { MODULE_TO_SCENARIO } from './types';
 import { getScenarioById } from '../PromptConfig';
 import { api } from '../../services/api';
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { EmptyState } from '../common/EmptyState';
 import { queryKeys, defaultQueryConfig } from '@/hooks/queries/config';
 
@@ -98,18 +98,10 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
         template_content: content,
       });
       await queryClient.invalidateQueries({ queryKey: ['modularAnalysis'] });
-      frontendEventBus.publish("message_show", {
-        type: 'success',
-        content: '提示词保存成功',
-        duration: 3000,
-      });
+      message.success('提示词保存成功', { duration: 3000 });
       setEditingPromptModule(null);
     } catch (error) {
-      frontendEventBus.publish("message_show", {
-        type: 'error',
-        content: `保存失败: ${(error as Error).message}`,
-        duration: 5000,
-      });
+      message.error(`保存失败: ${(error as Error).message}`, { duration: 5000 });
       throw error;
     }
   };

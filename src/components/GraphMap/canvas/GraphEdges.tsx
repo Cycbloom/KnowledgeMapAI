@@ -2,6 +2,7 @@ import React, { memo, useMemo } from "react";
 import type {
   Edge,
   LayoutLink,
+  LayoutNode,
   LinkStyle,
   LinkAnimation,
   GraphRelationType,
@@ -12,7 +13,7 @@ import { getRelationColor } from "../../../utils/graphMapAdapter";
 interface GraphEdgesProps {
   links: LayoutLink[];
   edges: Edge[];
-  nodeMap: Map<string, any>;
+  nodeMap: Map<string, LayoutNode>;
   focusedGraphId: string | null;
   neighborLinkIds: Set<string>;
   linkHighlightState: Map<string, boolean>;

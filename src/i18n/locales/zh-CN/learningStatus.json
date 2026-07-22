@@ -1,0 +1,10 @@
+{
+  "colorSchemes": {
+    "default": "默认",
+    "nature": "自然",
+    "ocean": "海洋",
+    "sunset": "日落",
+    "forest": "森林",
+    "custom": "自定义"
+  }
+}

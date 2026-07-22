@@ -14,10 +14,10 @@ export function CopyButton({ text }: CopyButtonProps) {
   const handleCopy = async () => {
     try {
       await run(navigator.clipboard.writeText(text));
-      message.success(t("common.copied"));
+      message.success(t("toast.common.copied"));
     } catch {
       console.error("Failed to copy");
-      message.error(t("common.copyFailed"));
+      message.error(t("toast.common.copyFailed"));
     }
   };
 

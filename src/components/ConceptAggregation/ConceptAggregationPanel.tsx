@@ -15,7 +15,7 @@ import {
   Group,
 } from "lucide-react";
 import { api } from "../../services/api";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { Button } from "../common/Button";
 import { EmptyState } from "../common/EmptyState";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
@@ -107,20 +107,14 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
     try {
       const response = await api.conceptAggregation.analyze(graphId, settings);
       setCurrentJobId(response.jobId);
-      frontendEventBus.publish("message_show", {
-        type: "info",
-        content: response.message || "分析任务已启动",
-      });
+      message.info(response.message || t("conceptAggregation.panel.analyzeStarted"));
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "启动分析失败";
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      const errorMessage =
+        error instanceof Error ? error.message : t("conceptAggregation.panel.analyzeFailed");
+      message.error(errorMessage);
       setIsAnalyzing(false);
     }
-  }, [graphId, settings]);
+  }, [graphId, settings, t]);
 
   if (!isOpen) return null;
 
@@ -132,7 +126,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
         <div className="flex flex-col items-center justify-center h-64 space-y-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            正在分析概念相似度...
+            {t("conceptAggregation.panel.analyzingSimilarity")}
           </p>
           <div className="w-full max-w-xs">
             <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -176,11 +170,11 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
                 </span>
               </div>
               <span className="text-xs px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">
-                {(group.similarity * 100).toFixed(0)}% 相似
+                {t("conceptAggregation.panel.xPercentSimilar", { percent: (group.similarity * 100).toFixed(0) })}
               </span>
             </div>
             <div className="text-xs text-slate-600 dark:text-slate-400">
-              <span className="font-medium">可合并:</span>{" "}
+              <span className="font-medium">{t("conceptAggregation.panel.mergeable")}</span>{" "}
               {group.sourceTitles.join(", ")}
             </div>
           </div>
@@ -197,7 +191,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
         <div className="flex flex-col items-center justify-center h-64 space-y-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            正在分析层次关系...
+            {t("conceptAggregation.panel.analyzingHierarchy")}
           </p>
         </div>
       );
@@ -249,7 +243,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
     <div className="space-y-6 p-4">
       <div>
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-          相似度阈值
+          {t("conceptAggregation.panel.similarityThreshold")}
         </label>
         <input
           type="range"
@@ -266,17 +260,17 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
           className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
         />
         <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
-          <span>宽松</span>
+          <span>{t("conceptAggregation.panel.loose")}</span>
           <span className="font-medium text-primary-600 dark:text-primary-400">
             {(settings.similarityThreshold ?? 0.8) * 100}%
           </span>
-          <span>严格</span>
+          <span>{t("conceptAggregation.panel.strict")}</span>
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-          层次置信度阈值
+          {t("conceptAggregation.panel.hierarchyThreshold")}
         </label>
         <input
           type="range"
@@ -293,22 +287,22 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
           className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
         />
         <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
-          <span>低</span>
+          <span>{t("conceptAggregation.panel.low")}</span>
           <span className="font-medium text-primary-600 dark:text-primary-400">
             {(settings.hierarchyThreshold ?? 0.7) * 100}%
           </span>
-          <span>高</span>
+          <span>{t("conceptAggregation.panel.high")}</span>
         </div>
       </div>
 
       <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
         <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-          说明
+          {t("conceptAggregation.panel.explanation")}
         </h4>
         <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
-          <li>• 相似度阈值：控制概念聚合的严格程度</li>
-          <li>• 层次阈值：控制父子关系识别的可信度</li>
-          <li>• 阈值越高，结果越精确但数量越少</li>
+          <li>{t("conceptAggregation.panel.explanationSimilarity")}</li>
+          <li>{t("conceptAggregation.panel.explanationHierarchy")}</li>
+          <li>{t("conceptAggregation.panel.explanationThreshold")}</li>
         </ul>
       </div>
     </div>
@@ -317,17 +311,17 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
   const tabs: Array<{ id: TabType; label: string; icon: React.ReactNode; count?: number }> = [
     {
       id: "aggregation",
-      label: "聚合结果",
+      label: t("conceptAggregation.panel.tabAggregation"),
       icon: <GitMerge size={16} />,
       count: analysisResult?.groups?.length,
     },
     {
       id: "hierarchy",
-      label: "层次树",
+      label: t("conceptAggregation.panel.tabHierarchy"),
       icon: <Network size={16} />,
       count: analysisResult?.hierarchyRelations?.length,
     },
-    { id: "settings", label: "设置", icon: <Settings2 size={16} /> },
+    { id: "settings", label: t("conceptAggregation.panel.tabSettings"), icon: <Settings2 size={16} /> },
   ];
 
   const panelContent = (
@@ -343,13 +337,13 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
         <div className="flex items-center gap-2">
           <Sparkles className="text-primary-500" size={20} />
           <h2 id={titleId} className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-            概念聚合
+            {t("conceptAggregation.panel.title")}
           </h2>
         </div>
         {!embedded && (
           <button
             onClick={onClose}
-            aria-label="关闭"
+            aria-label={t("conceptAggregation.panel.close")}
             className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
           >
             <X size={20} className="text-slate-500" />
@@ -372,20 +366,20 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
                 onClick={handleAnalyze}
                 disabled={isAnalyzing}
               >
-                {isAnalyzing ? "分析中..." : "开始分析"}
+                {isAnalyzing ? t("conceptAggregation.panel.analyzing") : t("conceptAggregation.panel.startAnalyze")}
               </Button>
 
               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 {analysisResult?.status === "completed" && (
                   <>
                     <CheckCircle2 size={14} className="text-green-500" />
-                    <span>分析完成</span>
+                    <span>{t("conceptAggregation.panel.analyzeComplete")}</span>
                   </>
                 )}
                 {analysisResult?.status === "failed" && (
                   <>
                     <AlertCircle size={14} className="text-red-500" />
-                    <span>分析失败</span>
+                    <span>{t("conceptAggregation.panel.analyzeFailedStatus")}</span>
                   </>
                 )}
               </div>
@@ -451,7 +445,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
                       {analysisResult.summary.totalNodes}
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">
-                      总节点数
+                      {t("conceptAggregation.panel.totalNodes")}
                     </div>
                   </div>
                   <div>
@@ -459,7 +453,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
                       {analysisResult.summary.groupCount}
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">
-                      聚合组数
+                      {t("conceptAggregation.panel.groupCount")}
                     </div>
                   </div>
                   <div>
@@ -467,7 +461,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
                       {analysisResult.summary.hierarchyCount}
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">
-                      层次关系
+                      {t("conceptAggregation.panel.hierarchyCount")}
                     </div>
                   </div>
                   <div>
@@ -478,7 +472,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
                       %
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">
-                      平均相似度
+                      {t("conceptAggregation.panel.avgSimilarity")}
                     </div>
                   </div>
                 </div>

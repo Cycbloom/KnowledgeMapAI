@@ -15,7 +15,6 @@
     "in_progress": "进行中",
     "completed": "已完成"
   },
-  "loadTasksFailed": "加载任务失败，请稍后重试",
   "errorDetails": "详情",
   "retry": "重试",
   "loading": "加载中...",
@@ -53,12 +52,6 @@
   "showing": "显示 {{start}} - {{end}} 条，共 {{total}} 条",
   "deleteTask": "删除任务",
   "deleteTaskConfirm": "确定要删除这个任务吗？此操作无法撤销。",
-  "taskRetried": "任务已重新提交",
-  "retryFailed": "重试失败",
-  "taskDeleted": "任务已删除",
-  "deleteFailed": "删除失败",
-  "noTasksToExport": "暂无任务可导出",
-  "tasksExported": "任务列表已导出",
   "autoGenerateQuestions": "自动生成题目",
   "batchGenerateQuestions": "批量生成题目",
   "autoExpandGraph": "自动扩展图谱",
@@ -68,18 +61,39 @@
   "reviewGeneration": "复习任务生成",
   "searchPlaceholder": "搜索任务...",
   "noSearchResults": "未找到匹配的任务",
+  "clear": "清除",
+  "exportAsCSV": "导出为 CSV",
+  "openedGraph": "已打开图谱：如未自动刷新，请稍等或手动刷新页面",
+  "enterLearningMode": "进入学习模式：可开始复习生成的题目",
   "selectMode": "多选",
   "exitSelectMode": "退出多选",
   "selectedCount": "已选 {{count}} 项",
   "selectAll": "全选",
   "batchDelete": "批量删除",
   "batchDeleteConfirm": "确定要删除选中的 {{count}} 个任务吗？此操作无法撤销。",
-  "batchDeleteSuccess": "已成功删除 {{count}} 个任务",
   "batchDeletePartial": "删除完成：成功 {{success}} 个，失败 {{fail}} 个",
   "cancelSelection": "取消选择",
   "emptyDesc": "任务创建后将显示在这里",
   "taskIdNotExist": "任务ID不存在",
   "copy": {
     "idCopied": "已复制任务 ID"
+  },
+  "related": {
+    "loadingTasks": "加载任务中...",
+    "title": "关联任务",
+    "taskCountSummary": "{{total}} 个任务 · {{completed}} 已完成",
+    "create": "新建",
+    "pendingCount": "待处理: {{count}}",
+    "inProgressCount": "进行中: {{count}}",
+    "completedCount": "已完成: {{count}}",
+    "completionRate": "{{percent}}% 完成",
+    "createNewTask": "创建新任务",
+    "progress": "进度",
+    "deadline": {
+      "expired": "已过期",
+      "today": "今天",
+      "tomorrow": "明天",
+      "inDays": "{{days}}天后"
+    }
   }
 }

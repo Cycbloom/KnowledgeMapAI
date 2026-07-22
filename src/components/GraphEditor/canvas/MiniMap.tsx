@@ -100,7 +100,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
-    handleMouseMove(e);
+    handleMouseMove(e.nativeEvent);
   };
 
   // Calculate visible center offset
@@ -111,7 +111,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({
   // If the user feels it's top-left, maybe the actual visual center is different due to UI overlays?
   // Let's assume the passed containerWidth/Height are the full canvas dimensions.
   
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging && e.type !== 'mousedown') return;
     
     const svgRect = svgRef.current?.getBoundingClientRect();
@@ -144,14 +144,14 @@ export const MiniMap: React.FC<MiniMapProps> = ({
   useEffect(() => {
     if (isDragging) {
       window.addEventListener('mouseup', handleMouseUp);
-      window.addEventListener('mousemove', handleMouseMove as any);
+      window.addEventListener('mousemove', handleMouseMove);
     } else {
       window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('mousemove', handleMouseMove as any);
+      window.removeEventListener('mousemove', handleMouseMove);
     }
     return () => {
       window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('mousemove', handleMouseMove as any);
+      window.removeEventListener('mousemove', handleMouseMove);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDragging]);

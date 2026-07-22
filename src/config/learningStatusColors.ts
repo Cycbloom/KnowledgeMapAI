@@ -354,14 +354,19 @@ export const getColorScheme = (scheme: ColorScheme): Record<LearningStatus, Colo
   return COLOR_SCHEMES[scheme] || COLOR_SCHEMES.default;
 };
 
+/**
+ * Returns color scheme metadata. The `name` field holds an i18n key string
+ * (e.g. `learningStatus.colorSchemes.default`). Consumers MUST translate
+ * via `t()` before rendering.
+ */
 export const getColorSchemeNames = (): { key: ColorScheme; name: string }[] => {
   return [
-    { key: 'default', name: '默认' },
-    { key: 'nature', name: '自然' },
-    { key: 'ocean', name: '海洋' },
-    { key: 'sunset', name: '日落' },
-    { key: 'forest', name: '森林' },
-    { key: 'custom', name: '自定义' }
+    { key: 'default', name: 'learningStatus.colorSchemes.default' },
+    { key: 'nature', name: 'learningStatus.colorSchemes.nature' },
+    { key: 'ocean', name: 'learningStatus.colorSchemes.ocean' },
+    { key: 'sunset', name: 'learningStatus.colorSchemes.sunset' },
+    { key: 'forest', name: 'learningStatus.colorSchemes.forest' },
+    { key: 'custom', name: 'learningStatus.colorSchemes.custom' }
   ];
 };
 

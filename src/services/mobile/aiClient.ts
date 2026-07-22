@@ -62,20 +62,20 @@ const VALID_PROVIDERS: AIProviderType[] = ["deepseek", "volcengine", "aliyun", "
 
 function validateConfig(config: MobileAIConfig): void {
   if (!config) {
-    throw new AppError("AI 配置不能为空", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
+    throw new AppError("AI configuration cannot be empty", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
   }
 
   if (!config.apiKey || config.apiKey.trim() === "") {
-    throw new AppError("API Key 不能为空，请在设置中配置 API Key", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
+    throw new AppError("API Key cannot be empty, please configure API Key in settings", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
   }
 
   if (!config.provider) {
-    throw new AppError("AI 服务商未指定，请选择一个服务商", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
+    throw new AppError("AI provider not specified, please select a provider", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
   }
 
   if (!VALID_PROVIDERS.includes(config.provider)) {
     throw new AppError(
-      `不支持的 AI 服务商: ${config.provider}，请选择: ${VALID_PROVIDERS.join(", ")}`,
+      `Unsupported AI provider: ${config.provider}, please choose: ${VALID_PROVIDERS.join(", ")}`,
       SharedErrorCodes.VALIDATION_ERROR,
       400,
     );
@@ -153,7 +153,7 @@ export class MobileAIClient {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
 
-      throw new AppError(`AI 请求失败: ${errorMessage}`, SharedErrorCodes.AI_PROVIDER_ERROR, 502);
+      throw new AppError(`AI request failed: ${errorMessage}`, SharedErrorCodes.AI_PROVIDER_ERROR, 502);
     }
   }
 
@@ -188,7 +188,7 @@ export class MobileAIClient {
     }
 
     throw new AppError(
-      `AI 请求失败，已重试 ${this.retryConfig.maxRetries} 次: ${lastError?.message || "未知错误"}`,
+      `AI request failed after ${this.retryConfig.maxRetries} retries: ${lastError?.message || "unknown error"}`,
       SharedErrorCodes.AI_PROVIDER_ERROR,
       502,
     );

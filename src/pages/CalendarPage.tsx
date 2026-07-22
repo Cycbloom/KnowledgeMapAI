@@ -114,7 +114,7 @@ export const CalendarPage: React.FC = () => {
       tags: formData.tags,
       queue_level: formData.priority >= 3 ? 0 : formData.priority >= 2 ? 1 : 2,
     });
-    message.success(t("calendar.taskCreated"));
+    message.success(t("toast.calendar.taskCreated"));
   };
 
   const handleEventDrop = useCallback(
@@ -126,12 +126,12 @@ export const CalendarPage: React.FC = () => {
         if (dropInfo.newEnd)
           updateData.scheduled_end = dropInfo.newEnd.toISOString();
         await api.scheduler.update(dropInfo.eventId, updateData);
-        message.success(t("calendar.taskTimeUpdated"));
+        message.success(t("toast.calendar.taskTimeUpdated"));
       } catch (error: unknown) {
         const errorMessage =
           error instanceof Error
             ? error.message
-            : t("calendar.taskTimeUpdateFailed");
+            : t("toast.calendar.taskTimeUpdateFailed");
         message.error(errorMessage);
       }
     },

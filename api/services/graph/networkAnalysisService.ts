@@ -236,8 +236,10 @@ export class NetworkAnalysisService {
     queue.push(source);
 
     while (queue.length > 0) {
-      const current = queue.shift()!;
-      const dist = distances.get(current)!;
+      const current = queue.shift();
+      if (current === undefined) break;
+      const dist = distances.get(current);
+      if (dist === undefined) continue;
       const neighbors = adjacency.get(current) || new Set();
 
       for (const neighbor of neighbors) {
@@ -288,8 +290,10 @@ export class NetworkAnalysisService {
     queue.push(source);
 
     while (queue.length > 0) {
-      const current = queue.shift()!;
-      const dist = distances.get(current)!;
+      const current = queue.shift();
+      if (current === undefined) break;
+      const dist = distances.get(current);
+      if (dist === undefined) continue;
       const neighbors = adjacency.get(current) || new Set();
 
       for (const neighbor of neighbors) {
@@ -348,7 +352,10 @@ export class NetworkAnalysisService {
       if (!moduleMap.has(module)) {
         moduleMap.set(module, []);
       }
-      moduleMap.get(module)!.push(node);
+      const list = moduleMap.get(module);
+      if (list) {
+        list.push(node);
+      }
     }
 
     const nodeIdToModule = new Map<string, string>();

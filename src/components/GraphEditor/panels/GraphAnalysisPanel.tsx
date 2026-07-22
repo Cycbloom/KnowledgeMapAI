@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from "react-i18next";
 import { BarChart3, AlertTriangle, CheckCircle2, Network, Layers, Lightbulb, TrendingUp, Activity, X } from 'lucide-react';
 import { api } from '../../../services/api';
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message } from "../../../utils/messageHelper";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Node } from '../../../types';
 import { EmptyState } from '../../common/EmptyState';
@@ -72,11 +72,8 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
       setAnalysis(analysisData);
       setMissingConnections(connectionsData?.suggestions || []);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "未知错误";
-      frontendEventBus.publish("message_show", { 
-        type: 'error',
-        content: `加载分析数据失败: ${message}`
-      });
+      const errorMessage = error instanceof Error ? error.message : "未知错误";
+      message.error(`加载分析数据失败: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
@@ -85,10 +82,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
   const handleCreateConnection = (sourceId: string, targetId: string) => {
     if (onCreateConnection) {
       onCreateConnection(sourceId, targetId);
-      frontendEventBus.publish("message_show", { 
-        type: 'success',
-        content: '连接已创建'
-      });
+      message.success('连接已创建');
     }
   };
 

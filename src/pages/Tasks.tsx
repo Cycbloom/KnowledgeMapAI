@@ -10,7 +10,6 @@ import {
 import { usePersistedListState } from "../hooks/common/usePersistedListState";
 import { useScrollRestoration } from "../hooks/common/useScrollRestoration";
 import { useStore } from "../store/useStore";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { ConfirmationModal, Skeleton } from "../components/common";
 import { VirtualList } from "../components/common/VirtualList";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -18,6 +17,7 @@ import { TaskProgressBar } from "@/components/common/TaskProgressBar";
 import { asyncConfirm } from "../utils/asyncConfirm";
 import { formatDate } from "@/utils/formatters";
 import { copyToClipboard } from "@/utils/clipboard";
+import { message } from "../utils/messageHelper";
 import {
   CheckCircle2,
   XCircle,
@@ -220,16 +220,10 @@ export const Tasks = () => {
   const handleRetry = async (taskId: string) => {
     try {
       await retryMutation.mutateAsync(taskId);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("tasks.taskRetried"),
-      });
+      message.success(t("toast.tasks.taskRetried"));
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("tasks.retryFailed");
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      const errMsg = err instanceof Error ? err.message : t("toast.tasks.retryFailed");
+      message.error(errMsg);
     }
   };
 
@@ -241,17 +235,11 @@ export const Tasks = () => {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("tasks.taskDeleted"),
-      });
+      message.success(t("toast.tasks.taskDeleted"));
       setDeleteId(null);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("tasks.deleteFailed");
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      const errMsg = err instanceof Error ? err.message : t("toast.tasks.deleteFailed");
+      message.error(errMsg);
     }
   };
 
@@ -318,27 +306,18 @@ export const Tasks = () => {
     setIsSelectMode(false);
 
     if (failCount === 0) {
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("tasks.batchDeleteSuccess", { count: successCount }),
-      });
+      message.success(t("toast.tasks.batchDeleteSuccess", { count: successCount }));
     } else {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("tasks.batchDeletePartial", {
-          success: successCount,
-          fail: failCount,
-        }),
-      });
+      message.warning(t("tasks.batchDeletePartial", {
+        success: successCount,
+        fail: failCount,
+      }));
     }
   }, [selectedIds, deleteMutation, t]);
 
   const handleExport = () => {
     if (!tasks || tasks.length === 0) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("tasks.noTasksToExport"),
-      });
+      message.warning(t("toast.tasks.noTasksToExport"));
       return;
     }
 
@@ -369,10 +348,7 @@ export const Tasks = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    frontendEventBus.publish("message_show", {
-      type: "success",
-      content: t("tasks.tasksExported"),
-    });
+    message.success(t("toast.tasks.tasksExported"));
   };
 
   return (
@@ -404,7 +380,7 @@ export const Tasks = () => {
           <button
             onClick={handleExport}
             className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-            title="Export as CSV"
+            title={t("tasks.exportAsCSV")}
           >
             <Download className="w-4 h-4" />
             <span>{t("tasks.export")}</span>
@@ -484,8 +460,8 @@ export const Tasks = () => {
               type="button"
               onClick={() => setSearchQuery("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-              aria-label="清除"
-              title="清除"
+              aria-label={t("tasks.clear")}
+              title={t("tasks.clear")}
             >
               <XCircle className="w-4 h-4" />
             </button>
@@ -496,7 +472,7 @@ export const Tasks = () => {
       {error ? (
         <div className="p-8 text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/20">
           <XCircle className="w-8 h-8 mx-auto mb-2" />
-          <p>{t("tasks.loadTasksFailed")}</p>
+          <p>{t("toast.tasks.loadTasksFailed")}</p>
           <button
             onClick={() => refetch()}
             className="mt-4 text-primary-600 dark:text-primary-400 hover:underline"
@@ -704,11 +680,7 @@ export const Tasks = () => {
                               <button
                                 onClick={() => {
                                   navigate(`/graph/${graphId}`);
-                                  frontendEventBus.publish("message_show", {
-                                    type: "info",
-                                    content:
-                                      "已打开图谱：如未自动刷新，请稍等或手动刷新页面",
-                                  });
+                                  message.info(t("tasks.openedGraph"));
                                 }}
                                 className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
                               >
@@ -724,11 +696,7 @@ export const Tasks = () => {
                                   navigate(
                                     `/study?node_id=${encodeURIComponent(nodeId)}`,
                                   );
-                                  frontendEventBus.publish("message_show", {
-                                    type: "success",
-                                    content:
-                                      "进入学习模式：可开始复习生成的题目",
-                                  });
+                                  message.success(t("tasks.enterLearningMode"));
                                 }}
                                 className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
                               >

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { PromptEditor } from "../GraphEditor/panels/PromptEditor";
 import { useStore } from "../../store/useStore";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { api } from "../../services/api";
 import { getScenarioById } from "../PromptConfig/promptScenarios";
 import type { TemplateType, TemplateCategory } from "@shared/types/graph";
@@ -191,11 +191,11 @@ export const TemplatePromptConfigPanel: React.FC<
         template_content: content,
         graph_id: graphId,
       });
-      frontendEventBus.publish("message_show", { type: "success", content: t("autoGraph.promptSaved") });
+      message.success(t("toast.autoGraph.promptSaved"));
       await loadTemplates();
     } catch (error) {
       console.error("Failed to save prompt:", error);
-      frontendEventBus.publish("message_show", { type: "error", content: t("autoGraph.promptSaveFailed") });
+      message.error(t("toast.autoGraph.promptSaveFailed"));
     }
   };
 

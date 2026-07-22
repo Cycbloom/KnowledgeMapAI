@@ -19,7 +19,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
 import { asyncConfirm } from "@/utils/asyncConfirm";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { useError } from "../../hooks";
 import { useActivityTracker } from "../../hooks/useActivityTracker";
 import { LearningPathWizard } from "./LearningPathWizard";
@@ -180,10 +180,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   }) => {
     setIsGenerating(true);
     setGenerationStep(t("learning.learningPath.analyzingGraph"));
-    frontendEventBus.publish("message_show", {
-      type: "info",
-      content: t("learning.learningPath.aiAnalyzing"),
-    });
+    message.info(t("learning.learningPath.aiAnalyzing"));
 
     try {
       const knowledgeStr = Object.entries(data.currentKnowledge)
@@ -202,10 +199,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
       setGenerationStep(t("learning.learningPath.optimizingOrder"));
       setTempPath(result);
       setViewMode("create");
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("learning.learningPath.pathGenerated"),
-      });
+      message.success(t("learning.learningPath.pathGenerated"));
     } catch (error) {
       handleError(error, {
         context: "AIPath",
@@ -250,10 +244,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
       setTempPath(null);
       setViewMode("list");
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("learning.learningPath.pathSaved"),
-      });
+      message.success(t("learning.learningPath.pathSaved"));
     } catch (error) {
       handleError(error, {
         context: "SavePath",
@@ -269,10 +260,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
     try {
       await deleteMutation.mutateAsync(pathId);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("learning.learningPath.pathDeleted"),
-      });
+      message.success(t("learning.learningPath.pathDeleted"));
       if (selectedPath?.id === pathId) {
         setSelectedPath(null);
       }
@@ -291,13 +279,11 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         id: path.id,
         data: { status: newStatus },
       });
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content:
-          newStatus === "active"
-            ? t("learning.learningPath.pathResumed")
-            : t("learning.learningPath.pathPaused"),
-      });
+      message.success(
+        newStatus === "active"
+          ? t("learning.learningPath.pathResumed")
+          : t("learning.learningPath.pathPaused"),
+      );
     } catch (error) {
       handleError(error, {
         context: "UpdateStatus",

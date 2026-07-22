@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import type { Node, Edge, GraphColorMode } from "../../../types";
+import type { Node, Edge, GraphColorMode, NodeStatus } from "../../../types";
 import type { RelatedNode } from "../../../hooks/graphEditor/useMiscState";
 import { levelLabels, DECAY_CONFIG } from "../../../config/graphConfig";
 import {
@@ -48,7 +48,7 @@ interface NodeDetailSidebarProps {
   nodes?: Node[];
   edges: Edge[];
   prevSidebarMode: "none" | "create" | "edit" | "outline" | "detail";
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   onClose: () => void;
   onBack: () => void;
   onEdit: () => void;
@@ -110,7 +110,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
-  const isMastered = nodeStatus && nodeStatus[node.id]?.mastered;
+  const isMastered = nodeStatus && nodeStatus?.[node.id]?.mastered;
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = getStatusColors(status, isDark);
 
@@ -154,6 +154,8 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
     return nodes.filter((n) => childIds.includes(n.id));
   }, [node, edges, nodes]);
 
+  const fsrsRetrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
+
   return (
     <div className="h-full flex flex-col">
       <div
@@ -195,7 +197,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
         </div>
       )}
 
-      {coloringMode === "decay" && nodeStatus?.[node.id]?.fsrs_retrievability != null && nodeStatus[node.id].fsrs_retrievability < DECAY_CONFIG.severeDecayThreshold && (
+      {coloringMode === "decay" && fsrsRetrievability != null && fsrsRetrievability < DECAY_CONFIG.severeDecayThreshold && (
         <div className="mb-4 px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
           <div className="flex items-center gap-2 mb-1.5">
             <AlertTriangle size={14} className="text-amber-500" />
@@ -204,7 +206,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             </span>
           </div>
           <p className="text-xs text-amber-600 dark:text-amber-500 mb-2">
-            {t("nodeDetail.retrievability", { percent: Math.round(nodeStatus[node.id].fsrs_retrievability * 100) })}
+            {t("nodeDetail.retrievability", { percent: Math.round(fsrsRetrievability * 100) })}
           </p>
           <button
             onClick={onStartLearningMode}

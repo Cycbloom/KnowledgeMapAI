@@ -175,8 +175,8 @@ export const Layout = () => {
 
   useNetworkStatus({
     enableSlowDetection: true,
-    onOnline: () => message.success(t('common.backOnline')),
-    onSlowConnection: () => message.warning(t('common.slowConnection')),
+    onOnline: () => message.success(t('toast.common.backOnline')),
+    onSlowConnection: () => message.warning(t('toast.common.slowConnection')),
   });
 
   const { data: userData, isLoading: isUserLoading } = useUser(
@@ -323,17 +323,13 @@ export const Layout = () => {
 
     const handler = (payload: { taskId: string; oldStatus: string; newStatus: string; taskType?: string }) => {
       if (payload.newStatus === "completed") {
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: `${t('layout.taskCompleted')}：${typeLabel(payload.taskType ?? "")}`,
+        message.success(`${t('layout.taskCompleted')}：${typeLabel(payload.taskType ?? "")}`, {
           duration: 8000,
           action: { label: t('common.view'), onClick: () => navigate("/tasks") },
         });
       }
       if (payload.newStatus === "failed") {
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: `${t('layout.taskFailed')}：${typeLabel(payload.taskType ?? "")}`,
+        message.error(`${t('layout.taskFailed')}：${typeLabel(payload.taskType ?? "")}`, {
           duration: 10000,
           action: { label: t('common.view'), onClick: () => navigate("/tasks") },
         });

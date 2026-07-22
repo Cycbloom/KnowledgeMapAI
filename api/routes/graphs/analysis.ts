@@ -35,7 +35,10 @@ router.get(
     const userId = req.user?.id || null;
     const includeEmbedding = req.query.includeEmbedding === "true";
     const includeStatus = req.query.includeStatus === "true";
-    const data = await graphService.getGraphNodes(req.supabase!, userId, id, {
+    if (!req.supabase) {
+      throw new AppError("Supabase client not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+    const data = await graphService.getGraphNodes(req.supabase, userId, id, {
       includeEmbedding,
       includeStatus,
     });
@@ -43,7 +46,7 @@ router.get(
     // Update last_used_at when user opens their own graph
     if (userId) {
       graphService
-        .updateLastUsedAt(req.supabase!, id, userId)
+        .updateLastUsedAt(req.supabase, id, userId)
         .catch((err) => logger.error("Update last used at failed:", err));
     }
 
@@ -59,8 +62,11 @@ router.get(
   async (req: OptionalAuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user?.id || null;
-    const data = userId
-      ? await graphService.getGraphNodeStatus(req.supabase!, userId, id)
+    if (userId && !req.supabase) {
+      throw new AppError("Supabase client not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+    const data = userId && req.supabase
+      ? await graphService.getGraphNodeStatus(req.supabase, userId, id)
       : {};
     res.json(data);
   },
@@ -93,7 +99,10 @@ router.get(
     const userId = req.user?.id || null;
 
     // Reuse logic: users can see path if they can see the graph
-    const data = await graphService.getLearningPath(req.supabase!, userId, id);
+    if (!req.supabase) {
+      throw new AppError("Supabase client not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+    const data = await graphService.getLearningPath(req.supabase, userId, id);
     res.json({ path: data });
   },
 );

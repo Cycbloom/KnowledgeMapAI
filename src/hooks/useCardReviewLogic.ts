@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { StudyCard } from "@shared/types";
 import { useUpdateCardProgressMutation } from "./mutations";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
+import { message } from "../utils/messageHelper";
 
 interface UseCardReviewLogicParams {
   semanticSimilarityMap: Map<string, Map<string, number>>;
@@ -122,10 +122,7 @@ export const useCardReviewLogic = ({
         handleNextCard();
       } catch (err) {
         console.error(err);
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("study.messages.saveProgressFailed"),
-        });
+        message.error(t("study.messages.saveProgressFailed"));
       }
     },
     [quizCards, currentCardIndex, updateProgressMutation, handleNextCard, t],
@@ -146,10 +143,7 @@ export const useCardReviewLogic = ({
         setPrevKnowledgePointId(quizCards[currentCardIndex].knowledge_point_id);
       } catch (err) {
         console.error(err);
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("study.messages.saveProgressFailed"),
-        });
+        message.error(t("study.messages.saveProgressFailed"));
       }
     },
     [quizCards, currentCardIndex, updateProgressMutation, t],

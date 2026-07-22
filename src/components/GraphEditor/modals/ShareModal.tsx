@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Globe, Lock, Copy, Check, ExternalLink, Users, UserPlus, Link as LinkIcon } from 'lucide-react';
 import { api } from '../../../services/api';
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message } from "../../../utils/messageHelper";
 import type { CollaboratorRole, CollaboratorWithUser } from '@shared/types';
 import { useStore } from '../../../store/useStore';
 import { asyncConfirm } from '@/utils/asyncConfirm';
@@ -71,13 +71,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       await api.graphs.togglePublic(graphId, newStatus);
       setIsPublic(newStatus);
       onPublicChange(newStatus);
-      frontendEventBus.publish("message_show", {
-        type: 'success',
-        content: newStatus ? t('graphEditor.share.madePublic') : t('graphEditor.share.madePrivate')
-      });
+      message.success(newStatus ? t('graphEditor.share.madePublic') : t('graphEditor.share.madePrivate'));
     } catch (error: unknown) {
       console.error(error);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.share.toggleFailed') });
+      message.error(t('graphEditor.share.toggleFailed'));
     } finally {
       setLoading(false);
     }
@@ -85,7 +82,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const handleCopy = () => {
     const publicUrl = `${window.location.origin}/graph/${graphId}`;
-    void copyToClipboard(publicUrl, t('common.copied'));
+    void copyToClipboard(publicUrl, t('toast.common.copied'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -104,16 +101,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       });
       
       if (response.ok) {
-        frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.share.inviteSent') });
+        message.success(t('graphEditor.share.inviteSent'));
         setInviteEmail('');
         fetchCollaborators();
       } else {
         const data = await response.json();
-        frontendEventBus.publish("message_show", { type: 'error', content: data.error || t('graphEditor.share.inviteFailed') });
+        message.error(data.error || t('graphEditor.share.inviteFailed'));
       }
     } catch (error) {
       console.error('邀请失败:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.share.inviteFailedRetry') });
+      message.error(t('graphEditor.share.inviteFailedRetry'));
     } finally {
       setInviteLoading(false);
     }
@@ -133,15 +130,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       });
       
       if (response.ok) {
-        frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.share.collaboratorRemoved') });
+        message.success(t('graphEditor.share.collaboratorRemoved'));
         fetchCollaborators();
       } else {
         const data = await response.json();
-        frontendEventBus.publish("message_show", { type: 'error', content: data.error || t('graphEditor.share.removeFailed') });
+        message.error(data.error || t('graphEditor.share.removeFailed'));
       }
     } catch (error) {
       console.error('移除失败:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.share.removeFailedRetry') });
+      message.error(t('graphEditor.share.removeFailedRetry'));
     }
   };
 
@@ -157,14 +154,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       if (response.ok) {
         const data = await response.json();
         setShareToken(data.invitationToken);
-        frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.share.linkGenerated') });
+        message.success(t('graphEditor.share.linkGenerated'));
       } else {
         const data = await response.json();
-        frontendEventBus.publish("message_show", { type: 'error', content: data.error || t('graphEditor.share.linkGenerateFailed') });
+        message.error(data.error || t('graphEditor.share.linkGenerateFailed'));
       }
     } catch (error) {
       console.error('生成链接失败:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.share.linkGenerateFailedRetry') });
+      message.error(t('graphEditor.share.linkGenerateFailedRetry'));
     }
   };
 
@@ -330,7 +327,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         />
                         <button
                           onClick={() => {
-                            void copyToClipboard(`${window.location.origin}/collaboration/${shareToken}`, t('common.copied'));
+                            void copyToClipboard(`${window.location.origin}/collaboration/${shareToken}`, t('toast.common.copied'));
                           }}
                           className="px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
                         >

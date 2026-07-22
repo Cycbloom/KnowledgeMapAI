@@ -252,7 +252,8 @@ export class LearningPathService {
         });
 
         const result = await this.getLearningPath(supabase, pathId, userId);
-        return result!;
+        if (!result) throw new Error("Learning path not found after creation");
+        return result;
       } catch (txError) {
         logger.warn('Transaction failed in createLearningPath, falling back to non-transactional operations', { error: txError });
       }
@@ -322,7 +323,8 @@ export class LearningPathService {
     }
 
     const result = await this.getLearningPath(supabase, path.id, userId);
-    return result!;
+    if (!result) throw new Error("Learning path not found after creation");
+    return result;
   }
 
   async getLearningPaths(
@@ -727,8 +729,9 @@ export class LearningPathService {
     }
 
     const result = await this.getLearningPath(supabase, pathId, userId);
+    if (!result) throw new Error("Learning path not found");
     return {
-      ...result!,
+      ...result,
       total_estimated_time: totalEstimatedTime,
     } as LearningPath & { daily_node_count?: number };
   }
@@ -798,7 +801,8 @@ export class LearningPathService {
           totalReviews: 0,
         });
       }
-      const stats = cardStats.get(kpId)!;
+      const stats = cardStats.get(kpId);
+      if (!stats) return;
       stats.avgDifficulty += card.difficulty || 1;
       stats.avgStability += card.fsrs_stability || 0;
       stats.totalReviews += card.review_count || 0;
@@ -846,9 +850,11 @@ export class LearningPathService {
       let confidence: "low" | "medium" | "high" = "medium";
 
       if (node.knowledge_point_id && cardStats.has(node.knowledge_point_id)) {
-        const stats = cardStats.get(node.knowledge_point_id)!;
-        difficultyMultiplier = 0.8 + stats.avgDifficulty * 0.15;
-        confidence = stats.totalReviews >= 5 ? "high" : "medium";
+        const stats = cardStats.get(node.knowledge_point_id);
+        if (stats) {
+          difficultyMultiplier = 0.8 + stats.avgDifficulty * 0.15;
+          confidence = stats.totalReviews >= 5 ? "high" : "medium";
+        }
       } else {
         confidence = "low";
         difficultyMultiplier = 1.2;
@@ -1161,7 +1167,8 @@ export class LearningPathService {
           pending: 0, skipped: 0, totalTimeSpent: 0,
         });
       }
-      const stats = graphNodes.get(graphId)!;
+      const stats = graphNodes.get(graphId);
+      if (!stats) continue;
       stats.total++;
       stats.totalTimeSpent += nodeTimeSpent.get(node.id) ?? 0;
 

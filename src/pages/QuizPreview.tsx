@@ -71,7 +71,7 @@ export const QuizPreview: React.FC = () => {
   const regeneratingModalRef = useFocusTrap<HTMLDivElement>({ enabled: !!regeneratingCardId });
   useEscapeKey(() => setRegeneratingCardId(null), !!regeneratingCardId);
 
-  const { data: quizSet, isLoading, error, refetch } = useQuizSet(quizSetId!, !!quizSetId);
+  const { data: quizSet, isLoading, error, refetch } = useQuizSet(quizSetId ?? "", !!quizSetId);
   const deleteMutation = useDeleteQuizSetMutation();
   const regenerateMutation = useRegenerateCardMutation();
 

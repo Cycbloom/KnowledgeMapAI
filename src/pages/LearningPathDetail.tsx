@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { Route } from "lucide-react";
 import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
 import { pathTasksApi } from "../services/api/modules/scheduler";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useError } from "../hooks";
 import PathHeaderSection from "../components/LearningPath/PathHeaderSection";
 import PathNodeListSection from "../components/LearningPath/PathNodeListSection";
@@ -20,6 +19,7 @@ import type {
 } from "../components/LearningPath/types";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { SkeletonCard } from "@/components/common";
+import { message } from "../utils/messageHelper";
 
 const LearningPathDetailPage: React.FC = () => {
   const { t } = useTranslation();
@@ -128,7 +128,7 @@ const LearningPathDetailPage: React.FC = () => {
     try {
       await learningPathsApi.updateNodeStatus(pathId, nodeId, status);
       await fetchPathDetail();
-      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.detail.nodeStatusUpdated") });
+      message.success(t("learningPaths.detail.nodeStatusUpdated"));
     } catch (error) {
       handleError(error, {
         context: "UpdateNodeStatus",
@@ -152,7 +152,7 @@ const LearningPathDetailPage: React.FC = () => {
         knowledge_point_id: node.node_id,
         priority: node.difficulty_level || 2,
       });
-      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.detail.taskCreated", { title: node.title }) });
+      message.success(t("learningPaths.detail.taskCreated", { title: node.title }));
       await fetchPathDetail();
     } catch (error) {
       handleError(error, {
@@ -173,17 +173,11 @@ const LearningPathDetailPage: React.FC = () => {
       );
 
       if (result.converted_count > 0) {
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("learningPaths.detail.batchConvertSuccess", { count: result.converted_count }),
-        });
+        message.success(t("learningPaths.detail.batchConvertSuccess", { count: result.converted_count }));
       }
 
       if (result.failed_count > 0) {
-        frontendEventBus.publish("message_show", {
-          type: "warning",
-          content: t("learningPaths.detail.batchConvertPartialFailed", { count: result.failed_count }),
-        });
+        message.warning(t("learningPaths.detail.batchConvertPartialFailed", { count: result.failed_count }));
       }
 
       setSelectedNodeIds(new Set());
@@ -238,10 +232,7 @@ const LearningPathDetailPage: React.FC = () => {
         daily_minutes: pathDetail.daily_minutes_target || 30,
       });
 
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("learningPaths.detail.autoScheduleSuccess", { total: result.total_tasks, days: result.estimated_days }),
-      });
+      message.success(t("learningPaths.detail.autoScheduleSuccess", { total: result.total_tasks, days: result.estimated_days }));
 
       await fetchPathDetail();
     } catch (error) {
@@ -263,7 +254,7 @@ const LearningPathDetailPage: React.FC = () => {
     try {
       await learningPathsApi.update(pathId, { status });
       await fetchPathDetail();
-      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.detail.pathStatusUpdated") });
+      message.success(t("learningPaths.detail.pathStatusUpdated"));
     } catch (error) {
       handleError(error, {
         context: "UpdatePathStatus",
@@ -280,7 +271,7 @@ const LearningPathDetailPage: React.FC = () => {
 
     try {
       await learningPathsApi.delete(pathId);
-      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.messages.deleteSuccess") });
+      message.success(t("learningPaths.messages.deleteSuccess"));
       navigate(-1);
     } catch (error) {
       handleError(error, {

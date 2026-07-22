@@ -729,11 +729,14 @@ export class ConceptAggregationService {
         moduleNodes.set(module, []);
       }
       if (kp.embedding) {
-        moduleNodes.get(module)!.push({
-          id: kp.id,
-          title: kp.title,
-          embedding: kp.embedding,
-        });
+        const list = moduleNodes.get(module);
+        if (list) {
+          list.push({
+            id: kp.id,
+            title: kp.title,
+            embedding: kp.embedding,
+          });
+        }
       }
     }
 

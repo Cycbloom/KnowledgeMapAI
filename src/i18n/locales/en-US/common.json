@@ -34,13 +34,8 @@
     "label": "Copy",
     "idTooltip": "Click to copy full ID"
   },
-  "copied": "Copied",
-  "copyFailed": "Copy failed",
   "copyError": "Copy error info",
   "copyCode": "Copy code",
-  "backOnline": "Back online, syncing data",
-  "slowConnection": "Slow connection, some operations may be delayed",
-  "offlineMode": "Offline mode: some AI features are unavailable",
   "undo": "Undo",
   "restored": "Restored",
   "restoreFailed": "Restore failed. Please restore manually from the recycle bin.",
@@ -154,8 +149,6 @@
   "restore": "Restore",
   "discard": "Discard",
   "saving": "Saving...",
-  "saved": "Saved",
-  "saveFailed": "Save failed",
   "tutor": {
     "empty": "No learning suggestions"
   }

@@ -273,7 +273,7 @@ export const UnifiedWorkbench: React.FC = () => {
           <div className="flex-shrink-0 p-4">
             <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400">
               <AlertCircle size={20} />
-              <span>{t("unifiedWorkbench.messages.loadFailed", { message: (queuesError as Error).message })}</span>
+              <span>{t("toast.workbench.loadFailed", { message: (queuesError as Error).message })}</span>
               <button
                 onClick={() => refetchQueues()}
                 className="ml-auto text-sm underline hover:text-red-500 dark:hover:text-red-300"

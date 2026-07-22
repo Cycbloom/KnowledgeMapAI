@@ -290,7 +290,7 @@ export class AIActionService {
     }
 
     // 4. Render Prompt
-    let prompt = TemplateEngine.render(action.prompt_template, context);
+    let prompt = TemplateEngine.render(action.prompt_template, context as unknown as Record<string, unknown>);
     
     // 5. Append Schema/Instructions
     const schema = ACTION_SCHEMAS[action.target_mode];

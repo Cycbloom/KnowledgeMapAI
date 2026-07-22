@@ -8,10 +8,12 @@ class EvaluatorRegistry {
   register(evaluator: AchievementConditionEvaluator): void {
     this.evaluators.set(evaluator.conditionType, evaluator)
     for (const event of evaluator.relevantEvents) {
-      if (!this.eventIndex.has(event)) {
-        this.eventIndex.set(event, new Set())
+      let set = this.eventIndex.get(event)
+      if (!set) {
+        set = new Set()
+        this.eventIndex.set(event, set)
       }
-      this.eventIndex.get(event)!.add(evaluator)
+      set.add(evaluator)
     }
   }
 

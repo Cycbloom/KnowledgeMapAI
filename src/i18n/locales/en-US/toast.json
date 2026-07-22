@@ -24,5 +24,164 @@
     "newVersionAvailable": "New version available, refresh to update",
     "refreshNow": "Refresh now",
     "later": "Later"
+  },
+  "scheduler": {
+    "taskCreated": "Task created successfully",
+    "taskUpdated": "Task updated successfully",
+    "taskDeleted": "Task deleted",
+    "taskMoved": "Task moved to Q{{queue}}",
+    "taskStarted": "Task started",
+    "taskPaused": "Task paused",
+    "taskCompleted": "Task completed",
+    "createTaskFailed": "Failed to create task",
+    "updateTaskFailed": "Failed to update task",
+    "deleteTaskFailed": "Failed to delete task",
+    "moveTaskFailed": "Failed to move task",
+    "startTaskFailed": "Failed to start task",
+    "pauseTaskFailed": "Failed to pause task",
+    "completeTaskFailed": "Failed to complete task",
+    "reorderFailed": "Failed to reorder"
+  },
+  "graphAI": {
+    "nodeTitleRequired": "Node title is required",
+    "expandComplete": "Expansion complete",
+    "noNewRelations": "No new relations found",
+    "cardGenerateFailed": "AI failed to generate valid cards",
+    "cardGenerateSuccess": "Successfully generated and saved {{count}} review cards",
+    "noCardGenerated": "No cards generated",
+    "submitting": "Submitting...",
+    "submitSuccess": "Task submitted successfully",
+    "branchSwitched": "Branch switched",
+    "actionSuccess": "Action executed successfully",
+    "actionFailed": "Execution failed",
+    "expandFailed": "Expansion failed",
+    "mergeGraphs": {
+      "selectNodeFirst": "Please select a node first",
+      "cannotDetermineGraph": "Cannot determine which graph the node belongs to",
+      "nodeTitleEmpty": "Node title cannot be empty",
+      "expandComplete": "Expansion complete: added {{nodesCount}} nodes and {{edgesCount}} edges",
+      "noNewRelations": "No new relations found",
+      "expandFailed": "Expansion failed"
+    },
+    "generateContent": {
+      "started": "AI content generation task started...",
+      "completed": "AI content generation completed",
+      "failed": "AI generation failed"
+    },
+    "batchGenerate": {
+      "selectNodeFirst": "Please select a node first",
+      "cannotDetermineGraph": "Cannot determine which graph the node belongs to",
+      "noCardsGenerated": "AI failed to generate valid cards",
+      "success": "Successfully generated and saved review cards!",
+      "successWithCount": "Successfully generated and saved {{count}} review cards!",
+      "failed": "Failed to generate cards"
+    },
+    "analyzeCrossDomain": {
+      "analysisComplete": "Cross-graph connection analysis completed",
+      "analysisFailed": "Cross-graph connection analysis failed"
+    },
+    "branch": {
+      "getSuggestionsFailed": "Failed to get branch suggestions",
+      "created": "Branch created: {{title}}",
+      "createFailed": "Failed to create branch",
+      "switched": "Switched to branch: {{title}}",
+      "switchFailed": "Failed to switch branch"
+    },
+    "content": {
+      "started": "AI content generation task started...",
+      "completed": "AI content generation completed",
+      "networkError": "Network connection failed, please check your network",
+      "failed": "AI generation failed"
+    }
+  },
+  "templates": {
+    "createSuccess": "Template created successfully!",
+    "updateSuccess": "Template updated successfully!",
+    "deleteSuccess": "Template deleted",
+    "duplicateSuccess": "Template duplicated",
+    "applySuccess": "Task created!",
+    "saveToLibrarySuccess": "Template saved to library",
+    "createFailed": "Failed to create template",
+    "updateFailed": "Failed to update template",
+    "deleteFailed": "Failed to delete template",
+    "duplicateFailed": "Failed to duplicate template",
+    "applyFailed": "Failed to apply template",
+    "saveFailed": "Failed to save template",
+    "systemTemplateCannotDelete": "System templates cannot be deleted",
+    "systemTemplateCannotEdit": "System templates cannot be edited",
+    "nameAndTitleRequired": "Please fill in template name and title template",
+    "selectTemplate": "Please select a template",
+    "enterCustomRules": "Please enter custom generation rules",
+    "enterTopic": "Please enter a topic"
+  },
+  "workbench": {
+    "taskCreateSuccess": "Task created successfully",
+    "taskCreateFailed": "Failed to create task",
+    "taskUpdateSuccess": "Task updated successfully",
+    "taskUpdateFailed": "Failed to update task",
+    "taskDeleted": "Task deleted",
+    "taskDeleteFailed": "Failed to delete task",
+    "taskStarted": "Task started",
+    "taskStartFailed": "Failed to start task",
+    "taskPaused": "Task paused",
+    "taskPauseFailed": "Failed to pause task",
+    "taskCompleted": "Task completed",
+    "taskCompleteFailed": "Failed to complete task",
+    "knowledgePointLinked": "Knowledge point linked successfully",
+    "knowledgePointLinkFailed": "Failed to link knowledge point",
+    "loadFailed": "Load failed: {{message}}",
+    "loadingWorkbench": "Loading workbench..."
+  },
+  "dashboard": {
+    "loadError": "Failed to load graphs",
+    "batchDeleteFailed": "Batch delete failed",
+    "deleteFailed": "Delete failed",
+    "favoriteAdded": "Added to favorites",
+    "favoriteRemoved": "Removed from favorites",
+    "operationFailed": "Operation failed",
+    "formatError": "Format error",
+    "importSuccess": "Import successful!",
+    "importFailed": "Import failed: {{message}}",
+    "nodesGenerated": "Successfully generated {{count}} nodes!"
+  },
+  "autoGraph": {
+    "rulesOptimized": "Rules optimized",
+    "optimizeFailed": "Optimization failed",
+    "initSuccess": "Knowledge graph initialized! Click ✨ to expand nodes",
+    "initFailed": "Initialization failed",
+    "expandFailed": "Expansion failed",
+    "graphSaved": "Knowledge graph saved",
+    "saveFailed": "Save failed",
+    "createGraphFailed": "Failed to create graph",
+    "promptSaved": "Prompt saved",
+    "promptSaveFailed": "Failed to save prompt"
+  },
+  "tasks": {
+    "loadTasksFailed": "Failed to load tasks, please retry later",
+    "taskRetried": "Task resubmitted",
+    "retryFailed": "Retry failed",
+    "taskDeleted": "Task deleted",
+    "deleteFailed": "Delete failed",
+    "noTasksToExport": "No tasks to export",
+    "tasksExported": "Tasks exported",
+    "batchDeleteSuccess": "Successfully deleted {{count}} tasks"
+  },
+  "calendar": {
+    "taskCreated": "Task created successfully!",
+    "taskCreateFailed": "Failed to create task",
+    "taskTimeUpdated": "Task time updated!",
+    "taskTimeUpdateFailed": "Failed to update task time",
+    "calendarExported": "Calendar exported!",
+    "exportFailed": "Export failed",
+    "webcalCopied": "WebCal link copied!"
+  },
+  "common": {
+    "copied": "Copied",
+    "copyFailed": "Copy failed",
+    "backOnline": "Back online, syncing data",
+    "slowConnection": "Slow connection, some operations may be delayed",
+    "offlineMode": "Offline mode: some AI features are unavailable",
+    "saved": "Saved",
+    "saveFailed": "Save failed"
   }
 }

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Node, Edge, BranchSuggestion, ExplorationPathItem } from '../../types';
 import type { CreateNodeData } from '@shared/types/api';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { api } from '../../services/api';
 import { UseMutationResult } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -65,7 +65,7 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
       return res.suggestions || [];
     } catch (err) {
       console.error(err);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.branch.getSuggestionsFailed') });
+      message.error(t('toast.graphAI.branch.getSuggestionsFailed'));
       return [];
     } finally {
       state.setLoading(false);
@@ -109,11 +109,11 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
         graphId: id
       });
       record({ type: 'CREATE_EDGE', payload: newEdge });
-      frontendEventBus.publish("message_show", { type: 'success', content: t('graphAI.branch.created', { title: suggestion.title }) });
+      message.success(t('toast.graphAI.branch.created', { title: suggestion.title }));
       return newNode;
     } catch (err) {
       console.error(err);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.branch.createFailed') });
+      message.error(t('toast.graphAI.branch.createFailed'));
       return null;
     } finally {
       state.setLoading(false);
@@ -189,11 +189,11 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
           }
         ]);
 
-        frontendEventBus.publish("message_show", { type: 'success', content: t('graphAI.branch.switched', { title: suggestion.title }) });
+        message.success(t('toast.graphAI.branch.switched', { title: suggestion.title }));
       }
     } catch (err) {
       console.error(err);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.branch.switchFailed') });
+      message.error(t('toast.graphAI.branch.switchFailed'));
     } finally {
       state.setLoading(false);
     }

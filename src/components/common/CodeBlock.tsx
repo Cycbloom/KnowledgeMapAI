@@ -33,11 +33,11 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
     try {
       await navigator.clipboard.writeText(codeContent);
       setCopied(true);
-      message.success(t('common.copied'));
+      message.success(t('toast.common.copied'));
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
-      message.error(t('common.copyFailed'));
+      message.error(t('toast.common.copyFailed'));
     }
   };
 
@@ -70,7 +70,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
           {copied ? (
             <>
               <Check size={14} />
-              <span>{t('common.copied')}</span>
+              <span>{t('toast.common.copied')}</span>
             </>
           ) : (
             <>

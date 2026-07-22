@@ -36,7 +36,12 @@ export { useBranchSelection } from './useBranchSelection';
 
 export interface GraphRef {
   centerNode?: (nodeId: string, options?: { forceRightPanelOpen?: boolean }) => void;
-  captureScreenshot?: (options: { transparent: boolean; fitView: boolean; hideGrid: boolean }) => Promise<string>;
+  captureScreenshot?: (options?: {
+    backgroundColor?: string | null;
+    transparent?: boolean;
+    fitView?: boolean;
+    hideGrid?: boolean;
+  }) => Promise<string | null>;
   getTransform?: () => { x: number; y: number; k: number };
   animateToTransform?: (transform: { x: number; y: number; k: number }, duration?: number) => void;
   fitView?: () => void;
@@ -44,7 +49,11 @@ export interface GraphRef {
   zoomIn?: () => void;
   zoomOut?: () => void;
   resetZoom?: () => void;
+  resetView?: () => void;
   getZoom?: () => number;
+  toggleRegionCollapse?: (regionId: string) => void;
+  expandAllRegions?: () => void;
+  collapseAllRegions?: () => void;
 }
 
 export type GraphEditorState = {

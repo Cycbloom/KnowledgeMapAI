@@ -96,8 +96,9 @@ class DeviceDiscoveryService {
     this.devices.set(device.id, device);
 
     // Reset timeout for this device
-    if (this.deviceTimeoutIntervals.has(device.id)) {
-      clearTimeout(this.deviceTimeoutIntervals.get(device.id)!);
+    const existingTimeout = this.deviceTimeoutIntervals.get(device.id);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
     }
 
     const timeout = setTimeout(() => {

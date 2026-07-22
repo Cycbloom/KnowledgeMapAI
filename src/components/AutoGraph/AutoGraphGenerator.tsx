@@ -20,7 +20,7 @@ import {
   Settings2,
 } from "lucide-react";
 import { api } from "../../services/api";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { useError, useIsMobile } from "../../hooks";
 import { useTopicCheck } from "../../hooks";
 import type {
@@ -271,7 +271,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
             exit={{ height: 0, opacity: 0 }}
             className="children-container"
           >
-            {node.children!.map((child) => (
+            {node.children?.map((child) => (
               <NodeItem
                 key={child.id}
                 node={child}
@@ -379,18 +379,12 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
   const handleInitialize = useCallback(async () => {
     if (!topic.trim()) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("autoGraph.topicRequired"),
-      });
+      message.warning(t("autoGraph.topicRequired"));
       return;
     }
 
     if (!graphId && isDuplicate) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("autoGraph.topicDuplicate"),
-      });
+      message.warning(t("autoGraph.topicDuplicate"));
       return;
     }
 
@@ -399,10 +393,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       !customPrompt.trim() &&
       selectedTemplateType !== "story_creation"
     ) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("autoGraph.enterCustomRules"),
-      });
+      message.warning(t("autoGraph.enterCustomRules"));
       return;
     }
 
@@ -456,14 +447,11 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
       setRootNode(root);
       setIsInputCollapsed(true);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("autoGraph.initSuccess"),
-      });
+      message.success(t("toast.autoGraph.initSuccess"));
     } catch (error) {
       handleError(error, {
         context: "AutoGraphInit",
-        fallbackMessage: t("autoGraph.initFailed"),
+        fallbackMessage: t("toast.autoGraph.initFailed"),
       });
     } finally {
       setIsInitializing(false);
@@ -511,7 +499,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       } catch (error) {
         handleError(error, {
           context: "ExpandNode",
-          fallbackMessage: t("autoGraph.expandFailed"),
+          fallbackMessage: t("toast.autoGraph.expandFailed"),
         });
         return null;
       }
@@ -644,7 +632,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       if (!targetGraphId) {
         handleError(new Error("Failed to create graph"), {
           context: "SaveGraph",
-          fallbackMessage: t("autoGraph.createGraphFailed"),
+          fallbackMessage: t("toast.autoGraph.createGraphFailed"),
         });
         return;
       }
@@ -656,16 +644,13 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         nodes: allNodes,
       });
 
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("autoGraph.graphSaved"),
-      });
+      message.success(t("toast.autoGraph.graphSaved"));
       onGraphGenerated?.(allNodes, []);
       onClose?.();
     } catch (error) {
       handleError(error, {
         context: "SaveGraph",
-        fallbackMessage: t("autoGraph.saveFailed"),
+        fallbackMessage: t("toast.autoGraph.saveFailed"),
       });
     } finally {
       setIsSaving(false);
@@ -1312,10 +1297,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                     <button
                       onClick={async () => {
                         if (!topic.trim()) {
-                          frontendEventBus.publish("message_show", {
-                            type: "warning",
-                            content: t("autoGraph.topicRequired"),
-                          });
+                          message.warning(t("autoGraph.topicRequired"));
                           return;
                         }
                         try {
@@ -1324,14 +1306,11 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                             currentPrompt: customPrompt,
                           })) as { optimizedPrompt: string };
                           setCustomPrompt(result.optimizedPrompt);
-                          frontendEventBus.publish("message_show", {
-                            type: "success",
-                            content: t("autoGraph.rulesOptimized"),
-                          });
+                          message.success(t("toast.autoGraph.rulesOptimized"));
                         } catch (error) {
                           handleError(error, {
                             context: "OptimizePrompt",
-                            fallbackMessage: t("autoGraph.optimizeFailed"),
+                            fallbackMessage: t("toast.autoGraph.optimizeFailed"),
                           });
                         }
                       }}

@@ -14,6 +14,18 @@ import { aiService } from "../ai/index";
 import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
 import { pricingService } from "../ai/pricingService";
 
+interface InfiniteExpansionPayload {
+  source_graph_id: string;
+  source_graph_title: string;
+  source_graph_description?: string;
+  max_depth?: number;
+  max_graphs_per_level?: number;
+  relation_types?: string[];
+  auto_generate_nodes?: boolean;
+  node_depth?: number;
+  [key: string]: unknown;
+}
+
 interface GraphDomainInfo {
   domainId: string;
   domainName: string;
@@ -76,7 +88,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
   async process(
     taskId: string,
     userId: string,
-    payload: any,
+    payload: InfiniteExpansionPayload,
     supabase: SupabaseClient,
     updateTaskStatus: UpdateTaskStatusFunction,
   ): Promise<void> {
@@ -146,7 +158,8 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
       let processedCount = 0;
 
       while (queue.length > 0) {
-        const current = queue.shift()!;
+        const current = queue.shift();
+        if (!current) break;
 
         if (
           processedGraphs.has(current.graphId) ||
@@ -439,7 +452,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
         undefined,
         userId,
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error(
         `Infinite graph expansion failed for task ${taskId}:`,
         error,
@@ -450,7 +463,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
         "failed",
         null,
         undefined,
-        error.message,
+        error instanceof Error ? error.message : String(error),
         userId,
       );
     }

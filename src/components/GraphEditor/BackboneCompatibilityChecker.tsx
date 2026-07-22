@@ -7,7 +7,7 @@ import {
   BACKBONE_MODULE_COLORS,
 } from "@shared/types/graph";
 import { api } from "../../services/api";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "../../hooks";
 
@@ -289,17 +289,11 @@ export const BackboneCompatibilityChecker: React.FC<
 
     if (successCount > 0) {
       await queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: `已成功修复 ${successCount} 个骨干节点的兼容性问题`,
-      });
+      message.success(`已成功修复 ${successCount} 个骨干节点的兼容性问题`);
     }
 
     if (errorCount > 0) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: `${errorCount} 个节点修复失败，请稍后重试`,
-      });
+      message.error(`${errorCount} 个节点修复失败，请稍后重试`);
     }
 
     onCheckComplete?.(false);

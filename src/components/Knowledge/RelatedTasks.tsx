@@ -27,17 +27,17 @@ interface RelatedTasksProps {
   onCreateTask?: () => void;
 }
 
-const formatDeadline = (date?: string): { text: string; color: string } | null => {
+const formatDeadline = (date: string | undefined, t: (key: string, options?: Record<string, unknown>) => string): { text: string; color: string } | null => {
   if (!date) return null;
   const d = new Date(date);
   const now = new Date();
   const diff = d.getTime() - now.getTime();
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
-  if (days < 0) return { text: "已过期", color: "text-red-500 dark:text-red-400" };
-  if (days === 0) return { text: "今天", color: "text-amber-500 dark:text-amber-400" };
-  if (days === 1) return { text: "明天", color: "text-yellow-500 dark:text-yellow-400" };
-  if (days <= 7) return { text: `${days}天后`, color: "text-primary-500 dark:text-primary-400" };
+  if (days < 0) return { text: t("tasks.related.deadline.expired"), color: "text-red-500 dark:text-red-400" };
+  if (days === 0) return { text: t("tasks.related.deadline.today"), color: "text-amber-500 dark:text-amber-400" };
+  if (days === 1) return { text: t("tasks.related.deadline.tomorrow"), color: "text-yellow-500 dark:text-yellow-400" };
+  if (days <= 7) return { text: t("tasks.related.deadline.inDays", { days }), color: "text-primary-500 dark:text-primary-400" };
   return { text: formatDate(date, "short"), color: "text-slate-500 dark:text-slate-400" };
 };
 
@@ -81,7 +81,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 size={24} className="animate-spin text-primary-500" />
-        <span className="ml-2 text-slate-500 dark:text-slate-400">加载任务中...</span>
+        <span className="ml-2 text-slate-500 dark:text-slate-400">{t("tasks.related.loadingTasks")}</span>
       </div>
     );
   }
@@ -90,12 +90,12 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
     return (
       <div className="flex flex-col items-center justify-center py-8 text-slate-500 dark:text-slate-400">
         <AlertCircle size={24} className="text-red-500 mb-2" />
-        <span>加载任务失败</span>
+        <span>{t("toast.tasks.loadTasksFailed")}</span>
         <button
           onClick={() => refetch()}
           className="mt-2 text-sm text-primary-500 hover:text-primary-600"
         >
-          重试
+          {t("tasks.retry")}
         </button>
       </div>
     );
@@ -110,10 +110,10 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
           </div>
           <div>
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-              关联任务
+              {t("tasks.related.title")}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {taskStats.total} 个任务 · {taskStats.completed} 已完成
+              {t("tasks.related.taskCountSummary", { total: taskStats.total, completed: taskStats.completed })}
             </p>
           </div>
         </div>
@@ -125,7 +125,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-primary-500 to-primary-500 text-white text-sm font-medium shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all"
           >
             <Plus size={16} />
-            <span>新建</span>
+            <span>{t("tasks.related.create")}</span>
           </motion.button>
         )}
       </div>
@@ -135,27 +135,28 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-slate-400" />
             <span className="text-sm text-slate-600 dark:text-slate-400">
-              待处理: {taskStats.pending}
+              {t("tasks.related.pendingCount", { count: taskStats.pending })}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-primary-500" />
             <span className="text-sm text-slate-600 dark:text-slate-400">
-              进行中: {taskStats.inProgress}
+              {t("tasks.related.inProgressCount", { count: taskStats.inProgress })}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className="text-sm text-slate-600 dark:text-slate-400">
-              已完成: {taskStats.completed}
+              {t("tasks.related.completedCount", { count: taskStats.completed })}
             </span>
           </div>
           <div className="ml-auto">
             <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              {taskStats.total > 0
-                ? Math.round((taskStats.completed / taskStats.total) * 100)
-                : 0}
-              % 完成
+              {t("tasks.related.completionRate", {
+                percent: taskStats.total > 0
+                  ? Math.round((taskStats.completed / taskStats.total) * 100)
+                  : 0,
+              })}
             </div>
           </div>
         </div>
@@ -166,7 +167,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
           <EmptyState
             icon={<ClipboardList size={32} />}
             title={t('scheduler.empty.tasks')}
-            action={onCreateTask ? { label: '创建新任务', onClick: onCreateTask } : undefined}
+            action={onCreateTask ? { label: t("tasks.related.createNewTask"), onClick: onCreateTask } : undefined}
           />
         ) : (
           <div className="space-y-2">
@@ -175,7 +176,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
               const queueStyle =
                 QUEUE_COLORS[task.queue_level as QueueLevel] ||
                 QUEUE_COLORS[0];
-              const deadlineInfo = formatDeadline(task.deadline);
+              const deadlineInfo = formatDeadline(task.deadline, t);
 
               return (
                 <motion.div
@@ -228,7 +229,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
                       task.progress_percentage !== undefined && (
                         <div className="mb-2">
                           <div className="flex justify-between text-xs text-slate-500 mb-1">
-                            <span>进度</span>
+                            <span>{t("tasks.related.progress")}</span>
                             <span>{task.progress_percentage}%</span>
                           </div>
                           <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">

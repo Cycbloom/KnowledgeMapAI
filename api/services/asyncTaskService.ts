@@ -229,8 +229,8 @@ export class AsyncTaskService {
     } else {
       if (typeof arg1 !== "string" && arg1 !== undefined) {
         supabase = arg1 as SupabaseClient;
-        taskId = arg2!;
-        status = arg3!;
+        taskId = arg2 ?? "";
+        status = arg3 ?? "";
         progress = arg4;
         result = arg5;
         errorMsg = arg6;
@@ -238,7 +238,7 @@ export class AsyncTaskService {
       } else {
         supabase = defaultClient;
         taskId = arg1 as string;
-        status = arg2!;
+        status = arg2 ?? "";
         result = arg3 as unknown as Record<string, unknown> | undefined;
         errorMsg = arg4 as unknown as string | undefined;
         userId = arg5 as unknown as string | undefined;

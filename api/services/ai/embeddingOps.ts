@@ -28,7 +28,8 @@ export class EmbeddingOps {
         }
 
         try {
-          if (provider.createEmbedding) {
+          const createEmbedding = provider.createEmbedding;
+          if (createEmbedding) {
             return await withEmbeddingMonitoring(
               {
                 operation: "generate_embedding",
@@ -36,7 +37,7 @@ export class EmbeddingOps {
                 model: provider.embeddingModel || provider.model,
               },
               async () => ({
-                result: await provider.createEmbedding!(text),
+                result: await createEmbedding(text),
                 tokenCount: text.length,
               }),
             );
@@ -95,7 +96,8 @@ export class EmbeddingOps {
     }
 
     try {
-      if (provider.createEmbedding) {
+      const createEmbedding = provider.createEmbedding;
+      if (createEmbedding) {
         const concurrencyLimit = 5;
         const results: (number[] | null)[] = new Array(texts.length).fill(null);
 
@@ -111,7 +113,7 @@ export class EmbeddingOps {
                   metadata: { batchCount: batch.length },
                 },
                 async () => ({
-                  result: await provider.createEmbedding!(text),
+                  result: await createEmbedding(text),
                   tokenCount: text.length,
                 }),
               ).catch(() => null),

@@ -56,9 +56,9 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
   }, [editingId]);
 
   const filteredShortcuts = DEFAULT_SHORTCUTS.filter(shortcut =>
-    shortcut.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    shortcut.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    CATEGORY_LABELS[shortcut.category].toLowerCase().includes(searchQuery.toLowerCase())
+    t(shortcut.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t(shortcut.description).toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t(CATEGORY_LABELS[shortcut.category]).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const groupedShortcuts = CATEGORY_ORDER.reduce((acc, category) => {
@@ -170,7 +170,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{shortcut.name}</span>
+                        <span className="font-medium text-sm">{t(shortcut.name)}</span>
                         {binding && !binding.enabled && (
                           <span className={cn('text-xs px-1.5 py-0.5 rounded',
                             isDark ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-600'
@@ -180,7 +180,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
                         )}
                       </div>
                       <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-500' : 'text-gray-400')}>
-                        {shortcut.description}
+                        {t(shortcut.description)}
                       </p>
                     </div>
 

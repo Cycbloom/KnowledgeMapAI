@@ -41,7 +41,7 @@ import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
 import { useFocusTrap, useEscapeKey, useCelebration } from "@/hooks/common";
 import { message } from "../utils/messageHelper";
 import { asyncConfirm } from "@/utils/asyncConfirm";
-import { UserTask, CreateUserTaskData, QueueData } from "@shared/types";
+import { UserTask, CreateUserTaskData, QueueData, TaskSubtask } from "@shared/types";
 import { api } from "../services/api";
 import { SkeletonCard, ErrorBoundary, ErrorState } from "../components/common";
 import { ShortcutHint } from "../components/common/ShortcutHint";
@@ -190,7 +190,9 @@ export const Scheduler: React.FC = () => {
 
   const queues = useMemo(() => {
     if (!queuesData || typeof queuesData !== "object") return QueueDataDefault;
-    const actualData = (queuesData as any).data || queuesData;
+    // 兼容后端可能返回 { data: QueueData } 包装格式
+    const wrapped = queuesData as { data?: QueueData };
+    const actualData: QueueData = wrapped.data ?? queuesData;
     return {
       q0: Array.isArray(actualData.q0) ? actualData.q0 : [],
       q1: Array.isArray(actualData.q1) ? actualData.q1 : [],
@@ -232,7 +234,7 @@ export const Scheduler: React.FC = () => {
 
     const filterByPath = (tasks: UserTask[]) => {
       return tasks.filter((task) => {
-        const taskPathId = (task as any).learning_path_id;
+        const taskPathId = (task as UserTask & { learning_path_id?: string }).learning_path_id;
         return taskPathId === selectedPathId;
       });
     };
@@ -298,11 +300,11 @@ export const Scheduler: React.FC = () => {
   const handleCreateTask = useCallback(async (data: CreateUserTaskData) => {
     try {
       await createTaskMutation.mutateAsync(data);
-      message.success(t("scheduler.taskCreated"));
+      message.success(t("toast.scheduler.taskCreated"));
       setShowTaskForm(false);
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : t("scheduler.createTaskFailed");
+        err instanceof Error ? err.message : t("toast.scheduler.createTaskFailed");
       message.error(errorMessage);
     }
   }, [createTaskMutation, t]);
@@ -311,12 +313,12 @@ export const Scheduler: React.FC = () => {
     if (!editingTask) return;
     try {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
-      message.success(t("scheduler.taskUpdated"));
+      message.success(t("toast.scheduler.taskUpdated"));
       setEditingTask(null);
       setShowTaskForm(false);
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : t("scheduler.updateTaskFailed");
+        err instanceof Error ? err.message : t("toast.scheduler.updateTaskFailed");
       message.error(errorMessage);
     }
   }, [editingTask, updateTaskMutation, t]);
@@ -330,10 +332,10 @@ export const Scheduler: React.FC = () => {
     if (!confirmed) return;
     try {
       await deleteTaskMutation.mutateAsync(task.id);
-      message.success(t("scheduler.taskDeleted"));
+      message.success(t("toast.scheduler.taskDeleted"));
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : t("scheduler.deleteTaskFailed");
+        err instanceof Error ? err.message : t("toast.scheduler.deleteTaskFailed");
       message.error(errorMessage);
     }
   }, [deleteTaskMutation, t]);
@@ -341,10 +343,10 @@ export const Scheduler: React.FC = () => {
   const handleMoveTask = async (taskId: string, targetQueue: number) => {
     try {
       await moveTaskMutation.mutateAsync({ id: taskId, targetQueue });
-      message.success(t("scheduler.taskMoved", { queue: targetQueue }));
+      message.success(t("toast.scheduler.taskMoved", { queue: targetQueue }));
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : t("scheduler.moveTaskFailed");
+        err instanceof Error ? err.message : t("toast.scheduler.moveTaskFailed");
       message.error(errorMessage);
     }
   };
@@ -354,7 +356,7 @@ export const Scheduler: React.FC = () => {
       await reorderMutation.mutateAsync({ queueLevel, taskIds });
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : t("scheduler.reorderFailed");
+        err instanceof Error ? err.message : t("toast.scheduler.reorderFailed");
       message.error(errorMessage);
     }
   };
@@ -364,7 +366,7 @@ export const Scheduler: React.FC = () => {
       const response = await api.scheduler.getSubtasks(taskId);
       if (response.data) {
         const firstPending = response.data.find(
-          (s: any) => s.status === "pending" || s.status === "in_progress",
+          (s: TaskSubtask) => s.status === "pending" || s.status === "in_progress",
         );
         if (firstPending && firstPending.status === "pending") {
           await api.scheduler.updateSubtask(taskId, firstPending.id, {
@@ -385,19 +387,19 @@ export const Scheduler: React.FC = () => {
   const handleStartTask = useCallback(async (task: UserTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
-      message.success(t("scheduler.taskStarted"));
+      message.success(t("toast.scheduler.taskStarted"));
       // 启动番茄钟计时器（使用专注时长，而非任务总时长）
       const { focusDuration } = useFocusStore.getState();
       useTimerStore.getState().start(task.id, focusDuration, task.queue_level);
       // 如果有子任务，自动激活第一个待做子任务
       const hasSubtasks =
-        (task as any).has_subtasks || (task as any).subtask_count > 0;
+        task.has_subtasks || (task.subtask_count ?? 0) > 0;
       if (hasSubtasks) {
         await fetchAndActivateFirstSubtask(task.id);
       }
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : t("scheduler.startTaskFailed");
+        err instanceof Error ? err.message : t("toast.scheduler.startTaskFailed");
       message.error(errorMessage);
     }
   }, [startTaskMutation, t, fetchAndActivateFirstSubtask]);
@@ -405,10 +407,10 @@ export const Scheduler: React.FC = () => {
   const handlePauseTask = useCallback(async (task: UserTask) => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
-      message.success(t("scheduler.taskPaused"));
+      message.success(t("toast.scheduler.taskPaused"));
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : t("scheduler.pauseTaskFailed");
+        err instanceof Error ? err.message : t("toast.scheduler.pauseTaskFailed");
       message.error(errorMessage);
     }
   }, [pauseTaskMutation, t]);
@@ -416,11 +418,11 @@ export const Scheduler: React.FC = () => {
   const handleCompleteTask = useCallback(async (task: UserTask) => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
-      message.success(t("scheduler.taskCompleted"));
+      message.success(t("toast.scheduler.taskCompleted"));
       triggerCelebration("task-completed");
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : t("scheduler.completeTaskFailed");
+        err instanceof Error ? err.message : t("toast.scheduler.completeTaskFailed");
       message.error(errorMessage);
     }
   }, [completeTaskMutation, t, triggerCelebration]);

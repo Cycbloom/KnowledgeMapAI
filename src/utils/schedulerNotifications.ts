@@ -104,7 +104,10 @@ class SchedulerSoundService {
     }
 
     try {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextCtor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextCtor) {
+        this.audioContext = new AudioContextCtor();
+      }
     } catch (e) {
       console.warn('无法初始化音频上下文:', e);
     }

@@ -82,7 +82,9 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
     } catch (error) {
       console.error("Optimization failed", error);
       message.error(
-        t("promptEditor.optimizeFailed", { message: (error as any).message }),
+        t("promptEditor.optimizeFailed", {
+          message: error instanceof Error ? error.message : String(error),
+        }),
       );
     } finally {
       setIsOptimizing(false);
@@ -95,7 +97,8 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
       await onSave(content);
     } catch (error) {
       console.error("Save failed", error);
-      message.error(t("promptEditor.saveFailed", { message: (error as any).message }));
+      const errMsg = error instanceof Error ? error.message : String(error);
+      message.error(t("promptEditor.saveFailed", { message: errMsg }));
     } finally {
       setIsSaving(false);
     }
@@ -195,8 +198,8 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
           {autoSaveStatus !== "idle" && (
             <span className="text-xs text-gray-500 dark:text-gray-400">
               {autoSaveStatus === "saving" && t("common.saving")}
-              {autoSaveStatus === "saved" && t("common.saved")}
-              {autoSaveStatus === "error" && t("common.saveFailed")}
+              {autoSaveStatus === "saved" && t("toast.common.saved")}
+              {autoSaveStatus === "error" && t("toast.common.saveFailed")}
             </span>
           )}
           {!showOptimizeInput && (

@@ -170,9 +170,7 @@ export const LearningMode = () => {
         types: ["qa", "choice", "true_false", "multi_choice", "fill_in_the_blank"],
       });
       if (result.success) {
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("learning.cards.taskSubmitted"),
+        msgHelper.success(t("learning.cards.taskSubmitted"), {
           duration: 5000,
           action: { label: t("learning.cards.viewTasks"), onClick: () => navigate("/tasks") },
         });
@@ -215,8 +213,8 @@ export const LearningMode = () => {
           try {
             await api.nodes.update(nodeId, { learning_material: response.content, keywords: responseKeywords });
             queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(nodeId) });
-            frontendEventBus.publish("message_show", {
-              type: "success", content: t("learning.material.generated"), duration: 8000,
+            msgHelper.success(t("learning.material.generated"), {
+              duration: 8000,
               action: { label: t("learning.material.generateCards"), onClick: () => handleGenerateCards(nodeId) },
             });
           } catch (saveError) {
@@ -319,8 +317,7 @@ export const LearningMode = () => {
     const isCapacitor = isCapacitorMobile();
     if (isCapacitor) {
       if (!mobileAIService.isConfigured()) {
-        frontendEventBus.publish("message_show", {
-          type: "error", content: t("learning.cards.configureApiKey"),
+        msgHelper.error(t("learning.cards.configureApiKey"), {
           action: { label: t("learning.cards.goToSettings"), onClick: () => navigate("/settings#prompts") },
         });
         return;
@@ -366,8 +363,8 @@ export const LearningMode = () => {
           }
         }
         if (!signal.aborted && savedCount > 0) {
-          frontendEventBus.publish("message_show", {
-            type: "success", content: t("learning.cards.generateSuccess", { count: savedCount }), duration: 5000,
+          msgHelper.success(t("learning.cards.generateSuccess", { count: savedCount }), {
+            duration: 5000,
             action: { label: t("learning.cards.startChallenge"), onClick: handleStartChallenge },
           });
         }
@@ -377,8 +374,8 @@ export const LearningMode = () => {
         if (isAICardGenError(error)) { handleAICardGenError(error, config); }
         else {
           const errorMessage = error instanceof Error ? error.message : t("learning.cards.generateFailed");
-          frontendEventBus.publish("message_show", {
-            type: "error", content: errorMessage, duration: 5000,
+          msgHelper.error(errorMessage, {
+            duration: 5000,
             action: { label: t("learning.cards.retry"), onClick: () => handleManualGenerateCards(config) },
           });
         }
@@ -391,8 +388,8 @@ export const LearningMode = () => {
     try {
       const result = await api.ai.batchGenerateCards([nodeId], { count: config.count, types: config.types });
       if (result.success) {
-        frontendEventBus.publish("message_show", {
-          type: "success", content: t("learning.cards.taskSubmitted"), duration: 5000,
+        msgHelper.success(t("learning.cards.taskSubmitted"), {
+          duration: 5000,
           action: { label: t("learning.cards.viewTasks"), onClick: () => navigate("/tasks") },
         });
       } else {
@@ -415,23 +412,23 @@ export const LearningMode = () => {
   const handleAICardGenError = (error: AICardGenError, config: { count: number; types: string[] }) => {
     switch (error.type) {
       case "api_key_missing": case "api_key_invalid":
-        frontendEventBus.publish("message_show", { type: "error", content: error.message, duration: 8000, action: { label: t("learning.cards.goToSettings"), onClick: () => navigate("/settings#prompts") } });
+        msgHelper.error(error.message, { duration: 8000, action: { label: t("learning.cards.goToSettings"), onClick: () => navigate("/settings#prompts") } });
         break;
       case "quota_exceeded":
         msgHelper.error(error.message, { duration: 8000 }); msgHelper.info(error.suggestion, { duration: 8000 });
         break;
       case "rate_limited":
-        frontendEventBus.publish("message_show", { type: "warning", content: error.message, duration: 5000, action: { label: t("learning.cards.retryLater"), onClick: () => setIsGenModalOpen(true) } });
+        msgHelper.warning(error.message, { duration: 5000, action: { label: t("learning.cards.retryLater"), onClick: () => setIsGenModalOpen(true) } });
         break;
       case "network_error": case "timeout":
-        frontendEventBus.publish("message_show", { type: "error", content: error.message, duration: 5000, action: { label: t("learning.cards.retry"), onClick: () => handleManualGenerateCards(config) } });
+        msgHelper.error(error.message, { duration: 5000, action: { label: t("learning.cards.retry"), onClick: () => handleManualGenerateCards(config) } });
         break;
       case "database_error":
         msgHelper.error(error.message, { duration: 8000 });
-        frontendEventBus.publish("message_show", { type: "info", content: error.suggestion, duration: 8000, action: error.retryable ? { label: t("learning.cards.retry"), onClick: () => handleManualGenerateCards(config) } : undefined });
+        msgHelper.info(error.suggestion, { duration: 8000, action: error.retryable ? { label: t("learning.cards.retry"), onClick: () => handleManualGenerateCards(config) } : undefined });
         break;
       case "invalid_response":
-        frontendEventBus.publish("message_show", { type: "warning", content: error.message, duration: 5000, action: { label: t("learning.cards.retry"), onClick: () => handleManualGenerateCards(config) } });
+        msgHelper.warning(error.message, { duration: 5000, action: { label: t("learning.cards.retry"), onClick: () => handleManualGenerateCards(config) } });
         break;
       default: msgHelper.error(error.message, { duration: 5000 });
     }
@@ -467,7 +464,7 @@ export const LearningMode = () => {
       try {
         const result = await api.ai.batchExpandGraph(ids);
         if (result.success) {
-          frontendEventBus.publish("message_show", { type: "success", content: t("learning.batch.expandSuccess", { count: ids.length }), duration: 5000, action: { label: t("learning.cards.viewTasks"), onClick: () => navigate("/tasks") } });
+          msgHelper.success(t("learning.batch.expandSuccess", { count: ids.length }), { duration: 5000, action: { label: t("learning.cards.viewTasks"), onClick: () => navigate("/tasks") } });
           setSelectedNodeIds(new Set());
         } else { msgHelper.error(t("learning.batch.submitFailed")); }
       } catch (error) { console.error("Batch expand failed:", error); msgHelper.error(t("learning.batch.expandError")); }
@@ -477,7 +474,7 @@ export const LearningMode = () => {
       try {
         const result = await api.ai.batchGenerateCards(ids, data);
         if (result.success) {
-          frontendEventBus.publish("message_show", { type: "success", content: t("learning.batch.generateSuccess", { count: ids.length }), duration: 5000, action: { label: t("learning.cards.viewTasks"), onClick: () => navigate("/tasks") } });
+          msgHelper.success(t("learning.batch.generateSuccess", { count: ids.length }), { duration: 5000, action: { label: t("learning.cards.viewTasks"), onClick: () => navigate("/tasks") } });
           setSelectedNodeIds(new Set());
         } else {
           const errorMsg = result.message || result.error || t("learning.cards.unknownError");

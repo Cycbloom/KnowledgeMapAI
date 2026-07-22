@@ -11,7 +11,7 @@ import { MindMapCanvas } from '../components/GraphEditor/canvas/MindMapCanvas';
 import { CombinedGraphToolbar } from '../components/CombinedView/CombinedGraphToolbar';
 import { CombinedGraphSidebar } from '../components/CombinedView/CombinedGraphSidebar';
 import { Skeleton } from '../components/common';
-import type { GraphRelation, Node, Edge, GraphColorMode, CrossGraphNodeConnection, CrossGraphRelationData } from '../types';
+import type { GraphRelation, Node, Edge, GraphColorMode, CrossGraphNodeConnection, CrossGraphRelationData, NodeStatus } from '../types';
 
 const GRAPH_SPACING = 400;
 
@@ -36,8 +36,8 @@ export const CombinedGraphView: React.FC = () => {
   const mergedNodeStatus = useMemo(() => {
     const status1 = graphStatusData?.[id1 || ''];
     const status2 = graphStatusData?.[id2 || ''];
-    const s1 = (Array.isArray(status1) ? {} : status1) as Record<string, any> | undefined;
-    const s2 = (Array.isArray(status2) ? {} : status2) as Record<string, any> | undefined;
+    const s1 = (Array.isArray(status1) ? {} : status1) as Record<string, NodeStatus> | undefined;
+    const s2 = (Array.isArray(status2) ? {} : status2) as Record<string, NodeStatus> | undefined;
     return { ...(s1 || {}), ...(s2 || {}) };
   }, [graphStatusData, id1, id2]);
   

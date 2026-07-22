@@ -859,9 +859,9 @@ export class AutoGraphService {
               results[i + j] = null;
             }
           }
-        } else {
-          for (let j = 0; j < (data?.length || 0); j++) {
-            results[i + j] = data![j];
+        } else if (data) {
+          for (let j = 0; j < data.length; j++) {
+            results[i + j] = data[j];
           }
         }
       } catch (error) {
@@ -871,12 +871,13 @@ export class AutoGraphService {
 
     const kpsNeedingEmbeddings: Array<{ id: string; text: string }> = [];
     for (let i = 0; i < results.length; i++) {
-      if (results[i] && !nodes[i].embedding) {
+      const result = results[i];
+      if (result && !nodes[i].embedding) {
         const node = nodes[i];
         const text = node.content
           ? `${node.title}: ${node.content.slice(0, 500)}`
           : node.title;
-        kpsNeedingEmbeddings.push({ id: results[i]!.id, text });
+        kpsNeedingEmbeddings.push({ id: result.id, text });
       }
     }
 
@@ -1048,7 +1049,7 @@ export class AutoGraphService {
         userId,
         {
           graph_id: graphId,
-          title: node.title!,
+          title: node.title ?? "",
           content: node.content || "",
           x_position: Math.round((Math.random() - 0.5) * 50),
           y_position: Math.round((Math.random() - 0.5) * 50),
@@ -1061,7 +1062,7 @@ export class AutoGraphService {
         if (node.id) nodeMap.set(node.id, result.knowledge_point_id || result.id);
         createdNodes.push({
           id: result.id,
-          title: node.title!,
+          title: node.title ?? "",
           content: node.content,
           knowledge_point_id: result.knowledge_point_id,
         });
@@ -1464,6 +1465,10 @@ export class AutoGraphService {
       selectedTemplate = fetchedTemplate as NonNullable<ApplyTemplateParams["template"]>;
     }
 
+    if (!selectedTemplate) {
+      throw new AppError("Template not found", 404, ErrorCodes.RESOURCE_TEMPLATE_NOT_FOUND);
+    }
+
     const systemPrompt = await promptService.getRenderedPrompt(
       supabase,
       "apply_template",
@@ -1494,9 +1499,9 @@ export class AutoGraphService {
             { role: "system", content: systemPrompt },
             {
               role: "user",
-              content: `主题：${topic}\n\n模板名称：${selectedTemplate!.name}\n模板结构：\n${JSON.stringify(
+              content: `主题：${topic}\n\n模板名称：${selectedTemplate.name}\n模板结构：\n${JSON.stringify(
                 {
-                  nodes: selectedTemplate!.nodes.map(
+                  nodes: selectedTemplate.nodes.map(
                     (n: {
                       id: string;
                       title: string;
@@ -1509,7 +1514,7 @@ export class AutoGraphService {
                       parentId: n.parentId,
                     }),
                   ),
-                  edges: selectedTemplate!.edges,
+                  edges: selectedTemplate.edges,
                 },
                 null,
                 2,
@@ -1546,17 +1551,17 @@ export class AutoGraphService {
 
     logger.info("Template applied successfully", {
       topic,
-      templateId: selectedTemplate!.id,
+      templateId: selectedTemplate.id,
       nodeCount: parsed.nodes?.length || 0,
       edgeCount: parsed.edges?.length || 0,
     });
 
     return {
-      templateId: selectedTemplate!.id,
-      templateName: selectedTemplate!.name,
+      templateId: selectedTemplate.id,
+      templateName: selectedTemplate.name,
       nodes: parsed.nodes || [],
       edges: parsed.edges || [],
-      layoutSuggestion: selectedTemplate!.layoutSuggestion,
+      layoutSuggestion: selectedTemplate.layoutSuggestion,
       metadata: {
         topic,
         style,

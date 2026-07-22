@@ -542,7 +542,8 @@ export class BackupService {
     const oldToNewKnowledgePointIds = new Map<string, string>();
 
     if (data.graphs && data.graphs.length > 0) {
-      const graphsToInsert = data.graphs.map((g) => ({
+      const graphs = data.graphs;
+      const graphsToInsert = graphs.map((g) => ({
         user_id: userId,
         title: g.title,
         description: g.description,
@@ -562,7 +563,7 @@ export class BackupService {
       if (graphsError) throw new Error(`导入图谱失败: ${graphsError.message}`);
 
       insertedGraphs?.forEach((g, i) => {
-        oldToNewGraphIds.set(data.graphs![i].id, g.id);
+        oldToNewGraphIds.set(graphs[i].id, g.id);
       });
       stats.graphs = insertedGraphs?.length || 0;
 
@@ -570,10 +571,10 @@ export class BackupService {
       if (insertedGraphs && insertedGraphs.length > 0) {
         const contentsToInsert = insertedGraphs.map((g, i) => ({
           graph_id: g.id,
-          podcast_script: data.graphs![i].podcast_script || null,
-          reference_books: data.graphs![i].reference_books || null,
-          external_links: data.graphs![i].external_links || null,
-          learning_guide: data.graphs![i].learning_guide || null,
+          podcast_script: graphs[i].podcast_script || null,
+          reference_books: graphs[i].reference_books || null,
+          external_links: graphs[i].external_links || null,
+          learning_guide: graphs[i].learning_guide || null,
         }));
         const { error: contentError } = await supabase
           .from('knowledge_graph_contents')

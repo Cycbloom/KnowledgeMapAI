@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { notificationApi } from '../../services/api/notification';
 import { NotificationSettings } from '@shared/types';
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { useTheme } from "../../hooks";
 import { Skeleton } from '../common';
 
@@ -50,10 +50,10 @@ export const NotificationSettingsPanel: React.FC = () => {
     setSaving(true);
     try {
       await notificationApi.updateSettings(settings);
-      frontendEventBus.publish("message_show", { type: 'success', content: '通知设置已保存!' });
+      message.success('通知设置已保存!');
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "保存设置失败";
-      frontendEventBus.publish("message_show", { type: 'error', content: message });
+      const errorMessage = error instanceof Error ? error.message : "保存设置失败";
+      message.error(errorMessage);
     } finally {
       setSaving(false);
     }

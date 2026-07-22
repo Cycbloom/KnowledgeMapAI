@@ -54,24 +54,6 @@
     "todayToReview": "To Review Today",
     "daysLater": "in {{count}} days"
   },
-  "messages": {
-    "taskCreateSuccess": "Task created successfully",
-    "taskCreateFailed": "Failed to create task",
-    "taskUpdateSuccess": "Task updated successfully",
-    "taskUpdateFailed": "Failed to update task",
-    "taskDeleted": "Task deleted",
-    "taskDeleteFailed": "Failed to delete task",
-    "taskStarted": "Task started",
-    "taskStartFailed": "Failed to start task",
-    "taskPaused": "Task paused",
-    "taskPauseFailed": "Failed to pause task",
-    "taskCompleted": "Task completed",
-    "taskCompleteFailed": "Failed to complete task",
-    "knowledgePointLinked": "Knowledge point linked successfully",
-    "knowledgePointLinkFailed": "Failed to link knowledge point",
-    "loadFailed": "Load failed: {{message}}",
-    "loadingWorkbench": "Loading workbench..."
-  },
   "tips": {
     "clickTaskHint": "Click a task card to view details and link knowledge points",
     "quickCreateHint": "Supports quick task creation and knowledge point linking",

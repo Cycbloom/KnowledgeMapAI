@@ -2,10 +2,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useTaskActions } from "../useTaskActions";
+import { message } from "../../utils/messageHelper";
 import type { UserTask, CreateUserTaskData, KnowledgePoint } from "@shared/types";
 
 const mocks = vi.hoisted(() => ({
-  publish: vi.fn(),
   createMutate: vi.fn(),
   updateMutate: vi.fn(),
   deleteMutate: vi.fn(),
@@ -15,10 +15,6 @@ const mocks = vi.hoisted(() => ({
   addTaskKnowledgePoint: vi.fn(),
   searchSimilar: vi.fn(),
   asyncConfirm: vi.fn(),
-}));
-
-vi.mock("../../services/timer/FrontendEventBus", () => ({
-  frontendEventBus: { publish: mocks.publish },
 }));
 
 vi.mock("react-i18next", () => ({
@@ -66,6 +62,8 @@ describe("useTaskActions", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(message, "success").mockReturnValue("test-id");
+    vi.spyOn(message, "error").mockReturnValue("test-id");
     mocks.createMutate.mockResolvedValue(undefined);
     mocks.updateMutate.mockResolvedValue(undefined);
     mocks.deleteMutate.mockResolvedValue(undefined);
@@ -115,10 +113,7 @@ describe("useTaskActions", () => {
     const data = makeCreateData();
     await act(async () => { await result.current.handleCreateTask(data); });
     expect(mocks.createMutate).toHaveBeenCalledWith(data);
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "success",
-      content: "unifiedWorkbench.messages.taskCreateSuccess",
-    });
+    expect(message.success).toHaveBeenCalledWith("toast.workbench.taskCreateSuccess");
     expect(result.current.showTaskForm).toBe(false);
   });
 
@@ -127,20 +122,14 @@ describe("useTaskActions", () => {
     const { result } = renderHook(() => useTaskActions(refetchQueues));
     const data = makeCreateData();
     await act(async () => { await result.current.handleCreateTask(data); });
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "error",
-      content: "create failed",
-    });
+    expect(message.error).toHaveBeenCalledWith("create failed");
   });
 
   it("handleCreateTask 失败时非 Error 对象应使用兜底消息", async () => {
     mocks.createMutate.mockRejectedValueOnce("string error");
     const { result } = renderHook(() => useTaskActions(refetchQueues));
     await act(async () => { await result.current.handleCreateTask(makeCreateData()); });
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "error",
-      content: "unifiedWorkbench.messages.taskCreateFailed",
-    });
+    expect(message.error).toHaveBeenCalledWith("toast.workbench.taskCreateFailed");
   });
 
   it("handleUpdateTask 应该使用 editingTask.id 调用 mutation", async () => {
@@ -165,10 +154,7 @@ describe("useTaskActions", () => {
     const { result } = renderHook(() => useTaskActions(refetchQueues));
     act(() => { result.current.openEditTaskForm(makeTask({ id: "t-1" })); });
     await act(async () => { await result.current.handleUpdateTask(makeCreateData()); });
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "error",
-      content: "update fail",
-    });
+    expect(message.error).toHaveBeenCalledWith("update fail");
   });
 
   it("handleDeleteTask 确认后应调用 delete mutation", async () => {
@@ -177,10 +163,7 @@ describe("useTaskActions", () => {
     await act(async () => { await result.current.handleDeleteTask(task); });
     expect(mocks.asyncConfirm).toHaveBeenCalled();
     expect(mocks.deleteMutate).toHaveBeenCalledWith("t-del");
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "success",
-      content: "unifiedWorkbench.messages.taskDeleted",
-    });
+    expect(message.success).toHaveBeenCalledWith("toast.workbench.taskDeleted");
   });
 
   it("handleDeleteTask 取消确认时不应调用 delete mutation", async () => {
@@ -195,40 +178,28 @@ describe("useTaskActions", () => {
     const task = makeTask({ id: "t-start" });
     await act(async () => { await result.current.handleStartTask(task); });
     expect(mocks.startMutate).toHaveBeenCalledWith("t-start");
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "success",
-      content: "unifiedWorkbench.messages.taskStarted",
-    });
+    expect(message.success).toHaveBeenCalledWith("toast.workbench.taskStarted");
   });
 
   it("handlePauseTask 应该调用 pause mutation", async () => {
     const { result } = renderHook(() => useTaskActions(refetchQueues));
     await act(async () => { await result.current.handlePauseTask(makeTask({ id: "t-pause" })); });
     expect(mocks.pauseMutate).toHaveBeenCalledWith("t-pause");
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "success",
-      content: "unifiedWorkbench.messages.taskPaused",
-    });
+    expect(message.success).toHaveBeenCalledWith("toast.workbench.taskPaused");
   });
 
   it("handleCompleteTask 应该调用 complete mutation", async () => {
     const { result } = renderHook(() => useTaskActions(refetchQueues));
     await act(async () => { await result.current.handleCompleteTask(makeTask({ id: "t-done" })); });
     expect(mocks.completeMutate).toHaveBeenCalledWith("t-done");
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "success",
-      content: "unifiedWorkbench.messages.taskCompleted",
-    });
+    expect(message.success).toHaveBeenCalledWith("toast.workbench.taskCompleted");
   });
 
   it("handleStartTask 失败时应发布错误消息", async () => {
     mocks.startMutate.mockRejectedValueOnce(new Error("start fail"));
     const { result } = renderHook(() => useTaskActions(refetchQueues));
     await act(async () => { await result.current.handleStartTask(makeTask()); });
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "error",
-      content: "start fail",
-    });
+    expect(message.error).toHaveBeenCalledWith("start fail");
   });
 
   it("handleLinkKnowledgePoint 成功时应调用 API、清理状态并 refetch", async () => {
@@ -243,10 +214,7 @@ describe("useTaskActions", () => {
     expect(mocks.addTaskKnowledgePoint).toHaveBeenCalledWith("t-link", {
       knowledge_point_id: "kp-1",
     });
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "success",
-      content: "unifiedWorkbench.messages.knowledgePointLinked",
-    });
+    expect(message.success).toHaveBeenCalledWith("toast.workbench.knowledgePointLinked");
     expect(result.current.linkingTaskId).toBeNull();
     expect(result.current.knowledgePointSearch).toBe("");
     expect(result.current.searchResults).toEqual([]);
@@ -260,10 +228,7 @@ describe("useTaskActions", () => {
     await act(async () => {
       await result.current.handleLinkKnowledgePoint("t-link", "kp-1");
     });
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      type: "error",
-      content: "link fail",
-    });
+    expect(message.error).toHaveBeenCalledWith("link fail");
     expect(result.current.linkingTaskId).toBe("t-link");
   });
 

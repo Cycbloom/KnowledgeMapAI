@@ -16,7 +16,7 @@ import { LearningStateBadge } from "./LearningStateBadge";
 import { MasteryProgressBar } from "./MasteryProgressBar";
 import { subtasksApi, type ValidTransitionsResult } from "../../services/api/modules/scheduler/subtasks";
 import { knowledgePointsApi, type TaskKnowledgePoint } from "../../services/api/modules/scheduler/knowledgePoints";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import { formatDate as formatDateUtil } from "../../utils/formatters";
 import type {
@@ -114,19 +114,13 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
         });
 
         if (response.success) {
-          frontendEventBus.publish("message_show", {
-            type: "success",
-            content: `状态已切换为 ${STATE_LABELS[toState]}`,
-          });
+          message.success(`状态已切换为 ${STATE_LABELS[toState]}`);
           onStateTransition?.(subtask.id, toState, masteryLevel);
           loadRelatedData();
         }
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "状态切换失败";
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: message,
-        });
+        const errorMessage = error instanceof Error ? error.message : "状态切换失败";
+        message.error(errorMessage);
       } finally {
         setTransitioningState(null);
       }
@@ -142,18 +136,12 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
       const response = await subtasksApi.updateMastery(taskId, subtask.id, masteryLevel);
 
       if (response.success) {
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: "掌握度已更新",
-        });
+        message.success("掌握度已更新");
         onMasteryUpdate?.(subtask.id, masteryLevel);
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "掌握度更新失败";
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      const errorMessage = error instanceof Error ? error.message : "掌握度更新失败";
+      message.error(errorMessage);
     } finally {
       setIsSaving(false);
     }

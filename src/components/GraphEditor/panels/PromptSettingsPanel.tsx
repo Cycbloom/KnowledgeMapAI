@@ -21,6 +21,18 @@ interface PromptSettingsPanelProps {
   scope: "user" | "graph";
 }
 
+interface PromptTemplateEntry {
+  code: string;
+  template_content?: string;
+  [key: string]: unknown;
+}
+
+interface PromptTemplates {
+  system: PromptTemplateEntry[];
+  user: PromptTemplateEntry[];
+  graph: PromptTemplateEntry[];
+}
+
 const PROMPT_NAME_MAP: Record<string, string> = {
   expand_knowledge: "知识扩展 (Expand Knowledge)",
   generate_cards: "生成卡片 (Generate Cards - Generic)",
@@ -213,7 +225,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
   scope,
 }) => {
   const { t, i18n } = useTranslation();
-  const [templates, setTemplates] = useState<any>({
+  const [templates, setTemplates] = useState<PromptTemplates>({
     system: [],
     user: [],
     graph: [],
@@ -237,7 +249,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     setLoading(true);
     try {
       const data = await api.prompts.list(graphId);
-      setTemplates(data);
+      setTemplates(data as PromptTemplates);
     } catch (error) {
       console.error(error);
     } finally {
@@ -250,19 +262,22 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphId, scope]);
 
-  const getEffectiveTemplate = (code: string) => {
+  const getEffectiveTemplate = (code: string): PromptTemplateEntry & { source: string } => {
     // If scope is graph, check graph -> user -> system
     if (scope === "graph") {
-      const graphTemp = templates.graph.find((t: any) => t.code === code);
+      const graphTemp = templates.graph.find((t) => t.code === code);
       if (graphTemp) return { ...graphTemp, source: "Graph" };
     }
 
     // If scope is user (or fallback for graph), check user -> system
-    const userTemp = templates.user.find((t: any) => t.code === code);
+    const userTemp = templates.user.find((t) => t.code === code);
     if (userTemp) return { ...userTemp, source: "User" };
 
-    const sysTemp = templates.system.find((t: any) => t.code === code);
-    return { ...(sysTemp || {}), source: "System" };
+    const sysTemp = templates.system.find((t) => t.code === code);
+    if (sysTemp) {
+      return { ...sysTemp, source: "System" };
+    }
+    return { code, template_content: "", source: "System" };
   };
 
   const handleSave = async (content: string) => {
@@ -291,7 +306,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
           isDangerous: true,
         })
       ) {
-        await api.prompts.reset(effective.id);
+        await api.prompts.reset(effective.id as string);
         fetchTemplates();
       }
     }
@@ -467,10 +482,10 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
                           >
                             {getSourceName(effective.source)}
                           </span>
-                          {effective.updated_at && (
+                          {typeof effective.updated_at === 'string' && effective.updated_at && (
                             <span className="text-gray-400">
                               更新于:{" "}
-                              {formatDate(effective.updated_at, "short")}
+                              {formatDate(effective.updated_at as string, "short")}
                             </span>
                           )}
                         </div>

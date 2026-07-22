@@ -26,7 +26,7 @@ export const backupApi = {
     });
     
     if (!response.ok) {
-      throw new AppError('导出失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
+      throw new AppError('Export failed', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     return response.blob();
@@ -43,7 +43,7 @@ export const backupApi = {
     });
     
     if (!response.ok) {
-      throw new AppError('获取快照列表失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
+      throw new AppError('Failed to get snapshot list', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     const data = await response.json();
@@ -64,7 +64,7 @@ export const backupApi = {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new AppError(errorData.error || '创建快照失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
+      throw new AppError(errorData.error || 'Failed to create snapshot', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     return response.json();
@@ -82,7 +82,7 @@ export const backupApi = {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new AppError(errorData.error || '删除快照失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
+      throw new AppError(errorData.error || 'Failed to delete snapshot', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     return response.json();
@@ -100,13 +100,13 @@ export const backupApi = {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new AppError(errorData.error || '恢复快照失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
+      throw new AppError(errorData.error || 'Failed to restore snapshot', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     return response.json();
   },
 
-  import: async (data: any, mode: 'merge' | 'replace' = 'merge') => {
+  import: async (data: unknown, mode: 'merge' | 'replace' = 'merge') => {
     const token = useStore.getState().token;
     const response = await fetch(`${API_URL}/backup/import?mode=${encodeURIComponent(mode)}`, {
       method: 'POST',
@@ -120,7 +120,7 @@ export const backupApi = {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new AppError(errorData.error || '导入失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
+      throw new AppError(errorData.error || 'Import failed', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
     }
     
     return response.json();

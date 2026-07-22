@@ -53,12 +53,12 @@ const LEVEL_ICONS: Record<NodeLevel, React.ReactNode> = {
   leaf: <Leaf size={14} />,
 };
 
-const LEVEL_LABELS: Record<NodeLevel, string> = {
-  root: "根节点",
-  core: "核心",
-  sub: "次级",
-  normal: "普通",
-  leaf: "叶子",
+const LEVEL_LABEL_KEYS: Record<NodeLevel, string> = {
+  root: "conceptAggregation.hierarchy.level.root",
+  core: "conceptAggregation.hierarchy.level.core",
+  sub: "conceptAggregation.hierarchy.level.sub",
+  normal: "conceptAggregation.hierarchy.level.normal",
+  leaf: "conceptAggregation.hierarchy.level.leaf",
 };
 
 const LEVEL_COLORS: Record<NodeLevel, string> = {
@@ -215,7 +215,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <span
           className={`flex-shrink-0 text-xs px-1.5 py-0.5 rounded ${LEVEL_BG_COLORS[node.level]}`}
         >
-          {LEVEL_LABELS[node.level]}
+          {t(LEVEL_LABEL_KEYS[node.level])}
         </span>
 
         {showTooltip && (
@@ -228,11 +228,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 <span className={LEVEL_COLORS[node.level]}>
                   {LEVEL_ICONS[node.level]}
                 </span>
-                <span>{LEVEL_LABELS[node.level]}</span>
+                <span>{t(LEVEL_LABEL_KEYS[node.level])}</span>
               </div>
               {node.confidence !== undefined && (
                 <div className="text-xs text-slate-500 dark:text-slate-400">
-                  置信度:{" "}
+                  {t("conceptAggregation.hierarchy.confidence")}{" "}
                   <span
                     className={
                       confidenceLevel === "high"
@@ -248,7 +248,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               )}
               {hasChildren && (
                 <div className="text-xs text-slate-500 dark:text-slate-400">
-                  子节点: {node.children?.length} 个
+                  {t("conceptAggregation.hierarchy.childCount", { count: node.children?.length ?? 0 })}
                 </div>
               )}
             </div>
@@ -293,8 +293,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   onConfirmRelation(suggestion.id);
                 }}
                 className="p-1 rounded hover:bg-green-100 dark:hover:bg-green-900/30 text-green-500 transition-colors"
-                title="确认关系"
-                aria-label="确认关系"
+                title={t("conceptAggregation.hierarchy.confirmRelation")}
+                aria-label={t("conceptAggregation.hierarchy.confirmRelation")}
               >
                 <Check size={12} />
               </button>
@@ -304,8 +304,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   onRejectRelation(suggestion.id);
                 }}
                 className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors"
-                title="拒绝关系"
-                aria-label={t('common.aria.close')}
+                title={t("conceptAggregation.hierarchy.rejectRelation")}
+                aria-label={t("conceptAggregation.hierarchy.rejectRelation")}
               >
                 <X size={12} />
               </button>
@@ -417,12 +417,12 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
         <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1">
             <Info size={12} />
-            共 {totalNodes} 个节点
+            {t("conceptAggregation.hierarchy.totalNodes", { count: totalNodes })}
           </span>
           {suggestions.length > 0 && (
             <span className="flex items-center gap-1 text-amber-500">
               <Sparkles size={12} />
-              {suggestions.length} 条建议
+              {t("conceptAggregation.hierarchy.suggestionsCount", { count: suggestions.length })}
             </span>
           )}
         </div>
@@ -431,14 +431,14 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
             onClick={expandAll}
             className="px-2 py-1 text-xs rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors"
           >
-            全部展开
+            {t("conceptAggregation.hierarchy.expandAll")}
           </button>
           <span className="text-slate-300 dark:text-slate-600">|</span>
           <button
             onClick={collapseAll}
             className="px-2 py-1 text-xs rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors"
           >
-            全部折叠
+            {t("conceptAggregation.hierarchy.collapseAll")}
           </button>
         </div>
       </div>
@@ -464,15 +464,15 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
         <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1">
             <span className="w-4 h-0.5 bg-slate-400" />
-            高置信度 ≥85%
+            {t("conceptAggregation.hierarchy.highConfidence")}
           </span>
           <span className="flex items-center gap-1">
             <span className="w-4 h-0.5 border-t border-dashed border-slate-400" />
-            中置信度 ≥70%
+            {t("conceptAggregation.hierarchy.mediumConfidence")}
           </span>
           <span className="flex items-center gap-1">
             <span className="w-4 h-0.5 border-t border-dotted border-slate-300" />
-            低置信度 &lt;70%
+            {t("conceptAggregation.hierarchy.lowConfidence")}
           </span>
         </div>
       </div>

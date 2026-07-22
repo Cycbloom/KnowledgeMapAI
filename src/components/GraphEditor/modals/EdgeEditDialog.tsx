@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Save, Palette, Minus, ArrowRight } from 'lucide-react';
 import type { Edge, EdgeLineStyle, RelationshipTypeConfig } from '../../../types';
 import { RELATIONSHIP_CATEGORY_LABELS } from '../../../config/relationshipTypes';
@@ -46,6 +47,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
   onSave,
   relationshipTypes
 }) => {
+  const { t } = useTranslation();
   const [label, setLabel] = useState('');
   const [relationshipType, setRelationshipType] = useState('');
   const [customColor, setCustomColor] = useState('');
@@ -179,10 +181,10 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                 >
                   <option value="">选择关系类型</option>
                   {Object.entries(groupedRelationshipTypes).map(([category, types]) => (
-                    <optgroup key={category} label={RELATIONSHIP_CATEGORY_LABELS[category as keyof typeof RELATIONSHIP_CATEGORY_LABELS] || category}>
+                    <optgroup key={category} label={t(RELATIONSHIP_CATEGORY_LABELS[category as keyof typeof RELATIONSHIP_CATEGORY_LABELS]) || category}>
                       {types.map((type) => (
                         <option key={type.id} value={type.name}>
-                          {type.display_name}
+                          {t(type.display_name)}
                         </option>
                       ))}
                     </optgroup>

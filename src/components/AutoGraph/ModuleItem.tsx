@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Trash2 } from "lucide-react";
 import type { BackboneModuleCustomConfig } from "@shared/types/graph";
 import { ColorPicker } from "./ColorPicker";
@@ -21,6 +22,7 @@ const ModuleItemComponent: React.FC<ModuleItemProps> = ({
   canDelete,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.slice(0, 20);
     onChange({ ...module, title: value });
@@ -59,7 +61,7 @@ const ModuleItemComponent: React.FC<ModuleItemProps> = ({
               onChange={handleTitleChange}
               disabled={disabled}
               maxLength={20}
-              placeholder="模块名称"
+              placeholder={t("autoGraph.module.namePlaceholder")}
               className={`
                 w-full px-2 py-1.5 text-xs border rounded-md transition-colors
                 bg-white dark:bg-slate-700
@@ -90,7 +92,7 @@ const ModuleItemComponent: React.FC<ModuleItemProps> = ({
             onChange={handleDescriptionChange}
             disabled={disabled}
             maxLength={100}
-            placeholder="模块描述（可选）"
+            placeholder={t("autoGraph.module.descriptionPlaceholder")}
             className={`
               w-full px-2 py-1.5 text-xs border rounded-md transition-colors
               bg-white dark:bg-slate-700
@@ -115,8 +117,8 @@ const ModuleItemComponent: React.FC<ModuleItemProps> = ({
                 : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
             }
           `}
-          aria-label={canDelete ? "删除模块" : "至少保留 3 个模块"}
-          title={canDelete ? "删除模块" : "至少保留 3 个模块"}
+          aria-label={canDelete ? t("autoGraph.module.deleteModule") : t("autoGraph.module.keepAtLeast3")}
+          title={canDelete ? t("autoGraph.module.deleteModule") : t("autoGraph.module.keepAtLeast3")}
         >
           <Trash2 size={14} />
         </button>

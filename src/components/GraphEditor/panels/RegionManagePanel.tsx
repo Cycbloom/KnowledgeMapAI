@@ -51,7 +51,7 @@ export const RegionManagePanel = React.memo(function RegionManagePanel({
             isCollapsed: false,
           });
         }
-        regionMap.get(module)!.nodes.push(node);
+        regionMap.get(module)?.nodes.push(node);
       }
     });
 

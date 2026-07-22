@@ -6,13 +6,18 @@ import { getNextLevel } from "../../utils/levelUtils";
 import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
 import { pricingService } from "../ai/pricingService";
 import { notDeleted } from '../common/softDeleteHelper';
+import type { AIProvider } from "@shared/types";
+
+interface KPTitleRef {
+  knowledge_points?: { title?: string } | { title?: string }[] | null;
+}
 
 export async function getAutoGraphPrompt(
   supabase: SupabaseClient,
   userId: string,
   graphId: string,
   type: "init" | "expand",
-  data: any,
+  data: Record<string, unknown>,
 ): Promise<string> {
   const templateCode =
     type === "init" ? "auto_graph_init" : "auto_graph_expand";
@@ -31,7 +36,7 @@ export async function generateNodesForGraph(
   topic: string,
   description: string | undefined,
   depth: number,
-  provider: any,
+  provider: AIProvider,
   userId?: string,
   sessionId?: string,
 ): Promise<number> {
@@ -46,7 +51,7 @@ export async function generateNodesForGraph(
       );
 
     const existingNodeTitles = new Set<string>();
-    existingNodes?.forEach((gn: any) => {
+    existingNodes?.forEach((gn: KPTitleRef) => {
       const kp = Array.isArray(gn.knowledge_points)
         ? gn.knowledge_points[0]
         : gn.knowledge_points;
@@ -221,7 +226,7 @@ export async function expandNodeForGraph(
   parentNodeContent: string | undefined,
   parentLevel: string,
   remainingDepth: number,
-  provider: any,
+  provider: AIProvider,
   userId?: string,
   sessionId?: string,
 ): Promise<number> {
@@ -238,7 +243,7 @@ export async function expandNodeForGraph(
       );
 
     const existingChildTitles = new Set<string>();
-    existingChildEdges?.forEach((edge: any) => {
+    existingChildEdges?.forEach((edge: KPTitleRef) => {
       const kp = Array.isArray(edge.knowledge_points)
         ? edge.knowledge_points[0]
         : edge.knowledge_points;

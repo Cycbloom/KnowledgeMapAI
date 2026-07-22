@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Node, Edge } from '../../types';
 import type { UpdateNodeData } from '@shared/types/api';
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { api } from '../../services/api';
 import { isNetworkError, wrapUnknownError } from '../../utils/errors';
 import { queryKeys } from '../queries/config';
@@ -81,12 +81,12 @@ export const useContentGeneration = (options: UseContentGenerationOptions) => {
         }
       );
       state.setAiPrompt('');
-      frontendEventBus.publish("message_show", { content: t('graphAI.content.completed'), type: 'success' });
+      message.success(t('toast.graphAI.content.completed'));
     } catch (err) {
       const appError = wrapUnknownError(err);
       console.error('[handleAIGenerate]', appError);
-      const errorMsg = isNetworkError(err) ? t('graphAI.content.networkError') : t('graphAI.content.failed');
-      frontendEventBus.publish("message_show", { content: errorMsg, type: 'error' });
+      const errorMsg = isNetworkError(err) ? t('toast.graphAI.content.networkError') : t('toast.graphAI.content.failed');
+      message.error(errorMsg);
     } finally {
       state.setLoading(false);
     }
@@ -95,16 +95,16 @@ export const useContentGeneration = (options: UseContentGenerationOptions) => {
   const handleGenerateNodeContent = useCallback(async () => {
     if (!selectedNode || !id) return;
     state.setLoading(true);
-    frontendEventBus.publish("message_show", { content: t('graphAI.content.started'), type: 'info' });
-    
+    message.info(t('toast.graphAI.content.started'));
+
     try {
       const prompt = `请详细解释 ${selectedNode.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如"好的"、"作为..."）、结束语或无关的对话内容。`;
-      
+
       let generatedContent = '';
-      
+
       await api.ai.generateContentStream(
-        { 
-          topic: selectedNode.title || '', 
+        {
+          topic: selectedNode.title || '',
           context: prompt,
           level: selectedNode.level
         },
@@ -119,13 +119,13 @@ export const useContentGeneration = (options: UseContentGenerationOptions) => {
           graphId: id,
           data: { content: generatedContent }
         });
-        
-        frontendEventBus.publish("message_show", { content: t('graphAI.content.completed'), type: 'success' });
+
+        message.success(t('toast.graphAI.content.completed'));
         queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
       }
     } catch (err) {
       console.error(err);
-      frontendEventBus.publish("message_show", { content: t('graphAI.content.failed'), type: 'error' });
+      message.error(t('toast.graphAI.content.failed'));
     } finally {
       state.setLoading(false);
     }

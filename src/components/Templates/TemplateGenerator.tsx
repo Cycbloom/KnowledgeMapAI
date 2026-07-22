@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { api } from "../../services/api";
 import type { GeneratedTemplate } from "../../services/api/autoGraph";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { useError, useIsMobile, useTheme } from "../../hooks";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import type {
@@ -440,10 +440,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
 
   const handleGenerateTemplates = useCallback(async () => {
     if (!topic.trim()) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("templates.message.enterTopic"),
-      });
+      message.warning(t("toast.templates.enterTopic"));
       return;
     }
 
@@ -462,17 +459,13 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
       if (result.templates && result.templates.length > 0) {
         setTemplates(result.templates);
         setStep("templates");
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("templates.generator.templateGenerated", {
+        message.success(
+          t("templates.generator.templateGenerated", {
             count: result.templates.length,
           }),
-        });
+        );
       } else {
-        frontendEventBus.publish("message_show", {
-          type: "warning",
-          content: t("templates.generator.generateFailed"),
-        });
+        message.warning(t("templates.generator.generateFailed"));
       }
     } catch (error) {
       handleError(error, {
@@ -491,18 +484,12 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
 
   const handleApplyTemplate = useCallback(async () => {
     if (!selectedTemplate || !graphId) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("templates.message.selectTemplate"),
-      });
+      message.warning(t("toast.templates.selectTemplate"));
       return;
     }
 
     if (style === "custom" && !customPrompt.trim()) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("templates.message.enterCustomRules"),
-      });
+      message.warning(t("toast.templates.enterCustomRules"));
       return;
     }
 
@@ -517,16 +504,13 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
         graph_id: graphId,
       }) as { nodes: unknown[]; edges: unknown[] };
 
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("templates.generator.applySuccess"),
-      });
+      message.success(t("templates.generator.applySuccess"));
       onTemplateApplied?.(result.nodes, result.edges);
       onClose?.();
     } catch (error) {
       handleError(error, {
         context: "ApplyTemplate",
-        fallbackMessage: t("templates.message.applyFailed"),
+        fallbackMessage: t("toast.templates.applyFailed"),
       });
     } finally {
       setIsApplying(false);
@@ -561,14 +545,11 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
         tags: selectedTemplate.tags,
       });
 
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("templates.message.saveToLibrarySuccess"),
-      });
+      message.success(t("toast.templates.saveToLibrarySuccess"));
     } catch (error) {
       handleError(error, {
         context: "SaveTemplate",
-        fallbackMessage: t("templates.message.saveFailed"),
+        fallbackMessage: t("toast.templates.saveFailed"),
       });
     } finally {
       setIsSaving(false);

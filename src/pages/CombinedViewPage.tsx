@@ -162,8 +162,8 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
   const mergedEdges: MergedEdge[] = useMemo(() => {
     return hookMergedEdges.map(edge => ({
       ...edge,
-      graphId: (edge as any).graphId || '',
-      color: getGraphColor((edge as any).graphId || ''),
+      graphId: edge.graphId || '',
+      color: getGraphColor(edge.graphId || ''),
     }));
   }, [hookMergedEdges, getGraphColor]);
 

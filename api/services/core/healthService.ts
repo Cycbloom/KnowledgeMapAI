@@ -2,6 +2,15 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "../../supabase";
 import { notDeleted } from '../common/softDeleteHelper';
 
+interface HealthGraphNode {
+  knowledge_point_id: string;
+  x_position?: number;
+  y_position?: number;
+  level?: string;
+  graph_id?: string;
+  knowledge_points?: { id: string; title?: string; content?: string | null }[] | null;
+}
+
 export interface OverviewData {
   totalGraphs: number;
   totalNodes: number;
@@ -107,7 +116,8 @@ export class HealthService {
           });
         }
 
-        const np = nodeProgress.get(card.knowledge_point_id)!;
+        const np = nodeProgress.get(card.knowledge_point_id);
+        if (!np) return;
         if (mastery > 0.8) np.mastered++;
         else if (mastery > 0.3) np.learning++;
         else np.new++;
@@ -221,7 +231,7 @@ export class HealthService {
 
     const nodeIds =
       graphNodes?.map(
-        (gn: any) => gn.knowledge_points?.id || gn.knowledge_point_id,
+        (gn: HealthGraphNode) => gn.knowledge_points?.[0]?.id || gn.knowledge_point_id,
       ) || [];
 
     const { data: studyCards } = await supabase
@@ -243,13 +253,16 @@ export class HealthService {
         if (!nodeMastery.has(nodeId)) {
           nodeMastery.set(nodeId, []);
         }
-        nodeMastery.get(nodeId)!.push(mastery);
+        const masteryList = nodeMastery.get(nodeId);
+        if (masteryList) {
+          masteryList.push(mastery);
+        }
       });
     }
 
     const heatmap: HeatmapItem[] =
-      graphNodes?.map((gn: any) => {
-        const nodeId = gn.knowledge_points?.id || gn.knowledge_point_id;
+      graphNodes?.map((gn: HealthGraphNode) => {
+        const nodeId = gn.knowledge_points?.[0]?.id || gn.knowledge_point_id;
         const masteries = nodeMastery.get(nodeId) || [];
         const avgMastery =
           masteries.length > 0
@@ -259,10 +272,10 @@ export class HealthService {
 
         return {
           id: nodeId,
-          title: gn.knowledge_points?.title || "",
-          level: gn.level,
-          x: gn.x_position,
-          y: gn.y_position,
+          title: gn.knowledge_points?.[0]?.title || "",
+          level: Number(gn.level) || 0,
+          x: gn.x_position ?? 0,
+          y: gn.y_position ?? 0,
           mastery: Math.round(avgMastery * 100),
           status:
             avgMastery > 0.8
@@ -310,15 +323,15 @@ export class HealthService {
 
     const nodeIds =
       graphNodes?.map(
-        (gn: any) => gn.knowledge_points?.id || gn.knowledge_point_id,
+        (gn: HealthGraphNode) => gn.knowledge_points?.[0]?.id || gn.knowledge_point_id,
       ) || [];
     const nodeMap = new Map(
-      graphNodes?.map((gn: any) => [
-        gn.knowledge_points?.id || gn.knowledge_point_id,
+      graphNodes?.map((gn: HealthGraphNode) => [
+        gn.knowledge_points?.[0]?.id || gn.knowledge_point_id,
         {
-          id: gn.knowledge_points?.id || gn.knowledge_point_id,
-          title: gn.knowledge_points?.title || "",
-          content: gn.knowledge_points?.content || "",
+          id: gn.knowledge_points?.[0]?.id || gn.knowledge_point_id,
+          title: gn.knowledge_points?.[0]?.title || "",
+          content: gn.knowledge_points?.[0]?.content || "",
           level: gn.level,
           graph_id: gn.graph_id,
         },
@@ -361,7 +374,8 @@ export class HealthService {
           });
         }
 
-        const stats = nodeStats.get(nodeId)!;
+        const stats = nodeStats.get(nodeId);
+        if (!stats) return;
         stats.mastery.push(mastery);
         stats.reviewCount = Math.max(stats.reviewCount, card.review_count || 0);
         stats.cards++;
@@ -448,7 +462,7 @@ export class HealthService {
       .in("graph_id", graphIds)
       );
 
-    const nodeIds = graphNodes?.map((gn: any) => gn.knowledge_point_id) || [];
+    const nodeIds = graphNodes?.map((gn: HealthGraphNode) => gn.knowledge_point_id) || [];
 
     const { data: studyCards } = await supabase
       .from("study_cards")

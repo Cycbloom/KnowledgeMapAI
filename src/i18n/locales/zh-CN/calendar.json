@@ -36,7 +36,6 @@
   "cancel": "取消",
   "create": "创建任务",
   "taskCreated": "任务创建成功!",
-  "taskCreateFailed": "创建任务失败",
   "taskTimeUpdated": "任务时间已更新!",
   "taskTimeUpdateFailed": "更新任务时间失败",
   "enterTaskTitle": "请输入任务标题",
@@ -46,9 +45,6 @@
   "copyWebCalLink": "复制 WebCal 订阅链接",
   "copyWebCalLinkDesc": "在日历应用中添加订阅链接，自动同步更新",
   "huaweiTip": "💡 华为手机用户：打开\"日历\"应用 → 点击右上角菜单 → 选择\"订阅日历\" → 粘贴 WebCal 链接",
-  "calendarExported": "日历已导出!",
-  "exportFailed": "导出失败",
-  "webcalCopied": "WebCal 链接已复制!",
   "unknownTask": "未知任务",
   "noActivityTitle": "暂无活动记录",
   "noActivityDesc": "开始学习后，活动时间线会显示在这里",
@@ -62,5 +58,11 @@
     "sat": "六"
   },
   "moreEvents": "+{{count}} 更多",
-  "activitySummary": "{{count}}项 · {{minutes}}分钟"
+  "activitySummary": "{{count}}项 · {{minutes}}分钟",
+  "subtask": {
+    "more": "+{{count}} 更多",
+    "estimatedDuration": "预计 {{minutes}} 分钟",
+    "hiddenCount": "+{{count}} 个子任务",
+    "collapse": "收起"
+  }
 }

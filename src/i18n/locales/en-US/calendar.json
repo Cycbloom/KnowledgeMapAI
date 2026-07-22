@@ -36,7 +36,6 @@
   "cancel": "Cancel",
   "create": "Create Task",
   "taskCreated": "Task created successfully!",
-  "taskCreateFailed": "Failed to create task",
   "taskTimeUpdated": "Task time updated!",
   "taskTimeUpdateFailed": "Failed to update task time",
   "enterTaskTitle": "Please enter task title",
@@ -46,9 +45,6 @@
   "copyWebCalLink": "Copy WebCal Subscription Link",
   "copyWebCalLinkDesc": "Add subscription link in calendar app for auto sync",
   "huaweiTip": "💡 Huawei users: Open Calendar app → Tap menu (top right) → Select \"Subscribe to calendar\" → Paste WebCal link",
-  "calendarExported": "Calendar exported!",
-  "exportFailed": "Export failed",
- "webcalCopied": "WebCal link copied!",
   "unknownTask": "Unknown Task",
   "noActivityTitle": "No Activity Records",
   "noActivityDesc": "Your activity timeline will appear here once you start learning",
@@ -62,5 +58,11 @@
     "sat": "Sat"
   },
   "moreEvents": "+{{count}} more",
-  "activitySummary": "{{count}} items · {{minutes}} min"
+  "activitySummary": "{{count}} items · {{minutes}} min",
+  "subtask": {
+    "more": "+{{count}} more",
+    "estimatedDuration": "Est. {{minutes}} min",
+    "hiddenCount": "+{{count}} subtasks",
+    "collapse": "Collapse"
+  }
 }

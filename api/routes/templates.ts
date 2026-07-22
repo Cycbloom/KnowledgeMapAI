@@ -36,8 +36,11 @@ const router = Router();
 
 router.get("/", optionalAuth, async (req: OptionalAuthRequest, res: Response) => {
   const { category } = req.query;
+  if (!req.supabase) {
+    throw new AppError("Supabase client not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+  }
   const data = await graphTemplateService.getTemplates(
-    req.supabase!,
+    req.supabase,
     category as string,
   );
   res.json(data);
@@ -49,7 +52,10 @@ router.get(
   validate({ params: uuidParamsSchema }),
   async (req: OptionalAuthRequest, res: Response) => {
     const { id } = req.params;
-    const data = await graphTemplateService.getTemplate(req.supabase!, id);
+    if (!req.supabase) {
+      throw new AppError("Supabase client not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+    const data = await graphTemplateService.getTemplate(req.supabase, id);
     if (!data) {
       throw new AppError("未找到该模板", 404, ErrorCodes.RESOURCE_TEMPLATE_NOT_FOUND);
     }

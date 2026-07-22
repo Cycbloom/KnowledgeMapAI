@@ -35,14 +35,14 @@ export const mobileAIService = {
   setConfig: (config: MobileAIUserConfig): void => {
     if (!config.apiKey || config.apiKey.trim() === "") {
       logger.error("[MobileAIService.setConfig] API Key 不能为空");
-      throw new AppError("API Key 不能为空", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
+      throw new AppError("API Key cannot be empty", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
     }
     if (!isValidProvider(config.provider)) {
       logger.error(
         "[MobileAIService.setConfig] 无效的 Provider:",
         config.provider,
       );
-      throw new AppError(`不支持的 AI 服务商: ${config.provider}`, SharedErrorCodes.VALIDATION_ERROR, 400);
+      throw new AppError(`Unsupported AI provider: ${config.provider}`, SharedErrorCodes.VALIDATION_ERROR, 400);
     }
     storeAIConfig(config);
   },
@@ -325,7 +325,7 @@ Important:
     const client = createAIClient();
     if (!client) {
       logger.error("[MobileAIService.generateLearningMaterial] AI 服务未配置");
-      throw new AppError("AI 服务未配置，请先在设置中配置 API Key", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
+      throw new AppError("AI service not configured, please configure API Key in settings first", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
     }
 
     const isEnglish = options.language === "en-US" || options.language === "en";
@@ -369,7 +369,7 @@ ${options.level ? `知识水平：${options.level}` : ""}
         error,
       );
       throw new AppError(
-        `生成学习资料失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        `Failed to generate learning material: ${error instanceof Error ? error.message : "unknown error"}`,
         SharedErrorCodes.AI_INVALID_RESPONSE,
         502,
       );
@@ -388,7 +388,7 @@ ${options.level ? `知识水平：${options.level}` : ""}
   ): Promise<{ suggestions: Array<{ title: string; content: string }> }> => {
     const client = createAIClient();
     if (!client) {
-      throw new AppError("AI 服务未配置，请先在设置中配置 API Key", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
+      throw new AppError("AI service not configured, please configure API Key in settings first", SharedErrorCodes.AI_PROVIDER_NOT_CONFIGURED, 500);
     }
 
     const existingNodesContext =
@@ -447,7 +447,7 @@ Please respond in Chinese.`;
         error,
       );
       throw new AppError(
-        `扩展知识节点失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        `Failed to expand knowledge node: ${error instanceof Error ? error.message : "unknown error"}`,
         SharedErrorCodes.AI_INVALID_RESPONSE,
         502,
       );

@@ -5,6 +5,7 @@ import { uuidParamsSchema, createRelationshipTypeSchema, updateRelationshipTypeS
 import { relationshipTypeService } from '../services/graph';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { AppError } from '../middleware/errorHandler';
+import type { RelationshipCategory } from '@shared/types';
 
 const router = Router();
 
@@ -18,15 +19,15 @@ router.get(
   requireAuth,
   async (req: AuthedRequest, res: Response) => {
     const { category } = req.params;
-    const validCategories = ['hierarchical', 'dependency', 'semantic', 'temporal', 'interaction', 'causal', 'custom'];
-    
-    if (!validCategories.includes(category)) {
+    const validCategories: RelationshipCategory[] = ['hierarchical', 'dependency', 'semantic', 'temporal', 'interaction', 'causal', 'custom'];
+
+    if (!validCategories.includes(category as RelationshipCategory)) {
       throw new AppError('无效的分类', 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const types = await relationshipTypeService.getByCategory(
       req.supabase,
-      category as any,
+      category as RelationshipCategory,
       req.user.id
     );
     res.json({ data: types });

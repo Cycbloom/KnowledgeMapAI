@@ -15,7 +15,6 @@
     "in_progress": "In Progress",
     "completed": "Completed"
   },
-  "loadTasksFailed": "Failed to load tasks, please retry later",
   "errorDetails": "Details",
   "retry": "Retry",
   "loading": "Loading...",
@@ -53,12 +52,6 @@
   "showing": "Showing {{start}} - {{end}} of {{total}}",
   "deleteTask": "Delete Task",
   "deleteTaskConfirm": "Are you sure you want to delete this task? This action cannot be undone.",
-  "taskRetried": "Task resubmitted",
-  "retryFailed": "Retry failed",
-  "taskDeleted": "Task deleted",
-  "deleteFailed": "Delete failed",
-  "noTasksToExport": "No tasks to export",
-  "tasksExported": "Tasks exported",
   "autoGenerateQuestions": "Auto Generate Questions",
   "batchGenerateQuestions": "Batch Generate Questions",
   "autoExpandGraph": "Auto Expand Graph",
@@ -68,18 +61,39 @@
   "reviewGeneration": "Review task generation",
   "searchPlaceholder": "Search tasks...",
   "noSearchResults": "No matching tasks found",
+  "clear": "Clear",
+  "exportAsCSV": "Export as CSV",
+  "openedGraph": "Graph opened. If not refreshed automatically, please wait or refresh the page manually.",
+  "enterLearningMode": "Learning mode started. You can now review the generated questions.",
   "selectMode": "Select",
   "exitSelectMode": "Exit Select",
   "selectedCount": "{{count}} selected",
   "selectAll": "Select All",
   "batchDelete": "Batch Delete",
   "batchDeleteConfirm": "Are you sure you want to delete {{count}} selected tasks? This action cannot be undone.",
-  "batchDeleteSuccess": "Successfully deleted {{count}} tasks",
   "batchDeletePartial": "Deletion complete: {{success}} succeeded, {{fail}} failed",
   "cancelSelection": "Cancel Selection",
   "emptyDesc": "Tasks will appear here once created",
   "taskIdNotExist": "Task ID does not exist",
   "copy": {
     "idCopied": "Task ID copied"
+  },
+  "related": {
+    "loadingTasks": "Loading tasks...",
+    "title": "Related Tasks",
+    "taskCountSummary": "{{total}} tasks · {{completed}} completed",
+    "create": "Create",
+    "pendingCount": "Pending: {{count}}",
+    "inProgressCount": "In Progress: {{count}}",
+    "completedCount": "Completed: {{count}}",
+    "completionRate": "{{percent}}% completed",
+    "createNewTask": "Create New Task",
+    "progress": "Progress",
+    "deadline": {
+      "expired": "Overdue",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "inDays": "in {{days}} days"
+    }
   }
 }

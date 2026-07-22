@@ -68,7 +68,7 @@ export class EdgeService {
           );
         }
 
-        const edge = rpcResult.edge as Record<string, unknown>;
+        const edge = rpcResult.edge as Edge;
 
         // 记录版本事件
         await graphVersionService.recordEvent(
@@ -329,7 +329,7 @@ export class EdgeService {
     return edgeIds.length;
   }
 
-  private mapEdge(dbEdge: any): Edge {
+  private mapEdge(dbEdge: Edge): Edge {
     return {
       id: dbEdge.id,
       graph_id: dbEdge.graph_id,

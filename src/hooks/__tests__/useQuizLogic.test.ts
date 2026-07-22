@@ -1,19 +1,8 @@
-﻿// @vitest-environment jsdom
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useQuizLogic } from "../useQuizLogic";
-
-// 使用 vi.hoisted 确保 mock 在 vi.mock 工厂执行前已初始化
-const mocks = vi.hoisted(() => ({
-  publish: vi.fn(),
-}));
-
-// 注意：测试文件位于 __tests__/ 子目录，路径需要多一级 ../
-vi.mock("../../services/timer/FrontendEventBus", () => ({
-  frontendEventBus: {
-    publish: mocks.publish,
-  },
-}));
+import { message } from "../../utils/messageHelper";
 
 // Mock react-i18next：t 直接返回 key 便于断言
 vi.mock("react-i18next", () => ({
@@ -44,6 +33,7 @@ describe("useQuizLogic", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(message, "info").mockReturnValue("test-id");
   });
 
   it("应该返回三个 action 函数", () => {
@@ -67,7 +57,7 @@ describe("useQuizLogic", () => {
 
     expect(startCardReview).toHaveBeenCalledWith(allCards);
     expect(setViewState).toHaveBeenCalledWith("quiz");
-    expect(mocks.publish).not.toHaveBeenCalled();
+    expect(message.info).not.toHaveBeenCalled();
   });
 
   it("handleStartQuiz 应该在 due 模式下使用到期卡片", () => {
@@ -92,10 +82,7 @@ describe("useQuizLogic", () => {
 
     expect(startCardReview).not.toHaveBeenCalled();
     expect(setViewState).not.toHaveBeenCalled();
-    expect(mocks.publish).toHaveBeenCalledWith("message_show", {
-      content: "study.messages.noCardsToReview",
-      type: "info",
-    });
+    expect(message.info).toHaveBeenCalledWith("study.messages.noCardsToReview");
   });
 
   it("handleOptionClick 应该在未显示答案时设置选项并显示答案", () => {

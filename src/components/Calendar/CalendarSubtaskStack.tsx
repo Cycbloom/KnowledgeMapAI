@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { TaskSubtask } from "@shared/types";
@@ -22,6 +23,7 @@ export const CalendarSubtaskStack: React.FC<CalendarSubtaskStackProps> = ({
   compact = false,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = React.useState(false);
 
   if (!subtasks || subtasks.length === 0) {
@@ -91,7 +93,7 @@ export const CalendarSubtaskStack: React.FC<CalendarSubtaskStackProps> = ({
           <div
             className={`text-[10px] ${isDark ? "text-slate-500" : "text-gray-400"} pl-1`}
           >
-            +{subtasks.length - 2} 更多
+            {t("calendar.subtask.more", { count: subtasks.length - 2 })}
           </div>
         )}
       </div>
@@ -153,7 +155,7 @@ export const CalendarSubtaskStack: React.FC<CalendarSubtaskStackProps> = ({
                 <div
                   className={`text-[10px] mt-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}
                 >
-                  预计 {subtask.estimated_duration} 分钟
+                  {t("calendar.subtask.estimatedDuration", { minutes: subtask.estimated_duration })}
                 </div>
               )}
             </div>
@@ -180,7 +182,7 @@ export const CalendarSubtaskStack: React.FC<CalendarSubtaskStackProps> = ({
           `}
         >
           <ChevronDown size={12} />
-          <span>+{hiddenCount} 个子任务</span>
+          <span>{t("calendar.subtask.hiddenCount", { count: hiddenCount })}</span>
         </motion.button>
       )}
 
@@ -203,7 +205,7 @@ export const CalendarSubtaskStack: React.FC<CalendarSubtaskStackProps> = ({
           `}
         >
           <ChevronUp size={12} />
-          <span>收起</span>
+          <span>{t("calendar.subtask.collapse")}</span>
         </motion.button>
       )}
     </div>

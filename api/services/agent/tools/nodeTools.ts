@@ -281,13 +281,13 @@ export const getNodeRelationsTool: AgentTool = {
       nodeId,
       nodeTitle: kpCheck.title,
       upstreamNodes: upstreamNodes.map(n => ({
-        id: n.id!,
+        id: n.id ?? "",
         title: n.title,
         relationshipType: n.relationType,
         direction: 'upstream' as const,
       })),
       downstreamNodes: downstreamNodes.map(n => ({
-        id: n.id!,
+        id: n.id ?? "",
         title: n.title,
         relationshipType: n.relationType,
         direction: 'downstream' as const,

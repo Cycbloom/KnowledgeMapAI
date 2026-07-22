@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { X, History, RotateCcw, GitCompare, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { knowledgePointsApi } from '../../../services/api/knowledgePoints';
 import type { KnowledgePointVersionWithDiff, KnowledgePointVersionDiff } from '../../../types';
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message } from "../../../utils/messageHelper";
 import { formatDate as formatDateUtil } from '../../../utils/formatters';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { ModalShell } from '../../common';
@@ -53,7 +53,7 @@ export const VersionHistoryModal = ({
       setTotal(result.total);
     } catch (error) {
       console.error('Failed to load versions:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.versionHistory.loadFailed') });
+      message.error(t('graphEditor.versionHistory.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -71,12 +71,12 @@ export const VersionHistoryModal = ({
     setRollbackLoading(true);
     try {
       await knowledgePointsApi.rollbackVersion(knowledgePointId, versionNumber);
-      frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.versionHistory.rollbackSuccess', { version: versionNumber }) });
+      message.success(t('graphEditor.versionHistory.rollbackSuccess', { version: versionNumber }));
       loadVersions();
       onRollback?.();
     } catch (error) {
       console.error('Rollback failed:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.versionHistory.rollbackFailed') });
+      message.error(t('graphEditor.versionHistory.rollbackFailed'));
     } finally {
       setRollbackLoading(false);
     }
@@ -105,7 +105,7 @@ export const VersionHistoryModal = ({
       setCompareResult(result);
     } catch (error) {
       console.error('Compare failed:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.versionHistory.compareFailed') });
+      message.error(t('graphEditor.versionHistory.compareFailed'));
     } finally {
       setLoading(false);
     }

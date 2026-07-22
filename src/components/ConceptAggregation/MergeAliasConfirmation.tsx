@@ -65,13 +65,13 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
           <div className="flex items-center gap-2">
             <GitMerge className="text-primary-500" size={20} />
             <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-              合并别名确认
+              {t("conceptAggregation.mergeAlias.title")}
             </h3>
           </div>
           <button
             onClick={onCancel}
             className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
-            aria-label="关闭"
+            aria-label={t("conceptAggregation.mergeAlias.close")}
           >
             <X size={18} className="text-slate-500" />
           </button>
@@ -80,7 +80,7 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
         <div className="p-4 space-y-4">
           <div className="bg-primary-50 dark:bg-primary-900/20 p-3 rounded-lg">
             <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
-              目标节点
+              {t("conceptAggregation.mergeAlias.targetNode")}
             </div>
             <div className="font-medium text-slate-800 dark:text-slate-200">
               {targetTitle}
@@ -90,21 +90,21 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                以下概念将被合并并转为别名：
+                {t("conceptAggregation.mergeAlias.mergeHint")}
               </div>
               <div className="flex items-center gap-2 text-xs">
                 <button
                   onClick={handleSelectAll}
                   className="text-primary-600 dark:text-primary-400 hover:underline"
                 >
-                  全选
+                  {t("conceptAggregation.mergeAlias.selectAll")}
                 </button>
                 <span className="text-slate-300">|</span>
                 <button
                   onClick={handleDeselectAll}
                   className="text-slate-500 dark:text-slate-400 hover:underline"
                 >
-                  取消全选
+                  {t("conceptAggregation.mergeAlias.deselectAll")}
                 </button>
               </div>
             </div>
@@ -128,7 +128,7 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
                         handleToggleAlias(title);
                       }}
                       className="flex-shrink-0"
-                      aria-label={`选择 ${title}`}
+                      aria-label={t("conceptAggregation.mergeAlias.selectItem", { name: title })}
                     >
                       {isSelected ? (
                         <CheckSquare
@@ -155,7 +155,7 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
 
                     {isSelected && (
                       <span className="text-xs px-1.5 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">
-                        别名
+                        {t("conceptAggregation.mergeAlias.aliasLabel")}
                       </span>
                     )}
                   </label>
@@ -175,11 +175,7 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
             <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/30 p-2.5 rounded-lg">
               <AlertCircle size={14} />
               <span>
-                已选择{' '}
-                <span className="font-medium text-primary-600 dark:text-primary-400">
-                  {selectedCount}
-                </span>{' '}
-                个概念作为别名
+                {t("conceptAggregation.mergeAlias.selectedCount", { count: selectedCount })}
               </span>
             </div>
           )}
@@ -187,7 +183,7 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
 
         <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
           <Button variant="ghost" size="sm" onClick={onCancel}>
-            取消
+            {t("conceptAggregation.mergeAlias.cancel")}
           </Button>
           <Button
             variant="primary"
@@ -195,7 +191,9 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
             onClick={handleConfirm}
             disabled={selectedCount === 0}
           >
-            确认合并{selectedCount > 0 ? ` (${selectedCount})` : ''}
+            {selectedCount > 0
+              ? t("conceptAggregation.mergeAlias.confirmWithCount", { count: selectedCount })
+              : t("conceptAggregation.mergeAlias.confirm")}
           </Button>
         </div>
       </div>

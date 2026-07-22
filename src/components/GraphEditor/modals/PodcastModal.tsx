@@ -14,7 +14,7 @@ import { CodeBlock } from "../../common/CodeBlock";
 import { useTextToSpeech, useTheme, useFocusTrap, useEscapeKey } from "../../../hooks";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message } from "../../../utils/messageHelper";
 import { Node } from "../../../types";
 
 interface PodcastModalProps {
@@ -105,8 +105,8 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
         .replace(/\s*```$/, "");
       setScript(cleanedScript);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "未知错误";
-      frontendEventBus.publish("message_show", { type: "error", content: `脚本生成失败: ${message}` });
+      const errorMessage = error instanceof Error ? error.message : "未知错误";
+      message.error(`脚本生成失败: ${errorMessage}`);
     } finally {
       setIsGenerating(false);
     }

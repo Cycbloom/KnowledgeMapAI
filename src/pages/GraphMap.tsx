@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { Sparkles, BookOpen, X, ChevronUp, ChevronDown, Layers, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { api } from "../services/api";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useStore } from "../store/useStore";
 import { queryKeys } from "../hooks/queries/config";
 import { useIsMobile } from "../hooks/common/useIsMobile";
@@ -20,6 +19,7 @@ import { CrossDomainInsightsSection } from "../components/GraphMap/CrossDomainIn
 import type { CrossDomainAnalysisResult } from "../components/GraphMap/types";
 import { useAnalysisModules } from "../hooks/useAnalysisModules";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import { message } from "../utils/messageHelper";
 import type {
   Graph,
   GraphRelation,
@@ -365,8 +365,10 @@ export const GraphMap = () => {
   const domainTree = useMemo(() => {
     if (!domainTreeRaw) return [];
     if (Array.isArray(domainTreeRaw)) return domainTreeRaw;
-    if (domainTreeRaw && 'domains' in domainTreeRaw && Array.isArray((domainTreeRaw as any).domains)) {
-      return (domainTreeRaw as any).domains;
+    // 兼容后端可能返回 { domains: DomainTreeNode[] } 包装格式
+    const wrapped = domainTreeRaw as unknown as { domains?: DomainTreeNode[] };
+    if (wrapped.domains && Array.isArray(wrapped.domains)) {
+      return wrapped.domains;
     }
     return [];
   }, [domainTreeRaw]);
@@ -430,7 +432,7 @@ export const GraphMap = () => {
     const map = new Map<string, Set<string>>();
 
     graphs.forEach((graph: Graph) => {
-      const domainIds = (graph as any).domainIds || [];
+      const domainIds = graph.domainIds || [];
       if (domainIds.length > 0) {
         map.set(graph.id, new Set(domainIds));
       } else if (graph.domain) {
@@ -535,13 +537,13 @@ export const GraphMap = () => {
       for (const id of ids) {
         await api.graphs.delete(id);
       }
-      frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.batch.deleteSuccess', { count: ids.length }) });
+      message.success(t('graphMap.batch.deleteSuccess', { count: ids.length }));
       setMultiSelectedGraphIds(new Set());
       queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : t('graphMap.batch.deleteFailed');
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errMsg = error instanceof Error ? error.message : t('graphMap.batch.deleteFailed');
+      message.error(errMsg);
     }
   }, [multiSelectedGraphIds, queryClient, t]);
 
@@ -564,14 +566,11 @@ export const GraphMap = () => {
       }
 
       if (failCount === 0) {
-        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.batch.setDomainSuccess', { count: successCount }) });
+        message.success(t('graphMap.batch.setDomainSuccess', { count: successCount }));
       } else if (successCount > 0) {
-        frontendEventBus.publish("message_show", {
-          type: "warning",
-          content: t('graphMap.batch.setDomainPartial', { success: successCount, fail: failCount }),
-        });
+        message.warning(t('graphMap.batch.setDomainPartial', { success: successCount, fail: failCount }));
       } else {
-        frontendEventBus.publish("message_show", { type: "error", content: t('graphMap.batch.setDomainFailed') });
+        message.error(t('graphMap.batch.setDomainFailed'));
       }
 
       setMultiSelectedGraphIds(new Set());
@@ -579,8 +578,8 @@ export const GraphMap = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       setIsBatchDomainPickerOpen(false);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : t('graphMap.batch.setDomainFailed');
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errMsg = error instanceof Error ? error.message : t('graphMap.batch.setDomainFailed');
+      message.error(errMsg);
     } finally {
       setIsBatchSettingDomain(false);
     }
@@ -596,13 +595,13 @@ export const GraphMap = () => {
         graphId,
         domainIds.map((id) => ({ domain_id: id })),
       );
-      frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.domainPicker.setSuccess') });
+      message.success(t('graphMap.domainPicker.setSuccess'));
       queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       setSingleGraphDomainPicker({ graphId: '', open: false });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : t('graphMap.domainPicker.setFailed');
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errMsg = error instanceof Error ? error.message : t('graphMap.domainPicker.setFailed');
+      message.error(errMsg);
     } finally {
       setIsSettingSingleGraphDomain(false);
     }
@@ -624,11 +623,11 @@ export const GraphMap = () => {
     }) => {
       try {
         await api.graphs.createRelation(data);
-        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.relation.createSuccess') });
+        message.success(t('graphMap.relation.createSuccess'));
         queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : t('graphMap.relation.createFailed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        const errMsg = error instanceof Error ? error.message : t('graphMap.relation.createFailed');
+        message.error(errMsg);
         throw error;
       }
     },
@@ -639,11 +638,11 @@ export const GraphMap = () => {
     async (relationId: string) => {
       try {
         await api.graphs.deleteRelationById(relationId);
-        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.relation.deleteSuccess') });
+        message.success(t('graphMap.relation.deleteSuccess'));
         queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : t('graphMap.relation.deleteFailed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        const errMsg = error instanceof Error ? error.message : t('graphMap.relation.deleteFailed');
+        message.error(errMsg);
       }
     },
     [queryClient, t],
@@ -674,16 +673,16 @@ export const GraphMap = () => {
           });
         }
 
-        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.graphCreation.success') });
+        message.success(t('graphMap.graphCreation.success'));
         queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
         queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
 
         if (data.auto_generate_content) {
-          frontendEventBus.publish("message_show", { type: "info", content: t('graphMap.graphCreation.generatingContent') });
+          message.info(t('graphMap.graphCreation.generatingContent'));
         }
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : t('graphMap.graphCreation.failed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        const errMsg = error instanceof Error ? error.message : t('graphMap.graphCreation.failed');
+        message.error(errMsg);
         throw error;
       }
     },
@@ -710,7 +709,7 @@ export const GraphMap = () => {
 
       try {
         await api.graphs.infiniteExpand(selectedGraphId, config);
-        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.expansion.started') });
+        message.success(t('graphMap.expansion.started'));
         setIsExpansionRunning(true);
         setExpansionProgress({
           status: "running",
@@ -724,8 +723,8 @@ export const GraphMap = () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
         queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : t('graphMap.expansion.startFailed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        const errMsg = error instanceof Error ? error.message : t('graphMap.expansion.startFailed');
+        message.error(errMsg);
         throw error;
       }
     },
@@ -780,12 +779,13 @@ export const GraphMap = () => {
           queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
 
           if (saveResult.nodeMapping) {
+            const nodeMapping = saveResult.nodeMapping;
             const coreNodesWithIds = result.coreNodes.map(
               (n: CoreNode, index: number) => {
                 const tempId = `temp-${index + 1}`;
                 return {
                   ...n,
-                  id: saveResult.nodeMapping![tempId]?.graphNodeId,
+                  id: nodeMapping[tempId]?.graphNodeId,
                 };
               },
             );
@@ -796,8 +796,8 @@ export const GraphMap = () => {
         }
         return null;
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : t('graphMap.expansion.depthFailed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        const errMsg = error instanceof Error ? error.message : t('graphMap.expansion.depthFailed');
+        message.error(errMsg);
         throw error;
       }
     },
@@ -848,8 +848,8 @@ export const GraphMap = () => {
         }
         return null;
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : t('graphMap.expansion.nodeExpandFailed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        const errMsg = error instanceof Error ? error.message : t('graphMap.expansion.nodeExpandFailed');
+        message.error(errMsg);
         throw error;
       }
     },
@@ -887,9 +887,9 @@ export const GraphMap = () => {
         }
         setIsPromptEditorOpen(true);
       } catch (error: unknown) {
-        const message =
+        const errMsg =
           error instanceof Error ? error.message : t('graphMap.prompt.fetchFailed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        message.error(errMsg);
       }
     },
     [t],
@@ -911,9 +911,9 @@ export const GraphMap = () => {
         setPromptContent(effectiveTemplate?.template_content || "");
         setDepthPromptType(type);
       } catch (error: unknown) {
-        const message =
+        const errMsg =
           error instanceof Error ? error.message : t('graphMap.prompt.fetchFailed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        message.error(errMsg);
       }
     },
     [t],
@@ -936,11 +936,11 @@ export const GraphMap = () => {
           scope: "user",
           template_content: content,
         });
-        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.prompt.saveSuccess') });
+        message.success(t('graphMap.prompt.saveSuccess'));
       } catch (error: unknown) {
-        const message =
+        const errMsg =
           error instanceof Error ? error.message : t('graphMap.prompt.saveFailed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        message.error(errMsg);
         throw error;
       }
     },
@@ -974,8 +974,8 @@ export const GraphMap = () => {
         );
         setIntelligentSuggestions(suggestions);
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : t('graphMap.relation.discoveryFailed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        const errMsg = error instanceof Error ? error.message : t('graphMap.relation.discoveryFailed');
+        message.error(errMsg);
       } finally {
         setIsDiscovering(false);
       }
@@ -991,11 +991,11 @@ export const GraphMap = () => {
       });
       setCrossDomainResult(result as unknown as CrossDomainAnalysisResult);
       setShowCrossDomainInsights(true);
-      frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.crossDomain.analyzeComplete') });
+      message.success(t('graphMap.crossDomain.analyzeComplete'));
     } catch (error: unknown) {
-      const message =
+      const errMsg =
         error instanceof Error ? error.message : t('graphMap.crossDomain.analyzeFailed');
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      message.error(errMsg);
     } finally {
       setIsAnalyzingCrossDomain(false);
     }
@@ -1014,11 +1014,11 @@ export const GraphMap = () => {
         });
         const key = `${relation.source_graph_id}-${relation.target_graph_id}-${relation.relation_type}`;
         setCreatedRelationIds((prev) => new Set(prev).add(key));
-        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.relation.createSuccess') });
+        message.success(t('graphMap.relation.createSuccess'));
         queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : t('graphMap.relation.createFailed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        const errMsg = error instanceof Error ? error.message : t('graphMap.relation.createFailed');
+        message.error(errMsg);
         throw error;
       }
     },
@@ -1036,9 +1036,7 @@ export const GraphMap = () => {
         });
 
         if (result.success) {
-          frontendEventBus.publish("message_show", {
-            type: "success",
-            content: t('graphMap.cards.taskSubmitted'),
+          message.success(t('graphMap.cards.taskSubmitted'), {
             duration: 5000,
             action: {
               label: t('graphMap.cards.viewTasks'),
@@ -1047,8 +1045,8 @@ export const GraphMap = () => {
           });
         }
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : t('graphMap.cards.generateFailed');
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        const errMsg = error instanceof Error ? error.message : t('graphMap.cards.generateFailed');
+        message.error(errMsg);
       }
     },
     [selectedNodeIds, navigate, t],
@@ -1256,7 +1254,7 @@ export const GraphMap = () => {
                             {graph.title}
                           </h3>
                           <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {t('graphMap.graph.nodeCount', { count: (graph as any).node_count || 0 })} · {t('graphMap.graph.relationCount', { count: graphRelations.length })}
+                            {t('graphMap.graph.nodeCount', { count: graph.node_count || 0 })} · {t('graphMap.graph.relationCount', { count: graphRelations.length })}
                           </div>
                         </div>
                         <button
@@ -1478,7 +1476,7 @@ export const GraphMap = () => {
                         </p>
                       )}
                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                        {t('graphMap.graph.nodeCount', { count: (graph as any).node_count || 0 })} ·{" "}
+                        {t('graphMap.graph.nodeCount', { count: graph.node_count || 0 })} ·{" "}
                         {t('graphMap.graph.relationCount', { count: graphRelations.length })}
                       </div>
 
@@ -1761,8 +1759,7 @@ export const GraphMap = () => {
           isRunning={isExpansionRunning}
           onEditPrompt={handleOpenPromptEditor}
           hasNodes={
-            (graphs.find((g: Graph) => g.id === selectedGraphId) as any)
-              ?.node_count > 0
+            (graphs.find((g: Graph) => g.id === selectedGraphId)?.node_count ?? 0) > 0
           }
         />
       </Suspense>
@@ -1866,10 +1863,7 @@ export const GraphMap = () => {
             });
             queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
             queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-            frontendEventBus.publish("message_show", {
-              type: "success",
-              content: t('graphMap.graphCreation.batchCreateSuccess', { count: result.created.length, failed: result.failed?.length || 0 }),
-            });
+            message.success(t('graphMap.graphCreation.batchCreateSuccess', { count: result.created.length, failed: result.failed?.length || 0 }));
             return result;
           }}
           onInitializeGraphs={async (graphIds: string[]) => {
@@ -1878,10 +1872,7 @@ export const GraphMap = () => {
               style: "academic",
               session_id: domainBatchSessionId || undefined,
             });
-            frontendEventBus.publish("message_show", {
-              type: "success",
-              content: t('graphMap.graphCreation.initTaskSubmitted', { count: result.summary.pending }),
-            });
+            message.success(t('graphMap.graphCreation.initTaskSubmitted', { count: result.summary.pending }));
           }}
           onLoadSourceGraphs={async () => {
             const result = await api.graphs.getMap();

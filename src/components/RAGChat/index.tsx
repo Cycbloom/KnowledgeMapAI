@@ -12,7 +12,7 @@ import {
 import { api } from "../../services/api";
 import { useTheme } from "../../hooks";
 import { useTextToSpeech } from "../../hooks";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { TutorExtractedConcept, TutorMode, TTSEngine } from "../../types";
 import { useChatState, Message, Source } from "./hooks/useChatState";
 import { ChatMessage, LoadingMessage } from "./ChatMessage";
@@ -355,10 +355,7 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
       } else {
         console.error("RAG Chat Error:", error);
         const errorMessage = error instanceof Error ? error.message : t("aiChat.errorOccurred");
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: errorMessage,
-        });
+        message.error(errorMessage);
         chatState.updateMessage(assistantMessageId, {
           content: t("aiChat.errorOccurred"),
           isStreaming: false,
@@ -705,12 +702,9 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
             graphId={graphId}
             onExtractComplete={(result) => {
               if (result.concepts.length > 0) {
-                frontendEventBus.publish("message_show", {
-                  type: "success",
-                  content: t("literatureExtract.success.extracted", {
-                    count: result.concepts.length,
-                  }),
-                });
+                message.success(t("literatureExtract.success.extracted", {
+                  count: result.concepts.length,
+                }));
               }
             }}
             className="h-full"

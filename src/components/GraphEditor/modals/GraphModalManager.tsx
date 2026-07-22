@@ -9,15 +9,16 @@ import { PodcastModal } from "./PodcastModal";
 import { ConfirmationModal } from "../../common";
 import { queryKeys } from "../../../hooks/queries/config";
 import { useQueryClient } from "@tanstack/react-query";
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message } from "../../../utils/messageHelper";
+import type { Graph, Node } from "../../../types";
 
 interface GraphModalManagerProps {
   id: string;
   state: GraphEditorState;
-  graphMeta: any;
+  graphMeta: Graph | undefined;
   aiEnabled: boolean;
-  tutorOps?: any;
-  nodes: any[];
+  tutorOps?: unknown;
+  nodes: Node[];
 }
 
 export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
@@ -50,22 +51,23 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
     try {
       setIsExporting(true);
       if (!state.graphRef.current?.captureScreenshot) {
-        frontendEventBus.publish("message_show", { content: t("graphEditor.export.notSupported"), type: "error" });
+        message.error(t("graphEditor.export.notSupported"));
         setIsExportImageModalOpen(false);
         return;
       }
       const dataUrl =
         await state.graphRef.current.captureScreenshot(exportImageOptions);
+      if (!dataUrl) return;
       const link = document.createElement("a");
       const safeTitle = (graphMeta?.title || "graph").replace(/[^a-z0-9\u4e00-\u9fff]/gi, "_").toLowerCase();
       link.download = `${safeTitle}-graph.png`;
       link.href = dataUrl;
       link.click();
       setIsExportImageModalOpen(false);
-      frontendEventBus.publish("message_show", { content: t("graphEditor.export.success"), type: "success" });
+      message.success(t("graphEditor.export.success"));
     } catch (error) {
       console.error("Export image failed:", error);
-      frontendEventBus.publish("message_show", { content: t("graphEditor.export.failed"), type: "error" });
+      message.error(t("graphEditor.export.failed"));
     } finally {
       setIsExporting(false);
     }
@@ -199,7 +201,7 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         graphId={id || ""}
-        isPublic={graphMeta?.is_public || false}
+        isPublic={graphMeta ? !!(graphMeta as unknown as Record<string, unknown>).is_public : false}
         ownerId={graphMeta?.user_id}
         onPublicChange={(newStatus) => {
           if (graphMeta) {

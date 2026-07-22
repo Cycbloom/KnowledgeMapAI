@@ -8,6 +8,7 @@ import type {
   Edge,
   NodeSizeMode,
   Node,
+  NodeStatus,
 } from "../../../types";
 import type { BackboneModule } from "@shared/types/graph";
 import { NodeRing } from "./NodeRing";
@@ -38,7 +39,7 @@ import { BackboneNodeIcon } from "../BackboneNodeIcon";
 interface MindMapNodeProps {
   node: LayoutNode;
   edges: Edge[];
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   selected: boolean;
   multiSelected?: boolean;
   isDark: boolean;
@@ -263,9 +264,10 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     ? learningPathOpacity
     : Math.min(nodeOpacity, decayOpacity);
   const isAccepted = node.is_accepted !== false;
+  const fsrsRetrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
   const isSeverelyDecayed = coloringMode === "decay" &&
-    nodeStatus?.[node.id]?.fsrs_retrievability != null &&
-    nodeStatus[node.id].fsrs_retrievability < DECAY_CONFIG.severeDecayThreshold;
+    fsrsRetrievability != null &&
+    fsrsRetrievability < DECAY_CONFIG.severeDecayThreshold;
   const hoverScale =
     isHovered || isTouchPressed ? styleConfig.animation.hoverScale : 1;
   const showHoverGlow = isHovered && styleConfig.animation.hoverGlow;
@@ -1025,7 +1027,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
           opacity={textVisibility.opacity * 0.6}
           style={{ pointerEvents: "none" }}
         >
-          {t('graphEditor.mindMap.reviewCount', { count: nodeStatus[node.id].review_count })}
+          {t('graphEditor.mindMap.reviewCount', { count: nodeStatus?.[node.id].review_count })}
         </text>
       )}
     </g>

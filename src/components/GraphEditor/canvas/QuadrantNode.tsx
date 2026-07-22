@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState } from "react";
-import type { Node, Edge, GraphColorMode, NodeLevel } from "@shared/types/graph";
+import type { Node, Edge, GraphColorMode, NodeLevel, NodeStatus } from "@shared/types/graph";
 import type { ColorScheme } from "@shared/types/styles";
 import { NodeRing } from "./NodeRing";
 import {
@@ -23,7 +23,7 @@ import { truncateText } from "../../../utils/textUtils";
 interface QuadrantNodeProps {
   node: Node;
   edges: Edge[];
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   selected: boolean;
   isDark: boolean;
   zoomLevel: number;
@@ -266,9 +266,10 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
 
   const shadowStyle = getShadowStyle(styleConfig.shadow);
   const hoverScale = isHovered ? styleConfig.animation.hoverScale : 1;
+  const fsrsRetrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
   const isSeverelyDecayed = coloringMode === "decay" &&
-    nodeStatus?.[node.id]?.fsrs_retrievability != null &&
-    nodeStatus[node.id].fsrs_retrievability < DECAY_CONFIG.severeDecayThreshold;
+    fsrsRetrievability != null &&
+    fsrsRetrievability < DECAY_CONFIG.severeDecayThreshold;
 
   return (
     <g

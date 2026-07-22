@@ -80,7 +80,10 @@ export class MasteryCalculationService {
       if (!cardsByKp.has(kpId)) {
         cardsByKp.set(kpId, []);
       }
-      cardsByKp.get(kpId)!.push(card);
+      const list = cardsByKp.get(kpId);
+      if (list) {
+        list.push(card);
+      }
     }
 
     // 对有 cards 的知识点计算加权平均

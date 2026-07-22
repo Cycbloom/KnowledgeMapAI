@@ -36,7 +36,11 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
     hasSession: !!result.session,
   });
 
-  await authRouteService.createUserProfile(admin, result.user!.id, email, name);
+  if (!result.user) {
+    throw new AppError('用户创建失败', 500, ErrorCodes.AUTH_ERROR);
+  }
+
+  await authRouteService.createUserProfile(admin, result.user.id, email, name);
 
   let session = result.session;
   if (!session) {

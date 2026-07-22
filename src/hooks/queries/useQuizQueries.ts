@@ -38,7 +38,10 @@ export const useQuizSet = (id: string, enabled: boolean = true) => {
 export const useQuizGenerationProgress = (taskId: string | null, enabled: boolean = true) => {
   return useQuery({
     queryKey: quizQueryKeys.quizGenerationProgress(taskId || ""),
-    queryFn: () => api.quiz.getGenerationProgress(taskId!),
+    queryFn: () => {
+      if (!taskId) throw new Error("taskId is required");
+      return api.quiz.getGenerationProgress(taskId);
+    },
     enabled: enabled && !!taskId,
     ...realtimeQueryConfig,
     refetchInterval: (query) => {

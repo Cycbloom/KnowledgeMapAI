@@ -26,7 +26,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
   };
 
   const handleCopy = async () => {
-    const success = await copyToClipboard(result, t('common.copied'));
+    const success = await copyToClipboard(result, t('toast.common.copied'));
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -110,7 +110,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
           </div>
 
           <div className="space-y-2 max-h-[200px] overflow-y-auto">
-            {structuredResult!.recommendations.map((rec) => {
+            {structuredResult?.recommendations.map((rec) => {
               const isSelected = selectedRecs.has(rec.id);
               const isApplied = appliedRecs.has(rec.id);
 

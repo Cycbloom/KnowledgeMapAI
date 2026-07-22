@@ -25,13 +25,13 @@ import {
   Archive,
   TrendingUp,
 } from "lucide-react";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/formatters";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { EmptyState, ErrorState, SkeletonCard } from "@/components/common";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
+import { message } from "../utils/messageHelper";
 
 type PathStatus = LearningPathStatus | "all";
 
@@ -148,13 +148,10 @@ export const LearningPaths = () => {
       setNewPathDailyMinutes(30);
       setNewPathTargetDate("");
       setIsCreating(false);
-      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.messages.createSuccess") });
+      message.success(t("learningPaths.messages.createSuccess"));
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("learningPaths.messages.createFailed");
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      const errMsg = err instanceof Error ? err.message : t("learningPaths.messages.createFailed");
+      message.error(errMsg);
     }
   };
 
@@ -163,10 +160,10 @@ export const LearningPaths = () => {
 
     try {
       await deleteMutation.mutateAsync(path.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.messages.deleteSuccess") });
+      message.success(t("learningPaths.messages.deleteSuccess"));
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("learningPaths.messages.deleteFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errMsg = err instanceof Error ? err.message : t("learningPaths.messages.deleteFailed");
+      message.error(errMsg);
     }
   };
 
@@ -179,10 +176,10 @@ export const LearningPaths = () => {
         id: path.id,
         data: { status: newStatus },
       });
-      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.messages.statusUpdated") });
+      message.success(t("learningPaths.messages.statusUpdated"));
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("learningPaths.messages.statusUpdateFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errMsg = err instanceof Error ? err.message : t("learningPaths.messages.statusUpdateFailed");
+      message.error(errMsg);
     }
   };
 

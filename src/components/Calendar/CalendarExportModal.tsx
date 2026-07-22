@@ -47,15 +47,15 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       a.download = `calendar-${new Date().toISOString().split("T")[0]}.ics`;
       a.click();
       window.URL.revokeObjectURL(url);
-      message.success(t("calendar.calendarExported"));
+      message.success(t("toast.calendar.calendarExported"));
     } catch {
-      message.error(t("calendar.exportFailed"));
+      message.error(t("toast.calendar.exportFailed"));
     }
   };
 
   const handleCopyWebCalLink = () => {
     const webcalUrl = `webcal://${window.location.host}/api/calendar/subscribe/${localStorage.getItem("userId")}`;
-    void copyToClipboard(webcalUrl, t("calendar.webcalCopied"));
+    void copyToClipboard(webcalUrl, t("toast.calendar.webcalCopied"));
   };
 
   return (

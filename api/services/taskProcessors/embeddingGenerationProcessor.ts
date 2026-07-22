@@ -65,12 +65,16 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
           .map((gn) => {
             const kpArray = gn.knowledge_points as unknown as { id: string; title: string; content: string | null }[] | null;
             const kp = kpArray?.[0];
+            if (!kp) {
+              return null;
+            }
             return {
-              id: kp!.id,
-              title: kp!.title,
-              content: kp!.content ?? null
+              id: kp.id,
+              title: kp.title,
+              content: kp.content ?? null
             };
-          });
+          })
+          .filter((kp): kp is { id: string; title: string; content: string | null } => kp !== null);
       } else {
         throw new Error('Either graphId or knowledgePointIds must be provided');
       }
@@ -143,7 +147,9 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
 
         for (const kp of longContentKps) {
           try {
-            const chunks = chunkingService.chunkText(kp.content!);
+            const content = kp.content;
+            if (!content) continue;
+            const chunks = chunkingService.chunkText(content);
 
             if (chunks.length === 0) continue;
 

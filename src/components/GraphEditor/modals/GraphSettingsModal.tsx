@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X, Settings, Shield, ArrowUp, ArrowDown, Save, Type, Zap, Activity, Gauge, MessageSquare } from 'lucide-react';
 import { useGraph } from '../../../hooks/queries';
 import { useUpdateGraphMutation } from '../../../hooks/mutations';
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message } from "../../../utils/messageHelper";
 import { usePerformanceStore } from '../../../store/usePerformanceStore';
 import { PromptSettingsPanel } from '../panels/PromptSettingsPanel';
 import { AIActionSettingsPanel } from '../panels/AIActionSettingsPanel';
@@ -50,10 +50,10 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
           }
         }
       });
-      frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.settings.saved') });
+      message.success(t('graphEditor.settings.saved'));
       onClose();
     } catch (error) {
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.settings.saveFailed') });
+      message.error(t('graphEditor.settings.saveFailed'));
     }
   };
 

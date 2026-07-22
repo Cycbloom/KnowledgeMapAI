@@ -113,26 +113,6 @@
     "createTask": "创建任务",
     "skip": "跳过，创建空白图谱"
   },
-  "message": {
-    "createSuccess": "模板创建成功!",
-    "updateSuccess": "模板更新成功!",
-    "deleteSuccess": "模板已删除",
-    "duplicateSuccess": "模板已复制",
-    "applySuccess": "任务已创建!",
-    "saveToLibrarySuccess": "模板已保存到模板库",
-    "createFailed": "创建模板失败",
-    "updateFailed": "更新模板失败",
-    "deleteFailed": "删除模板失败",
-    "duplicateFailed": "复制模板失败",
-    "applyFailed": "应用模板失败",
-    "saveFailed": "保存模板失败",
-    "systemTemplateCannotDelete": "系统预设模板不能删除",
-    "systemTemplateCannotEdit": "系统预设模板不能编辑",
-    "nameAndTitleRequired": "请填写模板名称和标题模板",
-    "selectTemplate": "请选择模板",
-    "enterCustomRules": "请输入自定义生成规则",
-    "enterTopic": "请输入主题"
-  },
   "empty": {
     "noTemplates": "未找到匹配的模板",
     "noTemplatesHint": "尝试更换搜索关键词或分类",
@@ -227,5 +207,79 @@
   "edgeList": "边关系 ({{count}})",
   "basicInfo": "基本信息",
   "noNodesClickToAdd": "暂无节点，点击上方按钮添加",
-  "createFirst": "新建模板"
+  "createFirst": "新建模板",
+  "preset": {
+    "templates": {
+      "template-concept-learning": {
+        "name": "概念学习",
+        "description": "适用于学习新概念，从定义到应用的完整学习路径"
+      },
+      "template-problem-solving": {
+        "name": "问题解决",
+        "description": "系统化的问题分析到解决方案的完整流程"
+      },
+      "template-programming": {
+        "name": "编程学习",
+        "description": "编程语言和技术的系统化学习路径"
+      },
+      "template-history": {
+        "name": "历史学习",
+        "description": "历史事件的系统化学习框架"
+      },
+      "template-scientific-experiment": {
+        "name": "科学实验",
+        "description": "科学实验的完整记录和分析框架"
+      },
+      "template-quadrant-analysis": {
+        "name": "四象限分析",
+        "description": "适用于SWOT分析、优先级管理等四象限分析"
+      }
+    },
+    "nodes": {
+      "template-concept-learning": {
+        "node-1": "主题",
+        "node-2": "定义",
+        "node-3": "特点",
+        "node-4": "示例",
+        "node-5": "应用"
+      },
+      "template-problem-solving": {
+        "node-1": "问题",
+        "node-2": "原因分析",
+        "node-3": "解决方案",
+        "node-4": "实施步骤",
+        "node-5": "预期效果"
+      },
+      "template-programming": {
+        "node-1": "主题",
+        "node-2": "核心概念",
+        "node-3": "语法规则",
+        "node-4": "代码示例",
+        "node-5": "常见错误",
+        "node-6": "最佳实践"
+      },
+      "template-history": {
+        "node-1": "事件",
+        "node-2": "经过",
+        "node-3": "影响",
+        "node-4": "关键人物",
+        "node-5": "相关事件"
+      },
+      "template-scientific-experiment": {
+        "node-1": "实验目的",
+        "node-2": "假设",
+        "node-3": "材料",
+        "node-4": "步骤",
+        "node-5": "结果",
+        "node-6": "结论"
+      },
+      "template-quadrant-analysis": {
+        "node-1": "主题",
+        "node-2": "第一象限",
+        "node-3": "第二象限",
+        "node-4": "第三象限",
+        "node-5": "第四象限"
+      }
+    }
+  }
 }

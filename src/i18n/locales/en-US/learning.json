@@ -598,5 +598,23 @@
       "title": "Remove Node",
       "message": "Are you sure you want to remove this node from the learning path?"
     }
+  },
+  "progress": {
+    "noPath": "No learning path created yet",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "pending": "Pending",
+    "paused": "Paused",
+    "totalHours": "Total (h)",
+    "learningProgress": "Learning Progress",
+    "currentLearning": "Current Learning",
+    "knowledgePointIndex": "Knowledge point {{current}} / {{total}}",
+    "continue": "Continue",
+    "pathPreview": "Learning Path Preview",
+    "more": "+{{count}} more",
+    "dailyTarget": "Daily Target",
+    "minutesPerDay": "{{minutes}} min/day",
+    "completedCount": "{{completed}}/{{total}} completed",
+    "remainingCount": "{{count}} remaining"
   }
 }

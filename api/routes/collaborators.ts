@@ -10,7 +10,10 @@ const router = Router();
 router.get("/:invitationToken/info", optionalAuth, async (req: OptionalAuthRequest, res: Response) => {
   try {
     const { invitationToken } = req.params;
-    const result = await collaboratorService.getInvitationInfo(req.supabase!, invitationToken);
+    if (!req.supabase) {
+      throw new AppError("Supabase client not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+    const result = await collaboratorService.getInvitationInfo(req.supabase, invitationToken);
 
     if (!result.success) {
       throw new AppError(result.error ?? "邀请信息不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);

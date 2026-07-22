@@ -21,7 +21,7 @@ interface GraphRelation {
   targetGraphId: string;
   relationType: 'prerequisite' | 'extension' | 'related';
   context: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   createdAt: string;
   targetGraph?: {
     id: string;
@@ -61,7 +61,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
         related: GraphRelation[];
       });
     } catch (error) {
-      handleError(error, { context: 'Relations', fallbackMessage: '获取关联图谱失败' });
+      handleError(error, { context: 'Relations', fallbackMessage: t('graphMap.graph.getRelationsFailed') });
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +80,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
       message.success(t('toast.graph.relationDeleted'));
       fetchRelations();
     } catch (error) {
-      handleError(error, { context: 'DeleteRelation', fallbackMessage: '删除关联失败' });
+      handleError(error, { context: 'DeleteRelation', fallbackMessage: t('graphMap.graph.deleteRelationFailed') });
     }
   };
 
@@ -107,7 +107,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
           <FolderOpen className="w-4 h-4" />
-          关联图谱
+          {t('graphMap.graph.relatedGraphs')}
         </h3>
         <button
           onClick={fetchRelations}
@@ -128,7 +128,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
             <div>
               <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                 <ArrowRight className="w-3 h-3 rotate-180" />
-                <span>前置知识 ({relations.prerequisites.length})</span>
+                <span>{t('graphMap.graph.prerequisite')} ({relations.prerequisites.length})</span>
               </div>
               <div className="space-y-2">
                 {relations.prerequisites.map((relation) => (
@@ -140,26 +140,26 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                   >
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                        {relation.targetGraph?.title || '未知图谱'}
+                        {relation.targetGraph?.title || t('graphMap.graph.unknownGraph')}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {relation.targetGraph?.nodeCount || 0} 节点
+                        {t('graphMap.graph.nodeCount', { count: relation.targetGraph?.nodeCount || 0 })}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleNavigate(relation.targetGraphId)}
                         className="p-1.5 text-gray-400 hover:text-primary-500 rounded"
-                        title="打开图谱"
-                        aria-label="打开图谱"
+                        title={t('graphMap.graph.openGraph')}
+                        aria-label={t('graphMap.graph.openGraph')}
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteRelation(relation.id)}
                         className="p-1.5 text-gray-400 hover:text-red-500 rounded"
-                        title="删除关联"
-                        aria-label="删除关联"
+                        title={t('graphMap.graph.removeRelation')}
+                        aria-label={t('graphMap.graph.removeRelation')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -174,7 +174,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
             <div>
               <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                 <ArrowRight className="w-3 h-3" />
-                <span>扩展知识 ({relations.extensions.length})</span>
+                <span>{t('graphMap.graph.extension')} ({relations.extensions.length})</span>
               </div>
               <div className="space-y-2">
                 {relations.extensions.map((relation) => (
@@ -186,26 +186,26 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                   >
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                        {relation.targetGraph?.title || '未知图谱'}
+                        {relation.targetGraph?.title || t('graphMap.graph.unknownGraph')}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {relation.targetGraph?.nodeCount || 0} 节点
+                        {t('graphMap.graph.nodeCount', { count: relation.targetGraph?.nodeCount || 0 })}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleNavigate(relation.targetGraphId)}
                         className="p-1.5 text-gray-400 hover:text-primary-500 rounded"
-                        title="打开图谱"
-                        aria-label="打开图谱"
+                        title={t('graphMap.graph.openGraph')}
+                        aria-label={t('graphMap.graph.openGraph')}
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteRelation(relation.id)}
                         className="p-1.5 text-gray-400 hover:text-red-500 rounded"
-                        title="删除关联"
-                        aria-label="删除关联"
+                        title={t('graphMap.graph.removeRelation')}
+                        aria-label={t('graphMap.graph.removeRelation')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -220,7 +220,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
             <div>
               <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                 <BookOpen className="w-3 h-3" />
-                <span>相关知识 ({relations.related.length})</span>
+                <span>{t('graphMap.graph.related')} ({relations.related.length})</span>
               </div>
               <div className="space-y-2">
                 {relations.related.map((relation) => (
@@ -232,26 +232,26 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                   >
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                        {relation.targetGraph?.title || '未知图谱'}
+                        {relation.targetGraph?.title || t('graphMap.graph.unknownGraph')}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {relation.targetGraph?.nodeCount || 0} 节点
+                        {t('graphMap.graph.nodeCount', { count: relation.targetGraph?.nodeCount || 0 })}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleNavigate(relation.targetGraphId)}
                         className="p-1.5 text-gray-400 hover:text-primary-500 rounded"
-                        title="打开图谱"
-                        aria-label="打开图谱"
+                        title={t('graphMap.graph.openGraph')}
+                        aria-label={t('graphMap.graph.openGraph')}
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteRelation(relation.id)}
                         className="p-1.5 text-gray-400 hover:text-red-500 rounded"
-                        title="删除关联"
-                        aria-label="删除关联"
+                        title={t('graphMap.graph.removeRelation')}
+                        aria-label={t('graphMap.graph.removeRelation')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

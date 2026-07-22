@@ -66,6 +66,7 @@ const ConceptMemberCard: React.FC<ConceptMemberCardProps> = ({
   onSplit,
   isTarget = false,
 }) => {
+  const { t } = useTranslation();
   const similarityStyle = getSimilarityStyle(member.similarity);
   const levelColor = getLevelColorHex(member.level);
 
@@ -82,7 +83,7 @@ const ConceptMemberCard: React.FC<ConceptMemberCardProps> = ({
           <div className="flex items-center gap-2 mb-1">
             {isTarget && (
               <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300">
-                目标
+                {t('conceptAggregation.results.target')}
               </span>
             )}
             <h4 className="font-medium text-sm text-slate-800 dark:text-slate-200 truncate">
@@ -95,7 +96,7 @@ const ConceptMemberCard: React.FC<ConceptMemberCardProps> = ({
               <span
                 className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${similarityStyle.bg} ${similarityStyle.color}`}
               >
-                {(member.similarity * 100).toFixed(0)}% 相似
+                {t('conceptAggregation.results.xPercentSimilar', { percent: (member.similarity * 100).toFixed(0) })}
               </span>
             )}
 
@@ -114,7 +115,7 @@ const ConceptMemberCard: React.FC<ConceptMemberCardProps> = ({
           {member.sources.length > 0 && (
             <div className="mt-2 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
               <Layers size={12} />
-              <span>{member.sources.length} 个来源</span>
+              <span>{t('conceptAggregation.results.xSources', { count: member.sources.length })}</span>
             </div>
           )}
         </div>
@@ -123,8 +124,8 @@ const ConceptMemberCard: React.FC<ConceptMemberCardProps> = ({
           <button
             onClick={() => onSplit(groupId, member.knowledgePointId)}
             className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-            title="从组中移除"
-            aria-label="从组中移除"
+            title={t('conceptAggregation.results.removeFromGroup')}
+            aria-label={t('conceptAggregation.results.removeFromGroup')}
           >
             <SplitSquareHorizontal size={14} />
           </button>
@@ -147,6 +148,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
   onIgnore,
   onSplit,
 }) => {
+  const { t } = useTranslation();
   const targetMember = group.members.find(
     (m) => m.knowledgePointId === group.suggestedTargetId
   );
@@ -162,19 +164,19 @@ const GroupCard: React.FC<GroupCardProps> = ({
           <div className="flex items-center gap-2">
             <GitMerge className="w-4 h-4 text-primary-500" />
             <h3 className="font-semibold text-base text-slate-800 dark:text-slate-200">
-              {targetMember?.title || group.suggestedAliases[0] || '未命名组'}
+              {targetMember?.title || group.suggestedAliases[0] || t('conceptAggregation.results.unnamedGroup')}
             </h3>
           </div>
           
           <div className="flex items-center gap-2">
             {group.autoMergeConfidence > 0 && (
               <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${getSimilarityStyle(group.autoMergeConfidence).bg} ${getSimilarityStyle(group.autoMergeConfidence).color}`}>
-                置信度 {(group.autoMergeConfidence * 100).toFixed(0)}%
+                {t('conceptAggregation.results.confidencePercent', { percent: (group.autoMergeConfidence * 100).toFixed(0) })}
               </span>
             )}
-            
+
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              {group.members.length} 个成员
+              {t('conceptAggregation.results.xMembers', { count: group.members.length })}
             </span>
           </div>
         </div>
@@ -227,16 +229,16 @@ const GroupCard: React.FC<GroupCardProps> = ({
           leftIcon={<EyeOff size={14} />}
           onClick={() => onIgnore(group.id)}
         >
-          忽略
+          {t('conceptAggregation.results.ignore')}
         </Button>
-        
+
         <Button
           variant="primary"
           size="sm"
           leftIcon={<GitMerge size={14} />}
           onClick={() => onMerge(group.id)}
         >
-          合并组
+          {t('conceptAggregation.results.mergeGroup')}
         </Button>
       </div>
     </div>
@@ -258,19 +260,20 @@ const SummaryPanel: React.FC<SummaryPanelProps> = ({
   confirmedCount,
   ignoredCount,
 }) => {
+  const { t } = useTranslation();
   const stats = [
-    { label: '总概念数', value: totalConcepts, icon: <Users size={16} />, color: 'text-slate-700 dark:text-slate-300' },
-    { label: '发现组数', value: groupCount, icon: <Layers size={16} />, color: 'text-primary-600 dark:text-primary-400' },
-    { label: '建议合并', value: suggestedMerges, icon: <GitMerge size={16} />, color: 'text-blue-600 dark:text-blue-400' },
-    { label: '已确认', value: confirmedCount, icon: <CheckCircle2 size={16} />, color: 'text-green-600 dark:text-green-400' },
-    { label: '已忽略', value: ignoredCount, icon: <AlertCircle size={16} />, color: 'text-orange-600 dark:text-orange-400' },
+    { label: t('conceptAggregation.results.totalConcepts'), value: totalConcepts, icon: <Users size={16} />, color: 'text-slate-700 dark:text-slate-300' },
+    { label: t('conceptAggregation.results.discoveredGroups'), value: groupCount, icon: <Layers size={16} />, color: 'text-primary-600 dark:text-primary-400' },
+    { label: t('conceptAggregation.results.suggestedMerges'), value: suggestedMerges, icon: <GitMerge size={16} />, color: 'text-blue-600 dark:text-blue-400' },
+    { label: t('conceptAggregation.results.confirmed'), value: confirmedCount, icon: <CheckCircle2 size={16} />, color: 'text-green-600 dark:text-green-400' },
+    { label: t('conceptAggregation.results.ignored'), value: ignoredCount, icon: <AlertCircle size={16} />, color: 'text-orange-600 dark:text-orange-400' },
   ];
 
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
         <BarChart3 className="w-4 h-4 text-slate-500" />
-        <h3 className="font-semibold text-sm text-slate-700 dark:text-slate-300">变更摘要</h3>
+        <h3 className="font-semibold text-sm text-slate-700 dark:text-slate-300">{t('conceptAggregation.results.changeSummary')}</h3>
       </div>
       
       <div className="grid grid-cols-5 gap-4">
@@ -335,7 +338,7 @@ export const AggregationResultsView: React.FC<AggregationResultsViewProps> = ({
         <EmptyState
           icon={<Layers size={32} />}
           title={t('graphEditor.empty.aggregationEmpty')}
-          description="系统未发现可合并的相似概念，或分析尚未完成"
+          description={t('conceptAggregation.results.emptyDescription')}
         />
       </div>
     );
@@ -350,10 +353,10 @@ export const AggregationResultsView: React.FC<AggregationResultsViewProps> = ({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-            相似概念分组
+            {t('conceptAggregation.results.similarGroups')}
           </h2>
           <span className="text-sm text-slate-500 dark:text-slate-400">
-            共 {summaryData.groupCount} 组
+            {t('conceptAggregation.results.totalGroups', { count: summaryData.groupCount })}
           </span>
         </div>
 

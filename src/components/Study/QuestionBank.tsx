@@ -145,7 +145,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
             answer: data.answer,
             explanation: data.explanation,
             options: data.options,
-            card_type: data.card_type as any
+            card_type: data.card_type
           }
         });
         setEditingCard(null);
@@ -157,7 +157,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
       try {
         await createCardsMutation.mutateAsync([{
           ...data,
-          card_type: data.card_type as any
+          card_type: data.card_type
         }]);
         setIsCreating(false);
       } catch (err: unknown) {

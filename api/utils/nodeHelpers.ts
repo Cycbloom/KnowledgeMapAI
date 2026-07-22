@@ -38,7 +38,7 @@ export async function getGraphNodesFromNewTable(
 }
 
 export async function getGraphNodesBatchFromNewTable(
-  supabase: any,
+  supabase: SupabaseClient,
   graphIds: string[],
 ): Promise<Map<string, Node[]>> {
   const result = new Map<string, Node[]>();
@@ -63,7 +63,10 @@ export async function getGraphNodesBatchFromNewTable(
     }
     const node = buildNodeFromGraphNode(gn);
     if (node) {
-      result.get(gid)!.push(node);
+      const list = result.get(gid);
+      if (list) {
+        list.push(node);
+      }
     }
   });
 

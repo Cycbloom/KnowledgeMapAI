@@ -139,9 +139,11 @@ export const createMindMapLayout = (
       layoutNodes.forEach(node => {
         const domain = node.properties?.domain as string | undefined;
         if (domain && domainCenters.has(domain)) {
-          const center = domainCenters.get(domain)!;
-          node.vx = (node.vx || 0) + (center.x - node.x) * alpha * 0.1;
-          node.vy = (node.vy || 0) + (center.y - node.y) * alpha * 0.1;
+          const center = domainCenters.get(domain);
+          if (center) {
+            node.vx = (node.vx || 0) + (center.x - node.x) * alpha * 0.1;
+            node.vy = (node.vy || 0) + (center.y - node.y) * alpha * 0.1;
+          }
         }
       });
     });
@@ -191,13 +193,21 @@ export const createSemanticLayout = (
 ): LayoutResult => {
   const { width, height, nNeighbors, minDist = 0.1, nEpochs = 200 } = options;
 
-  const nodesWithEmbedding = nodes.filter(n => embeddings.has(n.id) && embeddings.get(n.id)!.length > 0);
-  const nodesWithoutEmbedding = nodes.filter(n => !embeddings.has(n.id) || embeddings.get(n.id)!.length === 0);
+  const nodesWithEmbedding = nodes.filter(n => {
+    const emb = embeddings.get(n.id);
+    return emb !== undefined && emb.length > 0;
+  });
+  const nodesWithoutEmbedding = nodes.filter(n => {
+    const emb = embeddings.get(n.id);
+    return emb === undefined || emb.length === 0;
+  });
 
   let semanticPositions: Map<string, { x: number; y: number }> = new Map();
 
   if (nodesWithEmbedding.length >= 3) {
-    const embeddingMatrix: number[][] = nodesWithEmbedding.map(n => embeddings.get(n.id)!);
+    const embeddingMatrix: number[][] = nodesWithEmbedding
+      .map(n => embeddings.get(n.id))
+      .filter((emb): emb is number[] => emb !== undefined && emb.length > 0);
     const effectiveNNeighbors = nNeighbors || Math.min(15, nodesWithEmbedding.length - 1);
 
     const umap = new UMAP({

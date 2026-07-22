@@ -34,7 +34,7 @@ router.get(
   "/subscribe/:userId",
   async (req, res: Response) => {
     const { userId } = req.params;
-    const supabase = (req as any).supabase;
+    const supabase = req.supabase;
 
     if (!supabase) {
       throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);

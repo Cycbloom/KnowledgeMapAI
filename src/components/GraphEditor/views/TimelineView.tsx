@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, NodeSizeMode, EdgeWidthMode, Node as GraphNode } from '../../../types';
+import type { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, NodeSizeMode, EdgeWidthMode, Node as GraphNode, NodeStatus } from '../../../types';
 import { MindMapNode } from '../canvas/MindMapNode';
 import { MindMapLink } from '../canvas/MindMapLink';
 import { createMindMapLayout, LayoutResult } from '../../../utils/mindmapLayout';
@@ -13,7 +13,7 @@ import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 interface TimelineViewProps {
   nodes: Node[];
   edges: Edge[];
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   selectedNodeId: string | null;
   onNodeClick: (node: GraphNode) => void;
   onCanvasClick?: () => void;
@@ -131,15 +131,15 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       setIsLayoutCalculating(true);
       try {
         const result = await calculateMindMapLayout(
-          allNodes as any,
-          edges as any,
+          allNodes,
+          edges as unknown as Array<Record<string, unknown>>,
           {
             width: containerSize.width,
             height: containerSize.height - 80
           }
         );
         if (result) {
-          setLayout(result as any);
+          setLayout(result as unknown as LayoutResult);
         } else {
           // Fallback: Worker 不可用时降级为主线程同步计算
           console.warn('[TimelineView] Worker layout failed, falling back to main thread');
@@ -147,7 +147,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             width: containerSize.width,
             height: containerSize.height - 80
           });
-          setLayout(fallbackResult as any);
+          setLayout(fallbackResult);
         }
       } catch (error) {
         // 错误时也降级到主线程
@@ -156,7 +156,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           width: containerSize.width,
           height: containerSize.height - 80
         });
-        setLayout(fallbackResult as any);
+        setLayout(fallbackResult);
       } finally {
         setIsLayoutCalculating(false);
       }

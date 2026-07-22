@@ -535,7 +535,7 @@ function getMockBackbone(
 
   const useCustomModules = customModules && customModules.length > 0;
 
-  const moduleItems = useCustomModules ? customModules! : includeModules;
+  const moduleItems = useCustomModules && customModules ? customModules : includeModules;
 
   for (const item of moduleItems) {
     const moduleType = useCustomModules
@@ -599,8 +599,8 @@ function getMockBackbone(
     });
   }
 
-  const backboneModules: BackboneModuleConfig[] = useCustomModules
-    ? customModules!.map((cm) => ({
+  const backboneModules: BackboneModuleConfig[] = (useCustomModules && customModules)
+    ? customModules.map((cm) => ({
         module: cm.module_type,
         label: cm.title,
         description: cm.description,

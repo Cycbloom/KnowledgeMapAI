@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { api, AIAction } from '../../../services/api';
 import { Zap, Loader2, BookOpen } from 'lucide-react';
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message } from "../../../utils/messageHelper";
 import { useMenuNavigation } from '../../../hooks';
 
 interface NodeContextMenuProps {
@@ -50,19 +50,19 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
   const handleAnnotateTerms = async () => {
     if (!nodeContent) return;
     setAnnotating(true);
-    frontendEventBus.publish("message_show", { content: '正在进行术语标注...', type: 'info' });
+    message.info('正在进行术语标注...');
     try {
         await api.ai.annotateTerms({
             node_id: nodeId,
             node_content: nodeContent,
             graph_id: graphId
         });
-        frontendEventBus.publish("message_show", { content: '术语标注已完成', type: 'success' });
+        message.success('术语标注已完成');
         if (onRefresh) onRefresh();
         onClose();
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : '标注失败';
-        frontendEventBus.publish("message_show", { content: message, type: 'error' });
+        const errorMessage = error instanceof Error ? error.message : '标注失败';
+        message.error(errorMessage);
     } finally {
         setAnnotating(false);
     }

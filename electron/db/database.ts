@@ -49,9 +49,9 @@ export class DatabaseManager {
     if (currentVersion === 0) {
       // Run initial migration
       const migration = getInitialMigration();
-      const transaction = this.db!.transaction((stmts: string[]) => {
+      const transaction = this.getDb().transaction((stmts: string[]) => {
         for (const stmt of stmts) {
-          this.db!.exec(stmt);
+          this.getDb().exec(stmt);
         }
       });
       transaction(migration);
@@ -64,7 +64,7 @@ export class DatabaseManager {
 
   private getSchemaVersion(): number {
     try {
-      const row = this.db!.prepare('SELECT version FROM schema_version ORDER BY version DESC LIMIT 1').get() as { version: number } | undefined;
+      const row = this.getDb().prepare('SELECT version FROM schema_version ORDER BY version DESC LIMIT 1').get() as { version: number } | undefined;
       return row?.version ?? 0;
     } catch {
       return 0; // Table doesn't exist yet
@@ -72,7 +72,7 @@ export class DatabaseManager {
   }
 
   private setSchemaVersion(version: number): void {
-    this.db!.prepare('INSERT OR REPLACE INTO schema_version (version, applied_at) VALUES (?, ?)').run(version, new Date().toISOString());
+    this.getDb().prepare('INSERT OR REPLACE INTO schema_version (version, applied_at) VALUES (?, ?)').run(version, new Date().toISOString());
   }
 
   // Close database connection
@@ -128,7 +128,7 @@ export class DatabaseManager {
       sql += ` WHERE ${conditions.join(' AND ')}`;
     }
 
-    const rows = this.db!.prepare(sql).all(...params) as Record<string, unknown>[];
+    const rows = this.getDb().prepare(sql).all(...params) as Record<string, unknown>[];
     return rows.map(row => this.deserializeRow(row, tableDef)) as T[];
   }
 
@@ -136,7 +136,7 @@ export class DatabaseManager {
   findById<T = Record<string, unknown>>(tableName: string, id: string): T | null {
     this.ensureReady();
     const tableDef = this.getTableDef(tableName);
-    const row = this.db!.prepare(`SELECT * FROM ${tableName} WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
+    const row = this.getDb().prepare(`SELECT * FROM ${tableName} WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
     return row ? this.deserializeRow(row, tableDef) as T : null;
   }
 
@@ -158,14 +158,16 @@ export class DatabaseManager {
     const placeholders = columns.map(() => '?').join(', ');
 
     const sql = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
-    this.db!.prepare(sql).run(...values);
+    this.getDb().prepare(sql).run(...values);
 
     // Log operation for sync tracking
     this.logOperation(tableName, (enrichedData as Record<string, unknown>).id as string, 'create', undefined, enrichedData);
 
     // Return the created record
     const id = (enrichedData as Record<string, unknown>).id as string;
-    return this.findById<T>(tableName, id)!;
+    const created = this.findById<T>(tableName, id);
+    if (!created) throw new Error(`Record not found after create: ${tableName}/${id}`);
+    return created;
   }
 
   // Update an existing record
@@ -188,7 +190,7 @@ export class DatabaseManager {
     const values = columns.map(col => this.serializeValue(col, enrichedData[col], tableDef));
 
     const sql = `UPDATE ${tableName} SET ${setClauses.join(', ')} WHERE id = ?`;
-    this.db!.prepare(sql).run(...values, id);
+    this.getDb().prepare(sql).run(...values, id);
 
     // Calculate changed fields
     const changedFields = oldRecord
@@ -202,7 +204,9 @@ export class DatabaseManager {
     // Log operation for sync tracking
     this.logOperation(tableName, id, 'update', changedFields, enrichedData);
 
-    return this.findById<T>(tableName, id)!;
+    const updated = this.findById<T>(tableName, id);
+    if (!updated) throw new Error(`Record not found after update: ${tableName}/${id}`);
+    return updated;
   }
 
   // Delete a record (hard delete)
@@ -212,7 +216,7 @@ export class DatabaseManager {
     // Snapshot record before deletion for sync
     const snapshot = this.findById(tableName, id) as Record<string, unknown> | null;
 
-    const result = this.db!.prepare(`DELETE FROM ${tableName} WHERE id = ?`).run(id);
+    const result = this.getDb().prepare(`DELETE FROM ${tableName} WHERE id = ?`).run(id);
 
     // Log delete operation for sync tracking
     if (result.changes > 0) {
@@ -228,7 +232,7 @@ export class DatabaseManager {
     // Snapshot record before soft delete for sync
     const snapshot = this.findById(tableName, id) as Record<string, unknown> | null;
     const now = new Date().toISOString();
-    const result = this.db!.prepare(
+    const result = this.getDb().prepare(
       `UPDATE ${tableName} SET deleted_at = ?, sync_status = 'pending_push', local_updated_at = ? WHERE id = ?`
     ).run(now, now, id);
 
@@ -247,7 +251,7 @@ export class DatabaseManager {
     this.ensureReady();
     const tableDef = this.getTableDef(tableName);
 
-    const transaction = this.db!.transaction(() => {
+    const transaction = this.getDb().transaction(() => {
       const results: T[] = [];
       for (const data of items) {
         const enrichedData: Record<string, unknown> = {
@@ -261,7 +265,7 @@ export class DatabaseManager {
         const placeholders = columns.map(() => '?').join(', ');
 
         const sql = `INSERT OR REPLACE INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
-        this.db!.prepare(sql).run(...values);
+        this.getDb().prepare(sql).run(...values);
 
         results.push(this.deserializeRow(enrichedData, tableDef) as T);
       }
@@ -287,9 +291,12 @@ export class DatabaseManager {
     const updateClauses = columns.filter(c => c !== 'id').map(c => `${c} = excluded.${c}`).join(', ');
 
     const sql = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders}) ON CONFLICT(id) DO UPDATE SET ${updateClauses}`;
-    this.db!.prepare(sql).run(...values);
+    this.getDb().prepare(sql).run(...values);
 
-    return this.findById<T>(tableName, (enrichedData as Record<string, unknown>).id as string)!;
+    const upsertedId = (enrichedData as Record<string, unknown>).id as string;
+    const upserted = this.findById<T>(tableName, upsertedId);
+    if (!upserted) throw new Error(`Record not found after upsert: ${tableName}/${upsertedId}`);
+    return upserted;
   }
 
   // ============ Operation Logging ============
@@ -304,7 +311,7 @@ export class DatabaseManager {
   ): void {
     this.ensureReady();
     const id = crypto.randomUUID();
-    this.db!.prepare(
+    this.getDb().prepare(
       `INSERT INTO sync_operations (id, table_name, record_id, action, changed_fields, data, created_at, synced)
        VALUES (?, ?, ?, ?, ?, ?, ?, 0)`
     ).run(
@@ -323,7 +330,7 @@ export class DatabaseManager {
   // Get pending push records for a table
   getPendingPush(tableName: string): Record<string, unknown>[] {
     this.ensureReady();
-    return this.db!.prepare(`SELECT * FROM ${tableName} WHERE sync_status = 'pending_push'`).all() as Record<string, unknown>[];
+    return this.getDb().prepare(`SELECT * FROM ${tableName} WHERE sync_status = 'pending_push'`).all() as Record<string, unknown>[];
   }
 
   // Mark records as synced after successful push
@@ -332,19 +339,19 @@ export class DatabaseManager {
     if (ids.length === 0) return;
 
     const placeholders = ids.map(() => '?').join(', ');
-    this.db!.prepare(`UPDATE ${tableName} SET sync_status = 'synced' WHERE id IN (${placeholders})`).run(...ids);
+    this.getDb().prepare(`UPDATE ${tableName} SET sync_status = 'synced' WHERE id IN (${placeholders})`).run(...ids);
   }
 
   // Get sync metadata for a table
   getSyncMetadata(tableName: string): { last_sync_at: string; sync_direction: string; record_count: number } | null {
     this.ensureReady();
-    return this.db!.prepare('SELECT * FROM sync_metadata WHERE table_name = ?').get(tableName) as { last_sync_at: string; sync_direction: string; record_count: number } | null ?? null;
+    return this.getDb().prepare('SELECT * FROM sync_metadata WHERE table_name = ?').get(tableName) as { last_sync_at: string; sync_direction: string; record_count: number } | null ?? null;
   }
 
   // Update sync metadata
   updateSyncMetadata(tableName: string, lastSyncAt: string, direction: string, recordCount: number): void {
     this.ensureReady();
-    this.db!.prepare(
+    this.getDb().prepare(
       `INSERT OR REPLACE INTO sync_metadata (table_name, last_sync_at, sync_direction, record_count) VALUES (?, ?, ?, ?)`
     ).run(tableName, lastSyncAt, direction, recordCount);
   }
@@ -353,16 +360,16 @@ export class DatabaseManager {
   getSyncConflicts(tableName?: string): Array<{ id: string; table_name: string; record_id: string; local_data: string; remote_data: string; resolved: number; created_at: string }> {
     this.ensureReady();
     if (tableName) {
-      return this.db!.prepare('SELECT * FROM sync_conflicts WHERE table_name = ? AND resolved = 0').all(tableName) as Array<{ id: string; table_name: string; record_id: string; local_data: string; remote_data: string; resolved: number; created_at: string }>;
+      return this.getDb().prepare('SELECT * FROM sync_conflicts WHERE table_name = ? AND resolved = 0').all(tableName) as Array<{ id: string; table_name: string; record_id: string; local_data: string; remote_data: string; resolved: number; created_at: string }>;
     }
-    return this.db!.prepare('SELECT * FROM sync_conflicts WHERE resolved = 0').all() as Array<{ id: string; table_name: string; record_id: string; local_data: string; remote_data: string; resolved: number; created_at: string }>;
+    return this.getDb().prepare('SELECT * FROM sync_conflicts WHERE resolved = 0').all() as Array<{ id: string; table_name: string; record_id: string; local_data: string; remote_data: string; resolved: number; created_at: string }>;
   }
 
   // Add a sync conflict
   addSyncConflict(tableName: string, recordId: string, localData: unknown, remoteData: unknown): void {
     this.ensureReady();
     const id = crypto.randomUUID();
-    this.db!.prepare(
+    this.getDb().prepare(
       `INSERT INTO sync_conflicts (id, table_name, record_id, local_data, remote_data, resolved, created_at) VALUES (?, ?, ?, ?, ?, 0, ?)`
     ).run(id, tableName, recordId, JSON.stringify(localData), JSON.stringify(remoteData), new Date().toISOString());
   }
@@ -370,7 +377,7 @@ export class DatabaseManager {
   // Resolve a conflict
   resolveConflict(conflictId: string): void {
     this.ensureReady();
-    this.db!.prepare('UPDATE sync_conflicts SET resolved = 1, resolved_at = ? WHERE id = ?').run(new Date().toISOString(), conflictId);
+    this.getDb().prepare('UPDATE sync_conflicts SET resolved = 1, resolved_at = ? WHERE id = ?').run(new Date().toISOString(), conflictId);
   }
 
   // Count pending push records across all tables
@@ -380,7 +387,7 @@ export class DatabaseManager {
     for (const tableName of Object.keys(TABLES)) {
       if (!TABLES[tableName].syncEnabled) continue;
       try {
-        const row = this.db!.prepare(`SELECT COUNT(*) as count FROM ${tableName} WHERE sync_status = 'pending_push'`).get() as { count: number };
+        const row = this.getDb().prepare(`SELECT COUNT(*) as count FROM ${tableName} WHERE sync_status = 'pending_push'`).get() as { count: number };
         result[tableName] = row.count;
       } catch {
         result[tableName] = 0;
@@ -403,7 +410,7 @@ export class DatabaseManager {
     const sql = limit
       ? 'SELECT * FROM sync_operations WHERE synced = 0 ORDER BY created_at ASC LIMIT ?'
       : 'SELECT * FROM sync_operations WHERE synced = 0 ORDER BY created_at ASC';
-    const rows = (limit ? this.db!.prepare(sql).all(limit) : this.db!.prepare(sql).all()) as Record<string, unknown>[];
+    const rows = (limit ? this.getDb().prepare(sql).all(limit) : this.getDb().prepare(sql).all()) as Record<string, unknown>[];
 
     return rows.map(row => ({
       id: row.id as string,
@@ -421,7 +428,7 @@ export class DatabaseManager {
     this.ensureReady();
     if (ids.length === 0) return;
     const placeholders = ids.map(() => '?').join(', ');
-    this.db!.prepare(`UPDATE sync_operations SET synced = 1 WHERE id IN (${placeholders})`).run(...ids);
+    this.getDb().prepare(`UPDATE sync_operations SET synced = 1 WHERE id IN (${placeholders})`).run(...ids);
   }
 
   // Clean up old synced operations
@@ -429,7 +436,7 @@ export class DatabaseManager {
     this.ensureReady();
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
-    const result = this.db!.prepare(
+    const result = this.getDb().prepare(
       'DELETE FROM sync_operations WHERE synced = 1 AND created_at < ?'
     ).run(cutoffDate.toISOString());
     return result.changes;

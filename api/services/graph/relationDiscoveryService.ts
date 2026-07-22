@@ -72,11 +72,38 @@ export interface CreateRelationFromDiscoveryData {
   target_graph_id: string;
   relation_type: "prerequisite" | "extension" | "related" | "cross_domain";
   context?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   confidence?: number;
   shared_concepts?: string[];
 }
 
+interface AIRelationSuggestion {
+  source_graph_title?: string;
+  target_graph_title?: string;
+  relation_type?: "prerequisite" | "extension" | "related" | "cross_domain";
+  confidence?: number;
+  reason?: string;
+  description?: string;
+  shared_concepts?: string[];
+  common_concepts?: string[];
+  suggested_learning_order?: "source_first" | "target_first" | "parallel";
+  learning_order?: "source_first" | "target_first" | "parallel";
+}
+
+interface AICrossDomainInsightSuggestion {
+  related_graph_titles?: string[];
+  domains?: string[];
+  intersection_topics?: string[];
+  shared_topics?: string[];
+  description?: string;
+}
+
+interface RelationDiscoveryAIResponse {
+  discovered_relations?: AIRelationSuggestion[];
+  relations?: AIRelationSuggestion[];
+  suggestions?: AIRelationSuggestion[];
+  cross_domain_insights?: AICrossDomainInsightSuggestion[];
+}
 export class RelationDiscoveryService {
   async discoverRelations(
     supabase: SupabaseClient,
@@ -222,7 +249,7 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
     }
 
     const content = completion.choices[0].message.content;
-    let parsed: Record<string, any> = {};
+    let parsed: RelationDiscoveryAIResponse = {};
 
     try {
       parsed = JSON.parse(content || "{}");
@@ -619,7 +646,10 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
         nodeMap.set(graphId, []);
       }
       if (kp && !Array.isArray(kp)) {
-        nodeMap.get(graphId)!.push({ title: kp.title, content: kp.content });
+        const list = nodeMap.get(graphId);
+        if (list) {
+          list.push({ title: kp.title, content: kp.content });
+        }
       }
     }
 

@@ -102,10 +102,10 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
     setLoading(true);
     setError(null);
     try {
-      const data = await request('/relationship-types', {
+      const data = await request<{ data?: RelationshipTypeConfig[] }>('/relationship-types', {
         headers: getAuthHeaders(),
       });
-      setRelationshipTypes((data as any).data || []);
+      setRelationshipTypes(data.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取关系类型失败');
     } finally {
@@ -150,7 +150,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
       });
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.error || '更新关系类型失败');
+        throw new Error(errData.error || 'Failed to update relationship type');
       }
       await fetchRelationshipTypes();
       setEditingType(null);
@@ -177,7 +177,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
       });
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.error || '删除关系类型失败');
+        throw new Error(errData.error || 'Failed to delete relationship type');
       }
       await fetchRelationshipTypes();
     } catch (err) {
@@ -359,7 +359,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <span className="font-medium text-gray-900 dark:text-white">
-                                      {type.display_name}
+                                      {t(type.display_name)}
                                     </span>
                                     {type.is_builtin && (
                                       <span title="内置类型">

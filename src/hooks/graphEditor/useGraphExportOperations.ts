@@ -1,7 +1,7 @@
 import type { Node, Edge, Graph } from '../../types';
 import { GraphEditorState } from './index';
 import { useTranslation } from 'react-i18next';
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { api } from '../../services/api';
 import { generateJSON, downloadFile, downloadImage, generateAnkiDeck } from '../../utils/exportUtils';
 import { UseMutationResult } from '@tanstack/react-query';
@@ -45,11 +45,11 @@ export const useGraphExportOperations = ({
     try {
       const json = generateJSON(graphMeta, nodes, edges);
       downloadFile(json, `${graphMeta.title}_backup.json`, 'application/json');
-      frontendEventBus.publish("message_show", { content: t('graphEditor.export.jsonSuccess'), type: 'success' });
+      message.success(t('graphEditor.export.jsonSuccess'));
       setIsExportMenuOpen(false);
     } catch (err) {
       console.error(err);
-      frontendEventBus.publish("message_show", { content: t('graphEditor.export.exportFailed'), type: 'error' });
+      message.error(t('graphEditor.export.exportFailed'));
     }
   };
 
@@ -66,10 +66,10 @@ export const useGraphExportOperations = ({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      frontendEventBus.publish("message_show", { content: t('graphEditor.export.markdownSuccess'), type: 'success' });
+      message.success(t('graphEditor.export.markdownSuccess'));
     } catch (err) {
       console.error(err);
-      frontendEventBus.publish("message_show", { content: t('graphEditor.export.markdownFailed'), type: 'error' });
+      message.error(t('graphEditor.export.markdownFailed'));
     }
   };
 
@@ -77,22 +77,22 @@ export const useGraphExportOperations = ({
     if (!id || !graphMeta) return;
     try {
       setIsExportMenuOpen(false);
-      frontendEventBus.publish("message_show", { content: t('graphEditor.export.ankiGenerating'), type: 'info' });
+      message.info(t('graphEditor.export.ankiGenerating'));
 
       const cards = await api.study.getCards({ graph_id: id });
 
       if (!cards || cards.length === 0) {
-        frontendEventBus.publish("message_show", { content: t('graphEditor.export.noCards'), type: 'warning' });
+        message.warning(t('graphEditor.export.noCards'));
         return;
       }
 
       const content = generateAnkiDeck(cards, graphMeta.title);
       downloadFile(content, `${graphMeta.title}_anki.txt`, 'text/plain');
 
-      frontendEventBus.publish("message_show", { content: t('graphEditor.export.ankiSuccess'), type: 'success' });
+      message.success(t('graphEditor.export.ankiSuccess'));
     } catch (err) {
       console.error(err);
-      frontendEventBus.publish("message_show", { content: t('graphEditor.export.ankiFailed'), type: 'error' });
+      message.error(t('graphEditor.export.ankiFailed'));
     }
   };
 
@@ -113,13 +113,13 @@ export const useGraphExportOperations = ({
         setLoading(true);
         deleteGraphMutation.mutate(id, {
           onSuccess: () => {
-            frontendEventBus.publish("message_show", { content: t('graphEditor.export.graphDeleted'), type: 'success' });
+            message.success(t('graphEditor.export.graphDeleted'));
             navigate('/dashboard');
           },
           onError: (err: unknown) => {
             console.error(err);
             const errorMessage = err instanceof Error ? err.message : t('graphEditor.export.deleteFailed');
-            frontendEventBus.publish("message_show", { content: errorMessage, type: 'error' });
+            message.error(errorMessage);
             setLoading(false);
             setConfirmModal({ ...state.confirmModal, isOpen: false });
           },
@@ -140,18 +140,19 @@ export const useGraphExportOperations = ({
   const confirmExportImage = async () => {
     try {
       if (!graphRef.current?.captureScreenshot) {
-        frontendEventBus.publish("message_show", { content: t('graphEditor.export.notSupported'), type: 'error' });
+        message.error(t('graphEditor.export.notSupported'));
         setIsExportImageModalOpen(false);
         return;
       }
       const dataUrl = await graphRef.current.captureScreenshot(exportImageOptions);
+      if (!dataUrl) return;
       const safeTitle = (graphMeta?.title || 'graph').replace(/[^a-z0-9\u4e00-\u9fff]/gi, '_').toLowerCase();
       downloadImage(dataUrl, `${safeTitle}-graph.png`);
       setIsExportImageModalOpen(false);
-      frontendEventBus.publish("message_show", { content: t('graphEditor.export.success'), type: 'success' });
+      message.success(t('graphEditor.export.success'));
     } catch (error) {
       console.error('Export image failed:', error);
-      frontendEventBus.publish("message_show", { content: t('graphEditor.export.failed'), type: 'error' });
+      message.error(t('graphEditor.export.failed'));
     }
   };
 

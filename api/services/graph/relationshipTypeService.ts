@@ -185,7 +185,7 @@ export class RelationshipTypeService {
     }
   }
 
-  private mapRelationshipType(dbRecord: any): RelationshipTypeConfig {
+  private mapRelationshipType(dbRecord: RelationshipTypeConfig): RelationshipTypeConfig {
     return {
       id: dbRecord.id,
       name: dbRecord.name,

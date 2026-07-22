@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { Node, Edge } from '../../../types';
+import type { Node, Edge, NodeStatus } from '../../../types';
 import { getLearningStatus, getStatusColors } from '../../../config/learningStatusColors';
 import { getLevel, getLevelLabel } from '../../../lib/graphUtils';
 import { formatDate } from '../../../utils/formatters';
@@ -18,7 +18,7 @@ interface NodePreviewCardProps {
   node: Node;
   nodes: Node[];
   edges: Edge[];
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   position: { x: number; y: number };
   onNavigateToNode?: (node: Node) => void;
   onMarkMastered?: (nodeId: string) => void;

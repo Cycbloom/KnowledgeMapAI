@@ -314,7 +314,8 @@ export const getLearningPathsTool: AgentTool = {
     }> = [];
 
     while (queue.length > 0) {
-      const current = queue.shift()!;
+      const current = queue.shift();
+      if (current === undefined) break;
       if (visited.has(current)) continue;
 
       visited.add(current);
@@ -541,7 +542,10 @@ export const getSimilarGraphsTool: AgentTool = {
         | null;
       const kpData = Array.isArray(kp) ? kp[0] : kp;
       if (kpData?.title) {
-        graphKeywords.get(node.graph_id)!.add(kpData.title.toLowerCase());
+        const set = graphKeywords.get(node.graph_id);
+        if (set) {
+          set.add(kpData.title.toLowerCase());
+        }
       }
     });
 
@@ -789,7 +793,10 @@ export const analyzeMergeCandidatesTool: AgentTool = {
         | null;
       const kpData = Array.isArray(kp) ? kp[0] : kp;
       if (kpData?.title) {
-        graphKeywords.get(node.graph_id)!.add(kpData.title.toLowerCase());
+        const set = graphKeywords.get(node.graph_id);
+        if (set) {
+          set.add(kpData.title.toLowerCase());
+        }
       }
     });
 

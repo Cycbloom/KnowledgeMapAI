@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, FileText, Image, List, Check, Download, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message } from "../../../utils/messageHelper";
 import { LazyImage } from "../../common";
 import { useFocusTrap, useEscapeKey } from "../../../hooks";
 
@@ -49,8 +49,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
     setLoading(true);
     try {
       // We need to use fetch directly to handle blob response correctly with POST
-      const token = localStorage.getItem('auth-storage') 
-        ? JSON.parse(localStorage.getItem('auth-storage')!).state?.token 
+      const authStorage = localStorage.getItem('auth-storage');
+      const token = authStorage
+        ? JSON.parse(authStorage).state?.token
         : null;
 
       const response = await fetch(`/api/data/export/pdf?graph_id=${encodeURIComponent(graphId)}`, {
@@ -83,11 +84,11 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
-      frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.export.success') });
+      message.success(t('graphEditor.export.success'));
       onClose();
     } catch (error) {
       console.error('Export error:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.export.failed') });
+      message.error(t('graphEditor.export.failed'));
     } finally {
       setLoading(false);
     }

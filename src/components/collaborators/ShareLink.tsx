@@ -15,7 +15,7 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ invitationToken, graphId: 
   const shareUrl = `${window.location.origin}/collaboration/${invitationToken}`;
 
   const handleCopy = async () => {
-    const success = await copyToClipboard(shareUrl, t("common.copied"));
+    const success = await copyToClipboard(shareUrl, t("toast.common.copied"));
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

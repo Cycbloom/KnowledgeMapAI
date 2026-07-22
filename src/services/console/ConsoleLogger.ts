@@ -102,11 +102,13 @@ class ConsoleLogger {
     }
 
     if (query.startDate) {
-      filtered = filtered.filter((log) => log.timestamp >= query.startDate!);
+      const startDate = query.startDate;
+      filtered = filtered.filter((log) => log.timestamp >= startDate);
     }
 
     if (query.endDate) {
-      filtered = filtered.filter((log) => log.timestamp <= query.endDate!);
+      const endDate = query.endDate;
+      filtered = filtered.filter((log) => log.timestamp <= endDate);
     }
 
     const offset = query.offset ?? 0;

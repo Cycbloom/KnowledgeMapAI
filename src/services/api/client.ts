@@ -2,6 +2,7 @@ import { useStore } from '@/store/useStore';
 import { createErrorFromResponse } from '@/utils/errors';
 import { apiClient, getCookie } from './createApiClient';
 import { isElectronProduction, getElectronApiUrl } from '@/config/electronConfig';
+import type { Method } from 'axios';
 
 const API_URL = '/api';
 
@@ -31,6 +32,7 @@ export const getHeaders = () => {
   return headers;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handleResponse = async <T = any>(res: Response): Promise<T> => {
   const text = await res.text();
   let data;
@@ -56,8 +58,9 @@ export const handleResponse = async <T = any>(res: Response): Promise<T> => {
   return data as T;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const request = async <T = any>(url: string, options: RequestInit = {}): Promise<T> => {
-  const method = (options.method?.toUpperCase() || 'GET') as any;
+  const method = (options.method?.toUpperCase() || 'GET') as Method;
   const data = options.body ? JSON.parse(options.body as string) : undefined;
 
   return apiClient.request<T, T>({
@@ -83,6 +86,7 @@ export const getAIConfig = (taskType: AITaskType = 'text') => {
   };
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const injectAIConfig = <T extends Record<string, any>>(
   payload: T,
   taskType: AITaskType = 'text'

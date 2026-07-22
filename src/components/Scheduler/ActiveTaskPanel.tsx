@@ -10,7 +10,7 @@ import {
   ListTodo,
   Square,
 } from "lucide-react";
-import { UserTask } from "@shared/types";
+import { UserTask, TaskSubtask } from "@shared/types";
 import { api } from "../../services/api";
 import { useTimerStore } from "../../store/useTimerStore";
 import { useFocusStore } from "../../store/useFocusStore";
@@ -79,7 +79,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   const pause = useTimerStore((s) => s.pause);
   const resume = useTimerStore((s) => s.resume);
 
-  const [subtasks, setSubtasks] = useState<any[]>([]);
+  const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
   const [autoActivated, setAutoActivated] = useState(false);
 
@@ -93,13 +93,13 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     if (task.id) {
       api.scheduler
         .getSubtasks(task.id)
-        .then((res: any) => {
+        .then((res: { data?: TaskSubtask[] }) => {
           if (res.data) {
             setSubtasks(res.data);
             // 如果还没有激活子任务，自动激活第一个 pending/in_progress 的
             if (!activeSubtaskId && !autoActivated && res.data.length > 0) {
               const first = res.data.find(
-                (s: any) =>
+                (s: TaskSubtask) =>
                   s.status === "pending" || s.status === "in_progress",
               );
               if (first) {
@@ -129,7 +129,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
 
       // 从 ref 读最新数据（避免闭包旧值）
       const currentSt = subtasksRef.current.find(
-        (s: any) => s.id === activeSubtaskId,
+        (s: TaskSubtask) => s.id === activeSubtaskId,
       );
       const prevDuration = currentSt?.actual_duration || 0;
       const newDuration = prevDuration + elapsedMinutes;
@@ -197,11 +197,11 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     }
 
     // 3. 找下一个 pending 子任务
-    let nextSubtask: any = null;
+    let nextSubtask: TaskSubtask | null = null;
     try {
-      const response = await api.scheduler.getSubtasks(task.id);
+      const response: { data?: TaskSubtask[] } = await api.scheduler.getSubtasks(task.id);
       if (response.data) {
-        nextSubtask = response.data.find((s: any) => s.status === "pending");
+        nextSubtask = response.data.find((s) => s.status === "pending") ?? null;
       }
     } catch (err) {
       console.warn("Failed to fetch subtasks:", err);

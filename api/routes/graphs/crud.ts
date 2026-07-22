@@ -230,19 +230,22 @@ router.get(
   async (req: OptionalAuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user?.id || null;
+    if (!req.supabase) {
+      throw new AppError("Supabase client not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
 
-    const data = await graphService.getGraph(req.supabase!, id, userId);
+    const data = await graphService.getGraph(req.supabase, id, userId);
     if (!data) {
       throw new AppError("未找到该图谱", 404, ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
     }
 
-    if (userId && req.supabase) {
-      graphDomainService.migrateGraphDomainIfNeeded(req.supabase!, id, userId).catch((err) =>
+    if (userId) {
+      graphDomainService.migrateGraphDomainIfNeeded(req.supabase, id, userId).catch((err) =>
         logger.warn("懒迁移领域失败:", err),
       );
     }
 
-    const domains = await graphDomainService.getGraphDomains(req.supabase!, id);
+    const domains = await graphDomainService.getGraphDomains(req.supabase, id);
 
     res.json({ ...data, domains });
   },

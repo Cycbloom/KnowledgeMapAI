@@ -469,9 +469,11 @@ const calculateMindMapLayout = (
       layoutNodes.forEach((node) => {
         const domain = node.properties?.domain as string | undefined;
         if (domain && domainCenters.has(domain)) {
-          const center = domainCenters.get(domain)!;
-          node.vx = (node.vx || 0) + (center.x - (node.x ?? 0)) * alpha * 0.1;
-          node.vy = (node.vy || 0) + (center.y - (node.y ?? 0)) * alpha * 0.1;
+          const center = domainCenters.get(domain);
+          if (center) {
+            node.vx = (node.vx || 0) + (center.x - (node.x ?? 0)) * alpha * 0.1;
+            node.vy = (node.vy || 0) + (center.y - (node.y ?? 0)) * alpha * 0.1;
+          }
         }
       });
     });

@@ -26,7 +26,7 @@ import {
   FolderOpen,
   Palette,
 } from "lucide-react";
-import { Node, Edge } from "../../../types";
+import { Node, Edge, type NodeStatus } from "../../../types";
 import { createClient } from "@supabase/supabase-js";
 import { useDebouncedSearch } from "../../../hooks/useDebouncedSearch";
 import type { BatchGenerateConfig } from "../modals/BatchGenerateDialog";
@@ -50,19 +50,13 @@ import {
 interface GraphOutlineProps {
   nodes: Node[];
   edges?: Edge[];
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   onNodeClick: (node: Node) => void;
   selectedNodeId: string | null;
   selectedNodeIds?: Set<string>;
   onSelectionChange?: (ids: Set<string>) => void;
-  onBatchAction?: (
-    action:
-      | "expand_graph"
-      | "delete"
-      | "batch_generate_questions"
-      | "create_region",
-    data?: any,
-  ) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onBatchAction?: (action: "expand_graph" | "delete" | "batch_generate_questions" | "create_region", data?: any) => void;
   onAddNode?: () => void;
   onConnectNodes?: (sourceId: string, targetId: string) => void;
   className?: string;
@@ -293,7 +287,7 @@ export const GraphOutline = React.memo(function GraphOutline({
         if (!hasParent.has(edge.target_knowledge_point_id)) {
           if (!cMap.has(edge.source_knowledge_point_id))
             cMap.set(edge.source_knowledge_point_id, []);
-          cMap.get(edge.source_knowledge_point_id)!.push(target);
+          cMap.get(edge.source_knowledge_point_id)?.push(target);
 
           hasParent.add(edge.target_knowledge_point_id);
           pMap.set(
@@ -658,7 +652,7 @@ export const GraphOutline = React.memo(function GraphOutline({
             nodes: [],
           });
         }
-        literatureMap.get(key)!.nodes.push(node);
+        literatureMap.get(key)?.nodes.push(node);
       }
     }
 

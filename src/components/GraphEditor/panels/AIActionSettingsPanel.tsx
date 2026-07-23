@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { api, AIAction } from '../../../services/api';
 import { PromptEditor } from './PromptEditor';
 import { Edit, Trash2, Plus, Zap, Copy } from 'lucide-react';
@@ -11,7 +12,7 @@ interface AIActionSettingsPanelProps {
   scope: 'user' | 'graph';
 }
 
-const getActionModeText = (mode: string, t: (key: string) => string) => {
+const getActionModeText = (mode: string, t: TFunction) => {
   const modes: Record<string, string> = {
     'show_result': t('aiAction.modes.showResult'),
     'update_node': t('aiAction.modes.updateNode'),
@@ -20,7 +21,7 @@ const getActionModeText = (mode: string, t: (key: string) => string) => {
   return modes[mode] || mode;
 };
 
-const getScopeText = (scope: string, t: (key: string) => string) => {
+const getScopeText = (scope: string, t: TFunction) => {
   const scopes: Record<string, string> = {
     'system': t('aiAction.scopes.system'),
     'user': t('aiAction.scopes.user'),

@@ -205,6 +205,9 @@
     "daysLater": "{{count}} 天后",
     "weeksLater": "{{count}} 周后",
     "monthsLater": "{{count}} 个月后",
+    "stability": "稳定度",
+    "difficulty": "难度",
+    "retrievability": "可提取性",
     "quality": {
       "0": "完全忘记",
       "1": "印象模糊",
@@ -342,6 +345,7 @@
   "confirmDeleteTaskTitle": "删除任务",
   "confirmDeleteTaskMessage": "确定要删除任务「{{title}}」吗？此操作无法撤销。",
   "browseTasks": "浏览任务",
+  "more": "更多",
   "taskWorkbench": {
     "loadFailed": "加载任务详情失败",
     "taskStarted": "任务已开始",

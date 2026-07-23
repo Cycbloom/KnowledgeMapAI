@@ -75,7 +75,7 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ data }) => {
                   <div
                     key={date}
                     className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm ${getColor(count)}`}
-                    title={`${date}: ${t('stats.activity.reviewCount', { count: count })}`}
+                    title={`${date}: ${t('stats.activity.reviewCount', { count })}`}
                   />
                 );
               })}

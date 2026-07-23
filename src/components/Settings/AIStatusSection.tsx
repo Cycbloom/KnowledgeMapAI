@@ -15,8 +15,7 @@ import {
   Info,
   KeyRound,
 } from "lucide-react";
-import { PROVIDER_DEFAULTS } from "./settingsConstants";
-import type { EmbeddingAiConfig } from "./settingsConstants";
+import { PROVIDER_DEFAULTS, type EmbeddingAiConfig } from "./settingsConstants";
 
 interface AIStatusSectionProps {
   token: string | null;

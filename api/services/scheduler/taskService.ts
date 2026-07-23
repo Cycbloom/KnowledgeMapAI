@@ -235,7 +235,7 @@ export class TaskService {
       .order("position", { ascending: true });
 
     if (error)
-      throw new AppError(ErrorCodes.SCHEDULER_QUEUE_ERROR, { details: { originalError: error.message } });
+      {throw new AppError(ErrorCodes.SCHEDULER_QUEUE_ERROR, { details: { originalError: error.message } });}
     return data as UserTask[];
   }
 
@@ -286,7 +286,7 @@ export class TaskService {
       .single();
 
     if (taskError)
-      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: taskError.message } });
+      {throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: taskError.message } });}
 
     const { data: execution, error: execError } = await client
       .from("task_executions")
@@ -301,7 +301,7 @@ export class TaskService {
       .single();
 
     if (execError)
-      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: execError.message } });
+      {throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: execError.message } });}
 
     return {
       task: task as UserTask,
@@ -327,7 +327,7 @@ export class TaskService {
       .single();
 
     if (taskError)
-      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: taskError.message } });
+      {throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: taskError.message } });}
     return task as UserTask;
   }
 
@@ -364,7 +364,7 @@ export class TaskService {
       .limit(1);
 
     if (execError)
-      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: execError.message } });
+      {throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: execError.message } });}
 
     if (executions && executions.length > 0) {
       const execution = executions[0];
@@ -397,7 +397,7 @@ export class TaskService {
       .single();
 
     if (taskError)
-      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: taskError.message } });
+      {throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: taskError.message } });}
     return task as UserTask;
   }
 

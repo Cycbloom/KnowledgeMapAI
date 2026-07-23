@@ -9,6 +9,7 @@ vi.mock('comlink', () => ({
 import { expose } from 'comlink';
 // Side-effect import triggers the module body, which calls expose(graphWorker).
 import '../../workers/graphCalculator.worker';
+// eslint-disable-next-line no-duplicate-imports -- side-effect import must stay separate to trigger module body
 import type { GraphWorker } from '../../workers/graphCalculator.worker';
 
 // Capture the object that the worker passed to comlink.expose().

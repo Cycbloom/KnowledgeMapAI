@@ -29,9 +29,15 @@ import {
 import { Node, Edge, type NodeStatus } from "../../../types";
 import { createClient } from "@supabase/supabase-js";
 import { useDebouncedSearch } from "../../../hooks/useDebouncedSearch";
-import type { BatchGenerateConfig } from "../modals/BatchGenerateDialog";
-import { LiteratureSourceDB } from "@shared/types/graph";
-import { BatchGenerateDialog } from "../modals/BatchGenerateDialog";
+import { BatchGenerateDialog, type BatchGenerateConfig } from "../modals/BatchGenerateDialog";
+import {
+  LiteratureSourceDB,
+  BackboneModule,
+  BACKBONE_MODULE_LABELS,
+  BACKBONE_MODULE_ICONS,
+  BACKBONE_MODULE_COLORS,
+  ConceptSource,
+} from "@shared/types/graph";
 import { GraphStatsSummary } from "../shared/GraphStatsSummary";
 import { getLevelColors } from "../../../config/learningStatusColors";
 import { useTranslation } from "react-i18next";
@@ -39,13 +45,6 @@ import { asyncConfirm } from "../../../utils/asyncConfirm";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
 import { LiteratureHoverCard } from "../LiteratureHoverCard";
 import { HIERARCHICAL_EDGE_TYPES } from '../../../config/relationshipTypes';
-import {
-  BackboneModule,
-  BACKBONE_MODULE_LABELS,
-  BACKBONE_MODULE_ICONS,
-  BACKBONE_MODULE_COLORS,
-  ConceptSource,
-} from "@shared/types/graph";
 
 interface GraphOutlineProps {
   nodes: Node[];
@@ -286,7 +285,7 @@ export const GraphOutline = React.memo(function GraphOutline({
       if (source && target) {
         if (!hasParent.has(edge.target_knowledge_point_id)) {
           if (!cMap.has(edge.source_knowledge_point_id))
-            cMap.set(edge.source_knowledge_point_id, []);
+            {cMap.set(edge.source_knowledge_point_id, []);}
           cMap.get(edge.source_knowledge_point_id)?.push(target);
 
           hasParent.add(edge.target_knowledge_point_id);

@@ -4,7 +4,19 @@
   "loadError": "加载统计失败",
   "tabs": {
     "learning": "学习统计",
-    "tasks": "任务统计"
+    "tasks": "任务统计",
+    "overview": "概览",
+    "graphs": "图谱"
+  },
+  "metrics": {
+    "totalCards": "总卡片数",
+    "totalCardsSubtext": "累计创建的知识点",
+    "dueToday": "今日待复习",
+    "dueTodaySubtext": "记忆巩固的关键",
+    "learning": "学习中",
+    "learningSubtext": "正在掌握的知识点",
+    "avgStability": "平均记忆稳定度",
+    "avgStabilitySubtext": "天（FSRS 算法估算）"
   },
   "overview": "Overview",
   "graphAnalysis": "Graph Analysis",
@@ -20,12 +32,27 @@
   "reviewCards": "Review Cards",
   "knowledgeAccumulation": "Knowledge Accumulation Trend (Last 30 Days)",
   "newCards": "New Cards",
-  "forgettingCurve": "Forgetting Curve & Memory Threshold",
+  "forgettingCurve": {
+    "title": "遗忘曲线",
+    "retentionRate": "记忆保留率",
+    "description": "基于 FSRS 算法的理论模型（平均稳定度：{{stability}} 天）",
+    "dayLabel": "第 {{day}} 天",
+    "target": "目标 {{percent}}%"
+  },
   "forgettingCurveDesc": "Theoretical model based on FSRS algorithm (average stability: {{stability}} days)",
   "memoryRetention": "Memory Retention",
   "dayN": "Day {{day}}",
   "knowledgeDistribution": "知识掌握分布",
   "target": "Target",
   "loadingStats": "Loading statistics...",
-  "loadStatsFailed": "Failed to load statistics"
+  "loadStatsFailed": "Failed to load statistics",
+  "day": "天",
+  "forecast": {
+    "title": "复习预测",
+    "reviewCards": "复习卡片"
+  },
+  "growth": {
+    "title": "知识增长",
+    "newCards": "新增卡片"
+  }
 }

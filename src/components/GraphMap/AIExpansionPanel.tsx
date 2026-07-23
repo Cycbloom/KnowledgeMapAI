@@ -134,13 +134,13 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
 
   const styleOptions = styleOptionDefs.map((opt) => ({
     ...opt,
-    label: t(opt.labelKey),
-    details: t(opt.detailsKey),
+    label: t(opt.labelKey as never),
+    details: t(opt.detailsKey as never),
   }));
 
   const relationTypeOptions = relationTypeOptionDefs.map((opt) => ({
     ...opt,
-    label: t(opt.labelKey),
+    label: t(opt.labelKey as never),
   }));
 
   const toggleRelationType = (type: GraphRelationType) => {
@@ -360,9 +360,9 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                       >
                         <div className="flex items-center gap-2">
                           <option.icon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">{option.label}</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">{String(option.label)}</span>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{option.details}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{String(option.details)}</p>
                       </button>
                     ))}
                   </div>
@@ -447,7 +447,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
 
                 <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
                   <p className="text-xs text-primary-600 dark:text-primary-400">
-                    {t(`graphEditor.graphMap.aiExpansion.depthHint${depthLevel}`)}
+                    {t(`graphEditor.graphMap.aiExpansion.depthHint${depthLevel}` as never)}
                   </p>
                 </div>
 
@@ -500,7 +500,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                         <div className="flex items-center justify-center gap-1.5">
                           <div className={`w-2 h-2 rounded-full ${option.color}`} />
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {option.label}
+                            {String(option.label)}
                           </span>
                         </div>
                       </button>
@@ -593,7 +593,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
 
                 <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                   <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                    {t(`graphEditor.graphMap.aiExpansion.widthHint${maxDepth}`)}
+                    {t(`graphEditor.graphMap.aiExpansion.widthHint${maxDepth}` as never)}
                   </p>
                   {autoGenerateNodes && (
                     <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">

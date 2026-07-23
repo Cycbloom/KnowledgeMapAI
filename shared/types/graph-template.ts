@@ -1,15 +1,15 @@
 // 模板相关类型
 // TemplateTypeInfo, TEMPLATE_TYPE_MAP, Template, TemplateNode, TemplateEdge 等
 
-import { BackboneModule } from "./graph-core";
-import type {
-  LayoutSuggestion,
-  NodeLevel,
-  StoryCreationConfig,
-  TemplateCategory,
-  TemplateDifficulty,
-  TemplateLayoutType,
-  TemplateType,
+import {
+  BackboneModule,
+  type LayoutSuggestion,
+  type NodeLevel,
+  type StoryCreationConfig,
+  type TemplateCategory,
+  type TemplateDifficulty,
+  type TemplateLayoutType,
+  type TemplateType,
 } from "./graph-core";
 
 export interface TemplateTypeInfo {

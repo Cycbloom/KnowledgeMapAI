@@ -47,9 +47,9 @@ export const activitiesApi = {
     if (options?.from_date) params.append("from_date", options.from_date);
     if (options?.to_date) params.append("to_date", options.to_date);
     if (options?.activity_type)
-      params.append("activity_type", options.activity_type);
+      {params.append("activity_type", options.activity_type);}
     if (options?.knowledge_point_id)
-      params.append("knowledge_point_id", options.knowledge_point_id);
+      {params.append("knowledge_point_id", options.knowledge_point_id);}
     if (options?.graph_id) params.append("graph_id", options.graph_id);
     if (options?.limit) params.append("limit", String(options.limit));
     if (options?.offset) params.append("offset", String(options.offset));

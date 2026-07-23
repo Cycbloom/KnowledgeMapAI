@@ -127,7 +127,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                <span className="font-medium text-sm">{t(labelKey)}</span>
+                <span className="font-medium text-sm">{t(labelKey as never)}</span>
               </button>
             ))}
           </div>
@@ -150,7 +150,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
                     : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
                 }`}
               >
-                {t(labelKey)}
+                {t(labelKey as never)}
               </button>
             ))}
           </div>
@@ -213,8 +213,8 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="font-medium text-sm">{t(labelKey)}</span>
-                <span className="text-xs opacity-70 text-center leading-tight">{t(descKey)}</span>
+                <span className="font-medium text-sm">{t(labelKey as never)}</span>
+                <span className="text-xs opacity-70 text-center leading-tight">{t(descKey as never)}</span>
               </button>
             ))}
           </div>
@@ -231,8 +231,8 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
               <button
                 key={value}
                 onClick={() => updatePreference("defaultNodeColor", value)}
-                title={t(labelKey)}
-                aria-label={t(labelKey)}
+                title={t(labelKey as never)}
+                aria-label={t(labelKey as never)}
                 className={`flex items-center justify-center w-10 h-10 rounded-lg border-2 transition-all ${
                   preferences.defaultNodeColor === value
                     ? "ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-slate-800 border-transparent"

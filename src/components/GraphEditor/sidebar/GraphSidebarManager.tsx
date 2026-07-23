@@ -217,10 +217,10 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             onSelectionChange={setSelectedNodeIds}
             onBatchAction={(action: string, data?: BatchGenerateConfig) => {
               if (action === "expand_graph")
-                aiOps.handleBackgroundTask("expand_graph");
+                {aiOps.handleBackgroundTask("expand_graph");}
               else if (action === "delete") nodeOps.handleBatchDelete();
               else if (action === "batch_generate_questions")
-                aiOps.handleBackgroundTask("batch_generate_questions", data);
+                {aiOps.handleBackgroundTask("batch_generate_questions", data);}
               else if (action === "create_region") setIsCreateRegionOpen(true);
             }}
             onConnectNodes={onConnectNodes}

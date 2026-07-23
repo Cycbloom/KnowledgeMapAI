@@ -208,7 +208,7 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
 请发现新的潜在关系，输出JSON格式。`;
 
     const enrichedMetadata = await enrichMetadata(supabase, {
-      userId: userId,
+      userId,
     });
 
     const startTime = Date.now();
@@ -457,7 +457,7 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
     };
 
     const enrichedMetadata = await enrichMetadata(supabase, {
-      userId: userId,
+      userId,
     });
 
     const startTime = Date.now();

@@ -40,13 +40,13 @@ describe("errors utilities", () => {
       const context = { userId: 123, action: "login" };
       const error = new AppError(
         "Custom error",
-        "AUTH_ERROR",
+        "AUTH_UNAUTHORIZED",
         401,
         context,
         false,
       );
       expect(error.message).toBe("Custom error");
-      expect(error.code).toBe("AUTH_ERROR");
+      expect(error.code).toBe("AUTH_UNAUTHORIZED");
       expect(error.statusCode).toBe(401);
       expect(error.context).toEqual(context);
       expect(error.isOperational).toBe(false);
@@ -67,7 +67,7 @@ describe("errors utilities", () => {
     });
 
     it("should deserialize from JSON", () => {
-      const original = new AppError("Test error", "AUTH_ERROR", 401, {
+      const original = new AppError("Test error", "AUTH_UNAUTHORIZED", 401, {
         userId: 123,
       });
       const json = original.toJSON();

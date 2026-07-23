@@ -1,9 +1,8 @@
 import {
   ErrorCodes as SharedErrorCodes,
   ErrorCodeMessages as SharedErrorCodeMessages,
+  type ErrorCode as SharedErrorCode,
 } from "../../shared/types/errorCodes";
-
-import type { ErrorCode as SharedErrorCode } from "../../shared/types/errorCodes";
 
 import {
   AppErrorBase,

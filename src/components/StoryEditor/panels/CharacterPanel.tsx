@@ -134,7 +134,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
                     </div>
                     <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium mt-0.5
                       ${roleConfig.bg} ${roleConfig.text}`}>
-                      {t(roleConfig.labelKey)}
+                      {t(roleConfig.labelKey as never)}
                     </span>
                   </div>
 

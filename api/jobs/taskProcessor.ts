@@ -211,7 +211,7 @@ class TaskProcessor {
           node_title || "",
           truncatedContent,
           {
-            type: type,
+            type,
             count,
             provider: provider as AIProviderType | undefined,
             model,

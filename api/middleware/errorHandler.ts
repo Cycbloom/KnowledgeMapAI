@@ -34,7 +34,7 @@ const sanitizeValue = (value: unknown, depth: number = 0): unknown => {
 
   if (typeof value === 'string') {
     if (value.length > 1000) {
-      return value.substring(0, 100) + '...[TRUNCATED]';
+      return `${value.substring(0, 100)  }...[TRUNCATED]`;
     }
     return value;
   }

@@ -157,10 +157,10 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
                 <Icon className={`w-4 h-4 ${meta.iconColor}`} />
                 <div>
                   <span className="text-sm text-gray-700 dark:text-gray-300">
-                    {t(meta.labelKey)}
+                    {t(meta.labelKey as never)}
                   </span>
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                    {t(meta.descKey)}
+                    {t(meta.descKey as never)}
                   </p>
                 </div>
               </div>
@@ -173,7 +173,7 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
                 <div
                   role="switch"
                   aria-checked={!muted}
-                  aria-label={t(meta.labelKey)}
+                  aria-label={t(meta.labelKey as never)}
                   tabIndex={0}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                     muted ? "bg-gray-200 dark:bg-gray-700" : "bg-primary-600"

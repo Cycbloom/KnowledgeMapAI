@@ -205,6 +205,9 @@
     "daysLater": "In {{count}} days",
     "weeksLater": "In {{count}} weeks",
     "monthsLater": "In {{count}} months",
+    "stability": "Stability",
+    "difficulty": "Difficulty",
+    "retrievability": "Retrievability",
     "quality": {
       "0": "Complete Forget",
       "1": "Vague Memory",
@@ -342,6 +345,7 @@
   "confirmDeleteTaskTitle": "Delete Task",
   "confirmDeleteTaskMessage": "Are you sure you want to delete task \"{{title}}\"? This action cannot be undone.",
   "browseTasks": "Browse Tasks",
+  "more": "More",
   "taskWorkbench": {
     "loadFailed": "Failed to load task details",
     "taskStarted": "Task started",

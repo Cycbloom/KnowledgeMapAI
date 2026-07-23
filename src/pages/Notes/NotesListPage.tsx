@@ -958,7 +958,7 @@ export const NotesListPage = () => {
           {VIEW_TABS.map((tab) => (
             <FilterTab
               key={tab.value}
-              label={t(tab.labelKey)}
+              label={t(tab.labelKey as never)}
               value={tab.value}
               current={view}
               onClick={handleViewChange}

@@ -1,5 +1,4 @@
-import { EmptyState } from './EmptyState';
-import type { EmptyStateProps } from './EmptyState';
+import { EmptyState, type EmptyStateProps } from './EmptyState';
 
 export type EmptyStateCardProps = EmptyStateProps;
 

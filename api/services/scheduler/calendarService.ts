@@ -149,7 +149,7 @@ class CalendarService {
 
   private generateICSContent(tasks: CalendarTask[], executions: CalendarExecution[]): string {
     const now = new Date();
-    const timestamp = now.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    const timestamp = `${now.toISOString().replace(/[-:]/g, "").split(".")[0]  }Z`;
 
     let ics = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -173,7 +173,7 @@ X-WR-CALDESC:KnowledgeMap 任务调度系统的日历同步
         : new Date(startDate.getTime() + (task.estimated_duration || 30) * 60000);
 
       const formatDate = (date: Date): string => {
-        return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+        return `${date.toISOString().replace(/[-:]/g, "").split(".")[0]  }Z`;
       };
 
       const status = task.status === "completed" ? "COMPLETED" : "CONFIRMED";
@@ -220,7 +220,7 @@ CATEGORIES:${category}
         : new Date(startDate.getTime() + (exec.duration || 30) * 60000);
 
       const formatDate = (date: Date): string => {
-        return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+        return `${date.toISOString().replace(/[-:]/g, "").split(".")[0]  }Z`;
       };
 
       ics += `BEGIN:VEVENT

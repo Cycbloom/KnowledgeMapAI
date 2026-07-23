@@ -94,7 +94,7 @@ router.put(
 
     // Check ownership
     const existing = await aiActionService.getAction(supabase, id);
-    if (!existing) throw new AppError(ErrorCodes.ACTION_NOT_FOUND);
+    if (!existing) throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
 
     if (existing.scope !== "system" && existing.user_id !== userId) {
       throw new AppError(ErrorCodes.AUTH_FORBIDDEN);
@@ -116,7 +116,7 @@ router.delete("/:id", requireAuth, async (req: AuthRequest, res: Response) => {
 
   // Check ownership
   const existing = await aiActionService.getAction(supabase, id);
-  if (!existing) throw new AppError(ErrorCodes.ACTION_NOT_FOUND);
+  if (!existing) throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
 
   if (existing.scope !== "system" && existing.user_id !== userId) {
     throw new AppError(ErrorCodes.AUTH_FORBIDDEN);

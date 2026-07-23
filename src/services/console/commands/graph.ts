@@ -23,7 +23,7 @@ const handleGraphCreate = async (args: ParsedArgs, _context: CommandContext): Pr
   try {
     const result = await graphsApi.create({
       title: name,
-      description: description,
+      description,
     });
 
     return {
@@ -158,7 +158,7 @@ const handleNodeCreate = async (args: ParsedArgs, _context: CommandContext): Pro
   try {
     const result = await nodesApi.create({
       graph_id: graphId,
-      title: title,
+      title,
     });
 
     return {

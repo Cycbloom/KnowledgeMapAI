@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle2, Copy, Check, Link2, ArrowRight, CheckCircle, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
-import type { StructuredAnalysisResult } from '../../services/api/agent';
-import { agentApi } from '../../services/api/agent';
+import { agentApi, type StructuredAnalysisResult } from '../../services/api/agent';
 import { copyToClipboard } from '@/utils/clipboard';
 
 interface AnalysisResultViewProps {

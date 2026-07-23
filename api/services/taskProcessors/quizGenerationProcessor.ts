@@ -183,8 +183,8 @@ export class QuizGenerationProcessor implements TaskProcessor {
           context = `${context}\n\nCustom Instructions: ${customPrompt}`;
         }
 
-        let typesForNode = cardTypes;
-        let countForNode = cardsPerType ? 
+        const typesForNode = cardTypes;
+        const countForNode = cardsPerType ? 
           cardTypes.reduce((sum, type) => sum + (cardsPerType[type] || 1), 0) : 
           3;
 

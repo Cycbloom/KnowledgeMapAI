@@ -84,7 +84,7 @@ export const ConsoleInput = forwardRef<ConsoleInputRef, ConsoleInputProps>(
           const selected = suggestions[selectedIndex];
           const parts = value.split(' ');
           parts[parts.length - 1] = selected.value;
-          onChange(parts.join(' ') + ' ');
+          onChange(`${parts.join(' ')  } `);
           setShowSuggestions(false);
         }
       } else if (e.key === 'ArrowUp') {
@@ -127,7 +127,7 @@ export const ConsoleInput = forwardRef<ConsoleInputRef, ConsoleInputProps>(
           const selected = suggestions[selectedIndex];
           const parts = value.split(' ');
           parts[parts.length - 1] = selected.value;
-          onChange(parts.join(' ') + ' ');
+          onChange(`${parts.join(' ')  } `);
           setShowSuggestions(false);
         } else if (value.trim()) {
           setHistoryIndex(-1);
@@ -145,7 +145,7 @@ export const ConsoleInput = forwardRef<ConsoleInputRef, ConsoleInputProps>(
     const handleSuggestionClick = useCallback((suggestion: AutocompleteSuggestion) => {
       const parts = value.split(' ');
       parts[parts.length - 1] = suggestion.value;
-      onChange(parts.join(' ') + ' ');
+      onChange(`${parts.join(' ')  } `);
       setShowSuggestions(false);
       inputRef.current?.focus();
     }, [value, onChange]);

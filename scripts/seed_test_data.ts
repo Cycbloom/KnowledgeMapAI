@@ -248,7 +248,7 @@ const LONG_CONTENT_GRAPH: GraphData = {
     },
     { 
       title: '超长内容节点', 
-      content: '这是一个包含超长内容的知识点。'.repeat(60) + '\n\n' + '这是第二段超长内容，用于测试内容显示和存储。'.repeat(30) + '\n\n' + '这是第三段内容，包含了更多的文字来测试边界条件。'.repeat(20), 
+      content: `${'这是一个包含超长内容的知识点。'.repeat(60)}\n\n${'这是第二段超长内容，用于测试内容显示和存储。'.repeat(30)}\n\n${'这是第三段内容，包含了更多的文字来测试边界条件。'.repeat(20)}`,
       level: 'core' as const, 
       x: 400, 
       y: 280 

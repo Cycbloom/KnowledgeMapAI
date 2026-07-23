@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   Sparkles,
   Loader2,
@@ -21,14 +22,13 @@ import {
 } from "lucide-react";
 import { api } from "../../services/api";
 import { message } from "../../utils/messageHelper";
-import { useError, useIsMobile } from "../../hooks";
-import { useTopicCheck } from "../../hooks";
-import type {
-  TemplateType,
-  TemplateCategory,
-  BackboneModuleCustomConfig,
+import { useError, useIsMobile, useTopicCheck } from "../../hooks";
+import {
+  TEMPLATE_CATEGORY_TYPES,
+  type TemplateType,
+  type TemplateCategory,
+  type BackboneModuleCustomConfig,
 } from "@shared/types/graph";
-import { TEMPLATE_CATEGORY_TYPES } from "@shared/types/graph";
 import { TemplatePromptConfigPanel } from "./TemplatePromptConfigPanel";
 import { CustomModuleEditor } from "./CustomModuleEditor";
 import {
@@ -171,7 +171,7 @@ interface NodeItemProps {
   style: "academic" | "practical" | "beginner" | "custom";
   graphId?: string;
   isMobile?: boolean;
-  t: (key: string) => string;
+  t: TFunction;
   onExpand: (nodeId: string) => Promise<TreeNode[] | null>;
   onNodeUpdate: (nodeId: string, updates: Partial<TreeNode>) => void;
 }
@@ -690,7 +690,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   ];
 
   const getStyleLabel = (styleValue: string) => {
-    return t(`autoGraph.styleLabels.${styleValue}`);
+    return t(`autoGraph.styleLabels.${styleValue}` as never);
   };
 
   const handleSelectTemplateType = (type: TemplateType) => {
@@ -785,7 +785,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 selectedPresetId &&
                 selectedPresetId !== "custom" && (
                   <span className="ml-1 opacity-70">
-                    · {t(`templates.topicResearchPreset.${selectedPresetId}`)}
+                    · {t(`templates.topicResearchPreset.${selectedPresetId}` as never)}
                   </span>
                 )}
             </span>
@@ -955,7 +955,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                                   key={idx}
                                   className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[8px] leading-none"
                                   style={{
-                                    backgroundColor: mod.color + "20",
+                                    backgroundColor: `${mod.color  }20`,
                                     color: mod.color,
                                     border: `1px solid ${mod.color}40`,
                                   }}
@@ -1052,7 +1052,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                             onClick={handleCustomModulesConfirm}
                             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-600 hover:bg-primary-700 text-white transition-colors"
                           >
-                            {t("common.confirm")}
+                            {t("common.confirmButton")}
                           </button>
                         </div>
                       </div>
@@ -1265,13 +1265,13 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                             : "text-gray-700 dark:text-gray-300"
                         }`}
                       >
-                        {t(option.labelKey)}
+                        {t(option.labelKey as never)}
                       </span>
                     </div>
                     <p
                       className={`${isMobile ? "text-[9px]" : "text-[10px]"} text-gray-500 dark:text-gray-400 line-clamp-1`}
                     >
-                      {t(option.detailsKey)}
+                      {t(option.detailsKey as never)}
                     </p>
                   </button>
                 );
@@ -1482,7 +1482,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 <span
                   className={`${isMobile ? "text-[10px]" : "text-xs"} text-gray-400 dark:text-gray-500 px-2 py-0.5 bg-gray-200 dark:bg-slate-600 rounded`}
                 >
-                  {getStyleLabel(style)}
+                  {String(getStyleLabel(style))}
                 </span>
                 {selectedTemplateType !== "blank" && (
                   <span

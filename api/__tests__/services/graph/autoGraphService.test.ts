@@ -667,7 +667,7 @@ describe("AutoGraphService", () => {
 
       // 1. createKnowledgePointsBatch: await insert().select()
       mockSupabase.queryChain.mockChainResult({
-        data: [{ id: parentKpId }, { id: childKpId + "-1" }, { id: childKpId + "-2" }],
+        data: [{ id: parentKpId }, { id: `${childKpId  }-1` }, { id: `${childKpId  }-2` }],
         error: null,
       });
       // 2. createEdgesBatch: await notDeleted(select().eq())
@@ -685,13 +685,13 @@ describe("AutoGraphService", () => {
           {
             id: "edge-1",
             source_knowledge_point_id: parentKpId,
-            target_knowledge_point_id: childKpId + "-1",
+            target_knowledge_point_id: `${childKpId  }-1`,
             relationship_type: "contains",
           },
           {
             id: "edge-2",
             source_knowledge_point_id: parentKpId,
-            target_knowledge_point_id: childKpId + "-2",
+            target_knowledge_point_id: `${childKpId  }-2`,
             relationship_type: "references",
           },
         ],
@@ -705,13 +705,13 @@ describe("AutoGraphService", () => {
           graph_id: graphId,
         } as any)
         .mockResolvedValueOnce({
-          id: childGraphNodeId + "-1",
-          knowledge_point_id: childKpId + "-1",
+          id: `${childGraphNodeId  }-1`,
+          knowledge_point_id: `${childKpId  }-1`,
           graph_id: graphId,
         } as any)
         .mockResolvedValueOnce({
-          id: childGraphNodeId + "-2",
-          knowledge_point_id: childKpId + "-2",
+          id: `${childGraphNodeId  }-2`,
+          knowledge_point_id: `${childKpId  }-2`,
           graph_id: graphId,
         } as any);
 

@@ -4,8 +4,7 @@ import { logger } from "../../utils/logger";
 import { rerankingService } from "./rerankingService";
 import { reciprocalRankFusion, type RankedItem } from "../../utils/rrf";
 import { notDeleted } from '../common/softDeleteHelper';
-import type { TraversalFunction } from "./ragService";
-import type { RAGSearchResult, GraphRAGSearchResult } from "./ragService";
+import type { TraversalFunction, RAGSearchResult, GraphRAGSearchResult } from "./ragService";
 
 export class RAGSearchService {
   private aiService: AIService;

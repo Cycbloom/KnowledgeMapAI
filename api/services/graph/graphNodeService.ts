@@ -85,9 +85,7 @@ export class GraphNodeService {
   }
 
   async removeFromGraph(supabase: SupabaseClient, graphNodeId: string, graphId: string): Promise<void> {
-    let knowledgePointId: string | undefined;
-
-    knowledgePointId = await withThreeLevelFallback<string | undefined>({
+    const knowledgePointId = await withThreeLevelFallback<string | undefined>({
       context: 'removeFromGraph',
       rpcFn: async () => {
         const { data, error } = await supabase.rpc('remove_node_with_edges', {

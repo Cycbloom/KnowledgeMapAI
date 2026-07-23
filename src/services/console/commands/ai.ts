@@ -44,7 +44,7 @@ const handleAiAnalyze = async (args: ParsedArgs, _context: CommandContext): Prom
         const nodes = await graphsApi.getNodes(graphId);
         result = {
           totalNodes: Array.isArray(nodes) ? nodes.length : 0,
-          nodes: nodes,
+          nodes,
         };
         break;
       }

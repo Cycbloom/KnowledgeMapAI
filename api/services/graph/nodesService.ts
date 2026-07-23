@@ -429,20 +429,20 @@ export class NodesService {
     if (updates.content !== undefined) kpUpdates.content = updates.content;
     if (updates.summary !== undefined) kpUpdates.summary = updates.summary;
     if (updates.learning_material !== undefined)
-      kpUpdates.learning_material = updates.learning_material;
+      {kpUpdates.learning_material = updates.learning_material;}
     if (updates.properties !== undefined)
-      kpUpdates.properties = updates.properties;
+      {kpUpdates.properties = updates.properties;}
     if (updates.visibility !== undefined)
-      kpUpdates.visibility = updates.visibility;
+      {kpUpdates.visibility = updates.visibility;}
     if (updates.keywords !== undefined) kpUpdates.keywords = updates.keywords;
 
     if (updates.x_position !== undefined)
-      gnUpdates.x_position = updates.x_position;
+      {gnUpdates.x_position = updates.x_position;}
     if (updates.y_position !== undefined)
-      gnUpdates.y_position = updates.y_position;
+      {gnUpdates.y_position = updates.y_position;}
     if (updates.level !== undefined) gnUpdates.level = updates.level;
     if (updates.is_accepted !== undefined)
-      gnUpdates.is_accepted = updates.is_accepted;
+      {gnUpdates.is_accepted = updates.is_accepted;}
 
     if (Object.keys(kpUpdates).length > 0 || Object.keys(gnUpdates).length > 0) {
       if (transactionExecutor.isAvailable()) {
@@ -887,11 +887,11 @@ export class NodesService {
       .single();
 
     if (error)
-      throw new AppError(
+      {throw new AppError(
         error.message || '删除边失败',
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
+      );}
 
     if (!edge) {
       throw new AppError(

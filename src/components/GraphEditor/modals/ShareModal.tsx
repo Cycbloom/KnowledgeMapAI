@@ -260,7 +260,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       <div className="flex items-center gap-2">
                         <span
                           className="px-2 py-1 text-sm rounded"
-                          style={{ backgroundColor: roleColors[collaborator.role] + '20', color: roleColors[collaborator.role] }}
+                          style={{ backgroundColor: `${roleColors[collaborator.role]  }20`, color: roleColors[collaborator.role] }}
                         >
                           {roleLabels[collaborator.role]}
                         </span>

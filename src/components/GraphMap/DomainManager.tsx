@@ -101,7 +101,7 @@ function SortableDomainItem({
     <div ref={setNodeRef} style={style} {...attributes}>
       <div
         className={`group flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${
-          depth > 0 ? 'ml-' + Math.min(depth * 4, 16) : ''
+          depth > 0 ? `ml-${  Math.min(depth * 4, 16)}` : ''
         }`}
         style={{ paddingLeft: `${depth * 20 + 12}px` }}
       >
@@ -589,7 +589,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
       <div key={node.id}>
         <div
           className={`group flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${
-            depth > 0 ? 'ml-' + Math.min(depth * 4, 16) : ''
+            depth > 0 ? `ml-${  Math.min(depth * 4, 16)}` : ''
           }`}
           style={{ paddingLeft: `${depth * 20 + 12}px` }}
         >

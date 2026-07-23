@@ -1,5 +1,4 @@
-import { hierarchy, tree } from 'd3-hierarchy';
-import type { HierarchyNode } from 'd3-hierarchy';
+import { hierarchy, tree, type HierarchyNode } from 'd3-hierarchy';
 import { Node, Edge, LayoutNode, LayoutLink } from '../../types';
 import { HIERARCHICAL_EDGE_TYPES } from '../../config/relationshipTypes';
 

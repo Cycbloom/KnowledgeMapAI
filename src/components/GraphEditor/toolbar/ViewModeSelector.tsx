@@ -75,10 +75,10 @@ const ViewModeSelector = React.memo(({
                 ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
           }`}
-          title={t(descriptionKey)}
+          title={t(descriptionKey as never)}
         >
           <Icon size={16} />
-          <span className="hidden sm:inline">{t(labelKey)}</span>
+          <span className="hidden sm:inline">{t(labelKey as never)}</span>
         </button>
       ))}
     </div>

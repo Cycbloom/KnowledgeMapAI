@@ -585,7 +585,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
   // —— 键盘导航（菜单打开时拦截 Arrow/Enter/Esc） ——
   // 斜杠菜单过滤后的项
   const slashItems = useMemo(
-    () => filterBlockTypes(slashMenu.query, (key) => t(key)),
+    () => filterBlockTypes(slashMenu.query, (key) => t(key as never)),
     [slashMenu.query, t],
   );
 

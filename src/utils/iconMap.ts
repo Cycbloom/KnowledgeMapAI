@@ -12,8 +12,8 @@ import {
   User,
   Trash2,
   NotebookPen,
+  type LucideIcon,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
 /**
  * Maps Lucide icon name strings (as used in Kernel NavItemRegistration)

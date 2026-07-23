@@ -152,7 +152,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     return () => {
       useTimerStore.getState().setOnFocusSessionComplete(undefined);
     };
-  }, [task.id, activeSubtaskId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [task.id, activeSubtaskId]);  
 
   const currentActiveSubtask = subtasks.find((s) => s.id === activeSubtaskId);
   const currentSubtaskIndex = activeSubtaskId

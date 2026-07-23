@@ -34,7 +34,7 @@ export class TaskSettingsService {
         .single();
 
       if (createError)
-        throw new Error(`Failed to create settings: ${createError.message}`);
+        {throw new Error(`Failed to create settings: ${createError.message}`);}
       return newSettings as TaskSettings;
     }
 

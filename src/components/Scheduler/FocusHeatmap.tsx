@@ -157,7 +157,7 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
         Array<{ date: string; duration: number; count: number }>
       > = [];
 
-      let currentDate = new Date(startDate);
+      const currentDate = new Date(startDate);
       currentDate.setDate(currentDate.getDate() - startDay);
 
       for (let week = 0; week < 53; week++) {

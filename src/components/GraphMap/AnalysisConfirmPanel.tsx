@@ -1,8 +1,7 @@
 import React from 'react';
 import { Target, BarChart3, Zap, Loader2, Sparkles, FileText, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { TokenEstimation } from './utils/tokenEstimation';
-import { formatTokenCount, getTokenWarningLevel } from './utils/tokenEstimation';
+import { formatTokenCount, getTokenWarningLevel, type TokenEstimation } from './utils/tokenEstimation';
 
 export type AnalysisMode = 'quick' | 'deep' | 'custom';
 

@@ -664,7 +664,7 @@ const VariableHint = () => {
               <code className="text-primary-600 dark:text-primary-400 font-mono">
                 {`{{${varName}}}`}
               </code>
-              <span>{t(`notes.templates.hints.${VARIABLE_LABEL_SUFFIX[varName]}`)}</span>
+              <span>{t(`notes.templates.hints.${VARIABLE_LABEL_SUFFIX[varName]}` as never)}</span>
             </li>
           ))}
         </ul>

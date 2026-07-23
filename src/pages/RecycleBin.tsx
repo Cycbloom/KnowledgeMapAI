@@ -298,7 +298,7 @@ export const RecycleBin = () => {
     (category === "graphs" && isLoading && !isFetching) ||
     (category === "notes" && trashNotesLoading && !trashNotesFetching)
   )
-    return (
+    {return (
       <div
         className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
       >
@@ -310,7 +310,7 @@ export const RecycleBin = () => {
           </div>
         </div>
       </div>
-    );
+    );}
   if ((category === "graphs" && error) || (category === "notes" && trashNotesError)) {
     const activeError = category === "graphs" ? error : trashNotesError;
     const handleRetry = category === "graphs" ? refetch : refetchNotes;

@@ -43,9 +43,11 @@ export const NotesListSortDropdown: React.FC<Props> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  const currentLabel = t(
-    SORT_OPTIONS.find((opt) => opt.value === value)?.labelKey ??
-      "notes.sort.updatedAt",
+  const currentLabel = String(
+    t(
+      (SORT_OPTIONS.find((opt) => opt.value === value)?.labelKey ??
+        "notes.sort.updatedAt") as never,
+    ),
   );
 
   return (
@@ -98,7 +100,7 @@ export const NotesListSortDropdown: React.FC<Props> = ({
                 role="menuitem"
                 aria-pressed={active}
               >
-                <span>{t(opt.labelKey)}</span>
+                <span>{t(opt.labelKey as never)}</span>
                 {active && <Check size={14} aria-hidden="true" />}
               </button>
             );

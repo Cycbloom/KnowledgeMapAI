@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { driver, type DriveStep, type Side, type Driver } from "driver.js";
 import { useTranslation } from "react-i18next";
-import i18next from "i18next";
+import i18next, { type TFunction } from "i18next";
 import "driver.js/dist/driver.css";
 
 const ONBOARDING_KEY = "graph-editor-onboarding-complete";
@@ -77,15 +77,15 @@ const stepDefinitions: StepDefinition[] = [
 ];
 
 function buildSteps(
-  t: (key: string) => string,
+  t: TFunction,
   callbacks: TourCallbacks,
   driverRef: { current: Driver | null },
 ): DriveStep[] {
   return stepDefinitions.map((def) => {
     const step: DriveStep = {
       popover: {
-        title: t(`graphEditor.onboarding.${def.i18nKey}Title`),
-        description: t(`graphEditor.onboarding.${def.i18nKey}Desc`),
+        title: t(`graphEditor.onboarding.${def.i18nKey}Title` as never),
+        description: t(`graphEditor.onboarding.${def.i18nKey}Desc` as never),
         side: def.side,
       },
     };
@@ -138,7 +138,7 @@ function buildSteps(
 }
 
 function createDriverInstance(
-  t: (key: string) => string,
+  t: TFunction,
   onComplete?: () => void,
   callbacks?: TourCallbacks,
   driverRef?: { current: Driver | null },

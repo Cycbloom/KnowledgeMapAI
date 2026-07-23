@@ -14,9 +14,8 @@ import {
   Film,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { storyCreationHttpApi } from "../../../services/api/storyCreation";
+import { storyCreationHttpApi, type StoryCharacter } from "../../../services/api/storyCreation";
 import { message } from "../../../utils/messageHelper";
-import type { StoryCharacter } from "../../../services/api/storyCreation";
 import { useFormDraft, useBeforeUnload } from "../../../hooks";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
 

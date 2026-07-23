@@ -1,5 +1,6 @@
 {
   "appName": "知识图谱",
+  "mainNavigation": "主导航",
   "myGraphs": "我的图谱",
   "graphMap": "图谱地图",
   "studyCenter": "学习中心",
@@ -68,5 +69,8 @@
   },
   "importSuccess": "导入成功: {{title}}",
   "importFailed": "导入失败: {{message}}",
-  "skipToMain": "跳到主内容"
+  "skipToMain": "跳到主内容",
+  "expandSidebar": "展开侧边栏",
+  "collapseSidebar": "收起侧边栏",
+  "moreMenu": "更多菜单"
 }

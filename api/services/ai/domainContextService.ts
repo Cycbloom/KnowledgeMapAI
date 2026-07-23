@@ -129,7 +129,7 @@ export class DomainContextService {
     if (text.length <= MAX_CONTEXT_LENGTH) {
       return text;
     }
-    return text.substring(0, MAX_CONTEXT_LENGTH) + '...(内容已截断)';
+    return `${text.substring(0, MAX_CONTEXT_LENGTH)  }...(内容已截断)`;
   }
 
   private setCache(key: string, value: string): void {

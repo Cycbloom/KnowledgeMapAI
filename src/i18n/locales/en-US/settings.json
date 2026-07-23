@@ -4,6 +4,7 @@
   "back": "Back",
   "saveAll": "Save All Changes",
   "saving": "Saving...",
+  "loading": "Loading...",
   "sections": {
     "appearance": "Appearance",
     "focusMode": "Focus Mode",
@@ -251,5 +252,10 @@
       "system": "System",
       "systemDesc": "System notifications"
     }
-  }
+  },
+  "embeddingAutoConfigured": "Embedding service auto-configured",
+  "embeddingAutoConfigFailed": "Embedding service auto-configuration failed",
+  "loadConfigFailed": "Failed to load configuration",
+  "providerRequired": "Please select a provider",
+  "sourceAuto": "Auto"
 }

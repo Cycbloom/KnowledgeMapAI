@@ -339,7 +339,7 @@ const LogDetailModal: React.FC<{
 
   const getOperationLabel = (operation: string): string => {
     const key = `console.performance.operations.${operation}`;
-    const translated = t(key);
+    const translated = String(t(key as never));
     return translated === key ? operation : translated;
   };
 
@@ -383,14 +383,14 @@ const LogDetailModal: React.FC<{
       key === "graphId" &&
       (lowerValue === "temp" || lowerValue === "temporary")
     )
-      return true;
+      {return true;}
     if (key === "nodeId") {
       if (
         lowerValue === "node" ||
         lowerValue === "temp" ||
         lowerValue === "temporary"
       )
-        return true;
+        {return true;}
       if (/^node[-_]?\d+$/i.test(value)) return true;
     }
     return false;
@@ -856,7 +856,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   const getOperationLabel = useCallback(
     (operation: string): string => {
       const key = `console.performance.operations.${operation}`;
-      const translated = t(key);
+      const translated = String(t(key as never));
       return translated === key ? operation : translated;
     },
     [t],

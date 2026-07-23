@@ -100,7 +100,8 @@
     "typeCourse": "课程",
     "typeTool": "工具",
     "typeLink": "链接",
-    "learningGuide": "学习指南"
+    "learningGuide": "学习指南",
+    "back": "返回"
   },
   "settings": {
     "readingSettings": "阅读设置",
@@ -378,13 +379,18 @@
     "addBookButton": "添加书籍",
     "addLinkButton": "添加链接",
     "learningGuide": "学习指南",
-    "cancel": "取消"
+    "cancel": "取消",
+    "confirmDeleteBook": "确定要删除此书籍吗？",
+    "confirmDeleteLink": "确定要删除此链接吗？",
+    "delete": "删除"
   },
   "challenge": {
     "complete": "完成学习，开始挑战",
     "generating": "正在生成挑战题...",
     "generatingProgress": "正在生成第 {{current}}/{{total}} 题",
     "cancel": "取消",
+    "start": "开始挑战",
+    "completed": "挑战已完成",
     "taskSubmitted": "题目自动生成任务已提交至后台",
     "viewTasks": "查看任务",
     "generateFailed": "题目生成失败",
@@ -528,7 +534,9 @@
     "generate": "生成题目",
     "cancelling": "正在取消生成...",
     "cancelled": "生成已取消，已生成 {{count}} 题",
-    "batchFailed": "第 {{batch}} 批生成失败，继续..."
+    "batchFailed": "第 {{batch}} 批生成失败，继续...",
+    "offline": "离线模式不可用",
+    "selectNode": "请先选择知识点"
   },
   "batch": {
     "selectNodes": "请先选择节点",

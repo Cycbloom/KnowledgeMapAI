@@ -1,15 +1,16 @@
 import { useState, useCallback } from 'react';
 import { api } from '../services/api';
-import type {
-  AnalysisModuleId,
-  AnalysisModuleState,
-  AnalysisPromptScenarioId,
-  RelationAnalysisResult,
-  CrossDomainAnalysisResult,
-  LearningPathAnalysisResult,
-  KnowledgeGapAnalysisResult,
+import {
+  DEFAULT_MODULES,
+  MODULE_TO_SCENARIO,
+  type AnalysisModuleId,
+  type AnalysisModuleState,
+  type AnalysisPromptScenarioId,
+  type RelationAnalysisResult,
+  type CrossDomainAnalysisResult,
+  type LearningPathAnalysisResult,
+  type KnowledgeGapAnalysisResult,
 } from '../components/GraphMap/types';
-import { DEFAULT_MODULES, MODULE_TO_SCENARIO } from '../components/GraphMap/types';
 import { getScenarioById } from '../components/PromptConfig';
 
 interface UseAnalysisModulesReturn {

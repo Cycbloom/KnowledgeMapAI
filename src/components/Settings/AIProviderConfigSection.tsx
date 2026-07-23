@@ -13,8 +13,7 @@ import {
   AlertTriangle,
   Info,
 } from "lucide-react";
-import { PROVIDER_DEFAULTS } from "./settingsConstants";
-import type { ProviderConfig, ProviderFormData } from "./settingsConstants";
+import { PROVIDER_DEFAULTS, type ProviderConfig, type ProviderFormData } from "./settingsConstants";
 import { useStore } from "../../store/useStore";
 
 export const AIProviderConfigSection = React.memo(function AIProviderConfigSection() {

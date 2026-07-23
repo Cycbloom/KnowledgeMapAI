@@ -5,13 +5,13 @@ import {
   addToOfflineQueue,
   clearOfflineQueue,
 } from "../../utils/offlineStorage";
-import { autoResolveConflicts } from "../../../shared/sync";
-import type {
-  SyncOperation,
-  SyncBatch,
-  SyncDevice,
-  SyncConflict,
-  SyncStatus,
+import {
+  autoResolveConflicts,
+  type SyncOperation,
+  type SyncBatch,
+  type SyncDevice,
+  type SyncConflict,
+  type SyncStatus,
 } from "../../../shared/sync";
 import { getSupabaseClient } from "../../lib/supabase";
 import { withRetry } from "../../../shared/utils/retry";

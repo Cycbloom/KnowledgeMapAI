@@ -349,7 +349,7 @@ class SchedulerDecisionEngine {
 
     const isAvailable = context.userTimeSlots.some((slot) => {
       if (slot.day_of_week !== null && slot.day_of_week !== currentDay)
-        return false;
+        {return false;}
       return (
         slot.is_available &&
         currentTime >= slot.start_time &&

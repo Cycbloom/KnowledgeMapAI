@@ -324,7 +324,7 @@ export const Dashboard = () => {
   };
 
   if (isLoading && !isFetching)
-    return (
+    {return (
       <div
         className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
       >
@@ -338,9 +338,9 @@ export const Dashboard = () => {
           </div>
         </div>
       </div>
-    );
+    );}
   if (error)
-    return (
+    {return (
       <div className="p-8 flex flex-col items-center justify-center text-center">
         <AlertCircle size={48} className="text-red-500 mb-4" />
         <p className="text-red-600 dark:text-red-400 mb-4">{t('toast.dashboard.loadError')}</p>
@@ -352,7 +352,7 @@ export const Dashboard = () => {
           {t('dashboard.retry')}
         </button>
       </div>
-    );
+    );}
 
   return (
     <div

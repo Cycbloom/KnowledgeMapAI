@@ -53,10 +53,9 @@ import {
   ZoomIn,
   ZoomOut,
   Spline,
+  type LucideIcon,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { useTheme } from "../../../hooks";
-import { useIsMobile } from "../../../hooks";
+import { useTheme, useIsMobile } from "../../../hooks";
 import { ShortcutHint } from "../../common/ShortcutHint";
 import { GraphSwitcher } from "./GraphSwitcher";
 import {
@@ -231,7 +230,7 @@ function areEqual(prev: GraphToolbarProps, next: GraphToolbarProps): boolean {
       prev.pathfindingState.pathLength !== next.pathfindingState.pathLength ||
       prev.pathfindingState.reset !== next.pathfindingState.reset
     )
-      return false;
+      {return false;}
   }
 
   // exportActions: object with function properties
@@ -244,7 +243,7 @@ function areEqual(prev: GraphToolbarProps, next: GraphToolbarProps): boolean {
       prev.exportActions.onAnki !== next.exportActions.onAnki ||
       prev.exportActions.onDeleteGraph !== next.exportActions.onDeleteGraph
     )
-      return false;
+      {return false;}
   }
 
   // regions: array of objects
@@ -261,7 +260,7 @@ function areEqual(prev: GraphToolbarProps, next: GraphToolbarProps): boolean {
           p[i].color !== n[i].color ||
           p[i].nodes !== n[i].nodes
         )
-          return false;
+          {return false;}
       }
     }
   }

@@ -23,7 +23,7 @@ router.post('/check', requireAuth, async (req: Request, res: Response) => {
     const { type, value } = req.body;
     
     if (!type || value === undefined) {
-      throw new AppError(ErrorCodes.MISSING_TYPE_OR_VALUE);
+      throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
     }
 
     await achievementEngine.calibrateAllProgress(userId);

@@ -1,5 +1,4 @@
-import { useCallback, useRef } from 'react';
-import type { KeyboardEvent, RefObject } from 'react';
+import { useCallback, useRef, type KeyboardEvent, type RefObject } from 'react';
 
 export interface UseSkipToContentResult {
   skipLinkRef: RefObject<HTMLAnchorElement>;

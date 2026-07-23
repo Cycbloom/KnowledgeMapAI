@@ -668,7 +668,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
           }
         }}
         title={deleteConfirm?.type === 'book' ? t('learning.overviewEdit.confirmDeleteBook') : t('learning.overviewEdit.confirmDeleteLink')}
-        message={t('learning.overviewEdit.confirmDeleteMessage', { title: deleteConfirm?.title || '' })}
+        message={t('learning.overviewEdit.deleteConfirmMessage', { title: deleteConfirm?.title || '' })}
         confirmText={t('learning.overviewEdit.delete')}
         isDangerous
       />

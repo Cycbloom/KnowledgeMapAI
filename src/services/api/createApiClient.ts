@@ -8,12 +8,11 @@ import axios, {
 import { useStore } from "@/store/useStore";
 import { createErrorFromResponse } from "@/utils/errors";
 import { TokenRefreshManager } from "./TokenRefreshManager";
-import { isCapacitorMobile } from "@/config/mobileApiConfig";
+import { isCapacitorMobile, getMobileApiBaseUrl } from "@/config/mobileApiConfig";
 import {
   isElectronProduction,
   getElectronApiUrl,
 } from "@/config/electronConfig";
-import { getMobileApiBaseUrl } from "@/config/mobileApiConfig";
 import { localQuery, isCloudOnlyResource } from "./localClient";
 import { captureException } from "@/utils/errorReporter";
 import { logger } from "@/utils/logger";

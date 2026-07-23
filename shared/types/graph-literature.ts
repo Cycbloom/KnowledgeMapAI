@@ -1,8 +1,7 @@
 // 文献与概念提取相关类型
 // ConceptSource, LiteratureSourceDB, ExtractedConcept, BACKBONE_MODULE_* 常量映射等
 
-import { BackboneModule } from "./graph-core";
-import type { ConceptType } from "./graph-core";
+import { BackboneModule, type ConceptType } from "./graph-core";
 
 export interface LiteratureSourceDB {
   id: string;

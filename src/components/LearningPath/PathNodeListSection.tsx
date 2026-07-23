@@ -15,8 +15,7 @@ import {
 } from "lucide-react";
 import { NodeStatus } from "../../services/api/learningPaths";
 import { useTranslation } from "react-i18next";
-import type { LearningPathDetail, LearningPathNode } from "./types";
-import { STATUS_CONFIG } from "./types";
+import { STATUS_CONFIG, type LearningPathDetail, type LearningPathNode } from "./types";
 import { EmptyState } from "../common/EmptyState";
 
 interface PathNodeListSectionProps {

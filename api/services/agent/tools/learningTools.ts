@@ -4,7 +4,7 @@ import { notDeleted } from '../../common/softDeleteHelper';
 
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return '';
-  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  return text.length > maxLength ? `${text.substring(0, maxLength)  }...` : text;
 };
 
 const resolveGraphId = (idOrIdx: string | number, context: ToolContext): string => {

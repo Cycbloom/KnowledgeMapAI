@@ -246,7 +246,7 @@ export function createToastMutation<TData, TVariables>(
           const key = typeof options.successMessage === "function"
             ? options.successMessage(data)
             : options.successMessage;
-          message.success(t(key));
+          message.success(t(key as never));
         }
         if (options.invalidateQueries) {
           for (const qk of options.invalidateQueries) {
@@ -260,7 +260,7 @@ export function createToastMutation<TData, TVariables>(
           const key = typeof options.errorMessage === "function"
             ? options.errorMessage(error)
             : options.errorMessage;
-          message.error(t(key));
+          message.error(t(key as never));
         }
         options.onError?.(error, variables);
       },

@@ -1,13 +1,13 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Node } from "@shared/types";
 import { logger } from "./logger";
-import type { GraphNodeRaw } from "../../shared/utils/nodeHelpers";
 import {
   GRAPH_NODES_SELECT,
   GRAPH_NODES_SELECT_WITH_EMBEDDING,
   getKnowledgePoint,
   buildNodeFromGraphNode,
   buildNodesFromGraphNodes,
+  type GraphNodeRaw,
 } from "../../shared/utils/nodeHelpers";
 
 export type { GraphNodeRaw } from "../../shared/utils/nodeHelpers";
@@ -118,7 +118,7 @@ export async function createKnowledgePointWithGraphNode(
       const updateData: Record<string, string> = {};
       if (data.summary) updateData.summary = data.summary;
       if (data.learning_material)
-        updateData.learning_material = data.learning_material;
+        {updateData.learning_material = data.learning_material;}
 
       await supabase
         .from("knowledge_points")

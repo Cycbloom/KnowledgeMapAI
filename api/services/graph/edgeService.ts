@@ -178,15 +178,15 @@ export class EdgeService {
     const { data: newEdge, error: createError } = await supabase
       .from('edges')
       .insert([{
-        graph_id: graph_id,
-        source_knowledge_point_id: source_knowledge_point_id,
-        target_knowledge_point_id: target_knowledge_point_id,
+        graph_id,
+        source_knowledge_point_id,
+        target_knowledge_point_id,
         relationship_type: relationship_type || 'contains',
         weight: weight || 1,
-        custom_label: custom_label,
-        custom_color: custom_color,
-        custom_line_style: custom_line_style,
-        show_arrow: show_arrow
+        custom_label,
+        custom_color,
+        custom_line_style,
+        show_arrow
       }])
       .select()
       .single();

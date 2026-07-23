@@ -34,7 +34,7 @@ export const updateTimeSlot = async (_id: string, _data: Partial<Omit<UserTimeSl
 };
 
 export const deleteTimeSlot = async (_id: string): Promise<void> => {
-  return;
+  
 };
 
 export const getSchedules = async (): Promise<TaskSchedule[]> => {
@@ -50,7 +50,7 @@ export const updateSchedule = async (_id: string, _data: Partial<Omit<TaskSchedu
 };
 
 export const deleteSchedule = async (_id: string): Promise<void> => {
-  return;
+  
 };
 
 export const createProgressPlan = async (_taskId: string, _data: { start_date: string; end_date: string; progress_mode: ProgressMode; custom_allocations?: Array<{ date: string; percentage: number }> }): Promise<TaskProgressPlan> => {

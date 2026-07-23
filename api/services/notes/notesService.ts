@@ -749,7 +749,7 @@ export class NotesService {
     dateStr: string,
     aggregation: DailyAggregation,
   ): { title: string; content: string } {
-    let content = templateContent
+    const content = templateContent
       .replace(/\{\{date\}\}/g, dateStr)
       .replace(/\{\{today_reviewed_cards\}\}/g, String(aggregation.reviewedCards))
       .replace(/\{\{today_completed_tasks\}\}/g, String(aggregation.completedTasks))
@@ -1324,7 +1324,7 @@ export class NotesService {
 
       if (upsertError) {
         logger.warn('refreshEmbedding: upsert error', { noteId, error: upsertError });
-        return;
+        
       }
     } catch (err) {
       logger.warn('refreshEmbedding: unexpected error', { noteId, error: err });

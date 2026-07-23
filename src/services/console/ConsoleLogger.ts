@@ -39,7 +39,7 @@ function saveLogs(logs: ConsoleLogEntry[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logs.slice(0, MAX_LOG_ENTRIES)));
   } catch {
-    // eslint-disable-next-line no-console
+     
     logger.error('Failed to save console logs');
   }
 }

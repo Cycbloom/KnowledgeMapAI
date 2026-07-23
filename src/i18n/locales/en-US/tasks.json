@@ -13,7 +13,9 @@
   "status": {
     "pending": "Pending",
     "in_progress": "In Progress",
-    "completed": "Completed"
+    "completed": "Completed",
+    "paused": "Paused",
+    "cancelled": "Cancelled"
   },
   "errorDetails": "Details",
   "retry": "Retry",

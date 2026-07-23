@@ -143,7 +143,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
       return;
     }
 
-    if (!await asyncConfirm({ title: t("common.delete"), message: `${t("common.confirm")}${t("common.delete")} "${template.name}"?`, isDangerous: true })) return;
+    if (!await asyncConfirm({ title: t("common.delete"), message: `${t("common.confirmButton")}${t("common.delete")} "${template.name}"?`, isDangerous: true })) return;
 
     try {
       await taskTemplatesApi.deleteTemplate(template.id);
@@ -269,7 +269,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     : "bg-white text-gray-700 hover:bg-gray-100"
               }`}
             >
-              {cat === "all" ? t("templates.filter.all") : t(`templates.category.${cat}`)}
+              {cat === "all" ? t("templates.filter.all") : t(`templates.category.${cat}` as never)}
             </button>
           ))}
         </div>
@@ -325,7 +325,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       {template.name}
                     </h3>
                     <span className="text-xs text-gray-500">
-                      {t(`templates.category.${template.category}`)}
+                      {t(`templates.category.${template.category}` as never)}
                     </span>
                   </div>
                 </div>
@@ -490,7 +490,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     >
                       {["study", "work", "life", "health", "custom"].map((value) => (
                         <option key={value} value={value}>
-                          {t(`templates.category.${value}`)}
+                          {t(`templates.category.${value}` as never)}
                         </option>
                       ))}
                     </select>

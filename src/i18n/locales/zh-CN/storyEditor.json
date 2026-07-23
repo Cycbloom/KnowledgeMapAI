@@ -120,5 +120,7 @@
   },
   "content": "正文",
   "charactersInScene": "出场角色",
-  "psychologicalProfile": "心理画像"
+  "psychologicalProfile": "心理画像",
+  "synopsis": "概要",
+  "noCharacters": "暂无角色"
 }

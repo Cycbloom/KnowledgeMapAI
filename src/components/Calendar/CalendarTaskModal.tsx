@@ -329,7 +329,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                       }`}
                     >
-                      + {t(key)}
+                      + {t(key as never)}
                     </button>
                   );
                 })}

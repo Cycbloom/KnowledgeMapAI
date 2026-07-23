@@ -148,7 +148,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   whileTap={{ scale: 0.98 }}
                   className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                     readingMode === mode.id
-                      ? "border-primary-500 bg-gradient-to-br " + mode.color
+                      ? `border-primary-500 bg-gradient-to-br ${  mode.color}`
                       : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
                   }`}
                 >
@@ -260,7 +260,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   whileTap={{ scale: 0.98 }}
                   className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                     contentWidthMode === mode.id
-                      ? "border-primary-500 bg-gradient-to-br " + mode.color
+                      ? `border-primary-500 bg-gradient-to-br ${  mode.color}`
                       : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
                   }`}
                 >

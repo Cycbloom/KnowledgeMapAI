@@ -69,7 +69,10 @@ const statusConfig: Record<
     bgColor: "bg-gray-100 dark:bg-slate-700",
     icon: <Archive size={16} />,
   },
-};
+} as const satisfies Record<
+  PathStatus,
+  { labelKey: string; color: string; bgColor: string; icon: React.ReactNode }
+>;
 
 interface LearningPathItem {
   id: string;
@@ -277,7 +280,7 @@ export const LearningPaths = () => {
                 }`}
               >
                 {statusConfig[status].icon}
-                <span>{t(statusConfig[status].labelKey)}</span>
+                <span>{t(statusConfig[status].labelKey as never)}</span>
                 {!isLoading && statusCounts[status] !== undefined && (
                   <span className="ml-1 text-xs opacity-70">({statusCounts[status]})</span>
                 )}
@@ -346,7 +349,7 @@ export const LearningPaths = () => {
                         <span
                           className={`text-xs px-2 py-0.5 rounded-full ${statusConfig[path.status].bgColor} ${statusConfig[path.status].color}`}
                         >
-                          {t(statusConfig[path.status].labelKey)}
+                          {t(statusConfig[path.status].labelKey as never)}
                         </span>
                         {path.ai_generated && (
                           <span className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400">

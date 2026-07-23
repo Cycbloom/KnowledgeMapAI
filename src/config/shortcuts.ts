@@ -9,9 +9,9 @@ export interface ShortcutKey {
 export interface ShortcutDefinition {
   id: string;
   /** i18n key for the shortcut name, e.g. "shortcuts.actions.undo.name" */
-  name: string;
+  name: ShortcutNameKey;
   /** i18n key for the shortcut description, e.g. "shortcuts.actions.undo.description" */
-  description: string;
+  description: ShortcutDescriptionKey;
   category: ShortcutCategory;
   defaultKeys: ShortcutKey;
   action: string;
@@ -34,7 +34,7 @@ export interface ShortcutBinding {
   enabled: boolean;
 }
 
-export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
+const SHORTCUTS_DATA = [
   {
     id: 'undo',
     name: 'shortcuts.actions.undo.name',
@@ -469,12 +469,17 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: 'openSettings',
     icon: 'Settings'
   }
-];
+] as const;
+
+export type ShortcutNameKey = typeof SHORTCUTS_DATA[number]['name'];
+export type ShortcutDescriptionKey = typeof SHORTCUTS_DATA[number]['description'];
+
+export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [...SHORTCUTS_DATA];
 
 /**
  * i18n keys for shortcut categories. Consumers should translate via `t(CATEGORY_LABELS[category])`.
  */
-export const CATEGORY_LABELS: Record<ShortcutCategory, string> = {
+export const CATEGORY_LABELS = {
   navigation: 'shortcuts.categories.navigation',
   view: 'shortcuts.categories.view',
   editing: 'shortcuts.categories.editing',
@@ -482,7 +487,7 @@ export const CATEGORY_LABELS: Record<ShortcutCategory, string> = {
   ai: 'shortcuts.categories.ai',
   tools: 'shortcuts.categories.tools',
   general: 'shortcuts.categories.general'
-};
+} as const;
 
 export const CATEGORY_ORDER: ShortcutCategory[] = [
   'general',

@@ -52,17 +52,17 @@ export const StudyStrategySettings = React.memo(
       useLayoutEffect(() => {
         if (settings) {
           if (settings.request_retention)
-            setRetention(Number(settings.request_retention));
+            {setRetention(Number(settings.request_retention));}
           if (settings.maximum_interval)
-            setMaxInterval(Number(settings.maximum_interval));
+            {setMaxInterval(Number(settings.maximum_interval));}
           if (settings.defaultStudyMode)
-            setDefaultStudyMode(settings.defaultStudyMode as string);
+            {setDefaultStudyMode(settings.defaultStudyMode as string);}
           if (settings.masteryThresholds)
-            setMasteryThresholds(settings.masteryThresholds as typeof DEFAULT_MASTERY_THRESHOLDS);
+            {setMasteryThresholds(settings.masteryThresholds as typeof DEFAULT_MASTERY_THRESHOLDS);}
           if (settings.schedulerWeights)
-            setSchedulerWeights(settings.schedulerWeights as typeof DEFAULT_SCHEDULER_WEIGHTS);
+            {setSchedulerWeights(settings.schedulerWeights as typeof DEFAULT_SCHEDULER_WEIGHTS);}
           if (settings.semantic_scheduling !== undefined)
-            setSemanticScheduling(settings.semantic_scheduling as boolean);
+            {setSemanticScheduling(settings.semantic_scheduling as boolean);}
           // Loading values from the profile does not mark the form dirty;
           // auto-save should only fire on explicit user interaction.
           setIsDirty(false);

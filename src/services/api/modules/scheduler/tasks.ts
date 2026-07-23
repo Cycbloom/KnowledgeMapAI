@@ -29,7 +29,7 @@ export const tasksApi = {
     const params = new URLSearchParams();
     if (filters?.status) params.append("status", filters.status);
     if (filters?.queue_level !== undefined)
-      params.append("queue_level", filters.queue_level.toString());
+      {params.append("queue_level", filters.queue_level.toString());}
     if (filters?.tags?.length) params.append("tags", filters.tags.join(","));
     if (filters?.from_date) params.append("from_date", filters.from_date);
     if (filters?.to_date) params.append("to_date", filters.to_date);

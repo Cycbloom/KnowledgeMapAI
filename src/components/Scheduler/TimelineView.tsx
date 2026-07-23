@@ -170,7 +170,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                       </span>
                     </div>
                     <span className="text-xs text-slate-400 dark:text-slate-500">
-                      {t('scheduler.timeline.weekDay' + day.date.getDay())}
+                      {t(`scheduler.timeline.weekDay${  day.date.getDay()}` as never)}
                     </span>
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">

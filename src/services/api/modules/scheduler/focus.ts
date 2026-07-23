@@ -101,7 +101,7 @@ export const focusApi = {
     if (options?.to_date) params.append("to_date", options.to_date);
     if (options?.task_id) params.append("task_id", options.task_id);
     if (options?.is_break !== undefined)
-      params.append("is_break", String(options.is_break));
+      {params.append("is_break", String(options.is_break));}
     if (options?.limit) params.append("limit", String(options.limit));
     const queryString = params.toString();
     return request(

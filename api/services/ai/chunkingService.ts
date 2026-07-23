@@ -38,7 +38,7 @@ export class ChunkingService {
         const sentenceChunks = this.chunkBySentences(paragraph, chunkSize, overlap);
         for (const sentenceChunk of sentenceChunks) {
           const combined = currentChunk.trim().length > 0
-            ? currentChunk.trim() + '\n\n' + sentenceChunk
+            ? `${currentChunk.trim()  }\n\n${  sentenceChunk}`
             : sentenceChunk;
 
           if (combined.length <= chunkSize) {
@@ -53,7 +53,7 @@ export class ChunkingService {
         }
       } else {
         const combined = currentChunk.trim().length > 0
-          ? currentChunk.trim() + '\n\n' + paragraph
+          ? `${currentChunk.trim()  }\n\n${  paragraph}`
           : paragraph;
 
         if (combined.length <= chunkSize) {
@@ -62,7 +62,7 @@ export class ChunkingService {
           if (currentChunk.trim().length > 0) {
             chunks.push({ content: currentChunk.trim(), index: chunkIndex });
             chunkIndex++;
-            currentChunk = this.getOverlapText(currentChunk, overlap) + '\n\n' + paragraph;
+            currentChunk = `${this.getOverlapText(currentChunk, overlap)  }\n\n${  paragraph}`;
           } else {
             currentChunk = paragraph;
           }
@@ -86,11 +86,11 @@ export class ChunkingService {
       if (sentence.length === 0) continue;
 
       if (current.length + sentence.length + 1 <= chunkSize) {
-        current = current.length > 0 ? current + ' ' + sentence : sentence;
+        current = current.length > 0 ? `${current  } ${  sentence}` : sentence;
       } else {
         if (current.length > 0) {
           result.push(current.trim());
-          current = this.getOverlapText(current, overlap) + ' ' + sentence;
+          current = `${this.getOverlapText(current, overlap)  } ${  sentence}`;
         } else {
           current = sentence;
         }

@@ -15,9 +15,9 @@ import {
   SmartSuggestions,
   PrioritySuggestion,
   DecisionTaskRecommendation,
+  type TaskRecommendation as TaskRecommendationType,
 } from "../../services/api/taskRecommendation";
 import { TaskRecommendation as TaskRecommendationComponent } from "./TaskRecommendation";
-import type { TaskRecommendation as TaskRecommendationType } from "../../services/api/taskRecommendation";
 import { UserTask } from "@shared/types";
 
 interface SmartSuggestionProps {

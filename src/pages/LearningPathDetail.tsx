@@ -267,7 +267,7 @@ const LearningPathDetailPage: React.FC = () => {
 
   const handleDeletePath = async () => {
     if (!pathId || !await asyncConfirm({ title: t('learningPaths.detail.deletePathTitle'), message: t('learningPaths.detail.deletePathConfirm'), isDangerous: true }))
-      return;
+      {return;}
 
     try {
       await learningPathsApi.delete(pathId);
@@ -298,7 +298,7 @@ const LearningPathDetailPage: React.FC = () => {
 
   const nodesByStatus = useMemo(() => {
     if (!pathDetail || !pathDetail.nodes)
-      return {} as Record<NodeStatus, number>;
+      {return {} as Record<NodeStatus, number>;}
     return pathDetail.nodes.reduce(
       (acc, node) => {
         acc[node.status] = (acc[node.status] || 0) + 1;

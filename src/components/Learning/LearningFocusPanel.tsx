@@ -691,8 +691,8 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                   {getIcon(option.icon)}
                                   <span className="text-[10px]">
                                     {t(
-                                      `learning.focusMode.noiseOptions.${option.id}`,
-                                    )}
+                                    `learning.focusMode.noiseOptions.${option.id}` as never,
+                                  )}
                                   </span>
                                 </motion.button>
                               ))}
@@ -720,7 +720,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                 {option && getIcon(option.icon)}
                                 <span className="text-xs text-slate-600 dark:text-slate-300 flex-1">
                                   {t(
-                                    `learning.focusMode.noiseOptions.${noise.type}`,
+                                    `learning.focusMode.noiseOptions.${noise.type}` as never,
                                   )}
                                 </span>
                                 <input
@@ -775,7 +775,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                             whileTap={{ scale: 0.98 }}
                           >
                             {preset.isBuiltIn
-                              ? t(`learning.focusMode.presetNames.${preset.id}`)
+                              ? t(`learning.focusMode.presetNames.${preset.id}` as never)
                               : preset.name}
                           </motion.button>
                         ))}

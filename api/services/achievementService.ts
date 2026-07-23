@@ -7,14 +7,14 @@ import type {
   UserAchievement,
   FocusSession,
 } from '@shared/types/scheduler';
-import type {
-  AchievementRow,
-  UserAchievementRow,
-  PeriodicTaskRow,
-  FocusSessionRow,
-  UserTaskRow,
+import {
+  toAchievement,
+  type AchievementRow,
+  type UserAchievementRow,
+  type PeriodicTaskRow,
+  type FocusSessionRow,
+  type UserTaskRow,
 } from '@shared/types/database';
-import { toAchievement } from '@shared/types/database';
 
 export class AchievementService {
   async initDailyTasks(userId: string): Promise<void> {

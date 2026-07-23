@@ -10,7 +10,7 @@ import type {
   Node,
   NodeStatus,
 } from "../../../types";
-import type { BackboneModule } from "@shared/types/graph";
+import { BACKBONE_MODULE_COLORS, type BackboneModule } from "@shared/types/graph";
 import { NodeRing } from "./NodeRing";
 import {
   NODE_STYLE_CONFIG,
@@ -33,7 +33,6 @@ import {
 import { HEATMAP_CONFIG, DECAY_CONFIG, type SemanticZoomLevel } from "../../../config/graphConfig";
 import { getLevel, calculateNodeImportance } from "../../../lib/graphUtils";
 import { truncateText } from "../../../utils/textUtils";
-import { BACKBONE_MODULE_COLORS } from "@shared/types/graph";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
 
 interface MindMapNodeProps {
@@ -177,7 +176,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     if (maxTitleLength !== undefined && maxTitleLength > 0 && maxTitleLength < Infinity) {
       const raw = node.title || t("graphEditor.mindMap.unnamed");
       if (raw.length > maxTitleLength) {
-        return raw.slice(0, maxTitleLength) + '...';
+        return `${raw.slice(0, maxTitleLength)  }...`;
       }
       return raw;
     }

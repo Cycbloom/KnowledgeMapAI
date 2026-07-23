@@ -156,14 +156,14 @@ export class AliyunProvider extends BaseAIProvider {
       const part = sentences[i];
       if (currentChunk.length + part.length > 300) {
         if (currentChunk && currentChunk.trim().length > 0)
-          chunks.push(currentChunk);
+          {chunks.push(currentChunk);}
         currentChunk = part;
       } else {
         currentChunk += part;
       }
     }
     if (currentChunk && currentChunk.trim().length > 0)
-      chunks.push(currentChunk);
+      {chunks.push(currentChunk);}
 
     // Filter out chunks that are just punctuation or too short to be meaningful
     return chunks.filter((c) => {

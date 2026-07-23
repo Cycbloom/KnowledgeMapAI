@@ -5,8 +5,14 @@ import { autoGraphService } from '../graph/index';
 import { aiService } from '../ai/aiService';
 import { cacheService, CacheKeys } from '../common/cacheService';
 import { performanceMonitor } from '../ai/performanceMonitor';
-import type { ExtractedConcept, LiteratureInfo, ConceptSource, ReferenceBook } from '@shared/types/graph';
-import { BackboneModule, TITLE_TO_BACKBONE_MODULE } from '@shared/types/graph';
+import {
+  BackboneModule,
+  TITLE_TO_BACKBONE_MODULE,
+  type ExtractedConcept,
+  type LiteratureInfo,
+  type ConceptSource,
+  type ReferenceBook,
+} from '@shared/types/graph';
 import { notDeleted } from '../common/softDeleteHelper';
 
 const MERGE_THRESHOLD = parseFloat(process.env.CONCEPT_MERGE_THRESHOLD || "0.85");
@@ -37,11 +43,11 @@ class LiteratureApplyService {
 
     try {
       logger.info("Applying literature concepts", {
-        graphId: graphId,
+        graphId,
         conceptCount: concepts.length,
         relationCount: relations.length,
         literatureTitle: literature.title,
-        userId: userId,
+        userId,
       });
 
       const nodeMapping: Record<string, string> = {};
@@ -187,13 +193,13 @@ class LiteratureApplyService {
             abstract?: string;
           } = {};
           if (!existingData.journal && literature.journal)
-            updateData.journal = literature.journal;
+            {updateData.journal = literature.journal;}
           if (!existingData.doi && literature.doi)
-            updateData.doi = literature.doi;
+            {updateData.doi = literature.doi;}
           if (!existingData.keywords?.length && literature.keywords?.length)
-            updateData.keywords = literature.keywords;
+            {updateData.keywords = literature.keywords;}
           if (!existingData.abstract && literature.abstract)
-            updateData.abstract = literature.abstract;
+            {updateData.abstract = literature.abstract;}
 
           if (Object.keys(updateData).length > 0) {
             await supabase
@@ -791,7 +797,7 @@ class LiteratureApplyService {
         }));
 
       logger.info("Literature concepts applied successfully", {
-        graphId: graphId,
+        graphId,
         addedCount,
         mergedCount,
         edgeCount: edgesToCreate.length,
@@ -815,8 +821,8 @@ class LiteratureApplyService {
         duration,
         success: true,
         metadata: {
-          graphId: graphId,
-          userId: userId,
+          graphId,
+          userId,
         },
       });
 

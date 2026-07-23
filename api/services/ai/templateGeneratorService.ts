@@ -1,13 +1,11 @@
 import type { AIProviderType } from "@shared/types";
-import type {
-  TemplateCategory,
-  TemplateType,
-  LayoutSuggestion,
-} from "@shared/types/graph";
 import {
   BackboneModule,
   BACKBONE_MODULE_LABELS,
   BACKBONE_MODULE_COLORS,
+  type TemplateCategory,
+  type TemplateType,
+  type LayoutSuggestion,
 } from "@shared/types/graph";
 import { getAIProviderForTask, getAIProvider } from "./factory";
 import { promptService } from "./promptService";
@@ -28,11 +26,9 @@ import { backboneNetworkService } from "./backboneNetworkService";
 import { backboneValidatorService } from "./backboneValidatorService";
 import {
   validateTemplate,
-} from "./templateValidationService";
-import type {
-  GeneratedTemplateNode,
-  GeneratedTemplateEdge,
-  GeneratedTemplateScheme,
+  type GeneratedTemplateNode,
+  type GeneratedTemplateEdge,
+  type GeneratedTemplateScheme,
 } from "./templateValidationService";
 import { storyTemplateService } from "./storyTemplateService";
 

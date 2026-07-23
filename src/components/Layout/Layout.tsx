@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
 import { useUser } from "../../hooks/queries";
 import { useLogoutMutation, useImportGraphMutation } from "../../hooks/mutations";
-import { useTaskEvents, useConsole } from "../../hooks";
+import { useTaskEvents, useConsole, useTheme } from "../../hooks";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import {
   LogOut,
@@ -34,7 +34,6 @@ import { HeaderGreeting } from "./HeaderGreeting";
 import { NotificationCenter } from "../Notifications/NotificationCenter";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { AnimatedOutlet } from "./AnimatedOutlet";
-import { useTheme } from "../../hooks";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { api } from "../../services/api";
 import { Console } from "../Console/Console";
@@ -412,7 +411,7 @@ export const Layout = () => {
                     key={item.path}
                     to={item.path}
                     icon={Icon}
-                    label={t(item.label)}
+                    label={t(item.label as never)}
                     isCollapsed={isCollapsed}
                     isDark={isDark}
                     isActive={isActive}

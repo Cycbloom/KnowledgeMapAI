@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -74,7 +75,7 @@ const TemplateSchemeCard: React.FC<{
   isSelected: boolean;
   isMobile: boolean;
   isDark: boolean;
-  t: (key: string, options?: Record<string, unknown>) => string;
+  t: TFunction;
   onClick: () => void;
   onPreview: () => void;
 }> = ({ template, isSelected, isMobile, isDark, t, onClick, onPreview }) => {
@@ -177,7 +178,7 @@ const TemplatePreviewModal: React.FC<{
   template: GeneratedTemplate;
   isMobile: boolean;
   isDark: boolean;
-  t: (key: string, options?: Record<string, unknown>) => string;
+  t: TFunction;
   onClose: () => void;
 }> = ({ template, isMobile, isDark, t, onClose }) => {
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });

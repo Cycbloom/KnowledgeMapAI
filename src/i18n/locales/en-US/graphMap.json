@@ -115,7 +115,28 @@
   "graphCreation": {
     "success": "Graph created successfully",
     "failed": "Failed to create graph",
-    "generatingContent": "Generating initial content..."
+    "generatingContent": "Generating initial content...",
+    "batchCreateSuccess": "Batch creation complete: {{count}} succeeded, {{failed}} failed",
+    "initTaskSubmitted": "{{count}} initialization tasks submitted"
+  },
+  "mergeSuggestions": {
+    "title": "Merge Suggestions",
+    "itemCount": "{{count}} items",
+    "moreItems": "{{count}} more...",
+    "sharedConcepts": "Shared Concepts",
+    "merge": "Merge",
+    "link": "Link",
+    "dismiss": "Dismiss",
+    "merged": "Merged",
+    "linked": "Linked",
+    "dismissed": "Dismissed",
+    "tip": "Tip:",
+    "tipContent": "AI detected potentially duplicate or highly similar graphs. You can choose to merge, link, or keep them separate.",
+    "actions": {
+      "merge": "Merge",
+      "link": "Link",
+      "keepSeparate": "Keep Separate"
+    }
   },
   "expansion": {
     "started": "Infinite expansion task started",

@@ -1,8 +1,7 @@
 import React, { useState, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { isCapacitorMobile } from "../../config/mobileApiConfig";
-import { mobileAIService } from "../../services/mobile/aiService";
-import type { MobileAIUserConfig } from "../../services/mobile/aiService";
+import { mobileAIService, type MobileAIUserConfig } from "../../services/mobile/aiService";
 import type { AIProviderType } from "@shared/types";
 import { AvailableModels } from "../../types";
 import {

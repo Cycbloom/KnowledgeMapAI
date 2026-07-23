@@ -2,12 +2,10 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthedRequest } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
-import { ragService } from '../services/ai';
+import { ragService, performanceMonitor, enrichMetadata, getAIProviderForTask } from '../services/ai';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
-import { performanceMonitor, enrichMetadata } from '../services/ai';
-import { getAIProviderForTask } from '../services/ai';
 
 const router = Router();
 

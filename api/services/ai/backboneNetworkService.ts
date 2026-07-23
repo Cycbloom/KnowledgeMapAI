@@ -1,14 +1,12 @@
 import type { AIProviderType } from "@shared/types";
-import type {
-  NodeLevel,
-  LayoutSuggestion,
-  BackboneModuleCustomConfig,
-} from "@shared/types/graph";
 import {
   BackboneModule,
   BACKBONE_MODULE_LABELS,
   BACKBONE_MODULE_COLORS,
   BACKBONE_MODULE_TITLES,
+  type NodeLevel,
+  type LayoutSuggestion,
+  type BackboneModuleCustomConfig,
 } from "@shared/types/graph";
 import { getAIProviderForTask, getAIProvider } from "./factory";
 import { promptService } from "./promptService";

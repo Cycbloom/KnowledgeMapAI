@@ -147,7 +147,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
   };
 
   const insertPlaceholder = (placeholder: string) => {
-    setFormData(prev => ({ ...prev, titleTemplate: prev.titleTemplate + `{{${placeholder}}}` }));
+    setFormData(prev => ({ ...prev, titleTemplate: `${prev.titleTemplate  }{{${placeholder}}}` }));
   };
 
   const availableCommonTags = useMemo(

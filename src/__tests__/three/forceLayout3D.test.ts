@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { create3DForceLayout } from '../../three/layout/forceLayout3D';
-import type { LayoutNode3D, LayoutResult3D } from '../../three/layout/forceLayout3D';
+import { create3DForceLayout, type LayoutNode3D, type LayoutResult3D } from '../../three/layout/forceLayout3D';
 import type { Node, Edge, NodeLevel } from '../../types';
 
 // Mock comlink so we can also load the worker module (for grid-based comparison)
@@ -10,6 +9,7 @@ vi.mock('comlink', () => ({
 
 import { expose } from 'comlink';
 import '../../workers/graphCalculator.worker';
+// eslint-disable-next-line no-duplicate-imports -- side-effect import must stay separate to trigger module body
 import type { GraphWorker } from '../../workers/graphCalculator.worker';
 
 const mockedExpose = vi.mocked(expose);

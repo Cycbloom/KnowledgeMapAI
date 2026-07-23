@@ -171,7 +171,7 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
                     <span
                       className={`text-xs px-2 py-0.5 rounded ${action.bg} ${action.color}`}
                     >
-                      {action.label}
+                      {String(action.label)}
                     </span>
                     <span
                       className={`text-xs font-medium ${getSimilarityColor(

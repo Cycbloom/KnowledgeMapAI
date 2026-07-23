@@ -157,7 +157,7 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
           </span>
           <span className={`px-2 py-0.5 rounded text-xs font-medium ${fsrsStateConfig.bg} ${fsrsStateConfig.color}`}>
             <Activity size={12} className="inline mr-1" />
-            {t(fsrsStateConfig.label)}
+            {t(fsrsStateConfig.label as never)}
           </span>
           <span className="text-xs text-slate-400">
             {t('scheduler.review.nextReview')}: {nextReviewText}
@@ -187,7 +187,7 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
             <Gauge size={14} className="text-primary-500" />
             <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.difficulty')}:</span>
             <span className="font-medium text-slate-700 dark:text-slate-300">
-              {t(difficultyInfo.label)}
+              {t(difficultyInfo.label as never)}
             </span>
           </div>
           {task.fsrs_retrievability !== undefined && (

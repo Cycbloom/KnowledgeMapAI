@@ -1,5 +1,4 @@
-import { useCallback, useState } from "react";
-import type React from "react";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { message } from "../../../utils/messageHelper";
 import { learningPathsApi } from "../../../services/api/learningPaths";

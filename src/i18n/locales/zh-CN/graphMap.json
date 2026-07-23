@@ -115,7 +115,28 @@
   "graphCreation": {
     "success": "图谱创建成功",
     "failed": "创建图谱失败",
-    "generatingContent": "正在生成初始内容..."
+    "generatingContent": "正在生成初始内容...",
+    "batchCreateSuccess": "批量创建完成：成功 {{count}} 个，失败 {{failed}} 个",
+    "initTaskSubmitted": "已提交 {{count}} 个初始化任务"
+  },
+  "mergeSuggestions": {
+    "title": "合并建议",
+    "itemCount": "{{count}} 个项目",
+    "moreItems": "还有 {{count}} 项...",
+    "sharedConcepts": "共享概念",
+    "merge": "合并",
+    "link": "关联",
+    "dismiss": "忽略",
+    "merged": "已合并",
+    "linked": "已关联",
+    "dismissed": "已忽略",
+    "tip": "提示：",
+    "tipContent": "AI 检测到可能重复或高度相似的图谱，您可以选择合并、关联或保留独立。",
+    "actions": {
+      "merge": "合并",
+      "link": "关联",
+      "keepSeparate": "保持独立"
+    }
   },
   "expansion": {
     "started": "无限扩展任务已启动",

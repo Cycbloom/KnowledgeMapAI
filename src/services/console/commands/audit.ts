@@ -15,7 +15,7 @@ const handleAuditList = async (args: ParsedArgs, _context: CommandContext): Prom
   }
 
   let output = '审计日志 - 最近命令\n';
-  output += '='.repeat(60) + '\n\n';
+  output += `${'='.repeat(60)  }\n\n`;
 
   for (const log of logs) {
     const date = new Date(log.timestamp);
@@ -32,7 +32,7 @@ const handleAuditList = async (args: ParsedArgs, _context: CommandContext): Prom
   }
 
   const stats = consoleLogger.getStats();
-  output += '-'.repeat(60) + '\n';
+  output += `${'-'.repeat(60)  }\n`;
   output += `总计: ${stats.total} | 成功: ${stats.successful} | 失败: ${stats.failed}\n`;
 
   return {
@@ -66,7 +66,7 @@ const handleAuditSearch = async (args: ParsedArgs, _context: CommandContext): Pr
   }
 
   let output = `审计日志 - 搜索结果 "${command}"\n`;
-  output += '='.repeat(60) + '\n\n';
+  output += `${'='.repeat(60)  }\n\n`;
 
   for (const log of logs) {
     const date = new Date(log.timestamp);
@@ -82,7 +82,7 @@ const handleAuditSearch = async (args: ParsedArgs, _context: CommandContext): Pr
     output += '\n';
   }
 
-  output += '-'.repeat(60) + '\n';
+  output += `${'-'.repeat(60)  }\n`;
   output += `找到: ${logs.length} 条记录\n`;
 
   return {
@@ -99,7 +99,7 @@ const handleAuditStats = async (_args: ParsedArgs, _context: CommandContext): Pr
   const stats = consoleLogger.getStats();
 
   let output = '审计统计\n';
-  output += '='.repeat(40) + '\n\n';
+  output += `${'='.repeat(40)  }\n\n`;
   output += `总命令数: ${stats.total}\n`;
   output += `成功: ${stats.successful}\n`;
   output += `失败: ${stats.failed}\n\n`;

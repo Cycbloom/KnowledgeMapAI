@@ -1,6 +1,5 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
-import { Rating, State } from "ts-fsrs";
-import type { Card } from "ts-fsrs";
+import { Rating, State, type Card } from "ts-fsrs";
 import type { StudyCard } from "@shared/types/common";
 import type { GetCardsParams, CardGroup, StudyStats } from "@shared/types/api";
 import type { IStudyApi } from "../../api/contracts/IStudyApi";

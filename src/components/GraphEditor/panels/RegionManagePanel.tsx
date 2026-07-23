@@ -2,10 +2,12 @@ import React, { useMemo } from "react";
 
 import { useTranslation } from "react-i18next";
 import { Edit2, Trash2, Layers } from "lucide-react";
-import type { Node, CustomRegion, RegionInfo } from "@shared/types/graph";
 import {
   BACKBONE_MODULE_LABELS,
   BACKBONE_MODULE_COLORS,
+  type Node,
+  type CustomRegion,
+  type RegionInfo,
 } from "@shared/types/graph";
 
 interface RegionManagePanelProps {

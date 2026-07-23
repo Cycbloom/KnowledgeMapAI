@@ -373,7 +373,7 @@ export class CollaboratorService {
       .insert({
         graph_id: graphId,
         user_id: null,
-        role: role,
+        role,
         invited_by: userId,
         invitation_token: invitationToken,
         invitation_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),

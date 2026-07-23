@@ -431,14 +431,14 @@ export const Login = () => {
 
       const { data, error } = await client.auth.signUp({
         email: draft.email,
-        password: password,
+        password,
       });
 
       if (error) {
         const { data: signInData, error: signInError } =
           await client.auth.signInWithPassword({
             email: draft.email,
-            password: password,
+            password,
           });
         if (signInError) {
           setAuthError(signInError.message);

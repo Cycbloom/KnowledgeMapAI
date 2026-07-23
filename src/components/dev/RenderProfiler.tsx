@@ -12,7 +12,7 @@ const handleRender: React.ProfilerOnRenderCallback = (
   actualDuration,
 ) => {
   if (actualDuration > SLOW_RENDER_THRESHOLD_MS) {
-    // eslint-disable-next-line no-console
+     
     console.warn(
       `[RenderProfiler] Slow render: id="${id}", phase="${phase}", duration=${actualDuration.toFixed(2)}ms`,
     );

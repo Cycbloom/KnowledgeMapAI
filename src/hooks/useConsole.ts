@@ -1,8 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { commandRegistry, consoleLogger, allCommands } from '@/services/console';
-import type { CommandResult, CommandHistoryItem, CommandContext, CommandPermission } from '@/services/console';
-import type { ConfirmDialogType } from '@/store/useConsoleStore';
-import { useConsoleStore } from '@/store/useConsoleStore';
+import { commandRegistry, consoleLogger, allCommands, type CommandResult, type CommandHistoryItem, type CommandContext, type CommandPermission } from '@/services/console';
+import { useConsoleStore, type ConfirmDialogType } from '@/store/useConsoleStore';
 
 export interface UseConsoleOptions {
   userId: string;

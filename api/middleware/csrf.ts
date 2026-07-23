@@ -35,7 +35,7 @@ const shouldSkipCsrf = (req: Request): boolean => {
   const isMobileClient = req.headers["x-mobile-client"] === "true";
   const isElectronClient = req.headers["x-electron-client"] === "true";
   const isRouteSkipped = SKIP_CSRF_ROUTES.some(
-    (route) => req.path === route || req.path.startsWith(route + "/"),
+    (route) => req.path === route || req.path.startsWith(`${route  }/`),
   );
   const isLocalhost =
     req.hostname === "localhost" || req.hostname === "127.0.0.1";

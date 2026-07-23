@@ -63,7 +63,7 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
               }`}
             >
               <Icon className="w-4 h-4 flex-shrink-0 opacity-80" />
-              <span className="truncate">{t(item.labelKey)}</span>
+              <span className="truncate">{t(item.labelKey as never)}</span>
             </button>
           );
         })}

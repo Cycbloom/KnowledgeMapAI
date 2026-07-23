@@ -120,5 +120,7 @@
   },
   "content": "Content",
   "charactersInScene": "Appearing Characters",
-  "psychologicalProfile": "Psychology Profile"
+  "psychologicalProfile": "Psychology Profile",
+  "synopsis": "Synopsis",
+  "noCharacters": "No Characters"
 }

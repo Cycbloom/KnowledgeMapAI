@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, CheckSquare } from "lucide-react";
 import { useTheme } from "../hooks";
@@ -50,7 +50,7 @@ export const StatisticsCenter: React.FC = () => {
               }`}
             >
               {tab.icon}
-              <span>{t(tab.translationKey)}</span>
+              <span>{t(tab.translationKey as never)}</span>
             </button>
           ))}
         </div>

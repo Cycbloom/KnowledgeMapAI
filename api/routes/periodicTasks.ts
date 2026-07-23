@@ -22,7 +22,7 @@ router.post('/check', requireAuth, async (req: Request, res: Response) => {
     const { taskType, value } = req.body;
     
     if (!taskType || value === undefined) {
-      throw new AppError(ErrorCodes.MISSING_TASK_TYPE_OR_VALUE);
+      throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
     }
     
     const completedTasks = await periodicTaskService.updatePeriodicTaskProgress(userId, taskType, value);
@@ -48,7 +48,7 @@ router.post('/pass/claim', requireAuth, async (req: Request, res: Response) => {
     const { passId, level } = req.body;
     
     if (!passId || !level) {
-      throw new AppError(ErrorCodes.MISSING_PASS_ID_OR_LEVEL);
+      throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
     }
     
     const result = await periodicTaskService.claimPassReward(userId, passId, level);

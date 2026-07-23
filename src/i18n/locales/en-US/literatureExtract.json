@@ -82,7 +82,8 @@
     "extracted": "Successfully extracted {{count}} knowledge concepts",
     "saved": "Successfully saved to graph! Added {{addedCount}} concepts, merged {{mergedCount}} concepts",
     "exported": "Export successful",
-    "pasted": "Pasted successfully"
+    "pasted": "Pasted successfully",
+    "metadataDetected": "Metadata detected (confidence: {{confidence}})"
   },
   "result": {
     "title": "Extraction Complete",
@@ -198,7 +199,8 @@
       "book": "Book",
       "article": "Article",
       "report": "Report",
-      "webpage": "Webpage"
+      "webpage": "Webpage",
+      "document": "Document"
     }
   },
   "metadataForm": {

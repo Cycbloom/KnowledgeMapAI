@@ -483,7 +483,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
             size={14}
             className={isDark ? "text-gray-400" : "text-gray-500"}
           />
-          {t(labelKey)}
+          {t(labelKey as never)}
         </label>
         {children}
         {error ? (
@@ -498,7 +498,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
             <p
               className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
             >
-              {t(hintKey)}
+              {t(hintKey as never)}
             </p>
           )
         )}
@@ -680,7 +680,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
               >
                 {LITERATURE_TYPES.map(({ value, labelKey }) => (
                   <option key={value} value={value}>
-                    {t(labelKey)}
+                    {t(labelKey as never)}
                   </option>
                 ))}
               </select>,

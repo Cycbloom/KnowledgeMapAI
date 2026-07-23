@@ -9,13 +9,13 @@ import type {
   TaskExecution,
   TaskSubtask,
 } from "@shared/types";
-import type {
-  UserTaskRow,
-  TaskDependencyRow,
-  TaskExecutionRow,
-  TaskSubtaskRow,
+import {
+  toUserTask,
+  type UserTaskRow,
+  type TaskDependencyRow,
+  type TaskExecutionRow,
+  type TaskSubtaskRow,
 } from "@shared/types/database";
-import { toUserTask } from "@shared/types/database";
 import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const create = async (data: CreateUserTaskData) => {

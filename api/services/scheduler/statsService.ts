@@ -58,7 +58,7 @@ export class StatsService {
       .gte("created_at", startDate.toISOString());
 
     if (tasksError)
-      throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
+      {throw new Error(`Failed to fetch tasks: ${tasksError.message}`);}
 
     const { data: executions, error: execError } = await client
       .from("task_executions")
@@ -67,7 +67,7 @@ export class StatsService {
       .gte("started_at", startDate.toISOString());
 
     if (execError)
-      throw new Error(`Failed to fetch executions: ${execError.message}`);
+      {throw new Error(`Failed to fetch executions: ${execError.message}`);}
 
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter((t) => t.status === "completed").length;
@@ -169,7 +169,7 @@ export class StatsService {
       .lte("started_at", endDate.toISOString());
 
     if (error)
-      throw new Error(`Failed to fetch heatmap data: ${error.message}`);
+      {throw new Error(`Failed to fetch heatmap data: ${error.message}`);}
 
     const groupedByDate: Record<string, { count: number; duration: number }> =
       {};

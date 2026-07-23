@@ -359,7 +359,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <span className="font-medium text-gray-900 dark:text-white">
-                                      {t(type.display_name)}
+                                      {t(type.display_name as never)}
                                     </span>
                                     {type.is_builtin && (
                                       <span title="内置类型">

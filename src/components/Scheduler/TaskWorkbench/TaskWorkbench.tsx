@@ -191,17 +191,17 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
 
   const getPriorityInfo = (priority: number) => {
     if (priority >= 4)
-      return {
+      {return {
         label: "高优先级",
         color: "text-red-500",
         bg: "bg-red-100 dark:bg-red-500/20",
-      };
+      };}
     if (priority >= 2)
-      return {
+      {return {
         label: "中优先级",
         color: "text-yellow-500",
         bg: "bg-yellow-100 dark:bg-yellow-500/20",
-      };
+      };}
     return {
       label: "低优先级",
       color: "text-green-500",

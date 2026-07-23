@@ -110,7 +110,7 @@ export const mobileAuthApi: IAuthApi = {
     }
 
     const { data: authData, error } = await client.auth.updateUser({
-      data: data,
+      data,
     });
 
     if (error) {

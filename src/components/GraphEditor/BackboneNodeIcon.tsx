@@ -7,8 +7,8 @@ import {
   Target,
   Rocket,
 } from "lucide-react";
-import { BackboneModule } from "@shared/types/graph";
 import {
+  BackboneModule,
   BACKBONE_MODULE_LABELS,
   BACKBONE_MODULE_COLORS,
 } from "@shared/types/graph";

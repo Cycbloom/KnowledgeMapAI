@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CloudOff, RefreshCw } from 'lucide-react';
 import { useNetworkStatus } from '@/hooks/common/useNetworkStatus';

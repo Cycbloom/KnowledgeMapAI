@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
-import type { ReactNode } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Search,
@@ -13,10 +12,9 @@ import {
   CalendarClock,
   Bot,
   AlertTriangle,
+  type LucideIcon,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { pluginsApi } from "../../services/api/plugins";
-import type { RegistryPlugin, InstalledPlugin } from "../../services/api/plugins";
+import { pluginsApi, type RegistryPlugin, type InstalledPlugin } from "../../services/api/plugins";
 import { PluginCard } from "./PluginCard";
 import { useStore } from "../../store/useStore";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";

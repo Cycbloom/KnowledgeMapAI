@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -41,7 +42,7 @@ interface TaskCardProps {
   onSubtaskUpdate?: () => void;
 }
 
-const getTaskTypeBadge = (taskType: string | undefined, t: (key: string) => string) => {
+const getTaskTypeBadge = (taskType: string | undefined, t: TFunction) => {
   if (!taskType || taskType === "one_time") return null;
 
   const badges: Record<string, { label: string; icon?: React.ComponentType<{ size?: number | string }>; color: string }> = {
@@ -142,13 +143,13 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
     if (days < 0)
-      return { text: t("scheduler.taskCard.overdue"), color: "text-red-500 dark:text-red-400" };
+      {return { text: t("scheduler.taskCard.overdue"), color: "text-red-500 dark:text-red-400" };}
     if (days === 0)
-      return { text: t("scheduler.taskCard.today"), color: "text-amber-500 dark:text-amber-400" };
+      {return { text: t("scheduler.taskCard.today"), color: "text-amber-500 dark:text-amber-400" };}
     if (days === 1)
-      return { text: t("scheduler.taskCard.tomorrow"), color: "text-yellow-500 dark:text-yellow-400" };
+      {return { text: t("scheduler.taskCard.tomorrow"), color: "text-yellow-500 dark:text-yellow-400" };}
     if (days <= 7)
-      return { text: t("scheduler.taskCard.daysLater", { count: days }), color: "text-primary-500 dark:text-primary-400" };
+      {return { text: t("scheduler.taskCard.daysLater", { count: days }), color: "text-primary-500 dark:text-primary-400" };}
     return {
       text: formatDate(d, 'short'),
       color: "text-slate-500 dark:text-slate-400",

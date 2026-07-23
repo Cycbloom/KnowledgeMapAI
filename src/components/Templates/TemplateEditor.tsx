@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   Template,
   TemplateNode,
@@ -66,7 +67,7 @@ const TreeNodeItem: React.FC<{
   allNodes: TemplateNode[];
   depth: number;
   isDark: boolean;
-  t: (key: string, options?: Record<string, unknown>) => string;
+  t: TFunction;
   onUpdate: (id: string, updates: Partial<TemplateNode>) => void;
   onDelete: (id: string) => void;
   onAddChild: (parentId: string) => void;
@@ -216,7 +217,7 @@ const EdgeItem: React.FC<{
   edgeIndex: number;
   nodes: TemplateNode[];
   isDark: boolean;
-  t: (key: string, options?: Record<string, unknown>) => string;
+  t: TFunction;
   onUpdate: (updates: Partial<TemplateEdge>) => void;
   onDelete: () => void;
 }> = ({ edge, nodes, isDark, t, onUpdate, onDelete }) => {

@@ -92,7 +92,7 @@ export const Study = () => {
   const currentOptions: string[] = useMemo(() => {
     if (!cardReview.currentCard?.options) return [];
     if (Array.isArray(cardReview.currentCard.options))
-      return cardReview.currentCard.options;
+      {return cardReview.currentCard.options;}
     try {
       if (typeof cardReview.currentCard.options === "string") {
         return JSON.parse(cardReview.currentCard.options);
@@ -193,7 +193,7 @@ export const Study = () => {
   };
 
   if (isLoading)
-    return (
+    {return (
       <div
         className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"} ${isMobile ? "p-3" : "p-8"}`}
       >
@@ -240,7 +240,7 @@ export const Study = () => {
           </div>
         </div>
       </div>
-    );
+    );}
 
   // --- Dashboard & Bank & Focus & Quizzes View ---
   if (

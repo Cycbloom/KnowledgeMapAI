@@ -1,20 +1,21 @@
+import type { TFunction } from "i18next";
 import type { TimerMode } from "@shared/types";
 
 /**
  * TimerMode 对应的 i18n key 映射
  */
-export const TIMER_MODE_I18N_KEYS: Record<TimerMode, string> = {
+export const TIMER_MODE_I18N_KEYS = {
   focus: "focusTimer.focus",
   shortBreak: "focusTimer.shortBreak",
   longBreak: "focusTimer.longBreak",
-};
+} as const;
 
 /**
  * 获取 TimerMode 的 i18n 标签
  */
 export function getModeLabel(
   mode: TimerMode,
-  t: (key: string) => string,
+  t: TFunction,
 ): string {
   return t(TIMER_MODE_I18N_KEYS[mode]);
 }

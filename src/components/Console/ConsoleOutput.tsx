@@ -157,7 +157,7 @@ const renderFormattedContent = (content: string, isDark: boolean): React.ReactNo
         }
       } else if (!tableRendered) {
         nonTableLines.push(
-          <span key={'table-' + i}>
+          <span key={`table-${  i}`}>
             {renderAsciiTableHtml(table, isDark)}
           </span>
         );

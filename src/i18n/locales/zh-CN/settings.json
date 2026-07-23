@@ -4,6 +4,7 @@
   "back": "返回",
   "saveAll": "保存所有更改",
   "saving": "保存中...",
+  "loading": "加载中...",
   "sections": {
     "appearance": "外观",
     "focusMode": "专注模式",
@@ -251,5 +252,10 @@
       "system": "系统通知",
       "systemDesc": "系统通知"
     }
-  }
+  },
+  "embeddingAutoConfigured": "嵌入服务已自动配置",
+  "embeddingAutoConfigFailed": "嵌入服务自动配置失败",
+  "loadConfigFailed": "加载配置失败",
+  "providerRequired": "请选择服务提供商",
+  "sourceAuto": "自动"
 }

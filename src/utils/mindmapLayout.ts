@@ -202,7 +202,7 @@ export const createSemanticLayout = (
     return emb === undefined || emb.length === 0;
   });
 
-  let semanticPositions: Map<string, { x: number; y: number }> = new Map();
+  const semanticPositions: Map<string, { x: number; y: number }> = new Map();
 
   if (nodesWithEmbedding.length >= 3) {
     const embeddingMatrix: number[][] = nodesWithEmbedding
@@ -247,7 +247,7 @@ export const createSemanticLayout = (
     });
   }
 
-  let fallbackPositions: Map<string, { x: number; y: number }> = new Map();
+  const fallbackPositions: Map<string, { x: number; y: number }> = new Map();
   if (nodesWithoutEmbedding.length > 0) {
     const fallbackLayout = createMindMapLayout(nodesWithoutEmbedding, edges, {
       width,

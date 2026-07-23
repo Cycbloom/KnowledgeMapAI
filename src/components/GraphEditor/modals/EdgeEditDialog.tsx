@@ -181,10 +181,10 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                 >
                   <option value="">选择关系类型</option>
                   {Object.entries(groupedRelationshipTypes).map(([category, types]) => (
-                    <optgroup key={category} label={t(RELATIONSHIP_CATEGORY_LABELS[category as keyof typeof RELATIONSHIP_CATEGORY_LABELS]) || category}>
+                    <optgroup key={category} label={t(RELATIONSHIP_CATEGORY_LABELS[category as keyof typeof RELATIONSHIP_CATEGORY_LABELS] as never) || category}>
                       {types.map((type) => (
                         <option key={type.id} value={type.name}>
-                          {t(type.display_name)}
+                          {t(type.display_name as never)}
                         </option>
                       ))}
                     </optgroup>

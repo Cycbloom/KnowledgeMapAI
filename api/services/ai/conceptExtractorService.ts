@@ -13,13 +13,14 @@ import {
 } from "../../../shared/utils/retry";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
-import type {
-  ConceptType,
-  ExtractedConcept,
-  LiteratureInfo,
-  ExtractedRelation,
+import {
+  BackboneModule,
+  CONCEPT_TO_MODULE_MAP,
+  type ConceptType,
+  type ExtractedConcept,
+  type LiteratureInfo,
+  type ExtractedRelation,
 } from "@shared/types/graph";
-import { BackboneModule, CONCEPT_TO_MODULE_MAP } from "@shared/types/graph";
 
 export interface ExtractConceptsOptions {
   provider?: AIProviderType;

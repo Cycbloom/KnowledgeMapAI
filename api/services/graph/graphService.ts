@@ -4,6 +4,7 @@ import { notDeleted } from "../common/softDeleteHelper";
 import { logger } from "../../utils/logger";
 import {
   checkDuplicateGraphTopic,
+  type GraphTopicCheckResult,
 } from "../../utils/similaritySearch";
 import { aiService } from "../ai/aiService";
 import { AppError } from "../../middleware/errorHandler";
@@ -28,7 +29,6 @@ import type {
 
 import { GraphQueryService, graphQueryService } from "./graphQueryService";
 import { GraphBatchService, graphBatchService } from "./graphBatchService";
-import type { GraphTopicCheckResult } from "../../utils/similaritySearch";
 
 /**
  * 图谱服务（Facade）

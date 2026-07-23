@@ -1,5 +1,4 @@
-import type { QueryClient } from '@tanstack/react-query';
-import { DefaultError } from '@tanstack/react-query';
+import { DefaultError, type QueryClient } from '@tanstack/react-query';
 import { createLogger } from './logger';
 
 const logger = createLogger('OfflineMutations');

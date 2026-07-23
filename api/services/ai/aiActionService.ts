@@ -308,9 +308,9 @@ export class AIActionService {
 
     try {
         const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
-          graphId: graphId,
-          userId: userId,
-          nodeId: nodeId,
+          graphId,
+          userId,
+          nodeId,
           nodeTitle: node.title,
           actionName: action.name,
         });

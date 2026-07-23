@@ -201,7 +201,7 @@ router.get('/tasks/:id', requireAuth, async (req: AuthedRequest, res: Response) 
 
   } catch (error: unknown) {
     if (error instanceof AppError) throw error;
-    throw new AppError(ErrorCodes.FAILED_TO_FETCH_TASK);
+    throw new AppError(ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -209,7 +209,7 @@ router.post('/cross-graph-connections', requireAuth, async (req: AuthedRequest, 
   const { graph1_id, graph1_title, graph1_nodes, graph2_id, graph2_title, graph2_nodes, provider, model } = req.body;
 
   if (!graph1_id || !graph2_id || !graph1_nodes || !graph2_nodes) {
-    throw new AppError(ErrorCodes.MISSING_GRAPH_NODES_FIELDS);
+    throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
   }
 
   try {

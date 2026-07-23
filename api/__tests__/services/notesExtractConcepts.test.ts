@@ -218,7 +218,7 @@ describe("NotesService.extractConcepts JSON 解析容错", () => {
       choices: [
         {
           message: {
-            content: "```json\n" + JSON.stringify(validConcepts) + "\n```",
+            content: `\`\`\`json\n${  JSON.stringify(validConcepts)  }\n\`\`\``,
           },
         },
       ],

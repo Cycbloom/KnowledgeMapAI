@@ -15,6 +15,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useSchedulerTasks } from "../../hooks";
 import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import type { UserTask, UserTaskStatus } from "@shared/types";
@@ -27,7 +28,7 @@ interface RelatedTasksProps {
   onCreateTask?: () => void;
 }
 
-const formatDeadline = (date: string | undefined, t: (key: string, options?: Record<string, unknown>) => string): { text: string; color: string } | null => {
+const formatDeadline = (date: string | undefined, t: TFunction): { text: string; color: string } | null => {
   if (!date) return null;
   const d = new Date(date);
   const now = new Date();

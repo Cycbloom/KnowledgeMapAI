@@ -2,8 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from '@/lib/utils';
 import { WifiOff } from "lucide-react";
-import { useNetworkStatus } from "../../hooks";
-import { useTheme } from "../../hooks";
+import { useNetworkStatus, useTheme } from "../../hooks";
 
 export const OfflineIndicator: React.FC = () => {
   const { t } = useTranslation();

@@ -602,7 +602,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {t(opt.labelKey)}
+                  {t(opt.labelKey as never)}
                 </option>
               ))}
             </select>
@@ -647,7 +647,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 }`}
                 aria-pressed={active}
               >
-                {t(opt.labelKey)}
+                {t(opt.labelKey as never)}
               </button>
             );
           })}
@@ -684,7 +684,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 }`}
                 aria-pressed={active}
               >
-                {t(opt.labelKey)}
+                {t(opt.labelKey as never)}
               </button>
             );
           })}

@@ -64,7 +64,7 @@ export class PluginStoreService {
           plugin_name: pluginName,
           version: manifest.version,
           state: "inactive",
-          manifest: manifest,
+          manifest,
         },
         { onConflict: "user_id,plugin_name" },
       );

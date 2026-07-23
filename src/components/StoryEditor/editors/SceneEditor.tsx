@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Save, Loader2, FileText, MapPin, Clock, User, Type, CheckSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { storyCreationHttpApi } from "../../../services/api/storyCreation";
+import { storyCreationHttpApi, type StoryStructure, type StoryCharacter, type StorySceneDetail } from "../../../services/api/storyCreation";
 import { message } from "../../../utils/messageHelper";
-import type { StoryStructure, StoryCharacter, StorySceneDetail } from "../../../services/api/storyCreation";
 import { useFormDraft, useBeforeUnload } from "../../../hooks";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
 

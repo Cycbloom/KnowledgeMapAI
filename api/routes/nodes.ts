@@ -10,8 +10,7 @@ import {
   batchUpdatePositionsSchema,
   batchUpdateNodesSchema,
 } from "../schemas/index";
-import { nodesService } from "../services/graph";
-import { knowledgePointService } from "../services/graph";
+import { nodesService, knowledgePointService } from "../services/graph";
 
 const router = Router();
 

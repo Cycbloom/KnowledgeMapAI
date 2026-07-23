@@ -20,11 +20,13 @@
     "navigateToLearning": "跳转到学习模式",
     "notes": "笔记",
     "noteBadgeDaily": "每日",
-    "noteBadgeNote": "笔记"
+    "noteBadgeNote": "笔记",
+    "searchMode": "搜索模式"
   },
   "view": {
     "cardView": "卡片视图",
-    "listView": "列表视图"
+    "listView": "列表视图",
+    "viewToggle": "视图切换"
   },
   "actions": {
     "select": "选择",
@@ -34,7 +36,8 @@
     "importing": "导入中...",
     "graphMap": "图谱地图",
     "newGraph": "新建图谱",
-    "aiGenerate": "AI 生成"
+    "aiGenerate": "AI 生成",
+    "createGraph": "创建图谱"
   },
   "create": {
     "title": "新建图谱",
@@ -56,7 +59,9 @@
     "deselectAll": "取消全选",
     "selected": "已选择 {{count}} 项",
     "deleting": "删除中...",
-    "batchDelete": "批量删除"
+    "batchDelete": "批量删除",
+    "toolbar": "批量操作工具栏",
+    "clearSelection": "清除选择"
   },
   "empty": {
     "noResults": "未找到相关图谱",

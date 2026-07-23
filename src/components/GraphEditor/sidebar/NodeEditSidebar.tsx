@@ -20,11 +20,8 @@ import {
   Pencil,
   FileText,
 } from "lucide-react";
-import { useTheme } from "../../../hooks";
-import { useIsMobile } from "../../../hooks";
-import { useAutoSave, useBeforeUnload } from "../../../hooks";
-import type { BackboneModule } from "@shared/types/graph";
-import { BACKBONE_MODULE_LABELS } from "@shared/types/graph";
+import { useTheme, useIsMobile, useAutoSave, useBeforeUnload } from "../../../hooks";
+import { BACKBONE_MODULE_LABELS, type BackboneModule } from "@shared/types/graph";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";

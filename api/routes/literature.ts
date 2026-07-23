@@ -4,13 +4,10 @@ import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import type { AIProviderType } from "@shared/types";
-import { getAIProviderForTask } from "../services/ai";
+import { getAIProviderForTask, conceptExtractorService, literatureMetadataService, aiService } from "../services/ai";
 import { logger } from "../utils/logger";
 import { scrapeUrl } from "../utils/scraper";
-import { conceptExtractorService } from "../services/ai";
 import { conceptAggregationService } from "../services/graph";
-import { literatureMetadataService } from "../services/ai";
-import { aiService } from "../services/ai";
 import { literatureApplyService } from "../services/literature";
 import { upload } from "./ai/utils";
 import type { LiteratureInfo, ConceptType } from "@shared/types/graph";
@@ -267,7 +264,7 @@ router.post(
     try {
       let textContent = content || "";
       let literatureTitle = "未知文献";
-      let literatureUrl = url;
+      const literatureUrl = url;
 
       if (file) {
         logger.info(`Processing uploaded file: ${file.originalname}`);

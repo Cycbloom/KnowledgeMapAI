@@ -1,8 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ChevronDown, AlertCircle } from "lucide-react";
-import type { LearningPathSuggestion } from "./types";
-import { SUGGESTION_ICONS } from "./types";
+import { SUGGESTION_ICONS, type LearningPathSuggestion } from "./types";
 
 interface PathSuggestionsSectionProps {
   suggestions: LearningPathSuggestion[];

@@ -535,15 +535,15 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       if (result.literature && !metadata.title) {
         const detectedMetadata: Partial<LiteratureMetadata> = {};
         if (result.literature.title)
-          detectedMetadata.title = result.literature.title;
+          {detectedMetadata.title = result.literature.title;}
         if (result.literature.authors && result.literature.authors.length > 0)
-          detectedMetadata.authors = result.literature.authors;
+          {detectedMetadata.authors = result.literature.authors;}
         if (result.literature.year)
-          detectedMetadata.year = result.literature.year;
+          {detectedMetadata.year = result.literature.year;}
         if (result.literature.type)
-          detectedMetadata.type = result.literature.type;
+          {detectedMetadata.type = result.literature.type;}
         if (result.literature.journal)
-          detectedMetadata.journal = result.literature.journal;
+          {detectedMetadata.journal = result.literature.journal;}
 
         if (Object.keys(detectedMetadata).length > 0) {
           setDraft((prev) => ({
@@ -895,7 +895,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
                   : "border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-500"
               }`}
             >
-              {t(labelKey)}
+              {t(labelKey as never)}
             </button>
           ))}
         </div>
@@ -1315,7 +1315,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   };
 
   const formatRelationType = (type: string): string => {
-    return t(getRelationshipTypeDisplayName(type) || type);
+    return t((getRelationshipTypeDisplayName(type) || type) as never);
   };
 
   const renderEnhancedRelationList = () => {

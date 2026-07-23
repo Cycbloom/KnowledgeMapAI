@@ -8,10 +8,8 @@ import { uuidParamsSchema } from "../../schemas/index";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { AppError } from "../../middleware/errorHandler";
 import { logger } from "../../utils/logger";
-import { relationDiscoveryService } from "../../services/graph";
+import { relationDiscoveryService, domainExpansionService, graphExpansionService } from "../../services/graph";
 import { z } from "zod";
-import { domainExpansionService } from "../../services/graph";
-import { graphExpansionService } from "../../services/graph";
 
 const expandDomainSchema = z
   .object({

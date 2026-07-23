@@ -63,7 +63,7 @@ const handleHelp = async (args: ParsedArgs, _context: CommandContext): Promise<C
     if (cmd.subcommands && cmd.subcommands.length > 0) {
       for (const sub of cmd.subcommands) {
         const fullName = `${cmd.name} ${sub.name}`;
-        const subName = ('  └ ' + fullName).padEnd(20);
+        const subName = (`  └ ${  fullName}`).padEnd(20);
         const subDesc = (sub.description || '').padEnd(30);
         helpText += `│ ${subName} │ ${subDesc} │ ${permissionBadge(sub.permission || cmd.permission)}   │\n`;
       }

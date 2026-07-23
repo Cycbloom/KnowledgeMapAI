@@ -1,7 +1,7 @@
-import type { BackboneModule } from "@shared/types/graph";
 import {
   BACKBONE_MODULE_LABELS,
   BACKBONE_MODULE_TITLES,
+  type BackboneModule,
 } from "@shared/types/graph";
 import { logger } from "../../utils/logger";
 import { getAIProviderForTask } from "./factory";

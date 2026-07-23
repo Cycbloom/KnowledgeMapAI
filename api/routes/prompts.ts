@@ -44,7 +44,7 @@ router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
   }
 
   if (scope === 'graph' && !graph_id) {
-    throw new AppError(ErrorCodes.GRAPH_ID_REQUIRED);
+    throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
   }
 
   try {

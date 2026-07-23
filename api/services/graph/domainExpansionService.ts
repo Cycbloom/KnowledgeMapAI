@@ -39,7 +39,7 @@ class DomainExpansionService {
     const { graph_ids, domain, count = 10 } = options;
 
     try {
-      let sourceGraphs: Array<{
+      const sourceGraphs: Array<{
         id: string;
         title: string;
         description: string | null;
@@ -196,7 +196,7 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
         { timeout: 60000 },
       );
 
-      let recommendations: Array<{
+      const recommendations: Array<{
         title: string;
         description: string;
         priority: 'high' | 'medium' | 'low';

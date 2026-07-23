@@ -2,8 +2,8 @@ import { createPersistedStore } from "./createPersistedStore";
 import type {
   UserSettingsAppearance,
   UserSettingsThemeMode,
+  ThemePreset,
 } from "@shared/types";
-import type { ThemePreset } from "@shared/types";
 
 interface ThemeStoreState extends UserSettingsAppearance {
   setThemeMode: (mode: UserSettingsThemeMode) => void;

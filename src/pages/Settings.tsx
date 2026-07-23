@@ -38,8 +38,7 @@ import {
   ShortcutSettings,
   NotificationSettings,
 } from "../components/Settings";
-import type { DatabaseConfig } from "../components/Settings/settingsConstants";
-import { DEFAULT_AVAILABLE_MODES } from "../components/Settings/settingsConstants";
+import { DEFAULT_AVAILABLE_MODES, type DatabaseConfig } from "../components/Settings/settingsConstants";
 import { PwaInstallButton } from "../components/PwaInstallButton";
 import { PwaDiagnostics } from "../components/PwaDiagnostics";
 

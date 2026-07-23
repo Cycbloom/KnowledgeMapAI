@@ -127,7 +127,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     if (!isRealtimeTrackingRef.current) return;
     const transcriptText = (
       realtimeSTT.finalTranscript +
-      (realtimeSTT.interimTranscript ? " " + realtimeSTT.interimTranscript : "")
+      (realtimeSTT.interimTranscript ? ` ${  realtimeSTT.interimTranscript}` : "")
     ).trim();
     const separator = baseInputRef.current.trim() ? " " : "";
     onInputChange(

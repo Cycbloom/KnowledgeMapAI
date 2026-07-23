@@ -1,14 +1,12 @@
 import type { Node, Edge } from "@shared/types";
-import type {
-  CustomRegion,
-  RegionInfo,
-  GraphBackboneModule,
-} from "@shared/types/graph";
 import {
   BackboneModule,
   BACKBONE_MODULE_TITLES,
   BACKBONE_MODULE_COLORS,
   BACKBONE_MODULE_ICONS,
+  type CustomRegion,
+  type RegionInfo,
+  type GraphBackboneModule,
 } from "@shared/types/graph";
 
 export interface ComputeRegionsParams {

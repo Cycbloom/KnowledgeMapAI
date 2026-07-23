@@ -136,9 +136,9 @@ export const Templates = () => {
     }
 
     if (
-      !await asyncConfirm({ title: t("common.delete"), message: `${t("common.confirm")}${t("common.delete")} "${template.name}"?`, isDangerous: true })
+      !await asyncConfirm({ title: t("common.delete"), message: `${t("common.confirmButton")}${t("common.delete")} "${template.name}"?`, isDangerous: true })
     )
-      return;
+      {return;}
 
     try {
       await deleteTemplateMutation.mutateAsync(template.id);

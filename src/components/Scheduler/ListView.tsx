@@ -182,8 +182,8 @@ export const ListView: React.FC<ListViewProps> = ({
           else if (!a.deadline) comparison = 1;
           else if (!b.deadline) comparison = -1;
           else
-            comparison =
-              new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+            {comparison =
+              new Date(a.deadline).getTime() - new Date(b.deadline).getTime();}
           break;
         case "created_at":
           comparison =
@@ -306,32 +306,32 @@ export const ListView: React.FC<ListViewProps> = ({
 
   const formatDeadline = (date?: string) => {
     if (!date)
-      return { text: "--", color: "text-slate-400 dark:text-slate-500" };
+      {return { text: "--", color: "text-slate-400 dark:text-slate-500" };}
     const d = new Date(date);
     const now = new Date();
     const diff = d.getTime() - now.getTime();
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
     if (days < 0)
-      return {
+      {return {
         text: t("scheduler.timeline.overdue"),
         color: "text-red-500 dark:text-red-400",
-      };
+      };}
     if (days === 0)
-      return {
+      {return {
         text: t("scheduler.timeline.today"),
         color: "text-amber-500 dark:text-amber-400",
-      };
+      };}
     if (days === 1)
-      return {
+      {return {
         text: t("scheduler.timeline.tomorrow"),
         color: "text-yellow-500 dark:text-yellow-400",
-      };
+      };}
     if (days <= 7)
-      return {
+      {return {
         text: t("scheduler.review.daysLater", { count: days }),
         color: "text-primary-500 dark:text-primary-400",
-      };
+      };}
     return {
       text: formatDateUtil(d, 'short'),
       color: "text-slate-500 dark:text-slate-400",
@@ -445,11 +445,11 @@ export const ListView: React.FC<ListViewProps> = ({
                         px-2 py-1 rounded text-xs font-medium transition-all
                         ${
                           filterQueue === level
-                            ? QUEUE_COLORS[level as QueueLevel]
-                                .bg +
-                              " " +
+                            ? `${QUEUE_COLORS[level as QueueLevel]
+                                .bg 
+                              } ${ 
                               QUEUE_COLORS[level as QueueLevel]
-                                .text
+                                .text}`
                             : "bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                         }
                       `}

@@ -54,7 +54,7 @@ export const CollaboratorList: React.FC<CollaboratorListProps> = ({
             ) : (
               <span
                 className="px-2 py-1 text-sm rounded"
-                style={{ backgroundColor: COLLABORATOR_ROLE_COLORS[collaborator.role] + "20", color: COLLABORATOR_ROLE_COLORS[collaborator.role] }}
+                style={{ backgroundColor: `${COLLABORATOR_ROLE_COLORS[collaborator.role]  }20`, color: COLLABORATOR_ROLE_COLORS[collaborator.role] }}
               >
                 {COLLABORATOR_ROLE_LABELS[collaborator.role]}
               </span>

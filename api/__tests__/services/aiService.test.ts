@@ -102,7 +102,7 @@ describe("AIService", () => {
         choices: [
           {
             message: {
-              content: "```json\n" + JSON.stringify(jsonResponse) + "\n```",
+              content: `\`\`\`json\n${  JSON.stringify(jsonResponse)  }\n\`\`\``,
             },
           },
         ],
@@ -149,9 +149,9 @@ describe("AIService", () => {
     it("should correctly extract JSON from mixed content", async () => {
       const jsonResponse = { cards: [] };
       const mixedContent =
-        "Here is the result: ```json " +
-        JSON.stringify(jsonResponse) +
-        " ``` Hope it helps.";
+        `Here is the result: \`\`\`json ${ 
+        JSON.stringify(jsonResponse) 
+        } \`\`\` Hope it helps.`;
 
       const mockProvider = createMockProvider();
       mockProvider.client.chat.completions.create.mockResolvedValue({

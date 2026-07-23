@@ -7,8 +7,6 @@ import { aiService } from "../services/ai";
 import {
   knowledgePointService,
   knowledgePointVersionService,
-} from "../services/graph";
-import {
   conceptAggregationService,
 } from "../services/graph";
 import { requireKnowledgePointOwnership } from "../middleware/ownership";

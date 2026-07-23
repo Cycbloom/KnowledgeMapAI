@@ -71,7 +71,7 @@ export interface GeneratePathInput {
 
 export const learningPathsApi = {
   list: (status?: LearningPathStatus) =>
-    request("/learning-paths" + (status ? `?status=${status}` : "")),
+    request(`/learning-paths${  status ? `?status=${status}` : ""}`),
 
   get: (id: string) => request(`/learning-paths/${id}`),
 

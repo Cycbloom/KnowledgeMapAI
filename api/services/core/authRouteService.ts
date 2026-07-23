@@ -97,7 +97,7 @@ class AuthRouteService {
         'invalid_login_credentials': ErrorCodes.INVALID_CREDENTIALS,
         'email_not_confirmed': ErrorCodes.EMAIL_NOT_CONFIRMED,
         'too_many_requests': ErrorCodes.TOO_MANY_REQUESTS,
-        'user_not_found': ErrorCodes.USER_NOT_FOUND,
+        'user_not_found': ErrorCodes.RESOURCE_USER_NOT_FOUND,
         'invalid_password': ErrorCodes.INVALID_CREDENTIALS,
         'sign_in_not_allowed': ErrorCodes.AUTH_FORBIDDEN,
       };

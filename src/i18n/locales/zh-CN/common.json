@@ -3,7 +3,7 @@
   "error": "错误",
   "success": "成功",
   "cancel": "取消",
-  "confirm": "确认",
+  "confirmButton": "确认",
   "save": "保存",
   "delete": "删除",
   "edit": "编辑",
@@ -151,5 +151,15 @@
   "saving": "保存中...",
   "tutor": {
     "empty": "暂无学习建议"
-  }
+  },
+  "conceptAggregation": {
+    "noAliasTitle": "无别名",
+    "noAggregationTitle": "暂无概念聚合",
+    "noAggregationDesc": "选择节点后开始创建概念聚合",
+    "noHierarchyTitle": "暂无层级结构",
+    "noHierarchyDesc": "选择节点后查看层级结构",
+    "noHierarchyTreeTitle": "暂无层级树",
+    "noHierarchyTreeDesc": "选择节点后查看层级树"
+  },
+  "comingSoon": "即将推出"
 }

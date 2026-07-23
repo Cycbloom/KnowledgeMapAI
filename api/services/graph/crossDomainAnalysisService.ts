@@ -122,7 +122,7 @@ export class CrossDomainAnalysisService {
     }));
 
     const enrichedMetadata = await enrichMetadata(supabase, {
-      userId: userId,
+      userId,
     });
 
     const startTime = Date.now();
@@ -349,7 +349,7 @@ export class CrossDomainAnalysisService {
     });
 
     const enrichedMetadata = await enrichMetadata(supabase, {
-      userId: userId,
+      userId,
     });
 
     const startTime = Date.now();
@@ -581,7 +581,7 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
     }));
 
     const enrichedMetadata = await enrichMetadata(supabase, {
-      userId: userId,
+      userId,
     });
 
     const startTime = Date.now();

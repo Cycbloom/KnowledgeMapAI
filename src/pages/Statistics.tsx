@@ -255,7 +255,7 @@ export const Statistics = () => {
       </div>
     );
   }
-  if (error) return (
+  if (error) {return (
     <div className="p-8 flex flex-col items-center justify-center text-center">
       <AlertCircle size={48} className="text-red-500 mb-4" />
       <p className="text-red-600 dark:text-red-400 mb-4">{t('statistics.loadError')}</p>
@@ -267,7 +267,7 @@ export const Statistics = () => {
         {t('common.retry')}
       </button>
     </div>
-  );
+  );}
   if (!stats) {
     return (
       <div className="h-full flex items-center justify-center p-8 bg-slate-50 dark:bg-slate-900">

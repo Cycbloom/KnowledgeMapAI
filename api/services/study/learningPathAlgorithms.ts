@@ -94,7 +94,7 @@ export async function buildProgressMap(
         existing.difficulty = p.fsrs_difficulty || 0;
 
         if (p.fsrs_last_review)
-          existing.lastReviewDate = new Date(p.fsrs_last_review);
+          {existing.lastReviewDate = new Date(p.fsrs_last_review);}
         if (p.next_review) existing.nextReviewDate = new Date(p.next_review);
 
         existing.masteryLevel = Math.min(

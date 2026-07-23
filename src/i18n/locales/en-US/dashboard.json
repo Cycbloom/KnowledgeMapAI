@@ -20,11 +20,13 @@
     "navigateToLearning": "Navigate to learning mode",
     "notes": "Notes",
     "noteBadgeDaily": "Daily",
-    "noteBadgeNote": "Note"
+    "noteBadgeNote": "Note",
+    "searchMode": "Search Mode"
   },
   "view": {
     "cardView": "Card View",
-    "listView": "List View"
+    "listView": "List View",
+    "viewToggle": "View Toggle"
   },
   "actions": {
     "select": "Select",
@@ -34,7 +36,8 @@
     "importing": "Importing...",
     "graphMap": "Graph Map",
     "newGraph": "New Graph",
-    "aiGenerate": "AI Generate"
+    "aiGenerate": "AI Generate",
+    "createGraph": "Create Graph"
   },
   "create": {
     "title": "Create New Graph",
@@ -56,7 +59,9 @@
     "deselectAll": "Deselect All",
     "selected": "{{count}} items selected",
     "deleting": "Deleting...",
-    "batchDelete": "Batch Delete"
+    "batchDelete": "Batch Delete",
+    "toolbar": "Batch Actions Toolbar",
+    "clearSelection": "Clear Selection"
   },
   "empty": {
     "noResults": "No matching graphs found",

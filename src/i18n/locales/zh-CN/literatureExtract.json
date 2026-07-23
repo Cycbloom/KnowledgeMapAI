@@ -82,7 +82,8 @@
     "extracted": "成功提取 {{count}} 个知识概念",
     "saved": "成功保存到图谱！新增 {{addedCount}} 个概念，合并 {{mergedCount}} 个概念",
     "exported": "导出成功",
-    "pasted": "粘贴成功"
+    "pasted": "粘贴成功",
+    "metadataDetected": "元数据已识别（置信度: {{confidence}}）"
   },
   "result": {
     "title": "提取完成",
@@ -198,7 +199,8 @@
       "book": "书籍",
       "article": "文章",
       "report": "报告",
-      "webpage": "网页"
+      "webpage": "网页",
+      "document": "文档"
     }
   },
   "metadataForm": {

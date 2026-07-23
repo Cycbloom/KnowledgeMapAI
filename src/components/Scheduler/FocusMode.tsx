@@ -36,10 +36,10 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     if (isOpen) {
       startMixer();
       if (taskId && !isActive)
-        useTimerStore.getState().start(
+        {useTimerStore.getState().start(
           taskId,
           useFocusStore.getState().focusDuration,
-        );
+        );}
       frontendEventBus.publish("focus_enter", { taskId });
     } else {
       stopMixer();

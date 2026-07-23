@@ -201,7 +201,7 @@ export class ContentGenerationService {
             provider: provider.providerType,
             model,
             metadata: {
-              topic: topic,
+              topic,
               userId: options.userId,
             },
           },
@@ -329,7 +329,7 @@ export class ContentGenerationService {
             provider: provider.providerType,
             model,
             metadata: {
-              title: title,
+              title,
               userId: options.userId,
             },
           },

@@ -1,6 +1,6 @@
 import type { Node } from '../types';
-import { BackboneModule } from '@shared/types/graph';
 import {
+  BackboneModule,
   BACKBONE_MODULE_LABELS,
   BACKBONE_MODULE_ICONS,
   BACKBONE_MODULE_COLORS,

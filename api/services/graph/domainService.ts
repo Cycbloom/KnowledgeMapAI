@@ -153,7 +153,7 @@ export const domainService = {
       throw new AppError("获取领域列表失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
-    let tree = buildTree(domains as DomainRecord[]);
+    const tree = buildTree(domains as DomainRecord[]);
 
     const hasUncategorized = tree.some((d) => d.name === "未分类");
     if (!hasUncategorized) {

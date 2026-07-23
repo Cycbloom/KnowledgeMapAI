@@ -16,7 +16,7 @@ import { CreateRelationPanel } from "../components/GraphMap/CreateRelationPanel"
 import { QuickCreateGraphPanel } from "../components/GraphMap/QuickCreateGraphPanel";
 import { DomainManager } from "../components/GraphMap/DomainManager";
 import { CrossDomainInsightsSection } from "../components/GraphMap/CrossDomainInsightsSection";
-import type { CrossDomainAnalysisResult } from "../components/GraphMap/types";
+import type { CrossDomainAnalysisResult, AnalysisModuleState } from "../components/GraphMap/types";
 import { useAnalysisModules } from "../hooks/useAnalysisModules";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { message } from "../utils/messageHelper";
@@ -32,7 +32,6 @@ import type {
   DiscoveryResult,
   IntelligentSuggestion,
 } from "../types";
-import type { AnalysisModuleState } from "../components/GraphMap/types";
 
 const GraphMapCanvas = lazy(() =>
   import("../components/GraphMap/GraphMapCanvas").then((module) => ({
@@ -252,7 +251,7 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
                 disabled={isSetting}
                 className="px-4 py-2 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 transition-colors"
               >
-                {t('common.confirm')}
+                {t('common.confirmButton')}
               </button>
             </div>
           </>
@@ -1064,7 +1063,7 @@ export const GraphMap = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  if (error || domainTreeError) return (
+  if (error || domainTreeError) {return (
     <div className="p-8 flex flex-col items-center justify-center text-center">
       <AlertCircle size={48} className="text-red-500 mb-4" />
       <p className="text-red-600 dark:text-red-400 mb-4">{t('graphMap.loadError')}</p>
@@ -1076,7 +1075,7 @@ export const GraphMap = () => {
         {t('graphMap.retry')}
       </button>
     </div>
-  );
+  );}
 
   return (
     <>
@@ -1858,8 +1857,8 @@ export const GraphMap = () => {
                 title: g.title,
                 description: g.description,
               })),
-              relations: relations,
-              domain: domain,
+              relations,
+              domain,
             });
             queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
             queryClient.invalidateQueries({ queryKey: queryKeys.graphs });

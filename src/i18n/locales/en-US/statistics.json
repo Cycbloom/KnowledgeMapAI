@@ -4,7 +4,19 @@
   "loadError": "Failed to load statistics",
   "tabs": {
     "learning": "Learning Statistics",
-    "tasks": "Task Statistics"
+    "tasks": "Task Statistics",
+    "overview": "Overview",
+    "graphs": "Graphs"
+  },
+  "metrics": {
+    "totalCards": "Total Cards",
+    "totalCardsSubtext": "Cumulative knowledge points created",
+    "dueToday": "Due Today",
+    "dueTodaySubtext": "Key to memory retention",
+    "learning": "Learning",
+    "learningSubtext": "Knowledge being internalized",
+    "avgStability": "Average Memory Stability",
+    "avgStabilitySubtext": "days (FSRS algorithm estimate)"
   },
   "overview": "Overview",
   "graphAnalysis": "Graph Analysis",
@@ -20,12 +32,27 @@
   "reviewCards": "Review Cards",
   "knowledgeAccumulation": "Knowledge Accumulation Trend (Last 30 Days)",
   "newCards": "New Cards",
-  "forgettingCurve": "Forgetting Curve & Memory Threshold",
+  "forgettingCurve": {
+    "title": "Forgetting Curve",
+    "retentionRate": "Retention Rate",
+    "description": "Theoretical model based on FSRS algorithm (average stability: {{stability}} days)",
+    "dayLabel": "Day {{day}}",
+    "target": "Target {{percent}}%"
+  },
   "forgettingCurveDesc": "Theoretical model based on FSRS algorithm (average stability: {{stability}} days)",
   "memoryRetention": "Memory Retention",
   "dayN": "Day {{day}}",
   "knowledgeDistribution": "Knowledge Mastery Distribution",
   "target": "Target",
   "loadingStats": "Loading statistics...",
-  "loadStatsFailed": "Failed to load statistics"
+  "loadStatsFailed": "Failed to load statistics",
+  "day": "Day",
+  "forecast": {
+    "title": "Review Forecast",
+    "reviewCards": "Review Cards"
+  },
+  "growth": {
+    "title": "Knowledge Growth",
+    "newCards": "New Cards"
+  }
 }

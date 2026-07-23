@@ -5,13 +5,14 @@ import {
   X, Sparkles, GitBranch, Layers, Lightbulb, Loader2, 
   Check, Filter, ChevronDown, ChevronUp, Plus, AlertCircle
 } from 'lucide-react';
-import type { 
-  DiscoveryResult, 
-  DiscoveredRelation, 
-  GraphRelationType,
-  IntelligentSuggestion
+import {
+  GRAPH_RELATION_COLORS,
+  GRAPH_RELATION_LABELS,
+  type DiscoveryResult,
+  type DiscoveredRelation,
+  type GraphRelationType,
+  type IntelligentSuggestion,
 } from '@shared/types/graph';
-import { GRAPH_RELATION_COLORS, GRAPH_RELATION_LABELS } from '@shared/types/graph';
 
 interface GraphRelationDiscoveryPanelProps {
   isOpen: boolean;

@@ -15,8 +15,11 @@ import { useStore } from "../../store/useStore";
 import { message } from "../../utils/messageHelper";
 import { api } from "../../services/api";
 import { getScenarioById } from "../PromptConfig/promptScenarios";
-import type { TemplateType, TemplateCategory } from "@shared/types/graph";
-import { TEMPLATE_CATEGORY_TYPES } from "@shared/types/graph";
+import {
+  TEMPLATE_CATEGORY_TYPES,
+  type TemplateType,
+  type TemplateCategory,
+} from "@shared/types/graph";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 
 interface PromptTemplate {
@@ -250,7 +253,7 @@ export const TemplatePromptConfigPanel: React.FC<
                     <div className={`p-1 rounded ${config.iconBg}`}>
                       {config.icon}
                     </div>
-                    {t(config.labelKey)}
+                    {t(config.labelKey as never)}
                   </div>
                   <div className="space-y-0.5">
                     {TEMPLATE_CATEGORY_TYPES[cat].map((type) => {

@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../services/api";
+import { api, schedulerApi } from "../services/api";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { message as msgHelper } from "../utils/messageHelper";
 import { asyncConfirm } from "../utils/asyncConfirm";
@@ -45,7 +45,6 @@ import { addQuote } from "../components/RAGChat";
 import { NodeLevel, Keyword } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
 import { useShallow } from "zustand/react/shallow";
-import { schedulerApi } from "../services/api";
 
 type OutlineMode = "graph" | "learning-path";
 type RightPanelMode =
@@ -492,7 +491,7 @@ export const LearningMode = () => {
         msgHelper.error(errorMessage);
       } finally { setIsGeneratingCards(false); }
     } else if (action === "create_region") {
-      msgHelper.info(t("graphEditor.region.createRegion") + " - " + t("common.comingSoon"));
+      msgHelper.info(`${t("graphEditor.region.createRegion")  } - ${  t("common.comingSoon")}`);
     }
   };
 

@@ -113,7 +113,7 @@ export function buildNodeContext(
   if (includeContent && node.content) {
     const content =
       node.content.length > maxContentLength
-        ? node.content.substring(0, maxContentLength) + "..."
+        ? `${node.content.substring(0, maxContentLength)  }...`
         : node.content;
     parts.push(`内容: ${content}`);
   }

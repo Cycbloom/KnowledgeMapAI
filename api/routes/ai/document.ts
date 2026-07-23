@@ -5,19 +5,20 @@ import { validate } from "../../middleware/validate";
 import { textToGraphSchema, urlToTextSchema } from "../../schemas/index";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { AppError } from "../../middleware/errorHandler";
-import { aiService } from "../../services/ai";
 import {
+  aiService,
   getAIProviderForTask,
   getAIProvider,
+  promptService,
+  performanceMonitor,
+  enrichMetadata,
+  pricingService,
+  documentParsingService,
 } from "../../services/ai";
 import { logger } from "../../utils/logger";
-import { promptService } from "../../services/ai";
 import { scrapeUrl } from "../../utils/scraper";
 import { upload } from "./utils";
-import { performanceMonitor, enrichMetadata } from "../../services/ai";
-import { pricingService } from "../../services/ai";
 import { autoGraphService } from "../../services/graph";
-import { documentParsingService } from "../../services/ai";
 
 const router = Router();
 
@@ -355,7 +356,7 @@ router.post(
     const file = req.file;
 
     if (!file) {
-      throw new AppError(ErrorCodes.NO_IMAGE_UPLOADED);
+      throw new AppError(ErrorCodes.NO_FILE_UPLOADED);
     }
 
     try {

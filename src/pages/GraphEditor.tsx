@@ -20,8 +20,7 @@ import { QuadrantCanvas } from "../components/GraphEditor/canvas/QuadrantCanvas"
 import { ExplorationTimeline } from "../components/GraphEditor/shared/ExplorationTimeline";
 import { GraphStyleSettings } from "../components/GraphEditor/shared/GraphStyleSettings";
 import { RelationshipTypeSettings } from "../components/GraphEditor/shared/RelationshipTypeSettings";
-import { NodeBreadcrumb } from "../components/GraphEditor/shared/NodeBreadcrumb";
-import type { NodeBreadcrumbItem } from "../components/GraphEditor/shared/NodeBreadcrumb";
+import { NodeBreadcrumb, type NodeBreadcrumbItem } from "../components/GraphEditor/shared/NodeBreadcrumb";
 
 import { GraphModalManager } from "../components/GraphEditor/modals/GraphModalManager";
 import {
@@ -920,10 +919,8 @@ export const GraphEditor = () => {
   }, [id, canvasContextMenu, mutations.createNodeMutation, record, setSelectedNode, setSidebarMode, t]);
 
   const handlePasteNodes = useCallback(() => {
-    // Paste is a placeholder - copies clipboard nodes as new nodes at offset position
-    if (!id || clipboard.length === 0) return;
-    // No-op for now until full copy/paste is implemented
-  }, [id, clipboard]);
+    // Paste is a placeholder - No-op for now until full copy/paste is implemented
+  }, []);
 
   const handleSelectAllNodes = useCallback(() => {
     const allNodeIds = new Set(nodes.map((n) => n.id));

@@ -5,8 +5,10 @@ import { autoTaskGenerator } from "../autoTaskGenerator";
 import type {
   FocusSessionEndedPayload,
   TaskCompletedPayload,
+  StudyMode,
+  StudyWorkflowStage,
+  StudyWorkflowConfig,
 } from "../../../../shared/types/scheduler";
-import type { StudyMode, StudyWorkflowStage, StudyWorkflowConfig } from "../../../../shared/types/scheduler";
 import { getStudyModePreset } from "../../../../shared/constants/studyModePresets";
 import { MASTERY_THRESHOLDS } from "../../../../shared/constants/masteryThresholds";
 import { notDeleted } from '../../common/softDeleteHelper';

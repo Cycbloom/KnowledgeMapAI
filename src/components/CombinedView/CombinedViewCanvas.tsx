@@ -334,7 +334,7 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
                   style={{ pointerEvents: 'none' }}
                 >
                   {node.knowledgePoint.title.length > 8 
-                    ? node.knowledgePoint.title.slice(0, 8) + '...'
+                    ? `${node.knowledgePoint.title.slice(0, 8)  }...`
                     : node.knowledgePoint.title
                   }
                 </text>

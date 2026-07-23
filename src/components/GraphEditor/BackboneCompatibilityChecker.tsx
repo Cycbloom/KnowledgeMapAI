@@ -206,7 +206,7 @@ export const BackboneCompatibilityChecker: React.FC<
           nodeId: node.id,
           nodeTitle: node.title || "",
           issueType: "invalid_title",
-          currentModule: currentModule,
+          currentModule,
           suggestedModule: currentModule as BackboneModule,
           suggestedTitle: standardTitle,
         });

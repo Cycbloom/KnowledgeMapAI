@@ -215,7 +215,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <span
           className={`flex-shrink-0 text-xs px-1.5 py-0.5 rounded ${LEVEL_BG_COLORS[node.level]}`}
         >
-          {t(LEVEL_LABEL_KEYS[node.level])}
+          {t(LEVEL_LABEL_KEYS[node.level] as never)}
         </span>
 
         {showTooltip && (
@@ -228,7 +228,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 <span className={LEVEL_COLORS[node.level]}>
                   {LEVEL_ICONS[node.level]}
                 </span>
-                <span>{t(LEVEL_LABEL_KEYS[node.level])}</span>
+                <span>{t(LEVEL_LABEL_KEYS[node.level] as never)}</span>
               </div>
               {node.confidence !== undefined && (
                 <div className="text-xs text-slate-500 dark:text-slate-400">

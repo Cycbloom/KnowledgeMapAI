@@ -25,7 +25,7 @@ export const RegionHeader = React.memo(({
   const labelX = originX + (radius + labelOffset) * Math.cos(midAngle);
   const labelY = originY + (radius + labelOffset) * Math.sin(midAngle);
 
-  let tangentAngle = midAngle + Math.PI / 2;
+  const tangentAngle = midAngle + Math.PI / 2;
 
   let normalizedAngle = tangentAngle % (2 * Math.PI);
   if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;

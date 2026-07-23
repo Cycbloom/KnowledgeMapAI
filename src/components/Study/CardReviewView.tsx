@@ -4,8 +4,7 @@ import { StudyCard } from "@shared/types";
 import { StudyCardPreview } from "./StudyCardPreview";
 import { StudyCardDetailModal } from "./StudyCardDetailModal";
 import { StatsOverview } from "../Statistics/StatsOverview";
-import { WeakPointAnalysis } from "./WeakPointAnalysis";
-import type { WeakPoint, Prediction } from "./WeakPointAnalysis";
+import { WeakPointAnalysis, type WeakPoint, type Prediction } from "./WeakPointAnalysis";
 import type { ReviewForecast } from "../../hooks/queries/useStudyQueries";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import {

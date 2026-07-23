@@ -3,7 +3,7 @@
   "error": "Error",
   "success": "Success",
   "cancel": "Cancel",
-  "confirm": "Confirm",
+  "confirmButton": "Confirm",
   "save": "Save",
   "delete": "Delete",
   "edit": "Edit",
@@ -151,5 +151,15 @@
   "saving": "Saving...",
   "tutor": {
     "empty": "No learning suggestions"
-  }
+  },
+  "conceptAggregation": {
+    "noAliasTitle": "No Alias",
+    "noAggregationTitle": "No Concept Aggregation",
+    "noAggregationDesc": "Select a node to start creating concept aggregation",
+    "noHierarchyTitle": "No Hierarchy",
+    "noHierarchyDesc": "Select a node to view hierarchy",
+    "noHierarchyTreeTitle": "No Hierarchy Tree",
+    "noHierarchyTreeDesc": "Select a node to view hierarchy tree"
+  },
+  "comingSoon": "Coming Soon"
 }

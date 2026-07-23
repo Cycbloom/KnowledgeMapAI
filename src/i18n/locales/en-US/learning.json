@@ -41,7 +41,8 @@
     "typeTool": "Tool",
     "typeLink": "Link",
     "learningGuide": "Learning Guide",
-    "selectGraph": "Please select a knowledge graph"
+    "selectGraph": "Please select a knowledge graph",
+    "back": "Back"
   },
   "settings": {
     "readingSettings": "Reading Settings",
@@ -378,13 +379,18 @@
     "addBookButton": "Add Book",
     "addLinkButton": "Add Link",
     "learningGuide": "Learning Guide",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "confirmDeleteBook": "Are you sure you want to delete this book?",
+    "confirmDeleteLink": "Are you sure you want to delete this link?",
+    "delete": "Delete"
   },
   "challenge": {
     "complete": "Start Challenge",
     "generating": "Generating challenge questions...",
     "generatingProgress": "Generating question {{current}}/{{total}}",
     "cancel": "Cancel",
+    "start": "Start Challenge",
+    "completed": "Challenge Completed",
     "taskSubmitted": "Question generation task submitted to background",
     "viewTasks": "View Tasks",
     "generateFailed": "Failed to generate questions",
@@ -528,7 +534,9 @@
     "generate": "Generate Quiz",
     "cancelling": "Cancelling generation...",
     "cancelled": "Generation cancelled, {{count}} questions generated",
-    "batchFailed": "Batch {{batch}} generation failed, continuing..."
+    "batchFailed": "Batch {{batch}} generation failed, continuing...",
+    "offline": "Offline mode unavailable",
+    "selectNode": "Please select a knowledge point first"
   },
   "batch": {
     "selectNodes": "Please select nodes first",

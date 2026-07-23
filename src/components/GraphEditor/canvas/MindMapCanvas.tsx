@@ -20,8 +20,8 @@ import type {
   LayoutNode,
   GraphColorMode,
   NodeStatus,
+  Node as GraphNode,
 } from "../../../types";
-import type { Node as GraphNode } from "../../../types";
 import type { GraphRef } from "../../../hooks/graphEditor";
 import { MindMapNode } from "./MindMapNode";
 import { MindMapLink } from "./MindMapLink";

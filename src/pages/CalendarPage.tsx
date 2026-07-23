@@ -8,8 +8,8 @@ import {
   useCalendarExecutions,
   useCalendarActivityStats,
   useCalendarDailyActivities,
+  type ViewType,
 } from "../hooks/calendar";
-import type { ViewType } from "../hooks/calendar";
 import { CalendarHeader } from "../components/Calendar/CalendarHeader";
 import { CalendarContent } from "../components/Calendar/CalendarContent";
 import { CalendarTaskModal } from "../components/Calendar/CalendarTaskModal";
@@ -124,7 +124,7 @@ export const CalendarPage: React.FC = () => {
           scheduled_start: dropInfo.newStart.toISOString(),
         };
         if (dropInfo.newEnd)
-          updateData.scheduled_end = dropInfo.newEnd.toISOString();
+          {updateData.scheduled_end = dropInfo.newEnd.toISOString();}
         await api.scheduler.update(dropInfo.eventId, updateData);
         message.success(t("toast.calendar.taskTimeUpdated"));
       } catch (error: unknown) {

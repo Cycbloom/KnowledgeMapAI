@@ -8,11 +8,11 @@ export const studyApi: IStudyApi = {
     const search = new URLSearchParams();
     if (params?.graph_id) search.set("graph_id", params.graph_id);
     if (params?.knowledge_point_id)
-      search.set("knowledge_point_id", params.knowledge_point_id);
+      {search.set("knowledge_point_id", params.knowledge_point_id);}
     if (params?.knowledge_point_ids)
-      search.set("knowledge_point_ids", params.knowledge_point_ids.join(","));
+      {search.set("knowledge_point_ids", params.knowledge_point_ids.join(","));}
     if (params?.source_graph_id)
-      search.set("source_graph_id", params.source_graph_id);
+      {search.set("source_graph_id", params.source_graph_id);}
     if (params?.due) search.set("due", "true");
     const query = search.toString();
     return request(`/study/cards${query ? `?${query}` : ""}`);
@@ -28,7 +28,7 @@ export const studyApi: IStudyApi = {
     const search = new URLSearchParams();
     search.set("knowledge_point_id", knowledgePointId);
     if (params?.source_graph_id)
-      search.set("source_graph_id", params.source_graph_id);
+      {search.set("source_graph_id", params.source_graph_id);}
     if (params?.due) search.set("due", "true");
     return request(`/study/cards?${search.toString()}`);
   },

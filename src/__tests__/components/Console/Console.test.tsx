@@ -34,7 +34,7 @@ vi.mock('../../../utils/asyncConfirm', () => ({
 // crypto.randomUUID polyfill for jsdom (used by addToHistory)
 Object.defineProperty(window, 'crypto', {
   value: {
-    randomUUID: () => 'test-uuid-' + Math.random().toString(36).substring(7),
+    randomUUID: () => `test-uuid-${  Math.random().toString(36).substring(7)}`,
   },
 });
 

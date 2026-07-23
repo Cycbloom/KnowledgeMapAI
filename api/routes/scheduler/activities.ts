@@ -2,9 +2,7 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { z } from "zod";
 import { logger } from "../../utils/logger";
-import { activityService } from "../../services/scheduler";
-import { autoTaskGenerator } from "../../services/scheduler";
-import { smartTaskLinker } from "../../services/scheduler";
+import { activityService, autoTaskGenerator, smartTaskLinker } from "../../services/scheduler";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 
@@ -74,14 +72,14 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
     if (req.query.from_date) options.from_date = req.query.from_date as string;
     if (req.query.to_date) options.to_date = req.query.to_date as string;
     if (req.query.activity_type)
-      options.activity_type = req.query.activity_type as string;
+      {options.activity_type = req.query.activity_type as string;}
     if (req.query.knowledge_point_id)
-      options.knowledge_point_id = req.query.knowledge_point_id as string;
+      {options.knowledge_point_id = req.query.knowledge_point_id as string;}
     if (req.query.graph_id) options.graph_id = req.query.graph_id as string;
     if (req.query.limit)
-      options.limit = parseInt(req.query.limit as string, 10);
+      {options.limit = parseInt(req.query.limit as string, 10);}
     if (req.query.offset)
-      options.offset = parseInt(req.query.offset as string, 10);
+      {options.offset = parseInt(req.query.offset as string, 10);}
 
     const result = await activityService.getActivities(
       supabase,

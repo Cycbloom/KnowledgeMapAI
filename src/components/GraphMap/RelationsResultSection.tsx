@@ -13,13 +13,11 @@ import {
 import type {
   RelationAnalysisResult,
 } from './types';
-import type {
-  DiscoveredRelation,
-  GraphRelationType,
-} from '@shared/types/graph';
 import {
   GRAPH_RELATION_COLORS,
   GRAPH_RELATION_LABELS,
+  type DiscoveredRelation,
+  type GraphRelationType,
 } from '@shared/types/graph';
 
 interface RelationsResultSectionProps {

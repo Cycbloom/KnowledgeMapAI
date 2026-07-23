@@ -6,6 +6,9 @@
   "selected": "已选择 {{count}} 个节点",
   "confirm": "确认选择",
   "noNodes": "暂无节点",
+  "noResults": "无匹配结果",
+  "noNodesHint": "请先在图谱中创建节点",
+  "cancel": "取消",
   "levelLabels": {
     "root": "核心主题",
     "core": "主要概念",
@@ -13,5 +16,6 @@
     "normal": "具体内容",
     "leaf": "实例细节"
   },
+  "selectFrom": "从 \"{{title}}\" 中选择节点",
   "unnamedNode": "未命名节点"
 }

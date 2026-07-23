@@ -16,7 +16,7 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
 
   logger.info('Register attempt', {
     requestId,
-    email: email?.substring(0, 3) + '***',
+    email: `${email?.substring(0, 3)  }***`,
     hasName: !!name,
     passwordLength: password?.length || 0,
   });
@@ -37,7 +37,7 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
   });
 
   if (!result.user) {
-    throw new AppError('用户创建失败', 500, ErrorCodes.AUTH_ERROR);
+    throw new AppError('用户创建失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 
   await authRouteService.createUserProfile(admin, result.user.id, email, name);
@@ -70,7 +70,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response)
 
   logger.info('Login attempt', {
     requestId,
-    email: email?.substring(0, 3) + '***',
+    email: `${email?.substring(0, 3)  }***`,
     hasPassword: !!password,
   });
 
@@ -81,7 +81,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response)
   logger.info('Login successful', {
     requestId,
     userId: result.user.id,
-    email: result.user.email?.substring(0, 3) + '***',
+    email: `${result.user.email?.substring(0, 3)  }***`,
   });
 
   await authRouteService.ensureUserProfile(

@@ -164,7 +164,7 @@ export const requireAuth = async (req: AuthRequest, _res: Response, next: NextFu
   // 回调抛错时成为 unhandled rejection（而非传播到 requireAdmin），保持
   // 现有测试期望的错误处理语义。
   next();
-  return;
+  
 };
 
 export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextFunction) => {

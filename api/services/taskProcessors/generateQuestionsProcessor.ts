@@ -97,7 +97,7 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
             node_title,
             truncatedContent,
             {
-              type: type,
+              type,
               count,
               provider: provider as AIProviderType | undefined,
               model,

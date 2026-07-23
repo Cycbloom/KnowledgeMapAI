@@ -549,7 +549,7 @@ export const LearningStatsCenter = () => {
   }, [stats]);
 
   if (isLoading)
-    return (
+    {return (
       <div
         className={`h-full overflow-y-auto p-4 md:p-8 ${isDark ? "bg-slate-900" : "bg-slate-50"}`}
       >
@@ -576,14 +576,14 @@ export const LearningStatsCenter = () => {
           </div>
         </div>
       </div>
-    );
+    );}
   if (error)
-    return (
+    {return (
       <ErrorState
         message={(error as Error).message}
         onRetry={() => refetch()}
       />
-    );
+    );}
   if (!stats) return null;
 
   return (

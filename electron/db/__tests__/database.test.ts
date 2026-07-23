@@ -25,8 +25,8 @@ describe('DatabaseManager', () => {
     try {
       if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
       // Also clean WAL and SHM files
-      if (fs.existsSync(dbPath + '-wal')) fs.unlinkSync(dbPath + '-wal');
-      if (fs.existsSync(dbPath + '-shm')) fs.unlinkSync(dbPath + '-shm');
+      if (fs.existsSync(`${dbPath  }-wal`)) fs.unlinkSync(`${dbPath  }-wal`);
+      if (fs.existsSync(`${dbPath  }-shm`)) fs.unlinkSync(`${dbPath  }-shm`);
     } catch {
       // Ignore cleanup errors
     }

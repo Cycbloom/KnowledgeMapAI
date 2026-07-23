@@ -6,6 +6,9 @@
   "selected": "{{count}} nodes selected",
   "confirm": "Confirm Selection",
   "noNodes": "No nodes",
+  "noResults": "No Results",
+  "noNodesHint": "Please create nodes in the graph first",
+  "cancel": "Cancel",
   "levelLabels": {
     "root": "Core Topic",
     "core": "Main Concept",
@@ -13,5 +16,6 @@
     "normal": "Specific Content",
     "leaf": "Example Details"
   },
+  "selectFrom": "Select nodes from \"{{title}}\"",
   "unnamedNode": "Unnamed Node"
 }

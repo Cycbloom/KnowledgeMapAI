@@ -242,7 +242,7 @@ export class KnowledgeExpansionService {
             provider: provider.providerType,
             model,
             metadata: {
-              nodeTitle: nodeTitle,
+              nodeTitle,
               userId: options.userId,
             },
           },
@@ -362,7 +362,7 @@ export class KnowledgeExpansionService {
             provider: provider.providerType,
             model,
             metadata: {
-              nodeTitle: nodeTitle,
+              nodeTitle,
             },
           },
           async () => {

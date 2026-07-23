@@ -255,21 +255,21 @@ export class NodeBatchService {
       }
 
       if (nodeUpdate.content !== undefined)
-        kpUpdates.content = nodeUpdate.content;
+        {kpUpdates.content = nodeUpdate.content;}
       if (nodeUpdate.summary !== undefined)
-        kpUpdates.summary = nodeUpdate.summary;
+        {kpUpdates.summary = nodeUpdate.summary;}
       if (nodeUpdate.learning_material !== undefined)
-        kpUpdates.learning_material = nodeUpdate.learning_material;
+        {kpUpdates.learning_material = nodeUpdate.learning_material;}
       if (nodeUpdate.properties !== undefined)
-        kpUpdates.properties = nodeUpdate.properties;
+        {kpUpdates.properties = nodeUpdate.properties;}
 
       if (nodeUpdate.x_position !== undefined)
-        gnUpdates.x_position = nodeUpdate.x_position;
+        {gnUpdates.x_position = nodeUpdate.x_position;}
       if (nodeUpdate.y_position !== undefined)
-        gnUpdates.y_position = nodeUpdate.y_position;
+        {gnUpdates.y_position = nodeUpdate.y_position;}
       if (nodeUpdate.level !== undefined) gnUpdates.level = nodeUpdate.level;
       if (nodeUpdate.is_accepted !== undefined)
-        gnUpdates.is_accepted = nodeUpdate.is_accepted;
+        {gnUpdates.is_accepted = nodeUpdate.is_accepted;}
 
       if (Object.keys(kpUpdates).length > 0 || Object.keys(gnUpdates).length > 0) {
         pendingUpdates.push({

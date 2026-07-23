@@ -206,7 +206,7 @@ export const ensureBlockId = (
     return { content: blockContent, blockId: existing };
   }
   const newId = generateBlockId();
-  return { content: blockContent + '^' + newId, blockId: newId };
+  return { content: `${blockContent  }^${  newId}`, blockId: newId };
 };
 
 /**

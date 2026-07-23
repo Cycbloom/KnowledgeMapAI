@@ -3,10 +3,10 @@ import { aiService } from "../ai/aiService";
 import { logger } from "../../utils/logger";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { notDeleted } from '../common/softDeleteHelper';
-import { conceptSimilarityService } from "./conceptSimilarityService";
-import type {
-  SimilarityResult,
-  ConceptWithEmbedding,
+import {
+  conceptSimilarityService,
+  type SimilarityResult,
+  type ConceptWithEmbedding,
 } from "./conceptSimilarityService";
 import { conceptEmbeddingService } from "./conceptEmbeddingService";
 import type {

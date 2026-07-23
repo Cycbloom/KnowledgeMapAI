@@ -1,5 +1,6 @@
 {
   "appName": "Knowledge Graph",
+  "mainNavigation": "Main Navigation",
   "myGraphs": "My Graphs",
   "graphMap": "Graph Map",
   "studyCenter": "Study Center",
@@ -68,5 +69,8 @@
   },
   "importSuccess": "Import successful: {{title}}",
   "importFailed": "Import failed: {{message}}",
-  "skipToMain": "Skip to main content"
+  "skipToMain": "Skip to main content",
+  "expandSidebar": "Expand Sidebar",
+  "collapseSidebar": "Collapse Sidebar",
+  "moreMenu": "More Menu"
 }

@@ -10,10 +10,10 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { message } from "../../utils/messageHelper";
-import { storyCreationHttpApi } from "../../services/api/storyCreation";
-import type {
-  StoryStructure,
-  StoryCharacter,
+import {
+  storyCreationHttpApi,
+  type StoryStructure,
+  type StoryCharacter,
 } from "../../services/api/storyCreation";
 import type { Graph } from "@shared/types/graph";
 

@@ -1,5 +1,13 @@
-import { fsrs, Card, Rating, State, createEmptyCard, migrateParameters } from "ts-fsrs";
-import type { FSRS, FSRSParameters } from "ts-fsrs";
+import {
+  fsrs,
+  Card,
+  Rating,
+  State,
+  createEmptyCard,
+  migrateParameters,
+  type FSRS,
+  type FSRSParameters,
+} from "ts-fsrs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StudyCard } from "@/types";
 import { logger } from "@/utils/logger";

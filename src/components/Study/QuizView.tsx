@@ -294,7 +294,7 @@ export const QuizViewActive = ({
                 if (Array.isArray(stackCard.options)) return stackCard.options;
                 try {
                   if (typeof stackCard.options === "string")
-                    return JSON.parse(stackCard.options);
+                    {return JSON.parse(stackCard.options);}
                 } catch {
                   return [];
                 }
@@ -659,17 +659,17 @@ export const QuizViewActive = ({
                         let btnClass = `group ${isMobile ? "p-3.5" : "p-3"} rounded-xl border transition-all duration-200 relative flex items-start gap-3 shadow-sm `;
                         if (showAnswer) {
                           if (isCorrect)
-                            btnClass += isDark
+                            {btnClass += isDark
                               ? "bg-gradient-to-r from-emerald-900/30 to-emerald-900/10 border-emerald-500 text-emerald-400 shadow-md"
-                              : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";
+                              : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";}
                           else if (isSelected)
-                            btnClass += isDark
+                            {btnClass += isDark
                               ? "bg-gradient-to-r from-red-900/30 to-red-900/10 border-red-500 text-red-400 shadow-md"
-                              : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";
+                              : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";}
                           else
-                            btnClass += isDark
+                            {btnClass += isDark
                               ? "bg-slate-800/50 border-slate-700 text-slate-500"
-                              : "bg-gray-50 border-gray-200 text-gray-400";
+                              : "bg-gray-50 border-gray-200 text-gray-400";}
                         } else {
                           btnClass += isDark
                             ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:from-primary-900/30 hover:to-slate-800/50 hover:border-primary-500 cursor-pointer text-slate-200 hover:shadow-md"
@@ -736,17 +736,17 @@ export const QuizViewActive = ({
                         let btnClass = `group ${isMobile ? "p-3.5" : "p-3"} rounded-xl border transition-all duration-200 relative flex items-start gap-3 shadow-sm `;
                         if (showAnswer) {
                           if (isCorrect)
-                            btnClass += isDark
+                            {btnClass += isDark
                               ? "bg-gradient-to-r from-emerald-900/30 to-emerald-900/10 border-emerald-500 text-emerald-400 shadow-md"
-                              : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";
+                              : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";}
                           else if (isSelected)
-                            btnClass += isDark
+                            {btnClass += isDark
                               ? "bg-gradient-to-r from-red-900/30 to-red-900/10 border-red-500 text-red-400 shadow-md"
-                              : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";
+                              : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";}
                           else
-                            btnClass += isDark
+                            {btnClass += isDark
                               ? "bg-slate-800/50 border-slate-700 text-slate-500"
-                              : "bg-gray-50 border-gray-200 text-gray-400";
+                              : "bg-gray-50 border-gray-200 text-gray-400";}
                         } else {
                           btnClass += isSelected
                             ? isDark
@@ -810,17 +810,17 @@ export const QuizViewActive = ({
                         let btnClass = `group flex-1 ${isMobile ? "p-5" : "p-4"} rounded-xl border transition-all duration-200 font-bold ${isMobile ? "text-lg" : "text-base"} relative flex flex-col items-center justify-center gap-2 shadow-sm `;
                         if (showAnswer) {
                           if (isCorrect)
-                            btnClass += isDark
+                            {btnClass += isDark
                               ? "bg-gradient-to-r from-emerald-900/30 to-emerald-900/10 border-emerald-500 text-emerald-400 shadow-md"
-                              : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";
+                              : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";}
                           else if (isSelected)
-                            btnClass += isDark
+                            {btnClass += isDark
                               ? "bg-gradient-to-r from-red-900/30 to-red-900/10 border-red-500 text-red-400 shadow-md"
-                              : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";
+                              : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";}
                           else
-                            btnClass += isDark
+                            {btnClass += isDark
                               ? "bg-slate-800/50 border-slate-700 text-slate-500"
-                              : "bg-gray-50 border-gray-200 text-gray-400";
+                              : "bg-gray-50 border-gray-200 text-gray-400";}
                         } else {
                           btnClass += isDark
                             ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:from-primary-900/30 hover:to-slate-800/50 hover:border-primary-500 cursor-pointer text-slate-200 hover:shadow-md"

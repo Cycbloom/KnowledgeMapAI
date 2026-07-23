@@ -138,7 +138,7 @@ export const autoGraphApi = {
       language: data.language || getAILanguage(),
     };
     if (!payload.provider && config.provider)
-      payload.provider = config.provider;
+      {payload.provider = config.provider;}
     if (!payload.model && config.model) payload.model = config.model;
     return request("/auto-graph/init", {
       method: "POST",
@@ -176,7 +176,7 @@ export const autoGraphApi = {
       language: data.language || getAILanguage(),
     };
     if (!payload.provider && config.provider)
-      payload.provider = config.provider;
+      {payload.provider = config.provider;}
     if (!payload.model && config.model) payload.model = config.model;
     return request("/auto-graph/expand", {
       method: "POST",
@@ -225,7 +225,7 @@ export const autoGraphApi = {
     const config = getAIConfig("text");
     const payload = { ...data };
     if (!payload.provider && config.provider)
-      payload.provider = config.provider;
+      {payload.provider = config.provider;}
     if (!payload.model && config.model) payload.model = config.model;
     return request("/auto-graph/generate-templates", {
       method: "POST",
@@ -237,7 +237,7 @@ export const autoGraphApi = {
     const config = getAIConfig("text");
     const payload = { style: "academic", ...data };
     if (!payload.provider && config.provider)
-      payload.provider = config.provider;
+      {payload.provider = config.provider;}
     if (!payload.model && config.model) payload.model = config.model;
     return request("/auto-graph/apply-template", {
       method: "POST",

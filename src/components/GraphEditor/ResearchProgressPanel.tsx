@@ -37,7 +37,7 @@ interface ResearchProgressPanelProps {
 
 const iconMap: Record<string, LucideIcon> = {
   Search: Layers,
-  BookOpen: BookOpen,
+  BookOpen,
   FlaskConical: Layers,
   Beaker: Layers,
   Microscope: Layers,

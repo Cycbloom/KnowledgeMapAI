@@ -126,7 +126,7 @@ const supabaseAuthApi = {
     }
 
     const { data: authData, error } = await client.auth.updateUser({
-      data: data,
+      data,
     });
 
     if (error) {

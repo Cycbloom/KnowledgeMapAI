@@ -100,7 +100,7 @@ export const useSchedulerHotkeys = (options: SchedulerHotkeysOptions) => {
       if (event.key === 'm' && !isInput && !event.ctrlKey && !event.metaKey) {
         event.preventDefault();
         onToggleMiniMode?.();
-        return;
+        
       }
     },
     [

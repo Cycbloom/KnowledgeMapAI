@@ -313,7 +313,7 @@ export class AsyncTaskService {
       .single();
 
     if (error && error.code !== "PGRST116")
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch task: ${error.message}` });
+      {throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch task: ${error.message}` });}
     return data as Task | null;
   }
 

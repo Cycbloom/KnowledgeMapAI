@@ -136,7 +136,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
                         : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
-                  {t(VIEW_LABEL_KEYS[type])}
+                  {t(VIEW_LABEL_KEYS[type] as never)}
                 </button>
               ))}
             </div>

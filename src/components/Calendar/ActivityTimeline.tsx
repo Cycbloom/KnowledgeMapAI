@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Brain, RotateCcw, Route, Clock } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Brain, RotateCcw, Route, Clock, type LucideIcon } from "lucide-react";
 import { useTheme } from "../../hooks";
 import { formatDuration, formatDate } from "../../utils/formatters";
 import { ActivityEvent, ACTIVITY_TYPE_CONFIG } from "../../types/calendar";
@@ -119,7 +118,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                   {activity.ended_at && ` - ${formatTime(activity.ended_at)}`}
                 </span>
                 <span
-                  className={`text-xs px-1.5 py-0.5 rounded ${isDark ? colors.bgDark + " " + colors.textDark : colors.bg + " " + colors.text}`}
+                  className={`text-xs px-1.5 py-0.5 rounded ${isDark ? `${colors.bgDark  } ${  colors.textDark}` : `${colors.bg  } ${  colors.text}`}`}
                 >
                   {config?.label || activity.activity_type}
                 </span>

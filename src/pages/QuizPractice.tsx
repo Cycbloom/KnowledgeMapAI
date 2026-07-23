@@ -556,17 +556,17 @@ export const QuizPractice: React.FC = () => {
                         'w-full p-4 rounded-xl border transition-all text-left flex items-start gap-3 ';
                       if (showAnswer) {
                         if (isCorrect)
-                          btnClass += isDark
+                          {btnClass += isDark
                             ? 'bg-emerald-900/30 border-emerald-500 text-emerald-400'
-                            : 'bg-emerald-50 border-emerald-400 text-emerald-700';
+                            : 'bg-emerald-50 border-emerald-400 text-emerald-700';}
                         else if (isSelected)
-                          btnClass += isDark
+                          {btnClass += isDark
                             ? 'bg-red-900/30 border-red-500 text-red-400'
-                            : 'bg-red-50 border-red-400 text-red-700';
+                            : 'bg-red-50 border-red-400 text-red-700';}
                         else
-                          btnClass += isDark
+                          {btnClass += isDark
                             ? 'bg-slate-800/50 border-slate-700 text-slate-500'
-                            : 'bg-gray-50 border-gray-200 text-gray-400';
+                            : 'bg-gray-50 border-gray-200 text-gray-400';}
                       } else {
                         btnClass += isSelected
                           ? isDark
@@ -625,17 +625,17 @@ export const QuizPractice: React.FC = () => {
                         'w-full p-4 rounded-xl border transition-all text-left flex items-start gap-3 ';
                       if (showAnswer) {
                         if (isCorrect)
-                          btnClass += isDark
+                          {btnClass += isDark
                             ? 'bg-emerald-900/30 border-emerald-500 text-emerald-400'
-                            : 'bg-emerald-50 border-emerald-400 text-emerald-700';
+                            : 'bg-emerald-50 border-emerald-400 text-emerald-700';}
                         else if (isSelected)
-                          btnClass += isDark
+                          {btnClass += isDark
                             ? 'bg-red-900/30 border-red-500 text-red-400'
-                            : 'bg-red-50 border-red-400 text-red-700';
+                            : 'bg-red-50 border-red-400 text-red-700';}
                         else
-                          btnClass += isDark
+                          {btnClass += isDark
                             ? 'bg-slate-800/50 border-slate-700 text-slate-500'
-                            : 'bg-gray-50 border-gray-200 text-gray-400';
+                            : 'bg-gray-50 border-gray-200 text-gray-400';}
                       } else {
                         btnClass += isSelected
                           ? isDark
@@ -687,17 +687,17 @@ export const QuizPractice: React.FC = () => {
                         'flex-1 p-6 rounded-xl border transition-all font-bold text-lg flex flex-col items-center justify-center gap-2 ';
                       if (showAnswer) {
                         if (isCorrect)
-                          btnClass += isDark
+                          {btnClass += isDark
                             ? 'bg-emerald-900/30 border-emerald-500 text-emerald-400'
-                            : 'bg-emerald-50 border-emerald-400 text-emerald-700';
+                            : 'bg-emerald-50 border-emerald-400 text-emerald-700';}
                         else if (isSelected)
-                          btnClass += isDark
+                          {btnClass += isDark
                             ? 'bg-red-900/30 border-red-500 text-red-400'
-                            : 'bg-red-50 border-red-400 text-red-700';
+                            : 'bg-red-50 border-red-400 text-red-700';}
                         else
-                          btnClass += isDark
+                          {btnClass += isDark
                             ? 'bg-slate-800/50 border-slate-700 text-slate-500'
-                            : 'bg-gray-50 border-gray-200 text-gray-400';
+                            : 'bg-gray-50 border-gray-200 text-gray-400';}
                       } else {
                         btnClass += isSelected
                           ? isDark

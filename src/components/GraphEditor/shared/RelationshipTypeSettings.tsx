@@ -359,6 +359,8 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <span className="font-medium text-gray-900 dark:text-white">
+                                      {/* i18n: dynamic key from backend relationship type. display_name may be a
+                                          preset i18n key (is_builtin=true) or user-entered literal text. */}
                                       {t(type.display_name as never)}
                                     </span>
                                     {type.is_builtin && (

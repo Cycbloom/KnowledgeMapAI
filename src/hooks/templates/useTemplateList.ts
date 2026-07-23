@@ -1,11 +1,20 @@
 import { useState, useEffect, useMemo } from "react";
 import { taskTemplatesApi, TaskTemplate } from "../../services/api/taskTemplates";
 
+export type SelectedCategory =
+  | "all"
+  | "knowledge"
+  | "project"
+  | "analysis"
+  | "architecture"
+  | "topicResearch"
+  | "creative";
+
 interface TemplateListState {
   templates: TaskTemplate[];
   loading: boolean;
   searchQuery: string;
-  selectedCategory: string;
+  selectedCategory: SelectedCategory;
 }
 
 export function useTemplateList() {
@@ -48,7 +57,7 @@ export function useTemplateList() {
     setState((prev) => ({ ...prev, searchQuery: query }));
   };
 
-  const setSelectedCategory = (category: string) => {
+  const setSelectedCategory = (category: SelectedCategory) => {
     setState((prev) => ({ ...prev, selectedCategory: category }));
   };
 

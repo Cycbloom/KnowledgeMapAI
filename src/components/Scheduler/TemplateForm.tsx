@@ -115,7 +115,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
     const data: CreateTemplateData | UpdateTemplateData = {
       name: formData.name.trim(),
       description: formData.description.trim() || undefined,
-      category: formData.category as 'study' | 'work' | 'life' | 'health' | 'custom',
+      category: formData.category as 'knowledge' | 'project' | 'analysis' | 'architecture' | 'topicResearch' | 'creative',
       title_template: formData.titleTemplate.trim(),
       description_template: formData.descriptionTemplate.trim() || undefined,
       estimated_duration: formData.estimatedDuration,

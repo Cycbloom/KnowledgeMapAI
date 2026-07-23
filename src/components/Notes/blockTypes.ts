@@ -33,10 +33,27 @@ export type BlockTypeId =
   | "image"
   | "table";
 
+const BLOCK_LABEL_KEYS = [
+  "notes.editor.blockMenu.paragraph",
+  "notes.editor.blockMenu.heading1",
+  "notes.editor.blockMenu.heading2",
+  "notes.editor.blockMenu.heading3",
+  "notes.editor.blockMenu.bulletList",
+  "notes.editor.blockMenu.orderedList",
+  "notes.editor.blockMenu.taskList",
+  "notes.editor.blockMenu.blockquote",
+  "notes.editor.blockMenu.codeBlock",
+  "notes.editor.blockMenu.divider",
+  "notes.editor.blockMenu.image",
+  "notes.editor.blockMenu.table",
+] as const;
+
+export type BlockLabelKey = (typeof BLOCK_LABEL_KEYS)[number];
+
 export interface BlockType {
   id: BlockTypeId;
   /** i18n key，对应 notes.editor.blockMenu.* */
-  labelKey: string;
+  labelKey: BlockLabelKey;
   icon: LucideIcon;
   /** 调用对应 TipTap 命令插入块。返回 false 表示命令不可用。 */
   apply: (editor: Editor) => void;
@@ -154,7 +171,7 @@ export const BLOCK_TYPES: readonly BlockType[] = [
  */
 export const filterBlockTypes = (
   query: string,
-  translateLabel: (key: string) => string,
+  translateLabel: (key: BlockLabelKey) => string,
 ): BlockType[] => {
   const q = query.trim().toLowerCase();
   if (!q) return [...BLOCK_TYPES];

@@ -34,6 +34,7 @@ import { CustomModuleEditor } from "./CustomModuleEditor";
 import {
   ALL_PRESETS,
   PRESET_MAP,
+  type PresetId,
 } from "@shared/constants/backboneModulePresets";
 
 interface AutoGraphGeneratorProps {
@@ -321,7 +322,9 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     presetId: string | null;
     customModules?: BackboneModuleCustomConfig[];
   } | null>(null);
-  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [selectedPresetId, setSelectedPresetId] = useState<
+    PresetId | "custom" | null
+  >(null);
 
   const [topic, setTopic] = useState("");
   const [backgroundInfo, setBackgroundInfo] = useState("");
@@ -687,10 +690,12 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       labelKey: "autoGraph.styleLabels.custom",
       detailsKey: "autoGraph.customStyleDesc",
     },
-  ];
+  ] as const;
 
-  const getStyleLabel = (styleValue: string) => {
-    return t(`autoGraph.styleLabels.${styleValue}` as never);
+  type GraphStyle = (typeof styleOptions)[number]["value"];
+
+  const getStyleLabel = (styleValue: GraphStyle) => {
+    return t(`autoGraph.styleLabels.${styleValue}`);
   };
 
   const handleSelectTemplateType = (type: TemplateType) => {
@@ -725,7 +730,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     }
   };
 
-  const handleSelectTopicResearchPreset = (presetId: string) => {
+  const handleSelectTopicResearchPreset = (presetId: PresetId) => {
     setSelectedPresetId(presetId);
     setSelectedTemplateType("topic_research");
     setModuleConfig({ presetId });
@@ -785,7 +790,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 selectedPresetId &&
                 selectedPresetId !== "custom" && (
                   <span className="ml-1 opacity-70">
-                    · {t(`templates.topicResearchPreset.${selectedPresetId}` as never)}
+                    · {t(`templates.topicResearchPreset.${selectedPresetId}`)}
                   </span>
                 )}
             </span>
@@ -1265,13 +1270,13 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                             : "text-gray-700 dark:text-gray-300"
                         }`}
                       >
-                        {t(option.labelKey as never)}
+                        {t(option.labelKey)}
                       </span>
                     </div>
                     <p
                       className={`${isMobile ? "text-[9px]" : "text-[10px]"} text-gray-500 dark:text-gray-400 line-clamp-1`}
                     >
-                      {t(option.detailsKey as never)}
+                      {t(option.detailsKey)}
                     </p>
                   </button>
                 );

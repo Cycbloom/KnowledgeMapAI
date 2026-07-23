@@ -246,6 +246,7 @@ export function createToastMutation<TData, TVariables>(
           const key = typeof options.successMessage === "function"
             ? options.successMessage(data)
             : options.successMessage;
+          // i18n: dynamic key from caller parameter (mutation factory pattern, key set by each mutation caller)
           message.success(t(key as never));
         }
         if (options.invalidateQueries) {
@@ -260,6 +261,7 @@ export function createToastMutation<TData, TVariables>(
           const key = typeof options.errorMessage === "function"
             ? options.errorMessage(error)
             : options.errorMessage;
+          // i18n: dynamic key from caller parameter (mutation factory pattern, key set by each mutation caller)
           message.error(t(key as never));
         }
         options.onError?.(error, variables);

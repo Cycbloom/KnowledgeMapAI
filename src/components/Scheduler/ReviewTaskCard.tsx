@@ -28,18 +28,28 @@ const FSRS_STATE_CONFIG = {
   Learning: { label: "scheduler.review.fsrsState.learning", color: "text-orange-500", bg: "bg-orange-100 dark:bg-orange-500/20" },
   Review: { label: "scheduler.review.fsrsState.review", color: "text-green-500", bg: "bg-green-100 dark:bg-green-500/20" },
   Relearning: { label: "scheduler.review.fsrsState.relearning", color: "text-red-500", bg: "bg-red-100 dark:bg-red-500/20" },
-};
+} as const;
 
 const getFSRSStateConfig = (state?: string) => {
   return FSRS_STATE_CONFIG[state as keyof typeof FSRS_STATE_CONFIG] || FSRS_STATE_CONFIG.Review;
 };
 
-const getDifficultyLabel = (difficulty: number): { label: string; stars: number } => {
-  if (difficulty <= 0.1) return { label: "scheduler.review.difficulty.veryEasy", stars: 1 };
-  if (difficulty <= 0.3) return { label: "scheduler.review.difficulty.easy", stars: 2 };
-  if (difficulty <= 0.5) return { label: "scheduler.review.difficulty.medium", stars: 3 };
-  if (difficulty <= 0.7) return { label: "scheduler.review.difficulty.hard", stars: 4 };
-  return { label: "scheduler.review.difficulty.veryHard", stars: 5 };
+const DIFFICULTY_LABELS = {
+  veryEasy: "scheduler.review.difficultyLevel.veryEasy",
+  easy: "scheduler.review.difficultyLevel.easy",
+  medium: "scheduler.review.difficultyLevel.medium",
+  hard: "scheduler.review.difficultyLevel.hard",
+  veryHard: "scheduler.review.difficultyLevel.veryHard",
+} as const;
+
+type DifficultyLabelKey = (typeof DIFFICULTY_LABELS)[keyof typeof DIFFICULTY_LABELS];
+
+const getDifficultyLabel = (difficulty: number): { label: DifficultyLabelKey; stars: number } => {
+  if (difficulty <= 0.1) return { label: DIFFICULTY_LABELS.veryEasy, stars: 1 };
+  if (difficulty <= 0.3) return { label: DIFFICULTY_LABELS.easy, stars: 2 };
+  if (difficulty <= 0.5) return { label: DIFFICULTY_LABELS.medium, stars: 3 };
+  if (difficulty <= 0.7) return { label: DIFFICULTY_LABELS.hard, stars: 4 };
+  return { label: DIFFICULTY_LABELS.veryHard, stars: 5 };
 };
 
 export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
@@ -157,7 +167,7 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
           </span>
           <span className={`px-2 py-0.5 rounded text-xs font-medium ${fsrsStateConfig.bg} ${fsrsStateConfig.color}`}>
             <Activity size={12} className="inline mr-1" />
-            {t(fsrsStateConfig.label as never)}
+            {t(fsrsStateConfig.label)}
           </span>
           <span className="text-xs text-slate-400">
             {t('scheduler.review.nextReview')}: {nextReviewText}
@@ -187,7 +197,7 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
             <Gauge size={14} className="text-primary-500" />
             <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.difficulty')}:</span>
             <span className="font-medium text-slate-700 dark:text-slate-300">
-              {t(difficultyInfo.label as never)}
+              {t(difficultyInfo.label)}
             </span>
           </div>
           {task.fsrs_retrievability !== undefined && (

@@ -208,6 +208,19 @@
     "stability": "稳定度",
     "difficulty": "难度",
     "retrievability": "可提取性",
+    "fsrsState": {
+      "new": "新卡片",
+      "learning": "学习中",
+      "review": "复习中",
+      "relearning": "重学中"
+    },
+    "difficultyLevel": {
+      "veryEasy": "极易",
+      "easy": "简单",
+      "medium": "中等",
+      "hard": "困难",
+      "veryHard": "极难"
+    },
     "quality": {
       "0": "完全忘记",
       "1": "印象模糊",

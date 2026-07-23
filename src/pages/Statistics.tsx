@@ -7,7 +7,8 @@ import { ActivityHeatmap } from '../components/Statistics/ActivityHeatmap';
 import {
   KnowledgeHeatmap,
   MasteryDistributionChart,
-  QuickStatsCards
+  QuickStatsCards,
+  type CardTypeName
 } from '../components/Statistics/LearningStatsEnhanced';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -194,7 +195,7 @@ export const Statistics = () => {
   const { isDark } = useTheme();
   const { data: stats, isLoading, error, refetch } = useStatistics() as unknown as {
     data?: {
-      distribution: Array<{ name: string; value: number; color: string }>;
+      distribution: Array<{ name: CardTypeName; value: number; color: string }>;
       metrics: { learning: number; dueToday: number; totalCards: number; avgStability: number };
       heatmap: { date: string; count: number }[];
       forecast: { date: string; count: number }[];
@@ -226,7 +227,7 @@ export const Statistics = () => {
 
   const distributionData = useMemo(() => {
     if (!stats?.distribution) return [];
-    return stats.distribution.map((item: { name: string; value: number; color: string }) => ({
+    return stats.distribution.map((item: { name: CardTypeName; value: number; color: string }) => ({
       name: item.name,
       value: item.value,
       color: item.color

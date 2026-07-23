@@ -21,7 +21,7 @@ export interface TaskTemplate {
 export interface CreateTemplateData {
   name: string;
   description?: string;
-  category?: 'study' | 'work' | 'life' | 'health' | 'custom';
+  category?: 'knowledge' | 'project' | 'analysis' | 'architecture' | 'topicResearch' | 'creative';
   title_template: string;
   description_template?: string;
   estimated_duration?: number;
@@ -33,7 +33,7 @@ export interface CreateTemplateData {
 export interface UpdateTemplateData {
   name?: string;
   description?: string;
-  category?: 'study' | 'work' | 'life' | 'health' | 'custom';
+  category?: 'knowledge' | 'project' | 'analysis' | 'architecture' | 'topicResearch' | 'creative';
   title_template?: string;
   description_template?: string;
   estimated_duration?: number;
@@ -43,7 +43,7 @@ export interface UpdateTemplateData {
 }
 
 export interface TemplateFilters {
-  category?: 'study' | 'work' | 'life' | 'health' | 'custom';
+  category?: 'knowledge' | 'project' | 'analysis' | 'architecture' | 'topicResearch' | 'creative';
   search?: string;
 }
 
@@ -63,11 +63,12 @@ export interface TemplateCategory {
 }
 
 export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
-  { value: 'study', label: '学习', icon: '📚', color: 'blue', count: 0 },
-  { value: 'work', label: '工作', icon: '💼', color: 'purple', count: 0 },
-  { value: 'life', label: '生活', icon: '🏠', color: 'green', count: 0 },
-  { value: 'health', label: '健康', icon: '💪', color: 'red', count: 0 },
-  { value: 'custom', label: '自定义', icon: '⭐', color: 'amber', count: 0 },
+  { value: 'knowledge', label: '知识', icon: '📚', color: 'blue', count: 0 },
+  { value: 'project', label: '项目', icon: '💼', color: 'purple', count: 0 },
+  { value: 'analysis', label: '分析', icon: '🔍', color: 'amber', count: 0 },
+  { value: 'architecture', label: '架构', icon: '🏗️', color: 'indigo', count: 0 },
+  { value: 'topicResearch', label: '专题研究', icon: '🔬', color: 'purple', count: 0 },
+  { value: 'creative', label: '创意', icon: '✨', color: 'pink', count: 0 },
 ];
 
 export const taskTemplatesApi = {
@@ -154,33 +155,36 @@ export function applyTemplatePlaceholders(
 
 export function getCategoryColor(category: string): string {
   const colors: Record<string, string> = {
-    study: 'blue',
-    work: 'purple',
-    life: 'green',
-    health: 'red',
-    custom: 'amber',
+    knowledge: 'blue',
+    project: 'purple',
+    analysis: 'amber',
+    architecture: 'indigo',
+    topicResearch: 'purple',
+    creative: 'pink',
   };
   return colors[category] || 'slate';
 }
 
 export function getCategoryBgClass(category: string): string {
   const classes: Record<string, string> = {
-    study: 'bg-blue-100 dark:bg-blue-500/20',
-    work: 'bg-purple-100 dark:bg-purple-500/20',
-    life: 'bg-green-100 dark:bg-green-500/20',
-    health: 'bg-red-100 dark:bg-red-500/20',
-    custom: 'bg-amber-100 dark:bg-amber-500/20',
+    knowledge: 'bg-blue-100 dark:bg-blue-500/20',
+    project: 'bg-purple-100 dark:bg-purple-500/20',
+    analysis: 'bg-amber-100 dark:bg-amber-500/20',
+    architecture: 'bg-indigo-100 dark:bg-indigo-500/20',
+    topicResearch: 'bg-purple-100 dark:bg-purple-500/20',
+    creative: 'bg-pink-100 dark:bg-pink-500/20',
   };
   return classes[category] || 'bg-slate-100 dark:bg-slate-500/20';
 }
 
 export function getCategoryTextClass(category: string): string {
   const classes: Record<string, string> = {
-    study: 'text-blue-700 dark:text-blue-300',
-    work: 'text-purple-700 dark:text-purple-300',
-    life: 'text-green-700 dark:text-green-300',
-    health: 'text-red-700 dark:text-red-300',
-    custom: 'text-amber-700 dark:text-amber-300',
+    knowledge: 'text-blue-700 dark:text-blue-300',
+    project: 'text-purple-700 dark:text-purple-300',
+    analysis: 'text-amber-700 dark:text-amber-300',
+    architecture: 'text-indigo-700 dark:text-indigo-300',
+    topicResearch: 'text-purple-700 dark:text-purple-300',
+    creative: 'text-pink-700 dark:text-pink-300',
   };
   return classes[category] || 'text-slate-700 dark:text-slate-300';
 }

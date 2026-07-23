@@ -248,7 +248,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     });
   }, [preferredCount, maxConcepts, similarityThreshold]);
 
-  const conceptTypeOptions: { value: ConceptType; labelKey: string }[] = [
+  const conceptTypeOptions = [
     { value: "concept", labelKey: "literatureExtract.conceptTypes.concept" },
     { value: "method", labelKey: "literatureExtract.conceptTypes.method" },
     {
@@ -271,7 +271,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       value: "challenge",
       labelKey: "literatureExtract.conceptTypes.challenge",
     },
-  ];
+  ] as const satisfies readonly { value: ConceptType; labelKey: string }[];
 
   const handleAutoDetectMetadata = useCallback(
     async (citationText: string) => {
@@ -895,7 +895,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
                   : "border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-500"
               }`}
             >
-              {t(labelKey as never)}
+              {t(labelKey)}
             </button>
           ))}
         </div>
@@ -1315,6 +1315,10 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   };
 
   const formatRelationType = (type: string): string => {
+    // i18n: dynamic key from backend relationship type display name.
+    // getRelationshipTypeDisplayName returns a preset i18n key when `type` is a
+    // known preset, otherwise it returns the input `type` (an arbitrary
+    // user/backend-supplied string that is rendered as-is by i18next fallback).
     return t((getRelationshipTypeDisplayName(type) || type) as never);
   };
 

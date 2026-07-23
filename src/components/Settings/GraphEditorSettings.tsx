@@ -24,29 +24,29 @@ import { useGraphEditorPreferencesStore } from "../../store/useGraphEditorPrefer
 
 export type SearchNodeNavigateTarget = UserSettingsSearchNodeNavigateTarget;
 
-const VIEW_MODES: Array<{
-  mode: GraphViewMode;
-  labelKey: string;
-  icon: React.ComponentType<{ className?: string }>;
-}> = [
+const VIEW_MODES = [
   { mode: "mindmap", labelKey: "settings.graphEditor.viewModes.mindmap", icon: Network },
   { mode: "timeline", labelKey: "settings.graphEditor.viewModes.timeline", icon: Clock },
   { mode: "tree", labelKey: "settings.graphEditor.viewModes.tree", icon: GitBranch },
   { mode: "planet", labelKey: "settings.graphEditor.viewModes.planet", icon: Globe },
   { mode: "quadrant", labelKey: "settings.graphEditor.viewModes.quadrant", icon: LayoutGrid },
   { mode: "semantic", labelKey: "settings.graphEditor.viewModes.semantic", icon: MapIcon },
-];
+] as const satisfies ReadonlyArray<{
+  mode: GraphViewMode;
+  labelKey: string;
+  icon: React.ComponentType<{ className?: string }>;
+}>;
 
-const ZOOM_LEVELS: Array<{ value: number | "fit"; labelKey: string }> = [
+const ZOOM_LEVELS = [
   { value: "fit", labelKey: "settings.graphEditor.zoomFit" },
   { value: 0.5, labelKey: "settings.graphEditor.zoom50" },
   { value: 0.75, labelKey: "settings.graphEditor.zoom75" },
   { value: 1, labelKey: "settings.graphEditor.zoom100" },
   { value: 1.25, labelKey: "settings.graphEditor.zoom125" },
   { value: 1.5, labelKey: "settings.graphEditor.zoom150" },
-];
+] as const satisfies ReadonlyArray<{ value: number | "fit"; labelKey: string }>;
 
-const NODE_COLORS: Array<{ value: string; labelKey: string }> = [
+const NODE_COLORS = [
   { value: "#6366f1", labelKey: "settings.graphEditor.colorIndigo" },
   { value: "#3b82f6", labelKey: "settings.graphEditor.colorBlue" },
   { value: "#10b981", labelKey: "settings.graphEditor.colorGreen" },
@@ -55,17 +55,17 @@ const NODE_COLORS: Array<{ value: string; labelKey: string }> = [
   { value: "#8b5cf6", labelKey: "settings.graphEditor.colorPurple" },
   { value: "#ec4899", labelKey: "settings.graphEditor.colorPink" },
   { value: "#64748b", labelKey: "settings.graphEditor.colorSlate" },
-];
+] as const satisfies ReadonlyArray<{ value: string; labelKey: string }>;
 
-const NAVIGATE_TARGETS: Array<{
+const NAVIGATE_TARGETS = [
+  { value: "graph", labelKey: "settings.graphEditor.navigateToGraph", descKey: "settings.graphEditor.navigateToGraphDesc", icon: Network },
+  { value: "learning", labelKey: "settings.graphEditor.navigateToLearning", descKey: "settings.graphEditor.navigateToLearningDesc", icon: BookOpen },
+] as const satisfies ReadonlyArray<{
   value: SearchNodeNavigateTarget;
   labelKey: string;
   descKey: string;
   icon: React.ComponentType<{ className?: string }>;
-}> = [
-  { value: "graph", labelKey: "settings.graphEditor.navigateToGraph", descKey: "settings.graphEditor.navigateToGraphDesc", icon: Network },
-  { value: "learning", labelKey: "settings.graphEditor.navigateToLearning", descKey: "settings.graphEditor.navigateToLearningDesc", icon: BookOpen },
-];
+}>;
 
 export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
   const { t } = useTranslation();
@@ -127,7 +127,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                <span className="font-medium text-sm">{t(labelKey as never)}</span>
+                <span className="font-medium text-sm">{t(labelKey)}</span>
               </button>
             ))}
           </div>
@@ -150,7 +150,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
                     : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
                 }`}
               >
-                {t(labelKey as never)}
+                {t(labelKey)}
               </button>
             ))}
           </div>
@@ -213,8 +213,8 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="font-medium text-sm">{t(labelKey as never)}</span>
-                <span className="text-xs opacity-70 text-center leading-tight">{t(descKey as never)}</span>
+                <span className="font-medium text-sm">{t(labelKey)}</span>
+                <span className="text-xs opacity-70 text-center leading-tight">{t(descKey)}</span>
               </button>
             ))}
           </div>
@@ -231,8 +231,8 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
               <button
                 key={value}
                 onClick={() => updatePreference("defaultNodeColor", value)}
-                title={t(labelKey as never)}
-                aria-label={t(labelKey as never)}
+                title={t(labelKey)}
+                aria-label={t(labelKey)}
                 className={`flex items-center justify-center w-10 h-10 rounded-lg border-2 transition-all ${
                   preferences.defaultNodeColor === value
                     ? "ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-slate-800 border-transparent"

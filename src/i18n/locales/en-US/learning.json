@@ -139,7 +139,9 @@
       "wind_chime": "Wind Chime",
       "breathing": "Breathing Guide",
       "white_noise": "White Noise",
-      "pink_noise": "Pink Noise"
+      "pink_noise": "Pink Noise",
+      "brown_noise": "Brown Noise",
+      "none": "None"
     },
     "presetNames": {
       "rainy-reading": "Rainy Reading",

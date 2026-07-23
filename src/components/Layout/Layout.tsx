@@ -411,7 +411,7 @@ export const Layout = () => {
                     key={item.path}
                     to={item.path}
                     icon={Icon}
-                    label={t(item.label as never)}
+                    label={t(item.label)}
                     isCollapsed={isCollapsed}
                     isDark={isDark}
                     isActive={isActive}

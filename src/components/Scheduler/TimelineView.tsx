@@ -13,6 +13,8 @@ interface TimelineViewProps {
   onTaskMove?: (taskId: string, newDeadline: string) => void;
 }
 
+const WEEK_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
+
 export const TimelineView: React.FC<TimelineViewProps> = ({
   tasks,
   onTaskClick,
@@ -170,7 +172,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                       </span>
                     </div>
                     <span className="text-xs text-slate-400 dark:text-slate-500">
-                      {t(`scheduler.timeline.weekDay${  day.date.getDay()}` as never)}
+                      {t(`scheduler.timeline.weekDay${WEEK_DAYS[day.date.getDay()]}`)}
                     </span>
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">

@@ -3,7 +3,7 @@ import { useReducer, useState } from "react";
 export interface TemplateFormData {
   name: string;
   description: string;
-  category: string;
+  category: 'knowledge' | 'project' | 'analysis' | 'architecture' | 'topicResearch' | 'creative';
   title_template: string;
   description_template: string;
   estimated_duration: number;
@@ -14,7 +14,7 @@ export interface TemplateFormData {
 const initialFormData: TemplateFormData = {
   name: "",
   description: "",
-  category: "study",
+  category: "knowledge",
   title_template: "",
   description_template: "",
   estimated_duration: 25,

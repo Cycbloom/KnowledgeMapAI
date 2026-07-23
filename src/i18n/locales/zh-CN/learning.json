@@ -73,7 +73,9 @@
       "wind_chime": "风铃",
       "breathing": "呼吸引导",
       "white_noise": "白噪音",
-      "pink_noise": "粉噪音"
+      "pink_noise": "粉噪音",
+      "brown_noise": "棕噪音",
+      "none": "无"
     },
     "presetNames": {
       "rainy-reading": "雨天阅读",

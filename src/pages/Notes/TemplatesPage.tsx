@@ -626,15 +626,12 @@ const TemplateEditDialog = ({
 /**
  * 变量 → i18n key 后缀映射,避免在 JSX 中嵌套三元运算符。
  */
-const VARIABLE_LABEL_SUFFIX: Record<
-  (typeof TEMPLATE_VARIABLES)[number],
-  string
-> = {
+const VARIABLE_LABEL_SUFFIX = {
   date: "varDate",
   today_reviewed_cards: "varReviewedCards",
   today_completed_tasks: "varCompletedTasks",
   today_focus_time: "varFocusTime",
-};
+} as const satisfies Record<(typeof TEMPLATE_VARIABLES)[number], string>;
 
 /**
  * 变量占位提示:小标签 + 鼠标悬浮显示变量列表 popover。
@@ -664,7 +661,7 @@ const VariableHint = () => {
               <code className="text-primary-600 dark:text-primary-400 font-mono">
                 {`{{${varName}}}`}
               </code>
-              <span>{t(`notes.templates.hints.${VARIABLE_LABEL_SUFFIX[varName]}` as never)}</span>
+              <span>{t(`notes.templates.hints.${VARIABLE_LABEL_SUFFIX[varName]}`)}</span>
             </li>
           ))}
         </ul>

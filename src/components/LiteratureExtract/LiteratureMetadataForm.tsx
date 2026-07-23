@@ -52,14 +52,33 @@ interface LiteratureMetadataFormProps {
   disabled?: boolean;
 }
 
-const LITERATURE_TYPES: { value: LiteratureType; labelKey: string }[] = [
+const LITERATURE_TYPES = [
   { value: "paper", labelKey: "literatureExtract.metadata.types.paper" },
   { value: "book", labelKey: "literatureExtract.metadata.types.book" },
   { value: "article", labelKey: "literatureExtract.metadata.types.article" },
   { value: "report", labelKey: "literatureExtract.metadata.types.report" },
   { value: "webpage", labelKey: "literatureExtract.metadata.types.webpage" },
   { value: "document", labelKey: "literatureExtract.metadata.types.document" },
-];
+] as const satisfies readonly { value: LiteratureType; labelKey: string }[];
+
+const METADATA_FIELD_LABEL_KEYS = [
+  "literatureExtract.metadata.fields.title",
+  "literatureExtract.metadata.fields.authors",
+  "literatureExtract.metadata.fields.year",
+  "literatureExtract.metadata.fields.type",
+  "literatureExtract.metadata.fields.journal",
+  "literatureExtract.metadata.fields.doi",
+  "literatureExtract.metadata.fields.keywords",
+  "literatureExtract.metadata.fields.notes",
+] as const;
+
+const METADATA_FIELD_HINT_KEYS = [
+  "literatureExtract.metadata.hints.authors",
+  "literatureExtract.metadata.hints.keywords",
+] as const;
+
+type MetadataFieldLabelKey = (typeof METADATA_FIELD_LABEL_KEYS)[number];
+type MetadataFieldHintKey = (typeof METADATA_FIELD_HINT_KEYS)[number];
 
 const LITERATURE_TYPE_CONFIG: Record<
   LiteratureType,
@@ -465,10 +484,10 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
   };
 
   const renderFormField = (
-    labelKey: string,
+    labelKey: MetadataFieldLabelKey,
     icon: React.ElementType,
     children: React.ReactNode,
-    hintKey?: string,
+    hintKey?: MetadataFieldHintKey,
     error?: string,
   ) => {
     const Icon = icon;
@@ -483,7 +502,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
             size={14}
             className={isDark ? "text-gray-400" : "text-gray-500"}
           />
-          {t(labelKey as never)}
+          {t(labelKey)}
         </label>
         {children}
         {error ? (
@@ -498,7 +517,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
             <p
               className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
             >
-              {t(hintKey as never)}
+              {t(hintKey)}
             </p>
           )
         )}
@@ -680,7 +699,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
               >
                 {LITERATURE_TYPES.map(({ value, labelKey }) => (
                   <option key={value} value={value}>
-                    {t(labelKey as never)}
+                    {t(labelKey)}
                   </option>
                 ))}
               </select>,

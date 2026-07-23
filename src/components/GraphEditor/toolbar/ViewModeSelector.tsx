@@ -16,12 +16,7 @@ const ViewModeSelector = React.memo(({
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
-  const viewModes: Array<{
-    mode: GraphViewMode;
-    labelKey: string;
-    icon: React.ComponentType<Record<string, unknown>>;
-    descriptionKey: string;
-  }> = [
+  const viewModes = [
     {
       mode: "mindmap",
       labelKey: "graphEditor.toolbar.mindmap",
@@ -58,7 +53,12 @@ const ViewModeSelector = React.memo(({
       icon: LayoutGrid,
       descriptionKey: "graphEditor.toolbar.quadrantDesc",
     },
-  ];
+  ] as const satisfies ReadonlyArray<{
+    mode: GraphViewMode;
+    labelKey: string;
+    icon: React.ComponentType<Record<string, unknown>>;
+    descriptionKey: string;
+  }>;
 
   return (
     <div className="flex items-center gap-2">
@@ -75,10 +75,10 @@ const ViewModeSelector = React.memo(({
                 ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
           }`}
-          title={t(descriptionKey as never)}
+          title={t(descriptionKey)}
         >
           <Icon size={16} />
-          <span className="hidden sm:inline">{t(labelKey as never)}</span>
+          <span className="hidden sm:inline">{t(labelKey)}</span>
         </button>
       ))}
     </div>

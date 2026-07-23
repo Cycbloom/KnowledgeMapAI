@@ -37,6 +37,9 @@ interface NodeStatusInfo {
   locked?: boolean;
 }
 
+const CARD_TYPE_NAMES = ['new', 'learning', 'review', 'relearning'] as const;
+export type CardTypeName = (typeof CARD_TYPE_NAMES)[number];
+
 export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
@@ -154,7 +157,7 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
   );
 };
 
-export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: string; value: number; color: string }> }> = ({ distribution }) => {
+export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: CardTypeName; value: number; color: string }> }> = ({ distribution }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
@@ -211,7 +214,7 @@ export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: s
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
                 <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
-                  {t(`study.cardTypes.${item.name}` as never)}
+                  {t(`study.cardTypes.${item.name}`)}
                 </span>
               </div>
               <div className="flex items-center gap-2">

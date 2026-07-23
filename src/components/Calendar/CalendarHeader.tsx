@@ -26,7 +26,7 @@ interface CalendarHeaderProps {
   getTitle: () => string;
 }
 
-const VIEW_LABEL_KEYS: Record<ViewType, string> = {
+const VIEW_LABEL_KEYS: Record<ViewType, "calendar.month" | "calendar.week" | "calendar.day" | "calendar.schedule"> = {
   month: "calendar.month",
   week: "calendar.week",
   day: "calendar.day",
@@ -136,7 +136,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
                         : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
-                  {t(VIEW_LABEL_KEYS[type] as never)}
+                  {t(VIEW_LABEL_KEYS[type])}
                 </button>
               ))}
             </div>

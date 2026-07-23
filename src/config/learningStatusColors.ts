@@ -355,11 +355,26 @@ export const getColorScheme = (scheme: ColorScheme): Record<LearningStatus, Colo
 };
 
 /**
+ * Literal union of color scheme `name` i18n key strings.
+ *
+ * Note: We use an explicit literal union type annotation rather than
+ * `as const satisfies Record<ColorScheme, string>` because TS 5.8.3
+ * widens indexed access of the latter back to `string`.
+ */
+export type ColorSchemeName =
+  | 'learningStatus.colorSchemes.default'
+  | 'learningStatus.colorSchemes.nature'
+  | 'learningStatus.colorSchemes.ocean'
+  | 'learningStatus.colorSchemes.sunset'
+  | 'learningStatus.colorSchemes.forest'
+  | 'learningStatus.colorSchemes.custom';
+
+/**
  * Returns color scheme metadata. The `name` field holds an i18n key string
  * (e.g. `learningStatus.colorSchemes.default`). Consumers MUST translate
  * via `t()` before rendering.
  */
-export const getColorSchemeNames = (): { key: ColorScheme; name: string }[] => {
+export const getColorSchemeNames = (): { key: ColorScheme; name: ColorSchemeName }[] => {
   return [
     { key: 'default', name: 'learningStatus.colorSchemes.default' },
     { key: 'nature', name: 'learningStatus.colorSchemes.nature' },

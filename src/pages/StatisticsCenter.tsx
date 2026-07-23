@@ -8,7 +8,7 @@ import { TaskStatsTab } from "../components/Statistics/TaskStatsTab";
 
 type StatsTab = "learning" | "tasks";
 
-const tabs: { id: StatsTab; label: string; icon: React.ReactNode; translationKey: string }[] = [
+const tabs: { id: StatsTab; label: string; icon: React.ReactNode; translationKey: "statistics.tabs.learning" | "statistics.tabs.tasks" }[] = [
   { id: "learning", label: "学习统计", icon: <BookOpen size={18} />, translationKey: "statistics.tabs.learning" },
   { id: "tasks", label: "任务统计", icon: <CheckSquare size={18} />, translationKey: "statistics.tabs.tasks" },
 ];
@@ -50,7 +50,7 @@ export const StatisticsCenter: React.FC = () => {
               }`}
             >
               {tab.icon}
-              <span>{t(tab.translationKey as never)}</span>
+              <span>{t(tab.translationKey)}</span>
             </button>
           ))}
         </div>

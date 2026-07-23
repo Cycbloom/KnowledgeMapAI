@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Save, Palette, Minus, ArrowRight } from 'lucide-react';
-import type { Edge, EdgeLineStyle, RelationshipTypeConfig } from '../../../types';
-import { RELATIONSHIP_CATEGORY_LABELS } from '../../../config/relationshipTypes';
+import type { Edge, EdgeLineStyle, RelationshipCategory } from '../../../types';
+import { RELATIONSHIP_CATEGORY_LABELS, type PresetRelationshipTypeConfig } from '../../../config/relationshipTypes';
 import { useFocusTrap, useEscapeKey } from '../../../hooks/common';
 
 interface UpdateEdgeData {
@@ -18,7 +18,7 @@ interface EdgeEditDialogProps {
   edge: Edge | null;
   onClose: () => void;
   onSave: (data: UpdateEdgeData) => Promise<void>;
-  relationshipTypes: RelationshipTypeConfig[];
+  relationshipTypes: PresetRelationshipTypeConfig[];
 }
 
 const LINE_STYLE_OPTIONS: { value: EdgeLineStyle; label: string }[] = [
@@ -102,7 +102,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
     }
     acc[category].push(type);
     return acc;
-  }, {} as Record<string, RelationshipTypeConfig[]>);
+  }, {} as Record<string, PresetRelationshipTypeConfig[]>);
 
   return (
     <div
@@ -181,10 +181,10 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                 >
                   <option value="">选择关系类型</option>
                   {Object.entries(groupedRelationshipTypes).map(([category, types]) => (
-                    <optgroup key={category} label={t(RELATIONSHIP_CATEGORY_LABELS[category as keyof typeof RELATIONSHIP_CATEGORY_LABELS] as never) || category}>
+                    <optgroup key={category} label={t(RELATIONSHIP_CATEGORY_LABELS[category as RelationshipCategory]) || category}>
                       {types.map((type) => (
                         <option key={type.id} value={type.name}>
-                          {t(type.display_name as never)}
+                          {t(type.display_name)}
                         </option>
                       ))}
                     </optgroup>

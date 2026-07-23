@@ -48,16 +48,7 @@ const CATEGORIES: TemplateCategory[] = [
   "creative",
 ];
 
-const CATEGORY_CONFIG: Record<
-  TemplateCategory,
-  {
-    icon: React.ReactNode;
-    labelKey: string;
-    color: string;
-    iconBg: string;
-    textColor: string;
-  }
-> = {
+const CATEGORY_CONFIG = {
   knowledge: {
     icon: <GraduationCap size={16} />,
     labelKey: "templates.category.knowledge",
@@ -93,7 +84,16 @@ const CATEGORY_CONFIG: Record<
     iconBg: "bg-pink-100 dark:bg-pink-800/40",
     textColor: "text-pink-600 dark:text-pink-400",
   },
-};
+} as const satisfies Record<
+  TemplateCategory,
+  {
+    icon: React.ReactNode;
+    labelKey: string;
+    color: string;
+    iconBg: string;
+    textColor: string;
+  }
+>;
 
 export const TemplatePromptConfigPanel: React.FC<
   TemplatePromptConfigPanelProps
@@ -253,7 +253,7 @@ export const TemplatePromptConfigPanel: React.FC<
                     <div className={`p-1 rounded ${config.iconBg}`}>
                       {config.icon}
                     </div>
-                    {t(config.labelKey as never)}
+                    {t(config.labelKey)}
                   </div>
                   <div className="space-y-0.5">
                     {TEMPLATE_CATEGORY_TYPES[cat].map((type) => {

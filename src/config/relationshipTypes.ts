@@ -13,7 +13,7 @@ import { RelationshipTypeConfig, RelationshipCategory, EdgeLineStyle } from '../
  * `t(display_name)` falls back to returning the literal text itself
  * (i18next returns the key string when no translation is found).
  */
-export const PRESET_RELATIONSHIP_TYPES: Omit<RelationshipTypeConfig, 'id' | 'created_at' | 'updated_at'>[] = [
+export const PRESET_RELATIONSHIP_TYPES = [
   { name: 'contains', display_name: 'relationshipTypes.types.contains.displayName', category: 'hierarchical', color: '#3B82F6', line_style: 'solid', show_arrow: 'auto', is_builtin: true },
   { name: 'part_of', display_name: 'relationshipTypes.types.part_of.displayName', category: 'hierarchical', color: '#3B82F6', line_style: 'solid', show_arrow: 'auto', is_builtin: true },
   { name: 'parent_child', display_name: 'relationshipTypes.types.parent_child.displayName', category: 'hierarchical', color: '#3B82F6', line_style: 'solid', show_arrow: 'auto', is_builtin: true },
@@ -51,7 +51,24 @@ export const PRESET_RELATIONSHIP_TYPES: Omit<RelationshipTypeConfig, 'id' | 'cre
   { name: 'derives', display_name: 'relationshipTypes.types.derives.displayName', category: 'causal', color: '#DC2626', line_style: 'solid', show_arrow: true, is_builtin: true },
   { name: 'proportional', display_name: 'relationshipTypes.types.proportional.displayName', category: 'causal', color: '#DC2626', line_style: 'solid', show_arrow: false, is_builtin: true },
   { name: 'inverse', display_name: 'relationshipTypes.types.inverse.displayName', category: 'causal', color: '#DC2626', line_style: 'solid', show_arrow: false, is_builtin: true },
-];
+] as const satisfies readonly Omit<RelationshipTypeConfig, 'id' | 'created_at' | 'updated_at'>[];
+
+/**
+ * Literal union of all preset relationship type `display_name` i18n keys.
+ * Use this to type-narrow `display_name` when consumers know the value
+ * originates from `PRESET_RELATIONSHIP_TYPES` (not from backend data).
+ */
+export type PresetRelationshipTypeDisplayName =
+  (typeof PRESET_RELATIONSHIP_TYPES)[number]['display_name'];
+
+/**
+ * A `RelationshipTypeConfig` whose `display_name` is narrowed to the
+ * preset i18n key literal union. Use this for return types of helpers
+ * that only ever return preset configs (e.g. `getRelationshipTypeConfig`).
+ */
+export type PresetRelationshipTypeConfig = Omit<RelationshipTypeConfig, 'display_name'> & {
+  display_name: PresetRelationshipTypeDisplayName;
+};
 
 export const HIERARCHICAL_EDGE_TYPES = new Set([
   'contains',
@@ -60,13 +77,13 @@ export const HIERARCHICAL_EDGE_TYPES = new Set([
   'derived_from',
 ]);
 
-const relationshipTypeMap = new Map<string, Omit<RelationshipTypeConfig, 'id' | 'created_at' | 'updated_at'>>();
+const relationshipTypeMap = new Map<string, Omit<PresetRelationshipTypeConfig, 'id' | 'created_at' | 'updated_at'>>();
 
 PRESET_RELATIONSHIP_TYPES.forEach(type => {
   relationshipTypeMap.set(type.name, type);
 });
 
-export function getRelationshipTypeConfig(name: string): RelationshipTypeConfig | undefined {
+export function getRelationshipTypeConfig(name: string): PresetRelationshipTypeConfig | undefined {
   const config = relationshipTypeMap.get(name);
   if (!config) return undefined;
 
@@ -76,7 +93,7 @@ export function getRelationshipTypeConfig(name: string): RelationshipTypeConfig 
   };
 }
 
-export function getRelationshipTypesByCategory(category: RelationshipCategory): RelationshipTypeConfig[] {
+export function getRelationshipTypesByCategory(category: RelationshipCategory): PresetRelationshipTypeConfig[] {
   return PRESET_RELATIONSHIP_TYPES
     .filter(type => type.category === category)
     .map(type => ({
@@ -85,7 +102,7 @@ export function getRelationshipTypesByCategory(category: RelationshipCategory): 
     }));
 }
 
-export function getDefaultRelationshipType(): RelationshipTypeConfig {
+export function getDefaultRelationshipType(): PresetRelationshipTypeConfig {
   const defaultType = PRESET_RELATIONSHIP_TYPES[0];
   return {
     ...defaultType,
@@ -109,16 +126,39 @@ export function getRelationshipTypeLineStyle(name: string): EdgeLineStyle {
  * Note: For user-created relationship types loaded from the backend, the
  * `display_name` is the user-entered literal text; `t()` will return the
  * literal text when the key is not found in the i18n resources.
+ *
+ * The return type is `string` (not the preset literal union) because when
+ * the type is unknown the input `name` is returned, which is an arbitrary
+ * user/backend-supplied string. Callers that need a narrowed key should
+ * use `getRelationshipTypeConfig(name)?.display_name` instead.
  */
 export function getRelationshipTypeDisplayName(name: string): string {
   return relationshipTypeMap.get(name)?.display_name ?? name;
 }
 
 /**
+ * Literal union of relationship category i18n key strings.
+ * Used to narrow `RELATIONSHIP_CATEGORY_LABELS` values so consumers can
+ * pass them directly to `t()` without `as never`.
+ *
+ * Note: We use an explicit literal union type annotation rather than
+ * `as const satisfies Record<RelationshipCategory, string>` because
+ * TS 5.8.3 widens indexed access of the latter back to `string`.
+ */
+export type RelationshipCategoryLabel =
+  | 'relationshipTypes.categories.hierarchical'
+  | 'relationshipTypes.categories.dependency'
+  | 'relationshipTypes.categories.semantic'
+  | 'relationshipTypes.categories.temporal'
+  | 'relationshipTypes.categories.interaction'
+  | 'relationshipTypes.categories.causal'
+  | 'relationshipTypes.categories.custom';
+
+/**
  * i18n keys for relationship category labels. Consumers should translate
  * via `t(RELATIONSHIP_CATEGORY_LABELS[category])`.
  */
-export const RELATIONSHIP_CATEGORY_LABELS: Record<RelationshipCategory, string> = {
+export const RELATIONSHIP_CATEGORY_LABELS: Record<RelationshipCategory, RelationshipCategoryLabel> = {
   hierarchical: 'relationshipTypes.categories.hierarchical',
   dependency: 'relationshipTypes.categories.dependency',
   semantic: 'relationshipTypes.categories.semantic',

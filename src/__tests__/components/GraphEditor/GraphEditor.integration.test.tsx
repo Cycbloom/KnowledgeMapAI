@@ -217,6 +217,9 @@ describe("GraphEditor Integration", () => {
   it("shows a loading indicator while fetching graph data", () => {
     // Use a delayed response so the loading state is observable
     server.use(
+      // setTimeout 纯粹在 MSW handler 内部模拟服务端延迟（属于 mock 而非测试体）。
+      // 该延迟不直接触发 React 状态更新；act() 警告（"suspended resource finished
+      // loading"）来源于本测试为同步结构、未 await 异步 fetch，与 setTimeout 本身无关。
       http.get(`/api/graphs/${TEST_GRAPH_ID}/nodes`, async () => {
         await new Promise((resolve) => setTimeout(resolve, 500));
         return HttpResponse.json(mockGraphData);

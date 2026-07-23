@@ -2,8 +2,8 @@ import type {
   BackboneModulePreset,
 } from "@shared/types/graph";
 
-export const ACADEMIC_RESEARCH: BackboneModulePreset = {
-  id: "academic_research",
+export const ACADEMIC_RESEARCH = {
+  id: "academic_research" as const,
   name: "通用学术研究",
   description: "适用于通用学术研究领域，包含研究背景、文献综述、研究方法、核心概念、应用领域、未来方向六个标准模块",
   moduleTypes: [
@@ -70,10 +70,10 @@ export const ACADEMIC_RESEARCH: BackboneModulePreset = {
       relationshipToCore: "指明后续研究方向",
     },
   ],
-};
+} satisfies BackboneModulePreset;
 
-export const EXPERIMENTAL_SCIENCE: BackboneModulePreset = {
-  id: "experimental_science",
+export const EXPERIMENTAL_SCIENCE = {
+  id: "experimental_science" as const,
   name: "实验科学研究",
   description: "适用于实验科学领域，包含研究背景、文献综述、实验设计、数据收集、结果分析、应用领域六个模块",
   moduleTypes: [
@@ -140,10 +140,10 @@ export const EXPERIMENTAL_SCIENCE: BackboneModulePreset = {
       relationshipToCore: "展示研究的实际价值",
     },
   ],
-};
+} satisfies BackboneModulePreset;
 
-export const ENGINEERING_RESEARCH: BackboneModulePreset = {
-  id: "engineering_research",
+export const ENGINEERING_RESEARCH = {
+  id: "engineering_research" as const,
   name: "工程技术研究",
   description: "适用于工程技术研究领域，包含问题背景、技术架构、工程实现、性能评估、应用案例、未来方向六个模块",
   moduleTypes: [
@@ -210,10 +210,10 @@ export const ENGINEERING_RESEARCH: BackboneModulePreset = {
       relationshipToCore: "指明系统的后续发展方向",
     },
   ],
-};
+} satisfies BackboneModulePreset;
 
-export const POLICY_RESEARCH: BackboneModulePreset = {
-  id: "policy_research",
+export const POLICY_RESEARCH = {
+  id: "policy_research" as const,
   name: "政策研究",
   description: "适用于政策研究领域，包含政策背景、政策工具、实施机制、影响评估、案例分析、政策建议六个模块",
   moduleTypes: [
@@ -280,14 +280,16 @@ export const POLICY_RESEARCH: BackboneModulePreset = {
       relationshipToCore: "提出建设性的政策建议",
     },
   ],
-};
+} satisfies BackboneModulePreset;
 
-export const ALL_PRESETS: BackboneModulePreset[] = [
+export const ALL_PRESETS = [
   ACADEMIC_RESEARCH,
   EXPERIMENTAL_SCIENCE,
   ENGINEERING_RESEARCH,
   POLICY_RESEARCH,
-];
+] as const satisfies readonly BackboneModulePreset[];
+
+export type PresetId = (typeof ALL_PRESETS)[number]["id"];
 
 export const PRESET_MAP: Record<string, BackboneModulePreset> = {
   [ACADEMIC_RESEARCH.id]: ACADEMIC_RESEARCH,

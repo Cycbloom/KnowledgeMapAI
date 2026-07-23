@@ -53,13 +53,13 @@ const LEVEL_ICONS: Record<NodeLevel, React.ReactNode> = {
   leaf: <Leaf size={14} />,
 };
 
-const LEVEL_LABEL_KEYS: Record<NodeLevel, string> = {
+const LEVEL_LABEL_KEYS = {
   root: "conceptAggregation.hierarchy.level.root",
   core: "conceptAggregation.hierarchy.level.core",
   sub: "conceptAggregation.hierarchy.level.sub",
   normal: "conceptAggregation.hierarchy.level.normal",
   leaf: "conceptAggregation.hierarchy.level.leaf",
-};
+} as const satisfies Record<NodeLevel, string>;
 
 const LEVEL_COLORS: Record<NodeLevel, string> = {
   root: "text-purple-500",
@@ -215,7 +215,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <span
           className={`flex-shrink-0 text-xs px-1.5 py-0.5 rounded ${LEVEL_BG_COLORS[node.level]}`}
         >
-          {t(LEVEL_LABEL_KEYS[node.level] as never)}
+          {t(LEVEL_LABEL_KEYS[node.level])}
         </span>
 
         {showTooltip && (
@@ -228,7 +228,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 <span className={LEVEL_COLORS[node.level]}>
                   {LEVEL_ICONS[node.level]}
                 </span>
-                <span>{t(LEVEL_LABEL_KEYS[node.level] as never)}</span>
+                <span>{t(LEVEL_LABEL_KEYS[node.level])}</span>
               </div>
               {node.confidence !== undefined && (
                 <div className="text-xs text-slate-500 dark:text-slate-400">

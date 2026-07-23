@@ -19,10 +19,22 @@ interface TourCallbacks {
   onOpenRAGChat?: () => void;
 }
 
+const ONBOARDING_STEP_KEYS = [
+  "step1",
+  "step2",
+  "step3",
+  "step3b",
+  "step4",
+  "step4b",
+  "step5",
+] as const;
+
+type OnboardingStepKey = (typeof ONBOARDING_STEP_KEYS)[number];
+
 interface StepDefinition {
   tourId?: string;
   side: Side;
-  i18nKey: string;
+  i18nKey: OnboardingStepKey;
   /** Allow user to click the highlighted element (e.g. a button) */
   allowInteraction?: boolean;
   /** Called when user clicks "Next" or the highlighted element itself */
@@ -84,8 +96,8 @@ function buildSteps(
   return stepDefinitions.map((def) => {
     const step: DriveStep = {
       popover: {
-        title: t(`graphEditor.onboarding.${def.i18nKey}Title` as never),
-        description: t(`graphEditor.onboarding.${def.i18nKey}Desc` as never),
+        title: t(`graphEditor.onboarding.${def.i18nKey}Title`),
+        description: t(`graphEditor.onboarding.${def.i18nKey}Desc`),
         side: def.side,
       },
     };

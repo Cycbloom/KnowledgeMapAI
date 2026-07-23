@@ -10,11 +10,11 @@ interface Props {
   isDark: boolean;
 }
 
-const SORT_OPTIONS: { value: SortBy; labelKey: string }[] = [
+const SORT_OPTIONS = [
   { value: "updatedAt", labelKey: "notes.sort.updatedAt" },
   { value: "createdAt", labelKey: "notes.sort.createdAt" },
   { value: "title", labelKey: "notes.sort.title" },
-];
+] as const satisfies readonly { value: SortBy; labelKey: string }[];
 
 /**
  * 笔记列表排序下拉。受控组件,由父组件管理 value 与 onChange。
@@ -45,8 +45,8 @@ export const NotesListSortDropdown: React.FC<Props> = ({
 
   const currentLabel = String(
     t(
-      (SORT_OPTIONS.find((opt) => opt.value === value)?.labelKey ??
-        "notes.sort.updatedAt") as never,
+      SORT_OPTIONS.find((opt) => opt.value === value)?.labelKey ??
+        "notes.sort.updatedAt",
     ),
   );
 
@@ -100,7 +100,7 @@ export const NotesListSortDropdown: React.FC<Props> = ({
                 role="menuitem"
                 aria-pressed={active}
               >
-                <span>{t(opt.labelKey as never)}</span>
+                <span>{t(opt.labelKey)}</span>
                 {active && <Check size={14} aria-hidden="true" />}
               </button>
             );

@@ -31,9 +31,28 @@ export interface RouteOptions {
   protected?: boolean;
 }
 
+/**
+ * i18n keys used by registered nav items. Must match the labels registered in
+ * plugins.ts and exist in layout.json (both zh-CN and en-US).
+ */
+export type NavLabelKey =
+  | "layout.myGraphs"
+  | "layout.graphMap"
+  | "layout.studyCenter"
+  | "layout.notes"
+  | "layout.learningPaths"
+  | "layout.statistics"
+  | "layout.calendar"
+  | "layout.achievements"
+  | "layout.templates"
+  | "layout.tasks"
+  | "layout.scheduler"
+  | "layout.profile"
+  | "layout.trash";
+
 export interface NavItemRegistration {
   path: string;
-  label: string;
+  label: NavLabelKey;
   icon?: string;
   order: number;
   protected?: boolean;

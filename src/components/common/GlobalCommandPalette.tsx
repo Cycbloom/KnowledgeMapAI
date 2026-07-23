@@ -100,7 +100,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
         (item.icon ? iconMap[item.icon] : undefined) ?? BookOpen;
       items.push({
         id: `nav-${item.path}`,
-        label: t(item.label as never),
+        label: t(item.label),
         category: "navigation",
         icon: <Icon size={16} />,
         keywords: item.path,

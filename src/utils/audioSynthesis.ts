@@ -35,7 +35,7 @@ export interface NoiseConfig {
 export interface NoisePreset {
   id: string;
   name: string;
-  noises: NoiseConfig[];
+  noises: readonly NoiseConfig[];
   isBuiltIn: boolean;
 }
 
@@ -1010,7 +1010,7 @@ export const NOISE_OPTIONS: NoiseOption[] = [
   { id: 'pink_noise', label: '粉噪声', icon: 'Waves', category: 'meditation' },
 ];
 
-export const BUILT_IN_PRESETS: NoisePreset[] = [
+export const BUILT_IN_PRESETS = [
   {
     id: 'rainy-reading',
     name: '雨天阅读',
@@ -1049,4 +1049,6 @@ export const BUILT_IN_PRESETS: NoisePreset[] = [
     ],
     isBuiltIn: true,
   },
-];
+] as const satisfies readonly NoisePreset[];
+
+export type BuiltInPresetId = (typeof BUILT_IN_PRESETS)[number]['id'];

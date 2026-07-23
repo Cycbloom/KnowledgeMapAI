@@ -208,6 +208,19 @@
     "stability": "Stability",
     "difficulty": "Difficulty",
     "retrievability": "Retrievability",
+    "fsrsState": {
+      "new": "New Card",
+      "learning": "Learning",
+      "review": "Reviewing",
+      "relearning": "Relearning"
+    },
+    "difficultyLevel": {
+      "veryEasy": "Very Easy",
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard",
+      "veryHard": "Very Hard"
+    },
     "quality": {
       "0": "Complete Forget",
       "1": "Vague Memory",

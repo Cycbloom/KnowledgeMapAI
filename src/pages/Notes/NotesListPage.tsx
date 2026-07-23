@@ -59,13 +59,13 @@ import type { Note, NoteType } from "@shared/types/note";
 const PAGE_SIZE = 20;
 
 /** 视图标签定义:顺序即渲染顺序,value 对应 useNotesList 的 view 参数。 */
-const VIEW_TABS: ReadonlyArray<{ value: NoteView; labelKey: string }> = [
+const VIEW_TABS = [
   { value: "all", labelKey: "notes.views.all" },
   { value: "daily", labelKey: "notes.views.daily" },
   { value: "note", labelKey: "notes.views.note" },
   { value: "pinned", labelKey: "notes.views.pinned" },
   { value: "archived", labelKey: "notes.views.archived" },
-] as const;
+] as const satisfies ReadonlyArray<{ value: NoteView; labelKey: string }>;
 
 /**
  * 依据标签名生成稳定的颜色(与 TagSystem 视觉风格一致的小型实现,
@@ -958,7 +958,7 @@ export const NotesListPage = () => {
           {VIEW_TABS.map((tab) => (
             <FilterTab
               key={tab.value}
-              label={t(tab.labelKey as never)}
+              label={t(tab.labelKey)}
               value={tab.value}
               current={view}
               onClick={handleViewChange}

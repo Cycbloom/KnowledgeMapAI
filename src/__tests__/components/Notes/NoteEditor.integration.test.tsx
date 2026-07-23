@@ -14,7 +14,7 @@
  */
 import React from "react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { screen, waitFor, fireEvent } from "@testing-library/react";
+import { screen, waitFor, fireEvent, act } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "../../../../tests/setup/mswServer";
 import { renderWithProviders } from "../../../../tests/helpers/renderWithProviders";
@@ -406,8 +406,10 @@ describe("BlockEditor 集成测试", () => {
     }
     fireEvent(editor.view.dom, new Event("focusout", { bubbles: true }));
 
-    // 等待潜在异步保存
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    // 等待潜在异步保存（包裹 act 以处理失焦期间可能触发的 React 状态更新）
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    });
 
     expect(updateFn).not.toHaveBeenCalled();
   });

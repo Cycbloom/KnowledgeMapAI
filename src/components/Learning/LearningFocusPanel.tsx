@@ -44,9 +44,12 @@ import { useTimerStore } from "../../store/useTimerStore";
 import { useActivityTracker } from "../../hooks/useActivityTracker";
 import { AudioVisualizer } from "../common/AudioVisualizer";
 import { PomodoroCycleBar } from "../common/PomodoroCycleBar";
-import { NOISE_OPTIONS, NOISE_CATEGORIES } from "../../utils/audioSynthesis";
+import { NOISE_OPTIONS, NOISE_CATEGORIES, BUILT_IN_PRESETS, type BuiltInPresetId } from "../../utils/audioSynthesis";
 import { formatTimeFromSeconds } from "../../utils/formatters";
 import type { Keyword } from "../../../shared/types/graph";
+
+const isBuiltInPresetId = (id: string): id is BuiltInPresetId =>
+  BUILT_IN_PRESETS.some((p) => p.id === id);
 
 const getIcon = (iconName: string): React.ReactNode => {
   const icons: Record<string, React.ReactNode> = {
@@ -691,7 +694,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                   {getIcon(option.icon)}
                                   <span className="text-[10px]">
                                     {t(
-                                    `learning.focusMode.noiseOptions.${option.id}` as never,
+                                    `learning.focusMode.noiseOptions.${option.id}`,
                                   )}
                                   </span>
                                 </motion.button>
@@ -720,7 +723,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                 {option && getIcon(option.icon)}
                                 <span className="text-xs text-slate-600 dark:text-slate-300 flex-1">
                                   {t(
-                                    `learning.focusMode.noiseOptions.${noise.type}` as never,
+                                    `learning.focusMode.noiseOptions.${noise.type}`,
                                   )}
                                 </span>
                                 <input
@@ -774,8 +777,8 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                           >
-                            {preset.isBuiltIn
-                              ? t(`learning.focusMode.presetNames.${preset.id}` as never)
+                            {preset.isBuiltIn && isBuiltInPresetId(preset.id)
+                              ? t(`learning.focusMode.presetNames.${preset.id}`)
                               : preset.name}
                           </motion.button>
                         ))}

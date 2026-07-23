@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Edge, RelationshipTypeConfig } from '../../types';
-import { getRelationshipTypeConfig, RELATIONSHIP_CATEGORY_LABELS } from '../../config/relationshipTypes';
+import type { Edge } from '../../types';
+import { getRelationshipTypeConfig, RELATIONSHIP_CATEGORY_LABELS, type PresetRelationshipTypeConfig } from '../../config/relationshipTypes';
 
 interface RelationshipLegendProps {
   edges: Edge[];
@@ -23,7 +23,7 @@ export const RelationshipLegend: React.FC<RelationshipLegendProps> = ({
 }) => {
   const { t } = useTranslation();
   const usedRelationshipTypes = useMemo(() => {
-    const typeMap = new Map<string, { config: RelationshipTypeConfig; count: number }>();
+    const typeMap = new Map<string, { config: PresetRelationshipTypeConfig; count: number }>();
     
     edges.forEach(edge => {
       const typeName = edge.relationship_type || 'related';
@@ -96,13 +96,13 @@ export const RelationshipLegend: React.FC<RelationshipLegendProps> = ({
             </svg>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium truncate">{t(config.display_name as never)}</span>
+                <span className="text-xs font-medium truncate">{t(config.display_name)}</span>
                 <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   {count}
                 </span>
               </div>
               <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                {t(RELATIONSHIP_CATEGORY_LABELS[config.category] as never)}
+                {t(RELATIONSHIP_CATEGORY_LABELS[config.category])}
               </span>
             </div>
           </div>

@@ -33,7 +33,14 @@ interface CalendarTaskModalProps {
   defaultDate: Date;
 }
 
-const QUICK_TAG_KEYS = [
+type QuickTagKey =
+  | "calendar.quickTags.study"
+  | "calendar.quickTags.work"
+  | "calendar.quickTags.life"
+  | "calendar.quickTags.health"
+  | "calendar.quickTags.review";
+
+const QUICK_TAG_KEYS: readonly QuickTagKey[] = [
   "calendar.quickTags.study",
   "calendar.quickTags.work",
   "calendar.quickTags.life",
@@ -329,7 +336,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                       }`}
                     >
-                      + {t(key as never)}
+                      + {t(key)}
                     </button>
                   );
                 })}

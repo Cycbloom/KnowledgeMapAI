@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import type { Edge, RelationshipTypeConfig, EdgeLineStyle } from '../../../../types';
-import { PRESET_RELATIONSHIP_TYPES } from '../../../../config/relationshipTypes';
+import type { Edge, EdgeLineStyle } from '../../../../types';
+import { PRESET_RELATIONSHIP_TYPES, type PresetRelationshipTypeConfig } from '../../../../config/relationshipTypes';
 
 interface UseEdgeManagementOptions {
   edges: Edge[];
@@ -24,7 +24,7 @@ export const useEdgeManagement = (options: UseEdgeManagementOptions) => {
   } | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const relationshipTypes = useMemo<RelationshipTypeConfig[]>(() => {
+  const relationshipTypes = useMemo<PresetRelationshipTypeConfig[]>(() => {
     return PRESET_RELATIONSHIP_TYPES.map((type) => ({
       ...type,
       id: `preset-${type.name}`,

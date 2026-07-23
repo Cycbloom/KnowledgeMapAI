@@ -7,6 +7,12 @@ import type { GraphRelationType, InfiniteExpansionProgress } from '../../types';
 type ExpansionMode = 'depth' | 'width';
 type DepthStyle = 'academic' | 'practical' | 'beginner' | 'custom';
 
+const DEPTH_HINT_NUMBERS = [1, 2, 3, 4] as const;
+type DepthHintNumber = (typeof DEPTH_HINT_NUMBERS)[number];
+
+const WIDTH_HINT_NUMBERS = [1, 2, 3, 4, 5] as const;
+type WidthHintNumber = (typeof WIDTH_HINT_NUMBERS)[number];
+
 interface ExpansionResultNode {
   id?: string;
   title: string;
@@ -52,12 +58,7 @@ interface AIExpansionPanelProps {
   hasNodes?: boolean;
 }
 
-const styleOptionDefs: Array<{
-  value: DepthStyle;
-  labelKey: string;
-  detailsKey: string;
-  icon: typeof GraduationCap;
-}> = [
+const styleOptionDefs = [
   {
     value: 'academic',
     labelKey: 'graphEditor.graphMap.aiExpansion.styleAcademic',
@@ -82,17 +83,22 @@ const styleOptionDefs: Array<{
     detailsKey: 'graphEditor.graphMap.aiExpansion.styleCustomDetails',
     icon: PenTool,
   },
-];
-
-const relationTypeOptionDefs: Array<{
-  value: GraphRelationType;
+] as const satisfies readonly {
+  value: DepthStyle;
   labelKey: string;
-  color: string;
-}> = [
+  detailsKey: string;
+  icon: typeof GraduationCap;
+}[];
+
+const relationTypeOptionDefs = [
   { value: 'prerequisite', labelKey: 'graphEditor.graphMap.aiExpansion.relationPrerequisite', color: 'bg-primary-500' },
   { value: 'extension', labelKey: 'graphEditor.graphMap.aiExpansion.relationExtension', color: 'bg-green-500' },
   { value: 'related', labelKey: 'graphEditor.graphMap.aiExpansion.relationRelated', color: 'bg-amber-500' },
-];
+] as const satisfies readonly {
+  value: GraphRelationType;
+  labelKey: string;
+  color: string;
+}[];
 
 export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
   isOpen,
@@ -115,9 +121,9 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
   const [customPrompt, setCustomPrompt] = useState('');
   const [sources, setSources] = useState<string[]>([]);
   const [newSource, setNewSource] = useState('');
-  const [depthLevel, setDepthLevel] = useState(2);
+  const [depthLevel, setDepthLevel] = useState<DepthHintNumber>(2);
 
-  const [maxDepth, setMaxDepth] = useState(2);
+  const [maxDepth, setMaxDepth] = useState<WidthHintNumber>(2);
   const [maxGraphsPerLevel, setMaxGraphsPerLevel] = useState(3);
   const [selectedRelationTypes, setSelectedRelationTypes] = useState<GraphRelationType[]>(['prerequisite', 'extension', 'related']);
   const [autoGenerateNodes, setAutoGenerateNodes] = useState(true);
@@ -134,13 +140,13 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
 
   const styleOptions = styleOptionDefs.map((opt) => ({
     ...opt,
-    label: t(opt.labelKey as never),
-    details: t(opt.detailsKey as never),
+    label: t(opt.labelKey),
+    details: t(opt.detailsKey),
   }));
 
   const relationTypeOptions = relationTypeOptionDefs.map((opt) => ({
     ...opt,
-    label: t(opt.labelKey as never),
+    label: t(opt.labelKey),
   }));
 
   const toggleRelationType = (type: GraphRelationType) => {
@@ -435,7 +441,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                     min="1"
                     max="4"
                     value={depthLevel}
-                    onChange={e => setDepthLevel(Number(e.target.value))}
+                    onChange={e => setDepthLevel(DEPTH_HINT_NUMBERS[Number(e.target.value) - 1])}
                     disabled={isRunning}
                     className="w-full h-2 bg-primary-200 dark:bg-primary-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                   />
@@ -447,7 +453,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
 
                 <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
                   <p className="text-xs text-primary-600 dark:text-primary-400">
-                    {t(`graphEditor.graphMap.aiExpansion.depthHint${depthLevel}` as never)}
+                    {t(`graphEditor.graphMap.aiExpansion.depthHint${depthLevel}`)}
                   </p>
                 </div>
 
@@ -517,7 +523,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                     min="1"
                     max="5"
                     value={maxDepth}
-                    onChange={e => setMaxDepth(Number(e.target.value))}
+                    onChange={e => setMaxDepth(WIDTH_HINT_NUMBERS[Number(e.target.value) - 1])}
                     disabled={isRunning}
                     className="w-full h-2 bg-emerald-200 dark:bg-emerald-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                   />
@@ -593,7 +599,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
 
                 <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                   <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                    {t(`graphEditor.graphMap.aiExpansion.widthHint${maxDepth}` as never)}
+                    {t(`graphEditor.graphMap.aiExpansion.widthHint${maxDepth}`)}
                   </p>
                   {autoGenerateNodes && (
                     <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">

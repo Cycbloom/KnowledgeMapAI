@@ -12,12 +12,7 @@ interface CharacterPanelProps {
   onDelete: (id: string) => void;
 }
 
-const ROLE_TYPE_COLORS: Record<StoryCharacter["role_type"], {
-  bg: string;
-  text: string;
-  border: string;
-  labelKey: string;
-}> = {
+const ROLE_TYPE_COLORS = {
   protagonist: {
     bg: "bg-purple-100 dark:bg-purple-900/30",
     text: "text-purple-700 dark:text-purple-300",
@@ -42,7 +37,12 @@ const ROLE_TYPE_COLORS: Record<StoryCharacter["role_type"], {
     border: "border-gray-300 dark:border-gray-600",
     labelKey: "storyEditor.roleTypes.minor",
   },
-};
+} as const satisfies Record<StoryCharacter["role_type"], {
+  bg: string;
+  text: string;
+  border: string;
+  labelKey: string;
+}>;
 
 const DEFAULT_ROLE_CONFIG = {
   bg: "bg-gray-100 dark:bg-gray-800",
@@ -134,7 +134,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
                     </div>
                     <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium mt-0.5
                       ${roleConfig.bg} ${roleConfig.text}`}>
-                      {t(roleConfig.labelKey as never)}
+                      {t(roleConfig.labelKey)}
                     </span>
                   </div>
 

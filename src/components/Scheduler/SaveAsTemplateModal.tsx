@@ -5,9 +5,10 @@ import {
   Save,
   BookOpen,
   Briefcase,
-  Home,
-  Heart,
-  Star,
+  Search,
+  Layers,
+  Microscope,
+  Sparkles,
   Clock,
   Tag,
 } from "lucide-react";
@@ -18,19 +19,21 @@ import { useTheme, useFocusTrap, useEscapeKey, useFormDraft } from "../../hooks"
 import { ConfirmationModal } from "../common/ConfirmationModal";
 
 const categoryIcons: Record<string, React.ReactNode> = {
-  study: <BookOpen size={18} />,
-  work: <Briefcase size={18} />,
-  life: <Home size={18} />,
-  health: <Heart size={18} />,
-  custom: <Star size={18} />,
+  knowledge: <BookOpen size={18} />,
+  project: <Briefcase size={18} />,
+  analysis: <Search size={18} />,
+  architecture: <Layers size={18} />,
+  topicResearch: <Microscope size={18} />,
+  creative: <Sparkles size={18} />,
 };
 
 const categoryLabels: Record<string, string> = {
-  study: "学习",
-  work: "工作",
-  life: "生活",
-  health: "健康",
-  custom: "自定义",
+  knowledge: "知识",
+  project: "项目",
+  analysis: "分析",
+  architecture: "架构",
+  topicResearch: "专题研究",
+  creative: "创意",
 };
 
 interface SaveAsTemplateModalProps {
@@ -61,7 +64,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
   interface SaveAsTemplateDraft {
     name: string;
     description: string;
-    category: "study" | "work" | "life" | "health" | "custom";
+    category: "knowledge" | "project" | "analysis" | "architecture" | "topicResearch" | "creative";
     titleTemplate: string;
     descriptionTemplate: string;
     estimatedDuration: number;
@@ -72,7 +75,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
   const initialDraft: SaveAsTemplateDraft = {
     name: task.title,
     description: task.description || "",
-    category: "custom",
+    category: "creative",
     titleTemplate: task.title,
     descriptionTemplate: task.description || "",
     estimatedDuration: task.estimated_duration || 25,
@@ -224,7 +227,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               分类
             </label>
             <div className="flex gap-2">
-              {(["study", "work", "life", "health", "custom"] as const).map(
+              {(["knowledge", "project", "analysis", "architecture", "topicResearch", "creative"] as const).map(
                 (cat) => (
                   <button
                     key={cat}

@@ -62,25 +62,25 @@ interface DashboardHeaderProps {
   setTimeRangeFilter: (filter: TimeRangeFilter) => void;
 }
 
-const SORT_OPTIONS: { value: SortBy; labelKey: string }[] = [
+const SORT_OPTIONS = [
   { value: "updatedAt", labelKey: "dashboard.sort.updatedAt" },
   { value: "createdAt", labelKey: "dashboard.sort.createdAt" },
   { value: "title", labelKey: "dashboard.sort.title" },
   { value: "nodeCount", labelKey: "dashboard.sort.nodeCount" },
-];
+] as const satisfies ReadonlyArray<{ value: SortBy; labelKey: string }>;
 
-const STATUS_OPTIONS: { value: StatusFilter; labelKey: string }[] = [
+const STATUS_OPTIONS = [
   { value: "all", labelKey: "dashboard.filter.statusAll" },
   { value: "active", labelKey: "dashboard.filter.statusActive" },
   { value: "archived", labelKey: "dashboard.filter.statusArchived" },
-];
+] as const satisfies ReadonlyArray<{ value: StatusFilter; labelKey: string }>;
 
-const TIME_RANGE_OPTIONS: { value: TimeRangeFilter; labelKey: string }[] = [
+const TIME_RANGE_OPTIONS = [
   { value: "all", labelKey: "dashboard.filter.rangeAll" },
   { value: "today", labelKey: "dashboard.filter.rangeToday" },
   { value: "week", labelKey: "dashboard.filter.rangeWeek" },
   { value: "month", labelKey: "dashboard.filter.rangeMonth" },
-];
+] as const satisfies ReadonlyArray<{ value: TimeRangeFilter; labelKey: string }>;
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   isDark,
@@ -602,7 +602,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {t(opt.labelKey as never)}
+                  {t(opt.labelKey)}
                 </option>
               ))}
             </select>
@@ -647,7 +647,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 }`}
                 aria-pressed={active}
               >
-                {t(opt.labelKey as never)}
+                {t(opt.labelKey)}
               </button>
             );
           })}
@@ -684,7 +684,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 }`}
                 aria-pressed={active}
               >
-                {t(opt.labelKey as never)}
+                {t(opt.labelKey)}
               </button>
             );
           })}

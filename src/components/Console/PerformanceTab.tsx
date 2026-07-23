@@ -339,6 +339,7 @@ const LogDetailModal: React.FC<{
 
   const getOperationLabel = (operation: string): string => {
     const key = `console.performance.operations.${operation}`;
+    // i18n: dynamic key from runtime operation name (cannot be statically determined)
     const translated = String(t(key as never));
     return translated === key ? operation : translated;
   };
@@ -856,6 +857,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   const getOperationLabel = useCallback(
     (operation: string): string => {
       const key = `console.performance.operations.${operation}`;
+      // i18n: dynamic key from runtime operation name (cannot be statically determined)
       const translated = String(t(key as never));
       return translated === key ? operation : translated;
     },

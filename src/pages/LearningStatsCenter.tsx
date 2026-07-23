@@ -5,6 +5,7 @@ import {
   KnowledgeHeatmap,
   MasteryDistributionChart,
   QuickStatsCards,
+  type CardTypeName,
 } from "../components/Statistics/LearningStatsEnhanced";
 import {
   BarChart,
@@ -488,7 +489,7 @@ export const LearningStatsCenter = () => {
     refetch,
   } = useStatistics() as unknown as {
     data?: {
-      distribution: Array<{ name: string; value: number; color: string }>;
+      distribution: Array<{ name: CardTypeName; value: number; color: string }>;
       metrics: {
         learning: number;
         dueToday: number;
@@ -540,7 +541,7 @@ export const LearningStatsCenter = () => {
   const distributionData = useMemo(() => {
     if (!stats?.distribution) return [];
     return stats.distribution.map(
-      (item: { name: string; value: number; color: string }) => ({
+      (item: { name: CardTypeName; value: number; color: string }) => ({
         name: item.name,
         value: item.value,
         color: item.color,

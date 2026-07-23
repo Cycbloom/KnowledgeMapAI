@@ -9,11 +9,12 @@ import {
 } from "lucide-react";
 import { frontendKernel } from "../../App";
 import { iconMap } from "../../utils/iconMap";
+import type { NavLabelKey } from "../../services/kernel/types";
 
 interface NavItem {
   to: string;
   icon: LucideIcon;
-  labelKey: string;
+  labelKey: NavLabelKey;
 }
 
 interface MobileBottomNavProps {
@@ -178,7 +179,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <Link 
               to={item.to} 
               className={getNavItemClass(item.to)}
-              aria-label={t(item.labelKey as never)}
+              aria-label={t(item.labelKey)}
               aria-current={isActive(item.to) ? "page" : undefined}
             >
               <motion.div
@@ -187,7 +188,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 className="flex flex-col items-center"
               >
                 <item.icon size={20} strokeWidth={isActive(item.to) ? 2.5 : 2} aria-hidden="true" />
-                <span className="text-[10px] font-medium">{t(item.labelKey as never)}</span>
+                <span className="text-[10px] font-medium">{t(item.labelKey)}</span>
               </motion.div>
             </Link>
           </motion.div>
@@ -258,11 +259,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                                 : "text-gray-700 hover:bg-gray-50"
                           }`}
                           role="menuitem"
-                          aria-label={t(item.labelKey as never)}
+                          aria-label={t(item.labelKey)}
                           aria-current={isActive(item.to) ? "page" : undefined}
                         >
                           <item.icon size={16} strokeWidth={isActive(item.to) ? 2.5 : 2} aria-hidden="true" />
-                          <span className="text-sm">{t(item.labelKey as never)}</span>
+                          <span className="text-sm">{t(item.labelKey)}</span>
                         </Link>
                       </motion.div>
                     ))}

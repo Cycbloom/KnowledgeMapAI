@@ -9,9 +9,9 @@ import {
   X,
   BookOpen,
   Briefcase,
-  Home,
-  Heart,
-  Star,
+  Layers,
+  Microscope,
+  Sparkles,
   Clock,
   Tag,
   Copy,
@@ -33,12 +33,25 @@ import { useTemplateList } from "../../hooks/templates/useTemplateList";
 import { useTemplateModals } from "../../hooks/templates/useTemplateModals";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 
-const categoryIcons: Record<string, React.ReactNode> = {
-  study: <BookOpen size={20} />,
-  work: <Briefcase size={20} />,
-  life: <Home size={20} />,
-  health: <Heart size={20} />,
-  custom: <Star size={20} />,
+const CATEGORIES = [
+  "all",
+  "knowledge",
+  "project",
+  "analysis",
+  "architecture",
+  "topicResearch",
+  "creative",
+] as const;
+type Category = typeof CATEGORIES[number];
+type TemplateCategory = Exclude<Category, "all">;
+
+const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
+  knowledge: <BookOpen size={20} />,
+  project: <Briefcase size={20} />,
+  analysis: <Search size={20} />,
+  architecture: <Layers size={20} />,
+  topicResearch: <Microscope size={20} />,
+  creative: <Sparkles size={20} />,
 };
 
 interface TaskTemplatesProps {
@@ -95,7 +108,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
       await taskTemplatesApi.createTemplate({
         name: formData.name,
         description: formData.description,
-        category: formData.category as never,
+        category: formData.category,
         title_template: formData.title_template,
         description_template: formData.description_template,
         estimated_duration: formData.estimated_duration,
@@ -120,7 +133,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
       await taskTemplatesApi.updateTemplate(editingTemplate.id, {
         name: formData.name,
         description: formData.description,
-        category: formData.category as never,
+        category: formData.category,
         title_template: formData.title_template,
         description_template: formData.description_template,
         estimated_duration: formData.estimated_duration,
@@ -195,7 +208,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
     setFormDataForEdit({
       name: template.name,
       description: template.description || "",
-      category: template.category,
+      category: template.category as TemplateCategory,
       title_template: template.title_template,
       description_template: template.description_template || "",
       estimated_duration: template.estimated_duration,
@@ -257,7 +270,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         </div>
 
         <div className="flex gap-2">
-          {["all", "study", "work", "life", "health", "custom"].map((cat) => (
+          {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -269,7 +282,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     : "bg-white text-gray-700 hover:bg-gray-100"
               }`}
             >
-              {cat === "all" ? t("templates.filter.all") : t(`templates.category.${cat}` as never)}
+              {cat === "all" ? t("templates.filter.all") : t(`templates.category.${cat}`)}
             </button>
           ))}
         </div>
@@ -305,18 +318,22 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                 <div className="flex items-center gap-3">
                   <div
                     className={`p-2 rounded-lg ${
-                      template.category === "study"
+                      template.category === "knowledge"
                         ? "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400"
-                        : template.category === "work"
-                          ? "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400"
-                          : template.category === "life"
-                            ? "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
-                            : template.category === "health"
-                              ? "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400"
-                              : "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400"
+                        : template.category === "project"
+                          ? "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
+                          : template.category === "analysis"
+                            ? "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400"
+                            : template.category === "architecture"
+                              ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400"
+                              : template.category === "topicResearch"
+                                ? "bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400"
+                                : template.category === "creative"
+                                  ? "bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400"
+                                  : "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400"
                     }`}
                   >
-                    {categoryIcons[template.category]}
+                    {categoryIcons[template.category as TemplateCategory]}
                   </div>
                   <div>
                     <h3
@@ -325,7 +342,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       {template.name}
                     </h3>
                     <span className="text-xs text-gray-500">
-                      {t(`templates.category.${template.category}` as never)}
+                      {t(`templates.category.${template.category as TemplateCategory}`)}
                     </span>
                   </div>
                 </div>
@@ -481,16 +498,16 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     </label>
                     <select
                       value={formData.category}
-                      onChange={(e) => updateField("category", e.target.value)}
+                      onChange={(e) => updateField("category", e.target.value as TemplateCategory)}
                       className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                         isDark
                           ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
                           : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500"
                       }`}
                     >
-                      {["study", "work", "life", "health", "custom"].map((value) => (
+                      {(["knowledge", "project", "analysis", "architecture", "topicResearch", "creative"] as const).map((value) => (
                         <option key={value} value={value}>
-                          {t(`templates.category.${value}` as never)}
+                          {t(`templates.category.${value}`)}
                         </option>
                       ))}
                     </select>

@@ -1,18 +1,22 @@
-import { forwardRef, type SelectHTMLAttributes } from 'react';
+import { forwardRef, useId, type SelectHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 interface FormSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
   hint?: string;
+  errorId?: string;
 }
 
 export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
-  ({ label, error, hint, className, id, children, ...props }, ref) => {
+  ({ label, error, hint, className, id, errorId, children, ...props }, ref) => {
     const baseClass =
       'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100';
     const errorClass = error ? 'border-red-500 dark:border-red-500' : '';
     const userClass = className ?? '';
+
+    const generatedErrorId = useId();
+    const describedByErrorId = errorId ?? generatedErrorId;
 
     return (
       <div>
@@ -29,12 +33,18 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
           id={id}
           className={cn(baseClass, errorClass, userClass)}
           aria-invalid={error ? true : undefined}
+          aria-describedby={error ? describedByErrorId : undefined}
           {...props}
         >
           {children}
         </select>
         {error && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p
+            id={describedByErrorId}
+            className="mt-1 text-sm text-red-600 dark:text-red-400"
+          >
+            {error}
+          </p>
         )}
         {hint && !error && (
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{hint}</p>

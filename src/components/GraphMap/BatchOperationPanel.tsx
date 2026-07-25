@@ -24,7 +24,7 @@ export const BatchOperationPanel: React.FC<BatchOperationPanelProps> = ({
   if (selectedCount <= 1) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 p-3 flex items-center gap-3 z-50">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-500 p-3 flex items-center gap-3 z-50">
       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
         {t('graphMap.batch.selected', { count: selectedCount })}
       </span>

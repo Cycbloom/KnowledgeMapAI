@@ -76,8 +76,8 @@ export const QUEUE_COLORS: Record<QueueLevel, QueueColorDef> = {
 // ---------------------------------------------------------------------------
 
 export interface StatusConfigDef {
-  /** Chinese label (non-i18n consumers); i18n consumers should override */
-  label: string;
+  /** i18n key for the status label */
+  labelKey: string;
   /** Combined bg + text classes (most common usage) */
   color: string;
   /** Background only classes */
@@ -90,35 +90,35 @@ export interface StatusConfigDef {
 
 export const STATUS_CONFIG: Record<string, StatusConfigDef> = {
   pending: {
-    label: "待处理",
+    labelKey: "scheduler.task.status.pending",
     color: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400",
     bgColor: "bg-slate-100 dark:bg-slate-500/20",
     textColor: "text-slate-600 dark:text-slate-400",
-    borderColor: "border-slate-200 dark:border-slate-600",
+    borderColor: "border-slate-200 dark:border-slate-500",
   },
   in_progress: {
-    label: "进行中",
+    labelKey: "scheduler.task.status.inProgress",
     color: "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400",
     bgColor: "bg-primary-100 dark:bg-primary-500/20",
     textColor: "text-primary-600 dark:text-primary-400",
     borderColor: "border-primary-200 dark:border-primary-500/50",
   },
   paused: {
-    label: "已暂停",
+    labelKey: "scheduler.task.status.paused",
     color: "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
     bgColor: "bg-amber-100 dark:bg-amber-500/20",
     textColor: "text-amber-600 dark:text-amber-400",
     borderColor: "border-amber-200 dark:border-amber-500/50",
   },
   completed: {
-    label: "已完成",
+    labelKey: "scheduler.task.status.completed",
     color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
     bgColor: "bg-emerald-100 dark:bg-emerald-500/20",
     textColor: "text-emerald-600 dark:text-emerald-400",
     borderColor: "border-emerald-200 dark:border-emerald-500/50",
   },
   cancelled: {
-    label: "已取消",
+    labelKey: "scheduler.task.status.cancelled",
     color: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
     bgColor: "bg-red-100 dark:bg-red-500/20",
     textColor: "text-red-600 dark:text-red-400",
@@ -133,19 +133,19 @@ export const STATUS_CONFIG: Record<string, StatusConfigDef> = {
 // ---------------------------------------------------------------------------
 
 export const TASK_DETAIL_STATUS_CONFIG = {
-  pending: { label: "待处理", color: "text-slate-400", bg: "bg-slate-500/20" },
+  pending: { labelKey: "scheduler.task.status.pending", color: "text-slate-400", bg: "bg-slate-500/20" },
   in_progress: {
-    label: "进行中",
+    labelKey: "scheduler.task.status.inProgress",
     color: "text-primary-400",
     bg: "bg-primary-500/20",
   },
-  paused: { label: "已暂停", color: "text-amber-400", bg: "bg-amber-500/20" },
+  paused: { labelKey: "scheduler.task.status.paused", color: "text-amber-400", bg: "bg-amber-500/20" },
   completed: {
-    label: "已完成",
+    labelKey: "scheduler.task.status.completed",
     color: "text-emerald-400",
     bg: "bg-emerald-500/20",
   },
-  cancelled: { label: "已取消", color: "text-red-400", bg: "bg-red-500/20" },
+  cancelled: { labelKey: "scheduler.task.status.cancelled", color: "text-red-400", bg: "bg-red-500/20" },
 };
 
 // ---------------------------------------------------------------------------
@@ -154,19 +154,19 @@ export const TASK_DETAIL_STATUS_CONFIG = {
 
 export const TASK_DETAIL_QUEUE_CONFIG = {
   0: {
-    label: "Q0 紧急队列",
+    labelKey: "scheduler.task.queue.urgent",
     color: "text-primary-400",
     bg: "bg-primary-500/20",
     border: "border-primary-500/30",
   },
   1: {
-    label: "Q1 重要队列",
+    labelKey: "scheduler.task.queue.important",
     color: "text-emerald-400",
     bg: "bg-emerald-500/20",
     border: "border-emerald-500/30",
   },
   2: {
-    label: "Q2 待办队列",
+    labelKey: "scheduler.task.queue.todo",
     color: "text-amber-400",
     bg: "bg-amber-500/20",
     border: "border-amber-500/30",

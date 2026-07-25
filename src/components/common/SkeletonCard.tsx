@@ -16,7 +16,7 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
   return (
     <div
       className={cn(
-        'rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4',
+        'rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 p-4',
         className
       )}
     >
@@ -39,7 +39,7 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
         ))}
       </div>
       
-      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
+      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-slate-500">
         <Skeleton variant="circular" width={24} height={24} />
         <Skeleton variant="text" className="w-20 h-4" />
       </div>

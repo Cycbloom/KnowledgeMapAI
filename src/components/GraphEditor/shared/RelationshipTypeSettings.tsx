@@ -7,44 +7,45 @@ import {
 import { request } from '../../../services/api';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { useTranslation } from 'react-i18next';
+import { useFocusTrap } from '../../../hooks/common';
 
 interface RelationshipTypeSettingsProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const CATEGORY_LABELS_CN: Record<RelationshipCategory | 'all', string> = {
-  all: '全部',
-  hierarchical: '层级关系',
-  dependency: '依赖关系',
-  semantic: '语义关系',
-  temporal: '时序关系',
-  interaction: '交互关系',
-  causal: '因果关系',
-  custom: '自定义',
+const CATEGORY_KEYS: Record<RelationshipCategory | 'all', string> = {
+  all: 'graphEditor.relationshipType.categoryAll',
+  hierarchical: 'graphEditor.relationshipType.categoryHierarchical',
+  dependency: 'graphEditor.relationshipType.categoryDependency',
+  semantic: 'graphEditor.relationshipType.categorySemantic',
+  temporal: 'graphEditor.relationshipType.categoryTemporal',
+  interaction: 'graphEditor.relationshipType.categoryInteraction',
+  causal: 'graphEditor.relationshipType.categoryCausal',
+  custom: 'graphEditor.relationshipType.categoryCustom',
 };
 
-const LINE_STYLE_OPTIONS: { value: EdgeLineStyle; label: string }[] = [
-  { value: 'solid', label: '实线' },
-  { value: 'dashed', label: '虚线' },
-  { value: 'dotted', label: '点线' },
-  { value: 'double', label: '双线' },
+const LINE_STYLE_OPTIONS: { value: EdgeLineStyle; labelKey: string }[] = [
+  { value: 'solid', labelKey: 'graphEditor.relationshipType.lineStyleSolid' },
+  { value: 'dashed', labelKey: 'graphEditor.relationshipType.lineStyleDashed' },
+  { value: 'dotted', labelKey: 'graphEditor.relationshipType.lineStyleDotted' },
+  { value: 'double', labelKey: 'graphEditor.relationshipType.lineStyleDouble' },
 ];
 
-const ARROW_OPTIONS: { value: boolean | 'auto'; label: string }[] = [
-  { value: true, label: '显示' },
-  { value: false, label: '隐藏' },
-  { value: 'auto', label: '自动' },
+const ARROW_OPTIONS: { value: boolean | 'auto'; labelKey: string }[] = [
+  { value: true, labelKey: 'graphEditor.relationshipType.arrowShow' },
+  { value: false, labelKey: 'graphEditor.relationshipType.arrowHide' },
+  { value: 'auto', labelKey: 'graphEditor.relationshipType.arrowAuto' },
 ];
 
-const CATEGORY_OPTIONS: { value: RelationshipCategory; label: string }[] = [
-  { value: 'hierarchical', label: '层级关系' },
-  { value: 'dependency', label: '依赖关系' },
-  { value: 'semantic', label: '语义关系' },
-  { value: 'temporal', label: '时序关系' },
-  { value: 'interaction', label: '交互关系' },
-  { value: 'causal', label: '因果关系' },
-  { value: 'custom', label: '自定义' },
+const CATEGORY_OPTIONS: { value: RelationshipCategory; labelKey: string }[] = [
+  { value: 'hierarchical', labelKey: 'graphEditor.relationshipType.categoryHierarchical' },
+  { value: 'dependency', labelKey: 'graphEditor.relationshipType.categoryDependency' },
+  { value: 'semantic', labelKey: 'graphEditor.relationshipType.categorySemantic' },
+  { value: 'temporal', labelKey: 'graphEditor.relationshipType.categoryTemporal' },
+  { value: 'interaction', labelKey: 'graphEditor.relationshipType.categoryInteraction' },
+  { value: 'causal', labelKey: 'graphEditor.relationshipType.categoryCausal' },
+  { value: 'custom', labelKey: 'graphEditor.relationshipType.categoryCustom' },
 ];
 
 const DEFAULT_COLORS = [
@@ -86,6 +87,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
   const [expandedCategories, setExpandedCategories] = useState<Set<RelationshipCategory>>(
     new Set(['hierarchical', 'dependency', 'semantic'])
   );
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
 
   useEffect(() => {
     if (isOpen) {
@@ -107,7 +109,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
       });
       setRelationshipTypes(data.data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '获取关系类型失败');
+      setError(err instanceof Error ? err.message : t('graphEditor.relationshipType.fetchFailed', { defaultValue: '' }));
     } finally {
       setLoading(false);
     }
@@ -126,7 +128,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
       setIsCreating(false);
       setFormData(initialFormData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '创建关系类型失败');
+      setError(err instanceof Error ? err.message : t('graphEditor.relationshipType.createFailed'));
     } finally {
       setLoading(false);
     }
@@ -156,7 +158,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
       setEditingType(null);
       setFormData(initialFormData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '更新关系类型失败');
+      setError(err instanceof Error ? err.message : t('graphEditor.relationshipType.updateFailed', { defaultValue: '' }));
     } finally {
       setLoading(false);
     }
@@ -181,7 +183,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
       }
       await fetchRelationshipTypes();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '删除关系类型失败');
+      setError(err instanceof Error ? err.message : t('graphEditor.relationshipType.deleteFailed'));
     } finally {
       setLoading(false);
     }
@@ -261,14 +263,15 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div
+        ref={containerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[800px] max-h-[85vh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
-          <h2 id={titleId} className="text-xl font-semibold text-gray-900 dark:text-white">关系类型设置</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-500">
+          <h2 id={titleId} className="text-xl font-semibold text-gray-900 dark:text-white">{t('graphEditor.relationshipType.title')}</h2>
           <button
             onClick={onClose}
             aria-label={t('common.aria.close')}
@@ -281,9 +284,9 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
         </div>
 
         <div className="flex h-[calc(85vh-140px)]">
-          <div className="w-48 border-r border-gray-200 dark:border-slate-700 p-4 overflow-y-auto">
+          <div className="w-48 border-r border-gray-200 dark:border-slate-500 p-4 overflow-y-auto">
             <div className="space-y-1">
-              {(Object.keys(CATEGORY_LABELS_CN) as (RelationshipCategory | 'all')[]).map(category => (
+              {(Object.keys(CATEGORY_KEYS) as (RelationshipCategory | 'all')[]).map(category => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
@@ -293,7 +296,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                   }`}
                 >
-                  {CATEGORY_LABELS_CN[category]}
+                  {t(CATEGORY_KEYS[category], { defaultValue: '' })}
                 </button>
               ))}
             </div>
@@ -316,7 +319,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
               <>
                 <div className="flex justify-between items-center mb-4">
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    共 {filteredTypes.length} 个关系类型
+                    {t('graphEditor.relationshipType.totalCount', { count: filteredTypes.length })}
                   </p>
                   <button
                     onClick={handleCreate}
@@ -325,22 +328,22 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    新建关系类型
+                    {t('graphEditor.relationshipType.createNew')}
                   </button>
                 </div>
 
                 <div className="space-y-4">
                   {(Object.keys(groupedTypes) as RelationshipCategory[]).map(category => (
-                    <div key={category} className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                    <div key={category} className="border border-gray-200 dark:border-slate-500 rounded-lg overflow-hidden">
                       <button
                         onClick={() => toggleCategory(category)}
                         className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                       >
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {CATEGORY_LABELS_CN[category]}
+                          {t(CATEGORY_KEYS[category], { defaultValue: '' })}
                         </span>
                         <span className="text-gray-500 dark:text-gray-400 text-sm">
-                          {groupedTypes[category].length} 个
+                          {t('graphEditor.relationshipType.itemCount', { count: groupedTypes[category].length })}
                         </span>
                       </button>
 
@@ -364,7 +367,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                                       {t(type.display_name as never)}
                                     </span>
                                     {type.is_builtin && (
-                                      <span title="内置类型">
+                                      <span title={t('graphEditor.relationshipType.builtinType')}>
                                         <svg aria-hidden="true"
                                           width="14"
                                           height="14"
@@ -396,7 +399,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                                     <button
                                       onClick={() => handleEdit(type)}
                                       className="p-1.5 text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                                      title="编辑"
+                                      title={t('graphEditor.relationshipType.editAction')}
                                     >
                                       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -406,7 +409,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                                     <button
                                       onClick={() => deleteRelationshipType(type.id)}
                                       className="p-1.5 text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                      title="删除"
+                                      title={t('graphEditor.relationshipType.deleteAction')}
                                     >
                                       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -428,54 +431,54 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
             {(isCreating || editingType) && (
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  {isCreating ? '新建关系类型' : '编辑关系类型'}
+                  {isCreating ? t('graphEditor.relationshipType.createNew') : t('graphEditor.relationshipType.editTitle')}
                 </h3>
 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      名称（英文标识）
+                      {t('graphEditor.relationshipType.nameLabel')}
                     </label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={e => setFormData({ ...formData, name: e.target.value })}
                       disabled={!!editingType}
-                      placeholder="例如：leads_to"
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                      placeholder={t('graphEditor.relationshipType.namePlaceholder')}
+                      className={`w-full px-3 py-2 border border-gray-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                         editingType ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     />
                     {editingType && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">名称创建后不可修改</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('graphEditor.relationshipType.nameImmutable')}</p>
                     )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      显示名称
+                      {t('graphEditor.relationshipType.displayNameLabel')}
                     </label>
                     <input
                       type="text"
                       value={formData.display_name}
                       onChange={e => setFormData({ ...formData, display_name: e.target.value })}
-                      placeholder="例如：Leads To"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder={t('graphEditor.relationshipType.displayNamePlaceholder')}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      分类
+                      {t('graphEditor.relationshipType.categoryLabel')}
                     </label>
                     <select
                       value={formData.category}
                       onChange={e => setFormData({ ...formData, category: e.target.value as RelationshipCategory })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                       {CATEGORY_OPTIONS.map(option => (
                         <option key={option.value} value={option.value}>
-                          {option.label}
+                          {t(option.labelKey, { defaultValue: '' })}
                         </option>
                       ))}
                     </select>
@@ -483,20 +486,20 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      颜色
+                      {t('graphEditor.relationshipType.colorLabel')}
                     </label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
                         value={formData.color}
                         onChange={e => setFormData({ ...formData, color: e.target.value })}
-                        className="w-10 h-10 rounded cursor-pointer border border-gray-300 dark:border-slate-600"
+                        className="w-10 h-10 rounded cursor-pointer border border-gray-300 dark:border-slate-500"
                       />
                       <input
                         type="text"
                         value={formData.color}
                         onChange={e => setFormData({ ...formData, color: e.target.value })}
-                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
                     </div>
                     <div className="flex gap-2 mt-2">
@@ -518,16 +521,16 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      线型
+                      {t('graphEditor.relationshipType.lineStyleLabel')}
                     </label>
                     <select
                       value={formData.line_style}
                       onChange={e => setFormData({ ...formData, line_style: e.target.value as EdgeLineStyle })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                       {LINE_STYLE_OPTIONS.map(option => (
                         <option key={option.value} value={option.value}>
-                          {option.label}
+                          {t(option.labelKey, { defaultValue: '' })}
                         </option>
                       ))}
                     </select>
@@ -535,7 +538,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      箭头
+                      {t('graphEditor.relationshipType.arrowLabel')}
                     </label>
                     <select
                       value={typeof formData.show_arrow === 'boolean' ? String(formData.show_arrow) : 'auto'}
@@ -546,21 +549,21 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                           show_arrow: value === 'auto' ? 'auto' : value === 'true',
                         });
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                       {ARROW_OPTIONS.map(option => (
                         <option
                           key={String(option.value)}
                           value={typeof option.value === 'boolean' ? String(option.value) : 'auto'}
                         >
-                          {option.label}
+                          {t(option.labelKey, { defaultValue: '' })}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">预览</p>
+                  <div className="pt-4 border-t border-gray-200 dark:border-slate-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{t('graphEditor.relationshipType.preview')}</p>
                     <div className="flex items-center justify-center p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
                       <svg aria-hidden="true" width="200" height="40" viewBox="0 0 200 40">
                         <line
@@ -604,14 +607,14 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                     onClick={handleCancel}
                     className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                   >
-                    取消
+                    {t('graphEditor.relationshipType.cancel')}
                   </button>
                   <button
                     onClick={isCreating ? createRelationshipType : updateRelationshipType}
                     disabled={loading || !formData.name || !formData.display_name}
                     className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? '保存中...' : '保存'}
+                    {loading ? t('graphEditor.relationshipType.saving') : t('graphEditor.relationshipType.save')}
                   </button>
                 </div>
               </div>

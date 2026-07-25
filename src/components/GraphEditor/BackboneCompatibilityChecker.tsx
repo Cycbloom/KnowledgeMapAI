@@ -10,6 +10,7 @@ import { api } from "../../services/api";
 import { message } from "../../utils/messageHelper";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "../../hooks";
+import { useTranslation } from "react-i18next";
 
 interface CompatibilityIssue {
   nodeId: string;
@@ -147,6 +148,7 @@ export const BackboneCompatibilityChecker: React.FC<
   BackboneCompatibilityCheckerProps
 > = ({ graphId, nodes, templateType, onCheckComplete }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [issues, setIssues] = useState<CompatibilityIssue[]>([]);
@@ -289,11 +291,11 @@ export const BackboneCompatibilityChecker: React.FC<
 
     if (successCount > 0) {
       await queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
-      message.success(`已成功修复 ${successCount} 个骨干节点的兼容性问题`);
+      message.success(t("graphEditor.backbone.fixSuccess", { count: successCount }));
     }
 
     if (errorCount > 0) {
-      message.error(`${errorCount} 个节点修复失败，请稍后重试`);
+      message.error(t("graphEditor.backbone.fixError", { count: errorCount }));
     }
 
     onCheckComplete?.(false);
@@ -306,14 +308,18 @@ export const BackboneCompatibilityChecker: React.FC<
 
   const getIssueDescription = (issue: CompatibilityIssue): string => {
     switch (issue.issueType) {
-      case "missing_module":
-        return `缺少骨干模块属性，建议设置为「${issue.suggestedModule ? BACKBONE_MODULE_LABELS[issue.suggestedModule] : "未知"}」`;
-      case "invalid_module":
-        return `无效的模块属性「${issue.currentModule}」，建议修正为「${issue.suggestedModule ? BACKBONE_MODULE_LABELS[issue.suggestedModule] : "未知"}」`;
+      case "missing_module": {
+        const moduleLabel = issue.suggestedModule ? BACKBONE_MODULE_LABELS[issue.suggestedModule] : t("graphEditor.backbone.unknown");
+        return t("graphEditor.backbone.missingModule", { module: moduleLabel });
+      }
+      case "invalid_module": {
+        const moduleLabel = issue.suggestedModule ? BACKBONE_MODULE_LABELS[issue.suggestedModule] : t("graphEditor.backbone.unknown");
+        return t("graphEditor.backbone.invalidModule", { current: issue.currentModule ?? "", suggested: moduleLabel });
+      }
       case "invalid_title":
-        return `标题不符合标准，建议修改为「${issue.suggestedTitle}」`;
+        return t("graphEditor.backbone.invalidTitle", { title: issue.suggestedTitle ?? "" });
       default:
-        return "未知问题";
+        return t("graphEditor.backbone.unknownIssue");
     }
   };
 
@@ -347,12 +353,12 @@ export const BackboneCompatibilityChecker: React.FC<
               <h2
                 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                骨干节点兼容性检查
+                {t("graphEditor.backbone.title")}
               </h2>
               <p
                 className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
               >
-                发现 {issues.length} 个需要处理的兼容性问题
+                {t("graphEditor.backbone.issuesFound", { count: issues.length })}
               </p>
             </div>
           </div>
@@ -383,7 +389,7 @@ export const BackboneCompatibilityChecker: React.FC<
             <p
               className={`text-sm ${isDark ? "text-slate-300" : "text-gray-600"}`}
             >
-              检测到部分骨干节点缺少必要的属性或标题不符合标准，建议进行标准化处理以确保图谱功能正常运行。
+              {t("graphEditor.backbone.infoMessage")}
             </p>
           </div>
         </div>
@@ -398,12 +404,12 @@ export const BackboneCompatibilityChecker: React.FC<
                   : "text-primary-600 hover:text-primary-700"
               }`}
             >
-              {selectedIssues.size === issues.length ? "取消全选" : "全选"}
+              {selectedIssues.size === issues.length ? t("graphEditor.backbone.deselectAll") : t("graphEditor.backbone.selectAll")}
             </button>
             <span
               className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
             >
-              已选择 {selectedIssues.size} / {issues.length} 项
+              {t("graphEditor.backbone.selectedCount", { selected: selectedIssues.size, total: issues.length })}
             </span>
           </div>
 
@@ -499,7 +505,7 @@ export const BackboneCompatibilityChecker: React.FC<
                 : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
             } disabled:opacity-50`}
           >
-            忽略
+            {t("graphEditor.backbone.ignore")}
           </button>
           <button
             onClick={handleAutoFix}
@@ -509,12 +515,12 @@ export const BackboneCompatibilityChecker: React.FC<
             {isProcessing ? (
               <>
                 <RefreshCw size={16} className="animate-spin" />
-                处理中...
+                {t("graphEditor.backbone.processing")}
               </>
             ) : (
               <>
                 <Check size={16} />
-                自动修复 ({selectedIssues.size})
+                {t("graphEditor.backbone.autoFix", { count: selectedIssues.size })}
               </>
             )}
           </button>

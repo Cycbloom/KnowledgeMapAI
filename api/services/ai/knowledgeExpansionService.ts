@@ -24,18 +24,6 @@ import {
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 
-// Fallback system prompt for suggestNextTopic.
-// Used when the database does not contain a prompt with key "suggest_next_topic".
-// TODO: 迁移此 prompt 到数据库后可移除此常量
-const SUGGEST_NEXT_TOPIC_FALLBACK_PROMPT =
-  "You are an expert knowledge tutor. Based on the current node and user's learning progress, suggest 2-3 next topics to explore.\n" +
-  "Return a JSON object with a 'suggestions' array. Each object must have:\n" +
-  "- 'title': Brief topic title (max 30 chars)\n" +
-  "- 'description': Short explanation (max 80 chars)\n" +
-  "- 'priority': 'high', 'medium', or 'low'\n" +
-  "- 'estimatedDifficulty': Number from 1-5\n" +
-  "Please respond in Chinese.";
-
 export class KnowledgeExpansionService {
   async expandKnowledge(
     nodeTitle: string,
@@ -370,15 +358,17 @@ export class KnowledgeExpansionService {
               ? `\nUser Progress:\n- Mastered nodes: ${options.userProgress.masteredCount || 0}\n- Current level: ${options.userProgress.currentLevel || "beginner"}`
               : "";
 
-            // 优先从数据库读取 prompt，若不存在则使用 fallback 常量
-            let systemPrompt = await promptService.getRenderedPrompt(
+            // Fetch the prompt from the database (DB is the single source of truth)
+            const systemPrompt = await promptService.getRenderedPrompt(
               getSupabaseAdmin(),
               "suggest_next_topic",
               {},
             );
 
             if (!systemPrompt || systemPrompt.trim().length === 0) {
-              systemPrompt = SUGGEST_NEXT_TOPIC_FALLBACK_PROMPT;
+              throw new AppError(ErrorCodes.SYSTEM_CONFIGURATION_ERROR, {
+                message: "suggest_next_topic prompt template not found in database",
+              });
             }
 
             const completion = await provider.client.chat.completions.create({

@@ -45,7 +45,7 @@ const PathSuggestionsSection: React.FC<PathSuggestionsSectionProps> = ({
               {suggestions.map((suggestion, index) => (
                 <div
                   key={index}
-                  className={`p-3 rounded-lg border dark:border-slate-700 ${
+                  className={`p-3 rounded-lg border dark:border-slate-500 ${
                     suggestion.priority === "high"
                       ? "bg-red-50 dark:bg-red-900/20"
                       : suggestion.priority === "medium"

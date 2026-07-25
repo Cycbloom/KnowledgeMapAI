@@ -473,8 +473,8 @@ export const ConceptPreviewList: React.FC<ConceptPreviewListProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm">
-      <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 max-h-[90dvh] flex flex-col">
-        <div className="p-4 sm:p-6 border-b dark:border-slate-700 flex-shrink-0">
+      <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-500 max-h-[90dvh] flex flex-col">
+        <div className="p-4 sm:p-6 border-b dark:border-slate-500 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -504,13 +504,13 @@ export const ConceptPreviewList: React.FC<ConceptPreviewListProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleSelectAll}
-                className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
               >
                 {t("common.selectAll")}
               </button>
               <button
                 onClick={handleDeselectAll}
-                className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
               >
                 {t("common.deselectAll")}
               </button>
@@ -544,10 +544,10 @@ export const ConceptPreviewList: React.FC<ConceptPreviewListProps> = ({
           )}
         </div>
 
-        <div className="bg-gray-50 dark:bg-slate-900/50 px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end border-t dark:border-slate-700 flex-shrink-0">
+        <div className="bg-gray-50 dark:bg-slate-900/50 px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end border-t dark:border-slate-500 flex-shrink-0">
           <button
             onClick={onClose}
-            className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 rounded-lg sm:rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 dark:focus:ring-offset-slate-800 dark:focus:ring-slate-700 min-h-[44px] font-medium"
+            className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 rounded-lg sm:rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 dark:focus:ring-offset-slate-800 dark:focus:ring-slate-700 min-h-[44px] font-medium"
           >
             {t("common.cancel")}
           </button>

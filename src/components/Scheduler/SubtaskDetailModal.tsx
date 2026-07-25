@@ -78,23 +78,19 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
 
     setLoading(true);
     try {
-      const [kpResponse, transitionsResponse] = await Promise.all([
+      const [kpData, transitionsData] = await Promise.all([
         subtask.knowledge_point_id
           ? knowledgePointsApi.getTaskKnowledgePoints(taskId)
-          : Promise.resolve({ success: false, data: [] }),
+          : Promise.resolve([] as TaskKnowledgePoint[]),
         subtasksApi.getValidTransitions(taskId, subtask.id),
       ]);
 
-      if (kpResponse.success && kpResponse.data) {
-        const kp = kpResponse.data.find(
-          (k: TaskKnowledgePoint) => k.knowledge_point_id === subtask.knowledge_point_id
-        );
-        setKnowledgePoint(kp || null);
-      }
+      const kp = kpData.find(
+        (k: TaskKnowledgePoint) => k.knowledge_point_id === subtask.knowledge_point_id
+      );
+      setKnowledgePoint(kp || null);
 
-      if (transitionsResponse.success && transitionsResponse.data) {
-        setValidTransitions(transitionsResponse.data);
-      }
+      setValidTransitions(transitionsData);
     } catch (error) {
       console.error("Failed to load related data:", error);
     } finally {
@@ -108,16 +104,14 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
 
       setTransitioningState(toState);
       try {
-        const response = await subtasksApi.transitionSubtask(taskId, subtask.id, {
+        await subtasksApi.transitionSubtask(taskId, subtask.id, {
           to_state: toState,
           mastery_level: masteryLevel,
         });
 
-        if (response.success) {
-          message.success(`状态已切换为 ${STATE_LABELS[toState]}`);
-          onStateTransition?.(subtask.id, toState, masteryLevel);
-          loadRelatedData();
-        }
+        message.success(`状态已切换为 ${STATE_LABELS[toState]}`);
+        onStateTransition?.(subtask.id, toState, masteryLevel);
+        loadRelatedData();
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : "状态切换失败";
         message.error(errorMessage);
@@ -133,12 +127,10 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
 
     setIsSaving(true);
     try {
-      const response = await subtasksApi.updateMastery(taskId, subtask.id, masteryLevel);
+      await subtasksApi.updateMastery(taskId, subtask.id, masteryLevel);
 
-      if (response.success) {
-        message.success("掌握度已更新");
-        onMasteryUpdate?.(subtask.id, masteryLevel);
-      }
+      message.success("掌握度已更新");
+      onMasteryUpdate?.(subtask.id, masteryLevel);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "掌握度更新失败";
       message.error(errorMessage);
@@ -189,7 +181,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
               isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
             }`}
           >
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <BookOpen size={20} className="text-primary-500" />
                 子任务详情
@@ -436,7 +428,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
               )}
             </div>
 
-            <div className="flex justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-500">
               <button
                 onClick={onClose}
                 className={`px-4 py-2 rounded-xl font-medium ${

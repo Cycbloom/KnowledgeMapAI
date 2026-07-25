@@ -1,8 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowRight, Link as LinkIcon, Loader2 } from 'lucide-react';
 import type { Graph, GraphRelationType } from '../../types';
+import { message } from '@/utils/messageHelper';
+import { useFocusTrap } from '../../hooks/common/useFocusTrap';
+import { useEscapeKey } from '../../hooks/common/useEscapeKey';
 
 interface CreateRelationPanelProps {
   graphs: Graph[];
@@ -53,6 +56,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
       setContext('');
     } catch (error) {
       console.error('Failed to create relation:', error);
+      message.error(t('graphMap.createRelation.createFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -63,6 +67,10 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
     { value: 'extension', label: t('createRelation.extension'), description: t('createRelation.extensionDesc'), color: 'bg-green-500' },
     { value: 'related', label: t('createRelation.related'), description: t('createRelation.relatedDesc'), color: 'bg-amber-500' },
   ];
+
+  const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
+  useEscapeKey(onClose, isOpen);
+  const titleId = useId();
 
   if (!isOpen) return null;
 
@@ -76,14 +84,18 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
         onClick={onClose}
       >
         <motion.div
+          ref={containerRef}
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
           className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <LinkIcon className="w-5 h-5" />
               {t('createRelation.title')}
             </h2>

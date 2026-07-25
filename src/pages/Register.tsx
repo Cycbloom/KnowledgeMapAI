@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useRegisterMutation } from '../hooks/mutations';
@@ -36,6 +36,9 @@ export const Register = () => {
   const setUser = useStore(state => state.setUser);
   const registerMutation = useRegisterMutation();
   const { isDark, toggleTheme } = useTheme();
+  const emailErrorId = useId();
+  const passwordErrorId = useId();
+  const confirmPasswordErrorId = useId();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +80,9 @@ export const Register = () => {
     if (hasLetter && hasDigit) return "medium";
     return "weak";
   };
+  const isEmailInvalid = touched.email && !validateEmail(draft.email);
+  const isPasswordInvalid = touched.password && !validatePassword(password);
+  const isConfirmPasswordInvalid = touched.confirmPassword && !validateConfirmPassword(password, confirmPassword);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-slate-900 transition-colors duration-300">
@@ -84,10 +90,10 @@ export const Register = () => {
         <h2 className="text-2xl font-bold mb-2 text-center text-gray-900 dark:text-gray-100">{t('register.title')}</h2>
         <div className="flex items-center justify-center gap-1.5 mb-6 text-xs text-gray-500 dark:text-gray-400">
           <Cloud size={14} />
-          <span>{getAuthModeDisplay()}</span>
+          <span>{t(getAuthModeDisplay(), { defaultValue: '' })}</span>
         </div>
         {errors.length > 0 && (
-          <div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-2 mb-4 rounded">
+          <div role="alert" className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-2 mb-4 rounded">
             {errors.map((msg, index) => (
               <div key={index}>{msg}</div>
             ))}
@@ -95,7 +101,7 @@ export const Register = () => {
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="register-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.name')}</label>
+            <label htmlFor="register-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.name')} <span aria-hidden="true">*</span></label>
             <input
               id="register-name"
               type="text"
@@ -103,12 +109,13 @@ export const Register = () => {
               autoComplete="name"
               value={draft.name}
               onChange={e => setDraft(prev => ({ ...prev, name: e.target.value }))}
-              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
+              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-500 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
+              aria-invalid={false}
               required
             />
           </div>
           <div>
-            <label htmlFor="register-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.email')}</label>
+            <label htmlFor="register-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.email')} <span aria-hidden="true">*</span></label>
             <input
               id="register-email"
               type="email"
@@ -117,15 +124,17 @@ export const Register = () => {
               value={draft.email}
               onChange={e => setDraft(prev => ({ ...prev, email: e.target.value }))}
               onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
-              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
+              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-500 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
+              aria-invalid={isEmailInvalid}
+              aria-describedby={isEmailInvalid ? emailErrorId : undefined}
               required
             />
-            {touched.email && !validateEmail(draft.email) && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{t('register.validation.emailInvalid')}</p>
+            {isEmailInvalid && (
+              <p id={emailErrorId} role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">{t('register.validation.emailInvalid')}</p>
             )}
           </div>
           <div>
-            <label htmlFor="register-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.password')}</label>
+            <label htmlFor="register-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.password')} <span aria-hidden="true">*</span></label>
             <input
               id="register-password"
               type="password"
@@ -134,11 +143,13 @@ export const Register = () => {
               value={password}
               onChange={e => setPassword(e.target.value)}
               onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
-              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
+              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-500 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
+              aria-invalid={isPasswordInvalid}
+              aria-describedby={isPasswordInvalid ? passwordErrorId : undefined}
               required
             />
-            {touched.password && !validatePassword(password) && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{t('register.validation.passwordTooShort')}</p>
+            {isPasswordInvalid && (
+              <p id={passwordErrorId} role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">{t('register.validation.passwordTooShort')}</p>
             )}
             {password && (
               <div className="mt-2">
@@ -171,10 +182,12 @@ export const Register = () => {
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
               onBlur={() => setTouched(prev => ({ ...prev, confirmPassword: true }))}
-              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
+              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-500 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
+              aria-invalid={isConfirmPasswordInvalid}
+              aria-describedby={isConfirmPasswordInvalid ? confirmPasswordErrorId : undefined}
             />
-            {touched.confirmPassword && !validateConfirmPassword(password, confirmPassword) && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{t('register.validation.passwordMismatch')}</p>
+            {isConfirmPasswordInvalid && (
+              <p id={confirmPasswordErrorId} role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">{t('register.validation.passwordMismatch')}</p>
             )}
           </div>
           <button
@@ -185,13 +198,13 @@ export const Register = () => {
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          {t('register.alreadyHaveAccount')} <Link to="/login" className="text-primary-600 dark:text-primary-400 hover:underline">{t('register.login')}</Link>
+          {t('register.alreadyHaveAccount')} <Link to="/login" className="text-primary-600 dark:text-primary-400 underline">{t('register.login')}</Link>
         </p>
       </div>
       
       <button
         onClick={toggleTheme}
-        className="fixed bottom-6 right-6 p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-300"
+        className="fixed bottom-6 right-6 p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-300"
         title={isDark ? t('register.switchToLight') : t('register.switchToDark')}
       >
         {isDark ? <Sun size={20} /> : <Moon size={20} />}

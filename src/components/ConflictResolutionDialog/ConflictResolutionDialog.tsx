@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useId } from "react";
 import { AlertTriangle } from "lucide-react";
 import { offlineMutationQueue } from "@/utils/offlineMutations";
 import { frontendEventBus } from "@/services/timer/FrontendEventBus";
 import type { SyncConflictDetectedPayload } from "@/services/FrontendEventTypes";
+import { useFocusTrap } from "../../hooks/common/useFocusTrap";
+import { useEscapeKey } from "../../hooks/common/useEscapeKey";
 
 type ResolutionStrategy = "local" | "remote" | "merge";
 
@@ -18,6 +20,10 @@ export function ConflictResolutionDialog() {
     );
     return unsubscribe;
   }, []);
+
+  const titleId = useId();
+  const containerRef = useFocusTrap({ enabled: conflict !== null, restoreFocus: true });
+  useEscapeKey(() => setConflict(null), conflict !== null);
 
   if (!conflict) return null;
 
@@ -39,13 +45,17 @@ export function ConflictResolutionDialog() {
 
   return (
     <div
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
       data-testid="conflict-resolution-dialog"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
     >
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
         <div className="p-4 border-b border-gray-200 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-yellow-500" />
-          <h2 className="text-lg font-semibold">同步冲突</h2>
+          <h2 id={titleId} className="text-lg font-semibold">同步冲突</h2>
         </div>
         <div className="p-4">
           <p className="text-sm text-gray-600 mb-4">

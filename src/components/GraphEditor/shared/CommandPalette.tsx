@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, useId } from 'react';
 import { useTranslation } from "react-i18next";
 import {
   Search, Command,
@@ -6,6 +6,7 @@ import {
   SearchX
 } from 'lucide-react';
 import { useTheme } from "../../../hooks";
+import { useCombobox } from "../../../hooks/useCombobox";
 import { Node } from '../../../types';
 import { EmptyState } from '../../common/EmptyState';
 
@@ -37,10 +38,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const prevQueryRef = useRef(query);
+
+  const baseId = useId();
+  const titleId = `${baseId}-title`;
+  const listboxId = `${baseId}-listbox`;
 
   const handleClose = useCallback(() => {
     setQuery('');
@@ -49,9 +52,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   const filteredCommands = useMemo(() => {
     const lowerQuery = query.toLowerCase();
-    
-    const matchedCommands = initialCommands.filter(cmd => 
-      cmd.label.toLowerCase().includes(lowerQuery) || 
+
+    const matchedCommands = initialCommands.filter(cmd =>
+      cmd.label.toLowerCase().includes(lowerQuery) ||
       cmd.keywords?.some(k => k.toLowerCase().includes(lowerQuery))
     );
 
@@ -74,54 +77,57 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     return [...matchedCommands, ...matchedNodes.slice(0, 10)];
   }, [query, initialCommands, nodes, onNodeSelect]);
 
-  const safeSelectedIndex = selectedIndex >= filteredCommands.length ? 0 : selectedIndex;
+  const getOptionId = useCallback((index: number) => `${baseId}-option-${index}`, [baseId]);
+  const getOptionLabel = useCallback((cmd: CommandItem) => cmd.label, []);
 
-  useEffect(() => {
-    if (prevQueryRef.current !== query) {
-      prevQueryRef.current = query;
+  const handleSelect = useCallback((cmd: CommandItem) => {
+    cmd.action();
+    handleClose();
+  }, [handleClose]);
+
+  const handleSetIsOpen = useCallback((open: boolean) => {
+    if (!open) {
+      handleClose();
     }
-  }, [query]);
+  }, [handleClose]);
+
+  const {
+    activeIndex,
+    setActiveIndex,
+    activeId,
+    handleKeyDown,
+    resetActive,
+  } = useCombobox<CommandItem>({
+    options: filteredCommands,
+    isOpen,
+    setIsOpen: handleSetIsOpen,
+    onSelect: handleSelect,
+    getOptionId,
+    getOptionLabel,
+  });
+
+  // 筛选结果变化时重置活动项为首项，保持 activeIndex 始终有效
+  useEffect(() => {
+    setActiveIndex(filteredCommands.length > 0 ? 0 : null);
+  }, [filteredCommands, setActiveIndex]);
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      resetActive();
     }
-  }, [isOpen]);
+  }, [isOpen, resetActive]);
 
   useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedIndex(prev => (prev + 1) % filteredCommands.length);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIndex(prev => (prev - 1 + filteredCommands.length) % filteredCommands.length);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (filteredCommands[safeSelectedIndex]) {
-          filteredCommands[safeSelectedIndex].action();
-          handleClose();
-        }
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        handleClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, filteredCommands, safeSelectedIndex, handleClose]);
-
-  useEffect(() => {
-    if (listRef.current && listRef.current.children[safeSelectedIndex]) {
-      (listRef.current.children[safeSelectedIndex] as HTMLElement).scrollIntoView({
+    const idx = activeIndex ?? 0;
+    if (listRef.current && listRef.current.children[idx]) {
+      (listRef.current.children[idx] as HTMLElement).scrollIntoView({
         block: 'nearest',
         behavior: 'smooth'
       });
     }
-  }, [safeSelectedIndex]);
+  }, [activeIndex]);
 
   if (!isOpen) return null;
 
@@ -143,23 +149,34 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className={`
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className={`
         relative w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col
         transform transition-all duration-200 scale-100 opacity-100
         ${isDark ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-white border border-gray-200 text-gray-900'}
       `}>
+        <h2 id={titleId} className="sr-only">命令面板</h2>
         {/* Search Input */}
         <div className={`flex items-center px-4 py-3 border-b ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
           <Search className={`w-5 h-5 mr-3 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} />
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-expanded={isOpen}
+            aria-autocomplete="list"
+            aria-activedescendant={activeId}
+            aria-controls={listboxId}
+            onKeyDown={(e) => handleKeyDown(e.nativeEvent)}
             className={`flex-1 bg-transparent text-lg placeholder-gray-400 focus:outline-none`}
             placeholder="搜索命令或节点..."
             value={query}
@@ -175,8 +192,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         {/* Command List */}
-        <div 
+        <div
           ref={listRef}
+          role="listbox"
+          id={listboxId}
           className="max-h-[60vh] overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-700"
         >
           {filteredCommands.length === 0 ? (
@@ -194,20 +213,23 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   {categoryLabels[category] || category}
                 </div>
                 {items.map((cmd, _index) => {
-                  // Find the global index for this item to match selectedIndex
+                  // Find the global index for this item to match activeIndex
                   const globalIndex = filteredCommands.indexOf(cmd);
-                  const isSelected = globalIndex === selectedIndex;
-                  
+                  const isSelected = globalIndex === activeIndex;
+
                   return (
                     <button
                       key={cmd.id}
+                      role="option"
+                      id={getOptionId(globalIndex)}
+                      aria-selected={isSelected}
                       onClick={() => {
                         cmd.action();
                         onClose();
                       }}
-                      onMouseEnter={() => setSelectedIndex(globalIndex)}
+                      onMouseEnter={() => setActiveIndex(globalIndex)}
                       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                        isSelected 
+                        isSelected
                           ? isDark ? 'bg-primary-600 text-white' : 'bg-primary-500 text-white'
                           : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-gray-700 hover:bg-gray-100'
                       }`}
@@ -230,7 +252,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             ))
           )}
         </div>
-        
+
         {/* Footer */}
         <div className={`px-4 py-2 border-t text-[10px] flex justify-between ${
           isDark ? 'bg-slate-800/50 border-slate-800 text-slate-500' : 'bg-gray-50 border-gray-100 text-gray-400'

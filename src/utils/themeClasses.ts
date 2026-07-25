@@ -12,15 +12,15 @@ export const tc = {
     hover: 'hover:bg-gray-100 dark:hover:bg-slate-700',
   },
   border: {
-    default: 'border-gray-200 dark:border-slate-700',
+    default: 'border-gray-200 dark:border-slate-500',
     light: 'border-gray-100 dark:border-slate-800',
   },
   card: {
-    base: 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-sm',
+    base: 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-500 rounded-lg shadow-sm',
     hover: 'hover:shadow-md hover:border-gray-300 dark:hover:border-slate-600 transition-shadow',
   },
   input: {
-    base: 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-md focus:ring-2 focus:ring-blue-500',
+    base: 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-500 rounded-md focus:ring-2 focus:ring-blue-500',
   },
 };
 

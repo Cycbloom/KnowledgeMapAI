@@ -8,5 +8,39 @@
     "completed": "测验生成完成！",
     "failed": "测验生成失败",
     "createFailed": "创建测验失败"
+  },
+  "questionList": {
+    "type": {
+      "qa": "问答题",
+      "choice": "单选题",
+      "multiChoice": "多选题",
+      "trueFalse": "判断题",
+      "fillInTheBlank": "填空题",
+      "essay": "论述题"
+    },
+    "difficulty": {
+      "easy": "简单",
+      "fairlyEasy": "较易",
+      "medium": "中等",
+      "fairlyHard": "较难",
+      "hard": "困难"
+    },
+    "trueFalse": {
+      "true": "正确",
+      "false": "错误"
+    },
+    "questionCount": "共 {{count}} 道题目",
+    "questionCountShort": "{{count}} 题",
+    "button": {
+      "showAnswer": "显示答案",
+      "hideAnswer": "隐藏答案",
+      "edit": "编辑",
+      "regenerate": "重新生成",
+      "delete": "删除"
+    },
+    "label": {
+      "answer": "答案",
+      "explanation": "解析"
+    }
   }
 }

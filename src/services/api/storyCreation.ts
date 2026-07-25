@@ -95,7 +95,9 @@ export interface InitializeTemplateResponse {
 export const storyCreationHttpApi = {
   structures: {
     list: (graphId: string): Promise<{ structures: StoryStructure[] }> => {
-      return request(`/story/${graphId}/structures`);
+      return request<{ structures: StoryStructure[] }>(
+        `/story/${graphId}/structures`,
+      );
     },
 
     create: (
@@ -109,7 +111,7 @@ export const storyCreationHttpApi = {
         template_beat_id?: string;
       },
     ): Promise<StoryStructure> => {
-      return request(`/story/${graphId}/structures`, {
+      return request<StoryStructure>(`/story/${graphId}/structures`, {
         method: "POST",
         body: JSON.stringify(data),
       });
@@ -126,26 +128,32 @@ export const storyCreationHttpApi = {
         metadata: Record<string, unknown>;
       }>,
     ): Promise<StoryStructure> => {
-      return request(`/story/${graphId}/structures/${id}`, {
+      return request<StoryStructure>(`/story/${graphId}/structures/${id}`, {
         method: "PUT",
         body: JSON.stringify(data),
       });
     },
 
     delete: (graphId: string, id: string): Promise<{ message: string }> => {
-      return request(`/story/${graphId}/structures/${id}`, {
-        method: "DELETE",
-      });
+      return request<{ message: string }>(
+        `/story/${graphId}/structures/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
     },
 
     initializeTemplate: (
       graphId: string,
       templateCode: string,
     ): Promise<InitializeTemplateResponse> => {
-      return request(`/story/${graphId}/initialize-template`, {
-        method: "POST",
-        body: JSON.stringify({ templateCode }),
-      });
+      return request<InitializeTemplateResponse>(
+        `/story/${graphId}/initialize-template`,
+        {
+          method: "POST",
+          body: JSON.stringify({ templateCode }),
+        },
+      );
     },
   },
 
@@ -153,14 +161,16 @@ export const storyCreationHttpApi = {
     list: (
       graphId: string,
     ): Promise<{ characters: StoryCharacter[] }> => {
-      return request(`/story/${graphId}/characters`);
+      return request<{ characters: StoryCharacter[] }>(
+        `/story/${graphId}/characters`,
+      );
     },
 
     create: (
       graphId: string,
       data: Partial<Omit<StoryCharacter, "id" | "graph_id" | "created_at" | "updated_at">>,
     ): Promise<StoryCharacter> => {
-      return request(`/story/${graphId}/characters`, {
+      return request<StoryCharacter>(`/story/${graphId}/characters`, {
         method: "POST",
         body: JSON.stringify(data),
       });
@@ -173,19 +183,25 @@ export const storyCreationHttpApi = {
         Omit<StoryCharacter, "id" | "graph_id" | "created_at" | "updated_at">
       >,
     ): Promise<StoryCharacter> => {
-      return request(`/story/${graphId}/characters/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+      return request<StoryCharacter>(
+        `/story/${graphId}/characters/${id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(data),
+        },
+      );
     },
 
     delete: (
       graphId: string,
       id: string,
     ): Promise<{ message: string }> => {
-      return request(`/story/${graphId}/characters/${id}`, {
-        method: "DELETE",
-      });
+      return request<{ message: string }>(
+        `/story/${graphId}/characters/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
     },
   },
 
@@ -194,7 +210,9 @@ export const storyCreationHttpApi = {
       graphId: string,
       structureId: string,
     ): Promise<{ scene: StorySceneDetail | null }> => {
-      return request(`/story/${graphId}/scenes/${structureId}`);
+      return request<{ scene: StorySceneDetail | null }>(
+        `/story/${graphId}/scenes/${structureId}`,
+      );
     },
 
     create: (
@@ -210,7 +228,7 @@ export const storyCreationHttpApi = {
         word_count?: number;
       },
     ): Promise<StorySceneDetail> => {
-      return request(`/story/${graphId}/scenes`, {
+      return request<StorySceneDetail>(`/story/${graphId}/scenes`, {
         method: "POST",
         body: JSON.stringify(data),
       });
@@ -226,7 +244,7 @@ export const storyCreationHttpApi = {
         >
       >,
     ): Promise<StorySceneDetail> => {
-      return request(`/story/${graphId}/scenes/${id}`, {
+      return request<StorySceneDetail>(`/story/${graphId}/scenes/${id}`, {
         method: "PUT",
         body: JSON.stringify(data),
       });
@@ -243,7 +261,7 @@ export const storyCreationHttpApi = {
         notes?: string;
       },
     ): Promise<StoryAppearance> => {
-      return request(`/story/${graphId}/appearances`, {
+      return request<StoryAppearance>(`/story/${graphId}/appearances`, {
         method: "POST",
         body: JSON.stringify(data),
       });
@@ -253,9 +271,12 @@ export const storyCreationHttpApi = {
       graphId: string,
       id: string,
     ): Promise<{ message: string }> => {
-      return request(`/story/${graphId}/appearances/${id}`, {
-        method: "DELETE",
-      });
+      return request<{ message: string }>(
+        `/story/${graphId}/appearances/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
     },
 
     getStats: (
@@ -279,9 +300,24 @@ export const storyCreationHttpApi = {
         story_characters: { id: string; name: string; role_type: string };
       }>;
     }> => {
-      return request(
-        `/story/${graphId}/appearances/stats/${characterId}`,
-      );
+      return request<{
+        characterId: string;
+        stats: {
+          totalAppearances: number;
+          totalRelationships: number;
+          roleBreakdown: Record<string, number>;
+        };
+        appearances: StoryAppearance[];
+        relationships: Array<{
+          id: string;
+          relationship_type: string;
+          strength: number;
+          status: string;
+          notes: string | null;
+          target_character_id: string;
+          story_characters: { id: string; name: string; role_type: string };
+        }>;
+      }>(`/story/${graphId}/appearances/stats/${characterId}`);
     },
   },
 
@@ -289,7 +325,9 @@ export const storyCreationHttpApi = {
     list: (
       graphId: string,
     ): Promise<{ relationships: StoryCharacterRelationship[] }> => {
-      return request(`/story/${graphId}/relationships`);
+      return request<{ relationships: StoryCharacterRelationship[] }>(
+        `/story/${graphId}/relationships`,
+      );
     },
 
     create: (
@@ -303,19 +341,25 @@ export const storyCreationHttpApi = {
         notes?: string;
       },
     ): Promise<StoryCharacterRelationship> => {
-      return request(`/story/${graphId}/relationships`, {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return request<StoryCharacterRelationship>(
+        `/story/${graphId}/relationships`,
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        },
+      );
     },
 
     delete: (
       graphId: string,
       id: string,
     ): Promise<{ message: string }> => {
-      return request(`/story/${graphId}/relationships/${id}`, {
-        method: "DELETE",
-      });
+      return request<{ message: string }>(
+        `/story/${graphId}/relationships/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
     },
   },
 };

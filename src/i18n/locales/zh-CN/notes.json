@@ -82,6 +82,7 @@
   "editor": {
     "placeholder": "输入 / 唤起块菜单，或直接开始记录…",
     "slashHint": "输入 / 插入块",
+    "regionLabel": "笔记编辑器主区域",
     "saveStatus": {
       "idle": "未保存",
       "saving": "保存中…",

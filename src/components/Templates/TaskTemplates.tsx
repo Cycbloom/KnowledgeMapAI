@@ -25,6 +25,7 @@ import {
   TaskTemplate,
   applyTemplatePlaceholders,
   extractPlaceholders,
+  normalizeCategory,
 } from "../../services/api/taskTemplates";
 import { message } from "../../utils/messageHelper";
 import { useTheme } from "../../hooks";
@@ -208,7 +209,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
     setFormDataForEdit({
       name: template.name,
       description: template.description || "",
-      category: template.category as TemplateCategory,
+      category: normalizeCategory(template.category) as TemplateCategory,
       title_template: template.title_template,
       description_template: template.description_template || "",
       estimated_duration: template.estimated_duration,
@@ -303,7 +304,13 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTemplates.map((template) => (
+          {filteredTemplates.map((template) => {
+            // 归一化历史分类（study/work/life/health/custom → 新分类），
+            // 避免数据库残留旧值时图标/颜色/文案渲染异常。
+            const normalizedCategory = normalizeCategory(
+              template.category,
+            ) as TemplateCategory;
+            return (
             <motion.div
               key={template.id}
               initial={{ opacity: 0, y: 20 }}
@@ -318,22 +325,22 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                 <div className="flex items-center gap-3">
                   <div
                     className={`p-2 rounded-lg ${
-                      template.category === "knowledge"
+                      normalizedCategory === "knowledge"
                         ? "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400"
-                        : template.category === "project"
+                        : normalizedCategory === "project"
                           ? "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
-                          : template.category === "analysis"
+                          : normalizedCategory === "analysis"
                             ? "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400"
-                            : template.category === "architecture"
+                            : normalizedCategory === "architecture"
                               ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400"
-                              : template.category === "topicResearch"
+                              : normalizedCategory === "topicResearch"
                                 ? "bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400"
-                                : template.category === "creative"
+                                : normalizedCategory === "creative"
                                   ? "bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400"
                                   : "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400"
                     }`}
                   >
-                    {categoryIcons[template.category as TemplateCategory]}
+                    {categoryIcons[normalizedCategory]}
                   </div>
                   <div>
                     <h3
@@ -342,7 +349,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       {template.name}
                     </h3>
                     <span className="text-xs text-gray-500">
-                      {t(`templates.category.${template.category as TemplateCategory}`)}
+                      {t(`templates.category.${normalizedCategory}`)}
                     </span>
                   </div>
                 </div>
@@ -411,7 +418,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                 )}
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -619,7 +627,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                           <button
                             type="button"
                             onClick={() => removeTag(tag)}
-                            className="hover:text-red-500"
+                            aria-label={t('common.aria.removeTag', { tag })}
+                            className="hover:text-red-500 min-h-[24px] min-w-[24px] flex items-center justify-center"
                           >
                             <X size={12} />
                           </button>

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   History,
   Camera,
@@ -29,46 +30,58 @@ interface VersionHistoryPanelProps {
 
 const SNAPSHOT_TYPE_CONFIG: Record<
   GraphSnapshotType,
-  { label: string; color: string; bgColor: string }
+  { labelKey: string; color: string; bgColor: string }
 > = {
   manual: {
-    label: "手动",
+    labelKey: "graphEditor.versionHistory.snapshotType.manual",
     color: "text-blue-700 dark:text-blue-300",
     bgColor: "bg-blue-100 dark:bg-blue-900/30",
   },
   auto: {
-    label: "自动",
+    labelKey: "graphEditor.versionHistory.snapshotType.auto",
     color: "text-slate-600 dark:text-slate-300",
     bgColor: "bg-slate-100 dark:bg-slate-700/50",
   },
   pre_ai_expand: {
-    label: "AI扩展前",
+    labelKey: "graphEditor.versionHistory.snapshotType.pre_ai_expand",
     color: "text-purple-700 dark:text-purple-300",
     bgColor: "bg-purple-100 dark:bg-purple-900/30",
   },
   pre_batch_delete: {
-    label: "批量删除前",
+    labelKey: "graphEditor.versionHistory.snapshotType.pre_batch_delete",
     color: "text-orange-700 dark:text-orange-300",
     bgColor: "bg-orange-100 dark:bg-orange-900/30",
   },
   pre_rollback: {
-    label: "回滚前",
+    labelKey: "graphEditor.versionHistory.snapshotType.pre_rollback",
     color: "text-red-700 dark:text-red-300",
     bgColor: "bg-red-100 dark:bg-red-900/30",
   },
 };
 
-function formatRelativeTime(dateStr: string): string {
+function formatRelativeTime(dateStr: string, t: TFunction): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return "刚刚";
-  if (diffMins < 60) return `${diffMins}分钟前`;
+  if (diffMins < 1) return t("graphEditor.versionHistory.relativeTime.justNow");
+  if (diffMins < 60) {
+    return t("graphEditor.versionHistory.relativeTime.minutesAgo", {
+      count: diffMins,
+    });
+  }
   const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}小时前`;
+  if (diffHours < 24) {
+    return t("graphEditor.versionHistory.relativeTime.hoursAgo", {
+      count: diffHours,
+    });
+  }
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 30) return `${diffDays}天前`;
+  if (diffDays < 30) {
+    return t("graphEditor.versionHistory.relativeTime.daysAgo", {
+      count: diffDays,
+    });
+  }
   return formatDate(date, "short");
 }
 
@@ -154,7 +167,9 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
             <GitBranch className="text-primary-500" size={18} />
           )}
           <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-            {activeTab === "snapshots" ? "版本历史" : "分支管理"}
+            {activeTab === "snapshots"
+              ? t("graphEditor.versionHistory.title")
+              : t("graphEditor.versionHistory.branchManageTitle")}
           </h2>
         </div>
         <div className="flex items-center gap-2">
@@ -168,7 +183,7 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
               )}
             >
-              快照
+              {t("graphEditor.versionHistory.tabSnapshots")}
             </button>
             <button
               onClick={() => { setActiveTab("branches"); setDialog(null); }}
@@ -179,12 +194,12 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
               )}
             >
-              分支
+              {t("graphEditor.versionHistory.tabBranches")}
             </button>
           </div>
           <button
             onClick={onClose}
-            aria-label="关闭"
+            aria-label={t("graphEditor.versionHistory.close")}
             className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
           >
             <X size={18} className="text-slate-500" />
@@ -225,9 +240,9 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
                   <div className="flex justify-center py-3">
                     <button
                       onClick={() => setPage((p) => p + 1)}
-                      className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+                      className="text-sm text-primary-600 dark:text-primary-400 underline"
                     >
-                      加载更多
+                      {t("graphEditor.versionHistory.loadMore")}
                     </button>
                   </div>
                 )}
@@ -241,7 +256,7 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
               <Camera size={16} />
-              创建快照
+              {t("graphEditor.createSnapshot")}
             </button>
           </div>
         </>
@@ -255,19 +270,19 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
         <DialogOverlay onClose={closeDialog}>
           {dialog === "createSnapshot" && (
             <DialogContent
-              title="创建快照"
+              title={t("graphEditor.createSnapshot")}
               icon={<Camera size={18} className="text-primary-500" />}
               onConfirm={handleCreateSnapshot}
               onCancel={closeDialog}
-              confirmLabel="创建"
+              confirmLabel={t("graphEditor.versionHistory.confirmCreate")}
               loading={createSnapshotMutation.isPending}
             >
               <input
                 type="text"
                 value={snapshotDescription}
                 onChange={(e) => setSnapshotDescription(e.target.value)}
-                placeholder="输入快照描述（可选）"
-                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder={t("graphEditor.versionHistory.snapshotDescPlaceholder")}
+                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 autoFocus
               />
             </DialogContent>
@@ -275,29 +290,32 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
 
           {dialog === "rollback" && selectedSnapshot && (
             <DialogContent
-              title="回滚确认"
+              title={t("graphEditor.versionHistory.rollbackConfirmTitle")}
               icon={<RotateCcw size={18} className="text-red-500" />}
               onConfirm={handleRollback}
               onCancel={closeDialog}
-              confirmLabel="确认回滚"
+              confirmLabel={t("graphEditor.versionHistory.confirmRollback")}
               loading={rollbackMutation.isPending}
               confirmDanger
             >
               <div className="space-y-2">
                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                  确定要回滚到此版本吗？当前状态将自动保存为快照。
+                  {t("graphEditor.versionHistory.rollbackConfirmMessage")}
                 </p>
                 <div className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    目标快照
+                    {t("graphEditor.versionHistory.targetSnapshot")}
                   </p>
                   <p className="text-sm text-slate-700 dark:text-slate-300">
-                    {selectedSnapshot.description ?? "无描述"} ·{" "}
-                    {formatRelativeTime(selectedSnapshot.createdAt)}
+                    {selectedSnapshot.description ??
+                      t("graphEditor.versionHistory.noDescription")}{" "}
+                    · {formatRelativeTime(selectedSnapshot.createdAt, t)}
                   </p>
                   <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                    {selectedSnapshot.nodeCount} 节点 ·{" "}
-                    {selectedSnapshot.edgeCount} 边
+                    {t("graphEditor.versionHistory.nodeAndEdgeCount", {
+                      nodes: selectedSnapshot.nodeCount,
+                      edges: selectedSnapshot.edgeCount,
+                    })}
                   </p>
                 </div>
               </div>
@@ -306,30 +324,31 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
 
           {dialog === "createBranch" && selectedSnapshot && (
             <DialogContent
-              title="创建分支"
+              title={t("graphEditor.versionHistory.createBranchTitle")}
               icon={<GitBranch size={18} className="text-green-500" />}
               onConfirm={handleCreateBranch}
               onCancel={closeDialog}
-              confirmLabel="创建分支"
+              confirmLabel={t("graphEditor.versionHistory.createBranchLabel")}
               loading={createBranchMutation.isPending}
               confirmDisabled={!branchName.trim()}
             >
               <div className="space-y-3">
                 <div className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    基于快照
+                    {t("graphEditor.versionHistory.basedOnSnapshot")}
                   </p>
                   <p className="text-sm text-slate-700 dark:text-slate-300">
-                    {selectedSnapshot.description ?? "无描述"} ·{" "}
-                    {formatRelativeTime(selectedSnapshot.createdAt)}
+                    {selectedSnapshot.description ??
+                      t("graphEditor.versionHistory.noDescription")}{" "}
+                    · {formatRelativeTime(selectedSnapshot.createdAt, t)}
                   </p>
                 </div>
                 <input
                   type="text"
                   value={branchName}
                   onChange={(e) => setBranchName(e.target.value)}
-                  placeholder="输入分支名称"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder={t("graphEditor.versionHistory.branchNamePlaceholder")}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   autoFocus
                 />
               </div>
@@ -362,6 +381,7 @@ const SnapshotItem: React.FC<SnapshotItemProps> = ({
   onRollbackClick,
   onBranchClick,
 }) => {
+  const { t } = useTranslation();
   const typeConfig = SNAPSHOT_TYPE_CONFIG[snapshot.snapshotType];
 
   return (
@@ -405,19 +425,23 @@ const SnapshotItem: React.FC<SnapshotItemProps> = ({
                 typeConfig.color,
               )}
             >
-              {typeConfig.label}
+              {t(typeConfig.labelKey, { defaultValue: "" })}
             </span>
             <span className="text-xs text-slate-400 dark:text-slate-500">
-              {formatRelativeTime(snapshot.createdAt)}
+              {formatRelativeTime(snapshot.createdAt, t)}
             </span>
           </div>
 
           <p className="text-sm text-slate-700 dark:text-slate-300 truncate">
-            {snapshot.description ?? "无描述"}
+            {snapshot.description ??
+              t("graphEditor.versionHistory.noDescription")}
           </p>
 
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-            {snapshot.nodeCount} 节点 · {snapshot.edgeCount} 边
+            {t("graphEditor.versionHistory.nodeAndEdgeCount", {
+              nodes: snapshot.nodeCount,
+              edges: snapshot.edgeCount,
+            })}
           </p>
 
           {isHovered && (
@@ -427,21 +451,21 @@ const SnapshotItem: React.FC<SnapshotItemProps> = ({
                 className="inline-flex items-center gap-1 px-2 py-1 text-xs text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded transition-colors"
               >
                 <ChevronRight size={12} />
-                查看 Diff
+                {t("graphEditor.versionHistory.viewDiff")}
               </button>
               <button
                 onClick={onRollbackClick}
                 className="inline-flex items-center gap-1 px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded transition-colors"
               >
                 <RotateCcw size={12} />
-                回滚
+                {t("graphEditor.versionHistory.rollback")}
               </button>
               <button
                 onClick={onBranchClick}
                 className="inline-flex items-center gap-1 px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
               >
                 <GitBranch size={12} />
-                创建分支
+                {t("graphEditor.versionHistory.createBranchLabel")}
               </button>
             </div>
           )}
@@ -499,9 +523,10 @@ const DialogContent: React.FC<DialogContentProps> = ({
   confirmDisabled,
   children,
 }) => {
+  const { t } = useTranslation();
   return (
     <>
-      <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700">
+      <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-500">
         {icon}
         <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
           {title}
@@ -510,12 +535,12 @@ const DialogContent: React.FC<DialogContentProps> = ({
 
       <div className="p-4">{children}</div>
 
-      <div className="flex justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-700">
+      <div className="flex justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-500">
         <button
           onClick={onCancel}
           className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
         >
-          取消
+          {t("graphEditor.versionHistory.cancel")}
         </button>
         <button
           onClick={onConfirm}
@@ -527,7 +552,7 @@ const DialogContent: React.FC<DialogContentProps> = ({
               : "bg-primary-600 hover:bg-primary-700 text-white",
           )}
         >
-          {loading ? "处理中..." : confirmLabel}
+          {loading ? t("graphEditor.versionHistory.processing") : confirmLabel}
         </button>
       </div>
     </>

@@ -14,22 +14,22 @@ import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 const localAuthApi = {
   register: (data: RegisterData): Promise<AuthResponse> =>
-    request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+    request<AuthResponse>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
 
   login: (data: LoginData): Promise<AuthResponse> =>
-    request('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+    request<AuthResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
 
   logout: (): Promise<{ message: string }> =>
-    request('/auth/logout', { method: 'POST' }),
+    request<{ message: string }>('/auth/logout', { method: 'POST' }),
 
   getUser: (): Promise<{ user: User | null }> =>
-    request('/auth/user'),
+    request<{ user: User | null }>('/auth/user'),
 
   updateProfile: (data: UpdateProfileData): Promise<{ user: User | null }> =>
-    request('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
+    request<{ user: User | null }>('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
 
   refreshToken: (refreshToken: string): Promise<AuthResponse> =>
-    request('/auth/refresh', {
+    request<AuthResponse>('/auth/refresh', {
       method: 'POST',
       body: JSON.stringify({ refreshToken }),
     }),

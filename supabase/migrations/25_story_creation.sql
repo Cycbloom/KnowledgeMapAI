@@ -331,3 +331,201 @@ CREATE TRIGGER story_character_relationships_updated_at
 CREATE TRIGGER story_scene_details_updated_at
   BEFORE UPDATE ON story_scene_details
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- Row Level Security
+-- story_* 表通过 graph_id 外键关联 knowledge_graphs，权限跟随 knowledge_graphs：
+--   SELECT: owner / public / collaborator 可读
+--   INSERT/UPDATE/DELETE: 仅 owner
+-- story_templates 为系统表：所有用户可读，仅管理员可写
+-- =====================================================
+
+-- Story Structures
+ALTER TABLE story_structures ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view accessible story structures" ON story_structures FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_structures.graph_id
+    AND (
+      knowledge_graphs.user_id = auth.uid()
+      OR knowledge_graphs.is_public = true
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
+    )
+  )
+);
+CREATE POLICY "Users can insert own story structures" ON story_structures FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_structures.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can update own story structures" ON story_structures FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_structures.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can delete own story structures" ON story_structures FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_structures.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+-- Story Characters
+ALTER TABLE story_characters ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view accessible story characters" ON story_characters FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_characters.graph_id
+    AND (
+      knowledge_graphs.user_id = auth.uid()
+      OR knowledge_graphs.is_public = true
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
+    )
+  )
+);
+CREATE POLICY "Users can insert own story characters" ON story_characters FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_characters.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can update own story characters" ON story_characters FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_characters.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can delete own story characters" ON story_characters FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_characters.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+-- Story Character Relationships
+ALTER TABLE story_character_relationships ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view accessible story character relationships" ON story_character_relationships FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_character_relationships.graph_id
+    AND (
+      knowledge_graphs.user_id = auth.uid()
+      OR knowledge_graphs.is_public = true
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
+    )
+  )
+);
+CREATE POLICY "Users can insert own story character relationships" ON story_character_relationships FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_character_relationships.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can update own story character relationships" ON story_character_relationships FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_character_relationships.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can delete own story character relationships" ON story_character_relationships FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_character_relationships.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+-- Story Scene Details
+ALTER TABLE story_scene_details ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view accessible story scene details" ON story_scene_details FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_scene_details.graph_id
+    AND (
+      knowledge_graphs.user_id = auth.uid()
+      OR knowledge_graphs.is_public = true
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
+    )
+  )
+);
+CREATE POLICY "Users can insert own story scene details" ON story_scene_details FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_scene_details.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can update own story scene details" ON story_scene_details FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_scene_details.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can delete own story scene details" ON story_scene_details FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_scene_details.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+-- Story Appearances
+ALTER TABLE story_appearances ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view accessible story appearances" ON story_appearances FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_appearances.graph_id
+    AND (
+      knowledge_graphs.user_id = auth.uid()
+      OR knowledge_graphs.is_public = true
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
+    )
+  )
+);
+CREATE POLICY "Users can insert own story appearances" ON story_appearances FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_appearances.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can update own story appearances" ON story_appearances FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_appearances.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can delete own story appearances" ON story_appearances FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = story_appearances.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+-- Story Templates (系统表：所有用户可读，仅管理员可管理)
+-- 注：story_templates 表无 user_id 字段，仅有 is_system 字段；
+--     系统模板对所有用户可见，写操作仅限管理员（参照 achievements 表模式）。
+ALTER TABLE story_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view story templates" ON story_templates FOR SELECT USING (true);
+CREATE POLICY "Only admins can insert story templates" ON story_templates FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+);
+CREATE POLICY "Only admins can update story templates" ON story_templates FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+);
+CREATE POLICY "Only admins can delete story templates" ON story_templates FOR DELETE USING (
+  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+);

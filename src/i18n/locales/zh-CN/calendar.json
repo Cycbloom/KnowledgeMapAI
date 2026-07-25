@@ -61,5 +61,32 @@
     "estimatedDuration": "预计 {{minutes}} 分钟",
     "hiddenCount": "+{{count}} 个子任务",
     "collapse": "收起"
+  },
+  "scheduleView": {
+    "addTask": "添加任务",
+    "labels": {
+      "planned": "计划:",
+      "actual": "实际:",
+      "matchRate": "匹配率:",
+      "totalDuration": "总时长:"
+    },
+    "emptyDuration": "0分钟",
+    "activityLogCount": "活动记录: {{count}} 项",
+    "estimatedMinutes": "预计 {{minutes}} 分钟",
+    "actualMinutes": "实际 {{minutes}} 分钟",
+    "moveTo": "移动到 {{hour}}:00"
+  },
+  "dayView": {
+    "addTask": "添加任务",
+    "plannedAndExecuted": "{{plannedCount}} 个计划任务 · {{executedCount}} 个执行记录",
+    "activityLogCount": "{{count}} 个活动记录",
+    "subtaskLabel": "子任务",
+    "actualMinutes": "实际用时: {{minutes}} 分钟",
+    "moveTo": "移动到 {{hour}}:00",
+    "activityLog": "活动记录"
+  },
+  "a11y": {
+    "changeDate": "修改日期",
+    "draggableTask": "可拖动任务卡片，使用修改日期按钮可键盘移动"
   }
 }

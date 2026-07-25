@@ -23,6 +23,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   const { t } = useTranslation();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
+  const [editingDeadlineId, setEditingDeadlineId] = useState<string | null>(null);
 
   const timelineData = useMemo(() => {
     const today = new Date();
@@ -147,8 +148,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   ${day.isToday 
                     ? 'border-primary-500/50 shadow-lg shadow-primary-500/20' 
                     : day.isPast 
-                      ? 'border-slate-200 dark:border-slate-700/30 opacity-60' 
-                      : 'border-slate-200 dark:border-slate-700/50'
+                      ? 'border-slate-200 dark:border-slate-500/30 opacity-60' 
+                      : 'border-slate-200 dark:border-slate-500/50'
                   }
                   bg-white dark:bg-slate-900/60 backdrop-blur-sm
                 `}
@@ -159,7 +160,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   p-3 border-b
                   ${day.isToday 
                     ? 'bg-gradient-to-r from-primary-100 to-primary-100 dark:from-primary-500/20 dark:to-primary-500/20 border-primary-300 dark:border-primary-500/30' 
-                    : 'border-slate-200 dark:border-slate-700/50'
+                    : 'border-slate-200 dark:border-slate-500/50'
                   }
                 `}>
                   <div className="flex items-center justify-between">
@@ -200,8 +201,13 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                             draggable
                             onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, task.id)}
                             onDragEnd={handleDragEnd}
+                            aria-roledescription={t('scheduler.a11y.draggableTask')}
+                            aria-label={t('scheduler.timeline.taskA11yLabel', {
+                              title: task.title,
+                              deadline: task.deadline ? formatDate(task.deadline, 'short') : t('scheduler.timeline.noDeadline'),
+                            })}
                             className={`
-                              cursor-grab active:cursor-grabbing
+                              relative cursor-grab active:cursor-grabbing
                               ${draggedTask === task.id ? 'opacity-50' : ''}
                             `}
                           >
@@ -209,6 +215,40 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                               task={task}
                               onEditTask={onTaskClick}
                             />
+                            {onTaskMove && (
+                              <div className="absolute top-1 right-1 z-10">
+                                <button
+                                  type="button"
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingDeadlineId(editingDeadlineId === task.id ? null : task.id);
+                                  }}
+                                  className="p-1 rounded bg-white/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors shadow-sm backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60"
+                                  aria-label={t('scheduler.timeline.changeDeadline')}
+                                  title={t('scheduler.timeline.changeDeadline')}
+                                >
+                                  <Calendar size={12} />
+                                </button>
+                                {editingDeadlineId === task.id && (
+                                  <input
+                                    type="date"
+                                    value={task.deadline ? task.deadline.split('T')[0] : ''}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      if (e.target.value) {
+                                        onTaskMove(task.id, new Date(e.target.value).toISOString());
+                                      }
+                                      setEditingDeadlineId(null);
+                                    }}
+                                    onBlur={() => setEditingDeadlineId(null)}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    autoFocus
+                                    className="absolute top-7 right-0 text-xs px-1 py-0.5 rounded border border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60"
+                                  />
+                                )}
+                              </div>
+                            )}
                           </Reorder.Item>
                         ))}
                       </AnimatePresence>
@@ -222,7 +262,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       </div>
 
       {overdueTasks.length > 0 && (
-        <div className="flex-shrink-0 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700/50">
+        <div className="flex-shrink-0 mt-4 pt-4 border-t border-slate-200 dark:border-slate-500/50">
           <div className="p-3 sm:p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30">
             <div className="flex items-center gap-2 mb-2 sm:mb-3">
               <AlertCircle size={16} className="text-red-500 dark:text-red-400" />

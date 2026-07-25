@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, Settings, X, Clock, AlertCircle, CheckCircle, Timer, Coffee, Trash2 } from 'lucide-react';
 import { notificationApi } from '../../services/api/notification';
 import { Notification, NotificationType } from '@shared/types';
 import { useTheme, useMenuNavigation } from "../../hooks";
+import { useFocusTrap } from '../../hooks/common/useFocusTrap';
+import { useEscapeKey } from '../../hooks/common/useEscapeKey';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
@@ -35,6 +37,9 @@ export const NotificationCenter: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const mutedTypes = useNotificationsStore((s) => s.mutedNotificationTypes);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const panelRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen, restoreFocus: true });
+  useEscapeKey(() => setIsOpen(false), isOpen);
 
   const formatTimeAgo = (dateString: string): string => {
     const date = new Date(dateString);
@@ -162,8 +167,8 @@ export const NotificationCenter: React.FC = () => {
     const confirmed = await asyncConfirm({
       title: t('common.confirm.deleteReadNotificationsTitle'),
       message: t('common.confirm.deleteReadNotificationsMessage', { count: readIds.length }),
-      confirmText: '删除',
-      cancelText: '取消',
+      confirmText: t('notifications.center.delete'),
+      cancelText: t('notifications.center.cancel'),
       isDangerous: true,
     });
     if (!confirmed) return;
@@ -216,6 +221,9 @@ export const NotificationCenter: React.FC = () => {
         onClick={() => {
           setIsOpen(!isOpen);
         }}
+        aria-label={t('notifications.center.toggle')}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
         className={`relative p-2 rounded-lg transition-colors ${
           isDark
             ? 'hover:bg-slate-700 text-slate-400 hover:text-white'
@@ -224,7 +232,7 @@ export const NotificationCenter: React.FC = () => {
       >
         <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+          <span aria-live="polite" className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -233,6 +241,10 @@ export const NotificationCenter: React.FC = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -248,12 +260,12 @@ export const NotificationCenter: React.FC = () => {
               isDark ? 'border-slate-700' : 'border-gray-100'
             }`}>
               <div className="flex items-center gap-2">
-                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  通知
+                <h3 id={titleId} className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {t('notifications.center.title')}
                 </h3>
                 {unreadCount > 0 && (
                   <span className="px-2 py-0.5 bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 text-xs font-medium rounded-full">
-                    {unreadCount} 条未读
+                    {t('notifications.center.unreadCount', { count: unreadCount })}
                   </span>
                 )}
               </div>
@@ -296,8 +308,8 @@ export const NotificationCenter: React.FC = () => {
                       ? 'hover:bg-slate-700 text-slate-400 hover:text-white'
                       : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
                   }`}
-                  title={t('notifications.settings')}
-                  aria-label={t('notifications.settings')}
+                  title={t('notifications.settings.title')}
+                  aria-label={t('notifications.settings.title')}
                 >
                   <Settings size={16} />
                 </button>
@@ -305,7 +317,7 @@ export const NotificationCenter: React.FC = () => {
             </div>
 
             {/* Content */}
-            <div className="max-h-[400px] overflow-y-auto">
+            <div className="max-h-[400px] overflow-y-auto" role="list">
               {loading ? (
                 <SkeletonList items={5} hasAvatar />
               ) : visibleNotifications.length === 0 ? (
@@ -322,6 +334,7 @@ export const NotificationCenter: React.FC = () => {
                       {unreadNotifications.map((notification) => (
                         <div
                           key={notification.id}
+                          role="listitem"
                           onClick={() => handleNotificationClick(notification)}
                           className={`px-4 py-3 cursor-pointer transition-colors border-l-2 border-primary-500 ${
                             notificationIndexMap.get(notification.id) === activeIndex
@@ -374,12 +387,13 @@ export const NotificationCenter: React.FC = () => {
                         <div className={`px-4 py-2 text-xs font-medium ${
                           isDark ? 'text-slate-500 bg-slate-800' : 'text-gray-400 bg-gray-50'
                         }`}>
-                          已读
+                          {t('notifications.center.markAsRead')}
                         </div>
                       )}
                       {readNotifications.map((notification) => (
                         <div
                           key={notification.id}
+                          role="listitem"
                           onClick={() => handleNotificationClick(notification)}
                           className={`px-4 py-3 cursor-pointer transition-colors ${
                             notificationIndexMap.get(notification.id) === activeIndex
@@ -442,7 +456,7 @@ export const NotificationCenter: React.FC = () => {
                       : 'text-primary-600 hover:text-primary-700'
                   }`}
                 >
-                  查看全部通知
+                  {t('notifications.center.viewAll')}
                 </button>
               </div>
             )}

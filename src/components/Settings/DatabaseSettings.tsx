@@ -159,7 +159,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
   return (
     <div
       ref={(el) => { (sectionRef as React.MutableRefObject<HTMLDivElement | null>).current = el; }}
-      className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors"
+      className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -247,7 +247,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
         </div>
       )}
 
-      <div className="rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
+      <div className="rounded-lg border border-gray-100 dark:border-slate-500 overflow-hidden">
         <button
           onClick={() => setDbExpanded(!dbExpanded)}
           className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors min-h-[44px]"
@@ -263,7 +263,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
         </button>
 
         {dbExpanded && (
-          <div className="p-4 pt-0 space-y-3 border-t border-gray-100 dark:border-slate-700">
+          <div className="p-4 pt-0 space-y-3 border-t border-gray-100 dark:border-slate-500">
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                 Supabase URL
@@ -275,7 +275,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
                   setDbForm((prev) => ({ ...prev, url: e.target.value }))
                 }
                 placeholder="https://xxx.supabase.co"
-                className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                className="w-full input-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
               />
             </div>
 
@@ -294,7 +294,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
                     }))
                   }
                   placeholder="eyJhbGciOi..."
-                  className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                  className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                 />
                 <button
                   type="button"
@@ -321,7 +321,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
                     }))
                   }
                   placeholder="eyJhbGciOi..."
-                  className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                  className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                 />
                 <button
                   type="button"
@@ -360,7 +360,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
                   }))
                 }
                 placeholder={t("settings.databaseUrlPlaceholder")}
-                className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                className="w-full input-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
               />
             </div>
 

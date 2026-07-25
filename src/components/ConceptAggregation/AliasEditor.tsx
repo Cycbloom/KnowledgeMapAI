@@ -188,7 +188,7 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
         className={`flex flex-wrap gap-2 p-2 rounded-lg border transition-colors ${
           error
             ? 'border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
-            : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800'
+            : 'border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800'
         }`}
       >
         {aliases.map((alias) => (

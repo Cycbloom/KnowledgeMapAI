@@ -971,6 +971,12 @@ export const MindMapCanvas = React.memo(
 
     const nodeMap = useMemo(() => new Map((layout?.nodes ?? []).map((n) => [n.id, n])), [layout?.nodes]);
 
+    const focusedNodeTitle = useMemo(() => {
+      if (!focusedNodeId) return null;
+      const focusedNode = nodes.find((n) => n.id === focusedNodeId);
+      return focusedNode?.title ?? null;
+    }, [focusedNodeId, nodes]);
+
     if (!layout) {
       return (
         <div className="flex items-center justify-center h-full">
@@ -1024,10 +1030,12 @@ export const MindMapCanvas = React.memo(
             {t('graphEditor.mindMap.semanticUnavailable', '当前图谱节点缺少语义向量数据，已切换为常规布局。请确保知识点已通过 AI 功能生成向量数据。')}
           </div>
         )}
-        <svg aria-hidden="true"
+        <svg
           ref={svgRef}
           width="100%"
           height="100%"
+          role="application"
+          aria-label={t('graphEditor.mindMapCanvas.ariaLabel', '思维导图画布，共 {{count}} 个节点，当前焦点：{{focus}}', { count: nodes.length, focus: focusedNodeTitle ?? t('graphEditor.mindMapCanvas.emptyFocus', '无焦点') })}
           style={{
             backgroundColor: colors.background,
             cursor: interaction.isDragging ? "grabbing" : "grab",
@@ -1050,6 +1058,8 @@ export const MindMapCanvas = React.memo(
             }
           }}
         >
+          <title>{t('graphEditor.mindMapCanvas.title', '思维导图画布')}</title>
+          <desc>{t('graphEditor.mindMapCanvas.desc', '交互式思维导图画布，包含 {{count}} 个知识节点。使用鼠标或触摸进行平移与缩放，按节点可查看详情。', { count: nodes.length })}</desc>
           <g ref={contentRef}>
             <CanvasLayout
               layout={templateLayout}
@@ -1353,7 +1363,7 @@ export const MindMapCanvas = React.memo(
         >
           {t('graphEditor.mindMap.zoom', { percent: Math.round(transform.k * 100) })}
           <span style={{ fontSize: 10, color: isDark ? '#64748B' : '#94A3B8', marginLeft: 4 }}>
-            {t(`graphEditor.semanticZoom.${semanticLevel}`, semanticLevelLabel)}
+            {t(semanticLevelLabel, { defaultValue: '' })}
           </span>
         </div>
 

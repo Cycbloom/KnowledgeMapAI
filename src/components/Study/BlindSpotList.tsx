@@ -1,6 +1,8 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
+import { EmptyState } from '../common/EmptyState';
 
 interface BlindSpot {
   id: string;
@@ -18,13 +20,28 @@ interface BlindSpotListProps {
 }
 
 export const BlindSpotList: React.FC<BlindSpotListProps> = ({ data }) => {
-  if (!data || data.length === 0) return null;
+  const { t } = useTranslation();
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 h-full">
+        <div className="flex items-center mb-4 text-red-600">
+          <AlertTriangle size={20} className="mr-2" />
+          <h3 className="text-lg font-semibold">{t('study.blindSpot.title')}</h3>
+        </div>
+        <EmptyState
+          variant="inline"
+          title={t('study.blindSpot.empty.title')}
+          description={t('study.blindSpot.empty.description')}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 h-full">
       <div className="flex items-center mb-4 text-red-600">
         <AlertTriangle size={20} className="mr-2" />
-        <h3 className="text-lg font-semibold">知识盲区 (Top 10)</h3>
+        <h3 className="text-lg font-semibold">{t('study.blindSpot.title')}</h3>
       </div>
       <div className="space-y-3">
         {data.map((card) => (
@@ -34,14 +51,14 @@ export const BlindSpotList: React.FC<BlindSpotListProps> = ({ data }) => {
                 {card.question}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                所属节点: {card.knowledge_points?.title || 'Unknown'} | 稳定性: {card.fsrs_stability.toFixed(2)}
+                {t('study.blindSpot.nodeInfo', { node: card.knowledge_points?.title || 'Unknown', stability: card.fsrs_stability.toFixed(2) })}
               </div>
             </div>
-            <Link 
+            <Link
               to={`/study?graph_id=${card.graph_id}`}
               className="text-xs bg-white text-red-600 px-3 py-1 rounded border border-red-200 hover:bg-red-50 whitespace-nowrap"
             >
-              去复习
+              {t('study.blindSpot.review')}
             </Link>
           </div>
         ))}

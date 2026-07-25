@@ -232,7 +232,13 @@
       },
       "template-quadrant-analysis": {
         "name": "Quadrant Analysis",
-        "description": "Four-quadrant analysis suitable for SWOT analysis, priority management, etc."
+        "description": "Four-quadrant analysis suitable for SWOT analysis, priority management, etc.",
+        "axisX": "Importance",
+        "axisY": "Urgency",
+        "zoneQ1": "Important & Urgent",
+        "zoneQ2": "Important & Not Urgent",
+        "zoneQ3": "Not Important & Urgent",
+        "zoneQ4": "Not Important & Not Urgent"
       }
     },
     "nodes": {

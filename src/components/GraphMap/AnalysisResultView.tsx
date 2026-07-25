@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { agentApi, type StructuredAnalysisResult } from '../../services/api/agent';
 import { copyToClipboard } from '@/utils/clipboard';
+import { message } from '@/utils/messageHelper';
 
 interface AnalysisResultViewProps {
   result: string;
@@ -60,6 +61,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
       setSelectedRecs(new Set());
     } catch (error) {
       console.error('Failed to apply recommendations:', error);
+      message.error(t('graphMap.analysisResult.applyFailed'));
     } finally {
       setIsApplying(false);
     }
@@ -97,7 +99,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
             <div className="flex items-center gap-2">
               <button
                 onClick={selectAll}
-                className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                className="text-xs text-primary-600 dark:text-primary-400 underline"
               >
                 {t('common.selectAll')}
               </button>
@@ -122,7 +124,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
                       ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
                       : isSelected
                         ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
-                        : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-700'
+                        : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 hover:border-primary-300 dark:hover:border-primary-700'
                   }`}
                 >
                   <div className="flex items-center justify-between">

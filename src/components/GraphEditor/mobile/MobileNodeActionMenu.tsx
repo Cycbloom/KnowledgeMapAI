@@ -85,7 +85,7 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
             </div>
 
             {nodeTitle && (
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-500">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[85%]">
                     {nodeTitle}
@@ -121,7 +121,7 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
                 );
               })}
 
-              <div className="my-2 border-t border-gray-100 dark:border-slate-700" />
+              <div className="my-2 border-t border-gray-100 dark:border-slate-500" />
 
               <button
                 onClick={() => handleAction(onDelete)}

@@ -1163,11 +1163,12 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           {selectedTemplateType === "story_creation"
             ? t("autoGraph.storyTitle")
             : t("autoGraph.topic")}{" "}
-          <span className="text-red-500">*</span>
+          <span aria-hidden="true" className="text-red-500">*</span>
         </label>
         <div className="relative">
           <input
             type="text"
+            aria-required={true}
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder={
@@ -1410,12 +1411,16 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         className={`w-full ${isMobile ? "py-2.5 px-3 text-sm" : "py-3 px-4"} bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
       >
         {isInitializing ? (
-          <>
+          <span
+            role="status"
+            aria-live="polite"
+            className="flex items-center gap-2"
+          >
             <Loader2
               className={`${isMobile ? "w-4 h-4" : "w-5 h-5"} animate-spin`}
             />
             {t("autoGraph.initializing")}
-          </>
+          </span>
         ) : (
           <>
             <Sparkles className={`${isMobile ? "w-4 h-4" : "w-5 h-5"}`} />

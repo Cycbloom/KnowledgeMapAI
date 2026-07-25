@@ -144,7 +144,7 @@ export const StudyStrategySettings = React.memo(
       };
 
       return (
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Brain className="w-5 h-5 text-primary-600 dark:text-primary-400" />
@@ -154,7 +154,7 @@ export const StudyStrategySettings = React.memo(
             </div>
             <button
               onClick={handleResetStudyStrategyDefaults}
-              className="px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+              className="px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
             >
               恢复默认设置
             </button>
@@ -172,7 +172,7 @@ export const StudyStrategySettings = React.memo(
                     className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                       defaultStudyMode === mode.value
                         ? "border-primary-300 bg-primary-50 dark:border-primary-700 dark:bg-primary-900/20"
-                        : "border-gray-200 dark:border-slate-600 hover:border-primary-200 dark:hover:border-primary-800"
+                        : "border-gray-200 dark:border-slate-500 hover:border-primary-200 dark:hover:border-primary-800"
                     }`}
                     onClick={() => handleStudyModeChange(mode.value)}
                   >
@@ -188,7 +188,7 @@ export const StudyStrategySettings = React.memo(
                 间隔重复参数
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
+                <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-700 dark:text-gray-300">
                       {t("settings.requestRetention")}
@@ -226,7 +226,7 @@ export const StudyStrategySettings = React.memo(
                   </p>
                 </div>
 
-                <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
+                <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-700 dark:text-gray-300">
                       {t("settings.maxReviewInterval")}
@@ -270,7 +270,7 @@ export const StudyStrategySettings = React.memo(
                 掌握度阈值
               </label>
               <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
+                <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-700 dark:text-gray-300">
                       Learning / Review 分界值
@@ -299,7 +299,7 @@ export const StudyStrategySettings = React.memo(
                   </p>
                 </div>
 
-                <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
+                <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-700 dark:text-gray-300">
                       Review / Practice 分界值
@@ -328,7 +328,7 @@ export const StudyStrategySettings = React.memo(
                   </p>
                 </div>
 
-                <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
+                <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-700 dark:text-gray-300">
                       Practice / Quiz 分界值
@@ -375,7 +375,7 @@ export const StudyStrategySettings = React.memo(
                 ].map((item) => (
                   <div
                     key={item.key}
-                    className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors"
+                    className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors"
                   >
                     <div className="flex justify-between items-center mb-2">
                       <div>
@@ -410,7 +410,7 @@ export const StudyStrategySettings = React.memo(
               </div>
             </div>
 
-            <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-slate-700">
+            <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-slate-500">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                 <Brain className="w-4 h-4 text-primary-500" />
                 {t("settings.semanticScheduling")}

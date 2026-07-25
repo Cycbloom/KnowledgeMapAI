@@ -203,7 +203,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
                       {onGraphClick ? (
                         <button
                           onClick={() => onGraphClick(rel.source_graph_id)}
-                          className="text-primary-600 dark:text-primary-400 hover:underline truncate max-w-[140px]"
+                          className="text-primary-600 dark:text-primary-400 underline truncate max-w-[140px]"
                         >
                           {rel.source_graph_title}
                         </button>
@@ -216,7 +216,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
                       {onGraphClick ? (
                         <button
                           onClick={() => onGraphClick(rel.target_graph_id)}
-                          className="text-primary-600 dark:text-primary-400 hover:underline truncate max-w-[140px]"
+                          className="text-primary-600 dark:text-primary-400 underline truncate max-w-[140px]"
                         >
                           {rel.target_graph_title}
                         </button>

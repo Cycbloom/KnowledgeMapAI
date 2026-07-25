@@ -10,51 +10,12 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
 import type { StudyCard } from "@shared/types/common";
-
-export interface ReviewTask {
-  id: string;
-  user_id: string;
-  knowledge_point_id: string;
-  task_id: string;
-  interval_days?: number;
-  ease_factor?: number;
-  repetitions?: number;
-  algorithm?: string;
-  fsrs_stability?: number;
-  fsrs_difficulty?: number;
-  fsrs_state?: string;
-  fsrs_retrievability?: number;
-  next_review_date: string;
-  last_review_date: string | null;
-  last_quality_score: number | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateReviewTaskData {
-  knowledge_point_id: string;
-  task_id: string;
-}
-
-export interface UpdateReviewTaskData {
-  quality: number;
-}
-
-export interface ReviewTaskStats {
-  total: number;
-  overdue: number;
-  today: number;
-  upcoming: number;
-  future: number;
-  averageStability: number;
-  averageDifficulty: number;
-  averageRetrievability: number;
-}
-
-export interface PendingReviewTask extends ReviewTask {
-  urgency: "overdue" | "today" | "upcoming" | "future";
-  masteryLevel: number;
-}
+import type {
+  ReviewTask,
+  CreateReviewTaskData,
+  ReviewTaskStats,
+  PendingReviewTask,
+} from "@shared/types";
 
 export class ReviewTaskService {
   async createFirstReviewTask(
@@ -122,7 +83,7 @@ export class ReviewTaskService {
     client: SupabaseClient,
     userId: string,
     knowledgePointId: string,
-    data: UpdateReviewTaskData,
+    data: { quality: number },
   ): Promise<ReviewTask> {
     const { data: card, error: fetchError } = await client
       .from("study_cards")

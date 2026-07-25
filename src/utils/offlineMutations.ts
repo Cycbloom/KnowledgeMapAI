@@ -1,5 +1,6 @@
 import { DefaultError, type QueryClient } from '@tanstack/react-query';
 import { createLogger } from './logger';
+import { type OfflineOperation, getOfflineQueue, clearOfflineQueue } from './offlineStorage';
 
 const logger = createLogger('OfflineMutations');
 
@@ -319,3 +320,78 @@ export const offlineMutationQueue = {
     notifyListeners();
   },
 };
+
+/**
+ * 将旧 BackgroundSyncManager 的 IndexedDB 队列（KnowledgeMapDB.offlineQueue）
+ * 迁移到新的 React Query offlineMutationQueue（KnowledgeMapMutationQueue.mutationQueue）。
+ *
+ * - 读取旧 offlineQueue store 中的所有 OfflineOperation
+ * - 转换为 QueuedMutation 格式（mutationKey / variables / meta 编码原操作信息）
+ * - 调用 offlineMutationQueue.enqueue 写入新队列
+ * - 清空旧 offlineQueue store
+ * - 返回成功迁移的项数
+ *
+ * 幂等：迁移完成后清空旧 store，重复调用不会产生重复项。
+ * 若旧 store 为空或不存在，返回 0。
+ * SSR 安全：非浏览器环境直接返回 0。
+ *
+ * 位于 offlineMutations.ts，负责将旧 IndexedDB 队列迁移到由 offlineMutationQueue 管理的新结构。
+ */
+export async function migrateLegacyQueue(): Promise<number> {
+  // SSR 安全：非浏览器环境无 IndexedDB
+  if (typeof indexedDB === 'undefined') {
+    return 0;
+  }
+
+  let operations: OfflineOperation[];
+  try {
+    operations = await getOfflineQueue();
+  } catch (error) {
+    logger.warn('Failed to read legacy offline queue, skipping migration', error);
+    return 0;
+  }
+
+  if (operations.length === 0) {
+    return 0;
+  }
+
+  let migrated = 0;
+  for (const op of operations) {
+    try {
+      await offlineMutationQueue.enqueue({
+        // 编码原操作信息到 mutationKey，便于排查与未来对接 mutationFn
+        mutationKey: ['legacy-sync', op.entityType, op.type, op.entityId],
+        variables: {
+          entityType: op.entityType,
+          operationType: op.type,
+          entityId: op.entityId,
+          graphId: op.graphId,
+          data: op.data,
+        },
+        context: undefined,
+        meta: {
+          legacy: true,
+          entityType: op.entityType,
+          operationType: op.type,
+          entityId: op.entityId,
+          graphId: op.graphId,
+        },
+      });
+      migrated++;
+    } catch (error) {
+      logger.error(`Failed to migrate legacy queue item: ${op.id}`, error);
+    }
+  }
+
+  // 清空旧 store，保证幂等：重复调用不会再迁移已处理的项
+  try {
+    await clearOfflineQueue();
+  } catch (error) {
+    logger.error('Failed to clear legacy offline queue after migration', error);
+  }
+
+  logger.debug(
+    `Migrated ${migrated}/${operations.length} items from legacy queue to offlineMutationQueue`,
+  );
+  return migrated;
+}

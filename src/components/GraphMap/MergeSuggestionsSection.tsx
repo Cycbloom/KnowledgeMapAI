@@ -135,7 +135,7 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
               className={`rounded-lg border overflow-hidden ${
                 completed
                   ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
-                  : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'
+                  : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500'
               }`}
             >
               <div

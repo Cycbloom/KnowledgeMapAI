@@ -206,8 +206,8 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                 type="button"
                 onClick={() => setSearchTerm("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                aria-label="清除"
-                title="清除"
+                aria-label={t('study.questionBank.clear')}
+                title={t('study.questionBank.clear')}
               >
                 <XCircle className="w-4 h-4" />
               </button>

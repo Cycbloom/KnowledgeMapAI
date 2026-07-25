@@ -43,7 +43,7 @@ const PeriodicTaskCardComponent: React.FC<PeriodicTaskCardProps> = ({ task }) =>
       className={`relative bg-white dark:bg-slate-800 rounded-xl p-4 border transition-all ${
         isCompleted
           ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/20'
-          : 'border-slate-200 dark:border-slate-700'
+          : 'border-slate-200 dark:border-slate-500'
       }`}
     >
       <div className="flex items-start gap-3">

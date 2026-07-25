@@ -33,6 +33,7 @@ const corePlugin: Plugin = {
       component: () => import("../../pages/Dashboard").then((m) => ({ default: m.Dashboard })),
       options: { index: true, protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.dashboard",
     });
 
     kernel.registerRoute({
@@ -40,6 +41,7 @@ const corePlugin: Plugin = {
       component: () => import("../../pages/Profile").then((m) => ({ default: m.Profile })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.profile",
     });
 
     kernel.registerRoute({
@@ -47,6 +49,7 @@ const corePlugin: Plugin = {
       component: () => import("../../pages/Settings").then((m) => ({ default: m.Settings })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.settings",
     });
 
     kernel.registerRoute({
@@ -54,6 +57,7 @@ const corePlugin: Plugin = {
       component: () => import("../../pages/RecycleBin").then((m) => ({ default: m.RecycleBin })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.trash",
     });
 
     // Redirect routes
@@ -113,6 +117,7 @@ const graphPlugin: Plugin = {
       path: "/graph/:id",
       component: () => import("../../pages/GraphEditor").then((m) => ({ default: m.GraphEditor })),
       layout: "public",
+      title: "layout.breadcrumb.graphEditor",
     });
 
     // Protected routes (inside Layout)
@@ -121,6 +126,7 @@ const graphPlugin: Plugin = {
       component: () => import("../../pages/GraphMap").then((m) => ({ default: m.GraphMap })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.graphMap",
     });
 
     kernel.registerRoute({
@@ -154,6 +160,7 @@ const studyPlugin: Plugin = {
       component: () => import("../../pages/Study").then((m) => ({ default: m.Study })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.studyCenter",
     });
 
     kernel.registerRoute({
@@ -161,6 +168,7 @@ const studyPlugin: Plugin = {
       component: () => import("../../pages/LearningMode").then((m) => ({ default: m.LearningMode })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.learningMode",
     });
 
     kernel.registerRoute({
@@ -168,6 +176,7 @@ const studyPlugin: Plugin = {
       component: () => import("../../pages/LearningPaths").then((m) => ({ default: m.LearningPaths })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.learningPaths",
     });
 
     kernel.registerRoute({
@@ -175,6 +184,7 @@ const studyPlugin: Plugin = {
       component: () => import("../../pages/LearningPathDetail").then((m) => ({ default: m.default })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.learningPaths",
     });
 
     kernel.registerRoute({
@@ -182,6 +192,7 @@ const studyPlugin: Plugin = {
       component: () => import("../../pages/QuizPreview").then((m) => ({ default: m.QuizPreview })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.quizPreview",
     });
 
     kernel.registerRoute({
@@ -189,6 +200,7 @@ const studyPlugin: Plugin = {
       component: () => import("../../pages/QuizPractice").then((m) => ({ default: m.QuizPractice })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.quizPractice",
     });
 
     kernel.registerNavItem({
@@ -224,6 +236,7 @@ const notesPlugin: Plugin = {
       component: () => import("../../pages/Notes/NotesListPage").then((m) => ({ default: m.NotesListPage })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.notes",
     });
 
     // Templates page (Task 11) — 必须注册在 /notes/:noteId 之前,
@@ -233,6 +246,7 @@ const notesPlugin: Plugin = {
       component: () => import("../../pages/Notes/TemplatesPage").then((m) => ({ default: m.default })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.templates",
     });
 
     // Note editor page (Task 8)
@@ -241,6 +255,7 @@ const notesPlugin: Plugin = {
       component: () => import("../../pages/Notes/NoteEditorPage").then((m) => ({ default: m.default })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.notes",
     });
 
     // Nav item — placed between graph-map (order 2) and study (order 10)
@@ -267,6 +282,7 @@ const schedulerPlugin: Plugin = {
       component: () => import("../../pages/Scheduler").then((m) => ({ default: m.Scheduler })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.scheduler",
     });
 
     kernel.registerRoute({
@@ -274,6 +290,7 @@ const schedulerPlugin: Plugin = {
       component: () => import("../../pages/CurrentTask").then((m) => ({ default: m.CurrentTask })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.currentTask",
     });
 
     kernel.registerRoute({
@@ -281,6 +298,7 @@ const schedulerPlugin: Plugin = {
       component: () => import("../../pages/SchedulerStats").then((m) => ({ default: m.SchedulerStats })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.schedulerStats",
     });
 
     kernel.registerRoute({
@@ -288,6 +306,7 @@ const schedulerPlugin: Plugin = {
       component: () => import("../../pages/TaskDetailPage").then((m) => ({ default: m.default })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.tasks",
     });
 
     kernel.registerRoute({
@@ -295,6 +314,7 @@ const schedulerPlugin: Plugin = {
       component: () => import("../../pages/Tasks").then((m) => ({ default: m.Tasks })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.tasks",
     });
 
     kernel.registerRoute({
@@ -302,6 +322,7 @@ const schedulerPlugin: Plugin = {
       component: () => import("../../pages/CalendarPage").then((m) => ({ default: m.CalendarPage })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.calendar",
     });
 
     kernel.registerRoute({
@@ -309,6 +330,7 @@ const schedulerPlugin: Plugin = {
       component: () => import("../../pages/Achievements").then((m) => ({ default: m.Achievements })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.achievements",
     });
 
     kernel.registerRoute({
@@ -316,6 +338,7 @@ const schedulerPlugin: Plugin = {
       component: () => import("../../pages/StatisticsCenter").then((m) => ({ default: m.StatisticsCenter })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.statistics",
     });
 
     kernel.registerRoute({
@@ -323,6 +346,7 @@ const schedulerPlugin: Plugin = {
       component: () => import("../../pages/Templates").then((m) => ({ default: m.Templates })),
       options: { protected: true },
       layout: "protected",
+      title: "layout.breadcrumb.templates",
     });
 
     kernel.registerNavItem({

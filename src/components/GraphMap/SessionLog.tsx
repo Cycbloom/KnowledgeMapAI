@@ -27,7 +27,7 @@ export const SessionLog: React.FC<SessionLogProps> = ({ session }) => {
       </button>
       
       {isExpanded && (
-        <div className="space-y-2 pl-2 border-l-2 border-gray-200 dark:border-slate-700">
+        <div className="space-y-2 pl-2 border-l-2 border-gray-200 dark:border-slate-500">
           {session.messages
             .filter(m => m.role !== 'system')
             .map((message, index) => (

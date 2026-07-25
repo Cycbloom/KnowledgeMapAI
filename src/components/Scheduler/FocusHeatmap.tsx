@@ -62,6 +62,9 @@ const DayCell: React.FC<DayCellProps> = ({
       className="relative"
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
+      onFocus={() => setShowTooltip(true)}
+      onBlur={() => setShowTooltip(false)}
+      tabIndex={0}
     >
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
@@ -122,7 +125,7 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
       try {
         setLoading(true);
         const response = await api.scheduler.getYearlyHeatmap(currentYear);
-        setData(response.data || []);
+        setData(response || []);
         setError(null);
       } catch (err) {
         console.error("Failed to fetch heatmap data:", err);
@@ -240,14 +243,14 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigateYear("prev")}
-            aria-label="上一年"
+            aria-label={t('scheduler.heatmap.prevYear')}
             className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
           >
             <ChevronLeft size={20} />
           </button>
           <button
             onClick={() => navigateYear("next")}
-            aria-label="下一年"
+            aria-label={t('scheduler.heatmap.nextYear')}
             className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
           >
             <ChevronRight size={20} />
@@ -290,7 +293,7 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 overflow-x-auto"
+        className="p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500/50 overflow-x-auto"
       >
         <div className="flex gap-1">
           <div className="flex flex-col gap-0.5 mr-2">
@@ -324,7 +327,7 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200 dark:border-slate-500">
           <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
             <Info size={12} />
             <span>专注强度</span>

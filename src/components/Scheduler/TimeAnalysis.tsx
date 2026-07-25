@@ -40,7 +40,7 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
   const loadData = async () => {
     setLoading(true);
     try {
-      const { executions: data } = await api.scheduler.getExecutions({});
+      const data = await api.scheduler.getExecutions({});
       setExecutions(data);
     } catch (error) {
       console.error('Failed to load time analysis:', error);
@@ -104,7 +104,7 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
   , periodStats[0]);
 
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}>
+    <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-500 p-6 ${className}`}>
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-amber-100 dark:bg-amber-500/20 rounded-xl">
           <Clock size={20} className="text-amber-500" />

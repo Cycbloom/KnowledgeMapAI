@@ -339,6 +339,11 @@ export const Layout = () => {
     return unsubscribe;
   }, [navigate, t]);
 
+  // 路由切换时自动 focus 主内容区，便于键盘导航与屏幕阅读器
+  useEffect(() => {
+    mainRef.current?.focus({ preventScroll: true });
+  }, [location.pathname, mainRef]);
+
   const navItems = useMemo(() => frontendKernel.getNavItems(), [frontendKernel]);
 
   if (!!token && !user && isUserLoading) {
@@ -509,7 +514,7 @@ export const Layout = () => {
           )}
 
           <div
-            className={`flex-1 overflow-y-auto custom-scrollbar relative ${isMobile && !isFullScreenPage ? "pb-16" : ""}`}
+            className={`flex-1 overflow-y-auto custom-scrollbar relative ${isMobile && !isFullScreenPage ? "pb-[calc(3.5rem+var(--safe-area-inset-bottom))]" : ""}`}
           >
             {schemaStatus && (
               <div
@@ -559,6 +564,9 @@ export const Layout = () => {
             />
           )}
         </main>
+        <footer className="sr-only" role="contentinfo">
+          {t('common.footer.copyright')}
+        </footer>
       </div>
     </div>
   );

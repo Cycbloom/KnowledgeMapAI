@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { X, BookOpen, Link2, FileText, Plus, Pencil, Trash2, Save, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Graph, ReferenceBook, ExternalLink } from '../../../shared/types/graph';
@@ -64,6 +64,22 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
     index: number;
     title: string;
   } | null>(null);
+
+  // 表单字段可访问性唯一 id
+  const bookTitleId = useId();
+  const bookTitleErrorId = useId();
+  const bookAuthorId = useId();
+  const bookAuthorErrorId = useId();
+  const bookIsbnId = useId();
+  const bookUrlId = useId();
+  const bookUrlErrorId = useId();
+  const bookDescriptionId = useId();
+  const linkTitleId = useId();
+  const linkTitleErrorId = useId();
+  const linkTypeId = useId();
+  const linkUrlId = useId();
+  const linkUrlErrorId = useId();
+  const linkDescriptionId = useId();
 
   useEffect(() => {
     if (isOpen && graph) {
@@ -221,70 +237,81 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-              {t('learning.overviewEdit.bookTitle')} <span className="text-red-500">*</span>
+            <label htmlFor={bookTitleId} className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              {t('learning.overviewEdit.bookTitle')} <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <input
+              id={bookTitleId}
               type="text"
               value={bookForm.title}
               onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
+              aria-invalid={!!bookErrors.title}
+              aria-describedby={bookErrors.title ? bookTitleErrorId : undefined}
               className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                bookErrors.title ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
+                bookErrors.title ? 'border-red-500' : 'border-slate-200 dark:border-slate-500'
               }`}
               placeholder={t('learning.overviewEdit.bookTitlePlaceholder')}
             />
             {bookErrors.title && (
-              <p className="text-xs text-red-500 mt-1">{bookErrors.title}</p>
+              <p id={bookTitleErrorId} role="alert" className="text-xs text-red-500 mt-1">{bookErrors.title}</p>
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-              {t('learning.overviewEdit.author')} <span className="text-red-500">*</span>
+            <label htmlFor={bookAuthorId} className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              {t('learning.overviewEdit.author')} <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <input
+              id={bookAuthorId}
               type="text"
               value={bookForm.author}
               onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
+              aria-invalid={!!bookErrors.author}
+              aria-describedby={bookErrors.author ? bookAuthorErrorId : undefined}
               className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                bookErrors.author ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
+                bookErrors.author ? 'border-red-500' : 'border-slate-200 dark:border-slate-500'
               }`}
               placeholder={t('learning.overviewEdit.authorPlaceholder')}
             />
             {bookErrors.author && (
-              <p className="text-xs text-red-500 mt-1">{bookErrors.author}</p>
+              <p id={bookAuthorErrorId} role="alert" className="text-xs text-red-500 mt-1">{bookErrors.author}</p>
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.isbn')}</label>
+            <label htmlFor={bookIsbnId} className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.isbn')}</label>
             <input
+              id={bookIsbnId}
               type="text"
               value={bookForm.isbn || ''}
               onChange={(e) => setBookForm({ ...bookForm, isbn: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder={t('learning.overviewEdit.isbnPlaceholder')}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.linkUrl')}</label>
+            <label htmlFor={bookUrlId} className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.linkUrl')}</label>
             <input
+              id={bookUrlId}
               type="url"
               value={bookForm.url || ''}
               onChange={(e) => setBookForm({ ...bookForm, url: e.target.value })}
+              aria-invalid={!!bookErrors.url}
+              aria-describedby={bookErrors.url ? bookUrlErrorId : undefined}
               className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                bookErrors.url ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
+                bookErrors.url ? 'border-red-500' : 'border-slate-200 dark:border-slate-500'
               }`}
               placeholder="https://..."
             />
             {bookErrors.url && (
-              <p className="text-xs text-red-500 mt-1">{bookErrors.url}</p>
+              <p id={bookUrlErrorId} role="alert" className="text-xs text-red-500 mt-1">{bookErrors.url}</p>
             )}
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.description')}</label>
+            <label htmlFor={bookDescriptionId} className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.description')}</label>
             <textarea
+              id={bookDescriptionId}
               value={bookForm.description || ''}
               onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
               rows={2}
               placeholder={t('learning.overviewEdit.bookDescriptionPlaceholder')}
             />
@@ -329,7 +356,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             {books.map((book, index) => (
               <div
                 key={index}
-                className="flex items-start justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600"
+                className="flex items-start justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-500"
               >
                 <div className="flex-1 min-w-0">
                   <h5 className="font-medium text-slate-900 dark:text-slate-100 truncate">{book.title}</h5>
@@ -369,30 +396,34 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-              {t('learning.overviewEdit.linkTitle')} <span className="text-red-500">*</span>
+            <label htmlFor={linkTitleId} className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              {t('learning.overviewEdit.linkTitle')} <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <input
+              id={linkTitleId}
               type="text"
               value={linkForm.title}
               onChange={(e) => setLinkForm({ ...linkForm, title: e.target.value })}
+              aria-invalid={!!linkErrors.title}
+              aria-describedby={linkErrors.title ? linkTitleErrorId : undefined}
               className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                linkErrors.title ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
+                linkErrors.title ? 'border-red-500' : 'border-slate-200 dark:border-slate-500'
               }`}
               placeholder={t('learning.overviewEdit.linkTitlePlaceholder')}
             />
             {linkErrors.title && (
-              <p className="text-xs text-red-500 mt-1">{linkErrors.title}</p>
+              <p id={linkTitleErrorId} role="alert" className="text-xs text-red-500 mt-1">{linkErrors.title}</p>
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label htmlFor={linkTypeId} className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               {t('learning.overviewEdit.type')}
             </label>
             <select
+              id={linkTypeId}
               value={linkForm.type}
               onChange={(e) => setLinkForm({ ...linkForm, type: e.target.value as ExternalLink['type'] })}
-              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               {linkTypeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -402,28 +433,33 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             </select>
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-              URL <span className="text-red-500">*</span>
+            <label htmlFor={linkUrlId} className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              URL <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <input
+              id={linkUrlId}
               type="url"
+              aria-required={true}
               value={linkForm.url}
               onChange={(e) => setLinkForm({ ...linkForm, url: e.target.value })}
+              aria-invalid={!!linkErrors.url}
+              aria-describedby={linkErrors.url ? linkUrlErrorId : undefined}
               className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                linkErrors.url ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
+                linkErrors.url ? 'border-red-500' : 'border-slate-200 dark:border-slate-500'
               }`}
               placeholder="https://..."
             />
             {linkErrors.url && (
-              <p className="text-xs text-red-500 mt-1">{linkErrors.url}</p>
+              <p id={linkUrlErrorId} role="alert" className="text-xs text-red-500 mt-1">{linkErrors.url}</p>
             )}
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.description')}</label>
+            <label htmlFor={linkDescriptionId} className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.description')}</label>
             <textarea
+              id={linkDescriptionId}
               value={linkForm.description || ''}
               onChange={(e) => setLinkForm({ ...linkForm, description: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
               rows={2}
               placeholder={t('learning.overviewEdit.linkDescriptionPlaceholder')}
             />
@@ -468,7 +504,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             {links.map((link, index) => (
               <div
                 key={index}
-                className="flex items-start justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600"
+                className="flex items-start justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-500"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -481,7 +517,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-primary-600 dark:text-primary-400 hover:underline truncate block"
+                    className="text-sm text-primary-600 dark:text-primary-400 underline truncate block"
                   >
                     {link.url}
                   </a>
@@ -525,7 +561,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
       </div>
       
       {showPreview ? (
-        <div className="min-h-[300px] p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 prose prose-sm dark:prose-invert max-w-none">
+        <div className="min-h-[300px] p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-500 prose prose-sm dark:prose-invert max-w-none">
           {learningGuide ? (
             <div className="whitespace-pre-wrap text-slate-700 dark:text-slate-300">{learningGuide}</div>
           ) : (
@@ -536,7 +572,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
         <textarea
           value={learningGuide}
           onChange={(e) => setLearningGuide(e.target.value)}
-          className="w-full min-h-[300px] px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-y font-mono"
+          className="w-full min-h-[300px] px-4 py-3 text-sm border border-slate-200 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-y font-mono"
           placeholder={t('learning.overviewEdit.guidePlaceholder')}
         />
       )}
@@ -549,10 +585,10 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
         isOpen={isOpen}
         onClose={onClose}
         titleId="graph-overview-edit-modal-title"
-        className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 max-h-[95dvh] sm:max-h-[90dvh] flex flex-col"
+        className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-500 max-h-[95dvh] sm:max-h-[90dvh] flex flex-col"
         overlayClassName="p-2 sm:p-4 backdrop-blur-sm"
       >
-          <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-700">
+          <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-500">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-primary-600 dark:text-primary-400">
@@ -574,7 +610,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             </div>
           </div>
 
-          <div className="flex border-b border-slate-100 dark:border-slate-700 px-4 sm:px-6">
+          <div className="flex border-b border-slate-100 dark:border-slate-500 px-4 sm:px-6">
             <button
               onClick={() => setActiveTab('books')}
               className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 min-h-[44px] ${
@@ -626,7 +662,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             {activeTab === 'guide' && renderGuideTab()}
           </div>
 
-          <div className="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+          <div className="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-500 flex justify-end gap-3">
             <button
               onClick={onClose}
               disabled={isSaving}

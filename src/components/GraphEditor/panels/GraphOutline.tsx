@@ -54,8 +54,7 @@ interface GraphOutlineProps {
   selectedNodeId: string | null;
   selectedNodeIds?: Set<string>;
   onSelectionChange?: (ids: Set<string>) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onBatchAction?: (action: "expand_graph" | "delete" | "batch_generate_questions" | "create_region", data?: any) => void;
+  onBatchAction?: (action: "expand_graph" | "delete" | "batch_generate_questions" | "create_region", data?: BatchGenerateConfig) => void;
   onAddNode?: () => void;
   onConnectNodes?: (sourceId: string, targetId: string) => void;
   className?: string;
@@ -843,7 +842,7 @@ export const GraphOutline = React.memo(function GraphOutline({
               <div
                 className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-md transition-colors relative group/literature ${
                   isUncategorized
-                    ? "hover:bg-slate-50 dark:hover:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600"
+                    ? "hover:bg-slate-50 dark:hover:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-500"
                     : "hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
                 style={{
@@ -1518,7 +1517,7 @@ export const GraphOutline = React.memo(function GraphOutline({
               {filteredSuggestions.map((suggestion, idx) => (
                 <div
                   key={`${suggestion.sourceId}-${suggestion.targetId}-${idx}`}
-                  className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+                  className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-500"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1 text-xs">

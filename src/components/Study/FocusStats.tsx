@@ -69,7 +69,7 @@ export const FocusStats = () => {
         />
       </div>
 
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-200 dark:border-slate-700">
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-200 dark:border-slate-500">
         <h3 className="text-lg font-semibold mb-6 text-gray-800 dark:text-gray-200">{t('study.focusStats.weeklyTrend')}</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -111,7 +111,7 @@ export const FocusStats = () => {
 };
 
 const StatCard = ({ icon, label, value, subValue }: StatCardProps) => (
-  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-200 dark:border-slate-700 flex items-center gap-4">
+  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-200 dark:border-slate-500 flex items-center gap-4">
     <div className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
       {icon}
     </div>

@@ -1,4 +1,4 @@
-import { request } from "../../client";
+import { requestData } from "../../client";
 
 export interface TaskSettings {
   id: string;
@@ -32,15 +32,22 @@ export interface UserTimeSlot {
 }
 
 export const settingsApi = {
-  getSettings: () => request("/scheduler/settings"),
+  getSettings: () => requestData<TaskSettings>("/scheduler/settings"),
 
   updateSettings: (data: UpdateTaskSettingsData) =>
-    request("/scheduler/settings", {
+    requestData<TaskSettings>("/scheduler/settings", {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
-  getTimeSlots: () => request("/scheduler/time-slots"),
+  getTimeSlots: async (): Promise<UserTimeSlot[]> => {
+    const result = await requestData<{
+      slots: UserTimeSlot[];
+      weekView: Record<number, UserTimeSlot[]>;
+      globalSlots: UserTimeSlot[];
+    }>("/scheduler/time-slots");
+    return result.slots;
+  },
 
   createTimeSlot: (data: {
     day_of_week?: number;
@@ -49,7 +56,7 @@ export const settingsApi = {
     is_available?: boolean;
     label?: string;
   }) =>
-    request("/scheduler/time-slots", {
+    requestData<UserTimeSlot>("/scheduler/time-slots", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -63,11 +70,11 @@ export const settingsApi = {
       label?: string;
     },
   ) =>
-    request(`/scheduler/time-slots/${id}`, {
+    requestData<UserTimeSlot>(`/scheduler/time-slots/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
   deleteTimeSlot: (id: string) =>
-    request(`/scheduler/time-slots/${id}`, { method: "DELETE" }),
+    requestData<void>(`/scheduler/time-slots/${id}`, { method: "DELETE" }),
 };

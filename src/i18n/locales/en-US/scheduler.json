@@ -1,6 +1,7 @@
 {
   "title": "Task Scheduler",
   "subtitle": "Three-Level Feedback Queue · Smart Time Management",
+  "regionLabel": "Scheduler main area",
   "calendar": "Calendar",
   "newTask": "New Task",
   "pending": "Pending",
@@ -36,7 +37,10 @@
     "noTasksToday": "No tasks scheduled",
     "noTasks": "No tasks",
     "overdue": "Overdue",
-    "noDeadline": "No deadline set"
+    "noDeadline": "No deadline set",
+    "changeDeadline": "Change deadline",
+    "taskA11yLabel": "Task: {{title}}, deadline: {{deadline}}",
+    "dragHint": "Use arrow keys to switch date columns, or click the change deadline button to move the task"
   },
   "listView": {
     "title": "Task Name",
@@ -101,7 +105,8 @@
     "tasksInProgress": "{{count}} tasks in progress",
     "noTasks": "No tasks",
     "dropToPlace": "Drop to place task",
-    "addTask": "Add Task"
+    "addTask": "Add Task",
+    "toggleCollapse": "Expand/Collapse {{queue}} queue"
   },
   "taskForm": {
     "editTask": "Edit Task",
@@ -184,6 +189,56 @@
     "draftDetectedMessage": "An unfinished draft was detected. Would you like to restore it?",
     "restoreDraft": "Restore Draft",
     "discardDraft": "Discard Draft"
+  },
+  "templateForm": {
+    "editTemplate": "Edit Template",
+    "createTemplate": "Create New Template",
+    "fieldName": "Template Name",
+    "fieldNamePlaceholder": "e.g., Deep Learning Template",
+    "fieldCategory": "Category",
+    "fieldTitleTemplate": "Title Template",
+    "fieldTitleTemplatePlaceholder": "e.g., Study: {{example}}",
+    "fieldDescriptionTemplate": "Description Template",
+    "fieldDescriptionTemplatePlaceholder": "Optional description template, supports {{example}}...",
+    "descriptionPlaceholderExample": "placeholder",
+    "fieldEstimatedDuration": "Estimated Duration",
+    "fieldPriority": "Priority",
+    "fieldTags": "Tags (max 5)",
+    "fieldCustomTagPlaceholder": "Enter custom tag, press Enter to add...",
+    "fieldIsDefault": "Set as default template for this category",
+    "helpPlaceholderPrefix": "Use",
+    "helpPlaceholderExample": "variableName",
+    "helpPlaceholderSuffix": "format to create replaceable placeholders",
+    "buttonCancel": "Cancel",
+    "buttonSaveChanges": "Save Changes",
+    "buttonCreateTemplate": "Create Template",
+    "errorNameRequired": "Please enter a template name",
+    "errorNameTooLong": "Name cannot exceed 50 characters",
+    "errorTitleTemplateRequired": "Please enter a title template",
+    "errorTitleTemplateTooLong": "Title template cannot exceed 100 characters",
+    "errorDescriptionTemplateTooLong": "Description template cannot exceed 500 characters",
+    "duration15min": "15 min",
+    "duration25min": "25 min",
+    "duration30min": "30 min",
+    "duration45min": "45 min",
+    "duration1hour": "1 hour",
+    "duration1_5hours": "1.5 hours",
+    "duration2hours": "2 hours",
+    "duration3hours": "3 hours",
+    "priorityLow": "Low",
+    "priorityMedium": "Medium",
+    "priorityHigh": "High",
+    "priorityUrgent": "Urgent",
+    "tagStudy": "Study",
+    "tagWork": "Work",
+    "tagReading": "Reading",
+    "tagWriting": "Writing",
+    "tagCoding": "Coding",
+    "tagReview": "Review",
+    "tagProject": "Project",
+    "tagMeeting": "Meeting",
+    "tagExercise": "Exercise",
+    "tagRest": "Rest"
   },
   "review": {
     "overdue": "Overdue",
@@ -354,6 +409,20 @@
     "achievements": "No matching achievements",
     "content": "No content"
   },
+  "task": {
+    "status": {
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "paused": "Paused",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "queue": {
+      "urgent": "Q0 Urgent Queue",
+      "important": "Q1 Important Queue",
+      "todo": "Q2 To Do Queue"
+    }
+  },
   "loadError": "Failed to load scheduler data",
   "confirmDeleteTaskTitle": "Delete Task",
   "confirmDeleteTaskMessage": "Are you sure you want to delete task \"{{title}}\"? This action cannot be undone.",
@@ -382,14 +451,79 @@
     "linkAdded": "Link added",
     "linkAddFailed": "Failed to add link",
     "linkDeleted": "Link deleted",
-    "linkDeleteFailed": "Failed to delete link"
+    "linkDeleteFailed": "Failed to delete link",
+    "taskNotFound": "Task not found",
+    "back": "Back",
+    "edit": "Edit",
+    "saveAsTemplate": "Save as Template",
+    "delete": "Delete",
+    "statusCompleted": "Completed",
+    "statusInProgress": "In Progress",
+    "statusPaused": "Paused",
+    "statusCancelled": "Cancelled",
+    "statusPending": "Pending",
+    "typeOneTime": "One-time Task",
+    "typeLongTerm": "Long-term Project",
+    "typePeriodic": "Periodic Task",
+    "typeLearning": "Learning Task",
+    "typeDefault": "Regular Task",
+    "priorityHigh": "High Priority",
+    "priorityMedium": "Medium Priority",
+    "priorityLow": "Low Priority",
+    "dateNotSet": "Not set",
+    "tabNotes": "Notes",
+    "tabSubtasks": "Subtasks",
+    "tabExecutions": "Execution Records",
+    "tabProgress": "Progress",
+    "description": "Description",
+    "estimatedDuration": "Estimated Duration",
+    "actualDuration": "Actual Duration",
+    "totalDuration": "Total Duration",
+    "deadline": "Deadline",
+    "progress": "Progress",
+    "progressPercent": "{{percent}}% complete",
+    "tags": "Tags",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "completedAt": "Completed",
+    "startTask": "Start Task",
+    "pauseTask": "Pause Task",
+    "completeTask": "Complete Task",
+    "continueTask": "Continue Task",
+    "inProgressLabel": "In Progress"
   },
   "templateSelector": {
     "empty": "No templates found"
   },
   "weeklyReport": {
     "empty": "No focus records this week yet",
-    "emptyHint": "Start a focus session to track your progress"
+    "emptyHint": "Start a focus session to track your progress",
+    "title": "Weekly report",
+    "loadFailed": "Failed to load weekly report data",
+    "weekRange": "{{startMonth}}/{{startDay}} - {{endMonth}}/{{endDay}}",
+    "weekdaySun": "Sun",
+    "weekdayMon": "Mon",
+    "weekdayTue": "Tue",
+    "weekdayWed": "Wed",
+    "weekdayThu": "Thu",
+    "weekdayFri": "Fri",
+    "weekdaySat": "Sat",
+    "stat": {
+      "totalFocusDuration": "Total focus time",
+      "hours": "hr",
+      "dailyAverage": "Avg {{hours}} hr/day",
+      "completion": "Completion",
+      "tasks": "tasks",
+      "focusSessions": "{{count}} focus sessions",
+      "streakDays": "Streak",
+      "days": "days",
+      "pomodoros": "{{count}} pomodoros"
+    },
+    "bestDay": {
+      "title": "Best day",
+      "focusDuration": "Focus time"
+    },
+    "weekOverview": "This week overview"
   },
   "dailyStats": {
     "empty": "No focus records today yet",
@@ -408,5 +542,26 @@
       "title": "Delete Task",
       "message": "Are you sure you want to delete task \"{{title}}\"? This action cannot be undone."
     }
+  },
+  "reports": {
+    "loadDailyFailed": "Failed to load statistics",
+    "loadWeeklyFailed": "Failed to load weekly report",
+    "loadMonthlyFailed": "Failed to load monthly report"
+  },
+  "taskRetrospect": {
+    "saveFailed": "Failed to save review",
+    "loadFailed": "Failed to load review"
+  },
+  "heatmap": {
+    "prevYear": "Previous year",
+    "nextYear": "Next year"
+  },
+  "a11y": {
+    "draggableTask": "Draggable task card, press Space to enter drag mode",
+    "moveToColumn": "Move to {{column}}",
+    "dragCancel": "Cancel drag",
+    "dragConfirm": "Confirm move",
+    "dragStart": "Enter drag mode",
+    "dragMoveHint": "Use left/right arrow keys to switch target column, Enter to confirm, Esc to cancel"
   }
 }

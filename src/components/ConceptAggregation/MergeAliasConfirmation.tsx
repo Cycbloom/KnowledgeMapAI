@@ -61,7 +61,7 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
         className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
           <div className="flex items-center gap-2">
             <GitMerge className="text-primary-500" size={20} />
             <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
@@ -95,14 +95,14 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
               <div className="flex items-center gap-2 text-xs">
                 <button
                   onClick={handleSelectAll}
-                  className="text-primary-600 dark:text-primary-400 hover:underline"
+                  className="text-primary-600 dark:text-primary-400 underline"
                 >
                   {t("conceptAggregation.mergeAlias.selectAll")}
                 </button>
                 <span className="text-slate-300">|</span>
                 <button
                   onClick={handleDeselectAll}
-                  className="text-slate-500 dark:text-slate-400 hover:underline"
+                  className="text-slate-500 dark:text-slate-400 underline"
                 >
                   {t("conceptAggregation.mergeAlias.deselectAll")}
                 </button>
@@ -181,7 +181,7 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-500 bg-slate-50 dark:bg-slate-800/50">
           <Button variant="ghost" size="sm" onClick={onCancel}>
             {t("conceptAggregation.mergeAlias.cancel")}
           </Button>

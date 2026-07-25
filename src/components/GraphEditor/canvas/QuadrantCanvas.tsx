@@ -7,6 +7,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import type {
   Node,
@@ -142,6 +143,7 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
     ref,
   ) => {
     const { isDark } = useTheme();
+    const { t } = useTranslation();
     const svgRef = useRef<SVGSVGElement>(null);
     const contentRef = useRef<SVGGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -611,10 +613,12 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
         ref={containerRef}
         className="relative w-full h-full overflow-hidden"
       >
-        <svg aria-hidden="true"
+        <svg
           ref={svgRef}
           width="100%"
           height="100%"
+          role="application"
+          aria-label={t('graphEditor.quadrantCanvas.ariaLabel', '象限画布，共 {{count}} 个节点，{{regionCount}} 个区域', { count: totalNodeCount, regionCount: visibleRegions.length })}
           style={{
             backgroundColor: colors.background,
             cursor: isDragging
@@ -632,6 +636,8 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
             onCanvasClick?.();
           }}
         >
+          <title>{t('graphEditor.quadrantCanvas.title', '象限画布')}</title>
+          <desc>{t('graphEditor.quadrantCanvas.desc', '交互式象限画布，按区域分组展示 {{count}} 个知识节点。使用鼠标或触摸进行平移与缩放，拖动中心点可重定位，按节点可查看详情。', { count: totalNodeCount })}</desc>
           <g ref={contentRef}>
             {visibleRegions.map((region) => {
               return (
@@ -777,6 +783,8 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
               setTransform(newTransform);
             }}
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+            aria-label={t('graphEditor.quadrantCanvas.zoomIn', '放大')}
+            title={t('graphEditor.quadrantCanvas.zoomIn', '放大')}
           >
             <svg aria-hidden="true"
               width="20"
@@ -809,6 +817,8 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
               setTransform(newTransform);
             }}
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+            aria-label={t('graphEditor.quadrantCanvas.zoomOut', '缩小')}
+            title={t('graphEditor.quadrantCanvas.zoomOut', '缩小')}
           >
             <svg aria-hidden="true"
               width="20"
@@ -830,6 +840,8 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
               setTransform(newTransform);
             }}
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+            aria-label={t('graphEditor.quadrantCanvas.resetView', '重置视图')}
+            title={t('graphEditor.quadrantCanvas.resetView', '重置视图')}
           >
             <svg aria-hidden="true"
               width="20"

@@ -1,4 +1,4 @@
-import { forwardRef, type InputHTMLAttributes } from 'react';
+import { forwardRef, useId, type InputHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -14,11 +14,18 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
     const errorClass = error ? 'border-red-500 dark:border-red-500' : '';
     const userClass = className ?? '';
 
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
+    const errorId = useId();
+    const hintId = useId();
+
+    const describedBy = error ? errorId : hint ? hintId : undefined;
+
     return (
       <div>
         {label && (
           <label
-            htmlFor={id}
+            htmlFor={inputId}
             className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
           >
             {label}
@@ -26,16 +33,28 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
         )}
         <input
           ref={ref}
-          id={id}
+          id={inputId}
           className={cn(baseClass, errorClass, userClass)}
           aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          aria-required={props.required ? true : undefined}
           {...props}
         />
         {error && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p
+            id={errorId}
+            className="mt-1 text-sm text-red-600 dark:text-red-400"
+          >
+            {error}
+          </p>
         )}
         {hint && !error && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{hint}</p>
+          <p
+            id={hintId}
+            className="mt-1 text-sm text-gray-500 dark:text-gray-400"
+          >
+            {hint}
+          </p>
         )}
       </div>
     );

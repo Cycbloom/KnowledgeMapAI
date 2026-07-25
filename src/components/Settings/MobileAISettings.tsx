@@ -68,7 +68,7 @@ export const MobileAISettings = React.memo(function MobileAISettings({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
       <div className="flex items-center gap-2 mb-4">
         <Smartphone className="w-5 h-5 text-green-600 dark:text-green-400" />
         <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -92,11 +92,11 @@ export const MobileAISettings = React.memo(function MobileAISettings({
               setMobileProvider(provider);
               setMobileModel(availableModels[provider]?.[0] || "");
             }}
-            className="w-full select-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+            className="w-full select-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
           >
             <option value="deepseek">Deepseek</option>
-            <option value="volcengine">火山引擎 (Volcengine)</option>
-            <option value="aliyun">阿里云 (Aliyun)</option>
+            <option value="volcengine">{t('settings.mobileAI.volcengine')}</option>
+            <option value="aliyun">{t('settings.mobileAI.aliyun')}</option>
           </select>
         </div>
 
@@ -107,7 +107,7 @@ export const MobileAISettings = React.memo(function MobileAISettings({
           <select
             value={mobileModel}
             onChange={(e) => setMobileModel(e.target.value)}
-            className="w-full select-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+            className="w-full select-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
           >
             {availableModels[mobileProvider]?.map((m) => (
               <option key={m} value={m}>
@@ -127,7 +127,7 @@ export const MobileAISettings = React.memo(function MobileAISettings({
               value={mobileApiKey}
               onChange={(e) => setMobileApiKey(e.target.value)}
               placeholder={t("settings.enterApiKey")}
-              className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+              className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
             />
             <button
               type="button"

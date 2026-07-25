@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,8 +14,11 @@ import {
 } from "lucide-react";
 import { taskReviewApi, TaskReview } from "../../services/api/review";
 import { formatDurationMinutes } from "../../utils/formatters";
+import { message } from "@/utils/messageHelper";
 import { UserTask } from "@shared/types";
 import { useFormDraft } from "../../hooks";
+import { useFocusTrap } from "../../hooks/common/useFocusTrap";
+import { useEscapeKey } from "../../hooks/common/useEscapeKey";
 import { ConfirmationModal } from "../common/ConfirmationModal";
 
 interface TaskRetrospectDraft {
@@ -67,6 +70,10 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
     }
   }, [isOpen, task]);
 
+  const titleId = useId();
+  const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
+  useEscapeKey(onClose, isOpen);
+
   const loadExistingReview = async () => {
     if (!task) return;
     try {
@@ -90,6 +97,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
       }
     } catch (error) {
       console.error("Failed to load task review:", error);
+      message.error(t('scheduler.taskRetrospect.loadFailed'));
     } finally {
       setLoaded(true);
     }
@@ -121,6 +129,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
       onClose();
     } catch (error) {
       console.error("Failed to save task review:", error);
+      message.error(t('scheduler.taskRetrospect.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -132,6 +141,10 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
+          ref={containerRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -142,7 +155,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+            className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-500 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-gradient-to-r from-emerald-500 to-primary-500 p-6 text-white">
@@ -152,7 +165,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                     <CheckCircle size={24} />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold">任务完成！</h2>
+                    <h2 id={titleId} className="text-lg font-bold">任务完成！</h2>
                     <p className="text-sm text-white/80">花点时间回顾一下</p>
                   </div>
                 </div>
@@ -195,7 +208,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                   value={formData.content}
                   onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                   placeholder="这个任务完成得怎么样？有什么感受？"
-                  className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
 
@@ -209,7 +222,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                     value={formData.difficulties}
                     onChange={(e) => setFormData(prev => ({ ...prev, difficulties: e.target.value }))}
                     placeholder="有什么阻碍？"
-                    className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
                 <div>
@@ -221,7 +234,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                     value={formData.improvements}
                     onChange={(e) => setFormData(prev => ({ ...prev, improvements: e.target.value }))}
                     placeholder="如何解决的？"
-                    className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
               </div>
@@ -235,11 +248,11 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                   value={formData.learnings}
                   onChange={(e) => setFormData(prev => ({ ...prev, learnings: e.target.value }))}
                   placeholder="从这个任务中学到了什么新知识或技能？"
-                  className="w-full h-16 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full h-16 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
 
-              <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-slate-500">
                 <motion.button
                   onClick={() => {
                     onSkip?.();

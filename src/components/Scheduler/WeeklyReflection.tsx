@@ -181,7 +181,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700"
+            className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-500"
             onClick={e => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-gradient-to-r from-primary-500 to-primary-500 p-6 text-white">
@@ -299,7 +299,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                     value={formData.content}
                     onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                     placeholder="这周整体感觉如何？有什么收获？"
-                    className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
 
@@ -313,7 +313,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                       value={formData.improvements}
                       onChange={(e) => setFormData(prev => ({ ...prev, improvements: e.target.value }))}
                       placeholder="下周想要改进什么？"
-                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                   <div>
@@ -325,15 +325,15 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                       value={formData.learnings}
                       onChange={(e) => setFormData(prev => ({ ...prev, learnings: e.target.value }))}
                       placeholder="这周学到了什么新东西？"
-                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-500">
                   <motion.button
                     onClick={onClose}
-                    className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-500 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >

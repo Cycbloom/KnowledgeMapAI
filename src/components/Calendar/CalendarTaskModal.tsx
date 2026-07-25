@@ -166,10 +166,11 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                   className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
                 >
                   {t("calendar.taskTitle")}{" "}
-                  <span className="text-red-500">*</span>
+                  <span aria-hidden="true" className="text-red-500">*</span>
                 </label>
                 <FormInput
                   type="text"
+                  aria-required={true}
                   value={taskForm.title}
                   onChange={(e) => {
                     setTaskForm({ ...taskForm, title: e.target.value });
@@ -179,7 +180,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                   }}
                   placeholder={t("calendar.taskTitlePlaceholder")}
                   error={titleError}
-                  className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 placeholder-gray-400 dark:placeholder:text-slate-500"
+                  className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-500 placeholder-gray-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
@@ -192,7 +193,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                 }
                 placeholder={t("calendar.descriptionPlaceholder")}
                 rows={2}
-                className="resize-none bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 placeholder-gray-400 dark:placeholder:text-slate-500"
+                className="resize-none bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-500 placeholder-gray-400 dark:placeholder:text-slate-500"
               />
 
               {/* Deadline */}
@@ -212,7 +213,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                       deadline: e.target.value,
                     })
                   }
-                  className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600"
+                  className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-500"
                 />
               </div>
 
@@ -234,7 +235,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                         estimated_duration: parseInt(e.target.value) || 30,
                       })
                     }
-                    className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600"
+                    className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-500"
                   />
                 </div>
                 <FormSelect
@@ -246,7 +247,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                       priority: parseInt(e.target.value),
                     })
                   }
-                  className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600"
+                  className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-500"
                 >
                   {priorityLabels.map((label, index) => (
                     <option key={index} value={index + 1}>
@@ -273,7 +274,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                       e.key === "Enter" && (e.preventDefault(), addTag())
                     }
                     placeholder={t("calendar.addTag")}
-                    className="flex-1 px-3 py-3 rounded-lg border min-h-[44px] bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-slate-500"
+                    className="flex-1 px-3 py-3 rounded-lg border min-h-[44px] bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-500 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-slate-500"
                   />
                   <button
                     type="button"

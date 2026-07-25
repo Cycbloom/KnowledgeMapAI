@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useId, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,6 +10,7 @@ import {
 import { frontendKernel } from "../../App";
 import { iconMap } from "../../utils/iconMap";
 import type { NavLabelKey } from "../../services/kernel/types";
+import { useMenuNavigation } from "../../hooks/useMenuNavigation";
 
 interface NavItem {
   to: string;
@@ -100,6 +101,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const { t } = useTranslation();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const menuItemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const menuId = useId();
   const location = useLocation();
   const { mainNavItems, moreNavItems } = useKernelNavItems();
 
@@ -129,6 +134,45 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   };
 
   const isMoreActive = moreNavItems.some((item) => isActive(item.to));
+
+  // 计算初始激活索引：优先聚焦当前路由对应的菜单项
+  const initialMoreIndex = useMemo(() => {
+    const idx = moreNavItems.findIndex((item) => {
+      if (item.to === "/") {
+        return currentPath === "/";
+      }
+      return currentPath.startsWith(item.to);
+    });
+    return idx >= 0 ? idx : 0;
+  }, [moreNavItems, currentPath]);
+
+  const handleMenuSelect = useCallback((index: number) => {
+    menuItemRefs.current[index]?.click();
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setIsMoreOpen(false);
+    moreButtonRef.current?.focus();
+  }, []);
+
+  const { activeIndex: activeMenuIndex } = useMenuNavigation({
+    itemCount: moreNavItems.length,
+    enabled: isMoreOpen,
+    onSelect: handleMenuSelect,
+    onClose: handleClose,
+    initialIndex: initialMoreIndex,
+  });
+
+  // 菜单打开时聚焦菜单容器，使 aria-activedescendant 能被屏幕阅读器播报
+  useEffect(() => {
+    if (isMoreOpen) {
+      menuRef.current?.focus();
+    }
+  }, [isMoreOpen]);
+
+  const menuItemId = (index: number) => `${menuId}-item-${index}`;
+  const activeMenuItemId =
+    isMoreOpen && moreNavItems.length > 0 ? menuItemId(activeMenuIndex) : undefined;
 
   const getNavItemClass = (path: string) => {
     const active = isActive(path);
@@ -196,6 +240,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 
         <div ref={moreMenuRef} className="relative">
           <motion.button
+            ref={moreButtonRef}
             onClick={() => setIsMoreOpen(!isMoreOpen)}
             className={getMoreButtonClass()}
             whileTap={{ scale: 0.92 }}
@@ -229,6 +274,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 />
 
                 <motion.div
+                  ref={menuRef}
                   variants={moreMenuVariants}
                   initial="hidden"
                   animate="visible"
@@ -239,34 +285,49 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                       : "bg-white border border-gray-200"
                   }`}
                   role="menu"
+                  id={menuId}
                   aria-label={t('layout.moreMenu')}
+                  aria-activedescendant={activeMenuItemId}
+                  tabIndex={-1}
                 >
                   <div className="py-1.5">
-                    {moreNavItems.map((item) => (
-                      <motion.div
-                        key={item.to}
-                        variants={moreMenuItemVariants}
-                      >
-                        <Link
-                          to={item.to}
-                          className={`flex items-center gap-3 px-4 py-2.5 ${
-                            isActive(item.to)
-                              ? isDark
-                                ? "bg-primary-950/50 text-primary-400"
-                                : "bg-primary-50 text-primary-600"
-                              : isDark
-                                ? "text-slate-300 hover:bg-slate-800"
-                                : "text-gray-700 hover:bg-gray-50"
-                          }`}
-                          role="menuitem"
-                          aria-label={t(item.labelKey)}
-                          aria-current={isActive(item.to) ? "page" : undefined}
+                    {moreNavItems.map((item, index) => {
+                      const isActiveItem = isActive(item.to);
+                      const isFocused = index === activeMenuIndex;
+                      return (
+                        <motion.div
+                          key={item.to}
+                          variants={moreMenuItemVariants}
                         >
-                          <item.icon size={16} strokeWidth={isActive(item.to) ? 2.5 : 2} aria-hidden="true" />
-                          <span className="text-sm">{t(item.labelKey)}</span>
-                        </Link>
-                      </motion.div>
-                    ))}
+                          <Link
+                            ref={(el) => {
+                              menuItemRefs.current[index] = el;
+                            }}
+                            to={item.to}
+                            className={`flex items-center gap-3 px-4 py-2.5 ${
+                              isActiveItem
+                                ? isDark
+                                  ? "bg-primary-950/50 text-primary-400"
+                                  : "bg-primary-50 text-primary-600"
+                                : isFocused
+                                  ? isDark
+                                    ? "bg-slate-800 text-slate-100"
+                                    : "bg-gray-100 text-gray-900"
+                                  : isDark
+                                    ? "text-slate-300 hover:bg-slate-800"
+                                    : "text-gray-700 hover:bg-gray-50"
+                            }`}
+                            role="menuitem"
+                            id={menuItemId(index)}
+                            aria-label={t(item.labelKey)}
+                            aria-current={isActiveItem ? "page" : undefined}
+                          >
+                            <item.icon size={16} strokeWidth={isActiveItem ? 2.5 : 2} aria-hidden="true" />
+                            <span className="text-sm">{t(item.labelKey)}</span>
+                          </Link>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </motion.div>
               </>

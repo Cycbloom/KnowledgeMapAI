@@ -14,6 +14,7 @@
     "download": "生成并下载 PDF",
     "success": "导出成功！",
     "failed": "导出失败，请重试",
+    "prepareFailed": "导出准备失败",
     "imageTitle": "导出为 PNG 图片",
     "transparent": "透明背景",
     "fitView": "自适应视图",
@@ -35,6 +36,12 @@
       "title": "删除图谱",
       "message": "确定要删除当前图谱 \"{{title}}\" 吗？此操作无法撤销。"
     }
+  },
+  "edgeEdit": {
+    "saveFailed": "保存边失败"
+  },
+  "aiActionSettings": {
+    "loadFailed": "加载 AI 动作设置失败"
   },
   "graphMap": {
     "relationDiscovery": {
@@ -192,7 +199,48 @@
     "exportPDF": "PDF 文档",
     "exportJSON": "JSON 备份",
     "exportImage": "图片 (PNG)",
-    "deleteGraph": "彻底删除此图谱"
+    "deleteGraph": "彻底删除此图谱",
+    "back": "返回",
+    "add": "添加",
+    "preview": "预览",
+    "details": "详情",
+    "more": "更多",
+    "closeLiteratureExtract": "关闭文献提取",
+    "closeResearchProgress": "关闭研究进度",
+    "closeLiteratureLibrary": "关闭文献库",
+    "regionControl": "区域控制",
+    "versionHistory": "版本历史",
+    "conceptAggregation": "概念聚合",
+    "edgeDisplayMode": "边线显示模式",
+    "edgeFull": "边线",
+    "edgeSimplified": "简化",
+    "edgeHidden": "隐藏",
+    "exitFocusMode": "退出专注",
+    "exitFocusModeTitle": "退出专注模式 (Esc)",
+    "exitFocusModeAria": "退出专注模式",
+    "undo": "撤销",
+    "redo": "重做",
+    "batchOperations": "批量操作",
+    "batchCount": "批量 ({{count}})",
+    "nodeCount": "{{count}} 节点",
+    "modifyColor": "修改颜色",
+    "modifyLevel": "修改等级",
+    "levelRoot": "根节点",
+    "levelCore": "核心",
+    "levelSub": "次级",
+    "levelNormal": "普通",
+    "levelLeaf": "叶子",
+    "batchDeleteSelected": "批量删除选中",
+    "closeMenu": "关闭菜单",
+    "aiAssistantSheet": "AI 助手",
+    "viewOptions": "视图选项",
+    "moreFunctions": "更多功能",
+    "exportMarkdownAction": "导出 Markdown",
+    "exportAnkiAction": "导出 Anki 卡片",
+    "exportPDFAction": "导出 PDF",
+    "exportJSONAction": "导出 JSON",
+    "exportImageAction": "导出图片",
+    "batchMenu": "批量操作菜单"
   },
   "switcher": {
     "placeholder": "切换图谱",
@@ -219,7 +267,15 @@
     "colType": "类型",
     "colConcepts": "概念",
     "colModules": "模块",
-    "footer": "共收录 {{count}} 篇文献"
+    "footer": "共收录 {{count}} 篇文献",
+    "typeLabel": {
+      "paper": "论文",
+      "book": "书籍",
+      "article": "文章",
+      "report": "报告",
+      "webpage": "网页",
+      "document": "文档"
+    }
   },
   "mindMap": {
     "unnamed": "未命名",
@@ -251,6 +307,14 @@
     "exit": "退出叙事",
     "complete": "叙事完成",
     "startNarrative": "叙事播放"
+  },
+  "presentation": {
+    "mode": "演示模式",
+    "previous": "上一步 (←)",
+    "pause": "暂停",
+    "autoPlay": "自动播放",
+    "next": "下一步 (→)",
+    "exit": "退出演示 (Esc)"
   },
   "semanticZoom": {
     "overview": "概览",
@@ -422,6 +486,22 @@
     "selectNodeFirst": "请先选择一个节点"
   },
   "share": {
+    "title": "分享图谱",
+    "tabCollaborate": "协作者",
+    "tabPublic": "公开链接",
+    "loading": "加载中...",
+    "roleOwner": "所有者",
+    "roleEditor": "编辑者",
+    "roleViewer": "查看者",
+    "inviteEmailPlaceholder": "输入用户邮箱",
+    "generateShareLink": "生成分享链接",
+    "shareLinkLabel": "分享链接",
+    "publicAccess": "公开访问",
+    "privateGraph": "私有图谱",
+    "publicDesc": "任何拥有链接的人都可以查看此图谱，但无法进行编辑。",
+    "privateDesc": "只有您可以访问此图谱。",
+    "copyLink": "复制链接",
+    "openInNewTab": "在新标签页打开",
     "madePublic": "图谱已公开，任何人均可访问",
     "madePrivate": "图谱已设为私有",
     "toggleFailed": "设置失败，请重试",
@@ -433,13 +513,49 @@
     "removeFailedRetry": "移除失败，请重试",
     "linkGenerated": "分享链接已生成",
     "linkGenerateFailed": "生成链接失败",
-    "linkGenerateFailedRetry": "生成链接失败，请重试"
+    "linkGenerateFailedRetry": "生成链接失败，请重试",
+    "fetchCollaboratorsFailed": "加载协作者失败"
   },
   "versionHistory": {
     "loadFailed": "加载版本历史失败",
     "rollbackSuccess": "已成功回滚到版本 {{version}}",
     "rollbackFailed": "回滚失败",
-    "compareFailed": "版本对比失败"
+    "compareFailed": "版本对比失败",
+    "title": "版本历史",
+    "branchManageTitle": "分支管理",
+    "tabSnapshots": "快照",
+    "tabBranches": "分支",
+    "close": "关闭",
+    "loadMore": "加载更多",
+    "confirmCreate": "创建",
+    "snapshotDescPlaceholder": "输入快照描述（可选）",
+    "rollbackConfirmTitle": "回滚确认",
+    "confirmRollback": "确认回滚",
+    "rollbackConfirmMessage": "确定要回滚到此版本吗？当前状态将自动保存为快照。",
+    "targetSnapshot": "目标快照",
+    "basedOnSnapshot": "基于快照",
+    "noDescription": "无描述",
+    "nodeAndEdgeCount": "{{nodes}} 节点 · {{edges}} 边",
+    "createBranchTitle": "创建分支",
+    "createBranchLabel": "创建分支",
+    "branchNamePlaceholder": "输入分支名称",
+    "viewDiff": "查看 Diff",
+    "rollback": "回滚",
+    "cancel": "取消",
+    "processing": "处理中...",
+    "snapshotType": {
+      "manual": "手动",
+      "auto": "自动",
+      "pre_ai_expand": "AI扩展前",
+      "pre_batch_delete": "批量删除前",
+      "pre_rollback": "回滚前"
+    },
+    "relativeTime": {
+      "justNow": "刚刚",
+      "minutesAgo": "{{count}}分钟前",
+      "hoursAgo": "{{count}}小时前",
+      "daysAgo": "{{count}}天前"
+    }
   },
   "layout": {
     "noNodes": "没有节点可以调整",
@@ -448,6 +564,247 @@
   },
   "settings": {
     "saved": "设置已保存",
-    "saveFailed": "保存失败"
+    "saveFailed": "保存失败",
+    "title": "图谱设置",
+    "tabGeneral": "常规设置",
+    "tabPrompts": "AI 提示词",
+    "tabActions": "AI 动作",
+    "performanceTitle": "性能与画质 (Performance)",
+    "qualityHigh": "高画质",
+    "qualityMedium": "平衡",
+    "qualityLow": "高性能",
+    "showStats": "显示性能统计 (FPS)",
+    "qualityHighDesc": "启用泛光特效，最大视野距离。",
+    "qualityMediumDesc": "关闭部分特效，适中视野。",
+    "qualityLowDesc": "关闭特效，简化几何体，适合低端设备。",
+    "gamificationTitle": "闯关模式 (Gamification)",
+    "gamificationDesc": "开启后，节点将被锁定，必须先掌握前置知识点才能解锁。关闭后所有节点可见。",
+    "textDisplayTitle": "文本显示层级 (Label Display)",
+    "textDisplayAll": "全部显示",
+    "textDisplayImportant": "核心节点",
+    "textDisplayRootOnly": "仅根节点",
+    "textDisplayAllDesc": "在任何距离下显示所有节点的标题（可能较拥挤）。",
+    "textDisplayImportantDesc": "根据节点层级自动调整可见距离（根节点最远，叶子节点最近）。",
+    "textDisplayRootOnlyDesc": "仅显示最顶层的根节点标题。",
+    "learningDirectionTitle": "学习顺序 (Learning Order)",
+    "directionTopDown": "自顶向下",
+    "directionTopDownDesc": "先学根节点，解锁子节点",
+    "directionBottomUp": "自底向上",
+    "directionBottomUpDesc": "先学叶节点，解锁父节点",
+    "directionTopDownHint": "传统的学习路径：从概览到细节。",
+    "directionBottomUpHint": "构建式学习路径：从基础部分组装成整体。适合\"叶节点是父节点一部分\"的场景。",
+    "saving": "保存中...",
+    "save": "保存设置"
+  },
+  "backbone": {
+    "title": "骨干节点兼容性检查",
+    "issuesFound": "发现 {{count}} 个需要处理的兼容性问题",
+    "infoMessage": "检测到部分骨干节点缺少必要的属性或标题不符合标准，建议进行标准化处理以确保图谱功能正常运行。",
+    "selectAll": "全选",
+    "deselectAll": "取消全选",
+    "selectedCount": "已选择 {{selected}} / {{total}} 项",
+    "ignore": "忽略",
+    "processing": "处理中...",
+    "autoFix": "自动修复 ({{count}})",
+    "unknown": "未知",
+    "unknownIssue": "未知问题",
+    "fixSuccess": "已成功修复 {{count}} 个骨干节点的兼容性问题",
+    "fixError": "{{count}} 个节点修复失败，请稍后重试",
+    "missingModule": "缺少骨干模块属性，建议设置为「{{module}}」",
+    "invalidModule": "无效的模块属性「{{current}}」，建议修正为「{{suggested}}」",
+    "invalidTitle": "标题不符合标准，建议修改为「{{title}}」"
+  },
+  "relationshipType": {
+    "title": "关系类型设置",
+    "categoryAll": "全部",
+    "categoryHierarchical": "层级关系",
+    "categoryDependency": "依赖关系",
+    "categorySemantic": "语义关系",
+    "categoryTemporal": "时序关系",
+    "categoryInteraction": "交互关系",
+    "categoryCausal": "因果关系",
+    "categoryCustom": "自定义",
+    "lineStyleSolid": "实线",
+    "lineStyleDashed": "虚线",
+    "lineStyleDotted": "点线",
+    "lineStyleDouble": "双线",
+    "arrowShow": "显示",
+    "arrowHide": "隐藏",
+    "arrowAuto": "自动",
+    "fetchFailed": "获取关系类型失败",
+    "createFailed": "创建关系类型失败",
+    "updateFailed": "更新关系类型失败",
+    "deleteFailed": "删除关系类型失败",
+    "totalCount": "共 {{count}} 个关系类型",
+    "createNew": "新建关系类型",
+    "editTitle": "编辑关系类型",
+    "nameLabel": "名称（英文标识）",
+    "namePlaceholder": "例如：leads_to",
+    "nameImmutable": "名称创建后不可修改",
+    "displayNameLabel": "显示名称",
+    "displayNamePlaceholder": "例如：Leads To",
+    "categoryLabel": "分类",
+    "colorLabel": "颜色",
+    "lineStyleLabel": "线型",
+    "arrowLabel": "箭头",
+    "preview": "预览",
+    "cancel": "取消",
+    "save": "保存",
+    "saving": "保存中...",
+    "builtinType": "内置类型",
+    "editAction": "编辑",
+    "deleteAction": "删除",
+    "itemCount": "{{count}} 个"
+  },
+  "nodeEdit": {
+    "backToOutline": "返回大纲",
+    "headerCreate": "创建新节点",
+    "headerEdit": "编辑节点",
+    "selectParentHint": "点击图谱选择父节点（可多选）",
+    "selectParentDone": "完成",
+    "backboneBadge": "(骨干节点)",
+    "backboneImmutable": "{{module}} - 标题不可修改",
+    "field": {
+      "title": "标题",
+      "titlePlaceholder": "输入节点标题",
+      "summary": "概览",
+      "summaryHint": "(20-30字短概述，用于图谱预览)",
+      "summaryPlaceholder": "简短概览，概括核心内容...",
+      "parent": "父节点 (可多选)",
+      "parentPlaceholder": "搜索选择父节点...",
+      "clearAll": "清除全部",
+      "noParent": "无父节点",
+      "noMatchingNodes": "没有匹配的节点",
+      "noAvailableNodes": "没有可选的节点",
+      "selectFromGraph": "从图谱选择",
+      "finishSelect": "完成选择",
+      "tags": "标签 (逗号分隔)",
+      "tagsPlaceholder": "例如: 重要, 待办, 概念",
+      "level": "层级",
+      "levelRoot": "根节点",
+      "levelCore": "核心节点",
+      "levelSub": "次级节点",
+      "levelNormal": "普通节点",
+      "levelLeaf": "叶子节点",
+      "content": "内容"
+    },
+    "toolbar": {
+      "editMode": "编辑模式",
+      "edit": "编辑",
+      "previewMode": "预览模式",
+      "preview": "预览",
+      "bold": "加粗",
+      "italic": "斜体",
+      "heading": "标题",
+      "link": "链接",
+      "codeBlock": "代码块"
+    },
+    "placeholder": {
+      "bold": "粗体文本",
+      "italic": "斜体文本",
+      "link": "链接文本",
+      "code": "代码",
+      "content": "支持 Markdown 格式... 输入 [[ 触发节点链接"
+    },
+    "autoSaveSaving": "自动保存中...",
+    "autoSaveSaved": "已自动保存",
+    "cancel": "取消",
+    "save": "保存",
+    "saveNode": "保存节点"
+  },
+  "diffDetail": {
+    "title": "版本对比",
+    "loadFailed": "获取 Diff 数据失败",
+    "unknownNode": "未知节点",
+    "unknownEdge": "未知边",
+    "itemsChanged": "{{count}} 项变更",
+    "emptyValue": "(空)",
+    "levelAndPosition": "等级: {{level}} · 位置: ({{x}}, {{y}})",
+    "changeType": {
+      "added": "新增",
+      "removed": "删除",
+      "modified": "修改"
+    },
+    "field": {
+      "content": "内容",
+      "summary": "摘要"
+    },
+    "filter": {
+      "change": "变更",
+      "entity": "实体",
+      "all": "全部",
+      "node": "节点",
+      "edge": "边"
+    },
+    "summary": {
+      "nodesAdded": "+{{count}} 节点",
+      "nodesRemoved": "-{{count}} 节点",
+      "nodesModified": "~{{count}} 节点",
+      "edgesAdded": "+{{count}} 边",
+      "edgesRemoved": "-{{count}} 边",
+      "edgesModified": "~{{count}} 边"
+    },
+    "section": {
+      "nodesAdded": "新增节点",
+      "nodesRemoved": "删除节点",
+      "nodesModified": "修改节点",
+      "edgesAdded": "新增边",
+      "edgesRemoved": "删除边",
+      "edgesModified": "修改边"
+    }
+  },
+  "batchGenerate": {
+    "presets": {
+      "quick": {
+        "label": "快速自测",
+        "desc": "每节点3题 (问答/选择/判断)"
+      },
+      "standard": {
+        "label": "标准题目包",
+        "desc": "每节点10题 (含多选/填空/解答)"
+      },
+      "exam": {
+        "label": "考前冲刺",
+        "desc": "每节点15题 (偏重复杂题型)"
+      }
+    },
+    "questionTypes": {
+      "qa": "问答题",
+      "choice": "单选题",
+      "true_false": "判断题",
+      "multi_choice": "多选题",
+      "fill_in_the_blank": "填空题",
+      "essay": "解答题"
+    },
+    "processing": "正在处理: {{current_node}}",
+    "generating": "生成中...",
+    "summary": "将为 {{count}} 个节点生成题目，支持上下文感知。",
+    "selectPreset": "选择题目包预设",
+    "customSettings": "自定义设置",
+    "questionTypesLabel": "题目类型",
+    "countLabel": "每节点生成数量",
+    "estimatedCountPrefix": "预计生成: ",
+    "estimatedCountSuffix": " 道题目",
+    "buttons": {
+      "startGenerate": "开始生成",
+      "cancel": "取消"
+    }
+  },
+  "textToGraph": {
+    "generateFailed": "文生图失败"
+  },
+  "mindMapCanvas": {
+    "ariaLabel": "思维导图视图，{{count}} 个节点，当前焦点：{{focus}}",
+    "emptyFocus": "无焦点节点"
+  },
+  "quadrantCanvas": {
+    "ariaLabel": "象限图谱视图，{{nodeCount}} 个节点，{{regionCount}} 个区域",
+    "desc": "象限图谱可视化，支持平移、缩放、拖动中心点、点击节点查看详情",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "resetView": "重置视图"
+  },
+  "planetView": {
+    "ariaLabel": "3D 星球视图，{{count}} 个节点"
   }
 }

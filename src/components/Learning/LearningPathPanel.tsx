@@ -368,7 +368,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   ];
 
   const renderToolbar = () => (
-    <div className="sticky top-0 z-20 rounded-lg border bg-gray-50 dark:bg-slate-900/95 backdrop-blur-md border-gray-200 dark:border-slate-700 shadow-sm mx-0 mb-4">
+    <div className="sticky top-0 z-20 rounded-lg border bg-gray-50 dark:bg-slate-900/95 backdrop-blur-md border-gray-200 dark:border-slate-500 shadow-sm mx-0 mb-4">
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg">
@@ -415,7 +415,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="px-3 pb-3 pt-1 border-t border-gray-200 dark:border-slate-700 overflow-hidden"
+            className="px-3 pb-3 pt-1 border-t border-gray-200 dark:border-slate-500 overflow-hidden"
           >
             <div className="space-y-4 pt-2">
               <div>
@@ -853,7 +853,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
           )}
 
           {tempPath && (
-            <div className="border-t dark:border-slate-700 pt-4 flex-shrink-0">
+            <div className="border-t dark:border-slate-500 pt-4 flex-shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {t("learning.learningPath.previewPath")}

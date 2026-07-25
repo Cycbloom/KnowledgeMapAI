@@ -206,12 +206,10 @@ export const ListView: React.FC<ListViewProps> = ({
 
     setLoadingSubtasks((prev) => new Set(prev).add(taskId));
     try {
-      const response = await api.scheduler.getSubtasks(taskId);
-      if (response.success) {
-        setSubtasksMap((prev) =>
-          new Map(prev).set(taskId, response.data || []),
-        );
-      }
+      const data = await api.scheduler.getSubtasks(taskId);
+      setSubtasksMap((prev) =>
+        new Map(prev).set(taskId, data ?? []),
+      );
     } catch (error) {
       console.error("Failed to load subtasks:", error);
     } finally {
@@ -240,23 +238,21 @@ export const ListView: React.FC<ListViewProps> = ({
   ) => {
     const newStatus = subtask.status === "completed" ? "pending" : "completed";
     try {
-      const response = await api.scheduler.updateSubtask(task.id, subtask.id, {
+      const updated = await api.scheduler.updateSubtask(task.id, subtask.id, {
         status: newStatus,
       });
-      if (response.success) {
-        setSubtasksMap((prev) => {
-          const next = new Map(prev);
-          const subtasks = next.get(task.id);
-          if (subtasks) {
-            next.set(
-              task.id,
-              subtasks.map((st) => (st.id === subtask.id ? response.data : st)),
-            );
-          }
-          return next;
-        });
-        onSubtaskUpdate?.();
-      }
+      setSubtasksMap((prev) => {
+        const next = new Map(prev);
+        const subtasks = next.get(task.id);
+        if (subtasks) {
+          next.set(
+            task.id,
+            subtasks.map((st) => (st.id === subtask.id ? updated : st)),
+          );
+        }
+        return next;
+      });
+      onSubtaskUpdate?.();
     } catch (error) {
       console.error("Failed to update subtask:", error);
     }
@@ -365,7 +361,7 @@ export const ListView: React.FC<ListViewProps> = ({
               placeholder={t("scheduler.listView.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 text-slate-800 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-primary-400 dark:focus:border-primary-500/50"
+              className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500/50 text-slate-800 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-primary-400 dark:focus:border-primary-500/50"
             />
           </div>
 
@@ -376,7 +372,7 @@ export const ListView: React.FC<ListViewProps> = ({
               ${
                 showFilters
                   ? "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 border border-primary-300 dark:border-primary-500/30"
-                  : "bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50 hover:text-slate-800 dark:hover:text-white"
+                  : "bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-500/50 hover:text-slate-800 dark:hover:text-white"
               }
             `}
           >
@@ -401,9 +397,9 @@ export const ListView: React.FC<ListViewProps> = ({
             exit={{ height: 0, opacity: 0 }}
             className="flex-shrink-0 mb-4 overflow-hidden"
           >
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/30">
+            <div className="flex items-center gap-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-500/30">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 dark:text-slate-500">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   {t("scheduler.listView.status")}:
                 </span>
                 <div className="flex gap-1">
@@ -431,7 +427,7 @@ export const ListView: React.FC<ListViewProps> = ({
               <div className="w-px h-6 bg-slate-200 dark:bg-slate-700" />
 
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 dark:text-slate-500">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   {t("scheduler.listView.queue")}:
                 </span>
                 <div className="flex gap-1">
@@ -476,34 +472,49 @@ export const ListView: React.FC<ListViewProps> = ({
         )}
       </AnimatePresence>
 
-      <div className="flex-1 min-h-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900/60 backdrop-blur-sm">
+      <div className="flex-1 min-h-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-500/50 bg-white dark:bg-slate-900/60 backdrop-blur-sm">
         {/* Desktop: table view */}
         <div className="hidden md:block h-full overflow-x-auto custom-scrollbar">
-          <table className="w-full min-w-[900px]">
+          <table
+            className="w-full min-w-[900px]"
+            aria-label={t("scheduler.listView.tableAriaLabel", { defaultValue: "任务列表" })}
+          >
             <thead className="sticky top-0 z-10">
               <tr className="bg-slate-50 dark:bg-slate-800/80">
-                {COLUMNS.map((column) => (
+                {COLUMNS.map((column) => {
+                  const isSortable = column.id !== "actions" && column.id !== "tags";
+                  const ariaSort = isSortable
+                    ? sortField === (column.id as SortField)
+                      ? sortDirection === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                    : undefined;
+                  return (
                   <th
                     key={column.id}
+                    scope="col"
+                    aria-sort={ariaSort}
                     className={`
                       px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider
-                      ${column.id !== "actions" && column.id !== "tags" ? "cursor-pointer hover:text-slate-700 dark:hover:text-slate-200" : ""}
-                      border-b border-slate-200 dark:border-slate-700/50
+                      ${isSortable ? "cursor-pointer hover:text-slate-700 dark:hover:text-slate-200" : ""}
+                      border-b border-slate-200 dark:border-slate-500/50
                     `}
                     onClick={() => {
-                      if (column.id !== "actions" && column.id !== "tags") {
+                      if (isSortable) {
                         handleSort(column.id as SortField);
                       }
                     }}
                   >
                     <div className="flex items-center gap-2">
                       <span>{column.label}</span>
-                      {column.id !== "actions" && column.id !== "tags" && (
+                      {isSortable && (
                         <SortIcon field={column.id as SortField} />
                       )}
                     </div>
                   </th>
-                ))}
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/30">
@@ -559,6 +570,8 @@ export const ListView: React.FC<ListViewProps> = ({
                                   onClick={() =>
                                     toggleTaskExpand(task.id, hasSubtasks)
                                   }
+                                  aria-expanded={isExpanded}
+                                  aria-controls={`row-${task.id}-detail`}
                                   className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                 >
                                   {isExpanded ? (
@@ -722,6 +735,7 @@ export const ListView: React.FC<ListViewProps> = ({
                         <AnimatePresence>
                           {isExpanded && hasSubtasks && (
                             <motion.tr
+                              id={`row-${task.id}-detail`}
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
@@ -819,7 +833,7 @@ export const ListView: React.FC<ListViewProps> = ({
                                                 ${
                                                   subtask.status === "completed"
                                                     ? "bg-emerald-50/50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20"
-                                                    : "bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50"
+                                                    : "bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-500/50"
                                                 }
                                               `}
                                             >
@@ -913,7 +927,7 @@ export const ListView: React.FC<ListViewProps> = ({
               return (
                 <div
                   key={task.id}
-                  className="p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/60"
+                  className="p-3 rounded-xl border border-slate-200 dark:border-slate-500/50 bg-white dark:bg-slate-800/60"
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0 flex-1">
@@ -951,7 +965,7 @@ export const ListView: React.FC<ListViewProps> = ({
                       ))}
                     </div>
                   )}
-                  <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                  <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-500/50">
                     {task.status === "pending" && onStartTask && (
                       <button onClick={() => onStartTask(task)} className="flex items-center justify-center p-2 rounded-lg min-h-[36px] min-w-[36px] bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400">
                         <Play size={14} />

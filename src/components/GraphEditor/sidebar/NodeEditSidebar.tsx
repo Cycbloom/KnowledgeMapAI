@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useRef, useMemo, useEffect, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Node as GraphNode, NodeLevel } from "../../../types";
 import { getLevelColor, getLevelLabel } from "../../../lib/graphUtils";
@@ -163,6 +163,13 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
   const { t } = useTranslation();
+  // 表单字段可访问性：通过 useId 生成唯一 id，供 label htmlFor 关联控件
+  const titleId = useId();
+  const summaryId = useId();
+  const parentSearchId = useId();
+  const tagsId = useId();
+  const levelId = useId();
+  const contentId = useId();
   const [parentSearch, setParentSearch] = useState("");
   const [showParentDropdown, setShowParentDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -366,16 +373,23 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     [nodeForm, setNodeForm],
   );
 
-  const handleBold = useCallback(() => wrapSelection("**", "**", "粗体文本"), [wrapSelection]);
-  const handleItalic = useCallback(() => wrapSelection("*", "*", "斜体文本"), [wrapSelection]);
+  const handleBold = useCallback(
+    () => wrapSelection("**", "**", t("graphEditor.nodeEdit.placeholder.bold")),
+    [wrapSelection, t],
+  );
+  const handleItalic = useCallback(
+    () => wrapSelection("*", "*", t("graphEditor.nodeEdit.placeholder.italic")),
+    [wrapSelection, t],
+  );
   const handleHeading = useCallback(() => insertAtLineStart("## "), [insertAtLineStart]);
   const handleLink = useCallback(
-    () => wrapSelection("[", "](https://)", "链接文本"),
-    [wrapSelection],
+    () =>
+      wrapSelection("[", "](https://)", t("graphEditor.nodeEdit.placeholder.link")),
+    [wrapSelection, t],
   );
   const handleCodeBlock = useCallback(
-    () => wrapSelection("```\n", "\n```", "代码"),
-    [wrapSelection],
+    () => wrapSelection("```\n", "\n```", t("graphEditor.nodeEdit.placeholder.code")),
+    [wrapSelection, t],
   );
 
   // 双链 [[ 触发检测 + 内容变更处理
@@ -491,7 +505,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             <button
               onClick={onBack}
               className={`text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-all ${isMobile ? "mr-2 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center" : "mr-1 p-1.5"}`}
-              title="返回大纲"
+              title={t("graphEditor.nodeEdit.backToOutline")}
             >
               <ArrowLeft size={isMobile ? 20 : 18} />
             </button>
@@ -502,7 +516,9 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
           <h3
             className="font-bold text-gray-800 dark:text-gray-100 text-base sm:text-lg md:text-xl"
           >
-            {mode === "create" ? "创建新节点" : "编辑节点"}
+            {mode === "create"
+              ? t("graphEditor.nodeEdit.headerCreate")
+              : t("graphEditor.nodeEdit.headerEdit")}
           </h3>
         </div>
         <button
@@ -526,14 +542,14 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 className="text-amber-600 dark:text-amber-400 animate-pulse"
               />
               <span className="text-sm text-amber-700 dark:text-amber-300 font-medium">
-                点击图谱选择父节点（可多选）
+                {t("graphEditor.nodeEdit.selectParentHint")}
               </span>
             </div>
             <button
               onClick={onCancelSelectingParent}
               className={`bg-amber-100 dark:bg-amber-800 hover:bg-amber-200 dark:hover:bg-amber-700 text-amber-700 dark:text-amber-200 rounded transition-colors ${isMobile ? "w-full py-2.5 min-h-[44px] text-sm font-medium" : "px-2 py-1 text-xs"}`}
             >
-              完成
+              {t("graphEditor.nodeEdit.selectParentDone")}
             </button>
           </div>
         </div>
@@ -602,12 +618,13 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
           <>
         <div>
           <label
+            htmlFor={titleId}
             className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
           >
-            标题
+            {t("graphEditor.nodeEdit.field.title")}
             {isBackboneNode && (
               <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
-                (骨干节点)
+                {t("graphEditor.nodeEdit.backboneBadge")}
               </span>
             )}
           </label>
@@ -615,11 +632,14 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
               <BackboneNodeIcon module={backboneModule} size="small" />
               <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">
-                {BACKBONE_MODULE_LABELS[backboneModule]} - 标题不可修改
+                {t("graphEditor.nodeEdit.backboneImmutable", {
+                  module: BACKBONE_MODULE_LABELS[backboneModule],
+                })}
               </span>
             </div>
           )}
           <input
+            id={titleId}
             type="text"
             value={nodeForm.title}
             onChange={(e) =>
@@ -627,20 +647,22 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             }
             readOnly={isBackboneNode}
             className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "px-4 py-3 min-h-[44px] text-base" : "px-3 py-2"} ${isBackboneNode ? "cursor-not-allowed opacity-75" : ""}`}
-            placeholder="输入节点标题"
+            placeholder={t("graphEditor.nodeEdit.field.titlePlaceholder")}
           />
         </div>
 
         <div>
           <label
+            htmlFor={summaryId}
             className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
           >
-            概览
+            {t("graphEditor.nodeEdit.field.summary")}
             <span className="ml-1 text-xs font-normal text-gray-400 dark:text-gray-500">
-              (20-30字短概述，用于图谱预览)
+              {t("graphEditor.nodeEdit.field.summaryHint")}
             </span>
           </label>
           <input
+            id={summaryId}
             type="text"
             value={nodeForm.summary}
             onChange={(e) =>
@@ -648,15 +670,16 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             }
             maxLength={200}
             className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "px-4 py-3 min-h-[44px] text-base" : "px-3 py-2 text-sm"}`}
-            placeholder="简短概览，概括核心内容..."
+            placeholder={t("graphEditor.nodeEdit.field.summaryPlaceholder")}
           />
         </div>
 
         <div className="relative" ref={dropdownRef}>
           <label
+            htmlFor={parentSearchId}
             className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
           >
-            父节点 (可多选)
+            {t("graphEditor.nodeEdit.field.parent")}
           </label>
 
           <div className={`flex gap-2 ${isMobile ? "flex-col" : ""}`}>
@@ -667,6 +690,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 <Search size={isMobile ? 18 : 16} />
               </div>
               <input
+                id={parentSearchId}
                 ref={inputRef}
                 type="text"
                 value={parentSearch}
@@ -674,7 +698,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 onFocus={handleParentInputFocus}
                 onBlur={handleParentInputBlur}
                 className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "pl-11 pr-10 py-3 min-h-[44px] text-base" : "pl-9 pr-8 py-2"}`}
-                placeholder="搜索选择父节点..."
+                placeholder={t("graphEditor.nodeEdit.field.parentPlaceholder")}
               />
               <div
                 className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 ${isMobile ? "right-3" : "right-2"}`}
@@ -683,7 +707,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   <button
                     onClick={clearAllParents}
                     className={`text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded ${isMobile ? "p-1.5 min-h-[36px] min-w-[36px]" : "p-1"}`}
-                    title="清除全部"
+                    title={t("graphEditor.nodeEdit.field.clearAll")}
                   >
                     <X size={isMobile ? 16 : 14} />
                   </button>
@@ -714,7 +738,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   >
                     <Circle size={12} className="text-gray-400" />
                     <span className={`${isMobile ? "text-base" : "text-sm"}`}>
-                      无父节点
+                      {t("graphEditor.nodeEdit.field.noParent")}
                     </span>
                   </button>
 
@@ -722,7 +746,9 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                     <div
                       className={`text-center text-gray-400 dark:text-gray-500 ${isMobile ? "px-4 py-5 text-base" : "px-3 py-4 text-sm"}`}
                     >
-                      {parentSearch ? "没有匹配的节点" : "没有可选的节点"}
+                      {parentSearch
+                        ? t("graphEditor.nodeEdit.field.noMatchingNodes")
+                        : t("graphEditor.nodeEdit.field.noAvailableNodes")}
                     </div>
                   ) : (
                     filteredNodes.map((node) => {
@@ -785,14 +811,22 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   ? "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400"
                   : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-primary-500 hover:border-primary-300"
               } ${isMobile ? "w-full py-3 min-h-[48px] flex items-center justify-center gap-2 font-medium" : "p-2"}`}
-              title={isSelectingParent ? "完成选择" : "从图谱选择"}
+              title={
+                isSelectingParent
+                  ? t("graphEditor.nodeEdit.field.finishSelect")
+                  : t("graphEditor.nodeEdit.field.selectFromGraph")
+              }
             >
               <MousePointer2
                 size={isMobile ? 18 : 16}
                 className={isSelectingParent ? "animate-pulse" : ""}
               />
               {isMobile && (
-                <span>{isSelectingParent ? "完成选择" : "从图谱选择"}</span>
+                <span>
+                  {isSelectingParent
+                    ? t("graphEditor.nodeEdit.field.finishSelect")
+                    : t("graphEditor.nodeEdit.field.selectFromGraph")}
+                </span>
               )}
             </button>
           </div>
@@ -828,11 +862,13 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
 
         <div>
           <label
+            htmlFor={tagsId}
             className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
           >
-            标签 (逗号分隔)
+            {t("graphEditor.nodeEdit.field.tags")}
           </label>
           <input
+            id={tagsId}
             type="text"
             value={nodeForm.tags.join(", ")}
             onChange={(e) => {
@@ -843,37 +879,40 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               setNodeForm({ ...nodeForm, tags });
             }}
             className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "px-4 py-3 min-h-[44px] text-base" : "px-3 py-2"}`}
-            placeholder="例如: 重要, 待办, 概念"
+            placeholder={t("graphEditor.nodeEdit.field.tagsPlaceholder")}
           />
         </div>
 
         <div>
           <label
+            htmlFor={levelId}
             className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
           >
-            层级
+            {t("graphEditor.nodeEdit.field.level")}
           </label>
           <select
+            id={levelId}
             value={nodeForm.level}
             onChange={(e) =>
               setNodeForm({ ...nodeForm, level: e.target.value as NodeLevel })
             }
             className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "px-4 py-3 min-h-[44px] text-base" : "px-3 py-2 text-sm"}`}
           >
-            <option value="root">根节点</option>
-            <option value="core">核心节点</option>
-            <option value="sub">次级节点</option>
-            <option value="normal">普通节点</option>
-            <option value="leaf">叶子节点</option>
+            <option value="root">{t("graphEditor.nodeEdit.field.levelRoot")}</option>
+            <option value="core">{t("graphEditor.nodeEdit.field.levelCore")}</option>
+            <option value="sub">{t("graphEditor.nodeEdit.field.levelSub")}</option>
+            <option value="normal">{t("graphEditor.nodeEdit.field.levelNormal")}</option>
+            <option value="leaf">{t("graphEditor.nodeEdit.field.levelLeaf")}</option>
           </select>
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1">
             <label
+              htmlFor={contentId}
               className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base" : "text-sm"}`}
             >
-              内容
+              {t("graphEditor.nodeEdit.field.content")}
             </label>
             <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
               <button
@@ -884,10 +923,10 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                     ? "bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
-                title="编辑模式"
+                title={t("graphEditor.nodeEdit.toolbar.editMode")}
               >
                 <Pencil size={12} />
-                编辑
+                {t("graphEditor.nodeEdit.toolbar.edit")}
               </button>
               <button
                 type="button"
@@ -897,10 +936,10 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                     ? "bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
-                title="预览模式"
+                title={t("graphEditor.nodeEdit.toolbar.previewMode")}
               >
                 <Eye size={12} />
-                预览
+                {t("graphEditor.nodeEdit.toolbar.preview")}
               </button>
             </div>
           </div>
@@ -913,7 +952,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   type="button"
                   onClick={handleBold}
                   className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  title="加粗"
+                  title={t("graphEditor.nodeEdit.toolbar.bold")}
                 >
                   <Bold size={14} />
                 </button>
@@ -921,7 +960,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   type="button"
                   onClick={handleItalic}
                   className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  title="斜体"
+                  title={t("graphEditor.nodeEdit.toolbar.italic")}
                 >
                   <Italic size={14} />
                 </button>
@@ -929,15 +968,16 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   type="button"
                   onClick={handleHeading}
                   className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  title="标题"
+                  title={t("graphEditor.nodeEdit.toolbar.heading")}
                 >
                   <Heading size={14} />
                 </button>
                 <button
                   type="button"
                   onClick={handleLink}
-                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  title="链接"
+                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors min-h-[24px] min-w-[24px] flex items-center justify-center"
+                  title={t("graphEditor.nodeEdit.toolbar.link")}
+                  aria-label={t("graphEditor.nodeEdit.toolbar.link")}
                 >
                   <LinkIcon size={14} />
                 </button>
@@ -945,17 +985,18 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   type="button"
                   onClick={handleCodeBlock}
                   className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  title="代码块"
+                  title={t("graphEditor.nodeEdit.toolbar.codeBlock")}
                 >
                   <Code size={14} />
                 </button>
               </div>
               <textarea
+                id={contentId}
                 ref={contentTextareaRef}
                 value={nodeForm.content}
                 onChange={handleContentChange}
                 className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all resize-none font-mono bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "h-48 px-4 py-3 text-base" : "h-64 px-3 py-2 text-sm"}`}
-                placeholder="支持 Markdown 格式... 输入 [[ 触发节点链接"
+                placeholder={t("graphEditor.nodeEdit.placeholder.content")}
               />
             </>
           ) : (
@@ -1006,12 +1047,12 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             {autoSaveStatus === "saving" ? (
               <span className="flex items-center justify-center gap-1">
                 <Loader2 className="animate-spin" size={12} />
-                自动保存中...
+                {t("graphEditor.nodeEdit.autoSaveSaving")}
               </span>
             ) : (
               <span className="flex items-center justify-center gap-1">
                 <Check size={12} />
-                已自动保存
+                {t("graphEditor.nodeEdit.autoSaveSaved")}
               </span>
             )}
           </div>
@@ -1022,7 +1063,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               onClick={onClose}
               className="flex-1 py-3 rounded-xl flex items-center justify-center font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all min-h-[48px]"
             >
-              取消
+              {t("graphEditor.nodeEdit.cancel")}
             </button>
             <SaveButton
               onSave={handleManualSave}
@@ -1030,7 +1071,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               size="md"
               disabled={!nodeForm.title.trim()}
               className="flex-1 min-h-[48px]"
-              idleLabel="保存"
+              idleLabel={t("graphEditor.nodeEdit.save")}
             />
           </div>
         ) : (
@@ -1040,7 +1081,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             size="md"
             fullWidth
             disabled={!nodeForm.title.trim()}
-            idleLabel="保存节点"
+            idleLabel={t("graphEditor.nodeEdit.saveNode")}
           />
         )}
       </div>

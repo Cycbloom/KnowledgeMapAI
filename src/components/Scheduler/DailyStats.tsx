@@ -12,6 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { api } from '../../services/api';
 import { EmptyState } from '../common/EmptyState';
+import { ErrorState } from '../common/ErrorState';
 import { formatDuration, formatDate } from '../../utils/formatters';
 import type {DailyFocusStats} from '@shared/types';
 
@@ -32,7 +33,7 @@ const StatCard: React.FC<{
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.3 }}
-    className={`relative overflow-hidden p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 shadow-sm`}
+    className={`relative overflow-hidden p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500/50 shadow-sm`}
   >
     <div
       className={`absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 rounded-full opacity-10 ${color}`}
@@ -75,24 +76,25 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
   const [stats, setStats] = useState<DailyFocusStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await api.scheduler.getDailyFocusStats(date);
-        setStats(response.data);
+        const stats = await api.scheduler.getDailyFocusStats(date);
+        setStats(stats);
         setError(null);
       } catch (err) {
         console.error("Failed to fetch daily stats:", err);
-        setError("加载统计数据失败");
+        setError(t('scheduler.reports.loadDailyFailed'));
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-  }, [date]);
+  }, [date, retryCount, t]);
 
   if (loading) {
     return (
@@ -115,9 +117,13 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
   if (error) {
     return (
       <div className={`p-6 ${className}`}>
-        <div className="text-center text-red-500 dark:text-red-400">
-          <p>{error}</p>
-        </div>
+        <ErrorState
+          message={error}
+          onRetry={() => {
+            setError(null);
+            setRetryCount((c) => c + 1);
+          }}
+        />
       </div>
     );
   }

@@ -45,6 +45,29 @@ export type {
   UpdateUserTaskData,
   QueueData,
   GenerateTaskDetailsResult,
+  TaskAnalytics,
+  TaskInsight,
+  TaskInsightsResult,
+  ActivityEventType,
+  ActivityRecord,
+  DailyActivityStats,
+  RecordActivityData,
+  GetActivitiesOptions,
+  AutoGenerateTaskData,
+  AutoTaskResult,
+  LinkedTaskResult,
+  GraphTaskInfo,
+  SyncStudyDurationData,
+  SyncTaskCompletionData,
+  BatchSyncStudyDurationItem,
+  ProgressSyncResult,
+  TaskProgressSummary,
+  BatchSyncStudyDurationResult,
+  PathNodeTask,
+  LearningPathNode,
+  CreatePathNodeTaskData,
+  BatchConvertResult,
+  PathTaskWithDetails,
 } from "./scheduler-task";
 
 // Focus session types
@@ -64,14 +87,13 @@ export type {
   AchievementCheckResult,
 } from "./scheduler-achievement";
 
-// Legacy (deprecated) types
+// FSRS-style review task types (aligned with api/services/scheduler/reviewTaskService.ts)
 export type {
   ReviewTask,
   CreateReviewTaskData,
-  UpdateReviewTaskData,
   ReviewTaskStats,
   PendingReviewTask,
-} from "./scheduler-legacy";
+} from "./reviewTask";
 
 // Study types
 export type {
@@ -87,6 +109,8 @@ export type {
   StudyWorkflowConfig,
   FsrsParamOverride,
   StudyModePreset,
+  LoopStage,
+  LearningLoop,
 } from "./scheduler-study";
 
 export { LEARNING_STATE_CONFIGS } from "./scheduler-study";

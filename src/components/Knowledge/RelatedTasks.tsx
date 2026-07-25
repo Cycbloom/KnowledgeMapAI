@@ -64,8 +64,8 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
   const { t } = useTranslation();
 
   const relatedTasks = React.useMemo(() => {
-    if (!tasksData?.data) return [];
-    return tasksData.data.filter(
+    if (!tasksData) return [];
+    return tasksData.filter(
       (task: UserTask) => task.knowledge_point_id === knowledgePointId
     );
   }, [tasksData, knowledgePointId]);
@@ -132,7 +132,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
       </div>
 
       {taskStats.total > 0 && (
-        <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+        <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-slate-400" />
             <span className="text-sm text-slate-600 dark:text-slate-400">
@@ -209,7 +209,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
                       <span
                         className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.bgColor} ${statusConfig.textColor}`}
                       >
-                        {statusConfig.label}
+                        {t(statusConfig.labelKey, { defaultValue: '' })}
                       </span>
                       {task.priority >= 3 && (
                         <span className="text-red-500 dark:text-red-400 text-xs">★</span>
@@ -244,7 +244,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
                         </div>
                       )}
 
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-500">
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
                       {task.estimated_duration && (
                         <div className="flex items-center gap-1">
                           <Clock size={12} className={queueStyle.text} />

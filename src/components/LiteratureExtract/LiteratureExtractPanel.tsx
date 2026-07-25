@@ -892,7 +892,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
               className={`px-2 py-1 text-[11px] rounded-full border transition-all ${
                 selectedConceptTypes.includes(value)
                   ? "border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
-                  : "border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-500"
+                  : "border-gray-200 dark:border-slate-500 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-500"
               }`}
             >
               {t(labelKey)}
@@ -917,7 +917,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
               )
             }
             disabled={isProcessing}
-            className="w-full px-2 py-1.5 text-xs border rounded-md bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white"
+            className="w-full px-2 py-1.5 text-xs border rounded-md bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 text-gray-900 dark:text-white"
           />
           <span className="text-[10px] text-gray-400 mt-0.5">
             {t("literatureExtract.options.preferredCountHint")}
@@ -939,7 +939,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
               )
             }
             disabled={isProcessing}
-            className="w-full px-2 py-1.5 text-xs border rounded-md bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white"
+            className="w-full px-2 py-1.5 text-xs border rounded-md bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 text-gray-900 dark:text-white"
           />
           <span className="text-[10px] text-gray-400 mt-0.5">
             {t("literatureExtract.options.maxConceptsHint")}
@@ -962,7 +962,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
               )
             }
             disabled={isProcessing}
-            className="w-full px-2 py-1.5 text-xs border rounded-md bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white"
+            className="w-full px-2 py-1.5 text-xs border rounded-md bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 text-gray-900 dark:text-white"
           />
         </div>
       </div>
@@ -1053,12 +1053,12 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   };
 
   const renderStickyToolbar = () => (
-    <div className="sticky top-0 z-20 rounded-lg border bg-gray-50 dark:bg-slate-900/95 backdrop-blur-md border-gray-200 dark:border-slate-700 shadow-sm mx-0 mb-4">
+    <div className="sticky top-0 z-20 rounded-lg border bg-gray-50 dark:bg-slate-900/95 backdrop-blur-md border-gray-200 dark:border-slate-500 shadow-sm mx-0 mb-4">
       <div className="flex items-center justify-between px-3 py-2">
         {!extractedResult ? renderInputToolbar() : renderResultToolbar()}
       </div>
       {!extractedResult && showAdvancedOptions && (
-        <div className="px-3 pb-3 pt-1 border-t border-gray-200 dark:border-slate-700">
+        <div className="px-3 pb-3 pt-1 border-t border-gray-200 dark:border-slate-500">
           {renderAdvancedOptionsContent()}
         </div>
       )}

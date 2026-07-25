@@ -178,11 +178,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
   const { data: subtasks, isLoading: isLoadingSubtasks } = useQuery({
     queryKey: queryKeys.taskSubtasks(task.id),
     queryFn: async (): Promise<TaskSubtask[]> => {
-      const response = await api.scheduler.getSubtasks(task.id);
-      if (response.success) {
-        return response.data ?? [];
-      }
-      return [];
+      return await api.scheduler.getSubtasks(task.id);
     },
     enabled: !!task.id && !!hasSubtasks && showSubtasks,
     ...defaultQueryConfig,
@@ -191,20 +187,18 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
   const handleToggleSubtask = async (subtask: TaskSubtask) => {
     const newStatus = subtask.status === "completed" ? "pending" : "completed";
     try {
-      const response = await api.scheduler.updateSubtask(task.id, subtask.id, {
+      const updated = await api.scheduler.updateSubtask(task.id, subtask.id, {
         status: newStatus,
       });
-      if (response.success) {
-        queryClient.setQueryData<TaskSubtask[]>(
-          queryKeys.taskSubtasks(task.id),
-          (prev) =>
-            (prev ?? []).map((st) =>
-              st.id === subtask.id ? response.data : st,
-            ),
-        );
-        onSubtaskUpdate?.();
-        message.success(newStatus === "completed" ? t("scheduler.taskCard.subtaskCompleted") : t("scheduler.taskCard.subtaskReopened"));
-      }
+      queryClient.setQueryData<TaskSubtask[]>(
+        queryKeys.taskSubtasks(task.id),
+        (prev) =>
+          (prev ?? []).map((st) =>
+            st.id === subtask.id ? updated : st,
+          ),
+      );
+      onSubtaskUpdate?.();
+      message.success(newStatus === "completed" ? t("scheduler.taskCard.subtaskCompleted") : t("scheduler.taskCard.subtaskReopened"));
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t("scheduler.taskCard.updateSubtaskFailed");
       message.error(errorMessage);
@@ -257,7 +251,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
           <span
             className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.color}`}
           >
-            {statusConfig.label}
+            {t(statusConfig.labelKey, { defaultValue: '' })}
           </span>
           {task.priority >= 3 && (
             <span className="text-red-500 dark:text-red-400 text-xs">★</span>
@@ -314,7 +308,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                   <ChevronRight size={14} />
                 )}
                 <span>{t("scheduler.taskCard.subtasks")}</span>
-                <span className="text-slate-500 dark:text-slate-500">
+                <span className="text-slate-500 dark:text-slate-400">
                   {t("scheduler.taskCard.subtaskProgress", { completed: task.subtask_completed || 0, total: task.subtask_count })}
                 </span>
               </div>
@@ -406,7 +400,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-500">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
           {task.estimated_duration && (
             <div className="flex items-center gap-1">
               <Clock size={12} className={queueStyle.text} />

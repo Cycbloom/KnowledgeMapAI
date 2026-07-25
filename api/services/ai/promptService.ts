@@ -184,6 +184,10 @@ export class PromptService {
     let content = "";
 
     if (!template) {
+      // DB 为唯一权威来源，所有 12 个 prompt 已 seed 到 DB
+      // (supabase/migrations/53_seed_prompt_templates.sql)，DEFAULT_PROMPTS
+      // 仅作 DB 不可用时的降级安全网（如 Electron 桌面应用 DB 离线场景）。
+      // 新增 prompt 必须通过 supabase/migrations/53_seed_prompt_templates.sql 写入 DB。
       const defaultPrompt = DEFAULT_PROMPTS[code];
       if (defaultPrompt) {
         logger.info(`Using default prompt for code: ${code}`);

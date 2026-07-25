@@ -485,7 +485,7 @@ export const RecycleBin = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredGraphs.length === 0 ? (
-            <div className="col-span-full">
+            <div aria-live="polite" className="col-span-full">
               <EmptyState
                 icon={<Trash2 size={48} />}
                 title={searchQuery ? t("recycleBin.noResults") : t("recycleBin.empty")}
@@ -659,6 +659,7 @@ export const RecycleBin = () => {
             )}
             {filteredNotes.length === 0 ? (
               <div
+                aria-live="polite"
                 className={`col-span-full flex flex-col items-center justify-center py-20 rounded-3xl border-2 border-dashed ${
                   isDark
                     ? "border-slate-800 bg-slate-800/30"

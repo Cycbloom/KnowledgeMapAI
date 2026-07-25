@@ -12,19 +12,19 @@ export const performanceApi = {
     if (query.startTime) params.set('startTime', String(query.startTime));
     if (query.endTime) params.set('endTime', String(query.endTime));
     
-    return request(`/ai/performance/logs?${params}`);
+    return request<{ logs: AIPerformanceLog[] }>(`/ai/performance/logs?${params}`);
   },
-  
+
   getStats: async (query: { startTime?: number; endTime?: number } = {}): Promise<AIPerformanceStats> => {
     const params = new URLSearchParams();
     if (query.startTime) params.set('startTime', String(query.startTime));
     if (query.endTime) params.set('endTime', String(query.endTime));
-    
-    return request(`/ai/performance/stats?${params}`);
+
+    return request<AIPerformanceStats>(`/ai/performance/stats?${params}`);
   },
-  
+
   clearLogs: async (beforeTimestamp?: number): Promise<void> => {
     const params = beforeTimestamp ? `?beforeTimestamp=${beforeTimestamp}` : '';
-    return request(`/ai/performance/logs${params}`, { method: 'DELETE' });
+    return request<void>(`/ai/performance/logs${params}`, { method: 'DELETE' });
   },
 };

@@ -262,7 +262,7 @@ export const QuizList: React.FC<QuizListProps> = ({
             action={onCreateQuiz ? { label: t('study.quizList.createFirstQuiz'), onClick: onCreateQuiz } : undefined}
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div role="list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <AnimatePresence mode="popLayout">
               {paginatedQuizzes.map((quiz) => (
                 <QuizCard
@@ -286,7 +286,7 @@ export const QuizList: React.FC<QuizListProps> = ({
             isDark ? 'border-slate-800' : 'border-gray-100'
           }`}
         >
-          <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+          <div aria-live="polite" className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
             {t('study.quizList.pagination', {
               start: ((currentPage - 1) * pageSize) + 1,
               end: Math.min(currentPage * pageSize, filteredQuizzes.length),

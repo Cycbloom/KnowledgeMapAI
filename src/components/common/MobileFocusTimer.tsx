@@ -181,7 +181,7 @@ export const MobileFocusTimer: React.FC = () => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: isOnRight ? PANEL_WIDTH : -PANEL_WIDTH, opacity: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed z-modal-upper bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden"
+            className="fixed z-modal-upper bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-500 overflow-hidden"
             style={{
               width: PANEL_WIDTH,
               top: Math.max(60, Math.min(ballY - 80, window.innerHeight - 340)),
@@ -189,7 +189,7 @@ export const MobileFocusTimer: React.FC = () => {
             }}
           >
             <div
-              className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 dark:border-slate-700"
+              className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 dark:border-slate-500"
               style={{ backgroundColor: colors.bg }}
             >
               <div className="flex items-center gap-2">

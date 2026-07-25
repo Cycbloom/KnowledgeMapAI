@@ -75,7 +75,7 @@ const ConceptMemberCard: React.FC<ConceptMemberCardProps> = ({
       className={`p-3 rounded-lg border transition-all ${
         isTarget
           ? 'border-primary-300 dark:border-primary-700 bg-primary-50/50 dark:bg-primary-900/20'
-          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'
+          : 'border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -157,9 +157,9 @@ const GroupCard: React.FC<GroupCardProps> = ({
   );
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+      <div className="p-4 border-b border-slate-100 dark:border-slate-500 bg-slate-50/50 dark:bg-slate-800/50">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <GitMerge className="w-4 h-4 text-primary-500" />
@@ -222,7 +222,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="px-4 pb-4 pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-end gap-2">
+      <div className="px-4 pb-4 pt-2 border-t border-slate-100 dark:border-slate-500 flex items-center justify-end gap-2">
         <Button
           variant="ghost"
           size="sm"
@@ -270,7 +270,7 @@ const SummaryPanel: React.FC<SummaryPanelProps> = ({
   ];
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
         <BarChart3 className="w-4 h-4 text-slate-500" />
         <h3 className="font-semibold text-sm text-slate-700 dark:text-slate-300">{t('conceptAggregation.results.changeSummary')}</h3>

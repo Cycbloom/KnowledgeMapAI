@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import {
   CheckCircle2, Clock, ListTodo, TrendingUp, Zap, Activity,
-  Calendar, ChevronLeft, ChevronRight, Filter, RefreshCw
+  Calendar, ChevronLeft, ChevronRight, Filter, RefreshCw, XCircle, Timer
 } from 'lucide-react';
 import { QUEUE_COLORS, type QueueLevel } from '@/constants/scheduler';
 import { formatDate } from '../utils/formatters';
@@ -417,22 +417,33 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
   };
 
   const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      completed: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      interrupted: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      time_slice_ended: 'bg-primary-500/20 text-primary-400 border-primary-500/30',
+    const styles: Record<string, { color: string; icon: React.ElementType }> = {
+      completed: { color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', icon: CheckCircle2 },
+      interrupted: { color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: XCircle },
+      time_slice_ended: { color: 'bg-primary-500/20 text-primary-400 border-primary-500/30', icon: Timer },
     };
+    const cfg = styles[status] ?? { color: 'bg-slate-500/20 text-slate-400 border-slate-500/30', icon: Activity };
+    const Icon = cfg.icon;
+    const label = getStatusLabel(status);
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs border ${styles[status] || 'bg-slate-500/20 text-slate-400'}`}>
-        {getStatusLabel(status)}
+      <span
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${cfg.color}`}
+        aria-label={label}
+      >
+        <Icon size={12} />
+        <span>{label}</span>
       </span>
     );
   };
 
   const getQueueBadge = (level: number) => {
     const colors = ['text-primary-400', 'text-violet-400', 'text-amber-400'];
+    const colorClass = colors[level] ?? colors[0];
     return (
-      <span className={`font-mono ${colors[level]}`}>
+      <span
+        className={`inline-flex items-center gap-1 font-mono ${colorClass}`}
+        aria-label={t('schedulerStats.queueLevel.ariaLabel', { level })}
+      >
         Q{level}
       </span>
     );
@@ -469,15 +480,18 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table
+          className="w-full"
+          aria-label={t('schedulerStats.history.tableAriaLabel', { defaultValue: '任务执行历史记录表' })}
+        >
           <thead>
             <tr className="border-b border-slate-700">
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.taskId')}</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.startedAt')}</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.endedAt')}</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.duration')}</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.queue')}</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.status')}</th>
+              <th scope="col" className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.taskId')}</th>
+              <th scope="col" className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.startedAt')}</th>
+              <th scope="col" className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.endedAt')}</th>
+              <th scope="col" className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.duration')}</th>
+              <th scope="col" className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.queue')}</th>
+              <th scope="col" className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.status')}</th>
             </tr>
           </thead>
           <tbody>

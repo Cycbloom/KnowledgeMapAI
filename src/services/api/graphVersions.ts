@@ -68,7 +68,15 @@ export const graphVersionsApi = {
     selectedChanges?: { nodeIds?: string[]; edgeIds?: string[] },
     conflictResolutions?: Record<string, "main" | "branch">,
   ) =>
-    request(`/graphs/${graphId}/merge`, {
+    request<{
+      nodesAdded: number;
+      edgesAdded: number;
+      nodesModified: number;
+      edgesModified: number;
+      nodesRemoved: number;
+      edgesRemoved: number;
+      conflictsResolved: number;
+    }>(`/graphs/${graphId}/merge`, {
       method: "POST",
       body: JSON.stringify({
         branchGraphId,

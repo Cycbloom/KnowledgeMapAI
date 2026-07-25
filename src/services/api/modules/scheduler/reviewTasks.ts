@@ -1,23 +1,24 @@
-import { request } from "../../client";
+import { requestData } from "../../client";
 import type {
   CreateReviewTaskData,
-  UpdateReviewTaskData,
+  ReviewTask,
+  ReviewTaskStats,
+  PendingReviewTask,
 } from "@shared/types";
 
 export type {
   ReviewTask,
   CreateReviewTaskData,
-  UpdateReviewTaskData,
   ReviewTaskStats,
   PendingReviewTask,
 } from "@shared/types";
 
 export const studyReviewApi = {
   createFirstReviewTask: (data: CreateReviewTaskData) =>
-    request("/scheduler/review-tasks", { method: "POST", body: JSON.stringify(data) }),
+    requestData<ReviewTask>("/scheduler/review-tasks", { method: "POST", body: JSON.stringify(data) }),
 
-  updateReviewTask: (knowledgePointId: string, data: UpdateReviewTaskData) =>
-    request(`/scheduler/review-tasks/${knowledgePointId}`, {
+  updateReviewTask: (knowledgePointId: string, data: { quality: number }) =>
+    requestData<ReviewTask>(`/scheduler/review-tasks/${knowledgePointId}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
@@ -26,14 +27,14 @@ export const studyReviewApi = {
     const params = new URLSearchParams();
     if (limit !== undefined) params.append("limit", limit.toString());
     const queryString = params.toString();
-    return request(`/scheduler/review-tasks/pending${queryString ? `?${queryString}` : ""}`);
+    return requestData<PendingReviewTask[]>(`/scheduler/review-tasks/pending${queryString ? `?${queryString}` : ""}`);
   },
 
-  getReviewTaskStats: () => request("/scheduler/review-tasks/stats"),
+  getReviewTaskStats: () => requestData<ReviewTaskStats>("/scheduler/review-tasks/stats"),
 
   getReviewTaskByKnowledgePoint: (knowledgePointId: string) =>
-    request(`/scheduler/review-tasks/${knowledgePointId}`),
+    requestData<ReviewTask | null>(`/scheduler/review-tasks/${knowledgePointId}`),
 
   deleteReviewTask: (knowledgePointId: string) =>
-    request(`/scheduler/review-tasks/${knowledgePointId}`, { method: "DELETE" }),
+    requestData<void>(`/scheduler/review-tasks/${knowledgePointId}`, { method: "DELETE" }),
 };

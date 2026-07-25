@@ -1,3 +1,5 @@
+import type { StatisticsResponse } from "@shared/types/api";
+
 export interface IStatisticsApi {
-  getStats(): Promise<unknown>;
+  getStats(): Promise<StatisticsResponse>;
 }

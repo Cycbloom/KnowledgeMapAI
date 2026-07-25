@@ -87,7 +87,7 @@ export const TemplateCategoryCard: React.FC<TemplateCategoryCardProps> = ({
       className={`p-4 rounded-xl border text-left transition-all w-full ${
         isSelected
           ? `border-current ${getCategoryBgClass(category)} ${getCategoryTextClass(category)}`
-          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+          : 'border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
       }`}
     >
       <div className="flex items-center justify-between mb-2">
@@ -135,7 +135,7 @@ export const TemplateCategoryGrid: React.FC<TemplateCategoryGridProps> = ({
         className={`p-4 rounded-xl border text-left transition-all ${
           !selectedCategory
             ? 'border-primary-500 dark:border-primary-400 bg-primary-50 dark:bg-primary-500/10 text-primary-700 dark:text-primary-300'
-            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+            : 'border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
         }`}
       >
         <div className="flex items-center justify-between mb-2">

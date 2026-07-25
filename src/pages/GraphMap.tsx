@@ -183,13 +183,13 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
             {t('graphMap.domainPicker.title')}
-          </h3>
+          </h2>
           <button
             onClick={onClose}
             aria-label={t('common.aria.close')}
-            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors min-h-[24px] min-w-[24px] flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </button>
@@ -1151,9 +1151,9 @@ export const GraphMap = () => {
                   />
                 </svg>
               </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">
+              <h2 className="font-semibold text-gray-900 dark:text-white">
                 {t('graphMap.combinedView.title')}
-              </h3>
+              </h2>
             </div>
             <div className="space-y-2 mb-4">
               {Array.from(multiSelectedGraphIds).map((id, index) => {
@@ -1249,9 +1249,9 @@ export const GraphMap = () => {
                     <div className="px-4 pb-4 overflow-y-auto" style={{ maxHeight: isMobilePanelExpanded ? "calc(80vh - 40px)" : "140px" }}>
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                          <h2 className="font-semibold text-gray-900 dark:text-white truncate">
                             {graph.title}
-                          </h3>
+                          </h2>
                           <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                             {t('graphMap.graph.nodeCount', { count: graph.node_count || 0 })} · {t('graphMap.graph.relationCount', { count: graphRelations.length })}
                           </div>
@@ -1466,9 +1466,9 @@ export const GraphMap = () => {
 
                   return (
                     <>
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                      <h2 className="font-semibold text-gray-900 dark:text-white mb-2">
                         {graph.title}
-                      </h3>
+                      </h2>
                       {graph.description && (
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                           {graph.description}
@@ -2004,9 +2004,9 @@ export const GraphMap = () => {
       {isBatchDomainPickerOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-4">
-            <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">
+            <h2 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">
               {t('graphMap.domainPicker.batchTitle')}
-            </h3>
+            </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
               {t('graphMap.domainPicker.batchDesc', { count: multiSelectedGraphIds.size })}
             </p>
@@ -2089,10 +2089,10 @@ export const GraphMap = () => {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary-50 to-pink-50 dark:from-primary-900/30 dark:to-pink-900/30">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Layers className="w-5 h-5 text-primary-500" />
                 {t('graphMap.crossDomain.title')}
-              </h3>
+              </h2>
               <button
                 onClick={() => setShowCrossDomainInsights(false)}
                 className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"

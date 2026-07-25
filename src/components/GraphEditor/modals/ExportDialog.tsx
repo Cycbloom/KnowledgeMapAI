@@ -36,6 +36,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
           }
         } catch (error) {
           console.error('Failed to capture screenshot:', error);
+          message.error(t('graphEditor.export.prepareFailed'));
         }
       }
     };

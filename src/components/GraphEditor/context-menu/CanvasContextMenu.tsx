@@ -101,7 +101,7 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
   return (
     <div
       ref={menuRef}
-      className="fixed bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 py-1 z-50 min-w-[160px]"
+      className="fixed bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 py-1 z-50 min-w-[160px]"
       style={{ left: position.x, top: position.y }}
     >
       {menuItems.map((item) => (

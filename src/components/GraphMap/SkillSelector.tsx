@@ -38,7 +38,7 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
           <button
             key={skill.id}
             onClick={() => onSelect(skill)}
-            className="w-full flex items-start gap-3 p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all text-left group"
+            className="w-full flex items-start gap-3 p-3 rounded-xl border border-gray-200 dark:border-slate-500 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all text-left group"
           >
             <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:bg-primary-200 dark:group-hover:bg-primary-900/60 transition-colors">
               {SKILL_ICONS[skill.id] || <Network className="w-5 h-5" />}

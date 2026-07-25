@@ -21,7 +21,7 @@ export const ShortcutSettings = React.memo(function ShortcutSettings() {
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
         <div className="flex items-center gap-2 mb-4">
           <Keyboard className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -65,7 +65,7 @@ export const ShortcutSettings = React.memo(function ShortcutSettings() {
         </label>
       </div>
 
-      <ShortcutListContent className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden max-h-[70vh]" />
+      <ShortcutListContent className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 overflow-hidden max-h-[70vh]" />
     </>
   );
 });

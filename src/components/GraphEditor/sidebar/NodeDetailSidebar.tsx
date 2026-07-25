@@ -222,11 +222,11 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
         className={`flex-1 space-y-6 overflow-y-auto ${isMobile ? "pr-0 px-2 pb-24" : "pr-1"}`}
       >
         <section>
-          <h1
+          <h2
             className={`font-bold text-gray-900 dark:text-gray-100 leading-tight ${isMobile ? "text-xl mb-2" : "text-2xl mb-2"}`}
           >
             {node.title}
-          </h1>
+          </h2>
 
           {node.summary && (
             <p className={`text-gray-500 dark:text-gray-400 leading-relaxed ${isMobile ? "text-sm mb-3" : "text-sm mb-3"}`}>
@@ -242,7 +242,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
               className={`flex items-center bg-gray-50 dark:bg-gray-800 rounded ${isMobile ? "px-2.5 py-1.5" : "px-2 py-1"}`}
             >
               <Activity size={14} className="mr-1.5 text-primary-500" />
-              <span>{levelLabels[getLevel(node, edges)] || t("nodeDetail.normalNode")}</span>
+              <span>{t(levelLabels[getLevel(node, edges)], { defaultValue: t("nodeDetail.normalNode") })}</span>
             </div>
 
             <div
@@ -306,19 +306,19 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             urlTransform={(url) => url}
             components={{
               h1: ({ children }) => (
-                <h1 className="text-gray-900 dark:text-gray-100">{children}</h1>
-              ),
-              h2: ({ children }) => (
                 <h2 className="text-gray-900 dark:text-gray-100">{children}</h2>
               ),
-              h3: ({ children }) => (
+              h2: ({ children }) => (
                 <h3 className="text-gray-900 dark:text-gray-100">{children}</h3>
               ),
-              h4: ({ children }) => (
+              h3: ({ children }) => (
                 <h4 className="text-gray-900 dark:text-gray-100">{children}</h4>
               ),
-              h5: ({ children }) => (
+              h4: ({ children }) => (
                 <h5 className="text-gray-900 dark:text-gray-100">{children}</h5>
+              ),
+              h5: ({ children }) => (
+                <h6 className="text-gray-900 dark:text-gray-100">{children}</h6>
               ),
               h6: ({ children }) => (
                 <h6 className="text-gray-900 dark:text-gray-100">{children}</h6>
@@ -389,7 +389,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                 return (
                   <a
                     {...props}
-                    className="text-primary-600 dark:text-primary-400 hover:underline"
+                    className="text-primary-600 dark:text-primary-400 underline"
                     target="_blank"
                     rel="noopener noreferrer"
                   />

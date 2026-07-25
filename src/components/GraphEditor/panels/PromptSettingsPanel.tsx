@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
 import { asyncConfirm } from "@/utils/asyncConfirm";
@@ -216,7 +216,7 @@ const CATEGORY_COLOR_MAP: Record<
     bg: "bg-slate-50/70 dark:bg-slate-900/30",
     bgHover: "hover:bg-slate-100/80 dark:hover:bg-slate-900/50",
     icon: "text-slate-600 dark:text-slate-400",
-    border: "border-slate-200 dark:border-slate-700",
+    border: "border-slate-200 dark:border-slate-500",
   },
 };
 
@@ -245,7 +245,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     return source;
   };
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async () => {
     setLoading(true);
     try {
       const data = await api.prompts.list(graphId);
@@ -255,12 +255,11 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [graphId]);
 
   useEffect(() => {
     fetchTemplates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphId, scope]);
+  }, [graphId, scope, fetchTemplates]);
 
   const getEffectiveTemplate = (code: string): PromptTemplateEntry & { source: string } => {
     // If scope is graph, check graph -> user -> system

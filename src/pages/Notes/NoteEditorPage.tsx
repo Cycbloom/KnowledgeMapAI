@@ -210,7 +210,7 @@ const NoteEditorPage: React.FC = () => {
   if (isError || !note) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-slate-900 p-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8 max-w-md w-full">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-500 p-8 max-w-md w-full">
           <EmptyState
             illustration="error"
             title={t("notes.editorPage.notFound")}
@@ -230,7 +230,7 @@ const NoteEditorPage: React.FC = () => {
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-900">
       {/* 顶部 header */}
-      <header className="flex-shrink-0 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+      <header className="flex-shrink-0 border-b border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
           <button
             type="button"
@@ -330,7 +330,7 @@ const NoteEditorPage: React.FC = () => {
       </header>
 
       {/* 主体：BlockEditor(左) + 被引用的块侧边栏(右,P3 Task 10.2) */}
-      <main className="flex-1 overflow-hidden">
+      <div role="region" aria-label={t("notes.editor.regionLabel")} className="flex-1 overflow-hidden">
         <div className="h-full max-w-6xl mx-auto flex gap-4 px-4 sm:px-6 py-4">
           <div className="flex-1 min-w-0 h-full">
             <div className="max-w-4xl mx-auto h-full">
@@ -367,7 +367,7 @@ const NoteEditorPage: React.FC = () => {
             </div>
           </div>
           {/* P3 Task 10.2: 被引用的块侧边栏(大屏可见,移动端隐藏避免遮挡编辑器) */}
-          <aside className="hidden lg:flex flex-col w-72 flex-shrink-0 h-full overflow-y-auto border-l border-gray-200 dark:border-slate-700 pl-4">
+          <aside className="hidden lg:flex flex-col w-72 flex-shrink-0 h-full overflow-y-auto border-l border-gray-200 dark:border-slate-500 pl-4">
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 flex-shrink-0">
               {t("notes.blockRefsPanel.inboundTitle")}
             </h3>
@@ -376,7 +376,7 @@ const NoteEditorPage: React.FC = () => {
             </div>
           </aside>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

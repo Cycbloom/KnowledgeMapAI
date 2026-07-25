@@ -91,7 +91,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
       <div className="flex items-center gap-2 mb-4">
         <Volume2 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
         <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -109,7 +109,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
       </div>
 
       {/* TTS 测试区 */}
-      <div className="mb-6 p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
+      <div className="mb-6 p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Volume2 className="w-4 h-4 text-primary-600 dark:text-primary-400" />
@@ -133,7 +133,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
             <button
               onClick={checkTtsHealth}
               disabled={ttsHealth === 'checking'}
-              className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 min-h-[36px] disabled:opacity-50"
+              className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 min-h-[36px] disabled:opacity-50"
             >
               {ttsHealth === 'checking' ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -154,7 +154,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
               value={ttsTestVoice}
               onChange={(e) => setTtsTestVoice(e.target.value)}
               disabled={ttsHealth !== 'healthy'}
-              className="w-full rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all disabled:opacity-50"
+              className="w-full rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all disabled:opacity-50"
             >
               {ttsVoices.length > 0 ? (
                 ttsVoices.map((voice) => (
@@ -177,7 +177,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
               onChange={(e) => setTtsTestText(e.target.value)}
               disabled={ttsHealth !== 'healthy'}
               rows={3}
-              className="w-full rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all disabled:opacity-50 resize-none"
+              className="w-full rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all disabled:opacity-50 resize-none"
               placeholder={t("settings.ttsTestTextPlaceholder")}
             />
           </div>
@@ -218,7 +218,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
       </div>
 
       {/* STT 测试区 */}
-      <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
+      <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Mic className="w-4 h-4 text-primary-600 dark:text-primary-400" />
@@ -242,7 +242,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
             <button
               onClick={checkSttHealth}
               disabled={sttHealth === 'checking'}
-              className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 min-h-[36px] disabled:opacity-50"
+              className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 min-h-[36px] disabled:opacity-50"
             >
               {sttHealth === 'checking' ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -262,8 +262,8 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
             <div className="flex items-center gap-3">
               <label className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 border-dashed cursor-pointer transition-colors min-h-[44px] ${
                 sttHealth !== 'healthy'
-                  ? 'border-gray-200 dark:border-slate-700 opacity-50 cursor-not-allowed'
-                  : 'border-gray-300 dark:border-slate-600 hover:border-primary-400 dark:hover:border-primary-500'
+                  ? 'border-gray-200 dark:border-slate-500 opacity-50 cursor-not-allowed'
+                  : 'border-gray-300 dark:border-slate-500 hover:border-primary-400 dark:hover:border-primary-500'
               }`}>
                 <Upload className="w-4 h-4 text-gray-400" />
                 <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
@@ -326,7 +326,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
                   {sttTestResult.success && sttTestResult.text && (
                     <div className="mt-2">
                       <p className="text-xs opacity-80 mb-1">{t("settings.transcriptionResult")}:</p>
-                      <p className="bg-white dark:bg-slate-800 p-2 rounded text-sm border border-gray-200 dark:border-slate-700 break-all">
+                      <p className="bg-white dark:bg-slate-800 p-2 rounded text-sm border border-gray-200 dark:border-slate-500 break-all">
                         {sttTestResult.text}
                       </p>
                     </div>

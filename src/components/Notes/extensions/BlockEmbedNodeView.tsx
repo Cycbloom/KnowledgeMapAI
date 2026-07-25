@@ -108,7 +108,7 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
   if (isLoading) {
     return (
       <NodeViewWrapper
-        className="block-embed my-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 overflow-hidden"
+        className="block-embed my-2 rounded-lg border border-gray-200 dark:border-slate-500 bg-gray-50 dark:bg-slate-800/50 overflow-hidden"
         as="div"
       >
         <div className="flex items-center gap-2 px-3 py-3 text-sm text-gray-500 dark:text-slate-400">
@@ -156,12 +156,12 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
 
   return (
     <NodeViewWrapper
-      className="block-embed my-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 overflow-hidden"
+      className="block-embed my-2 rounded-lg border border-gray-200 dark:border-slate-500 bg-gray-50 dark:bg-slate-800/50 overflow-hidden"
       as="div"
       contentEditable={false}
     >
       {/* 顶部信息条:标题 + 操作按钮 */}
-      <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-gray-100 dark:border-slate-700 bg-white/50 dark:bg-slate-800/30">
+      <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-gray-100 dark:border-slate-500 bg-white/50 dark:bg-slate-800/30">
         <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400 min-w-0">
           <FileText className="w-3.5 h-3.5 flex-shrink-0" />
           <span className="truncate font-medium">{noteTitle}</span>

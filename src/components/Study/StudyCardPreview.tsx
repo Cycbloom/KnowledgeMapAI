@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Calendar, Tag, Eye, Play, Trash2, Edit2, CheckSquare, Square } from 'lucide-react';
 import { StudyCard } from '../../types';
@@ -30,6 +31,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
   selectionMode = false,
   showStatus = true,
 }) => {
+  const { t } = useTranslation();
   return (
     <motion.div
       layout
@@ -67,13 +69,13 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
                 ? (isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-600')
                 : (isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500')
             }`}>
-              {(card.review_count || 0) > 0 ? '已学习' : '新内容'}
+              {(card.review_count || 0) > 0 ? t('study.cardPreview.status.studied') : t('study.cardPreview.status.new')}
             </span>
           )}
           
           <div className={`flex items-center gap-1 text-[10px] ml-auto ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
             <Calendar size={10} />
-            <span>{card.next_review ? formatDate(card.next_review, 'short') : '尚未开始'}</span>
+            <span>{card.next_review ? formatDate(card.next_review, 'short') : t('study.cardPreview.notStarted')}</span>
           </div>
         </div>
         
@@ -81,17 +83,13 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
         <p className={`text-sm line-clamp-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{card.answer}</p>
       </div>
 
-      <div className="mt-5 pt-4 border-t border-gray-50 dark:border-slate-700/50 flex items-center justify-between">
+      <div className="mt-5 pt-4 border-t border-gray-50 dark:border-slate-500/50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={`p-1.5 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
             <Tag size={12} className="text-primary-400" />
           </div>
           <span className={`text-[10px] font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-            {card.card_type === 'choice' ? '单选题' : 
-             card.card_type === 'multi_choice' ? '多选题' : 
-             card.card_type === 'fill_in_the_blank' ? '填空题' : 
-             card.card_type === 'true_false' ? '判断题' :
-             card.card_type === 'essay' ? '问答题' : '问答题'}
+            {t(`study.cardPreview.cardType.${card.card_type}`, { defaultValue: '' })}
           </span>
         </div>
         
@@ -107,7 +105,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
                   ? 'text-slate-400 hover:text-primary-400 hover:bg-slate-700' 
                   : 'text-gray-400 hover:text-primary-600 hover:bg-gray-100'
               }`}
-              title="预览内容"
+              title={t('study.cardPreview.button.preview')}
             >
               <Eye size={16} />
             </button>
@@ -124,7 +122,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
                   ? 'text-slate-400 hover:text-amber-400 hover:bg-slate-700' 
                   : 'text-gray-400 hover:text-amber-600 hover:bg-gray-100'
               }`}
-              title="编辑"
+              title={t('study.cardPreview.button.edit')}
             >
               <Edit2 size={16} />
             </button>
@@ -141,7 +139,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
                   ? 'text-slate-400 hover:text-red-400 hover:bg-slate-700' 
                   : 'text-gray-400 hover:text-red-600 hover:bg-gray-100'
               }`}
-              title="删除"
+              title={t('study.cardPreview.button.delete')}
             >
               <Trash2 size={16} />
             </button>
@@ -160,7 +158,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
               }`}
             >
               <Play size={12} />
-              练习
+              {t('study.cardPreview.button.practice')}
             </button>
           )}
         </div>

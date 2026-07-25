@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { X, Clock, Tag, Star, AlertCircle, HelpCircle } from 'lucide-react';
@@ -17,28 +17,6 @@ interface TemplateFormProps {
   onCancel: () => void;
 }
 
-const DURATION_OPTIONS = [
-  { value: 15, label: '15 分钟' },
-  { value: 25, label: '25 分钟' },
-  { value: 30, label: '30 分钟' },
-  { value: 45, label: '45 分钟' },
-  { value: 60, label: '1 小时' },
-  { value: 90, label: '1.5 小时' },
-  { value: 120, label: '2 小时' },
-  { value: 180, label: '3 小时' },
-];
-
-const PRIORITY_OPTIONS = [
-  { value: 1, label: '低', color: 'text-slate-500 dark:text-slate-400' },
-  { value: 2, label: '中', color: 'text-primary-600 dark:text-primary-400' },
-  { value: 3, label: '高', color: 'text-amber-600 dark:text-amber-400' },
-  { value: 4, label: '紧急', color: 'text-red-600 dark:text-red-400' },
-];
-
-const COMMON_TAGS = [
-  '学习', '工作', '阅读', '写作', '编程', '复习', '项目', '会议', '运动', '休息'
-];
-
 export const TemplateForm: React.FC<TemplateFormProps> = ({
   template,
   onSubmit,
@@ -50,6 +28,46 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
   const [showHelp, setShowHelp] = useState(false);
 
   const isEditing = !!template;
+
+  const fieldIdBase = useId();
+  const nameFieldId = `${fieldIdBase}-name`;
+  const nameErrorId = `${fieldIdBase}-name-error`;
+  const titleTemplateFieldId = `${fieldIdBase}-titleTemplate`;
+  const titleTemplateErrorId = `${fieldIdBase}-titleTemplate-error`;
+  const descriptionTemplateFieldId = `${fieldIdBase}-descriptionTemplate`;
+  const estimatedDurationFieldId = `${fieldIdBase}-estimatedDuration`;
+  const tagsFieldId = `${fieldIdBase}-tags`;
+
+  const DURATION_OPTIONS = [
+    { value: 15, label: t('scheduler.templateForm.duration15min') },
+    { value: 25, label: t('scheduler.templateForm.duration25min') },
+    { value: 30, label: t('scheduler.templateForm.duration30min') },
+    { value: 45, label: t('scheduler.templateForm.duration45min') },
+    { value: 60, label: t('scheduler.templateForm.duration1hour') },
+    { value: 90, label: t('scheduler.templateForm.duration1_5hours') },
+    { value: 120, label: t('scheduler.templateForm.duration2hours') },
+    { value: 180, label: t('scheduler.templateForm.duration3hours') },
+  ];
+
+  const PRIORITY_OPTIONS = [
+    { value: 1, label: t('scheduler.templateForm.priorityLow'), color: 'text-slate-500 dark:text-slate-400' },
+    { value: 2, label: t('scheduler.templateForm.priorityMedium'), color: 'text-primary-600 dark:text-primary-400' },
+    { value: 3, label: t('scheduler.templateForm.priorityHigh'), color: 'text-amber-600 dark:text-amber-400' },
+    { value: 4, label: t('scheduler.templateForm.priorityUrgent'), color: 'text-red-600 dark:text-red-400' },
+  ];
+
+  const COMMON_TAGS = [
+    t('scheduler.templateForm.tagStudy'),
+    t('scheduler.templateForm.tagWork'),
+    t('scheduler.templateForm.tagReading'),
+    t('scheduler.templateForm.tagWriting'),
+    t('scheduler.templateForm.tagCoding'),
+    t('scheduler.templateForm.tagReview'),
+    t('scheduler.templateForm.tagProject'),
+    t('scheduler.templateForm.tagMeeting'),
+    t('scheduler.templateForm.tagExercise'),
+    t('scheduler.templateForm.tagRest'),
+  ];
 
   interface TemplateFormDraft {
     name: string;
@@ -90,19 +108,19 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) {
-      newErrors.name = '请输入模板名称';
+      newErrors.name = t('scheduler.templateForm.errorNameRequired');
     }
     if (formData.name.length > 50) {
-      newErrors.name = '名称不能超过50个字符';
+      newErrors.name = t('scheduler.templateForm.errorNameTooLong');
     }
     if (!formData.titleTemplate.trim()) {
-      newErrors.titleTemplate = '请输入标题模板';
+      newErrors.titleTemplate = t('scheduler.templateForm.errorTitleTemplateRequired');
     }
     if (formData.titleTemplate.length > 100) {
-      newErrors.titleTemplate = '标题模板不能超过100个字符';
+      newErrors.titleTemplate = t('scheduler.templateForm.errorTitleTemplateTooLong');
     }
     if (formData.descriptionTemplate && formData.descriptionTemplate.length > 500) {
-      newErrors.descriptionTemplate = '描述模板不能超过500个字符';
+      newErrors.descriptionTemplate = t('scheduler.templateForm.errorDescriptionTemplateTooLong');
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -168,11 +186,11 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-[95dvh] sm:max-h-[90dvh]"
+        className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-500 rounded-2xl shadow-2xl overflow-hidden max-h-[95dvh] sm:max-h-[90dvh]"
       >
-        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500 bg-slate-50 dark:bg-slate-800/50">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-            {isEditing ? '编辑模板' : '创建新模板'}
+            {isEditing ? t('scheduler.templateForm.editTemplate') : t('scheduler.templateForm.createTemplate')}
           </h2>
           <button
             onClick={onCancel}
@@ -184,20 +202,23 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4 sm:space-y-4 max-h-[calc(95dvh-140px)] sm:max-h-[calc(90dvh-140px)] overflow-y-auto">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              模板名称 <span className="text-red-500 dark:text-red-400">*</span>
+            <label htmlFor={nameFieldId} className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              {t('scheduler.templateForm.fieldName')} <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span>
             </label>
             <input
+              id={nameFieldId}
+              aria-invalid={!!errors.name}
+              aria-describedby={errors.name ? nameErrorId : undefined}
               type="text"
               value={formData.name}
               onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="例如：深度学习模板"
+              placeholder={t('scheduler.templateForm.fieldNamePlaceholder')}
               className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
-                errors.name ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
+                errors.name ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-500'
               }`}
             />
             {errors.name && (
-              <p className="mt-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+              <p role="alert" id={nameErrorId} className="mt-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
                 <AlertCircle size={12} />
                 {errors.name}
               </p>
@@ -206,7 +227,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              分类
+              {t('scheduler.templateForm.fieldCategory')}
             </label>
             <div className="flex flex-wrap gap-2">
               {TEMPLATE_CATEGORIES.map(cat => (
@@ -228,8 +249,8 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                标题模板 <span className="text-red-500 dark:text-red-400">*</span>
+              <label htmlFor={titleTemplateFieldId} className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t('scheduler.templateForm.fieldTitleTemplate')} <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span>
               </label>
               <button
                 type="button"
@@ -242,7 +263,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
             {showHelp && (
               <div className="mb-2 p-3 rounded-lg bg-primary-50 dark:bg-primary-500/10 border border-primary-200 dark:border-primary-500/30">
                 <p className="text-xs text-primary-700 dark:text-primary-300 mb-2">
-                  使用 <code className="px-1 py-0.5 rounded bg-primary-100 dark:bg-primary-500/20">{'{{变量名}}'}</code> 格式创建可替换的占位符
+                  {t('scheduler.templateForm.helpPlaceholderPrefix')} <code className="px-1 py-0.5 rounded bg-primary-100 dark:bg-primary-500/20">{`{{${t('scheduler.templateForm.helpPlaceholderExample')}}}`}</code> {t('scheduler.templateForm.helpPlaceholderSuffix')}
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {['topic', 'project', 'task', 'name'].map(p => (
@@ -259,16 +280,19 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               </div>
             )}
             <input
+              id={titleTemplateFieldId}
+              aria-invalid={!!errors.titleTemplate}
+              aria-describedby={errors.titleTemplate ? titleTemplateErrorId : undefined}
               type="text"
               value={formData.titleTemplate}
               onChange={e => setFormData(prev => ({ ...prev, titleTemplate: e.target.value }))}
-              placeholder="例如：学习：{{topic}}"
+              placeholder={t('scheduler.templateForm.fieldTitleTemplatePlaceholder', { example: '{{topic}}' })}
               className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
-                errors.titleTemplate ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
+                errors.titleTemplate ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-500'
               }`}
             />
             {errors.titleTemplate && (
-              <p className="mt-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+              <p role="alert" id={titleTemplateErrorId} className="mt-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
                 <AlertCircle size={12} />
                 {errors.titleTemplate}
               </p>
@@ -276,28 +300,30 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              描述模板
+            <label htmlFor={descriptionTemplateFieldId} className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              {t('scheduler.templateForm.fieldDescriptionTemplate')}
             </label>
             <textarea
+              id={descriptionTemplateFieldId}
               value={formData.descriptionTemplate}
               onChange={e => setFormData(prev => ({ ...prev, descriptionTemplate: e.target.value }))}
-              placeholder="可选的描述模板，支持 {{占位符}}..."
+              placeholder={t('scheduler.templateForm.fieldDescriptionTemplatePlaceholder', { example: `{{${t('scheduler.templateForm.descriptionPlaceholderExample')}}}` })}
               rows={3}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 resize-none"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              <label htmlFor={estimatedDurationFieldId} className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 <Clock size={14} className="inline mr-1" />
-                预计时长
+                {t('scheduler.templateForm.fieldEstimatedDuration')}
               </label>
               <select
+                id={estimatedDurationFieldId}
                 value={formData.estimatedDuration}
                 onChange={e => setFormData(prev => ({ ...prev, estimatedDuration: Number(e.target.value) }))}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50"
               >
                 {DURATION_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -308,7 +334,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 <Star size={14} className="inline mr-1" />
-                优先级
+                {t('scheduler.templateForm.fieldPriority')}
               </label>
               <div className="flex gap-1">
                 {PRIORITY_OPTIONS.map(opt => (
@@ -330,9 +356,9 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+            <label htmlFor={tagsFieldId} className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               <Tag size={14} className="inline mr-1" />
-              标签 (最多5个)
+              {t('scheduler.templateForm.fieldTags')}
             </label>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {formData.tags.map(tag => (
@@ -365,13 +391,14 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               ))}
             </div>
             <input
+              id={tagsFieldId}
               type="text"
               value={customTag}
               onChange={e => setCustomTag(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="输入自定义标签，按 Enter 添加..."
+              placeholder={t('scheduler.templateForm.fieldCustomTagPlaceholder')}
               disabled={formData.tags.length >= 5}
-              className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 disabled:opacity-50"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 disabled:opacity-50"
             />
           </div>
 
@@ -381,27 +408,27 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               id="isDefault"
               checked={formData.isDefault}
               onChange={e => setFormData(prev => ({ ...prev, isDefault: e.target.checked }))}
-              className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary-500 focus:ring-primary-500"
+              className="w-4 h-4 rounded border-slate-300 dark:border-slate-500 text-primary-500 focus:ring-primary-500"
             />
             <label htmlFor="isDefault" className="text-sm text-slate-700 dark:text-slate-300">
-              设为该分类的默认模板
+              {t('scheduler.templateForm.fieldIsDefault')}
             </label>
           </div>
         </form>
 
-        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-500 bg-slate-50/50 dark:bg-slate-800/30">
           <button
             type="button"
             onClick={onCancel}
             className="flex-1 sm:flex-none px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors min-h-[44px] touch-target font-medium"
           >
-            取消
+            {t('scheduler.templateForm.buttonCancel')}
           </button>
           <button
             onClick={handleSubmit}
             className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-400 hover:to-primary-400 transition-all shadow-lg shadow-primary-500/20 min-h-[44px] touch-target"
           >
-            {isEditing ? '保存修改' : '创建模板'}
+            {isEditing ? t('scheduler.templateForm.buttonSaveChanges') : t('scheduler.templateForm.buttonCreateTemplate')}
           </button>
         </div>
       </motion.div>

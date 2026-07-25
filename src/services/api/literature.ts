@@ -24,21 +24,27 @@ export const literatureApi = {
       formData.append("file", data.file);
       if (config.provider) formData.append("provider", config.provider);
       if (config.model) formData.append("model", config.model);
-      return request("/literature/metadata", {
-        method: "POST",
-        body: formData,
-      });
+      return request<{ metadata: LiteratureMetadata; confidence: number }>(
+        "/literature/metadata",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
     }
 
-    return request("/literature/metadata", {
-      method: "POST",
-      body: JSON.stringify({
-        content: data.content,
-        url: data.url,
-        provider: config.provider,
-        model: config.model,
-      }),
-    });
+    return request<{ metadata: LiteratureMetadata; confidence: number }>(
+      "/literature/metadata",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          content: data.content,
+          url: data.url,
+          provider: config.provider,
+          model: config.model,
+        }),
+      },
+    );
   },
 
   extractConcepts: (
@@ -76,13 +82,13 @@ export const literatureApi = {
         formData.append("model", config.model);
       }
 
-      return request("/literature/extract", {
+      return request<LiteratureExtractResponse>("/literature/extract", {
         method: "POST",
         body: formData,
       });
     }
 
-    return request("/literature/extract", {
+    return request<LiteratureExtractResponse>("/literature/extract", {
       method: "POST",
       body: JSON.stringify({
         graph_id: data.graph_id,
@@ -100,7 +106,7 @@ export const literatureApi = {
   applyConcepts: (
     data: LiteratureApplyRequest,
   ): Promise<LiteratureApplyResponse> => {
-    return request("/literature/apply", {
+    return request<LiteratureApplyResponse>("/literature/apply", {
       method: "POST",
       body: JSON.stringify(data),
     });

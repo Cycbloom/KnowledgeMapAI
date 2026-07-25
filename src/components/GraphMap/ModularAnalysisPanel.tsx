@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useId } from 'react';
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +11,8 @@ import { api } from '../../services/api';
 import { message } from "../../utils/messageHelper";
 import { EmptyState } from '../common/EmptyState';
 import { queryKeys, defaultQueryConfig } from '@/hooks/queries/config';
+import { useFocusTrap } from '../../hooks/common/useFocusTrap';
+import { useEscapeKey } from '../../hooks/common/useEscapeKey';
 
 interface PromptTemplateItem {
   code: string;
@@ -88,6 +90,10 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
     ...defaultQueryConfig,
   });
 
+  const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
+  useEscapeKey(onClose, isOpen);
+  const titleId = useId();
+
   const handleSavePrompt = async (moduleId: AnalysisModuleId, content: string) => {
     const scenarioId = MODULE_TO_SCENARIO[moduleId];
     try {
@@ -97,10 +103,10 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
         template_content: content,
       });
       await queryClient.invalidateQueries({ queryKey: ['modularAnalysis'] });
-      message.success('提示词保存成功', { duration: 3000 });
+      message.success(t('graphMap.modularAnalysis.promptSaveSuccess'), { duration: 3000 });
       setEditingPromptModule(null);
     } catch (error) {
-      message.error(`保存失败: ${(error as Error).message}`, { duration: 5000 });
+      message.error(t('graphMap.modularAnalysis.promptSaveFailed', { message: (error as Error).message }), { duration: 5000 });
       throw error;
     }
   };
@@ -128,6 +134,10 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
   return (
     <AnimatePresence>
       <motion.div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -142,9 +152,9 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary-500" />
-              模块化分析
+              {t('graphMap.modularAnalysis.title')}
             </h2>
             <button
               onClick={onClose}
@@ -158,18 +168,18 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-4">
                 <span className="text-gray-600 dark:text-gray-400">
-                  已选择 <span className="font-medium text-gray-900 dark:text-white">{selectedModules.length}</span> 个模块
+                  {t('graphMap.modularAnalysis.selectedPrefix')} <span className="font-medium text-gray-900 dark:text-white">{selectedModules.length}</span> {t('graphMap.modularAnalysis.selectedSuffix')}
                 </span>
                 {completedCount > 0 && (
                   <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                     <CheckCircle2 className="w-4 h-4" />
-                    {completedCount} 已完成
+                    {t('graphMap.modularAnalysis.completedCount', { count: completedCount })}
                   </span>
                 )}
                 {errorCount > 0 && (
                   <span className="flex items-center gap-1 text-red-500">
                     <AlertCircle className="w-4 h-4" />
-                    {errorCount} 出错
+                    {t('graphMap.modularAnalysis.errorCount', { count: errorCount })}
                   </span>
                 )}
               </div>
@@ -181,7 +191,7 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
                 }}
                 className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400 text-xs"
               >
-                全选
+                {t('graphMap.modularAnalysis.selectAll')}
               </button>
             </div>
           </div>
@@ -213,14 +223,14 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
               {isAnyLoading ? (
                 <span className="flex items-center gap-1">
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  正在分析中，请稍候...
+                  {t('graphMap.modularAnalysis.analyzing')}
                 </span>
               ) : selectedIds.length > 0 ? (
                 <span>
-                  即将执行 {selectedIds.length} 个分析模块
+                  {t('graphMap.modularAnalysis.aboutToExecute', { count: selectedIds.length })}
                 </span>
               ) : (
-                <span>请选择至少一个分析模块</span>
+                <span>{t('graphMap.modularAnalysis.selectAtLeastOne')}</span>
               )}
             </div>
             <div className="flex gap-3">
@@ -228,7 +238,7 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
-                关闭
+                {t('graphMap.modularAnalysis.close')}
               </button>
               <button
                 onClick={handleExecute}
@@ -238,12 +248,12 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
                 {isAnyLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    分析中...
+                    {t('graphMap.modularAnalysis.analyzingButton')}
                   </>
                 ) : (
                   <>
                     <Play className="w-4 h-4" />
-                    开始分析
+                    {t('graphMap.modularAnalysis.startAnalysis')}
                   </>
                 )}
               </button>
@@ -258,7 +268,7 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
             {isPromptsLoading ? (
               <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
                 <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                提示词加载中...
+                {t('graphMap.modularAnalysis.promptLoading')}
               </div>
             ) : (
               <PromptEditor
@@ -266,7 +276,7 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
                 variables={getPromptVariables(editingPromptModule)}
                 onSave={(content) => handleSavePrompt(editingPromptModule, content)}
                 onCancel={() => setEditingPromptModule(null)}
-                title={`${modules.find(m => m.id === editingPromptModule)?.name} - 提示词编辑`}
+                title={t('graphMap.modularAnalysis.promptEditTitle', { name: modules.find(m => m.id === editingPromptModule)?.name ?? '' })}
               />
             )}
           </div>

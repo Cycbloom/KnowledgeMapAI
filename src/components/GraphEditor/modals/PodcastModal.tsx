@@ -140,7 +140,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
           className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-slate-800 dark:to-slate-800">
+          <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-slate-800 dark:to-slate-800">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-full">
                 <Volume2
@@ -205,7 +205,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
                     <p>{t("podcast.noScript")}</p>
                     <button
                       onClick={generateScript}
-                      className="mt-4 text-primary-600 hover:underline"
+                      className="mt-4 text-primary-600 underline"
                     >
                       {t("podcast.clickToGenerate")}
                     </button>
@@ -226,7 +226,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
           </div>
 
           {/* Controls Footer */}
-          <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
+          <div className="p-4 border-t border-slate-200 dark:border-slate-500 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
             <div className="flex items-center gap-2">
               {/* Engine Switcher */}
               <div className="flex bg-slate-200 dark:bg-slate-800 rounded p-1 text-xs">

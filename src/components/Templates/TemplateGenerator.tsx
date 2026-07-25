@@ -644,10 +644,11 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                   } font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
                 >
                   {t("templates.generator.topic")}{" "}
-                  <span className="text-red-500">*</span>
+                  <span aria-hidden="true" className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
+                  aria-required={true}
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder={t("templates.generator.topicPlaceholder")}
@@ -759,12 +760,16 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                 } bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
               >
                 {isGenerating ? (
-                  <>
+                  <span
+                    role="status"
+                    aria-live="polite"
+                    className="flex items-center gap-2"
+                  >
                     <Loader2
                       className={`${isMobile ? "w-4 h-4" : "w-5 h-5"} animate-spin`}
                     />
                     {t("templates.generator.generating")}
-                  </>
+                  </span>
                 ) : (
                   <>
                     <Sparkles

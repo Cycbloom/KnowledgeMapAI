@@ -15,10 +15,10 @@ export interface UpdateRegionData {
 
 export const regionsApi = {
   list: (graphId: string): Promise<{ regions: CustomRegion[] }> =>
-    request(`/graphs/${graphId}/regions`),
+    request<{ regions: CustomRegion[] }>(`/graphs/${graphId}/regions`),
 
   create: (graphId: string, data: CreateRegionData): Promise<CustomRegion> =>
-    request(`/graphs/${graphId}/regions`, {
+    request<CustomRegion>(`/graphs/${graphId}/regions`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -28,7 +28,7 @@ export const regionsApi = {
     regionId: string,
     data: UpdateRegionData,
   ): Promise<CustomRegion> =>
-    request(`/graphs/${graphId}/regions/${regionId}`, {
+    request<CustomRegion>(`/graphs/${graphId}/regions/${regionId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
@@ -37,15 +37,18 @@ export const regionsApi = {
     graphId: string,
     regionId: string,
   ): Promise<{ success: boolean; message: string }> =>
-    request(`/graphs/${graphId}/regions/${regionId}`, {
-      method: "DELETE",
-    }),
+    request<{ success: boolean; message: string }>(
+      `/graphs/${graphId}/regions/${regionId}`,
+      {
+        method: "DELETE",
+      },
+    ),
 
   updateViewMode: (
     graphId: string,
     viewMode: GraphViewMode,
   ): Promise<unknown> =>
-    request(`/graphs/${graphId}/view-mode`, {
+    request<unknown>(`/graphs/${graphId}/view-mode`, {
       method: "PUT",
       body: JSON.stringify({ viewMode }),
     }),

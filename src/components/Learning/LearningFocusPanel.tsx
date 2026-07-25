@@ -441,7 +441,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                   initial={{ opacity: 0, x: 300 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 300 }}
-                  className="w-80 border-l border-slate-200 dark:border-slate-700/50 bg-white/90 dark:bg-slate-900/50 backdrop-blur-sm overflow-y-auto p-4 space-y-6"
+                  className="w-80 border-l border-slate-200 dark:border-slate-500/50 bg-white/90 dark:bg-slate-900/50 backdrop-blur-sm overflow-y-auto p-4 space-y-6"
                 >
                   <div>
                     <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
@@ -534,7 +534,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                           </button>
                         </div>
 
-                        <div className="text-xs text-slate-500 dark:text-slate-500 flex items-center justify-center gap-1">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1">
                           <CheckCircleIcon size={12} />
                           <span>
                             {t("learning.focusMode.sessionsCompleted", {
@@ -567,7 +567,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                       </label>
                       {highlightEnabled && (
                         <div className="space-y-2">
-                          <div className="flex justify-between text-xs text-slate-500 dark:text-slate-500">
+                          <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                             <span>
                               {t("learning.focusMode.highlightIntensity")}
                             </span>

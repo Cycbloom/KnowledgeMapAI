@@ -89,7 +89,7 @@ const PluginCardBoundary = ({ children }: { children: ReactNode }) => {
           <div className="flex justify-end gap-2">
             <button
               onClick={() => setDismissed(true)}
-              className="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+              className="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
             >
               继续浏览其他插件
             </button>
@@ -256,13 +256,13 @@ export const PluginMarketplace = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("pluginMarketplace.searchPlaceholder")}
-                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">{t("pluginMarketplace.allCategories")}</option>
               {categories.map((cat) => (
@@ -273,7 +273,7 @@ export const PluginMarketplace = () => {
             </select>
             <button
               onClick={loadRegistry}
-              className="p-2 rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+              className="p-2 rounded-lg border border-gray-200 dark:border-slate-500 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
             >
               <RefreshCw className={`w-4 h-4 text-gray-500 dark:text-gray-400 ${loading ? "animate-spin" : ""}`} />
             </button>
@@ -316,7 +316,7 @@ export const PluginMarketplace = () => {
                 return (
                   <div
                     key={plugin.plugin_name ?? plugin.manifest?.name ?? Math.random()}
-                    className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 transition-colors"
+                    className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -357,7 +357,7 @@ export const PluginMarketplace = () => {
                             {plugin.state === "active" ? (
                               <button
                                 onClick={() => handleDeactivate(name)}
-                                className="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                                className="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                               >
                                 {t("pluginMarketplace.deactivate")}
                               </button>

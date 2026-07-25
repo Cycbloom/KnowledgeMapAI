@@ -537,13 +537,13 @@ export const QuizPractice: React.FC = () => {
                 </div>
 
                 <div className="mb-8">
-                  <h3
+                  <h2
                     className={`text-lg md:text-xl font-semibold leading-snug ${
                       isDark ? 'text-white' : 'text-gray-900'
                     }`}
                   >
                     {currentCard.question}
-                  </h3>
+                  </h2>
                 </div>
 
                 {isChoice && currentOptions.length > 0 && (
@@ -740,13 +740,13 @@ export const QuizPractice: React.FC = () => {
                         isDark ? 'bg-slate-700/50' : 'bg-gray-50'
                       }`}
                     >
-                      <h4
+                      <h3
                         className={`text-sm font-bold mb-3 ${
                           isDark ? 'text-emerald-400' : 'text-emerald-600'
                         }`}
                       >
                         {t('study.quizPractice.referenceAnswer')}
-                      </h4>
+                      </h3>
                       <p
                         className={`text-base leading-relaxed ${
                           isDark ? 'text-slate-200' : 'text-gray-800'
@@ -768,7 +768,7 @@ export const QuizPractice: React.FC = () => {
                   >
                     <div className="flex items-center gap-2 mb-3 text-primary-500">
                       <Brain size={18} />
-                      <h4 className="font-bold text-sm uppercase tracking-wider">{t('study.quizPractice.explanationTitle')}</h4>
+                      <h3 className="font-bold text-sm uppercase tracking-wider">{t('study.quizPractice.explanationTitle')}</h3>
                     </div>
                     <p
                       className={`text-sm leading-relaxed ${

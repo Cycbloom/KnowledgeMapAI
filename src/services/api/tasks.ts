@@ -1,25 +1,26 @@
 import { request } from './client';
 import { AppError, SharedErrorCodes } from "@/utils/errors";
+import type { Task } from '@shared/types';
 
 export const tasksApi = {
-  create: (data: { type: string; payload: unknown }) => 
-    request('/tasks', { method: 'POST', body: JSON.stringify(data) }),
-  
-  list: (status?: string, limit: number = 20, offset: number = 0) => 
-    request(`/tasks?${new URLSearchParams({
+  create: (data: { type: string; payload: unknown }) =>
+    request<Task>('/tasks', { method: 'POST', body: JSON.stringify(data) }),
+
+  list: (status?: string, limit: number = 20, offset: number = 0) =>
+    request<{ tasks: Task[]; total: number }>(`/tasks?${new URLSearchParams({
       ...(status && { status }),
       limit: limit.toString(),
       offset: offset.toString()
     }).toString()}`),
-  
-  retry: (id: string) => request(`/tasks/${id}/retry`, { method: 'POST' }),
-  
-  delete: (id: string) => request(`/tasks/${id}`, { method: 'DELETE' }),
+
+  retry: (id: string) => request<Task>(`/tasks/${id}/retry`, { method: 'POST' }),
+
+  delete: (id: string) => request<{ success: boolean }>(`/tasks/${id}`, { method: 'DELETE' }),
 };
 
 export const searchApi = {
-  query: (q: string, type: 'keyword' | 'semantic' | 'hybrid' = 'keyword') => 
-    request(`/search?q=${encodeURIComponent(q)}&type=${type}`),
+  query: (q: string, type: 'keyword' | 'semantic' | 'hybrid' = 'keyword') =>
+    request<unknown>(`/search?q=${encodeURIComponent(q)}&type=${type}`),
 };
 
 export const dataApi = {
@@ -42,5 +43,5 @@ export const dataApi = {
     });
   },
   
-  import: (data: unknown) => request('/data/import', { method: 'POST', body: JSON.stringify(data) }),
+  import: (data: unknown) => request<unknown>('/data/import', { method: 'POST', body: JSON.stringify(data) }),
 };

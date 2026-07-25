@@ -118,12 +118,12 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                   <span
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold ${queueConfig.bg} ${queueConfig.color} border ${queueConfig.border}`}
                   >
-                    {queueConfig.label}
+                    {t(queueConfig.labelKey, { defaultValue: '' })}
                   </span>
                   <span
                     className={`px-2.5 py-1 rounded-lg text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}
                   >
-                    {statusConfig.label}
+                    {t(statusConfig.labelKey, { defaultValue: '' })}
                   </span>
                   {task.priority >= 3 && (
                     <span className="flex items-center gap-1 text-red-400 text-xs">

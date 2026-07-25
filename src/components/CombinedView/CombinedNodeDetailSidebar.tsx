@@ -131,9 +131,9 @@ export const CombinedNodeDetailSidebar: React.FC<
               {graphTitle}
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-2">
             {node.title}
-          </h1>
+          </h2>
 
           {node.summary && (
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-3">
@@ -144,7 +144,7 @@ export const CombinedNodeDetailSidebar: React.FC<
           <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400 mb-4">
             <div className="flex items-center bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
               <Activity size={14} className="mr-1.5 text-primary-500" />
-              <span>{levelLabels[getLevel(node, edges)] || t("nodeDetail.normalNode")}</span>
+              <span>{t(levelLabels[getLevel(node, edges)], { defaultValue: t("nodeDetail.normalNode") })}</span>
             </div>
 
             <div className="flex items-center bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
@@ -178,19 +178,19 @@ export const CombinedNodeDetailSidebar: React.FC<
             urlTransform={(url) => url}
             components={{
               h1: ({ children }) => (
-                <h1 className="text-gray-900 dark:text-gray-100">{children}</h1>
-              ),
-              h2: ({ children }) => (
                 <h2 className="text-gray-900 dark:text-gray-100">{children}</h2>
               ),
-              h3: ({ children }) => (
+              h2: ({ children }) => (
                 <h3 className="text-gray-900 dark:text-gray-100">{children}</h3>
               ),
-              h4: ({ children }) => (
+              h3: ({ children }) => (
                 <h4 className="text-gray-900 dark:text-gray-100">{children}</h4>
               ),
-              h5: ({ children }) => (
+              h4: ({ children }) => (
                 <h5 className="text-gray-900 dark:text-gray-100">{children}</h5>
+              ),
+              h5: ({ children }) => (
+                <h6 className="text-gray-900 dark:text-gray-100">{children}</h6>
               ),
               h6: ({ children }) => (
                 <h6 className="text-gray-900 dark:text-gray-100">{children}</h6>
@@ -250,7 +250,7 @@ export const CombinedNodeDetailSidebar: React.FC<
                 return (
                   <a
                     {...props}
-                    className="text-primary-600 dark:text-primary-400 hover:underline"
+                    className="text-primary-600 dark:text-primary-400 underline"
                     target="_blank"
                     rel="noopener noreferrer"
                   />

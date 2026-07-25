@@ -74,10 +74,8 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
 
   const loadSubtasks = async () => {
     try {
-      const response = await api.scheduler.getSubtasks(taskId);
-      if (response.success) {
-        setSubtasks(response.data || []);
-      }
+      const data = await api.scheduler.getSubtasks(taskId);
+      setSubtasks(data ?? []);
     } catch (error) {
       console.error("Failed to load subtasks:", error);
     } finally {
@@ -113,24 +111,22 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     }
 
     try {
-      const response = await api.scheduler.createSubtask(taskId, {
+      const created = await api.scheduler.createSubtask(taskId, {
         title: newSubtask.title,
         description: newSubtask.description || undefined,
         estimated_duration: newSubtask.estimated_duration,
         knowledge_point_id: newSubtask.knowledge_point_id,
       });
-      if (response.success) {
-        setSubtasks([...subtasks, response.data]);
-        clearDraft();
-        setNewSubtask({
-          title: "",
-          description: "",
-          estimated_duration: undefined,
-          knowledge_point_id: defaultKnowledgePointId || "",
-        });
-        setIsAdding(false);
-        messageHelper.success(t('scheduler.taskWorkbench.subtaskAdded'));
-      }
+      setSubtasks([...subtasks, created]);
+      clearDraft();
+      setNewSubtask({
+        title: "",
+        description: "",
+        estimated_duration: undefined,
+        knowledge_point_id: defaultKnowledgePointId || "",
+      });
+      setIsAdding(false);
+      messageHelper.success(t('scheduler.taskWorkbench.subtaskAdded'));
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.subtaskAddFailed');
       messageHelper.error(errMsg);
@@ -140,14 +136,12 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
   const handleToggleStatus = async (subtask: TaskSubtask) => {
     const newStatus = subtask.status === "completed" ? "pending" : "completed";
     try {
-      const response = await api.scheduler.updateSubtask(taskId, subtask.id, {
+      const updated = await api.scheduler.updateSubtask(taskId, subtask.id, {
         status: newStatus,
       });
-      if (response.success) {
-        setSubtasks(
-          subtasks.map((st) => (st.id === subtask.id ? response.data : st)),
-        );
-      }
+      setSubtasks(
+        subtasks.map((st) => (st.id === subtask.id ? updated : st)),
+      );
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.subtaskUpdateFailed');
       messageHelper.error(errMsg);
@@ -157,11 +151,9 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
   const handleDeleteSubtask = async (subtaskId: string) => {
     if (!await asyncConfirm({ title: t('common.confirm.deleteSubtaskTitle'), message: t('common.confirm.deleteSubtaskMessage'), isDangerous: true })) return;
     try {
-      const response = await api.scheduler.deleteSubtask(taskId, subtaskId);
-      if (response.success) {
-        setSubtasks(subtasks.filter((st) => st.id !== subtaskId));
-        messageHelper.success(t('scheduler.taskWorkbench.subtaskDeleted'));
-      }
+      await api.scheduler.deleteSubtask(taskId, subtaskId);
+      setSubtasks(subtasks.filter((st) => st.id !== subtaskId));
+      messageHelper.success(t('scheduler.taskWorkbench.subtaskDeleted'));
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.subtaskDeleteFailed');
       messageHelper.error(errMsg);
@@ -249,7 +241,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           )}
 
           {isAdding && (
-            <div className="mb-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="mb-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-500">
               <input
                 type="text"
                 value={newSubtask.title}
@@ -257,7 +249,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                   setNewSubtask({ ...newSubtask, title: e.target.value })
                 }
                 placeholder="子任务标题"
-                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 autoFocus
               />
               <textarea
@@ -266,7 +258,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                   setNewSubtask({ ...newSubtask, description: e.target.value })
                 }
                 placeholder="描述（可选）"
-                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 rows={2}
               />
               <div className="flex items-center gap-2 mb-2">
@@ -279,7 +271,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                       knowledge_point_id: e.target.value,
                     })
                   }
-                  className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">选择知识点</option>
                   {knowledgePoints.map((kp) => (
@@ -303,7 +295,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                     })
                   }
                   placeholder="预计时长（分钟）"
-                  className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -338,7 +330,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                 className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                   subtask.status === "completed"
                     ? "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30"
-                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-500"
                 }`}
               >
                 <button

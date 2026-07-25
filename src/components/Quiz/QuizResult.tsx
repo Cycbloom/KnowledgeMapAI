@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { StudyCard } from '@shared/types/common';
 import { formatTimeFromSeconds } from '../../utils/formatters';
+import { useReducedMotionOrPreference } from '../../hooks/common/useReducedMotionOrPreference';
 
 interface QuestionTiming {
   cardId: string;
@@ -47,6 +48,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
   onBack,
 }) => {
   const { t } = useTranslation();
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
   const accuracy = results.total > 0 ? Math.round((results.correct / results.total) * 100) : 0;
   const hasWrongCards = results.wrongCards.length > 0;
 
@@ -68,8 +70,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
   return (
     <div className="min-h-full flex items-center justify-center p-4 md:p-8 bg-gray-50 dark:bg-slate-900">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
+        animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+        transition={transitionOverride}
         className="w-full max-w-2xl bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden"
       >
         <div className={`h-2 bg-gradient-to-r ${getAccuracyGradient(accuracy)}`} />
@@ -77,9 +80,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
         <div className="p-8 md:p-10">
           <div className="text-center mb-8">
             <motion.div
-              initial={{ scale: 0 }}
+              initial={reduceMotion ? false : { scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring' }}
+              transition={transitionOverride ?? { delay: 0.2, type: 'spring' }}
               className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${
                 accuracy >= 80
                   ? 'bg-emerald-100 dark:bg-emerald-900/30'
@@ -98,18 +101,18 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             </motion.div>
 
             <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              transition={transitionOverride ?? { delay: 0.3 }}
               className="text-3xl font-bold mb-2 text-gray-900 dark:text-white"
             >
               {accuracy >= 80 ? t('study.quizResult.title.excellent') : accuracy >= 60 ? t('study.quizResult.title.good') : t('study.quizResult.title.needsWork')}
             </motion.h2>
 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              transition={transitionOverride ?? { delay: 0.4 }}
               className="text-gray-500 dark:text-slate-400"
             >
               {t('study.quizResult.subtitle')}
@@ -117,9 +120,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={transitionOverride ?? { delay: 0.5 }}
             className="grid grid-cols-3 gap-4 mb-8"
           >
             <div className="text-center p-4 rounded-2xl bg-gray-50 dark:bg-slate-700/50">
@@ -143,9 +146,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={transitionOverride ?? { delay: 0.6 }}
             className="mb-8"
           >
             <div className="flex items-center justify-between mb-3">
@@ -156,9 +159,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             </div>
             <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <motion.div
-                initial={{ width: 0 }}
+                initial={reduceMotion ? false : { width: 0 }}
                 animate={{ width: `${accuracy}%` }}
-                transition={{ delay: 0.8, duration: 0.8 }}
+                transition={transitionOverride ?? { delay: 0.8, duration: 0.8 }}
                 className={`h-full bg-gradient-to-r ${getAccuracyGradient(accuracy)} rounded-full`}
               />
             </div>
@@ -167,9 +170,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           {/* Time statistics (UX2-12) */}
           {results.totalTime !== undefined && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.65 }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              transition={transitionOverride ?? { delay: 0.65 }}
               className="mb-8"
             >
               <div className="flex items-center gap-2 mb-4">
@@ -217,9 +220,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
 
           {Object.keys(results.byType).length > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              transition={transitionOverride ?? { delay: 0.7 }}
               className="mb-8"
             >
               <div className="flex items-center gap-2 mb-4">
@@ -258,9 +261,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
 
           {hasWrongCards && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              transition={transitionOverride ?? { delay: 0.8 }}
               className="mb-8"
             >
               <div className="flex items-center gap-2 mb-4">
@@ -294,9 +297,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           )}
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={transitionOverride ?? { delay: 0.9 }}
             className="space-y-3"
           >
             <button

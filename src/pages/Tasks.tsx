@@ -46,7 +46,7 @@ const getStatusBadgeClass = (status: string) => {
       return "bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300 dark:border-primary-700";
     case "pending":
     default:
-      return "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600";
+      return "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-500";
   }
 };
 
@@ -372,7 +372,7 @@ export const Tasks = () => {
             className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${
               isSelectMode
                 ? "bg-primary-600 text-white hover:bg-primary-700"
-                : "bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700"
+                : "bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 hover:bg-gray-50 dark:hover:bg-slate-700"
             }`}
           >
             <CheckSquare className="w-4 h-4" />
@@ -380,7 +380,7 @@ export const Tasks = () => {
           </button>
           <button
             onClick={handleExport}
-            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
             title={t("tasks.exportAsCSV")}
           >
             <Download className="w-4 h-4" />
@@ -388,7 +388,7 @@ export const Tasks = () => {
           </button>
           <button
             onClick={() => refetch()}
-            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
+            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
             disabled={isFetching}
           >
             <RefreshCw
@@ -408,7 +408,7 @@ export const Tasks = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-6 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-x-auto">
+      <div className="flex items-center gap-2 mb-6 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 overflow-x-auto">
         <FilterTab
           label={t("tasks.allTasks")}
           value="all"
@@ -454,7 +454,7 @@ export const Tasks = () => {
             placeholder={t("tasks.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-10 py-2 rounded-lg text-sm border focus:ring-2 focus:ring-primary-500 outline-none transition-all w-48 bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
+            className="pl-9 pr-10 py-2 rounded-lg text-sm border focus:ring-2 focus:ring-primary-500 outline-none transition-all w-48 bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-500 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
           />
           {searchQuery && (
             <button
@@ -476,7 +476,7 @@ export const Tasks = () => {
           <p>{t("toast.tasks.loadTasksFailed")}</p>
           <button
             onClick={() => refetch()}
-            className="mt-4 text-primary-600 dark:text-primary-400 hover:underline"
+            className="mt-4 text-primary-600 dark:text-primary-400 underline"
           >
             {t("tasks.retry")}
           </button>
@@ -484,7 +484,7 @@ export const Tasks = () => {
             <button
               type="button"
               onClick={() => setShowErrorDetails((prev) => !prev)}
-              className="text-xs text-red-500 dark:text-red-400 hover:underline"
+              className="text-xs text-red-500 dark:text-red-400 underline"
             >
               {t("tasks.errorDetails")}
             </button>
@@ -502,7 +502,7 @@ export const Tasks = () => {
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-100 dark:border-slate-700 flex items-center gap-3"
+                  className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-100 dark:border-slate-500 flex items-center gap-3"
                 >
                   <Skeleton className="h-5 w-5 rounded" />
                   <Skeleton className="h-4 flex-1" />
@@ -513,7 +513,7 @@ export const Tasks = () => {
           )}
 
           {!isLoading && filteredTasks.length === 0 && (
-            <div className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-500">
               <EmptyState
                 icon={<Inbox className="w-12 h-12 text-gray-300 dark:text-slate-600" />}
                 title={debouncedSearchQuery.trim() ? t("tasks.noSearchResults") : t("tasks.noTasks")}
@@ -530,7 +530,7 @@ export const Tasks = () => {
                 containerHeight={listContainerHeight}
                 onEndReached={handleEndReached}
                 endReachedThreshold={3}
-                className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700"
+                className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-500"
                 renderItem={(task) => {
                   const context = (() => {
                     try {
@@ -546,7 +546,7 @@ export const Tasks = () => {
                   const nodeId = context.node_id;
 
                   return (
-                    <div className="border-b border-gray-100 dark:border-slate-700">
+                    <div className="border-b border-gray-100 dark:border-slate-500">
                     <div
                       className={`p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
                         selectedIds.has(task.id) ? "bg-primary-50/50 dark:bg-primary-900/10" : ""
@@ -565,7 +565,7 @@ export const Tasks = () => {
                             )}
                           </button>
                         )}
-                        <div className="min-w-0 flex-1">
+                        <div aria-live="polite" className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span
                               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${getStatusBadgeClass(task.status)}`}
@@ -655,7 +655,7 @@ export const Tasks = () => {
                           {graphId && (
                             <button
                               onClick={() => navigate(`/graph/${graphId}`)}
-                              className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white transition-colors"
+                              className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 dark:border-slate-500 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white transition-colors"
                             >
                               {t("tasks.openGraph")}
                             </button>
@@ -725,7 +725,7 @@ export const Tasks = () => {
       )}
 
       {isSelectMode && selectedIds.size > 0 && (
-        <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 px-6 py-3 flex items-center justify-between shadow-lg z-10">
+        <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-500 px-6 py-3 flex items-center justify-between shadow-lg z-10">
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {t("tasks.selectedCount", { count: selectedIds.size })}

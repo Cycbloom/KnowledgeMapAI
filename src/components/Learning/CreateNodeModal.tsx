@@ -137,10 +137,11 @@ export const CreateNodeModal = ({
                 className={`block text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-gray-700"}`}
               >
                 {t("learning.node.titleLabel")}{" "}
-                <span className="text-red-500">*</span>
+                <span aria-hidden="true" className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                aria-required={true}
                 value={newNodeTitle}
                 onChange={(e) => onNewNodeTitleChange(e.target.value)}
                 placeholder={t("learning.node.titlePlaceholder")}

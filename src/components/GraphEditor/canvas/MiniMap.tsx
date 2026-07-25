@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { useTheme } from "../../../hooks";
 
 interface MiniMapProps {
@@ -111,9 +111,9 @@ export const MiniMap: React.FC<MiniMapProps> = ({
   // If the user feels it's top-left, maybe the actual visual center is different due to UI overlays?
   // Let's assume the passed containerWidth/Height are the full canvas dimensions.
   
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging && e.type !== 'mousedown') return;
-    
+
     const svgRect = svgRef.current?.getBoundingClientRect();
     if (!svgRect) return;
 
@@ -135,11 +135,11 @@ export const MiniMap: React.FC<MiniMapProps> = ({
     const newY = targetCenterY - graphCenterY * transform.k;
 
     onTransformChange({ ...transform, x: newX, y: newY });
-  };
+  }, [isDragging, offsetX, offsetY, scale, bounds, transform, onTransformChange, targetCenterX, targetCenterY]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (isDragging) {
@@ -153,14 +153,13 @@ export const MiniMap: React.FC<MiniMapProps> = ({
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('mousemove', handleMouseMove);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging]);
+  }, [isDragging, handleMouseUp, handleMouseMove]);
 
   if (nodes.length === 0) return null;
 
   return (
     <div 
-      className={`bg-white/90 dark:bg-slate-800/90 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden backdrop-blur-sm ${className}`}
+      className={`bg-white/90 dark:bg-slate-800/90 border border-gray-200 dark:border-slate-500 rounded-lg shadow-lg overflow-hidden backdrop-blur-sm ${className}`}
       style={{ width, height }}
     >
       <svg

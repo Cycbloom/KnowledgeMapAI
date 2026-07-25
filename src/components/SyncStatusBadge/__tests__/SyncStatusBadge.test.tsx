@@ -72,7 +72,7 @@ describe("SyncStatusBadge", () => {
     expect(count).toHaveTextContent("3");
 
     // 按钮应包含黄色 class
-    const button = screen.getByRole("button", { name: "同步状态" });
+    const button = screen.getByRole("button", { name: /同步状态/ });
     expect(button.className).toContain("bg-yellow-500");
   });
 
@@ -89,7 +89,7 @@ describe("SyncStatusBadge", () => {
     const count = screen.getByTestId("sync-status-badge-count");
     expect(count).toHaveTextContent("11");
 
-    const button = screen.getByRole("button", { name: "同步状态" });
+    const button = screen.getByRole("button", { name: /同步状态/ });
     expect(button.className).toContain("bg-red-500");
   });
 
@@ -107,7 +107,7 @@ describe("SyncStatusBadge", () => {
     expect(screen.queryByTestId("sync-status-badge-popover")).not.toBeInTheDocument();
 
     // 点击徽章按钮
-    const button = screen.getByRole("button", { name: "同步状态" });
+    const button = screen.getByRole("button", { name: /同步状态/ });
     fireEvent.click(button);
 
     // popover 应显示
@@ -132,7 +132,7 @@ describe("SyncStatusBadge", () => {
     render(<SyncStatusBadge />);
 
     // 打开 popover
-    const button = screen.getByRole("button", { name: "同步状态" });
+    const button = screen.getByRole("button", { name: /同步状态/ });
     fireEvent.click(button);
     expect(screen.getByTestId("sync-status-badge-popover")).toBeVisible();
 

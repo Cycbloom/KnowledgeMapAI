@@ -686,10 +686,8 @@ export const TaskStatsTab: React.FC = () => {
   const loadAnalytics = async () => {
     setLoading(true);
     try {
-      const response = await api.scheduler.getTaskAnalytics();
-      if (response.success) {
-        setAnalytics(response.data);
-      }
+      const data = await api.scheduler.getTaskAnalytics();
+      setAnalytics(data);
     } catch (error) {
       console.error("Failed to load analytics:", error);
     } finally {
@@ -702,10 +700,8 @@ export const TaskStatsTab: React.FC = () => {
 
     setInsightsLoading(true);
     try {
-      const response = await api.scheduler.generateInsights();
-      if (response.success) {
-        setInsights(response.data);
-      }
+      const data = await api.scheduler.generateInsights();
+      setInsights(data.insights);
     } catch (error) {
       console.error("Failed to generate insights:", error);
     } finally {
@@ -719,7 +715,7 @@ export const TaskStatsTab: React.FC = () => {
         <Skeleton className="h-8 w-48" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-200 dark:border-slate-700 p-4">
+            <div key={i} className="rounded-xl border border-gray-200 dark:border-slate-500 p-4">
               <Skeleton className="h-8 w-16 mb-2" />
               <Skeleton className="h-3 w-20" />
             </div>

@@ -22,7 +22,7 @@ export const KnowledgePointCard: React.FC<KnowledgePointCardProps> = ({ kp, onCl
     <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      className="group p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:shadow-md transition-all cursor-pointer"
+      className="group p-3 rounded-lg border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800/50 hover:shadow-md transition-all cursor-pointer"
       onClick={() => onClick(kp.id)}
     >
       <div className="flex items-start gap-2">

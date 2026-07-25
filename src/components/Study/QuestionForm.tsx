@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef } from 'react';
+import React, { useState, useLayoutEffect, useRef, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StudyCard } from '../../types';
 import { CheckSquare, Plus, X } from 'lucide-react';
@@ -64,6 +64,16 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const prevInitialDataRef = useRef(initialData);
+
+  // 可访问性：为各字段及错误消息生成唯一 id
+  const questionId = useId();
+  const questionErrorId = useId();
+  const typeId = useId();
+  const optionsErrorId = useId();
+  const optionsInputBaseId = useId();
+  const answerId = useId();
+  const answerErrorId = useId();
+  const explanationId = useId();
 
   const questionRef = useRef<HTMLTextAreaElement>(null);
   const answerRef = useRef<HTMLTextAreaElement>(null);
@@ -154,30 +164,41 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     setFormData(prev => ({ ...prev, options: prev.options.filter((_, i) => i !== index) }));
   };
 
+  // answer 字段在非 true_false/choice/multi_choice 时渲染为 textarea
+  const isAnswerTextarea =
+    formData.card_type !== 'true_false' &&
+    formData.card_type !== 'choice' &&
+    formData.card_type !== 'multi_choice';
+
   return (
     <div className={`p-4 sm:p-4 border-b ${isDark ? 'bg-slate-800/50' : 'bg-primary-50/50'}`}>
       <div className="space-y-4 max-w-2xl">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <label className="block text-sm font-medium mb-1 label-mobile">
-              {t('study.questionForm.questionLabel')} <span className="text-red-500">*</span>
+            <label htmlFor={questionId} className="block text-sm font-medium mb-1 label-mobile">
+              {t('study.questionForm.questionLabel')} <span aria-hidden="true" className="text-red-500">*</span>
               <span className={`ml-2 text-xs font-normal ${formData.question.length > 500 ? 'text-red-500' : 'text-gray-400'}`}>
                 {formData.question.length}/500
               </span>
             </label>
             <textarea
               ref={questionRef}
+              id={questionId}
+              aria-required={true}
+              aria-invalid={!!errors.question}
+              aria-describedby={errors.question ? questionErrorId : undefined}
               value={formData.question}
               onChange={e => setFormData({...formData, question: e.target.value})}
               className={`w-full p-3 border rounded-lg text-base ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.question ? 'border-red-500' : ''} resize-none overflow-hidden min-h-[44px]`}
               rows={1}
               placeholder={t('study.questionForm.questionPlaceholder')}
             />
-            {errors.question && <p className="text-red-500 text-xs mt-1">{errors.question}</p>}
+            {errors.question && <p role="alert" id={questionErrorId} className="text-red-500 text-xs mt-1">{errors.question}</p>}
           </div>
           <div className="w-full sm:w-32">
-            <label className="block text-sm font-medium mb-1 label-mobile">{t('study.questionForm.typeLabel')}</label>
+            <label htmlFor={typeId} className="block text-sm font-medium mb-1 label-mobile">{t('study.questionForm.typeLabel')}</label>
             <select
+              id={typeId}
               value={formData.card_type}
               onChange={e => {
                   const type = e.target.value as StudyCard['card_type'];
@@ -204,8 +225,8 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         {/* Options for Choice/Multi-Choice */}
         {(formData.card_type === 'choice' || formData.card_type === 'multi_choice') && (
             <div>
-                <label className="block text-sm font-medium mb-1 label-mobile">
-                    {t('study.questionForm.optionsAndAnswer')} <span className="text-red-500">*</span>
+                <label htmlFor={`${optionsInputBaseId}-0`} className="block text-sm font-medium mb-1 label-mobile">
+                    {t('study.questionForm.optionsAndAnswer')} <span aria-hidden="true" className="text-red-500">*</span>
                 </label>
                 <div className="space-y-2">
                     {formData.options.map((option, idx) => {
@@ -250,6 +271,10 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                             <span className="font-mono text-gray-400 w-6">{String.fromCharCode(65 + idx)}.</span>
                             <input
                                 type="text"
+                                id={`${optionsInputBaseId}-${idx}`}
+                                aria-required={true}
+                                aria-invalid={!!errors.options}
+                                aria-describedby={errors.options ? optionsErrorId : undefined}
                                 value={option}
                                 onChange={e => updateOption(idx, e.target.value)}
                                 className={`flex-1 p-3 border rounded-lg text-base min-h-[44px] ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
@@ -272,23 +297,25 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                         <Plus size={16} /> {t('study.questionForm.addOption')}
                     </button>
                 </div>
-                {errors.options && <p className="text-red-500 text-xs mt-1">{errors.options}</p>}
+                {errors.options && <p role="alert" id={optionsErrorId} className="text-red-500 text-xs mt-1">{errors.options}</p>}
             </div>
         )}
 
         {/* Answer Input */}
         <div>
-          <label className="block text-sm font-medium mb-1 label-mobile">
-            {(formData.card_type === 'choice' || formData.card_type === 'multi_choice') ? t('study.questionForm.answerPreview') : t('study.questionForm.answerLabel')} <span className="text-red-500">*</span>
+          <label htmlFor={isAnswerTextarea ? answerId : undefined} className="block text-sm font-medium mb-1 label-mobile">
+            {(formData.card_type === 'choice' || formData.card_type === 'multi_choice') ? t('study.questionForm.answerPreview') : t('study.questionForm.answerLabel')} <span aria-hidden="true" className="text-red-500">*</span>
           </label>
           
           {formData.card_type === 'true_false' ? (
-              <div className="flex gap-4">
+              <fieldset className="flex gap-4">
+                  <legend className="sr-only">{t('study.questionForm.answerLegend')}</legend>
                   {['True', 'False'].map(val => (
                       <label key={val} className="flex items-center gap-2 cursor-pointer">
-                          <input 
-                              type="radio" 
-                              name="tf_answer" 
+                          <input
+                              type="radio"
+                              name="tf_answer"
+                              aria-required={true}
                               value={val}
                               checked={formData.answer === val}
                               onChange={e => setFormData({...formData, answer: e.target.value})}
@@ -297,7 +324,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                           <span className="text-base">{val === 'True' ? t('study.questionForm.trueLabel') : t('study.questionForm.falseLabel')}</span>
                       </label>
                   ))}
-              </div>
+              </fieldset>
           ) : (formData.card_type === 'choice' || formData.card_type === 'multi_choice') ? (
               <div className={`p-3 rounded-lg text-sm ${isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-100 text-gray-600'}`}>
                   {formData.answer || t('study.questionForm.clickToSelectAnswer')}
@@ -305,6 +332,10 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
           ) : (
               <textarea
                 ref={answerRef}
+                id={answerId}
+                aria-required={true}
+                aria-invalid={!!errors.answer}
+                aria-describedby={errors.answer ? answerErrorId : undefined}
                 value={formData.answer}
                 onChange={e => setFormData({...formData, answer: e.target.value})}
                 className={`w-full p-3 border rounded-lg text-base ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.answer ? 'border-red-500' : ''} resize-none overflow-hidden min-h-[44px]`}
@@ -312,13 +343,14 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                 placeholder={t('study.questionForm.answerPlaceholder')}
               />
           )}
-          {errors.answer && <p className="text-red-500 text-xs mt-1">{errors.answer}</p>}
+          {errors.answer && <p role="alert" id={answerErrorId} className="text-red-500 text-xs mt-1">{errors.answer}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1 label-mobile">{t('study.questionForm.explanationLabel')}</label>
+          <label htmlFor={explanationId} className="block text-sm font-medium mb-1 label-mobile">{t('study.questionForm.explanationLabel')}</label>
           <textarea
             ref={explanationRef}
+            id={explanationId}
             value={formData.explanation}
             onChange={e => setFormData({...formData, explanation: e.target.value})}
             className={`w-full p-3 border rounded-lg text-base ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} resize-none overflow-hidden min-h-[44px]`}

@@ -29,7 +29,7 @@
     @apply mt-4 mb-2 font-bold text-slate-900 dark:text-slate-100;
   }
   .prose-sm blockquote {
-    @apply border-l-4 border-slate-200 pl-4 italic text-slate-500 my-2 dark:border-slate-700 dark:text-slate-400;
+    @apply border-l-4 border-slate-200 pl-4 italic text-slate-500 my-2 dark:border-slate-500 dark:text-slate-400;
   }
 }
 
@@ -1149,4 +1149,102 @@ select:focus-visible {
 }
 .decay-pulse {
   animation: decay-pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   Reduced Motion - 减少动效偏好（WCAG 2.3.3 Animation from Interactions）
+   系统级 prefers-reduced-motion: reduce 时，所有动效降级为瞬变
+   覆盖 animate-spin / animate-pulse / animate-bounce 等 Tailwind 工具类
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   Forced Colors - Windows 高对比度模式适配
+   确保关键控件在 forced-colors 模式下保留可见边框与系统色映射
+   ============================================ */
+@media (forced-colors: active) {
+  *,
+  *::before,
+  *::after {
+    forced-color-adjust: auto;
+  }
+
+  button,
+  [role="button"] {
+    border: 1px solid ButtonText;
+  }
+
+  input,
+  textarea,
+  select {
+    border: 1px solid ButtonText;
+    background: Background;
+  }
+
+  :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  svg {
+    forced-color-adjust: auto;
+  }
+
+  /* 保留品牌色：Button primary variant
+     高对比度模式下不映射为系统色，保留 --primary-600 品牌色与白色文本 */
+  button[class*="bg-primary-600"][class*="text-white"] {
+    forced-color-adjust: none;
+  }
+
+  /* 保留语义色：MessageBar error/warning/success 类型
+     高对比度模式下保留红/琥珀/翠绿语义色以维持状态可识别性 */
+  [class*="bg-red-600"][class*="text-white"],
+  [class*="bg-amber-600"][class*="text-white"],
+  [class*="bg-emerald-600"][class*="text-white"] {
+    forced-color-adjust: none;
+  }
+}
+
+/* ============================================
+   More Contrast - 系统级增加对比度偏好
+   提高文本对比度与边框可见性，不修改组件层
+   ============================================ */
+@media (prefers-contrast: more) {
+  .text-slate-500 {
+    color: rgb(15 23 42); /* slate-900 */
+  }
+
+  .dark .text-slate-500 {
+    color: rgb(241 245 249); /* slate-100 */
+  }
+
+  .border-slate-200 {
+    border-color: rgb(15 23 42); /* slate-900 */
+  }
+
+  .dark .border-slate-200 {
+    border-color: rgb(241 245 249); /* slate-100 */
+  }
+}
+
+/* ============================================
+   Mobile Input Font Size - iOS Safari 防自动缩放
+   视口宽度 ≤ 768px 时强制 input/textarea/select 字号为 16px，
+   覆盖 text-sm 等 Tailwind 工具类（14px 会触发 iOS Safari 聚焦自动缩放）
+   ============================================ */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }

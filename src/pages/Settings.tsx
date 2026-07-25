@@ -231,7 +231,7 @@ export const Settings = () => {
 
         <div className="flex flex-col md:flex-row gap-6">
           {/* 左侧锚点导航 - 桌面端 */}
-          <nav className="hidden md:block w-56 flex-shrink-0">
+          <nav className="hidden md:block w-56 flex-shrink-0" aria-label={t('settings.navDesktop')}>
             <div className="sticky top-6 space-y-1">
               {sections.map((section) => (
                 <a
@@ -252,7 +252,7 @@ export const Settings = () => {
           </nav>
 
           {/* 移动端水平 chips */}
-          <nav className="md:hidden -mx-4 px-4 overflow-x-auto">
+          <nav className="md:hidden -mx-4 px-4 overflow-x-auto" aria-label={t('settings.navMobile')}>
             <div className="flex gap-2 pb-2">
               {sections.map((section) => (
                 <a
@@ -296,7 +296,7 @@ export const Settings = () => {
                 if (el) sectionRefs.current.aiProvider = el;
               }}
             >
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
                 <div className="flex items-center gap-2 mb-4">
                   <Globe className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                   <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -309,7 +309,7 @@ export const Settings = () => {
                     className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
                       aiLanguage === "auto"
                         ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
-                        : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                        : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
                     }`}
                   >
                     <Monitor className="w-5 h-5 mb-1" />
@@ -323,7 +323,7 @@ export const Settings = () => {
                     className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
                       aiLanguage === "zh-CN"
                         ? "bg-red-50 border-red-200 text-red-700 ring-1 ring-red-200 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300"
-                        : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                        : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
                     }`}
                   >
                     <span className="text-xl mb-1">中</span>
@@ -337,7 +337,7 @@ export const Settings = () => {
                     className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
                       aiLanguage === "en-US"
                         ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
-                        : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                        : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
                     }`}
                   >
                     <span className="text-xl mb-1">A</span>
@@ -369,7 +369,7 @@ export const Settings = () => {
                 if (el) sectionRefs.current.prompts = el;
               }}
             >
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors space-y-6">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors space-y-6">
                 <PromptSettingsPanel scope="user" />
                 <AIActionSettingsPanel scope="user" />
               </div>
@@ -450,7 +450,7 @@ export const Settings = () => {
               ref={(el) => {
                 if (el) sectionRefs.current.plugins = el;
               }}
-              className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors"
+              className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors"
             >
               <div className="flex items-center gap-2 mb-4">
                 <Puzzle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
@@ -465,7 +465,7 @@ export const Settings = () => {
             {!isElectron() && (
               <section
                 data-testid="settings-pwa-section"
-                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors"
+                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors"
               >
                 <div className="flex items-center gap-2 mb-4">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">

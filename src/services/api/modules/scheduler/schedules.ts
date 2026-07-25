@@ -1,37 +1,6 @@
-import { request } from "../../client";
+import { requestData } from "../../client";
 import type { ProgressMode } from "./tasks";
-
-export interface TaskSchedule {
-  id: string;
-  user_id: string;
-  task_template_id: string;
-  schedule_type: "daily" | "weekly" | "custom" | "smart";
-  schedule_config: Record<string, unknown>;
-  next_run_at?: string;
-  last_run_at?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  task_template?: {
-    id: string;
-    title: string;
-    description?: string;
-    queue_level: number;
-    priority: number;
-    tags: string[];
-  };
-}
-
-export interface TaskProgressPlan {
-  id: string;
-  task_id: string;
-  plan_date: string;
-  planned_percentage: number;
-  actual_percentage: number;
-  status: "pending" | "completed" | "skipped";
-  notes?: string;
-  created_at: string;
-}
+import type { TaskSchedule, TaskProgressPlan } from "@shared/types";
 
 export const schedulesApi = {
   createSchedule: (data: {
@@ -40,7 +9,7 @@ export const schedulesApi = {
     schedule_config?: Record<string, unknown>;
     is_active?: boolean;
   }) =>
-    request("/scheduler/schedules", {
+    requestData<TaskSchedule>("/scheduler/schedules", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -52,15 +21,15 @@ export const schedulesApi = {
       is_active?: boolean;
     },
   ) =>
-    request(`/scheduler/schedules/${id}`, {
+    requestData<TaskSchedule>(`/scheduler/schedules/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
   deleteSchedule: (id: string) =>
-    request(`/scheduler/schedules/${id}`, { method: "DELETE" }),
+    requestData<void>(`/scheduler/schedules/${id}`, { method: "DELETE" }),
 
-  getSchedules: () => request("/scheduler/schedules"),
+  getSchedules: () => requestData<TaskSchedule[]>("/scheduler/schedules"),
 
   createProgressPlan: (
     taskId: string,
@@ -71,7 +40,7 @@ export const schedulesApi = {
       custom_allocations?: Array<{ date: string; percentage: number }>;
     },
   ) =>
-    request(`/scheduler/tasks/${taskId}/progress-plan`, {
+    requestData<TaskProgressPlan>(`/scheduler/tasks/${taskId}/progress-plan`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -87,13 +56,17 @@ export const schedulesApi = {
       notes?: string;
     },
   ) =>
-    request(`/scheduler/tasks/${taskId}/progress-plan`, {
+    requestData<TaskProgressPlan>(`/scheduler/tasks/${taskId}/progress-plan`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
-  getProgressPlan: (taskId: string) =>
-    request(`/scheduler/tasks/${taskId}/progress-plan`),
+  getProgressPlan: async (taskId: string): Promise<TaskProgressPlan[]> => {
+    const result = await requestData<{ task: unknown; plans: TaskProgressPlan[] }>(
+      `/scheduler/tasks/${taskId}/progress-plan`,
+    );
+    return result.plans;
+  },
 
   updateProgressPlanEntry: (
     taskId: string,
@@ -103,7 +76,7 @@ export const schedulesApi = {
       notes?: string;
     },
   ) =>
-    request(`/scheduler/tasks/${taskId}/progress`, {
+    requestData<TaskProgressPlan>(`/scheduler/tasks/${taskId}/progress`, {
       method: "POST",
       body: JSON.stringify(data),
     }),

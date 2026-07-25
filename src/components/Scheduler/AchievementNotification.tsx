@@ -5,6 +5,7 @@ import { Achievement } from "@shared/types";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import type { AchievementUnlockedPayload } from "../../services/FrontendEventTypes";
 import { useFocusTrap, useEscapeKey, useCelebration } from "../../hooks";
+import { useReducedMotionOrPreference } from "../../hooks/common/useReducedMotionOrPreference";
 
 interface NotificationItem {
   id: string;
@@ -29,14 +30,16 @@ const SingleNotification: React.FC<{
   notification: NotificationItem;
   onDismiss: (id: string) => void;
 }> = ({ notification, onDismiss }) => {
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
+
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, x: 100, scale: 0.8 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 100, scale: 0.8 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className="relative overflow-hidden bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-sm"
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 100, scale: 0.8 }}
+      animate={reduceMotion ? { opacity: 1 } : { opacity: 1, x: 0, scale: 1 }}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 100, scale: 0.8 }}
+      transition={transitionOverride ?? { type: "spring", stiffness: 300, damping: 25 }}
+      className="relative overflow-hidden bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-500 max-w-sm"
     >
       <div
         className={`absolute inset-0 bg-gradient-to-r ${DEFAULT_GRADIENT} opacity-5`}
@@ -52,9 +55,9 @@ const SingleNotification: React.FC<{
 
         <div className="flex items-start gap-3">
           <motion.div
-            initial={{ scale: 0, rotate: -180 }}
+            initial={reduceMotion ? false : { scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
-            transition={{
+            transition={transitionOverride ?? {
               type: "spring",
               stiffness: 300,
               damping: 20,
@@ -67,9 +70,9 @@ const SingleNotification: React.FC<{
 
           <div className="flex-1 min-w-0">
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={transitionOverride ?? { delay: 0.2 }}
             >
               <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                 成就解锁!
@@ -84,9 +87,9 @@ const SingleNotification: React.FC<{
 
             {notification.icon && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
+                transition={transitionOverride ?? { delay: 0.3 }}
                 className="flex items-center gap-2 mt-2"
               >
                 <span className="text-lg">{notification.icon}</span>
@@ -182,6 +185,7 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => onClose(), isOpen);
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
 
   useEffect(() => {
     if (isOpen) {
@@ -216,14 +220,16 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={transitionOverride}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
           onClick={onClose}
         >
           <motion.div
             ref={containerRef}
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
+            initial={reduceMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
+            animate={reduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
+            transition={transitionOverride}
             onClick={(e) => e.stopPropagation()}
             className="relative bg-white dark:bg-slate-800 rounded-2xl p-8 max-w-md w-full shadow-2xl overflow-hidden"
           >
@@ -249,14 +255,15 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
 
               <motion.div
                 key={currentAchievement.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
+                animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                transition={transitionOverride}
                 className="text-center"
               >
                 <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
+                  initial={reduceMotion ? false : { scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                  transition={transitionOverride ?? { type: "spring", stiffness: 200, damping: 15 }}
                   className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/30 mb-4"
                 >
                   <Sparkles className="w-10 h-10 text-white" />
@@ -265,16 +272,16 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
+                  transition={transitionOverride ?? { delay: 0.2 }}
                   className="text-sm text-amber-600 dark:text-amber-400 font-medium"
                 >
                   成就解锁!
                 </motion.p>
 
                 <motion.h3
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+                  animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                  transition={transitionOverride ?? { delay: 0.3 }}
                   className="text-2xl font-bold text-slate-900 dark:text-white mt-2"
                 >
                   {currentAchievement.name}
@@ -283,16 +290,16 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
+                  transition={transitionOverride ?? { delay: 0.4 }}
                   className="text-slate-500 dark:text-slate-400 mt-2"
                 >
                   {currentAchievement.description}
                 </motion.p>
 
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 }}
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
+                  animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+                  transition={transitionOverride ?? { delay: 0.5 }}
                   className="flex items-center justify-center gap-3 mt-4"
                 >
                   <span className="text-3xl">{currentAchievement.icon}</span>

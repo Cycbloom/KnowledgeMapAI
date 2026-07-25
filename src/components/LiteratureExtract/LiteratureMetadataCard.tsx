@@ -113,7 +113,7 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
         className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200 ${
           isDark
             ? "border-slate-700 bg-slate-800/50 hover:bg-slate-700/50"
-            : "border-gray-200 bg-white hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700"
+            : "border-gray-200 bg-white hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-500 dark:hover:bg-slate-700"
         }`}
       >
         <TypeIcon size={16} style={{ color: typeColor }} />
@@ -208,7 +208,7 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
           className={`absolute left-0 right-0 top-full z-50 p-3 rounded-lg border shadow-lg mt-1 ${
             isDark
               ? "border-slate-700 bg-slate-800"
-              : "border-gray-200 bg-white dark:bg-slate-800 dark:border-slate-700"
+              : "border-gray-200 bg-white dark:bg-slate-800 dark:border-slate-500"
           }`}
         >
           {renderFullContent()}
@@ -294,7 +294,7 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
             href={formatDoiUrl(metadata.doi)}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary-500 hover:text-primary-600 hover:underline truncate"
+            className="text-primary-500 hover:text-primary-600 underline truncate"
           >
             {metadata.doi}
           </a>

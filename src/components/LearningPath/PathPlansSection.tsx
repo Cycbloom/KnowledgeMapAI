@@ -48,7 +48,7 @@ const PathPlansSection: React.FC<PathPlansSectionProps> = ({
               {plans.map((plan) => (
                 <div
                   key={plan.id}
-                  className={`p-3 rounded-lg border dark:border-slate-700 ${
+                  className={`p-3 rounded-lg border dark:border-slate-500 ${
                     plan.completed
                       ? "bg-green-50 dark:bg-green-900/20"
                       : "bg-gray-50 dark:bg-slate-700/30"

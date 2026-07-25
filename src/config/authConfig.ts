@@ -89,9 +89,9 @@ export const getAuthModeDisplay = (): string => {
   const url = authConfig.supabase.url;
   if (!url) return "";
   if (url.includes("127.0.0.1") || url.includes("localhost")) {
-    return "本地模式";
+    return "auth.mode.local";
   }
-  return "云端模式";
+  return "auth.mode.cloud";
 };
 
 export const isSupabaseConfigured = (): boolean => {

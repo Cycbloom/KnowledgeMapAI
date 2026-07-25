@@ -59,6 +59,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       }
     } catch (error) {
       console.error('获取协作者失败:', error);
+      message.error(t('graphEditor.share.fetchCollaboratorsFailed'));
     } finally {
       setCollaboratorsLoading(false);
     }
@@ -172,9 +173,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const publicUrl = `${window.location.origin}/graph/${graphId}`;
   const roleLabels: Record<CollaboratorRole, string> = {
-    owner: '所有者',
-    editor: '编辑者',
-    viewer: '查看者',
+    owner: t('graphEditor.share.roleOwner'),
+    editor: t('graphEditor.share.roleEditor'),
+    viewer: t('graphEditor.share.roleViewer'),
   };
   const roleColors: Record<CollaboratorRole, string> = {
     owner: '#EF4444',
@@ -199,7 +200,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
-          <h2 id="share-modal-title" className="text-lg font-bold text-gray-800 dark:text-white">分享图谱</h2>
+          <h2 id="share-modal-title" className="text-lg font-bold text-gray-800 dark:text-white">{t('graphEditor.share.title')}</h2>
           <button onClick={onClose} aria-label={t('common.aria.close')} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <X size={20} className="text-gray-500 dark:text-gray-400" />
           </button>
@@ -216,7 +217,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             }`}
           >
             <Users size={16} className="inline-block mr-1" />
-            协作者
+            {t('graphEditor.share.tabCollaborate')}
           </button>
           <button
             onClick={() => setActiveTab('public')}
@@ -227,7 +228,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             }`}
           >
             <Globe size={16} className="inline-block mr-1" />
-            公开链接
+            {t('graphEditor.share.tabPublic')}
           </button>
         </div>
 
@@ -236,7 +237,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {activeTab === 'collaborate' ? (
             <div className="space-y-4">
               {collaboratorsLoading ? (
-                <div className="text-center py-4 text-gray-500">加载中...</div>
+                <div className="text-center py-4 text-gray-500">{t('graphEditor.share.loading')}</div>
               ) : (
                 <div className="space-y-2">
                   {collaborators.map((collaborator) => (
@@ -285,7 +286,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       type="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="输入用户邮箱"
+                      placeholder={t('graphEditor.share.inviteEmailPlaceholder')}
                       className="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-sm"
                     />
                     <select
@@ -293,8 +294,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       onChange={(e) => setInviteRole(e.target.value as CollaboratorRole)}
                       className="px-2 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-sm"
                     >
-                      <option value="editor">编辑者</option>
-                      <option value="viewer">查看者</option>
+                      <option value="editor">{t('graphEditor.share.roleEditor')}</option>
+                      <option value="viewer">{t('graphEditor.share.roleViewer')}</option>
                     </select>
                     <button
                       type="submit"
@@ -310,13 +311,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 border dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm"
                   >
                     <LinkIcon size={16} />
-                    生成分享链接
+                    {t('graphEditor.share.generateShareLink')}
                   </button>
 
                   {shareToken && (
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        分享链接
+                        {t('graphEditor.share.shareLinkLabel')}
                       </label>
                       <div className="flex gap-2">
                         <input
@@ -348,7 +349,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-medium text-gray-900 dark:text-gray-100">
-                      {isPublic ? '公开访问' : '私有图谱'}
+                      {isPublic ? t('graphEditor.share.publicAccess') : t('graphEditor.share.privateGraph')}
                     </h3>
                     <button 
                       onClick={handleToggle}
@@ -363,9 +364,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     </button>
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {isPublic 
-                      ? '任何拥有链接的人都可以查看此图谱，但无法进行编辑。' 
-                      : '只有您可以访问此图谱。'}
+                    {isPublic
+                      ? t('graphEditor.share.publicDesc')
+                      : t('graphEditor.share.privateDesc')}
                   </p>
                 </div>
               </div>
@@ -373,7 +374,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               {isPublic && (
                 <div className="space-y-2 animate-in slide-in-from-top-2">
                   <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    分享链接
+                    {t('graphEditor.share.shareLinkLabel')}
                   </label>
                   <div className="flex gap-2">
                     <div className="flex-1 flex items-center bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-600 dark:text-gray-300 truncate font-mono">
@@ -382,7 +383,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     <button
                       onClick={handleCopy}
                       className="p-2 bg-primary-50 dark:bg-primary-900/30 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-900/50 rounded-lg transition-colors border border-primary-200 dark:border-primary-800"
-                      title="复制链接"
+                      title={t('graphEditor.share.copyLink')}
                     >
                       {copied ? <Check size={20} /> : <Copy size={20} />}
                     </button>
@@ -391,7 +392,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors border border-gray-200 dark:border-gray-600"
-                      title="在新标签页打开"
+                      title={t('graphEditor.share.openInNewTab')}
                     >
                       <ExternalLink size={20} />
                     </a>

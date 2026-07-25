@@ -49,10 +49,10 @@ describe('Register 页面', () => {
     it('应该显示姓名、邮箱、密码、确认密码输入框和注册按钮', () => {
       renderWithProviders(<Register />);
 
-      expect(screen.getByLabelText('姓名')).toBeInTheDocument();
-      expect(screen.getByLabelText('邮箱')).toBeInTheDocument();
-      expect(screen.getByLabelText('密码')).toBeInTheDocument();
-      expect(screen.getByLabelText('确认密码')).toBeInTheDocument();
+      expect(screen.getByLabelText(/^姓名/)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^邮箱/)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^密码/)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^确认密码/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '注册' })).toBeInTheDocument();
     });
   });
@@ -62,7 +62,7 @@ describe('Register 页面', () => {
       renderWithProviders(<Register />);
 
       // Blur 邮箱字段以触发 React 校验（空值不通过邮箱格式校验）
-      fireEvent.blur(screen.getByLabelText('邮箱'));
+      fireEvent.blur(screen.getByLabelText(/^邮箱/));
 
       await waitFor(() => {
         expect(screen.getByText('邮箱格式不正确')).toBeVisible();
@@ -79,7 +79,7 @@ describe('Register 页面', () => {
     it('邮箱格式无效时应该显示校验错误且不调用 authApi.register', async () => {
       renderWithProviders(<Register />);
 
-      const emailInput = screen.getByLabelText('邮箱');
+      const emailInput = screen.getByLabelText(/^邮箱/);
       fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
       fireEvent.blur(emailInput);
 
@@ -92,7 +92,7 @@ describe('Register 页面', () => {
     it('密码过短时应该显示校验错误且不调用 authApi.register', async () => {
       renderWithProviders(<Register />);
 
-      const passwordInput = screen.getByLabelText('密码');
+      const passwordInput = screen.getByLabelText(/^密码/);
       fireEvent.change(passwordInput, { target: { value: '123' } });
       fireEvent.blur(passwordInput);
 
@@ -105,8 +105,8 @@ describe('Register 页面', () => {
     it('两次密码不一致时应该显示校验错误且不调用 authApi.register', async () => {
       renderWithProviders(<Register />);
 
-      const passwordInput = screen.getByLabelText('密码');
-      const confirmPasswordInput = screen.getByLabelText('确认密码');
+      const passwordInput = screen.getByLabelText(/^密码/);
+      const confirmPasswordInput = screen.getByLabelText(/^确认密码/);
       fireEvent.change(passwordInput, { target: { value: 'password123' } });
       fireEvent.change(confirmPasswordInput, {
         target: { value: 'password456' },
@@ -135,16 +135,16 @@ describe('Register 页面', () => {
 
       renderWithProviders(<Register />);
 
-      fireEvent.change(screen.getByLabelText('姓名'), {
+      fireEvent.change(screen.getByLabelText(/^姓名/), {
         target: { value: '测试用户' },
       });
-      fireEvent.change(screen.getByLabelText('邮箱'), {
+      fireEvent.change(screen.getByLabelText(/^邮箱/), {
         target: { value: 'test@example.com' },
       });
-      fireEvent.change(screen.getByLabelText('密码'), {
+      fireEvent.change(screen.getByLabelText(/^密码/), {
         target: { value: 'password123' },
       });
-      fireEvent.change(screen.getByLabelText('确认密码'), {
+      fireEvent.change(screen.getByLabelText(/^确认密码/), {
         target: { value: 'password123' },
       });
 
@@ -173,16 +173,16 @@ describe('Register 页面', () => {
 
       renderWithProviders(<Register />);
 
-      fireEvent.change(screen.getByLabelText('姓名'), {
+      fireEvent.change(screen.getByLabelText(/^姓名/), {
         target: { value: '测试用户' },
       });
-      fireEvent.change(screen.getByLabelText('邮箱'), {
+      fireEvent.change(screen.getByLabelText(/^邮箱/), {
         target: { value: 'test@example.com' },
       });
-      fireEvent.change(screen.getByLabelText('密码'), {
+      fireEvent.change(screen.getByLabelText(/^密码/), {
         target: { value: 'password123' },
       });
-      fireEvent.change(screen.getByLabelText('确认密码'), {
+      fireEvent.change(screen.getByLabelText(/^确认密码/), {
         target: { value: 'password123' },
       });
 

@@ -57,7 +57,7 @@ const handleTaskList = async (args: ParsedArgs, _context: CommandContext): Promi
 
   try {
     const result = await tasksApi.list(status, limit, offset);
-    const tasks = result as TaskItem[];
+    const tasks = result.tasks as unknown as TaskItem[];
 
     const taskList = tasks.map((t, index) => ({
       index: offset + index + 1,
@@ -92,7 +92,7 @@ const handleTaskShow = async (args: ParsedArgs, _context: CommandContext): Promi
 
   try {
     const result = await tasksApi.list(undefined, 100, 0);
-    const tasks = result as TaskItem[];
+    const tasks = result.tasks as unknown as TaskItem[];
     const task = tasks.find((t) => t.id === taskId);
 
     if (!task) {

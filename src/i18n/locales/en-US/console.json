@@ -66,6 +66,41 @@
     "showEmbeddingOps": "Show Embedding Operations",
     "requests": "requests",
     "standaloneRequests": "Standalone Requests",
+    "fetchLogsFailed": "Failed to fetch performance logs",
+    "sessionName": {
+      "autoGenerate": "Auto Graph Generation",
+      "batchInit": "Batch Initialize Knowledge Graphs ({{count}} graphs)",
+      "recursiveGenerate": "Recursive Graph Generation",
+      "nodeGenerate": "Graph Node Generation",
+      "relationAnalysis": "Graph Relation Analysis",
+      "aiChat": "AI Chat",
+      "contentGenerate": "Content Generation",
+      "aiAction": "AI Action Execute",
+      "template": "Template Generation",
+      "docToGraph": "Document to Graph",
+      "literatureExtract": "Literature Extract"
+    },
+    "metadata": {
+      "graphId": "Graph ID",
+      "graphTitle": "Graph Title",
+      "userId": "User ID",
+      "userName": "User Name",
+      "nodeId": "Node ID",
+      "nodeTitle": "Node Title",
+      "nodeLevel": "Node Level",
+      "topic": "Topic",
+      "style": "Style",
+      "depth": "Depth",
+      "actionName": "Action Name",
+      "documentName": "Document Name",
+      "learningStyle": "Learning Style",
+      "targetGoal": "Target Goal",
+      "templateType": "Template Type",
+      "text": "Text",
+      "graph1": "Graph 1",
+      "graph2": "Graph 2",
+      "title": "Title"
+    },
     "detail": {
       "title": "Request Details",
       "operation": "Operation Type",
@@ -85,7 +120,8 @@
       "cacheSaved": "💰 Saved by Cache",
       "reasoningToken": "🧠 Reasoning Tokens (DeepSeek Reasoner)",
       "errorMessage": "Error Message",
-      "metadata": "Metadata"
+      "metadata": "Metadata",
+      "metadataInfo": "Metadata Info"
     },
     "operations": {
       "generate-content": "Generate Content",
@@ -147,5 +183,8 @@
       "volcengine": "Volcengine",
       "aliyun": "Alibaba Cloud"
     }
+  },
+  "commandAutocomplete": {
+    "placeholder": "Type a command..."
   }
 }

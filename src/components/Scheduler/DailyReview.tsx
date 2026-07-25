@@ -193,10 +193,10 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700"
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-500"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 p-6 flex items-center justify-between">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-500 p-6 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Calendar size={24} className="text-primary-500" />
@@ -267,7 +267,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                           className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${
                             isSelected
                               ? config.bg
-                              : "border-slate-200 dark:border-slate-700"
+                              : "border-slate-200 dark:border-slate-500"
                           }`}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
@@ -299,7 +299,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                     value={formData.content}
                     onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                     placeholder="记录今天的收获和感受..."
-                    className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
 
@@ -313,7 +313,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                       value={formData.difficulties}
                       onChange={(e) => setFormData(prev => ({ ...prev, difficulties: e.target.value }))}
                       placeholder="今天遇到了什么困难？"
-                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                   <div>
@@ -325,7 +325,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                       value={formData.improvements}
                       onChange={(e) => setFormData(prev => ({ ...prev, improvements: e.target.value }))}
                       placeholder="明天可以怎么改进？"
-                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                 </div>
@@ -339,14 +339,14 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                     value={formData.learnings}
                     onChange={(e) => setFormData(prev => ({ ...prev, learnings: e.target.value }))}
                     placeholder="记录今天学到的新知识或技能..."
-                    className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-500">
                   <motion.button
                     onClick={onClose}
-                    className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-500 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >

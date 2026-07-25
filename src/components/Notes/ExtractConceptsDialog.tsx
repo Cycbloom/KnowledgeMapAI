@@ -103,10 +103,10 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
       onClose={onClose}
       titleId={titleId}
       closeOnOverlayClick={!createNodesMutation.isPending}
-      className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90dvh] overflow-hidden flex flex-col border border-gray-200 dark:border-slate-700"
+      className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90dvh] overflow-hidden flex flex-col border border-gray-200 dark:border-slate-500"
     >
       {/* 标题栏 */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-500">
         <h3
           id={titleId}
           className="text-base font-semibold text-gray-900 dark:text-gray-100"
@@ -142,7 +142,7 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
                       "focus:outline-none focus:ring-2 focus:ring-primary-400",
                       isSelected
                         ? "border-primary-300 bg-primary-50/50 dark:border-primary-700 dark:bg-primary-900/20"
-                        : "border-gray-200 bg-white hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-700/50 dark:hover:bg-slate-700",
+                        : "border-gray-200 bg-white hover:bg-gray-50 dark:border-slate-500 dark:bg-slate-700/50 dark:hover:bg-slate-700",
                     )}
                   >
                     <div className="flex items-start gap-2">
@@ -184,7 +184,7 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
       </div>
 
       {/* 目标图谱选择器 */}
-      <div className="px-5 py-3 border-t border-gray-200 dark:border-slate-700">
+      <div className="px-5 py-3 border-t border-gray-200 dark:border-slate-500">
         <label
           htmlFor="extract-concepts-graph-select"
           className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5"
@@ -200,7 +200,7 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
             className={cn(
               "w-full appearance-none px-3 py-2 pr-9 text-sm rounded-lg border",
               "bg-white dark:bg-slate-700",
-              "border-gray-300 dark:border-slate-600",
+              "border-gray-300 dark:border-slate-500",
               "text-gray-800 dark:text-slate-200",
               "focus:outline-none focus:ring-2 focus:ring-primary-400",
               "disabled:opacity-60 disabled:cursor-not-allowed",
@@ -230,7 +230,7 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
       </div>
 
       {/* 操作栏 */}
-      <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50">
+      <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-200 dark:border-slate-500 bg-gray-50 dark:bg-slate-900/50">
         {createNodesMutation.isPending && (
           <Loading size="sm" text={t("notes.ai.extractConcepts.loading")} />
         )}

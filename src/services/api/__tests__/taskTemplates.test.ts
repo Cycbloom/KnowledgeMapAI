@@ -17,6 +17,7 @@ import {
   getCategoryColor,
   getCategoryBgClass,
   getCategoryTextClass,
+  normalizeCategory,
   type CreateTemplateData,
   type UpdateTemplateData,
   type TemplateFilters,
@@ -532,6 +533,58 @@ describe('getCategoryTextClass', () => {
     expect(getCategoryTextClass('unknown')).toBe(
       'text-slate-700 dark:text-slate-300',
     );
+  });
+});
+
+describe('normalizeCategory - 历史分类兼容', () => {
+  it('应该将 study 映射为 knowledge', () => {
+    expect(normalizeCategory('study')).toBe('knowledge');
+  });
+
+  it('应该将 work 映射为 project', () => {
+    expect(normalizeCategory('work')).toBe('project');
+  });
+
+  it('应该将 life 映射为 creative', () => {
+    expect(normalizeCategory('life')).toBe('creative');
+  });
+
+  it('应该将 health 映射为 creative', () => {
+    expect(normalizeCategory('health')).toBe('creative');
+  });
+
+  it('应该将 custom 映射为 creative', () => {
+    expect(normalizeCategory('custom')).toBe('creative');
+  });
+
+  it('应该原样返回当前新分类', () => {
+    expect(normalizeCategory('knowledge')).toBe('knowledge');
+    expect(normalizeCategory('project')).toBe('project');
+    expect(normalizeCategory('analysis')).toBe('analysis');
+    expect(normalizeCategory('architecture')).toBe('architecture');
+    expect(normalizeCategory('topicResearch')).toBe('topicResearch');
+    expect(normalizeCategory('creative')).toBe('creative');
+  });
+
+  it('应该原样返回未知分类（让上层走默认 fallback）', () => {
+    expect(normalizeCategory('unknown')).toBe('unknown');
+    expect(normalizeCategory('')).toBe('');
+  });
+
+  it('应该保证归一化后的分类都有对应样式（非 slate 兜底）', () => {
+    // 验证关键修复：归一化后的分类必须能命中新分类的颜色/背景映射，
+    // 避免历史分类在 UI 出现空白图标或裸 i18n key。
+    const legacyCategories = ['study', 'work', 'life', 'health', 'custom'];
+    for (const legacy of legacyCategories) {
+      const normalized = normalizeCategory(legacy);
+      expect(getCategoryColor(normalized)).not.toBe('slate');
+      expect(getCategoryBgClass(normalized)).not.toBe(
+        'bg-slate-100 dark:bg-slate-500/20',
+      );
+      expect(getCategoryTextClass(normalized)).not.toBe(
+        'text-slate-700 dark:text-slate-300',
+      );
+    }
   });
 });
 

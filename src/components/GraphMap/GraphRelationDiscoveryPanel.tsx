@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -13,6 +13,8 @@ import {
   type GraphRelationType,
   type IntelligentSuggestion,
 } from '@shared/types/graph';
+import { useFocusTrap } from '../../hooks/common/useFocusTrap';
+import { useEscapeKey } from '../../hooks/common/useEscapeKey';
 
 interface GraphRelationDiscoveryPanelProps {
   isOpen: boolean;
@@ -46,6 +48,10 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
   const [showFilters, setShowFilters] = useState(false);
   const [creatingRelationId, setCreatingRelationId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'relations' | 'insights' | 'suggestions'>('relations');
+
+  const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
+  useEscapeKey(onClose, isOpen);
+  const titleId = useId();
 
   if (!isOpen) return null;
 
@@ -85,6 +91,10 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
   return (
     <AnimatePresence>
       <motion.div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -99,9 +109,9 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary-500" />
-              智能关系发现
+              {t('graphMap.relationDiscovery.title')}
             </h2>
             <button
               onClick={onClose}
@@ -115,24 +125,24 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 text-primary-500 animate-spin mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">正在分析图谱关系...</p>
-                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">这可能需要几秒钟</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('graphMap.relationDiscovery.analyzing')}</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{t('graphMap.relationDiscovery.analyzingHint')}</p>
               </div>
             ) : !discoveryResult ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <GitBranch className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
                 <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  点击下方按钮开始智能分析
+                  {t('graphMap.relationDiscovery.startPrompt')}
                 </p>
                 <p className="text-sm text-gray-400 dark:text-gray-500 mb-6 text-center max-w-md">
-                  AI将分析您的知识图谱，发现潜在的关联关系、交叉学科知识网络，并提供学习建议
+                  {t('graphMap.relationDiscovery.startDesc')}
                 </p>
                 <button
                   onClick={() => onDiscover()}
                   className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors flex items-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
-                  开始智能分析
+                  {t('graphMap.relationDiscovery.startAnalysis')}
                 </button>
               </div>
             ) : (
@@ -142,19 +152,19 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                     <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                       {discoveryResult.analysis_summary.total_graphs_analyzed}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">分析图谱</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.relationDiscovery.graphsAnalyzed')}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {discoveryResult.analysis_summary.relations_discovered}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">发现关系</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.relationDiscovery.relationsFound')}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                       {discoveryResult.analysis_summary.cross_domain_clusters}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">跨学科群</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.relationDiscovery.crossDomainClusters')}</div>
                   </div>
                 </div>
 
@@ -167,7 +177,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                   >
-                    发现的关系 ({sortedRelations.length})
+                    {t('graphMap.relationDiscovery.discoveredRelations', { count: sortedRelations.length })}
                   </button>
                   <button
                     onClick={() => setActiveTab('insights')}
@@ -177,7 +187,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                   >
-                    跨学科洞察 ({discoveryResult.cross_domain_insights.length})
+                    {t('graphMap.relationDiscovery.crossDomainInsights', { count: discoveryResult.cross_domain_insights.length })}
                   </button>
                   <button
                     onClick={() => setActiveTab('suggestions')}
@@ -291,14 +301,14 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                                   <div className="flex items-center gap-2 text-sm">
                                     <button
                                       onClick={() => onGraphClick(rel.source_graph_id)}
-                                      className="text-primary-600 dark:text-primary-400 hover:underline truncate max-w-[150px]"
+                                      className="text-primary-600 dark:text-primary-400 underline truncate max-w-[150px]"
                                     >
                                       {rel.source_graph_title}
                                     </button>
                                     <span className="text-gray-400">→</span>
                                     <button
                                       onClick={() => onGraphClick(rel.target_graph_id)}
-                                      className="text-primary-600 dark:text-primary-400 hover:underline truncate max-w-[150px]"
+                                      className="text-primary-600 dark:text-primary-400 underline truncate max-w-[150px]"
                                     >
                                       {rel.target_graph_title}
                                     </button>
@@ -400,7 +410,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                               <button
                                 key={graphId}
                                 onClick={() => onGraphClick(graphId)}
-                                className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                                className="text-xs text-primary-600 dark:text-primary-400 underline"
                               >
                                 {t('graphEditor.graphMap.relationDiscovery.viewGraph')}
                               </button>
@@ -427,11 +437,12 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                                 {path.description}
                               </div>
                               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                <span>预计时间：{path.estimated_time}</span>
+                                <span>{t('graphMap.relationDiscovery.estimatedTime')}{path.estimated_time}</span>
                                 <span>•</span>
-                                <span>难度：{
-                                  path.difficulty === 'beginner' ? '入门' :
-                                  path.difficulty === 'intermediate' ? '中级' : '高级'
+                                <span>{t('graphMap.relationDiscovery.difficulty')}{
+                                  path.difficulty === 'beginner' ? t('graphMap.relationDiscovery.difficultyBeginner') :
+                                  path.difficulty === 'intermediate' ? t('graphMap.relationDiscovery.difficultyIntermediate') :
+                                  t('graphMap.relationDiscovery.difficultyAdvanced')
                                 }</span>
                               </div>
                             </div>
@@ -444,7 +455,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                       <div>
                         <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-amber-500" />
-                          知识缺口
+                          {t('graphMap.relationDiscovery.knowledgeGaps')}
                         </h4>
                         <div className="space-y-2">
                           {intelligentSuggestions.knowledge_gaps.map((gap, idx) => (
@@ -458,13 +469,14 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                                   gap.importance === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
                                   'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                                 }`}>
-                                  {gap.importance === 'high' ? '高优先' : gap.importance === 'medium' ? '中优先' : '低优先'}
+                                  {gap.importance === 'high' ? t('graphMap.relationDiscovery.priorityHigh') : gap.importance === 'medium' ? t('graphMap.relationDiscovery.priorityMedium') : t('graphMap.relationDiscovery.priorityLow')}
                                 </span>
                               </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
-                                建议：{
-                                  gap.suggested_action === 'create' ? '创建新图谱' :
-                                  gap.suggested_action === 'merge' ? '合并现有图谱' : '扩展现有图谱'
+                                {t('graphMap.relationDiscovery.suggestion')}{
+                                  gap.suggested_action === 'create' ? t('graphMap.relationDiscovery.suggestedActionCreate') :
+                                  gap.suggested_action === 'merge' ? t('graphMap.relationDiscovery.suggestedActionMerge') :
+                                  t('graphMap.relationDiscovery.suggestedActionExpand')
                                 }
                               </div>
                             </div>
@@ -477,7 +489,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                       <div>
                         <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                           <Lightbulb className="w-4 h-4 text-primary-500" />
-                          跨领域学习机会
+                          {t('graphMap.relationDiscovery.crossDomainOpportunities')}
                         </h4>
                         <div className="space-y-2">
                           {intelligentSuggestions.cross_domain_opportunities.map((opp, idx) => (
@@ -501,8 +513,8 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
 
           <div className="flex justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900/50">
             <div className="text-xs text-gray-500 dark:text-gray-400">
-              {discoveryResult?.analysis_summary.isolated_graphs.length 
-                ? `${discoveryResult.analysis_summary.isolated_graphs.length} 个图谱仍处于孤立状态` 
+              {discoveryResult?.analysis_summary.isolated_graphs.length
+                ? t('graphMap.relationDiscovery.isolatedGraphs', { count: discoveryResult.analysis_summary.isolated_graphs.length })
                 : ''}
             </div>
             <div className="flex gap-2">
@@ -510,7 +522,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                 onClick={onClose}
                 className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
-                关闭
+                {t('graphMap.relationDiscovery.close')}
               </button>
               {discoveryResult && (
                 <button
@@ -519,7 +531,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                   className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 transition-colors flex items-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
-                  重新分析
+                  {t('graphMap.relationDiscovery.reanalyze')}
                 </button>
               )}
             </div>

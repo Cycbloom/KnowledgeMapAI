@@ -18,16 +18,7 @@ export function useActivityTracker(options?: ActivityTrackerOptions) {
       try {
         const result = await activitiesApi.recordActivity(data);
         if (data.activity_type === "focus_study") {
-          const id = (result as Record<string, unknown>)?.data
-            ? ((
-                (result as Record<string, unknown>).data as Record<
-                  string,
-                  unknown
-                >
-              )?.id as string | null)
-            : (((result as Record<string, unknown>)?.id as string | null) ??
-              null);
-          setActiveActivityId(id);
+          setActiveActivityId(result.id);
         }
         options?.onRecorded?.(result);
         return result;

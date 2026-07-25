@@ -71,7 +71,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden" 
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50">
+        <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-slate-500 bg-gray-50/50 dark:bg-slate-900/50">
           <div>
             <h2 id="help-modal-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('helpGuide.title')}</h2>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('helpGuide.subtitle')}</p>
@@ -132,7 +132,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       {shortcuts.map(shortcut => (
                         <div key={shortcut.id} className="flex justify-between items-center gap-2">
                           <span className="text-gray-700 dark:text-gray-300 font-medium text-sm">{t(shortcut.name)}</span>
-                          <kbd className="bg-white dark:bg-slate-700 px-2 py-1 rounded border border-gray-300 dark:border-slate-600 text-xs font-mono text-gray-600 dark:text-gray-300 shadow-sm text-center whitespace-nowrap">
+                          <kbd className="bg-white dark:bg-slate-700 px-2 py-1 rounded border border-gray-300 dark:border-slate-500 text-xs font-mono text-gray-600 dark:text-gray-300 shadow-sm text-center whitespace-nowrap">
                             {formatShortcutKey(shortcut.defaultKeys)}
                           </kbd>
                         </div>
@@ -170,7 +170,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 flex justify-end">
+        <div className="p-6 border-t border-gray-100 dark:border-slate-500 bg-gray-50/50 dark:bg-slate-900/50 flex justify-end">
           <button
             onClick={onClose}
             className="px-6 py-2 bg-slate-900 dark:bg-primary-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-primary-700 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-900 dark:focus-visible:ring-primary-500 dark:focus-visible:ring-offset-slate-800"

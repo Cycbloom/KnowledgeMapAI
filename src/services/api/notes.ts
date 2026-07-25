@@ -185,13 +185,13 @@ export const notesApi: INotesApi = {
   // searchBlocks: 块搜索补全,供 BlockRefPopover 输入 (( 时拉取候选块
 
   getBlock: (noteId: string, blockId: string): Promise<BlockContent> =>
-    request(`/notes/${noteId}/blocks/${blockId}`),
+    request<BlockContent>(`/notes/${noteId}/blocks/${blockId}`),
 
   getInboundBlockRefs: (noteId: string): Promise<BlockRef[]> =>
-    request(`/notes/${noteId}/block-refs/inbound`),
+    request<BlockRef[]>(`/notes/${noteId}/block-refs/inbound`),
 
   getOutboundBlockRefs: (noteId: string): Promise<BlockRef[]> =>
-    request(`/notes/${noteId}/block-refs/outbound`),
+    request<BlockRef[]>(`/notes/${noteId}/block-refs/outbound`),
 
   searchBlocks: (
     query: string,
@@ -199,6 +199,6 @@ export const notesApi: INotesApi = {
   ): Promise<BlockRefTarget[]> => {
     const params = new URLSearchParams({ q: query });
     if (limit !== undefined) params.set('limit', String(limit));
-    return request(`/notes/block-search?${params.toString()}`);
+    return request<BlockRefTarget[]>(`/notes/block-search?${params.toString()}`);
   },
 };

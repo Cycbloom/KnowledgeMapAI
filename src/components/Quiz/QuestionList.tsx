@@ -31,21 +31,21 @@ interface QuestionListProps {
 
 type CardType = StudyCard['card_type'];
 
-const cardTypeConfig: Record<CardType, { label: string; icon: React.ReactNode; color: string }> = {
-  qa: { label: '问答题', icon: <MessageSquare size={16} />, color: 'text-primary-500' },
-  choice: { label: '单选题', icon: <CheckSquare size={16} />, color: 'text-green-500' },
-  multi_choice: { label: '多选题', icon: <CheckSquare size={16} />, color: 'text-primary-500' },
-  true_false: { label: '判断题', icon: <ToggleLeft size={16} />, color: 'text-amber-500' },
-  fill_in_the_blank: { label: '填空题', icon: <FileText size={16} />, color: 'text-primary-500' },
-  essay: { label: '论述题', icon: <FileText size={16} />, color: 'text-rose-500' },
+const cardTypeConfig: Record<CardType, { labelKey: string; icon: React.ReactNode; color: string }> = {
+  qa: { labelKey: 'quiz.questionList.type.qa', icon: <MessageSquare size={16} />, color: 'text-primary-500' },
+  choice: { labelKey: 'quiz.questionList.type.choice', icon: <CheckSquare size={16} />, color: 'text-green-500' },
+  multi_choice: { labelKey: 'quiz.questionList.type.multiChoice', icon: <CheckSquare size={16} />, color: 'text-primary-500' },
+  true_false: { labelKey: 'quiz.questionList.type.trueFalse', icon: <ToggleLeft size={16} />, color: 'text-amber-500' },
+  fill_in_the_blank: { labelKey: 'quiz.questionList.type.fillInTheBlank', icon: <FileText size={16} />, color: 'text-primary-500' },
+  essay: { labelKey: 'quiz.questionList.type.essay', icon: <FileText size={16} />, color: 'text-rose-500' },
 };
 
-const difficultyConfig: Record<number, { label: string; color: string }> = {
-  1: { label: '简单', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  2: { label: '较易', color: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-400' },
-  3: { label: '中等', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  4: { label: '较难', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-  5: { label: '困难', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+const difficultyConfig: Record<number, { labelKey: string; color: string }> = {
+  1: { labelKey: 'quiz.questionList.difficulty.easy', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  2: { labelKey: 'quiz.questionList.difficulty.fairlyEasy', color: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-400' },
+  3: { labelKey: 'quiz.questionList.difficulty.medium', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  4: { labelKey: 'quiz.questionList.difficulty.fairlyHard', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  5: { labelKey: 'quiz.questionList.difficulty.hard', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
 };
 
 export const QuestionList: React.FC<QuestionListProps> = ({
@@ -114,7 +114,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
     const config = difficultyConfig[Math.min(Math.max(difficulty, 1), 5)];
     return (
       <span className={`px-2 py-0.5 rounded text-xs font-medium ${config.color}`}>
-        {config.label}
+        {t(config.labelKey, { defaultValue: '' })}
       </span>
     );
   };
@@ -188,7 +188,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
               }`}
             >
               <span className={card.answer === val ? 'font-medium text-green-500' : ''}>
-                {val === 'True' ? '正确' : '错误'}
+                {val === 'True' ? t('quiz.questionList.trueFalse.true') : t('quiz.questionList.trueFalse.false')}
               </span>
               {card.answer === val && (
                 <CheckSquare size={14} className="text-green-500" />
@@ -223,7 +223,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-          共 {cards.length} 道题目
+          {t('quiz.questionList.questionCount', { count: cards.length })}
         </div>
         <button
           onClick={toggleAllAnswers}
@@ -234,7 +234,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
           }`}
         >
           {showAllAnswers ? <EyeOff size={16} /> : <Eye size={16} />}
-          {showAllAnswers ? '隐藏答案' : '显示答案'}
+          {showAllAnswers ? t('quiz.questionList.button.hideAnswer') : t('quiz.questionList.button.showAnswer')}
         </button>
       </div>
 
@@ -260,13 +260,13 @@ export const QuestionList: React.FC<QuestionListProps> = ({
             >
               <div className="flex items-center gap-3">
                 <span className={config.color}>{config.icon}</span>
-                <span className="font-medium">{config.label}</span>
+                <span className="font-medium">{t(config.labelKey, { defaultValue: '' })}</span>
                 <span
                   className={`px-2 py-0.5 rounded-full text-xs ${
                     isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'
                   }`}
                 >
-                  {typeCards.length} 题
+                  {t('quiz.questionList.questionCountShort', { count: typeCards.length })}
                 </span>
               </div>
               {isGroupExpanded ? (
@@ -326,7 +326,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                           ? 'text-slate-400 hover:text-primary-400 hover:bg-slate-700'
                                           : 'text-gray-400 hover:text-primary-600 hover:bg-gray-100'
                                       }`}
-                                      title={isAnswerExpanded ? '隐藏答案' : '显示答案'}
+                                      title={isAnswerExpanded ? t('quiz.questionList.button.hideAnswer') : t('quiz.questionList.button.showAnswer')}
                                     >
                                       {isAnswerExpanded ? <EyeOff size={16} /> : <Eye size={16} />}
                                     </button>
@@ -337,7 +337,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                           ? 'text-slate-400 hover:text-amber-400 hover:bg-slate-700'
                                           : 'text-gray-400 hover:text-amber-600 hover:bg-gray-100'
                                       }`}
-                                      title="编辑"
+                                      title={t('quiz.questionList.button.edit')}
                                     >
                                       <Edit2 size={16} />
                                     </button>
@@ -348,7 +348,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                           ? 'text-slate-400 hover:text-primary-400 hover:bg-slate-700'
                                           : 'text-gray-400 hover:text-primary-600 hover:bg-gray-100'
                                       }`}
-                                      title="重新生成"
+                                      title={t('quiz.questionList.button.regenerate')}
                                     >
                                       <RefreshCw size={16} />
                                     </button>
@@ -363,7 +363,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                           ? 'text-slate-400 hover:text-red-400 hover:bg-slate-700'
                                           : 'text-gray-400 hover:text-red-600 hover:bg-gray-100'
                                       }`}
-                                      title="删除"
+                                      title={t('quiz.questionList.button.delete')}
                                     >
                                       <Trash2 size={16} />
                                     </button>
@@ -386,7 +386,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                           isDark ? 'text-slate-500' : 'text-gray-400'
                                         }`}
                                       >
-                                        答案
+                                        {t('quiz.questionList.label.answer')}
                                       </span>
                                     </div>
                                     {renderAnswer(card)}
@@ -398,7 +398,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                             isDark ? 'text-slate-500' : 'text-gray-400'
                                           }`}
                                         >
-                                          解析
+                                          {t('quiz.questionList.label.explanation')}
                                         </span>
                                         <div
                                           className={`mt-1 p-3 rounded-lg ${

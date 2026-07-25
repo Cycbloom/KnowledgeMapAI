@@ -133,5 +133,10 @@
     "restored": "已恢复",
     "restoreFailed": "恢复失败，请前往回收站手动恢复"
   },
-  "deleteGraphTitle": "删除图谱"
+  "deleteGraphTitle": "删除图谱",
+  "mobileFAB": {
+    "aiGenerate": "AI 生成",
+    "import": "导入",
+    "importing": "导入中..."
+  }
 }

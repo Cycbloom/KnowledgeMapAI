@@ -99,7 +99,7 @@ export const mobileStudyApi: IStudyApi = {
 
   createCardsBatch: async (cards: unknown[]) => {
     if (cards.length === 0) {
-      return { success: true, cards: [] };
+      return [];
     }
 
     const client = getMobileSupabaseClient();
@@ -154,7 +154,7 @@ export const mobileStudyApi: IStudyApi = {
       throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
-    return { success: true, cards: (data as StudyCard[]) || [] };
+    return (data as StudyCard[]) || [];
   },
 
   update: async (id: string, data: Partial<StudyCard>) => {
@@ -174,7 +174,7 @@ export const mobileStudyApi: IStudyApi = {
       throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
-    return { success: true, card: result as StudyCard };
+    return result as StudyCard;
   },
 
   delete: async (id: string) => {
@@ -277,7 +277,7 @@ export const mobileStudyApi: IStudyApi = {
       );
     }
 
-    return { success: true, card: updatedCard as StudyCard };
+    return updatedCard as StudyCard;
   },
 
   getCardGroups: async (knowledgePointId: string) => {
@@ -503,7 +503,13 @@ export const mobileStudyApi: IStudyApi = {
       throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
-    return { success: true };
+    return {
+      source: "custom" as const,
+      w,
+      request_retention: (currentSettings.request_retention as number) ?? 0.9,
+      maximum_interval: (currentSettings.maximum_interval as number) ?? 36500,
+      last_optimized_at: (currentSettings.fsrs_last_optimized_at as string) ?? null,
+    };
   },
 
   resetFsrsParameters: async () => {
@@ -539,12 +545,14 @@ export const mobileStudyApi: IStudyApi = {
       throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
-    return { success: true };
+    return { success: true, message: "FSRS 参数已重置为默认值" };
   },
 
   optimizeFsrsParameters: async () => {
     return {
       success: false,
+      oldW: [],
+      newW: [],
       improvement: 0,
       reviewCount: 0,
       message: "移动端暂不支持参数优化，请在桌面端使用",

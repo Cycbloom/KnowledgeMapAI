@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useRef } from "react";
-import { Clock, Move } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Clock, Move, Calendar as CalendarIcon } from "lucide-react";
 import { useTheme } from "../../hooks";
 import {
   CalendarEvent,
@@ -37,6 +38,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   onSubtaskClick,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{
     dayIndex: number;
@@ -44,6 +46,10 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   } | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const dragRef = useRef<HTMLDivElement>(null);
+  const [editingDateEventId, setEditingDateEventId] = useState<string | null>(
+    null,
+  );
+  const [pendingDateValue, setPendingDateValue] = useState<string>("");
 
   const weekData = useMemo(() => {
     const days: {
@@ -193,15 +199,78 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
     setDragOffset(0);
   };
 
+  const toDateInputValue = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleOpenChangeDate = (event: CalendarEvent) => {
+    setEditingDateEventId(event.id);
+    setPendingDateValue(toDateInputValue(new Date(event.start)));
+  };
+
+  const handleDateInputChange = (
+    event: CalendarEvent,
+    newValue: string,
+  ) => {
+    if (!newValue) {
+      setEditingDateEventId(null);
+      return;
+    }
+    if (!onEventDrop) {
+      setEditingDateEventId(null);
+      return;
+    }
+    const parts = newValue.split("-");
+    if (parts.length !== 3) {
+      setEditingDateEventId(null);
+      return;
+    }
+    const year = parseInt(parts[0] ?? "0", 10);
+    const month = parseInt(parts[1] ?? "0", 10) - 1;
+    const day = parseInt(parts[2] ?? "0", 10);
+
+    const originalStart = new Date(event.start);
+    const newStart = new Date(originalStart);
+    newStart.setFullYear(year, month, day);
+
+    const originalEnd = event.end ? new Date(event.end) : null;
+    let newEnd: Date | undefined;
+    if (originalEnd) {
+      const duration = originalEnd.getTime() - originalStart.getTime();
+      newEnd = new Date(newStart.getTime() + duration);
+    }
+
+    onEventDrop({
+      eventId: event.id,
+      newStart,
+      newEnd,
+    });
+    setEditingDateEventId(null);
+  };
+
+  const handleCardKeyDown = (
+    e: React.KeyboardEvent,
+    event: CalendarEvent,
+  ) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      onEventClick(event);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex border-b border-slate-200 dark:border-slate-700">
+      <div className="flex border-b border-slate-200 dark:border-slate-500">
         <div className="w-16 flex-shrink-0" />
         {weekData.map((day, index) => (
           <div
             key={index}
-            className={`flex-1 text-center py-2 border-l border-slate-200 dark:border-slate-700 cursor-pointer ${
+            className={`flex-1 text-center py-2 border-l border-slate-200 dark:border-slate-500 cursor-pointer ${
               day.isToday ? "bg-primary-50 dark:bg-primary-500/10" : ""
             }`}
             onClick={() => onDateSelect(day.date)}
@@ -240,7 +309,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
           {weekData.map((day, dayIndex) => (
             <div
               key={dayIndex}
-              className={`flex-1 relative border-l border-slate-200 dark:border-slate-700 ${
+              className={`flex-1 relative border-l border-slate-200 dark:border-slate-500 ${
                 day.isToday ? "bg-primary-50/30 dark:bg-primary-500/5" : ""
               }`}
             >
@@ -282,13 +351,20 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                 const isDragging = draggedEvent?.id === event.id;
                 const hasEnoughHeight =
                   position.height && parseInt(position.height) > 80;
+                const isEditingDate = editingDateEventId === event.id;
                 return (
                   <div
                     key={`event-${i}`}
                     ref={dragRef}
-                    draggable={!!onEventDrop}
+                    draggable={!!onEventDrop && !isEditingDate}
                     onDragStart={(e) => handleDragStart(e, event)}
                     onDragEnd={handleDragEnd}
+                    role="button"
+                    tabIndex={0}
+                    aria-roledescription={t("calendar.a11y.draggableTask")}
+                    aria-label={`${event.title}, ${formatDate(event.start, "long-date")}`}
+                    aria-grabbed={isDragging ? "true" : "false"}
+                    onKeyDown={(e) => handleCardKeyDown(e, event)}
                     className={`absolute left-1 right-1 ${getEventColor(event)} text-white rounded shadow-sm cursor-pointer hover:opacity-90 overflow-hidden ${
                       isDragging ? "opacity-50" : ""
                     } ${onEventDrop ? "cursor-grab active:cursor-grabbing" : ""}`}
@@ -306,7 +382,38 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                           {event.subtask_completed || 0}/{event.subtask_count}
                         </span>
                       )}
+                      {onEventDrop && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenChangeDate(event);
+                          }}
+                          className={`p-0.5 rounded hover:bg-white/20 focus:outline-none focus:ring-1 focus:ring-white/50 flex-shrink-0 ${
+                            event.has_subtasks && event.subtask_count
+                              ? ""
+                              : "ml-auto"
+                          }`}
+                          aria-label={t("calendar.a11y.changeDate")}
+                          title={t("calendar.a11y.changeDate")}
+                        >
+                          <CalendarIcon size={10} />
+                        </button>
+                      )}
                     </div>
+                    {isEditingDate && (
+                      <input
+                        type="date"
+                        value={pendingDateValue}
+                        onChange={(e) =>
+                          handleDateInputChange(event, e.target.value)
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        className="mx-1 mb-1 text-xs text-slate-900 bg-white rounded px-1 py-0.5 w-[calc(100%-0.5rem)]"
+                        aria-label={t("calendar.a11y.changeDate")}
+                      />
+                    )}
                     {position.height && parseInt(position.height) > 40 && (
                       <div className="px-1 text-xs opacity-80 flex items-center gap-1">
                         <Clock size={10} />

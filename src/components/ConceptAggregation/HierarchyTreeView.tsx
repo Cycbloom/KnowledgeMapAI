@@ -219,7 +219,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         </span>
 
         {showTooltip && (
-          <div className="absolute z-50 left-full ml-2 p-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 w-56">
+          <div className="absolute z-50 left-full ml-2 p-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-500 w-56">
             <div className="space-y-1.5">
               <p className="font-medium text-sm text-slate-800 dark:text-slate-200">
                 {node.title}
@@ -263,7 +263,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               key={suggestion.id}
               className={`flex items-center gap-2 p-2 rounded-lg text-xs border transition-colors ${
                 getConfidenceLevel(suggestion.confidence) === "low"
-                  ? "border-dotted border-slate-200 dark:border-slate-700 opacity-60"
+                  ? "border-dotted border-slate-200 dark:border-slate-500 opacity-60"
                   : getConfidenceLevel(suggestion.confidence) === "medium"
                     ? "border-dashed border-amber-200 dark:border-amber-800"
                     : "border-solid border-blue-200 dark:border-blue-800"
@@ -413,7 +413,7 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-slate-500">
         <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1">
             <Info size={12} />
@@ -460,7 +460,7 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
         ))}
       </div>
 
-      <div className="px-3 py-2 border-t border-slate-200 dark:border-slate-700">
+      <div className="px-3 py-2 border-t border-slate-200 dark:border-slate-500">
         <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1">
             <span className="w-4 h-0.5 bg-slate-400" />

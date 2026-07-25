@@ -344,7 +344,47 @@ export class AchievementEngine {
             ) || 0
           await periodicTaskService.updatePeriodicTaskProgress(userId, "focus", totalMinutes)
 
-          await achievementService.updateStudyStreak(userId)
+          // Inline updateStudyStreak logic (removed from achievementService)
+          const { data: streakSessions, error: streakError } = await getSupabaseAdmin()
+            .from("focus_sessions")
+            .select("started_at")
+            .eq("user_id", userId)
+            .eq("completed", true)
+            .order("started_at", { ascending: false })
+
+          if (!streakError && streakSessions) {
+            const streakSessionsTyped = streakSessions as Pick<FocusSessionRow, 'started_at'>[]
+            const streakDates = new Set(streakSessionsTyped.map((s) => s.started_at.split("T")[0]))
+            const sortedStreakDates = Array.from(streakDates).sort(
+              (a, b) => new Date(b).getTime() - new Date(a).getTime()
+            )
+
+            if (sortedStreakDates.length > 0) {
+              const todayDate = new Date().toISOString().split("T")[0]
+              const yesterdayDate = new Date(Date.now() - 86400000).toISOString().split("T")[0]
+
+              if (sortedStreakDates[0] === todayDate || sortedStreakDates[0] === yesterdayDate) {
+                let streak = 0
+                const dateString = (d: Date) => d.toISOString().split("T")[0]
+
+                if (
+                  streakDates.has(dateString(new Date())) ||
+                  streakDates.has(dateString(new Date(Date.now() - 86400000)))
+                ) {
+                  const checkDate = new Date()
+                  if (!streakDates.has(dateString(checkDate))) {
+                    checkDate.setDate(checkDate.getDate() - 1)
+                  }
+                  while (streakDates.has(dateString(checkDate))) {
+                    streak++
+                    checkDate.setDate(checkDate.getDate() - 1)
+                  }
+                }
+
+                await achievementService.checkAndUnlock(userId, "streak_days", streak)
+              }
+            }
+          }
         } catch (error) {
           logger.error("[AchievementEngine] Failed to update focus stats:", error)
         }

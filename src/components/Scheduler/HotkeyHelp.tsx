@@ -27,7 +27,7 @@ export const HotkeyHelp: React.FC<HotkeyHelpProps> = ({ isOpen, onClose }) => {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-500 overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
             <div className="bg-gradient-to-r from-slate-700 to-slate-800 p-4 text-white flex items-center justify-between">
@@ -62,7 +62,7 @@ export const HotkeyHelp: React.FC<HotkeyHelpProps> = ({ isOpen, onClose }) => {
               ))}
             </div>
 
-            <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="p-4 border-t border-slate-200 dark:border-slate-500">
               <p className="text-xs text-slate-400 text-center">
                 按 <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono">?</kbd> 随时显示此帮助
               </p>

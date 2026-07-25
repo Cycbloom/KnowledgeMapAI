@@ -21,16 +21,16 @@ export const nodesApi: INodesApi = {
     return request<DeleteNodeResult>(url, { method: 'DELETE' });
   },
   
-  batchDelete: (node_ids: string[], options?: { hard_delete?: boolean }) => 
-    request('/nodes/batch-delete', { 
-      method: 'POST', 
-      body: JSON.stringify({ node_ids, ...options }) 
+  batchDelete: (node_ids: string[], options?: { hard_delete?: boolean }) =>
+    request<{ count: number }>('/nodes/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify({ node_ids, ...options })
     }),
-  
-  batchUpdatePositions: (positions: NodePositionUpdate[]) => 
-    request('/nodes/batch-update-positions', { method: 'POST', body: JSON.stringify({ positions }) }),
-  
-  getRelated: (id: string) => request(`/nodes/${id}/related`),
+
+  batchUpdatePositions: (positions: NodePositionUpdate[]) =>
+    request<void>('/nodes/batch-update-positions', { method: 'POST', body: JSON.stringify({ positions }) }),
+
+  getRelated: (id: string) => request<unknown>(`/nodes/${id}/related`),
   
   searchSimilar: (params: {
     title: string;
@@ -61,5 +61,5 @@ export const nodesApi: INodesApi = {
 export const edgesApi: IEdgesApi = {
   create: (data: CreateEdgeData) => request<Edge>('/edges', { method: 'POST', body: JSON.stringify(data) }),
   
-  delete: (id: string) => request(`/edges/${id}`, { method: 'DELETE' }),
+  delete: (id: string) => request<void>(`/edges/${id}`, { method: 'DELETE' }),
 };

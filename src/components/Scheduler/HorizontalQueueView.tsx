@@ -263,8 +263,13 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
             >
               {isCollapsed ? (
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={false}
+                  aria-label={t('scheduler.queue.toggleCollapse', { queue: queueTitles[level as keyof typeof queueTitles] })}
                   className={`
                     p-4 flex items-center justify-between cursor-pointer
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60 dark:focus-visible:ring-primary-500/60
                     ${
                       level === 0
                         ? "bg-gradient-to-r from-primary-100 to-primary-100 dark:from-primary-500/20 dark:to-primary-500/20"
@@ -275,6 +280,12 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
                     rounded-t-2xl
                   `}
                   onClick={() => toggleCollapse(level)}
+                  onKeyDown={(e) => {
+                    if (e.key === " " || e.key === "Enter") {
+                      e.preventDefault();
+                      toggleCollapse(level);
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <span
@@ -355,7 +366,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
       {onViewChange && (
         <div className="flex-shrink-0 p-3 sm:p-4 border-b border-slate-200 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/30 backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 overflow-x-auto custom-scrollbar">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500/50 overflow-x-auto custom-scrollbar">
               {(
                 Object.keys(VIEW_CONFIG) as Array<keyof typeof VIEW_CONFIG>
               ).map((viewKey) => {
@@ -387,7 +398,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2 text-xs sm:text-sm">
-              <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500">
                 <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
                 <span className="text-slate-500 dark:text-slate-400">
                   {t('scheduler.queue.pending')}
@@ -396,7 +407,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
                   {stats.pending}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500">
                 <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
                 <span className="text-slate-500 dark:text-slate-400">
                   {t('scheduler.queue.inProgress')}
@@ -405,7 +416,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
                   {stats.inProgress}
                 </span>
               </div>
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                 <span className="text-slate-500 dark:text-slate-400">
                   {t('scheduler.queue.completed')}

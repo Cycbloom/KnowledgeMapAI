@@ -32,7 +32,10 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { domainsApi } from '../../services/api/domains';
 import type { DomainTreeNode } from '@shared/types/graph';
+import { message } from '@/utils/messageHelper';
 import { useIsMobile } from '../../hooks';
+import { useFocusTrap } from '../../hooks/common/useFocusTrap';
+import { useEscapeKey } from '../../hooks/common/useEscapeKey';
 
 interface DomainManagerProps {
   isOpen: boolean;
@@ -80,6 +83,7 @@ function SortableDomainItem({
   hasChildrenFn,
   onToggleExpand,
 }: SortableDomainItemProps) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -98,7 +102,13 @@ function SortableDomainItem({
   const showChildren = hasChildrenFn(domain) && isExpanded;
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      aria-roledescription={t('graphMap.a11y.draggableNode')}
+      aria-label={domain.name}
+    >
       <div
         className={`group flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${
           depth > 0 ? `ml-${  Math.min(depth * 4, 16)}` : ''
@@ -188,6 +198,8 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
   const titleId = useId();
   const deviceInfo = useIsMobile();
   const isMobile = deviceInfo.isMobile;
+  const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
+  useEscapeKey(onClose, isOpen);
 
   const [domains, setDomains] = useState<DomainTreeNode[]>([]);
   const [loading, setLoading] = useState(false);
@@ -226,6 +238,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
       setExpandedIds(firstLevelIds);
     } catch (error) {
       console.error('Failed to fetch domains:', error);
+      message.error(t('graphMap.domainManager.fetchFailed'));
     } finally {
       setLoading(false);
     }
@@ -272,6 +285,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
       setFormData(initialFormData);
     } catch (error) {
       console.error('Failed to create domain:', error);
+      message.error(t('graphMap.domainManager.createFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -306,6 +320,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
       setFormData(initialFormData);
     } catch (error) {
       console.error('Failed to update domain:', error);
+      message.error(t('graphMap.domainManager.updateFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -319,6 +334,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
       setDeleteConfirmId(null);
     } catch (error) {
       console.error('Failed to delete domain:', error);
+      message.error(t('graphMap.domainManager.deleteFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -353,6 +369,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
     } catch (error) {
       console.error('Failed to reorder domains:', error);
       setDomains(arrayMove(newDomains, newIndex, oldIndex));
+      message.error(t('graphMap.domainManager.reorderFailed'));
     }
   };
 
@@ -370,6 +387,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
       setAiColorRecommendation(result);
     } catch (error) {
       console.error('Failed to generate AI color:', error);
+      message.error(t('graphMap.domainManager.generateColorFailed'));
     } finally {
       setIsGeneratingColor(false);
     }
@@ -469,6 +487,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
         <span className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.domainManager.customColor')}</span>
         <input
           type="text"
+          aria-required={true}
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder="#000000"
@@ -482,10 +501,11 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
     <div className="p-4 bg-gray-50 dark:bg-slate-700/50 border-t border-b border-gray-200 dark:border-gray-600 space-y-3">
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {t('graphMap.domainManager.nameRequired')} <span className="text-red-500">*</span>
+          {t('graphMap.domainManager.nameRequired')} <span aria-hidden="true" className="text-red-500">*</span>
         </label>
         <input
           type="text"
+          aria-required={true}
           value={formData.name}
           onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
           placeholder={t('graphMap.domainManager.descriptionPlaceholder')}
@@ -509,7 +529,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {t('graphMap.domainManager.colorRequired')} <span className="text-red-500">*</span>
+          {t('graphMap.domainManager.colorRequired')} <span aria-hidden="true" className="text-red-500">*</span>
         </label>
         {renderColorPicker(formData.color, color => setFormData(prev => ({ ...prev, color })))}
       </div>
@@ -709,17 +729,18 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          className={`bg-white dark:bg-slate-800 rounded-xl shadow-2xl overflow-hidden ${
-            isMobile ? 'w-full h-full max-w-none rounded-none' : 'w-full max-w-2xl mx-4'
-          }`}
-          onClick={e => e.stopPropagation()}
-        >
+            ref={containerRef}
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            className={`bg-white dark:bg-slate-800 rounded-xl shadow-2xl overflow-hidden ${
+              isMobile ? 'w-full h-full max-w-none rounded-none' : 'w-full max-w-2xl mx-4'
+            }`}
+            onClick={e => e.stopPropagation()}
+          >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white">
               {t('graphMap.domainManager.title')}

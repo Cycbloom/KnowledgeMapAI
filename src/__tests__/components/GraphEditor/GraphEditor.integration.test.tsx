@@ -234,10 +234,10 @@ describe("GraphEditor Integration", () => {
   });
 
   it("displays the graph title and nodes after loading", async () => {
-    const { findByText, getByTestId } = renderGraphEditor();
+    const { findAllByText, getByTestId, findByText } = renderGraphEditor();
 
-    // Graph title appears in the toolbar
-    expect(await findByText("测试图谱")).toBeInTheDocument();
+    // Graph title appears in the toolbar and the sr-only h1
+    expect((await findAllByText("测试图谱")).length).toBeGreaterThan(0);
 
     // Nodes are rendered in the (mocked) canvas
     const canvas = getByTestId("mindmap-canvas-mock");

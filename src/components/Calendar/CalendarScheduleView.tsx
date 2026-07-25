@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Move,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { useTheme } from "../../hooks";
 import { formatDurationMinutes, formatDate } from "../../utils/formatters";
@@ -219,6 +220,74 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
     setDragOffset(0);
   };
 
+  const [editingDateEventId, setEditingDateEventId] = useState<string | null>(
+    null,
+  );
+  const [pendingDateValue, setPendingDateValue] = useState<string>("");
+
+  const toDateInputValue = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleOpenChangeDate = (event: CalendarEvent) => {
+    setEditingDateEventId(event.id);
+    setPendingDateValue(toDateInputValue(new Date(event.start)));
+  };
+
+  const handleDateInputChange = (
+    event: CalendarEvent,
+    newValue: string,
+  ) => {
+    if (!newValue) {
+      setEditingDateEventId(null);
+      return;
+    }
+    if (!onEventDrop) {
+      setEditingDateEventId(null);
+      return;
+    }
+    const parts = newValue.split("-");
+    if (parts.length !== 3) {
+      setEditingDateEventId(null);
+      return;
+    }
+    const year = parseInt(parts[0] ?? "0", 10);
+    const month = parseInt(parts[1] ?? "0", 10) - 1;
+    const day = parseInt(parts[2] ?? "0", 10);
+
+    const originalStart = new Date(event.start);
+    const newStart = new Date(originalStart);
+    newStart.setFullYear(year, month, day);
+
+    const originalEnd = event.end ? new Date(event.end) : null;
+    let newEnd: Date | undefined;
+    if (originalEnd) {
+      const duration = originalEnd.getTime() - originalStart.getTime();
+      newEnd = new Date(newStart.getTime() + duration);
+    }
+
+    onEventDrop({
+      eventId: event.id,
+      newStart,
+      newEnd,
+    });
+    setEditingDateEventId(null);
+  };
+
+  const handleCardKeyDown = (
+    e: React.KeyboardEvent,
+    event: CalendarEvent,
+  ) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      onEventClick(event);
+    }
+  };
+
   const currentHour = new Date().getHours();
   const isToday = currentDate.toDateString() === new Date().toDateString();
 
@@ -294,7 +363,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
             >
               <Plus size={16} />
-              添加任务
+              {t("calendar.scheduleView.addTask")}
             </button>
           )}
         </div>
@@ -306,7 +375,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               <span
                 className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
               >
-                计划: {formatDurationMinutes(scheduleData.stats.plannedMinutes, { emptyText: "0分钟" })}
+                {t("calendar.scheduleView.labels.planned")} {formatDurationMinutes(scheduleData.stats.plannedMinutes, { emptyText: t("calendar.scheduleView.emptyDuration") })}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -314,7 +383,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               <span
                 className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
               >
-                实际: {formatDurationMinutes(scheduleData.stats.executedMinutes, { emptyText: "0分钟" })}
+                {t("calendar.scheduleView.labels.actual")} {formatDurationMinutes(scheduleData.stats.executedMinutes, { emptyText: t("calendar.scheduleView.emptyDuration") })}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -322,7 +391,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               <span
                 className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
               >
-                匹配率: {scheduleData.stats.matchRate}%
+                {t("calendar.scheduleView.labels.matchRate")} {scheduleData.stats.matchRate}%
               </span>
             </div>
           </div>
@@ -335,7 +404,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               <span
                 className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
               >
-                活动记录: {dailyActivities.length} 项
+                {t("calendar.scheduleView.activityLogCount", { count: dailyActivities.length })}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -343,7 +412,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               <span
                 className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
               >
-                总时长:{" "}
+                {t("calendar.scheduleView.labels.totalDuration")}{" "}
                 {formatDurationMinutes(
                   Math.round(
                     dailyActivities.reduce(
@@ -351,7 +420,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                       0,
                     ) / 60,
                   ),
-                  { emptyText: "0分钟" },
+                  { emptyText: t("calendar.scheduleView.emptyDuration") },
                 )}
               </span>
             </div>
@@ -414,12 +483,19 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                     {slot.planned.map((event, i) => {
                       const colors = getEventColor(event);
                       const isDragging = draggedEvent?.id === event.id;
+                      const isEditingDate = editingDateEventId === event.id;
                       return (
                         <div
                           key={`plan-${i}`}
-                          draggable={!!onEventDrop}
+                          draggable={!!onEventDrop && !isEditingDate}
                           onDragStart={(e) => handleDragStart(e, event)}
                           onDragEnd={handleDragEnd}
+                          role="button"
+                          tabIndex={0}
+                          aria-roledescription={t("calendar.a11y.draggableTask")}
+                          aria-label={event.title}
+                          aria-grabbed={isDragging ? "true" : "false"}
+                          onKeyDown={(e) => handleCardKeyDown(e, event)}
                           className={`p-2 rounded-lg ${colors.bg} text-white cursor-pointer hover:opacity-90 transition-opacity ${
                             isDragging ? "opacity-50" : ""
                           } ${onEventDrop ? "cursor-grab active:cursor-grabbing" : ""}`}
@@ -442,10 +518,41 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                                 {event.subtask_count}
                               </span>
                             )}
+                            {onEventDrop && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenChangeDate(event);
+                                }}
+                                className={`p-0.5 rounded hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 ${
+                                  event.has_subtasks && event.subtask_count
+                                    ? ""
+                                    : "ml-auto"
+                                }`}
+                                aria-label={t("calendar.a11y.changeDate")}
+                                title={t("calendar.a11y.changeDate")}
+                              >
+                                <CalendarIcon size={12} />
+                              </button>
+                            )}
                           </div>
+                          {isEditingDate && (
+                            <input
+                              type="date"
+                              value={pendingDateValue}
+                              onChange={(e) =>
+                                handleDateInputChange(event, e.target.value)
+                              }
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              className="mt-1 text-xs text-slate-900 bg-white rounded px-1 py-0.5"
+                              aria-label={t("calendar.a11y.changeDate")}
+                            />
+                          )}
                           {event.estimated_duration && (
                             <div className="text-xs opacity-80 mt-1">
-                              预计 {event.estimated_duration} 分钟
+                              {t("calendar.scheduleView.estimatedMinutes", { minutes: event.estimated_duration })}
                             </div>
                           )}
                           {showSubtasks &&
@@ -488,7 +595,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                         <div
                           className={`text-xs mt-1 ${isDark ? "text-green-500/70" : "text-green-600"}`}
                         >
-                          实际 {Math.round((exec.duration || 0) / 60)} 分钟
+                          {t("calendar.scheduleView.actualMinutes", { minutes: Math.round((exec.duration || 0) / 60) })}
                         </div>
                       </div>
                     ))}
@@ -504,7 +611,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                         }`}
                       >
                         <Move size={14} />
-                        <span className="text-sm">移动到 {slot.hour}:00</span>
+                        <span className="text-sm">{t("calendar.scheduleView.moveTo", { hour: slot.hour })}</span>
                       </div>
                     </div>
                   )}
@@ -522,7 +629,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                           }`}
                         >
                           <Plus size={14} />
-                          <span className="text-sm">添加任务</span>
+                          <span className="text-sm">{t("calendar.scheduleView.addTask")}</span>
                         </div>
                       </div>
                     )}

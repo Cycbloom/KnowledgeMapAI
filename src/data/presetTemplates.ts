@@ -327,31 +327,31 @@ export const presetTemplates: Template[] = [
       showAxes: true,
       showLabels: true,
       axes: {
-        x: { label: '重要性', min: 0, max: 100 },
-        y: { label: '紧急性', min: 0, max: 100 },
+        x: { label: 'templates.preset.templates.template-quadrant-analysis.axisX', min: 0, max: 100 },
+        y: { label: 'templates.preset.templates.template-quadrant-analysis.axisY', min: 0, max: 100 },
       },
       zones: [
         {
           id: 'q1',
-          label: '重要且紧急',
+          label: 'templates.preset.templates.template-quadrant-analysis.zoneQ1',
           bounds: { x: 50, y: 0, width: 50, height: 50 },
           color: 'rgba(239, 68, 68, 0.1)',
         },
         {
           id: 'q2',
-          label: '重要不紧急',
+          label: 'templates.preset.templates.template-quadrant-analysis.zoneQ2',
           bounds: { x: 50, y: 50, width: 50, height: 50 },
           color: 'rgba(59, 130, 246, 0.1)',
         },
         {
           id: 'q3',
-          label: '不重要紧急',
+          label: 'templates.preset.templates.template-quadrant-analysis.zoneQ3',
           bounds: { x: 0, y: 0, width: 50, height: 50 },
           color: 'rgba(249, 115, 22, 0.1)',
         },
         {
           id: 'q4',
-          label: '不重要不紧急',
+          label: 'templates.preset.templates.template-quadrant-analysis.zoneQ4',
           bounds: { x: 0, y: 50, width: 50, height: 50 },
           color: 'rgba(107, 114, 128, 0.1)',
         },

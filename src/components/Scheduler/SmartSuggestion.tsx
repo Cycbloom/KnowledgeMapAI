@@ -139,7 +139,7 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
   const timeInfo = getCurrentTimeInfo();
 
   return (
-    <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-500 overflow-hidden">
       <div
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"

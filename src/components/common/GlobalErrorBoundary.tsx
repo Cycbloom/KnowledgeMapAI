@@ -147,7 +147,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-900 p-4">
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-lg max-w-lg w-full text-center border border-gray-100 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-lg max-w-lg w-full text-center border border-gray-100 dark:border-slate-500">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 mb-6">
               <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
             </div>
@@ -162,7 +162,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
               {appError.message}
             </p>
 
-            <div className="relative bg-gray-50 dark:bg-slate-700 p-4 rounded-lg text-left text-xs font-mono mb-8 overflow-auto max-h-48 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-300">
+            <div className="relative bg-gray-50 dark:bg-slate-700 p-4 rounded-lg text-left text-xs font-mono mb-8 overflow-auto max-h-48 border border-gray-200 dark:border-slate-500 text-gray-700 dark:text-gray-300">
               <CopyButton text={errorDetails} />
               <pre className="whitespace-pre-wrap break-all">
                 {errorDetails}
@@ -190,7 +190,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleReload}
-                className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-500 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
               >
                 <Bug className="w-4 h-4 mr-2" />
                 {i18next.t("errors.boundary.reload")}
@@ -198,7 +198,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleGoHome}
-                className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-500 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
               >
                 <Home className="w-4 h-4 mr-2" />
                 {i18next.t("errors.boundary.goHome")}
@@ -208,7 +208,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                 <button
                   onClick={this.handleReportError}
                   disabled={this.state.errorReported}
-                  className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-500 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4 mr-2" />
                   {this.state.errorReported ? i18next.t("errors.boundary.reported") : i18next.t("errors.boundary.reportError")}

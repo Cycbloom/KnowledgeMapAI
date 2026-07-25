@@ -56,6 +56,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useTheme, useIsMobile } from "../../../hooks";
+import { useEscapeKey } from "../../../hooks/common/useEscapeKey";
 import { ShortcutHint } from "../../common/ShortcutHint";
 import { GraphSwitcher } from "./GraphSwitcher";
 import {
@@ -407,6 +408,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
+  useEscapeKey(() => setOpenDropdown(null), !!openDropdown);
+
   const themeClasses = {
     container: isDark
       ? "bg-slate-800/90 border-slate-700 text-gray-100"
@@ -438,11 +441,11 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
 
   const MobileBottomNav = () => {
     const navItems = [
-      { icon: ArrowLeft, label: "返回", onClick: onBack },
-      { icon: Plus, label: "添加", onClick: onAddNode },
+      { icon: ArrowLeft, label: t("graphEditor.toolbar.back"), onClick: onBack },
+      { icon: Plus, label: t("graphEditor.toolbar.add"), onClick: onAddNode },
       {
         icon: isMobilePreviewMode ? Eye : EyeOff,
-        label: isMobilePreviewMode ? "预览" : "详情",
+        label: isMobilePreviewMode ? t("graphEditor.toolbar.preview") : t("graphEditor.toolbar.details"),
         onClick: () => setIsMobilePreviewMode?.(!isMobilePreviewMode),
         active: isMobilePreviewMode,
       },
@@ -454,7 +457,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
       },
       {
         icon: MoreHorizontal,
-        label: "更多",
+        label: t("graphEditor.toolbar.more"),
         onClick: () =>
           setMobileMenuOpen(mobileMenuOpen === "more" ? null : "more"),
       },
@@ -520,7 +523,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
       ai: [
         {
           icon: Sparkles,
-          label: "文本/文档生成",
+          label: t("graphEditor.toolbar.textToGraph"),
           onClick: () => {
             onTextToGraph();
             onClose();
@@ -529,7 +532,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: FileText,
-          label: isLiteratureExtractOpen ? "关闭文献提取" : "文献提取",
+          label: isLiteratureExtractOpen ? t("graphEditor.toolbar.closeLiteratureExtract") : t("graphEditor.toolbar.literatureExtract"),
           onClick: () => {
             setIsLiteratureExtractOpen?.(!isLiteratureExtractOpen);
             onClose();
@@ -539,7 +542,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: BarChart3,
-          label: isResearchProgressOpen ? "关闭研究进度" : "研究进度",
+          label: isResearchProgressOpen ? t("graphEditor.toolbar.closeResearchProgress") : t("graphEditor.toolbar.researchProgress"),
           onClick: () => {
             setIsResearchProgressOpen?.(!isResearchProgressOpen);
             onClose();
@@ -549,7 +552,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: BookOpen,
-          label: isLiteratureLibraryOpen ? "关闭文献库" : "文献库",
+          label: isLiteratureLibraryOpen ? t("graphEditor.toolbar.closeLiteratureLibrary") : t("graphEditor.toolbar.literatureLibrary"),
           onClick: () => {
             setIsLiteratureLibraryOpen?.(!isLiteratureLibraryOpen);
             onClose();
@@ -559,7 +562,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Navigation,
-          label: "智能拓展",
+          label: t("graphEditor.toolbar.intelligentExpand"),
           onClick: () => {
             if (selectedNodeIds.size === 1 && onAIExpand) {
               onAIExpand();
@@ -571,7 +574,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: MessageSquare,
-          label: "智能问答",
+          label: t("graphEditor.toolbar.intelligentQnA"),
           onClick: () => {
             setIsChatOpen(!isChatOpen);
             onClose();
@@ -581,7 +584,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Navigation,
-          label: isPathfindingMode ? "退出路径导航" : "路径导航",
+          label: isPathfindingMode ? t("graphEditor.toolbar.exitPathfinding") : t("graphEditor.toolbar.pathfinding"),
           onClick: () => {
             setIsPathfindingMode(!isPathfindingMode);
             pathfindingState.reset();
@@ -593,7 +596,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
       view: [
         {
           icon: GraduationCap,
-          label: "大纲学习模式",
+          label: t("graphEditor.toolbar.outlineLearningMode"),
           onClick: () => {
             navigate(`/learning?graph_id=${id}`);
             onClose();
@@ -602,7 +605,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Network,
-          label: "思维导图",
+          label: t("graphEditor.toolbar.mindmap"),
           onClick: () => {
             setViewMode("mindmap");
             onClose();
@@ -612,7 +615,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Clock,
-          label: "时间线",
+          label: t("graphEditor.toolbar.timeline"),
           onClick: () => {
             setViewMode("timeline");
             onClose();
@@ -622,7 +625,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: GitBranch,
-          label: "树形视图",
+          label: t("graphEditor.toolbar.treeView"),
           onClick: () => {
             setViewMode("tree");
             onClose();
@@ -632,7 +635,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Globe,
-          label: "知识星球",
+          label: t("graphEditor.toolbar.knowledgePlanet"),
           onClick: () => {
             setViewMode("planet");
             onClose();
@@ -652,7 +655,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: LayoutGrid,
-          label: "象限",
+          label: t("graphEditor.toolbar.quadrant"),
           onClick: () => {
             setViewMode("quadrant");
             onClose();
@@ -662,7 +665,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: List,
-          label: "侧边栏大纲",
+          label: t("graphEditor.toolbar.sidebarOutline"),
           onClick: () => {
             setSidebarMode(sidebarMode === "outline" ? "none" : "outline");
             onClose();
@@ -671,7 +674,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: GitBranch,
-          label: isExplorationMode ? "退出探索模式" : "探索分支模式",
+          label: isExplorationMode ? t("graphEditor.toolbar.exitExplorationMode") : t("graphEditor.toolbar.explorationMode"),
           onClick: () => {
             setIsExplorationMode(!isExplorationMode);
             onClose();
@@ -681,7 +684,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Grid,
-          label: showGrid ? "隐藏网格" : "显示网格",
+          label: showGrid ? t("graphEditor.toolbar.hideGrid") : t("graphEditor.toolbar.showGrid"),
           onClick: () => {
             setShowGrid(!showGrid);
             onClose();
@@ -690,7 +693,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Maximize,
-          label: "专注模式",
+          label: t("graphEditor.toolbar.focusMode"),
           onClick: () => {
             setIsFocusMode(true);
             onClose();
@@ -700,7 +703,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
       more: [
         {
           icon: Settings,
-          label: "图谱参数设置",
+          label: t("graphEditor.toolbar.graphSettings"),
           onClick: () => {
             onOpenSettings();
             onClose();
@@ -708,7 +711,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Palette,
-          label: "样式设置",
+          label: t("graphEditor.toolbar.styleSettings"),
           onClick: () => {
             setIsStyleSettingsOpen(true);
             onClose();
@@ -717,7 +720,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: isDark ? Sun : Moon,
-          label: isDark ? "浅色模式" : "深色模式",
+          label: isDark ? t("graphEditor.toolbar.lightMode") : t("graphEditor.toolbar.darkMode"),
           onClick: () => {
             toggleTheme();
             onClose();
@@ -725,7 +728,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Download,
-          label: "导出 Markdown",
+          label: t("graphEditor.toolbar.exportMarkdownAction"),
           onClick: () => {
             exportActions.onMarkdown();
             onClose();
@@ -733,7 +736,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: BookOpen,
-          label: "导出 Anki 卡片",
+          label: t("graphEditor.toolbar.exportAnkiAction"),
           onClick: () => {
             exportActions.onAnki();
             onClose();
@@ -741,7 +744,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Download,
-          label: "导出 PDF",
+          label: t("graphEditor.toolbar.exportPDFAction"),
           onClick: () => {
             exportActions.onPDF();
             onClose();
@@ -749,7 +752,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Download,
-          label: "导出 JSON",
+          label: t("graphEditor.toolbar.exportJSONAction"),
           onClick: () => {
             exportActions.onJSON();
             onClose();
@@ -757,7 +760,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Download,
-          label: "导出图片",
+          label: t("graphEditor.toolbar.exportImageAction"),
           onClick: () => {
             exportActions.onImage();
             onClose();
@@ -765,7 +768,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Share2,
-          label: "分享图谱",
+          label: t("graphEditor.toolbar.shareGraph"),
           onClick: () => {
             onShare?.();
             onClose();
@@ -774,7 +777,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: HelpCircle,
-          label: "操作指南",
+          label: t("graphEditor.toolbar.helpGuide"),
           onClick: () => {
             onOpenHelp?.();
             onClose();
@@ -783,7 +786,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: RefreshCw,
-          label: "刷新数据",
+          label: t("graphEditor.toolbar.refreshData"),
           onClick: () => {
             onRefresh?.();
             onClose();
@@ -792,7 +795,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         },
         {
           icon: Trash2,
-          label: "删除图谱",
+          label: t("graphEditor.toolbar.deleteGraph"),
           onClick: () => {
             exportActions.onDeleteGraph();
             onClose();
@@ -834,15 +837,15 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
               >
                 {type === "ai"
-                  ? "AI 助手"
+                  ? t("graphEditor.toolbar.aiAssistantSheet")
                   : type === "view"
-                    ? "视图选项"
-                    : "更多功能"}
+                    ? t("graphEditor.toolbar.viewOptions")
+                    : t("graphEditor.toolbar.moreFunctions")}
               </h3>
               <button
                 onClick={onClose}
                 className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-100"}`}
-                aria-label="关闭菜单"
+                aria-label={t("graphEditor.toolbar.closeMenu")}
               >
                 <X
                   size={18}
@@ -899,6 +902,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           onClick={() => setIsBatchMenuOpen(!isBatchMenuOpen)}
           aria-expanded={isBatchMenuOpen}
           aria-haspopup="menu"
+          aria-label={t("graphEditor.toolbar.batchMenu")}
           className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm ${
             isBatchMenuOpen
               ? "bg-primary-600 text-white"
@@ -906,11 +910,11 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                 ? "bg-primary-900/40 text-primary-300 border border-primary-800/50 hover:bg-primary-800/60"
                 : "bg-primary-50 text-primary-600 border border-primary-100 hover:bg-primary-100"
           }`}
-          title="批量操作"
+          title={t("graphEditor.toolbar.batchOperations")}
         >
           <MoreHorizontal size={18} />
           <span className="text-xs font-bold">
-            批量 ({selectedNodeIds.size})
+            {t("graphEditor.toolbar.batchCount", { count: selectedNodeIds.size })}
           </span>
           <ChevronDown
             size={14}
@@ -923,18 +927,18 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             className={`absolute top-full left-0 mt-2 shadow-2xl rounded-xl border w-60 py-2 z-50 ${themeClasses.dropdown} animate-in fade-in zoom-in-95 duration-150`}
           >
             <div className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
-              <span>批量操作</span>
+              <span>{t("graphEditor.toolbar.batchOperations")}</span>
               <span className="bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">
-                {selectedNodeIds.size} 节点
+                {t("graphEditor.toolbar.nodeCount", { count: selectedNodeIds.size })}
               </span>
             </div>
-            <div className="border-t my-1 border-gray-100 dark:border-slate-700"></div>
+            <div className="border-t my-1 border-gray-100 dark:border-slate-500"></div>
 
             {/* Batch Color */}
             <div className="px-4 py-3">
               <div className="text-[10px] text-gray-500 mb-2.5 font-bold flex items-center gap-1.5">
                 <div className="w-1 h-3 bg-primary-500 rounded-full"></div>
-                修改颜色
+                {t("graphEditor.toolbar.modifyColor")}
               </div>
               <div className="flex flex-wrap gap-2.5">
                 {[
@@ -959,21 +963,21 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               </div>
             </div>
 
-            <div className="border-t my-1 border-gray-100 dark:border-slate-700"></div>
+            <div className="border-t my-1 border-gray-100 dark:border-slate-500"></div>
 
             {/* Batch Level */}
             <div className="px-4 py-3">
               <div className="text-[10px] text-gray-500 mb-2.5 font-bold flex items-center gap-1.5">
                 <div className="w-1 h-3 bg-green-500 rounded-full"></div>
-                修改等级
+                {t("graphEditor.toolbar.modifyLevel")}
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: "root", label: "根节点" },
-                  { id: "core", label: "核心" },
-                  { id: "sub", label: "次级" },
-                  { id: "normal", label: "普通" },
-                  { id: "leaf", label: "叶子" },
+                  { id: "root", label: t("graphEditor.toolbar.levelRoot") },
+                  { id: "core", label: t("graphEditor.toolbar.levelCore") },
+                  { id: "sub", label: t("graphEditor.toolbar.levelSub") },
+                  { id: "normal", label: t("graphEditor.toolbar.levelNormal") },
+                  { id: "leaf", label: t("graphEditor.toolbar.levelLeaf") },
                 ].map((level) => (
                   <button
                     key={level.id}
@@ -989,7 +993,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               </div>
             </div>
 
-            <div className="border-t my-1 border-gray-100 dark:border-slate-700"></div>
+            <div className="border-t my-1 border-gray-100 dark:border-slate-500"></div>
             <div className="px-2 pt-1">
               <button
                 onClick={() => {
@@ -1006,7 +1010,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                         completed: batchDeleteProgress.completed,
                         total: batchDeleteProgress.total,
                       })
-                    : '批量删除选中'}
+                    : t('graphEditor.toolbar.batchDeleteSelected')}
                 </span>
               </button>
             </div>
@@ -1028,10 +1032,10 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                 ? "bg-slate-800/90 hover:bg-slate-700 text-white"
                 : "bg-white/90 hover:bg-gray-100 text-gray-800"
             }`}
-            title="退出专注模式 (Esc)"
+            title={t("graphEditor.toolbar.exitFocusModeTitle")}
           >
             <Minimize size={18} />
-            <span className="text-sm font-medium">退出专注</span>
+            <span className="text-sm font-medium">{t("graphEditor.toolbar.exitFocusMode")}</span>
           </button>
         </div>
       );
@@ -1045,8 +1049,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               ? "bg-slate-800/20 hover:bg-slate-800/90 text-white hover:text-primary-400"
               : "bg-white/20 hover:bg-white/90 text-white hover:text-gray-800"
           }`}
-          title="退出专注模式 (Esc)"
-          aria-label="退出专注模式"
+          title={t("graphEditor.toolbar.exitFocusModeTitle")}
+          aria-label={t("graphEditor.toolbar.exitFocusModeAria")}
         >
           <Minimize size={18} />
         </button>
@@ -1110,6 +1114,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
       >
         <button
           onClick={() => setOpenDropdown(openDropdown === id ? null : id)}
+          aria-haspopup="menu"
+          aria-expanded={openDropdown === id}
           className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all ${
             active || openDropdown === id
               ? isDark
@@ -1260,6 +1266,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               }
             }
           }}
+          aria-pressed={active}
           className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all ${
             disabled
               ? themeClasses.button.disabled
@@ -1343,8 +1350,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           <button
             onClick={onBack}
             className={`p-2 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.button.default}`}
-            title="返回"
-            aria-label="返回"
+            title={t("graphEditor.toolbar.back")}
+            aria-label={t("graphEditor.toolbar.back")}
           >
             <ArrowLeft size={18} />
           </button>
@@ -1356,8 +1363,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               onClick={onUndo}
               disabled={!canUndo}
               className={`p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${!canUndo ? themeClasses.button.disabled : themeClasses.button.default}`}
-              title="撤销"
-              aria-label="撤销"
+              title={t("graphEditor.toolbar.undo")}
+              aria-label={t("graphEditor.toolbar.undo")}
             >
               <Undo size={18} />
             </button>
@@ -1367,8 +1374,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               onClick={onRedo}
               disabled={!canRedo}
               className={`p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${!canRedo ? themeClasses.button.disabled : themeClasses.button.default}`}
-              title="重做"
-              aria-label="重做"
+              title={t("graphEditor.toolbar.redo")}
+              aria-label={t("graphEditor.toolbar.redo")}
             >
               <Redo size={18} />
             </button>
@@ -1666,7 +1673,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
             <MenuItem
               icon={Layers}
-              label="区域控制"
+              label={t("graphEditor.toolbar.regionControl")}
               keepOpenOnChildClick
               subMenuOpen={isSubMenuOpen}
               onSubMenuToggle={() => setIsSubMenuOpen(!isSubMenuOpen)}
@@ -1681,6 +1688,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                       e.stopPropagation();
                       onRegionToggle?.(region.id);
                     }}
+                    aria-pressed={!isCollapsed}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-all ${
                       isDark
                         ? "hover:bg-slate-700 text-gray-300"
@@ -1839,11 +1847,11 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               : "bg-primary-50 text-primary-600"
             : themeClasses.button.default
         }`}
-        title="版本历史"
-        aria-label="版本历史"
+        title={t("graphEditor.toolbar.versionHistory")}
+        aria-label={t("graphEditor.toolbar.versionHistory")}
       >
         <History size={18} />
-        <span className="text-sm font-medium hidden xl:inline">版本历史</span>
+        <span className="text-sm font-medium hidden xl:inline">{t("graphEditor.toolbar.versionHistory")}</span>
       </button>
 
       {/* Zoom Controls */}
@@ -1906,16 +1914,16 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                   : "bg-primary-50 text-primary-600"
                 : themeClasses.button.default
             }`}
-            title={t("graphEditor.toolbar.edgeDisplayMode", "边线显示模式")}
-            aria-label={t("graphEditor.toolbar.edgeDisplayMode", "边线显示模式")}
+            title={t("graphEditor.toolbar.edgeDisplayMode")}
+            aria-label={t("graphEditor.toolbar.edgeDisplayMode")}
           >
             <Spline size={18} />
             <span className="text-xs font-medium hidden xl:inline">
               {edgeDisplayMode === "full"
-                ? t("graphEditor.toolbar.edgeFull", "边线")
+                ? t("graphEditor.toolbar.edgeFull")
                 : edgeDisplayMode === "simplified"
-                  ? t("graphEditor.toolbar.edgeSimplified", "简化")
-                  : t("graphEditor.toolbar.edgeHidden", "隐藏")}
+                  ? t("graphEditor.toolbar.edgeSimplified")
+                  : t("graphEditor.toolbar.edgeHidden")}
             </span>
           </button>
         </div>
@@ -2023,7 +2031,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         <MenuItem
           onClick={onOpenConceptAggregation}
           icon={GitMerge}
-          label="概念聚合"
+          label={t("graphEditor.toolbar.conceptAggregation")}
           disabled={!onOpenConceptAggregation}
         />
 

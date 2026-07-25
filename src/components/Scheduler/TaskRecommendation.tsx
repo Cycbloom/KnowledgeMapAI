@@ -58,7 +58,7 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
 
   if (isLoading) {
     return (
-      <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+      <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-500">
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-20 bg-slate-100 dark:bg-slate-800 rounded-lg" />
@@ -70,7 +70,7 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
 
   if (recommendations.length === 0) {
     return (
-      <div className="p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+      <div className="p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-500">
         <EmptyState
           icon={<ClipboardList size={32} />}
           title={t('scheduler.empty.recommendations')}

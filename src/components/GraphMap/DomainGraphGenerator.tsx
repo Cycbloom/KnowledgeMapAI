@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -22,6 +22,9 @@ import {
   Map,
 } from 'lucide-react';
 import { EmptyState } from '../common/EmptyState';
+import { message } from '@/utils/messageHelper';
+import { useFocusTrap } from '../../hooks/common/useFocusTrap';
+import { useEscapeKey } from '../../hooks/common/useEscapeKey';
 
 export interface RecommendedGraph {
   title: string;
@@ -168,6 +171,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
       }
     } catch (err) {
       console.error('Failed to load domains:', err);
+      message.error(t('graphMap.domainGraph.loadDomainFailed'));
     } finally {
       setIsLoadingDomains(false);
     }
@@ -369,11 +373,19 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
     }
   };
 
+  const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
+  useEscapeKey(handleClose, isOpen);
+  const titleId = useId();
+
   if (!isOpen) return null;
 
   return (
     <AnimatePresence>
       <motion.div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -388,7 +400,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Network className="w-5 h-5 text-primary-500" />
               {t('graphMap.domainGenerator.title')}
             </h2>

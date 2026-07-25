@@ -279,6 +279,17 @@ export const GraphMapCanvas = forwardRef<
       [layout],
     );
 
+    const focusedNodeTitle = useMemo(() => {
+      if (!focusedGraphId) return null;
+      const focusedGraph = graphs.find((g) => g.id === focusedGraphId);
+      return focusedGraph?.title ?? null;
+    }, [focusedGraphId, graphs]);
+
+    const canvasAriaLabel = t("graphMap.canvas.ariaLabel", {
+      count: nodes.length,
+      focus: focusedNodeTitle ?? t("graphMap.canvas.emptyFocus"),
+    });
+
     useEffect(() => {
       if (layout && layout.nodes.length > 0) {
         const rootNode =
@@ -333,6 +344,8 @@ export const GraphMapCanvas = forwardRef<
           ref={svgRef}
           width="100%"
           height="100%"
+          role="application"
+          aria-label={canvasAriaLabel}
           style={{
             backgroundColor: colors.background,
             cursor: isDragging ? "grabbing" : "grab",
@@ -345,7 +358,9 @@ export const GraphMapCanvas = forwardRef<
           onClick={handleCanvasClick}
           onContextMenu={(e) => e.preventDefault()}
         >
-          <g ref={contentRef}>
+          <title>{canvasAriaLabel}</title>
+          <desc>{t("graphMap.canvas.desc")}</desc>
+          <g ref={contentRef} aria-label={t("graphMap.canvas.nodesContainer", { count: nodes.length })}>
             <CanvasLayout
               layout={undefined}
               width={containerSize.width}

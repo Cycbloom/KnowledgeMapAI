@@ -1,6 +1,7 @@
 import React, { useId } from 'react';
 import { X, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useFocusTrap } from '../../hooks/common';
 import { UserTaskDetail } from '../../types';
 import { BasicInfoSection } from './BasicInfoSection';
 import { DependencySection } from './DependencySection';
@@ -26,6 +27,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
 }) => {
   const { t } = useTranslation();
   const titleId = useId();
+  const panelRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   if (!isOpen || !task) return null;
 
   const getStatusColor = (status: string) => {
@@ -51,7 +53,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative w-full max-w-2xl bg-white dark:bg-gray-800 h-full overflow-y-auto shadow-xl">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative w-full max-w-2xl bg-white dark:bg-gray-800 h-full overflow-y-auto shadow-xl">
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
           <h2 id={titleId} className="text-xl font-semibold text-gray-900 dark:text-white truncate">
             {task.title}

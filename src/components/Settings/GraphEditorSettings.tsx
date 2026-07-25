@@ -88,7 +88,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Network className="w-5 h-5 text-primary-600 dark:text-primary-400" />
@@ -98,7 +98,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
         </div>
         <button
           onClick={handleReset}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
         >
           <RotateCcw className="w-3 h-3" />
           {t("settings.graphEditor.reset")}
@@ -123,7 +123,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
                 className={`flex items-center gap-2 justify-center p-3 rounded-lg border transition-all min-h-[56px] ${
                   preferences.defaultViewMode === mode
                     ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
-                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -147,7 +147,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
                 className={`flex items-center justify-center p-2.5 rounded-lg border text-sm font-medium transition-all ${
                   preferences.defaultZoomLevel === value
                     ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
-                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
                 }`}
               >
                 {t(labelKey)}
@@ -157,7 +157,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
         </div>
 
         {/* Auto-layout on save */}
-        <div className="pt-4 border-t border-gray-100 dark:border-slate-700">
+        <div className="pt-4 border-t border-gray-100 dark:border-slate-500">
           <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
             <div>
               <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -193,7 +193,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
         </div>
 
         {/* Search node navigate target */}
-        <div className="pt-4 border-t border-gray-100 dark:border-slate-700">
+        <div className="pt-4 border-t border-gray-100 dark:border-slate-500">
           <label className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
             <Compass className="w-4 h-4 text-gray-400" />
             {t("settings.graphEditor.searchNodeNavigateTarget")}
@@ -209,7 +209,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
                 className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all min-h-[72px] ${
                   preferences.searchNodeNavigateTarget === value
                     ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
-                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -236,7 +236,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
                 className={`flex items-center justify-center w-10 h-10 rounded-lg border-2 transition-all ${
                   preferences.defaultNodeColor === value
                     ? "ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-slate-800 border-transparent"
-                    : "border-gray-200 dark:border-slate-600 hover:scale-105"
+                    : "border-gray-200 dark:border-slate-500 hover:scale-105"
                 }`}
                 style={{ backgroundColor: value }}
               >

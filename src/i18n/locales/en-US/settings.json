@@ -257,5 +257,11 @@
   "embeddingAutoConfigFailed": "Embedding service auto-configuration failed",
   "loadConfigFailed": "Failed to load configuration",
   "providerRequired": "Please select a provider",
-  "sourceAuto": "Auto"
+  "sourceAuto": "Auto",
+  "mobileAI": {
+    "volcengine": "Volcengine",
+    "aliyun": "Aliyun"
+  },
+  "navDesktop": "Desktop navigation",
+  "navMobile": "Mobile navigation"
 }

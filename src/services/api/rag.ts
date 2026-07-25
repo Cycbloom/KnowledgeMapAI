@@ -14,6 +14,27 @@ interface Source {
   relationshipType?: string;
 }
 
+interface RagChatResponse {
+  answer: string;
+  sources: Source[];
+  suggestedQuestions?: string[];
+}
+
+interface RagSearchResponse {
+  results: Source[];
+}
+
+interface KnowledgeGap {
+  topic: string;
+  reason: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+interface AnalyzeGapsResponse {
+  gaps: KnowledgeGap[];
+  suggestions: string[];
+}
+
 export const ragApi = {
   chat: (data: {
     message: string;
@@ -32,7 +53,7 @@ export const ragApi = {
     const payload = { ...data, language: data.language || getAILanguage() };
     if (!payload.provider && config.provider) payload.provider = config.provider;
     if (!payload.model && config.model) payload.model = config.model;
-    return request('/rag/chat', { method: 'POST', body: JSON.stringify(payload) });
+    return request<RagChatResponse>('/rag/chat', { method: 'POST', body: JSON.stringify(payload) });
   },
   
   chatStream: async (
@@ -119,10 +140,10 @@ export const ragApi = {
     use_graph_context?: boolean;
     graph_hops?: number;
     search_mode?: 'semantic' | 'keyword' | 'hybrid';
-  }) => request('/rag/search', { method: 'POST', body: JSON.stringify(data) }),
-  
-  analyzeGaps: (graphId: string) => request('/rag/analyze-gaps', { 
-    method: 'POST', 
-    body: JSON.stringify({ graph_id: graphId }) 
+  }) => request<RagSearchResponse>('/rag/search', { method: 'POST', body: JSON.stringify(data) }),
+
+  analyzeGaps: (graphId: string) => request<AnalyzeGapsResponse>('/rag/analyze-gaps', {
+    method: 'POST',
+    body: JSON.stringify({ graph_id: graphId })
   }),
 };

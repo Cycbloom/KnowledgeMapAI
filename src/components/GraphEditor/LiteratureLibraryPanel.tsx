@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -50,16 +51,18 @@ const ALL_MODULES = [
   BackboneModule.FUTURE_DIRECTIONS,
 ];
 
-const getTypeLabel = (type: string): string => {
-  const labels: Record<string, string> = {
-    paper: "论文",
-    book: "书籍",
-    article: "文章",
-    report: "报告",
-    webpage: "网页",
-    document: "文档",
-  };
-  return labels[type] || type;
+const TYPE_LABEL_KEYS: Record<string, string> = {
+  paper: "graphEditor.literatureLibrary.typeLabel.paper",
+  book: "graphEditor.literatureLibrary.typeLabel.book",
+  article: "graphEditor.literatureLibrary.typeLabel.article",
+  report: "graphEditor.literatureLibrary.typeLabel.report",
+  webpage: "graphEditor.literatureLibrary.typeLabel.webpage",
+  document: "graphEditor.literatureLibrary.typeLabel.document",
+};
+
+const getTypeLabel = (type: string, t: TFunction): string => {
+  const key = TYPE_LABEL_KEYS[type];
+  return key ? t(key, { defaultValue: "" }) : type;
 };
 
 const getTypeColor = (type: string): string => {
@@ -106,7 +109,7 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
   }, [fetchLiterature]);
 
   const moduleOptions = [
-    { value: null, label: t("literatureExtract.allModules", "全部模块") },
+    { value: null, label: t("literatureExtract.allModules") },
     ...ALL_MODULES.map((m) => ({
       value: m,
       label: BACKBONE_MODULE_LABELS[m],
@@ -131,7 +134,7 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
             isMobile ? "max-w-lg" : "max-w-3xl"
           }`}
         >
-          <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-500">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
                 <BookOpen
@@ -141,13 +144,10 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                  {t("graphEditor.literatureLibrary.title", "文献库")}
+                  {t("graphEditor.literatureLibrary.title")}
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {t(
-                    "graphEditor.literatureLibrary.subtitle",
-                    "图谱中涉及的所有文献资料",
-                  )}
+                  {t("graphEditor.literatureLibrary.subtitle")}
                 </p>
               </div>
             </div>
@@ -156,7 +156,6 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
                 <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-full">
                   {t("graphEditor.literatureLibrary.totalCount", {
                     count: data.totalCount,
-                    defaultValue: `共 ${data.totalCount} 篇`,
                   })}
                 </span>
               )}
@@ -169,7 +168,7 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
             </div>
           </div>
 
-          <div className="px-5 pt-4 pb-2 border-b border-slate-100 dark:border-slate-700/50">
+          <div className="px-5 pt-4 pb-2 border-b border-slate-100 dark:border-slate-500/50">
             <div className="flex gap-2 overflow-x-auto pb-1">
               {moduleOptions.map((option) => (
                 <button
@@ -203,44 +202,29 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
 
             {!isLoading && data && data.literature.length > 0 && (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table
+                  className="w-full text-sm"
+                  aria-label={t("graphEditor.literatureLibrary.tableAriaLabel", { defaultValue: "文献库列表" })}
+                >
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-700">
-                      <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        {t(
-                          "graphEditor.literatureLibrary.colTitle",
-                          "标题",
-                        )}
+                    <tr className="border-b border-slate-200 dark:border-slate-500">
+                      <th scope="col" className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        {t("graphEditor.literatureLibrary.colTitle")}
                       </th>
-                      <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">
-                        {t(
-                          "graphEditor.literatureLibrary.colAuthors",
-                          "作者",
-                        )}
+                      <th scope="col" className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">
+                        {t("graphEditor.literatureLibrary.colAuthors")}
                       </th>
-                      <th className="text-center py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16">
-                        {t(
-                          "graphEditor.literatureLibrary.colYear",
-                          "年份",
-                        )}
+                      <th scope="col" className="text-center py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16">
+                        {t("graphEditor.literatureLibrary.colYear")}
                       </th>
-                      <th className="text-center py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden sm:table-cell w-16">
-                        {t(
-                          "graphEditor.literatureLibrary.colType",
-                          "类型",
-                        )}
+                      <th scope="col" className="text-center py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden sm:table-cell w-16">
+                        {t("graphEditor.literatureLibrary.colType")}
                       </th>
-                      <th className="text-center py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16">
-                        {t(
-                          "graphEditor.literatureLibrary.colConcepts",
-                          "概念",
-                        )}
+                      <th scope="col" className="text-center py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16">
+                        {t("graphEditor.literatureLibrary.colConcepts")}
                       </th>
-                      <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell">
-                        {t(
-                          "graphEditor.literatureLibrary.colModules",
-                          "模块",
-                        )}
+                      <th scope="col" className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell">
+                        {t("graphEditor.literatureLibrary.colModules")}
                       </th>
                     </tr>
                   </thead>
@@ -261,7 +245,7 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
                                 href={item.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary-600 dark:text-primary-400 hover:underline truncate max-w-[200px] md:max-w-[300px] flex items-center gap-1"
+                                className="text-primary-600 dark:text-primary-400 underline truncate max-w-[200px] md:max-w-[300px] flex items-center gap-1"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <span className="truncate">{item.title}</span>
@@ -304,7 +288,7 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
                               color: getTypeColor(item.type),
                             }}
                           >
-                            {getTypeLabel(item.type)}
+                            {getTypeLabel(item.type, t)}
                           </span>
                         </td>
                         <td className="py-2.5 px-3 text-center">
@@ -346,12 +330,11 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
           </div>
 
           {!isLoading && data && data.totalCount > 0 && (
-            <div className="border-t border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-800/80">
+            <div className="border-t border-slate-200 dark:border-slate-500 p-4 bg-slate-50 dark:bg-slate-800/80">
               <div className="flex items-center justify-center text-xs text-slate-500 dark:text-slate-400">
                 <BookOpen size={14} className="mr-2" />
                 {t("graphEditor.literatureLibrary.footer", {
                   count: data.totalCount,
-                  defaultValue: `共收录 ${data.totalCount} 篇文献`,
                 })}
               </div>
             </div>

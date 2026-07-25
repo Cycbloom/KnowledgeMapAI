@@ -70,10 +70,8 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
 
   const loadLinks = async () => {
     try {
-      const response = await api.scheduler.getLinks(taskId);
-      if (response.success) {
-        setLinks(response.data || []);
-      }
+      const data = await api.scheduler.getLinks(taskId);
+      setLinks(data ?? []);
     } catch (error) {
       console.error("Failed to load links:", error);
     } finally {
@@ -88,18 +86,16 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
     }
 
     try {
-      const response = await api.scheduler.createLink(taskId, {
+      const created = await api.scheduler.createLink(taskId, {
         link_type: newLink.link_type,
         title: newLink.title || undefined,
         url: newLink.url,
         description: newLink.description || undefined,
       });
-      if (response.success) {
-        setLinks([...links, response.data]);
-        setNewLink({ link_type: "web", title: "", url: "", description: "" });
-        setIsAdding(false);
-        messageHelper.success(t('scheduler.taskWorkbench.linkAdded'));
-      }
+      setLinks([...links, created]);
+      setNewLink({ link_type: "web", title: "", url: "", description: "" });
+      setIsAdding(false);
+      messageHelper.success(t('scheduler.taskWorkbench.linkAdded'));
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.linkAddFailed');
       messageHelper.error(errMsg);
@@ -109,11 +105,9 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
   const handleDeleteLink = async (linkId: string) => {
     if (!await asyncConfirm({ title: t('common.confirm.deleteLinkTitle'), message: t('common.confirm.deleteLinkMessage'), isDangerous: true })) return;
     try {
-      const response = await api.scheduler.deleteLink(taskId, linkId);
-      if (response.success) {
-        setLinks(links.filter((l) => l.id !== linkId));
-        messageHelper.success(t('scheduler.taskWorkbench.linkDeleted'));
-      }
+      await api.scheduler.deleteLink(taskId, linkId);
+      setLinks(links.filter((l) => l.id !== linkId));
+      messageHelper.success(t('scheduler.taskWorkbench.linkDeleted'));
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.linkDeleteFailed');
       messageHelper.error(errMsg);
@@ -176,7 +170,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
       {isExpanded && (
         <>
           {isAdding && (
-            <div className="mb-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="mb-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-500">
               <div className="flex gap-2 mb-3">
                 {(["web", "file", "api"] as const).map((type) => {
                   const Icon = getLinkTypeIcon(type);
@@ -211,7 +205,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                       ? "file:///path/to/file"
                       : "https://api.example.com"
                 }
-                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 autoFocus
               />
               <input
@@ -221,7 +215,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                   setNewLink({ ...newLink, title: e.target.value })
                 }
                 placeholder="标题（可选，默认使用链接地址）"
-                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <input
                 type="text"
@@ -230,7 +224,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                   setNewLink({ ...newLink, description: e.target.value })
                 }
                 placeholder="描述（可选）"
-                className="w-full px-3 py-2 mb-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 mb-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <div className="flex justify-end gap-2">
                 <button
@@ -263,7 +257,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
               return (
                 <div
                   key={link.id}
-                  className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-500/50 transition-all group"
+                  className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-500 hover:border-primary-300 dark:hover:border-primary-500/50 transition-all group"
                 >
                   <div
                     className={`p-2 rounded-lg ${

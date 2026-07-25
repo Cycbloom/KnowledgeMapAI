@@ -67,7 +67,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
 
   return (
     <div
-      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}
+      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-500 p-6 ${className}`}
     >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">

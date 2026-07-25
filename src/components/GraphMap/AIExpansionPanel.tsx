@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Sparkles, Network, ChevronDown, ChevronUp, Check, Settings2, Layers, GitBranch, BookOpen, Briefcase, GraduationCap, PenTool, Link, Plus } from 'lucide-react';
 import type { GraphRelationType, InfiniteExpansionProgress } from '../../types';
+import { useFocusTrap } from '../../hooks/common/useFocusTrap';
+import { useEscapeKey } from '../../hooks/common/useEscapeKey';
 
 type ExpansionMode = 'depth' | 'width';
 type DepthStyle = 'academic' | 'practical' | 'beginner' | 'custom';
@@ -245,6 +247,10 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
     }
   }, [isOpen]);
 
+  const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
+  useEscapeKey(onClose, isOpen);
+  const titleId = useId();
+
   if (!isOpen) return null;
 
   return (
@@ -257,14 +263,18 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
         onClick={onClose}
       >
         <motion.div
+          ref={containerRef}
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
           className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] overflow-y-auto"
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary-500" />
               {t('graphEditor.graphMap.aiExpansion.title')}
             </h2>

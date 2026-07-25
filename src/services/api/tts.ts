@@ -4,10 +4,13 @@ import type { TTSVoice } from '@shared/types';
 import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export const ttsApi = {
-  health: () => request('/ai/tts/health'),
+  health: () =>
+    request<{ status: string; model_loaded: boolean; model_name: string }>(
+      '/ai/tts/health',
+    ),
 
   voices: async (): Promise<TTSVoice[]> => {
-    const result = await request('/ai/tts/voices') as TTSVoice[];
+    const result = await request<TTSVoice[]>('/ai/tts/voices');
     return result;
   },
   

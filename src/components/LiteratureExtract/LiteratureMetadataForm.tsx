@@ -232,7 +232,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
           ${
             isDark
               ? "border-slate-700 bg-slate-800"
-              : "border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800"
+              : "border-gray-200 bg-white dark:border-slate-500 dark:bg-slate-800"
           }
         `}
         onMouseEnter={() => setIsHovered(true)}
@@ -316,7 +316,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
                 href={formatDoiUrl(metadata.doi)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-500 hover:text-primary-600 hover:underline truncate"
+                className="text-primary-500 hover:text-primary-600 underline truncate"
               >
                 {metadata.doi}
               </a>
@@ -433,7 +433,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
           ${
             isDark
               ? "border-slate-700 bg-slate-800/50 hover:bg-slate-700/50"
-              : "border-gray-200 bg-white hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+              : "border-gray-200 bg-white hover:bg-gray-50 dark:border-slate-500 dark:bg-slate-800 dark:hover:bg-slate-700"
           }
           ${disabled ? "opacity-50 cursor-not-allowed" : ""}
         `}
@@ -562,7 +562,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
               ${
                 isDark
                   ? "border-gray-600 bg-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                  : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-100 dark:placeholder-slate-500"
+                  : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-gray-100 dark:placeholder-slate-500"
               }
               ${disabled || isDetecting ? "opacity-50 cursor-not-allowed" : ""}
             `}
@@ -620,7 +620,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
                 ${
                   isDark
                     ? "border-gray-600 bg-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-100 dark:placeholder-slate-500"
+                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-gray-100 dark:placeholder-slate-500"
                 }
                 ${disabled ? "opacity-50 cursor-not-allowed" : ""}
               `}
@@ -641,7 +641,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
                 ${
                   isDark
                     ? "border-gray-600 bg-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-100 dark:placeholder-slate-500"
+                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-gray-100 dark:placeholder-slate-500"
                 }
                 ${disabled ? "opacity-50 cursor-not-allowed" : ""}
               `}
@@ -669,7 +669,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
                       ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
                       : isDark
                         ? "border-gray-600 bg-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                        : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-100 dark:placeholder-slate-500"
+                        : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-gray-100 dark:placeholder-slate-500"
                   }
                   ${disabled ? "opacity-50 cursor-not-allowed" : ""}
                 `}
@@ -692,7 +692,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
                   ${
                     isDark
                       ? "border-gray-600 bg-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                      : "border-gray-300 bg-white text-gray-900 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-100"
+                      : "border-gray-300 bg-white text-gray-900 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-gray-100"
                   }
                   ${disabled ? "opacity-50 cursor-not-allowed" : ""}
                 `}
@@ -720,7 +720,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
                 ${
                   isDark
                     ? "border-gray-600 bg-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-100 dark:placeholder-slate-500"
+                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-gray-100 dark:placeholder-slate-500"
                 }
                 ${disabled ? "opacity-50 cursor-not-allowed" : ""}
               `}
@@ -741,7 +741,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
                 ${
                   isDark
                     ? "border-gray-600 bg-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-100 dark:placeholder-slate-500"
+                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-gray-100 dark:placeholder-slate-500"
                 }
                 ${disabled ? "opacity-50 cursor-not-allowed" : ""}
               `}
@@ -764,7 +764,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
                 ${
                   isDark
                     ? "border-gray-600 bg-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-100 dark:placeholder-slate-500"
+                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-gray-100 dark:placeholder-slate-500"
                 }
                 ${disabled ? "opacity-50 cursor-not-allowed" : ""}
               `}
@@ -786,7 +786,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
                 ${
                   isDark
                     ? "border-gray-600 bg-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-100 dark:placeholder-slate-500"
+                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-gray-100 dark:placeholder-slate-500"
                 }
                 ${disabled ? "opacity-50 cursor-not-allowed" : ""}
               `}

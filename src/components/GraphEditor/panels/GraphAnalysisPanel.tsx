@@ -118,7 +118,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
             className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
               <div className="flex items-center gap-2">
                 <BarChart3 className="text-primary-500" size={20} />
                 <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">图谱分析</h2>
@@ -133,7 +133,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 dark:border-slate-700">
+            <div className="flex border-b border-slate-200 dark:border-slate-500">
               <button
                 onClick={() => setActiveTab('overview')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
@@ -321,20 +321,20 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                         missingConnections.map((conn, idx) => (
                           <div
                             key={idx}
-                            className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600"
+                            className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-500"
                           >
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => onNodeClick?.(conn.sourceId)}
-                                  className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline"
+                                  className="text-sm font-medium text-primary-600 dark:text-primary-400 underline"
                                 >
                                   {nodes.find(n => n.id === conn.sourceId)?.title || '未知节点'}
                                 </button>
                                 <span className="text-slate-400">→</span>
                                 <button
                                   onClick={() => onNodeClick?.(conn.targetId)}
-                                  className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline"
+                                  className="text-sm font-medium text-primary-600 dark:text-primary-400 underline"
                                 >
                                   {nodes.find(n => n.id === conn.targetId)?.title || '未知节点'}
                                 </button>

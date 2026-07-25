@@ -8,7 +8,44 @@
   "delete": "删除",
   "edit": "编辑",
   "create": "创建",
-  "search": "搜索",
+  "search": {
+    "label": "搜索",
+    "scope": {
+      "all": "全部",
+      "today": "今天",
+      "week": "本周",
+      "month": "本月"
+    },
+    "filter": {
+      "timeLabel": "时间:",
+      "statusLabel": "状态:",
+      "statusAll": "全部",
+      "statusMastered": "已掌握",
+      "statusLearning": "学习中",
+      "statusNew": "未开始"
+    },
+    "history": {
+      "title": "搜索历史",
+      "clear": "清空"
+    },
+    "loading": "搜索中...",
+    "aiAnswer": "AI 回答",
+    "graphs": "图谱 ({{count}})",
+    "nodes": "节点 ({{count}})",
+    "unknownGraph": "未知图谱",
+    "noResults": "未找到相关内容",
+    "inputToStart": "输入关键词开始搜索",
+    "shortcut": "按 Enter 搜索 · Ctrl+/ 快捷键",
+    "semanticMode": "语义搜索",
+    "keywordMode": "关键词搜索",
+    "placeholder": {
+      "keyword": "搜索图谱或节点...",
+      "semantic": "AI 语义搜索..."
+    },
+    "toggleToKeyword": "切换回关键词搜索",
+    "toggleToSemantic": "开启AI语义搜索",
+    "filterButton": "筛选"
+  },
   "noData": "暂无数据",
   "empty": "暂无数据",
   "retry": "重试",
@@ -107,10 +144,12 @@
     "conceptAggregation": "概念聚合",
     "search": "搜索",
     "removeOption": "移除选项",
+    "removeTag": "移除标签 {{tag}}",
     "selectColor": "选择颜色",
     "selectIcon": "选择图标",
     "showPassword": "显示密码",
-    "hidePassword": "隐藏密码"
+    "hidePassword": "隐藏密码",
+    "required": "必填"
   },
   "clipboard": {
     "unavailable": "剪贴板不可用",
@@ -161,5 +200,90 @@
     "noHierarchyTreeTitle": "暂无层级树",
     "noHierarchyTreeDesc": "选择节点后查看层级树"
   },
-  "comingSoon": "即将推出"
+  "focusTimer": {
+    "reset": "重置",
+    "pause": "暂停",
+    "start": "开始",
+    "skip": "跳过"
+  },
+  "offlineStatus": {
+    "offlineMode": "离线模式",
+    "pendingCount": "{{count}} 项待同步",
+    "syncing": "正在同步...",
+    "syncFailed": "同步失败",
+    "retry": "重试",
+    "syncComplete": "同步完成",
+    "syncNow": "立即同步"
+  },
+  "commandPalette": {
+    "categoryNavigation": "导航",
+    "categoryRecent": "最近访问",
+    "categoryAction": "快速操作",
+    "recentGraph": "最近图谱",
+    "recentNode": "最近节点",
+    "recentNote": "最近笔记",
+    "untitledGraph": "未命名图谱",
+    "untitledNode": "未命名节点",
+    "untitledNote": "未命名笔记",
+    "actionNewGraph": "新建图谱",
+    "actionToggleTheme": "切换主题",
+    "actionSettings": "打开设置",
+    "actionTrash": "打开回收站",
+    "actionNewGraphKeywords": "new create 创建 图谱",
+    "actionToggleThemeKeywords": "theme dark light 主题 暗黑 明亮",
+    "actionSettingsKeywords": "settings 配置 设置",
+    "actionTrashKeywords": "trash recycle bin 回收站",
+    "ariaLabel": "全局命令面板",
+    "searchPlaceholder": "搜索命令、最近项或操作...",
+    "noMatch": "无匹配命令",
+    "footerNavigate": "↑↓ 导航",
+    "footerSelect": "↵ 选择",
+    "footerClose": "Esc 关闭",
+    "footerTitle": "全局命令面板"
+  },
+  "comingSoon": "即将推出",
+  "shortcutHelp": {
+    "title": "快捷键设置",
+    "resetAll": "重置全部",
+    "searchPlaceholder": "搜索快捷键...",
+    "disabled": "已禁用",
+    "pressNewShortcut": "按下新的快捷键...",
+    "notSet": "未设置",
+    "resetToDefault": "重置为默认",
+    "noMatch": "未找到匹配的快捷键",
+    "customHint": "点击快捷键按钮可以自定义",
+    "totalCount": "共 {{count}} 个快捷键",
+    "categories": {
+      "navigation": "导航",
+      "view": "视图",
+      "editing": "编辑",
+      "selection": "选择",
+      "ai": "AI助手",
+      "tools": "工具",
+      "general": "通用"
+    }
+  },
+  "preferences": {
+    "reducedMotion": "减少动态效果",
+    "reducedMotionDesc": "降低界面动画时长与强度（系统开启“减少动态效果”或此处开启均生效）"
+  },
+  "footer": {
+    "copyright": "© 2026 KnowledgeMap. 保留所有权利。"
+  },
+  "form": {
+    "errorAnnouncement": "表单错误"
+  },
+  "tagSystem": {
+    "selected": "已选 {{count}} 个标签",
+    "filter": "标签筛选",
+    "selectAll": "选择标签"
+  },
+  "audioVisualizer": {
+    "ariaLabel": "音频可视化，当前状态：{{state}}",
+    "state": {
+      "playing": "播放中",
+      "paused": "已暂停",
+      "idle": "空闲"
+    }
+  }
 }

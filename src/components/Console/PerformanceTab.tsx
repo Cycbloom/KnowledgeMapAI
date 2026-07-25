@@ -15,6 +15,7 @@ import {
   Layers,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAiPerformanceLogs, useAiPerformanceStats, useClearAiPerformanceLogs } from "@/hooks/queries";
 import { formatDurationMs as formatDuration, formatDate } from "@/utils/formatters";
@@ -91,6 +92,7 @@ interface SessionGroupProps {
 const getSessionName = (
   logs: AIPerformanceLog[],
   getOperationLabel: (operation: string) => string,
+  t: TFunction,
 ): string => {
   const operations = new Set(logs.map((l) => l.operation));
 
@@ -98,7 +100,7 @@ const getSessionName = (
     operations.has("auto_graph_init") ||
     operations.has("auto_graph_expand")
   ) {
-    return "图谱自动生成";
+    return t("console.performance.sessionName.autoGenerate");
   }
   if (
     operations.has("recursive_graph_init") ||
@@ -109,50 +111,52 @@ const getSessionName = (
       logs.map((l) => l.metadata?.graphId).filter(Boolean),
     );
     if (graphIds.size > 1) {
-      return `批量初始化知识图谱（${graphIds.size} 个图谱）`;
+      return t("console.performance.sessionName.batchInit", {
+        count: graphIds.size,
+      });
     }
-    return "递归图谱生成";
+    return t("console.performance.sessionName.recursiveGenerate");
   }
   if (
     operations.has("generate_nodes_for_graph") ||
     operations.has("expand_node_for_graph")
   ) {
-    return "图谱节点生成";
+    return t("console.performance.sessionName.nodeGenerate");
   }
   if (
     operations.has("discover_relations") ||
     operations.has("get_intelligent_suggestions")
   ) {
-    return "图谱关系分析";
+    return t("console.performance.sessionName.relationAnalysis");
   }
   if (operations.has("chat") || operations.has("tutor_chat")) {
-    return "AI 对话";
+    return t("console.performance.sessionName.aiChat");
   }
   if (
     operations.has("generate_content") ||
     operations.has("generate_content_stream")
   ) {
-    return "内容生成";
+    return t("console.performance.sessionName.contentGenerate");
   }
   if (operations.has("ai_action_execute")) {
-    return "AI 动作执行";
+    return t("console.performance.sessionName.aiAction");
   }
   if (operations.has("template_generation")) {
-    return "模板生成";
+    return t("console.performance.sessionName.template");
   }
   if (
     operations.has("text_to_graph") ||
     operations.has("document_to_graph") ||
     operations.has("image_to_graph")
   ) {
-    return "文档转图谱";
+    return t("console.performance.sessionName.docToGraph");
   }
   if (
     operations.has("literature_extract") ||
     operations.has("extractMetadata") ||
     operations.has("extractConcepts")
   ) {
-    return "文献提取";
+    return t("console.performance.sessionName.literatureExtract");
   }
 
   const firstLog = logs.sort((a, b) => a.timestamp - b.timestamp)[0];
@@ -188,8 +192,8 @@ const SessionGroup: React.FC<SessionGroupProps> = ({
   );
 
   const sessionName = useMemo(
-    () => getSessionName(logs, getOperationLabel),
-    [logs, getOperationLabel],
+    () => getSessionName(logs, getOperationLabel, t),
+    [logs, getOperationLabel, t],
   );
 
   return (
@@ -344,26 +348,37 @@ const LogDetailModal: React.FC<{
     return translated === key ? operation : translated;
   };
 
-  const metadataLabels: Record<string, string> = {
-    graphId: "图谱ID",
-    graphTitle: "图谱标题",
-    userId: "用户ID",
-    userName: "用户名",
-    nodeId: "节点ID",
-    nodeTitle: "节点名称",
-    nodeLevel: "节点层级",
-    topic: "主题",
-    style: "风格",
-    depth: "深度",
-    actionName: "动作名称",
-    documentName: "文档名称",
-    learningStyle: "学习风格",
-    targetGoal: "目标",
-    templateType: "模板类型",
-    text: "文本内容",
-    graph1: "图谱1",
-    graph2: "图谱2",
-    title: "标题",
+  const metadataLabelKeys = [
+    "graphId",
+    "graphTitle",
+    "userId",
+    "userName",
+    "nodeId",
+    "nodeTitle",
+    "nodeLevel",
+    "topic",
+    "style",
+    "depth",
+    "actionName",
+    "documentName",
+    "learningStyle",
+    "targetGoal",
+    "templateType",
+    "text",
+    "graph1",
+    "graph2",
+    "title",
+  ];
+
+  const getMetadataLabel = (key: string): string => {
+    if (metadataLabelKeys.includes(key)) {
+      const translationKey = `console.performance.metadata.${key}`;
+      const translated = String(
+        t(translationKey as never, { defaultValue: "" }),
+      );
+      return translated || key;
+    }
+    return key;
   };
 
   const priorityOrder = [
@@ -417,7 +432,7 @@ const LogDetailModal: React.FC<{
       )
       .map((key) => ({
         key,
-        label: metadataLabels[key] || key,
+        label: getMetadataLabel(key),
         value: metadata[key],
       }));
 
@@ -429,7 +444,7 @@ const LogDetailModal: React.FC<{
       .filter(([key, value]) => !isPlaceholderValue(key, value))
       .map(([key, value]) => ({
         key,
-        label: metadataLabels[key] || key,
+        label: getMetadataLabel(key),
         value,
       }));
 
@@ -768,7 +783,7 @@ const LogDetailModal: React.FC<{
               <div
                 className={`text-xs font-medium mb-1 ${isDark ? "text-red-400" : "text-red-600"}`}
               >
-                错误信息
+                {t("console.performance.detail.errorMessage")}
               </div>
               <div
                 className={`text-sm ${isDark ? "text-red-300" : "text-red-700"}`}
@@ -790,7 +805,7 @@ const LogDetailModal: React.FC<{
                   }`}
                 >
                   <Coins size={12} />
-                  元数据信息
+                  {t("console.performance.detail.metadataInfo")}
                 </div>
                 <div
                   className={`rounded-lg overflow-hidden border divide-y ${
@@ -908,7 +923,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
     }
   }, [clearLogsMutate, t]);
 
-  const errorMessage = error instanceof Error ? error.message : error ? "获取性能日志失败" : null;
+  const errorMessage = error instanceof Error ? error.message : error ? t("console.performance.fetchLogsFailed") : null;
 
   const uniqueOperations = Array.from(
     new Set(logs.map((log) => log.operation)),
@@ -1060,7 +1075,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   className={`px-2 py-1 text-xs rounded-md border outline-none ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300"
-                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300"
+                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-500 dark:text-slate-300"
                   }`}
                 >
                   <option value="today">
@@ -1082,7 +1097,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   className={`px-2 py-1 text-xs rounded-md border outline-none ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300"
-                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300"
+                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-500 dark:text-slate-300"
                   }`}
                 >
                   <option value="">
@@ -1098,7 +1113,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   className={`flex items-center gap-1.5 px-2 py-1 text-xs rounded-md border cursor-pointer select-none ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300"
-                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300"
+                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-500 dark:text-slate-300"
                   }`}
                 >
                   <input
@@ -1117,7 +1132,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   className={`px-2 py-1 text-xs rounded-md border outline-none ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300"
-                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300"
+                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-500 dark:text-slate-300"
                   }`}
                 >
                   <option value="">
@@ -1139,7 +1154,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   className={`px-2 py-1 text-xs rounded-md border outline-none ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300"
-                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300"
+                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-500 dark:text-slate-300"
                   }`}
                 >
                   <option value="">{t("console.performance.allStatus")}</option>

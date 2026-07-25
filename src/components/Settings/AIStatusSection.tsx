@@ -155,9 +155,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
           enabled: false,
           loaded: true,
         }));
-        message.warning(
-          t("settings.loadConfigFailed") || "Failed to load AI configuration",
-        );
+        message.error(t("settings.loadConfigFailed"));
       }
     };
     if (token) {
@@ -321,7 +319,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Cpu className="w-5 h-5 text-primary-600 dark:text-primary-400" />
@@ -346,7 +344,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
           <select
             value={selectedProviderForAdd}
             onChange={(e) => setSelectedProviderForAdd(e.target.value)}
-            className="select-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+            className="select-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
           >
             {Object.entries(PROVIDER_DEFAULTS).map(([key, defaults]) => (
               <option key={key} value={key}>
@@ -360,7 +358,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
               value={newModelName}
               onChange={(e) => setNewModelName(e.target.value)}
               placeholder={t("settings.inputModelName")}
-              className="flex-1 input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+              className="flex-1 input-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
             <button
               onClick={handleAddModel}
@@ -376,9 +374,9 @@ export const AIStatusSection = React.memo(function AIStatusSection({
           {Object.entries(availableModels).map(([provider, models]) => (
             <div
               key={provider}
-              className="bg-white dark:bg-slate-900 p-3 rounded border border-gray-100 dark:border-slate-700"
+              className="bg-white dark:bg-slate-900 p-3 rounded border border-gray-100 dark:border-slate-500"
             >
-              <div className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 border-b dark:border-slate-700 pb-1">
+              <div className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 border-b dark:border-slate-500 pb-1">
                 {provider}
               </div>
               <div className="space-y-1 max-h-32 overflow-y-auto">
@@ -410,7 +408,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
       </div>
 
       <div className="space-y-6">
-        <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
+        <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-primary-100 dark:bg-primary-900/30 rounded text-primary-700 dark:text-primary-400">
@@ -455,7 +453,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
               <select
                 value={mainAiConfig.provider}
                 onChange={(e) => handleMainAiProviderChange(e.target.value)}
-                className="w-full select-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                className="w-full select-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
               >
                 {Object.entries(PROVIDER_DEFAULTS).map(
                   ([key, defaults]) => (
@@ -483,7 +481,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
                 placeholder={
                   PROVIDER_DEFAULTS[mainAiConfig.provider]?.model || ""
                 }
-                className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                className="w-full input-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
               />
             </div>
 
@@ -511,7 +509,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
           </div>
         </div>
 
-        <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
+        <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded text-green-700 dark:text-green-400">
@@ -597,7 +595,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
                   onChange={(e) =>
                     handleEmbeddingProviderChange(e.target.value)
                   }
-                  className="w-full select-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                  className="w-full select-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                 >
                   {Object.entries(PROVIDER_DEFAULTS)
                     .filter(([, defaults]) => defaults.supportsEmbedding)
@@ -626,7 +624,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
                     PROVIDER_DEFAULTS[embeddingAiConfig.provider]
                       ?.embeddingModel || ""
                   }
-                  className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                  className="w-full input-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                 />
               </div>
 

@@ -173,7 +173,7 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
 
               {isSelected && (
                 <div
-                  className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700"
+                  className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-500"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-between">

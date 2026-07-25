@@ -1,8 +1,9 @@
-import { request } from "../../client";
+import { requestData } from "../../client";
+import type { LearningLoop } from "@shared/types";
 
 export const orchestratorApi = {
   startLearningLoop: async (knowledgePointId?: string, graphId?: string) => {
-    return request("/scheduler/learning-loops", {
+    return requestData<LearningLoop>("/scheduler/learning-loops", {
       method: "POST",
       body: JSON.stringify({
         knowledge_point_id: knowledgePointId,
@@ -12,18 +13,18 @@ export const orchestratorApi = {
   },
 
   advanceLearningLoop: async (loopId: string) => {
-    return request(`/scheduler/learning-loops/${loopId}/advance`, {
+    return requestData<LearningLoop>(`/scheduler/learning-loops/${loopId}/advance`, {
       method: "POST",
     });
   },
 
   getActiveLearningLoop: async (knowledgePointId?: string) => {
     const params = knowledgePointId ? `?knowledge_point_id=${knowledgePointId}` : "";
-    return request(`/scheduler/learning-loops/active${params}`);
+    return requestData<LearningLoop | null>(`/scheduler/learning-loops/active${params}`);
   },
 
   startLearningWithTask: async (knowledgePointId: string, graphId?: string) => {
-    return request("/scheduler/learning-loops/start-with-task", {
+    return requestData<LearningLoop | null>("/scheduler/learning-loops/start-with-task", {
       method: "POST",
       body: JSON.stringify({
         knowledge_point_id: knowledgePointId,

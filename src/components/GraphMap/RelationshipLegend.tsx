@@ -53,7 +53,7 @@ export const RelationshipLegend: React.FC<RelationshipLegendProps> = ({
       ${isDark ? 'bg-slate-800 text-gray-200' : 'bg-white text-gray-800'}
     `}>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold">关系类型图例</h3>
+        <h3 className="text-sm font-semibold">{t('graphMap.relationshipLegend.title')}</h3>
         {onClose && (
           <button
             onClick={onClose}
@@ -112,7 +112,9 @@ export const RelationshipLegend: React.FC<RelationshipLegendProps> = ({
       {usedRelationshipTypes.length > 1 && (
         <div className={`mt-2 pt-2 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
           <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-            共 {usedRelationshipTypes.reduce((sum, { count }) => sum + count, 0)} 条边
+            {t('graphMap.relationshipLegend.totalEdges', {
+              count: usedRelationshipTypes.reduce<number>((sum, { count }) => sum + count, 0),
+            })}
           </span>
         </div>
       )}

@@ -1,19 +1,19 @@
 export const levelLabels: Record<string, string> = {
-  root: '根节点',
-  core: '核心节点',
-  sub: '次级节点',
-  normal: '普通节点',
-  leaf: '叶子节点'
+  root: 'graphMap.levelLabels.root',
+  core: 'graphMap.levelLabels.core',
+  sub: 'graphMap.levelLabels.sub',
+  normal: 'graphMap.levelLabels.normal',
+  leaf: 'graphMap.levelLabels.leaf'
 };
 
 export type SemanticZoomLevel = 'overview' | 'cluster' | 'node' | 'detail';
 
 export const SEMANTIC_ZOOM_CONFIG = {
   levels: {
-    overview: { minZoom: 0, maxZoom: 0.3, label: '概览', labelEn: 'Overview' },
-    cluster: { minZoom: 0.3, maxZoom: 0.7, label: '集群', labelEn: 'Cluster' },
-    node: { minZoom: 0.7, maxZoom: 1.5, label: '节点', labelEn: 'Node' },
-    detail: { minZoom: 1.5, maxZoom: 5, label: '详情', labelEn: 'Detail' },
+    overview: { minZoom: 0, maxZoom: 0.3, labelKey: 'graphMap.zoomLevel.overview' },
+    cluster: { minZoom: 0.3, maxZoom: 0.7, labelKey: 'graphMap.zoomLevel.cluster' },
+    node: { minZoom: 0.7, maxZoom: 1.5, labelKey: 'graphMap.zoomLevel.node' },
+    detail: { minZoom: 1.5, maxZoom: 5, labelKey: 'graphMap.zoomLevel.detail' },
   },
   // Which node levels are visible at each zoom level
   visibleLevels: {

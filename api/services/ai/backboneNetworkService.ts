@@ -138,106 +138,6 @@ const BACKBONE_MODULE_CONFIGS: Record<
   },
 };
 
-const BACKBONE_GENERATION_PROMPT = `你是一个专业的知识图谱架构师，专门为学术研究和知识体系构建骨干网络结构。
-
-## 任务目标
-
-为给定的研究主题生成一个结构化的骨干网络，该网络将作为知识图谱的核心框架。
-
-## 骨干网络模块
-
-骨干网络由以下六个核心模块组成：
-
-1. **研究背景 (research_background)**: 研究主题的背景信息、发展历程和现状
-2. **文献综述 (literature_review)**: 相关文献的综述和分析
-3. **研究方法 (research_methods)**: 研究采用的方法论和技术手段
-4. **核心概念 (core_concepts)**: 研究的核心概念、定义和理论框架
-5. **应用领域 (application_domains)**: 研究成果的应用领域和实际场景
-6. **未来方向 (future_directions)**: 未来研究方向和发展趋势
-
-## 标准标题要求
-
-**重要**: 骨干网络的结构如下：
-
-1. **根节点（root 级别）**：研究主题本身，只有一个根节点，标题为研究主题，**不需要**固定标题
-2. **核心节点（core 级别）**：六个骨干模块，必须使用以下标准标题，不允许使用任何变体：
-   - 研究背景模块必须使用标题："研究背景"
-   - 文献综述模块必须使用标题："文献综述"
-   - 研究方法模块必须使用标题："研究方法"
-   - 核心概念模块必须使用标题："核心概念"
-   - 应用领域模块必须使用标题："应用领域"
-   - 未来方向模块必须使用标题："未来方向"
-
-不允许使用以下变体：
-- ❌ "背景介绍"、"研究背景介绍"、"背景概述"
-- ❌ "文献回顾"、"相关文献"、"文献分析"
-- ❌ "方法论"、"研究方法论"、"技术方法"
-- ❌ "核心理论"、"关键概念"、"基本概念"
-- ❌ "应用场景"、"实践应用"、"应用实践"
-- ❌ "未来展望"、"发展趋势"、"研究展望"
-
-## 节点粒度要求
-
-**重要**: 生成的节点级别：
-- **root**: 主题根节点，只有一个，标题为研究主题本身
-- **core**: 六个骨干模块节点，标题必须使用标准标题
-
-不要生成 sub、normal 或 leaf 级别的节点。
-
-## 输出格式
-
-返回一个 JSON 对象，结构如下：
-
-{
-  "backbone": {
-    "id": "backbone-unique-id",
-    "topic": "研究主题",
-    "description": "骨干网络的整体描述",
-    "nodes": [
-      {
-        "id": "node-unique-id",
-        "title": "节点标题",
-        "description": "节点描述",
-        "summary": "20-30字的简短概览，概括该知识点的核心内容",
-        "level": "root|core",
-        "module": "research_background|literature_review|research_methods|core_concepts|application_domains|future_directions",
-        "parentId": "父节点ID（如果是根节点则为null）",
-        "suggestedContent": "建议的内容要点",
-        "color": "#hexcolor"
-      }
-    ],
-    "edges": [
-      {
-        "source": "source-node-id",
-        "target": "target-node-id",
-        "relationship_type": "contains|related|prerequisite",
-        "description": "关系描述"
-      }
-    ],
-    "layoutSuggestion": "radial|tree|network|hierarchical",
-    "estimatedNodes": 预估总节点数,
-    "reasoning": "设计思路说明"
-  }
-}
-
-## 设计原则
-
-1. **模块化结构**: 每个模块应有清晰的边界和职责
-2. **层次分明**: root 节点代表模块入口，core 节点代表关键概念
-3. **关系清晰**: 边应表示有意义的语义关系
-4. **可扩展性**: 结构应便于后续添加更细粒度的节点
-5. **语义连贯**: 节点标题和描述应准确反映研究主题
-
-## 注意事项
-
-1. **必须且只能生成 1 个根节点**：研究主题本身
-2. **必须且只能生成 6 个核心节点**：每个骨干模块恰好一个核心节点
-3. 每个骨干模块的核心节点必须使用上述标准标题
-4. 不要为同一个模块生成多个核心节点
-5. 确保所有边的 source 和 target 指向有效的节点 ID
-6. 节点颜色应与模块颜色一致
-7. 所有描述和内容使用中文`;
-
 const BACKBONE_VALIDATION_RULES = {
   validLevels: ["root", "core"] as NodeLevel[],
   validModules: [
@@ -1009,7 +909,7 @@ export class BackboneNetworkService {
           })
           .join("\n");
 
-    const customPrompt = await promptService.getRenderedPrompt(
+    const systemPrompt = await promptService.getRenderedPrompt(
       getSupabaseAdmin(),
       "backbone_generation",
       {
@@ -1020,22 +920,13 @@ export class BackboneNetworkService {
       graphId,
     );
 
-    if (customPrompt && customPrompt.trim().length > 0) {
-      return customPrompt;
+    if (!systemPrompt || systemPrompt.trim().length === 0) {
+      throw new AppError(ErrorCodes.SYSTEM_CONFIGURATION_ERROR, {
+        message: "backbone_generation prompt template not found in database",
+      });
     }
 
-    return `${BACKBONE_GENERATION_PROMPT}
-
-## 本次生成的模块
-
-请为以下模块生成骨干节点：
-
-${moduleDescriptions}
-
-## 节点数量限制
-
-- 每个模块最多生成 ${maxNodesPerModule} 个核心节点
-- 每个模块必须有 1 个 root 节点作为模块入口`;
+    return systemPrompt;
   }
 
   private buildUserPrompt(

@@ -624,7 +624,7 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
               return (
                 <a
                   {...props}
-                  className="text-primary-600 hover:underline"
+                  className="text-primary-600 underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 />

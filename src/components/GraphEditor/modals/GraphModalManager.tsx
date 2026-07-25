@@ -100,7 +100,7 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
         <div className="fixed inset-0 z-modal-manager flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-700">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-500">
               <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
                 <Image className="text-primary-600" size={20} />
                 {t("graphEditor.export.imageTitle")}
@@ -172,7 +172,7 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-gray-50 dark:bg-slate-900/50 border-t border-gray-100 dark:border-slate-700 flex justify-end gap-3">
+            <div className="p-4 bg-gray-50 dark:bg-slate-900/50 border-t border-gray-100 dark:border-slate-500 flex justify-end gap-3">
               <button
                 onClick={() => setIsExportImageModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-200/50 dark:hover:bg-slate-700 rounded-lg transition-colors"

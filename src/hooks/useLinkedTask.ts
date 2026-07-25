@@ -23,9 +23,8 @@ export function useLinkedTask({ graphId, nodeId }: UseLinkedTaskOptions) {
 
     const fetchLinkedTask = async () => {
       try {
-        const result = await schedulerApi.linkTaskForGraph(graphId);
-        if (result?.data) {
-          const data = result.data;
+        const data = await schedulerApi.linkTaskForGraph(graphId);
+        if (data) {
           setLinkedTask({
             mainTaskId: data.mainTaskId,
             graphName: data.graphName,

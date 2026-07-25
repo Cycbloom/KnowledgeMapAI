@@ -55,7 +55,7 @@ const PathProgressOverview: React.FC<PathProgressOverviewProps> = ({
           </div>
         </div>
 
-        <div className="pt-4 border-t dark:border-slate-700">
+        <div className="pt-4 border-t dark:border-slate-500">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-gray-500 dark:text-gray-400">
               连续学习

@@ -16,6 +16,7 @@ import { formatDate } from "../../../utils/formatters";
 import { asyncConfirm } from "../../../utils/asyncConfirm";
 import { useBranches, useGraphDiff, useMergePreview } from "../../../hooks/queries/useGraphVersionQueries";
 import { useMergeBranch, useDeleteBranch } from "../../../hooks/mutations/useGraphVersionMutations";
+import { useFocusTrap } from "../../../hooks/common";
 import type { MergeConflict } from "@shared/types/graphVersion";
 import { EmptyState } from "../../common/EmptyState";
 
@@ -200,7 +201,7 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
       {mergeTarget && (
         <MergeDialogOverlay onClose={closeMergeDialog} titleId={mergeTitleId}>
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-500">
               <GitMerge size={18} className="text-primary-500" />
               <h3 id={mergeTitleId} className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                 合并分支
@@ -235,7 +236,7 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
               />
             </div>
 
-            <div className="flex justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-500">
               <button
                 onClick={closeMergeDialog}
                 className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
@@ -256,7 +257,7 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
       {deleteTarget && (
         <MergeDialogOverlay onClose={closeDeleteDialog} titleId={deleteTitleId}>
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-sm mx-4 overflow-hidden">
-            <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-500">
               <Trash2 size={18} className="text-red-500" />
               <h3 id={deleteTitleId} className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                 删除分支
@@ -267,7 +268,7 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
                 确定要删除分支「{deleteTarget.title || deleteTarget.branch_name}」吗？此操作将移至回收站。
               </p>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-500">
               <button
                 onClick={closeDeleteDialog}
                 className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
@@ -298,7 +299,7 @@ interface BranchItemProps {
 
 const BranchItem: React.FC<BranchItemProps> = ({ branch, onMerge, onView, onDelete }) => {
   return (
-    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 group">
+    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-500 group">
       <div className="flex items-center gap-3 min-w-0">
         <GitBranch size={16} className="text-slate-400 shrink-0" />
         <div className="min-w-0">
@@ -349,12 +350,15 @@ const MergeDialogOverlay: React.FC<MergeDialogOverlayProps> = ({
   children,
   titleId,
 }) => {
+  // 真模态:有 bg-black/50 全屏遮罩 + 阻止背景交互 + aria-modal="true"。
+  // 组件由父组件挂载/卸载控制可见性:挂载时捕获触发元素,卸载时恢复焦点。
+  const dialogRef = useFocusTrap<HTMLDivElement>();
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
     >
-      <div role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={(e) => e.stopPropagation()}>{children}</div>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={(e) => e.stopPropagation()}>{children}</div>
     </div>
   );
 };
@@ -526,6 +530,7 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
   onToggleExpand,
   onResolutionChange,
 }) => {
+  const { t } = useTranslation();
   const isNodeConflict = conflict.entityType === "node";
   const mainAfter = conflict.mainChange.after;
   const branchAfter = conflict.branchChange.after;
@@ -576,7 +581,8 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
             )}
           </div>
           {/* 冲突解决选项 */}
-          <div className="space-y-2">
+          <fieldset className="space-y-2">
+            <legend className="sr-only">{t('graphMap.branch.conflictLegend')}</legend>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
@@ -601,7 +607,7 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
                 保留分支
               </span>
             </label>
-          </div>
+          </fieldset>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
 
 interface TermTooltipProps {
@@ -10,6 +10,7 @@ export const TermTooltip: React.FC<TermTooltipProps> = ({ term, explanation }) =
   const [isVisible, setIsVisible] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0, arrowOffset: 0 });
   const triggerRef = useRef<HTMLSpanElement>(null);
+  const tooltipId = useId();
 
   const handleMouseEnter = () => {
     if (triggerRef.current) {
@@ -53,12 +54,15 @@ export const TermTooltip: React.FC<TermTooltipProps> = ({ term, explanation }) =
         onFocus={handleMouseEnter}
         onBlur={handleMouseLeave}
         tabIndex={0}
+        aria-describedby={tooltipId}
       >
         {term}
       </span>
       {isVisible && createPortal(
-        <div 
+        <div
             className="fixed z-tooltip pointer-events-none"
+            role="tooltip"
+            id={tooltipId}
             style={{
                 top: coords.top - 8, // 8px gap above the term
                 left: coords.left,

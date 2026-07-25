@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from '@/lib/utils';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import type {
@@ -37,6 +38,7 @@ const DEFAULT_DURATION = 3000;
 export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const handleMessageShow = useCallback((payload: MessageShowPayload) => {
     const id = payload.id ?? Math.random().toString(36).substring(7);
@@ -157,10 +159,15 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
     }
   };
 
+  const hasError = messages.some((m) => m.type === "error");
+  const ariaLive = hasError ? "assertive" : "polite";
+
   return (
     <div
       className="absolute left-0 right-0 z-50 pointer-events-none"
       style={{ bottom: bottomOffset }}
+      aria-live={ariaLive}
+      aria-atomic="false"
     >
       <AnimatePresence>
         {messages.map((msg) => (
@@ -175,6 +182,9 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
               getBackgroundColor(msg.type),
               'text-white flex items-center px-4 text-xs select-none shadow-lg pointer-events-auto'
             )}
+            {...(msg.type === "loading"
+              ? { role: "status", "aria-busy": "true" }
+              : {})}
           >
             <div className="flex items-center gap-2 flex-1 overflow-hidden">
               <div className="flex items-center gap-2 truncate">
@@ -195,7 +205,7 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
             {msg.type !== "loading" && (
               <button
                 onClick={() => removeMessage(msg.id)}
-                aria-label="关闭"
+                aria-label={t('common.aria.close')}
                 className="ml-2 hover:text-white/80 transition-colors flex-shrink-0"
               >
                 <X className="w-3.5 h-3.5" />

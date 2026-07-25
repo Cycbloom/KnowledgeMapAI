@@ -1,8 +1,20 @@
-import type { TaskSubtask, UserTask } from "@shared/types";
+import type {
+  TaskSubtask,
+  UserTask,
+  ActivityEventType,
+  ActivityRecord,
+} from "@shared/types";
+
+export type {
+  ActivityEventType,
+  DailyActivityStats,
+} from "@shared/types";
+
+// Re-export ActivityRecord under the legacy name ActivityEvent for backwards
+// compatibility with existing calendar component imports.
+export type ActivityEvent = ActivityRecord;
 
 export type CalendarMode = "plan" | "history";
-
-export type ActivityEventType = "focus_study" | "review" | "path_progress";
 
 /**
  * CalendarEvent 是 UserTask 的日历视图投影类型。
@@ -47,29 +59,6 @@ export interface CalendarEvent {
   subtask_completed?: UserTask["subtask_completed"];
   /** 从 UserTask.has_subtasks 映射 */
   has_subtasks?: UserTask["has_subtasks"];
-}
-
-export interface ActivityEvent {
-  id: string;
-  user_id: string;
-  activity_type: ActivityEventType;
-  title: string;
-  description?: string;
-  started_at: string;
-  ended_at?: string;
-  duration?: number;
-  metadata?: Record<string, unknown>;
-  knowledge_point_id?: string;
-  graph_id?: string;
-  task_id?: string;
-  created_at: string;
-}
-
-export interface DailyActivityStats {
-  date: string;
-  total_duration: number;
-  activity_count: number;
-  activities_by_type: Record<ActivityEventType, number>;
 }
 
 export interface ActivityTypeConfig {

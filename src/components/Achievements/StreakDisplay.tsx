@@ -52,7 +52,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-500">
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
         <Flame className="w-5 h-5 text-orange-500" />
         {t('achievements.streak.title')}

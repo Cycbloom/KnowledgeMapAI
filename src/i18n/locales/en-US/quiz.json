@@ -8,5 +8,39 @@
     "completed": "Quiz generation complete!",
     "failed": "Quiz generation failed",
     "createFailed": "Failed to create quiz"
+  },
+  "questionList": {
+    "type": {
+      "qa": "Q&A",
+      "choice": "Single Choice",
+      "multiChoice": "Multiple Choice",
+      "trueFalse": "True/False",
+      "fillInTheBlank": "Fill in the Blank",
+      "essay": "Essay"
+    },
+    "difficulty": {
+      "easy": "Easy",
+      "fairlyEasy": "Fairly Easy",
+      "medium": "Medium",
+      "fairlyHard": "Fairly Hard",
+      "hard": "Hard"
+    },
+    "trueFalse": {
+      "true": "True",
+      "false": "False"
+    },
+    "questionCount": "{{count}} questions in total",
+    "questionCountShort": "{{count}} Q",
+    "button": {
+      "showAnswer": "Show Answer",
+      "hideAnswer": "Hide Answer",
+      "edit": "Edit",
+      "regenerate": "Regenerate",
+      "delete": "Delete"
+    },
+    "label": {
+      "answer": "Answer",
+      "explanation": "Explanation"
+    }
   }
 }

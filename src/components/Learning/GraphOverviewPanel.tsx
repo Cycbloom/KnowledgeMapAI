@@ -310,7 +310,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary-600 dark:text-primary-400 hover:underline"
+                        className="text-primary-600 dark:text-primary-400 underline"
                       >
                         {children}
                       </a>

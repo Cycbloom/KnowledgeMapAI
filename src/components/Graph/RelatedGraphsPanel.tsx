@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
 import { motion } from 'framer-motion';
 import {
@@ -51,7 +51,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
   const { t } = useTranslation();
   const { handleError } = useError();
 
-  const fetchRelations = async () => {
+  const fetchRelations = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await api.graphs.getRelations(graphId);
@@ -65,14 +65,13 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [graphId, handleError, t]);
 
   useEffect(() => {
     if (graphId) {
       fetchRelations();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphId]);
+  }, [graphId, fetchRelations]);
 
   const handleDeleteRelation = async (relationId: string) => {
     try {

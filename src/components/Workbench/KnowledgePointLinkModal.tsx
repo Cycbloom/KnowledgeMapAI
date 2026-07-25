@@ -70,7 +70,7 @@ export const KnowledgePointLinkModal: React.FC<KnowledgePointLinkModalProps> = (
                   value={knowledgePointSearch}
                   onChange={(e) => onSearchChange(e.target.value)}
                   placeholder={t("unifiedWorkbench.tips.searchKnowledgePlaceholder")}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   autoFocus
                 />
                 <BookOpen size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -87,7 +87,7 @@ export const KnowledgePointLinkModal: React.FC<KnowledgePointLinkModalProps> = (
                     <button
                       key={kp.id}
                       onClick={() => onLink(linkingTaskId, kp.id)}
-                      className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-500/50 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-all text-left"
+                      className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-500 hover:border-primary-300 dark:hover:border-primary-500/50 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-all text-left"
                     >
                       <h4 className="font-medium text-slate-900 dark:text-white">{kp.title}</h4>
                       {kp.content && (

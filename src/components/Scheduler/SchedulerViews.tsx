@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { LayoutGrid, Calendar, Columns, List } from 'lucide-react';
@@ -36,17 +36,50 @@ export const SchedulerViews: React.FC<SchedulerViewsProps> = ({
       description: t('scheduler.queue.listDesc'),
     },
   };
+  const viewKeys = Object.keys(VIEW_CONFIG) as Array<keyof typeof VIEW_CONFIG>;
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      const lastIndex = viewKeys.length - 1;
+      let nextIndex: number;
+      if (e.key === 'ArrowLeft') {
+        nextIndex = currentIndex === 0 ? lastIndex : currentIndex - 1;
+      } else {
+        nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
+      }
+      const nextViewKey = viewKeys[nextIndex];
+      onViewChange(nextViewKey);
+      const nextTabId = `scheduler-view-tab-${nextViewKey}`;
+      document.getElementById(nextTabId)?.focus();
+    },
+    [viewKeys, onViewChange],
+  );
+
   return (
-    <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200 dark:border-slate-700/50">
-      {(Object.keys(VIEW_CONFIG) as Array<keyof typeof VIEW_CONFIG>).map((viewKey) => {
+    <div
+      role="tablist"
+      aria-label={t('scheduler.title')}
+      className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200 dark:border-slate-500/50"
+    >
+      {viewKeys.map((viewKey, index) => {
         const config = VIEW_CONFIG[viewKey];
         const IconComponent = config.icon;
         const isActive = currentView === viewKey;
+        const tabId = `scheduler-view-tab-${viewKey}`;
+        const panelId = `scheduler-view-panel-${viewKey}`;
 
         return (
           <motion.button
             key={viewKey}
+            id={tabId}
+            role="tab"
+            aria-selected={isActive}
+            aria-controls={panelId}
+            tabIndex={isActive ? 0 : -1}
             onClick={() => onViewChange(viewKey)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
             className={`
               relative flex items-center gap-2 px-4 py-2 rounded-lg
               transition-all duration-300

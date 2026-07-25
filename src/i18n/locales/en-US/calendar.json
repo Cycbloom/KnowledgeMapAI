@@ -61,5 +61,32 @@
     "estimatedDuration": "Est. {{minutes}} min",
     "hiddenCount": "+{{count}} subtasks",
     "collapse": "Collapse"
+  },
+  "scheduleView": {
+    "addTask": "Add Task",
+    "labels": {
+      "planned": "Planned:",
+      "actual": "Actual:",
+      "matchRate": "Match Rate:",
+      "totalDuration": "Total:"
+    },
+    "emptyDuration": "0 min",
+    "activityLogCount": "Activity Records: {{count}}",
+    "estimatedMinutes": "Est. {{minutes}} min",
+    "actualMinutes": "Actual {{minutes}} min",
+    "moveTo": "Move to {{hour}}:00"
+  },
+  "dayView": {
+    "addTask": "Add Task",
+    "plannedAndExecuted": "{{plannedCount}} planned tasks · {{executedCount}} execution records",
+    "activityLogCount": "{{count}} activity records",
+    "subtaskLabel": "subtasks",
+    "actualMinutes": "Actual time: {{minutes}} min",
+    "moveTo": "Move to {{hour}}:00",
+    "activityLog": "Activity Records"
+  },
+  "a11y": {
+    "changeDate": "Change date",
+    "draggableTask": "Draggable task card, use the change date button to move via keyboard"
   }
 }

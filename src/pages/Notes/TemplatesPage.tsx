@@ -265,7 +265,7 @@ const TemplatesPage = () => {
           <button
             type="button"
             onClick={() => refetch()}
-            className="mt-4 text-primary-600 dark:text-primary-400 hover:underline"
+            className="mt-4 text-primary-600 dark:text-primary-400 underline"
           >
             {t("notes.retry")}
           </button>
@@ -308,7 +308,7 @@ const TemplatesPage = () => {
             {isLoading ? (
               <TemplatesSkeleton />
             ) : customTemplates.length === 0 ? (
-              <div className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-500">
                 <EmptyState
                   icon={
                     <FileText className="w-12 h-12 text-gray-300 dark:text-slate-600" />
@@ -385,7 +385,7 @@ const TemplateCard = ({
   const setDefaultDisabled = isDefault || isBusy;
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-5 shadow-sm transition-colors">
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-500 p-5 shadow-sm transition-colors">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -534,9 +534,9 @@ const TemplateEditDialog = ({
       aria-labelledby={titleId}
       onClick={handleOverlayClick}
     >
-      <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 max-h-[90dvh] flex flex-col">
+      <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-500 max-h-[90dvh] flex flex-col">
         {/* 标题区 */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b dark:border-slate-700">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b dark:border-slate-500">
           <h3
             id={titleId}
             className="text-lg font-semibold text-gray-900 dark:text-gray-100"
@@ -571,7 +571,7 @@ const TemplateEditDialog = ({
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
               placeholder={t("notes.templates.fields.namePlaceholder")}
-              className="w-full bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+              className="w-full bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-500 rounded-md px-3 py-2 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
             />
           </div>
 
@@ -593,18 +593,18 @@ const TemplateEditDialog = ({
               onChange={(e) => onContentChange(e.target.value)}
               placeholder={t("notes.templates.fields.contentPlaceholder")}
               rows={12}
-              className="w-full bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors font-mono resize-y min-h-[200px]"
+              className="w-full bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-500 rounded-md px-3 py-2 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors font-mono resize-y min-h-[200px]"
             />
           </div>
         </div>
 
         {/* 底部操作区 */}
-        <div className="bg-gray-50 dark:bg-slate-900/50 px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end border-t dark:border-slate-700">
+        <div className="bg-gray-50 dark:bg-slate-900/50 px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end border-t dark:border-slate-500">
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 rounded-lg sm:rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 min-h-[44px] font-medium"
+            className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 rounded-lg sm:rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 min-h-[44px] font-medium"
           >
             {t("notes.templates.actions.cancel")}
           </button>
@@ -651,7 +651,7 @@ const VariableHint = () => {
         <span>{t("notes.templates.hints.variables")}</span>
       </button>
       {/* 浮层:group-hover 时显示 */}
-      <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md shadow-lg p-3 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity">
+      <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-500 rounded-md shadow-lg p-3 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity">
         <ul className="space-y-1 text-xs">
           {TEMPLATE_VARIABLES.map((varName) => (
             <li
@@ -675,7 +675,7 @@ const TemplatesSkeleton = () => (
     {Array.from({ length: 3 }).map((_, i) => (
       <div
         key={i}
-        className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-gray-100 dark:border-slate-700"
+        className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-gray-100 dark:border-slate-500"
       >
         <Skeleton className="h-4 w-1/3 mb-3" />
         <Skeleton className="h-20 w-full" />

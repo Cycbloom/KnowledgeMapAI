@@ -1,6 +1,7 @@
 {
   "title": "Unified Workbench",
   "subtitle": "Task Scheduling · Knowledge Management · Study Progress",
+  "regionLabel": "Workbench main area",
   "actions": {
     "scheduler": "Task Scheduler",
     "createNewTask": "New Task",
@@ -36,6 +37,8 @@
     "totalTasksValue": "Total Tasks: {{count}}",
     "knowledgePointReview": "Knowledge Point Review",
     "intervalDays": "Interval: {{count}} days",
+    "stability": "Stability: {{value}}",
+    "difficulty": "Difficulty",
     "estimatedDuration": "Estimated Duration",
     "taskCount": "{{count}} tasks",
     "timeSliceMinutes": "{{count}} min"

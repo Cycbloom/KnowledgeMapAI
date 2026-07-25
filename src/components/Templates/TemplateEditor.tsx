@@ -122,7 +122,7 @@ const TreeNodeItem: React.FC<{
               className={`flex-1 px-2 py-1 text-sm rounded border outline-none transition-all ${
                 isDark
                   ? "bg-slate-800 border-slate-600 text-white focus:border-primary-500"
-                  : "bg-white border-gray-200 text-gray-900 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                  : "bg-white border-gray-200 text-gray-900 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-white"
               }`}
             />
             <select
@@ -133,7 +133,7 @@ const TreeNodeItem: React.FC<{
               className={`px-2 py-1 text-xs rounded border outline-none ${
                 isDark
                   ? "bg-slate-800 border-slate-600 text-white"
-                  : "bg-white border-gray-200 text-gray-900 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                  : "bg-white border-gray-200 text-gray-900 dark:bg-slate-700 dark:border-slate-500 dark:text-white"
               }`}
             >
               <option value="root">{t("templates.node.root")}</option>
@@ -160,7 +160,7 @@ const TreeNodeItem: React.FC<{
             className={`w-full px-2 py-1 text-xs rounded border outline-none transition-all resize-none ${
               isDark
                 ? "bg-slate-800 border-slate-600 text-slate-300 placeholder-slate-500 focus:border-primary-500"
-                : "bg-white border-gray-200 text-gray-600 placeholder-gray-400 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300 dark:placeholder-slate-500"
+                : "bg-white border-gray-200 text-gray-600 placeholder-gray-400 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-slate-300 dark:placeholder-slate-500"
             }`}
           />
 
@@ -233,7 +233,7 @@ const EdgeItem: React.FC<{
         className={`flex-1 px-2 py-1 text-sm rounded border outline-none ${
           isDark
             ? "bg-slate-800 border-slate-600 text-white"
-            : "bg-white border-gray-200 text-gray-900 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+            : "bg-white border-gray-200 text-gray-900 dark:bg-slate-700 dark:border-slate-500 dark:text-white"
         }`}
       >
         <option value="">{t("templates.edge.sourceNode")}</option>
@@ -256,7 +256,7 @@ const EdgeItem: React.FC<{
         className={`flex-1 px-2 py-1 text-sm rounded border outline-none ${
           isDark
             ? "bg-slate-800 border-slate-600 text-white"
-            : "bg-white border-gray-200 text-gray-900 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+            : "bg-white border-gray-200 text-gray-900 dark:bg-slate-700 dark:border-slate-500 dark:text-white"
         }`}
       >
         <option value="">{t("templates.edge.targetNode")}</option>
@@ -275,7 +275,7 @@ const EdgeItem: React.FC<{
         className={`w-24 px-2 py-1 text-sm rounded border outline-none ${
           isDark
             ? "bg-slate-800 border-slate-600 text-white placeholder-slate-500"
-            : "bg-white border-gray-200 text-gray-900 placeholder-gray-400 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-500"
+            : "bg-white border-gray-200 text-gray-900 placeholder-gray-400 dark:bg-slate-700 dark:border-slate-500 dark:text-white dark:placeholder-slate-500"
         }`}
       />
 
@@ -518,7 +518,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     className={`w-full px-3 py-2 rounded-lg border outline-none transition-all ${
                       isDark
                         ? "bg-slate-800 border-slate-600 text-white focus:border-primary-500"
-                        : "bg-white border-gray-200 text-gray-900 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                        : "bg-white border-gray-200 text-gray-900 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-white"
                     }`}
                   />
                 </div>
@@ -540,7 +540,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     className={`w-full px-3 py-2 rounded-lg border outline-none transition-all resize-none ${
                       isDark
                         ? "bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-primary-500"
-                        : "bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-500"
+                        : "bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-500 dark:text-white dark:placeholder-slate-500"
                     }`}
                   />
                 </div>
@@ -563,7 +563,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     className={`w-full px-3 py-2 rounded-lg border outline-none ${
                       isDark
                         ? "bg-slate-800 border-slate-600 text-white"
-                        : "bg-white border-gray-200 text-gray-900 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                        : "bg-white border-gray-200 text-gray-900 dark:bg-slate-700 dark:border-slate-500 dark:text-white"
                     }`}
                   >
                     <option value="knowledge">

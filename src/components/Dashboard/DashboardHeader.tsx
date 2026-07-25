@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useId } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -24,6 +24,7 @@ import type {
   TimeRangeFilter,
 } from "../../hooks/useDashboardFilters";
 import type { Graph } from "@shared/types";
+import { useMenuNavigation } from "../../hooks";
 
 interface DashboardHeaderProps {
   isDark: boolean;
@@ -82,6 +83,9 @@ const TIME_RANGE_OPTIONS = [
   { value: "month", labelKey: "dashboard.filter.rangeMonth" },
 ] as const satisfies ReadonlyArray<{ value: TimeRangeFilter; labelKey: string }>;
 
+// 更多菜单固定 4 项：[0]选择/取消选择 [1]导入 [2]图谱地图 [3]筛选
+const MORE_MENU_ITEM_COUNT = 4;
+
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   isDark,
   isMobile,
@@ -118,6 +122,44 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 }) => {
   const { t } = useTranslation();
   const [filterExpanded, setFilterExpanded] = useState(false);
+  const moreMenuId = useId();
+
+  const handleMoreMenuSelect = (index: number) => {
+    const item = document.getElementById(`${moreMenuId}-item-${index}`);
+    item?.click();
+    setShowMoreMenu(false);
+  };
+
+  const { activeIndex: moreActiveIndex, setActiveIndex: setMoreActiveIndex } =
+    useMenuNavigation({
+      itemCount: MORE_MENU_ITEM_COUNT,
+      enabled: showMoreMenu,
+      onSelect: handleMoreMenuSelect,
+      onClose: () => setShowMoreMenu(false),
+    });
+
+  // 补充 Home/End 导航（hook 仅处理 ArrowUp/ArrowDown/Enter/Escape）
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Home") {
+        e.preventDefault();
+        setMoreActiveIndex(0);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        setMoreActiveIndex(MORE_MENU_ITEM_COUNT - 1);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [showMoreMenu, setMoreActiveIndex]);
+
+  const moreActiveRing = (idx: number) =>
+    showMoreMenu && moreActiveIndex === idx
+      ? isDark
+        ? "ring-2 ring-primary-400 ring-inset"
+        : "ring-2 ring-primary-500 ring-inset"
+      : "";
 
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -213,7 +255,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             className={`w-full pl-10 pr-20 sm:pr-24 py-2.5 sm:py-2.5 rounded-xl border outline-none transition-all text-sm ${
               isDark
                 ? "bg-slate-800 border-slate-700 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-white placeholder:text-slate-500"
-                : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500"
+                : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500"
             }`}
           />
           <div
@@ -288,7 +330,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               className={`flex items-center rounded-xl border overflow-hidden ${
                 isDark
                   ? "bg-slate-800 border-slate-700"
-                  : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 shadow-sm"
+                  : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 shadow-sm"
               }`}
               role="group"
               aria-label={t("dashboard.view.viewToggle")}
@@ -335,7 +377,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium min-h-[44px] ${
                   isDark
                     ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
-                    : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm"
+                    : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm"
                 }`}
                 title={t("dashboard.actions.select")}
                 aria-label={t("dashboard.actions.select")}
@@ -375,7 +417,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     : "bg-primary-50 border-primary-300 text-primary-600"
                   : isDark
                     ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
-                    : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm"
+                    : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm"
               }`}
               aria-label={t("dashboard.filter.toggle")}
               aria-expanded={filterExpanded}
@@ -392,7 +434,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium min-h-[44px] ${
                 isDark
                   ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
-                  : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm"
+                  : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm"
               } disabled:opacity-50`}
               title={t("dashboard.actions.import")}
               aria-label={t("dashboard.actions.import")}
@@ -410,7 +452,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium min-h-[44px] ${
                 isDark
                   ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
-                  : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm"
+                  : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm"
               }`}
               title={t("dashboard.actions.graphMap")}
               aria-label={t("dashboard.actions.graphMap")}
@@ -475,19 +517,22 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       : "bg-white border-gray-200"
                   }`}
                   role="menu"
+                  aria-activedescendant={`${moreMenuId}-item-${moreActiveIndex}`}
                 >
                   {!isSelectMode && (
                     <button
+                      id={`${moreMenuId}-item-0`}
                       onClick={() => {
                         enterSelectMode();
                         setShowMoreMenu(false);
                       }}
-                      className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${
+                      className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${moreActiveRing(0)} ${
                         isDark
                           ? "text-slate-300 hover:bg-slate-700"
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
                       role="menuitem"
+                      tabIndex={-1}
                     >
                       <CheckSquare size={18} aria-hidden="true" />
                       <span>{t("dashboard.actions.select")}</span>
@@ -496,16 +541,18 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
                   {isSelectMode && (
                     <button
+                      id={`${moreMenuId}-item-0`}
                       onClick={() => {
                         exitSelectMode();
                         setShowMoreMenu(false);
                       }}
-                      className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${
+                      className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${moreActiveRing(0)} ${
                         isDark
                           ? "text-red-400 hover:bg-red-900/30"
                           : "text-red-600 hover:bg-red-50"
                       }`}
                       role="menuitem"
+                      tabIndex={-1}
                     >
                       <X size={18} aria-hidden="true" />
                       <span>{t("dashboard.actions.cancelSelect")}</span>
@@ -513,14 +560,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   )}
 
                   <button
+                    id={`${moreMenuId}-item-1`}
                     onClick={onImportClick}
                     disabled={isImporting}
-                    className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${
+                    className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${moreActiveRing(1)} ${
                       isDark
                         ? "text-slate-300 hover:bg-slate-700"
                         : "text-gray-700 hover:bg-gray-50"
                     } disabled:opacity-50`}
                     role="menuitem"
+                    tabIndex={-1}
                   >
                     <Upload size={18} aria-hidden="true" />
                     <span>
@@ -531,25 +580,28 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   </button>
 
                   <Link
+                    id={`${moreMenuId}-item-2`}
                     to="/graph-map"
                     onClick={() => setShowMoreMenu(false)}
-                    className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${
+                    className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${moreActiveRing(2)} ${
                       isDark
                         ? "text-slate-300 hover:bg-slate-700"
                         : "text-gray-700 hover:bg-gray-50"
                     }`}
                     role="menuitem"
+                    tabIndex={-1}
                   >
                     <Network size={18} aria-hidden="true" />
                     <span>{t("dashboard.actions.graphMap")}</span>
                   </Link>
 
                   <button
+                    id={`${moreMenuId}-item-3`}
                     onClick={() => {
                       setFilterExpanded(!filterExpanded);
                       setShowMoreMenu(false);
                     }}
-                    className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${
+                    className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${moreActiveRing(3)} ${
                       filterExpanded
                         ? isDark
                           ? "text-primary-400 hover:bg-primary-900/20"
@@ -559,6 +611,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                           : "text-gray-700 hover:bg-gray-50"
                     }`}
                     role="menuitem"
+                    tabIndex={-1}
                   >
                     <SlidersHorizontal size={18} aria-hidden="true" />
                     <span>{t("dashboard.filter.toggle")}</span>
@@ -597,7 +650,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               className={`appearance-none pl-3 pr-9 py-1.5 rounded-lg border text-xs font-medium transition-all outline-none focus:ring-2 focus:ring-primary-500 min-h-[36px] ${
                 isDark
                   ? "bg-slate-700 border-slate-600 text-slate-200"
-                  : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-100 shadow-sm"
+                  : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 text-gray-700 dark:text-gray-100 shadow-sm"
               }`}
             >
               {SORT_OPTIONS.map((opt) => (
@@ -643,7 +696,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     ? "bg-primary-500 text-white"
                     : isDark
                       ? "bg-slate-700 text-slate-300 hover:bg-slate-600 border border-slate-600"
-                      : "bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 shadow-sm"
+                      : "bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-500 shadow-sm"
                 }`}
                 aria-pressed={active}
               >
@@ -680,7 +733,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     ? "bg-primary-500 text-white"
                     : isDark
                       ? "bg-slate-700 text-slate-300 hover:bg-slate-600 border border-slate-600"
-                      : "bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 shadow-sm"
+                      : "bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-500 shadow-sm"
                 }`}
                 aria-pressed={active}
               >

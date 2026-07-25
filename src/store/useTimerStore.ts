@@ -374,9 +374,8 @@ const useTimerStore = create<TimerState & TimerActions>()(
 
 // ---------------------------------------------------------------------------
 // Document title sync — updates the browser tab title while timer is active
+// 倒计时结束后不还原 title，交由路由的 useDocumentTitle hook 重新设置
 // ---------------------------------------------------------------------------
-
-const DEFAULT_TITLE = document.title;
 
 useTimerStore.subscribe((state, prevState) => {
   if (
@@ -386,8 +385,8 @@ useTimerStore.subscribe((state, prevState) => {
     return;
   }
 
+  // 倒计时结束后不还原 title，交由路由的 useDocumentTitle hook 重新设置
   if (!state.isActive) {
-    document.title = DEFAULT_TITLE;
     return;
   }
 

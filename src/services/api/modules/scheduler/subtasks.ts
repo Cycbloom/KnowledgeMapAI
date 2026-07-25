@@ -1,54 +1,14 @@
-import { request } from "../../client";
+import { requestData } from "../../client";
+import type {
+  TaskSubtask,
+  CreateSubtaskData,
+  UpdateSubtaskData,
+  TransitionSubtaskData,
+} from "@shared/types";
 import type { LearningState, StateHistoryEntry } from "@shared/types/scheduler";
 
-export interface TaskSubtask {
-  id: string;
-  task_id: string;
-  title: string;
-  description?: string;
-  status: "pending" | "in_progress" | "completed";
-  priority: number;
-  position: number;
-  estimated_duration?: number;
-  actual_duration?: number;
-  due_date?: string;
-  completed_at?: string;
-  learning_path_node_id?: string;
-  knowledge_point_id: string;
-  learning_state: LearningState;
-  mastery_level: number;
-  last_state_change_at: string;
-  state_history: StateHistoryEntry[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateSubtaskData {
-  title: string;
-  description?: string;
-  knowledge_point_id: string;
-  priority?: number;
-  estimated_duration?: number;
-  due_date?: string;
-}
-
-export interface UpdateSubtaskData {
-  title?: string;
-  description?: string;
-  status?: "pending" | "in_progress" | "completed";
-  priority?: number;
-  estimated_duration?: number;
-  actual_duration?: number;
-  due_date?: string | null;
-  learning_state?: LearningState;
-  mastery_level?: number;
-}
-
-export interface TransitionSubtaskData {
-  to_state: LearningState;
-  mastery_level: number;
-  reason?: string;
-}
+// Re-export for backwards compatibility with existing imports.
+export type { TaskSubtask, CreateSubtaskData, UpdateSubtaskData, TransitionSubtaskData };
 
 export interface ValidTransitionsResult {
   current_state: LearningState;
@@ -57,24 +17,32 @@ export interface ValidTransitionsResult {
   recommended_next: LearningState;
 }
 
-export const subtasksApi = {
-  getSubtasks: (taskId: string) =>
-    request(`/scheduler/tasks/${taskId}/subtasks`),
+// StateHistoryEntry is re-exported for consumers that already import it from
+// this module; the canonical type lives in @shared/types/scheduler.
+export type { StateHistoryEntry };
 
-  createSubtask: (taskId: string, data: CreateSubtaskData) =>
-    request(`/scheduler/tasks/${taskId}/subtasks`, {
+export const subtasksApi = {
+  getSubtasks: (taskId: string): Promise<TaskSubtask[]> =>
+    requestData<TaskSubtask[]>(`/scheduler/tasks/${taskId}/subtasks`),
+
+  createSubtask: (taskId: string, data: CreateSubtaskData): Promise<TaskSubtask> =>
+    requestData<TaskSubtask>(`/scheduler/tasks/${taskId}/subtasks`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  updateSubtask: (taskId: string, subtaskId: string, data: UpdateSubtaskData) =>
-    request(`/scheduler/tasks/${taskId}/subtasks/${subtaskId}`, {
+  updateSubtask: (
+    taskId: string,
+    subtaskId: string,
+    data: UpdateSubtaskData,
+  ): Promise<TaskSubtask> =>
+    requestData<TaskSubtask>(`/scheduler/tasks/${taskId}/subtasks/${subtaskId}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
-  deleteSubtask: (taskId: string, subtaskId: string) =>
-    request(`/scheduler/tasks/${taskId}/subtasks/${subtaskId}`, {
+  deleteSubtask: (taskId: string, subtaskId: string): Promise<void> =>
+    requestData<void>(`/scheduler/tasks/${taskId}/subtasks/${subtaskId}`, {
       method: "DELETE",
     }),
 
@@ -82,23 +50,33 @@ export const subtasksApi = {
     taskId: string,
     subtaskId: string,
     data: TransitionSubtaskData,
-  ) =>
-    request(`/scheduler/tasks/${taskId}/subtasks/${subtaskId}/transition`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  ): Promise<TaskSubtask> =>
+    requestData<TaskSubtask>(
+      `/scheduler/tasks/${taskId}/subtasks/${subtaskId}/transition`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    ),
 
-  updateMastery: (taskId: string, subtaskId: string, masteryLevel: number) =>
-    request(`/scheduler/tasks/${taskId}/subtasks/${subtaskId}/mastery`, {
-      method: "PATCH",
-      body: JSON.stringify({ mastery_level: masteryLevel }),
-    }),
+  updateMastery: (
+    taskId: string,
+    subtaskId: string,
+    masteryLevel: number,
+  ): Promise<TaskSubtask> =>
+    requestData<TaskSubtask>(
+      `/scheduler/tasks/${taskId}/subtasks/${subtaskId}/mastery`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ mastery_level: masteryLevel }),
+      },
+    ),
 
   getValidTransitions: (
     taskId: string,
     subtaskId: string,
-  ): Promise<{ success: boolean; data: ValidTransitionsResult }> =>
-    request(
+  ): Promise<ValidTransitionsResult> =>
+    requestData<ValidTransitionsResult>(
       `/scheduler/tasks/${taskId}/subtasks/${subtaskId}/valid-transitions`,
     ),
 };

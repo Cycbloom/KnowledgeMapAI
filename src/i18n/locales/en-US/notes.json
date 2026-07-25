@@ -82,6 +82,7 @@
   "editor": {
     "placeholder": "Type / for blocks, or start writing…",
     "slashHint": "Type / to insert a block",
+    "regionLabel": "Notes editor main area",
     "saveStatus": {
       "idle": "Not saved",
       "saving": "Saving…",

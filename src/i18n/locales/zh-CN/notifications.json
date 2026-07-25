@@ -6,9 +6,67 @@
   "deleteFailed": "删除通知失败",
   "markAllRead": "全部已读",
   "deleteRead": "删除已读通知",
-  "settings": "通知设置",
+  "settings": {
+    "title": "通知设置",
+    "savedSuccess": "通知设置已保存!",
+    "saveFailed": "保存设置失败",
+    "loadFailed": "无法加载通知设置",
+    "retry": "重试",
+    "basicSettings": "基础设置",
+    "browserNotifications": {
+      "title": "浏览器通知",
+      "desc": "接收浏览器推送通知"
+    },
+    "soundReminder": {
+      "title": "声音提醒",
+      "desc": "播放提示音",
+      "volume": "音量: {{volume}}%"
+    },
+    "notificationTypes": "通知类型",
+    "type": {
+      "taskStart": "任务开始",
+      "taskStartDesc": "任务开始执行时通知",
+      "taskComplete": "任务完成",
+      "taskCompleteDesc": "任务完成时通知",
+      "timeSliceEnd": "时间片结束",
+      "timeSliceEndDesc": "时间片用尽时通知",
+      "deadline": "截止日期",
+      "deadlineDesc": "任务即将到期时提醒",
+      "break": "休息提醒",
+      "breakDesc": "休息开始和结束时提醒",
+      "dailySummary": "每日总结",
+      "dailySummaryDesc": "每日任务完成情况总结"
+    },
+    "deadlineReminderTime": {
+      "title": "截止日期提醒时间",
+      "desc": "选择在截止日期前多久提醒"
+    },
+    "duration": {
+      "minute": "{{count}}分钟",
+      "hour": "{{count}}小时",
+      "day": "{{count}}天"
+    },
+    "doNotDisturb": {
+      "title": "免打扰模式",
+      "enable": "启用免打扰",
+      "desc": "在指定时段内不发送通知",
+      "startTime": "开始时间",
+      "endTime": "结束时间"
+    },
+    "reset": "重置",
+    "save": "保存设置"
+  },
   "empty": "暂无通知",
   "emptyHint": "新的通知会显示在这里",
   "loadError": "加载通知失败",
-  "retry": "重试"
+  "retry": "重试",
+  "center": {
+    "title": "通知",
+    "toggle": "通知中心",
+    "unreadCount": "{{count}} 条未读",
+    "markAsRead": "已读",
+    "viewAll": "查看全部通知",
+    "delete": "删除",
+    "cancel": "取消"
+  }
 }

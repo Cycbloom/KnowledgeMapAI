@@ -4,6 +4,7 @@ import { X, Save, Palette, Minus, ArrowRight } from 'lucide-react';
 import type { Edge, EdgeLineStyle, RelationshipCategory } from '../../../types';
 import { RELATIONSHIP_CATEGORY_LABELS, type PresetRelationshipTypeConfig } from '../../../config/relationshipTypes';
 import { useFocusTrap, useEscapeKey } from '../../../hooks/common';
+import { message } from '../../../utils/messageHelper';
 
 interface UpdateEdgeData {
   custom_label?: string;
@@ -81,6 +82,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
       onClose();
     } catch (error) {
       console.error('Failed to save edge:', error);
+      message.error(t('graphEditor.edgeEdit.saveFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -119,7 +121,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
         className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-500">
           <h2 id="edge-edit-dialog-title" className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             编辑边
           </h2>
@@ -131,7 +133,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
           </button>
         </div>
 
-        <div className="flex border-b border-gray-100 dark:border-slate-700">
+        <div className="flex border-b border-gray-100 dark:border-slate-500">
           <button
             onClick={() => setActiveTab('basic')}
             className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
@@ -166,7 +168,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   placeholder="输入边的标签（可选）"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
                 />
               </div>
 
@@ -177,7 +179,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                 <select
                   value={relationshipType}
                   onChange={(e) => setRelationshipType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
                 >
                   <option value="">选择关系类型</option>
                   {Object.entries(groupedRelationshipTypes).map(([category, types]) => (
@@ -206,14 +208,14 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                     type="color"
                     value={customColor || '#3B82F6'}
                     onChange={(e) => setCustomColor(e.target.value)}
-                    className="w-10 h-10 rounded cursor-pointer border border-gray-300 dark:border-slate-600"
+                    className="w-10 h-10 rounded cursor-pointer border border-gray-300 dark:border-slate-500"
                   />
                   <input
                     type="text"
                     value={customColor}
                     onChange={(e) => setCustomColor(e.target.value)}
                     placeholder="#3B82F6"
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
                   />
                   {customColor && (
                     <button
@@ -252,7 +254,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                       className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
                         customLineStyle === option.value
                           ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                          : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
+                          : 'border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
                       }`}
                     >
                       {option.label}
@@ -274,7 +276,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                       className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
                         showArrow === option.value
                           ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                          : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
+                          : 'border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
                       }`}
                     >
                       {option.label}
@@ -286,7 +288,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
           )}
         </div>
 
-        <div className="p-4 bg-gray-50 dark:bg-slate-900/50 border-t border-gray-100 dark:border-slate-700 flex justify-end gap-3">
+        <div className="p-4 bg-gray-50 dark:bg-slate-900/50 border-t border-gray-100 dark:border-slate-500 flex justify-end gap-3">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-200/50 dark:hover:bg-slate-700 rounded-lg transition-colors"

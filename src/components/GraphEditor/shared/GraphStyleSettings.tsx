@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { ColorScheme, LinkStyle, LinkAnimation, NodeSizeMode, EdgeWidthMode, GraphColorMode } from '../../../types';
 import { getColorSchemeNames, COLOR_SCHEMES } from '../../../config/learningStatusColors';
 import { PRESET_RELATIONSHIP_TYPES } from '../../../config/relationshipTypes';
+import { useFocusTrap } from '../../../hooks/common/useFocusTrap';
+import { useEscapeKey } from '../../../hooks/common/useEscapeKey';
 
 const ToggleSwitch: React.FC<{
   checked: boolean;
@@ -66,6 +68,8 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   const { t } = useTranslation();
   const titleId = useId();
   const [activeTab, setActiveTab] = useState<'colors' | 'links' | 'animations' | 'nodes' | 'edges' | 'edgeSettings'>('colors');
+  const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
+  useEscapeKey(onClose, isOpen);
 
   const commonRelationshipTypes = PRESET_RELATIONSHIP_TYPES.slice(0, 8);
 
@@ -89,13 +93,14 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div
+        ref={containerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[600px] max-h-[80vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-500">
           <h2 id={titleId} className="text-xl font-semibold text-gray-900 dark:text-white">{t('graphStyleSettings.title')}</h2>
           <button
             onClick={onClose}
@@ -108,7 +113,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           </button>
         </div>
 
-        <div className="flex border-b border-gray-200 dark:border-slate-700">
+        <div className="flex border-b border-gray-200 dark:border-slate-500">
           <button
             onClick={() => setActiveTab('colors')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
@@ -218,7 +223,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                         className={`p-4 rounded-lg border-2 transition-all ${
                           currentColorScheme === scheme.key
                             ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                            : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                            : 'border-gray-200 dark:border-slate-500 hover:border-gray-300 dark:hover:border-slate-600'
                         } ${coloringMode !== 'status' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <div className="flex items-center space-x-2">
@@ -239,7 +244,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
+              <div className="pt-4 border-t border-gray-200 dark:border-slate-500">
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white">{t('graphStyleSettings.colorScheme.currentScheme')}</h4>
@@ -282,7 +287,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       className={`p-4 rounded-lg border-2 transition-all ${
                         currentLinkStyle === style.key
                           ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                          : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                          : 'border-gray-200 dark:border-slate-500 hover:border-gray-300 dark:hover:border-slate-600'
                       }`}
                     >
                       <div className="flex items-center justify-center">
@@ -321,7 +326,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       className={`p-4 rounded-lg border-2 transition-all ${
                         currentLinkAnimation === animation.key
                           ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                          : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                          : 'border-gray-200 dark:border-slate-500 hover:border-gray-300 dark:hover:border-slate-600'
                       }`}
                     >
                       <div className="flex items-center justify-center">
@@ -342,7 +347,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
+              <div className="pt-4 border-t border-gray-200 dark:border-slate-500">
                 <div className="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-primary-900 dark:text-primary-100 mb-2">{t('graphStyleSettings.animationDesc.title')}</h4>
                   <ul className="text-xs text-primary-800 dark:text-primary-200 space-y-1">
@@ -373,7 +378,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
                         nodeSizeMode === mode.key
                           ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                          : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                          : 'border-gray-200 dark:border-slate-500 hover:border-gray-300 dark:hover:border-slate-600'
                       }`}
                     >
                       <div className="font-medium text-gray-900 dark:text-white">{mode.name}</div>
@@ -401,7 +406,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
                         edgeWidthMode === mode.key
                           ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                          : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                          : 'border-gray-200 dark:border-slate-500 hover:border-gray-300 dark:hover:border-slate-600'
                       }`}
                     >
                       <div className="font-medium text-gray-900 dark:text-white">{mode.name}</div>
@@ -460,7 +465,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                   {commonRelationshipTypes.map(type => (
                     <div
                       key={type.name}
-                      className="flex items-center space-x-2 p-2 rounded-lg border border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                      className="flex items-center space-x-2 p-2 rounded-lg border border-gray-200 dark:border-slate-500 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="w-4 h-4 rounded" style={{ backgroundColor: type.color }} />
                       <span className="text-sm text-gray-700 dark:text-gray-300">{t(type.display_name)}</span>
@@ -472,7 +477,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           )}
         </div>
 
-        <div className="p-6 border-t border-gray-200 dark:border-slate-700 flex justify-end space-x-3">
+        <div className="p-6 border-t border-gray-200 dark:border-slate-500 flex justify-end space-x-3">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"

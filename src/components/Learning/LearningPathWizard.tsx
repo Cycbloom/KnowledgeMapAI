@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Target, 
-  BookOpen, 
-  Settings2, 
-  Sparkles, 
-  Loader2, 
-  ChevronRight, 
+import {
+  Target,
+  BookOpen,
+  Settings2,
+  Sparkles,
+  Loader2,
+  ChevronRight,
   Check,
   Wand2,
   AlertTriangle,
@@ -14,6 +14,7 @@ import {
   FolderPlus,
   Link2
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../../services/api';
 import { message } from "../../utils/messageHelper";
 import { useError } from "../../hooks";
@@ -49,11 +50,17 @@ interface LearningPathWizardProps {
   onCancel: () => void;
 }
 
-const KNOWLEDGE_LEVELS = ['不了解', '了解一点', '比较熟悉', '非常熟悉'];
+const KNOWLEDGE_LEVELS = [
+  { value: '不了解', labelKey: 'learning.path.wizard.knowledgeLevelUnknown' },
+  { value: '了解一点', labelKey: 'learning.path.wizard.knowledgeLevelLittle' },
+  { value: '比较熟悉', labelKey: 'learning.path.wizard.knowledgeLevelFamiliar' },
+  { value: '非常熟悉', labelKey: 'learning.path.wizard.knowledgeLevelVery' },
+] as const;
+
 const LEARNING_STYLES = [
-  { value: 'sequential', label: '顺序学习', description: '按顺序逐步学习' },
-  { value: 'exploratory', label: '探索学习', description: '自由探索感兴趣的内容' },
-  { value: 'focused', label: '专注学习', description: '专注于核心知识点' },
+  { value: 'sequential', labelKey: 'learning.path.wizard.styleSequential', descKey: 'learning.path.wizard.styleDescSequential' },
+  { value: 'exploratory', labelKey: 'learning.path.wizard.styleExploratory', descKey: 'learning.path.wizard.styleDescExploratory' },
+  { value: 'focused', labelKey: 'learning.path.wizard.styleFocused', descKey: 'learning.path.wizard.styleDescFocused' },
 ] as const;
 
 export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
@@ -61,26 +68,27 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
   onComplete,
   onCancel
 }) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreatingGraphs, setIsCreatingGraphs] = useState(false);
   const [questionsData, setQuestionsData] = useState<QuestionsData | null>(null);
-  
+
   const [selectedGoal, setSelectedGoal] = useState<string>('');
   const [customGoal, setCustomGoal] = useState('');
   const [knowledgeAnswers, setKnowledgeAnswers] = useState<Record<string, string>>({});
   const [learningStyle, setLearningStyle] = useState<'sequential' | 'exploratory' | 'focused'>('sequential');
   const [dailyTime, setDailyTime] = useState(30);
   const [selectedPrerequisites, setSelectedPrerequisites] = useState<Set<string>>(new Set());
-  const [createdGraphs, setCreatedGraphs] = useState<Array<{ 
-    topic: string; 
+  const [createdGraphs, setCreatedGraphs] = useState<Array<{
+    topic: string;
     graphId: string;
     isNew: boolean;
     similarity?: number;
     matchedTitle?: string;
   }>>([]);
-  
+
   const { handleError } = useError();
 
   useEffect(() => {
@@ -102,7 +110,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
       });
       setKnowledgeAnswers(initialAnswers);
     } catch (error) {
-      handleError(error, { context: 'Questions', fallbackMessage: '获取问题失败' });
+      handleError(error, { context: 'Questions', fallbackMessage: t('learning.path.wizard.fetchQuestionsFailed') });
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +152,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
 
   const handleCreatePrerequisiteGraphs = async () => {
     if (selectedPrerequisites.size === 0) {
-      message.warning('请选择要创建图谱的前置知识');
+      message.warning(t('learning.path.wizard.selectPrerequisites'));
       return;
     }
 
@@ -179,11 +187,11 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
 
       let resultMessage = '';
       if (newCount > 0 && linkedCount > 0) {
-        resultMessage = `已创建 ${newCount} 个新图谱，关联 ${linkedCount} 个现有图谱`;
+        resultMessage = t('learning.path.wizard.createdAndLinked', { newCount, linkedCount });
       } else if (newCount > 0) {
-        resultMessage = `已创建 ${newCount} 个前置知识图谱`;
+        resultMessage = t('learning.path.wizard.createdOnly', { newCount });
       } else if (linkedCount > 0) {
-        resultMessage = `已关联 ${linkedCount} 个现有图谱`;
+        resultMessage = t('learning.path.wizard.linkedOnly', { linkedCount });
       }
 
       message.success(resultMessage);
@@ -191,7 +199,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
       setSelectedPrerequisites(new Set());
     } catch (error) {
       console.error('Create prerequisite graphs error:', error);
-      handleError(error, { context: 'CreateGraphs', fallbackMessage: '创建前置图谱失败' });
+      handleError(error, { context: 'CreateGraphs', fallbackMessage: t('learning.path.wizard.createPrerequisiteFailed') });
     } finally {
       setIsCreatingGraphs(false);
     }
@@ -201,12 +209,12 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     const finalGoal = selectedGoal === 'custom' ? customGoal : selectedGoal;
 
     if (!finalGoal.trim()) {
-      message.warning('请选择或输入学习目标');
+      message.warning(t('learning.path.wizard.selectOrInputGoal'));
       return;
     }
 
     setIsGenerating(true);
-    message.info('已收到请求，AI 正在为您规划学习路径，请稍候...');
+    message.info(t('learning.path.wizard.planningInProgress'));
     try {
       onComplete({
         targetGoal: finalGoal,
@@ -238,7 +246,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary-500 mb-4" />
-        <p className="text-sm text-gray-500">AI 正在分析图谱内容...</p>
+        <p className="text-sm text-gray-500">{t('learning.path.wizard.loadingMessage')}</p>
       </div>
     );
   }
@@ -250,7 +258,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Wand2 className="w-5 h-5 text-primary-500" />
-          AI 学习路径规划
+          {t('learning.path.wizard.title')}
         </h3>
         <div className="flex items-center gap-2">
           {stepIndicator.map((s) => (
@@ -275,11 +283,11 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
           >
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <Target className="w-4 h-4 text-primary-500" />
-              <span>第 1 步：选择学习目标</span>
+              <span>{t('learning.path.wizard.step1')}</span>
             </div>
-            
+
             <p className="text-sm text-gray-500">
-              根据你的图谱「{questionsData?.graphTitle}」，推荐以下学习目标：
+              {t('learning.path.wizard.suggestedGoalsHint', { title: questionsData?.graphTitle ?? '' })}
             </p>
 
             <div className="space-y-2">
@@ -322,14 +330,14 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                   }`}>
                     {selectedGoal === 'custom' && <Check className="w-3 h-3 text-white" />}
                   </div>
-                  <span className="text-gray-600 dark:text-gray-300">其他目标</span>
+                  <span className="text-gray-600 dark:text-gray-300">{t('learning.path.wizard.customGoal')}</span>
                 </div>
                 {selectedGoal === 'custom' && (
                   <input
                     type="text"
                     value={customGoal}
                     onChange={(e) => setCustomGoal(e.target.value)}
-                    placeholder="请输入你的学习目标..."
+                    placeholder={t('learning.path.wizard.customGoalPlaceholder')}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-slate-800 dark:text-white mt-2"
                     autoFocus
                   />
@@ -349,11 +357,11 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
           >
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <BookOpen className="w-4 h-4 text-primary-500" />
-              <span>第 2 步：评估前置知识</span>
+              <span>{t('learning.path.wizard.step2')}</span>
             </div>
-            
+
             <p className="text-sm text-gray-500">
-              请评估你对以下知识的掌握程度：
+              {t('learning.path.wizard.assessKnowledgeHint')}
             </p>
 
             <div className="space-y-4">
@@ -371,7 +379,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                         {hasExistingGraph && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
                             <Link2 className="w-3 h-3" />
-                            已有图谱
+                            {t('learning.path.wizard.existingGraph')}
                           </span>
                         )}
                       </div>
@@ -381,27 +389,27 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                     </div>
                     {hasExistingGraph && (
                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 rounded px-2 py-1">
-                        <span>匹配到：「{hasExistingGraph.title}」</span>
+                        <span>{t('learning.path.wizard.matchedTo', { title: hasExistingGraph.title })}</span>
                         <span className="text-gray-300 dark:text-gray-600">|</span>
-                        <span>{Math.round(hasExistingGraph.similarity * 100)}% 相似</span>
+                        <span>{t('learning.path.wizard.similarity', { percent: Math.round(hasExistingGraph.similarity * 100) })}</span>
                         <span className="text-gray-300 dark:text-gray-600">|</span>
-                        <span>{hasExistingGraph.nodeCount} 个知识点</span>
+                        <span>{t('learning.path.wizard.nodeCount', { count: hasExistingGraph.nodeCount })}</span>
                       </div>
                     )}
                     <div className="flex flex-wrap gap-2">
                       {KNOWLEDGE_LEVELS.map((level) => (
                         <button
-                          key={level}
-                          onClick={() => setKnowledgeAnswers(prev => ({ ...prev, [question.topic]: level }))}
+                          key={level.value}
+                          onClick={() => setKnowledgeAnswers(prev => ({ ...prev, [question.topic]: level.value }))}
                           className={`px-3 py-1.5 text-xs rounded-full transition-all ${
-                            knowledgeAnswers[question.topic] === level
-                              ? level === '不了解' 
-                                ? 'bg-red-500 text-white' 
+                            knowledgeAnswers[question.topic] === level.value
+                              ? level.value === '不了解'
+                                ? 'bg-red-500 text-white'
                                 : 'bg-primary-500 text-white'
                               : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
                           }`}
                         >
-                          {level}
+                          {t(level.labelKey, { defaultValue: '' })}
                         </button>
                       ))}
                     </div>
@@ -422,12 +430,12 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
           >
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <FolderPlus className="w-4 h-4 text-primary-500" />
-              <span>第 3 步：创建前置知识图谱</span>
+              <span>{t('learning.path.wizard.step3')}</span>
             </div>
-            
+
             <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
               <p className="text-sm text-amber-800 dark:text-amber-200">
-                以下知识你标注为「不了解」，建议先学习。可以为这些知识创建独立的学习图谱：
+                {t('learning.path.wizard.createGraphsHint')}
               </p>
             </div>
 
@@ -458,17 +466,23 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                         {existingGraph && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
                             <Link2 className="w-3 h-3" />
-                            已有图谱
+                            {t('learning.path.wizard.existingGraph')}
                           </span>
                         )}
                       </div>
                       {existingGraph && (
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          匹配到：「{existingGraph.title}」({Math.round(existingGraph.similarity * 100)}% 相似，{existingGraph.nodeCount} 个知识点)
+                          {t('learning.path.wizard.matchedToWithCount', {
+                            title: existingGraph.title,
+                            percent: Math.round(existingGraph.similarity * 100),
+                            count: existingGraph.nodeCount
+                          })}
                         </div>
                       )}
                     </div>
-                    <span className="text-xs text-gray-400">{existingGraph ? '关联' : '创建'}</span>
+                    <span className="text-xs text-gray-400">
+                      {existingGraph ? t('learning.path.wizard.actionLink') : t('learning.path.wizard.actionCreate')}
+                    </span>
                   </button>
                 );
               })}
@@ -477,7 +491,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
             {createdGraphs.length > 0 && (
               <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
                 <p className="text-sm text-green-800 dark:text-green-200 font-medium mb-2">
-                  处理结果：
+                  {t('learning.path.wizard.processingResult')}
                 </p>
                 <ul className="space-y-2">
                   {createdGraphs.map((g) => (
@@ -489,10 +503,13 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                       )}
                       <span>{g.topic}</span>
                       {g.isNew ? (
-                        <span className="text-xs text-green-600 dark:text-green-400">（新建）</span>
+                        <span className="text-xs text-green-600 dark:text-green-400">{t('learning.path.wizard.newLabel')}</span>
                       ) : (
                         <span className="text-xs text-green-600 dark:text-green-400">
-                          （关联「{g.matchedTitle}」，{Math.round((g.similarity || 0) * 100)}% 相似）
+                          {t('learning.path.wizard.linkedWithSimilarity', {
+                            title: g.matchedTitle ?? '',
+                            percent: Math.round((g.similarity || 0) * 100)
+                          })}
                         </span>
                       )}
                     </li>
@@ -509,12 +526,12 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
               {isCreatingGraphs ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  处理中...
+                  {t('learning.path.wizard.processing')}
                 </>
               ) : (
                 <>
                   <FolderPlus className="w-4 h-4" />
-                  创建或关联选中的知识图谱
+                  {t('learning.path.wizard.createOrLinkButton')}
                 </>
               )}
             </button>
@@ -531,13 +548,19 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
           >
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <Settings2 className="w-4 h-4 text-primary-500" />
-              <span>{unknownPrerequisites.length > 0 ? '第 4 步' : '第 3 步'}：学习偏好</span>
+              <span>
+                {t('learning.path.wizard.step4Prefix', {
+                  step: unknownPrerequisites.length > 0
+                    ? t('learning.path.wizard.step4Label')
+                    : t('learning.path.wizard.step3Label')
+                })}
+              </span>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  每日学习时间
+                  {t('learning.path.wizard.dailyTimeLabel')}
                 </label>
                 <div className="flex items-center gap-4">
                   <input
@@ -550,14 +573,14 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                     className="flex-1"
                   />
                   <span className="text-sm font-medium text-primary-600 dark:text-primary-400 w-16 text-right">
-                    {dailyTime} 分钟
+                    {t('learning.path.wizard.minutes', { count: dailyTime })}
                   </span>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  学习风格
+                  {t('learning.learningPath.learningStyle')}
                 </label>
                 <div className="space-y-2">
                   {LEARNING_STYLES.map((style) => (
@@ -570,8 +593,8 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                           : 'bg-gray-50 dark:bg-slate-700 border-2 border-transparent hover:border-gray-200 dark:hover:border-slate-600'
                       }`}
                     >
-                      <div className="font-medium text-sm text-gray-900 dark:text-white">{style.label}</div>
-                      <div className="text-xs text-gray-500">{style.description}</div>
+                      <div className="font-medium text-sm text-gray-900 dark:text-white">{t(style.labelKey, { defaultValue: '' })}</div>
+                      <div className="text-xs text-gray-500">{t(style.descKey, { defaultValue: '' })}</div>
                     </button>
                   ))}
                 </div>
@@ -581,21 +604,21 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
         )}
       </AnimatePresence>
 
-      <div className="flex items-center justify-between mt-6 pt-4 border-t dark:border-slate-700">
+      <div className="flex items-center justify-between mt-6 pt-4 border-t dark:border-slate-500">
         <button
           onClick={step === 1 ? onCancel : handleBack}
           className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
         >
-          {step === 1 ? '取消' : '上一步'}
+          {step === 1 ? t('common.cancel') : t('learning.path.wizard.buttonPrevious')}
         </button>
-        
+
         {step < 4 ? (
           <button
             onClick={handleNext}
             disabled={!canProceed()}
             className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            下一步
+            {t('learning.path.wizard.buttonNext')}
             <ChevronRight className="w-4 h-4" />
           </button>
         ) : (
@@ -605,14 +628,18 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 disabled:opacity-50"
           >
             {isGenerating ? (
-              <>
+              <span
+                role="status"
+                aria-live="polite"
+                className="flex items-center gap-2"
+              >
                 <Loader2 className="w-4 h-4 animate-spin" />
-                生成中...
-              </>
+                {t('learning.path.wizard.buttonGenerating')}
+              </span>
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />
-                生成学习路径
+                {t('learning.path.wizard.buttonGenerate')}
               </>
             )}
           </button>

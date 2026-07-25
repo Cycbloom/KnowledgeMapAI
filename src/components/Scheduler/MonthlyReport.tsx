@@ -15,6 +15,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { api } from '../../services/api';
 import { EmptyState } from '../common/EmptyState';
+import { ErrorState } from '../common/ErrorState';
 import { formatDuration, formatDate } from '../../utils/formatters';
 import type {MonthlyFocusStats} from '@shared/types';
 
@@ -54,27 +55,28 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
   const [currentMonth, setCurrentMonth] = useState(
     month ?? new Date().getMonth() + 1,
   );
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await api.scheduler.getMonthlyFocusStats(
+        const stats = await api.scheduler.getMonthlyFocusStats(
           currentYear,
           currentMonth,
         );
-        setStats(response.data);
+        setStats(stats);
         setError(null);
       } catch (err) {
         console.error("Failed to fetch monthly stats:", err);
-        setError("加载月报数据失败");
+        setError(t('scheduler.reports.loadMonthlyFailed'));
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-  }, [currentYear, currentMonth]);
+  }, [currentYear, currentMonth, retryCount, t]);
 
   const navigateMonth = (direction: "prev" | "next") => {
     if (direction === "prev") {
@@ -115,9 +117,13 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
   if (error) {
     return (
       <div className={`p-6 ${className}`}>
-        <div className="text-center text-red-500 dark:text-red-400">
-          <p>{error}</p>
-        </div>
+        <ErrorState
+          message={error}
+          onRetry={() => {
+            setError(null);
+            setRetryCount((c) => c + 1);
+          }}
+        />
       </div>
     );
   }
@@ -272,7 +278,7 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
-        className="p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50"
+        className="p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500/50"
       >
         <div className="flex items-center gap-2 mb-4">
           <BarChart3 size={18} className="text-slate-500" />
@@ -319,7 +325,7 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
-        className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/30"
+        className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-500/30"
       >
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>

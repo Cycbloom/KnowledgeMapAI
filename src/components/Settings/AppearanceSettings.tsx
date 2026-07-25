@@ -10,6 +10,7 @@ import {
   SwatchBook,
   Globe,
   Sparkles,
+  Wind,
 } from "lucide-react";
 
 export const AppearanceSettings = React.memo(function AppearanceSettings() {
@@ -20,11 +21,13 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
   const setCelebrationEnabled = usePreferencesStore(
     (s) => s.setCelebrationEnabled,
   );
+  const reducedMotion = usePreferencesStore((s) => s.reducedMotion);
+  const setReducedMotion = usePreferencesStore((s) => s.setReducedMotion);
 
   return (
     <>
       {/* 外观设置 */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
         <div className="flex items-center gap-2 mb-4">
           <Palette className="w-5 h-5 text-pink-600 dark:text-pink-400" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -38,7 +41,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
             className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
               themeMode === "light"
                 ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
-                : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
             }`}
           >
             <Sun className="w-6 h-6 mb-2" />
@@ -52,7 +55,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
             className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
               themeMode === "dark"
                 ? "bg-slate-800 border-slate-700 text-white ring-1 ring-slate-600 dark:bg-primary-600 dark:border-primary-500"
-                : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
             }`}
           >
             <Moon className="w-6 h-6 mb-2" />
@@ -66,7 +69,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
             className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
               themeMode === "system"
                 ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
-                : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
             }`}
           >
             <Monitor className="w-6 h-6 mb-2" />
@@ -78,7 +81,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
       </div>
 
       {/* 主题预设 */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
         <div className="flex items-center gap-2 mb-4">
           <SwatchBook className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -94,7 +97,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
               className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[80px] ${
                 themePreset === preset.key
                   ? "border-2 bg-primary-50 dark:bg-primary-900/30"
-                  : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                  : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
               }`}
               style={
                 themePreset === preset.key
@@ -126,7 +129,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
       </div>
 
       {/* 语言设置 */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
         <div className="flex items-center gap-2 mb-4">
           <Globe className="w-5 h-5 text-green-600 dark:text-green-400" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -145,7 +148,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
                 className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                   i18n.language === "zh-CN" || i18n.language.startsWith("zh")
                     ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
-                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
                 }`}
               >
                 <span className="text-2xl mb-2">中</span>
@@ -159,7 +162,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
                 className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                   i18n.language === "en-US" || i18n.language.startsWith("en")
                     ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
-                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:text-gray-400 dark:hover:bg-slate-700"
                 }`}
               >
                 <span className="text-2xl mb-2">A</span>
@@ -173,7 +176,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
       </div>
 
       {/* 微反馈偏好 */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="w-5 h-5 text-amber-500 dark:text-amber-400" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -211,6 +214,51 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
             <span
               className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
                 celebrationEnabled ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </div>
+        </label>
+      </div>
+
+      {/* 减少动态效果偏好（无障碍） */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
+        <div className="flex items-center gap-2 mb-4">
+          <Wind className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            {t("common.preferences.reducedMotion")}
+          </h2>
+        </div>
+
+        <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+          <div>
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              {t("common.preferences.reducedMotion")}
+            </span>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              {t("common.preferences.reducedMotionDesc")}
+            </p>
+          </div>
+          <div
+            role="switch"
+            aria-checked={reducedMotion}
+            aria-label={t("common.preferences.reducedMotion")}
+            tabIndex={0}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+              reducedMotion
+                ? "bg-primary-600"
+                : "bg-gray-200 dark:bg-gray-700"
+            }`}
+            onClick={() => setReducedMotion(!reducedMotion)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setReducedMotion(!reducedMotion);
+              }
+            }}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                reducedMotion ? "translate-x-5" : "translate-x-0.5"
               }`}
             />
           </div>

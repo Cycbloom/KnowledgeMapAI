@@ -14,6 +14,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { api } from '../../services/api';
 import { EmptyState } from '../common/EmptyState';
+import { ErrorState } from '../common/ErrorState';
 import { formatDuration, formatDate } from '../../utils/formatters';
 import type {WeeklyFocusStats} from '@shared/types';
 
@@ -22,32 +23,41 @@ interface WeeklyReportProps {
   className?: string;
 }
 
-const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-
 export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className = '' }) => {
   const { t } = useTranslation();
   const [stats, setStats] = useState<WeeklyFocusStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentWeekStart, setCurrentWeekStart] = useState<string | undefined>(weekStart);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const weekdays = [
+    t('scheduler.weeklyReport.weekdaySun'),
+    t('scheduler.weeklyReport.weekdayMon'),
+    t('scheduler.weeklyReport.weekdayTue'),
+    t('scheduler.weeklyReport.weekdayWed'),
+    t('scheduler.weeklyReport.weekdayThu'),
+    t('scheduler.weeklyReport.weekdayFri'),
+    t('scheduler.weeklyReport.weekdaySat'),
+  ];
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await api.scheduler.getWeeklyFocusStats(currentWeekStart);
-        setStats(response.data);
+        const stats = await api.scheduler.getWeeklyFocusStats(currentWeekStart);
+        setStats(stats);
         setError(null);
       } catch (err) {
         console.error('Failed to fetch weekly stats:', err);
-        setError('加载周报数据失败');
+        setError(t('scheduler.reports.loadWeeklyFailed'));
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-  }, [currentWeekStart]);
+  }, [currentWeekStart, retryCount, t]);
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     if (!stats) return;
@@ -74,9 +84,13 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
   if (error) {
     return (
       <div className={`p-6 ${className}`}>
-        <div className="text-center text-red-500 dark:text-red-400">
-          <p>{error}</p>
-        </div>
+        <ErrorState
+          message={error}
+          onRetry={() => {
+            setError(null);
+            setRetryCount((c) => c + 1);
+          }}
+        />
       </div>
     );
   }
@@ -85,7 +99,12 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
 
   const weekStartDate = new Date(stats.week_start);
   const weekEndDate = new Date(stats.week_end);
-  const weekRange = `${weekStartDate.getMonth() + 1}月${weekStartDate.getDate()}日 - ${weekEndDate.getMonth() + 1}月${weekEndDate.getDate()}日`;
+  const weekRange = t('scheduler.weeklyReport.weekRange', {
+    startMonth: weekStartDate.getMonth() + 1,
+    startDay: weekStartDate.getDate(),
+    endMonth: weekEndDate.getMonth() + 1,
+    endDay: weekEndDate.getDate(),
+  });
 
   const totalHours = stats.total_duration / 3600;
   const avgHoursPerDay = stats.daily_average / 3600;
@@ -99,7 +118,7 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
         >
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             <Calendar size={20} className="text-violet-500" />
-            周报
+            {t('scheduler.weeklyReport.title')}
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{weekRange}</p>
         </motion.div>
@@ -129,14 +148,14 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
         >
           <div className="flex items-center gap-2 mb-2">
             <Clock size={18} className="text-primary-500" />
-            <span className="text-sm text-slate-600 dark:text-slate-300">总专注时长</span>
+            <span className="text-sm text-slate-600 dark:text-slate-300">{t('scheduler.weeklyReport.stat.totalFocusDuration')}</span>
           </div>
           <p className="text-3xl font-bold text-slate-900 dark:text-white">
             {totalHours.toFixed(1)}
-            <span className="text-lg font-normal text-slate-500 ml-1">小时</span>
+            <span className="text-lg font-normal text-slate-500 ml-1">{t('scheduler.weeklyReport.stat.hours')}</span>
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            日均 {avgHoursPerDay.toFixed(1)} 小时
+            {t('scheduler.weeklyReport.stat.dailyAverage', { hours: avgHoursPerDay.toFixed(1) })}
           </p>
         </motion.div>
 
@@ -148,14 +167,14 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
         >
           <div className="flex items-center gap-2 mb-2">
             <Target size={18} className="text-emerald-500" />
-            <span className="text-sm text-slate-600 dark:text-slate-300">完成情况</span>
+            <span className="text-sm text-slate-600 dark:text-slate-300">{t('scheduler.weeklyReport.stat.completion')}</span>
           </div>
           <p className="text-3xl font-bold text-slate-900 dark:text-white">
             {stats.tasks_completed}
-            <span className="text-lg font-normal text-slate-500 ml-1">任务</span>
+            <span className="text-lg font-normal text-slate-500 ml-1">{t('scheduler.weeklyReport.stat.tasks')}</span>
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {stats.total_sessions} 次专注会话
+            {t('scheduler.weeklyReport.stat.focusSessions', { count: stats.total_sessions })}
           </p>
         </motion.div>
 
@@ -167,14 +186,14 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
         >
           <div className="flex items-center gap-2 mb-2">
             <Flame size={18} className="text-amber-500" />
-            <span className="text-sm text-slate-600 dark:text-slate-300">连续专注</span>
+            <span className="text-sm text-slate-600 dark:text-slate-300">{t('scheduler.weeklyReport.stat.streakDays')}</span>
           </div>
           <p className="text-3xl font-bold text-slate-900 dark:text-white">
             {stats.streak_days}
-            <span className="text-lg font-normal text-slate-500 ml-1">天</span>
+            <span className="text-lg font-normal text-slate-500 ml-1">{t('scheduler.weeklyReport.stat.days')}</span>
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {stats.total_pomodoros} 个番茄钟
+            {t('scheduler.weeklyReport.stat.pomodoros', { count: stats.total_pomodoros })}
           </p>
         </motion.div>
       </div>
@@ -192,9 +211,9 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
                 <Award size={20} className="text-white" />
               </div>
               <div>
-                <p className="text-sm text-slate-600 dark:text-slate-300">最佳表现日</p>
+                <p className="text-sm text-slate-600 dark:text-slate-300">{t('scheduler.weeklyReport.bestDay.title')}</p>
                 <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                  {WEEKDAYS[new Date(stats.best_day.date).getDay()]} · {formatDate(stats.best_day.date, 'month-day')}
+                  {weekdays[new Date(stats.best_day.date).getDay()]} · {formatDate(stats.best_day.date, 'month-day')}
                 </p>
               </div>
             </div>
@@ -202,7 +221,7 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
               <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
                 {formatDuration(stats.best_day.duration, { format: 'compact', emptyText: '0m' })}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">专注时长</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t('scheduler.weeklyReport.bestDay.focusDuration')}</p>
             </div>
           </div>
         </motion.div>
@@ -212,14 +231,14 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50"
+        className="p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500/50"
       >
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp size={18} className="text-slate-500" />
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">本周概览</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('scheduler.weeklyReport.weekOverview')}</span>
         </div>
         <div className="grid grid-cols-7 gap-2">
-          {WEEKDAYS.map((day, index) => {
+          {weekdays.map((day, index) => {
             const date = new Date(weekStartDate);
             date.setDate(date.getDate() + index);
             const isToday = date.toDateString() === new Date().toDateString();

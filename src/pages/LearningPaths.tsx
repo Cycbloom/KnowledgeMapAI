@@ -482,10 +482,11 @@ export const LearningPaths = () => {
                 <label
                   className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                 >
-                  {t("learningPaths.createDialog.pathName")} <span className="text-red-500">*</span>
+                  {t("learningPaths.createDialog.pathName")} <span aria-hidden="true" className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
+                  aria-required={true}
                   value={newPathTitle}
                   onChange={(e) => setNewPathTitle(e.target.value)}
                   placeholder={t("learningPaths.createDialog.pathNamePlaceholder")}

@@ -22,19 +22,6 @@ import {
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 
-// Fallback system prompt for image-to-graph conversion.
-// TODO: Migrate this to the database prompts table with key "image_to_graph"
-const IMAGE_TO_GRAPH_SYSTEM_PROMPT = `You are a knowledge graph expert capable of analyzing visual content.
-
-Your task:
-1. Analyze the provided image to extract the structured knowledge hierarchy.
-2. Output a JSON object with 'nodes' and 'edges' arrays.
-   - Nodes: { "id": "temp_id", "title": "Title", "content": "Description", "summary": "20-30字的简短概览，概括该知识点的核心内容", "level": "root|core|sub|normal|leaf" }
-   - Edges: { "source": "parent_id", "target": "child_id", "relationship": "contains|related" }
-3. Limit to 30-50 nodes.
-4. Each node must have a summary field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼
-5. Respond in Chinese.`;
-
 export class AnalysisService {
   async generateGraphFromImage(
     imageBase64: string,
@@ -63,13 +50,18 @@ export class AnalysisService {
     }
 
     try {
-      // Try to fetch the prompt from the database first, fall back to the constant
-      const systemPrompt =
-        (await promptService.getRenderedPrompt(
-          getSupabaseAdmin(),
-          "image_to_graph",
-          {},
-        )) || IMAGE_TO_GRAPH_SYSTEM_PROMPT;
+      // Fetch the prompt from the database (DB is the single source of truth)
+      const systemPrompt = await promptService.getRenderedPrompt(
+        getSupabaseAdmin(),
+        "image_to_graph",
+        {},
+      );
+
+      if (!systemPrompt || systemPrompt.trim().length === 0) {
+        throw new AppError(ErrorCodes.SYSTEM_CONFIGURATION_ERROR, {
+          message: "image_to_graph prompt template not found in database",
+        });
+      }
 
       return withAIMonitoring(
         {

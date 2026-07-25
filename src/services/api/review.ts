@@ -52,27 +52,27 @@ export interface ReviewStats {
 
 export const taskReviewApi = {
   async createReview(data: CreateReviewData): Promise<TaskReview> {
-    return request('/scheduler/reviews', {
+    return request<TaskReview>('/scheduler/reviews', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   async updateReview(reviewId: string, data: UpdateReviewData): Promise<TaskReview> {
-    return request(`/scheduler/reviews/${reviewId}`, {
+    return request<TaskReview>(`/scheduler/reviews/${reviewId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
 
   async deleteReview(reviewId: string): Promise<void> {
-    return request(`/scheduler/reviews/${reviewId}`, {
+    return request<void>(`/scheduler/reviews/${reviewId}`, {
       method: 'DELETE',
     });
   },
 
   async getReview(reviewId: string): Promise<TaskReview | null> {
-    return request(`/scheduler/reviews/${reviewId}`);
+    return request<TaskReview | null>(`/scheduler/reviews/${reviewId}`);
   },
 
   async getReviews(filters?: ReviewFilters): Promise<TaskReview[]> {
@@ -83,24 +83,24 @@ export const taskReviewApi = {
     if (filters?.from_date) params.set('from_date', filters.from_date);
     if (filters?.to_date) params.set('to_date', filters.to_date);
     const query = params.toString();
-    return request(`/scheduler/reviews${query ? `?${query}` : ''}`);
+    return request<TaskReview[]>(`/scheduler/reviews${query ? `?${query}` : ''}`);
   },
 
   async getDailyReview(date?: string): Promise<TaskReview | null> {
     const targetDate = date || new Date().toISOString().split('T')[0];
-    return request(`/scheduler/reviews/daily?date=${targetDate}`);
+    return request<TaskReview | null>(`/scheduler/reviews/daily?date=${targetDate}`);
   },
 
   async getWeeklyReview(weekStart?: string): Promise<TaskReview | null> {
     const targetWeekStart = weekStart || new Date().toISOString().split('T')[0];
-    return request(`/scheduler/reviews/weekly?week_start=${targetWeekStart}`);
+    return request<TaskReview | null>(`/scheduler/reviews/weekly?week_start=${targetWeekStart}`);
   },
 
   async getTaskReview(taskId: string): Promise<TaskReview | null> {
-    return request(`/scheduler/reviews/task/${taskId}`);
+    return request<TaskReview | null>(`/scheduler/reviews/task/${taskId}`);
   },
 
   async getReviewStats(period: 'week' | 'month' = 'month'): Promise<ReviewStats> {
-    return request(`/scheduler/reviews/stats?period=${period}`);
+    return request<ReviewStats>(`/scheduler/reviews/stats?period=${period}`);
   },
 };

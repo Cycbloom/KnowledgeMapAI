@@ -232,7 +232,13 @@
       },
       "template-quadrant-analysis": {
         "name": "四象限分析",
-        "description": "适用于SWOT分析、优先级管理等四象限分析"
+        "description": "适用于SWOT分析、优先级管理等四象限分析",
+        "axisX": "重要性",
+        "axisY": "紧急性",
+        "zoneQ1": "重要且紧急",
+        "zoneQ2": "重要不紧急",
+        "zoneQ3": "不重要紧急",
+        "zoneQ4": "不重要不紧急"
       }
     },
     "nodes": {

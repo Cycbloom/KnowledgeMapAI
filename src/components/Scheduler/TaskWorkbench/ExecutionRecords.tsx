@@ -42,9 +42,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
     setLoading(true);
     try {
       const response = await api.scheduler.getTaskExecutions(taskId);
-      if (response.success) {
-        setExecutions(response.data || []);
-      }
+      setExecutions(response || []);
     } catch (error) {
       console.error("Failed to load executions:", error);
     } finally {
@@ -191,7 +189,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
           {Object.entries(groupedExecutions).map(([date, execs]) => (
             <div
               key={date}
-              className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+              className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-500 overflow-hidden"
             >
               <button
                 onClick={() => toggleGroup(date)}
@@ -221,13 +219,13 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <div className="border-t border-slate-200 dark:border-slate-700">
+                    <div className="border-t border-slate-200 dark:border-slate-500">
                       {execs.map((exec, index) => (
                         <div
                           key={exec.id}
                           className={`flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${
                             index > 0
-                              ? "border-t border-slate-100 dark:border-slate-700/50"
+                              ? "border-t border-slate-100 dark:border-slate-500/50"
                               : ""
                           }`}
                         >

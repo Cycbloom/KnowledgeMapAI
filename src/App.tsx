@@ -9,6 +9,7 @@ import { QueryErrorResetBoundary } from "@tanstack/react-query";
 import { useDeepLink } from "./hooks/useDeepLink";
 import { useMobileInit } from "./hooks/useMobileInit";
 import { useNetworkStatus } from "./hooks/common/useNetworkStatus";
+import { useDocumentTitle } from "./hooks/common/useDocumentTitle";
 import { useTranslation } from "react-i18next";
 import { message } from "@/utils/messageHelper";
 import { getSupabaseClient } from "./lib/supabase";
@@ -60,6 +61,9 @@ function getLazyComponent(registration: RouteRegistration): React.LazyExoticComp
 
 /* eslint-disable react-hooks/static-components */
 function LazyRoute({ registration }: { registration: RouteRegistration }) {
+  const { t } = useTranslation();
+  const title = registration.title ? (t(registration.title as never) as string) : undefined;
+  useDocumentTitle(title, t('documentTitle.suffix'));
   const Component = getLazyComponent(registration);
   if (!Component) return null;
   return (

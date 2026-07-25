@@ -539,6 +539,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
         transition: `opacity ${transitionDuration}ms ease`,
       }}
     >
+      <title>{node.title ?? t("graphEditor.mindMap.unnamed")}</title>
       <svg width={0} height={0}>
         <defs>{gradientDefinitions}</defs>
       </svg>

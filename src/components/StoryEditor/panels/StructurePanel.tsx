@@ -249,7 +249,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
 
         {/* Template Selector */}
         {showTemplateSelector && (
-          <div className="mx-3 mt-3 p-3 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-lg border border-purple-200 dark:border-slate-600">
+          <div className="mx-3 mt-3 p-3 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-lg border border-purple-200 dark:border-slate-500">
             <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
               {t("storyEditor.selectTemplate")}
             </h4>
@@ -257,7 +257,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
               <button
                 onClick={() => handleInitializeTemplate("three_act")}
                 disabled={initializing}
-                className="w-full text-left px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-slate-600 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors disabled:opacity-50"
+                className="w-full text-left px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-slate-500 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors disabled:opacity-50"
               >
                 <div className="font-medium text-gray-900 dark:text-white">
                   {t("storyEditor.templateThreeAct")}

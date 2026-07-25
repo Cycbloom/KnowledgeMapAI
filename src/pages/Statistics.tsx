@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useStatistics, useUser, useGraphs } from '../hooks/queries';
@@ -33,7 +33,7 @@ const MetricCard = ({ title, value, subtext, icon: Icon, color, isDark }: Metric
   <div className={`p-6 rounded-lg shadow-sm border flex items-start justify-between ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
     <div>
       <p className={`text-sm font-medium mb-1 ${themeClasses.textSecondary(isDark)}`}>{title}</p>
-      <h3 className={`text-3xl font-bold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{typeof value === 'number' ? formatNumber(value) : value}</h3>
+      <h2 className={`text-3xl font-bold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{typeof value === 'number' ? formatNumber(value) : value}</h2>
       {subtext && <p className={`text-xs mt-2 ${themeClasses.textMuted(isDark)}`}>{subtext}</p>}
     </div>
     <div className={`p-3 rounded-full ${color}`}>
@@ -49,7 +49,7 @@ interface ForecastDataItem {
 
 const ForecastChart = ({ data, t, isDark }: { data: ForecastDataItem[], t: TFunction, isDark: boolean }) => (
   <div className={`p-6 rounded-lg shadow-sm border h-80 flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
-    <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{t('statistics.forecast.title')}</h3>
+    <h2 className={`text-lg font-bold mb-6 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{t('statistics.forecast.title')}</h2>
     <div className="flex-1 w-full min-h-0">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
@@ -85,7 +85,7 @@ interface GrowthDataItem {
 
 const GrowthChart = ({ data, t, isDark }: { data: GrowthDataItem[], t: TFunction, isDark: boolean }) => (
   <div className={`p-6 rounded-lg shadow-sm border h-80 flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
-    <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{t('statistics.growth.title')}</h3>
+    <h2 className={`text-lg font-bold mb-6 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{t('statistics.growth.title')}</h2>
     <div className="flex-1 w-full min-h-0">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
@@ -143,7 +143,7 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability, t, isDark }: {
 
   return (
     <div className={`p-6 rounded-lg shadow-sm border h-80 flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
-      <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{t('statistics.forgettingCurve.title')}</h3>
+      <h2 className={`text-lg font-bold mb-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{t('statistics.forgettingCurve.title')}</h2>
       <p className={`text-xs mb-6 ${themeClasses.textSecondary(isDark)}`}>
         {t('statistics.forgettingCurve.description', { stability: avgStability > 0 ? avgStability.toFixed(1) : 7 })}
       </p>
@@ -210,6 +210,50 @@ export const Statistics = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'graphs'>('overview');
   const retention = userData?.user?.profile?.settings?.request_retention || 0.9;
 
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const tabs = [
+    { id: 'overview', label: t('statistics.tabs.overview') },
+    { id: 'graphs', label: t('statistics.tabs.graphs') },
+  ] as const;
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(tabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
   const totalNodesCount = useMemo(() => {
     if (!graphsData) return 0;
     return graphsData.reduce((sum: number, g: Graph) => sum + (g.nodes_count || 0), 0);
@@ -245,7 +289,7 @@ export const Statistics = () => {
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 space-y-3"
+              className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-slate-500 space-y-3"
             >
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-8 w-16" />
@@ -284,31 +328,39 @@ export const Statistics = () => {
         <p className="text-gray-500 dark:text-gray-400 mt-2">{t('statistics.subtitle')}</p>
       </div>
 
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'overview'
-              ? 'bg-primary-500 text-white'
-              : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-          }`}
-        >
-          {t('statistics.tabs.overview')}
-        </button>
-        <button
-          onClick={() => setActiveTab('graphs')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'graphs'
-              ? 'bg-primary-500 text-white'
-              : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-          }`}
-        >
-          {t('statistics.tabs.graphs')}
-        </button>
+      <div className="flex gap-2 mb-6" role="tablist" aria-label={t('statistics.title')}>
+        {tabs.map((tab, index) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              ref={(el) => { tabRefs.current[index] = el; }}
+              role="tab"
+              id={`${tabIdPrefix}-${tab.id}`}
+              aria-selected={isActive}
+              aria-controls={`${panelIdPrefix}-${tab.id}`}
+              tabIndex={isActive ? 0 : -1}
+              onClick={() => setActiveTab(tab.id)}
+              onKeyDown={(e) => handleTabKeyDown(e, index)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                isActive
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {activeTab === 'overview' ? (
-        <>
+        <div
+          role="tabpanel"
+          id={`${panelIdPrefix}-overview`}
+          aria-labelledby={`${tabIdPrefix}-overview`}
+          tabIndex={0}
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <MetricCard
               title={t('statistics.metrics.totalCards')}
@@ -361,11 +413,16 @@ export const Statistics = () => {
           <div className="mb-8">
             <GrowthChart data={stats.growth || []} t={t} isDark={isDark} />
           </div>
-        </>
+        </div>
       ) : (
-        <>
+        <div
+          role="tabpanel"
+          id={`${panelIdPrefix}-graphs`}
+          aria-labelledby={`${tabIdPrefix}-graphs`}
+          tabIndex={0}
+        >
           <div className="mb-8">
-            <QuickStatsCards 
+            <QuickStatsCards
               totalNodes={totalNodesCount}
               masteredNodes={stats.metrics.learning}
               dueToday={stats.metrics.dueToday}
@@ -377,7 +434,7 @@ export const Statistics = () => {
             <KnowledgeHeatmap graphData={graphHeatmapData} />
             <MasteryDistributionChart distribution={distributionData} />
           </div>
-        </>
+        </div>
       )}
     </div>
   );

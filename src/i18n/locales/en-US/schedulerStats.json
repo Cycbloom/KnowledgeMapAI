@@ -80,6 +80,9 @@
     "interrupted": "Interrupted",
     "timeSliceEnded": "Time Slice Ended"
   },
+  "queueLevel": {
+    "ariaLabel": "Queue level Q{{level}}"
+  },
   "durations": {
     "minutes": "{{count}} min",
     "hoursAndMinutes": "{{hours}} h {{minutes}} min",

@@ -390,7 +390,7 @@ const NoteListSkeleton = () => (
     {Array.from({ length: 6 }).map((_, i) => (
       <div
         key={i}
-        className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-gray-100 dark:border-slate-700 flex items-center gap-4"
+        className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-gray-100 dark:border-slate-500 flex items-center gap-4"
       >
         <Skeleton className="h-5 w-5 rounded" />
         <div className="flex-1 space-y-2">
@@ -874,7 +874,7 @@ export const NotesListPage = () => {
             type="button"
             onClick={handleCreateDaily}
             disabled={manualCreateDailyMutation.isPending}
-            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
           >
             {manualCreateDailyMutation.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -900,7 +900,7 @@ export const NotesListPage = () => {
             type="button"
             onClick={() => refetch()}
             disabled={isFetching}
-            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-3 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
+            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 px-3 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
             title={t("notes.actions.refresh")}
             aria-label={t("notes.actions.refresh")}
           >
@@ -912,7 +912,7 @@ export const NotesListPage = () => {
           <button
             type="button"
             onClick={() => navigate("/notes/templates")}
-            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-3 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 px-3 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
             title={t("notes.templates.actions.manage")}
             aria-label={t("notes.templates.actions.manage")}
           >
@@ -926,7 +926,7 @@ export const NotesListPage = () => {
             <button
               type="button"
               onClick={enterSelectMode}
-              className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-3 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+              className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 px-3 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
               title={t("notes.batch.enterSelectMode")}
               aria-label={t("notes.batch.enterSelectMode")}
             >
@@ -954,7 +954,7 @@ export const NotesListPage = () => {
 
       {/* 视图切换 + Task 4 排序下拉 */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
-        <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-x-auto flex-1 min-w-0">
+        <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 overflow-x-auto flex-1 min-w-0">
           {VIEW_TABS.map((tab) => (
             <FilterTab
               key={tab.value}
@@ -990,7 +990,7 @@ export const NotesListPage = () => {
             }
           }}
           placeholder={t("notes.search.placeholder")}
-          className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg pl-10 pr-10 py-2 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+          className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-500 rounded-lg pl-10 pr-10 py-2 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
         />
         {searchInput && (
           <button
@@ -1035,7 +1035,7 @@ export const NotesListPage = () => {
           <button
             type="button"
             onClick={() => refetch()}
-            className="mt-4 text-primary-600 dark:text-primary-400 hover:underline"
+            className="mt-4 text-primary-600 dark:text-primary-400 underline"
           >
             {t("notes.retry")}
           </button>
@@ -1045,7 +1045,7 @@ export const NotesListPage = () => {
           {isLoading && !isFetching && <NoteListSkeleton />}
 
           {!isLoading && notes.length === 0 && (
-            <div className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-500">
               <EmptyState
                 icon={
                   <NotebookPen className="w-12 h-12 text-gray-300 dark:text-slate-600" />
@@ -1071,7 +1071,7 @@ export const NotesListPage = () => {
 
           {/* SubTask 10.1/10.2 空状态:服务端有数据但被客户端搜索/标签筛选过滤掉 */}
           {!isLoading && notes.length > 0 && filteredNotes.length === 0 && (
-            <div className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-700">
+            <div aria-live="polite" className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-500">
               <EmptyState
                 icon={
                   <Search className="w-12 h-12 text-gray-300 dark:text-slate-600" />
@@ -1136,9 +1136,13 @@ export const NotesListPage = () => {
                   items={sortedFilteredNotes}
                   itemHeight={140}
                   containerHeight={listContainerHeight}
-                  className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700"
+                  role="list"
+                  className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-500"
                   renderItem={(note) => (
-                    <div className="border-b border-gray-100 dark:border-slate-700">
+                    <div
+                      role="listitem"
+                      className="border-b border-gray-100 dark:border-slate-500"
+                    >
                       <NoteCard
                         note={note}
                         onPin={handlePin}

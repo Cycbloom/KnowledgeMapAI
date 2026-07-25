@@ -121,3 +121,26 @@ export interface StudyModePreset {
   ratingMode: RatingMode;
   masteryThresholdOverride?: Partial<Record<"LEARNING_REVIEW" | "REVIEW_PRACTICE" | "PRACTICE_QUIZ" | "QUIZ_MASTERY", number>>;
 }
+
+// --- Learning loop orchestrator types (migrated from backend learningLoopOrchestrator.ts) ---
+
+export type LoopStage = "learn" | "test" | "review" | "iterate";
+
+export interface LearningLoop {
+  id: string;
+  userId: string;
+  knowledgePointId?: string;
+  graphId?: string;
+  currentStage: LoopStage;
+  currentWorkflowStage?: StudyWorkflowStage;
+  studyMode?: StudyMode;
+  masteryLevel: number;
+  loopCount: number;
+  lastStageChangeAt: string;
+  config: {
+    masteryThreshold?: number;
+    testDelayMinutes?: number;
+    maxLoops?: number;
+  };
+  taskId?: string;
+}

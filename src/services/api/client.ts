@@ -32,8 +32,7 @@ export const getHeaders = () => {
   return headers;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const handleResponse = async <T = any>(res: Response): Promise<T> => {
+export const handleResponse = async <T = unknown>(res: Response): Promise<T> => {
   const text = await res.text();
   let data;
   try {
@@ -58,7 +57,7 @@ export const handleResponse = async <T = any>(res: Response): Promise<T> => {
   return data as T;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- 10+ 调用方未指定泛型参数，unknown 会导致约 37 处级联类型错误，超出 R44 spec 单任务修改范围
 export const request = async <T = any>(url: string, options: RequestInit = {}): Promise<T> => {
   const method = (options.method?.toUpperCase() || 'GET') as Method;
   const data = options.body ? JSON.parse(options.body as string) : undefined;
@@ -68,6 +67,27 @@ export const request = async <T = any>(url: string, options: RequestInit = {}): 
     method,
     data,
   });
+};
+
+/**
+ * Standard API response envelope returned by all backend endpoints.
+ * Backend always returns `{ success, data, ...extra }` format.
+ */
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data: T;
+  total?: number;
+  message?: string;
+}
+
+/**
+ * Like {@link request}, but unwraps the standard `{ success, data }` envelope
+ * and returns the inner `data` payload directly. Use this for endpoints that
+ * return the standard wrapped response (all scheduler endpoints do).
+ */
+export const requestData = async <T>(url: string, options: RequestInit = {}): Promise<T> => {
+  const res = await request<ApiResponse<T>>(url, options);
+  return res.data;
 };
 
 export type AITaskType = 'text' | 'embedding' | 'reasoning';
@@ -86,8 +106,7 @@ export const getAIConfig = (taskType: AITaskType = 'text') => {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const injectAIConfig = <T extends Record<string, any>>(
+export const injectAIConfig = <T extends Record<string, unknown>>(
   payload: T,
   taskType: AITaskType = 'text'
 ): T & AIConfig => {

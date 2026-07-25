@@ -27,7 +27,7 @@ describe("EmptyStateCard", () => {
     expect(wrapper).toHaveClass(
       "border-dashed",
       "border-gray-300",
-      "dark:border-slate-700",
+      "dark:border-slate-500",
       "rounded-lg",
       "bg-white",
       "dark:bg-slate-800",
@@ -70,7 +70,7 @@ describe("EmptyStateCard", () => {
     const wrapper = container.firstChild as HTMLElement;
     const html = wrapper.outerHTML;
     expect(html).toMatch(/dark:bg-slate-800/);
-    expect(html).toMatch(/dark:border-slate-700/);
+    expect(html).toMatch(/dark:border-slate-500/);
   });
 
   it("不传任何可选字段时应该仅渲染外层包裹 + 内层 EmptyState 默认行为（默认 illustration=empty、size=md、iconWrapper=false）", () => {

@@ -352,9 +352,9 @@ export const QuizPreview: React.FC = () => {
               }`}
             >
               <div className={`p-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-                <h3 className="font-medium">
+                <h2 className="font-medium">
                   {editingCard ? t('study.quizPreview.editQuestion') : t('study.quizPreview.addNewQuestion')}
-                </h3>
+                </h2>
               </div>
               <QuestionForm
                 initialData={editingCard || undefined}

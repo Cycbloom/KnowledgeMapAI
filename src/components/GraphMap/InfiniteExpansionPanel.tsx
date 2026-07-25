@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Sparkles, Network, ChevronDown, ChevronUp, Check, Settings2 } from 'lucide-react';
 import type { GraphRelationType, InfiniteExpansionProgress } from '../../types';
+import { message } from '@/utils/messageHelper';
+import { useFocusTrap } from '../../hooks/common/useFocusTrap';
+import { useEscapeKey } from '../../hooks/common/useEscapeKey';
 
 interface InfiniteExpansionPanelProps {
   isOpen: boolean;
@@ -41,9 +44,9 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const relationTypeOptions: Array<{ value: GraphRelationType; label: string; color: string }> = [
-    { value: 'prerequisite', label: '前置知识', color: 'bg-primary-500' },
-    { value: 'extension', label: '扩展知识', color: 'bg-green-500' },
-    { value: 'related', label: '相关知识', color: 'bg-amber-500' },
+    { value: 'prerequisite', label: t('graphMap.infiniteExpansion.relationPrerequisite'), color: 'bg-primary-500' },
+    { value: 'extension', label: t('graphMap.infiniteExpansion.relationExtension'), color: 'bg-green-500' },
+    { value: 'related', label: t('graphMap.infiniteExpansion.relationRelated'), color: 'bg-amber-500' },
   ];
 
   const toggleRelationType = (type: GraphRelationType) => {
@@ -68,6 +71,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
       });
     } catch (error) {
       console.error('Failed to start expansion:', error);
+      message.error(t('graphMap.infiniteExpansion.startFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -79,11 +83,19 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
     }
   }, [isRunning, progress]);
 
+  const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
+  useEscapeKey(onClose, isOpen);
+  const titleId = useId();
+
   if (!isOpen) return null;
 
   return (
     <AnimatePresence>
       <motion.div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -98,16 +110,16 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary-500" />
-              AI 无限扩展知识网络
+              {t('graphMap.infiniteExpansion.title')}
             </h2>
             <div className="flex items-center gap-2">
               {onEditPrompt && (
                 <button
                   onClick={onEditPrompt}
                   className="p-1.5 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded transition-colors"
-                  title="编辑提示词"
+                  title={t('graphMap.infiniteExpansion.editPromptTitle')}
                   aria-label={t('common.aria.editPrompt')}
                 >
                   <Settings2 className="w-4 h-4" />
@@ -126,17 +138,17 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
             <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
               <div className="flex items-center gap-2 text-sm text-primary-700 dark:text-primary-300">
                 <Network className="w-4 h-4" />
-                <span className="font-medium">源图谱：</span>
+                <span className="font-medium">{t('graphMap.infiniteExpansion.sourceGraphLabel')}</span>
                 <span>{sourceGraphTitle}</span>
               </div>
               <p className="text-xs text-primary-600 dark:text-primary-400 mt-1">
-                AI 将分析此图谱并自动生成相关的知识图谱
+                {t('graphMap.infiniteExpansion.sourceGraphHint')}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                关系类型
+                {t('graphMap.infiniteExpansion.relationType')}
               </label>
               <div className="flex gap-2">
                 {relationTypeOptions.map(option => (
@@ -163,7 +175,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                扩展深度：{maxDepth} 层
+                {t('graphMap.infiniteExpansion.depthLabel', { depth: maxDepth })}
               </label>
               <input
                 type="range"
@@ -175,8 +187,8 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                 className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
               />
               <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                <span>1 层</span>
-                <span>5 层</span>
+                <span>{t('graphMap.infiniteExpansion.depthMin')}</span>
+                <span>{t('graphMap.infiniteExpansion.depthMax')}</span>
               </div>
             </div>
 
@@ -185,7 +197,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
               className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             >
               {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              高级选项
+              {t('graphMap.infiniteExpansion.advancedOptions')}
             </button>
 
             {showAdvanced && (
@@ -197,7 +209,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
               >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    每层最大图谱数：{maxGraphsPerLevel}
+                    {t('graphMap.infiniteExpansion.maxGraphsPerLevel', { count: maxGraphsPerLevel })}
                   </label>
                   <input
                     type="range"
@@ -221,14 +233,14 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                   />
                   <label htmlFor="autoGenerateNodes" className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
                     <Sparkles className="w-4 h-4 text-green-500" />
-                    <span>自动生成图谱内的知识点</span>
+                    <span>{t('graphMap.infiniteExpansion.autoGenerateNodes')}</span>
                   </label>
                 </div>
 
                 {autoGenerateNodes && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      知识点深度：{nodeDepth} 层
+                      {t('graphMap.infiniteExpansion.nodeDepthLabel', { depth: nodeDepth })}
                     </label>
                     <input
                       type="range"
@@ -249,26 +261,26 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                 <div className="flex items-center gap-3 mb-3">
                   <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    正在扩展知识网络...
+                    {t('graphMap.infiniteExpansion.expanding')}
                   </span>
                 </div>
-                
+
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                    <span>当前深度</span>
+                    <span>{t('graphMap.infiniteExpansion.currentDepth')}</span>
                     <span>{progress.current_depth} / {maxDepth}</span>
                   </div>
                   <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                    <span>已创建图谱</span>
+                    <span>{t('graphMap.infiniteExpansion.createdGraphs')}</span>
                     <span>{progress.total_graphs_created}</span>
                   </div>
                   <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                    <span>已创建知识点</span>
+                    <span>{t('graphMap.infiniteExpansion.createdNodes')}</span>
                     <span>{progress.total_nodes_created}</span>
                   </div>
                   {progress.current_graph_title && (
                     <div className="text-xs text-gray-500 dark:text-gray-500 truncate">
-                      正在处理：{progress.current_graph_title}
+                      {t('graphMap.infiniteExpansion.processing', { title: progress.current_graph_title })}
                     </div>
                   )}
                 </div>
@@ -276,7 +288,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                 {progress.created_graphs.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                      已创建的图谱
+                      {t('graphMap.infiniteExpansion.createdGraphsList')}
                     </p>
                     <div className="max-h-24 overflow-y-auto space-y-1">
                       {progress.created_graphs.slice(-5).map((g, idx) => (
@@ -286,7 +298,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                             g.relation_type === 'extension' ? 'bg-green-500' : 'bg-amber-500'
                           }`} />
                           <span className="text-gray-700 dark:text-gray-300 truncate">{g.title}</span>
-                          <span className="text-gray-400">({g.node_count ?? 0} 节点)</span>
+                          <span className="text-gray-400">{t('graphMap.infiniteExpansion.nodeCountShort', { count: g.node_count ?? 0 })}</span>
                         </div>
                       ))}
                     </div>
@@ -299,10 +311,10 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-2">
                   <Check className="w-5 h-5" />
-                  <span className="font-medium">扩展完成！</span>
+                  <span className="font-medium">{t('graphMap.infiniteExpansion.completed')}</span>
                 </div>
                 <div className="text-sm text-green-600 dark:text-green-400">
-                  共创建 {progress.total_graphs_created} 个图谱，{progress.total_nodes_created} 个知识点
+                  {t('graphMap.infiniteExpansion.completedSummary', { graphs: progress.total_graphs_created, nodes: progress.total_nodes_created })}
                 </div>
               </div>
             )}
@@ -313,7 +325,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
-              {progress?.status === 'completed' ? '关闭' : '取消'}
+              {progress?.status === 'completed' ? t('graphMap.infiniteExpansion.close') : t('graphMap.infiniteExpansion.cancel')}
             </button>
             {progress?.status !== 'completed' && progress?.status !== 'running' && (
               <button
@@ -324,12 +336,12 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    启动中...
+                    {t('graphMap.infiniteExpansion.starting')}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    开始扩展
+                    {t('graphMap.infiniteExpansion.startExpansion')}
                   </>
                 )}
               </button>

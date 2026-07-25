@@ -214,7 +214,7 @@ export const Profile = () => {
           </button>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
             <User className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('profile.accountInfo.title')}</h2>
@@ -224,11 +224,11 @@ export const Profile = () => {
             <div className="text-gray-600 dark:text-gray-400">{t('profile.accountInfo.loading')}</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
+              <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500">
                 <div className="text-gray-500 dark:text-gray-400">{t('profile.accountInfo.nickname')}</div>
                 <div className="mt-1 font-semibold text-gray-900 dark:text-gray-100 break-words">{displayName}</div>
               </div>
-              <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
+              <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500">
                 <div className="text-gray-500 dark:text-gray-400">{t('profile.accountInfo.email')}</div>
                 <div className="mt-1 font-semibold text-gray-900 dark:text-gray-100 break-words">{email}</div>
               </div>
@@ -236,7 +236,7 @@ export const Profile = () => {
           )}
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-6 transition-colors">
             <div className="flex items-center justify-between">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -256,7 +256,7 @@ export const Profile = () => {
         </div>
 
         {/* Data Backup Section */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
             <Database className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('profile.backup.title')}</h2>
@@ -287,7 +287,7 @@ export const Profile = () => {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 dark:hover:border-primary-500 dark:hover:text-primary-400 disabled:opacity-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 dark:hover:border-primary-500 dark:hover:text-primary-400 disabled:opacity-50 transition-colors"
               >
                 <Upload className="w-5 h-5" />
                 <span>{isImporting ? t('profile.backup.importing') : t('profile.backup.importBackup')}</span>
@@ -295,9 +295,10 @@ export const Profile = () => {
             </div>
           </div>
 
-          <div className="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
+          <div className="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500">
             <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('profile.backup.importMode')}</div>
-            <div className="flex gap-4">
+            <fieldset className="flex gap-4">
+              <legend className="sr-only">{t('profile.importMode.legend')}</legend>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
@@ -326,7 +327,7 @@ export const Profile = () => {
                   <span className="text-xs text-gray-500 dark:text-gray-500 ml-1">{t('profile.backup.mergeImportHint')}</span>
                 </span>
               </label>
-            </div>
+            </fieldset>
           </div>
 
           <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50">
@@ -378,7 +379,7 @@ export const Profile = () => {
                 {snapshots.map((snapshot) => (
                   <div
                     key={snapshot.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700"
+                    className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

@@ -2,7 +2,6 @@ export { studyReviewApi } from "./reviewTasks";
 export type {
   ReviewTask,
   CreateReviewTaskData,
-  UpdateReviewTaskData,
   ReviewTaskStats,
   PendingReviewTask,
 } from "./reviewTasks";

@@ -3,21 +3,41 @@ import type {
   TaskSchedule,
   TaskProgressPlan,
   ProgressMode,
+  TaskAnalytics,
+  TaskInsightsResult,
 } from "@shared/types";
 
-export const getTaskAnalytics = async () => {
+export const getTaskAnalytics = async (): Promise<TaskAnalytics> => {
   return {
-    total_tasks: 0,
-    completed_tasks: 0,
-    total_duration: 0,
-    avg_duration: 0,
-    completion_rate: 0,
-    tasks_by_queue: { q0: 0, q1: 0, q2: 0 },
-    tasks_by_status: {},
+    overview: {
+      todayCompleted: 0,
+      weekCompleted: 0,
+      monthCompleted: 0,
+      avgDuration: 0,
+      totalTasks: 0,
+      completionRate: 0,
+    },
+    completionTrend: [],
+    timeDistribution: [],
+    queueStats: [],
+    tagStats: [],
+    priorityStats: [],
+    comparison: {
+      previousPeriod: {
+        completed: 0,
+        completionRate: 0,
+        avgDuration: 0,
+      },
+      change: {
+        completedChange: 0,
+        completionRateChange: 0,
+        avgDurationChange: 0,
+      },
+    },
   };
 };
 
-export const generateInsights = async () => {
+export const generateInsights = async (): Promise<TaskInsightsResult> => {
   return { insights: [] };
 };
 

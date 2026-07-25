@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../hooks';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,13 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const { isDark } = useTheme();
+  const { t } = useTranslation();
+
+  const audioState: 'playing' | 'paused' | 'idle' =
+    !analyserData || analyserData.length === 0 ? 'idle' : 'playing';
+  const ariaLabel = t('common.audioVisualizer.ariaLabel', {
+    state: t(`common.audioVisualizer.state.${audioState}`),
+  });
 
   const defaultColor = useMemo(() => {
     return isDark ? '#60A5FA' : '#3B82F6';
@@ -294,7 +302,10 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
         height={height * 2}
         style={canvasStyle}
         className="relative z-10"
+        role="img"
+        aria-label={ariaLabel}
       />
+      <div className="sr-only">{ariaLabel}</div>
       {type === 'circle' && (
         <div
           className="absolute inset-0 rounded-full pointer-events-none z-0"

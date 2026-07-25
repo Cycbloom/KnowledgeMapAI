@@ -136,7 +136,7 @@ export const EditRegionDialog: React.FC<EditRegionDialogProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("graphEditor.region.regionNamePlaceholder")}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-500 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
             />
           </div>
 
@@ -169,7 +169,7 @@ export const EditRegionDialog: React.FC<EditRegionDialogProps> = ({
                 className={`w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${
                   isCustomColor
                     ? "border-slate-800 dark:border-white scale-110"
-                    : "border-slate-300 dark:border-slate-600 hover:scale-105"
+                    : "border-slate-300 dark:border-slate-500 hover:scale-105"
                 }`}
                 style={{
                   background: isCustomColor
@@ -185,7 +185,7 @@ export const EditRegionDialog: React.FC<EditRegionDialogProps> = ({
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="w-full h-10 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700"
+                className="w-full h-10 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-500"
               />
             )}
           </div>
@@ -218,7 +218,7 @@ export const EditRegionDialog: React.FC<EditRegionDialogProps> = ({
                 <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
                   {t("graphEditor.region.inRegion")}
                 </div>
-                <div className="max-h-40 overflow-y-auto bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2">
+                <div className="max-h-40 overflow-y-auto bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-500 p-2">
                   {regionNodes.length === 0 ? (
                     <div className="text-center py-4 text-slate-400 text-xs">
                       {t("graphEditor.region.noSelectedNodes")}
@@ -250,7 +250,7 @@ export const EditRegionDialog: React.FC<EditRegionDialogProps> = ({
                 <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
                   {t("graphEditor.region.availableNodes")}
                 </div>
-                <div className="max-h-40 overflow-y-auto bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2">
+                <div className="max-h-40 overflow-y-auto bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-500 p-2">
                   {availableNodes.length === 0 ? (
                     <div className="text-center py-4 text-slate-400 text-xs">
                       {t("graphEditor.region.noAvailableNodes")}

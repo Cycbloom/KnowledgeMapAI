@@ -358,7 +358,7 @@ export const SetupWizard = () => {
           {t("setup.createSupabaseAccount")}
         </h2>
       </div>
-      <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 space-y-3">
+      <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 space-y-3">
         <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
           {t("setup.supabaseAccountExplanation")}
         </p>
@@ -388,7 +388,7 @@ export const SetupWizard = () => {
           {t("setup.createSupabaseProject")}
         </h2>
       </div>
-      <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 space-y-4">
+      <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           {t("setup.createProjectInstructions")}
         </p>
@@ -435,7 +435,7 @@ export const SetupWizard = () => {
             value={dbForm.url}
             onChange={(e) => setDbForm((prev) => ({ ...prev, url: e.target.value }))}
             placeholder="https://xxx.supabase.co"
-            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
+            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
           />
         </div>
         <div>
@@ -448,7 +448,7 @@ export const SetupWizard = () => {
               value={dbForm.anonKey}
               onChange={(e) => setDbForm((prev) => ({ ...prev, anonKey: e.target.value }))}
               placeholder="eyJhbGciOi..."
-              className="w-full p-3 pr-16 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
+              className="w-full p-3 pr-16 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
             />
             <button
               type="button"
@@ -469,7 +469,7 @@ export const SetupWizard = () => {
               value={dbForm.serviceRoleKey}
               onChange={(e) => setDbForm((prev) => ({ ...prev, serviceRoleKey: e.target.value }))}
               placeholder="eyJhbGciOi..."
-              className="w-full p-3 pr-16 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
+              className="w-full p-3 pr-16 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
             />
             <button
               type="button"
@@ -497,7 +497,7 @@ export const SetupWizard = () => {
             value={dbForm.databaseUrl}
             onChange={(e) => setDbForm((prev) => ({ ...prev, databaseUrl: e.target.value }))}
             placeholder="postgresql://postgres:...@db.xxx.supabase.co:5432/postgres"
-            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
+            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
           />
         </div>
       </div>
@@ -588,8 +588,8 @@ export const SetupWizard = () => {
       )}
 
       {migrations.length > 0 && (
-        <div className="rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
-          <div className="px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-700">
+        <div className="rounded-xl border border-gray-200 dark:border-slate-500 overflow-hidden">
+          <div className="px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-500">
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {t("setup.migrationProgress")}
             </h3>
@@ -648,7 +648,7 @@ export const SetupWizard = () => {
           <select
             value={aiProvider}
             onChange={(e) => setAiProvider(e.target.value as AIProviderType)}
-            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
           >
             {AI_PROVIDERS.map((p) => (
               <option key={p.value} value={p.value}>
@@ -666,7 +666,7 @@ export const SetupWizard = () => {
             value={aiApiKey}
             onChange={(e) => setAiApiKey(e.target.value)}
             placeholder={t("setup.aiApiKeyPlaceholder")}
-            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
+            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
           />
         </div>
         <div>
@@ -678,7 +678,7 @@ export const SetupWizard = () => {
             value={aiBaseURL}
             onChange={(e) => setAiBaseURL(e.target.value)}
             placeholder="https://api.example.com/v1"
-            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
+            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
           />
         </div>
         <div>
@@ -690,7 +690,7 @@ export const SetupWizard = () => {
             value={aiModel}
             onChange={(e) => setAiModel(e.target.value)}
             placeholder="model-name"
-            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
+            className="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] font-mono"
           />
         </div>
       </div>
@@ -752,7 +752,7 @@ export const SetupWizard = () => {
           {t("setup.completeDescription")}
         </p>
       </div>
-      <div className="rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden max-w-sm mx-auto">
+      <div className="rounded-xl border border-gray-200 dark:border-slate-500 overflow-hidden max-w-sm mx-auto">
         <div className="divide-y divide-gray-100 dark:divide-slate-700">
           <div className="px-4 py-3 flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
@@ -809,12 +809,12 @@ export const SetupWizard = () => {
         <div className="w-full max-w-2xl">
           {renderStepIndicator()}
 
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 md:p-8 transition-colors">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-6 md:p-8 transition-colors">
             <div className="min-h-[400px] flex flex-col">
               <div className="flex-1">{renderStepContent()}</div>
 
               {currentStep !== 7 && (
-                <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100 dark:border-slate-700">
+                <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100 dark:border-slate-500">
                   <button
                     onClick={goPrev}
                     disabled={currentStep === 1}

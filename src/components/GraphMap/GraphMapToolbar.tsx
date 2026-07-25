@@ -190,7 +190,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
             <ChevronDown className="w-3 h-3" />
           </button>
           {showFilterDropdown && (
-            <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-600 z-50 min-w-[140px]">
+            <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-500 z-50 min-w-[140px]">
               {filterOptions.map((option) => (
                 <button
                   key={option.value}
@@ -226,7 +226,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
             <ChevronDown className="w-3 h-3" />
           </button>
           {showFilterDropdown && (
-            <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-600 z-50 min-w-[140px]">
+            <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-500 z-50 min-w-[140px]">
               {filterOptions.map((option) => (
                 <button
                   key={option.value}
@@ -289,7 +289,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
               <MoreHorizontal className="w-5 h-5" />
             </button>
             {showMoreMenu && (
-              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-600 z-50 min-w-[160px]">
+              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-500 z-50 min-w-[160px]">
                 <button
                   onClick={() => {
                     onRefresh();
@@ -313,7 +313,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
                   <Globe className="w-4 h-4" />
                   {t("graphMap.toolbar.domainGenerate")}
                 </button>
-                <div className="px-3 py-2 border-t border-gray-200 dark:border-slate-600">
+                <div className="px-3 py-2 border-t border-gray-200 dark:border-slate-500">
                   <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
                     {t("graphMap.analysis.title")}
                   </div>
@@ -394,7 +394,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
               <Sparkles className="w-5 h-5" />
             </button>
             {showAnalyzeMenu && (
-              <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 min-w-[240px] p-2">
+              <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-500 z-50 min-w-[240px] p-2">
                 {analysisModeOptions.map((option) => (
                   <button
                     key={option.mode}
@@ -487,7 +487,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
             />
           </button>
           {showAnalyzeMenu && (
-            <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 min-w-[260px] p-2">
+            <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-500 z-50 min-w-[260px] p-2">
               {analysisModeOptions.map((option) => (
                 <button
                   key={option.mode}

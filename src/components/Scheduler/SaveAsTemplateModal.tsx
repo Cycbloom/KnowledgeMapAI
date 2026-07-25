@@ -172,7 +172,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
           isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
         }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
             保存为任务模板
           </h3>
@@ -190,10 +190,11 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
         >
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              模板名称 <span className="text-red-500">*</span>
+              模板名称 <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <input
               type="text"
+              aria-required={true}
               value={formData.name}
               onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
               placeholder="模板名称"
@@ -252,7 +253,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                标题模板 <span className="text-red-500">*</span>
+                标题模板 <span aria-hidden="true" className="text-red-500">*</span>
               </label>
               <button
                 type="button"
@@ -264,6 +265,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             </div>
             <input
               type="text"
+              aria-required={true}
               value={formData.titleTemplate}
               onChange={(e) => setFormData((prev) => ({ ...prev, titleTemplate: e.target.value }))}
               placeholder="例如：学习：{{topic}}"
@@ -424,7 +426,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
           </div>
         </form>
 
-        <div className="flex justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-700">
+        <div className="flex justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-500">
           <button
             type="button"
             onClick={onClose}

@@ -406,7 +406,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             <div className="text-red-500 font-bold mb-2">侧边栏组件出错</div>
             <button
               onClick={handleCloseSidebar}
-              className="text-primary-600 hover:underline"
+              className="text-primary-600 underline"
             >
               关闭侧边栏
             </button>

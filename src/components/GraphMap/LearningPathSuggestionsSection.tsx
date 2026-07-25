@@ -119,7 +119,7 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
                           {onGraphClick && path.path[i] ? (
                             <button
                               onClick={() => onGraphClick(path.path[i])}
-                              className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
+                              className="text-xs text-primary-600 dark:text-primary-400 underline flex items-center gap-0.5"
                             >
                               {title}
                               <ExternalLink className="w-2.5 h-2.5" />

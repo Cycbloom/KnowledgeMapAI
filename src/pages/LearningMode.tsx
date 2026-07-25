@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, schedulerApi } from "../services/api";
+import type { BatchGenerateConfig } from "../components/GraphEditor/modals/BatchGenerateDialog";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { message as msgHelper } from "../utils/messageHelper";
 import { asyncConfirm } from "../utils/asyncConfirm";
@@ -439,7 +440,7 @@ export const LearningMode = () => {
 
   const handleBatchAction = async (
     action: string,
-    data?: Record<string, unknown>,
+    data?: BatchGenerateConfig,
   ) => {
     const ids = Array.from(selectedNodeIds);
     if (ids.length === 0) { msgHelper.warning(t("learning.batch.selectNodes")); return; }
@@ -471,7 +472,10 @@ export const LearningMode = () => {
       if (!isOnline) { msgHelper.error(t("learning.cards.offline")); return; }
       setIsGeneratingCards(true);
       try {
-        const result = await api.ai.batchGenerateCards(ids, data);
+        const result = await api.ai.batchGenerateCards(ids, {
+          ...data,
+          pack_template: data.pack_template ?? undefined,
+        });
         if (result.success) {
           msgHelper.success(t("learning.batch.generateSuccess", { count: ids.length }), { duration: 5000, action: { label: t("learning.cards.viewTasks"), onClick: () => navigate("/tasks") } });
           setSelectedNodeIds(new Set());

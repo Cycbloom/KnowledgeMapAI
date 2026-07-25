@@ -19,7 +19,7 @@ export function useCalendarExecutions(filters?: ExecutionFilters) {
     queryKey: ["calendar", "executions", filters] as const,
     queryFn: async (): Promise<ExecutionEvent[]> => {
       const res = await api.scheduler.getExecutions(filters);
-      const executions: TaskExecution[] = res.data ?? [];
+      const executions: TaskExecution[] = res ?? [];
       return executions.map((exec: TaskExecution) => ({
         id: exec.id,
         task_id: exec.task_id,

@@ -112,6 +112,59 @@
     "deleteFailed": "删除关系失败",
     "discoveryFailed": "关系发现失败"
   },
+  "relationDiscovery": {
+    "title": "智能关系发现",
+    "analyzing": "正在分析图谱关系...",
+    "analyzingHint": "这可能需要几秒钟",
+    "startPrompt": "点击下方按钮开始智能分析",
+    "startDesc": "AI将分析您的知识图谱，发现潜在的关联关系、交叉学科知识网络，并提供学习建议",
+    "startAnalysis": "开始智能分析",
+    "graphsAnalyzed": "分析图谱",
+    "relationsFound": "发现关系",
+    "crossDomainClusters": "跨学科群",
+    "discoveredRelations": "发现的关系 ({{count}})",
+    "crossDomainInsights": "跨学科洞察 ({{count}})",
+    "estimatedTime": "预计时间：",
+    "difficulty": "难度：",
+    "difficultyBeginner": "入门",
+    "difficultyIntermediate": "中级",
+    "difficultyAdvanced": "高级",
+    "knowledgeGaps": "知识缺口",
+    "priorityHigh": "高优先",
+    "priorityMedium": "中优先",
+    "priorityLow": "低优先",
+    "suggestion": "建议：",
+    "suggestedActionCreate": "创建新图谱",
+    "suggestedActionMerge": "合并现有图谱",
+    "suggestedActionExpand": "扩展现有图谱",
+    "crossDomainOpportunities": "跨领域学习机会",
+    "isolatedGraphs": "{{count}} 个图谱仍处于孤立状态",
+    "close": "关闭",
+    "reanalyze": "重新分析"
+  },
+  "actionConfirmation": {
+    "title": "待确认操作",
+    "batchConfirm": "全部确认",
+    "batchReject": "全部拒绝",
+    "executeSuccess": "执行成功",
+    "executeFailed": "执行失败",
+    "executing": "执行中...",
+    "confirm": "确认",
+    "reject": "拒绝",
+    "allResolved": "所有操作已处理完毕",
+    "tool": {
+      "createNode": "创建节点",
+      "createEdge": "创建关系",
+      "createGraphRelation": "创建图谱关系",
+      "createStudyCard": "创建学习卡片",
+      "updateNode": "更新节点"
+    },
+    "riskLevel": {
+      "low": "低风险",
+      "medium": "中风险",
+      "high": "高风险"
+    }
+  },
   "graphCreation": {
     "success": "图谱创建成功",
     "failed": "创建图谱失败",
@@ -143,6 +196,37 @@
     "startFailed": "启动扩展失败",
     "depthFailed": "深度拓展失败",
     "nodeExpandFailed": "展开节点失败"
+  },
+  "infiniteExpansion": {
+    "title": "AI 无限扩展知识网络",
+    "editPromptTitle": "编辑提示词",
+    "sourceGraphLabel": "源图谱：",
+    "sourceGraphHint": "AI 将分析此图谱并自动生成相关的知识图谱",
+    "relationType": "关系类型",
+    "relationPrerequisite": "前置知识",
+    "relationExtension": "扩展知识",
+    "relationRelated": "相关知识",
+    "depthLabel": "扩展深度：{{depth}} 层",
+    "depthMin": "1 层",
+    "depthMax": "5 层",
+    "advancedOptions": "高级选项",
+    "maxGraphsPerLevel": "每层最大图谱数：{{count}}",
+    "autoGenerateNodes": "自动生成图谱内的知识点",
+    "nodeDepthLabel": "知识点深度：{{depth}} 层",
+    "expanding": "正在扩展知识网络...",
+    "currentDepth": "当前深度",
+    "createdGraphs": "已创建图谱",
+    "createdNodes": "已创建知识点",
+    "processing": "正在处理：{{title}}",
+    "createdGraphsList": "已创建的图谱",
+    "nodeCountShort": "({{count}} 节点)",
+    "completed": "扩展完成！",
+    "completedSummary": "共创建 {{graphs}} 个图谱，{{nodes}} 个知识点",
+    "close": "关闭",
+    "cancel": "取消",
+    "starting": "启动中...",
+    "startExpansion": "开始扩展",
+    "startFailed": "启动扩展失败"
   },
   "prompt": {
     "fetchFailed": "获取提示词失败",
@@ -178,7 +262,13 @@
     "tryAnother": "换一个",
     "customColor": "自定义:",
     "confirmDelete": "确定删除「{{name}}」？",
-    "hasChildren": "该领域包含 {{count}} 个子领域，将一并删除"
+    "hasChildren": "该领域包含 {{count}} 个子领域，将一并删除",
+    "fetchFailed": "加载域名失败",
+    "createFailed": "创建域名失败",
+    "updateFailed": "更新域名失败",
+    "deleteFailed": "删除域名失败",
+    "reorderFailed": "排序域名失败",
+    "generateColorFailed": "生成颜色失败"
   },
   "agentAnalysis": {
     "title": "Agent 分析",
@@ -193,6 +283,7 @@
     "selected": "已选择 {{count}} 项",
     "applying": "应用中...",
     "applySelected": "应用选中项 ({{count}})",
+    "applyFailed": "应用推荐失败",
     "relationTypes": {
       "prerequisite": "前置依赖",
       "extension": "扩展",
@@ -292,11 +383,95 @@
     "domainOption": "{{name}} ({{count}} 个图谱)",
     "nodeCount": "{{count}} 个节点"
   },
+  "domainGraph": {
+    "loadSourceFailed": "加载源图谱失败",
+    "loadDomainFailed": "加载域名失败"
+  },
+  "createRelation": {
+    "createFailed": "创建关系失败"
+  },
+  "levelLabels": {
+    "root": "根节点",
+    "core": "核心节点",
+    "sub": "次级节点",
+    "normal": "普通节点",
+    "leaf": "叶子节点"
+  },
+  "zoomLevel": {
+    "overview": "概览",
+    "cluster": "集群",
+    "node": "节点",
+    "detail": "详情"
+  },
   "priority": {
     "high": "高优先级",
     "medium": "中优先级",
     "low": "低优先级"
   },
+  "domainFilter": {
+    "title": "领域",
+    "all": "全部",
+    "searchPlaceholder": "搜索领域...",
+    "noMatch": "未找到匹配的领域"
+  },
+  "relationshipLegend": {
+    "title": "关系类型图例",
+    "totalEdges": "共 {{count}} 条边"
+  },
+  "analysisModuleCard": {
+    "editPrompt": "编辑提示词",
+    "analyzing": "分析中...",
+    "completed": "已完成",
+    "error": "出错",
+    "viewResult": "查看结果"
+  },
   "loadError": "加载图谱地图数据失败",
-  "retry": "重试"
+  "retry": "重试",
+  "knowledgeGaps": {
+    "priorityHigh": "高优先",
+    "priorityMedium": "中优先",
+    "priorityLow": "低优先",
+    "actionCreate": "创建新图谱",
+    "actionMerge": "合并现有图谱",
+    "actionExpand": "扩展现有图谱",
+    "knowledgeGapsLabel": "知识缺口",
+    "highPriorityLabel": "高优先级",
+    "noGapsFound": "没有发现知识缺口",
+    "identifiedGaps": "识别的知识缺口",
+    "relatedGraphs": "相关图谱",
+    "suggestion": "建议：",
+    "creating": "创建中",
+    "createGraph": "创建图谱",
+    "recommendationText": "优先处理高优先级的知识缺口，这些缺口可能会影响您的知识体系完整性"
+  },
+  "modularAnalysis": {
+    "title": "模块化分析",
+    "selectedPrefix": "已选择",
+    "selectedSuffix": "个模块",
+    "completedCount": "{{count}} 已完成",
+    "errorCount": "{{count}} 出错",
+    "selectAll": "全选",
+    "analyzing": "正在分析中，请稍候...",
+    "aboutToExecute": "即将执行 {{count}} 个分析模块",
+    "selectAtLeastOne": "请选择至少一个分析模块",
+    "close": "关闭",
+    "analyzingButton": "分析中...",
+    "startAnalysis": "开始分析",
+    "promptLoading": "提示词加载中...",
+    "promptEditTitle": "{{name}} - 提示词编辑",
+    "promptSaveSuccess": "提示词保存成功",
+    "promptSaveFailed": "保存失败: {{message}}"
+  },
+  "a11y": {
+    "draggableNode": "可拖动节点，使用方向键移动"
+  },
+  "branch": {
+    "conflictLegend": "冲突解决方式"
+  },
+  "canvas": {
+    "ariaLabel": "知识图谱视图，{{count}} 个节点，当前焦点：{{focus}}",
+    "emptyFocus": "无焦点节点",
+    "desc": "知识图谱可视化，使用方向键浏览节点",
+    "nodesContainer": "节点容器，共 {{count}} 个节点"
+  }
 }

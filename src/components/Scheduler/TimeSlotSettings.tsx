@@ -41,10 +41,8 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
 
   const fetchTimeSlots = async () => {
     try {
-      const response = await api.scheduler.getTimeSlots();
-      if (response.success) {
-        setTimeSlots(response.data.slots || []);
-      }
+      const slots = await api.scheduler.getTimeSlots();
+      setTimeSlots(slots);
     } catch (error) {
       console.error("Failed to fetch time slots:", error);
     } finally {
@@ -54,21 +52,19 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
 
   const handleAddSlot = async () => {
     try {
-      const response = await api.scheduler.createTimeSlot({
+      const newSlotResult = await api.scheduler.createTimeSlot({
         ...newSlot,
         day_of_week: newSlot.day_of_week ?? undefined,
       });
-      if (response.success) {
-        setTimeSlots([...timeSlots, response.data]);
-        setShowAddForm(false);
-        setNewSlot({
-          day_of_week: null,
-          start_time: "09:00",
-          end_time: "12:00",
-          is_available: true,
-          label: "",
-        });
-      }
+      setTimeSlots([...timeSlots, newSlotResult]);
+      setShowAddForm(false);
+      setNewSlot({
+        day_of_week: null,
+        start_time: "09:00",
+        end_time: "12:00",
+        is_available: true,
+        label: "",
+      });
     } catch (error) {
       console.error("Failed to add time slot:", error);
     }
@@ -76,10 +72,8 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
 
   const handleDeleteSlot = async (id: string) => {
     try {
-      const response = await api.scheduler.deleteTimeSlot(id);
-      if (response.success) {
-        setTimeSlots(timeSlots.filter((slot) => slot.id !== id));
-      }
+      await api.scheduler.deleteTimeSlot(id);
+      setTimeSlots(timeSlots.filter((slot) => slot.id !== id));
     } catch (error) {
       console.error("Failed to delete time slot:", error);
     }
@@ -124,7 +118,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
       </div>
 
       {showAddForm && (
-        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-500">
           <h4 className="font-medium text-slate-900 dark:text-white mb-4">
             添加新时间段
           </h4>
@@ -143,7 +137,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                       : null,
                   })
                 }
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
               >
                 <option value="">每天</option>
                 {DAYS_OF_WEEK.map((day) => (
@@ -164,7 +158,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                   setNewSlot({ ...newSlot, label: e.target.value })
                 }
                 placeholder="如：上午专注时间"
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
               />
             </div>
             <div>
@@ -177,7 +171,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                 onChange={(e) =>
                   setNewSlot({ ...newSlot, start_time: e.target.value })
                 }
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
               />
             </div>
             <div>
@@ -190,7 +184,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                 onChange={(e) =>
                   setNewSlot({ ...newSlot, end_time: e.target.value })
                 }
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
               />
             </div>
           </div>
@@ -224,7 +218,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
               {getSlotsByDay(null).map((slot) => (
                 <div
                   key={slot.id}
-                  className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700"
+                  className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-500"
                 >
                   <Clock className="w-4 h-4 text-slate-400" />
                   <span className="text-sm text-slate-900 dark:text-white">
@@ -254,7 +248,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
           return (
             <div
               key={day.value}
-              className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700"
+              className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-500"
             >
               <div className="flex items-center gap-2 mb-3">
                 <Calendar className="w-4 h-4 text-slate-500" />
@@ -268,7 +262,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                     key={slot.id}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
                       slot.is_available
-                        ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                        ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-500"
                         : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30"
                     }`}
                   >
@@ -299,7 +293,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
         })}
 
         {timeSlots.length === 0 && (
-          <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-500">
             <Info className="w-12 h-12 text-slate-400 mx-auto mb-4" />
             <p className="text-slate-500 dark:text-slate-400">
               还没有设置可用时间段

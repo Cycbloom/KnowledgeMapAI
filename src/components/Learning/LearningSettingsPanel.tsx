@@ -58,7 +58,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
 
   const renderContent = () => (
     <>
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800">
+      <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-500/20">
             <Settings size={18} className="text-primary-600 dark:text-primary-400" />
@@ -149,7 +149,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                     readingMode === mode.id
                       ? `border-primary-500 bg-gradient-to-br ${  mode.color}`
-                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
+                      : "border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
                   }`}
                 >
                   <mode.icon
@@ -261,7 +261,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                     contentWidthMode === mode.id
                       ? `border-primary-500 bg-gradient-to-br ${  mode.color}`
-                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
+                      : "border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
                   }`}
                 >
                   <mode.icon
@@ -291,7 +291,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
               onClick={resetSettings}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-500 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
             >
               <RefreshCcw size={16} />
               <span className="text-sm font-medium">
@@ -300,7 +300,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
             </motion.button>
           </div>
 
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-500">
             <motion.button
               onClick={handleManagePrompts}
               whileHover={{ scale: 1.02 }}
@@ -337,7 +337,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               className="fixed inset-x-0 bottom-0 z-fullscreen-content max-h-[90dvh] flex flex-col"
             >
-              <div className="bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-700 overflow-hidden h-full flex flex-col">
+              <div className="bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-500 overflow-hidden h-full flex flex-col">
                 <div className="flex items-center justify-center py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   <GripHorizontal
                     className="text-gray-400 dark:text-gray-500"
@@ -372,7 +372,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
             className="fixed inset-0 z-fullscreen-content flex items-center justify-center pointer-events-none"
           >
             <div className="w-full max-w-2xl h-[80vh] pointer-events-auto">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden h-full flex flex-col">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-500 overflow-hidden h-full flex flex-col">
                 {renderContent()}
               </div>
             </div>

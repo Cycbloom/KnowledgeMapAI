@@ -160,7 +160,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
         {groups.map((group: ConceptGroup, index: number) => (
           <div
             key={group.id || index}
-            className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600"
+            className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-500"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -213,7 +213,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
           (relation: HierarchyRelation, index: number) => (
             <div
               key={index}
-              className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600"
+              className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-500"
             >
               <div className="flex items-center gap-2 text-sm">
                 <span className="font-medium text-slate-800 dark:text-slate-200">
@@ -295,7 +295,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
         </div>
       </div>
 
-      <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+      <div className="pt-4 border-t border-slate-200 dark:border-slate-500">
         <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
           {t("conceptAggregation.panel.explanation")}
         </h4>
@@ -333,7 +333,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
       }`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+      <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
         <div className="flex items-center gap-2">
           <Sparkles className="text-primary-500" size={20} />
           <h2 id={titleId} className="text-lg font-semibold text-slate-800 dark:text-slate-200">
@@ -352,7 +352,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
       </div>
 
             {/* Toolbar */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
               <Button
                 variant="primary"
                 size="sm"
@@ -407,7 +407,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
             </AnimatePresence>
 
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 dark:border-slate-700">
+            <div className="flex border-b border-slate-200 dark:border-slate-500">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -438,7 +438,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
 
             {/* Footer */}
             {analysisResult?.summary && (
-              <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30">
+              <div className="p-4 border-t border-slate-200 dark:border-slate-500 bg-slate-50 dark:bg-slate-700/30">
                 <div className="grid grid-cols-4 gap-4 text-center">
                   <div>
                     <div className="text-lg font-bold text-slate-800 dark:text-slate-200">

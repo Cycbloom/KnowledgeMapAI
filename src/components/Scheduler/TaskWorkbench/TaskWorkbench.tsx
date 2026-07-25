@@ -57,9 +57,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     setLoading(true);
     try {
       const response = await api.scheduler.getDetail(taskId);
-      if (response.success) {
-        setTask(response.data);
-      }
+      setTask(response);
     } catch (error) {
       console.error("Failed to load task detail:", error);
       messageHelper.error(t('scheduler.taskWorkbench.loadFailed'));
@@ -162,63 +160,63 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "completed":
-        return "已完成";
+        return t('scheduler.taskWorkbench.statusCompleted');
       case "in_progress":
-        return "进行中";
+        return t('scheduler.taskWorkbench.statusInProgress');
       case "paused":
-        return "已暂停";
+        return t('scheduler.taskWorkbench.statusPaused');
       case "cancelled":
-        return "已取消";
+        return t('scheduler.taskWorkbench.statusCancelled');
       default:
-        return "待处理";
+        return t('scheduler.taskWorkbench.statusPending');
     }
   };
 
   const getTaskTypeLabel = (type?: string) => {
     switch (type) {
       case "one_time":
-        return "一次性任务";
+        return t('scheduler.taskWorkbench.typeOneTime');
       case "long_term":
-        return "长期项目";
+        return t('scheduler.taskWorkbench.typeLongTerm');
       case "periodic":
-        return "周期任务";
+        return t('scheduler.taskWorkbench.typePeriodic');
       case "learning":
-        return "学习任务";
+        return t('scheduler.taskWorkbench.typeLearning');
       default:
-        return "普通任务";
+        return t('scheduler.taskWorkbench.typeDefault');
     }
   };
 
   const getPriorityInfo = (priority: number) => {
     if (priority >= 4)
       {return {
-        label: "高优先级",
+        label: t('scheduler.taskWorkbench.priorityHigh'),
         color: "text-red-500",
         bg: "bg-red-100 dark:bg-red-500/20",
       };}
     if (priority >= 2)
       {return {
-        label: "中优先级",
+        label: t('scheduler.taskWorkbench.priorityMedium'),
         color: "text-yellow-500",
         bg: "bg-yellow-100 dark:bg-yellow-500/20",
       };}
     return {
-      label: "低优先级",
+      label: t('scheduler.taskWorkbench.priorityLow'),
       color: "text-green-500",
       bg: "bg-green-100 dark:bg-green-500/20",
     };
   };
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "未设置";
+    if (!dateStr) return t('scheduler.taskWorkbench.dateNotSet');
     return formatDateUtil(dateStr, 'full-datetime');
   };
 
   const tabs: { id: WorkTab; label: string; icon: React.ReactNode }[] = [
-    { id: "notes", label: "笔记", icon: <FileText size={16} /> },
-    { id: "subtasks", label: "子任务", icon: <CheckCircle size={16} /> },
-    { id: "executions", label: "执行记录", icon: <Clock size={16} /> },
-    { id: "progress", label: "进度", icon: <BarChart3 size={16} /> },
+    { id: "notes", label: t('scheduler.taskWorkbench.tabNotes'), icon: <FileText size={16} /> },
+    { id: "subtasks", label: t('scheduler.taskWorkbench.tabSubtasks'), icon: <CheckCircle size={16} /> },
+    { id: "executions", label: t('scheduler.taskWorkbench.tabExecutions'), icon: <Clock size={16} /> },
+    { id: "progress", label: t('scheduler.taskWorkbench.tabProgress'), icon: <BarChart3 size={16} /> },
   ];
 
   if (loading) {
@@ -259,13 +257,13 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       <div className="flex flex-col items-center justify-center h-full">
         <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
         <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-          任务不存在
+          {t('scheduler.taskWorkbench.taskNotFound')}
         </h2>
         <button
           onClick={onBack}
           className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
         >
-          返回
+          {t('scheduler.taskWorkbench.back')}
         </button>
       </div>
     );
@@ -283,7 +281,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
               <button
                 onClick={onBack}
                 className="flex-shrink-0 p-2 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-all"
-                title="返回"
+                title={t('scheduler.taskWorkbench.back')}
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -296,7 +294,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 <button
                   onClick={onEdit}
                   className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                  title="编辑"
+                  title={t('scheduler.taskWorkbench.edit')}
                 >
                   <Edit className="w-4 h-4" />
                 </button>
@@ -304,14 +302,14 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
               <button
                 onClick={() => setShowSaveAsTemplate(true)}
                 className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
-                title="保存为模板"
+                title={t('scheduler.taskWorkbench.saveAsTemplate')}
               >
                 <Bookmark className="w-4 h-4" />
               </button>
               <button
                 onClick={handleDeleteTask}
                 className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                title="删除"
+                title={t('scheduler.taskWorkbench.delete')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -351,7 +349,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           {task.description && (
             <div>
               <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
-                描述
+                {t('scheduler.taskWorkbench.description')}
               </h3>
               <p className="text-sm text-slate-900 dark:text-white whitespace-pre-wrap leading-relaxed">
                 {task.description}
@@ -361,43 +359,43 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
 
           {/* Time info cards */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-500">
               <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1">
                 <Timer className="w-3.5 h-3.5" />
-                <span className="text-xs">预计时长</span>
+                <span className="text-xs">{t('scheduler.taskWorkbench.estimatedDuration')}</span>
               </div>
               <p className="text-base font-semibold text-slate-900 dark:text-white">
-                {formatDurationMinutes(task.estimated_duration, { format: 'zh-spaced', emptyText: '未设置' })}
+                {formatDurationMinutes(task.estimated_duration, { format: 'zh-spaced', emptyText: t('scheduler.taskWorkbench.dateNotSet') })}
               </p>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-500">
               <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1">
                 <Clock className="w-3.5 h-3.5" />
-                <span className="text-xs">实际时长</span>
+                <span className="text-xs">{t('scheduler.taskWorkbench.actualDuration')}</span>
               </div>
               <p className="text-base font-semibold text-slate-900 dark:text-white">
-                {formatDurationMinutes(task.actual_duration, { format: 'zh-spaced', emptyText: '未设置' })}
+                {formatDurationMinutes(task.actual_duration, { format: 'zh-spaced', emptyText: t('scheduler.taskWorkbench.dateNotSet') })}
               </p>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-500">
               <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1">
                 <BarChart3 className="w-3.5 h-3.5" />
-                <span className="text-xs">总时长</span>
+                <span className="text-xs">{t('scheduler.taskWorkbench.totalDuration')}</span>
               </div>
               <p className="text-base font-semibold text-slate-900 dark:text-white">
-                {formatDurationMinutes(task.total_duration, { format: 'zh-spaced', emptyText: '未设置' })}
+                {formatDurationMinutes(task.total_duration, { format: 'zh-spaced', emptyText: t('scheduler.taskWorkbench.dateNotSet') })}
               </p>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-500">
               <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1">
                 <Calendar className="w-3.5 h-3.5" />
-                <span className="text-xs">截止日期</span>
+                <span className="text-xs">{t('scheduler.taskWorkbench.deadline')}</span>
               </div>
               <p className="text-xs font-semibold text-slate-900 dark:text-white">
-                {task.deadline ? formatDate(task.deadline) : "未设置"}
+                {task.deadline ? formatDate(task.deadline) : t('scheduler.taskWorkbench.dateNotSet')}
               </p>
             </div>
           </div>
@@ -407,7 +405,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
             task.progress_percentage !== undefined && (
               <div>
                 <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
-                  进度
+                  {t('scheduler.taskWorkbench.progress')}
                 </h3>
                 <div className="bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
                   <div
@@ -416,7 +414,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                   />
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                  {task.progress_percentage}% 完成
+                  {t('scheduler.taskWorkbench.progressPercent', { percent: task.progress_percentage })}
                 </p>
               </div>
             )}
@@ -425,7 +423,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           {task.tags && task.tags.length > 0 && (
             <div>
               <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
-                标签
+                {t('scheduler.taskWorkbench.tags')}
               </h3>
               <div className="flex flex-wrap gap-1.5">
                 {task.tags.map((tag, index) => (
@@ -447,10 +445,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           <KnowledgePointAssociation taskId={task.id} />
 
           {/* Timestamps */}
-          <div className="text-xs text-slate-400 dark:text-slate-500 space-y-1 pt-3 border-t border-slate-200 dark:border-slate-700">
-            <p>创建: {formatDate(task.created_at)}</p>
-            <p>更新: {formatDate(task.updated_at)}</p>
-            {task.completed_at && <p>完成: {formatDate(task.completed_at)}</p>}
+          <div className="text-xs text-slate-400 dark:text-slate-500 space-y-1 pt-3 border-t border-slate-200 dark:border-slate-500">
+            <p>{t('scheduler.taskWorkbench.createdAt')}: {formatDate(task.created_at)}</p>
+            <p>{t('scheduler.taskWorkbench.updatedAt')}: {formatDate(task.updated_at)}</p>
+            {task.completed_at && <p>{t('scheduler.taskWorkbench.completedAt')}: {formatDate(task.completed_at)}</p>}
           </div>
         </div>
 
@@ -510,7 +508,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
             {task.status === "in_progress" && (
               <span className="flex items-center gap-1.5">
                 <Timer className="w-3.5 h-3.5 animate-pulse" />
-                进行中
+                {t('scheduler.taskWorkbench.inProgressLabel')}
               </span>
             )}
           </div>
@@ -521,7 +519,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-medium hover:from-primary-600 hover:to-primary-700 transition-all shadow-md shadow-primary-500/30 hover:shadow-lg"
               >
                 <Play className="w-4 h-4" />
-                开始任务
+                {t('scheduler.taskWorkbench.startTask')}
               </button>
             )}
             {task.status === "in_progress" && (
@@ -531,14 +529,14 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                   className="flex items-center gap-2 px-5 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors"
                 >
                   <Pause className="w-4 h-4" />
-                  暂停任务
+                  {t('scheduler.taskWorkbench.pauseTask')}
                 </button>
                 <button
                   onClick={handleCompleteTask}
                   className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all shadow-md shadow-green-500/30"
                 >
                   <CheckCircle className="w-4 h-4" />
-                  完成任务
+                  {t('scheduler.taskWorkbench.completeTask')}
                 </button>
               </>
             )}
@@ -548,7 +546,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-medium hover:from-primary-600 hover:to-primary-700 transition-all shadow-md shadow-primary-500/30"
               >
                 <Play className="w-4 h-4" />
-                继续任务
+                {t('scheduler.taskWorkbench.continueTask')}
               </button>
             )}
           </div>

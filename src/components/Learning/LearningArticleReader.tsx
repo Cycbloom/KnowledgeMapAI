@@ -117,7 +117,7 @@ export const LearningArticleReader = ({
     >
       {isGenerating ? (
         <div className="w-full">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-500">
             <div className="flex items-center gap-3">
               <Skeleton className="h-4 w-16" />
               <Skeleton className="h-7 w-64" />
@@ -136,7 +136,7 @@ export const LearningArticleReader = ({
         </div>
       ) : (
         <div className="w-full">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-500">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(`/learning?graph_id=${graphId}`)}

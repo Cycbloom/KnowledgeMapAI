@@ -93,25 +93,23 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     if (task.id) {
       api.scheduler
         .getSubtasks(task.id)
-        .then((res: { data?: TaskSubtask[] }) => {
-          if (res.data) {
-            setSubtasks(res.data);
-            // 如果还没有激活子任务，自动激活第一个 pending/in_progress 的
-            if (!activeSubtaskId && !autoActivated && res.data.length > 0) {
-              const first = res.data.find(
-                (s: TaskSubtask) =>
-                  s.status === "pending" || s.status === "in_progress",
-              );
-              if (first) {
-                setAutoActivated(true);
-                setActiveSubtaskId?.(first.id);
-                useTimerStore.getState().setSubtask(first.id);
-                // 如果是 pending 状态，更新为 in_progress
-                if (first.status === "pending") {
-                  api.scheduler
-                    .updateSubtask(task.id, first.id, { status: "in_progress" })
-                    .catch((err) => { console.error(err); });
-                }
+        .then((subtaskList: TaskSubtask[]) => {
+          setSubtasks(subtaskList);
+          // 如果还没有激活子任务，自动激活第一个 pending/in_progress 的
+          if (!activeSubtaskId && !autoActivated && subtaskList.length > 0) {
+            const first = subtaskList.find(
+              (s: TaskSubtask) =>
+                s.status === "pending" || s.status === "in_progress",
+            );
+            if (first) {
+              setAutoActivated(true);
+              setActiveSubtaskId?.(first.id);
+              useTimerStore.getState().setSubtask(first.id);
+              // 如果是 pending 状态，更新为 in_progress
+              if (first.status === "pending") {
+                api.scheduler
+                  .updateSubtask(task.id, first.id, { status: "in_progress" })
+                  .catch((err) => { console.error(err); });
               }
             }
           }
@@ -199,10 +197,8 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     // 3. 找下一个 pending 子任务
     let nextSubtask: TaskSubtask | null = null;
     try {
-      const response: { data?: TaskSubtask[] } = await api.scheduler.getSubtasks(task.id);
-      if (response.data) {
-        nextSubtask = response.data.find((s) => s.status === "pending") ?? null;
-      }
+      const subtaskList = await api.scheduler.getSubtasks(task.id);
+      nextSubtask = subtaskList.find((s) => s.status === "pending") ?? null;
     } catch (err) {
       console.warn("Failed to fetch subtasks:", err);
     }
@@ -433,7 +429,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
 
         {/* 子任务区域 */}
         {activeSubtaskId && currentActiveSubtask && (
-          <div className="mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-700/60">
+          <div className="mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-500/60">
             {/* 当前活跃子任务 */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -550,7 +546,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
             </button>
 
             {subtasksExpanded && (
-              <div className="mt-2.5 space-y-0.5 max-h-40 overflow-y-auto rounded-lg bg-white/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-700/50 p-1.5">
+              <div className="mt-2.5 space-y-0.5 max-h-40 overflow-y-auto rounded-lg bg-white/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-500/50 p-1.5">
                 {subtasks.map((st) => {
                   const isCurrent = st.id === activeSubtaskId;
                   const isCompleted = st.status === "completed";

@@ -1,4 +1,5 @@
 import {
+  Notification,
   NotificationSettings,
   CreateNotificationData,
 } from "@shared/types";
@@ -9,30 +10,50 @@ export const notificationApi = {
     const query = new URLSearchParams();
     if (params?.limit) query.append("limit", params.limit.toString());
     if (params?.unread_only) query.append("unread_only", "true");
-    return request(`/notifications?${query.toString()}`);
+    return request<{ success: boolean; data: Notification[] }>(
+      `/notifications?${query.toString()}`,
+    );
   },
 
-  getUnreadCount: () => request("/notifications/unread-count"),
+  getUnreadCount: () =>
+    request<{ success: boolean; count: number }>("/notifications/unread-count"),
 
   markAsRead: (notificationId: string) =>
-    request(`/notifications/${notificationId}/read`, { method: "PUT" }),
+    request<{ success: boolean }>(
+      `/notifications/${notificationId}/read`,
+      { method: "PUT" },
+    ),
 
-  markAllAsRead: () => request("/notifications/read-all", { method: "PUT" }),
+  markAllAsRead: () =>
+    request<{ success: boolean }>("/notifications/read-all", { method: "PUT" }),
 
   deleteNotification: (notificationId: string) =>
-    request(`/notifications/${notificationId}`, { method: "DELETE" }),
+    request<{ success: boolean }>(`/notifications/${notificationId}`, {
+      method: "DELETE",
+    }),
 
-  clearAll: () => request("/notifications/clear-all", { method: "DELETE" }),
+  clearAll: () =>
+    request<{ success: boolean }>("/notifications/clear-all", {
+      method: "DELETE",
+    }),
 
   createNotification: (data: CreateNotificationData) =>
-    request("/notifications", { method: "POST", body: JSON.stringify(data) }),
+    request<{ success: boolean; data: Notification }>("/notifications", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   getSettings: (): Promise<{ success: boolean; data: NotificationSettings }> =>
-    request("/notifications/settings"),
+    request<{ success: boolean; data: NotificationSettings }>(
+      "/notifications/settings",
+    ),
 
   updateSettings: (settings: Partial<NotificationSettings>) =>
-    request("/notifications/settings", {
-      method: "PUT",
-      body: JSON.stringify(settings),
-    }),
+    request<{ success: boolean; data: NotificationSettings }>(
+      "/notifications/settings",
+      {
+        method: "PUT",
+        body: JSON.stringify(settings),
+      },
+    ),
 };

@@ -2,6 +2,7 @@ import React, { forwardRef, useImperativeHandle, useRef, useState, useEffect, us
 import { motion } from 'framer-motion';
 import { ChevronRight, CheckCircle, XCircle, Info, Trash2, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { CommandResult } from '@/services/console';
 
 const INITIAL_VISIBLE_COUNT = 20;
@@ -97,15 +98,18 @@ const parseAsciiTable = (text: string): ParsedAsciiTable | null => {
   return { headers, rows: dataRows, isSubRow: isSubRowFlags };
 };
 
-const renderAsciiTableHtml = (table: ParsedAsciiTable, isDark: boolean): React.ReactNode => {
+const renderAsciiTableHtml = (table: ParsedAsciiTable, isDark: boolean, t: TFunction): React.ReactNode => {
   const { headers, rows, isSubRow = [] } = table;
   return (
     <div className={`overflow-x-auto rounded-lg my-2 ${isDark ? 'border-2 border-primary-500/40 shadow-lg shadow-primary-500/10' : 'border-2 border-primary-300 shadow-md'}`}>
-      <table className="min-w-full text-sm">
+      <table
+        className="min-w-full text-sm"
+        aria-label={t('console.output.asciiTableAriaLabel', { defaultValue: '命令输出表格' })}
+      >
         <thead className={isDark ? 'bg-slate-800/90' : 'bg-gray-100'}>
           <tr>
             {headers.map((header, i) => (
-              <th key={i} className={`px-3 py-1.5 text-left font-semibold text-xs uppercase tracking-wide ${isDark ? 'text-primary-300 border-b border-primary-500/30' : 'text-primary-700 border-b border-primary-200'} whitespace-nowrap`}>
+              <th key={i} scope="col" className={`px-3 py-1.5 text-left font-semibold text-xs uppercase tracking-wide ${isDark ? 'text-primary-300 border-b border-primary-500/30' : 'text-primary-700 border-b border-primary-200'} whitespace-nowrap`}>
                 {header}
               </th>
             ))}
@@ -138,7 +142,7 @@ const renderAsciiTableHtml = (table: ParsedAsciiTable, isDark: boolean): React.R
   );
 };
 
-const renderFormattedContent = (content: string, isDark: boolean): React.ReactNode => {
+const renderFormattedContent = (content: string, isDark: boolean, t: TFunction): React.ReactNode => {
   const table = parseAsciiTable(content);
   if (table) {
     const parts = content.split('\n');
@@ -158,7 +162,7 @@ const renderFormattedContent = (content: string, isDark: boolean): React.ReactNo
       } else if (!tableRendered) {
         nonTableLines.push(
           <span key={`table-${  i}`}>
-            {renderAsciiTableHtml(table, isDark)}
+            {renderAsciiTableHtml(table, isDark, t)}
           </span>
         );
         tableRendered = true;
@@ -180,19 +184,23 @@ const renderFormattedContent = (content: string, isDark: boolean): React.ReactNo
   );
 };
 
-const renderTable = (data: Record<string, unknown>[], isDark: boolean): React.ReactNode => {
+const renderTable = (data: Record<string, unknown>[], isDark: boolean, t: TFunction): React.ReactNode => {
   if (!data || data.length === 0) return null;
 
   const headers = Object.keys(data[0]);
 
   return (
     <div className={`overflow-x-auto rounded-lg border ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-      <table className="min-w-full text-sm">
+      <table
+        className="min-w-full text-sm"
+        aria-label={t('console.output.dataTableAriaLabel', { defaultValue: '命令输出数据表' })}
+      >
         <thead className={isDark ? 'bg-slate-800' : 'bg-gray-50'}>
           <tr>
             {headers.map((header) => (
               <th
                 key={header}
+                scope="col"
                 className={`px-3 py-2 text-left font-medium ${
                   isDark ? 'text-slate-300' : 'text-gray-700'
                 }`}
@@ -228,6 +236,7 @@ const OutputItemComponent: React.FC<{
   isDark: boolean;
   index: number;
 }> = ({ item, isDark, index }) => {
+  const { t } = useTranslation();
   if (item.type === 'input') {
     return (
       <motion.div
@@ -259,14 +268,14 @@ const OutputItemComponent: React.FC<{
     }
 
     if (item.content) {
-      return renderFormattedContent(item.content, isDark);
+      return renderFormattedContent(item.content, isDark, t);
     }
 
     if (hasData) {
       const data = result.data;
 
       if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
-        return renderTable(data as Record<string, unknown>[], isDark);
+        return renderTable(data as Record<string, unknown>[], isDark, t);
       }
 
       if (typeof data === 'object' && data !== null) {

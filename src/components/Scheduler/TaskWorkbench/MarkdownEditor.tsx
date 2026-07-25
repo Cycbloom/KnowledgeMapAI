@@ -141,7 +141,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           );
           processedLine = processedLine.replace(
             /\[(.+?)\]\((.+?)\)/g,
-            '<a href="$2" class="text-primary-500 hover:underline" target="_blank">$1</a>',
+            '<a href="$2" class="text-primary-500 underline" target="_blank">$1</a>',
           );
 
           return (
@@ -188,7 +188,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     >
       <div className={`flex flex-col h-full ${containerClass} ${className}`}>
         <div className={`flex flex-col h-full ${isFullscreen ? "p-4" : ""}`}>
-          <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200 dark:border-slate-500">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsEditing(true)}
@@ -247,10 +247,10 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
-                className="w-full h-full p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-400"
+                className="w-full h-full p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-400"
               />
             ) : (
-              <div className="h-full overflow-y-auto p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <div className="h-full overflow-y-auto p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500 rounded-xl">
                 {localValue ? (
                   renderPreview()
                 ) : (

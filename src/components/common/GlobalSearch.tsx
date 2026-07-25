@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -6,6 +6,7 @@ import { Search, LayoutGrid, FileText, Loader2, X, Sparkles, Clock, Filter, Chec
 import { cn } from '@/lib/utils';
 import { api } from '../../services/api';
 import { useTheme } from "../../hooks";
+import { useCombobox } from '../../hooks/useCombobox';
 import { queryKeys, defaultQueryConfig } from '@/hooks/queries/config';
 import { formatDate as formatDateUtil } from '../../utils/formatters';
 
@@ -48,6 +49,11 @@ interface SearchResult {
   nodes: SearchResultNode[];
   answer?: string;
 }
+
+type SearchOption =
+  | { kind: 'history'; item: SearchHistoryItem }
+  | { kind: 'graph'; graph: SearchResultGraph }
+  | { kind: 'node'; node: SearchResultNode };
 
 function useDebounceValue<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -215,6 +221,50 @@ export const GlobalSearch = () => {
     return formatDateUtil(timestamp, 'relative');
   };
 
+  const baseId = useId();
+  const listboxId = `${baseId}-listbox`;
+  const getOptionId = useCallback(
+    (index: number) => `${baseId}-option-${index}`,
+    [baseId],
+  );
+
+  const options = useMemo<SearchOption[]>(() => {
+    if (!query.trim() && searchHistory.length > 0) {
+      return searchHistory.map((item) => ({ kind: 'history' as const, item }));
+    }
+    if (filteredResults) {
+      return [
+        ...filteredResults.graphs.map((graph) => ({ kind: 'graph' as const, graph })),
+        ...filteredResults.nodes.map((node) => ({ kind: 'node' as const, node })),
+      ];
+    }
+    return [];
+  }, [query, searchHistory, filteredResults]);
+
+  const handleOptionSelect = (option: SearchOption) => {
+    if (option.kind === 'history') {
+      handleHistoryClick(option.item);
+    } else if (option.kind === 'graph') {
+      handleSelect(`/graph/${option.graph.id}`);
+    } else {
+      handleSelect(`/graph/${option.node.graph_id}?node_id=${option.node.id}`);
+    }
+  };
+
+  const { activeIndex, activeId, handleKeyDown: handleComboboxKeyDown } = useCombobox<SearchOption>({
+    options,
+    isOpen,
+    setIsOpen,
+    onSelect: handleOptionSelect,
+    getOptionId,
+    getOptionLabel: (option: SearchOption) => {
+      if (option.kind === 'history') return option.item.query;
+      if (option.kind === 'graph') return option.graph.title;
+      return option.node.title;
+    },
+    enabled: true,
+  });
+
   return (
     <div className="relative w-full max-w-md" ref={wrapperRef}>
       <div className="relative">
@@ -222,20 +272,26 @@ export const GlobalSearch = () => {
         <input
           ref={inputRef}
           type="text"
+          role="combobox"
           aria-label={t('common.aria.search')}
           value={query}
           aria-expanded={isOpen}
+          aria-autocomplete="list"
+          aria-controls={listboxId}
+          aria-activedescendant={activeId}
           onChange={(e) => {
             setQuery(e.target.value);
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={(e) => {
+            handleComboboxKeyDown(e.nativeEvent);
+            if (e.nativeEvent.defaultPrevented) return;
             if (e.key === 'Enter') {
               handleSearch();
             }
           }}
-          placeholder={searchType === 'semantic' ? "AI 语义搜索..." : "搜索图谱或节点..."}
+          placeholder={searchType === 'semantic' ? t('common.search.placeholder.semantic') : t('common.search.placeholder.keyword')}
           className={cn(
             "w-full pl-10 pr-24 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent",
             isDark
@@ -252,12 +308,12 @@ export const GlobalSearch = () => {
                 ? 'bg-primary-500 text-white'
                 : isDark ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
             )}
-            title="筛选"
-            aria-label="筛选"
+            title={t('common.search.filterButton')}
+            aria-label={t('common.search.filterButton')}
           >
             <Filter size={14} />
           </button>
-          
+
           <button
             onClick={() => setSearchType(prev => prev === 'keyword' ? 'semantic' : 'keyword')}
             className={cn("p-1 rounded-md transition-colors",
@@ -265,8 +321,8 @@ export const GlobalSearch = () => {
                 ? 'text-primary-500'
                 : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
             )}
-            title={searchType === 'semantic' ? "切换回关键词搜索" : "开启AI语义搜索"}
-            aria-label={searchType === 'semantic' ? "切换回关键词搜索" : "开启AI语义搜索"}
+            title={searchType === 'semantic' ? t('common.search.toggleToKeyword') : t('common.search.toggleToSemantic')}
+            aria-label={searchType === 'semantic' ? t('common.search.toggleToKeyword') : t('common.search.toggleToSemantic')}
           >
             <Sparkles size={14} fill={searchType === 'semantic' ? "currentColor" : "none"} />
           </button>
@@ -294,7 +350,7 @@ export const GlobalSearch = () => {
             <div className={cn("p-3 border-b", isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-gray-50')}>
               <div className="flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-2">
-                  <span className={isDark ? 'text-slate-400' : 'text-gray-500'}>时间:</span>
+                  <span className={isDark ? 'text-slate-400' : 'text-gray-500'}>{t('common.search.filter.timeLabel')}</span>
                   <div className="flex gap-1">
                     {(['all', 'today', 'week', 'month'] as const).map(range => (
                       <button
@@ -306,21 +362,21 @@ export const GlobalSearch = () => {
                             : isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                         )}
                       >
-                        {range === 'all' ? '全部' : range === 'today' ? '今天' : range === 'week' ? '本周' : '本月'}
+                        {t(`common.search.scope.${range}`, { defaultValue: '' })}
                       </button>
                     ))}
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
-                  <span className={isDark ? 'text-slate-400' : 'text-gray-500'}>状态:</span>
+                  <span className={isDark ? 'text-slate-400' : 'text-gray-500'}>{t('common.search.filter.statusLabel')}</span>
                   <div className="flex gap-1">
                     {([
-                      { key: 'all', label: '全部', icon: null },
-                      { key: 'mastered', label: '已掌握', icon: CheckCircle },
-                      { key: 'learning', label: '学习中', icon: null },
-                      { key: 'new', label: '未开始', icon: Lock }
-                    ] as const).map(({ key, label, icon: Icon }) => (
+                      { key: 'all', labelKey: 'common.search.filter.statusAll', icon: null },
+                      { key: 'mastered', labelKey: 'common.search.filter.statusMastered', icon: CheckCircle },
+                      { key: 'learning', labelKey: 'common.search.filter.statusLearning', icon: null },
+                      { key: 'new', labelKey: 'common.search.filter.statusNew', icon: Lock }
+                    ] as const).map(({ key, labelKey, icon: Icon }) => (
                       <button
                         key={key}
                         onClick={() => setFilters(prev => ({ ...prev, status: key }))}
@@ -331,7 +387,7 @@ export const GlobalSearch = () => {
                         )}
                       >
                         {Icon && <Icon size={10} />}
-                        {label}
+                        {t(labelKey, { defaultValue: '' })}
                       </button>
                     ))}
                   </div>
@@ -341,22 +397,25 @@ export const GlobalSearch = () => {
           )}
 
           {!query.trim() && searchHistory.length > 0 ? (
-            <div className="max-h-[60vh] overflow-y-auto">
+            <div className="max-h-[60vh] overflow-y-auto" role="listbox" id={listboxId}>
               <div className={cn("px-4 py-2 flex items-center justify-between", isDark ? 'border-slate-700' : 'border-gray-100')}>
                 <span className={cn("text-xs font-bold uppercase tracking-wider", isDark ? 'text-slate-500' : 'text-gray-400')}>
-                  搜索历史
+                  {t('common.search.history.title')}
                 </span>
                 <button
                   onClick={clearHistory}
                   className={cn("text-xs flex items-center gap-1", isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600')}
                 >
                   <Trash2 size={12} />
-                  清空
+                  {t('common.search.history.clear')}
                 </button>
               </div>
               {searchHistory.map((item, idx) => (
                 <button
                   key={idx}
+                  role="option"
+                  id={getOptionId(idx)}
+                  aria-selected={activeIndex === idx}
                   onClick={() => handleHistoryClick(item)}
                   className={cn("w-full text-left px-4 py-2 flex items-center justify-between gap-3 transition-colors group",
                     isDark ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'
@@ -391,15 +450,15 @@ export const GlobalSearch = () => {
           ) : isLoading ? (
             <div className={cn("p-4 text-center flex items-center justify-center gap-2", isDark ? 'text-slate-400' : 'text-gray-500')}>
               <Loader2 size={16} className="animate-spin" />
-              <span className="text-sm">搜索中...</span>
+              <span className="text-sm">{t('common.search.loading')}</span>
             </div>
           ) : filteredResults ? (
-            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar" aria-live="polite" aria-atomic="true">
+            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar" aria-live="polite" aria-atomic="true" role="listbox" id={listboxId}>
               {filteredResults.answer && (
                 <div className={cn("p-4 border-b", isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-primary-50/50')}>
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles size={14} className="text-primary-500" />
-                    <span className={cn("text-xs font-bold uppercase tracking-wider", isDark ? 'text-primary-400' : 'text-primary-600')}>AI 回答</span>
+                    <span className={cn("text-xs font-bold uppercase tracking-wider", isDark ? 'text-primary-400' : 'text-primary-600')}>{t('common.search.aiAnswer')}</span>
                   </div>
                   <div className={cn("text-sm leading-relaxed", isDark ? 'text-slate-300' : 'text-gray-700')}>
                     {filteredResults.answer}
@@ -410,11 +469,14 @@ export const GlobalSearch = () => {
               {filteredResults.graphs.length > 0 && (
                 <div className="py-2">
                   <div className={cn("px-4 py-1 text-xs font-bold uppercase tracking-wider", isDark ? 'text-slate-500' : 'text-gray-400')}>
-                    图谱 ({filteredResults.graphs.length})
+                    {t('common.search.graphs', { count: filteredResults.graphs.length })}
                   </div>
-                  {filteredResults.graphs.map((g) => (
+                  {filteredResults.graphs.map((g, idx) => (
                     <button
                       key={g.id}
+                      role="option"
+                      id={getOptionId(idx)}
+                      aria-selected={activeIndex === idx}
                       onClick={() => handleSelect(`/graph/${g.id}`)}
                       className={cn("w-full text-left px-4 py-2 flex items-center gap-3 transition-colors group",
                         isDark ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'
@@ -437,11 +499,14 @@ export const GlobalSearch = () => {
               {filteredResults.nodes.length > 0 && (
                 <div className={cn("py-2", filteredResults.graphs.length > 0 ? 'border-t' : '', isDark ? 'border-slate-700' : 'border-gray-100')}>
                   <div className={cn("px-4 py-1 text-xs font-bold uppercase tracking-wider", isDark ? 'text-slate-500' : 'text-gray-400')}>
-                    节点 ({filteredResults.nodes.length})
+                    {t('common.search.nodes', { count: filteredResults.nodes.length })}
                   </div>
-                  {filteredResults.nodes.map((n) => (
+                  {filteredResults.nodes.map((n, idx) => (
                     <button
                       key={n.id}
+                      role="option"
+                      id={getOptionId(filteredResults.graphs.length + idx)}
+                      aria-selected={activeIndex === filteredResults.graphs.length + idx}
                       onClick={() => handleSelect(`/graph/${n.graph_id}?node_id=${n.id}`)}
                       className={cn("w-full text-left px-4 py-2 flex items-center gap-3 transition-colors group",
                         isDark ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'
@@ -460,7 +525,7 @@ export const GlobalSearch = () => {
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className={cn("text-xs", isDark ? 'text-slate-500' : 'text-gray-500')}>
-                            {n.knowledge_graphs?.title || '未知图谱'}
+                            {n.knowledge_graphs?.title || t('common.search.unknownGraph')}
                           </span>
                           {n.tags && n.tags.length > 0 && (
                             <div className="flex gap-1">
@@ -480,19 +545,19 @@ export const GlobalSearch = () => {
 
               {filteredResults.graphs.length === 0 && filteredResults.nodes.length === 0 && (
                 <div className={cn("p-8 text-center text-sm", isDark ? 'text-slate-500' : 'text-gray-500')}>
-                  未找到相关内容
+                  {t('common.search.noResults')}
                 </div>
               )}
             </div>
           ) : query.trim() ? null : (
             <div className={cn("p-8 text-center text-sm", isDark ? 'text-slate-500' : 'text-gray-500')}>
-              输入关键词开始搜索
+              {t('common.search.inputToStart')}
             </div>
           )}
-          
+
           <div className={cn("px-4 py-2 border-t flex items-center justify-between text-xs", isDark ? 'border-slate-700 text-slate-500' : 'border-gray-100 text-gray-400')}>
-            <span>按 Enter 搜索 · Ctrl+/ 快捷键</span>
-            <span>{searchType === 'semantic' ? '语义搜索' : '关键词搜索'}</span>
+            <span>{t('common.search.shortcut')}</span>
+            <span>{searchType === 'semantic' ? t('common.search.semanticMode') : t('common.search.keywordMode')}</span>
           </div>
         </div>
       )}

@@ -105,7 +105,7 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
                   onEditPrompt();
                 }}
                 className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
-                title="编辑提示词"
+                title={t('graphMap.analysisModuleCard.editPrompt')}
                 aria-label={t('common.aria.editPrompt')}
               >
                 <Settings size={16} />
@@ -126,21 +126,21 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
             {isLoading && (
               <div className="flex items-center gap-1 text-xs text-primary-500">
                 <Loader2 className="w-3 h-3 animate-spin" />
-                <span>分析中...</span>
+                <span>{t('graphMap.analysisModuleCard.analyzing')}</span>
               </div>
             )}
 
             {isCompleted && (
               <div className="flex items-center gap-1 text-xs text-green-500">
                 <Check className="w-3 h-3" />
-                <span>已完成</span>
+                <span>{t('graphMap.analysisModuleCard.completed')}</span>
               </div>
             )}
 
             {hasError && (
               <div className="flex items-center gap-1 text-xs text-red-500">
                 <AlertCircle className="w-3 h-3" />
-                <span>出错</span>
+                <span>{t('graphMap.analysisModuleCard.error')}</span>
               </div>
             )}
           </div>
@@ -162,7 +162,7 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
               p-2 rounded-lg transition-colors flex-shrink-0
               ${colors.bg} hover:opacity-80
             `}
-            title="查看结果"
+            title={t('graphMap.analysisModuleCard.viewResult')}
             aria-label={t('common.aria.viewResult')}
           >
             <Eye className={`w-4 h-4 ${colors.icon}`} />

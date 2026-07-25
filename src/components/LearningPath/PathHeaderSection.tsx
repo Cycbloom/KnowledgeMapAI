@@ -116,7 +116,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-700 rounded-lg shadow-lg border dark:border-slate-600 py-1 z-10"
+                    className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-700 rounded-lg shadow-lg border dark:border-slate-500 py-1 z-10"
                   >
                     {pathDetail.graph_id && (
                       <button
@@ -170,7 +170,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                       <Archive className="w-4 h-4" />
                       归档
                     </button>
-                    <hr className="my-1 dark:border-slate-600" />
+                    <hr className="my-1 dark:border-slate-500" />
                     <button
                       onClick={() => {
                         onShowActionsChange(null);

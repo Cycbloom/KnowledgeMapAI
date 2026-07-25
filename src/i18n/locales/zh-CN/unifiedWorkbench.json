@@ -1,6 +1,7 @@
 {
   "title": "统一工作台",
   "subtitle": "任务调度 · 知识管理 · 学习进度",
+  "regionLabel": "工作台主区域",
   "actions": {
     "scheduler": "任务调度器",
     "createNewTask": "新建任务",
@@ -36,6 +37,8 @@
     "totalTasksValue": "总任务: {{count}}",
     "knowledgePointReview": "知识点复习",
     "intervalDays": "间隔: {{count}}天",
+    "stability": "稳定度: {{value}}",
+    "difficulty": "难度",
     "estimatedDuration": "预计时长",
     "taskCount": "{{count}} 个任务",
     "timeSliceMinutes": "{{count}}分钟"

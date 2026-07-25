@@ -96,7 +96,7 @@ export const FocusTimer: React.FC = () => {
       layout
       initial={false}
       className={cn(
-        "fixed z-50 shadow-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden",
+        "fixed z-50 shadow-xl border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 overflow-hidden",
         isExpanded
           ? "rounded-2xl w-72"
           : "rounded-full hover:shadow-2xl transition-shadow"
@@ -146,7 +146,7 @@ export const FocusTimer: React.FC = () => {
             exit={{ opacity: 0 }}
           >
             <div
-              className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-100 dark:border-slate-700 cursor-move"
+              className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-100 dark:border-slate-500 cursor-move"
               onPointerDown={(e) => dragControls.start(e)}
             >
               <div className="flex items-center gap-2 pointer-events-none">
@@ -214,7 +214,7 @@ export const FocusTimer: React.FC = () => {
                           shortBreakDuration: parseInt(e.target.value),
                         })
                       }
-                      className="w-1/2 p-2 rounded border dark:bg-slate-700 dark:border-slate-600 text-sm"
+                      className="w-1/2 p-2 rounded border dark:bg-slate-700 dark:border-slate-500 text-sm"
                       placeholder={t("focusTimer.shortBreakLabel")}
                     />
                     <input
@@ -225,7 +225,7 @@ export const FocusTimer: React.FC = () => {
                           longBreakDuration: parseInt(e.target.value),
                         })
                       }
-                      className="w-1/2 p-2 rounded border dark:bg-slate-700 dark:border-slate-600 text-sm"
+                      className="w-1/2 p-2 rounded border dark:bg-slate-700 dark:border-slate-500 text-sm"
                       placeholder={t("focusTimer.longBreakLabel")}
                     />
                   </div>
@@ -321,7 +321,7 @@ export const FocusTimer: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <button
                     onClick={handleReset}
-                    aria-label="重置"
+                    aria-label={t('common.focusTimer.reset')}
                     className="p-3 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                   >
                     <RotateCcw size={20} />
@@ -329,7 +329,7 @@ export const FocusTimer: React.FC = () => {
 
                   <button
                     onClick={handleStartPause}
-                    aria-label={isRunning ? "暂停" : "开始"}
+                    aria-label={isRunning ? t('common.focusTimer.pause') : t('common.focusTimer.start')}
                     className={cn(
                       "p-4 rounded-full shadow-lg transform transition-transform active:scale-95",
                       isRunning
@@ -346,7 +346,7 @@ export const FocusTimer: React.FC = () => {
 
                   <button
                     onClick={handleSkip}
-                    aria-label="跳过"
+                    aria-label={t('common.focusTimer.skip')}
                     className="p-3 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                   >
                     <SkipForward size={20} />

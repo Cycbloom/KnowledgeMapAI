@@ -31,9 +31,9 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
   const [packTemplate, setPackTemplate] = useState<string | null>(null);
 
   const packPresets: Array<{ id: string; label: string; desc: string; types: string[]; count: number }> = [
-    { id: 'quick', label: '快速自测', desc: '每节点3题 (问答/选择/判断)', types: ['qa', 'choice', 'true_false'], count: 3 },
-    { id: 'standard', label: '标准题目包', desc: '每节点10题 (含多选/填空/解答)', types: ['choice', 'multi_choice', 'fill_in_the_blank', 'essay'], count: 10 },
-    { id: 'exam', label: '考前冲刺', desc: '每节点15题 (偏重复杂题型)', types: ['choice', 'multi_choice', 'essay'], count: 15 },
+    { id: 'quick', label: t('graphEditor.batchGenerate.presets.quick.label'), desc: t('graphEditor.batchGenerate.presets.quick.desc'), types: ['qa', 'choice', 'true_false'], count: 3 },
+    { id: 'standard', label: t('graphEditor.batchGenerate.presets.standard.label'), desc: t('graphEditor.batchGenerate.presets.standard.desc'), types: ['choice', 'multi_choice', 'fill_in_the_blank', 'essay'], count: 10 },
+    { id: 'exam', label: t('graphEditor.batchGenerate.presets.exam.label'), desc: t('graphEditor.batchGenerate.presets.exam.desc'), types: ['choice', 'multi_choice', 'essay'], count: 15 },
   ];
 
   const handleSelectPreset = (preset: { id: string; types: string[]; count: number }) => {
@@ -52,12 +52,21 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
 
   // Poll task status (Removed polling, just close on submission)
   /*
+  interface AiBatchTaskStatus {
+    status: 'completed' | 'failed' | 'processing';
+    error?: string;
+    result?: {
+      totalCards?: number;
+      progress?: number;
+      current_node?: string;
+    };
+  }
   React.useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (taskId) {
         interval = setInterval(async () => {
             try {
-                const res: any = await api.ai.getTaskStatus(taskId);
+                const res: AiBatchTaskStatus = await api.ai.getTaskStatus(taskId);
                 const task = res;
                 
                 if (task.status === 'completed') {
@@ -74,7 +83,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                     setProgress({
                         current: task.result.progress || 0,
                         total: 100,
-                        message: task.result.current_node ? `正在处理: ${task.result.current_node}` : '生成中...'
+                        message: task.result.current_node ? t('graphEditor.batchGenerate.processing', { current_node: task.result.current_node }) : t('graphEditor.batchGenerate.generating')
                     });
                 }
             } catch (e) {
@@ -118,14 +127,14 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
              </button>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            将为 {selectedNodeIds.length} 个节点生成题目，支持上下文感知。
+            {t('graphEditor.batchGenerate.summary', { count: selectedNodeIds.length })}
           </p>
         </div>
         
         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
           {/* Presets / Packs */}
           <div className="space-y-3">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">选择题目包预设</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('graphEditor.batchGenerate.selectPreset')}</label>
             <div className="grid grid-cols-1 gap-3">
               {packPresets.map(preset => (
                 <div 
@@ -134,7 +143,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                   className={`cursor-pointer p-3 rounded-lg border transition-all
                     ${packTemplate === preset.id 
                       ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 dark:border-primary-400' 
-                      : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'}`}
+                      : 'border-slate-200 hover:border-slate-300 dark:border-slate-500'}`}
                 >
                   <div className="flex justify-between items-center mb-1">
                     <span className={`font-semibold text-sm ${packTemplate === preset.id ? 'text-primary-600 dark:text-primary-300' : 'text-slate-700 dark:text-slate-200'}`}>
@@ -150,9 +159,9 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                 className={`cursor-pointer p-3 rounded-lg border transition-all text-center text-xs font-medium
                   ${packTemplate === null 
                     ? 'border-primary-500 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:border-primary-400 dark:text-primary-300' 
-                    : 'border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700'}`}
+                    : 'border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-500'}`}
               >
-                自定义设置
+                {t('graphEditor.batchGenerate.customSettings')}
               </div>
             </div>
           </div>
@@ -161,15 +170,15 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
             <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
               {/* Types */}
               <div className="space-y-3">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">题目类型</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('graphEditor.batchGenerate.questionTypesLabel')}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'qa', label: '问答题' },
-                    { id: 'choice', label: '单选题' },
-                    { id: 'true_false', label: '判断题' },
-                    { id: 'multi_choice', label: '多选题' },
-                    { id: 'fill_in_the_blank', label: '填空题' },
-                    { id: 'essay', label: '解答题' }
+                    { id: 'qa' },
+                    { id: 'choice' },
+                    { id: 'true_false' },
+                    { id: 'multi_choice' },
+                    { id: 'fill_in_the_blank' },
+                    { id: 'essay' }
                   ].map(type => (
                     <div 
                       key={type.id}
@@ -177,9 +186,9 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                       className={`cursor-pointer px-2 py-2 rounded-md border text-xs font-medium transition-all text-center
                         ${types.includes(type.id) 
                           ? 'border-primary-500 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:border-primary-400 dark:text-primary-300' 
-                          : 'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400'}`}
+                          : 'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-500 dark:text-slate-400'}`}
                     >
-                      {type.label}
+                      {t(`graphEditor.batchGenerate.questionTypes.${type.id}`, { defaultValue: '' })}
                     </div>
                   ))}
                 </div>
@@ -188,7 +197,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
               {/* Count */}
               <div className="space-y-3">
                 <div className="flex justify-between">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">每节点生成数量</label>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('graphEditor.batchGenerate.countLabel')}</label>
                     <span className="text-sm text-primary-600 font-medium">{count}</span>
                 </div>
                 <input 
@@ -209,7 +218,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
 
           {/* Info */}
           <div className="bg-primary-50 dark:bg-primary-900/20 p-3 rounded text-xs text-primary-600 dark:text-primary-400">
-             预计生成: <span className="font-bold">{selectedNodeIds.length * count}</span> 道题目
+             {t('graphEditor.batchGenerate.estimatedCountPrefix')}<span className="font-bold">{selectedNodeIds.length * count}</span>{t('graphEditor.batchGenerate.estimatedCountSuffix')}
           </div>
         </div>
 
@@ -219,7 +228,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
             disabled={isLoading}
             className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-md text-sm font-medium transition-colors"
           >
-            取消
+            {t('graphEditor.batchGenerate.buttons.cancel')}
           </button>
           <button
             onClick={handleGenerate}
@@ -227,7 +236,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
             className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px] justify-center"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-            开始生成
+            {t('graphEditor.batchGenerate.buttons.startGenerate')}
           </button>
         </div>
     </ModalShell>

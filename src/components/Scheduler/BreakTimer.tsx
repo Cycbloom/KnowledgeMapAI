@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useTimerStore } from '../../store/useTimerStore';
 import { formatTimeFromSeconds } from '../../utils/formatters';
+import { useReducedMotionOrPreference } from '@/hooks/common/useReducedMotionOrPreference';
 
 interface BreakTimerProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
   const isPaused = useTimerStore(s => s.isPaused);
   const mode = useTimerStore(s => s.mode);
   const progress = useTimerStore(s => s.progress);
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
 
   const [currentSuggestion, setCurrentSuggestion] = useState(0);
   const isRunning = isActive && !isPaused;
@@ -74,19 +76,21 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={transitionOverride}
         className="fixed inset-0 z-modal-upper flex items-center justify-center bg-gradient-to-br from-emerald-900/95 via-teal-900/95 to-primary-900/95 backdrop-blur-sm"
       >
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
+          initial={reduceMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
+          animate={reduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+          exit={reduceMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
+          transition={transitionOverride}
           className="relative w-full max-w-md mx-4"
         >
           <div className="text-center mb-6">
             <motion.div
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1 }}
+              initial={reduceMotion ? { opacity: 0 } : { y: -20, opacity: 0 }}
+              animate={reduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
+              transition={transitionOverride ?? { delay: 0.1 }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/20 border border-emerald-500/30 mb-4"
             >
               <Coffee size={20} className="text-emerald-400" />
@@ -99,7 +103,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
+                transition={transitionOverride ?? { delay: 0.2 }}
                 className="text-emerald-400/80 text-sm"
               >
                 🎉 恭喜完成 {pomodorosCompleted} 个番茄钟！享受你的长休息吧
@@ -148,9 +152,9 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                     strokeDasharray={circumference}
                     strokeDashoffset={strokeDashoffset}
                     filter="url(#breakGlow)"
-                    initial={{ strokeDashoffset: circumference }}
+                    initial={reduceMotion ? false : { strokeDashoffset: circumference }}
                     animate={{ strokeDashoffset }}
-                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                    transition={transitionOverride ?? { duration: 0.5, ease: 'easeOut' }}
                   />
                 </svg>
 
@@ -158,9 +162,9 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                   <motion.div
                     className="text-5xl font-mono font-bold text-white"
                     key={timeLeft}
-                    initial={{ scale: 1.05 }}
+                    initial={reduceMotion ? false : { scale: 1.05 }}
                     animate={{ scale: 1 }}
-                    transition={{ duration: 0.2 }}
+                    transition={transitionOverride ?? { duration: 0.2 }}
                   >
                     {formatTimeFromSeconds(timeLeft)}
                   </motion.div>
@@ -169,7 +173,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                   </div>
                 </div>
 
-                {isRunning && (
+                {isRunning && !reduceMotion && (
                   <motion.div
                     className="absolute inset-0 rounded-full pointer-events-none"
                     animate={{
@@ -190,9 +194,10 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
 
               <motion.div
                 key={currentSuggestion}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+                animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
+                transition={transitionOverride}
                 className="text-center mb-6"
               >
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 text-white/80">
@@ -205,8 +210,8 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 <motion.button
                   onClick={() => useTimerStore.getState().reset()}
                   className="p-3 rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={reduceMotion ? undefined : { scale: 1.05 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.95 }}
                 >
                   <RotateCcw size={20} />
                 </motion.button>
@@ -218,8 +223,8 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                       ? 'bg-amber-500 text-white'
                       : 'bg-emerald-500 text-white'
                   }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={reduceMotion ? undefined : { scale: 1.05 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.95 }}
                 >
                   {isRunning ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
                 </motion.button>
@@ -227,8 +232,8 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 <motion.button
                   onClick={() => useTimerStore.getState().skipToNext()}
                   className="p-3 rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={reduceMotion ? undefined : { scale: 1.05 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.95 }}
                 >
                   <SkipForward size={20} />
                 </motion.button>
@@ -236,14 +241,15 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
             </>
           ) : (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+              transition={transitionOverride}
               className="text-center"
             >
               <motion.div
-                initial={{ scale: 0 }}
+                initial={reduceMotion ? false : { scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: 'spring', delay: 0.1 }}
+                transition={transitionOverride ?? { type: 'spring', delay: 0.1 }}
                 className="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-500/20 flex items-center justify-center"
               >
                 <CheckCircle size={40} className="text-emerald-400" />
@@ -256,8 +262,8 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 <motion.button
                   onClick={onResumeTask}
                   className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 text-white font-medium hover:bg-emerald-600 transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 >
                   <Play size={18} />
                   <span>继续当前任务</span>
@@ -266,8 +272,8 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 <motion.button
                   onClick={onSwitchTask}
                   className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 >
                   <ArrowRight size={18} />
                   <span>切换到下一个任务</span>
@@ -276,8 +282,8 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 <motion.button
                   onClick={onClose}
                   className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-white/60 hover:text-white/80 transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 >
                   <Sparkles size={18} />
                   <span>稍后再说</span>

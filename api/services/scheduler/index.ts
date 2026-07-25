@@ -81,10 +81,9 @@ export type {
 export type {
   ReviewTask,
   CreateReviewTaskData,
-  UpdateReviewTaskData,
   ReviewTaskStats,
   PendingReviewTask,
-} from "./reviewTaskService";
+} from "@shared/types";
 
 export type {
   SyncStudyDurationParams,

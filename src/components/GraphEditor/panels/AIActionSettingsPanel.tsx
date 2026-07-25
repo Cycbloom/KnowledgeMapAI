@@ -43,6 +43,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
       setActions(data);
     } catch (error) {
       console.error(error);
+      message.error(t('graphEditor.aiActionSettings.loadFailed'));
     } finally {
       setLoading(false);
     }

@@ -71,7 +71,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
 }) => {
   const [allAchievements, setAllAchievements] = useState<Achievement[]>([]);
   const [userAchievements, setUserAchievements] = useState<
-    (UserAchievement & { achievement: Achievement })[]
+    UserAchievement[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,12 +88,12 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [achievementsRes, userAchievementsRes] = await Promise.all([
+        const [achievements, userAchievements] = await Promise.all([
           api.scheduler.getAllAchievements(),
           api.scheduler.getUserAchievements(),
         ]);
-        setAllAchievements(achievementsRes.data || []);
-        setUserAchievements(userAchievementsRes.data || []);
+        setAllAchievements(achievements ?? []);
+        setUserAchievements(userAchievements ?? []);
         setError(null);
       } catch (err) {
         console.error("Failed to fetch achievements:", err);
@@ -269,7 +269,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
                 ${
                   categoryFilter === category
                     ? `${info.bg} border-current`
-                    : "bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600"
+                    : "bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-500/50 hover:border-slate-300 dark:hover:border-slate-600"
                 }
               `}
             >
@@ -306,7 +306,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
             placeholder="搜索成就..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full pl-9 pr-4 py-2 rounded-lg bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
@@ -349,7 +349,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ delay: index * 0.03 }}
                 onClick={() => setSelectedAchievement(achievement)}
-                className="flex flex-col items-center p-3 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 cursor-pointer transition-all"
+                className="flex flex-col items-center p-3 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500/50 hover:border-slate-300 dark:hover:border-slate-600 cursor-pointer transition-all"
               >
                 <AchievementBadge
                   achievement={achievement}

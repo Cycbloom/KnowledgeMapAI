@@ -301,7 +301,7 @@ KnowledgeMap Web 端通过 VitePWA + Workbox 提供 PWA 能力，支持离线访
 
 ### 旧队列迁移
 
-`src/utils/backgroundSync.ts` 的 `BackgroundSyncManager` 已标记 `@deprecated`，由 `offlineMutationQueue` 替代。应用启动时调用 `migrateLegacyQueue()` 将旧 `KnowledgeMapDB.offlineQueue` store 中的项迁移到新 `KnowledgeMapMutationQueue.mutationQueue` store。
+应用启动时调用 `migrateLegacyQueue()`（位于 `src/utils/offlineMutations.ts`）将旧 `KnowledgeMapDB.offlineQueue` store 中的项迁移到新 `KnowledgeMapMutationQueue.mutationQueue` store。这是从已移除的 `BackgroundSyncManager` 迁移到 `offlineMutationQueue` 的兼容逻辑。
 
 ### PWA 安装体验
 

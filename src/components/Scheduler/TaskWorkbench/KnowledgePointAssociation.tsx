@@ -41,10 +41,8 @@ export const KnowledgePointAssociation: React.FC<
 
   const loadAssociations = async () => {
     try {
-      const response = await api.scheduler.getTaskKnowledgePoints(taskId);
-      if (response.success) {
-        setAssociations(response.data || []);
-      }
+      const data = await api.scheduler.getTaskKnowledgePoints(taskId);
+      setAssociations(data ?? []);
     } catch (error) {
       console.error("Failed to load knowledge point associations:", error);
     } finally {
@@ -80,17 +78,15 @@ export const KnowledgePointAssociation: React.FC<
 
   const handleAddAssociation = async (knowledgePointId: string) => {
     try {
-      const response = await api.scheduler.addTaskKnowledgePoint(taskId, {
+      const created = await api.scheduler.addTaskKnowledgePoint(taskId, {
         knowledge_point_id: knowledgePointId,
         is_primary: associations.length === 0,
       });
-      if (response.success) {
-        setAssociations([...associations, response.data]);
-        setIsAdding(false);
-        setSearchQuery("");
-        setSearchResults([]);
-        message.success("知识点已关联");
-      }
+      setAssociations([...associations, created]);
+      setIsAdding(false);
+      setSearchQuery("");
+      setSearchResults([]);
+      message.success("知识点已关联");
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "关联知识点失败";
       message.error(errorMessage);
@@ -99,14 +95,9 @@ export const KnowledgePointAssociation: React.FC<
 
   const handleRemoveAssociation = async (kpId: string) => {
     try {
-      const response = await api.scheduler.removeTaskKnowledgePoint(
-        taskId,
-        kpId,
-      );
-      if (response.success) {
-        setAssociations(associations.filter((a) => a.id !== kpId));
-        message.success("已取消关联");
-      }
+      await api.scheduler.removeTaskKnowledgePoint(taskId, kpId);
+      setAssociations(associations.filter((a) => a.id !== kpId));
+      message.success("已取消关联");
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "取消关联失败";
       message.error(errorMessage);
@@ -115,20 +106,18 @@ export const KnowledgePointAssociation: React.FC<
 
   const handleSetPrimary = async (kpId: string) => {
     try {
-      const response = await api.scheduler.updateTaskKnowledgePoint(
+      await api.scheduler.updateTaskKnowledgePoint(
         taskId,
         kpId,
         { is_primary: true },
       );
-      if (response.success) {
-        setAssociations(
-          associations.map((a) => ({
-            ...a,
-            is_primary: a.id === kpId,
-          })),
-        );
-        message.success("已设为主要知识点");
-      }
+      setAssociations(
+        associations.map((a) => ({
+          ...a,
+          is_primary: a.id === kpId,
+        })),
+      );
+      message.success("已设为主要知识点");
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "设置失败";
       message.error(errorMessage);
@@ -186,7 +175,7 @@ export const KnowledgePointAssociation: React.FC<
       {isExpanded && (
         <>
           {isAdding && (
-            <div className="mb-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="mb-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-500">
               <div className="relative">
                 <Search
                   size={16}
@@ -197,7 +186,7 @@ export const KnowledgePointAssociation: React.FC<
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="搜索知识点..."
-                  className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   autoFocus
                 />
                 {isSearching && (
@@ -208,7 +197,7 @@ export const KnowledgePointAssociation: React.FC<
               </div>
 
               {searchResults.length > 0 && (
-                <div className="mt-2 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg">
+                <div className="mt-2 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-500 rounded-lg">
                   {searchResults.map((kp) => (
                     <button
                       key={kp.id}
@@ -262,7 +251,7 @@ export const KnowledgePointAssociation: React.FC<
                 className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                   association.is_primary
                     ? "bg-primary-50 dark:bg-primary-500/10 border-primary-200 dark:border-primary-500/30"
-                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-500"
                 }`}
               >
                 <BookOpen size={18} className="text-primary-500 flex-shrink-0" />

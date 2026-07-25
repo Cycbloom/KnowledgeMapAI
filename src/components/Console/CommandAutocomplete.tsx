@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useId, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Terminal, Settings, FileText, Hash } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { AutocompleteSuggestion } from '@/services/console';
+import { useCombobox } from '@/hooks/useCombobox';
 
 interface CommandAutocompleteProps {
   suggestions: AutocompleteSuggestion[];
@@ -55,8 +57,30 @@ export const CommandAutocomplete: React.FC<CommandAutocompleteProps> = ({
   onSelect,
   isDark,
 }) => {
+  const { t } = useTranslation();
   const listRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<HTMLButtonElement>(null);
+  const baseId = useId();
+
+  const getOptionId = useCallback(
+    (index: number) => `${baseId}-option-${index}`,
+    [baseId],
+  );
+
+  const { activeId, setActiveIndex, handleKeyDown } = useCombobox<AutocompleteSuggestion>({
+    options: suggestions,
+    isOpen: true,
+    setIsOpen: () => {},
+    onSelect: (suggestion) => onSelect(suggestion),
+    getOptionId,
+    getOptionLabel: (suggestion) => suggestion.value,
+  });
+
+  // 将 hook 内部 activeIndex 与父组件受控的 selectedIndex 保持同步，
+  // 以便 activeId（aria-activedescendant）正确指向当前选项。
+  useEffect(() => {
+    setActiveIndex(selectedIndex);
+  }, [selectedIndex, setActiveIndex]);
 
   useEffect(() => {
     if (selectedRef.current && listRef.current) {
@@ -93,6 +117,16 @@ export const CommandAutocomplete: React.FC<CommandAutocompleteProps> = ({
     >
       <div
         ref={listRef}
+        role="listbox"
+        aria-label={t('console.commandAutocomplete.placeholder')}
+        aria-activedescendant={activeId}
+        onKeyDown={(e) => {
+          // 焦点在选项按钮上时，Enter 由按钮 onClick 处理，避免重复触发 onSelect
+          if (e.key === 'Enter' && e.target !== e.currentTarget) {
+            return;
+          }
+          handleKeyDown(e.nativeEvent);
+        }}
         className="max-h-64 overflow-y-auto custom-scrollbar"
       >
         {suggestions.map((suggestion, index) => {
@@ -103,6 +137,9 @@ export const CommandAutocomplete: React.FC<CommandAutocompleteProps> = ({
           return (
             <button
               key={`${suggestion.value}-${index}`}
+              id={getOptionId(index)}
+              role="option"
+              aria-selected={isSelected}
               ref={isSelected ? selectedRef : null}
               onClick={() => handleClick(suggestion)}
               className={`w-full text-left px-3 py-2 flex items-center gap-3 transition-colors ${

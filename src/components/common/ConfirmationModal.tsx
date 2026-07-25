@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
-import { useFocusTrap } from '../../hooks/common';
+import { useFocusTrap, useEscapeKey } from '../../hooks/common';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +31,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const modalRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(onClose, isOpen);
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState('');
 
@@ -99,7 +100,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     >
       <div
         ref={modalRef}
-        className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 sm:max-h-[90dvh]"
+        className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-500 sm:max-h-[90dvh]"
       >
         <div className="p-4 sm:p-6">
           <div className="flex items-start gap-4">
@@ -146,15 +147,15 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleInputKeyDown}
               placeholder={t('confirmDialog.enterPlaceholder', { text: textToMatch })}
-              className="w-full px-3 py-2 text-sm rounded-lg border outline-none transition-colors bg-gray-50 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:border-red-500 dark:focus:border-red-500"
+              className="w-full px-3 py-2 text-sm rounded-lg border outline-none transition-colors bg-gray-50 dark:bg-slate-700 border-gray-300 dark:border-slate-500 text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:border-red-500 dark:focus:border-red-500"
             />
           </div>
         )}
 
-        <div className="bg-gray-50 dark:bg-slate-900/50 px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end border-t dark:border-slate-700">
+        <div className="bg-gray-50 dark:bg-slate-900/50 px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end border-t dark:border-slate-500">
           <button
             onClick={onClose}
-            className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 rounded-lg sm:rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-200 dark:focus-visible:ring-offset-slate-800 dark:focus-visible:ring-slate-700 min-h-[44px] touch-target font-medium"
+            className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 rounded-lg sm:rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-200 dark:focus-visible:ring-offset-slate-800 dark:focus-visible:ring-slate-700 min-h-[44px] touch-target font-medium"
           >
             {finalCancelText}
           </button>

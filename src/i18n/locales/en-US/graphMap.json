@@ -112,6 +112,59 @@
     "deleteFailed": "Failed to delete relation",
     "discoveryFailed": "Relation discovery failed"
   },
+  "relationDiscovery": {
+    "title": "Intelligent Relation Discovery",
+    "analyzing": "Analyzing graph relations...",
+    "analyzingHint": "This may take a few seconds",
+    "startPrompt": "Click the button below to start intelligent analysis",
+    "startDesc": "AI will analyze your knowledge graphs to discover potential relations, cross-disciplinary knowledge networks, and provide learning suggestions",
+    "startAnalysis": "Start Intelligent Analysis",
+    "graphsAnalyzed": "Graphs Analyzed",
+    "relationsFound": "Relations Found",
+    "crossDomainClusters": "Cross-Domain Clusters",
+    "discoveredRelations": "Discovered Relations ({{count}})",
+    "crossDomainInsights": "Cross-Domain Insights ({{count}})",
+    "estimatedTime": "Estimated Time: ",
+    "difficulty": "Difficulty: ",
+    "difficultyBeginner": "Beginner",
+    "difficultyIntermediate": "Intermediate",
+    "difficultyAdvanced": "Advanced",
+    "knowledgeGaps": "Knowledge Gaps",
+    "priorityHigh": "High Priority",
+    "priorityMedium": "Medium Priority",
+    "priorityLow": "Low Priority",
+    "suggestion": "Suggestion: ",
+    "suggestedActionCreate": "Create New Graph",
+    "suggestedActionMerge": "Merge Existing Graphs",
+    "suggestedActionExpand": "Expand Existing Graphs",
+    "crossDomainOpportunities": "Cross-Domain Learning Opportunities",
+    "isolatedGraphs": "{{count}} graphs are still isolated",
+    "close": "Close",
+    "reanalyze": "Re-analyze"
+  },
+  "actionConfirmation": {
+    "title": "Pending Actions",
+    "batchConfirm": "Confirm All",
+    "batchReject": "Reject All",
+    "executeSuccess": "Execution Successful",
+    "executeFailed": "Execution Failed",
+    "executing": "Executing...",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "allResolved": "All actions have been processed",
+    "tool": {
+      "createNode": "Create Node",
+      "createEdge": "Create Edge",
+      "createGraphRelation": "Create Graph Relation",
+      "createStudyCard": "Create Study Card",
+      "updateNode": "Update Node"
+    },
+    "riskLevel": {
+      "low": "Low Risk",
+      "medium": "Medium Risk",
+      "high": "High Risk"
+    }
+  },
   "graphCreation": {
     "success": "Graph created successfully",
     "failed": "Failed to create graph",
@@ -143,6 +196,37 @@
     "startFailed": "Failed to start expansion",
     "depthFailed": "Depth expansion failed",
     "nodeExpandFailed": "Failed to expand node"
+  },
+  "infiniteExpansion": {
+    "title": "AI Infinite Knowledge Network Expansion",
+    "editPromptTitle": "Edit Prompt",
+    "sourceGraphLabel": "Source Graph: ",
+    "sourceGraphHint": "AI will analyze this graph and automatically generate related knowledge graphs",
+    "relationType": "Relation Type",
+    "relationPrerequisite": "Prerequisite",
+    "relationExtension": "Extension",
+    "relationRelated": "Related",
+    "depthLabel": "Expansion Depth: {{depth}} levels",
+    "depthMin": "1 level",
+    "depthMax": "5 levels",
+    "advancedOptions": "Advanced Options",
+    "maxGraphsPerLevel": "Max Graphs Per Level: {{count}}",
+    "autoGenerateNodes": "Auto-generate knowledge points within graphs",
+    "nodeDepthLabel": "Knowledge Point Depth: {{depth}} levels",
+    "expanding": "Expanding knowledge network...",
+    "currentDepth": "Current Depth",
+    "createdGraphs": "Graphs Created",
+    "createdNodes": "Knowledge Points Created",
+    "processing": "Processing: {{title}}",
+    "createdGraphsList": "Created Graphs",
+    "nodeCountShort": "({{count}} nodes)",
+    "completed": "Expansion Complete!",
+    "completedSummary": "Created {{graphs}} graphs and {{nodes}} knowledge points in total",
+    "close": "Close",
+    "cancel": "Cancel",
+    "starting": "Starting...",
+    "startExpansion": "Start Expansion",
+    "startFailed": "Failed to start expansion"
   },
   "prompt": {
     "fetchFailed": "Failed to fetch prompt",
@@ -178,7 +262,13 @@
     "tryAnother": "Try Another",
     "customColor": "Custom:",
     "confirmDelete": "Delete \"{{name}}\"?",
-    "hasChildren": "This domain contains {{count}} sub-domains that will be deleted together"
+    "hasChildren": "This domain contains {{count}} sub-domains that will be deleted together",
+    "fetchFailed": "Failed to load domains",
+    "createFailed": "Failed to create domain",
+    "updateFailed": "Failed to update domain",
+    "deleteFailed": "Failed to delete domain",
+    "reorderFailed": "Failed to reorder domains",
+    "generateColorFailed": "Failed to generate color"
   },
   "agentAnalysis": {
     "title": "Agent Analysis",
@@ -193,6 +283,7 @@
     "selected": "{{count}} items selected",
     "applying": "Applying...",
     "applySelected": "Apply Selected ({{count}})",
+    "applyFailed": "Failed to apply recommendation",
     "relationTypes": {
       "prerequisite": "Prerequisite",
       "extension": "Extension",
@@ -292,11 +383,95 @@
     "domainOption": "{{name}} ({{count}} graphs)",
     "nodeCount": "{{count}} nodes"
   },
+  "domainGraph": {
+    "loadSourceFailed": "Failed to load source graph",
+    "loadDomainFailed": "Failed to load domain"
+  },
+  "createRelation": {
+    "createFailed": "Failed to create relation"
+  },
+  "levelLabels": {
+    "root": "Root Node",
+    "core": "Core Node",
+    "sub": "Secondary Node",
+    "normal": "Normal Node",
+    "leaf": "Leaf Node"
+  },
+  "zoomLevel": {
+    "overview": "Overview",
+    "cluster": "Cluster",
+    "node": "Node",
+    "detail": "Detail"
+  },
   "priority": {
     "high": "High Priority",
     "medium": "Medium Priority",
     "low": "Low Priority"
   },
+  "domainFilter": {
+    "title": "Domain",
+    "all": "All",
+    "searchPlaceholder": "Search domains...",
+    "noMatch": "No matching domains found"
+  },
+  "relationshipLegend": {
+    "title": "Relation Type Legend",
+    "totalEdges": "{{count}} edges in total"
+  },
+  "analysisModuleCard": {
+    "editPrompt": "Edit Prompt",
+    "analyzing": "Analyzing...",
+    "completed": "Completed",
+    "error": "Error",
+    "viewResult": "View Result"
+  },
   "loadError": "Failed to load graph map data",
-  "retry": "Retry"
+  "retry": "Retry",
+  "knowledgeGaps": {
+    "priorityHigh": "High Priority",
+    "priorityMedium": "Medium Priority",
+    "priorityLow": "Low Priority",
+    "actionCreate": "Create New Graph",
+    "actionMerge": "Merge Existing Graphs",
+    "actionExpand": "Expand Existing Graphs",
+    "knowledgeGapsLabel": "Knowledge Gaps",
+    "highPriorityLabel": "High Priority",
+    "noGapsFound": "No knowledge gaps found",
+    "identifiedGaps": "Identified Knowledge Gaps",
+    "relatedGraphs": "Related Graphs",
+    "suggestion": "Suggestion: ",
+    "creating": "Creating",
+    "createGraph": "Create Graph",
+    "recommendationText": "Prioritize addressing high-priority knowledge gaps, as these may affect the integrity of your knowledge system"
+  },
+  "modularAnalysis": {
+    "title": "Modular Analysis",
+    "selectedPrefix": "Selected",
+    "selectedSuffix": "modules",
+    "completedCount": "{{count}} Completed",
+    "errorCount": "{{count}} Errors",
+    "selectAll": "Select All",
+    "analyzing": "Analyzing, please wait...",
+    "aboutToExecute": "About to execute {{count}} analysis modules",
+    "selectAtLeastOne": "Please select at least one analysis module",
+    "close": "Close",
+    "analyzingButton": "Analyzing...",
+    "startAnalysis": "Start Analysis",
+    "promptLoading": "Loading prompt...",
+    "promptEditTitle": "{{name}} - Prompt Editor",
+    "promptSaveSuccess": "Prompt saved successfully",
+    "promptSaveFailed": "Save failed: {{message}}"
+  },
+  "a11y": {
+    "draggableNode": "Draggable node, use arrow keys to move"
+  },
+  "branch": {
+    "conflictLegend": "Conflict resolution"
+  },
+  "canvas": {
+    "ariaLabel": "Knowledge graph view, {{count}} nodes, focus: {{focus}}",
+    "emptyFocus": "No focused node",
+    "desc": "Knowledge graph visualization, use arrow keys to navigate nodes",
+    "nodesContainer": "Nodes container, {{count}} nodes"
+  }
 }

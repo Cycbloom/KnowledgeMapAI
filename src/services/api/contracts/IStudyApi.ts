@@ -1,4 +1,12 @@
-import type { GetCardsParams, CardGroup, StudyStats } from "@shared/types/api";
+import type {
+  GetCardsParams,
+  CardGroup,
+  StudyStats,
+  FsrsParameters,
+  FsrsOptimizeResult,
+  FsrsResetResult,
+  StudySemanticGroupsResponse,
+} from "@shared/types/api";
 import type { StudyCard } from "@shared/types/common";
 
 export interface IStudyApi {
@@ -12,49 +20,27 @@ export interface IStudyApi {
     },
   ): Promise<StudyCard[]>;
 
-  createCardsBatch(cards: unknown[]): Promise<unknown>;
+  createCardsBatch(cards: unknown[]): Promise<StudyCard[]>;
 
-  update(id: string, data: Partial<StudyCard>): Promise<unknown>;
+  update(id: string, data: Partial<StudyCard>): Promise<StudyCard>;
 
   delete(id: string): Promise<void | { success: boolean }>;
 
   deleteBatch(ids: string[]): Promise<void | { success: boolean }>;
 
-  updateProgress(id: string, quality: number): Promise<unknown>;
+  updateProgress(id: string, quality: number): Promise<StudyCard>;
 
   getCardGroups(knowledgePointId: string): Promise<CardGroup[]>;
 
   getStats(graphId?: string): Promise<StudyStats>;
 
-  getFsrsParameters(): Promise<{
-    source: "default" | "custom" | "optimized";
-    w: number[];
-    request_retention: number;
-    maximum_interval: number;
-    last_optimized_at: string | null;
-  }>;
+  getFsrsParameters(): Promise<FsrsParameters>;
 
-  setFsrsParameters(w: number[]): Promise<unknown>;
+  setFsrsParameters(w: number[]): Promise<FsrsParameters>;
 
-  resetFsrsParameters(): Promise<unknown>;
+  resetFsrsParameters(): Promise<FsrsResetResult>;
 
-  optimizeFsrsParameters(): Promise<{
-    success: boolean;
-    improvement: number;
-    reviewCount: number;
-    message: string;
-  }>;
+  optimizeFsrsParameters(): Promise<FsrsOptimizeResult>;
 
-  getSemanticGroups(graphId?: string): Promise<{
-    groups: Array<{
-      groupId: number;
-      memberKpIds: string[];
-      avgSimilarity: number;
-    }>;
-    interference_pairs: Array<{
-      kpId1: string;
-      kpId2: string;
-      similarity: number;
-    }>;
-  }>;
+  getSemanticGroups(graphId?: string): Promise<StudySemanticGroupsResponse>;
 }

@@ -77,10 +77,13 @@ export const conceptAggregationApi = {
     graphId: string,
     options?: AnalyzeOptions,
   ): Promise<{ jobId: string; status: string; message: string }> =>
-    request(`/graphs/${graphId}/concept-aggregation/analyze`, {
-      method: "POST",
-      body: JSON.stringify(options ?? {}),
-    }),
+    request<{ jobId: string; status: string; message: string }>(
+      `/graphs/${graphId}/concept-aggregation/analyze`,
+      {
+        method: "POST",
+        body: JSON.stringify(options ?? {}),
+      },
+    ),
 
   getResults: (graphId: string, jobId?: string): Promise<AnalysisResult> => {
     const params = jobId ? `?jobId=${jobId}` : "";
@@ -94,7 +97,7 @@ export const conceptAggregationApi = {
     graphId: string,
     groups: MergeGroup[],
   ): Promise<MergeResult> =>
-    request(`/graphs/${graphId}/concept-aggregation/merge`, {
+    request<MergeResult>(`/graphs/${graphId}/concept-aggregation/merge`, {
       method: "POST",
       body: JSON.stringify({ groups }),
     }),
@@ -103,10 +106,13 @@ export const conceptAggregationApi = {
     graphId: string,
     relations: HierarchyRelationInput[],
   ): Promise<ApplyHierarchyResult> =>
-    request(`/graphs/${graphId}/concept-aggregation/hierarchy`, {
-      method: "POST",
-      body: JSON.stringify({ relations }),
-    }),
+    request<ApplyHierarchyResult>(
+      `/graphs/${graphId}/concept-aggregation/hierarchy`,
+      {
+        method: "POST",
+        body: JSON.stringify({ relations }),
+      },
+    ),
 
   updateAliases: (
     knowledgePointId: string,

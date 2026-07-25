@@ -87,13 +87,13 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
             className="overflow-hidden"
           >
             {pathDetail.nodes.length > 0 && (
-              <div className="px-6 py-3 border-b dark:border-slate-700 flex items-center justify-between bg-gray-50 dark:bg-slate-700/30">
+              <div className="px-6 py-3 border-b dark:border-slate-500 flex items-center justify-between bg-gray-50 dark:bg-slate-700/30">
                 <div className="flex items-center gap-3">
                   {isSelectionMode ? (
                     <>
                       <button
                         onClick={onToggleSelectAll}
-                        className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+                        className="text-sm text-primary-600 dark:text-primary-400 underline"
                       >
                         {selectedNodeIds.size === pathDetail.nodes.filter((n) => n.status === "pending" && !n.related_task_id).length
                           ? "取消全选"
@@ -159,7 +159,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.02 }}
-                    className={`border dark:border-slate-700 rounded-lg overflow-hidden ${
+                    className={`border dark:border-slate-500 rounded-lg overflow-hidden ${
                       selectedNode === node.id
                         ? "ring-2 ring-primary-500"
                         : ""
@@ -249,7 +249,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="border-t dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30"
+                          className="border-t dark:border-slate-500 bg-gray-50 dark:bg-slate-700/30"
                         >
                           <div className="p-4 space-y-4">
                             {node.content && (
@@ -319,7 +319,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2 pt-2 border-t dark:border-slate-600">
+                            <div className="flex items-center gap-2 pt-2 border-t dark:border-slate-500">
                               <button
                                 onClick={() =>
                                   onConvertToTask(node)

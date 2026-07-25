@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // R31: Public API contract file. The actual `schedulerApi` export has inferred
 // return types; this contract is only used for compile-time satisfaction check.
 import type {
@@ -9,7 +8,6 @@ import type {
   CreateQueueData,
   UpdateQueueData,
   CreateReviewTaskData,
-  UpdateReviewTaskData,
   SystemTask,
   CreateSystemTaskData,
   ProgressMode,
@@ -18,8 +16,55 @@ import type {
   TransitionSubtaskData,
   FocusSession,
   CreateFocusSessionData,
+  UserFocusStats,
+  DailyFocusStats,
+  WeeklyFocusStats,
+  MonthlyFocusStats,
+  TaskSchedule,
+  TaskProgressPlan,
+  TaskSettings,
   UpdateTaskSettingsData,
+  UserTimeSlot,
+  HeatmapData,
   LearningState,
+  UserTask,
+  UserTaskDetail,
+  TaskExecution,
+  TaskDependency,
+  Queue,
+  QueueData,
+  GenerateTaskDetailsResult,
+  TaskSubtask,
+  TaskLink,
+  TaskKnowledgePoint,
+  UserTaskStats,
+  TaskAnalytics,
+  TaskInsightsResult,
+  Achievement,
+  UserAchievement,
+  AchievementCheckResult,
+  ReviewTask,
+  ReviewTaskStats,
+  PendingReviewTask,
+  SyncStudyDurationData,
+  SyncTaskCompletionData,
+  BatchSyncStudyDurationItem,
+  ProgressSyncResult,
+  TaskProgressSummary,
+  BatchSyncStudyDurationResult,
+  PathNodeTask,
+  CreatePathNodeTaskData,
+  BatchConvertResult,
+  PathTaskWithDetails,
+  ActivityRecord,
+  DailyActivityStats,
+  RecordActivityData,
+  GetActivitiesOptions,
+  AutoGenerateTaskData,
+  AutoTaskResult,
+  LinkedTaskResult,
+  GraphTaskInfo,
+  LearningLoop,
 } from "@shared/types";
 
 // --- Module-local types (not in @shared/types) ---
@@ -31,70 +76,6 @@ export interface ValidTransitionsResult {
   recommended_next: LearningState;
 }
 
-export interface SyncStudyDurationData {
-  taskId: string;
-  duration: number;
-  date?: string;
-}
-
-export interface SyncTaskCompletionData {
-  taskId: string;
-  completed: boolean;
-  completedAt?: string;
-}
-
-export interface BatchSyncStudyDurationItem {
-  taskId: string;
-  duration: number;
-  date?: string;
-}
-
-export interface CreatePathNodeTaskData {
-  path_id: string;
-  node_id: string;
-  title?: string;
-  description?: string;
-  estimated_duration?: number;
-  knowledge_point_id?: string;
-  priority?: number;
-}
-
-export type ActivityEventType = "focus_study" | "review" | "path_progress";
-
-export interface RecordActivityData {
-  activity_type: ActivityEventType;
-  title: string;
-  description?: string;
-  started_at?: string;
-  ended_at?: string;
-  duration?: number;
-  metadata?: Record<string, unknown>;
-  knowledge_point_id?: string;
-  graph_id?: string;
-  task_id?: string;
-}
-
-export interface GetActivitiesOptions {
-  from_date?: string;
-  to_date?: string;
-  activity_type?: ActivityEventType;
-  knowledge_point_id?: string;
-  graph_id?: string;
-  limit?: number;
-  offset?: number;
-}
-
-export interface AutoGenerateTaskData {
-  type: "focus_study" | "review" | "path_progress";
-  knowledge_point_id: string;
-  graph_id?: string;
-  path_node_id?: string;
-  parent_task_id?: string;
-  title?: string;
-  interval_days?: number;
-  estimated_time?: number;
-}
-
 export interface SystemTaskStats {
   total: number;
   pending: number;
@@ -104,160 +85,208 @@ export interface SystemTaskStats {
   cancelled: number;
 }
 
+export interface TaskRecommendationInfo {
+  task: UserTask;
+  score: number;
+  reasons: string[];
+  urgencyLevel: "low" | "medium" | "high" | "critical";
+  suggestedTimeSlot?: {
+    start: string;
+    end: string;
+    label: string;
+    type: "morning" | "afternoon" | "evening" | "night";
+  };
+}
+
+export interface SmartRecommendationResult {
+  recommendedTask: TaskRecommendationInfo | null;
+  alternativeTasks: TaskRecommendationInfo[];
+  reasons: string[];
+  currentContext: {
+    timeSlot: {
+      start: string;
+      end: string;
+      label: string;
+      type: "morning" | "afternoon" | "evening" | "night";
+    };
+    isPeakHour: boolean;
+    efficiencyLevel: "high" | "medium" | "low";
+  };
+}
+
+export interface EfficiencyDataResult {
+  hourlyEfficiency: Record<number, number>;
+  tagEfficiency: Record<string, { avgDuration: number; completionRate: number }>;
+  queueEfficiency: Record<number, { avgDuration: number; completionRate: number }>;
+  peakHours: number[];
+  lowHours: number[];
+}
+
+export interface DynamicPriorityResult {
+  score: number;
+  factors: Array<{ name: string; impact: number; description: string }>;
+}
+
+export interface DependencyCheckResult {
+  canStart: boolean;
+  blockedBy: Array<{ id: string; title: string; status: string }>;
+  softBlockedBy: Array<{ id: string; title: string; status: string }>;
+}
+
 // --- Sub-API interfaces ---
 
 export interface ISchedulerTasksApi {
-  create: (data: CreateUserTaskData) => Promise<any>;
-  list: (filters?: UserTaskFilters) => Promise<any>;
-  get: (id: string) => Promise<any>;
-  getDetail: (id: string) => Promise<any>;
-  update: (id: string, data: UpdateUserTaskData) => Promise<any>;
-  delete: (id: string) => Promise<any>;
-  start: (id: string) => Promise<any>;
-  pause: (id: string) => Promise<any>;
-  complete: (id: string) => Promise<any>;
-  demote: (id: string) => Promise<any>;
-  move: (id: string, targetQueue: number | string) => Promise<any>;
-  reorder: (queueLevel: number, taskIds: string[]) => Promise<any>;
-  generateDetails: (title: string, context?: string) => Promise<any>;
-  updateNotes: (id: string, notes: string) => Promise<any>;
-  getSmartRecommendation: () => Promise<any>;
-  getEfficiencyProfile: (days?: number) => Promise<any>;
-  getDynamicPriority: (id: string) => Promise<any>;
-  checkDependencies: (id: string) => Promise<any>;
-  updateProgress: (id: string, data: { progress_percentage?: number; actual_duration_add?: number }) => Promise<any>;
-  tickExecution: (taskId: string, durationSeconds: number) => Promise<any>;
+  create: (data: CreateUserTaskData) => Promise<UserTask>;
+  list: (filters?: UserTaskFilters) => Promise<UserTask[]>;
+  get: (id: string) => Promise<UserTask>;
+  getDetail: (id: string) => Promise<UserTaskDetail>;
+  update: (id: string, data: UpdateUserTaskData) => Promise<UserTask>;
+  delete: (id: string) => Promise<void>;
+  start: (id: string) => Promise<{ task: UserTask; execution: TaskExecution }>;
+  pause: (id: string) => Promise<{ task: UserTask; duration: number }>;
+  complete: (id: string) => Promise<UserTask>;
+  demote: (id: string) => Promise<UserTask>;
+  move: (id: string, targetQueue: number | string) => Promise<UserTask>;
+  reorder: (queueLevel: number, taskIds: string[]) => Promise<void>;
+  generateDetails: (title: string, context?: string) => Promise<GenerateTaskDetailsResult>;
+  updateNotes: (id: string, notes: string) => Promise<UserTask>;
+  getSmartRecommendation: () => Promise<SmartRecommendationResult>;
+  getEfficiencyProfile: (days?: number) => Promise<EfficiencyDataResult>;
+  getDynamicPriority: (id: string) => Promise<DynamicPriorityResult>;
+  checkDependencies: (id: string) => Promise<DependencyCheckResult>;
+  updateProgress: (id: string, data: { progress_percentage?: number; actual_duration_add?: number }) => Promise<UserTask>;
+  tickExecution: (taskId: string, durationSeconds: number) => Promise<TaskExecution>;
 }
 
 export interface ISchedulerQueuesApi {
-  getQueues: (options?: { includeCompleted?: boolean; includeCancelled?: boolean }) => Promise<any>;
-  createQueue: (data: CreateQueueData) => Promise<any>;
-  updateQueue: (id: string, data: UpdateQueueData) => Promise<any>;
-  deleteQueue: (id: string, targetQueueId?: string) => Promise<any>;
-  reorderQueues: (queueIds: string[]) => Promise<any>;
+  getQueues: (options?: { includeCompleted?: boolean; includeCancelled?: boolean }) => Promise<QueueData>;
+  createQueue: (data: CreateQueueData) => Promise<Queue>;
+  updateQueue: (id: string, data: UpdateQueueData) => Promise<Queue>;
+  deleteQueue: (id: string, targetQueueId?: string) => Promise<void>;
+  reorderQueues: (queueIds: string[]) => Promise<void>;
 }
 
 export interface ISchedulerExecutionsApi {
-  getExecutions: (filters?: ExecutionFilters) => Promise<any>;
-  getTaskExecutions: (taskId: string) => Promise<any>;
+  getExecutions: (filters?: ExecutionFilters) => Promise<TaskExecution[]>;
+  getTaskExecutions: (taskId: string) => Promise<TaskExecution[]>;
 }
 
 export interface ISchedulerDependenciesApi {
-  addTaskDependency: (taskId: string, data: { depends_on_task_id: string; dependency_type?: "strict" | "soft" }) => Promise<any>;
-  removeTaskDependency: (taskId: string, dependencyId: string) => Promise<any>;
-  getTaskDependencies: (taskId: string) => Promise<any>;
-  getTaskDependents: (taskId: string) => Promise<any>;
+  addTaskDependency: (taskId: string, data: { depends_on_task_id: string; dependency_type?: "strict" | "soft" }) => Promise<TaskDependency>;
+  removeTaskDependency: (taskId: string, dependencyId: string) => Promise<void>;
+  getTaskDependencies: (taskId: string) => Promise<TaskDependency[]>;
+  getTaskDependents: (taskId: string) => Promise<TaskDependency[]>;
 }
 
 export interface ISchedulerFocusApi {
-  createFocusSession: (data: CreateFocusSessionData) => Promise<any>;
-  updateFocusSession: (id: string, data: Partial<FocusSession>) => Promise<any>;
-  getFocusSessions: (options?: { from_date?: string; to_date?: string; task_id?: string; is_break?: boolean; limit?: number }) => Promise<any>;
-  getUserFocusStats: () => Promise<any>;
-  getDailyFocusStats: (date?: string) => Promise<any>;
-  getWeeklyFocusStats: (weekStart?: string) => Promise<any>;
-  getMonthlyFocusStats: (year?: number, month?: number) => Promise<any>;
-  getYearlyHeatmap: (year?: number) => Promise<any>;
+  createFocusSession: (data: CreateFocusSessionData) => Promise<FocusSession>;
+  updateFocusSession: (id: string, data: Partial<FocusSession>) => Promise<FocusSession>;
+  getFocusSessions: (options?: { from_date?: string; to_date?: string; task_id?: string; is_break?: boolean; limit?: number }) => Promise<FocusSession[]>;
+  getUserFocusStats: () => Promise<UserFocusStats>;
+  getDailyFocusStats: (date?: string) => Promise<DailyFocusStats>;
+  getWeeklyFocusStats: (weekStart?: string) => Promise<WeeklyFocusStats>;
+  getMonthlyFocusStats: (year?: number, month?: number) => Promise<MonthlyFocusStats>;
+  getYearlyHeatmap: (year?: number) => Promise<HeatmapData[]>;
 }
 
 export interface ISchedulerSchedulesApi {
-  createSchedule: (data: { task_template_id: string; schedule_type: "daily" | "weekly" | "custom" | "smart"; schedule_config?: Record<string, unknown>; is_active?: boolean }) => Promise<any>;
-  updateSchedule: (id: string, data: { schedule_config?: Record<string, unknown>; is_active?: boolean }) => Promise<any>;
-  deleteSchedule: (id: string) => Promise<any>;
-  getSchedules: () => Promise<any>;
-  createProgressPlan: (taskId: string, data: { start_date: string; end_date: string; progress_mode: ProgressMode; custom_allocations?: Array<{ date: string; percentage: number }> }) => Promise<any>;
-  updateProgressPlan: (taskId: string, data: { planId?: string; date?: string; planned_percentage?: number; actual_percentage?: number; status?: "pending" | "completed" | "skipped"; notes?: string }) => Promise<any>;
-  getProgressPlan: (taskId: string) => Promise<any>;
-  updateProgressPlanEntry: (taskId: string, data: { date?: string; percentage: number; notes?: string }) => Promise<any>;
+  createSchedule: (data: { task_template_id: string; schedule_type: "daily" | "weekly" | "custom" | "smart"; schedule_config?: Record<string, unknown>; is_active?: boolean }) => Promise<TaskSchedule>;
+  updateSchedule: (id: string, data: { schedule_config?: Record<string, unknown>; is_active?: boolean }) => Promise<TaskSchedule>;
+  deleteSchedule: (id: string) => Promise<void>;
+  getSchedules: () => Promise<TaskSchedule[]>;
+  createProgressPlan: (taskId: string, data: { start_date: string; end_date: string; progress_mode: ProgressMode; custom_allocations?: Array<{ date: string; percentage: number }> }) => Promise<TaskProgressPlan>;
+  updateProgressPlan: (taskId: string, data: { planId?: string; date?: string; planned_percentage?: number; actual_percentage?: number; status?: "pending" | "completed" | "skipped"; notes?: string }) => Promise<TaskProgressPlan>;
+  getProgressPlan: (taskId: string) => Promise<TaskProgressPlan[]>;
+  updateProgressPlanEntry: (taskId: string, data: { date?: string; percentage: number; notes?: string }) => Promise<TaskProgressPlan>;
 }
 
 export interface ISchedulerSettingsApi {
-  getSettings: () => Promise<any>;
-  updateSettings: (data: UpdateTaskSettingsData) => Promise<any>;
-  getTimeSlots: () => Promise<any>;
-  createTimeSlot: (data: { day_of_week?: number; start_time: string; end_time: string; is_available?: boolean; label?: string }) => Promise<any>;
-  updateTimeSlot: (id: string, data: { start_time?: string; end_time?: string; is_available?: boolean; label?: string }) => Promise<any>;
-  deleteTimeSlot: (id: string) => Promise<any>;
+  getSettings: () => Promise<TaskSettings>;
+  updateSettings: (data: UpdateTaskSettingsData) => Promise<TaskSettings>;
+  getTimeSlots: () => Promise<UserTimeSlot[]>;
+  createTimeSlot: (data: { day_of_week?: number; start_time: string; end_time: string; is_available?: boolean; label?: string }) => Promise<UserTimeSlot>;
+  updateTimeSlot: (id: string, data: { start_time?: string; end_time?: string; is_available?: boolean; label?: string }) => Promise<UserTimeSlot>;
+  deleteTimeSlot: (id: string) => Promise<void>;
 }
 
 export interface ISchedulerSubtasksApi {
-  getSubtasks: (taskId: string) => Promise<any>;
-  createSubtask: (taskId: string, data: CreateSubtaskData) => Promise<any>;
-  updateSubtask: (taskId: string, subtaskId: string, data: UpdateSubtaskData) => Promise<any>;
-  deleteSubtask: (taskId: string, subtaskId: string) => Promise<any>;
-  transitionSubtask: (taskId: string, subtaskId: string, data: TransitionSubtaskData) => Promise<any>;
-  updateMastery: (taskId: string, subtaskId: string, masteryLevel: number) => Promise<any>;
-  getValidTransitions: (taskId: string, subtaskId: string) => Promise<{ success: boolean; data: ValidTransitionsResult }>;
+  getSubtasks: (taskId: string) => Promise<TaskSubtask[]>;
+  createSubtask: (taskId: string, data: CreateSubtaskData) => Promise<TaskSubtask>;
+  updateSubtask: (taskId: string, subtaskId: string, data: UpdateSubtaskData) => Promise<TaskSubtask>;
+  deleteSubtask: (taskId: string, subtaskId: string) => Promise<void>;
+  transitionSubtask: (taskId: string, subtaskId: string, data: TransitionSubtaskData) => Promise<TaskSubtask>;
+  updateMastery: (taskId: string, subtaskId: string, masteryLevel: number) => Promise<TaskSubtask>;
+  getValidTransitions: (taskId: string, subtaskId: string) => Promise<ValidTransitionsResult>;
 }
 
 export interface ISchedulerLinksApi {
-  getLinks: (taskId: string) => Promise<any>;
-  createLink: (taskId: string, data: { link_type?: "web" | "file" | "api"; title?: string; url: string; description?: string; icon?: string; metadata?: Record<string, unknown> }) => Promise<any>;
-  updateLink: (taskId: string, linkId: string, data: { title?: string; description?: string; icon?: string; metadata?: Record<string, unknown> }) => Promise<any>;
-  deleteLink: (taskId: string, linkId: string) => Promise<any>;
+  getLinks: (taskId: string) => Promise<TaskLink[]>;
+  createLink: (taskId: string, data: { link_type?: "web" | "file" | "api"; title?: string; url: string; description?: string; icon?: string; metadata?: Record<string, unknown> }) => Promise<TaskLink>;
+  updateLink: (taskId: string, linkId: string, data: { title?: string; description?: string; icon?: string; metadata?: Record<string, unknown> }) => Promise<TaskLink>;
+  deleteLink: (taskId: string, linkId: string) => Promise<void>;
 }
 
 export interface ISchedulerKnowledgePointsApi {
-  getTaskKnowledgePoints: (taskId: string) => Promise<any>;
-  addTaskKnowledgePoint: (taskId: string, data: { knowledge_point_id: string; relevance_score?: number; is_primary?: boolean; notes?: string }) => Promise<any>;
-  updateTaskKnowledgePoint: (taskId: string, kpId: string, data: { relevance_score?: number; is_primary?: boolean; notes?: string }) => Promise<any>;
-  removeTaskKnowledgePoint: (taskId: string, kpId: string) => Promise<any>;
+  getTaskKnowledgePoints: (taskId: string) => Promise<TaskKnowledgePoint[]>;
+  addTaskKnowledgePoint: (taskId: string, data: { knowledge_point_id: string; relevance_score?: number; is_primary?: boolean; notes?: string }) => Promise<TaskKnowledgePoint>;
+  updateTaskKnowledgePoint: (taskId: string, kpId: string, data: { relevance_score?: number; is_primary?: boolean; notes?: string }) => Promise<TaskKnowledgePoint>;
+  removeTaskKnowledgePoint: (taskId: string, kpId: string) => Promise<void>;
 }
 
 export interface ISchedulerAnalyticsApi {
-  getStats: (period?: "day" | "week" | "month" | "year") => Promise<any>;
-  getHeatmap: (year?: number, month?: number) => Promise<any>;
-  getTaskAnalytics: () => Promise<any>;
-  generateInsights: () => Promise<any>;
+  getStats: (period?: "day" | "week" | "month" | "year") => Promise<UserTaskStats>;
+  getHeatmap: (year?: number, month?: number) => Promise<HeatmapData[]>;
+  getTaskAnalytics: () => Promise<TaskAnalytics>;
+  generateInsights: () => Promise<TaskInsightsResult>;
 }
 
 export interface ISchedulerAchievementsApi {
-  getAllAchievements: () => Promise<any>;
-  getUserAchievements: () => Promise<any>;
-  checkAchievements: () => Promise<any>;
+  getAllAchievements: () => Promise<Achievement[]>;
+  getUserAchievements: () => Promise<UserAchievement[]>;
+  checkAchievements: () => Promise<AchievementCheckResult>;
 }
 
 export interface ISchedulerStudyReviewApi {
-  createFirstReviewTask: (data: CreateReviewTaskData) => Promise<any>;
-  updateReviewTask: (knowledgePointId: string, data: UpdateReviewTaskData) => Promise<any>;
-  getPendingReviewTasks: (limit?: number) => Promise<any>;
-  getReviewTaskStats: () => Promise<any>;
-  getReviewTaskByKnowledgePoint: (knowledgePointId: string) => Promise<any>;
-  deleteReviewTask: (knowledgePointId: string) => Promise<any>;
+  createFirstReviewTask: (data: CreateReviewTaskData) => Promise<ReviewTask>;
+  updateReviewTask: (knowledgePointId: string, data: { quality: number }) => Promise<ReviewTask>;
+  getPendingReviewTasks: (limit?: number) => Promise<PendingReviewTask[]>;
+  getReviewTaskStats: () => Promise<ReviewTaskStats>;
+  getReviewTaskByKnowledgePoint: (knowledgePointId: string) => Promise<ReviewTask | null>;
+  deleteReviewTask: (knowledgePointId: string) => Promise<void>;
 }
 
 export interface ISchedulerProgressSyncApi {
-  syncStudyDuration: (data: SyncStudyDurationData) => Promise<any>;
-  syncTaskCompletion: (data: SyncTaskCompletionData) => Promise<any>;
-  getTaskProgressSummary: (taskId: string) => Promise<any>;
-  batchSyncStudyDuration: (items: BatchSyncStudyDurationItem[]) => Promise<any>;
+  syncStudyDuration: (data: SyncStudyDurationData) => Promise<ProgressSyncResult>;
+  syncTaskCompletion: (data: SyncTaskCompletionData) => Promise<ProgressSyncResult>;
+  getTaskProgressSummary: (taskId: string) => Promise<TaskProgressSummary>;
+  batchSyncStudyDuration: (items: BatchSyncStudyDurationItem[]) => Promise<BatchSyncStudyDurationResult>;
 }
 
 export interface ISchedulerPathTasksApi {
-  convertNodeToTask: (data: CreatePathNodeTaskData) => Promise<any>;
-  batchConvertNodesToTasks: (pathId: string, nodeIds?: string[]) => Promise<any>;
-  getPathTasks: (pathId: string) => Promise<any>;
-  getNodeTask: (nodeId: string) => Promise<any>;
-  deletePathTaskAssociation: (nodeId: string, deleteTask?: boolean) => Promise<any>;
-  deleteAllPathTaskAssociations: (pathId: string, deleteTasks?: boolean) => Promise<any>;
+  convertNodeToTask: (data: CreatePathNodeTaskData) => Promise<PathNodeTask>;
+  batchConvertNodesToTasks: (pathId: string, nodeIds?: string[]) => Promise<BatchConvertResult>;
+  getPathTasks: (pathId: string) => Promise<PathTaskWithDetails[]>;
+  getNodeTask: (nodeId: string) => Promise<PathTaskWithDetails | null>;
+  deletePathTaskAssociation: (nodeId: string, deleteTask?: boolean) => Promise<void>;
+  deleteAllPathTaskAssociations: (pathId: string, deleteTasks?: boolean) => Promise<{ deleted_count: number }>;
 }
 
 export interface ISchedulerActivitiesApi {
-  recordActivity: (data: RecordActivityData) => Promise<any>;
-  getActivities: (options?: GetActivitiesOptions) => Promise<any>;
-  getDailyActivities: (date: string) => Promise<any>;
-  getActivityStats: (startDate: string, endDate: string) => Promise<any>;
-  endActivity: (id: string, endedAt?: string, duration?: number) => Promise<any>;
-  autoGenerateTask: (data: AutoGenerateTaskData) => Promise<any>;
-  linkTask: (knowledgePointId: string, title?: string, graphId?: string) => Promise<any>;
-  linkTaskForGraph: (graphId: string) => Promise<any>;
+  recordActivity: (data: RecordActivityData) => Promise<ActivityRecord>;
+  getActivities: (options?: GetActivitiesOptions) => Promise<ActivityRecord[]>;
+  getDailyActivities: (date: string) => Promise<ActivityRecord[]>;
+  getActivityStats: (startDate: string, endDate: string) => Promise<DailyActivityStats[]>;
+  endActivity: (id: string, endedAt?: string, duration?: number) => Promise<ActivityRecord>;
+  autoGenerateTask: (data: AutoGenerateTaskData) => Promise<AutoTaskResult>;
+  linkTask: (knowledgePointId: string, title?: string, graphId?: string) => Promise<LinkedTaskResult | GraphTaskInfo>;
+  linkTaskForGraph: (graphId: string) => Promise<GraphTaskInfo>;
 }
 
 export interface ISchedulerOrchestratorApi {
-  startLearningLoop: (knowledgePointId?: string, graphId?: string) => Promise<any>;
-  advanceLearningLoop: (loopId: string) => Promise<any>;
-  getActiveLearningLoop: (knowledgePointId?: string) => Promise<any>;
-  startLearningWithTask: (knowledgePointId: string, graphId?: string) => Promise<any>;
+  startLearningLoop: (knowledgePointId?: string, graphId?: string) => Promise<LearningLoop>;
+  advanceLearningLoop: (loopId: string) => Promise<LearningLoop>;
+  getActiveLearningLoop: (knowledgePointId?: string) => Promise<LearningLoop | null>;
+  startLearningWithTask: (knowledgePointId: string, graphId?: string) => Promise<LearningLoop | null>;
 }
 
 export interface ISchedulerSystemTasksApi {

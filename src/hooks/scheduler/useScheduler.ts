@@ -164,7 +164,7 @@ export function useStartUserTaskMutation() {
   const queryClient = useQueryClient();
   return createOptimisticMutation<UserTask, string, UserTask[]>({
     mutationFn: (id: string) =>
-      api.scheduler.start(id) as Promise<UserTask>,
+      api.scheduler.start(id).then(r => r.task),
     queryKey: queryKeys.schedulerTasks(),
     optimisticUpdater: (old: UserTask[] | undefined, id: string) => {
       if (!old) return old;
@@ -180,7 +180,7 @@ export function usePauseUserTaskMutation() {
   const queryClient = useQueryClient();
   return createOptimisticMutation<UserTask, string, UserTask[]>({
     mutationFn: (id: string) =>
-      api.scheduler.pause(id) as Promise<UserTask>,
+      api.scheduler.pause(id).then(r => r.task),
     queryKey: queryKeys.schedulerTasks(),
     optimisticUpdater: (old: UserTask[] | undefined, id: string) => {
       if (!old) return old;

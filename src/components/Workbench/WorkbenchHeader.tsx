@@ -67,7 +67,7 @@ export const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onNavigateScheduler}
-              className="p-2.5 sm:flex sm:items-center sm:gap-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+              className="p-2.5 sm:flex sm:items-center sm:gap-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
             >
               <Zap size={18} />
               <span className="hidden sm:inline">{t("unifiedWorkbench.actions.scheduler")}</span>
@@ -86,7 +86,8 @@ export const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({
             <button
               onClick={onRefetch}
               disabled={isFetchingQueues}
-              className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600 transition-all disabled:opacity-50 min-h-[44px] min-w-[44px]"
+              aria-label={t('common.aria.refresh')}
+              className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600 transition-all disabled:opacity-50 min-h-[44px] min-w-[44px]"
             >
               <RefreshCw
                 size={18}
@@ -97,22 +98,22 @@ export const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-4">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500">
             <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
             <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.status.pending")}</span>
             <span className="text-xs sm:text-sm font-bold text-primary-600 dark:text-primary-400">{taskStats.pending}</span>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500">
             <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
             <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.status.inProgress")}</span>
             <span className="text-xs sm:text-sm font-bold text-primary-600 dark:text-primary-400">{taskStats.inProgress}</span>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500">
             <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
             <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.status.completed")}</span>
             <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">{taskStats.completed}</span>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500">
             <Clock size={14} className="text-slate-400" />
             <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.estimatedDuration")}</span>
             <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">{formatDuration(taskStats.totalEstimated)}</span>

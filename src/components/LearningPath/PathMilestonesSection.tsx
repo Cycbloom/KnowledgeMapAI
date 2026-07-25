@@ -53,7 +53,7 @@ const PathMilestonesSection: React.FC<PathMilestonesSectionProps> = ({
               {milestones.map((milestone) => (
                 <div
                   key={milestone.id}
-                  className={`p-4 rounded-lg border dark:border-slate-700 ${
+                  className={`p-4 rounded-lg border dark:border-slate-500 ${
                     milestone.is_completed
                       ? "bg-green-50 dark:bg-green-900/20"
                       : "bg-gray-50 dark:bg-slate-700/30"

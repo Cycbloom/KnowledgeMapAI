@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useId } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "../services/api/createApiClient";
@@ -200,6 +200,27 @@ export const Login = () => {
   const validatePassword = (value: string): boolean => {
     return value.trim().length > 0;
   };
+
+  // A11y: 生成唯一 id 用于 label/input/error 关联，避免硬编码 id 冲突
+  const patErrorId = useId();
+  const quickEmailInputId = useId();
+  const quickEmailErrorId = useId();
+  const quickPasswordInputId = useId();
+  const quickPasswordErrorId = useId();
+  const quickAuthErrorId = useId();
+  const manualEmailInputId = useId();
+  const manualEmailErrorId = useId();
+  const manualPasswordInputId = useId();
+  const manualPasswordErrorId = useId();
+  const manualAuthErrorId = useId();
+  const projectNameInputId = useId();
+  const dbPasswordInputId = useId();
+  const regionInputId = useId();
+  const supabaseUrlInputId = useId();
+  const databaseUrlInputId = useId();
+  const providerInputId = useId();
+  const baseUrlInputId = useId();
+  const modelInputId = useId();
 
   useEffect(() => {
     loadSavedConfig();
@@ -761,26 +782,42 @@ export const Login = () => {
     onToggle: () => void,
     placeholder: string,
     id: string,
-  ) => (
-    <div className="relative">
-      <input
-        id={id}
-        type={show ? "text" : "password"}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full input-mobile pr-10 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
-      />
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-label={show ? t('common.aria.hidePassword') : t('common.aria.showPassword')}
-        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-      >
-        {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-      </button>
-    </div>
-  );
+    error?: string,
+    errorId?: string,
+  ) => {
+    const hasError = Boolean(error);
+    return (
+      <div className="relative">
+        <input
+          id={id}
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          aria-invalid={hasError ? true : undefined}
+          aria-describedby={hasError && errorId ? errorId : undefined}
+          className="w-full input-mobile pr-10 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={show ? t('common.aria.hidePassword') : t('common.aria.showPassword')}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        </button>
+        {hasError && errorId && (
+          <p
+            id={errorId}
+            role="alert"
+            className="mt-1 text-xs text-red-600 dark:text-red-400"
+          >
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center gap-1 mb-6">
@@ -841,6 +878,7 @@ export const Login = () => {
       <div>
         <label htmlFor="pat" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
           Personal Access Token
+          <span aria-hidden="true" className="text-red-500 ml-0.5">*</span>
         </label>
         {renderPasswordField(
           pat,
@@ -849,15 +887,10 @@ export const Login = () => {
           () => setShowPat(!showPat),
           t("quickSetup.patPlaceholder"),
           "pat",
+          patError || undefined,
+          patErrorId,
         )}
       </div>
-
-      {patError && (
-        <div className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
-          <X className="w-4 h-4" />
-          {patError}
-        </div>
-      )}
 
       <button
         onClick={handleVerifyPat}
@@ -899,7 +932,7 @@ export const Login = () => {
             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
               selectedOrg === org.id
                 ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
-                : "border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50"
+                : "border-gray-200 dark:border-slate-500 hover:bg-gray-50 dark:hover:bg-slate-700/50"
             }`}
           >
             <input
@@ -949,33 +982,40 @@ export const Login = () => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+        <label htmlFor={projectNameInputId} className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
           {t("quickSetup.projectName")}
+          <span aria-hidden="true" className="text-red-500 ml-0.5">*</span>
         </label>
         <input
+          id={projectNameInputId}
           type="text"
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
-          className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+          required
+          className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+        <label htmlFor={dbPasswordInputId} className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
           {t("quickSetup.dbPassword")}
+          <span aria-hidden="true" className="text-red-500 ml-0.5">*</span>
         </label>
         <div className="flex gap-2">
           <div className="flex-1 relative">
             <input
+              id={dbPasswordInputId}
               type={showDbPassword ? "text" : "password"}
               value={dbPassword}
               onChange={(e) => setDbPassword(e.target.value)}
               placeholder={t("quickSetup.dbPasswordPlaceholder")}
-              className="w-full input-mobile pr-10 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
+              required
+              className="w-full input-mobile pr-10 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
             />
             <button
               type="button"
               onClick={() => setShowDbPassword(!showDbPassword)}
+              aria-label={showDbPassword ? t('common.aria.hidePassword') : t('common.aria.showPassword')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               {showDbPassword ? (
@@ -997,14 +1037,17 @@ export const Login = () => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+        <label htmlFor={regionInputId} className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
           {t("quickSetup.region")}
+          <span aria-hidden="true" className="text-red-500 ml-0.5">*</span>
         </label>
         <div className="relative">
           <select
+            id={regionInputId}
             value={selectedRegion}
             onChange={(e) => setSelectedRegion(e.target.value)}
-            className="w-full select-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none transition-all"
+            required
+            className="w-full select-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none transition-all"
           >
             <option value="">{t("quickSetup.selectRegion")}</option>
             {regions.map((r) => (
@@ -1087,7 +1130,7 @@ export const Login = () => {
 
         {createError && (
           <div className="space-y-3">
-            <div className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
+            <div role="alert" className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
               <X className="w-4 h-4" />
               {createError}
             </div>
@@ -1101,7 +1144,7 @@ export const Login = () => {
               </button>
               <button
                 onClick={() => setDraft((prev) => ({ ...prev, activeTab: "manual" }))}
-                className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+                className="text-sm text-primary-600 dark:text-primary-400 underline"
               >
                 {t("quickSetup.switchToManual")}
               </button>
@@ -1112,7 +1155,19 @@ export const Login = () => {
     );
   };
 
-  const renderQuickStep5 = () => (
+  const renderQuickStep5 = () => {
+    const emailError = touched.email
+      ? !draft.email.trim()
+        ? t("configPage.validation.emailRequired")
+        : !validateEmail(draft.email)
+          ? t("configPage.validation.emailInvalid")
+          : ""
+      : "";
+    const passwordError =
+      touched.password && !validatePassword(password)
+        ? t("configPage.validation.passwordRequired")
+        : "";
+    return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 mb-2">
         <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
@@ -1123,8 +1178,8 @@ export const Login = () => {
         </h3>
       </div>
 
-      <div className="rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
-        <div className="px-3 py-2 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-700">
+      <div className="rounded-lg border border-gray-200 dark:border-slate-500 overflow-hidden">
+        <div className="px-3 py-2 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-500">
           <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
             {t("quickSetup.projectSummary")}
           </span>
@@ -1158,13 +1213,13 @@ export const Login = () => {
       </div>
 
       {showAuthForm && (
-        <div className="pt-3 border-t border-gray-100 dark:border-slate-700">
+        <div className="pt-3 border-t border-gray-100 dark:border-slate-500">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
             {t("configPage.signInRequired")}
           </p>
           <form onSubmit={handleAuthSubmit} className="space-y-3">
             <input
-              id="email"
+              id={quickEmailInputId}
               type="email"
               value={draft.email}
               onChange={(e) =>
@@ -1173,34 +1228,49 @@ export const Login = () => {
               onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
               placeholder={t("configPage.email")}
               aria-label={t("configPage.email")}
-              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+              aria-invalid={emailError ? true : undefined}
+              aria-describedby={emailError ? quickEmailErrorId : undefined}
+              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
-            {touched.email && !draft.email.trim() && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                {t("configPage.validation.emailRequired")}
+            {emailError && (
+              <p
+                id={quickEmailErrorId}
+                role="alert"
+                className="mt-1 text-xs text-red-600 dark:text-red-400"
+              >
+                {emailError}
               </p>
             )}
-            {touched.email &&
-              draft.email.trim() &&
-              !validateEmail(draft.email) && (
-                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                  {t("configPage.validation.emailInvalid")}
-                </p>
-              )}
             <input
+              id={quickPasswordInputId}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
               placeholder={t("configPage.password")}
-              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+              aria-label={t("configPage.password")}
+              aria-invalid={passwordError ? true : undefined}
+              aria-describedby={passwordError ? quickPasswordErrorId : undefined}
+              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
-            {touched.password && !validatePassword(password) && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                {t("configPage.validation.passwordRequired")}
+            {passwordError && (
+              <p
+                id={quickPasswordErrorId}
+                role="alert"
+                className="mt-1 text-xs text-red-600 dark:text-red-400"
+              >
+                {passwordError}
               </p>
             )}
-            {authError && <p className="text-xs text-red-500">{authError}</p>}
+            {authError && (
+              <p
+                id={quickAuthErrorId}
+                role="alert"
+                className="text-xs text-red-500"
+              >
+                {authError}
+              </p>
+            )}
             <button
               type="submit"
               disabled={authenticating}
@@ -1235,10 +1305,11 @@ export const Login = () => {
         </button>
       )}
     </div>
-  );
+    );
+  };
 
   const renderQuickSetup = () => (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-6 transition-colors">
       {renderStepIndicator()}
 
       {draft.step === 1 && renderQuickStep1()}
@@ -1249,8 +1320,20 @@ export const Login = () => {
     </div>
   );
 
-  const renderSupabaseCard = () => (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
+  const renderSupabaseCard = () => {
+    const emailError = touched.email
+      ? !draft.email.trim()
+        ? t("configPage.validation.emailRequired")
+        : !validateEmail(draft.email)
+          ? t("configPage.validation.emailInvalid")
+          : ""
+      : "";
+    const passwordError =
+      touched.password && !validatePassword(password)
+        ? t("configPage.validation.passwordRequired")
+        : "";
+    return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-6 transition-colors">
       <div className="flex items-center gap-3 mb-5">
         <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
           <Database className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -1272,17 +1355,18 @@ export const Login = () => {
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          <label htmlFor={supabaseUrlInputId} className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
             {t("configPage.supabaseUrl")}
           </label>
           <input
+            id={supabaseUrlInputId}
             type="text"
             value={dbForm.url}
             onChange={(e) =>
               setDbForm((prev) => ({ ...prev, url: e.target.value }))
             }
             placeholder="https://xxx.supabase.co"
-            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
+            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
           />
         </div>
 
@@ -1315,17 +1399,18 @@ export const Login = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          <label htmlFor={databaseUrlInputId} className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
             {t("configPage.databaseUrl")}
           </label>
           <input
+            id={databaseUrlInputId}
             type="text"
             value={dbForm.databaseUrl}
             onChange={(e) =>
               setDbForm((prev) => ({ ...prev, databaseUrl: e.target.value }))
             }
             placeholder="postgresql://postgres:...@db.xxx.supabase.co:5432/postgres"
-            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
+            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
           />
           <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
             {t("configPage.databaseUrlHelp")}
@@ -1350,7 +1435,7 @@ export const Login = () => {
         </button>
 
         {dbError && (
-          <div className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
+          <div role="alert" className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
             <X className="w-4 h-4" />
             {dbError}
           </div>
@@ -1395,8 +1480,8 @@ export const Login = () => {
       )}
 
       {migrations.length > 0 && (
-        <div className="mt-4 rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
-          <div className="px-3 py-2 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-700">
+        <div className="mt-4 rounded-lg border border-gray-200 dark:border-slate-500 overflow-hidden">
+          <div className="px-3 py-2 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-500">
             <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
               {t("configPage.migrationProgress")}
             </span>
@@ -1435,12 +1520,13 @@ export const Login = () => {
       )}
 
       {showAuthForm && (
-        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-700">
+        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-500">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
             {t("configPage.signInRequired")}
           </p>
           <form onSubmit={handleAuthSubmit} className="space-y-3">
             <input
+              id={manualEmailInputId}
               type="email"
               value={draft.email}
               onChange={(e) =>
@@ -1448,34 +1534,50 @@ export const Login = () => {
               }
               onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
               placeholder={t("configPage.email")}
-              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+              aria-label={t("configPage.email")}
+              aria-invalid={emailError ? true : undefined}
+              aria-describedby={emailError ? manualEmailErrorId : undefined}
+              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
-            {touched.email && !draft.email.trim() && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                {t("configPage.validation.emailRequired")}
+            {emailError && (
+              <p
+                id={manualEmailErrorId}
+                role="alert"
+                className="mt-1 text-xs text-red-600 dark:text-red-400"
+              >
+                {emailError}
               </p>
             )}
-            {touched.email &&
-              draft.email.trim() &&
-              !validateEmail(draft.email) && (
-                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                  {t("configPage.validation.emailInvalid")}
-                </p>
-              )}
             <input
+              id={manualPasswordInputId}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
               placeholder={t("configPage.password")}
-              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+              aria-label={t("configPage.password")}
+              aria-invalid={passwordError ? true : undefined}
+              aria-describedby={passwordError ? manualPasswordErrorId : undefined}
+              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
-            {touched.password && !validatePassword(password) && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                {t("configPage.validation.passwordRequired")}
+            {passwordError && (
+              <p
+                id={manualPasswordErrorId}
+                role="alert"
+                className="mt-1 text-xs text-red-600 dark:text-red-400"
+              >
+                {passwordError}
               </p>
             )}
-            {authError && <p className="text-xs text-red-500">{authError}</p>}
+            {authError && (
+              <p
+                id={manualAuthErrorId}
+                role="alert"
+                className="text-xs text-red-500"
+              >
+                {authError}
+              </p>
+            )}
             <button
               type="submit"
               disabled={authenticating}
@@ -1501,10 +1603,11 @@ export const Login = () => {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderAICard = () => (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-6 transition-colors">
       <div className="flex items-center gap-3 mb-5">
         <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
           <Bot className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -1516,14 +1619,15 @@ export const Login = () => {
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          <label htmlFor={providerInputId} className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
             {t("configPage.provider")}
           </label>
           <div className="relative">
             <select
+              id={providerInputId}
               value={aiProvider}
               onChange={(e) => setAiProvider(e.target.value as AIProviderType)}
-              className="w-full select-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none transition-all"
+              className="w-full select-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none transition-all"
             >
               {AI_PROVIDERS.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -1550,28 +1654,30 @@ export const Login = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          <label htmlFor={baseUrlInputId} className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
             {t("configPage.baseUrl")}
           </label>
           <input
+            id={baseUrlInputId}
             type="text"
             value={aiBaseURL}
             onChange={(e) => setAiBaseURL(e.target.value)}
             placeholder="https://api.example.com/v1"
-            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
+            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          <label htmlFor={modelInputId} className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
             {t("configPage.model")}
           </label>
           <input
+            id={modelInputId}
             type="text"
             value={aiModel}
             onChange={(e) => setAiModel(e.target.value)}
             placeholder="model-name"
-            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
+            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
           />
         </div>
       </div>
@@ -1620,7 +1726,7 @@ export const Login = () => {
       </div>
 
       {configuredProviders.length > 0 && (
-        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-700">
+        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-500">
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
             {t("configPage.configuredProviders")}
           </p>
@@ -1649,7 +1755,7 @@ export const Login = () => {
           </h1>
 
           <div className="flex justify-center mb-6">
-            <div className="inline-flex rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1">
+            <div className="inline-flex rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 p-1">
               <button
                 onClick={() => setDraft((prev) => ({ ...prev, activeTab: "quick" }))}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -1692,7 +1798,7 @@ export const Login = () => {
 
       <button
         onClick={toggleTheme}
-        className="fixed bottom-6 right-6 p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-300"
+        className="fixed bottom-6 right-6 p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-300"
         title={
           isDark
             ? t("configPage.switchToLightMode")

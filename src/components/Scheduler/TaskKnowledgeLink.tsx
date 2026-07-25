@@ -151,7 +151,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
       </div>
 
       {isAdding && (
-        <div className="mb-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div className="mb-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-500">
           <div className="relative">
             <Search
               size={16}
@@ -162,7 +162,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('scheduler.taskLink.searchPlaceholder')}
-              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
               autoFocus
             />
             {isSearching && (
@@ -180,13 +180,13 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
           )}
 
           {searchResults.length > 0 && (
-            <div className="mt-2 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-xl">
+            <div className="mt-2 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-500 rounded-xl">
               {searchResults.map((kp) => (
                 <button
                   key={kp.id}
                   type="button"
                   onClick={() => handleAddKnowledgePoint(kp)}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-slate-100 dark:hover:bg-slate-700 text-left transition-colors border-b border-slate-100 dark:border-slate-700 last:border-b-0"
+                  className="w-full flex items-center gap-3 p-3 hover:bg-slate-100 dark:hover:bg-slate-700 text-left transition-colors border-b border-slate-100 dark:border-slate-500 last:border-b-0"
                 >
                   <BookOpen size={16} className="text-primary-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -234,7 +234,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
             className={`group flex items-center gap-3 p-3 rounded-xl border transition-all ${
               kp.is_primary
                 ? "bg-primary-50 dark:bg-primary-500/10 border-primary-200 dark:border-primary-500/30"
-                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600"
             }`}
           >
             <BookOpen size={18} className="text-primary-500 flex-shrink-0" />

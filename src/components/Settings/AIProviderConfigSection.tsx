@@ -194,7 +194,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
       <div className="flex items-center gap-2 mb-4">
         <KeyRound className="w-5 h-5 text-amber-600 dark:text-amber-400" />
         <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -225,7 +225,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
             return (
               <div
                 key={providerKey}
-                className="rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden"
+                className="rounded-lg border border-gray-100 dark:border-slate-500 overflow-hidden"
               >
                 <button
                   onClick={() =>
@@ -251,7 +251,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                 </button>
 
                 {isExpanded && form && (
-                  <div className="p-4 pt-0 space-y-3 border-t border-gray-100 dark:border-slate-700">
+                  <div className="p-4 pt-0 space-y-3 border-t border-gray-100 dark:border-slate-500">
                     {isEnvSource && (
                       <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2">
                         <Info className="w-4 h-4 mt-0.5 shrink-0" />
@@ -291,7 +291,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                               : t("settings.enterApiKey")
                           }
                           disabled={isEnvSource}
-                          className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                          className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         />
                         <button
                           type="button"
@@ -327,7 +327,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                           }))
                         }
                         placeholder={defaults.baseURL}
-                        className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                        className="w-full input-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                       />
                     </div>
 
@@ -348,7 +348,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                           }))
                         }
                         placeholder={defaults.model}
-                        className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                        className="w-full input-mobile rounded border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                       />
                     </div>
 

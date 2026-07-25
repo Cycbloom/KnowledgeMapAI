@@ -48,7 +48,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
           <MonitorPlay size={20} />
         </div>
         <div className="flex flex-col">
-          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">演示模式</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('graphEditor.presentation.mode')}</span>
           <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
             {currentStep + 1} / {totalSteps}
           </span>
@@ -62,7 +62,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
           onClick={onPrev}
           disabled={currentStep === 0}
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
-          title="上一步 (←)"
+          title={t('graphEditor.presentation.previous')}
           aria-label={t('common.aria.prevStep')}
         >
           <ChevronLeft size={24} />
@@ -72,7 +72,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
           <button
             onClick={onTogglePlay}
             className="p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors shadow-md mx-1"
-            title={isPlaying ? "暂停" : "自动播放"}
+            title={isPlaying ? t('graphEditor.presentation.pause') : t('graphEditor.presentation.autoPlay')}
           >
             {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
           </button>
@@ -82,7 +82,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
           onClick={onNext}
           disabled={currentStep >= totalSteps - 1}
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
-          title="下一步 (→)"
+          title={t('graphEditor.presentation.next')}
           aria-label={t('common.aria.nextStep')}
         >
           <ChevronRight size={24} />
@@ -94,7 +94,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
       <button
         onClick={onExit}
         className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded-full transition-colors"
-        title="退出演示 (Esc)"
+        title={t('graphEditor.presentation.exit')}
         aria-label={t('common.aria.exitPresentation')}
       >
         <X size={20} />

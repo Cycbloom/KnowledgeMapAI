@@ -322,7 +322,7 @@ export const LearningModeHeader = ({
               disabled={!isOnline || generateProgress?.isGenerating}
               className={`flex items-center ${isMobile ? "px-2 py-1.5" : "space-x-2 px-3 lg:px-4 py-2"} rounded-full font-medium transition-all ${
                 !isOnline || generateProgress?.isGenerating
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 dark:bg-slate-800 dark:text-slate-600 dark:border-slate-700"
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 dark:bg-slate-800 dark:text-slate-600 dark:border-slate-500"
                   : isDark
                     ? "bg-primary-900/30 text-primary-400 hover:bg-primary-900/50 border border-primary-500/30"
                     : "bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200"

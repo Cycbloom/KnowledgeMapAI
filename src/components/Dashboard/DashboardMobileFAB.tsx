@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Sparkles, Upload } from "lucide-react";
+import { useMenuNavigation } from "../../hooks";
 
 interface DashboardMobileFABProps {
   isDark: boolean;
@@ -12,6 +13,8 @@ interface DashboardMobileFABProps {
   fabMenuRef: React.RefObject<HTMLDivElement>;
 }
 
+const FAB_MENU_ITEM_COUNT = 2;
+
 export const DashboardMobileFAB: React.FC<DashboardMobileFABProps> = ({
   isDark,
   showFABMenu,
@@ -22,6 +25,43 @@ export const DashboardMobileFAB: React.FC<DashboardMobileFABProps> = ({
   fabMenuRef,
 }) => {
   const { t } = useTranslation();
+  const menuId = useId();
+
+  const handleSelect = (index: number) => {
+    const item = document.getElementById(`${menuId}-item-${index}`);
+    item?.click();
+    onToggleFABMenu();
+  };
+
+  const { activeIndex, setActiveIndex } = useMenuNavigation({
+    itemCount: FAB_MENU_ITEM_COUNT,
+    enabled: showFABMenu,
+    onSelect: handleSelect,
+    onClose: onToggleFABMenu,
+  });
+
+  // 补充 Home/End 导航（hook 仅处理 ArrowUp/ArrowDown/Enter/Escape）
+  useEffect(() => {
+    if (!showFABMenu) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Home") {
+        e.preventDefault();
+        setActiveIndex(0);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        setActiveIndex(FAB_MENU_ITEM_COUNT - 1);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [showFABMenu, setActiveIndex]);
+
+  const activeRing = (idx: number) =>
+    showFABMenu && activeIndex === idx
+      ? isDark
+        ? "ring-2 ring-primary-400"
+        : "ring-2 ring-primary-500"
+      : "";
 
   return (
     <div className="fixed bottom-20 right-6 z-40" ref={fabMenuRef}>
@@ -29,13 +69,16 @@ export const DashboardMobileFAB: React.FC<DashboardMobileFABProps> = ({
         <div
           className="absolute bottom-20 right-0 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200"
           role="menu"
+          aria-activedescendant={`${menuId}-item-${activeIndex}`}
         >
           <button
+            id={`${menuId}-item-0`}
             onClick={onOpenAIGenerator}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap ${activeRing(0)} ${
               isDark ? "bg-slate-700 text-white" : "bg-white text-gray-900"
             }`}
             role="menuitem"
+            tabIndex={-1}
             aria-label={t("dashboard.actions.aiGenerate")}
           >
             <div
@@ -44,18 +87,20 @@ export const DashboardMobileFAB: React.FC<DashboardMobileFABProps> = ({
             >
               <Sparkles size={16} />
             </div>
-            <span className="text-sm font-medium">AI 生成</span>
+            <span className="text-sm font-medium">{t('dashboard.mobileFAB.aiGenerate')}</span>
           </button>
 
           <button
+            id={`${menuId}-item-1`}
             onClick={onImportClick}
             disabled={isImporting}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap ${activeRing(1)} ${
               isDark
                 ? "bg-slate-700 text-white"
                 : "bg-white text-gray-900"
             } disabled:opacity-50`}
             role="menuitem"
+            tabIndex={-1}
             aria-label={t("dashboard.actions.import")}
           >
             <div
@@ -65,7 +110,7 @@ export const DashboardMobileFAB: React.FC<DashboardMobileFABProps> = ({
               <Upload size={16} />
             </div>
             <span className="text-sm font-medium">
-              {isImporting ? "导入中..." : "导入"}
+              {isImporting ? t('dashboard.mobileFAB.importing') : t('dashboard.mobileFAB.import')}
             </span>
           </button>
         </div>

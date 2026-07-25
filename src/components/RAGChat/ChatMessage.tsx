@@ -204,6 +204,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         >
           {message.role === "assistant" ? (
             <div
+              aria-live="polite"
+              aria-atomic="false"
+              {...(message.isStreaming ? { "aria-busy": "true" } : {})}
               className={`prose prose-sm max-w-none ${isDark ? "prose-invert prose-slate" : ""}`}
             >
               <ReactMarkdown
@@ -250,7 +253,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                           return (
                             <a
                               href={href}
-                              className="text-primary-500 hover:underline"
+                              className="text-primary-500 underline"
                             >
                               {children}
                             </a>

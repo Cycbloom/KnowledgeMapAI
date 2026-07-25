@@ -99,7 +99,7 @@ export const RegionManagePanel = React.memo(function RegionManagePanel({
               {backboneRegions.map((region) => (
                 <div
                   key={region.id}
-                  className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+                  className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-500"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -137,7 +137,7 @@ export const RegionManagePanel = React.memo(function RegionManagePanel({
               {customRegionsWithNodes.map((region) => (
                 <div
                   key={region.id}
-                  className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 group"
+                  className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-500 group"
                 >
                   <div className="flex items-center gap-3">
                     <div

@@ -210,7 +210,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div
-      className={`p-4 border-t ${isDark ? "border-slate-700" : "border-gray-200 dark:border-slate-700"}`}
+      className={`p-4 border-t ${isDark ? "border-slate-700" : "border-gray-200 dark:border-slate-500"}`}
     >
       <AnimatePresence>
         {showQuoteTip && (
@@ -462,7 +462,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         className={`flex flex-col rounded-2xl border transition-all duration-200 ${
           isDark
             ? "bg-slate-800/80 border-slate-700 focus-within:border-primary-500/60 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.2)]"
-            : "bg-white border-gray-200 focus-within:border-primary-400/60 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] shadow-sm dark:bg-slate-800 dark:border-slate-700"
+            : "bg-white border-gray-200 focus-within:border-primary-400/60 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] shadow-sm dark:bg-slate-800 dark:border-slate-500"
         }`}
       >
         <textarea

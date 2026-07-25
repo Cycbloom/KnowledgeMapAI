@@ -167,7 +167,6 @@ export type {
   UpdateQueueData,
   ReviewTask,
   CreateReviewTaskData,
-  UpdateReviewTaskData,
   ReviewTaskStats,
   PendingReviewTask,
   SyncStudyDurationData,

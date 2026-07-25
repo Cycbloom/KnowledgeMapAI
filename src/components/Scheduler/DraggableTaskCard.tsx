@@ -12,6 +12,7 @@ import {
   Info,
 } from "lucide-react";
 import { UserTask } from "@shared/types";
+import { useTranslation } from "react-i18next";
 import { QUEUE_COLORS, STATUS_CONFIG, type QueueLevel } from "@/constants/scheduler";
 
 interface DraggableTaskCardProps {
@@ -37,6 +38,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
     QUEUE_COLORS[task.queue_level as QueueLevel] ||
     QUEUE_COLORS[0];
   const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
+  const { t } = useTranslation();
   const [showDragTip, setShowDragTip] = useState(false);
   const isInProgress = task.status === "in_progress";
 
@@ -54,8 +56,15 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
       queueLevel: task.queue_level,
       type: "task",
     },
-    disabled: isInProgress,
   });
+
+  // 进行中任务保留可聚焦性（便于屏幕阅读器读出内容），但阻止实际拖动
+  // 通过不附加 listeners 实现指针拖动屏蔽；通过 onPointerDown 早返回实现额外保险
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (isInProgress) {
+      e.stopPropagation();
+    }
+  };
 
   const style: React.CSSProperties = {
     transform: isDragging ? undefined : CSS.Transform.toString(transform),
@@ -89,8 +98,14 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
       style={style}
       {...attributes}
       {...(isInProgress ? {} : listeners)}
+      aria-roledescription={t("scheduler.a11y.draggableTask")}
+      aria-disabled={isInProgress}
+      aria-grabbed={isDragging ? "true" : "false"}
+      onPointerDown={handlePointerDown}
       onMouseEnter={() => isInProgress && setShowDragTip(true)}
       onMouseLeave={() => setShowDragTip(false)}
+      onFocus={() => isInProgress && setShowDragTip(true)}
+      onBlur={() => setShowDragTip(false)}
       className={`
         group relative rounded-xl border transition-all duration-200
         ${isInProgress ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing"}
@@ -115,7 +130,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
           <span
             className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.color}`}
           >
-            {statusConfig.label}
+            {t(statusConfig.labelKey, { defaultValue: '' })}
           </span>
           {task.priority >= 3 && (
             <span className="text-red-500 dark:text-red-400 text-xs">
@@ -134,7 +149,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
           </p>
         )}
 
-        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-500">
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
           {task.estimated_duration && (
             <div className="flex items-center gap-1">
               <Clock size={12} className={queueStyle.text} />
@@ -149,7 +164,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
           className={`
                 flex items-center justify-center gap-1 px-2 py-1.5
                 bg-slate-50/80 dark:bg-slate-800/50
-                border-t border-slate-100 dark:border-slate-700/50
+                border-t border-slate-100 dark:border-slate-500/50
                 opacity-0 group-hover:opacity-100
                 transition-opacity duration-200
               `}

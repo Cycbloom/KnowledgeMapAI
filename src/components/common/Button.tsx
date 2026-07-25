@@ -33,10 +33,10 @@ const variantStyles: Record<ButtonVariant, string> = {
   ghost: `
     bg-transparent text-gray-700
     dark:text-gray-200
-    border border-gray-300 dark:border-slate-600
+    border border-gray-300 dark:border-slate-500
     hover:bg-gray-50 dark:hover:bg-slate-700
     active:bg-gray-100 dark:active:bg-slate-600
-    disabled:text-gray-400 disabled:dark:text-gray-500 disabled:border-gray-200 disabled:dark:border-slate-700
+    disabled:text-gray-400 disabled:dark:text-gray-500 disabled:border-gray-200 disabled:dark:border-slate-500
     focus:ring-gray-300 dark:focus:ring-slate-600
   `,
   danger: `

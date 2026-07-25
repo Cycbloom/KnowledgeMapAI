@@ -46,7 +46,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
   const loadData = async () => {
     setLoading(true);
     try {
-      const { tasks: allTasks } = await api.scheduler.list({
+      const allTasks = await api.scheduler.list({
         status: "all",
       });
       setTasks(allTasks);
@@ -160,7 +160,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
 
   return (
     <div
-      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}
+      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-500 p-6 ${className}`}
     >
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-primary-100 dark:bg-primary-500/20 rounded-xl">

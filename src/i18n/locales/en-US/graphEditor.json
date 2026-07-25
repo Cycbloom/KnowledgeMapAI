@@ -14,6 +14,7 @@
     "download": "Generate and Download PDF",
     "success": "Export successful!",
     "failed": "Export failed, please retry",
+    "prepareFailed": "Failed to prepare export",
     "imageTitle": "Export as PNG Image",
     "transparent": "Transparent background",
     "fitView": "Fit view",
@@ -35,6 +36,12 @@
       "title": "Delete Graph",
       "message": "Are you sure you want to delete the current graph \"{{title}}\"? This action cannot be undone."
     }
+  },
+  "edgeEdit": {
+    "saveFailed": "Failed to save edge"
+  },
+  "aiActionSettings": {
+    "loadFailed": "Failed to load AI action settings"
   },
   "graphMap": {
     "relationDiscovery": {
@@ -192,7 +199,48 @@
     "exportPDF": "PDF Document",
     "exportJSON": "JSON Backup",
     "exportImage": "Image (PNG)",
-    "deleteGraph": "Delete This Graph Permanently"
+    "deleteGraph": "Delete This Graph Permanently",
+    "back": "Back",
+    "add": "Add",
+    "preview": "Preview",
+    "details": "Details",
+    "more": "More",
+    "closeLiteratureExtract": "Close Literature Extract",
+    "closeResearchProgress": "Close Research Progress",
+    "closeLiteratureLibrary": "Close Literature Library",
+    "regionControl": "Region Control",
+    "versionHistory": "Version History",
+    "conceptAggregation": "Concept Aggregation",
+    "edgeDisplayMode": "Edge Display Mode",
+    "edgeFull": "Edges",
+    "edgeSimplified": "Simplified",
+    "edgeHidden": "Hidden",
+    "exitFocusMode": "Exit Focus",
+    "exitFocusModeTitle": "Exit Focus Mode (Esc)",
+    "exitFocusModeAria": "Exit Focus Mode",
+    "undo": "Undo",
+    "redo": "Redo",
+    "batchOperations": "Batch Operations",
+    "batchCount": "Batch ({{count}})",
+    "nodeCount": "{{count}} nodes",
+    "modifyColor": "Modify Color",
+    "modifyLevel": "Modify Level",
+    "levelRoot": "Root",
+    "levelCore": "Core",
+    "levelSub": "Sub",
+    "levelNormal": "Normal",
+    "levelLeaf": "Leaf",
+    "batchDeleteSelected": "Batch Delete Selected",
+    "closeMenu": "Close Menu",
+    "aiAssistantSheet": "AI Assistant",
+    "viewOptions": "View Options",
+    "moreFunctions": "More Functions",
+    "exportMarkdownAction": "Export Markdown",
+    "exportAnkiAction": "Export Anki Cards",
+    "exportPDFAction": "Export PDF",
+    "exportJSONAction": "Export JSON",
+    "exportImageAction": "Export Image",
+    "batchMenu": "Batch actions menu"
   },
   "switcher": {
     "placeholder": "Switch Graph",
@@ -219,7 +267,15 @@
     "colType": "Type",
     "colConcepts": "Concepts",
     "colModules": "Modules",
-    "footer": "{{count}} literature items total"
+    "footer": "{{count}} literature items total",
+    "typeLabel": {
+      "paper": "Paper",
+      "book": "Book",
+      "article": "Article",
+      "report": "Report",
+      "webpage": "Webpage",
+      "document": "Document"
+    }
   },
   "mindMap": {
     "unnamed": "Unnamed",
@@ -251,6 +307,14 @@
     "exit": "Exit Narrative",
     "complete": "Narrative Complete",
     "startNarrative": "Narrative Play"
+  },
+  "presentation": {
+    "mode": "Presentation Mode",
+    "previous": "Previous (←)",
+    "pause": "Pause",
+    "autoPlay": "Auto Play",
+    "next": "Next (→)",
+    "exit": "Exit Presentation (Esc)"
   },
   "semanticZoom": {
     "overview": "Overview",
@@ -422,6 +486,22 @@
     "selectNodeFirst": "Please select a node first"
   },
   "share": {
+    "title": "Share Graph",
+    "tabCollaborate": "Collaborators",
+    "tabPublic": "Public Link",
+    "loading": "Loading...",
+    "roleOwner": "Owner",
+    "roleEditor": "Editor",
+    "roleViewer": "Viewer",
+    "inviteEmailPlaceholder": "Enter user email",
+    "generateShareLink": "Generate Share Link",
+    "shareLinkLabel": "Share Link",
+    "publicAccess": "Public Access",
+    "privateGraph": "Private Graph",
+    "publicDesc": "Anyone with the link can view this graph, but cannot edit it.",
+    "privateDesc": "Only you can access this graph.",
+    "copyLink": "Copy Link",
+    "openInNewTab": "Open in new tab",
     "madePublic": "Graph is now public, anyone can access it",
     "madePrivate": "Graph is now private",
     "toggleFailed": "Failed to update, please retry",
@@ -433,13 +513,49 @@
     "removeFailedRetry": "Failed to remove, please retry",
     "linkGenerated": "Share link generated",
     "linkGenerateFailed": "Failed to generate link",
-    "linkGenerateFailedRetry": "Failed to generate link, please retry"
+    "linkGenerateFailedRetry": "Failed to generate link, please retry",
+    "fetchCollaboratorsFailed": "Failed to load collaborators"
   },
   "versionHistory": {
     "loadFailed": "Failed to load version history",
     "rollbackSuccess": "Successfully rolled back to version {{version}}",
     "rollbackFailed": "Rollback failed",
-    "compareFailed": "Version comparison failed"
+    "compareFailed": "Version comparison failed",
+    "title": "Version History",
+    "branchManageTitle": "Branch Management",
+    "tabSnapshots": "Snapshots",
+    "tabBranches": "Branches",
+    "close": "Close",
+    "loadMore": "Load More",
+    "confirmCreate": "Create",
+    "snapshotDescPlaceholder": "Enter snapshot description (optional)",
+    "rollbackConfirmTitle": "Rollback Confirmation",
+    "confirmRollback": "Confirm Rollback",
+    "rollbackConfirmMessage": "Are you sure you want to roll back to this version? The current state will be automatically saved as a snapshot.",
+    "targetSnapshot": "Target Snapshot",
+    "basedOnSnapshot": "Based on Snapshot",
+    "noDescription": "No description",
+    "nodeAndEdgeCount": "{{nodes}} nodes · {{edges}} edges",
+    "createBranchTitle": "Create Branch",
+    "createBranchLabel": "Create Branch",
+    "branchNamePlaceholder": "Enter branch name",
+    "viewDiff": "View Diff",
+    "rollback": "Rollback",
+    "cancel": "Cancel",
+    "processing": "Processing...",
+    "snapshotType": {
+      "manual": "Manual",
+      "auto": "Auto",
+      "pre_ai_expand": "Before AI Expansion",
+      "pre_batch_delete": "Before Batch Delete",
+      "pre_rollback": "Before Rollback"
+    },
+    "relativeTime": {
+      "justNow": "Just now",
+      "minutesAgo": "{{count}} minutes ago",
+      "hoursAgo": "{{count}} hours ago",
+      "daysAgo": "{{count}} days ago"
+    }
   },
   "layout": {
     "noNodes": "No nodes to arrange",
@@ -448,6 +564,247 @@
   },
   "settings": {
     "saved": "Settings saved",
-    "saveFailed": "Failed to save"
+    "saveFailed": "Failed to save",
+    "title": "Graph Settings",
+    "tabGeneral": "General",
+    "tabPrompts": "AI Prompts",
+    "tabActions": "AI Actions",
+    "performanceTitle": "Performance & Quality (Performance)",
+    "qualityHigh": "High Quality",
+    "qualityMedium": "Balanced",
+    "qualityLow": "High Performance",
+    "showStats": "Show Performance Stats (FPS)",
+    "qualityHighDesc": "Enable bloom effects, maximum view distance.",
+    "qualityMediumDesc": "Disable some effects, moderate view distance.",
+    "qualityLowDesc": "Disable effects, simplified geometry, suitable for low-end devices.",
+    "gamificationTitle": "Quest Mode (Gamification)",
+    "gamificationDesc": "When enabled, nodes are locked and you must master prerequisite knowledge points to unlock them. When disabled, all nodes are visible.",
+    "textDisplayTitle": "Text Display Level (Label Display)",
+    "textDisplayAll": "Show All",
+    "textDisplayImportant": "Core Nodes",
+    "textDisplayRootOnly": "Root Only",
+    "textDisplayAllDesc": "Display all node titles at any distance (may be crowded).",
+    "textDisplayImportantDesc": "Automatically adjust visible distance based on node level (root nodes farthest, leaf nodes closest).",
+    "textDisplayRootOnlyDesc": "Only display top-level root node titles.",
+    "learningDirectionTitle": "Learning Order (Learning Order)",
+    "directionTopDown": "Top-Down",
+    "directionTopDownDesc": "Learn root nodes first, unlock children",
+    "directionBottomUp": "Bottom-Up",
+    "directionBottomUpDesc": "Learn leaf nodes first, unlock parents",
+    "directionTopDownHint": "Traditional learning path: from overview to details.",
+    "directionBottomUpHint": "Constructive learning path: assemble parts into a whole. Suitable for scenarios where \"leaf nodes are part of the parent node\".",
+    "saving": "Saving...",
+    "save": "Save Settings"
+  },
+  "backbone": {
+    "title": "Backbone Node Compatibility Check",
+    "issuesFound": "Found {{count}} compatibility issues to handle",
+    "infoMessage": "Detected some backbone nodes are missing required properties or have non-standard titles. Standardization is recommended to ensure proper graph functionality.",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "selectedCount": "Selected {{selected}} / {{total}} items",
+    "ignore": "Ignore",
+    "processing": "Processing...",
+    "autoFix": "Auto Fix ({{count}})",
+    "unknown": "Unknown",
+    "unknownIssue": "Unknown issue",
+    "fixSuccess": "Successfully fixed compatibility issues for {{count}} backbone nodes",
+    "fixError": "{{count}} nodes failed to fix, please retry later",
+    "missingModule": "Missing backbone module property, suggested: \"{{module}}\"",
+    "invalidModule": "Invalid module property \"{{current}}\", suggested: \"{{suggested}}\"",
+    "invalidTitle": "Title does not conform to standard, suggested: \"{{title}}\""
+  },
+  "relationshipType": {
+    "title": "Relationship Type Settings",
+    "categoryAll": "All",
+    "categoryHierarchical": "Hierarchical",
+    "categoryDependency": "Dependency",
+    "categorySemantic": "Semantic",
+    "categoryTemporal": "Temporal",
+    "categoryInteraction": "Interaction",
+    "categoryCausal": "Causal",
+    "categoryCustom": "Custom",
+    "lineStyleSolid": "Solid",
+    "lineStyleDashed": "Dashed",
+    "lineStyleDotted": "Dotted",
+    "lineStyleDouble": "Double",
+    "arrowShow": "Show",
+    "arrowHide": "Hide",
+    "arrowAuto": "Auto",
+    "fetchFailed": "Failed to fetch relationship types",
+    "createFailed": "Failed to create relationship type",
+    "updateFailed": "Failed to update relationship type",
+    "deleteFailed": "Failed to delete relationship type",
+    "totalCount": "{{count}} relationship types total",
+    "createNew": "Create New",
+    "editTitle": "Edit Relationship Type",
+    "nameLabel": "Name (English Identifier)",
+    "namePlaceholder": "e.g., leads_to",
+    "nameImmutable": "Name cannot be changed after creation",
+    "displayNameLabel": "Display Name",
+    "displayNamePlaceholder": "e.g., Leads To",
+    "categoryLabel": "Category",
+    "colorLabel": "Color",
+    "lineStyleLabel": "Line Style",
+    "arrowLabel": "Arrow",
+    "preview": "Preview",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "builtinType": "Built-in Type",
+    "editAction": "Edit",
+    "deleteAction": "Delete",
+    "itemCount": "{{count}} items"
+  },
+  "nodeEdit": {
+    "backToOutline": "Back to Outline",
+    "headerCreate": "Create New Node",
+    "headerEdit": "Edit Node",
+    "selectParentHint": "Click on the graph to select parent nodes (multi-select)",
+    "selectParentDone": "Done",
+    "backboneBadge": "(Backbone Node)",
+    "backboneImmutable": "{{module}} - Title cannot be modified",
+    "field": {
+      "title": "Title",
+      "titlePlaceholder": "Enter node title",
+      "summary": "Summary",
+      "summaryHint": "(20-30 chars short summary, used for graph preview)",
+      "summaryPlaceholder": "Brief summary of core content...",
+      "parent": "Parent Nodes (multi-select)",
+      "parentPlaceholder": "Search to select parent node...",
+      "clearAll": "Clear All",
+      "noParent": "No Parent Node",
+      "noMatchingNodes": "No matching nodes",
+      "noAvailableNodes": "No nodes to select",
+      "selectFromGraph": "Select from Graph",
+      "finishSelect": "Finish Selection",
+      "tags": "Tags (comma-separated)",
+      "tagsPlaceholder": "e.g., important, todo, concept",
+      "level": "Level",
+      "levelRoot": "Root Node",
+      "levelCore": "Core Node",
+      "levelSub": "Sub Node",
+      "levelNormal": "Normal Node",
+      "levelLeaf": "Leaf Node",
+      "content": "Content"
+    },
+    "toolbar": {
+      "editMode": "Edit Mode",
+      "edit": "Edit",
+      "previewMode": "Preview Mode",
+      "preview": "Preview",
+      "bold": "Bold",
+      "italic": "Italic",
+      "heading": "Heading",
+      "link": "Link",
+      "codeBlock": "Code Block"
+    },
+    "placeholder": {
+      "bold": "bold text",
+      "italic": "italic text",
+      "link": "link text",
+      "code": "code",
+      "content": "Markdown supported... Type [[ to trigger node link"
+    },
+    "autoSaveSaving": "Auto saving...",
+    "autoSaveSaved": "Auto saved",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saveNode": "Save Node"
+  },
+  "diffDetail": {
+    "title": "Version Comparison",
+    "loadFailed": "Failed to load diff data",
+    "unknownNode": "Unknown node",
+    "unknownEdge": "Unknown edge",
+    "itemsChanged": "{{count}} changes",
+    "emptyValue": "(empty)",
+    "levelAndPosition": "Level: {{level}} · Position: ({{x}}, {{y}})",
+    "changeType": {
+      "added": "Added",
+      "removed": "Removed",
+      "modified": "Modified"
+    },
+    "field": {
+      "content": "Content",
+      "summary": "Summary"
+    },
+    "filter": {
+      "change": "Change",
+      "entity": "Entity",
+      "all": "All",
+      "node": "Node",
+      "edge": "Edge"
+    },
+    "summary": {
+      "nodesAdded": "+{{count}} nodes",
+      "nodesRemoved": "-{{count}} nodes",
+      "nodesModified": "~{{count}} nodes",
+      "edgesAdded": "+{{count}} edges",
+      "edgesRemoved": "-{{count}} edges",
+      "edgesModified": "~{{count}} edges"
+    },
+    "section": {
+      "nodesAdded": "Added Nodes",
+      "nodesRemoved": "Removed Nodes",
+      "nodesModified": "Modified Nodes",
+      "edgesAdded": "Added Edges",
+      "edgesRemoved": "Removed Edges",
+      "edgesModified": "Modified Edges"
+    }
+  },
+  "batchGenerate": {
+    "presets": {
+      "quick": {
+        "label": "Quick Self-Test",
+        "desc": "3 questions per node (QA/Choice/True-False)"
+      },
+      "standard": {
+        "label": "Standard Question Pack",
+        "desc": "10 questions per node (incl. Multi-Choice/Fill-in/Essay)"
+      },
+      "exam": {
+        "label": "Exam Sprint",
+        "desc": "15 questions per node (focus on complex types)"
+      }
+    },
+    "questionTypes": {
+      "qa": "Q&A",
+      "choice": "Single Choice",
+      "true_false": "True/False",
+      "multi_choice": "Multi-Choice",
+      "fill_in_the_blank": "Fill-in-the-Blank",
+      "essay": "Essay"
+    },
+    "processing": "Processing: {{current_node}}",
+    "generating": "Generating...",
+    "summary": "Will generate questions for {{count}} nodes, with context awareness.",
+    "selectPreset": "Select Question Pack Preset",
+    "customSettings": "Custom Settings",
+    "questionTypesLabel": "Question Types",
+    "countLabel": "Generation Count per Node",
+    "estimatedCountPrefix": "Estimated: ",
+    "estimatedCountSuffix": " questions",
+    "buttons": {
+      "startGenerate": "Start Generate",
+      "cancel": "Cancel"
+    }
+  },
+  "textToGraph": {
+    "generateFailed": "Text-to-graph generation failed"
+  },
+  "mindMapCanvas": {
+    "ariaLabel": "Mind map view, {{count}} nodes, focus: {{focus}}",
+    "emptyFocus": "No focused node"
+  },
+  "quadrantCanvas": {
+    "ariaLabel": "Quadrant graph view, {{nodeCount}} nodes, {{regionCount}} regions",
+    "desc": "Quadrant graph visualization, supports pan, zoom, drag center, click node for details",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "resetView": "Reset view"
+  },
+  "planetView": {
+    "ariaLabel": "3D planet view, {{count}} nodes"
   }
 }

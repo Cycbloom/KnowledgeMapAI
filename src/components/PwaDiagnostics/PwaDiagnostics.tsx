@@ -126,7 +126,7 @@ export function PwaDiagnostics() {
   const standaloneMode = getStandaloneMode();
 
   return (
-    <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
+    <div className="border border-gray-200 dark:border-slate-500 rounded-lg overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded((prev) => !prev)}

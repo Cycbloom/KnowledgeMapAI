@@ -1224,8 +1224,9 @@ export const GraphEditor = () => {
 
   return (
     <div
-      className={`h-screen w-screen flex flex-col overflow-hidden ${isDark ? "dark" : ""}`}
+      className={`h-screen w-full flex flex-col overflow-hidden ${isDark ? "dark" : ""}`}
     >
+      <h1 className="sr-only">{graphMeta?.title ?? t("layout.breadcrumb.graphEditor")}</h1>
       {/* 只读模式提示条 */}
       {isReadOnly && !isGraphLoading && (
         <div className="bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800 px-4 py-2 flex items-center justify-between">
@@ -1788,7 +1789,7 @@ export const GraphEditor = () => {
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={panelState.closeConsole}
-                      className="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                      className="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                     >
                       关闭
                     </button>
@@ -1847,7 +1848,7 @@ export const GraphEditor = () => {
 
       {panelState.isVersionHistoryOpen && id && (
         <Suspense fallback={<ViewLoader />}>
-          <div className="fixed right-0 top-0 bottom-0 z-40 w-80 shadow-xl border-l border-slate-200 dark:border-slate-700">
+          <div className="fixed right-0 top-0 bottom-0 z-40 w-80 shadow-xl border-l border-slate-200 dark:border-slate-500">
             <VersionHistoryPanel
               graphId={id}
               onClose={() => panelState.setIsVersionHistoryOpen(false)}
@@ -1859,7 +1860,7 @@ export const GraphEditor = () => {
 
       {panelState.selectedDiff && id && (
         <Suspense fallback={<ViewLoader />}>
-          <div className="fixed right-80 top-0 bottom-0 z-40 w-80 shadow-xl border-l border-slate-200 dark:border-slate-700">
+          <div className="fixed right-80 top-0 bottom-0 z-40 w-80 shadow-xl border-l border-slate-200 dark:border-slate-500">
             <DiffDetailPanel
               graphId={id}
               sourceSnapshotId={panelState.selectedDiff.sourceSnapshotId}

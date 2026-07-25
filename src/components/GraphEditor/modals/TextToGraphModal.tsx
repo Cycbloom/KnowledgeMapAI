@@ -103,7 +103,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         if (!contentToAnalyze) throw new Error(t('textToGraph.messages.urlExtractFailed'));
       } catch (err: unknown) {
         console.error(err);
-        message.error(err instanceof Error ? err.message : t('textToGraph.messages.urlParseFailed'));
+        message.error((err instanceof Error ? err.message : t('textToGraph.messages.urlParseFailed')) || t('graphEditor.textToGraph.generateFailed'));
         setIsUrlLoading(false);
         return;
       } finally {
@@ -142,7 +142,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       message.success(t('textToGraph.messages.analysisCompleted'));
     } catch (error: unknown) {
       console.error(error);
-      message.error(error instanceof Error ? error.message : t('textToGraph.messages.analysisFailed'));
+      message.error((error instanceof Error ? error.message : t('textToGraph.messages.analysisFailed')) || t('graphEditor.textToGraph.generateFailed'));
     }
   };
 
@@ -176,7 +176,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       message.success(t('textToGraph.messages.imageAnalysisSuccess'));
     } catch (err: unknown) {
       console.error(err);
-      message.error(err instanceof Error ? err.message : t('textToGraph.messages.imageAnalysisFailed'));
+      message.error((err instanceof Error ? err.message : t('textToGraph.messages.imageAnalysisFailed')) || t('graphEditor.textToGraph.generateFailed'));
     }
   };
 
@@ -215,7 +215,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
           message.success(t('textToGraph.messages.pdfParseSuccess'));
         } catch (err: unknown) {
           console.error(err);
-          message.error(err instanceof Error ? err.message : t('textToGraph.messages.pdfParseError'));
+          message.error((err instanceof Error ? err.message : t('textToGraph.messages.pdfParseError')) || t('graphEditor.textToGraph.generateFailed'));
         }
     } else {
        // Local parsing for MD/OPML/TXT

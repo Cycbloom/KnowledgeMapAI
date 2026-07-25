@@ -97,7 +97,7 @@ export const StudyProgressPanel: React.FC<StudyProgressPanelProps> = ({
         </div>
 
         {reviewStats && (
-          <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+          <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500">
             <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1">
               <TrendingUp size={12} />
               {t("unifiedWorkbench.labels.reviewProgress")}

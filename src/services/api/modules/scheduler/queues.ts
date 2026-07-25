@@ -1,5 +1,5 @@
-import { request } from "../../client";
-import type { Queue, CreateQueueData, UpdateQueueData } from "@shared/types";
+import { requestData } from "../../client";
+import type { Queue, CreateQueueData, UpdateQueueData, QueueData } from "@shared/types";
 
 export type { Queue, CreateQueueData, UpdateQueueData };
 
@@ -18,29 +18,29 @@ export const queuesApi = {
       params.append("include_cancelled", "true");
     }
     const queryString = params.toString();
-    return request(`/scheduler/queues${queryString ? `?${queryString}` : ""}`);
+    return requestData<QueueData>(`/scheduler/queues${queryString ? `?${queryString}` : ""}`);
   },
 
   createQueue: (data: CreateQueueData) =>
-    request("/scheduler/queues", {
+    requestData<Queue>("/scheduler/queues", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
   updateQueue: (id: string, data: UpdateQueueData) =>
-    request(`/scheduler/queues/${id}`, {
+    requestData<Queue>(`/scheduler/queues/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
   deleteQueue: (id: string, targetQueueId?: string) =>
-    request(`/scheduler/queues/${id}`, {
+    requestData<void>(`/scheduler/queues/${id}`, {
       method: "DELETE",
       body: JSON.stringify({ target_queue_id: targetQueueId }),
     }),
 
   reorderQueues: (queueIds: string[]) =>
-    request("/scheduler/queues/reorder", {
+    requestData<void>("/scheduler/queues/reorder", {
       method: "PUT",
       body: JSON.stringify({ queue_ids: queueIds }),
     }),

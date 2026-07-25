@@ -38,10 +38,10 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
     <div
       role="listbox"
       aria-label="block menu"
-      className="fixed z-50 min-w-[240px] max-w-[320px] py-1 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg shadow-black/5 dark:shadow-black/30 overflow-hidden"
+      className="fixed z-50 min-w-[240px] max-w-[320px] py-1 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 shadow-lg shadow-black/5 dark:shadow-black/30 overflow-hidden"
       style={{ top: position.top, left: position.left }}
     >
-      <div className="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-slate-500 border-b border-gray-100 dark:border-slate-700">
+      <div className="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-slate-500 border-b border-gray-100 dark:border-slate-500">
         {t("notes.editor.blockMenu.title")}
       </div>
       <div className="max-h-[280px] overflow-y-auto">

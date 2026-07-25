@@ -46,7 +46,7 @@ export const useSemanticZoom = ({
 
   const semanticLevelLabel = useMemo(() => {
     const levelConfig = config.levels[semanticLevel];
-    return levelConfig.label;
+    return levelConfig.labelKey;
   }, [semanticLevel]);
 
   const nodeStrategies = useMemo(() => {

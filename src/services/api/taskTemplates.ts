@@ -71,43 +71,66 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
   { value: 'creative', label: '创意', icon: '✨', color: 'pink', count: 0 },
 ];
 
+/**
+ * 将任意 category 字符串归一化为当前合法的新分类。
+ *
+ * 历史背景：早期版本的 task_templates.category 使用
+ *   'study' | 'work' | 'life' | 'health' | 'custom'
+ * 当前版本使用
+ *   'knowledge' | 'project' | 'analysis' | 'architecture' | 'topicResearch' | 'creative'
+ *
+ * 数据库中可能仍存在历史数据（用户自建模板或未重新 seed 的环境），
+ * UI 在渲染时必须将旧值映射到对应的新值，避免出现空白图标/裸 i18n key。
+ */
+const LEGACY_CATEGORY_MAP: Record<string, string> = {
+  study: 'knowledge',
+  work: 'project',
+  life: 'creative',
+  health: 'creative',
+  custom: 'creative',
+};
+
+export function normalizeCategory(category: string): string {
+  return LEGACY_CATEGORY_MAP[category] ?? category;
+}
+
 export const taskTemplatesApi = {
   getTemplates: (filters?: TemplateFilters) => {
     const params = new URLSearchParams();
     if (filters?.category) params.append('category', filters.category);
     if (filters?.search) params.append('search', filters.search);
     const queryString = params.toString();
-    return request(`/scheduler/templates${queryString ? `?${queryString}` : ''}`);
+    return request<{ success: boolean; data: TaskTemplate[]; total: number }>(`/scheduler/templates${queryString ? `?${queryString}` : ''}`);
   },
 
-  getTemplate: (id: string) => request(`/scheduler/templates/${id}`),
+  getTemplate: (id: string) => request<{ success: boolean; data: TaskTemplate }>(`/scheduler/templates/${id}`),
 
-  getCategories: (): Promise<{ data: TemplateCategory[] }> =>
-    request('/scheduler/templates/categories'),
+  getCategories: (): Promise<{ success: boolean; data: TemplateCategory[] }> =>
+    request<{ success: boolean; data: TemplateCategory[] }>('/scheduler/templates/categories'),
 
   createTemplate: (data: CreateTemplateData) =>
-    request('/scheduler/templates', { method: 'POST', body: JSON.stringify(data) }),
+    request<{ success: boolean; data: TaskTemplate }>('/scheduler/templates', { method: 'POST', body: JSON.stringify(data) }),
 
   updateTemplate: (id: string, data: UpdateTemplateData) =>
-    request(`/scheduler/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    request<{ success: boolean; data: TaskTemplate }>(`/scheduler/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   deleteTemplate: (id: string) =>
-    request(`/scheduler/templates/${id}`, { method: 'DELETE' }),
+    request<{ success: boolean }>(`/scheduler/templates/${id}`, { method: 'DELETE' }),
 
   applyTemplate: (id: string, data?: ApplyTemplateData) =>
-    request(`/scheduler/templates/${id}/apply`, {
+    request<{ success: boolean; data: unknown }>(`/scheduler/templates/${id}/apply`, {
       method: 'POST',
       body: JSON.stringify(data || {}),
     }),
 
   duplicateTemplate: (id: string, name?: string) =>
-    request(`/scheduler/templates/${id}/duplicate`, {
+    request<{ success: boolean; data: TaskTemplate }>(`/scheduler/templates/${id}/duplicate`, {
       method: 'POST',
       body: JSON.stringify({ name }),
     }),
 
   setDefaultTemplate: (id: string) =>
-    request(`/scheduler/templates/${id}/set-default`, { method: 'POST' }),
+    request<{ success: boolean; data: TaskTemplate }>(`/scheduler/templates/${id}/set-default`, { method: 'POST' }),
 };
 
 export function extractPlaceholders(template: TaskTemplate): string[] {

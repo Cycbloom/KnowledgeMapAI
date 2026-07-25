@@ -85,5 +85,8 @@
   "createSnapshot": "Create Snapshot",
   "snapshotFailed": "Snapshot operation failed, please try again later",
   "restoreFailed": "Restore failed, please try again later",
-  "logoutFailed": "Logout failed, please try again later"
+  "logoutFailed": "Logout failed, please try again later",
+  "importMode": {
+    "legend": "Import mode selection"
+  }
 }

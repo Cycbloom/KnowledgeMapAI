@@ -114,6 +114,8 @@ const SortableNode: React.FC<SortableNodeProps> = ({
     isDragging,
   } = useSortable({ id: node.id });
 
+  const { t } = useTranslation();
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -145,9 +147,11 @@ const SortableNode: React.FC<SortableNodeProps> = ({
         ${statusColors[node.status]}
         ${isDragging ? 'shadow-lg' : 'hover:shadow-md'}
       `}
+      {...attributes}
+      aria-roledescription={t('learning.pathEditor.a11y.draggableNode')}
+      aria-label={node.node?.title || t('learning.pathEditor.unknownNode')}
     >
       <div
-        {...attributes}
         {...listeners}
         className={`cursor-grab active:cursor-grabbing p-1 rounded ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
       >
@@ -164,18 +168,18 @@ const SortableNode: React.FC<SortableNodeProps> = ({
       >
         <div className="flex items-center gap-2">
           <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            {node.node?.title || '未知节点'}
+            {node.node?.title || t('learning.pathEditor.unknownNode')}
           </span>
           <div 
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: difficultyColors[Math.min(node.difficulty_level - 1, 4)] }}
-            title={`难度: ${node.difficulty_level}/5`}
+            title={t('learning.pathEditor.difficulty', { level: node.difficulty_level })}
           />
         </div>
         <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
           <span className="flex items-center gap-1">
             <Timer className="w-3 h-3" />
-            {node.estimated_minutes}分钟
+            {t('learning.pathEditor.estimatedMinutes', { minutes: node.estimated_minutes })}
           </span>
           {node.node?.level && (
             <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-200 dark:bg-slate-600">
@@ -189,14 +193,14 @@ const SortableNode: React.FC<SortableNodeProps> = ({
         <button
           onClick={() => onStatusChange(node.id, node.status === 'completed' ? 'pending' : 'completed')}
           className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
-          title={node.status === 'completed' ? '标记为未完成' : '标记为完成'}
+          title={node.status === 'completed' ? t('learning.pathEditor.markIncomplete') : t('learning.pathEditor.markComplete')}
         >
           {statusIcons[node.status]}
         </button>
         <button
           onClick={() => onRemove(node.id)}
           className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400 hover:text-red-400' : 'hover:bg-gray-100 text-gray-400 hover:text-red-500'}`}
-          title="从路径中移除"
+          title={t('learning.pathEditor.removeFromPath')}
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -341,7 +345,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       
       const result = await api.learningPath.generate({
         graph_id: graphId,
-        target_goal: '根据图谱结构生成最优学习路径',
+        target_goal: t('learning.pathEditor.defaultTargetGoal'),
         learning_style: 'sequential',
         daily_time_minutes: 30
       }) as { stages: LearningPathStage[]; graphTitle: string; targetGoal?: string };
@@ -356,8 +360,8 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
         }));
         
         await api.learningPaths.create({
-          title: `学习路径 - ${result.graphTitle}`,
-          description: result.targetGoal || 'AI 生成的学习路径',
+          title: t('learning.pathEditor.pathTitle', { title: result.graphTitle }),
+          description: result.targetGoal || t('learning.pathEditor.aiGeneratedDescription'),
           goal: result.targetGoal,
           daily_minutes_target: 30,
           ai_generated: true,
@@ -394,10 +398,10 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
           <div className="flex items-center gap-3">
             <Target className="w-5 h-5 text-primary-500" />
             <div>
-              <h2 className="text-lg font-semibold">学习路径编辑器</h2>
+              <h2 className="text-lg font-semibold">{t('learning.pathEditor.title')}</h2>
               {learningPath && (
                 <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  {learningPath.title} · {learningPath.completed_nodes}/{learningPath.total_nodes} 已完成
+                  {t('learning.pathEditor.progressSummary', { title: learningPath.title, completed: learningPath.completed_nodes, total: learningPath.total_nodes })}
                 </p>
               )}
             </div>
@@ -417,11 +421,11 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                 <div className="flex items-center gap-4 text-sm">
                   <span className="flex items-center gap-1">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    {learningPath.completed_nodes ?? 0} 已完成
+                    {t('learning.pathEditor.completedCount', { count: learningPath.completed_nodes ?? 0 })}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-4 h-4 text-primary-500" />
-                    {learningPath.estimated_hours?.toFixed(1) ?? '-'} 小时
+                    {t('learning.pathEditor.estimatedHours', { hours: learningPath.estimated_hours?.toFixed(1) ?? '-' })}
                   </span>
                   {learningPath.target_completion_date && (
                     <span className="flex items-center gap-1">
@@ -465,7 +469,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
 
               {isAddingNode && (
                 <div className={`mt-4 p-4 rounded-lg border ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-gray-50'}`}>
-                  <h4 className="text-sm font-medium mb-3">添加节点到路径</h4>
+                  <h4 className="text-sm font-medium mb-3">{t('learning.pathEditor.addNodeToPath')}</h4>
                   <div className="flex gap-2">
                     <select
                       value={selectedNewNode}
@@ -476,7 +480,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                           : 'bg-white border-gray-300 text-gray-900'
                       }`}
                     >
-                      <option value="">选择节点...</option>
+                      <option value="">{t('learning.pathEditor.selectNodePlaceholder')}</option>
                       {availableNodes.map(node => (
                         <option key={node.id} value={node.id}>{node.title}</option>
                       ))}
@@ -486,13 +490,13 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                       disabled={!selectedNewNode || isSaving}
                       className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
                     >
-                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : '添加'}
+                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('learning.pathEditor.addButton')}
                     </button>
                     <button
                       onClick={() => { setIsAddingNode(false); setSelectedNewNode(''); }}
                       className={`px-4 py-2 rounded-lg ${isDark ? 'bg-slate-700 hover:bg-slate-600' : 'bg-gray-200 hover:bg-gray-300'}`}
                     >
-                      取消
+                      {t('learning.pathEditor.cancelButton')}
                     </button>
                   </div>
                 </div>
@@ -502,10 +506,10 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
             <div className="text-center py-12">
               <Target className={`w-16 h-16 mx-auto mb-4 ${isDark ? 'text-slate-700' : 'text-gray-300'}`} />
               <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                尚未创建学习路径
+                {t('learning.pathEditor.noPathTitle')}
               </h3>
               <p className={`text-sm mb-6 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-                让AI根据图谱结构为您生成最优学习路径
+                {t('learning.pathEditor.noPathDescription')}
               </p>
               <button
                 onClick={handleGeneratePath}
@@ -515,12 +519,12 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                 {isGenerating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    生成中...
+                    {t('learning.pathEditor.generating')}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    AI生成学习路径
+                    {t('learning.pathEditor.aiGeneratePath')}
                   </>
                 )}
               </button>
@@ -540,7 +544,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                 }`}
               >
                 <Plus className="w-4 h-4" />
-                添加节点
+                {t('learning.pathEditor.addNode')}
               </button>
               <button
                 onClick={handleGeneratePath}
@@ -552,7 +556,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                 ) : (
                   <Sparkles className="w-4 h-4" />
                 )}
-                AI 重新生成
+                {t('learning.pathEditor.aiRegenerate')}
               </button>
             </div>
             <div className="flex gap-2">
@@ -560,7 +564,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                 onClick={onClose}
                 className={`px-4 py-2 rounded-lg ${isDark ? 'bg-slate-800 hover:bg-slate-700' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
-                取消
+                {t('learning.pathEditor.cancelButton')}
               </button>
               <button
                 onClick={handleSaveOrder}
@@ -568,7 +572,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                 className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                保存更改
+                {t('learning.pathEditor.saveChanges')}
               </button>
             </div>
           </div>

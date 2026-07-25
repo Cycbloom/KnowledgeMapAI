@@ -55,15 +55,22 @@ interface PlanetNodeProps {
   isDark: boolean;
 }
 
+/**
+ * Troika Text 实例的最小类型声明（troika-three-text 未提供 TypeScript 类型）。
+ * 实际类继承自 THREE.Mesh，这里仅声明 PlanetView 中实际访问的字段。
+ */
+type TroikaTextMesh = THREE.Mesh & {
+  fontSize: number;
+  fillOpacity: number;
+};
+
 function PlanetNode({
   node,
   isDark,
 }: PlanetNodeProps) {
   const { t } = useTranslation();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const titleTextRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tagTextRef = useRef<any>(null);
+  const titleTextRef = useRef<TroikaTextMesh>(null);
+  const tagTextRef = useRef<TroikaTextMesh>(null);
   const { camera } = useThree();
   const nodePosRef = useRef(new THREE.Vector3(node.x, node.z, node.y));
 
@@ -786,7 +793,10 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
   enableRotation = false
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+
+  const ariaLabel = t('graphEditor.planetView.ariaLabel', '3D 星球视图，共 {{count}} 个节点，可拖动旋转与缩放查看节点间关系', { count: nodes.length });
 
   // 3D layout runs in a Web Worker (comlink) so the main thread stays
   // responsive even for large graphs. The worker is created once; the layout
@@ -852,6 +862,8 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
       <Canvas
         camera={{ position: [200, 150, 200], fov: 60, near: 0.1, far: 3000 }}
         gl={{ antialias: true, alpha: true }}
+        role="img"
+        aria-label={ariaLabel}
       >
         <Suspense fallback={null}>
           <Scene
@@ -870,6 +882,7 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
           />
         </Suspense>
       </Canvas>
+      <div className="sr-only">{ariaLabel}</div>
     </div>
   );
 };

@@ -118,7 +118,7 @@ export const Achievements = () => {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-5 flex items-center gap-4"
+                className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-500 p-5 flex items-center gap-4"
               >
                 <Skeleton variant="circular" width={48} height={48} />
                 <div className="flex-1 space-y-2">
@@ -211,7 +211,7 @@ export const Achievements = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-center">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-6 shadow-sm border border-slate-200 dark:border-slate-500 flex flex-col justify-center">
             <div className="text-center space-y-4">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600 mb-2">
                 <Award size={24} />
@@ -226,7 +226,7 @@ export const Achievements = () => {
           </div>
         </div>
 
-        <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700 pb-2 overflow-x-auto">
+        <div className="flex gap-2 border-b border-slate-200 dark:border-slate-500 pb-2 overflow-x-auto">
           {tabs.map(tab => {
             const Icon = tab.icon;
             return (
@@ -270,7 +270,7 @@ export const Achievements = () => {
                     className={`relative p-4 rounded-xl border transition-all ${
                       isCompleted 
                         ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' 
-                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-500'
                     }`}
                   >
                     <div className="flex items-start gap-3 mb-3">
@@ -374,7 +374,7 @@ export const Achievements = () => {
               const CatIcon = getCategoryIcon(category);
               return (
                 <div key={category} className="space-y-4">
-                  <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
+                  <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-500 pb-2">
                     <CatIcon className="text-slate-400" size={20} />
                     <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
                       {categories[category as keyof typeof categories] || category}
@@ -393,7 +393,7 @@ export const Achievements = () => {
                           animate={{ opacity: 1, y: 0 }}
                           className={`relative group rounded-xl p-4 border transition-all duration-300 ${
                             isUnlocked 
-                              ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md' 
+                              ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-500 shadow-sm hover:shadow-md' 
                               : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-75'
                           }`}
                         >

@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { AlertTriangle, TrendingUp } from "lucide-react";
+import { EmptyState } from "../common/EmptyState";
 
 export interface WeakPoint {
   nodeId: string;
@@ -46,11 +47,11 @@ export const WeakPointAnalysis = ({
           {t("study.weakPoints.title")}
         </h3>
         {weakPoints.length === 0 ? (
-          <p
-            className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
-          >
-            {t("study.weakPoints.empty")}
-          </p>
+          <EmptyState
+            variant="inline"
+            title={t("study.weakPoint.empty.title")}
+            description={t("study.weakPoint.empty.description")}
+          />
         ) : (
           <div className="space-y-3">
             {weakPoints.slice(0, 5).map((point, idx) => (

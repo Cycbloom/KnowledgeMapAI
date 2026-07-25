@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from "react";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { RefreshCw, AlertCircle, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { offlineMutationQueue, type QueuedMutation } from "@/utils/offlineMutations";
 import { cn } from "@/lib/utils";
 
 /**
- * 同步状态徽章组件
+ * SyncStatusBadge 组件
  *
  * 基于 offlineMutationQueue 显示 pending mutation 数量：
  * - pending = 0：不显示
@@ -14,6 +16,7 @@ import { cn } from "@/lib/utils";
  * 点击徽章弹出 popover 显示最近 5 项队列状态。
  */
 export function SyncStatusBadge() {
+  const { t } = useTranslation();
   const [queue, setQueue] = useState<QueuedMutation[]>([]);
   const [showPopover, setShowPopover] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,6 +51,14 @@ export function SyncStatusBadge() {
     badgeColor = "bg-yellow-500";
   }
 
+  // 决定图标
+  let StatusIcon = RefreshCw;
+  if (pendingCount > 10 || failedCount > 0) {
+    StatusIcon = AlertCircle;
+  } else if (pendingCount > 0) {
+    StatusIcon = Clock;
+  }
+
   if (pendingCount === 0) {
     return null; // 无 pending 时不显示
   }
@@ -61,9 +72,9 @@ export function SyncStatusBadge() {
           "relative p-1.5 rounded-full text-white hover:opacity-80 transition-opacity",
           badgeColor,
         )}
-        aria-label="同步状态"
+        aria-label={t('syncStatus.badge.ariaLabel', { count: pendingCount })}
       >
-        <RefreshCw className="h-4 w-4" />
+        <StatusIcon className="h-4 w-4" />
         {pendingCount > 0 && (
           <span
             data-testid="sync-status-badge-count"
@@ -79,17 +90,17 @@ export function SyncStatusBadge() {
           className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto"
         >
           <div className="p-3 border-b border-gray-200 font-medium text-sm text-gray-800">
-            待同步操作 ({pendingCount})
+            {t('syncStatus.popover.title', { count: pendingCount })}
           </div>
           <div className="divide-y divide-gray-100">
             {queue.slice(0, 5).map((item) => (
               <div key={item.id} className="p-3 text-xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium truncate text-gray-800">
-                    {formatMutationKey(item.mutationKey)}
+                    {formatMutationKey(item.mutationKey, t)}
                   </span>
                   <span className="text-gray-500 shrink-0">
-                    {formatRelativeTime(item.timestamp)}
+                    {formatRelativeTime(item.timestamp, t)}
                   </span>
                 </div>
                 {item.lastError && (
@@ -107,18 +118,18 @@ export function SyncStatusBadge() {
   );
 }
 
-function formatMutationKey(key: unknown[]): string {
-  if (!Array.isArray(key) || key.length === 0) return "未知操作";
+function formatMutationKey(key: unknown[], t: TFunction): string {
+  if (!Array.isArray(key) || key.length === 0) return t('syncStatus.unknown');
   return key.map((k) => String(k)).join(" / ");
 }
 
-function formatRelativeTime(timestamp: number): string {
+function formatRelativeTime(timestamp: number, t: TFunction): string {
   const diff = Date.now() - timestamp;
   const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return "刚刚";
+  if (seconds < 60) return t('syncStatus.justNow');
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} 分钟前`;
+  if (minutes < 60) return t('syncStatus.minutesAgo', { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} 小时前`;
-  return `${Math.floor(hours / 24)} 天前`;
+  if (hours < 24) return t('syncStatus.hoursAgo', { count: hours });
+  return t('syncStatus.daysAgo', { count: Math.floor(hours / 24) });
 }

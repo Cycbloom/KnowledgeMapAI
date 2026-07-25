@@ -18,8 +18,7 @@ export function useCalendarActivityStats(startDate: string, endDate: string) {
   return useQuery({
     queryKey: calendarKeys.activityStats(startDate, endDate),
     queryFn: async (): Promise<DailyActivityStats[]> => {
-      const res = await api.scheduler.getActivityStats(startDate, endDate);
-      return (res.data ?? []) as DailyActivityStats[];
+      return api.scheduler.getActivityStats(startDate, endDate);
     },
     enabled: !!startDate && !!endDate,
     ...defaultQueryConfig,
@@ -30,8 +29,7 @@ export function useCalendarDailyActivities(date: string) {
   return useQuery({
     queryKey: calendarKeys.dailyActivities(date),
     queryFn: async (): Promise<ActivityEvent[]> => {
-      const res = await api.scheduler.getDailyActivities(date);
-      return (res.data ?? []) as ActivityEvent[];
+      return api.scheduler.getDailyActivities(date);
     },
     enabled: !!date,
     ...defaultQueryConfig,

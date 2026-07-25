@@ -43,9 +43,9 @@ export interface SearchResult {
 }
 
 export const searchApi = {
-  search: (query: string): Promise<SearchResult> => 
-    request(`/search?q=${encodeURIComponent(query)}`),
-  
-  semanticSearch: (query: string): Promise<SearchResult> => 
-    request(`/search?q=${encodeURIComponent(query)}&type=semantic`),
+  search: (query: string): Promise<SearchResult> =>
+    request<SearchResult>(`/search?q=${encodeURIComponent(query)}`),
+
+  semanticSearch: (query: string): Promise<SearchResult> =>
+    request<SearchResult>(`/search?q=${encodeURIComponent(query)}&type=semantic`),
 };

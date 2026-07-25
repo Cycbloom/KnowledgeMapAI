@@ -35,6 +35,16 @@
       "learning": "Learning",
       "review": "Review",
       "relearning": "Relearning"
+    },
+    "clear": "Clear"
+  },
+  "blindSpot": {
+    "title": "Blind Spots (Top 10)",
+    "nodeInfo": "Node: {{node}} | Stability: {{stability}}",
+    "review": "Review",
+    "empty": {
+      "title": "No weak knowledge points",
+      "description": "Keep reviewing, weak points will appear automatically"
     }
   },
   "focusTimer": {
@@ -104,6 +114,12 @@
     "title": "Weak Points",
     "empty": "No weak point data"
   },
+  "weakPoint": {
+    "empty": {
+      "title": "No weak point analysis",
+      "description": "Analysis will be generated after more reviews"
+    }
+  },
   "priority": {
     "high": "High Priority",
     "medium": "Medium Priority",
@@ -130,6 +146,27 @@
     "noCardsFound": "No matching cards found",
     "clearSearch": "Clear Search",
     "switchToAll": "Switch to All Cards"
+  },
+  "cardPreview": {
+    "status": {
+      "studied": "Studied",
+      "new": "New"
+    },
+    "notStarted": "Not started",
+    "cardType": {
+      "qa": "Q&A",
+      "choice": "Single Choice",
+      "multi_choice": "Multiple Choice",
+      "fill_in_the_blank": "Fill in the Blank",
+      "true_false": "True/False",
+      "essay": "Essay"
+    },
+    "button": {
+      "preview": "Preview",
+      "edit": "Edit",
+      "delete": "Delete",
+      "practice": "Practice"
+    }
   },
   "completed": {
     "levelComplete": "Round Complete!",
@@ -319,6 +356,7 @@
     }
   },
   "questionForm": {
+    "answerLegend": "Answer selection",
     "questionLabel": "Question",
     "questionPlaceholder": "Enter question content...",
     "typeLabel": "Type",

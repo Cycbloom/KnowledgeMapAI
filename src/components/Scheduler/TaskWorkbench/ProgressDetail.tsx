@@ -57,12 +57,9 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
   const loadProgressPlans = async () => {
     setLoading(true);
     try {
-      const response = await api.scheduler.getProgressPlan(taskId);
-      if (response.success) {
-        const plansData = response.data?.plans || response.data || [];
-        setPlans(Array.isArray(plansData) ? plansData : []);
-        analyzeProgress(Array.isArray(plansData) ? plansData : []);
-      }
+      const plansData = await api.scheduler.getProgressPlan(taskId);
+      setPlans(Array.isArray(plansData) ? plansData : []);
+      analyzeProgress(Array.isArray(plansData) ? plansData : []);
     } catch (error) {
       console.error("Failed to load progress plans:", error);
     } finally {
@@ -137,17 +134,15 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
     updates: Partial<TaskProgressPlan>,
   ) => {
     try {
-      const response = await api.scheduler.updateProgressPlan(taskId, {
+      await api.scheduler.updateProgressPlan(taskId, {
         planId,
         ...updates,
       });
-      if (response.success) {
-        setPlans(
-          plans.map((p) => (p.id === planId ? { ...p, ...updates } : p)),
-        );
-        setSelectedPlan(null);
-        loadProgressPlans();
-      }
+      setPlans(
+        plans.map((p) => (p.id === planId ? { ...p, ...updates } : p)),
+      );
+      setSelectedPlan(null);
+      loadProgressPlans();
     } catch (error) {
       console.error("Failed to update plan:", error);
     }
@@ -313,23 +308,26 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
         <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
           每日进度计划
         </h4>
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-500 overflow-hidden">
+          <table
+            className="w-full"
+            aria-label={t("scheduler.progressDetail.tableAriaLabel", { defaultValue: "每日进度计划表" })}
+          >
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-700/50">
-                <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">
+                <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">
                   日期
                 </th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
+                <th scope="col" className="px-4 py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
                   计划
                 </th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
+                <th scope="col" className="px-4 py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
                   实际
                 </th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
+                <th scope="col" className="px-4 py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
                   状态
                 </th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400">
+                <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400">
                   操作
                 </th>
               </tr>
@@ -340,7 +338,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                 return (
                   <tr
                     key={plan.id}
-                    className="border-t border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 cursor-pointer transition-colors"
+                    className="border-t border-slate-100 dark:border-slate-500/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 cursor-pointer transition-colors"
                     onClick={() => setSelectedPlan(plan)}
                   >
                     <td className="px-4 py-3">
@@ -416,7 +414,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
               className="relative w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 p-4 flex items-center justify-between">
+              <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-500 p-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                   编辑进度 - {formatDate(selectedPlan.plan_date)}
                 </h3>
@@ -448,7 +446,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                     max="100"
                     defaultValue={selectedPlan.actual_percentage}
                     id="actual-progress-input"
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
 
@@ -471,7 +469,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                         className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                           selectedPlan.status === option.value
                             ? "border-primary-500 bg-primary-50 dark:bg-primary-500/10"
-                            : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                            : "border-slate-200 dark:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
                         }`}
                       >
                         <input
@@ -510,13 +508,13 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                     id="notes-input"
                     defaultValue={selectedPlan.notes || ""}
                     rows={3}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
                     placeholder="添加备注..."
                   />
                 </div>
               </div>
 
-              <div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 flex justify-between">
+              <div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-500 p-4 flex justify-between">
                 <button
                   onClick={async () => {
                     if (await asyncConfirm({ title: t('common.confirm.deleteProgressTitle'), message: t('common.confirm.deleteProgressMessage'), isDangerous: true })) {

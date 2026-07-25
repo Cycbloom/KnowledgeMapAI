@@ -194,13 +194,13 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                       e.stopPropagation();
                       onAddEvent(day.date);
                     }}
-                    className={`p-0.5 rounded ${
+                    className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded ${
                       isDark
                         ? "bg-slate-600 hover:bg-slate-500 text-slate-300"
                         : "bg-gray-200 hover:bg-gray-300 text-gray-600"
                     }`}
                   >
-                    <Plus size={12} />
+                    <Plus size={16} />
                   </button>
                 )}
             </div>

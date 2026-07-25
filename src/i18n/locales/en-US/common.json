@@ -8,7 +8,44 @@
   "delete": "Delete",
   "edit": "Edit",
   "create": "Create",
-  "search": "Search",
+  "search": {
+    "label": "Search",
+    "scope": {
+      "all": "All",
+      "today": "Today",
+      "week": "This Week",
+      "month": "This Month"
+    },
+    "filter": {
+      "timeLabel": "Time:",
+      "statusLabel": "Status:",
+      "statusAll": "All",
+      "statusMastered": "Mastered",
+      "statusLearning": "Learning",
+      "statusNew": "Not Started"
+    },
+    "history": {
+      "title": "Search History",
+      "clear": "Clear"
+    },
+    "loading": "Searching...",
+    "aiAnswer": "AI Answer",
+    "graphs": "Graphs ({{count}})",
+    "nodes": "Nodes ({{count}})",
+    "unknownGraph": "Unknown Graph",
+    "noResults": "No results found",
+    "inputToStart": "Type a keyword to start searching",
+    "shortcut": "Press Enter to search · Ctrl+/ shortcut",
+    "semanticMode": "Semantic Search",
+    "keywordMode": "Keyword Search",
+    "placeholder": {
+      "keyword": "Search graphs or nodes...",
+      "semantic": "AI semantic search..."
+    },
+    "toggleToKeyword": "Switch to keyword search",
+    "toggleToSemantic": "Enable AI semantic search",
+    "filterButton": "Filter"
+  },
   "noData": "No data",
   "empty": "No data",
   "retry": "Retry",
@@ -107,10 +144,12 @@
     "conceptAggregation": "Concept Aggregation",
     "search": "Search",
     "removeOption": "Remove option",
+    "removeTag": "Remove tag {{tag}}",
     "selectColor": "Select color",
     "selectIcon": "Select icon",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "required": "Required"
   },
   "clipboard": {
     "unavailable": "Clipboard unavailable",
@@ -161,5 +200,90 @@
     "noHierarchyTreeTitle": "No Hierarchy Tree",
     "noHierarchyTreeDesc": "Select a node to view hierarchy tree"
   },
-  "comingSoon": "Coming Soon"
+  "focusTimer": {
+    "reset": "Reset",
+    "pause": "Pause",
+    "start": "Start",
+    "skip": "Skip"
+  },
+  "offlineStatus": {
+    "offlineMode": "Offline Mode",
+    "pendingCount": "{{count}} item(s) pending sync",
+    "syncing": "Syncing...",
+    "syncFailed": "Sync Failed",
+    "retry": "Retry",
+    "syncComplete": "Sync Complete",
+    "syncNow": "Sync Now"
+  },
+  "commandPalette": {
+    "categoryNavigation": "Navigation",
+    "categoryRecent": "Recent",
+    "categoryAction": "Quick Actions",
+    "recentGraph": "Recent Graphs",
+    "recentNode": "Recent Nodes",
+    "recentNote": "Recent Notes",
+    "untitledGraph": "Unnamed Graph",
+    "untitledNode": "Unnamed Node",
+    "untitledNote": "Unnamed Note",
+    "actionNewGraph": "New Graph",
+    "actionToggleTheme": "Toggle Theme",
+    "actionSettings": "Open Settings",
+    "actionTrash": "Open Trash",
+    "actionNewGraphKeywords": "new create graph",
+    "actionToggleThemeKeywords": "theme dark light",
+    "actionSettingsKeywords": "settings config",
+    "actionTrashKeywords": "trash recycle bin",
+    "ariaLabel": "Global Command Palette",
+    "searchPlaceholder": "Search commands, recent items, or actions...",
+    "noMatch": "No matching commands",
+    "footerNavigate": "↑↓ Navigate",
+    "footerSelect": "↵ Select",
+    "footerClose": "Esc Close",
+    "footerTitle": "Global Command Palette"
+  },
+  "comingSoon": "Coming Soon",
+  "shortcutHelp": {
+    "title": "Keyboard Shortcuts",
+    "resetAll": "Reset All",
+    "searchPlaceholder": "Search shortcuts...",
+    "disabled": "Disabled",
+    "pressNewShortcut": "Press new shortcut...",
+    "notSet": "Not set",
+    "resetToDefault": "Reset to default",
+    "noMatch": "No matching shortcuts found",
+    "customHint": "Click a shortcut button to customize",
+    "totalCount": "{{count}} shortcuts total",
+    "categories": {
+      "navigation": "Navigation",
+      "view": "View",
+      "editing": "Editing",
+      "selection": "Selection",
+      "ai": "AI Assistant",
+      "tools": "Tools",
+      "general": "General"
+    }
+  },
+  "preferences": {
+    "reducedMotion": "Reduce motion",
+    "reducedMotionDesc": "Reduce animation duration and intensity (active when the OS enables \"reduce motion\" or this toggle is on)"
+  },
+  "footer": {
+    "copyright": "© 2026 KnowledgeMap. All rights reserved."
+  },
+  "form": {
+    "errorAnnouncement": "Form errors"
+  },
+  "tagSystem": {
+    "selected": "{{count}} tags selected",
+    "filter": "Filter tags",
+    "selectAll": "Select tags"
+  },
+  "audioVisualizer": {
+    "ariaLabel": "Audio visualizer, state: {{state}}",
+    "state": {
+      "playing": "Playing",
+      "paused": "Paused",
+      "idle": "Idle"
+    }
+  }
 }

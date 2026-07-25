@@ -39,7 +39,7 @@ export const GraphStatsSummary = React.memo(({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-1.5 rounded border border-slate-100 dark:border-slate-700">
+        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-1.5 rounded border border-slate-100 dark:border-slate-500">
           <Clock size={12} className={dueTodayCount > 0 ? "text-amber-500" : "text-slate-400"} />
           <div className="flex flex-col">
             <span className="text-[10px] text-slate-500">今日复习</span>
@@ -49,7 +49,7 @@ export const GraphStatsSummary = React.memo(({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-1.5 rounded border border-slate-100 dark:border-slate-700">
+        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-1.5 rounded border border-slate-100 dark:border-slate-500">
           {isolatedCount > 0 ? (
             <AlertTriangle size={12} className="text-orange-500" />
           ) : (

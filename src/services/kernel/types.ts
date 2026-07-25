@@ -24,6 +24,12 @@ export interface RouteRegistration {
   layout?: "protected" | "public";
   /** If set, this route redirects to the given path instead of rendering a component. */
   redirect?: string;
+  /**
+   * i18n key (e.g. "layout.breadcrumb.dashboard") used to set document.title.
+   * Resolved by the useDocumentTitle hook (Task 8) on route activation.
+   * Optional — routes without a title keep the default document.title.
+   */
+  title?: string;
 }
 
 export interface RouteOptions {

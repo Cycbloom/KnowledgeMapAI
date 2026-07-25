@@ -85,5 +85,8 @@
   "createSnapshot": "创建快照",
   "snapshotFailed": "快照操作失败，请稍后重试",
   "restoreFailed": "恢复失败，请稍后重试",
-  "logoutFailed": "登出失败，请稍后重试"
+  "logoutFailed": "登出失败，请稍后重试",
+  "importMode": {
+    "legend": "导入模式选择"
+  }
 }

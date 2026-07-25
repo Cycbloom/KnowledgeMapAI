@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Terminal, Clock, ChevronDown, ChevronUp, Activity } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,8 @@ import { ConfirmationModal } from '@/components/common/ConfirmationModal';
 import { PerformanceTab } from './PerformanceTab';
 
 type TabType = 'console' | 'performance';
+
+const TABS: TabType[] = ['console', 'performance'];
 
 interface ConsoleProps {
   isOpen: boolean;
@@ -52,6 +54,12 @@ export const Console: React.FC<ConsoleProps> = ({
   
   const [showHistoryPanel, setShowHistoryPanel] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<TabType>('console');
+  const baseId = useId();
+  const consoleTabId = `${baseId}-tab-console`;
+  const consolePanelId = `${baseId}-panel-console`;
+  const performanceTabId = `${baseId}-tab-performance`;
+  const performancePanelId = `${baseId}-panel-performance`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const outputRef = useRef<ConsoleOutputRef>(null);
   const inputRef = useRef<ConsoleInputRef>(null);
   const consoleRef = useRef<HTMLDivElement>(null);
@@ -191,6 +199,20 @@ export const Console: React.FC<ConsoleProps> = ({
     clearOutput();
   }, [clearOutput]);
 
+  const handleTabKeyDown = useCallback((e: React.KeyboardEvent<HTMLButtonElement>, currentTab: TabType) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const currentIndex = TABS.indexOf(currentTab);
+    if (currentIndex === -1) return;
+    const direction = e.key === 'ArrowRight' ? 1 : -1;
+    const newIndex = (currentIndex + direction + TABS.length) % TABS.length;
+    const newTab = TABS[newIndex];
+    setActiveTab(newTab);
+    requestAnimationFrame(() => {
+      tabRefs.current[newIndex]?.focus();
+    });
+  }, []);
+
   return (
     <>
       <AnimatePresence>
@@ -212,9 +234,16 @@ export const Console: React.FC<ConsoleProps> = ({
                 isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-gray-50'
               }`}
             >
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1" role="tablist">
                 <button
+                  ref={(el) => { tabRefs.current[0] = el; }}
+                  role="tab"
+                  id={consoleTabId}
+                  aria-controls={consolePanelId}
+                  aria-selected={activeTab === 'console'}
+                  tabIndex={activeTab === 'console' ? 0 : -1}
                   onClick={() => setActiveTab('console')}
+                  onKeyDown={(e) => handleTabKeyDown(e, 'console')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     activeTab === 'console'
                       ? isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-200 text-gray-800'
@@ -225,7 +254,14 @@ export const Console: React.FC<ConsoleProps> = ({
                   {t('console.tabs.console')}
                 </button>
                 <button
+                  ref={(el) => { tabRefs.current[1] = el; }}
+                  role="tab"
+                  id={performanceTabId}
+                  aria-controls={performancePanelId}
+                  aria-selected={activeTab === 'performance'}
+                  tabIndex={activeTab === 'performance' ? 0 : -1}
                   onClick={() => setActiveTab('performance')}
+                  onKeyDown={(e) => handleTabKeyDown(e, 'performance')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     activeTab === 'performance'
                       ? isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-200 text-gray-800'
@@ -276,7 +312,12 @@ export const Console: React.FC<ConsoleProps> = ({
 
             <div className="flex flex-1 min-h-0">
               {activeTab === 'console' ? (
-                <>
+                <div
+                  role="tabpanel"
+                  id={consolePanelId}
+                  aria-labelledby={consoleTabId}
+                  className="flex flex-1 min-h-0"
+                >
                   <div className={`flex-1 flex flex-col min-w-0 ${showHistoryPanel ? 'border-r' : ''} ${
                     isDark ? 'border-slate-700' : 'border-gray-200'
                   }`}>
@@ -316,9 +357,16 @@ export const Console: React.FC<ConsoleProps> = ({
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </>
+                </div>
               ) : (
-                <PerformanceTab isDark={isDark} />
+                <div
+                  role="tabpanel"
+                  id={performancePanelId}
+                  aria-labelledby={performanceTabId}
+                  className="flex flex-1 min-h-0"
+                >
+                  <PerformanceTab isDark={isDark} />
+                </div>
               )}
             </div>
           </motion.div>

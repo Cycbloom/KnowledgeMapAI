@@ -1,0 +1,13 @@
+{
+  "badge": {
+    "ariaLabel": "Sync status: {{count}} pending"
+  },
+  "popover": {
+    "title": "Pending operations ({{count}})"
+  },
+  "unknown": "Unknown operation",
+  "justNow": "just now",
+  "minutesAgo": "{{count}} minutes ago",
+  "hoursAgo": "{{count}} hours ago",
+  "daysAgo": "{{count}} days ago"
+}

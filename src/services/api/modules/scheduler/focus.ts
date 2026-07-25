@@ -1,4 +1,5 @@
-import { request } from "../../client";
+import { requestData } from "../../client";
+import type { HeatmapData } from "@shared/types";
 
 export interface FocusSession {
   id: string;
@@ -78,13 +79,13 @@ export interface MonthlyFocusStats {
 
 export const focusApi = {
   createFocusSession: (data: CreateFocusSessionData) =>
-    request("/scheduler/focus-sessions", {
+    requestData<FocusSession>("/scheduler/focus-sessions", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
   updateFocusSession: (id: string, data: Partial<FocusSession>) =>
-    request(`/scheduler/focus-sessions/${id}`, {
+    requestData<FocusSession>(`/scheduler/focus-sessions/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
@@ -104,21 +105,21 @@ export const focusApi = {
       {params.append("is_break", String(options.is_break));}
     if (options?.limit) params.append("limit", String(options.limit));
     const queryString = params.toString();
-    return request(
+    return requestData<FocusSession[]>(
       `/scheduler/focus-sessions${queryString ? `?${queryString}` : ""}`,
     );
   },
 
-  getUserFocusStats: () => request("/scheduler/focus-stats"),
+  getUserFocusStats: () => requestData<UserFocusStats>("/scheduler/focus-stats"),
 
   getDailyFocusStats: (date?: string) => {
     const params = date ? `?date=${date}` : "";
-    return request(`/scheduler/focus-stats/daily${params}`);
+    return requestData<DailyFocusStats>(`/scheduler/focus-stats/daily${params}`);
   },
 
   getWeeklyFocusStats: (weekStart?: string) => {
     const params = weekStart ? `?week_start=${weekStart}` : "";
-    return request(`/scheduler/focus-stats/weekly${params}`);
+    return requestData<WeeklyFocusStats>(`/scheduler/focus-stats/weekly${params}`);
   },
 
   getMonthlyFocusStats: (year?: number, month?: number) => {
@@ -126,13 +127,13 @@ export const focusApi = {
     if (year !== undefined) params.append("year", String(year));
     if (month !== undefined) params.append("month", String(month));
     const queryString = params.toString();
-    return request(
+    return requestData<MonthlyFocusStats>(
       `/scheduler/focus-stats/monthly${queryString ? `?${queryString}` : ""}`,
     );
   },
 
   getYearlyHeatmap: (year?: number) => {
     const params = year ? `?year=${year}` : "";
-    return request(`/scheduler/focus-stats/heatmap${params}`);
+    return requestData<HeatmapData[]>(`/scheduler/focus-stats/heatmap${params}`);
   },
 };

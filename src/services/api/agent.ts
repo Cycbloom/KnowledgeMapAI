@@ -209,31 +209,31 @@ export const agentApi = {
     graph_ids?: string[];
     custom_prompt?: string;
   }): Promise<{ session: AgentSession }> =>
-    request("/agent/sessions", {
+    request<{ session: AgentSession }>("/agent/sessions", {
       method: "POST",
       body: JSON.stringify(options || {}),
     }),
 
   getSession: (sessionId: string): Promise<{ session: AgentSession }> =>
-    request(`/agent/sessions/${sessionId}`),
+    request<{ session: AgentSession }>(`/agent/sessions/${sessionId}`),
 
   executeSession: (
     sessionId: string,
     customPrompt?: string,
   ): Promise<{ session: AgentSession }> =>
-    request(`/agent/sessions/${sessionId}/execute`, {
+    request<{ session: AgentSession }>(`/agent/sessions/${sessionId}/execute`, {
       method: "POST",
       body: JSON.stringify({ custom_prompt: customPrompt }),
     }),
 
   getSkills: (): Promise<{ skills: SkillDefinition[] }> =>
-    request("/agent/skills"),
+    request<{ skills: SkillDefinition[] }>("/agent/skills"),
 
   applyRecommendations: (
     recommendations: GraphRecommendation[],
     graphIndex?: Record<string, string>,
   ): Promise<{ success: boolean; created: number }> =>
-    request("/agent/recommendations/apply", {
+    request<{ success: boolean; created: number }>("/agent/recommendations/apply", {
       method: "POST",
       body: JSON.stringify({ recommendations, graphIndex }),
     }),
@@ -242,7 +242,7 @@ export const agentApi = {
     graphIds: string[],
     targetTitle?: string,
   ): Promise<{ success: boolean; merged_graph_id: string }> =>
-    request("/graphs/merge", {
+    request<{ success: boolean; merged_graph_id: string }>("/graphs/merge", {
       method: "POST",
       body: JSON.stringify({ graph_ids: graphIds, target_title: targetTitle }),
     }),
@@ -251,7 +251,7 @@ export const agentApi = {
     graphIds: string[],
     relationType?: RelationType,
   ): Promise<{ success: boolean; created: number }> =>
-    request("/graphs/batch-link", {
+    request<{ success: boolean; created: number }>("/graphs/batch-link", {
       method: "POST",
       body: JSON.stringify({
         graph_ids: graphIds,
@@ -260,18 +260,18 @@ export const agentApi = {
     }),
 
   dismissMergeSuggestion: (graphIds: string[]): Promise<{ success: boolean }> =>
-    request("/agent/merge-suggestions/dismiss", {
+    request<{ success: boolean }>("/agent/merge-suggestions/dismiss", {
       method: "POST",
       body: JSON.stringify({ graph_ids: graphIds }),
     }),
 
-  getTools: (): Promise<{ tools: ToolDefinition[] }> => request("/agent/tools"),
+  getTools: (): Promise<{ tools: ToolDefinition[] }> => request<{ tools: ToolDefinition[] }>("/agent/tools"),
 
   executeAutonomous: (
     sessionId: string,
     goal: AnalysisGoal,
   ): Promise<ExecuteResult> =>
-    request(`/agent/sessions/${sessionId}/autonomous`, {
+    request<ExecuteResult>(`/agent/sessions/${sessionId}/autonomous`, {
       method: "POST",
       body: JSON.stringify({ goal }),
     }),
@@ -279,13 +279,13 @@ export const agentApi = {
   getPendingActions: (
     sessionId: string,
   ): Promise<{ pendingActions: PendingAction[] }> =>
-    request(`/agent/sessions/${sessionId}/pending-actions`),
+    request<{ pendingActions: PendingAction[] }>(`/agent/sessions/${sessionId}/pending-actions`),
 
   confirmAction: (
     sessionId: string,
     actionId: string,
   ): Promise<{ success: boolean; result?: unknown; needsResume?: boolean }> =>
-    request(`/agent/sessions/${sessionId}/actions/${actionId}/confirm`, {
+    request<{ success: boolean; result?: unknown; needsResume?: boolean }>(`/agent/sessions/${sessionId}/actions/${actionId}/confirm`, {
       method: "POST",
     }),
 
@@ -293,7 +293,7 @@ export const agentApi = {
     sessionId: string,
     actionId: string,
   ): Promise<{ success: boolean; needsResume?: boolean }> =>
-    request(`/agent/sessions/${sessionId}/actions/${actionId}/reject`, {
+    request<{ success: boolean; needsResume?: boolean }>(`/agent/sessions/${sessionId}/actions/${actionId}/reject`, {
       method: "POST",
     }),
 
@@ -309,7 +309,15 @@ export const agentApi = {
       error?: string;
     }>;
   }> =>
-    request(`/agent/sessions/${sessionId}/actions/batch-confirm`, {
+    request<{
+      success: boolean;
+      results: Array<{
+        actionId: string;
+        success: boolean;
+        result?: unknown;
+        error?: string;
+      }>;
+    }>(`/agent/sessions/${sessionId}/actions/batch-confirm`, {
       method: "POST",
       body: JSON.stringify({ action_ids: actionIds }),
     }),
@@ -325,7 +333,14 @@ export const agentApi = {
       error?: string;
     }>;
   }> =>
-    request(`/agent/sessions/${sessionId}/actions/batch-reject`, {
+    request<{
+      success: boolean;
+      results: Array<{
+        actionId: string;
+        success: boolean;
+        error?: string;
+      }>;
+    }>(`/agent/sessions/${sessionId}/actions/batch-reject`, {
       method: "POST",
       body: JSON.stringify({ action_ids: actionIds }),
     }),

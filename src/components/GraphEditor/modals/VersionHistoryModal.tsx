@@ -215,7 +215,7 @@ export const VersionHistoryModal = ({
                 <div className="space-y-6">
                   <button
                     onClick={() => setCompareResult(null)}
-                    className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+                    className="text-sm text-primary-600 dark:text-primary-400 underline"
                   >
                     ← 返回选择
                   </button>
@@ -291,7 +291,7 @@ export const VersionHistoryModal = ({
             <div>
               <button
                 onClick={() => setSelectedVersion(null)}
-                className="text-sm text-primary-600 dark:text-primary-400 hover:underline mb-4"
+                className="text-sm text-primary-600 dark:text-primary-400 underline mb-4"
               >
                 ← 返回列表
               </button>

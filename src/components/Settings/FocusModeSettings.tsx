@@ -52,7 +52,7 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Timer className="w-5 h-5 text-orange-500 dark:text-orange-400" />
@@ -62,7 +62,7 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
         </div>
         <button
           onClick={handleResetFocusDefaults}
-          className="px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+          className="px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
         >
           {t("settings.resetFocusDefaults")}
         </button>
@@ -74,7 +74,7 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
             {t("settings.timeDurations")}
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
+            <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
               <div className="flex justify-between items-center mb-2">
                 <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <Clock className="w-4 h-4 text-primary-500" />
@@ -99,7 +99,7 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
               </div>
             </div>
 
-            <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
+            <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
               <div className="flex justify-between items-center mb-2">
                 <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <Coffee className="w-4 h-4 text-emerald-500" />
@@ -124,7 +124,7 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
               </div>
             </div>
 
-            <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
+            <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
               <div className="flex justify-between items-center mb-2">
                 <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <Coffee className="w-4 h-4 text-purple-500" />
@@ -149,7 +149,7 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
               </div>
             </div>
 
-            <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
+            <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
               <div className="flex justify-between items-center mb-2">
                 <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <RefreshCw className="w-4 h-4 text-amber-500" />
@@ -176,7 +176,7 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
           </div>
         </div>
 
-        <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-slate-700">
+        <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-slate-500">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
             <Zap className="w-4 h-4 text-amber-500" />
             {t("settings.automationOptions")}

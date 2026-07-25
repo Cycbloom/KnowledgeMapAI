@@ -39,47 +39,47 @@ export const pluginsApi = {
     if (options?.q) params.set('q', options.q);
     const query = params.toString();
     const url = `/plugins/registry${query ? `?${query}` : ''}`;
-    const res = await request(url);
+    const res = await request<{ success: boolean; data: RegistryPlugin[] }>(url);
     return res.data;
   },
 
   getRegistryPlugin: async (name: string): Promise<RegistryPlugin> => {
-    const res = await request(`/plugins/registry/${name}`);
+    const res = await request<{ success: boolean; data: RegistryPlugin }>(`/plugins/registry/${name}`);
     return res.data;
   },
 
   install: async (name: string): Promise<void> => {
-    await request(`/plugins/registry/${name}/install`, { method: 'POST' });
+    await request<{ success: boolean }>(`/plugins/registry/${name}/install`, { method: 'POST' });
   },
 
   uninstall: async (name: string): Promise<void> => {
-    await request(`/plugins/registry/${name}/uninstall`, { method: 'POST' });
+    await request<{ success: boolean }>(`/plugins/registry/${name}/uninstall`, { method: 'POST' });
   },
 
   update: async (name: string): Promise<void> => {
-    await request(`/plugins/registry/${name}/update`, { method: 'POST' });
+    await request<{ success: boolean }>(`/plugins/registry/${name}/update`, { method: 'POST' });
   },
 
   activate: async (name: string): Promise<void> => {
-    await request(`/plugins/${name}/activate`, { method: 'POST' });
+    await request<{ success: boolean }>(`/plugins/${name}/activate`, { method: 'POST' });
   },
 
   deactivate: async (name: string): Promise<void> => {
-    await request(`/plugins/${name}/deactivate`, { method: 'POST' });
+    await request<{ success: boolean }>(`/plugins/${name}/deactivate`, { method: 'POST' });
   },
 
   listInstalled: async (): Promise<InstalledPlugin[]> => {
-    const res = await request('/plugins');
+    const res = await request<{ success: boolean; data: InstalledPlugin[] }>('/plugins');
     return res.data;
   },
 
   checkUpdates: async (): Promise<PluginUpdate[]> => {
-    const res = await request('/plugins/updates');
+    const res = await request<{ success: boolean; data: PluginUpdate[] }>('/plugins/updates');
     return res.data;
   },
 
   rate: async (name: string, rating: number, review?: string): Promise<void> => {
-    await request(`/plugins/registry/${name}/rate`, {
+    await request<{ success: boolean }>(`/plugins/registry/${name}/rate`, {
       method: 'POST',
       body: JSON.stringify({ rating, review }),
     });

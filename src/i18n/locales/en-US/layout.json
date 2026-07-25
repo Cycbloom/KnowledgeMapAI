@@ -57,7 +57,14 @@
     "trash": "Trash",
     "graphEditor": "Graph Editor",
     "scheduler": "Scheduler",
-    "learningPaths": "Learning Paths"
+    "learningPaths": "Learning Paths",
+    "dashboard": "Dashboard",
+    "quiz": "Quiz",
+    "settings": "Settings",
+    "currentTask": "Current Task",
+    "schedulerStats": "Scheduler Stats",
+    "quizPreview": "Quiz Preview",
+    "quizPractice": "Quiz Practice"
   },
   "schemaEmpty": "Database is empty. Schema initialization is required.",
   "schemaPartial": "Database is partially initialized. Please complete database migration.",

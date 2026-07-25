@@ -66,6 +66,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
   return (
     <motion.div
       layout
+      role="listitem"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
@@ -114,7 +115,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
         </div>
       </div>
 
-      <div className="mt-auto pt-4 border-t border-gray-50 dark:border-slate-700/50 flex items-center justify-between">
+      <div className="mt-auto pt-4 border-t border-gray-50 dark:border-slate-500/50 flex items-center justify-between">
         <div className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
           {getCardTypeLabel(quiz.config?.cardTypes || [])}
         </div>

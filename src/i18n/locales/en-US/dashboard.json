@@ -133,5 +133,10 @@
     "restored": "Restored",
     "restoreFailed": "Restore failed. Please restore manually from the recycle bin."
   },
-  "deleteGraphTitle": "Delete Graph"
+  "deleteGraphTitle": "Delete Graph",
+  "mobileFAB": {
+    "aiGenerate": "AI Generate",
+    "import": "Import",
+    "importing": "Importing..."
+  }
 }

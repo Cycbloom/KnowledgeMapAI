@@ -72,13 +72,13 @@
   - [x] 删除 `task_subtasks.mastery_level` 列
   - [x] 删除 [07_scheduler_tasks.sql](file:///d:/KnowledgeMap/supabase/migrations/07_scheduler_tasks.sql) L218 注释中的 "synced with knowledge_points.mastery_level" 说明
 
-- [ ] Task 4.2: `user_tasks.context->>'graph_id'` 改为正式列
-  - 在 `user_tasks` 新增 `graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL` 列
-  - 数据迁移：`UPDATE user_tasks SET graph_id = (context->>'graph_id')::uuid WHERE task_type = 'graph_learning' AND context->>'graph_id' IS NOT NULL`
-  - 从 `context` JSONB 中移除 `graph_id` 键：`UPDATE user_tasks SET context = context - 'graph_id' WHERE context ? 'graph_id'`
-  - 删除 `idx_user_tasks_context_graph_id` 索引
-  - 新建 `idx_user_tasks_graph_id` 索引（部分索引：`WHERE graph_id IS NOT NULL`）
-  - 修改 service 层读写
+- [x] Task 4.2: `user_tasks.context->>'graph_id'` 改为正式列 ✅ 已完成（R40 spec 收尾）
+  - 在 `user_tasks` 新增 `graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL` 列（`07_scheduler_tasks.sql` L39 已存在）
+  - 数据迁移：模块化 schema 文件代表目标状态，`db:local:reset` 重建即完成
+  - 从 `context` JSONB 中移除 `graph_id` 键：模块化 schema 已不再包含此键
+  - 删除 `idx_user_tasks_context_graph_id` 索引（已删除）
+  - 新建 `idx_user_tasks_graph_id` 索引（部分索引：`WHERE graph_id IS NOT NULL`）（`12_indexes.sql` L140 已存在）
+  - 修改 service 层读写（审计发现 `api/services/` 下无 `context->>'graph_id'` 活跃引用，所有 service 已直接使用 `graph_id` 列）
 
 - [x] Task 4.3: `relationship_types.show_arrow` 改为 ENUM ✅ 已完成
   - 新增类型：`CREATE TYPE arrow_display AS ENUM ('true', 'false', 'auto');`
@@ -121,7 +121,7 @@
 
 ## Phase 8: P2 agent 冗余（可选，独立执行）
 
-- [ ] Task 8.1: `agent_messages` 关联 `agent_tool_calls`
+- [x] Task 8.1: `agent_messages` 关联 `agent_tool_calls`
   - **决策：不执行** — spec 已标注"本 spec 不强制执行，待 agent 模块重构时一并处理"。当前 agent 模块运行正常，独立重构收益有限。
 
 # Task Dependencies

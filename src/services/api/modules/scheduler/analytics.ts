@@ -1,40 +1,35 @@
-import { request } from "../../client";
+import { requestData } from "../../client";
+import type {
+  UserTaskStats,
+  HeatmapData,
+  TaskAnalytics,
+  TaskInsightsResult,
+} from "@shared/types";
 
-export interface UserTaskStats {
-  total_tasks: number;
-  completed_tasks: number;
-  total_duration: number;
-  avg_duration: number;
-  completion_rate: number;
-  tasks_by_queue: { q0: number; q1: number; q2: number };
-  tasks_by_status: Record<string, number>;
-  daily?: Array<{
-    date: string;
-    completed: number;
-    duration: number;
-  }>;
-}
-
-export interface HeatmapData {
-  date: string;
-  count: number;
-  duration: number;
-}
+// Re-export for backwards compatibility with existing imports.
+export type { UserTaskStats, HeatmapData };
 
 export const analyticsApi = {
-  getStats: (period: "day" | "week" | "month" | "year" = "week") =>
-    request(`/scheduler/stats?period=${period}`),
+  getStats: (
+    period: "day" | "week" | "month" | "year" = "week",
+  ): Promise<UserTaskStats> =>
+    requestData<UserTaskStats>(`/scheduler/stats?period=${period}`),
 
-  getHeatmap: (year?: number, month?: number) => {
+  getHeatmap: (year?: number, month?: number): Promise<HeatmapData[]> => {
     const params = new URLSearchParams();
     if (year !== undefined) params.append("year", year.toString());
     if (month !== undefined) params.append("month", month.toString());
     const queryString = params.toString();
-    return request(`/scheduler/heatmap${queryString ? `?${queryString}` : ""}`);
+    return requestData<HeatmapData[]>(
+      `/scheduler/heatmap${queryString ? `?${queryString}` : ""}`,
+    );
   },
 
-  getTaskAnalytics: () => request("/scheduler/analytics"),
+  getTaskAnalytics: (): Promise<TaskAnalytics> =>
+    requestData<TaskAnalytics>("/scheduler/analytics"),
 
-  generateInsights: () =>
-    request("/scheduler/analytics/insights", { method: "POST" }),
+  generateInsights: (): Promise<TaskInsightsResult> =>
+    requestData<TaskInsightsResult>("/scheduler/analytics/insights", {
+      method: "POST",
+    }),
 };

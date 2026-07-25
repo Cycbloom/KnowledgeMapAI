@@ -34,7 +34,7 @@ export function useCalendarEvents(
         return [];
       }
       const res = await api.scheduler.list(filters);
-      const tasks: UserTask[] = res.data ?? [];
+      const tasks: UserTask[] = res ?? [];
       return tasks.map((task) => userTaskToCalendarEvent(task));
     },
     enabled: calendarMode === "plan",

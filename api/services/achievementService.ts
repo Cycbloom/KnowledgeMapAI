@@ -12,7 +12,6 @@ import {
   type AchievementRow,
   type UserAchievementRow,
   type PeriodicTaskRow,
-  type FocusSessionRow,
   type UserTaskRow,
 } from '@shared/types/database';
 
@@ -115,7 +114,12 @@ export class AchievementService {
     }));
   }
 
-  /** @deprecated Use achievementEngine.evaluateAchievements() instead */
+  /**
+   * @deprecated Use achievementEngine.evaluateAchievements() instead.
+   * 保留原因：仍有 1 处活跃调用方 ——
+   * api/services/achievements/achievementEngine.ts:384（focus_session_ended 分支
+   * 内联 streak 计算后调用此方法解锁 streak_days 成就）。迁移前不可删除。
+   */
   async checkAndUnlock(userId: string, type: string, currentValue: number): Promise<Achievement[]> {
     const { data: candidates, error: candidateError } = await getSupabaseAdmin()
       .from('achievements')
@@ -251,53 +255,6 @@ export class AchievementService {
     if (updateError) throw updateError;
 
     return { newLevel: level, newXp: xp, levelUp };
-  }
-
-  /** @deprecated Use event-driven approach via achievementEngine */
-  async updateStudyStreak(userId: string): Promise<void> {
-    const { data: sessions, error } = await getSupabaseAdmin()
-      .from('focus_sessions')
-      .select('started_at')
-      .eq('user_id', userId)
-      .eq('completed', true)
-      .order('started_at', { ascending: false });
-
-    if (error || !sessions) return;
-
-    const sessionsTyped = sessions as Pick<FocusSessionRow, 'started_at'>[];
-    const dates = new Set(sessionsTyped.map((s) => s.started_at.split('T')[0]));
-    const sortedDates = Array.from(dates).sort(
-      (a, b) => new Date(b).getTime() - new Date(a).getTime()
-    );
-
-    if (sortedDates.length === 0) return;
-
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-
-    if (sortedDates[0] !== today && sortedDates[0] !== yesterday) {
-      return;
-    }
-
-    let streak = 0;
-    const currentDate = new Date();
-    const dateString = (d: Date) => d.toISOString().split('T')[0];
-
-    if (!dates.has(dateString(currentDate)) && !dates.has(dateString(new Date(Date.now() - 86400000)))) {
-      streak = 0;
-    } else {
-      const checkDate = new Date();
-      if (!dates.has(dateString(checkDate))) {
-        checkDate.setDate(checkDate.getDate() - 1);
-      }
-
-      while (dates.has(dateString(checkDate))) {
-        streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      }
-    }
-
-    await this.checkAndUnlock(userId, 'streak_days', streak);
   }
 
   async updateDailyTaskProgress(userId: string, type: string, currentTotal: number): Promise<void> {

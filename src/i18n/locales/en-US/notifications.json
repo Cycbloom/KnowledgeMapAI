@@ -6,9 +6,67 @@
   "deleteFailed": "Failed to delete notification",
   "markAllRead": "Mark all as read",
   "deleteRead": "Delete read notifications",
-  "settings": "Notification settings",
+  "settings": {
+    "title": "Notification settings",
+    "savedSuccess": "Notification settings saved!",
+    "saveFailed": "Failed to save settings",
+    "loadFailed": "Failed to load notification settings",
+    "retry": "Retry",
+    "basicSettings": "Basic settings",
+    "browserNotifications": {
+      "title": "Browser notifications",
+      "desc": "Receive browser push notifications"
+    },
+    "soundReminder": {
+      "title": "Sound alert",
+      "desc": "Play notification sound",
+      "volume": "Volume: {{volume}}%"
+    },
+    "notificationTypes": "Notification types",
+    "type": {
+      "taskStart": "Task started",
+      "taskStartDesc": "Notify when a task starts",
+      "taskComplete": "Task completed",
+      "taskCompleteDesc": "Notify when a task completes",
+      "timeSliceEnd": "Time slice ended",
+      "timeSliceEndDesc": "Notify when a time slice runs out",
+      "deadline": "Deadline",
+      "deadlineDesc": "Remind when a task is about to be due",
+      "break": "Break reminder",
+      "breakDesc": "Remind when a break starts and ends",
+      "dailySummary": "Daily summary",
+      "dailySummaryDesc": "Summary of daily task completion"
+    },
+    "deadlineReminderTime": {
+      "title": "Deadline reminder time",
+      "desc": "Choose how long before the deadline to remind"
+    },
+    "duration": {
+      "minute": "{{count}} min",
+      "hour": "{{count}} hr",
+      "day": "{{count}} day"
+    },
+    "doNotDisturb": {
+      "title": "Do not disturb",
+      "enable": "Enable do not disturb",
+      "desc": "Do not send notifications during the specified period",
+      "startTime": "Start time",
+      "endTime": "End time"
+    },
+    "reset": "Reset",
+    "save": "Save settings"
+  },
   "empty": "No notifications",
   "emptyHint": "New notifications will appear here",
   "loadError": "Failed to load notifications",
-  "retry": "Retry"
+  "retry": "Retry",
+  "center": {
+    "title": "Notifications",
+    "toggle": "Notifications center",
+    "unreadCount": "{{count}} unread",
+    "markAsRead": "Read",
+    "viewAll": "View all notifications",
+    "delete": "Delete",
+    "cancel": "Cancel"
+  }
 }

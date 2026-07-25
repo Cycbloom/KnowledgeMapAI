@@ -9,6 +9,7 @@ interface VirtualListProps<T> {
   renderItem: (item: T, index: number) => React.ReactNode;
   overscan?: number;
   className?: string;
+  role?: string;
   onEndReached?: () => void;
   endReachedThreshold?: number;
 }
@@ -20,6 +21,7 @@ function VirtualListComponent<T>({
   renderItem,
   overscan = 3,
   className = '',
+  role,
   onEndReached,
   endReachedThreshold = 5,
 }: VirtualListProps<T>) {
@@ -36,6 +38,7 @@ function VirtualListComponent<T>({
   return (
     <div
       className={cn('overflow-auto', className)}
+      role={role}
       style={{
         height: containerHeight,
         overscrollBehavior: 'contain',

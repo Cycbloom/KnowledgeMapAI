@@ -1,6 +1,7 @@
 {
   "title": "任务调度器",
   "subtitle": "三层反馈队列 · 智能时间管理",
+  "regionLabel": "调度器主区域",
   "calendar": "日历",
   "newTask": "新建任务",
   "pending": "待处理",
@@ -36,7 +37,10 @@
     "noTasksToday": "暂无任务安排",
     "noTasks": "无任务",
     "overdue": "已过期",
-    "noDeadline": "未设置截止日期"
+    "noDeadline": "未设置截止日期",
+    "changeDeadline": "修改截止日期",
+    "taskA11yLabel": "任务：{{title}}，截止日期：{{deadline}}",
+    "dragHint": "使用方向键切换日期列，或点击修改截止日期按钮以移动任务"
   },
   "listView": {
     "title": "任务名称",
@@ -101,7 +105,8 @@
     "tasksInProgress": "{{count}} 个任务进行中",
     "noTasks": "暂无任务",
     "dropToPlace": "释放以放置任务",
-    "addTask": "添加任务"
+    "addTask": "添加任务",
+    "toggleCollapse": "展开/折叠 {{queue}} 队列"
   },
   "taskForm": {
     "editTask": "编辑任务",
@@ -184,6 +189,56 @@
     "draftDetectedMessage": "检测到您之前有未完成的草稿，是否恢复？",
     "restoreDraft": "恢复草稿",
     "discardDraft": "放弃草稿"
+  },
+  "templateForm": {
+    "editTemplate": "编辑模板",
+    "createTemplate": "创建新模板",
+    "fieldName": "模板名称",
+    "fieldNamePlaceholder": "例如：深度学习模板",
+    "fieldCategory": "分类",
+    "fieldTitleTemplate": "标题模板",
+    "fieldTitleTemplatePlaceholder": "例如：学习：{{example}}",
+    "fieldDescriptionTemplate": "描述模板",
+    "fieldDescriptionTemplatePlaceholder": "可选的描述模板，支持 {{example}}...",
+    "descriptionPlaceholderExample": "占位符",
+    "fieldEstimatedDuration": "预计时长",
+    "fieldPriority": "优先级",
+    "fieldTags": "标签 (最多5个)",
+    "fieldCustomTagPlaceholder": "输入自定义标签，按 Enter 添加...",
+    "fieldIsDefault": "设为该分类的默认模板",
+    "helpPlaceholderPrefix": "使用",
+    "helpPlaceholderExample": "变量名",
+    "helpPlaceholderSuffix": "格式创建可替换的占位符",
+    "buttonCancel": "取消",
+    "buttonSaveChanges": "保存修改",
+    "buttonCreateTemplate": "创建模板",
+    "errorNameRequired": "请输入模板名称",
+    "errorNameTooLong": "名称不能超过50个字符",
+    "errorTitleTemplateRequired": "请输入标题模板",
+    "errorTitleTemplateTooLong": "标题模板不能超过100个字符",
+    "errorDescriptionTemplateTooLong": "描述模板不能超过500个字符",
+    "duration15min": "15 分钟",
+    "duration25min": "25 分钟",
+    "duration30min": "30 分钟",
+    "duration45min": "45 分钟",
+    "duration1hour": "1 小时",
+    "duration1_5hours": "1.5 小时",
+    "duration2hours": "2 小时",
+    "duration3hours": "3 小时",
+    "priorityLow": "低",
+    "priorityMedium": "中",
+    "priorityHigh": "高",
+    "priorityUrgent": "紧急",
+    "tagStudy": "学习",
+    "tagWork": "工作",
+    "tagReading": "阅读",
+    "tagWriting": "写作",
+    "tagCoding": "编程",
+    "tagReview": "复习",
+    "tagProject": "项目",
+    "tagMeeting": "会议",
+    "tagExercise": "运动",
+    "tagRest": "休息"
   },
   "review": {
     "overdue": "已过期",
@@ -354,6 +409,20 @@
     "achievements": "没有找到匹配的成就",
     "content": "暂无内容"
   },
+  "task": {
+    "status": {
+      "pending": "待处理",
+      "inProgress": "进行中",
+      "paused": "已暂停",
+      "completed": "已完成",
+      "cancelled": "已取消"
+    },
+    "queue": {
+      "urgent": "Q0 紧急队列",
+      "important": "Q1 重要队列",
+      "todo": "Q2 待办队列"
+    }
+  },
   "loadError": "加载调度数据失败",
   "confirmDeleteTaskTitle": "删除任务",
   "confirmDeleteTaskMessage": "确定要删除任务「{{title}}」吗？此操作无法撤销。",
@@ -382,14 +451,79 @@
     "linkAdded": "链接已添加",
     "linkAddFailed": "添加链接失败",
     "linkDeleted": "链接已删除",
-    "linkDeleteFailed": "删除链接失败"
+    "linkDeleteFailed": "删除链接失败",
+    "taskNotFound": "任务不存在",
+    "back": "返回",
+    "edit": "编辑",
+    "saveAsTemplate": "保存为模板",
+    "delete": "删除",
+    "statusCompleted": "已完成",
+    "statusInProgress": "进行中",
+    "statusPaused": "已暂停",
+    "statusCancelled": "已取消",
+    "statusPending": "待处理",
+    "typeOneTime": "一次性任务",
+    "typeLongTerm": "长期项目",
+    "typePeriodic": "周期任务",
+    "typeLearning": "学习任务",
+    "typeDefault": "普通任务",
+    "priorityHigh": "高优先级",
+    "priorityMedium": "中优先级",
+    "priorityLow": "低优先级",
+    "dateNotSet": "未设置",
+    "tabNotes": "笔记",
+    "tabSubtasks": "子任务",
+    "tabExecutions": "执行记录",
+    "tabProgress": "进度",
+    "description": "描述",
+    "estimatedDuration": "预计时长",
+    "actualDuration": "实际时长",
+    "totalDuration": "总时长",
+    "deadline": "截止日期",
+    "progress": "进度",
+    "progressPercent": "{{percent}}% 完成",
+    "tags": "标签",
+    "createdAt": "创建",
+    "updatedAt": "更新",
+    "completedAt": "完成",
+    "startTask": "开始任务",
+    "pauseTask": "暂停任务",
+    "completeTask": "完成任务",
+    "continueTask": "继续任务",
+    "inProgressLabel": "进行中"
   },
   "templateSelector": {
     "empty": "没有找到模板"
   },
   "weeklyReport": {
     "empty": "本周还没有专注记录",
-    "emptyHint": "开始专注来追踪你的进度"
+    "emptyHint": "开始专注来追踪你的进度",
+    "title": "周报",
+    "loadFailed": "加载周报数据失败",
+    "weekRange": "{{startMonth}}月{{startDay}}日 - {{endMonth}}月{{endDay}}日",
+    "weekdaySun": "周日",
+    "weekdayMon": "周一",
+    "weekdayTue": "周二",
+    "weekdayWed": "周三",
+    "weekdayThu": "周四",
+    "weekdayFri": "周五",
+    "weekdaySat": "周六",
+    "stat": {
+      "totalFocusDuration": "总专注时长",
+      "hours": "小时",
+      "dailyAverage": "日均 {{hours}} 小时",
+      "completion": "完成情况",
+      "tasks": "任务",
+      "focusSessions": "{{count}} 次专注会话",
+      "streakDays": "连续专注",
+      "days": "天",
+      "pomodoros": "{{count}} 个番茄钟"
+    },
+    "bestDay": {
+      "title": "最佳表现日",
+      "focusDuration": "专注时长"
+    },
+    "weekOverview": "本周概览"
   },
   "dailyStats": {
     "empty": "今天还没有专注记录",
@@ -408,5 +542,26 @@
       "title": "删除任务",
       "message": "确定要删除任务「{{title}}」吗？此操作无法撤销。"
     }
+  },
+  "reports": {
+    "loadDailyFailed": "加载统计数据失败",
+    "loadWeeklyFailed": "加载周报失败",
+    "loadMonthlyFailed": "加载月报失败"
+  },
+  "taskRetrospect": {
+    "saveFailed": "保存复盘失败",
+    "loadFailed": "加载复盘失败"
+  },
+  "heatmap": {
+    "prevYear": "上一年",
+    "nextYear": "下一年"
+  },
+  "a11y": {
+    "draggableTask": "可拖动任务卡片，按空格键进入拖动模式",
+    "moveToColumn": "移动到 {{column}}",
+    "dragCancel": "取消拖动",
+    "dragConfirm": "确认移动",
+    "dragStart": "进入拖动模式",
+    "dragMoveHint": "使用左右方向键切换目标列，Enter 确认，Esc 取消"
   }
 }

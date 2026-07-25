@@ -398,10 +398,10 @@ export const Dashboard = () => {
         {/* Recently Edited Section */}
         {recentGraphs.length > 0 && (
           <div>
-            <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+            <h2 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
               <Clock size={16} />
               {t("dashboard.recent.title")}
-            </h3>
+            </h2>
             <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
               {recentGraphs.map((graph) => (
                 <button
@@ -574,7 +574,10 @@ export const Dashboard = () => {
               }`}
             >
               <div className={`overflow-x-auto ${isMobile ? "hidden" : ""}`}>
-                <table className="w-full">
+                <table
+                  className="w-full"
+                  aria-label={t("dashboard.list.tableAriaLabel", { defaultValue: "知识图谱列表" })}
+                >
                   <thead>
                     <tr
                       className={`sticky top-0 z-10 border-b ${
@@ -584,9 +587,11 @@ export const Dashboard = () => {
                       }`}
                     >
                       {filters.isSelectMode && (
-                        <th className="w-12 px-4 py-3">
+                        <th scope="col" className="w-12 px-4 py-3">
                           <button
                             onClick={filters.toggleSelectAll}
+                            aria-label={t("dashboard.list.selectAllAriaLabel", { defaultValue: "全选" })}
+                            aria-pressed={filters.isAllSelected}
                             className={`flex items-center justify-center w-5 h-5 rounded ${
                               filters.isAllSelected
                                 ? "bg-primary-500 text-white"
@@ -603,22 +608,22 @@ export const Dashboard = () => {
                           </button>
                         </th>
                       )}
-                      <th className={`text-left px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.title")}
                       </th>
-                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden lg:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold hidden lg:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.description")}
                       </th>
-                      <th className={`text-center px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-center px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.nodes")}
                       </th>
-                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden md:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold hidden md:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.createdAt")}
                       </th>
-                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden xl:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold hidden xl:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.updatedAt")}
                       </th>
-                      <th className={`text-right px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-right px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.actions")}
                       </th>
                     </tr>

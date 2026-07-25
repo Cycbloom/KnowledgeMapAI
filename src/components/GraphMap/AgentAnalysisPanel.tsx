@@ -364,9 +364,9 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
         initial={{ opacity: 0, x: 300 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 300 }}
-        className="fixed right-0 top-0 h-full w-[480px] bg-white dark:bg-slate-900 shadow-2xl border-l border-gray-200 dark:border-slate-700 z-50 flex flex-col"
+        className="fixed right-0 top-0 h-full w-[480px] bg-white dark:bg-slate-900 shadow-2xl border-l border-gray-200 dark:border-slate-500 z-50 flex flex-col"
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-500">
           <div className="flex items-center gap-2">
             {step === 'execute' && selectedSkill && (
               <button

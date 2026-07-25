@@ -127,7 +127,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                   className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-all text-center flex items-center justify-center gap-2
                     ${types.includes(type.id) 
                       ? 'border-primary-500 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:border-primary-400 dark:text-primary-300 shadow-sm' 
-                      : 'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      : 'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {type.label}
                   {types.includes(type.id) && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}

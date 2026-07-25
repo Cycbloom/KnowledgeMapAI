@@ -66,6 +66,41 @@
     "showEmbeddingOps": "显示Embedding操作",
     "requests": "次请求",
     "standaloneRequests": "独立请求",
+    "fetchLogsFailed": "获取性能日志失败",
+    "sessionName": {
+      "autoGenerate": "图谱自动生成",
+      "batchInit": "批量初始化知识图谱（{{count}} 个图谱）",
+      "recursiveGenerate": "递归图谱生成",
+      "nodeGenerate": "图谱节点生成",
+      "relationAnalysis": "图谱关系分析",
+      "aiChat": "AI 对话",
+      "contentGenerate": "内容生成",
+      "aiAction": "AI 动作执行",
+      "template": "模板生成",
+      "docToGraph": "文档转图谱",
+      "literatureExtract": "文献提取"
+    },
+    "metadata": {
+      "graphId": "图谱ID",
+      "graphTitle": "图谱标题",
+      "userId": "用户ID",
+      "userName": "用户名",
+      "nodeId": "节点ID",
+      "nodeTitle": "节点名称",
+      "nodeLevel": "节点层级",
+      "topic": "主题",
+      "style": "风格",
+      "depth": "深度",
+      "actionName": "动作名称",
+      "documentName": "文档名称",
+      "learningStyle": "学习风格",
+      "targetGoal": "目标",
+      "templateType": "模板类型",
+      "text": "文本内容",
+      "graph1": "图谱1",
+      "graph2": "图谱2",
+      "title": "标题"
+    },
     "detail": {
       "title": "请求详情",
       "operation": "操作类型",
@@ -85,7 +120,8 @@
       "cacheSaved": "💰 缓存节省",
       "reasoningToken": "🧠 推理 Token（DeepSeek Reasoner）",
       "errorMessage": "错误信息",
-      "metadata": "元数据"
+      "metadata": "元数据",
+      "metadataInfo": "元数据信息"
     },
     "operations": {
       "generate-content": "生成内容",
@@ -146,5 +182,8 @@
       "volcengine": "火山引擎",
       "aliyun": "阿里云"
     }
+  },
+  "commandAutocomplete": {
+    "placeholder": "输入命令..."
   }
 }

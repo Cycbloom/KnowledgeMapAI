@@ -88,7 +88,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </p>
         )}
 
-        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-500">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
           {task.estimated_duration && (
             <div className="flex items-center gap-1">
               <Clock size={12} className={queueStyle.text} />

@@ -1,9 +1,19 @@
-import { request } from "../../client";
+import { requestData } from "../../client";
 import type {
   CreateUserTaskData,
   UpdateUserTaskData,
   UserTaskFilters,
+  UserTask,
+  UserTaskDetail,
+  TaskExecution,
+  GenerateTaskDetailsResult,
 } from "@shared/types";
+import type {
+  SmartRecommendationResult,
+  EfficiencyDataResult,
+  DynamicPriorityResult,
+  DependencyCheckResult,
+} from "../../contracts/ISchedulerApi";
 
 export type {
   UserTask,
@@ -23,7 +33,7 @@ export type {
 
 export const tasksApi = {
   create: (data: CreateUserTaskData) =>
-    request("/scheduler/tasks", { method: "POST", body: JSON.stringify(data) }),
+    requestData<UserTask>("/scheduler/tasks", { method: "POST", body: JSON.stringify(data) }),
 
   list: (filters?: UserTaskFilters) => {
     const params = new URLSearchParams();
@@ -34,85 +44,85 @@ export const tasksApi = {
     if (filters?.from_date) params.append("from_date", filters.from_date);
     if (filters?.to_date) params.append("to_date", filters.to_date);
     const queryString = params.toString();
-    return request(`/scheduler/tasks${queryString ? `?${queryString}` : ""}`);
+    return requestData<UserTask[]>(`/scheduler/tasks${queryString ? `?${queryString}` : ""}`);
   },
 
-  get: (id: string) => request(`/scheduler/tasks/${id}`),
+  get: (id: string) => requestData<UserTask>(`/scheduler/tasks/${id}`),
 
-  getDetail: (id: string) => request(`/scheduler/tasks/${id}/detail`),
+  getDetail: (id: string) => requestData<UserTaskDetail>(`/scheduler/tasks/${id}/detail`),
 
   update: (id: string, data: UpdateUserTaskData) =>
-    request(`/scheduler/tasks/${id}`, {
+    requestData<UserTask>(`/scheduler/tasks/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
   delete: (id: string) =>
-    request(`/scheduler/tasks/${id}`, { method: "DELETE" }),
+    requestData<void>(`/scheduler/tasks/${id}`, { method: "DELETE" }),
 
   start: (id: string) =>
-    request(`/scheduler/tasks/${id}/start`, { method: "POST" }),
+    requestData<{ task: UserTask; execution: TaskExecution }>(`/scheduler/tasks/${id}/start`, { method: "POST" }),
 
   pause: (id: string) =>
-    request(`/scheduler/tasks/${id}/pause`, { method: "POST" }),
+    requestData<{ task: UserTask; duration: number }>(`/scheduler/tasks/${id}/pause`, { method: "POST" }),
 
   complete: (id: string) =>
-    request(`/scheduler/tasks/${id}/complete`, { method: "POST" }),
+    requestData<UserTask>(`/scheduler/tasks/${id}/complete`, { method: "POST" }),
 
   demote: (id: string) =>
-    request(`/scheduler/tasks/${id}/demote`, { method: "POST" }),
+    requestData<UserTask>(`/scheduler/tasks/${id}/demote`, { method: "POST" }),
 
   move: (id: string, targetQueue: number | string) => {
     const body =
       typeof targetQueue === "number"
         ? { target_queue: targetQueue }
         : { target_queue_id: targetQueue };
-    return request(`/scheduler/tasks/${id}/move`, {
+    return requestData<UserTask>(`/scheduler/tasks/${id}/move`, {
       method: "PUT",
       body: JSON.stringify(body),
     });
   },
 
   reorder: (queueLevel: number, taskIds: string[]) =>
-    request(`/scheduler/tasks/reorder`, {
+    requestData<void>(`/scheduler/tasks/reorder`, {
       method: "PUT",
       body: JSON.stringify({ queue_level: queueLevel, task_ids: taskIds }),
     }),
 
   generateDetails: (title: string, context?: string) =>
-    request("/scheduler/generate-details", {
+    requestData<GenerateTaskDetailsResult>("/scheduler/generate-details", {
       method: "POST",
       body: JSON.stringify({ title, context }),
     }),
 
   updateNotes: (id: string, notes: string) =>
-    request(`/scheduler/tasks/${id}/notes`, {
+    requestData<UserTask>(`/scheduler/tasks/${id}/notes`, {
       method: "PUT",
       body: JSON.stringify({ notes }),
     }),
 
-  getSmartRecommendation: () => request("/scheduler/smart-recommendation"),
+  getSmartRecommendation: () => requestData<SmartRecommendationResult>("/scheduler/smart-recommendation"),
 
   getEfficiencyProfile: (days: number = 30) =>
-    request(`/scheduler/efficiency-data?days=${days}`),
+    requestData<EfficiencyDataResult>(`/scheduler/efficiency-data?days=${days}`),
 
   getDynamicPriority: (id: string) =>
-    request(`/scheduler/tasks/${id}/dynamic-priority`),
+    requestData<DynamicPriorityResult>(`/scheduler/tasks/${id}/dynamic-priority`),
 
   checkDependencies: (id: string) =>
-    request(`/scheduler/tasks/${id}/dependency-check`),
+    requestData<DependencyCheckResult>(`/scheduler/tasks/${id}/dependency-check`),
 
   updateProgress: (id: string, data: {
     progress_percentage?: number;
     actual_duration_add?: number;
   }) =>
-    request(`/scheduler/tasks/${id}/progress`, {
+    requestData<UserTask>(`/scheduler/tasks/${id}/progress`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
 
   tickExecution: (taskId: string, durationSeconds: number) =>
-    request(`/scheduler/tasks/${taskId}/execution/tick`, {
+    requestData<TaskExecution>(`/scheduler/tasks/${taskId}/execution/tick`, {
       method: "PATCH",
       body: JSON.stringify({ duration_seconds: durationSeconds }),
     }),

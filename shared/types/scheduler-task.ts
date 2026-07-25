@@ -405,3 +405,275 @@ export interface GenerateTaskDetailsResult {
   priority: number;
   suggested_queue: number;
 }
+
+export interface TaskAnalytics {
+  overview: {
+    todayCompleted: number;
+    weekCompleted: number;
+    monthCompleted: number;
+    avgDuration: number;
+    totalTasks: number;
+    completionRate: number;
+  };
+  completionTrend: Array<{
+    date: string;
+    completed: number;
+    total: number;
+    cumulative: number;
+  }>;
+  timeDistribution: Array<{
+    day: number;
+    hour: number;
+    value: number;
+  }>;
+  queueStats: Array<{
+    queueLevel: number;
+    totalTasks: number;
+    completedTasks: number;
+    completionRate: number;
+    avgDuration: number;
+  }>;
+  tagStats: Array<{
+    tag: string;
+    count: number;
+    completedCount: number;
+    completionRate: number;
+  }>;
+  priorityStats: Array<{
+    priority: number;
+    label: string;
+    count: number;
+    completedCount: number;
+    completionRate: number;
+    avgDelay: number;
+  }>;
+  comparison: {
+    previousPeriod: {
+      completed: number;
+      completionRate: number;
+      avgDuration: number;
+    };
+    change: {
+      completedChange: number;
+      completionRateChange: number;
+      avgDurationChange: number;
+    };
+  };
+}
+
+export interface TaskInsight {
+  type: "positive" | "negative" | "neutral";
+  title: string;
+  description: string;
+  recommendation?: string;
+}
+
+export interface TaskInsightsResult {
+  insights: TaskInsight[];
+}
+
+// --- Activity types (migrated from src/types/calendar.ts and impl modules) ---
+
+export type ActivityEventType = "focus_study" | "review" | "path_progress";
+
+export interface ActivityRecord {
+  id: string;
+  user_id: string;
+  activity_type: ActivityEventType;
+  title: string;
+  description?: string;
+  started_at: string;
+  ended_at?: string;
+  duration?: number;
+  metadata?: Record<string, unknown>;
+  knowledge_point_id?: string;
+  graph_id?: string;
+  task_id?: string;
+  created_at: string;
+}
+
+export interface DailyActivityStats {
+  date: string;
+  total_duration: number;
+  activity_count: number;
+  activities_by_type: Record<string, number>;
+}
+
+export interface RecordActivityData {
+  activity_type: ActivityEventType;
+  title: string;
+  description?: string;
+  started_at?: string;
+  ended_at?: string;
+  duration?: number;
+  metadata?: Record<string, unknown>;
+  knowledge_point_id?: string;
+  graph_id?: string;
+  task_id?: string;
+}
+
+export interface GetActivitiesOptions {
+  from_date?: string;
+  to_date?: string;
+  activity_type?: ActivityEventType;
+  knowledge_point_id?: string;
+  graph_id?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AutoGenerateTaskData {
+  type: "focus_study" | "review" | "path_progress";
+  knowledge_point_id: string;
+  graph_id?: string;
+  path_node_id?: string;
+  parent_task_id?: string;
+  title?: string;
+  interval_days?: number;
+  estimated_time?: number;
+}
+
+export interface AutoTaskResult {
+  taskId: string;
+  title: string;
+  queueLevel: number;
+  priority: number;
+  created: boolean;
+  reason: string;
+}
+
+export interface LinkedTaskResult {
+  taskId: string;
+  taskTitle: string;
+  source: "learning_path" | "existing" | "auto_generated";
+  graphId?: string;
+  subtaskId?: string;
+  learningState?: string;
+  progress?: number;
+  totalNodes?: number;
+  completedNodes?: number;
+}
+
+export interface GraphTaskInfo {
+  mainTaskId: string;
+  graphId: string;
+  graphName: string;
+  totalNodes: number;
+  completedNodes: number;
+  subtasks: Array<{
+    id: string;
+    title: string;
+    knowledgePointId: string;
+    status: string;
+    learningState: string;
+  }>;
+}
+
+// --- Progress sync types (migrated from impl progressSync.ts) ---
+
+export interface SyncStudyDurationData {
+  taskId: string;
+  duration: number;
+  date?: string;
+}
+
+export interface SyncTaskCompletionData {
+  taskId: string;
+  completed: boolean;
+  completedAt?: string;
+}
+
+export interface BatchSyncStudyDurationItem {
+  taskId: string;
+  duration: number;
+  date?: string;
+}
+
+export interface ProgressSyncResult {
+  task: {
+    id: string;
+    actualDuration: number;
+    progressPercentage: number;
+  };
+  knowledgePoints: Array<{
+    id: string;
+    masteryLevel: number;
+    totalStudyDuration: number;
+    lastStudyAt: string;
+  }>;
+}
+
+export interface TaskProgressSummary {
+  task: {
+    id: string;
+    title: string;
+    actualDuration: number;
+    estimatedDuration: number | null;
+    progressPercentage: number;
+  };
+  knowledgePoints: Array<{
+    id: string;
+    title: string;
+    masteryLevel: number;
+    totalStudyDuration: number;
+    lastStudyAt: string | null;
+    relevanceScore: number;
+    isPrimary: boolean;
+  }>;
+}
+
+export interface BatchSyncStudyDurationResult {
+  results: ProgressSyncResult[];
+  summary: {
+    total: number;
+    success: number;
+    failed: number;
+  };
+}
+
+// --- Path task types (migrated from impl pathTasks.ts) ---
+
+export interface PathNodeTask {
+  id: string;
+  path_id: string;
+  node_id: string;
+  task_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+export interface LearningPathNode {
+  id: string;
+  path_id: string;
+  knowledge_point_id?: string;
+  order_index: number;
+  title: string;
+  description?: string;
+  estimated_time?: number;
+  is_milestone: boolean;
+  prerequisites: string[];
+  status: string;
+}
+
+export interface CreatePathNodeTaskData {
+  path_id: string;
+  node_id: string;
+  title?: string;
+  description?: string;
+  estimated_duration?: number;
+  knowledge_point_id?: string;
+  priority?: number;
+}
+
+export interface BatchConvertResult {
+  success: boolean;
+  converted_count: number;
+  failed_count: number;
+  tasks: PathNodeTask[];
+  errors: Array<{ node_id: string; error: string }>;
+}
+
+export interface PathTaskWithDetails extends PathNodeTask {
+  task?: UserTask;
+  node?: LearningPathNode;
+}

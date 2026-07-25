@@ -196,11 +196,12 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
           <div className="p-4 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('quickCreate.graphName')} <span className="text-red-500">*</span>
+                {t('quickCreate.graphName')} <span aria-hidden="true" className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
                   type="text"
+                  aria-required={true}
                   value={title}
                   onChange={e => setTitle(e.target.value)}
                   placeholder={t('quickCreate.namePlaceholder')}

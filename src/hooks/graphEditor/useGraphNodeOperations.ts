@@ -342,7 +342,7 @@ export const useGraphNodeOperations = ({
       },
       {
         loadingSetter: setLoading,
-        successMessage: `已将 ${selectedNodeIds.size} 个节点等级修改为 ${levelLabels[level] || level}`,
+        successMessage: `已将 ${selectedNodeIds.size} 个节点等级修改为 ${t(levelLabels[level], { defaultValue: level })}`,
         errorMessage: '批量修改等级失败'
       }
     );

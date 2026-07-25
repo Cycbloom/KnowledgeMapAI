@@ -56,3 +56,80 @@ CREATE INDEX IF NOT EXISTS idx_graph_snapshots_graph_created ON graph_snapshots(
 CREATE INDEX IF NOT EXISTS idx_graph_snapshots_type ON graph_snapshots(snapshot_type);
 
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_branch ON knowledge_graphs(parent_graph_id) WHERE is_branch = true;
+
+-- =====================================================
+-- Row Level Security
+-- graph_snapshots / graph_events 通过 graph_id 外键关联 knowledge_graphs，权限跟随 knowledge_graphs：
+--   SELECT: owner / public / collaborator 可读
+--   INSERT/UPDATE/DELETE: 仅 owner
+-- =====================================================
+
+-- Graph Snapshots
+ALTER TABLE graph_snapshots ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view accessible graph snapshots" ON graph_snapshots FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_snapshots.graph_id
+    AND (
+      knowledge_graphs.user_id = auth.uid()
+      OR knowledge_graphs.is_public = true
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
+    )
+  )
+);
+CREATE POLICY "Users can insert own graph snapshots" ON graph_snapshots FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_snapshots.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can update own graph snapshots" ON graph_snapshots FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_snapshots.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can delete own graph snapshots" ON graph_snapshots FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_snapshots.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+-- Graph Events
+ALTER TABLE graph_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view accessible graph events" ON graph_events FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_events.graph_id
+    AND (
+      knowledge_graphs.user_id = auth.uid()
+      OR knowledge_graphs.is_public = true
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
+    )
+  )
+);
+CREATE POLICY "Users can insert own graph events" ON graph_events FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_events.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can update own graph events" ON graph_events FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_events.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can delete own graph events" ON graph_events FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_events.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);

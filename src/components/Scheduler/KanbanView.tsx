@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   Circle,
@@ -84,6 +84,11 @@ export const KanbanView: React.FC<{
   );
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
 
+  // 键盘拖动相关状态
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const [dropTargetStatus, setDropTargetStatus] = useState<string | null>(null);
+  const [dragAnnouncement, setDragAnnouncement] = useState<string>("");
+
   const columnsData = useMemo(() => {
     return KANBAN_COLUMNS.map((column) => ({
       ...column,
@@ -128,6 +133,64 @@ export const KanbanView: React.FC<{
     setDraggedOverColumn(null);
   };
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, task: UserTask) => {
+      // 未在拖动模式：Space/Enter 进入拖动模式
+      if (draggingTaskId === null) {
+        if (e.key === " " || e.key === "Enter") {
+          e.preventDefault();
+          setDraggingTaskId(task.id);
+          setDropTargetStatus(task.status);
+          setDragAnnouncement(
+            `${t("scheduler.a11y.dragStart")}. ${t("scheduler.a11y.dragMoveHint")}`,
+          );
+        }
+        return;
+      }
+
+      // 其他任务正在被拖动：忽略
+      if (draggingTaskId !== task.id) {
+        return;
+      }
+
+      // 当前任务正在被拖动
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        const currentIndex = KANBAN_COLUMNS.findIndex(
+          (col) => col.id === dropTargetStatus,
+        );
+        if (currentIndex === -1) return;
+        const direction = e.key === "ArrowLeft" ? -1 : 1;
+        const newIndex =
+          (currentIndex + direction + KANBAN_COLUMNS.length) %
+          KANBAN_COLUMNS.length;
+        const newColumn = KANBAN_COLUMNS[newIndex];
+        setDropTargetStatus(newColumn.id);
+        setDragAnnouncement(
+          t("scheduler.a11y.moveToColumn", { column: newColumn.title }),
+        );
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (
+          dropTargetStatus &&
+          dropTargetStatus !== task.status &&
+          onTaskMove
+        ) {
+          onTaskMove(task.id, dropTargetStatus);
+        }
+        setDraggingTaskId(null);
+        setDropTargetStatus(null);
+        setDragAnnouncement(t("scheduler.a11y.dragConfirm"));
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setDraggingTaskId(null);
+        setDropTargetStatus(null);
+        setDragAnnouncement(t("scheduler.a11y.dragCancel"));
+      }
+    },
+    [draggingTaskId, dropTargetStatus, KANBAN_COLUMNS, onTaskMove, t],
+  );
+
   const totalEstimatedTime = (columnTasks: UserTask[]) => {
     return columnTasks.reduce((sum, t) => sum + (t.estimated_duration || 0), 0);
   };
@@ -143,11 +206,16 @@ export const KanbanView: React.FC<{
 
   return (
     <div className="h-full min-h-0 overflow-x-auto custom-scrollbar">
+      <span aria-live="assertive" className="sr-only">
+        {dragAnnouncement}
+      </span>
       <div className="flex gap-3 sm:gap-4 min-w-max xl:min-w-0 h-full p-1">
         <AnimatePresence>
           {columnsData.map((column, index) => {
             const IconComponent = column.icon;
             const isOver = draggedOverColumn === column.id;
+            const isKeyboardDropTarget =
+              draggingTaskId !== null && dropTargetStatus === column.id;
             const estimatedTime = totalEstimatedTime(column.tasks);
 
             return (
@@ -157,9 +225,13 @@ export const KanbanView: React.FC<{
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: index * 0.1 }}
+                role="region"
+                aria-label={column.title}
+                aria-dropeffect={isKeyboardDropTarget ? "move" : undefined}
                 className={`
                   flex flex-col w-64 sm:w-80 xl:w-auto xl:grow flex-shrink-0 rounded-2xl border transition-all duration-300
                   ${isOver ? "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 scale-[1.02]" : ""}
+                  ${isKeyboardDropTarget ? "ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-500/10" : ""}
                   ${column.border}
                   bg-white dark:bg-slate-900/60 backdrop-blur-sm
                 `}
@@ -251,30 +323,46 @@ export const KanbanView: React.FC<{
                       className="space-y-2 sm:space-y-3"
                     >
                       <AnimatePresence>
-                        {column.tasks.map((task) => (
-                          <Reorder.Item
-                            key={task.id}
-                            value={task}
-                            draggable
-                            onDragStart={(e) =>
-                              handleDragStart(
-                                e as unknown as React.DragEvent,
-                                task.id,
-                                task.status,
-                              )
-                            }
-                            onDragEnd={handleDragEnd}
-                            className={`
+                        {column.tasks.map((task) => {
+                          const isKeyboardDragging =
+                            draggingTaskId === task.id;
+                          return (
+                            <Reorder.Item
+                              key={task.id}
+                              value={task}
+                              draggable
+                              role="button"
+                              tabIndex={0}
+                              aria-roledescription={t(
+                                "scheduler.a11y.draggableTask",
+                              )}
+                              aria-grabbed={
+                                isKeyboardDragging ? "true" : "false"
+                              }
+                              onKeyDown={(e: React.KeyboardEvent) =>
+                                handleKeyDown(e, task)
+                              }
+                              onDragStart={(e) =>
+                                handleDragStart(
+                                  e as unknown as React.DragEvent,
+                                  task.id,
+                                  task.status,
+                                )
+                              }
+                              onDragEnd={handleDragEnd}
+                              className={`
                               cursor-grab active:cursor-grabbing
                               ${draggedTask === task.id ? "opacity-50 scale-95" : ""}
+                              ${isKeyboardDragging ? "opacity-50 ring-2 ring-primary-500" : ""}
                             `}
-                          >
-                            <TaskCard
-                              task={task}
-                              onEditTask={onTaskClick}
-                            />
-                          </Reorder.Item>
-                        ))}
+                            >
+                              <TaskCard
+                                task={task}
+                                onEditTask={onTaskClick}
+                              />
+                            </Reorder.Item>
+                          );
+                        })}
                       </AnimatePresence>
                     </Reorder.Group>
                   )}

@@ -1215,7 +1215,9 @@ export class GraphVersionService {
                 [nodeData.xPosition, nodeData.yPosition, nodeData.level, nodeData.isAccepted, mainGraphId, nodeData.knowledgePointId],
               );
               // 更新 knowledge_point 内容（如果 content 或 summary 有变更）
-              // TODO: Task 2 完成分支知识点隔离后，需通过 source_knowledge_point_id 映射到主图原始 kp id
+              // TODO: 分支知识点隔离基础设施已就绪（knowledge_points.source_knowledge_point_id
+              // 列 + buildBranchKpMapping 映射已实现），但本合并路径仍用分支 kp id 直接更新
+              // knowledge_points，需改用映射后的主图原始 kp id。
               if (nodeData.content !== undefined || nodeData.summary !== undefined) {
                 await client.query(
                   'UPDATE knowledge_points SET content = COALESCE($1, content), summary = $2, updated_at = NOW() WHERE id = $3',
@@ -1344,7 +1346,9 @@ export class GraphVersionService {
               .eq('knowledge_point_id', nodeDiff.knowledgePointId)
               );
             // 更新 knowledge_point 内容（如果有变更）
-            // TODO: Task 2 完成分支知识点隔离后，需通过 source_knowledge_point_id 映射到主图原始 kp id
+            // TODO: 分支知识点隔离基础设施已就绪（knowledge_points.source_knowledge_point_id
+            // 列 + buildBranchKpMapping 映射已实现），但本合并路径仍用分支 kp id 直接更新
+            // knowledge_points，需改用映射后的主图原始 kp id。
             if (nodeDiff.changedFields.includes('content') || nodeDiff.changedFields.includes('summary')) {
               await supabase
                 .from('knowledge_points')

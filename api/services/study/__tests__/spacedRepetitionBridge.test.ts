@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createEmptyCard, type Card } from "ts-fsrs";
 
 vi.mock("../semanticInterferenceService", () => ({
@@ -49,7 +49,17 @@ describe("SpacedRepetitionBridge", () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe("getUnifiedReviewQueue", () => {
+    beforeEach(() => {
+      // 固定时间到上午 10:00，避免 isoOffset(2) 在 22:00 后跨日导致 urgency 计算为 "upcoming"
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2025-06-15T10:00:00Z"));
+    });
+
     it("应该在语义调度禁用时返回按紧急度排序的 FSRS 复习队列", async () => {
       const supabase = createMockSupabase();
       const inner = supabase as unknown as MockSupabaseClient;

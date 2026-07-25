@@ -14,10 +14,11 @@
  * 与 WikiLinkPopover 的差异:本浮层自带输入框(查询在浮层内输入,而非取自编辑器文本),
  * 故键盘导航在输入框的 onKeyDown 内自处理,不依赖父组件拦截。
  */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2, FileText } from "lucide-react";
 import { useBlockSearch } from "@/hooks/queries/useNoteQueries";
+import { useFocusTrap } from "@/hooks/common";
 import type { BlockRefTarget } from "@shared/types/note";
 
 export interface BlockRefPopoverProps {
@@ -45,6 +46,18 @@ export const BlockRefPopover: React.FC<BlockRefPopoverProps> = ({
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // 组件由父组件挂载/卸载控制可见性:挂载时捕获触发元素,卸载时恢复焦点。
+  // 输入框为首个可聚焦元素,initialFocus='first' 会自动聚焦,与下面 inputRef.current?.focus() 一致。
+  const popoverRef = useFocusTrap<HTMLDivElement>();
+
+  // combobox + listbox 语义:input 作为 combobox 触发,结果列表作为 listbox,
+  // 通过 aria-activedescendant 让屏幕阅读器朗读当前键盘选中项(参考 TagSystem 模式)。
+  const baseId = useId();
+  const listboxId = `${baseId}-listbox`;
+  const getOptionId = useCallback(
+    (index: number) => `${baseId}-option-${index}`,
+    [baseId],
+  );
 
   // 防抖:输入变化后 300ms 同步到 debouncedQuery 触发搜索
   useEffect(() => {
@@ -122,16 +135,26 @@ export const BlockRefPopover: React.FC<BlockRefPopoverProps> = ({
 
   return (
     <div
+      ref={popoverRef}
       role="dialog"
       aria-label={t("notes.editor.blockRef.placeholder")}
-      className="fixed z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg shadow-black/5 dark:shadow-black/30 overflow-hidden"
+      className="fixed z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 shadow-lg shadow-black/5 dark:shadow-black/30 overflow-hidden"
       style={{ top: anchorRect.bottom + 4, left: anchorRect.left }}
     >
-      {/* 输入框 */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 dark:border-slate-700">
+      {/* 输入框(combobox 触发元素) */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 dark:border-slate-500">
         <input
           ref={inputRef}
           type="text"
+          role="combobox"
+          aria-expanded={items.length > 0}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-haspopup="listbox"
+          aria-activedescendant={
+            items.length > 0 ? getOptionId(selectedIndex) : undefined
+          }
+          aria-label={t("notes.editor.blockRef.placeholder")}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -141,8 +164,13 @@ export const BlockRefPopover: React.FC<BlockRefPopoverProps> = ({
         {showSearching && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400 dark:text-slate-500" />}
       </div>
 
-      {/* 结果列表 */}
-      <div className="max-h-[280px] overflow-y-auto">
+      {/* 结果列表(listbox) */}
+      <div
+        id={listboxId}
+        role="listbox"
+        aria-label={t("notes.editor.blockRef.placeholder")}
+        className="max-h-[280px] overflow-y-auto"
+      >
         {showEmpty ? (
           <div className="px-3 py-2 text-sm text-gray-400 dark:text-slate-500">
             {t("notes.editor.blockRef.noMatch")}
@@ -153,6 +181,7 @@ export const BlockRefPopover: React.FC<BlockRefPopoverProps> = ({
             return (
               <button
                 key={`${item.noteId}-${item.blockId}`}
+                id={getOptionId(index)}
                 type="button"
                 role="option"
                 aria-selected={isActive}

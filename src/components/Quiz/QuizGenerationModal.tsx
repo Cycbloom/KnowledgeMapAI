@@ -195,8 +195,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
     if (open && promptConfigs?.quiz_generation) {
       setFormData(prev => ({ ...prev, customPrompt: promptConfigs.quiz_generation }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, promptConfigs?.quiz_generation]);
+  }, [open, promptConfigs?.quiz_generation, setFormData]);
 
   useEffect(() => {
     if (progress?.status === 'completed' && createdQuizSetId) {
@@ -446,7 +445,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                     <label
                       className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}
                     >
-                      测验标题 <span className="text-red-500">*</span>
+                      测验标题 <span aria-hidden="true" className="text-red-500">*</span>
                     </label>
                     {isGeneratingTitle && (
                       <span className={`flex items-center gap-1 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
@@ -458,6 +457,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                   <div className="relative">
                     <input
                       type="text"
+                      aria-required={true}
                       value={title}
                       onChange={(e) => handleTitleChange(e.target.value)}
                       placeholder="例如：第一章基础概念测验"
@@ -534,6 +534,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                   className={`p-4 rounded-xl ${
                     isDark ? 'bg-primary-900/30' : 'bg-primary-50'
                   }`}
+                  aria-live="polite"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -547,10 +548,17 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                     </span>
                   </div>
 
-                  <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-primary-100'}`}>
+                  <div
+                    className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-primary-100'}`}
+                  >
                     <div
                       className="h-full bg-gradient-to-r from-primary-500 to-violet-500 transition-all duration-300"
                       style={{ width: `${progressPercent}%` }}
+                      role="progressbar"
+                      aria-valuenow={progressPercent}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={t('quiz.generation.progressLabel', { defaultValue: '生成进度' })}
                     />
                   </div>
 

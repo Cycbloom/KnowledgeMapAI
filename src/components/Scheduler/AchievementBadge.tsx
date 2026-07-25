@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Lock, Sparkles } from "lucide-react";
 import { Achievement } from "@shared/types";
 import { formatDate } from "../../utils/formatters";
+import { useReducedMotionOrPreference } from "@/hooks/common/useReducedMotionOrPreference";
 
 interface AchievementBadgeProps {
   achievement: Achievement;
@@ -69,6 +70,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   const sizeConfig = SIZE_CONFIG[size];
   const categoryGradient = CATEGORY_COLORS[achievement.category];
   const categoryGlow = CATEGORY_GLOW[achievement.category];
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
 
   const progressPercentage = conditionValue
     ? Math.min(100, (progress / conditionValue) * 100)
@@ -80,11 +82,11 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
     <motion.div
       className={`relative inline-flex flex-col items-center ${onClick ? "cursor-pointer" : ""}`}
       onClick={onClick}
-      whileHover={animate ? { scale: 1.05 } : undefined}
-      whileTap={animate && onClick ? { scale: 0.95 } : undefined}
+      whileHover={animate && !reduceMotion ? { scale: 1.05 } : undefined}
+      whileTap={animate && onClick && !reduceMotion ? { scale: 0.95 } : undefined}
     >
       <div className={`relative ${sizeConfig.glow}`}>
-        {unlocked && animate && (
+        {unlocked && animate && !reduceMotion && (
           <motion.div
             className={`absolute inset-0 rounded-full bg-gradient-to-r ${categoryGradient} opacity-20 blur-xl ${categoryGlow}`}
             animate={{
@@ -103,7 +105,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
           className={`absolute inset-0 m-auto ${sizeConfig.ring} rounded-full border-2 ${
             unlocked
               ? `border-gradient-to-r ${categoryGradient}`
-              : "border-slate-300 dark:border-slate-600"
+              : "border-slate-300 dark:border-slate-500"
           }`}
           style={{
             borderImage: unlocked
@@ -111,10 +113,10 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
               : undefined,
             borderImageSlice: 1,
           }}
-          initial={animate ? { rotate: 0 } : undefined}
-          animate={animate && unlocked ? { rotate: 360 } : undefined}
+          initial={animate && !reduceMotion ? { rotate: 0 } : undefined}
+          animate={animate && unlocked && !reduceMotion ? { rotate: 360 } : undefined}
           transition={
-            animate && unlocked
+            animate && unlocked && !reduceMotion
               ? { duration: 20, repeat: Infinity, ease: "linear" }
               : undefined
           }
@@ -134,9 +136,9 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
           {unlocked ? (
             <motion.span
               className={sizeConfig.icon}
-              initial={animate ? { scale: 0, rotate: -180 } : undefined}
+              initial={animate ? (reduceMotion ? false : { scale: 0, rotate: -180 }) : undefined}
               animate={animate ? { scale: 1, rotate: 0 } : undefined}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              transition={transitionOverride ?? { type: "spring", stiffness: 200, damping: 15 }}
             >
               {achievement.icon}
             </motion.span>
@@ -148,9 +150,9 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
 
           {unlocked && achievement.xp_reward > 0 && (
             <motion.div
-              initial={animate ? { scale: 0 } : undefined}
+              initial={animate ? (reduceMotion ? false : { scale: 0 }) : undefined}
               animate={animate ? { scale: 1 } : undefined}
-              transition={{ delay: 0.3 }}
+              transition={transitionOverride ?? { delay: 0.3 }}
               className="absolute -bottom-1 -right-1 bg-amber-400 text-amber-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md"
             >
               +{achievement.xp_reward} XP
@@ -182,13 +184,13 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
               strokeLinecap="round"
               strokeDasharray={`${progressPercentage * 3.01} 301.59`}
               transform="rotate(-90 50 50)"
-              initial={animate ? { strokeDasharray: "0 301.59" } : undefined}
+              initial={animate ? (reduceMotion ? false : { strokeDasharray: "0 301.59" }) : undefined}
               animate={
                 animate
                   ? { strokeDasharray: `${progressPercentage * 3.01} 301.59` }
                   : undefined
               }
-              transition={{ duration: 1, ease: "easeOut" }}
+              transition={transitionOverride ?? { duration: 1, ease: "easeOut" }}
             />
           </svg>
         )}
@@ -233,7 +235,7 @@ export const AchievementBadgeNotification: React.FC<
       initial={{ scale: 0.5, opacity: 0, y: 50 }}
       animate={{ scale: 1, opacity: 1, y: 0 }}
       exit={{ scale: 0.5, opacity: 0, y: 50 }}
-      className="relative flex flex-col items-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700"
+      className="relative flex flex-col items-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-500"
     >
       <motion.div
         className="absolute inset-0 rounded-2xl overflow-hidden"

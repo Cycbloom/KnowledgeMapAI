@@ -180,7 +180,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
           isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
         }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
             从模板创建任务
           </h3>
@@ -197,7 +197,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
           <div
             className={`w-1/2 border-r ${isDark ? "border-slate-700" : "border-slate-200"}`}
           >
-            <div className="p-3 border-b border-slate-200 dark:border-slate-700">
+            <div className="p-3 border-b border-slate-200 dark:border-slate-500">
               <div className="flex gap-3">
                 <div className="relative flex-1">
                   <Search
@@ -501,7 +501,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+                <div className="p-4 border-t border-slate-200 dark:border-slate-500">
                   <button
                     onClick={handleApply}
                     className="w-full px-4 py-2.5 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"

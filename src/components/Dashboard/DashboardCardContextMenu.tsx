@@ -92,10 +92,10 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
   return (
     <div
       ref={menuRef}
-      className="fixed bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 py-1 z-50 min-w-[180px]"
+      className="fixed bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 py-1 z-50 min-w-[180px]"
       style={{ left: position.x, top: position.y }}
     >
-      <div className="px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-slate-700 mb-1 truncate max-w-[220px]">
+      <div className="px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-slate-500 mb-1 truncate max-w-[220px]">
         {graph.title}
       </div>
       <button
@@ -127,7 +127,7 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
         />
         {t("dashboard.contextMenu.toggleFavorite")}
       </button>
-      <hr className="my-1 border-gray-200 dark:border-slate-700" />
+      <hr className="my-1 border-gray-200 dark:border-slate-500" />
       <button
         onClick={handleDelete}
         className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"

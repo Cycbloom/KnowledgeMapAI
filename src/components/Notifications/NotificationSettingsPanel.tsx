@@ -19,8 +19,10 @@ import { NotificationSettings } from '@shared/types';
 import { message } from "../../utils/messageHelper";
 import { useTheme } from "../../hooks";
 import { Skeleton } from '../common';
+import { useTranslation } from 'react-i18next';
 
 export const NotificationSettingsPanel: React.FC = () => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,9 +52,9 @@ export const NotificationSettingsPanel: React.FC = () => {
     setSaving(true);
     try {
       await notificationApi.updateSettings(settings);
-      message.success('通知设置已保存!');
+      message.success(t('notifications.settings.savedSuccess'));
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "保存设置失败";
+      const errorMessage = error instanceof Error ? error.message : t('notifications.settings.saveFailed');
       message.error(errorMessage);
     } finally {
       setSaving(false);
@@ -80,7 +82,7 @@ export const NotificationSettingsPanel: React.FC = () => {
         <Skeleton className="h-6 w-48" />
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-slate-700">
+            <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-slate-500">
               <div className="space-y-2">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-3 w-48" />
@@ -96,12 +98,12 @@ export const NotificationSettingsPanel: React.FC = () => {
   if (!settings) {
     return (
       <div className={`text-center py-10 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-        <p>无法加载通知设置</p>
+        <p>{t('notifications.settings.loadFailed')}</p>
         <button
           onClick={loadSettings}
           className="mt-2 text-primary-500 hover:text-primary-600"
         >
-          重试
+          {t('notifications.settings.retry')}
         </button>
       </div>
     );
@@ -112,7 +114,7 @@ export const NotificationSettingsPanel: React.FC = () => {
       {/* Basic Settings */}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
         <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          基础设置
+          {t('notifications.settings.basicSettings')}
         </h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -120,10 +122,10 @@ export const NotificationSettingsPanel: React.FC = () => {
               <Bell className={isDark ? 'text-slate-400' : 'text-gray-500'} size={20} />
               <div>
                 <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  浏览器通知
+                  {t('notifications.settings.browserNotifications.title')}
                 </p>
                 <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  接收浏览器推送通知
+                  {t('notifications.settings.browserNotifications.desc')}
                 </p>
               </div>
             </div>
@@ -150,10 +152,10 @@ export const NotificationSettingsPanel: React.FC = () => {
               )}
               <div>
                 <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  声音提醒
+                  {t('notifications.settings.soundReminder.title')}
                 </p>
                 <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  播放提示音
+                  {t('notifications.settings.soundReminder.desc')}
                 </p>
               </div>
             </div>
@@ -174,7 +176,7 @@ export const NotificationSettingsPanel: React.FC = () => {
           {settings.sound_enabled && (
             <div className="ml-8">
               <p className={`text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                音量: {settings.sound_volume}%
+                {t('notifications.settings.soundReminder.volume', { volume: settings.sound_volume })}
               </p>
               <input
                 type="range"
@@ -192,26 +194,26 @@ export const NotificationSettingsPanel: React.FC = () => {
       {/* Notification Types */}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
         <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          通知类型
+          {t('notifications.settings.notificationTypes')}
         </h3>
         <div className="space-y-3">
           {[
-            { key: 'task_start_enabled', icon: Timer, label: '任务开始', desc: '任务开始执行时通知' },
-            { key: 'task_complete_enabled', icon: CheckCircle, label: '任务完成', desc: '任务完成时通知' },
-            { key: 'time_slice_end_enabled', icon: Clock, label: '时间片结束', desc: '时间片用尽时通知' },
-            { key: 'deadline_enabled', icon: AlertTriangle, label: '截止日期', desc: '任务即将到期时提醒' },
-            { key: 'break_enabled', icon: Coffee, label: '休息提醒', desc: '休息开始和结束时提醒' },
-            { key: 'daily_summary_enabled', icon: FileText, label: '每日总结', desc: '每日任务完成情况总结' },
+            { key: 'task_start_enabled', icon: Timer, labelKey: 'notifications.settings.type.taskStart', descKey: 'notifications.settings.type.taskStartDesc' },
+            { key: 'task_complete_enabled', icon: CheckCircle, labelKey: 'notifications.settings.type.taskComplete', descKey: 'notifications.settings.type.taskCompleteDesc' },
+            { key: 'time_slice_end_enabled', icon: Clock, labelKey: 'notifications.settings.type.timeSliceEnd', descKey: 'notifications.settings.type.timeSliceEndDesc' },
+            { key: 'deadline_enabled', icon: AlertTriangle, labelKey: 'notifications.settings.type.deadline', descKey: 'notifications.settings.type.deadlineDesc' },
+            { key: 'break_enabled', icon: Coffee, labelKey: 'notifications.settings.type.break', descKey: 'notifications.settings.type.breakDesc' },
+            { key: 'daily_summary_enabled', icon: FileText, labelKey: 'notifications.settings.type.dailySummary', descKey: 'notifications.settings.type.dailySummaryDesc' },
           ].map((item) => (
             <div key={item.key} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <item.icon className={isDark ? 'text-slate-400' : 'text-gray-500'} size={18} />
                 <div>
                   <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {item.label}
+                    {t(item.labelKey, { defaultValue: '' })}
                   </p>
                   <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                    {item.desc}
+                    {t(item.descKey, { defaultValue: '' })}
                   </p>
                 </div>
               </div>
@@ -236,10 +238,10 @@ export const NotificationSettingsPanel: React.FC = () => {
       {settings.deadline_enabled && (
         <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
           <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            截止日期提醒时间
+            {t('notifications.settings.deadlineReminderTime.title')}
           </h3>
           <p className={`text-sm mb-3 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-            选择在截止日期前多久提醒
+            {t('notifications.settings.deadlineReminderTime.desc')}
           </p>
           <div className="flex flex-wrap gap-2">
             {[15, 30, 60, 120, 1440].map((minutes) => (
@@ -254,7 +256,11 @@ export const NotificationSettingsPanel: React.FC = () => {
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {minutes < 60 ? `${minutes}分钟` : minutes < 1440 ? `${minutes / 60}小时` : '1天'}
+                {minutes < 60
+                  ? t('notifications.settings.duration.minute', { count: minutes })
+                  : minutes < 1440
+                    ? t('notifications.settings.duration.hour', { count: minutes / 60 })
+                    : t('notifications.settings.duration.day', { count: 1 })}
               </button>
             ))}
           </div>
@@ -264,7 +270,7 @@ export const NotificationSettingsPanel: React.FC = () => {
       {/* Do Not Disturb */}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
         <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          免打扰模式
+          {t('notifications.settings.doNotDisturb.title')}
         </h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -272,10 +278,10 @@ export const NotificationSettingsPanel: React.FC = () => {
               <Moon className={isDark ? 'text-slate-400' : 'text-gray-500'} size={20} />
               <div>
                 <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  启用免打扰
+                  {t('notifications.settings.doNotDisturb.enable')}
                 </p>
                 <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  在指定时段内不发送通知
+                  {t('notifications.settings.doNotDisturb.desc')}
                 </p>
               </div>
             </div>
@@ -297,7 +303,7 @@ export const NotificationSettingsPanel: React.FC = () => {
             <div className="flex items-center gap-4 ml-8">
               <div>
                 <label className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  开始时间
+                  {t('notifications.settings.doNotDisturb.startTime')}
                 </label>
                 <input
                   type="time"
@@ -312,7 +318,7 @@ export const NotificationSettingsPanel: React.FC = () => {
               </div>
               <div>
                 <label className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  结束时间
+                  {t('notifications.settings.doNotDisturb.endTime')}
                 </label>
                 <input
                   type="time"
@@ -341,7 +347,7 @@ export const NotificationSettingsPanel: React.FC = () => {
           }`}
         >
           <RefreshCw size={16} />
-          重置
+          {t('notifications.settings.reset')}
         </button>
         <button
           onClick={handleSave}
@@ -353,7 +359,7 @@ export const NotificationSettingsPanel: React.FC = () => {
           ) : (
             <Save size={16} />
           )}
-          保存设置
+          {t('notifications.settings.save')}
         </button>
       </div>
     </div>

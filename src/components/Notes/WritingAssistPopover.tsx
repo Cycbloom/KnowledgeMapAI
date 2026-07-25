@@ -11,6 +11,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2, Check, X } from "lucide-react";
+import { useFocusTrap } from "@/hooks/common";
 
 export interface WritingAssistPopoverProps {
   /** AI 生成的建议文本(loading 时可为空字符串)。 */
@@ -36,16 +37,20 @@ export const WritingAssistPopover: React.FC<WritingAssistPopoverProps> = ({
   anchorRect,
 }) => {
   const { t } = useTranslation();
+  // 组件由父组件挂载/卸载控制可见性:挂载时捕获触发元素,卸载时恢复焦点。
+  // 默认 enabled=true, restoreFocus=true,与整屏模态行为一致。
+  const popoverRef = useFocusTrap<HTMLDivElement>();
 
   return (
     <div
+      ref={popoverRef}
       role="dialog"
       aria-label={t("notes.writingAssist.popoverTitle")}
-      className="fixed z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg shadow-black/5 dark:shadow-black/30 overflow-hidden"
+      className="fixed z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 shadow-lg shadow-black/5 dark:shadow-black/30 overflow-hidden"
       style={{ top: anchorRect.bottom + 4, left: anchorRect.left }}
     >
       {/* 标题栏 */}
-      <div className="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-slate-500 border-b border-gray-100 dark:border-slate-700 flex items-center gap-1.5">
+      <div className="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-slate-500 border-b border-gray-100 dark:border-slate-500 flex items-center gap-1.5">
         {isLoading && <Loader2 className="w-3 h-3 animate-spin" />}
         <span>{t("notes.writingAssist.popoverTitle")}</span>
       </div>
@@ -70,7 +75,7 @@ export const WritingAssistPopover: React.FC<WritingAssistPopoverProps> = ({
 
       {/* 底部按钮:仅在非 loading、无 error 时显示 */}
       {!isLoading && !error && (
-        <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-gray-100 dark:border-slate-700">
+        <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-gray-100 dark:border-slate-500">
           <button
             type="button"
             onClick={onReject}

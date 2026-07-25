@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useId, useCallback } from 'react';
 import { Globe, ChevronDown, Check, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { DomainTreeNode } from '@shared/types/graph';
 import { useIsMobile } from '../../hooks';
+import { useCombobox } from '../../hooks/useCombobox';
 
 interface DomainFilterProps {
   domains: DomainTreeNode[];
@@ -20,6 +21,8 @@ interface DomainTreeItemProps {
   onToggleExpand: (domainId: string) => void;
   graphCount?: number;
   graphCountMap?: Map<string, number>;
+  /** 域 ID -> option DOM id 的映射，用于 role="option" 的 id 与 aria-activedescendant 对齐 */
+  optionIdMap?: Map<string, string>;
 }
 
 const DomainTreeItem: React.FC<DomainTreeItemProps> = ({
@@ -31,6 +34,7 @@ const DomainTreeItem: React.FC<DomainTreeItemProps> = ({
   onToggleExpand,
   graphCount,
   graphCountMap,
+  optionIdMap,
 }) => {
   const hasChildren = domain.children && domain.children.length > 0;
   const isExpanded = expandedIds.has(domain.id);
@@ -40,6 +44,9 @@ const DomainTreeItem: React.FC<DomainTreeItemProps> = ({
     <div>
       <button
         onClick={() => onToggle(domain.id)}
+        role="option"
+        aria-selected={isSelected}
+        id={optionIdMap?.get(domain.id)}
         className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-sm rounded-md transition-colors ${
           isSelected
             ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
@@ -87,6 +94,7 @@ const DomainTreeItem: React.FC<DomainTreeItemProps> = ({
               onToggleExpand={onToggleExpand}
               graphCount={graphCountMap?.get(child.id)}
               graphCountMap={graphCountMap}
+              optionIdMap={optionIdMap}
             />
           ))}
         </div>
@@ -194,6 +202,50 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
     });
   };
 
+  // 仅展开可见的域节点扁平化，供 useCombobox 键盘导航使用
+  const flattenedDomains = useMemo(() => {
+    const result: DomainTreeNode[] = [];
+    const collect = (nodes: DomainTreeNode[]) => {
+      for (const node of nodes) {
+        result.push(node);
+        if (node.children && expandedIds.has(node.id)) {
+          collect(node.children);
+        }
+      }
+    };
+    collect(filteredDomains);
+    return result;
+  }, [filteredDomains, expandedIds]);
+
+  const baseId = useId();
+  const getOptionId = useCallback(
+    (index: number) => `${baseId}-opt-${flattenedDomains[index]?.id ?? index}`,
+    [baseId, flattenedDomains],
+  );
+
+  const { activeId, handleKeyDown, resetActive } = useCombobox<DomainTreeNode>({
+    options: flattenedDomains,
+    isOpen,
+    setIsOpen,
+    onSelect: (domain) => handleToggle(domain.id),
+    getOptionId,
+    getOptionLabel: (domain) => domain.name,
+  });
+
+  const optionIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    flattenedDomains.forEach((domain, index) => {
+      map.set(domain.id, getOptionId(index));
+    });
+    return map;
+  }, [flattenedDomains, getOptionId]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetActive();
+    }
+  }, [isOpen, resetActive]);
+
   const selectedCount = selectedDomainIds.size;
 
   return (
@@ -202,10 +254,13 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
+        role="combobox"
+        aria-activedescendant={activeId}
+        onKeyDown={(e) => handleKeyDown(e.nativeEvent)}
         className={`flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-slate-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors`}
       >
         <Globe className="w-4 h-4" />
-        <span>领域</span>
+        <span>{t('graphMap.domainFilter.title')}</span>
         {selectedCount > 0 && (
           <span className="min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-primary-500 text-white text-xs rounded-full">
             {selectedCount}
@@ -216,7 +271,8 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
 
       {isOpen && (
         <div
-          className={`absolute top-full left-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-600 z-50 ${
+          role="listbox"
+          className={`absolute top-full left-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-500 z-50 ${
             isMobile ? 'w-[280px]' : 'w-[240px]'
           } max-h-[360px] overflow-y-auto p-1.5`}
         >
@@ -229,7 +285,7 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
             }`}
           >
             <span className="w-3.5" />
-            <span>全部</span>
+            <span>{t('graphMap.domainFilter.all')}</span>
             {selectedCount === 0 && (
               <Check className="w-4 h-4 ml-auto text-primary-500 dark:text-primary-400" />
             )}
@@ -241,7 +297,7 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
               aria-label={t('common.aria.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="搜索领域..."
+              placeholder={t('graphMap.domainFilter.searchPlaceholder')}
               className="w-full pl-7 pr-3 py-1.5 text-sm border border-gray-200 dark:border-slate-500 rounded-md bg-white dark:bg-slate-600 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-400 dark:focus:ring-primary-500"
               autoFocus={isOpen}
             />
@@ -250,10 +306,10 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
             </svg>
           </div>
 
-          <div className="border-t border-gray-100 dark:border-slate-600 pt-1">
+          <div className="border-t border-gray-100 dark:border-slate-500 pt-1">
             {filteredDomains.length === 0 && searchQuery.trim() && (
               <div className="px-2 py-4 text-center text-sm text-gray-400 dark:text-gray-500">
-                未找到匹配的领域
+                {t('graphMap.domainFilter.noMatch')}
               </div>
             )}
             {filteredDomains.map((domain) => (
@@ -267,6 +323,7 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
                 onToggleExpand={handleToggleExpand}
                 graphCount={domainGraphCount?.get(domain.id)}
                 graphCountMap={domainGraphCount}
+                optionIdMap={optionIdMap}
               />
             ))}
           </div>

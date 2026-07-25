@@ -207,7 +207,7 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-white dark:bg-slate-900 overflow-hidden">
+    <div className="h-screen w-full flex flex-col bg-white dark:bg-slate-900 overflow-hidden">
       {/* Header */}
       <header className="h-14 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-900 px-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -326,7 +326,7 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({
 
           {selectedStructure && !isSceneSelected && (
             <div className="max-w-2xl mx-auto">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-xl p-8 border border-blue-100 dark:border-slate-600">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-xl p-8 border border-blue-100 dark:border-slate-500">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   {selectedStructure.title}
                 </h2>

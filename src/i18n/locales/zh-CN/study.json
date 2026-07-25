@@ -35,6 +35,16 @@
       "learning": "学习中",
       "review": "复习中",
       "relearning": "重学中"
+    },
+    "clear": "清除"
+  },
+  "blindSpot": {
+    "title": "知识盲区 (Top 10)",
+    "nodeInfo": "所属节点: {{node}} | 稳定性: {{stability}}",
+    "review": "去复习",
+    "empty": {
+      "title": "暂无薄弱知识点",
+      "description": "继续保持复习，薄弱点会自动出现"
     }
   },
   "focusTimer": {
@@ -104,6 +114,12 @@
     "title": "薄弱知识点",
     "empty": "暂无薄弱点数据"
   },
+  "weakPoint": {
+    "empty": {
+      "title": "暂无薄弱点分析",
+      "description": "完成更多复习后将自动生成分析"
+    }
+  },
   "priority": {
     "high": "高优先级",
     "medium": "中优先级",
@@ -130,6 +146,27 @@
     "noCardsFound": "未找到匹配的卡片",
     "clearSearch": "清除搜索",
     "switchToAll": "切换到全部卡片"
+  },
+  "cardPreview": {
+    "status": {
+      "studied": "已学习",
+      "new": "新内容"
+    },
+    "notStarted": "尚未开始",
+    "cardType": {
+      "qa": "问答题",
+      "choice": "单选题",
+      "multi_choice": "多选题",
+      "fill_in_the_blank": "填空题",
+      "true_false": "判断题",
+      "essay": "问答题"
+    },
+    "button": {
+      "preview": "预览内容",
+      "edit": "编辑",
+      "delete": "删除",
+      "practice": "练习"
+    }
   },
   "completed": {
     "levelComplete": "本轮完成！",
@@ -319,6 +356,7 @@
     }
   },
   "questionForm": {
+    "answerLegend": "答案选择",
     "questionLabel": "问题",
     "questionPlaceholder": "输入问题内容...",
     "typeLabel": "类型",

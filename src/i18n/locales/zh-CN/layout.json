@@ -57,7 +57,14 @@
     "trash": "回收站",
     "graphEditor": "图谱编辑",
     "scheduler": "任务调度",
-    "learningPaths": "学习路径"
+    "learningPaths": "学习路径",
+    "dashboard": "仪表盘",
+    "quiz": "测验",
+    "settings": "设置",
+    "currentTask": "当前任务",
+    "schedulerStats": "调度统计",
+    "quizPreview": "测验预览",
+    "quizPractice": "测验练习"
   },
   "schemaEmpty": "数据库为空，需要初始化表结构才能正常使用。",
   "schemaPartial": "数据库部分初始化，请完成数据库迁移。",

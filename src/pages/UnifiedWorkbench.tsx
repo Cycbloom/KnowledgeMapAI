@@ -294,7 +294,7 @@ export const UnifiedWorkbench: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs text-primary-500 dark:text-primary-400 font-medium">{t("unifiedWorkbench.labels.currentTask")}</p>
-                    <h3 className="font-bold text-slate-900 dark:text-white">{activeTask.title}</h3>
+                    <h2 className="font-bold text-slate-900 dark:text-white">{activeTask.title}</h2>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -316,7 +316,7 @@ export const UnifiedWorkbench: React.FC = () => {
           </div>
         )}
 
-        <main className="flex-1 min-h-0 flex flex-col p-3 sm:p-6 gap-3 sm:gap-6">
+        <div role="region" aria-label={t("unifiedWorkbench.regionLabel")} className="flex-1 min-h-0 flex flex-col p-3 sm:p-6 gap-3 sm:gap-6">
           {queuesLoading ? (
             <div className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-6">
               <div className="flex-shrink-0 min-h-[280px]">
@@ -427,7 +427,7 @@ export const UnifiedWorkbench: React.FC = () => {
               </div>
             </>
           )}
-        </main>
+        </div>
 
         <div className="flex-shrink-0 border-t border-slate-200 dark:border-slate-800/50 bg-slate-50/80 dark:bg-slate-900/30 backdrop-blur-sm px-3 sm:px-6 py-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-400 dark:text-slate-500">

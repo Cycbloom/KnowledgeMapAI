@@ -32,9 +32,6 @@ export interface UndoableActionOptions<TPayload, TResource> {
 
 /**
  * 通用撤销操作 hook：执行删除后显示 X 秒撤销 toast，点击撤销调用 restoreFn 恢复。
- *
- * 替代旧的 useUndoableDelete（保留为 deprecated alias）。
- * 计划清理：可在 R25+ 删除 useUndoableDelete re-export。
  */
 export function useUndoableAction<TPayload, TResource>(
   options: UndoableActionOptions<TPayload, TResource>,

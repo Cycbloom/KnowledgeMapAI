@@ -1,10 +1,12 @@
-import React, { useMemo, useState, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useCallback, useRef, useId } from 'react';
 import { Tag, X, Plus, Hash, Filter, Sparkles, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from "../../hooks";
 import { cn } from '@/lib/utils';
 import { Node } from '../../types';
 import { EmptyState } from './EmptyState';
+import { useEscapeKey } from '../../hooks/common/useEscapeKey';
+import { useCombobox } from '../../hooks/useCombobox';
 
 interface TagData {
   name: string;
@@ -162,6 +164,11 @@ export const TagFilter: React.FC<TagFilterProps> = ({
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  useEscapeKey(() => setIsOpen(false), isOpen);
+
+  const baseId = useId();
+  const triggerId = `${baseId}-trigger`;
+  const getOptionId = useCallback((index: number) => `${baseId}-option-${index}`, [baseId]);
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
@@ -180,6 +187,15 @@ export const TagFilter: React.FC<TagFilterProps> = ({
     }
   }, [selectedTags, onTagChange]);
 
+  const { activeId, handleKeyDown } = useCombobox<string>({
+    options: allTags,
+    isOpen,
+    setIsOpen,
+    onSelect: handleTagToggle,
+    getOptionId,
+    getOptionLabel: (tag) => tag,
+  });
+
   const clearAll = useCallback(() => {
     onTagChange([]);
   }, [onTagChange]);
@@ -187,9 +203,13 @@ export const TagFilter: React.FC<TagFilterProps> = ({
   return (
     <div className="relative">
       <button
+        id={triggerId}
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => handleKeyDown(e.nativeEvent)}
+        role="combobox"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
+        aria-activedescendant={activeId}
         className={cn(
           'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors',
           selectedTags.length > 0
@@ -201,7 +221,9 @@ export const TagFilter: React.FC<TagFilterProps> = ({
       >
         <Filter size={16} />
         <span className="text-sm">
-          {selectedTags.length > 0 ? `已选 ${selectedTags.length} 个标签` : '标签筛选'}
+          {selectedTags.length > 0
+            ? t('common.tagSystem.selected', { count: selectedTags.length })
+            : t('common.tagSystem.filter')}
         </span>
         {selectedTags.length > 0 && (
           <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-xs">
@@ -211,32 +233,39 @@ export const TagFilter: React.FC<TagFilterProps> = ({
       </button>
 
       {isOpen && (
-        <div className={cn(
-          'absolute top-full left-0 mt-2 w-72 rounded-xl shadow-xl border z-50',
-          isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-        )}>
+        <div
+          role="listbox"
+          aria-labelledby={triggerId}
+          className={cn(
+            'absolute top-full left-0 mt-2 w-72 rounded-xl shadow-xl border z-50',
+            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
+          )}
+        >
           <div className={cn('p-3 border-b', isDark ? 'border-slate-700' : 'border-gray-100')}>
             <div className="flex items-center justify-between">
               <span className={cn('text-sm font-medium', isDark ? 'text-slate-300' : 'text-gray-700')}>
-                选择标签
+                {t('common.tagSystem.selectAll')}
               </span>
               {selectedTags.length > 0 && (
                 <button
                   onClick={clearAll}
-                  className={cn('text-xs', isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')}
+                  className={cn('text-xs min-h-[44px] px-3 py-2', isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')}
                 >
                   清除全部
                 </button>
               )}
             </div>
           </div>
-          
+
           <div className="max-h-64 overflow-y-auto p-2">
-            {allTags.map(tag => {
+            {allTags.map((tag, index) => {
               const isSelected = selectedTags.includes(tag);
               return (
                 <button
                   key={tag}
+                  id={getOptionId(index)}
+                  role="option"
+                  aria-selected={isSelected}
                   onClick={() => handleTagToggle(tag)}
                   className={cn(
                     'w-full text-left px-3 py-2 rounded-lg flex items-center justify-between transition-colors',
@@ -256,7 +285,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
               );
             })}
           </div>
-          
+
           {allTags.length === 0 && (
             <EmptyState icon={<Tag size={24} />} title={t('common.empty')} className="min-h-0 py-4" />
           )}
@@ -326,13 +355,13 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({
               key={tag}
               onClick={() => onAddTag(tag)}
               className={cn(
-                'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors',
+                'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center',
                 isDark
                   ? 'bg-slate-600 text-slate-300 hover:bg-primary-600 hover:text-white'
                   : 'bg-gray-200 text-gray-600 hover:bg-primary-500 hover:text-white'
               )}
             >
-              <Plus size={12} />
+              <Plus size={16} />
               {tag}
             </button>
           ))}
@@ -402,10 +431,10 @@ export const TagInput: React.FC<{
             {tag}
             <button
               onClick={() => handleRemoveTag(tag)}
-              className="ml-1 hover:bg-white/20 rounded-full p-0.5"
-              aria-label="移除标签"
+              className="ml-1 hover:bg-white/20 rounded-full p-0.5 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label={t('common.aria.removeTag')}
             >
-              <X size={12} />
+              <X size={16} />
             </button>
           </span>
         ))}

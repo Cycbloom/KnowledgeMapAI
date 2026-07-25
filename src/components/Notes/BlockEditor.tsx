@@ -976,7 +976,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
           : "text-gray-400 dark:text-slate-500";
 
   return (
-    <div className="flex flex-col h-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+    <div className="flex flex-col h-full rounded-xl border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-900 overflow-hidden">
       <BlockEditorToolbar
         editor={editor}
         onMoveBlockUp={handleMoveUp}
@@ -1000,7 +1000,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
         <EditorContent editor={editor} />
       </div>
 
-      <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-slate-700 text-xs">
+      <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-slate-500 text-xs">
         <span className="text-gray-400 dark:text-slate-500">
           {isUploadingImage ? (
             <span

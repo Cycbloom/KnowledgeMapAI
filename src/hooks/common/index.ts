@@ -20,3 +20,5 @@ export type { ShortcutPlatform, UseShortcutLabelOptions } from './useShortcutLab
 export { useCelebration } from './useCelebration';
 export { useFirstRunHint } from './useFirstRunHint';
 export type { UseFirstRunHintOptions, UseFirstRunHintResult } from './useFirstRunHint';
+export { useReducedMotionOrPreference } from './useReducedMotionOrPreference';
+export type { UseReducedMotionOrPreferenceResult } from './useReducedMotionOrPreference';

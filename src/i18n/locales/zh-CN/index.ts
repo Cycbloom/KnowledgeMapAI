@@ -1,4 +1,5 @@
 import dashboard from './dashboard.json';
+import documentTitle from './documentTitle.json';
 import focusTimer from './focusTimer.json';
 import study from './study.json';
 import promptConfig from './promptConfig.json';
@@ -33,6 +34,7 @@ import createRelation from './createRelation.json';
 import promptEditor from './promptEditor.json';
 import aiAction from './aiAction.json';
 import register from './register.json';
+import auth from './auth.json';
 import profile from './profile.json';
 import recycleBin from './recycleBin.json';
 import helpGuide from './helpGuide.json';
@@ -58,9 +60,11 @@ import form from './form.json';
 import toast from './toast.json';
 import relationshipTypes from './relationshipTypes.json';
 import learningStatus from './learningStatus.json';
+import syncStatus from './syncStatus.json';
 
 const zhCN = {
   dashboard,
+  documentTitle,
   focusTimer,
   study,
   promptConfig,
@@ -95,6 +99,7 @@ const zhCN = {
   promptEditor,
   aiAction,
   register,
+  auth,
   profile,
   recycleBin,
   helpGuide,
@@ -120,6 +125,7 @@ const zhCN = {
   toast,
   relationshipTypes,
   learningStatus,
+  syncStatus,
 };
 
 export default zhCN;

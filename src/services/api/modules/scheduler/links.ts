@@ -1,23 +1,12 @@
-import { request } from "../../client";
+import { requestData } from "../../client";
+import type { TaskLink, LinkType } from "@shared/types";
 
-export type LinkType = "web" | "file" | "api";
-
-export interface TaskLink {
-  id: string;
-  task_id: string;
-  link_type: LinkType;
-  title?: string;
-  url: string;
-  description?: string;
-  icon?: string;
-  metadata?: Record<string, unknown>;
-  position: number;
-  created_at: string;
-  updated_at: string;
-}
+// Re-export for backwards compatibility with existing imports.
+export type { TaskLink, LinkType };
 
 export const linksApi = {
-  getLinks: (taskId: string) => request(`/scheduler/tasks/${taskId}/links`),
+  getLinks: (taskId: string): Promise<TaskLink[]> =>
+    requestData<TaskLink[]>(`/scheduler/tasks/${taskId}/links`),
 
   createLink: (
     taskId: string,
@@ -29,8 +18,8 @@ export const linksApi = {
       icon?: string;
       metadata?: Record<string, unknown>;
     },
-  ) =>
-    request(`/scheduler/tasks/${taskId}/links`, {
+  ): Promise<TaskLink> =>
+    requestData<TaskLink>(`/scheduler/tasks/${taskId}/links`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -44,12 +33,14 @@ export const linksApi = {
       icon?: string;
       metadata?: Record<string, unknown>;
     },
-  ) =>
-    request(`/scheduler/tasks/${taskId}/links/${linkId}`, {
+  ): Promise<TaskLink> =>
+    requestData<TaskLink>(`/scheduler/tasks/${taskId}/links/${linkId}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
-  deleteLink: (taskId: string, linkId: string) =>
-    request(`/scheduler/tasks/${taskId}/links/${linkId}`, { method: "DELETE" }),
+  deleteLink: (taskId: string, linkId: string): Promise<void> =>
+    requestData<void>(`/scheduler/tasks/${taskId}/links/${linkId}`, {
+      method: "DELETE",
+    }),
 };

@@ -31,22 +31,22 @@ interface DiffDetailPanelProps {
 
 const CHANGE_TYPE_CONFIG: Record<
   DiffChangeType,
-  { label: string; color: string; bgColor: string; Icon: typeof Plus }
+  { labelKey: string; color: string; bgColor: string; Icon: typeof Plus }
 > = {
   added: {
-    label: "新增",
+    labelKey: "graphEditor.diffDetail.changeType.added",
     color: "text-green-700 dark:text-green-300",
     bgColor: "bg-green-100 dark:bg-green-900/30",
     Icon: Plus,
   },
   removed: {
-    label: "删除",
+    labelKey: "graphEditor.diffDetail.changeType.removed",
     color: "text-red-700 dark:text-red-300",
     bgColor: "bg-red-100 dark:bg-red-900/30",
     Icon: Minus,
   },
   modified: {
-    label: "修改",
+    labelKey: "graphEditor.diffDetail.changeType.modified",
     color: "text-amber-700 dark:text-amber-300",
     bgColor: "bg-amber-100 dark:bg-amber-900/30",
     Icon: Edit3,
@@ -55,6 +55,7 @@ const CHANGE_TYPE_CONFIG: Record<
 
 function NodeDiffRow({ diff }: { diff: NodeDiff }) {
   const [expanded, setExpanded] = useState(false);
+  const { t } = useTranslation();
   const config = CHANGE_TYPE_CONFIG[diff.changeType];
   const { Icon } = config;
   const displayData = diff.after ?? diff.before;
@@ -78,14 +79,16 @@ function NodeDiffRow({ diff }: { diff: NodeDiff }) {
           )}
         >
           <Icon size={10} />
-          {config.label}
+          {t(config.labelKey, { defaultValue: "" })}
         </span>
         <span className="text-sm text-slate-700 dark:text-slate-300 truncate">
-          {displayData?.title ?? "未知节点"}
+          {displayData?.title ?? t("graphEditor.diffDetail.unknownNode")}
         </span>
         {diff.changeType === "modified" && diff.changedFields.length > 0 && (
           <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto flex-shrink-0">
-            {diff.changedFields.length} 项变更
+            {t("graphEditor.diffDetail.itemsChanged", {
+              count: diff.changedFields.length,
+            })}
           </span>
         )}
       </button>
@@ -106,14 +109,16 @@ function NodeDiffRow({ diff }: { diff: NodeDiff }) {
               return (
                 <div key={field} className="space-y-1">
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    {field === "content" ? "内容" : "摘要"}
+                    {field === "content"
+                      ? t("graphEditor.diffDetail.field.content")
+                      : t("graphEditor.diffDetail.field.summary")}
                   </span>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="p-1.5 bg-red-50 dark:bg-red-900/10 rounded text-red-700 dark:text-red-300 whitespace-pre-wrap break-words max-h-24 overflow-y-auto text-[11px]">
-                      {beforeValue || "(空)"}
+                      {beforeValue || t("graphEditor.diffDetail.emptyValue")}
                     </div>
                     <div className="p-1.5 bg-green-50 dark:bg-green-900/10 rounded text-green-700 dark:text-green-300 whitespace-pre-wrap break-words max-h-24 overflow-y-auto text-[11px]">
-                      {afterValue || "(空)"}
+                      {afterValue || t("graphEditor.diffDetail.emptyValue")}
                     </div>
                   </div>
                 </div>
@@ -143,16 +148,22 @@ function NodeDiffRow({ diff }: { diff: NodeDiff }) {
       {expanded && diff.changeType === "added" && diff.after && (
         <div className="px-8 pb-2 text-xs text-slate-500 dark:text-slate-400">
           <span>
-            等级: {diff.after.level} · 位置: ({diff.after.xPosition},{" "}
-            {diff.after.yPosition})
+            {t("graphEditor.diffDetail.levelAndPosition", {
+              level: diff.after.level,
+              x: diff.after.xPosition,
+              y: diff.after.yPosition,
+            })}
           </span>
         </div>
       )}
       {expanded && diff.changeType === "removed" && diff.before && (
         <div className="px-8 pb-2 text-xs text-slate-500 dark:text-slate-400">
           <span>
-            等级: {diff.before.level} · 位置: ({diff.before.xPosition},{" "}
-            {diff.before.yPosition})
+            {t("graphEditor.diffDetail.levelAndPosition", {
+              level: diff.before.level,
+              x: diff.before.xPosition,
+              y: diff.before.yPosition,
+            })}
           </span>
         </div>
       )}
@@ -169,6 +180,7 @@ function SimpleList<T extends SnapshotNodeData | SnapshotEdgeData>({
   changeType: "added" | "removed";
   getLabel: (item: T) => string;
 }) {
+  const { t } = useTranslation();
   const config = CHANGE_TYPE_CONFIG[changeType];
   const { Icon } = config;
 
@@ -189,7 +201,7 @@ function SimpleList<T extends SnapshotNodeData | SnapshotEdgeData>({
             )}
           >
             <Icon size={10} />
-            {config.label}
+            {t(config.labelKey, { defaultValue: "" })}
           </span>
           <span className="text-slate-700 dark:text-slate-300 truncate">
             {getLabel(item)}
@@ -201,12 +213,13 @@ function SimpleList<T extends SnapshotNodeData | SnapshotEdgeData>({
 }
 
 function EdgeDiffRow({ diff }: { diff: EdgeDiff }) {
+  const { t } = useTranslation();
   const config = CHANGE_TYPE_CONFIG[diff.changeType];
   const { Icon } = config;
   const displayData = diff.after ?? diff.before;
 
   const getEdgeLabel = (data: SnapshotEdgeData | null) => {
-    if (!data) return "未知边";
+    if (!data) return t("graphEditor.diffDetail.unknownEdge");
     return `${data.sourceKnowledgePointId.slice(0, 8)}... → ${data.targetKnowledgePointId.slice(0, 8)}...`;
   };
 
@@ -220,7 +233,7 @@ function EdgeDiffRow({ diff }: { diff: EdgeDiff }) {
         )}
       >
         <Icon size={10} />
-        {config.label}
+        {t(config.labelKey, { defaultValue: "" })}
       </span>
       <span className="text-slate-700 dark:text-slate-300 truncate">
         {diff.changeType === "modified"
@@ -300,7 +313,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
         );
         setDiff(result);
       } catch (_e) {
-        setError("获取 Diff 数据失败");
+        setError(t("graphEditor.diffDetail.loadFailed"));
       } finally {
         setIsLoading(false);
       }
@@ -371,7 +384,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
         <div className="flex items-center gap-2">
           <GitCompare className="text-primary-500" size={18} />
           <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-            版本对比
+            {t("graphEditor.diffDetail.title")}
           </h2>
         </div>
         <button
@@ -385,50 +398,54 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
       {diff && diff.summary.totalChanges > 0 && (
         <div className="px-4 py-2 space-y-2 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">变更</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">
+              {t("graphEditor.diffDetail.filter.change")}
+            </span>
             <div className="flex items-center gap-1">
               <FilterChip
                 active={changeTypeFilter === "all"}
                 onClick={() => setChangeTypeFilter("all")}
-                label="全部"
+                label={t("graphEditor.diffDetail.filter.all")}
               />
               <FilterChip
                 active={changeTypeFilter === "added"}
                 onClick={() => setChangeTypeFilter("added")}
-                label="新增"
+                label={t("graphEditor.diffDetail.changeType.added")}
                 dotColor="bg-green-500"
               />
               <FilterChip
                 active={changeTypeFilter === "removed"}
                 onClick={() => setChangeTypeFilter("removed")}
-                label="删除"
+                label={t("graphEditor.diffDetail.changeType.removed")}
                 dotColor="bg-red-500"
               />
               <FilterChip
                 active={changeTypeFilter === "modified"}
                 onClick={() => setChangeTypeFilter("modified")}
-                label="修改"
+                label={t("graphEditor.diffDetail.changeType.modified")}
                 dotColor="bg-amber-500"
               />
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">实体</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">
+              {t("graphEditor.diffDetail.filter.entity")}
+            </span>
             <div className="flex items-center gap-1">
               <FilterChip
                 active={entityTypeFilter === "all"}
                 onClick={() => setEntityTypeFilter("all")}
-                label="全部"
+                label={t("graphEditor.diffDetail.filter.all")}
               />
               <FilterChip
                 active={entityTypeFilter === "node"}
                 onClick={() => setEntityTypeFilter("node")}
-                label="节点"
+                label={t("graphEditor.diffDetail.filter.node")}
               />
               <FilterChip
                 active={entityTypeFilter === "edge"}
                 onClick={() => setEntityTypeFilter("edge")}
-                label="边"
+                label={t("graphEditor.diffDetail.filter.edge")}
               />
             </div>
           </div>
@@ -458,37 +475,49 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
                     {diff.summary.nodesAdded > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
                         <Plus size={10} />
-                        +{diff.summary.nodesAdded} 节点
+                        {t("graphEditor.diffDetail.summary.nodesAdded", {
+                          count: diff.summary.nodesAdded,
+                        })}
                       </span>
                     )}
                     {diff.summary.nodesRemoved > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
                         <Minus size={10} />
-                        -{diff.summary.nodesRemoved} 节点
+                        {t("graphEditor.diffDetail.summary.nodesRemoved", {
+                          count: diff.summary.nodesRemoved,
+                        })}
                       </span>
                     )}
                     {diff.summary.nodesModified > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
                         <Edit3 size={10} />
-                        ~{diff.summary.nodesModified} 节点
+                        {t("graphEditor.diffDetail.summary.nodesModified", {
+                          count: diff.summary.nodesModified,
+                        })}
                       </span>
                     )}
                     {diff.summary.edgesAdded > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
                         <Plus size={10} />
-                        +{diff.summary.edgesAdded} 边
+                        {t("graphEditor.diffDetail.summary.edgesAdded", {
+                          count: diff.summary.edgesAdded,
+                        })}
                       </span>
                     )}
                     {diff.summary.edgesRemoved > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
                         <Minus size={10} />
-                        -{diff.summary.edgesRemoved} 边
+                        {t("graphEditor.diffDetail.summary.edgesRemoved", {
+                          count: diff.summary.edgesRemoved,
+                        })}
                       </span>
                     )}
                     {diff.summary.edgesModified > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
                         <Edit3 size={10} />
-                        ~{diff.summary.edgesModified} 边
+                        {t("graphEditor.diffDetail.summary.edgesModified", {
+                          count: diff.summary.edgesModified,
+                        })}
                       </span>
                     )}
                   </div>
@@ -496,7 +525,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
 
                 <SectionHeader
                   sectionKey="nodesAdded"
-                  title="新增节点"
+                  title={t("graphEditor.diffDetail.section.nodesAdded")}
                   count={diff.nodes.added.length}
                   colorClass="text-green-600 dark:text-green-400"
                 />
@@ -510,7 +539,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
 
                 <SectionHeader
                   sectionKey="nodesRemoved"
-                  title="删除节点"
+                  title={t("graphEditor.diffDetail.section.nodesRemoved")}
                   count={diff.nodes.removed.length}
                   colorClass="text-red-600 dark:text-red-400"
                 />
@@ -524,7 +553,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
 
                 <SectionHeader
                   sectionKey="nodesModified"
-                  title="修改节点"
+                  title={t("graphEditor.diffDetail.section.nodesModified")}
                   count={diff.nodes.modified.length}
                   colorClass="text-amber-600 dark:text-amber-400"
                 />
@@ -538,7 +567,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
 
                 <SectionHeader
                   sectionKey="edgesAdded"
-                  title="新增边"
+                  title={t("graphEditor.diffDetail.section.edgesAdded")}
                   count={diff.edges.added.length}
                   colorClass="text-green-600 dark:text-green-400"
                 />
@@ -554,7 +583,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
 
                 <SectionHeader
                   sectionKey="edgesRemoved"
-                  title="删除边"
+                  title={t("graphEditor.diffDetail.section.edgesRemoved")}
                   count={diff.edges.removed.length}
                   colorClass="text-red-600 dark:text-red-400"
                 />
@@ -570,7 +599,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
 
                 <SectionHeader
                   sectionKey="edgesModified"
-                  title="修改边"
+                  title={t("graphEditor.diffDetail.section.edgesModified")}
                   count={diff.edges.modified.length}
                   colorClass="text-amber-600 dark:text-amber-400"
                 />

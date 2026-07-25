@@ -1,0 +1,13 @@
+{
+  "badge": {
+    "ariaLabel": "同步状态：{{count}} 项待同步"
+  },
+  "popover": {
+    "title": "待同步操作 ({{count}})"
+  },
+  "unknown": "未知操作",
+  "justNow": "刚刚",
+  "minutesAgo": "{{count}} 分钟前",
+  "hoursAgo": "{{count}} 小时前",
+  "daysAgo": "{{count}} 天前"
+}

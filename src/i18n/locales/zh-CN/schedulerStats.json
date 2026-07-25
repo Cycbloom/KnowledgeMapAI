@@ -80,6 +80,9 @@
     "interrupted": "已中断",
     "timeSliceEnded": "时间片结束"
   },
+  "queueLevel": {
+    "ariaLabel": "队列级别 Q{{level}}"
+  },
   "durations": {
     "minutes": "{{count}}分钟",
     "hoursAndMinutes": "{{hours}}小时{{minutes}}分钟",

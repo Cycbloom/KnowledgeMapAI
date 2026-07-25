@@ -65,7 +65,7 @@ export const CrossDomainInsightsSection: React.FC<CrossDomainInsightsSectionProp
                 disabled={!onGraphClick}
                 className={`text-xs flex items-center gap-1 ${
                   onGraphClick
-                    ? 'text-primary-600 dark:text-primary-400 hover:underline'
+                    ? 'text-primary-600 dark:text-primary-400 underline'
                     : 'text-gray-500 dark:text-gray-400'
                 }`}
               >

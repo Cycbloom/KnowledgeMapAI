@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+  useId,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -15,6 +22,7 @@ import {
   Clock,
 } from "lucide-react";
 import { useTheme, useFocusTrap } from "../../hooks";
+import { useCombobox } from "../../hooks/useCombobox";
 import { frontendKernel } from "../../App";
 import { iconMap } from "../../utils/iconMap";
 import {
@@ -42,18 +50,6 @@ interface CommandItem {
   action: () => void;
 }
 
-const CATEGORY_LABELS: Record<CommandCategory, string> = {
-  navigation: "导航",
-  recent: "最近访问",
-  action: "快速操作",
-};
-
-const RECENT_SUBGROUP_LABELS: Record<RecentSubGroup, string> = {
-  graph: "最近图谱",
-  node: "最近节点",
-  note: "最近笔记",
-};
-
 const ORDERED_CATEGORIES: CommandCategory[] = [
   "navigation",
   "recent",
@@ -70,10 +66,30 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+
+  // ARIA id 生成：baseId 派生 titleId / listboxId / option id
+  const baseId = useId();
+  const titleId = `${baseId}-title`;
+  const listboxId = `${baseId}-listbox`;
+  const getOptionId = useCallback(
+    (index: number) => `${baseId}-option-${index}`,
+    [baseId],
+  );
+
+  const categoryLabels: Record<CommandCategory, string> = {
+    navigation: t("common.commandPalette.categoryNavigation"),
+    recent: t("common.commandPalette.categoryRecent"),
+    action: t("common.commandPalette.categoryAction"),
+  };
+
+  const recentSubGroupLabels: Record<RecentSubGroup, string> = {
+    graph: t("common.commandPalette.recentGraph"),
+    node: t("common.commandPalette.recentNode"),
+    note: t("common.commandPalette.recentNote"),
+  };
 
   const { getRecentGraphs } = useRecentGraphs();
   const { recentNodes } = useRecentNodes();
@@ -81,7 +97,6 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
 
   const handleClose = useCallback(() => {
     setQuery("");
-    setSelectedIndex(0);
     onClose();
   }, [onClose]);
 
@@ -113,7 +128,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     recentGraphs.forEach((graph) => {
       items.push({
         id: `recent-graph-${graph.id}`,
-        label: graph.topic || "未命名图谱",
+        label: graph.topic || t("common.commandPalette.untitledGraph"),
         category: "recent",
         recentSubGroup: "graph",
         icon: <Network size={16} />,
@@ -126,7 +141,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     recentNodes.forEach((node) => {
       items.push({
         id: `recent-node-${node.id}`,
-        label: node.title || "未命名节点",
+        label: node.title || t("common.commandPalette.untitledNode"),
         category: "recent",
         recentSubGroup: "node",
         icon: <FileText size={16} />,
@@ -140,7 +155,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     recentNotes.forEach((note) => {
       items.push({
         id: `recent-note-${note.id}`,
-        label: note.title || "未命名笔记",
+        label: note.title || t("common.commandPalette.untitledNote"),
         category: "recent",
         recentSubGroup: "note",
         icon: <FileText size={16} />,
@@ -152,34 +167,34 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     // action - 快速操作
     items.push({
       id: "action-new-graph",
-      label: "新建图谱",
+      label: t("common.commandPalette.actionNewGraph"),
       category: "action",
       icon: <Plus size={16} />,
-      keywords: "new create 创建 图谱",
+      keywords: t("common.commandPalette.actionNewGraphKeywords"),
       action: () => navigate("/"),
     });
     items.push({
       id: "action-toggle-theme",
-      label: "切换主题",
+      label: t("common.commandPalette.actionToggleTheme"),
       category: "action",
       icon: isDark ? <Sun size={16} /> : <Moon size={16} />,
-      keywords: "theme dark light 主题 暗黑 明亮",
+      keywords: t("common.commandPalette.actionToggleThemeKeywords"),
       action: () => toggleTheme(),
     });
     items.push({
       id: "action-settings",
-      label: "打开设置",
+      label: t("common.commandPalette.actionSettings"),
       category: "action",
       icon: <Settings size={16} />,
-      keywords: "settings 配置 设置",
+      keywords: t("common.commandPalette.actionSettingsKeywords"),
       action: () => navigate("/settings"),
     });
     items.push({
       id: "action-trash",
-      label: "打开回收站",
+      label: t("common.commandPalette.actionTrash"),
       category: "action",
       icon: <Trash2 size={16} />,
-      keywords: "trash recycle bin 回收站",
+      keywords: t("common.commandPalette.actionTrashKeywords"),
       action: () => navigate("/trash"),
     });
 
@@ -206,81 +221,81 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     );
   }, [commands, query]);
 
-  const safeSelectedIndex =
-    selectedIndex >= filteredCommands.length ? 0 : selectedIndex;
+  // 接入 useCombobox hook：管理活动项索引与键盘导航
+  const {
+    activeIndex,
+    setActiveIndex,
+    activeId,
+    handleKeyDown,
+    resetActive,
+  } = useCombobox<CommandItem>({
+    options: filteredCommands,
+    isOpen: true, // 下拉在面板打开期间始终展开
+    setIsOpen: () => {}, // 面板开关由父组件控制，hook 无需操作
+    onSelect: (cmd) => {
+      cmd.action();
+      handleClose();
+    },
+    getOptionId,
+    getOptionLabel: (cmd) => cmd.label,
+    enabled: isOpen,
+  });
 
-  // 查询变化时重置选中项
+  // 默认活动项：保留"首项预选中"的既有 UX
+  const safeActiveIndex = activeIndex ?? 0;
+
+  // 查询变化或打开时，定位首项（保留"首项预选中"的既有 UX）
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
+    if (!isOpen) return;
+    setActiveIndex(filteredCommands.length > 0 ? 0 : null);
+  }, [isOpen, query, setActiveIndex, filteredCommands.length]);
 
-  // 打开时自动聚焦输入框
+  // 打开时自动聚焦输入框；关闭时重置活动项
   useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(() => inputRef.current?.focus(), 50);
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
-
-  // 键盘导航：↑↓ 选择、Enter 执行、Esc 关闭
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          filteredCommands.length === 0
-            ? 0
-            : (prev + 1) % filteredCommands.length,
-        );
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          filteredCommands.length === 0
-            ? 0
-            : (prev - 1 + filteredCommands.length) %
-              filteredCommands.length,
-        );
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        const cmd = filteredCommands[safeSelectedIndex];
-        if (cmd) {
-          cmd.action();
-          handleClose();
-        }
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        handleClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, filteredCommands, safeSelectedIndex, handleClose]);
+    resetActive();
+  }, [isOpen, resetActive]);
 
   // 选中项滚动到可视区域
   useEffect(() => {
     if (!listRef.current) return;
     const el = listRef.current.querySelector<HTMLElement>(
-      `[data-cmd-index="${safeSelectedIndex}"]`,
+      `[data-cmd-index="${safeActiveIndex}"]`,
     );
     el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [safeSelectedIndex]);
+  }, [safeActiveIndex]);
+
+  // Escape 需关闭整个面板（hook 仅关闭 listbox），单独拦截后委托给 hook
+  const handleInputKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      handleClose();
+      return;
+    }
+    handleKeyDown(e.nativeEvent);
+  };
 
   if (!isOpen) return null;
 
   const renderCommandButton = (cmd: CommandItem, globalIndex: number) => {
-    const isSelected = globalIndex === safeSelectedIndex;
+    const isSelected = globalIndex === safeActiveIndex;
     return (
       <button
         key={cmd.id}
         data-cmd-index={globalIndex}
+        role="option"
+        id={getOptionId(globalIndex)}
+        aria-selected={isSelected}
         onClick={() => {
           cmd.action();
           handleClose();
         }}
-        onMouseEnter={() => setSelectedIndex(globalIndex)}
+        onMouseEnter={() => setActiveIndex(globalIndex)}
         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
           isSelected
             ? isDark
@@ -314,13 +329,19 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
         ref={containerRef}
         role="dialog"
         aria-modal="true"
-        aria-label="全局命令面板"
+        aria-labelledby={titleId}
+        aria-label={t("common.commandPalette.ariaLabel")}
         className={`relative w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col transform transition-all duration-200 scale-100 opacity-100 ${
           isDark
             ? "bg-slate-900 border border-slate-700 text-white"
             : "bg-white border border-gray-200 text-gray-900"
         }`}
       >
+        {/* 对话框标题（仅供 aria-labelledby 引用，视觉隐藏） */}
+        <h2 id={titleId} className="sr-only">
+          {t("common.commandPalette.ariaLabel")}
+        </h2>
+
         {/* Search Input */}
         <div
           className={`flex items-center px-4 py-3 border-b ${
@@ -334,11 +355,17 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
             aria-label={t('common.aria.search')}
+            aria-autocomplete="list"
+            aria-expanded={true}
+            aria-controls={listboxId}
+            aria-activedescendant={activeId}
             className="flex-1 bg-transparent text-lg placeholder-gray-400 focus:outline-none"
-            placeholder="搜索命令、最近项或操作..."
+            placeholder={t("common.commandPalette.searchPlaceholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleInputKeyDown}
           />
           <kbd
             className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded border ${
@@ -354,11 +381,14 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
         {/* Command List */}
         <div
           ref={listRef}
+          role="listbox"
+          id={listboxId}
+          aria-labelledby={titleId}
           className="max-h-[60vh] overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-700"
         >
           {filteredCommands.length === 0 ? (
             <div className="py-8 text-center text-gray-500 dark:text-slate-400">
-              <p>无匹配命令</p>
+              <p>{t("common.commandPalette.noMatch")}</p>
             </div>
           ) : (
             ORDERED_CATEGORIES.map((category) => {
@@ -374,7 +404,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
                       isDark ? "text-slate-500" : "text-gray-400"
                     }`}
                   >
-                    {CATEGORY_LABELS[category]}
+                    {categoryLabels[category]}
                   </div>
 
                   {category === "recent" ? (
@@ -392,7 +422,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
                           >
                             <Clock size={10} aria-hidden="true" />
                             <span>
-                              {RECENT_SUBGROUP_LABELS[subGroup]}
+                              {recentSubGroupLabels[subGroup]}
                             </span>
                           </div>
                           {subItems.map((cmd) => {
@@ -423,11 +453,11 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
           }`}
         >
           <div className="flex gap-3">
-            <span>↑↓ 导航</span>
-            <span>↵ 选择</span>
-            <span>Esc 关闭</span>
+            <span>{t("common.commandPalette.footerNavigate")}</span>
+            <span>{t("common.commandPalette.footerSelect")}</span>
+            <span>{t("common.commandPalette.footerClose")}</span>
           </div>
-          <div>全局命令面板</div>
+          <div>{t("common.commandPalette.footerTitle")}</div>
         </div>
       </div>
     </div>

@@ -133,12 +133,12 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
         api.scheduler.getEfficiencyProfile(30),
       ]);
 
-      if (recommendationRes.success) {
-        setRecommendation(recommendationRes.data);
+      if (recommendationRes) {
+        setRecommendation(recommendationRes);
       }
 
-      if (efficiencyRes.success) {
-        setEfficiencyProfile(efficiencyRes.data);
+      if (efficiencyRes) {
+        setEfficiencyProfile(efficiencyRes);
       }
     } catch (error: unknown) {
       console.error("Failed to load recommendation:", error);
@@ -281,7 +281,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
 
   if (!recommendation?.recommendedTask) {
     return (
-      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-500">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
             <CheckCircle className="w-4 h-4 text-slate-400" />
@@ -474,7 +474,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                     {reasons.slice(0, 4).map((reason, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-white dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700/50 text-slate-500 dark:text-slate-400"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-white dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-500/50 text-slate-500 dark:text-slate-400"
                       >
                         {reason}
                       </span>
@@ -505,7 +505,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                             {recommendationDetails.map((detail, index) => (
                               <div
                                 key={index}
-                                className="flex items-start gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+                                className="flex items-start gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-500"
                               >
                                 <div className="text-primary-500 mt-0.5">
                                   {detail.icon}
@@ -559,7 +559,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                         {alternativeTasks.map((alt, index) => (
                           <div
                             key={alt.task.id}
-                            className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+                            className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-500"
                           >
                             <div className="flex items-center gap-3">
                               <span className="text-sm text-slate-400">

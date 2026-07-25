@@ -99,7 +99,7 @@ export const ResearchProgressPanel: React.FC<ResearchProgressPanelProps> = ({
             isMobile ? "max-w-lg" : "max-w-xl"
           }`}
         >
-          <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-500">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
                 <BarChart3 className="text-primary-600 dark:text-primary-400" size={20} />
@@ -153,7 +153,7 @@ export const ResearchProgressPanel: React.FC<ResearchProgressPanelProps> = ({
                       className={`rounded-lg border p-4 transition-colors ${
                         isEmpty
                           ? "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20"
-                          : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
+                          : "border-slate-200 dark:border-slate-500 bg-slate-50 dark:bg-slate-800/50"
                       }`}
                     >
                       <div className="flex items-center gap-3 mb-3">
@@ -232,7 +232,7 @@ export const ResearchProgressPanel: React.FC<ResearchProgressPanelProps> = ({
           </div>
 
           {!isLoading && data && data.totalNodes > 0 && (
-            <div className="border-t border-slate-200 dark:border-slate-700 p-5 bg-slate-50 dark:bg-slate-800/80">
+            <div className="border-t border-slate-200 dark:border-slate-500 p-5 bg-slate-50 dark:bg-slate-800/80">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">

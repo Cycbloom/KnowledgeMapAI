@@ -140,7 +140,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
   if (isSearching) {
     return (
-      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50 p-3">
+      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 z-50 p-3">
         <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
           <motion.div
             animate={{ rotate: 360 }}
@@ -160,7 +160,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
   if (!hasResults && query.length >= 2) {
     return (
-      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50 p-3">
+      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 z-50 p-3">
         <div className="text-center text-gray-500 dark:text-gray-400 text-sm">
           未找到「{query}」相关结果
         </div>
@@ -178,10 +178,10 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -4 }}
-        className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50 max-h-[60vh] overflow-y-auto"
+        className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 z-50 max-h-[60vh] overflow-y-auto"
       >
         {results?.graphs && results.graphs.length > 0 && (
-          <div className="py-1.5 border-b border-gray-200 dark:border-slate-700">
+          <div className="py-1.5 border-b border-gray-200 dark:border-slate-500">
             <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
               <Network className="w-3 h-3 text-primary-500" />
               <span>图谱 {results.graphs.length}</span>
@@ -310,7 +310,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         )}
 
         {results?.notes && results.notes.length > 0 && (
-          <div className="py-1.5 border-t border-gray-200 dark:border-slate-700">
+          <div className="py-1.5 border-t border-gray-200 dark:border-slate-500">
             <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
               <NotebookPen className="w-3 h-3 text-amber-500" />
               <span>
@@ -367,7 +367,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         )}
 
         {results?.answer && (
-          <div className="p-2 border-t border-gray-200 dark:border-slate-700 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20">
+          <div className="p-2 border-t border-gray-200 dark:border-slate-500 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20">
             <div className="flex items-center gap-1.5 mb-1">
               <Sparkles className="w-3 h-3 text-primary-500" />
               <span className="text-xs font-medium text-primary-700 dark:text-primary-300">AI 回答</span>

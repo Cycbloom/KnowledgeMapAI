@@ -37,25 +37,25 @@ export interface UpdateTemplateData {
 }
 
 export const templatesApi = {
-  list: (category?: TemplateCategory): Promise<Template[]> => 
-    request(`/templates${category ? `?category=${category}` : ''}`),
-  
-  get: (id: string): Promise<Template> => request(`/templates/${id}`),
-  
-  create: (data: SaveTemplateData): Promise<Template> => 
-    request('/templates', { method: 'POST', body: JSON.stringify(data) }),
-  
-  update: (id: string, data: UpdateTemplateData): Promise<Template> => 
-    request(`/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  
-  delete: (id: string): Promise<{ message: string }> => 
-    request(`/templates/${id}`, { method: 'DELETE' }),
+  list: (category?: TemplateCategory): Promise<Template[]> =>
+    request<Template[]>(`/templates${category ? `?category=${category}` : ''}`),
 
-  saveTemplate: (data: SaveTemplateData): Promise<Template> => 
-    request('/templates', { method: 'POST', body: JSON.stringify(data) }),
+  get: (id: string): Promise<Template> => request<Template>(`/templates/${id}`),
 
-  updateTemplate: (id: string, data: UpdateTemplateData): Promise<Template> => 
-    request(`/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  create: (data: SaveTemplateData): Promise<Template> =>
+    request<Template>('/templates', { method: 'POST', body: JSON.stringify(data) }),
+
+  update: (id: string, data: UpdateTemplateData): Promise<Template> =>
+    request<Template>(`/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  delete: (id: string): Promise<{ message: string }> =>
+    request<{ message: string }>(`/templates/${id}`, { method: 'DELETE' }),
+
+  saveTemplate: (data: SaveTemplateData): Promise<Template> =>
+    request<Template>('/templates', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateTemplate: (id: string, data: UpdateTemplateData): Promise<Template> =>
+    request<Template>(`/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 };
 
 export const promptsApi = {

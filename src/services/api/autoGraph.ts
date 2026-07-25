@@ -140,7 +140,19 @@ export const autoGraphApi = {
     if (!payload.provider && config.provider)
       {payload.provider = config.provider;}
     if (!payload.model && config.model) payload.model = config.model;
-    return request("/auto-graph/init", {
+    return request<{
+      sessionId: string;
+      root: { title: string; content: string; summary?: string };
+      coreNodes: Array<{
+        title: string;
+        content?: string;
+        summary?: string;
+        level?: string;
+        backboneModule?: string;
+        needsRefinement?: boolean;
+        color?: string;
+      }>;
+    }>("/auto-graph/init", {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -178,7 +190,16 @@ export const autoGraphApi = {
     if (!payload.provider && config.provider)
       {payload.provider = config.provider;}
     if (!payload.model && config.model) payload.model = config.model;
-    return request("/auto-graph/expand", {
+    return request<{
+      sessionId: string;
+      parentNodeId: string;
+      children: Array<{
+        title: string;
+        content?: string;
+        summary?: string;
+        level?: string;
+      }>;
+    }>("/auto-graph/expand", {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -199,25 +220,40 @@ export const autoGraphApi = {
       properties?: Record<string, unknown>;
     }>;
   }) =>
-    request("/auto-graph/save-nodes", {
+    request<{
+      success: boolean;
+      nodeCount: number;
+      edgeCount: number;
+      nodeMapping?: Record<
+        string,
+        { graphNodeId: string; knowledgePointId: string }
+      >;
+    }>("/auto-graph/save-nodes", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
   optimizePrompt: (data: { topic: string; currentPrompt?: string }) =>
-    request("/auto-graph/optimize-prompt", {
+    request<{ optimizedPrompt: string }>("/auto-graph/optimize-prompt", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
   generateEmbeddings: (limit?: number) =>
-    request("/auto-graph/generate-embeddings", {
-      method: "POST",
-      body: JSON.stringify({ limit }),
-    }),
+    request<{ success: boolean; processed: number; failed: number }>(
+      "/auto-graph/generate-embeddings",
+      {
+        method: "POST",
+        body: JSON.stringify({ limit }),
+      },
+    ),
 
   getEmbeddingStatus: () =>
-    request("/auto-graph/embedding-status", { method: "GET" }),
+    request<{
+      isRunning: boolean;
+      stopRequested: boolean;
+      pendingCount: number;
+    }>("/auto-graph/embedding-status", { method: "GET" }),
 
   generateTemplates: (
     data: GenerateTemplatesData,
@@ -227,10 +263,13 @@ export const autoGraphApi = {
     if (!payload.provider && config.provider)
       {payload.provider = config.provider;}
     if (!payload.model && config.model) payload.model = config.model;
-    return request("/auto-graph/generate-templates", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    return request<GenerateTemplatesResult>(
+      "/auto-graph/generate-templates",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
   },
 
   applyTemplate: (data: ApplyTemplateData): Promise<ApplyTemplateResult> => {
@@ -239,7 +278,7 @@ export const autoGraphApi = {
     if (!payload.provider && config.provider)
       {payload.provider = config.provider;}
     if (!payload.model && config.model) payload.model = config.model;
-    return request("/auto-graph/apply-template", {
+    return request<ApplyTemplateResult>("/auto-graph/apply-template", {
       method: "POST",
       body: JSON.stringify(payload),
     });

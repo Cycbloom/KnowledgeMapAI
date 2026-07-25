@@ -11,6 +11,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useTheme } from "../../hooks";
+import { EmptyState } from "../common/EmptyState";
 
 interface LearningPathNode {
   id: string;
@@ -84,10 +85,12 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
   if (!learningPath) {
     return (
       <div className={`p-4 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-gray-50'}`}>
-        <div className="flex items-center gap-3 text-gray-500">
-          <Target className="w-5 h-5" />
-          <span className="text-sm">{t("learning.progress.noPath")}</span>
-        </div>
+        <EmptyState
+          variant="inline"
+          icon={<Target className="w-5 h-5 text-gray-400" />}
+          title={t("learning.progress.noPath")}
+          description={t("learning.progress.empty.description")}
+        />
       </div>
     );
   }
@@ -115,7 +118,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
 
   return (
     <div className={`rounded-xl ${isDark ? 'bg-slate-800' : 'bg-white border border-gray-200'}`}>
-      <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+      <div className="p-4 border-b border-gray-200 dark:border-slate-500">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-primary-500" />

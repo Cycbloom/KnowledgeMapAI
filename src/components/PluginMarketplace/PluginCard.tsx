@@ -38,7 +38,7 @@ export const PluginCard = ({ plugin, isInstalled, onInstall, onUninstall, instal
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 transition-colors hover:shadow-md">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 transition-colors hover:shadow-md">
       <div className="flex items-start gap-3">
         <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-lg shrink-0">
           {getPluginLabel(plugin.name).charAt(0).toUpperCase()}

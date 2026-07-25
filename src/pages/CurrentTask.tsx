@@ -275,6 +275,7 @@ export const CurrentTask: React.FC = () => {
   if (isLoading) {
     return (
       <div className="h-full bg-slate-50 dark:bg-slate-900 p-6 lg:p-8">
+        <h1 className="sr-only">{t("unifiedWorkbench.labels.currentTask")}</h1>
         <div className="max-w-4xl mx-auto">
           <Skeleton className="h-32 w-full mb-6 rounded-2xl" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -291,6 +292,7 @@ export const CurrentTask: React.FC = () => {
   if (!currentTask) {
     return (
       <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <h1 className="sr-only">{t("unifiedWorkbench.labels.currentTask")}</h1>
         <div className="text-center max-w-md px-6">
           <motion.div
             initial={{ scale: 0 }}
@@ -320,6 +322,7 @@ export const CurrentTask: React.FC = () => {
 
   return (
     <div className="h-full overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6 lg:p-8">
+      <h1 className="sr-only">{t("unifiedWorkbench.labels.currentTask")}</h1>
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <Link
@@ -612,7 +615,7 @@ export const CurrentTask: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-6">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800/50 p-6">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                 {t("scheduler.currentTask.optionsTitle")}
               </h3>
@@ -653,7 +656,7 @@ export const CurrentTask: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-6">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800/50 p-6">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                 {t("scheduler.currentTask.timeSliceSettings")}
               </h3>
@@ -700,7 +703,7 @@ export const CurrentTask: React.FC = () => {
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
-                className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6"
+                className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-500 p-6"
               >
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-500/20">

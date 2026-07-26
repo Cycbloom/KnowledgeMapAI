@@ -1,5 +1,6 @@
 {
   "title": "Select Nodes",
+  "treeLabel": "Node selection tree",
   "searchPlaceholder": "Search nodes...",
   "selectAll": "Select All",
   "deselectAll": "Deselect All",

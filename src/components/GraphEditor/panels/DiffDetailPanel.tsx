@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useId } from "react";
 import { useTranslation } from "react-i18next";
 import {
   X,
@@ -175,10 +175,12 @@ function SimpleList<T extends SnapshotNodeData | SnapshotEdgeData>({
   items,
   changeType,
   getLabel,
+  id,
 }: {
   items: T[];
   changeType: "added" | "removed";
   getLabel: (item: T) => string;
+  id?: string;
 }) {
   const { t } = useTranslation();
   const config = CHANGE_TYPE_CONFIG[changeType];
@@ -187,7 +189,7 @@ function SimpleList<T extends SnapshotNodeData | SnapshotEdgeData>({
   if (items.length === 0) return null;
 
   return (
-    <div className="space-y-0.5">
+    <div id={id} className="space-y-0.5">
       {items.map((item) => (
         <div
           key={item.id}
@@ -300,6 +302,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
   });
   const [changeTypeFilter, setChangeTypeFilter] = useState<"all" | "added" | "removed" | "modified">("all");
   const [entityTypeFilter, setEntityTypeFilter] = useState<"all" | "node" | "edge">("all");
+  const sectionContentIdPrefix = useId();
 
   useEffect(() => {
     const fetchDiff = async () => {
@@ -360,10 +363,12 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
   }) => {
     if (count === 0 || !isSectionVisible(sectionKey)) return null;
     const isExpanded = expandedSections[sectionKey];
+    const sectionContentId = `${sectionContentIdPrefix}-${sectionKey}`;
     return (
       <button
         onClick={() => toggleSection(sectionKey)}
         aria-expanded={isExpanded}
+        aria-controls={sectionContentId}
         aria-label={isExpanded ? t('common.aria.collapse') : t('common.aria.expand')}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
       >
@@ -452,7 +457,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" aria-busy={isLoading}>
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
@@ -531,6 +536,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
                 />
                 {isSectionVisible("nodesAdded") && expandedSections.nodesAdded && (
                   <SimpleList
+                    id={`${sectionContentIdPrefix}-nodesAdded`}
                     items={diff.nodes.added}
                     changeType="added"
                     getLabel={(n: SnapshotNodeData) => n.title}
@@ -545,6 +551,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
                 />
                 {isSectionVisible("nodesRemoved") && expandedSections.nodesRemoved && (
                   <SimpleList
+                    id={`${sectionContentIdPrefix}-nodesRemoved`}
                     items={diff.nodes.removed}
                     changeType="removed"
                     getLabel={(n: SnapshotNodeData) => n.title}
@@ -558,7 +565,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
                   colorClass="text-amber-600 dark:text-amber-400"
                 />
                 {isSectionVisible("nodesModified") && expandedSections.nodesModified && (
-                  <div>
+                  <div id={`${sectionContentIdPrefix}-nodesModified`}>
                     {diff.nodes.modified.map((d) => (
                       <NodeDiffRow key={d.id} diff={d} />
                     ))}
@@ -573,6 +580,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
                 />
                 {isSectionVisible("edgesAdded") && expandedSections.edgesAdded && (
                   <SimpleList
+                    id={`${sectionContentIdPrefix}-edgesAdded`}
                     items={diff.edges.added}
                     changeType="added"
                     getLabel={(e: SnapshotEdgeData) =>
@@ -589,6 +597,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
                 />
                 {isSectionVisible("edgesRemoved") && expandedSections.edgesRemoved && (
                   <SimpleList
+                    id={`${sectionContentIdPrefix}-edgesRemoved`}
                     items={diff.edges.removed}
                     changeType="removed"
                     getLabel={(e: SnapshotEdgeData) =>
@@ -604,7 +613,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
                   colorClass="text-amber-600 dark:text-amber-400"
                 />
                 {isSectionVisible("edgesModified") && expandedSections.edgesModified && (
-                  <div>
+                  <div id={`${sectionContentIdPrefix}-edgesModified`}>
                     {diff.edges.modified.map((d) => (
                       <EdgeDiffRow key={d.id} diff={d} />
                     ))}

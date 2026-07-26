@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,7 @@ import {
   Minimize2,
 } from "lucide-react";
 import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
-import { useIsMobile } from "../../hooks";
+import { useIsMobile, useFocusTrap, useEscapeKey } from "../../hooks";
 
 interface LearningSettingsPanelProps {
   isOpen: boolean;
@@ -44,6 +44,9 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
   const { t } = useTranslation();
   const { isMobile } = useIsMobile();
   const navigate = useNavigate();
+  const titleId = useId();
+  const modalRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(onClose, isOpen);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -63,7 +66,10 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
           <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-500/20">
             <Settings size={18} className="text-primary-600 dark:text-primary-400" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
+          <h3
+            id={titleId}
+            className="text-lg font-semibold text-slate-800 dark:text-white"
+          >
             {t("learning.settings.readingSettings")}
           </h3>
         </div>
@@ -101,6 +107,8 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                 step="1"
                 value={fontSize}
                 onChange={(e) => setFontSize(parseInt(e.target.value))}
+                aria-label={t("learning.settings.fontSize")}
+                aria-valuetext={`${fontSize}px`}
                 className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-primary-500"
               />
               <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500">
@@ -122,7 +130,11 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                 {t("learning.settings.readingMode")}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div
+              role="radiogroup"
+              aria-label={t("learning.settings.readingMode")}
+              className="grid grid-cols-2 gap-2"
+            >
               {(
                 [
                   {
@@ -140,14 +152,19 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                       "from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30",
                   },
                 ] as const
-              ).map((mode) => (
+              ).map((mode) => {
+                const isSelected = readingMode === mode.id;
+                return (
                 <motion.button
                   key={mode.id}
                   onClick={() => setReadingMode(mode.id)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  role="radio"
+                  aria-checked={isSelected}
+                  tabIndex={isSelected ? 0 : -1}
                   className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                    readingMode === mode.id
+                    isSelected
                       ? `border-primary-500 bg-gradient-to-br ${  mode.color}`
                       : "border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
                   }`}
@@ -170,7 +187,8 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                     {mode.label}
                   </span>
                 </motion.button>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -184,7 +202,11 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                 {t("learning.settings.pagination")}
               </span>
             </div>
-            <div className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-xl">
+            <div
+              role="radiogroup"
+              aria-label={t("learning.settings.pagination")}
+              className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-xl"
+            >
               {(
                 [
                   {
@@ -198,14 +220,19 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                     icon: FileText,
                   },
                 ] as const
-              ).map((mode) => (
+              ).map((mode) => {
+                const isSelected = paginationMode === mode.id;
+                return (
                 <motion.button
                   key={mode.id}
                   onClick={() => setPaginationMode(mode.id)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  role="radio"
+                  aria-checked={isSelected}
+                  tabIndex={isSelected ? 0 : -1}
                   className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                    paginationMode === mode.id
+                    isSelected
                       ? "bg-white dark:bg-slate-600 text-primary-600 dark:text-primary-400 shadow-sm"
                       : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                   }`}
@@ -213,7 +240,8 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   <mode.icon size={16} />
                   {mode.label}
                 </motion.button>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -227,7 +255,11 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                 {t("learning.settings.contentWidth")}
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div
+              role="radiogroup"
+              aria-label={t("learning.settings.contentWidth")}
+              className="grid grid-cols-3 gap-2"
+            >
               {(
                 [
                   {
@@ -252,14 +284,19 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                       "from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20",
                   },
                 ] as const
-              ).map((mode) => (
+              ).map((mode) => {
+                const isSelected = contentWidthMode === mode.id;
+                return (
                 <motion.button
                   key={mode.id}
                   onClick={() => setContentWidthMode(mode.id)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  role="radio"
+                  aria-checked={isSelected}
+                  tabIndex={isSelected ? 0 : -1}
                   className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                    contentWidthMode === mode.id
+                    isSelected
                       ? `border-primary-500 bg-gradient-to-br ${  mode.color}`
                       : "border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
                   }`}
@@ -282,7 +319,8 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                     {mode.label}
                   </span>
                 </motion.button>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -337,7 +375,13 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               className="fixed inset-x-0 bottom-0 z-fullscreen-content max-h-[90dvh] flex flex-col"
             >
-              <div className="bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-500 overflow-hidden h-full flex flex-col">
+              <div
+                ref={modalRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                className="bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-500 overflow-hidden h-full flex flex-col"
+              >
                 <div className="flex items-center justify-center py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   <GripHorizontal
                     className="text-gray-400 dark:text-gray-500"
@@ -372,7 +416,13 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
             className="fixed inset-0 z-fullscreen-content flex items-center justify-center pointer-events-none"
           >
             <div className="w-full max-w-2xl h-[80vh] pointer-events-auto">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-500 overflow-hidden h-full flex flex-col">
+              <div
+                ref={modalRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-500 overflow-hidden h-full flex flex-col"
+              >
                 {renderContent()}
               </div>
             </div>

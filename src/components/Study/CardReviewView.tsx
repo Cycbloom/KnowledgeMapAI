@@ -280,7 +280,7 @@ export const CardReviewView = ({
               transition={{ delay: 0.4 }}
               onClick={() => onStartQuiz("due")}
               disabled={dueCards.length === 0}
-              className={`flex flex-col items-center text-center ${isMobile ? "p-5 rounded-2xl" : "p-8 rounded-[2.5rem]"} border-2 transition-all group relative overflow-hidden ${
+              className={`flex flex-col items-center text-center ${isMobile ? "p-5 rounded-2xl" : "p-8 rounded-[2.5rem]"} border-2 transition-all group relative overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                 dueCards.length > 0
                   ? isDark
                     ? "bg-primary-900/20 border-primary-800/50 hover:border-primary-500 shadow-lg shadow-primary-900/20"
@@ -334,7 +334,7 @@ export const CardReviewView = ({
               transition={{ delay: 0.5 }}
               onClick={() => onStartQuiz("all")}
               disabled={allCards.length === 0}
-              className={`flex flex-col items-center text-center ${isMobile ? "p-5 rounded-2xl" : "p-8 rounded-[2.5rem]"} border-2 transition-all group ${
+              className={`flex flex-col items-center text-center ${isMobile ? "p-5 rounded-2xl" : "p-8 rounded-[2.5rem]"} border-2 transition-all group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                 allCards.length > 0
                   ? isDark
                     ? "bg-slate-800 border-slate-700 hover:border-primary-500 shadow-lg"
@@ -547,7 +547,7 @@ export const CardReviewView = ({
             >
               <button
                 onClick={() => setTableMode("due")}
-                className={`flex-1 px-3 md:px-4 py-2 md:py-1.5 rounded-lg ${isMobile ? "text-sm" : "text-sm"} font-medium transition-all ${
+                className={`flex-1 px-3 md:px-4 py-2 md:py-1.5 rounded-lg ${isMobile ? "text-sm" : "text-sm"} font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                   tableMode === "due"
                     ? isDark
                       ? "bg-primary-600 text-white shadow-lg"
@@ -561,7 +561,7 @@ export const CardReviewView = ({
               </button>
               <button
                 onClick={() => setTableMode("all")}
-                className={`flex-1 px-3 md:px-4 py-2 md:py-1.5 rounded-lg ${isMobile ? "text-sm" : "text-sm"} font-medium transition-all ${
+                className={`flex-1 px-3 md:px-4 py-2 md:py-1.5 rounded-lg ${isMobile ? "text-sm" : "text-sm"} font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                   tableMode === "all"
                     ? isDark
                       ? "bg-primary-600 text-white shadow-lg"
@@ -575,7 +575,11 @@ export const CardReviewView = ({
               </button>
             </div>
 
-            <div className="relative">
+            <div
+              role="search"
+              aria-label={t('common.aria.searchWithTarget', { target: t('study.cardList.title') })}
+              className="relative"
+            >
               <Search
                 className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-500" : "text-gray-400"}`}
                 size={18}
@@ -615,7 +619,7 @@ export const CardReviewView = ({
                       setSearchQuery("");
                       setCurrentPage(1);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                       isDark
                         ? "border-slate-600 text-slate-300 hover:bg-slate-800"
                         : "border-gray-300 text-gray-600 hover:bg-gray-100"
@@ -630,7 +634,7 @@ export const CardReviewView = ({
                       setTableMode("all");
                       setCurrentPage(1);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                       isDark
                         ? "border-primary-700 text-primary-400 hover:bg-primary-900/30"
                         : "border-primary-300 text-primary-600 hover:bg-primary-50"
@@ -658,13 +662,16 @@ export const CardReviewView = ({
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div
+          <nav
+            aria-label={t("common.aria.pagination")}
             className={`flex items-center justify-center gap-1 md:gap-2 mt-6 md:mt-8`}
           >
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${isMobile ? "p-3" : "p-2"} rounded-xl transition-all ${
+              aria-label={t("common.aria.previousPage")}
+              aria-disabled={currentPage === 1 ? "true" : undefined}
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${isMobile ? "p-3" : "p-2"} rounded-xl transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                 currentPage === 1
                   ? "opacity-30 cursor-not-allowed"
                   : isDark
@@ -672,7 +679,7 @@ export const CardReviewView = ({
                     : "hover:bg-gray-100 text-gray-600"
               }`}
             >
-              <ChevronLeft size={isMobile ? 24 : 20} />
+              <ChevronLeft size={isMobile ? 24 : 20} aria-hidden="true" />
             </button>
 
             <div className="flex items-center gap-1">
@@ -687,7 +694,9 @@ export const CardReviewView = ({
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`${isMobile ? "w-11 h-11 text-base" : "w-10 h-10 text-sm"} rounded-xl font-bold transition-all min-w-[44px] min-h-[44px] ${
+                        aria-current={currentPage === page ? "page" : undefined}
+                        aria-label={t("common.aria.page", { number: page })}
+                        className={`${isMobile ? "w-11 h-11 text-base" : "w-10 h-10 text-sm"} rounded-xl font-bold transition-all min-w-[44px] min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                           currentPage === page
                             ? "bg-primary-600 text-white shadow-lg shadow-primary-200"
                             : isDark
@@ -718,7 +727,9 @@ export const CardReviewView = ({
                 setCurrentPage((p) => Math.min(totalPages, p + 1))
               }
               disabled={currentPage === totalPages}
-              className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${isMobile ? "p-3" : "p-2"} rounded-xl transition-all ${
+              aria-label={t("common.aria.nextPage")}
+              aria-disabled={currentPage === totalPages ? "true" : undefined}
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${isMobile ? "p-3" : "p-2"} rounded-xl transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                 currentPage === totalPages
                   ? "opacity-30 cursor-not-allowed"
                   : isDark
@@ -726,9 +737,9 @@ export const CardReviewView = ({
                     : "hover:bg-gray-100 text-gray-600"
               }`}
             >
-              <ChevronRight size={isMobile ? 24 : 20} />
+              <ChevronRight size={isMobile ? 24 : 20} aria-hidden="true" />
             </button>
-          </div>
+          </nav>
         )}
       </div>
 

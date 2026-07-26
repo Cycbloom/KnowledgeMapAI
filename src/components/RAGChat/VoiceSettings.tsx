@@ -13,20 +13,20 @@ interface VoiceSettingsProps {
 export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose }) => {
   const { t } = useTranslation();
   const [ttsEngine, setTTSEngine] = useState<TTSEngine>('browser');
-  const { 
-    isSpeaking: _isSpeaking, 
-    isPaused: _isPaused, 
+  const {
+    isSpeaking,
+    isPaused: _isPaused,
     isLoading: ttsLoading,
-    error: ttsError, 
-    voices, 
-    selectedVoice, 
-    speak, 
-    pause: _pause, 
-    resume: _resume, 
-    cancel: _cancel, 
+    error: ttsError,
+    voices,
+    selectedVoice,
+    speak,
+    pause: _pause,
+    resume: _resume,
+    cancel: _cancel,
     setVoice,
     switchEngine,
-    hasSupport 
+    hasSupport
   } = useTextToSpeech(ttsEngine);
 
   const handleVoiceChange = (voice: SpeechSynthesisVoice | string) => {
@@ -56,15 +56,16 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
                 switchEngine('browser');
                 setTTSEngine('browser');
               }}
+              aria-pressed={ttsEngine === 'browser'}
               className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-all ${
                 ttsEngine === 'browser'
                   ? 'bg-primary-600 text-white'
-                  : isDark 
-                    ? 'bg-slate-700 text-primary-300 hover:bg-slate-600' 
+                  : isDark
+                    ? 'bg-slate-700 text-primary-300 hover:bg-slate-600'
                     : 'bg-white text-primary-600 hover:bg-primary-100'
               }`}
             >
-              <Globe size={12} />
+              <Globe size={12} aria-hidden="true" />
               <span>{t("aiChat.browserTts")}</span>
             </button>
             <button
@@ -72,15 +73,16 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
                 switchEngine('sambert');
                 setTTSEngine('sambert');
               }}
+              aria-pressed={ttsEngine === 'sambert'}
               className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-all ${
                 ttsEngine === 'sambert'
                   ? 'bg-primary-600 text-white'
-                  : isDark 
-                    ? 'bg-slate-700 text-primary-300 hover:bg-slate-600' 
+                  : isDark
+                    ? 'bg-slate-700 text-primary-300 hover:bg-slate-600'
                     : 'bg-white text-primary-600 hover:bg-primary-100'
               }`}
             >
-              <Cpu size={12} />
+              <Cpu size={12} aria-hidden="true" />
               <span>{t("aiChat.sambertTts")}</span>
             </button>
           </div>
@@ -90,14 +92,15 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
       <button
         onClick={() => speak(t("aiChat.voicePreviewText"))}
         disabled={ttsLoading}
+        aria-label={t("aiChat.previewVoice")}
+        aria-pressed={isSpeaking}
         className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-all ${
           isDark
             ? 'bg-slate-700 text-primary-300 hover:bg-slate-600'
             : 'bg-white text-primary-600 hover:bg-primary-100'
         } disabled:opacity-50`}
-        title={t("aiChat.previewVoice")}
       >
-        <Play size={12} />
+        <Play size={12} aria-hidden="true" />
         <span>{t("aiChat.previewVoice")}</span>
       </button>
 

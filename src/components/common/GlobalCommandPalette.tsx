@@ -361,7 +361,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
             aria-expanded={true}
             aria-controls={listboxId}
             aria-activedescendant={activeId}
-            className="flex-1 bg-transparent text-lg placeholder-gray-400 focus:outline-none"
+            className="flex-1 bg-transparent text-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             placeholder={t("common.commandPalette.searchPlaceholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}

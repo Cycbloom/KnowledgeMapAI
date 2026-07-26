@@ -2,6 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flag, ChevronDown, Trophy } from "lucide-react";
 import { formatDate as formatDateUtil } from "../../utils/formatters";
+import { useTranslation } from "react-i18next";
 import type { LearningPathMilestone } from "./types";
 
 interface PathMilestonesSectionProps {
@@ -15,6 +16,7 @@ const PathMilestonesSection: React.FC<PathMilestonesSectionProps> = ({
   expandedSections,
   onToggleSection,
 }) => {
+  const { t } = useTranslation();
   if (milestones.length === 0) return null;
 
   const formatDate = (dateStr: string) => formatDateUtil(dateStr);
@@ -94,7 +96,14 @@ const PathMilestonesSection: React.FC<PathMilestonesSectionProps> = ({
                     </span>
                   </div>
                   <div className="mt-3">
-                    <div className="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                    <div
+                      role="progressbar"
+                      aria-valuenow={Math.round(milestone.progress)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={t('common.aria.progress')}
+                      className="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden"
+                    >
                       <div
                         className={`h-full transition-all ${milestone.is_completed ? "bg-green-500" : "bg-primary-500"}`}
                         style={{ width: `${milestone.progress}%` }}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
@@ -340,6 +340,7 @@ const LogDetailModal: React.FC<{
 
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
   useEscapeKey(() => onClose(), true);
+  const titleId = useId();
 
   const getOperationLabel = (operation: string): string => {
     const key = `console.performance.operations.${operation}`;
@@ -461,6 +462,9 @@ const LogDetailModal: React.FC<{
     >
       <motion.div
         ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
@@ -484,6 +488,7 @@ const LogDetailModal: React.FC<{
               className={isDark ? "text-primary-400" : "text-primary-600"}
             />
             <h3
+              id={titleId}
               className={`font-semibold ${isDark ? "text-slate-200" : "text-gray-800"}`}
             >
               {t("console.performance.detail.title")}
@@ -496,8 +501,9 @@ const LogDetailModal: React.FC<{
                 ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
             }`}
+            aria-label={t("common.aria.close")}
           >
-            <XCircle size={16} />
+            <XCircle size={16} aria-hidden="true" />
           </button>
         </div>
 
@@ -1024,9 +1030,10 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                     ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700"
                     : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
               }`}
+              aria-label={t("console.performance.filter")}
               title={t("console.performance.filter")}
             >
-              <Filter size={14} />
+              <Filter size={14} aria-hidden="true" />
             </button>
             <button
               onClick={loadData}
@@ -1042,6 +1049,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
               <RefreshCw
                 size={14}
                 className={isLoading ? "animate-spin" : ""}
+                aria-hidden="true"
               />
             </button>
             <button
@@ -1051,9 +1059,10 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   ? "text-slate-400 hover:text-red-400 hover:bg-slate-700"
                   : "text-gray-500 hover:text-red-500 hover:bg-gray-200"
               }`}
+              aria-label={t("console.performance.clearLogs")}
               title={t("console.performance.clearLogs")}
             >
-              <Trash2 size={14} />
+              <Trash2 size={14} aria-hidden="true" />
             </button>
           </div>
         </div>

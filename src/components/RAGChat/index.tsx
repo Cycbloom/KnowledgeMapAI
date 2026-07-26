@@ -680,7 +680,11 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div
+        role="region"
+        aria-label={t('common.aria.messageListRegion')}
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+      >
         {isTutorMode && tutorMode === "concept-aggregation" && graphId ? (
           <ConceptAggregationPanel
             graphId={graphId}

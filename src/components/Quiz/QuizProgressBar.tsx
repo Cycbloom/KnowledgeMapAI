@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Clock, Flag } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatTimeFromSeconds } from '../../utils/formatters';
 
 interface QuizProgressBarProps {
@@ -19,6 +20,7 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
   startTime,
   flaggedCount = 0,
 }) => {
+  const { t } = useTranslation();
   const progress = total > 0 ? (answered.filter(Boolean).length / total) * 100 : 0;
 
   // Session timer (UX2-04)
@@ -43,23 +45,39 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
         <div className="flex items-center gap-3">
           {flaggedCount > 0 && (
             <span className="flex items-center gap-1 text-amber-500" title="已标记待复查">
-              <Flag size={12} fill="currentColor" />
+              <Flag size={12} fill="currentColor" aria-hidden="true" />
               {flaggedCount}
             </span>
           )}
           {startTime && (
-            <span className="flex items-center gap-1 text-gray-500 dark:text-slate-400" title="用时">
-              <Clock size={12} />
+            <span
+              className="flex items-center gap-1 text-gray-500 dark:text-slate-400"
+              title="用时"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <Clock size={12} aria-hidden="true" />
               {formatTimeFromSeconds(elapsedSeconds)}
             </span>
           )}
-          <span className="text-gray-500">
+          <span
+            className="text-gray-500"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             已答 {answered.filter(Boolean).length} 题
           </span>
         </div>
       </div>
 
-      <div className="relative h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+      <div
+        className="relative h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden"
+        role="progressbar"
+        aria-valuenow={answered.filter(Boolean).length}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-label={t('quiz.progressBar.ariaLabel')}
+      >
         <div
           className="absolute h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all duration-300"
           style={{ width: `${progress}%` }}
@@ -84,10 +102,10 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
                     : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
                 }
               `}
-              title={`第 ${index + 1} 题${isAnswered ? ' (已答)' : ''}`}
+              aria-label={`第 ${index + 1} 题${isAnswered ? ' (已答)' : ''}`}
             >
               {isAnswered ? (
-                <Check size={14} className="mx-auto" />
+                <Check size={14} className="mx-auto" aria-hidden="true" />
               ) : (
                 index + 1
               )}

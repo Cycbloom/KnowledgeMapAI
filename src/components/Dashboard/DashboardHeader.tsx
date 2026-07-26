@@ -123,6 +123,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const { t } = useTranslation();
   const [filterExpanded, setFilterExpanded] = useState(false);
   const moreMenuId = useId();
+  const filterPanelId = useId();
 
   const handleMoreMenuSelect = (index: number) => {
     const item = document.getElementById(`${moreMenuId}-item-${index}`);
@@ -421,6 +422,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               }`}
               aria-label={t("dashboard.filter.toggle")}
               aria-expanded={filterExpanded}
+              aria-controls={filterPanelId}
             >
               <SlidersHorizontal size={16} aria-hidden="true" />
               <span className="hidden lg:inline">
@@ -505,12 +507,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 aria-label={t("common.more")}
                 aria-expanded={showMoreMenu}
                 aria-haspopup="menu"
+                aria-controls={moreMenuId}
               >
                 <MoreHorizontal size={20} aria-hidden="true" />
               </button>
 
               {showMoreMenu && (
                 <div
+                  id={moreMenuId}
                   className={`absolute right-0 top-full mt-2 w-40 rounded-xl border shadow-lg z-50 overflow-hidden ${
                     isDark
                       ? "bg-slate-800 border-slate-700"
@@ -625,6 +629,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
       {/* Filter Row (collapsible with animation) */}
       <div
+        id={filterPanelId}
         className={`flex flex-wrap items-center gap-3 rounded-xl overflow-hidden transition-all duration-300 ease-in-out ${
           filterExpanded
             ? "max-h-[200px] opacity-100 px-4 py-3 border"

@@ -52,7 +52,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50" onClick={onClose} aria-hidden="true" role="presentation" />
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative w-full max-w-2xl bg-white dark:bg-gray-800 h-full overflow-y-auto shadow-xl">
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
           <h2 id={titleId} className="text-xl font-semibold text-gray-900 dark:text-white truncate">
@@ -63,16 +63,16 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
             aria-label={t('common.aria.close')}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
         <div className="p-4 space-y-6">
           <div className="flex items-center gap-3">
             <span className={`px-2 py-1 rounded text-sm ${getStatusColor(task.status)}`}>
-              {task.status === 'completed' ? <CheckCircle className="w-4 h-4 inline mr-1" /> : 
-               task.status === 'in_progress' ? <Clock className="w-4 h-4 inline mr-1" /> :
-               <AlertCircle className="w-4 h-4 inline mr-1" />}
+              {task.status === 'completed' ? <CheckCircle aria-hidden="true" className="w-4 h-4 inline mr-1" /> :
+               task.status === 'in_progress' ? <Clock aria-hidden="true" className="w-4 h-4 inline mr-1" /> :
+               <AlertCircle aria-hidden="true" className="w-4 h-4 inline mr-1" />}
               {task.status}
             </span>
             <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">

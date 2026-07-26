@@ -276,7 +276,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                       />
                     </div>
                     <span
-                      className={`text-[10px] ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                      className={`text-[10px] ${isDark ? "text-slate-500" : "text-gray-500"}`}
                     >
                       {t("calendar.activitySummary", { count: stats.activity_count, minutes: Math.round(stats.total_duration / 60) })}
                     </span>

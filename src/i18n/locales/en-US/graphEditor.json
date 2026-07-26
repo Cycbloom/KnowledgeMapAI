@@ -355,7 +355,9 @@
     "batchDelete": "Batch delete",
     "establishConnection": "Establish connection",
     "ignore": "Ignore",
-    "noNodes": "No nodes"
+    "noNodes": "No nodes",
+    "region": "Outline",
+    "treeLabel": "Graph outline"
   },
   "region": {
     "title": "Region Management",
@@ -496,6 +498,7 @@
     "inviteEmailPlaceholder": "Enter user email",
     "generateShareLink": "Generate Share Link",
     "shareLinkLabel": "Share Link",
+    "linkLabel": "Share link",
     "publicAccess": "Public Access",
     "privateGraph": "Private Graph",
     "publicDesc": "Anyone with the link can view this graph, but cannot edit it.",
@@ -514,7 +517,10 @@
     "linkGenerated": "Share link generated",
     "linkGenerateFailed": "Failed to generate link",
     "linkGenerateFailedRetry": "Failed to generate link, please retry",
-    "fetchCollaboratorsFailed": "Failed to load collaborators"
+    "fetchCollaboratorsFailed": "Failed to load collaborators",
+    "publicToggleLabel": "Public access",
+    "emailLabel": "Email address",
+    "roleLabel": "Permission role"
   },
   "versionHistory": {
     "loadFailed": "Failed to load version history",
@@ -594,7 +600,12 @@
     "directionTopDownHint": "Traditional learning path: from overview to details.",
     "directionBottomUpHint": "Constructive learning path: assemble parts into a whole. Suitable for scenarios where \"leaf nodes are part of the parent node\".",
     "saving": "Saving...",
-    "save": "Save Settings"
+    "save": "Save Settings",
+    "qualityGroupLabel": "Quality",
+    "showStatsLabel": "Show statistics",
+    "gamificationLabel": "Gamification",
+    "textDisplayLevelGroupLabel": "Text display level",
+    "learningDirectionGroupLabel": "Learning direction"
   },
   "backbone": {
     "title": "Backbone Node Compatibility Check",
@@ -806,5 +817,16 @@
   },
   "planetView": {
     "ariaLabel": "3D planet view, {{count}} nodes"
+  },
+  "miniMap": {
+    "ariaLabel": "Mini map, {{count}} nodes",
+    "desc": "Graph mini map for quick navigation"
+  },
+  "timelineView": {
+    "ariaLabel": "Timeline view, {{count}} nodes",
+    "desc": "Nodes arranged in chronological order"
+  },
+  "nodeLinkSelector": {
+    "dialogLabel": "Select linked node"
   }
 }

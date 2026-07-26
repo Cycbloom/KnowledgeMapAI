@@ -186,7 +186,11 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
   }
 
   return (
-    <div className={`p-6 ${className}`}>
+    <div
+      role="region"
+      aria-label={t('common.aria.achievementGalleryRegion')}
+      className={`p-6 ${className}`}
+    >
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}

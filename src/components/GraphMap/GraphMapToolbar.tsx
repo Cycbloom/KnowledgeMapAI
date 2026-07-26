@@ -285,8 +285,9 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
               className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
+              aria-label={t("common.more")}
             >
-              <MoreHorizontal className="w-5 h-5" />
+              <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
             </button>
             {showMoreMenu && (
               <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-500 z-50 min-w-[160px]">
@@ -373,25 +374,29 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
             disabled={isLoading}
             className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg disabled:opacity-50"
             title={t("graphMap.toolbar.refresh")}
+            aria-label={t("graphMap.toolbar.refresh")}
           >
             <RefreshCw
               className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
+              aria-hidden="true"
             />
           </button>
           <button
             onClick={onDomainGenerate}
             className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg"
             title={t("graphMap.toolbar.domainGenerate")}
+            aria-label={t("graphMap.toolbar.domainGenerate")}
           >
-            <Globe className="w-5 h-5" />
+            <Globe className="w-5 h-5" aria-hidden="true" />
           </button>
           <div className="relative" ref={analyzeMenuRef}>
             <button
               onClick={() => setShowAnalyzeMenu(!showAnalyzeMenu)}
               className="p-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg shadow-md hover:shadow-lg hover:from-primary-600 hover:to-primary-700 transition-all duration-200"
               title={t("graphMap.analysis.title")}
+              aria-label={t("graphMap.analysis.title")}
             >
-              <Sparkles className="w-5 h-5" />
+              <Sparkles className="w-5 h-5" aria-hidden="true" />
             </button>
             {showAnalyzeMenu && (
               <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-500 z-50 min-w-[240px] p-2">
@@ -439,8 +444,9 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
             onClick={onCreateGraph}
             className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg"
             title={t("graphMap.toolbar.createGraph")}
+            aria-label={t("graphMap.toolbar.createGraph")}
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5" aria-hidden="true" />
           </button>
           <button
             onClick={onCreateRelation}
@@ -460,16 +466,18 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
           disabled={isLoading}
           className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50"
           title={t("graphMap.toolbar.refresh")}
+          aria-label={t("graphMap.toolbar.refresh")}
         >
-          <RefreshCw className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
         </button>
 
         <button
           onClick={onDomainGenerate}
           className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
           title={t("graphMap.toolbar.domainGenerate")}
+          aria-label={t("graphMap.toolbar.domainGenerate")}
         >
-          <Globe className="w-5 h-5" />
+          <Globe className="w-5 h-5" aria-hidden="true" />
         </button>
 
         <div className="relative" ref={analyzeMenuRef}>
@@ -533,8 +541,9 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
           onClick={onCreateGraph}
           className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
           title={t("graphMap.toolbar.createGraph")}
+          aria-label={t("graphMap.toolbar.createGraph")}
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-5 h-5" aria-hidden="true" />
         </button>
 
         <button
@@ -551,14 +560,19 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
   };
 
   return (
-    <div className="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-2 sm:px-4 gap-2">
+    <div
+      role="toolbar"
+      aria-label={t("common.aria.toolbar.graphMap")}
+      className="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-2 sm:px-4 gap-2"
+    >
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
         <button
           onClick={onBack}
           className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
           title={t("common.back")}
+          aria-label={t("common.back")}
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" aria-hidden="true" />
         </button>
 
         <div className="flex items-center gap-2 min-w-0 flex-shrink-0">

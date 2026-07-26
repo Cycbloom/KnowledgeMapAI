@@ -351,8 +351,15 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
   if (isLoadingPaths && graphPaths.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-primary-500" />
+      <div
+        className="flex items-center justify-center h-64"
+        aria-live="polite"
+      >
+        <RefreshCw
+          className="w-8 h-8 animate-spin text-primary-500"
+          aria-hidden="true"
+        />
+        <span className="sr-only">{t("common.aria.loading")}</span>
       </div>
     );
   }
@@ -471,9 +478,12 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
     <div className="learning-path-panel h-full flex flex-col space-y-4 relative overflow-hidden">
       {renderToolbar()}
       {isGenerating && (
-        <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg">
+        <div
+          className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg"
+          aria-live="polite"
+        >
           <div className="flex flex-col items-center gap-4">
-            <div className="relative">
+            <div className="relative" aria-hidden="true">
               <RefreshCw className="w-12 h-12 animate-spin text-primary-500" />
               <Sparkles className="w-5 h-5 text-primary-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             </div>
@@ -485,7 +495,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 {t("learning.learningPath.aiPlanning")}
               </p>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1" aria-hidden="true">
               <div
                 className="w-2 h-2 bg-primary-500 rounded-full animate-bounce"
                 style={{ animationDelay: "0ms" }}
@@ -500,6 +510,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               />
             </div>
           </div>
+          <span className="sr-only">{t("common.aria.loading")}</span>
         </div>
       )}
       {viewMode === "wizard" ? (
@@ -668,7 +679,14 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
                         {path.progress_percentage !== undefined &&
                           path.progress_percentage > 0 && (
-                            <div className="h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden mb-3">
+                            <div
+                              role="progressbar"
+                              aria-valuenow={Math.round(path.progress_percentage)}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                              aria-label={t('common.aria.progress')}
+                              className="h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden mb-3"
+                            >
                               <div
                                 className="h-full bg-gradient-to-r from-primary-500 to-primary-500"
                                 style={{

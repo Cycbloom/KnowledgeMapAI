@@ -17,12 +17,23 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
 
     const generatedErrorId = useId();
     const describedByErrorId = errorId ?? generatedErrorId;
+    const hintId = useId();
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
+
+    const ariaDescribedby = error
+      ? hint
+        ? `${describedByErrorId} ${hintId}`
+        : describedByErrorId
+      : hint
+      ? hintId
+      : undefined;
 
     return (
       <div>
         {label && (
           <label
-            htmlFor={id}
+            htmlFor={inputId}
             className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
           >
             {label}
@@ -30,10 +41,11 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
         )}
         <textarea
           ref={ref}
-          id={id}
+          id={inputId}
           className={cn(baseClass, errorClass, userClass)}
           aria-invalid={error ? true : undefined}
-          aria-describedby={error ? describedByErrorId : undefined}
+          aria-describedby={ariaDescribedby}
+          aria-errormessage={error ? describedByErrorId : undefined}
           {...props}
         />
         {error && (
@@ -44,8 +56,13 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
             {error}
           </p>
         )}
-        {hint && !error && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{hint}</p>
+        {hint && (
+          <p
+            id={hintId}
+            className="mt-1 text-sm text-gray-500 dark:text-gray-400"
+          >
+            {hint}
+          </p>
         )}
       </div>
     );

@@ -99,11 +99,12 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
   };
 
   return (
-    <div className="space-y-4">
+    <fieldset className="space-y-4">
+      <legend className="sr-only">{t('study.quizTypeConfig.typeLegend')}</legend>
       <div className="flex items-center justify-between">
-        <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+        <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
           {t('study.quizTypeConfig.title')}
-        </label>
+        </span>
         <div className={`px-3 py-1 rounded-full text-sm font-bold ${
           isDark ? 'bg-primary-900/50 text-primary-300' : 'bg-primary-100 text-primary-600'
         }`}>
@@ -128,7 +129,16 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
           return (
             <div
               key={type.id}
+              role="checkbox"
+              aria-checked={isSelected}
+              tabIndex={0}
               onClick={() => toggleType(type.id)}
+              onKeyDown={(e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                  e.preventDefault();
+                  toggleType(type.id);
+                }
+              }}
               className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all ${
                 isSelected
                   ? isDark
@@ -184,6 +194,7 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
                       <button
                         onClick={() => updateCount(type.id, count - 1)}
                         disabled={count <= 1}
+                        aria-label={t('study.quizTypeConfig.decrementCount', { type: type.label })}
                         className={`w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${
                           isDark
                             ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 disabled:opacity-50'
@@ -200,6 +211,7 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
                       <button
                         onClick={() => updateCount(type.id, count + 1)}
                         disabled={count >= 20}
+                        aria-label={t('study.quizTypeConfig.incrementCount', { type: type.label })}
                         className={`w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${
                           isDark
                             ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 disabled:opacity-50'
@@ -216,6 +228,6 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
           );
         })}
       </div>
-    </div>
+    </fieldset>
   );
 };

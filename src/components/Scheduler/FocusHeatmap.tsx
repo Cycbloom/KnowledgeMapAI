@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useId, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, CalendarClock, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -56,6 +56,7 @@ const DayCell: React.FC<DayCellProps> = ({
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const colorClass = getColorForDuration(duration, maxDuration);
+  const tooltipId = useId();
 
   return (
     <div
@@ -65,6 +66,8 @@ const DayCell: React.FC<DayCellProps> = ({
       onFocus={() => setShowTooltip(true)}
       onBlur={() => setShowTooltip(false)}
       tabIndex={0}
+      aria-describedby={tooltipId}
+      aria-haspopup={"tooltip" as "true"}
     >
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
@@ -83,6 +86,8 @@ const DayCell: React.FC<DayCellProps> = ({
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
+            role="tooltip"
+            id={tooltipId}
             className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50"
           >
             <div className="bg-slate-900 dark:bg-slate-700 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-nowrap">
@@ -289,13 +294,15 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
         </div>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500/50 overflow-x-auto"
-      >
-        <div className="flex gap-1">
+      <figure>
+        <figcaption className="sr-only">{t("scheduler.focusHeatmap.title")}</figcaption>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500/50 overflow-x-auto"
+        >
+          <div className="flex gap-1">
           <div className="flex flex-col gap-0.5 mr-2">
             <div className="h-3" />
             {WEEKDAYS.map((day, i) => (
@@ -345,6 +352,7 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
           </div>
         </div>
       </motion.div>
+      </figure>
 
       <div className="flex justify-center mt-4 gap-2">
         {MONTHS.map((month, index) => (

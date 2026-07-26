@@ -9,7 +9,7 @@
  * 点击 loaded 胶囊:跳转 /notes/{noteId}?block={blockId}
  * 点击 stale 胶囊:不跳转,显示 tooltip "源块已删除,可点击移除引用"
  */
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useId, useState } from "react";
 import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -38,6 +38,7 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
   const sourceNoteId = (node.attrs as { noteId: string | null }).noteId;
   const currentNoteId = readCurrentNoteId(editor);
   const effectiveNoteId = sourceNoteId ?? currentNoteId ?? "";
+  const staleTooltipId = useId();
 
   const { data, isLoading, isError } = useBlockContent(
     effectiveNoteId,
@@ -90,6 +91,8 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
         onBlur={() => setShowTooltip(false)}
         tabIndex={0}
         data-selected={selected}
+        aria-describedby={staleTooltipId}
+        aria-haspopup={"tooltip" as "true"}
       >
         <AlertCircle className="w-3 h-3" />
         <span className="font-mono text-[10px]">{blockId}</span>
@@ -97,6 +100,7 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
         {showTooltip && (
           <span
             role="tooltip"
+            id={staleTooltipId}
             className="absolute z-10 top-full left-0 mt-1 px-2 py-1 rounded bg-gray-800 dark:bg-slate-900 text-white text-[10px] whitespace-nowrap shadow-lg"
           >
             {t("notes.editor.blockRef.removed")}

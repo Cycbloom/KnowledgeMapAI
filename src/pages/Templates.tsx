@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTemplates } from "../hooks/queries";
@@ -52,6 +52,51 @@ export const Templates = () => {
 
   const [activeTab, setActiveTab] = useState<TemplateTab>("knowledge");
   const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
+
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const createTemplateTitleId = useId();
+  const editTemplateTitleId = useId();
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const templateTabs: { id: TemplateTab; label: string; icon: React.ReactNode }[] = [
+    { id: "knowledge", label: t("templates.knowledgeTemplates"), icon: <Network size={18} /> },
+    { id: "task", label: t("templates.taskTemplates"), icon: <CheckSquare size={18} /> },
+  ];
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % templateTabs.length;
+        setActiveTab(templateTabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + templateTabs.length) % templateTabs.length;
+        setActiveTab(templateTabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(templateTabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = templateTabs.length - 1;
+        setActiveTab(templateTabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
   const [selectedCategory, setSelectedCategory] = useState<
     TemplateCategory | "all"
   >("all");
@@ -213,39 +258,51 @@ export const Templates = () => {
           </h1>
         </div>
 
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab("knowledge")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
-              activeTab === "knowledge"
-                ? "bg-primary-600 text-white shadow-md"
-                : isDark
-                  ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            <Network size={18} />
-            <span>{t("templates.knowledgeTemplates")}</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("task")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
-              activeTab === "task"
-                ? "bg-primary-600 text-white shadow-md"
-                : isDark
-                  ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            <CheckSquare size={18} />
-            <span>{t("templates.taskTemplates")}</span>
-          </button>
+        <div className="flex gap-2 mb-6" role="tablist" aria-label={t("templates.title")}>
+          {templateTabs.map((tab, index) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                ref={(el) => { tabRefs.current[index] = el; }}
+                role="tab"
+                id={`${tabIdPrefix}-${tab.id}`}
+                aria-selected={isActive}
+                aria-controls={`${panelIdPrefix}-${tab.id}`}
+                tabIndex={isActive ? 0 : -1}
+                onClick={() => setActiveTab(tab.id)}
+                onKeyDown={(e) => handleTabKeyDown(e, index)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
+                  isActive
+                    ? "bg-primary-600 text-white shadow-md"
+                    : isDark
+                      ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {activeTab === "task" ? (
-          <TaskTemplates />
+          <div
+            role="tabpanel"
+            id={`${panelIdPrefix}-task`}
+            aria-labelledby={`${tabIdPrefix}-task`}
+            tabIndex={0}
+          >
+            <TaskTemplates />
+          </div>
         ) : (
-          <>
+          <div
+            role="tabpanel"
+            id={`${panelIdPrefix}-knowledge`}
+            aria-labelledby={`${tabIdPrefix}-knowledge`}
+            tabIndex={0}
+          >
             <div className="flex items-center justify-end mb-6">
               <button
                 onClick={() => {
@@ -262,7 +319,11 @@ export const Templates = () => {
             </div>
 
             <div className="flex gap-4 mb-6">
-              <div className="relative flex-1">
+              <div
+                role="search"
+                aria-label={t('common.aria.searchWithTarget', { target: t('templates.title') })}
+                className="relative flex-1"
+              >
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                   size={18}
@@ -452,7 +513,7 @@ export const Templates = () => {
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
 
@@ -460,12 +521,15 @@ export const Templates = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div
             ref={createModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={createTemplateTitleId}
             className={`w-full max-w-md rounded-2xl shadow-2xl p-6 md:p-8 ${
               isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
             }`}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">
+              <h3 id={createTemplateTitleId} className="text-xl font-bold">
                 {t("templates.createTemplate")}
               </h3>
               <button
@@ -598,12 +662,15 @@ export const Templates = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div
             ref={editModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={editTemplateTitleId}
             className={`w-full max-w-md rounded-2xl shadow-2xl p-6 md:p-8 ${
               isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
             }`}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">
+              <h3 id={editTemplateTitleId} className="text-xl font-bold">
                 {t("templates.button.edit")}
               </h3>
               <button

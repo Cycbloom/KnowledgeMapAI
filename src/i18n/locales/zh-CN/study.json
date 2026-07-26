@@ -328,6 +328,9 @@
     "expectedCount": "预计 {{count}} 题",
     "selectAtLeastOne": "请至少选择一种题型",
     "questionCount": "题目数量",
+    "typeLegend": "题型选择",
+    "incrementCount": "增加 {{type}} 题目数量",
+    "decrementCount": "减少 {{type}} 题目数量",
     "types": {
       "qa": {
         "label": "问答题",
@@ -355,7 +358,11 @@
       }
     }
   },
+  "difficultySelector": {
+    "legend": "难度选择"
+  },
   "questionForm": {
+    "trueFalseGroupLabel": "答案",
     "answerLegend": "答案选择",
     "questionLabel": "问题",
     "questionPlaceholder": "输入问题内容...",

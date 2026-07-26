@@ -469,8 +469,8 @@ export const RecycleBin = () => {
                 </button>
                 <button
                   onClick={clearSelection}
-                  aria-label={t('common.aria.close')}
-                  className={`p-1.5 rounded-lg transition-colors ${
+                  aria-label={t('recycleBin.clearSelection')}
+                  className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-lg transition-colors ${
                     isDark
                       ? "hover:bg-slate-700 text-slate-400"
                       : "hover:bg-gray-100 text-gray-500"

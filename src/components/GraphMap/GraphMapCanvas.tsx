@@ -323,12 +323,13 @@ export const GraphMapCanvas = forwardRef<
                 </p>
               </>
             ) : (
-              <>
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+              <div aria-live="polite">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4" aria-hidden="true"></div>
                 <p className="text-gray-600 dark:text-gray-400">
                   {t("graphMap.empty.loading")}
                 </p>
-              </>
+                <span className="sr-only">{t("common.aria.loading")}</span>
+              </div>
             )}
           </div>
         </div>

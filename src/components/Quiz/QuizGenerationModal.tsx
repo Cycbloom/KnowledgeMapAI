@@ -347,9 +347,9 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                     ? 'text-slate-400 hover:bg-slate-800'
                     : 'text-gray-400 hover:bg-gray-100'
                 }`}
-                aria-label={t('common.close')}
+                aria-label={t('common.aria.close')}
               >
-                <X size={20} />
+                <X size={20} aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -361,7 +361,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
           </div>
         ) : (
           <>
-            <div className={`flex-1 overflow-y-auto p-6 space-y-6 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+            <div className={`flex-1 overflow-y-auto p-6 space-y-6 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`} aria-busy={isGenerating}>
               {selectedGraphId && learningPath && learningPath.stages && learningPath.stages.length > 0 && (
                 <div
                   className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'}`}
@@ -448,7 +448,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                       测验标题 <span aria-hidden="true" className="text-red-500">*</span>
                     </label>
                     {isGeneratingTitle && (
-                      <span className={`flex items-center gap-1 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                      <span role="status" className={`flex items-center gap-1 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                         <Loader2 size={12} className="animate-spin" />
                         AI 生成中...
                       </span>
@@ -534,6 +534,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                   className={`p-4 rounded-xl ${
                     isDark ? 'bg-primary-900/30' : 'bg-primary-50'
                   }`}
+                  role="status"
                   aria-live="polite"
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -618,12 +619,12 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                   >
                     {isGenerating ? (
                       <>
-                        <Loader2 size={18} className="animate-spin" />
+                        <Loader2 size={18} className="animate-spin" aria-hidden="true" />
                         生成中...
                       </>
                     ) : (
                       <>
-                        <Sparkles size={18} />
+                        <Sparkles size={18} aria-hidden="true" />
                         开始生成
                       </>
                     )}

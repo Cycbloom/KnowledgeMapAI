@@ -102,7 +102,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
     >
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-primary-100 dark:bg-primary-500/20 rounded-xl">
-          <GitBranch size={20} className="text-primary-500" />
+          <GitBranch size={20} className="text-primary-500" aria-hidden="true" />
         </div>
         <div>
           <h3 className="font-semibold text-slate-900 dark:text-white">
@@ -113,7 +113,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
       </div>
 
       {nodes.length === 0 ? (
-        <EmptyState icon={<Network size={32} />} title={t('scheduler.empty.dependencies')} />
+        <EmptyState icon={<Network size={32} aria-hidden="true" />} title={t('scheduler.empty.dependencies')} />
       ) : (
         <div className="relative overflow-x-auto">
           <svg
@@ -122,7 +122,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
             viewBox="0 0 700 400"
             className="min-w-[600px]"
           >
-            <defs>
+            <defs aria-hidden="true">
               <marker
                 id="arrowhead"
                 markerWidth="10"
@@ -168,6 +168,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
                       strokeWidth="1"
                       x="-6"
                       y="-6"
+                      aria-hidden="true"
                     />
                   </g>
                 )}
@@ -182,6 +183,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
                       strokeWidth="1"
                       x="-6"
                       y="-6"
+                      aria-hidden="true"
                     />
                   </g>
                 )}
@@ -245,12 +247,12 @@ export const DependencyIndicator: React.FC<DependencyIndicatorProps> = ({
     <div className={`flex items-center gap-1 ${className}`}>
       {isBlocked ? (
         <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
-          <Lock size={10} />
+          <Lock size={10} aria-hidden="true" />
           <span>等待 {pendingBlockers.length} 个任务</span>
         </div>
       ) : (
         <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs">
-          <Unlock size={10} />
+          <Unlock size={10} aria-hidden="true" />
           <span>已解锁</span>
         </div>
       )}

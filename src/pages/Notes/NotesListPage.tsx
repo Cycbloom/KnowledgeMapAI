@@ -373,7 +373,7 @@ const NoteCard = memo(({
               aria-label={t("notes.actions.delete")}
             >
               {isBusy ? (
-                <Loader2 size={16} className="animate-spin" />
+                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
               ) : (
                 <Trash2 size={16} />
               )}
@@ -877,7 +877,7 @@ export const NotesListPage = () => {
             className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
           >
             {manualCreateDailyMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
             ) : (
               <CalendarDays className="w-4 h-4" />
             )}
@@ -890,7 +890,7 @@ export const NotesListPage = () => {
             className="bg-primary-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-primary-700 transition-colors disabled:opacity-50"
           >
             {createNoteMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
             ) : (
               <Plus className="w-4 h-4" />
             )}
@@ -973,7 +973,11 @@ export const NotesListPage = () => {
       </div>
 
       {/* SubTask 10.1: 顶部搜索框(debounce 300ms,回车立即触发) */}
-      <div className="relative mb-4">
+      <div
+        role="search"
+        aria-label={t('common.aria.searchWithTarget', { target: t('notes.title') })}
+        className="relative mb-4"
+      >
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500 pointer-events-none"
           aria-hidden="true"
@@ -1017,7 +1021,7 @@ export const NotesListPage = () => {
             <button
               type="button"
               onClick={() => setFilterTag(null)}
-              className="ml-1 -mr-1 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full p-0.5 transition-colors"
+              className="ml-1 -mr-1 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full p-2 transition-colors"
               aria-label={t("notes.filter.clearAriaLabel")}
               title={t("notes.filter.clear")}
             >
@@ -1029,7 +1033,7 @@ export const NotesListPage = () => {
 
       {/* 内容区 */}
       {error ? (
-        <div className="p-8 text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/20">
+        <div role="alert" className="p-8 text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/20">
           <XCircle className="w-8 h-8 mx-auto mb-2" />
           <p>{t("notes.loadFailed")}</p>
           <button
@@ -1041,7 +1045,15 @@ export const NotesListPage = () => {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div
+          aria-busy={isLoading}
+          aria-label={t("common.aria.loadingRegion")}
+          className="space-y-4"
+        >
+          {/* sr-only 实时区域:筛选结果数量变化时向 SR 用户播报 */}
+          <span className="sr-only" aria-live="polite" aria-atomic="true">
+            当前显示 {filteredNotes.length} 条笔记
+          </span>
           {isLoading && !isFetching && <NoteListSkeleton />}
 
           {!isLoading && notes.length === 0 && (
@@ -1069,9 +1081,11 @@ export const NotesListPage = () => {
             </div>
           )}
 
-          {/* SubTask 10.1/10.2 空状态:服务端有数据但被客户端搜索/标签筛选过滤掉 */}
+          {/* SubTask 10.1/10.2 空状态:服务端有数据但被客户端搜索/标签筛选过滤掉。
+              保留外层 div 是为了提供视觉样式(虚线边框/背景),不再设置 aria-live:
+              EmptyState 组件已自带 role="status",避免重复播报。 */}
           {!isLoading && notes.length > 0 && filteredNotes.length === 0 && (
-            <div aria-live="polite" className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-500">
+            <div className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-500">
               <EmptyState
                 icon={
                   <Search className="w-12 h-12 text-gray-300 dark:text-slate-600" />
@@ -1116,7 +1130,7 @@ export const NotesListPage = () => {
                 fallbackRender={(error, resetErrorBoundary) => (
                   <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-red-200 dark:border-red-900/40 p-8 text-center">
                     <XCircle className="w-8 h-8 mx-auto mb-3 text-red-600 dark:text-red-400" />
-                    <p className="text-red-600 dark:text-red-400 mb-2 font-medium">
+                    <p role="alert" className="text-red-600 dark:text-red-400 mb-2 font-medium">
                       笔记列表加载失败
                     </p>
                     <p className="text-xs text-gray-500 dark:text-slate-400 mb-4 font-mono break-all">

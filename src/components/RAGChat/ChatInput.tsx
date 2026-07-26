@@ -230,13 +230,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             {onDismissQuoteTip && (
               <button
                 onClick={onDismissQuoteTip}
-                className={`flex-shrink-0 p-0.5 rounded transition-colors ${
+                aria-label={t("common.aria.close")}
+                className={`flex-shrink-0 p-0.5 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                   isDark
                     ? "hover:bg-blue-800/50 text-blue-400 hover:text-blue-200"
                     : "hover:bg-blue-100 text-blue-400 hover:text-blue-600"
                 }`}
               >
-                <X size={12} />
+                <X size={12} aria-hidden="true" />
               </button>
             )}
           </motion.div>
@@ -263,7 +264,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <div className="flex justify-end mb-1">
               <button
                 onClick={onClearQuotes}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs transition-colors ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                   isDark
                     ? "text-slate-400 hover:text-red-400 hover:bg-red-900/20"
                     : "text-gray-400 hover:text-red-500 hover:bg-red-50"
@@ -319,7 +320,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       onKeyDown={handleEditKeyDown}
                       onBlur={saveEdit}
                       rows={2}
-                      className={`w-full bg-transparent resize-none outline-none text-xs leading-relaxed break-all ${
+                      className={`w-full bg-transparent resize-none outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-xs leading-relaxed break-all ${
                         isDark ? "text-primary-200" : "text-primary-800"
                       }`}
                       style={{ maxHeight: "120px" }}
@@ -356,27 +357,29 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         e.stopPropagation();
                         startEditing(quote);
                       }}
-                      className={`p-1 rounded transition-colors ${
+                      className={`p-1 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                         isDark
                           ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300"
                           : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
                       }`}
+                      aria-label={t("aiChat.editQuote")}
                       title={t("aiChat.editQuote")}
                     >
-                      <Pencil size={12} />
+                      <Pencil size={12} aria-hidden="true" />
                     </button>
                   )}
                   {onRemoveQuote && (
                     <button
                       onClick={() => onRemoveQuote(quote.id)}
-                      className={`p-1 rounded transition-colors ${
+                      className={`p-1 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                         isDark
                           ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300"
                           : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
                       }`}
+                      aria-label={t("aiChat.removeQuote")}
                       title={t("aiChat.removeQuote")}
                     >
-                      <X size={12} />
+                      <X size={12} aria-hidden="true" />
                     </button>
                   )}
                 </div>
@@ -408,7 +411,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <button
                   key={option.value}
                   onClick={() => onSearchModeChange(option.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                     searchMode === option.value
                       ? isDark
                         ? "bg-primary-600 text-white shadow-sm"
@@ -428,7 +431,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             {onToggleGraphContext && (
               <button
                 onClick={onToggleGraphContext}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-2 rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                   useGraphContext
                     ? isDark
                       ? "bg-primary-900/40 text-primary-300 ring-1 ring-primary-700/50"
@@ -437,22 +440,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       ? "bg-slate-800/80 text-slate-400 hover:bg-slate-700 hover:text-slate-300"
                       : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-600 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-300"
                 }`}
+                aria-label={t("aiChat.graphContext")}
                 title={t("aiChat.graphContext")}
               >
-                <Network size={16} />
+                <Network size={16} aria-hidden="true" />
               </button>
             )}
             {onClearChat && (
               <button
                 onClick={onClearChat}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-2 rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                   isDark
                     ? "bg-slate-800/80 text-slate-400 hover:bg-red-900/30 hover:text-red-400"
                     : "bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
                 }`}
+                aria-label={t("aiChat.clearConversation")}
                 title={t("aiChat.clearConversation")}
               >
-                <Trash2 size={16} />
+                <Trash2 size={16} aria-hidden="true" />
               </button>
             )}
           </div>
@@ -488,21 +493,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <>
               <button
                 onClick={() => setUseRealtimeEngine((prev) => !prev)}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-2 rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                   useRealtimeEngine
                     ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-md shadow-indigo-500/25"
                     : isDark
                       ? "bg-slate-700/60 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
                       : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200"
                 }`}
+                aria-label={t("aiChat.realtimeStt")}
                 title={t("aiChat.realtimeStt")}
               >
-                <Cloud size={16} />
+                <Cloud size={16} aria-hidden="true" />
               </button>
               <button
                 onClick={handleMicClick}
                 disabled={isFileTranscribing}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-2 rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                   isMicActive
                     ? "bg-red-500 text-white hover:bg-red-600 animate-pulse shadow-md shadow-red-500/25"
                     : isFileTranscribing
@@ -513,7 +519,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           ? "bg-slate-700/60 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
                           : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200"
                 }`}
-                title={
+                aria-label={
                   isFileTranscribing
                     ? t("aiChat.sttTranscribing")
                     : isMicActive
@@ -522,11 +528,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 }
               >
                 {isFileTranscribing ? (
-                  <Loader2 size={16} className="animate-spin" />
+                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 ) : isMicActive ? (
-                  <MicOff size={16} />
+                  <MicOff size={16} aria-hidden="true" />
                 ) : (
-                  <Mic size={16} />
+                  <Mic size={16} aria-hidden="true" />
                 )}
               </button>
             </>
@@ -534,7 +540,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           {isLoading && onStopGeneration ? (
             <button
               onClick={onStopGeneration}
-              className={`p-2 rounded-lg transition-all bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-500/25`}
+              className={`p-2 rounded-lg transition-all bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800`}
               title={t("aiChat.stopGeneration")}
             >
               <Square size={14} className="fill-current" />
@@ -543,7 +549,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <button
               onClick={onSend}
               disabled={!input.trim() || isLoading}
-              className={`p-2 rounded-lg transition-all ${
+              className={`p-2 rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                 input.trim() && !isLoading
                   ? isTutorMode
                     ? "bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-500/25"
@@ -563,7 +569,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         (realtimeSTT.isListening ||
           realtimeSTT.isConnecting ||
           realtimeSTT.error) && (
-          <div className="mt-1.5 px-2 text-xs">
+          <div
+            className="mt-1.5 px-2 text-xs"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             {realtimeSTT.error ? (
               <span className="text-red-500">{realtimeSTT.error}</span>
             ) : realtimeSTT.isConnecting ? (
@@ -605,7 +615,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <button
             onClick={onExtractConcepts}
             disabled={!hasAssistantMessages}
-            className={`flex-1 p-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`flex-1 p-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
               isDark
                 ? "bg-yellow-900/30 text-yellow-300 hover:bg-yellow-900/50"
                 : "bg-yellow-500 text-white hover:bg-yellow-600"
@@ -617,7 +627,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           {onSuggestNextTopics && (
             <button
               onClick={onSuggestNextTopics}
-              className={`flex-1 p-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 ${
+              className={`flex-1 p-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                 isDark
                   ? "bg-primary-900/30 text-primary-300 hover:bg-primary-900/50"
                   : "bg-primary-500 text-white hover:bg-primary-600"

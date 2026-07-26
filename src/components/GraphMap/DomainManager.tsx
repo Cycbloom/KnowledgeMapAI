@@ -72,6 +72,8 @@ interface SortableDomainItemProps {
   isExpanded?: boolean;
   hasChildrenFn: (node: DomainTreeNode) => boolean;
   onToggleExpand: (id: string) => void;
+  setSize?: number;
+  posInSet?: number;
 }
 
 function SortableDomainItem({
@@ -82,6 +84,8 @@ function SortableDomainItem({
   isExpanded = false,
   hasChildrenFn,
   onToggleExpand,
+  setSize,
+  posInSet,
 }: SortableDomainItemProps) {
   const { t } = useTranslation();
   const {
@@ -100,12 +104,20 @@ function SortableDomainItem({
   };
 
   const showChildren = hasChildrenFn(domain) && isExpanded;
+  const hasChildren = hasChildrenFn(domain);
+  const childrenId = `domain-children-${domain.id}`;
+  const childCount = hasChildren ? domain.children.length : 0;
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
+      role="treeitem"
+      aria-level={depth + 1}
+      aria-expanded={hasChildren ? isExpanded : undefined}
+      aria-setsize={setSize}
+      aria-posinset={posInSet}
       aria-roledescription={t('graphMap.a11y.draggableNode')}
       aria-label={domain.name}
     >
@@ -116,34 +128,44 @@ function SortableDomainItem({
         style={{ paddingLeft: `${depth * 20 + 12}px` }}
       >
         <button
+          type="button"
+          aria-label={t('common.aria.dragHandle')}
           {...listeners}
           className="cursor-grab active:cursor-grabbing touch-none p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
         >
-          <GripVertical className="w-4 h-4" />
+          <GripVertical className="w-4 h-4" aria-hidden="true" />
         </button>
 
-        {hasChildrenFn(domain) ? (
+        {hasChildren ? (
           <button
             onClick={() => onToggleExpand(domain.id)}
+            aria-expanded={isExpanded}
+            aria-controls={childrenId}
+            aria-label={
+              isExpanded
+                ? t('common.collapse', { defaultValue: '折叠' })
+                : t('common.expand', { defaultValue: '展开' })
+            }
             className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           >
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4" aria-hidden="true" />
             ) : (
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4" aria-hidden="true" />
             )}
           </button>
         ) : (
-          <span className="w-5" />
+          <span className="w-5" aria-hidden="true" />
         )}
 
         <span
           className="w-3 h-3 rounded-full flex-shrink-0"
           style={{ backgroundColor: domain.color }}
+          aria-hidden="true"
         />
 
         <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white truncate min-w-0">
-          {domain.icon && <span className="mr-1">{domain.icon}</span>}
+          {domain.icon && <span className="mr-1" aria-hidden="true">{domain.icon}</span>}
           {domain.name}
         </span>
 
@@ -153,41 +175,46 @@ function SortableDomainItem({
           </span>
         )}
 
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
           {!domain.is_system && (
             <>
               <button
                 onClick={() => onEdit(domain)}
                 className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
-                title="Edit"
+                aria-label={t('common.edit')}
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="w-4 h-4" aria-hidden="true" />
               </button>
               <button
                 onClick={() => onDelete(domain.id)}
                 className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded"
-                title="Delete"
+                aria-label={t('common.delete')}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4" aria-hidden="true" />
               </button>
             </>
           )}
         </div>
       </div>
 
-      {showChildren &&
-        domain.children.map(child => (
-          <SortableDomainItem
-            key={child.id}
-            domain={child}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            depth={depth + 1}
-            isExpanded={false}
-            hasChildrenFn={hasChildrenFn}
-            onToggleExpand={onToggleExpand}
-          />
-        ))
+      {showChildren && (
+        <div role="group" id={childrenId}>
+          {domain.children.map((child, index) => (
+            <SortableDomainItem
+              key={child.id}
+              domain={child}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              depth={depth + 1}
+              isExpanded={false}
+              hasChildrenFn={hasChildrenFn}
+              onToggleExpand={onToggleExpand}
+              setSize={childCount}
+              posInSet={index + 1}
+            />
+          ))}
+        </div>
+      )
       }
     </div>
   );
@@ -601,40 +628,72 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
 
   const hasChildren = (node: DomainTreeNode): boolean => node.children.length > 0;
 
-  const renderTreeNode = (node: DomainTreeNode, depth: number = 0) => {
+  const renderTreeNode = (node: DomainTreeNode, depth: number = 0, setSize?: number, posInSet?: number) => {
     const isExpanded = expandedIds.has(node.id);
     const showChildren = hasChildren(node) && isExpanded;
+    const nodeHasChildren = hasChildren(node);
+    const childrenId = `domain-tree-children-${node.id}`;
+    const childCount = nodeHasChildren ? node.children.length : 0;
 
     return (
       <div key={node.id}>
         <div
-          className={`group flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${
+          role="treeitem"
+          aria-level={depth + 1}
+          aria-expanded={nodeHasChildren ? isExpanded : undefined}
+          aria-setsize={setSize}
+          aria-posinset={posInSet}
+          aria-label={node.name}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowRight') {
+              if (nodeHasChildren && !isExpanded) {
+                e.preventDefault();
+                toggleExpand(node.id);
+              }
+            } else if (e.key === 'ArrowLeft') {
+              if (nodeHasChildren && isExpanded) {
+                e.preventDefault();
+                toggleExpand(node.id);
+              }
+            }
+          }}
+          className={`group flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 ${
             depth > 0 ? `ml-${  Math.min(depth * 4, 16)}` : ''
           }`}
           style={{ paddingLeft: `${depth * 20 + 12}px` }}
         >
-          {hasChildren(node) ? (
+          {nodeHasChildren ? (
             <button
               onClick={() => toggleExpand(node.id)}
+              aria-expanded={isExpanded}
+              aria-controls={childrenId}
+              aria-label={
+                isExpanded
+                  ? t('common.collapse', { defaultValue: '折叠' })
+                  : t('common.expand', { defaultValue: '展开' })
+              }
+              tabIndex={-1}
               className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             >
               {isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-4 h-4" aria-hidden="true" />
               ) : (
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               )}
             </button>
           ) : (
-            <span className="w-5" />
+            <span className="w-5" aria-hidden="true" />
           )}
 
           <span
             className="w-3 h-3 rounded-full flex-shrink-0"
             style={{ backgroundColor: node.color }}
+            aria-hidden="true"
           />
 
           <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white truncate min-w-0">
-            {node.icon && <span className="mr-1">{node.icon}</span>}
+            {node.icon && <span className="mr-1" aria-hidden="true">{node.icon}</span>}
             {node.name}
           </span>
 
@@ -644,22 +703,24 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
             </span>
           )}
 
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
             {!node.is_system && (
               <>
                 <button
                   onClick={() => handleEdit(node)}
                   className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
-                  title={t('common.edit')}
+                  aria-label={t('common.edit')}
+                  tabIndex={-1}
                 >
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="w-4 h-4" aria-hidden="true" />
                 </button>
                 <button
                   onClick={() => setDeleteConfirmId(node.id)}
                   className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded"
-                  title={t('common.delete')}
+                  aria-label={t('common.delete')}
+                  tabIndex={-1}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
                 </button>
               </>
             )}
@@ -672,7 +733,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
             style={{ marginLeft: `${(depth + 1) * 20 + 12}px` }}
           >
             <div className="flex items-start gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-red-800 dark:text-red-200">
                   {t('graphMap.domainManager.confirmDelete', { name: node.name })}
@@ -695,7 +756,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                     disabled={submitting}
                     className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-1"
                   >
-                    {submitting && <Loader2 className="w-3 h-3 animate-spin" />}
+                    {submitting && <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />}
                     {t('common.delete')}
                   </button>
                 </div>
@@ -710,8 +771,11 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           </div>
         )}
 
-        {showChildren &&
-          node.children.map(child => renderTreeNode(child, depth + 1))
+        {showChildren && (
+          <div role="group" id={childrenId}>
+            {node.children.map((child, index) => renderTreeNode(child, depth + 1, childCount, index + 1))}
+          </div>
+        )
         }
       </div>
     );
@@ -790,7 +854,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                   items={domains.map(d => d.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="py-2">
+                  <div className="py-2" role="tree" aria-label={t('graphMap.domainManager.treeLabel')}>
                     {domains.map(domain => (
                       <div key={domain.id}>
                         <SortableDomainItem
@@ -801,6 +865,8 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                           isExpanded={expandedIds.has(domain.id)}
                           hasChildrenFn={hasChildren}
                           onToggleExpand={toggleExpand}
+                          setSize={domains.length}
+                          posInSet={domains.findIndex(d => d.id === domain.id) + 1}
                         />
 
                         {deleteConfirmId === domain.id && (

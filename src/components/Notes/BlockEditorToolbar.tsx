@@ -51,7 +51,10 @@ const ToolbarDivider: React.FC = () => (
 );
 
 interface ToolbarButtonProps {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{
+    className?: string;
+    "aria-hidden"?: boolean | "true" | "false";
+  }>;
   label: string;
   onClick: () => void;
   isActive?: boolean;
@@ -79,7 +82,7 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
     disabled={disabled || loading}
     className={cn(
       "inline-flex items-center justify-center w-8 h-8 rounded-md transition-colors",
-      "focus:outline-none focus:ring-2 focus:ring-primary-400",
+      "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800",
       isActive
         ? "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-300"
         : "text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700",
@@ -87,7 +90,7 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
         "opacity-40 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent",
     )}
   >
-    <Icon className={cn("w-4 h-4", loading && "animate-spin")} />
+    <Icon className={cn("w-4 h-4", loading && "animate-spin")} aria-hidden="true" />
   </button>
 );
 

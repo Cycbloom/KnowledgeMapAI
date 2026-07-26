@@ -69,7 +69,7 @@ export const Breadcrumb: React.FC = () => {
   const showBackButton = isMobile && path !== "/";
 
   return (
-    <div className="flex items-center gap-1 text-sm">
+    <nav className="flex items-center gap-1 text-sm" aria-label={t("common.aria.breadcrumb")}>
       {showBackButton && (
         <motion.button
           onClick={handleGoBack}
@@ -91,10 +91,14 @@ export const Breadcrumb: React.FC = () => {
             <ChevronRight
               size={14}
               className={isDark ? "text-slate-600" : "text-gray-400"}
+              aria-hidden="true"
             />
           )}
           {index === breadcrumbs.length - 1 ? (
-            <span className={`${isDark ? "text-slate-300" : "text-gray-700"} ${showBackButton ? "font-medium" : ""}`}>
+            <span
+              className={`${isDark ? "text-slate-300" : "text-gray-700"} ${showBackButton ? "font-medium" : ""}`}
+              aria-current="page"
+            >
               {crumb.label}
             </span>
           ) : (
@@ -106,11 +110,11 @@ export const Breadcrumb: React.FC = () => {
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              {index === 0 ? <Home size={16} /> : crumb.label}
+              {index === 0 ? <Home size={16} aria-hidden="true" /> : crumb.label}
             </Link>
           )}
         </React.Fragment>
       ))}
-    </div>
+    </nav>
   );
 };

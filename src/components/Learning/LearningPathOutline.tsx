@@ -103,8 +103,15 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
       <div
         className={`flex flex-col h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 ${className}`}
       >
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+        <div
+          className="flex items-center justify-center h-64"
+          aria-live="polite"
+        >
+          <Loader2
+            className="w-8 h-8 animate-spin text-primary-500"
+            aria-hidden="true"
+          />
+          <span className="sr-only">{t("common.aria.loading")}</span>
         </div>
       </div>
     );
@@ -168,7 +175,14 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
               {(progress.progress_percentage || 0).toFixed(0)}%
             </span>
           </div>
-          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            role="progressbar"
+            aria-valuenow={Math.round(progress.progress_percentage || 0)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={t('common.aria.progress')}
+            className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+          >
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progress.progress_percentage || 0}%` }}
@@ -190,7 +204,11 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto py-2 scroll-smooth">
-        <div className="space-y-1 px-2">
+        <div
+          className="space-y-1 px-2"
+          role="list"
+          aria-label={t("learning.pathOutline.listLabel")}
+        >
           {nodes.length === 0 ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
               {t("learning.pathOutline.noNodes")}
@@ -211,6 +229,11 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
                 <motion.div
                   key={node.id}
                   ref={isCurrentNode ? currentNodeRef : null}
+                  role="listitem"
+                  tabIndex={0}
+                  aria-label={`${index + 1}. ${node.title}${
+                    statusConfig.label ? `，${statusConfig.label}` : ""
+                  }`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0, scale: isClicked ? 0.98 : 1 }}
                   transition={{
@@ -223,6 +246,17 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
                       setClickedNodeId(nodeId);
                       setTimeout(() => setClickedNodeId(null), 150);
                       onNodeClick(nodeId);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      const nodeId = node.knowledge_point_id || node.id;
+                      if (nodeId) {
+                        setClickedNodeId(nodeId);
+                        setTimeout(() => setClickedNodeId(null), 150);
+                        onNodeClick(nodeId);
+                      }
                     }
                   }}
                   className={`

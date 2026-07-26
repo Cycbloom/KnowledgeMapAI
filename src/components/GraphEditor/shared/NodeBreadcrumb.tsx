@@ -1,5 +1,6 @@
 import React from "react";
 import { ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useTheme } from "../../../hooks";
 
 export interface NodeBreadcrumbItem {
@@ -26,6 +27,7 @@ export const NodeBreadcrumb = React.memo(({
   className,
 }: NodeBreadcrumbProps) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   if (!selectedNode) {
     return null;
@@ -33,7 +35,7 @@ export const NodeBreadcrumb = React.memo(({
 
   return (
     <nav
-      aria-label="节点层级面包屑"
+      aria-label={t("common.aria.breadcrumb")}
       className={`
         inline-flex items-center gap-1 max-w-full px-3 py-1.5 rounded-lg text-sm
         backdrop-blur-sm truncate
@@ -57,6 +59,7 @@ export const NodeBreadcrumb = React.memo(({
           <ChevronRight
             size={14}
             className={`shrink-0 ${isDark ? "text-slate-600" : "text-gray-400"}`}
+            aria-hidden="true"
           />
           <button
             type="button"
@@ -76,12 +79,14 @@ export const NodeBreadcrumb = React.memo(({
       <ChevronRight
         size={14}
         className={`shrink-0 ${isDark ? "text-slate-600" : "text-gray-400"}`}
+        aria-hidden="true"
       />
       <span
         className={`shrink-0 max-w-[200px] truncate font-medium ${
           isDark ? "text-slate-100" : "text-gray-900"
         }`}
         title={selectedNode.title}
+        aria-current="page"
       >
         {selectedNode.title}
       </span>

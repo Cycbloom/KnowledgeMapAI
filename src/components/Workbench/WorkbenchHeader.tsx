@@ -47,7 +47,7 @@ export const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({
             >
               <div className="relative">
                 <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30">
-                  <Layers size={24} className="text-white" />
+                  <Layers size={24} className="text-white" aria-hidden="true" />
                 </div>
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
               </div>
@@ -67,9 +67,10 @@ export const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onNavigateScheduler}
+              aria-label={t("unifiedWorkbench.actions.scheduler")}
               className="p-2.5 sm:flex sm:items-center sm:gap-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
             >
-              <Zap size={18} />
+              <Zap aria-hidden="true" size={18} />
               <span className="hidden sm:inline">{t("unifiedWorkbench.actions.scheduler")}</span>
             </motion.button>
 
@@ -77,9 +78,10 @@ export const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onAddTask}
+              aria-label={t("unifiedWorkbench.actions.createNewTask")}
               className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all"
             >
-              <Plus size={18} />
+              <Plus aria-hidden="true" size={18} />
               <span className="hidden sm:inline">{t("unifiedWorkbench.actions.createNewTask")}</span>
             </motion.button>
 
@@ -90,6 +92,7 @@ export const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({
               className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600 transition-all disabled:opacity-50 min-h-[44px] min-w-[44px]"
             >
               <RefreshCw
+                aria-hidden="true"
                 size={18}
                 className={isFetchingQueues ? "animate-spin" : ""}
               />
@@ -114,7 +117,7 @@ export const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({
             <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">{taskStats.completed}</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500">
-            <Clock size={14} className="text-slate-400" />
+            <Clock size={14} className="text-slate-400" aria-hidden="true" />
             <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.estimatedDuration")}</span>
             <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">{formatDuration(taskStats.totalEstimated)}</span>
           </div>

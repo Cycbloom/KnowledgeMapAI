@@ -55,7 +55,8 @@
     "filter": "筛选",
     "totalTasks": "共 {{count}} 个任务",
     "clearFilter": "清除筛选",
-    "noTasks": "没有找到匹配的任务"
+    "noTasks": "没有找到匹配的任务",
+    "tableRegion": "任务列表"
   },
   "subtasks": {
     "knowledgePoints": "{{count}} 个知识点",
@@ -106,7 +107,8 @@
     "noTasks": "暂无任务",
     "dropToPlace": "释放以放置任务",
     "addTask": "添加任务",
-    "toggleCollapse": "展开/折叠 {{queue}} 队列"
+    "toggleCollapse": "展开/折叠 {{queue}} 队列",
+    "region": "任务队列"
   },
   "taskForm": {
     "editTask": "编辑任务",
@@ -337,6 +339,7 @@
     "periodicInstance": "周期任务实例",
     "subtaskCompleted": "子任务已完成",
     "subtaskReopened": "子任务已重新开启",
+    "subtaskIncompleteAnnouncement": "子任务已取消完成",
     "updateSubtaskFailed": "更新子任务失败",
     "actionStart": "开始",
     "actionPause": "暂停",
@@ -421,7 +424,8 @@
       "urgent": "Q0 紧急队列",
       "important": "Q1 重要队列",
       "todo": "Q2 待办队列"
-    }
+    },
+    "statusGroupLabel": "任务状态"
   },
   "loadError": "加载调度数据失败",
   "confirmDeleteTaskTitle": "删除任务",
@@ -534,6 +538,7 @@
     "emptyHint": "开始专注来追踪你的进度"
   },
   "focusHeatmap": {
+    "title": "年度专注热力图",
     "empty": "{{year}} 年还没有专注记录",
     "emptyHint": "开始专注来填充你的热力图"
   },

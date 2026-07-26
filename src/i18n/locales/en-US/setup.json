@@ -94,5 +94,6 @@
   "prev": "Previous",
   "previous": "Previous",
   "next": "Next",
-  "stepOf": "Step {{current}} of {{total}}"
+  "stepOf": "Step {{current}} of {{total}}",
+  "stepIndicator": "Step {{current}} of {{total}}"
 }

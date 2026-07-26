@@ -67,6 +67,7 @@ export const DashboardMobileFAB: React.FC<DashboardMobileFABProps> = ({
     <div className="fixed bottom-20 right-6 z-40" ref={fabMenuRef}>
       {showFABMenu && (
         <div
+          id={menuId}
           className="absolute bottom-20 right-0 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200"
           role="menu"
           aria-activedescendant={`${menuId}-item-${activeIndex}`}
@@ -74,7 +75,7 @@ export const DashboardMobileFAB: React.FC<DashboardMobileFABProps> = ({
           <button
             id={`${menuId}-item-0`}
             onClick={onOpenAIGenerator}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap ${activeRing(0)} ${
+            className={`flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl shadow-lg whitespace-nowrap ${activeRing(0)} ${
               isDark ? "bg-slate-700 text-white" : "bg-white text-gray-900"
             }`}
             role="menuitem"
@@ -94,7 +95,7 @@ export const DashboardMobileFAB: React.FC<DashboardMobileFABProps> = ({
             id={`${menuId}-item-1`}
             onClick={onImportClick}
             disabled={isImporting}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap ${activeRing(1)} ${
+            className={`flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl shadow-lg whitespace-nowrap ${activeRing(1)} ${
               isDark
                 ? "bg-slate-700 text-white"
                 : "bg-white text-gray-900"
@@ -130,6 +131,7 @@ export const DashboardMobileFAB: React.FC<DashboardMobileFABProps> = ({
         }
         aria-expanded={showFABMenu}
         aria-haspopup="menu"
+        aria-controls={menuId}
       >
         <Plus size={24} aria-hidden="true" />
       </button>

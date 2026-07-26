@@ -1,7 +1,9 @@
 import React, { useLayoutEffect, useState, useRef } from 'react';
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 export const LoadingBar: React.FC = () => {
+  const { t } = useTranslation();
   const isFetching = useIsFetching({
     predicate: (query) => !query.meta?.silent
   });
@@ -65,6 +67,7 @@ export const LoadingBar: React.FC = () => {
         className="h-full bg-primary-500 transition-all duration-300 ease-out"
         style={{ width: `${progress}%` }}
       />
+      <span className="sr-only">{t('common.aria.loading')}</span>
     </div>
   );
 };

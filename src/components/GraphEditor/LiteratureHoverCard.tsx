@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import type { Node } from "../../types";
 import type { LiteratureType } from "../LiteratureExtract/LiteratureMetadataForm";
 import LiteratureMetadataCard from "../LiteratureExtract/LiteratureMetadataCard";
@@ -34,6 +34,7 @@ export const LiteratureHoverCard: React.FC<LiteratureHoverCardProps> = ({
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
+  const tooltipId = useId();
 
   useEffect(() => {
     if (!cardRef.current) return;
@@ -67,6 +68,8 @@ export const LiteratureHoverCard: React.FC<LiteratureHoverCardProps> = ({
   return (
     <div
       ref={cardRef}
+      role="tooltip"
+      id={tooltipId}
       className="fixed z-tooltip transition-opacity duration-200 animate-in fade-in zoom-in-95"
       style={{
         left: `${adjustedPosition.x}px`,

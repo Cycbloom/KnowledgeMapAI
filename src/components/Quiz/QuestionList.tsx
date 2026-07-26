@@ -321,6 +321,8 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                   <div className="flex items-center gap-1">
                                     <button
                                       onClick={() => toggleAnswer(card.id)}
+                                      aria-pressed={isAnswerExpanded}
+                                      aria-label={isAnswerExpanded ? t('quiz.questionList.button.hideAnswer') : t('quiz.questionList.button.showAnswer')}
                                       className={`p-1.5 rounded-lg transition-colors ${
                                         isDark
                                           ? 'text-slate-400 hover:text-primary-400 hover:bg-slate-700'
@@ -328,7 +330,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                       }`}
                                       title={isAnswerExpanded ? t('quiz.questionList.button.hideAnswer') : t('quiz.questionList.button.showAnswer')}
                                     >
-                                      {isAnswerExpanded ? <EyeOff size={16} /> : <Eye size={16} />}
+                                      {isAnswerExpanded ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
                                     </button>
                                     <button
                                       onClick={() => onEdit(card)}

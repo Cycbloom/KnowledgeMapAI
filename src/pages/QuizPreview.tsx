@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useId } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -62,6 +62,7 @@ export const QuizPreview: React.FC = () => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const queryClient = useQueryClient();
+  const regeneratingTitleId = useId();
 
   const [editingCard, setEditingCard] = useState<StudyCard | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -367,10 +368,20 @@ export const QuizPreview: React.FC = () => {
         </AnimatePresence>
 
         {regeneratingCardId && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div ref={regeneratingModalRef} className={`p-6 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
-              <Loader2 size={32} className="animate-spin mx-auto mb-3 text-primary-500" />
-              <p className={isDark ? 'text-slate-300' : 'text-gray-600'}>{t('study.quizPreview.regeneratingTitle')}</p>
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            role="status"
+            aria-live="polite"
+          >
+            <div
+              ref={regeneratingModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={regeneratingTitleId}
+              className={`p-6 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-white'}`}
+            >
+              <Loader2 size={32} className="animate-spin mx-auto mb-3 text-primary-500" aria-hidden="true" />
+              <p id={regeneratingTitleId} className={isDark ? 'text-slate-300' : 'text-gray-600'}>{t('study.quizPreview.regeneratingTitle')}</p>
             </div>
           </div>
         )}

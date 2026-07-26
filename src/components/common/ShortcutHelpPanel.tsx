@@ -139,7 +139,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
             placeholder={t('common.shortcutHelp.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn('flex-1 bg-transparent text-sm focus:outline-none',
+            className={cn('flex-1 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
               isDark ? 'placeholder-slate-500' : 'placeholder-gray-400'
             )}
           />
@@ -189,6 +189,8 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
                           ref={inputRef}
                           type="text"
                           readOnly
+                          aria-readonly="true"
+                          aria-label={t('common.shortcutHelp.shortcutField')}
                           placeholder={t('common.shortcutHelp.pressNewShortcut')}
                           onKeyDown={(e) => handleKeyCapture(e, shortcut.id)}
                           onBlur={() => {

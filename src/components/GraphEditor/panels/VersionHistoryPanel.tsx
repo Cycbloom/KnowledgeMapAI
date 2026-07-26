@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import {
@@ -101,6 +101,50 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"snapshots" | "branches">("snapshots");
 
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const tabs = [
+    { id: "snapshots", label: t("graphEditor.versionHistory.tabSnapshots") },
+    { id: "branches", label: t("graphEditor.versionHistory.tabBranches") },
+  ] as const;
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case "ArrowRight": {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case "ArrowLeft": {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case "Home": {
+        e.preventDefault();
+        setActiveTab(tabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case "End": {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
   const pageSize = 20;
   const { data, isLoading } = useSnapshots(graphId, page, pageSize);
   const createSnapshotMutation = useCreateSnapshot(graphId);
@@ -162,9 +206,9 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
       <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
           {activeTab === "snapshots" ? (
-            <History className="text-primary-500" size={18} />
+            <History aria-hidden="true" className="text-primary-500" size={18} />
           ) : (
-            <GitBranch className="text-primary-500" size={18} />
+            <GitBranch aria-hidden="true" className="text-primary-500" size={18} />
           )}
           <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
             {activeTab === "snapshots"
@@ -173,8 +217,15 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
           </h2>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
+          <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5" role="tablist" aria-label={t("graphEditor.versionHistory.title")}>
             <button
+              ref={(el) => { tabRefs.current[0] = el; }}
+              role="tab"
+              id={`${tabIdPrefix}-snapshots`}
+              aria-selected={activeTab === "snapshots"}
+              aria-controls={`${panelIdPrefix}-snapshots`}
+              tabIndex={activeTab === "snapshots" ? 0 : -1}
+              onKeyDown={(e) => handleTabKeyDown(e, 0)}
               onClick={() => { setActiveTab("snapshots"); setDialog(null); }}
               className={cn(
                 "px-2.5 py-1 text-xs font-medium rounded-md transition-colors",
@@ -186,6 +237,13 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
               {t("graphEditor.versionHistory.tabSnapshots")}
             </button>
             <button
+              ref={(el) => { tabRefs.current[1] = el; }}
+              role="tab"
+              id={`${tabIdPrefix}-branches`}
+              aria-selected={activeTab === "branches"}
+              aria-controls={`${panelIdPrefix}-branches`}
+              tabIndex={activeTab === "branches" ? 0 : -1}
+              onKeyDown={(e) => handleTabKeyDown(e, 1)}
               onClick={() => { setActiveTab("branches"); setDialog(null); }}
               className={cn(
                 "px-2.5 py-1 text-xs font-medium rounded-md transition-colors",
@@ -202,14 +260,20 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
             aria-label={t("graphEditor.versionHistory.close")}
             className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
           >
-            <X size={18} className="text-slate-500" />
+            <X aria-hidden="true" size={18} className="text-slate-500" />
           </button>
         </div>
       </div>
 
       {activeTab === "snapshots" ? (
-        <>
-          <div className="flex-1 overflow-y-auto">
+        <div
+          role="tabpanel"
+          id={`${panelIdPrefix}-snapshots`}
+          aria-labelledby={`${tabIdPrefix}-snapshots`}
+          tabIndex={0}
+          className="contents"
+        >
+          <div className="flex-1 overflow-y-auto" aria-busy={isLoading}>
             {isLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
@@ -255,13 +319,19 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
               onClick={() => setDialog("createSnapshot")}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
-              <Camera size={16} />
+              <Camera size={16} aria-hidden="true" />
               {t("graphEditor.createSnapshot")}
             </button>
           </div>
-        </>
+        </div>
       ) : (
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div
+          role="tabpanel"
+          id={`${panelIdPrefix}-branches`}
+          aria-labelledby={`${tabIdPrefix}-branches`}
+          tabIndex={0}
+          className="flex-1 min-h-0 overflow-hidden"
+        >
           <BranchManagePanel graphId={graphId} onClose={onClose} hideHeader />
         </div>
       )}
@@ -271,7 +341,7 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
           {dialog === "createSnapshot" && (
             <DialogContent
               title={t("graphEditor.createSnapshot")}
-              icon={<Camera size={18} className="text-primary-500" />}
+              icon={<Camera aria-hidden="true" size={18} className="text-primary-500" />}
               onConfirm={handleCreateSnapshot}
               onCancel={closeDialog}
               confirmLabel={t("graphEditor.versionHistory.confirmCreate")}
@@ -291,7 +361,7 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
           {dialog === "rollback" && selectedSnapshot && (
             <DialogContent
               title={t("graphEditor.versionHistory.rollbackConfirmTitle")}
-              icon={<RotateCcw size={18} className="text-red-500" />}
+              icon={<RotateCcw aria-hidden="true" size={18} className="text-red-500" />}
               onConfirm={handleRollback}
               onCancel={closeDialog}
               confirmLabel={t("graphEditor.versionHistory.confirmRollback")}
@@ -325,7 +395,7 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
           {dialog === "createBranch" && selectedSnapshot && (
             <DialogContent
               title={t("graphEditor.versionHistory.createBranchTitle")}
-              icon={<GitBranch size={18} className="text-green-500" />}
+              icon={<GitBranch aria-hidden="true" size={18} className="text-green-500" />}
               onConfirm={handleCreateBranch}
               onCancel={closeDialog}
               confirmLabel={t("graphEditor.versionHistory.createBranchLabel")}
@@ -450,21 +520,21 @@ const SnapshotItem: React.FC<SnapshotItemProps> = ({
                 onClick={onDiffClick}
                 className="inline-flex items-center gap-1 px-2 py-1 text-xs text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded transition-colors"
               >
-                <ChevronRight size={12} />
+                <ChevronRight size={12} aria-hidden="true" />
                 {t("graphEditor.versionHistory.viewDiff")}
               </button>
               <button
                 onClick={onRollbackClick}
                 className="inline-flex items-center gap-1 px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded transition-colors"
               >
-                <RotateCcw size={12} />
+                <RotateCcw size={12} aria-hidden="true" />
                 {t("graphEditor.versionHistory.rollback")}
               </button>
               <button
                 onClick={onBranchClick}
                 className="inline-flex items-center gap-1 px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
               >
-                <GitBranch size={12} />
+                <GitBranch size={12} aria-hidden="true" />
                 {t("graphEditor.versionHistory.createBranchLabel")}
               </button>
             </div>

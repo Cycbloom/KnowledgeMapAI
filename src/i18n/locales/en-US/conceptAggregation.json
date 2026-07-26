@@ -59,7 +59,8 @@
     "inputPlaceholder": "Enter a new alias, press Enter to add...",
     "addButton": "Add alias",
     "mergeHint": "After merging, the above concepts will be kept as aliases of the target node",
-    "limitReached": "Maximum alias limit reached"
+    "limitReached": "Maximum alias limit reached",
+    "removeAria": "Remove alias"
   },
   "hierarchy": {
     "level": {
@@ -79,7 +80,8 @@
     "collapseAll": "Collapse All",
     "highConfidence": "High confidence ≥85%",
     "mediumConfidence": "Medium confidence ≥70%",
-    "lowConfidence": "Low confidence <70%"
+    "lowConfidence": "Low confidence <70%",
+    "treeLabel": "Concept hierarchy tree"
   },
   "mergeAlias": {
     "empty": "No concepts available to merge",

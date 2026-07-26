@@ -176,7 +176,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 
   const getNavItemClass = (path: string) => {
     const active = isActive(path);
-    return `flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] ${
+    return `flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] min-h-[44px] ${
       active
         ? isDark
           ? "text-primary-400 bg-primary-950/50"
@@ -188,7 +188,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   };
 
   const getMoreButtonClass = () => {
-    return `flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] ${
+    return `flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] min-h-[44px] ${
       isMoreActive
         ? isDark
           ? "text-primary-400 bg-primary-950/50"
@@ -247,6 +247,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             aria-label={t('common.more')}
             aria-expanded={isMoreOpen}
             aria-haspopup="menu"
+            aria-controls={menuId}
           >
             <motion.div
               animate={{ rotate: isMoreOpen ? 180 : 0 }}
@@ -304,7 +305,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                               menuItemRefs.current[index] = el;
                             }}
                             to={item.to}
-                            className={`flex items-center gap-3 px-4 py-2.5 ${
+                            className={`flex items-center gap-3 px-4 py-2.5 min-h-[44px] ${
                               isActiveItem
                                 ? isDark
                                   ? "bg-primary-950/50 text-primary-400"

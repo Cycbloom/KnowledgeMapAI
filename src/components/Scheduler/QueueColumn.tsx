@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDroppable } from "@dnd-kit/core";
 import {
@@ -95,6 +95,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
   void _onReorder;
   const { t } = useTranslation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const contentPanelId = useId();
   const config =
     QUEUE_CONFIG[level as keyof typeof QUEUE_CONFIG] || QUEUE_CONFIG[2];
   const IconComponent = config.icon;
@@ -159,9 +160,12 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
 
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors text-slate-500 dark:text-slate-400"
+            aria-expanded={!isCollapsed}
+            aria-controls={contentPanelId}
+            aria-label={t("scheduler.queue.toggleCollapse", { queue: title })}
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors text-slate-500 dark:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
           >
-            {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+            {isCollapsed ? <ChevronDown size={18} aria-hidden="true" /> : <ChevronUp size={18} aria-hidden="true" />}
           </button>
         </div>
 
@@ -208,6 +212,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
       <AnimatePresence>
         {!isCollapsed && (
           <motion.div
+            id={contentPanelId}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -254,6 +259,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
                     ${config.border} ${config.accentColor}
                     hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all
                     flex items-center justify-center gap-2 text-sm
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800
                   `}
                 >
                   <Plus size={16} />

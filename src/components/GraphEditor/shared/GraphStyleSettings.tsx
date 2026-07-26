@@ -1,4 +1,4 @@
-import React, { useState, useId } from 'react';
+import React, { useState, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ColorScheme, LinkStyle, LinkAnimation, NodeSizeMode, EdgeWidthMode, GraphColorMode } from '../../../types';
 import { getColorSchemeNames, COLOR_SCHEMES } from '../../../config/learningStatusColors';
@@ -71,6 +71,54 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
   useEscapeKey(onClose, isOpen);
 
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const tabs = [
+    { id: 'colors', label: t('graphStyleSettings.tabs.colors') },
+    { id: 'links', label: t('graphStyleSettings.tabs.links') },
+    { id: 'animations', label: t('graphStyleSettings.tabs.animations') },
+    { id: 'nodes', label: t('graphStyleSettings.tabs.nodes') },
+    { id: 'edges', label: t('graphStyleSettings.tabs.edges') },
+    { id: 'edgeSettings', label: t('graphStyleSettings.tabs.edgeSettings') },
+  ] as const;
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(tabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
   const commonRelationshipTypes = PRESET_RELATIONSHIP_TYPES.slice(0, 8);
 
   if (!isOpen) return null;
@@ -91,7 +139,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose} role="presentation">
       <div
         ref={containerRef}
         role="dialog"
@@ -113,8 +161,15 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           </button>
         </div>
 
-        <div className="flex border-b border-gray-200 dark:border-slate-500">
+        <div className="flex border-b border-gray-200 dark:border-slate-500" role="tablist" aria-label={t('graphStyleSettings.title')}>
           <button
+            ref={(el) => { tabRefs.current[0] = el; }}
+            role="tab"
+            id={`${tabIdPrefix}-colors`}
+            aria-selected={activeTab === 'colors'}
+            aria-controls={`${panelIdPrefix}-colors`}
+            tabIndex={activeTab === 'colors' ? 0 : -1}
+            onKeyDown={(e) => handleTabKeyDown(e, 0)}
             onClick={() => setActiveTab('colors')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'colors'
@@ -125,6 +180,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             {t('graphStyleSettings.tabs.colors')}
           </button>
           <button
+            ref={(el) => { tabRefs.current[1] = el; }}
+            role="tab"
+            id={`${tabIdPrefix}-links`}
+            aria-selected={activeTab === 'links'}
+            aria-controls={`${panelIdPrefix}-links`}
+            tabIndex={activeTab === 'links' ? 0 : -1}
+            onKeyDown={(e) => handleTabKeyDown(e, 1)}
             onClick={() => setActiveTab('links')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'links'
@@ -135,6 +197,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             {t('graphStyleSettings.tabs.links')}
           </button>
           <button
+            ref={(el) => { tabRefs.current[2] = el; }}
+            role="tab"
+            id={`${tabIdPrefix}-animations`}
+            aria-selected={activeTab === 'animations'}
+            aria-controls={`${panelIdPrefix}-animations`}
+            tabIndex={activeTab === 'animations' ? 0 : -1}
+            onKeyDown={(e) => handleTabKeyDown(e, 2)}
             onClick={() => setActiveTab('animations')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'animations'
@@ -145,6 +214,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             {t('graphStyleSettings.tabs.animations')}
           </button>
           <button
+            ref={(el) => { tabRefs.current[3] = el; }}
+            role="tab"
+            id={`${tabIdPrefix}-nodes`}
+            aria-selected={activeTab === 'nodes'}
+            aria-controls={`${panelIdPrefix}-nodes`}
+            tabIndex={activeTab === 'nodes' ? 0 : -1}
+            onKeyDown={(e) => handleTabKeyDown(e, 3)}
             onClick={() => setActiveTab('nodes')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'nodes'
@@ -155,6 +231,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             {t('graphStyleSettings.tabs.nodes')}
           </button>
           <button
+            ref={(el) => { tabRefs.current[4] = el; }}
+            role="tab"
+            id={`${tabIdPrefix}-edges`}
+            aria-selected={activeTab === 'edges'}
+            aria-controls={`${panelIdPrefix}-edges`}
+            tabIndex={activeTab === 'edges' ? 0 : -1}
+            onKeyDown={(e) => handleTabKeyDown(e, 4)}
             onClick={() => setActiveTab('edges')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'edges'
@@ -165,6 +248,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             {t('graphStyleSettings.tabs.edges')}
           </button>
           <button
+            ref={(el) => { tabRefs.current[5] = el; }}
+            role="tab"
+            id={`${tabIdPrefix}-edgeSettings`}
+            aria-selected={activeTab === 'edgeSettings'}
+            aria-controls={`${panelIdPrefix}-edgeSettings`}
+            tabIndex={activeTab === 'edgeSettings' ? 0 : -1}
+            onKeyDown={(e) => handleTabKeyDown(e, 5)}
             onClick={() => setActiveTab('edgeSettings')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'edgeSettings'
@@ -178,7 +268,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
 
         <div className="p-6 overflow-y-auto max-h-[60vh]">
           {activeTab === 'colors' && (
-            <div className="space-y-4">
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-colors`}
+              aria-labelledby={`${tabIdPrefix}-colors`}
+              tabIndex={0}
+              className="space-y-4"
+            >
               {coloringMode === 'level' && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/50 rounded-lg p-3 mb-4">
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">
@@ -276,7 +372,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           )}
 
           {activeTab === 'links' && (
-            <div className="space-y-4">
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-links`}
+              aria-labelledby={`${tabIdPrefix}-links`}
+              tabIndex={0}
+              className="space-y-4"
+            >
               <div>
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.tabs.links')}</h3>
                 <div className="grid grid-cols-2 gap-3">
@@ -315,7 +417,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           )}
 
           {activeTab === 'animations' && (
-            <div className="space-y-4">
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-animations`}
+              aria-labelledby={`${tabIdPrefix}-animations`}
+              tabIndex={0}
+              className="space-y-4"
+            >
               <div>
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.tabs.animations')}</h3>
                 <div className="grid grid-cols-2 gap-3">
@@ -362,7 +470,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           )}
 
           {activeTab === 'nodes' && (
-            <div className="space-y-4">
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-nodes`}
+              aria-labelledby={`${tabIdPrefix}-nodes`}
+              tabIndex={0}
+              className="space-y-4"
+            >
               <div>
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.nodeSizeMode.title')}</h3>
                 <div className="space-y-2">
@@ -391,7 +505,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           )}
 
           {activeTab === 'edges' && (
-            <div className="space-y-4">
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-edges`}
+              aria-labelledby={`${tabIdPrefix}-edges`}
+              tabIndex={0}
+              className="space-y-4"
+            >
               <div>
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.edgeWidthMode.title')}</h3>
                 <div className="space-y-2">
@@ -419,7 +539,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           )}
 
           {activeTab === 'edgeSettings' && (
-            <div className="space-y-4">
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-edgeSettings`}
+              aria-labelledby={`${tabIdPrefix}-edgeSettings`}
+              tabIndex={0}
+              className="space-y-4"
+            >
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
                 <div>
                   <div className="font-medium text-gray-900 dark:text-white">{t('graphStyleSettings.edgeSettings.showLabels')}</div>

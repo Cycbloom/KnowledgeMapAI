@@ -165,7 +165,7 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">
+                <span className="text-xs text-gray-500 dark:text-gray-500 hidden sm:inline">
                   {muted
                     ? t("settings.notifications.muted")
                     : t("settings.notifications.enabled")}

@@ -112,7 +112,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
               </div>
               <div className="flex items-center gap-3">
                 <span
-                  className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                  className={`text-xs ${isDark ? "text-slate-500" : "text-gray-600"}`}
                 >
                   {formatTime(activity.started_at)}
                   {activity.ended_at && ` - ${formatTime(activity.ended_at)}`}
@@ -125,7 +125,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
               </div>
               {activity.description && (
                 <p
-                  className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                  className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-gray-600"}`}
                 >
                   {activity.description}
                 </p>

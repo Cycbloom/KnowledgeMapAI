@@ -86,6 +86,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
   const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
   useEscapeKey(onClose, isOpen);
   const titleId = useId();
+  const advancedControlsId = useId();
 
   if (!isOpen) return null;
 
@@ -111,7 +112,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary-500" />
+              <Sparkles aria-hidden="true" className="w-5 h-5 text-primary-500" />
               {t('graphMap.infiniteExpansion.title')}
             </h2>
             <div className="flex items-center gap-2">
@@ -122,14 +123,15 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                   title={t('graphMap.infiniteExpansion.editPromptTitle')}
                   aria-label={t('common.aria.editPrompt')}
                 >
-                  <Settings2 className="w-4 h-4" />
+                  <Settings2 aria-hidden="true" className="w-4 h-4" />
                 </button>
               )}
               <button
                 onClick={onClose}
                 className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
+                aria-label={t('common.aria.close')}
               >
-                <X className="w-5 h-5" />
+                <X aria-hidden="true" className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -137,7 +139,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
           <div className="p-4 space-y-4">
             <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
               <div className="flex items-center gap-2 text-sm text-primary-700 dark:text-primary-300">
-                <Network className="w-4 h-4" />
+                <Network aria-hidden="true" className="w-4 h-4" />
                 <span className="font-medium">{t('graphMap.infiniteExpansion.sourceGraphLabel')}</span>
                 <span>{sourceGraphTitle}</span>
               </div>
@@ -184,6 +186,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                 value={maxDepth}
                 onChange={e => setMaxDepth(Number(e.target.value))}
                 disabled={isRunning}
+                aria-label={t('graphMap.infiniteExpansion.depthLabel', { depth: maxDepth })}
                 className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
               />
               <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -194,14 +197,17 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
 
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
+              aria-expanded={showAdvanced}
+              aria-controls={advancedControlsId}
               className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             >
-              {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {showAdvanced ? <ChevronUp className="w-4 h-4" aria-hidden="true" /> : <ChevronDown className="w-4 h-4" aria-hidden="true" />}
               {t('graphMap.infiniteExpansion.advancedOptions')}
             </button>
 
             {showAdvanced && (
               <motion.div
+                id={advancedControlsId}
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
@@ -218,6 +224,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                     value={maxGraphsPerLevel}
                     onChange={e => setMaxGraphsPerLevel(Number(e.target.value))}
                     disabled={isRunning}
+                    aria-label={t('graphMap.infiniteExpansion.maxGraphsPerLevel', { count: maxGraphsPerLevel })}
                     className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                   />
                 </div>
@@ -232,7 +239,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                     className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
                   />
                   <label htmlFor="autoGenerateNodes" className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                    <Sparkles className="w-4 h-4 text-green-500" />
+                    <Sparkles aria-hidden="true" className="w-4 h-4 text-green-500" />
                     <span>{t('graphMap.infiniteExpansion.autoGenerateNodes')}</span>
                   </label>
                 </div>
@@ -249,6 +256,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                       value={nodeDepth}
                       onChange={e => setNodeDepth(Number(e.target.value))}
                       disabled={isRunning}
+                      aria-label={t('graphMap.infiniteExpansion.nodeDepthLabel', { depth: nodeDepth })}
                       className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                     />
                   </div>
@@ -257,9 +265,9 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
             )}
 
             {(isRunning || isSubmitting) && progress && (
-              <div className="p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
+              <div role="status" className="p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
-                  <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
+                  <Loader2 aria-hidden="true" className="w-5 h-5 text-primary-500 animate-spin" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('graphMap.infiniteExpansion.expanding')}
                   </span>
@@ -308,9 +316,9 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
             )}
 
             {progress?.status === 'completed' && (
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div role="status" className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-2">
-                  <Check className="w-5 h-5" />
+                  <Check aria-hidden="true" className="w-5 h-5" />
                   <span className="font-medium">{t('graphMap.infiniteExpansion.completed')}</span>
                 </div>
                 <div className="text-sm text-green-600 dark:text-green-400">
@@ -335,12 +343,12 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                     {t('graphMap.infiniteExpansion.starting')}
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4" aria-hidden="true" />
                     {t('graphMap.infiniteExpansion.startExpansion')}
                   </>
                 )}

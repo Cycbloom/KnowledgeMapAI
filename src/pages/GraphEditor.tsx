@@ -7,6 +7,7 @@ import React, {
   useLayoutEffect,
   useEffect,
   useRef,
+  useId,
 } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -230,6 +231,7 @@ export const GraphEditor = () => {
   const [showOnboarding, setShowOnboarding] = useState(!isOnboardingComplete());
 
   const panelState = useGraphEditorPanelState({ userId: user?.id || "" });
+  const literatureExtractTitleId = useId();
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -1818,12 +1820,22 @@ export const GraphEditor = () => {
       {panelState.isLiteratureExtractOpen && id && (
         <Suspense fallback={<ViewLoader />}>
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <LiteratureExtractPanel
-              graphId={id}
-              onExtractComplete={handleLiteratureExtractComplete}
-              onConceptsSaved={handleConceptsSaved}
-              onClose={() => panelState.setIsLiteratureExtractOpen(false)}
-            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={literatureExtractTitleId}
+              className="w-full max-w-2xl"
+            >
+              <h2 id={literatureExtractTitleId} className="sr-only">
+                {t("graphEditor.toolbar.literatureExtract")}
+              </h2>
+              <LiteratureExtractPanel
+                graphId={id}
+                onExtractComplete={handleLiteratureExtractComplete}
+                onConceptsSaved={handleConceptsSaved}
+                onClose={() => panelState.setIsLiteratureExtractOpen(false)}
+              />
+            </div>
           </div>
         </Suspense>
       )}

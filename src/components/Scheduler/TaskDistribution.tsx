@@ -97,6 +97,8 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
 
   const distribution = getDistribution();
 
+  const totalTasks = distribution.reduce((sum, item) => sum + item.count, 0);
+
   // 保留本地实现：< 60 分钟使用中文，>= 60 分钟使用带空格紧凑格式 "Xh Ym"，混合格式无法直接复用 @/utils/formatters
   const formatDuration = (minutes: number) => {
     if (minutes < 60) return `${minutes}分钟`;
@@ -111,7 +113,13 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
     const center = 100;
 
     return (
-      <svg width="200" height="200" viewBox="0 0 200 200">
+      <svg
+        width="200"
+        height="200"
+        viewBox="0 0 200 200"
+        role="img"
+        aria-label={t('stats.taskDistribution.ariaSummary', { total: totalTasks })}
+      >
         {distribution.map((item, index) => {
           const angle = (item.percentage / 100) * 360;
           const startAngle = currentAngle;
@@ -144,6 +152,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
               onClick={() =>
                 setSelectedTag(item.tag === selectedTag ? null : item.tag)
               }
+              aria-hidden="true"
             />
           );
         })}
@@ -164,7 +173,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
     >
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-primary-100 dark:bg-primary-500/20 rounded-xl">
-          <PieChart size={20} className="text-primary-500" />
+          <PieChart size={20} className="text-primary-500" aria-hidden="true" />
         </div>
         <div>
           <h3 className="font-semibold text-slate-900 dark:text-white">
@@ -175,12 +184,19 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
       </div>
 
       {loading ? (
-        <div className="h-48 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500" />
+        <div
+          className="h-48 flex items-center justify-center"
+          aria-live="polite"
+        >
+          <div
+            className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"
+            aria-hidden="true"
+          />
+          <span className="sr-only">{t("common.aria.loading")}</span>
         </div>
       ) : distribution.length === 0 ? (
         <EmptyState
-          icon={<BarChart3 size={32} />}
+          icon={<BarChart3 size={32} aria-hidden="true" />}
           title={t('scheduler.empty.distributionEmpty')}
         />
       ) : (
@@ -189,12 +205,13 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
 
           <div className="flex-1 space-y-2">
             {distribution.map((item, index) => (
-              <motion.div
+              <motion.button
+                type="button"
                 key={index}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors text-left w-full ${
                   selectedTag === item.tag
                     ? "bg-slate-100 dark:bg-slate-800"
                     : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
@@ -204,6 +221,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
                 }
               >
                 <div
+                  aria-hidden="true"
                   className="w-3 h-3 rounded-full flex-shrink-0"
                   style={{ backgroundColor: item.color }}
                 />
@@ -218,7 +236,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
                 <div className="text-sm font-medium text-slate-500">
                   {item.percentage.toFixed(1)}%
                 </div>
-              </motion.div>
+              </motion.button>
             ))}
           </div>
         </div>

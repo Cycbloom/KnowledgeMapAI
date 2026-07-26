@@ -72,7 +72,7 @@ export const SSEStatusIndicator = () => {
       aria-atomic="true"
     >
       <StatusIcon size={14} className={status === 'connecting' ? 'animate-spin' : ''} />
-      <span className="hidden sm:inline">{statusInfo.label}</span>
+      <span className="sr-only sm:not-sr-only sm:inline">{statusInfo.label}</span>
     </div>
   );
 };

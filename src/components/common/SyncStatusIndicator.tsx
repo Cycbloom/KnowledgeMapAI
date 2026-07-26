@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSyncStatus } from '../../hooks/common/useSyncStatus';
 import { SyncDetailPanel } from './SyncDetailPanel';
 import { cn } from '@/lib/utils';
+import { useReducedMotionOrPreference } from '../../hooks/common/useReducedMotionOrPreference';
 
 type SyncState = 'synced' | 'syncing' | 'offline' | 'error';
 
@@ -25,6 +26,7 @@ const stateConfig: Record<SyncState, { icon: typeof Check; color: string; label:
 export function SyncStatusIndicator() {
   const { status, isLocalAvailable, manualSync } = useSyncStatus();
   const [showPanel, setShowPanel] = useState(false);
+  const { reduceMotion } = useReducedMotionOrPreference();
 
   // Don't render if local DB is not available (web mode or dev mode)
   if (!isLocalAvailable) return null;
@@ -32,6 +34,7 @@ export function SyncStatusIndicator() {
   const state = getSyncState(status);
   const config = stateConfig[state];
   const Icon = config.icon;
+  const shouldSpin = config.spin && !reduceMotion;
 
   return (
     <div className="relative" aria-live="polite" aria-atomic="true">
@@ -41,8 +44,8 @@ export function SyncStatusIndicator() {
         title={config.label}
       >
         <motion.div
-          animate={config.spin ? { rotate: 360 } : {}}
-          transition={config.spin ? { duration: 1, repeat: Infinity, ease: 'linear' } : {}}
+          animate={shouldSpin ? { rotate: 360 } : {}}
+          transition={shouldSpin ? { duration: 1, repeat: Infinity, ease: 'linear' } : {}}
         >
           <Icon className="w-3.5 h-3.5" />
         </motion.div>

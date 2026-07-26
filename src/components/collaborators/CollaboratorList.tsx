@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   CollaboratorRole,
   CollaboratorWithUser,
@@ -21,6 +22,7 @@ export const CollaboratorList: React.FC<CollaboratorListProps> = ({
   onUpdateRole,
   onRemove,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       {collaborators.map((collaborator) => (
@@ -63,8 +65,9 @@ export const CollaboratorList: React.FC<CollaboratorListProps> = ({
               <button
                 onClick={() => onRemove?.(collaborator.user_id)}
                 className="p-1 text-red-500 hover:text-red-700"
+                aria-label={t("common.aria.removeCollaborator")}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>

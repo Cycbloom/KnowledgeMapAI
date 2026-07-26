@@ -294,10 +294,12 @@ export const QuizList: React.FC<QuizListProps> = ({
             })}
           </div>
 
-          <div className="flex items-center gap-2">
+          <nav aria-label={t("common.aria.pagination")} className="flex items-center gap-2">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
+              aria-label={t("common.aria.previousPage")}
+              aria-disabled={currentPage === 1 ? "true" : undefined}
               className={`p-2 rounded-lg border transition-colors ${
                 currentPage === 1
                   ? isDark
@@ -308,7 +310,7 @@ export const QuizList: React.FC<QuizListProps> = ({
                     : 'border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={16} aria-hidden="true" />
             </button>
 
             <div className="flex items-center gap-1">
@@ -324,6 +326,8 @@ export const QuizList: React.FC<QuizListProps> = ({
                   <button
                     key={pageNum}
                     onClick={() => setCurrentPage(pageNum)}
+                    aria-current={currentPage === pageNum ? "page" : undefined}
+                    aria-label={t("common.aria.page", { number: pageNum })}
                     className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                       currentPage === pageNum
                         ? 'bg-primary-600 text-white'
@@ -341,6 +345,8 @@ export const QuizList: React.FC<QuizListProps> = ({
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
+              aria-label={t("common.aria.nextPage")}
+              aria-disabled={currentPage === totalPages ? "true" : undefined}
               className={`p-2 rounded-lg border transition-colors ${
                 currentPage === totalPages
                   ? isDark
@@ -351,9 +357,9 @@ export const QuizList: React.FC<QuizListProps> = ({
                     : 'border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={16} aria-hidden="true" />
             </button>
-          </div>
+          </nav>
         </div>
       )}
     </div>

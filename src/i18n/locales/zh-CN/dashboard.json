@@ -98,7 +98,8 @@
     "copyFailed": "复制失败",
     "openInNewWindow": "在新窗口打开",
     "toggleFavorite": "切换收藏",
-    "moveToTrash": "移至回收站"
+    "moveToTrash": "移至回收站",
+    "label": "图谱操作菜单：{{title}}"
   },
   "recent": {
     "title": "最近编辑",

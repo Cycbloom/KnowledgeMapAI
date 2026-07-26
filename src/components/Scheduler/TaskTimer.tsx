@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, Check, Coffee } from 'lucide-react';
-import { formatTimeFromSeconds } from '../../utils/formatters';
+import { formatTimeFromSeconds, formatIsoDuration } from '../../utils/formatters';
 
 interface TaskTimerProps {
   duration: number;
@@ -64,6 +64,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
         <svg
           className="w-full h-full transform -rotate-90"
           viewBox="0 0 200 200"
+          aria-hidden="true"
         >
           <defs>
             <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -119,26 +120,33 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
 
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {isBreak ? (
-            <Coffee size={24} className="text-emerald-500 dark:text-emerald-400 mb-1" />
+            <Coffee size={24} className="text-emerald-500 dark:text-emerald-400 mb-1" aria-hidden="true" />
           ) : null}
           
-          <motion.div
+          <motion.time
+            dateTime={formatIsoDuration(remaining)}
             className="text-4xl font-mono font-bold tracking-wider"
             style={{ color: progressColor }}
             key={formatTimeFromSeconds(remaining)}
             initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.2 }}
+            aria-live="polite"
+            aria-atomic="true"
           >
             {formatTimeFromSeconds(remaining)}
-          </motion.div>
-          
+          </motion.time>
+
           <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
             {isBreak ? '休息时间' : '专注时间'}
           </div>
-          
+
           {duration > 0 && (
-            <div className="text-xs text-slate-500 dark:text-slate-600 mt-1">
+            <div
+              className="text-xs text-slate-500 dark:text-slate-600 mt-1"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               {Math.round(progress * 100)}%
             </div>
           )}
@@ -170,7 +178,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Pause size={18} />
+            <Pause size={18} aria-hidden="true" />
             <span className="font-medium">暂停</span>
           </motion.button>
         ) : (
@@ -180,7 +188,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Play size={18} />
+            <Play size={18} aria-hidden="true" />
             <span className="font-medium">继续</span>
           </motion.button>
         )}
@@ -191,19 +199,27 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <Check size={18} />
+          <Check size={18} aria-hidden="true" />
           <span className="font-medium">完成</span>
         </motion.button>
       </div>
 
       <div className="mt-4 flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
-        <div className="flex items-center gap-1">
+        <div
+          className="flex items-center gap-1"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <span className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400" />
-          <span>已用: {formatTimeFromSeconds(displayTime)}</span>
+          <span>已用: <time dateTime={formatIsoDuration(displayTime)}>{formatTimeFromSeconds(displayTime)}</time></span>
         </div>
-        <div className="flex items-center gap-1">
+        <div
+          className="flex items-center gap-1"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-400" />
-          <span>总计: {formatTimeFromSeconds(duration)}</span>
+          <span>总计: <time dateTime={formatIsoDuration(duration)}>{formatTimeFromSeconds(duration)}</time></span>
         </div>
       </div>
     </div>

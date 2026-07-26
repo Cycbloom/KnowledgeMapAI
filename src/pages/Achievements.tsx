@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { queryKeys } from '../hooks/queries/config';
@@ -32,6 +32,11 @@ export const Achievements = () => {
   const { user } = useStore();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = React.useState<TabKey>('daily');
+
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   
   const taskTypeMap: Record<string, { label: string; icon: LucideIcon }> = {
     login: { label: t('achievements.taskTypes.login'), icon: Calendar },
@@ -46,6 +51,40 @@ export const Achievements = () => {
     { key: 'pass', label: t('achievements.tabs.pass'), icon: Ticket },
     { key: 'achievements', label: t('achievements.tabs.achievements'), icon: Trophy },
   ];
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].key);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].key);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(tabs[0].key);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].key);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
   
   const { data: achievements, isLoading: loadingAchievements, error: achievementsError, refetch: refetchAchievements } = useQuery({
     queryKey: queryKeys.achievements(),
@@ -175,6 +214,7 @@ export const Achievements = () => {
 
   return (
     <div className="h-full overflow-y-auto px-4 py-4 md:p-6">
+      <h1 className="sr-only">{t('layout.achievements')}</h1>
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
           <div className="col-span-1 md:col-span-2 bg-gradient-to-r from-primary-600 to-primary-600 rounded-2xl p-4 md:p-6 text-white shadow-lg relative overflow-hidden">
@@ -226,15 +266,23 @@ export const Achievements = () => {
           </div>
         </div>
 
-        <div className="flex gap-2 border-b border-slate-200 dark:border-slate-500 pb-2 overflow-x-auto">
-          {tabs.map(tab => {
+        <div className="flex gap-2 border-b border-slate-200 dark:border-slate-500 pb-2 overflow-x-auto" role="tablist" aria-label={t('layout.achievements')}>
+          {tabs.map((tab, index) => {
             const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
+                ref={(el) => { tabRefs.current[index] = el; }}
+                role="tab"
+                id={`${tabIdPrefix}-${tab.key}`}
+                aria-selected={isActive}
+                aria-controls={`${panelIdPrefix}-${tab.key}`}
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => setActiveTab(tab.key)}
+                onKeyDown={(e) => handleTabKeyDown(e, index)}
                 className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all whitespace-nowrap flex-shrink-0 min-h-[44px] ${
-                  activeTab === tab.key
+                  isActive
                     ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
                     : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
@@ -247,14 +295,20 @@ export const Achievements = () => {
         </div>
 
         {activeTab === 'daily' && (
-          <div className="space-y-4">
+          <div
+            role="tabpanel"
+            id={`${panelIdPrefix}-daily`}
+            aria-labelledby={`${tabIdPrefix}-daily`}
+            tabIndex={0}
+            className="space-y-4"
+          >
             <StreakDisplay
               dailyStreak={user?.profile?.daily_task_streak || 0}
               weeklyStreak={user?.profile?.weekly_streak || 0}
               monthlyStreak={user?.profile?.monthly_streak || 0}
               quarterlyStreak={user?.profile?.quarterly_streak || 0}
             />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {dailyTasks?.map((task: DailyTask) => {
                 const isCompleted = task.status === 'completed';
@@ -268,15 +322,15 @@ export const Achievements = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={`relative p-4 rounded-xl border transition-all ${
-                      isCompleted 
-                        ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' 
+                      isCompleted
+                        ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
                         : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-500'
                     }`}
                   >
                     <div className="flex items-start gap-3 mb-3">
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                        isCompleted 
-                          ? 'bg-green-100 text-green-600 dark:bg-green-800 dark:text-green-100' 
+                        isCompleted
+                          ? 'bg-green-100 text-green-600 dark:bg-green-800 dark:text-green-100'
                           : 'bg-primary-50 text-primary-500 dark:bg-primary-900/30 dark:text-primary-300'
                       }`}>
                         <TaskIcon size={20} />
@@ -300,7 +354,7 @@ export const Achievements = () => {
                         <span className="font-medium text-amber-600">+{task.xp_reward} XP</span>
                       </div>
                       <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className={`h-full rounded-full transition-all duration-500 ${
                             isCompleted ? 'bg-green-500' : 'bg-primary-500'
                           }`}
@@ -316,7 +370,13 @@ export const Achievements = () => {
         )}
 
         {activeTab === 'periodic' && (
-          <div className="space-y-4">
+          <div
+            role="tabpanel"
+            id={`${panelIdPrefix}-periodic`}
+            aria-labelledby={`${tabIdPrefix}-periodic`}
+            tabIndex={0}
+            className="space-y-4"
+          >
             {loadingPeriodicTasks ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -330,7 +390,13 @@ export const Achievements = () => {
         )}
 
         {activeTab === 'pass' && (
-          <div className="space-y-6">
+          <div
+            role="tabpanel"
+            id={`${panelIdPrefix}-pass`}
+            aria-labelledby={`${tabIdPrefix}-pass`}
+            tabIndex={0}
+            className="space-y-6"
+          >
             {loadingPass ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -369,7 +435,13 @@ export const Achievements = () => {
         )}
 
         {activeTab === 'achievements' && (
-          <div className="space-y-8">
+          <div
+            role="tabpanel"
+            id={`${panelIdPrefix}-achievements`}
+            aria-labelledby={`${tabIdPrefix}-achievements`}
+            tabIndex={0}
+            className="space-y-8"
+          >
             {Object.entries(groupedAchievements || {}).map(([category, items]: [string, Achievement[]]) => {
               const CatIcon = getCategoryIcon(category);
               return (
@@ -392,20 +464,20 @@ export const Achievements = () => {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           className={`relative group rounded-xl p-4 border transition-all duration-300 ${
-                            isUnlocked 
-                              ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-500 shadow-sm hover:shadow-md' 
+                            isUnlocked
+                              ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-500 shadow-sm hover:shadow-md'
                               : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-75'
                           }`}
                         >
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                              isUnlocked 
-                                ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg' 
+                              isUnlocked
+                                ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg'
                                 : 'bg-slate-200 dark:bg-slate-800 text-slate-400 grayscale'
                             }`}>
                               <Icon className="w-6 h-6" />
                             </div>
-                            
+
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <h4 className={`font-semibold truncate ${
@@ -420,8 +492,8 @@ export const Achievements = () => {
                               </p>
                               <div className="flex items-center justify-between mt-auto">
                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                                  isUnlocked 
-                                    ? 'bg-amber-100 text-amber-700' 
+                                  isUnlocked
+                                    ? 'bg-amber-100 text-amber-700'
                                     : 'bg-slate-200 text-slate-500'
                                 }`}>
                                   +{ach.xp_reward} XP
@@ -434,7 +506,7 @@ export const Achievements = () => {
                               </div>
                             </div>
                           </div>
-                          
+
                           {!isUnlocked && (
                             <div className="absolute inset-0 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-[1px] rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                               <Lock className="text-slate-400" />

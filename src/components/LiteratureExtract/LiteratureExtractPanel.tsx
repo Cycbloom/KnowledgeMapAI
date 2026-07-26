@@ -792,6 +792,15 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
 
       {!fileState.file ? (
         <div
+          role="region"
+          aria-label={t('common.aria.dropzone')}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
           onClick={() => fileInputRef.current?.click()}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -833,9 +842,10 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
             <button
               onClick={handleRemoveFile}
               disabled={isProcessing}
+              aria-label={t("literatureExtract.toolbar.removeFile")}
               className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
             >
-              <X size={16} className="text-gray-400" />
+              <X size={16} className="text-gray-400" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -1119,29 +1129,32 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         <button
           onClick={handleReset}
           title={t("literatureExtract.toolbar.reset")}
+          aria-label={t("literatureExtract.toolbar.reset")}
           className="flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-md transition-all bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 whitespace-nowrap flex-shrink-0"
         >
-          <RotateCcw size={14} />
+          <RotateCcw size={14} aria-hidden="true" />
         </button>
 
         <button
           onClick={handleExport}
           title={t("literatureExtract.toolbar.export")}
+          aria-label={t("literatureExtract.toolbar.export")}
           className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-all bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 whitespace-nowrap flex-shrink-0"
         >
-          <Download size={14} />
+          <Download size={14} aria-hidden="true" />
         </button>
 
         <button
           onClick={handleCopySummary}
           title={t("literatureExtract.toolbar.copy")}
+          aria-label={t("literatureExtract.toolbar.copy")}
           className={`flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap flex-shrink-0 ${
             copySuccess
               ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
               : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600"
           }`}
         >
-          <Copy size={14} />
+          <Copy size={14} aria-hidden="true" />
         </button>
       </div>
 
@@ -1291,7 +1304,14 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
                     )}
                     {concept.similarity !== undefined && (
                       <div className="flex items-center gap-1 mt-1.5">
-                        <div className="flex-1 h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          role="progressbar"
+                          aria-valuenow={Math.round(concept.similarity * 100)}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-label={t('common.aria.progress')}
+                          className="flex-1 h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden"
+                        >
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${concept.similarity * 100}%` }}
@@ -1420,7 +1440,11 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
 
     return (
       <div className="space-y-3">
-        <div className="relative">
+        <div
+          role="search"
+          aria-label={t('common.aria.searchWithTarget', { target: t('literatureExtract.title') })}
+          className="relative"
+        >
           <Search
             size={16}
             className={`absolute left-3 top-1/2 -translate-y-1/2 ${
@@ -1513,9 +1537,10 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         <div className="flex justify-end mb-2">
           <button
             onClick={onClose}
+            aria-label={t("common.aria.close")}
             className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
           >
-            <X size={isMobile ? 18 : 20} />
+            <X size={isMobile ? 18 : 20} aria-hidden="true" />
           </button>
         </div>
       )}

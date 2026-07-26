@@ -145,6 +145,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
           ) : (
             <Lock
               className={`${sizeConfig.icon} text-slate-400 dark:text-slate-500`}
+              aria-hidden="true"
             />
           )}
 
@@ -164,6 +165,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
           <svg
             className={`absolute inset-0 m-auto ${sizeConfig.ring}`}
             viewBox="0 0 100 100"
+            aria-hidden="true"
           >
             <circle
               cx="50"
@@ -229,47 +231,52 @@ export const AchievementBadgeNotification: React.FC<
   AchievementBadgeNotificationProps
 > = ({ achievement, onClose }) => {
   const categoryGradient = CATEGORY_COLORS[achievement.category];
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
 
   return (
     <motion.div
-      initial={{ scale: 0.5, opacity: 0, y: 50 }}
-      animate={{ scale: 1, opacity: 1, y: 0 }}
-      exit={{ scale: 0.5, opacity: 0, y: 50 }}
+      initial={reduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0, y: 50 }}
+      animate={reduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1, y: 0 }}
+      exit={reduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0, y: 50 }}
+      transition={transitionOverride}
       className="relative flex flex-col items-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-500"
     >
       <motion.div
         className="absolute inset-0 rounded-2xl overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
+        transition={transitionOverride}
       >
-        <motion.div
-          className={`absolute inset-0 bg-gradient-to-r ${categoryGradient} opacity-10`}
-          animate={{
-            opacity: [0.1, 0.2, 0.1],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
+        {!reduceMotion && (
+          <motion.div
+            className={`absolute inset-0 bg-gradient-to-r ${categoryGradient} opacity-10`}
+            animate={{
+              opacity: [0.1, 0.2, 0.1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        )}
       </motion.div>
 
       <motion.div
-        initial={{ scale: 0, rotate: -180 }}
+        initial={reduceMotion ? false : { scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+        transition={transitionOverride ?? { type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
         className="relative"
       >
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
-          <Sparkles className="w-8 h-8 text-white" />
+          <Sparkles className="w-8 h-8 text-white" aria-hidden="true" />
         </div>
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
+        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+        animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+        transition={transitionOverride ?? { delay: 0.4 }}
         className="relative mt-4 text-center"
       >
         <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
@@ -284,9 +291,9 @@ export const AchievementBadgeNotification: React.FC<
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.6 }}
+        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
+        animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+        transition={transitionOverride ?? { delay: 0.6 }}
         className="relative mt-4 flex items-center gap-2 bg-amber-100 dark:bg-amber-500/20 px-4 py-2 rounded-full"
       >
         <span className="text-lg">{achievement.icon}</span>
@@ -299,7 +306,7 @@ export const AchievementBadgeNotification: React.FC<
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
+          transition={transitionOverride ?? { delay: 0.8 }}
           onClick={onClose}
           className="relative mt-6 px-6 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg font-medium transition-colors"
         >

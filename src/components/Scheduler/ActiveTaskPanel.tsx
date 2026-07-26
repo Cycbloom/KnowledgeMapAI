@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
@@ -64,6 +65,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   onViewDetail,
   onStop,
 }) => {
+  const { t } = useTranslation();
   const config =
     QUEUE_CONFIG[task.queue_level as keyof typeof QUEUE_CONFIG] ||
     QUEUE_CONFIG[2];
@@ -417,6 +419,11 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="absolute -bottom-1 left-0 right-0 h-1 bg-slate-200 dark:bg-slate-700 overflow-hidden"
+            role="progressbar"
+            aria-label={t('common.aria.taskProgress')}
+            aria-valuenow={Math.min(Math.round(progress), 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
           >
             <motion.div
               className={`h-full bg-gradient-to-r ${config.gradient}`}

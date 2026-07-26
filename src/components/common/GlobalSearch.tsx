@@ -343,7 +343,10 @@ export const GlobalSearch = () => {
       </div>
 
       {isOpen && (
-        <div className={cn("absolute top-full left-0 right-0 mt-2 rounded-xl shadow-2xl border overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200",
+        <div
+          role="region"
+          aria-label={t('common.aria.searchResultsRegion')}
+          className={cn("absolute top-full left-0 right-0 mt-2 rounded-xl shadow-2xl border overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200",
           isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
         )}>
           {showFilters && (
@@ -448,7 +451,7 @@ export const GlobalSearch = () => {
               ))}
             </div>
           ) : isLoading ? (
-            <div className={cn("p-4 text-center flex items-center justify-center gap-2", isDark ? 'text-slate-400' : 'text-gray-500')}>
+            <div role="status" aria-live="polite" className={cn("p-4 text-center flex items-center justify-center gap-2", isDark ? 'text-slate-400' : 'text-gray-500')}>
               <Loader2 size={16} className="animate-spin" />
               <span className="text-sm">{t('common.search.loading')}</span>
             </div>
@@ -544,7 +547,7 @@ export const GlobalSearch = () => {
               )}
 
               {filteredResults.graphs.length === 0 && filteredResults.nodes.length === 0 && (
-                <div className={cn("p-8 text-center text-sm", isDark ? 'text-slate-500' : 'text-gray-500')}>
+                <div role="status" aria-live="polite" className={cn("p-8 text-center text-sm", isDark ? 'text-slate-500' : 'text-gray-500')}>
                   {t('common.search.noResults')}
                 </div>
               )}

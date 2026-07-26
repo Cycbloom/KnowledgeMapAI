@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Circle, Clock, BookOpen, Zap, ListTodo } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface PeriodicTaskCardProps {
   task: {
@@ -31,6 +32,7 @@ const periodTypeLabels: Record<string, string> = {
 };
 
 const PeriodicTaskCardComponent: React.FC<PeriodicTaskCardProps> = ({ task }) => {
+  const { t } = useTranslation();
   const config = taskTypeConfig[task.task_type];
   const Icon = config.icon;
   const progressPercent = Math.min(100, (task.progress / task.target) * 100);
@@ -59,7 +61,7 @@ const PeriodicTaskCardComponent: React.FC<PeriodicTaskCardProps> = ({ task }) =>
             {isCompleted ? (
               <CheckCircle2 className="w-5 h-5 text-green-500" />
             ) : (
-              <Circle className="w-5 h-5 text-slate-300 dark:text-slate-600" />
+              <Circle className="w-5 h-5 text-slate-400 dark:text-slate-600" />
             )}
           </div>
 
@@ -72,7 +74,14 @@ const PeriodicTaskCardComponent: React.FC<PeriodicTaskCardProps> = ({ task }) =>
                 {Math.round(progressPercent)}%
               </span>
             </div>
-            <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div
+              role="progressbar"
+              aria-valuenow={Math.round(progressPercent)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={t('common.aria.progress')}
+              className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden"
+            >
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercent}%` }}

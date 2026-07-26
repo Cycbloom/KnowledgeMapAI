@@ -55,7 +55,8 @@
     "filter": "Filter",
     "totalTasks": "{{count}} tasks total",
     "clearFilter": "Clear Filter",
-    "noTasks": "No matching tasks found"
+    "noTasks": "No matching tasks found",
+    "tableRegion": "Task list"
   },
   "subtasks": {
     "knowledgePoints": "{{count}} knowledge points",
@@ -106,7 +107,8 @@
     "noTasks": "No tasks",
     "dropToPlace": "Drop to place task",
     "addTask": "Add Task",
-    "toggleCollapse": "Expand/Collapse {{queue}} queue"
+    "toggleCollapse": "Expand/Collapse {{queue}} queue",
+    "region": "Task queue"
   },
   "taskForm": {
     "editTask": "Edit Task",
@@ -337,6 +339,7 @@
     "periodicInstance": "Periodic task instance",
     "subtaskCompleted": "Subtask completed",
     "subtaskReopened": "Subtask reopened",
+    "subtaskIncompleteAnnouncement": "Subtask marked incomplete",
     "updateSubtaskFailed": "Failed to update subtask",
     "actionStart": "Start",
     "actionPause": "Pause",
@@ -421,7 +424,8 @@
       "urgent": "Q0 Urgent Queue",
       "important": "Q1 Important Queue",
       "todo": "Q2 To Do Queue"
-    }
+    },
+    "statusGroupLabel": "Task status"
   },
   "loadError": "Failed to load scheduler data",
   "confirmDeleteTaskTitle": "Delete Task",
@@ -534,6 +538,7 @@
     "emptyHint": "Start a focus session to track your progress"
   },
   "focusHeatmap": {
+    "title": "Annual Focus Heatmap",
     "empty": "No focus records in {{year}} yet",
     "emptyHint": "Start a focus session to fill your heatmap"
   },

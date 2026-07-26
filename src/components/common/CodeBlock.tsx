@@ -69,12 +69,12 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
         >
           {copied ? (
             <>
-              <Check size={14} />
+              <Check aria-hidden="true" size={14} />
               <span>{t('toast.common.copied')}</span>
             </>
           ) : (
             <>
-              <Copy size={14} />
+              <Copy aria-hidden="true" size={14} />
               <span>{t('common.copy.label')}</span>
             </>
           )}

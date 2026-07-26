@@ -4,6 +4,7 @@ import type { TimerMode } from "@shared/types";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { TIMER_MODE_COLORS, getModeLabel } from "@/constants/timer";
+import { useReducedMotionOrPreference } from "@/hooks/common/useReducedMotionOrPreference";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -103,6 +104,7 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const isSm = size === "sm";
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
 
   const { stations, currentIdx } = useMemo(
     () => generateVisibleStations(mode, completedSessions, longBreakInterval),
@@ -225,6 +227,11 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
                   <div
                     className="flex-shrink-0 relative"
                     style={{ width: connLen, height: 2 }}
+                    role="progressbar"
+                    aria-label={t('common.aria.pomodoroProgress')}
+                    aria-valuenow={(isCompleted || isCurrent) ? 100 : 0}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
                   >
                     {/* Background track */}
                     <div className="absolute inset-0 rounded-full bg-gray-200 dark:bg-slate-700" />
@@ -233,9 +240,9 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
                       <motion.div
                         className="absolute inset-y-0 left-0 rounded-full"
                         style={{ backgroundColor: "#10b981" }}
-                        initial={{ width: 0 }}
+                        initial={reduceMotion ? false : { width: 0 }}
                         animate={{ width: "100%" }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        transition={transitionOverride ?? { duration: 0.4, ease: "easeOut" }}
                       />
                     )}
                   </div>
@@ -306,7 +313,7 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
                     )}
 
                     {/* Pulse ring for current */}
-                    {isCurrent && (
+                    {isCurrent && !reduceMotion && (
                       <motion.div
                         className="absolute inset-0 rounded-full pointer-events-none"
                         style={{ border: `2px solid ${color}` }}

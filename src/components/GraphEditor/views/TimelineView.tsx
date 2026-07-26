@@ -373,6 +373,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
   const nodesMap = layout ? new Map(layout.nodes.map(n => [String(n.id).trim(), n])) : new Map();
 
+  const timelineAriaLabel = t('graphEditor.timelineView.ariaLabel', { count: nodes.length });
+
   return (
     <div ref={containerRef} className="w-full h-full relative overflow-hidden">
       <svg
@@ -380,6 +382,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         width={containerSize.width}
         height={containerSize.height - 80}
         className="absolute inset-0"
+        role="application"
+        aria-label={timelineAriaLabel}
         style={{ backgroundColor: colors.background, cursor: isDragging ? 'grabbing' : 'grab' }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
@@ -387,6 +391,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
+        <title>{timelineAriaLabel}</title>
+        <desc>{t('graphEditor.timelineView.desc')}</desc>
         <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.k})`}>
           {layout && layout.links.map(link => {
             const sourceId = typeof link.source === 'string' ? String(link.source).trim() : String(link.source.id).trim();
@@ -466,12 +472,14 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         <div
           className="absolute flex items-center justify-center pointer-events-none"
           style={{ top: 0, left: 0, right: 0, bottom: 80 }}
+          aria-live="polite"
         >
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4" aria-hidden="true"></div>
             <p className="text-gray-600 dark:text-gray-400">
               {t('graphEditor.mindMap.loading')}
             </p>
+            <span className="sr-only">{t('common.aria.loading')}</span>
           </div>
         </div>
       )}
@@ -488,7 +496,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               title={t('common.aria.reset')}
               aria-label={t('common.aria.reset')}
             >
-              <RotateCcw className={`w-4 h-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`} />
+              <RotateCcw aria-hidden="true" className={`w-4 h-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`} />
             </button>
 
             <button
@@ -497,28 +505,30 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               title={t('common.aria.prevStep')}
               aria-label={t('common.aria.prevStep')}
             >
-              <SkipBack className={`w-4 h-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`} />
+              <SkipBack aria-hidden="true" className={`w-4 h-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`} />
             </button>
-            
+
             <button
               onClick={handlePlayPause}
               className={`p-3 rounded-full ${isDark ? 'bg-primary-600 hover:bg-primary-500' : 'bg-primary-500 hover:bg-primary-400'} text-white transition-colors`}
-              title={isPlaying ? '暂停' : '播放'}
+              title={isPlaying ? t('common.aria.pause') : t('common.aria.play')}
+              aria-label={isPlaying ? t('common.aria.pause') : t('common.aria.play')}
+              aria-pressed={isPlaying}
             >
               {isPlaying ? (
-                <Pause className="w-5 h-5" />
+                <Pause aria-hidden="true" className="w-5 h-5" />
               ) : (
-                <Play className="w-5 h-5" />
+                <Play aria-hidden="true" className="w-5 h-5" />
               )}
             </button>
-            
+
             <button
               onClick={handleStepForward}
               className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
               title={t('common.aria.nextStep')}
               aria-label={t('common.aria.nextStep')}
             >
-              <SkipForward className={`w-4 h-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`} />
+              <SkipForward aria-hidden="true" className={`w-4 h-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`} />
             </button>
           </div>
 

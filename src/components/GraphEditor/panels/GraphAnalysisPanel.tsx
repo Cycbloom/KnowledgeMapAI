@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTranslation } from "react-i18next";
 import { BarChart3, AlertTriangle, CheckCircle2, Network, Layers, Lightbulb, TrendingUp, Activity, X } from 'lucide-react';
 import { api } from '../../../services/api';
@@ -55,6 +55,51 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'overview' | 'structure' | 'connections'>('overview');
+
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const tabs = [
+    { id: 'overview', label: '概览' },
+    { id: 'structure', label: '结构分析' },
+    { id: 'connections', label: '连接建议' },
+  ] as const;
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(tabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     if (isOpen && graphId) {
@@ -133,8 +178,15 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 dark:border-slate-500">
+            <div className="flex border-b border-slate-200 dark:border-slate-500" role="tablist" aria-label="图谱分析">
               <button
+                ref={(el) => { tabRefs.current[0] = el; }}
+                role="tab"
+                id={`${tabIdPrefix}-overview`}
+                aria-selected={activeTab === 'overview'}
+                aria-controls={`${panelIdPrefix}-overview`}
+                tabIndex={activeTab === 'overview' ? 0 : -1}
+                onKeyDown={(e) => handleTabKeyDown(e, 0)}
                 onClick={() => setActiveTab('overview')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === 'overview'
@@ -145,6 +197,13 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                 概览
               </button>
               <button
+                ref={(el) => { tabRefs.current[1] = el; }}
+                role="tab"
+                id={`${tabIdPrefix}-structure`}
+                aria-selected={activeTab === 'structure'}
+                aria-controls={`${panelIdPrefix}-structure`}
+                tabIndex={activeTab === 'structure' ? 0 : -1}
+                onKeyDown={(e) => handleTabKeyDown(e, 1)}
                 onClick={() => setActiveTab('structure')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === 'structure'
@@ -155,6 +214,13 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                 结构分析
               </button>
               <button
+                ref={(el) => { tabRefs.current[2] = el; }}
+                role="tab"
+                id={`${tabIdPrefix}-connections`}
+                aria-selected={activeTab === 'connections'}
+                aria-controls={`${panelIdPrefix}-connections`}
+                tabIndex={activeTab === 'connections' ? 0 : -1}
+                onKeyDown={(e) => handleTabKeyDown(e, 2)}
                 onClick={() => setActiveTab('connections')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === 'connections'
@@ -167,7 +233,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4" aria-busy={isLoading}>
               {isLoading ? (
                 <div className="flex items-center justify-center h-64">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
@@ -175,7 +241,13 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
               ) : analysis ? (
                 <>
                   {activeTab === 'overview' && (
-                    <div className="space-y-4">
+                    <div
+                      role="tabpanel"
+                      id={`${panelIdPrefix}-overview`}
+                      aria-labelledby={`${tabIdPrefix}-overview`}
+                      tabIndex={0}
+                      className="space-y-4"
+                    >
                       {/* Health Score */}
                       <div className={`p-4 rounded-lg ${getHealthBgColor(analysis.healthScore)}`}>
                         <div className="flex items-center justify-between mb-2">
@@ -240,7 +312,13 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                   )}
 
                   {activeTab === 'structure' && (
-                    <div className="space-y-4">
+                    <div
+                      role="tabpanel"
+                      id={`${panelIdPrefix}-structure`}
+                      aria-labelledby={`${tabIdPrefix}-structure`}
+                      tabIndex={0}
+                      className="space-y-4"
+                    >
                       {/* Central Nodes */}
                       <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
                         <div className="flex items-center gap-2 mb-3">
@@ -311,7 +389,13 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                   )}
 
                   {activeTab === 'connections' && (
-                    <div className="space-y-3">
+                    <div
+                      role="tabpanel"
+                      id={`${panelIdPrefix}-connections`}
+                      aria-labelledby={`${tabIdPrefix}-connections`}
+                      tabIndex={0}
+                      className="space-y-3"
+                    >
                       {missingConnections.length === 0 ? (
                         <EmptyState
                           icon={<Lightbulb size={32} />}

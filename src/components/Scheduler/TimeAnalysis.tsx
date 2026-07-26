@@ -104,7 +104,8 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
   , periodStats[0]);
 
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-500 p-6 ${className}`}>
+    <figure className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-500 p-6 ${className}`}>
+      <figcaption className="sr-only">时间段分析</figcaption>
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-amber-100 dark:bg-amber-500/20 rounded-xl">
           <Clock size={20} className="text-amber-500" />
@@ -204,6 +205,6 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
           </div>
         </>
       )}
-    </div>
+    </figure>
   );
 };

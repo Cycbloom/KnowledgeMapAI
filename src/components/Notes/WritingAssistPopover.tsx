@@ -51,7 +51,7 @@ export const WritingAssistPopover: React.FC<WritingAssistPopoverProps> = ({
     >
       {/* 标题栏 */}
       <div className="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-slate-500 border-b border-gray-100 dark:border-slate-500 flex items-center gap-1.5">
-        {isLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+        {isLoading && <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />}
         <span>{t("notes.writingAssist.popoverTitle")}</span>
       </div>
 

@@ -86,11 +86,14 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
               </div>
               <input
                 type="range"
+                autoComplete="off"
                 min={5}
                 max={60}
                 step={5}
                 value={focusDuration}
                 onChange={(e) => updateFocusSettings({ focusDuration: Number(e.target.value) })}
+                aria-label={t("settings.focusDuration")}
+                aria-valuetext={`${focusDuration} ${t("settings.minutes")}`}
                 className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
               />
               <div className="flex justify-between text-xs text-gray-400 mt-1">
@@ -111,11 +114,14 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
               </div>
               <input
                 type="range"
+                autoComplete="off"
                 min={1}
                 max={15}
                 step={1}
                 value={shortBreakDuration}
                 onChange={(e) => updateFocusSettings({ shortBreakDuration: Number(e.target.value) })}
+                aria-label={t("settings.shortBreakDuration")}
+                aria-valuetext={`${shortBreakDuration} ${t("settings.minutes")}`}
                 className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
               />
               <div className="flex justify-between text-xs text-gray-400 mt-1">
@@ -136,11 +142,14 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
               </div>
               <input
                 type="range"
+                autoComplete="off"
                 min={10}
                 max={30}
                 step={5}
                 value={longBreakDuration}
                 onChange={(e) => updateFocusSettings({ longBreakDuration: Number(e.target.value) })}
+                aria-label={t("settings.longBreakDuration")}
+                aria-valuetext={`${longBreakDuration} ${t("settings.minutes")}`}
                 className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
               />
               <div className="flex justify-between text-xs text-gray-400 mt-1">
@@ -161,11 +170,14 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
               </div>
               <input
                 type="range"
+                autoComplete="off"
                 min={2}
                 max={6}
                 step={1}
                 value={longBreakInterval}
                 onChange={(e) => updateFocusSettings({ longBreakInterval: Number(e.target.value) })}
+                aria-label={t("settings.longBreakInterval")}
+                aria-valuetext={`${longBreakInterval} ${t("settings.pomodoros")}`}
                 className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-600"
               />
               <div className="flex justify-between text-xs text-gray-400 mt-1">

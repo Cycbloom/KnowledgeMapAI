@@ -136,6 +136,7 @@
     "options": "Options",
     "export": "Export",
     "copy": "Copy",
+    "removeFile": "Remove file",
     "copied": "Copied",
     "title": "Title",
     "authors": "Authors"

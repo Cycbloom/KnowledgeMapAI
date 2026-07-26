@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Template, TemplateCategory } from "../../types";
 import { TemplateCard } from "./TemplateCard";
@@ -29,6 +29,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
+  const titleId = useId();
   const { data: templates = [], isLoading } = useTemplates();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<
@@ -103,6 +104,9 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div
         ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className={`w-full ${isMobile ? "h-full rounded-none" : "max-w-5xl rounded-2xl"} shadow-2xl ${isMobile ? "max-h-full" : "max-h-[90vh]"} flex flex-col ${
           isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
         }`}
@@ -112,6 +116,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         >
           <div className="flex items-center justify-between mb-3 md:mb-4">
             <h2
+              id={titleId}
               className={`text-lg md:text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
             >
               {t("templates.selectTemplate")}
@@ -206,17 +211,19 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2">
+                  <nav aria-label={t("common.aria.pagination")} className="flex items-center justify-center gap-2">
                     <button
                       onClick={handlePrevPage}
                       disabled={currentPage === 0}
+                      aria-label={t("common.aria.previousPage")}
+                      aria-disabled={currentPage === 0 ? "true" : undefined}
                       className={`p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
                         isDark
                           ? "hover:bg-slate-700 text-slate-300"
                           : "hover:bg-gray-100 text-gray-600"
                       }`}
                     >
-                      <ChevronLeft size={isMobile ? 18 : 20} />
+                      <ChevronLeft size={isMobile ? 18 : 20} aria-hidden="true" />
                     </button>
                     <span
                       className={`text-sm ${isDark ? "text-slate-400" : "text-gray-600"}`}
@@ -226,15 +233,17 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     <button
                       onClick={handleNextPage}
                       disabled={currentPage === totalPages - 1}
+                      aria-label={t("common.aria.nextPage")}
+                      aria-disabled={currentPage === totalPages - 1 ? "true" : undefined}
                       className={`p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
                         isDark
                           ? "hover:bg-slate-700 text-slate-300"
                           : "hover:bg-gray-100 text-gray-600"
                       }`}
                     >
-                      <ChevronRight size={isMobile ? 18 : 20} />
+                      <ChevronRight size={isMobile ? 18 : 20} aria-hidden="true" />
                     </button>
-                  </div>
+                  </nav>
                 )}
               </>
             )}

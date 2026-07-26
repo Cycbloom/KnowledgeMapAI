@@ -117,6 +117,28 @@ export function formatTimeFromSeconds(seconds: number): string {
 }
 
 /**
+ * 将秒数格式化为 ISO 8601 duration 字符串，用于 <time dateTime> 属性。
+ *
+ * @param totalSeconds - 时长（秒）
+ * @returns ISO 8601 duration 字符串
+ *
+ * @example
+ *   formatIsoDuration(0)      // "PT0S"
+ *   formatIsoDuration(65)     // "PT1M5S"
+ *   formatIsoDuration(3661)   // "PT1H1M1S"
+ */
+export function formatIsoDuration(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  let result = 'PT';
+  if (hours > 0) result += `${hours}H`;
+  if (minutes > 0) result += `${minutes}M`;
+  if (seconds > 0) result += `${seconds}S`;
+  return result || 'PT0S';
+}
+
+/**
  * 格式化数字，添加千分位分隔符
  * @param n 数字
  * @param locale locale 字符串，默认跟随 i18next.language

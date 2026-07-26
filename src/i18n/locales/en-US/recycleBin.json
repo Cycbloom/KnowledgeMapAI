@@ -7,6 +7,7 @@
   "selectAll": "Select All",
   "deselectAll": "Deselect All",
   "selected": "{{count}} items selected",
+  "clearSelection": "Clear selection",
   "batchRestore": "Batch Restore",
   "batchDelete": "Batch Delete",
   "empty": "Trash is empty",

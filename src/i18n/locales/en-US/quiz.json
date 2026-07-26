@@ -3,11 +3,17 @@
     "noQuestions": "No questions yet",
     "noKnowledgePoints": "No knowledge points in this graph"
   },
+  "knowledgePointSelector": {
+    "treeLabel": "Knowledge point selection tree"
+  },
   "generation": {
     "started": "Quiz generation started...",
     "completed": "Quiz generation complete!",
     "failed": "Quiz generation failed",
     "createFailed": "Failed to create quiz"
+  },
+  "progressBar": {
+    "ariaLabel": "Quiz progress"
   },
   "questionList": {
     "type": {

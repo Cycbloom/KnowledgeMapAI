@@ -265,7 +265,7 @@ export const CombinedGraphView: React.FC = () => {
     return (
       <div className="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-slate-900">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400">{t('combinedViewPage.page.missingGraphId')}</p>
+          <p role="alert" className="text-red-600 dark:text-red-400">{t('combinedViewPage.page.missingGraphId')}</p>
           <button
             onClick={handleBack}
             className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
@@ -282,7 +282,7 @@ export const CombinedGraphView: React.FC = () => {
       <div className="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-slate-900">
         <div className="p-8 flex flex-col items-center justify-center text-center">
           <AlertCircle size={48} className="text-red-500 mb-4" />
-          <p className="text-red-600 dark:text-red-400 mb-4">{t('combinedViewPage.loadError')}</p>
+          <p role="alert" className="text-red-600 dark:text-red-400 mb-4">{t('combinedViewPage.loadError')}</p>
           <button
             type="button"
             onClick={() => { void refetch1(); void refetch2(); void refetch3(); void refetch4(); void refetch5(); }}
@@ -300,6 +300,7 @@ export const CombinedGraphView: React.FC = () => {
   
   return (
     <div className="h-full w-full flex flex-col bg-gray-50 dark:bg-slate-900 relative">
+      <h1 className="sr-only">{t('combinedViewPage.title')}</h1>
       <CombinedGraphToolbar
         graph1Title={graph1Meta?.title || t('combinedViewPage.page.graph1')}
         graph2Title={graph2Meta?.title || t('combinedViewPage.page.graph2')}
@@ -333,9 +334,10 @@ export const CombinedGraphView: React.FC = () => {
             />
             
             {crossGraphConnections.length > 0 && (
-              <svg 
-                className="absolute inset-0 pointer-events-none" 
+              <svg
+                className="absolute inset-0 pointer-events-none"
                 style={{ zIndex: 6 }}
+                aria-hidden="true"
               >
                 <defs>
                   <linearGradient id="crossGraphGradient" x1="0%" y1="0%" x2="100%" y2="0%">

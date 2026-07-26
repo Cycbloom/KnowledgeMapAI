@@ -155,15 +155,40 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
     return t(`nodeSelector.levelLabels.${level}`, { defaultValue: level });
   };
 
-  const renderTreeNode = (node: TreeNode, depth: number = 0) => {
+  const renderTreeNode = (node: TreeNode, depth: number = 0, setSize?: number, posInSet?: number) => {
     const isExpanded = expandedIds.has(node.id);
     const isSelected = selectedIds.includes(node.id);
     const hasChildren = node.children.length > 0;
+    const childrenId = `node-selector-children-${node.id}`;
+    const childCount = hasChildren ? node.children.length : 0;
 
     return (
       <div key={node.id}>
         <div
-          className={`flex items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition-colors ${
+          role="treeitem"
+          aria-level={depth + 1}
+          aria-expanded={hasChildren ? isExpanded : undefined}
+          aria-setsize={setSize}
+          aria-posinset={posInSet}
+          aria-selected={isSelected}
+          tabIndex={isSelected ? 0 : -1}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowRight') {
+              if (hasChildren && !isExpanded) {
+                e.preventDefault();
+                toggleExpand(node.id);
+              }
+            } else if (e.key === 'ArrowLeft') {
+              if (hasChildren && isExpanded) {
+                e.preventDefault();
+                toggleExpand(node.id);
+              }
+            } else if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleSelect(node.id);
+            }
+          }}
+          className={`flex items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 ${
             isSelected
               ? isDark
                 ? 'bg-primary-900/30'
@@ -177,20 +202,32 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
           {hasChildren ? (
             <button
               onClick={() => toggleExpand(node.id)}
+              aria-expanded={isExpanded}
+              aria-controls={childrenId}
+              aria-label={
+                isExpanded
+                  ? t('common.collapse', { defaultValue: '折叠' })
+                  : t('common.expand', { defaultValue: '展开' })
+              }
+              tabIndex={-1}
               className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-slate-600"
             >
               {isExpanded ? (
-                <ChevronDown size={14} className={isDark ? 'text-slate-400' : 'text-gray-500'} />
+                <ChevronDown size={14} className={isDark ? 'text-slate-400' : 'text-gray-500'} aria-hidden="true" />
               ) : (
-                <ChevronRight size={14} className={isDark ? 'text-slate-400' : 'text-gray-500'} />
+                <ChevronRight size={14} className={isDark ? 'text-slate-400' : 'text-gray-500'} aria-hidden="true" />
               )}
             </button>
           ) : (
-            <span className="w-5" />
+            <span className="w-5" aria-hidden="true" />
           )}
 
           <button
+            role="checkbox"
+            aria-checked={isSelected}
+            aria-label={node.title}
             onClick={() => toggleSelect(node.id)}
+            tabIndex={-1}
             className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
               isSelected
                 ? 'bg-primary-600 border-primary-600 text-white'
@@ -199,32 +236,36 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
                   : 'border-gray-300'
             }`}
           >
-            {isSelected && <Check size={12} />}
+            {isSelected && <Check size={12} aria-hidden="true" />}
           </button>
 
           <div
             className={`w-2 h-2 rounded-full ${levelColors[node.level] || 'bg-gray-400'}`}
             title={getLevelLabel(node.level)}
+            aria-hidden="true"
           />
 
-          <span
+          <button
             onClick={() => toggleSelect(node.id)}
-            className={`flex-1 text-sm truncate ${
+            tabIndex={-1}
+            className={`flex-1 text-sm truncate text-left ${
               isDark ? 'text-slate-200' : 'text-gray-700'
             }`}
           >
             {node.title}
-          </span>
+          </button>
 
           {hasChildren && (
-            <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+            <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`} aria-hidden="true">
               {node.children.length}
             </span>
           )}
         </div>
 
         {isExpanded && hasChildren && (
-          <div>{node.children.map((child) => renderTreeNode(child, depth + 1))}</div>
+          <div role="group" id={childrenId}>
+            {node.children.map((child, index) => renderTreeNode(child, depth + 1, childCount, index + 1))}
+          </div>
         )}
       </div>
     );
@@ -372,7 +413,15 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
                   {searchTerm ? (
                     renderSearchResults()
                   ) : treeData.length > 0 ? (
-                    <div className="space-y-0.5">{treeData.map((node) => renderTreeNode(node))}</div>
+                    <div
+                      className="space-y-0.5"
+                      role="tree"
+                      aria-label={t('nodeSelector.treeLabel')}
+                    >
+                      {treeData.map((node, index) =>
+                        renderTreeNode(node, 0, treeData.length, index + 1),
+                      )}
+                    </div>
                   ) : (
                     <div className={`text-center py-8 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
                       <Network size={32} className="mx-auto mb-2 opacity-50" />

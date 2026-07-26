@@ -13,7 +13,7 @@ export const OfflineIndicator: React.FC = () => {
 
   return (
     <div
-      aria-live="polite"
+      aria-live="assertive"
       aria-atomic="true"
       className={cn(
         'fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-full shadow-lg border animate-bounce-in backdrop-blur-sm transition-all duration-300',

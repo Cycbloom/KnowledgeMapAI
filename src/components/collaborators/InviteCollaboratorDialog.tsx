@@ -67,7 +67,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
           <button
             onClick={onClose}
             aria-label={t('common.aria.close')}
-            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center"
           >
             <X size={20} className="text-gray-500 dark:text-gray-400" />
           </button>
@@ -81,6 +81,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
               <input
                 id="invite-email"
                 type="email"
+                autoComplete="email"
                 value={draft.email}
                 onChange={(e) => setDraft(prev => ({ ...prev, email: e.target.value }))}
                 onBlur={() => setTouched(true)}

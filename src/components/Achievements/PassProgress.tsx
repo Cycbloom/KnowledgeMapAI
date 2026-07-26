@@ -177,7 +177,14 @@ export const PassProgress: React.FC<PassProgressProps> = ({
         </div>
 
         <div className="relative">
-          <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+          <div
+            role="progressbar"
+            aria-valuenow={Math.round(progressPercent)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={t('common.aria.progress')}
+            className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden"
+          >
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
@@ -192,6 +199,7 @@ export const PassProgress: React.FC<PassProgressProps> = ({
         {canScrollLeft && (
           <button
             onClick={() => scroll("left")}
+            aria-label={t('common.aria.scrollLeft')}
             className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border border-slate-200 dark:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700"
           >
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
@@ -201,6 +209,7 @@ export const PassProgress: React.FC<PassProgressProps> = ({
         {canScrollRight && (
           <button
             onClick={() => scroll("right")}
+            aria-label={t('common.aria.scrollRight')}
             className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border border-slate-200 dark:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700"
           >
             <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -54,6 +54,10 @@ export const SetupWizard = () => {
   });
   const [showAnonKey, setShowAnonKey] = useState(false);
   const [showServiceRoleKey, setShowServiceRoleKey] = useState(false);
+  const anonKeyId = useId();
+  const serviceRoleKeyId = useId();
+  // 公共路由 main 地标 ref，路由切换时 focus 便于键盘/SR 导航
+  const mainRef = useRef<HTMLElement>(null);
   const [dbTesting, setDbTesting] = useState(false);
   const [dbTestResult, setDbTestResult] = useState<"success" | "error" | null>(null);
   const [dbTestMessage, setDbTestMessage] = useState("");
@@ -77,6 +81,11 @@ export const SetupWizard = () => {
       checkDatabaseStatus();
     }
   }, [currentStep]);
+
+  // 路由切换时自动 focus 公共 main 地标，便于键盘导航与屏幕阅读器
+  useEffect(() => {
+    mainRef.current?.focus({ preventScroll: true });
+  }, []);
 
   useEffect(() => {
     const provider = AI_PROVIDERS.find((p) => p.value === aiProvider);
@@ -278,35 +287,44 @@ export const SetupWizard = () => {
   };
 
   const renderStepIndicator = () => (
-    <div className="flex items-center justify-center gap-2 mb-8">
-      {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
-        <div key={step} className="flex items-center">
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
-              step === currentStep
-                ? "bg-primary-500 text-white scale-110 shadow-lg shadow-primary-500/30"
-                : step < currentStep
-                  ? "bg-primary-500/20 text-primary-600 dark:text-primary-400"
-                  : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400"
-            }`}
+    <div>
+      <span className="sr-only" aria-live="polite">
+        {t("setup.stepIndicator", { current: currentStep, total: TOTAL_STEPS })}
+      </span>
+      <ol className="flex items-center justify-center gap-2 mb-8 list-none m-0 p-0">
+        {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
+          <li
+            key={step}
+            className="flex items-center"
+            aria-current={step === currentStep ? "step" : undefined}
           >
-            {step < currentStep ? (
-              <CheckCircle2 className="w-4 h-4" />
-            ) : (
-              step
-            )}
-          </div>
-          {step < TOTAL_STEPS && (
             <div
-              className={`w-6 h-0.5 mx-1 transition-colors duration-300 ${
-                step < currentStep
-                  ? "bg-primary-500"
-                  : "bg-gray-200 dark:bg-slate-700"
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+                step === currentStep
+                  ? "bg-primary-500 text-white scale-110 shadow-lg shadow-primary-500/30"
+                  : step < currentStep
+                    ? "bg-primary-500/20 text-primary-600 dark:text-primary-400"
+                    : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400"
               }`}
-            />
-          )}
-        </div>
-      ))}
+            >
+              {step < currentStep ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : (
+                step
+              )}
+            </div>
+            {step < TOTAL_STEPS && (
+              <div
+                className={`w-6 h-0.5 mx-1 transition-colors duration-300 ${
+                  step < currentStep
+                    ? "bg-primary-500"
+                    : "bg-gray-200 dark:bg-slate-700"
+                }`}
+              />
+            )}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 
@@ -432,6 +450,7 @@ export const SetupWizard = () => {
           </label>
           <input
             type="text"
+            autoComplete="off"
             value={dbForm.url}
             onChange={(e) => setDbForm((prev) => ({ ...prev, url: e.target.value }))}
             placeholder="https://xxx.supabase.co"
@@ -444,7 +463,9 @@ export const SetupWizard = () => {
           </label>
           <div className="relative">
             <input
+              id={anonKeyId}
               type={showAnonKey ? "text" : "password"}
+              autoComplete="off"
               value={dbForm.anonKey}
               onChange={(e) => setDbForm((prev) => ({ ...prev, anonKey: e.target.value }))}
               placeholder="eyJhbGciOi..."
@@ -453,6 +474,9 @@ export const SetupWizard = () => {
             <button
               type="button"
               onClick={() => setShowAnonKey(!showAnonKey)}
+              aria-expanded={showAnonKey}
+              aria-controls={anonKeyId}
+              aria-label={showAnonKey ? t("common.aria.hidePassword") : t("common.aria.showPassword")}
               className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             >
               {showAnonKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -465,7 +489,9 @@ export const SetupWizard = () => {
           </label>
           <div className="relative">
             <input
+              id={serviceRoleKeyId}
               type={showServiceRoleKey ? "text" : "password"}
+              autoComplete="off"
               value={dbForm.serviceRoleKey}
               onChange={(e) => setDbForm((prev) => ({ ...prev, serviceRoleKey: e.target.value }))}
               placeholder="eyJhbGciOi..."
@@ -474,6 +500,9 @@ export const SetupWizard = () => {
             <button
               type="button"
               onClick={() => setShowServiceRoleKey(!showServiceRoleKey)}
+              aria-expanded={showServiceRoleKey}
+              aria-controls={serviceRoleKeyId}
+              aria-label={showServiceRoleKey ? t("common.aria.hidePassword") : t("common.aria.showPassword")}
               className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             >
               {showServiceRoleKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -494,6 +523,7 @@ export const SetupWizard = () => {
           </div>
           <input
             type="text"
+            autoComplete="off"
             value={dbForm.databaseUrl}
             onChange={(e) => setDbForm((prev) => ({ ...prev, databaseUrl: e.target.value }))}
             placeholder="postgresql://postgres:...@db.xxx.supabase.co:5432/postgres"
@@ -509,7 +539,7 @@ export const SetupWizard = () => {
         >
           {dbTesting ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
               {t("setup.testing")}
             </>
           ) : (
@@ -543,7 +573,7 @@ export const SetupWizard = () => {
 
       {dbStatus === "loading" && (
         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
           {t("setup.checkingDatabaseStatus")}
         </div>
       )}
@@ -577,7 +607,7 @@ export const SetupWizard = () => {
           >
             {dbInitializing ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                 {t("setup.initializing")}
               </>
             ) : (
@@ -604,7 +634,7 @@ export const SetupWizard = () => {
                   <XCircle className="w-4 h-4 text-red-500 shrink-0" />
                 )}
                 {migration.status === "running" && (
-                  <Loader2 className="w-4 h-4 animate-spin text-primary-500 shrink-0" />
+                  <Loader2 className="w-4 h-4 animate-spin text-primary-500 shrink-0" aria-hidden="true" />
                 )}
                 {migration.status === "pending" && (
                   <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600 shrink-0" />
@@ -663,6 +693,7 @@ export const SetupWizard = () => {
           </label>
           <input
             type="password"
+            autoComplete="off"
             value={aiApiKey}
             onChange={(e) => setAiApiKey(e.target.value)}
             placeholder={t("setup.aiApiKeyPlaceholder")}
@@ -675,6 +706,7 @@ export const SetupWizard = () => {
           </label>
           <input
             type="text"
+            autoComplete="off"
             value={aiBaseURL}
             onChange={(e) => setAiBaseURL(e.target.value)}
             placeholder="https://api.example.com/v1"
@@ -687,6 +719,7 @@ export const SetupWizard = () => {
           </label>
           <input
             type="text"
+            autoComplete="off"
             value={aiModel}
             onChange={(e) => setAiModel(e.target.value)}
             placeholder="model-name"
@@ -702,7 +735,7 @@ export const SetupWizard = () => {
         >
           {aiSaving ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
               {t("setup.saving")}
             </>
           ) : (
@@ -716,7 +749,7 @@ export const SetupWizard = () => {
         >
           {aiTesting ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
               {t("setup.testing")}
             </>
           ) : (
@@ -804,7 +837,12 @@ export const SetupWizard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-300 flex flex-col">
+    <main
+      id="public-main"
+      ref={mainRef}
+      tabIndex={-1}
+      className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-300 flex flex-col focus:outline-none"
+    >
       <div className="flex-1 flex items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-2xl">
           {renderStepIndicator()}
@@ -862,6 +900,6 @@ export const SetupWizard = () => {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 };

@@ -250,7 +250,7 @@ export const Console: React.FC<ConsoleProps> = ({
                       : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  <Terminal size={14} />
+                  <Terminal size={14} aria-hidden="true" />
                   {t('console.tabs.console')}
                 </button>
                 <button
@@ -268,7 +268,7 @@ export const Console: React.FC<ConsoleProps> = ({
                       : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  <Activity size={14} />
+                  <Activity size={14} aria-hidden="true" />
                   {t('console.tabs.performance')}
                 </button>
               </div>
@@ -292,9 +292,11 @@ export const Console: React.FC<ConsoleProps> = ({
                     className={`p-1.5 rounded-md transition-colors ${
                       isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
                     }`}
+                    aria-label={isMinimized ? t('console.toolbar.expand') : t('console.toolbar.minimize')}
+                    aria-pressed={isMinimized}
                     title={isMinimized ? t('console.toolbar.expand') : t('console.toolbar.minimize')}
                   >
-                    {isMinimized ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    {isMinimized ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
                   </button>
                 )}
                 <button
@@ -305,7 +307,7 @@ export const Console: React.FC<ConsoleProps> = ({
                   aria-label={t('console.toolbar.close')}
                   title={t('console.toolbar.close')}
                 >
-                  <X size={16} />
+                  <X size={16} aria-hidden="true" />
                 </button>
               </div>
             </div>

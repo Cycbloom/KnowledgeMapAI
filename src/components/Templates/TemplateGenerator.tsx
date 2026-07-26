@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useId } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { motion, AnimatePresence } from "framer-motion";
@@ -183,6 +183,7 @@ const TemplatePreviewModal: React.FC<{
 }> = ({ template, isMobile, isDark, t, onClose }) => {
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
   useEscapeKey(() => onClose(), true);
+  const titleId = useId();
 
   const nodeMap = useMemo(() => {
     const map = new Map<string, GeneratedTemplate["nodes"][number]>();
@@ -227,6 +228,9 @@ const TemplatePreviewModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div
         ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className={`w-full ${
           isMobile ? "h-full rounded-none" : "max-w-2xl max-h-[80vh]"
         } rounded-2xl shadow-2xl flex flex-col ${
@@ -238,6 +242,7 @@ const TemplatePreviewModal: React.FC<{
         >
           <div className="flex items-center justify-between">
             <h3
+              id={titleId}
               className={`font-bold ${isMobile ? "text-base" : "text-lg"} ${
                 isDark ? "text-white" : "text-gray-900"
               }`}

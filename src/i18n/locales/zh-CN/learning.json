@@ -270,7 +270,8 @@
     "hoursOnly": "{{hours}}小时",
     "minutes": "{{count}}分钟",
     "hoursMinutes": "{{hours}}小时{{minutes}}分钟",
-    "hours": "{{count}}小时"
+    "hours": "{{count}}小时",
+    "listLabel": "学习路径列表"
   },
   "generateCards": {
     "title": "题目生成配置",
@@ -592,6 +593,7 @@
     "title": "学习路径",
     "aiDriven": "AI 驱动",
     "nodeAdded": "节点已添加到路径",
+    "stepIndicator": "第 {{current}} 步，共 {{total}} 步",
     "nodeAddFailed": "添加节点失败",
     "nodeRemoved": "节点已从路径中移除",
     "nodeRemoveFailed": "移除节点失败",
@@ -709,5 +711,8 @@
     "empty": {
       "description": "暂未选择学习路径，请先在图谱中创建"
     }
+  },
+  "pathWizard": {
+    "stepIndicator": "第 {{current}} 步，共 {{total}} 步"
   }
 }

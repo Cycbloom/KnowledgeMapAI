@@ -17,6 +17,15 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
 
     const generatedErrorId = useId();
     const describedByErrorId = errorId ?? generatedErrorId;
+    const hintId = useId();
+
+    const ariaDescribedby = error
+      ? hint
+        ? `${describedByErrorId} ${hintId}`
+        : describedByErrorId
+      : hint
+      ? hintId
+      : undefined;
 
     return (
       <div>
@@ -33,7 +42,8 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
           id={id}
           className={cn(baseClass, errorClass, userClass)}
           aria-invalid={error ? true : undefined}
-          aria-describedby={error ? describedByErrorId : undefined}
+          aria-describedby={ariaDescribedby}
+          aria-errormessage={error ? describedByErrorId : undefined}
           {...props}
         >
           {children}
@@ -46,8 +56,13 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
             {error}
           </p>
         )}
-        {hint && !error && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{hint}</p>
+        {hint && (
+          <p
+            id={hintId}
+            className="mt-1 text-sm text-gray-500 dark:text-gray-400"
+          >
+            {hint}
+          </p>
         )}
       </div>
     );

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useId } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { motion, AnimatePresence } from "framer-motion";
@@ -108,6 +108,8 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
 }) => {
   const { t } = useTranslation();
   const [showSubtasks, setShowSubtasks] = useState(false);
+  const [statusAnnouncement, setStatusAnnouncement] = useState("");
+  const subtasksPanelId = useId();
 
   const queueStyle =
     QUEUE_COLORS[task.queue_level as QueueLevel] ||
@@ -198,7 +200,9 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
           ),
       );
       onSubtaskUpdate?.();
-      message.success(newStatus === "completed" ? t("scheduler.taskCard.subtaskCompleted") : t("scheduler.taskCard.subtaskReopened"));
+      const announcement = newStatus === "completed" ? t("scheduler.taskCard.subtaskCompleted") : t("scheduler.taskCard.subtaskReopened");
+      message.success(announcement);
+      setStatusAnnouncement(announcement);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t("scheduler.taskCard.updateSubtaskFailed");
       message.error(errorMessage);
@@ -227,6 +231,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
         overflow-hidden
       `}
     >
+      <span className="sr-only" aria-live="polite">{statusAnnouncement}</span>
       {isDragging && (
         <div
           className={`
@@ -299,6 +304,8 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 setShowSubtasks(!showSubtasks);
               }}
+              aria-expanded={showSubtasks}
+              aria-controls={subtasksPanelId}
               className="flex items-center justify-between w-full text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors py-1.5"
             >
               <div className="flex items-center gap-2">
@@ -313,7 +320,14 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-1 ml-3">
-                <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden"
+                  role="progressbar"
+                  aria-label={t('common.aria.subtaskProgress')}
+                  aria-valuenow={subtaskProgress}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
                   <motion.div
                     className="h-full bg-gradient-to-r from-primary-500 to-primary-500"
                     initial={{ width: 0 }}
@@ -328,6 +342,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
             <AnimatePresence>
               {showSubtasks && (
                 <motion.div
+                  id={subtasksPanelId}
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
@@ -552,6 +567,9 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
       {task.status === "in_progress" && (
         <div
           className={`absolute bottom-0 left-0 right-0 h-0.5 ${queueStyle.bg} overflow-hidden`}
+          role="progressbar"
+          aria-label={t('common.aria.taskProgress')}
+          aria-valuetext={t('common.aria.indeterminateProgress')}
         >
           <motion.div
             className={`h-full ${queueStyle.accent}`}

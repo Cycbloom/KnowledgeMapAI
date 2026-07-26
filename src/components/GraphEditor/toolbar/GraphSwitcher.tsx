@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useId } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Star, Network } from "lucide-react";
@@ -20,6 +20,7 @@ export const GraphSwitcher: React.FC<GraphSwitcherProps> = ({
   const { getRecentGraphs } = useRecentGraphs();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
 
   const recentGraphs = useMemo(() => getRecentGraphs(), [getRecentGraphs]);
 
@@ -58,6 +59,9 @@ export const GraphSwitcher: React.FC<GraphSwitcherProps> = ({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        aria-controls={menuId}
         className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all max-w-[220px] ${
           isOpen
             ? isDark
@@ -81,6 +85,7 @@ export const GraphSwitcher: React.FC<GraphSwitcherProps> = ({
 
       {isOpen && (
         <div
+          id={menuId}
           className={`absolute top-full left-0 mt-1 p-1.5 rounded-xl shadow-2xl border w-56 z-50 ${
             isDark
               ? "bg-slate-800 border-slate-700 text-gray-100"

@@ -1,5 +1,6 @@
 {
   "title": "选择节点",
+  "treeLabel": "节点选择树",
   "searchPlaceholder": "搜索节点...",
   "selectAll": "全选",
   "deselectAll": "取消全选",

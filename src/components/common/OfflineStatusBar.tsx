@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useNetworkStatus } from '../../hooks/common/useNetworkStatus';
 import { useTheme } from '../../hooks';
 import { offlineMutationQueue } from '../../utils/offlineMutations';
+import { useReducedMotionOrPreference } from '../../hooks/common/useReducedMotionOrPreference';
 
 type SyncState = 'idle' | 'syncing' | 'success' | 'error';
 
@@ -19,6 +20,7 @@ export const OfflineStatusBar: React.FC = () => {
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0 });
   const [showSuccess, setShowSuccess] = useState(false);
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
 
   const updatePendingCount = useCallback(async () => {
     const pending = await offlineMutationQueue.getPending();
@@ -153,11 +155,11 @@ export const OfflineStatusBar: React.FC = () => {
               <div className="h-1.5 bg-white/30 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-white"
-                  initial={{ width: 0 }}
+                  initial={reduceMotion ? false : { width: 0 }}
                   animate={{
                     width: `${(syncProgress.current / syncProgress.total) * 100}%`,
                   }}
-                  transition={{ duration: 0.3 }}
+                  transition={transitionOverride ?? { duration: 0.3 }}
                 />
               </div>
               <span className="text-xs opacity-90 mt-1 block">
@@ -213,10 +215,10 @@ export const OfflineStatusBar: React.FC = () => {
     <AnimatePresence>
       {shouldShow && (
         <motion.div
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -100, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          initial={reduceMotion ? { opacity: 0 } : { y: -100, opacity: 0 }}
+          animate={reduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
+          exit={reduceMotion ? { opacity: 0 } : { y: -100, opacity: 0 }}
+          transition={transitionOverride ?? { type: 'spring', stiffness: 300, damping: 30 }}
           className={cn('fixed top-0 left-0 right-0 z-modal-overlay', getBackgroundClass(), getTextClass(), 'border-b backdrop-blur-sm shadow-lg')}
         >
           <div className="h-10 px-4 flex items-center justify-center gap-2">

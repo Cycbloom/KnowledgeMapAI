@@ -32,9 +32,9 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case 'high': return <TrendingUp size={14} className="text-red-500" />;
-      case 'medium': return <Clock size={14} className="text-yellow-500" />;
-      case 'low': return <Sparkles size={14} className="text-primary-500" />;
+      case 'high': return <TrendingUp size={14} className="text-red-500" aria-hidden="true" />;
+      case 'medium': return <Clock size={14} className="text-yellow-500" aria-hidden="true" />;
+      case 'low': return <Sparkles size={14} className="text-primary-500" aria-hidden="true" />;
       default: return null;
     }
   };
@@ -117,7 +117,7 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
 
                   {suggestion.relatedTopics.length > 0 && (
                     <div className="flex items-center gap-1">
-                      <Sparkles size={10} className="text-primary-500" />
+                      <Sparkles size={10} className="text-primary-500" aria-hidden="true" />
                       <span className="text-xs text-primary-600 dark:text-primary-400">
                         {suggestion.relatedTopics.length}
                       </span>
@@ -167,7 +167,7 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
             title="关闭分支预览"
             aria-label={t('common.aria.closeBranchPreview')}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
               <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>

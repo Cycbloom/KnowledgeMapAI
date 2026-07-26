@@ -1,5 +1,5 @@
-import React, { Suspense, lazy, useEffect, useMemo, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
 import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, Skeleton, CelebrationOverlay } from "./components/common";
@@ -109,6 +109,7 @@ function App() {
   useDeepLink();
   const { t } = useTranslation();
   const { online } = useNetworkStatus();
+  const location = useLocation();
 
   useEffect(() => {
     if (!online) {
@@ -131,6 +132,15 @@ function App() {
 
   const publicRoutes = useKernelRoutes("public");
   const protectedRoutes = useKernelRoutes("protected");
+  const publicMainRef = useRef<HTMLElement>(null);
+  const isPublicRoute = publicRoutes.some((r) => r.path === location.pathname);
+
+  // 公共路由切换时聚焦到 main 元素，使键盘用户跳过 skip link 后从主内容开始 Tab
+  useEffect(() => {
+    if (isPublicRoute) {
+      publicMainRef.current?.focus();
+    }
+  }, [location.pathname, isPublicRoute]);
 
   useEffect(() => {
     if (!authConfig.isSupabase()) return;
@@ -233,6 +243,65 @@ function App() {
     return <LoadingFallback />;
   }
 
+  const routesElement = (
+    <Routes>
+      {/* Public routes (outside Layout) */}
+      {publicRoutes.map((registration) => {
+        if (registration.redirect) {
+          return (
+            <Route
+              key={registration.path}
+              path={registration.path}
+              element={<Navigate to={registration.redirect} replace />}
+            />
+          );
+        }
+        return (
+          <Route
+            key={registration.path}
+            path={registration.path}
+            element={withProfiler(
+              registration.path,
+              <LazyRoute registration={registration} />,
+            )}
+          />
+        );
+      })}
+
+      {/* Protected routes (inside Layout) */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        {protectedRoutes.map((registration) => {
+          const isIndex = registration.options?.index === true;
+          if (registration.redirect) {
+            return (
+              <Route
+                key={registration.path}
+                path={registration.path.replace(/^\//, "")}
+                element={<Navigate to={registration.redirect} replace />}
+              />
+            );
+          }
+          return (
+            <Route
+              key={registration.path}
+              {...(isIndex ? { index: true } : { path: registration.path.replace(/^\//, "") })}
+              element={withProfiler(
+                registration.path,
+                <LazyRoute registration={registration} />,
+              )}
+            />
+          );
+        })}
+      </Route>
+    </Routes>
+  );
+
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
@@ -249,62 +318,26 @@ function App() {
             </>
           )}
           <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              {/* Public routes (outside Layout) */}
-              {publicRoutes.map((registration) => {
-                if (registration.redirect) {
-                  return (
-                    <Route
-                      key={registration.path}
-                      path={registration.path}
-                      element={<Navigate to={registration.redirect} replace />}
-                    />
-                  );
-                }
-                return (
-                  <Route
-                    key={registration.path}
-                    path={registration.path}
-                    element={withProfiler(
-                      registration.path,
-                      <LazyRoute registration={registration} />,
-                    )}
-                  />
-                );
-              })}
-
-              {/* Protected routes (inside Layout) */}
-              <Route
-                element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                }
+            {isPublicRoute && (
+              <a
+                href="#public-main"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-skip-link focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
               >
-                {protectedRoutes.map((registration) => {
-                  const isIndex = registration.options?.index === true;
-                  if (registration.redirect) {
-                    return (
-                      <Route
-                        key={registration.path}
-                        path={registration.path.replace(/^\//, "")}
-                        element={<Navigate to={registration.redirect} replace />}
-                      />
-                    );
-                  }
-                  return (
-                    <Route
-                      key={registration.path}
-                      {...(isIndex ? { index: true } : { path: registration.path.replace(/^\//, "") })}
-                      element={withProfiler(
-                        registration.path,
-                        <LazyRoute registration={registration} />,
-                      )}
-                    />
-                  );
-                })}
-              </Route>
-            </Routes>
+                {t('common.skipToContent')}
+              </a>
+            )}
+            {isPublicRoute ? (
+              <main
+                id="public-main"
+                tabIndex={-1}
+                ref={publicMainRef}
+                className="outline-none"
+              >
+                {routesElement}
+              </main>
+            ) : (
+              routesElement
+            )}
           </Suspense>
           <CelebrationOverlay />
         </GlobalErrorBoundary>

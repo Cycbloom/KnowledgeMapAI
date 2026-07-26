@@ -261,14 +261,20 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
           {t('learning.path.wizard.title')}
         </h3>
         <div className="flex items-center gap-2">
-          {stepIndicator.map((s) => (
-            <div
-              key={s}
-              className={`w-8 h-1 rounded-full transition-colors ${
-                s <= step ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'
-              }`}
-            />
-          ))}
+          <span className="sr-only" aria-live="polite">
+            {t('learning.pathWizard.stepIndicator', { current: step, total: stepIndicator.length })}
+          </span>
+          <ol className="flex items-center gap-2 list-none m-0 p-0">
+            {stepIndicator.map((s) => (
+              <li
+                key={s}
+                aria-current={s === step ? 'step' : undefined}
+                className={`w-8 h-1 rounded-full transition-colors ${
+                  s <= step ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'
+                }`}
+              />
+            ))}
+          </ol>
         </div>
       </div>
 

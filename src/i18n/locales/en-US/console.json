@@ -21,13 +21,18 @@
     "searchHistory": "Search History:",
     "searchPlaceholder": "Enter search keywords...",
     "confirmPlaceholder": "Enter y to confirm / n to cancel",
-    "commandPlaceholder": "Enter command... (Tab for autocomplete, Ctrl+R to search history)"
+    "commandPlaceholder": "Enter command... (Tab for autocomplete, Ctrl+R to search history)",
+    "commandAria": "Command input"
   },
   "output": {
     "clear": "Clear Output",
     "helpHint": "Enter help to see available commands",
     "shortcutHint": "Tab for autocomplete · Ctrl+R to search history · Esc to close",
-    "scrollMore": "Scroll up to view more history ({{count}} entries)"
+    "scrollMore": "Scroll up to view more history ({{count}} entries)",
+    "tableRegion": "Output table"
+  },
+  "history": {
+    "region": "Command history"
   },
   "noHistoryTitle": "No History",
   "noHistoryDesc": "Executed commands will appear here",

@@ -1,5 +1,6 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface DashboardPaginationProps {
   isDark: boolean;
@@ -16,13 +17,16 @@ export const DashboardPagination: React.FC<DashboardPaginationProps> = ({
   totalPages,
   onPageChange,
 }) => {
+  const { t } = useTranslation();
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-center gap-2 sm:gap-3 mt-6 sm:mt-8">
+    <nav aria-label={t("common.aria.pagination")} className="flex items-center justify-center gap-2 sm:gap-3 mt-6 sm:mt-8">
       <button
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
+        aria-label={t("common.aria.previousPage")}
+        aria-disabled={currentPage === 1 ? "true" : undefined}
         className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:p-2 rounded-xl transition-all flex items-center justify-center ${
           currentPage === 1
             ? "opacity-30 cursor-not-allowed"
@@ -31,7 +35,7 @@ export const DashboardPagination: React.FC<DashboardPaginationProps> = ({
               : "hover:bg-gray-100 text-gray-600"
         }`}
       >
-        <ChevronLeft size={20} />
+        <ChevronLeft size={20} aria-hidden="true" />
       </button>
 
       {/* Desktop: Show page numbers */}
@@ -48,6 +52,8 @@ export const DashboardPagination: React.FC<DashboardPaginationProps> = ({
                   <button
                     key={page}
                     onClick={() => onPageChange(page)}
+                    aria-current={currentPage === page ? "page" : undefined}
+                    aria-label={t("common.aria.page", { number: page })}
                     className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
                       currentPage === page
                         ? "bg-primary-600 text-white shadow-lg shadow-primary-600/20"
@@ -87,6 +93,8 @@ export const DashboardPagination: React.FC<DashboardPaginationProps> = ({
       <button
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
+        aria-label={t("common.aria.nextPage")}
+        aria-disabled={currentPage === totalPages ? "true" : undefined}
         className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:p-2 rounded-xl transition-all flex items-center justify-center ${
           currentPage === totalPages
             ? "opacity-30 cursor-not-allowed"
@@ -95,8 +103,8 @@ export const DashboardPagination: React.FC<DashboardPaginationProps> = ({
               : "hover:bg-gray-100 text-gray-600"
         }`}
       >
-        <ChevronRight size={20} />
+        <ChevronRight size={20} aria-hidden="true" />
       </button>
-    </div>
+    </nav>
   );
 };

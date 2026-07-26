@@ -71,10 +71,12 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
         {onTogglePlay && (
           <button
             onClick={onTogglePlay}
+            aria-pressed={isPlaying}
+            aria-label={isPlaying ? t('graphEditor.presentation.pause') : t('graphEditor.presentation.autoPlay')}
             className="p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors shadow-md mx-1"
             title={isPlaying ? t('graphEditor.presentation.pause') : t('graphEditor.presentation.autoPlay')}
           >
-            {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+            {isPlaying ? <Pause size={20} fill="currentColor" aria-hidden="true" /> : <Play size={20} fill="currentColor" aria-hidden="true" />}
           </button>
         )}
 

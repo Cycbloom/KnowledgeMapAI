@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -476,7 +476,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             <button
               key={index}
               onClick={item.onClick}
-              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${
+              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                 item.active ||
                 (mobileMenuOpen !== null &&
                   navItems.find((n) => n.label === item.label)?.onClick ===
@@ -491,7 +491,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               title={item.label}
               aria-label={item.label}
             >
-              <item.icon size={20} />
+              <item.icon size={20} aria-hidden="true" />
               <span className="text-[10px] mt-0.5 font-medium">
                 {item.label}
               </span>
@@ -844,11 +844,12 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               </h3>
               <button
                 onClick={onClose}
-                className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-100"}`}
+                className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-100"}`}
                 aria-label={t("graphEditor.toolbar.closeMenu")}
               >
                 <X
                   size={18}
+                  aria-hidden="true"
                   className={isDark ? "text-gray-400" : "text-gray-500"}
                 />
               </button>
@@ -861,7 +862,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                   key={index}
                   onClick={item.onClick}
                   disabled={item.disabled}
-                  className={`w-full flex items-center gap-3 px-4 py-4 min-h-[52px] rounded-xl transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-4 min-h-[52px] rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                     item.disabled
                       ? "opacity-50 cursor-not-allowed"
                       : item.active
@@ -874,7 +875,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                   } ${item.color || (isDark ? "text-gray-300" : "text-gray-700")}`}
                   aria-label={item.label}
                 >
-                  <item.icon size={22} />
+                  <item.icon size={22} aria-hidden="true" />
                   <span className="font-medium">{item.label}</span>
                 </button>
               ))}
@@ -888,6 +889,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
 
   const BatchMenu = () => {
     const [isBatchMenuOpen, setIsBatchMenuOpen] = useState(false);
+    const batchMenuId = useId();
 
     if (selectedNodeIds.size <= 1) return null;
 
@@ -902,8 +904,9 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           onClick={() => setIsBatchMenuOpen(!isBatchMenuOpen)}
           aria-expanded={isBatchMenuOpen}
           aria-haspopup="menu"
+          aria-controls={batchMenuId}
           aria-label={t("graphEditor.toolbar.batchMenu")}
-          className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm ${
+          className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
             isBatchMenuOpen
               ? "bg-primary-600 text-white"
               : isDark
@@ -912,18 +915,20 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           }`}
           title={t("graphEditor.toolbar.batchOperations")}
         >
-          <MoreHorizontal size={18} />
+          <MoreHorizontal size={18} aria-hidden="true" />
           <span className="text-xs font-bold">
             {t("graphEditor.toolbar.batchCount", { count: selectedNodeIds.size })}
           </span>
           <ChevronDown
             size={14}
+            aria-hidden="true"
             className={`transition-transform ${isBatchMenuOpen ? "rotate-180" : ""}`}
           />
         </button>
 
         {isBatchMenuOpen && (
           <div
+            id={batchMenuId}
             className={`absolute top-full left-0 mt-2 shadow-2xl rounded-xl border w-60 py-2 z-50 ${themeClasses.dropdown} animate-in fade-in zoom-in-95 duration-150`}
           >
             <div className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
@@ -956,7 +961,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                       onBatchColorUpdate?.(color);
                       setIsBatchMenuOpen(false);
                     }}
-                    className="w-6 h-6 rounded-full border-2 border-transparent hover:border-white dark:hover:border-slate-400 hover:scale-125 transition-all shadow-sm ring-1 ring-gray-200 dark:ring-slate-700"
+                    className="w-6 h-6 rounded-full border-2 border-transparent hover:border-white dark:hover:border-slate-400 hover:scale-125 transition-all shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
                     style={{ backgroundColor: color }}
                   />
                 ))}
@@ -985,7 +990,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                       onBatchLevelUpdate?.(level.id);
                       setIsBatchMenuOpen(false);
                     }}
-                    className={`px-2 py-1.5 text-[10px] rounded-lg border font-medium transition-all ${themeClasses.itemHover} ${isDark ? "border-slate-700 text-gray-300" : "border-gray-200 text-gray-600"}`}
+                    className={`px-2 py-1.5 text-[10px] rounded-lg border font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.itemHover} ${isDark ? "border-slate-700 text-gray-300" : "border-gray-200 text-gray-600"}`}
                   >
                     {level.label}
                   </button>
@@ -1001,9 +1006,9 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                   setIsBatchMenuOpen(false);
                 }}
                 disabled={!!batchDeleteProgress}
-                className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 transition-colors font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 transition-colors font-semibold disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
               >
-                <Trash2 size={16} />
+                <Trash2 size={16} aria-hidden="true" />
                 <span>
                   {batchDeleteProgress
                     ? t('tasks.progress.deleting', {
@@ -1027,14 +1032,14 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50">
           <button
             onClick={() => setIsFocusMode(false)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-full backdrop-blur-md transition-all shadow-lg ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-full backdrop-blur-md transition-all shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
               isDark
                 ? "bg-slate-800/90 hover:bg-slate-700 text-white"
                 : "bg-white/90 hover:bg-gray-100 text-gray-800"
             }`}
             title={t("graphEditor.toolbar.exitFocusModeTitle")}
           >
-            <Minimize size={18} />
+            <Minimize size={18} aria-hidden="true" />
             <span className="text-sm font-medium">{t("graphEditor.toolbar.exitFocusMode")}</span>
           </button>
         </div>
@@ -1044,7 +1049,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
       <div className="absolute top-4 left-4 z-50">
         <button
           onClick={() => setIsFocusMode(false)}
-          className={`p-2 rounded-full backdrop-blur-sm transition-all shadow-sm ${
+          className={`p-2 rounded-full backdrop-blur-sm transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
             isDark
               ? "bg-slate-800/20 hover:bg-slate-800/90 text-white hover:text-primary-400"
               : "bg-white/20 hover:bg-white/90 text-white hover:text-gray-800"
@@ -1052,7 +1057,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           title={t("graphEditor.toolbar.exitFocusModeTitle")}
           aria-label={t("graphEditor.toolbar.exitFocusModeAria")}
         >
-          <Minimize size={18} />
+          <Minimize size={18} aria-hidden="true" />
         </button>
       </div>
     );
@@ -1077,6 +1082,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
       maxHeight: undefined as number | undefined,
     });
     const dropdownContainerRef = useRef<HTMLDivElement>(null);
+    const dropdownContentId = useId();
 
     useEffect(() => {
       if (openDropdown === id && dropdownContainerRef.current) {
@@ -1116,7 +1122,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           onClick={() => setOpenDropdown(openDropdown === id ? null : id)}
           aria-haspopup="menu"
           aria-expanded={openDropdown === id}
-          className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all ${
+          aria-controls={dropdownContentId}
+          className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
             active || openDropdown === id
               ? isDark
                 ? "bg-primary-900/40 text-primary-400"
@@ -1126,16 +1133,18 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                 : "text-gray-600 hover:bg-gray-100"
           }`}
         >
-          <Icon size={20} />
+          <Icon size={20} aria-hidden="true" />
           <span className="text-sm font-medium">{label}</span>
           <ChevronDown
             size={14}
+            aria-hidden="true"
             className={`transition-transform duration-200 ${openDropdown === id ? "rotate-180" : ""}`}
           />
         </button>
 
         {openDropdown === id && (
           <div
+            id={dropdownContentId}
             className={`absolute ${
               dropdownPosition.vertical === "below"
                 ? "top-full mt-2"
@@ -1267,7 +1276,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             }
           }}
           aria-pressed={active}
-          className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all ${
+          className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
             disabled
               ? themeClasses.button.disabled
               : active
@@ -1278,11 +1287,12 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                 : `${themeClasses.itemHover} ${colorClass || (isDark ? "text-gray-300" : "text-gray-700")}`
           }`}
         >
-          <Icon size={18} className="flex-shrink-0" />
+          <Icon size={18} className="flex-shrink-0" aria-hidden="true" />
           <span className="flex-grow text-left font-medium">{label}</span>
           {children && (
             <ChevronRight
               size={14}
+              aria-hidden="true"
               className={`opacity-50 transition-transform ${isOpen && keepOpenOnChildClick ? "rotate-90" : ""}`}
             />
           )}
@@ -1339,6 +1349,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   return (
     <div
       data-tour={dataTour}
+      role="toolbar"
+      aria-label={t("common.aria.toolbar.graph")}
       className={`absolute top-4 left-4 p-2 rounded-xl shadow-lg flex items-center space-x-2 z-30 backdrop-blur-md border transition-transform duration-300 ${themeClasses.container}`}
       style={{
         transform: isRAGChatOpen ? `translateX(${ragChatWidth}px)` : undefined,
@@ -1353,7 +1365,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             title={t("graphEditor.toolbar.back")}
             aria-label={t("graphEditor.toolbar.back")}
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} aria-hidden="true" />
           </button>
         </ShortcutHint>
         <Divider />
@@ -1366,7 +1378,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               title={t("graphEditor.toolbar.undo")}
               aria-label={t("graphEditor.toolbar.undo")}
             >
-              <Undo size={18} />
+              <Undo size={18} aria-hidden="true" />
             </button>
           </ShortcutHint>
           <ShortcutHint actionId="redo">
@@ -1377,7 +1389,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               title={t("graphEditor.toolbar.redo")}
               aria-label={t("graphEditor.toolbar.redo")}
             >
-              <Redo size={18} />
+              <Redo size={18} aria-hidden="true" />
             </button>
           </ShortcutHint>
         </div>
@@ -1432,14 +1444,15 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           {onShare && (
             <button
               onClick={onShare}
-              className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm ${
+              className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                 isDark
                   ? "bg-emerald-900/40 text-emerald-300 border border-emerald-700/50 hover:bg-emerald-800/60"
                   : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
               }`}
               title={t("graphEditor.toolbar.shareGraph")}
+              aria-label={t("graphEditor.toolbar.shareGraph")}
             >
-              <Share2 size={16} />
+              <Share2 size={16} aria-hidden="true" />
               <span className="text-xs font-bold hidden xl:inline">
                 {t("graphEditor.toolbar.share")}
               </span>
@@ -1450,14 +1463,14 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           {selectedNodeIds.size === 1 && onAIExpand && (
             <button
               onClick={onAIExpand}
-              className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 ${
+              className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                 isDark
                   ? "bg-primary-900/40 text-primary-300 border border-primary-700/50 hover:bg-primary-800/60"
                   : "bg-primary-50 text-primary-700 border border-primary-200 hover:bg-primary-100"
               }`}
               title={t("graphEditor.toolbar.aiExpandTitle")}
             >
-              <Sparkles size={16} />
+              <Sparkles size={16} aria-hidden="true" />
               <span className="text-xs font-bold">
                 {t("graphEditor.toolbar.infiniteExpand")}
               </span>
@@ -1470,14 +1483,14 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             onBranchExplore && (
               <button
                 onClick={onBranchExplore}
-                className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 ${
+                className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                   isDark
                     ? "bg-primary-900/40 text-primary-300 border border-primary-700/50 hover:bg-primary-800/60"
                     : "bg-primary-50 text-primary-700 border border-primary-200 hover:bg-primary-100"
                 }`}
                 title={t("graphEditor.toolbar.branchSuggestionTitle")}
               >
-                <GitBranch size={16} />
+                <GitBranch size={16} aria-hidden="true" />
                 <span className="text-xs font-bold">
                   {t("graphEditor.toolbar.exploreBranch")}
                 </span>
@@ -1499,14 +1512,15 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
       {isReadOnly && onShare && (
         <button
           onClick={onShare}
-          className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm ${
+          className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
             isDark
               ? "bg-emerald-900/40 text-emerald-300 border border-emerald-700/50 hover:bg-emerald-800/60"
               : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
           }`}
           title={t("graphEditor.toolbar.shareGraph")}
+          aria-label={t("graphEditor.toolbar.shareGraph")}
         >
-          <Share2 size={16} />
+          <Share2 size={16} aria-hidden="true" />
           <span className="text-xs font-bold hidden xl:inline">
             {t("graphEditor.toolbar.share")}
           </span>
@@ -1689,7 +1703,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                       onRegionToggle?.(region.id);
                     }}
                     aria-pressed={!isCollapsed}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-all ${
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                       isDark
                         ? "hover:bg-slate-700 text-gray-300"
                         : "hover:bg-gray-100 text-gray-700"
@@ -1708,6 +1722,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
+                          aria-hidden="true"
                         >
                           <path
                             strokeLinecap="round"
@@ -1840,7 +1855,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
 
       <button
         onClick={() => setIsVersionHistoryOpen?.(!isVersionHistoryOpen)}
-        className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all ${
+        className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
           isVersionHistoryOpen
             ? isDark
               ? "bg-primary-900/40 text-primary-400"
@@ -1850,7 +1865,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         title={t("graphEditor.toolbar.versionHistory")}
         aria-label={t("graphEditor.toolbar.versionHistory")}
       >
-        <History size={18} />
+        <History size={18} aria-hidden="true" />
         <span className="text-sm font-medium hidden xl:inline">{t("graphEditor.toolbar.versionHistory")}</span>
       </button>
 
@@ -1862,16 +1877,16 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             <ShortcutHint actionId="zoom-out">
               <button
                 onClick={onZoomOut}
-                className={`p-1.5 rounded-lg transition-colors ${themeClasses.button.default}`}
+                className={`p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.button.default}`}
                 title={t("graphEditor.mindMap.zoomOut")}
                 aria-label={t("graphEditor.mindMap.zoomOut")}
               >
-                <ZoomOut size={18} />
+                <ZoomOut size={18} aria-hidden="true" />
               </button>
             </ShortcutHint>
             <button
               onClick={() => onZoomReset?.()}
-              className={`px-2 py-1 rounded-lg text-xs font-medium tabular-nums min-w-[3.5rem] text-center transition-colors ${themeClasses.button.default}`}
+              className={`px-2 py-1 rounded-lg text-xs font-medium tabular-nums min-w-[3.5rem] text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.button.default}`}
               title={t("graphEditor.mindMap.resetView")}
             >
               {Math.round(zoomLevel * 100)}%
@@ -1879,11 +1894,11 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             <ShortcutHint actionId="zoom-in">
               <button
                 onClick={onZoomIn}
-                className={`p-1.5 rounded-lg transition-colors ${themeClasses.button.default}`}
+                className={`p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.button.default}`}
                 title={t("graphEditor.mindMap.zoomIn")}
                 aria-label={t("graphEditor.mindMap.zoomIn")}
               >
-                <ZoomIn size={18} />
+                <ZoomIn size={18} aria-hidden="true" />
               </button>
             </ShortcutHint>
           </div>
@@ -1907,7 +1922,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               };
               setEdgeDisplayMode(next[edgeDisplayMode] || "full");
             }}
-            className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all ${
+            className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
               edgeDisplayMode !== "full"
                 ? isDark
                   ? "bg-primary-900/40 text-primary-400"
@@ -1917,7 +1932,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             title={t("graphEditor.toolbar.edgeDisplayMode")}
             aria-label={t("graphEditor.toolbar.edgeDisplayMode")}
           >
-            <Spline size={18} />
+            <Spline size={18} aria-hidden="true" />
             <span className="text-xs font-medium hidden xl:inline">
               {edgeDisplayMode === "full"
                 ? t("graphEditor.toolbar.edgeFull")
@@ -1935,7 +1950,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           <Divider />
           <button
             onClick={() => navigate("/profile")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all animate-pulse ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all animate-pulse focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
               isDark
                 ? "bg-amber-900/40 text-amber-300 border border-amber-700/50 hover:bg-amber-800/60"
                 : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"

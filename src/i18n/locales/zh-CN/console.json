@@ -21,13 +21,18 @@
     "searchHistory": "搜索历史:",
     "searchPlaceholder": "输入搜索关键词...",
     "confirmPlaceholder": "输入 y 确认 / n 取消",
-    "commandPlaceholder": "输入命令... (Tab 补全, Ctrl+R 搜索历史)"
+    "commandPlaceholder": "输入命令... (Tab 补全, Ctrl+R 搜索历史)",
+    "commandAria": "命令输入"
   },
   "output": {
     "clear": "清空输出",
     "helpHint": "输入 help 查看可用命令",
     "shortcutHint": "Tab 补全 · Ctrl+R 搜索历史 · Esc 关闭",
-    "scrollMore": "向上滚动查看更多历史记录 ({{count}} 条)"
+    "scrollMore": "向上滚动查看更多历史记录 ({{count}} 条)",
+    "tableRegion": "输出表格"
+  },
+  "history": {
+    "region": "命令历史"
   },
   "noHistoryTitle": "暂无历史记录",
   "noHistoryDesc": "执行的命令将出现在这里",

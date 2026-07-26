@@ -4,6 +4,7 @@ import React, {
   useRef,
   useCallback,
   useMemo,
+  useId,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -97,6 +98,7 @@ const getTimeSlice = (
 
 export const CurrentTask: React.FC = () => {
   const { t } = useTranslation();
+  const timeUpTitleId = useId();
   const {
     data: tasksData,
     isLoading,
@@ -371,6 +373,7 @@ export const CurrentTask: React.FC = () => {
               <svg
                 className="w-full h-full transform -rotate-90"
                 viewBox="0 0 300 300"
+                aria-hidden="true"
               >
                 <defs>
                   <filter
@@ -461,15 +464,21 @@ export const CurrentTask: React.FC = () => {
                   initial={{ scale: 1.1 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.2 }}
+                  aria-live="polite"
+                  aria-atomic="true"
                 >
                   {formatTimeFromSeconds(remaining)}
                 </motion.div>
 
-                <div className="text-sm text-slate-400 dark:text-slate-500 mt-2">
+                <div className="text-sm text-slate-500 dark:text-slate-500 mt-2">
                   {isBreak ? t("scheduler.currentTask.breakTime") : t("scheduler.currentTask.focusTime")}
                 </div>
 
-                <div className="text-sm text-slate-400 dark:text-slate-600 mt-1">
+                <div
+                  className="text-sm text-slate-400 dark:text-slate-600 mt-1"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
                   {Math.round(progress * 100)}%
                 </div>
               </div>
@@ -527,14 +536,22 @@ export const CurrentTask: React.FC = () => {
             </div>
 
             <div className="mt-4 flex items-center gap-6 text-sm text-slate-400 dark:text-slate-500">
-              <div className="flex items-center gap-2">
+              <div
+                className="flex items-center gap-2"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 <span
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: queueConfig.color }}
                 />
                 <span>{t("scheduler.currentTask.used")}: {formatTimeFromSeconds(totalTime - timeLeft)}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div
+                className="flex items-center gap-2"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-400" />
                 <span>{t("scheduler.currentTask.total")}: {formatTimeFromSeconds(totalTime)}</span>
               </div>
@@ -631,7 +648,7 @@ export const CurrentTask: React.FC = () => {
                   />
                   <div className="text-left">
                     <div className="font-medium">{t("scheduler.currentTask.skipTask")}</div>
-                    <div className="text-xs text-slate-400 dark:text-slate-500">
+                    <div className="text-xs text-slate-500 dark:text-slate-500">
                       {t("scheduler.currentTask.skipTaskDesc")}
                     </div>
                   </div>
@@ -648,7 +665,7 @@ export const CurrentTask: React.FC = () => {
                   />
                   <div className="text-left">
                     <div className="font-medium">{t("scheduler.currentTask.startBreak")}</div>
-                    <div className="text-xs text-slate-400 dark:text-slate-500">
+                    <div className="text-xs text-slate-500 dark:text-slate-500">
                       {t("scheduler.currentTask.breakMinutes", { count: breakDurationMinutes })}
                     </div>
                   </div>
@@ -700,6 +717,9 @@ export const CurrentTask: React.FC = () => {
             >
               <motion.div
                 ref={timeUpModalRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={timeUpTitleId}
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}

@@ -5,13 +5,15 @@ import { cn } from '@/lib/utils';
 interface FormErrorProps {
   message?: string;
   className?: string;
+  id?: string;
 }
 
-const FormError: React.FC<FormErrorProps> = ({ message, className = '' }) => {
+const FormError: React.FC<FormErrorProps> = ({ message, className = '', id }) => {
   if (!message) return null;
 
   return (
     <div
+      id={id}
       className={cn(
         'flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400',
         'animate-[fadeIn_0.2s_ease-out]',
@@ -19,7 +21,7 @@ const FormError: React.FC<FormErrorProps> = ({ message, className = '' }) => {
       )}
       role="alert"
     >
-      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+      <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
       <span>{message}</span>
     </div>
   );

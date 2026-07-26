@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useId } from "react";
+import React, { useState, useEffect, useCallback, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "../services/api/createApiClient";
@@ -222,8 +222,59 @@ export const Login = () => {
   const baseUrlInputId = useId();
   const modelInputId = useId();
 
+  // Tab pattern a11y
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  // 公共路由 main 地标 ref，路由切换时 focus 便于键盘/SR 导航
+  const mainRef = useRef<HTMLElement>(null);
+  const loginTabs: { id: "quick" | "manual"; label: string }[] = [
+    { id: "quick", label: t("quickSetup.quickSetup") },
+    { id: "manual", label: t("quickSetup.manualSetup") },
+  ];
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % loginTabs.length;
+        setDraft((prev) => ({ ...prev, activeTab: loginTabs[nextIndex].id }));
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + loginTabs.length) % loginTabs.length;
+        setDraft((prev) => ({ ...prev, activeTab: loginTabs[prevIndex].id }));
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setDraft((prev) => ({ ...prev, activeTab: loginTabs[0].id }));
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = loginTabs.length - 1;
+        setDraft((prev) => ({ ...prev, activeTab: loginTabs[lastIndex].id }));
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
   useEffect(() => {
     loadSavedConfig();
+  }, []);
+
+  // 路由切换时自动 focus 公共 main 地标，便于键盘导航与屏幕阅读器
+  useEffect(() => {
+    mainRef.current?.focus({ preventScroll: true });
   }, []);
 
   useEffect(() => {
@@ -802,7 +853,7 @@ export const Login = () => {
           type="button"
           onClick={onToggle}
           aria-label={show ? t('common.aria.hidePassword') : t('common.aria.showPassword')}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
         >
           {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>
@@ -1221,6 +1272,7 @@ export const Login = () => {
             <input
               id={quickEmailInputId}
               type="email"
+              autoComplete="email"
               value={draft.email}
               onChange={(e) =>
                 setDraft((prev) => ({ ...prev, email: e.target.value }))
@@ -1244,6 +1296,7 @@ export const Login = () => {
             <input
               id={quickPasswordInputId}
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
@@ -1528,6 +1581,7 @@ export const Login = () => {
             <input
               id={manualEmailInputId}
               type="email"
+              autoComplete="email"
               value={draft.email}
               onChange={(e) =>
                 setDraft((prev) => ({ ...prev, email: e.target.value }))
@@ -1551,6 +1605,7 @@ export const Login = () => {
             <input
               id={manualPasswordInputId}
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
@@ -1747,7 +1802,12 @@ export const Login = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-300 flex flex-col">
+    <main
+      id="public-main"
+      ref={mainRef}
+      tabIndex={-1}
+      className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-300 flex flex-col focus:outline-none"
+    >
       <div className="flex-1 flex items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-4xl">
           <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-6">
@@ -1755,43 +1815,57 @@ export const Login = () => {
           </h1>
 
           <div className="flex justify-center mb-6">
-            <div className="inline-flex rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 p-1">
-              <button
-                onClick={() => setDraft((prev) => ({ ...prev, activeTab: "quick" }))}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  draft.activeTab === "quick"
-                    ? "bg-primary-600 text-white shadow-sm"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                }`}
-              >
-                <Zap className="w-4 h-4" />
-                {t("quickSetup.quickSetup")}
-              </button>
-              <button
-                onClick={() => setDraft((prev) => ({ ...prev, activeTab: "manual" }))}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  draft.activeTab === "manual"
-                    ? "bg-primary-600 text-white shadow-sm"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                }`}
-              >
-                <Settings className="w-4 h-4" />
-                {t("quickSetup.manualSetup")}
-              </button>
+            <div className="inline-flex rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 p-1" role="tablist" aria-label={t("quickSetup.quickSetup")}>
+              {loginTabs.map((tab, index) => {
+                const isActive = draft.activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    ref={(el) => { tabRefs.current[index] = el; }}
+                    role="tab"
+                    id={`${tabIdPrefix}-${tab.id}`}
+                    aria-selected={isActive}
+                    aria-controls={`${panelIdPrefix}-${tab.id}`}
+                    tabIndex={isActive ? 0 : -1}
+                    onClick={() => setDraft((prev) => ({ ...prev, activeTab: tab.id }))}
+                    onKeyDown={(e) => handleTabKeyDown(e, index)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-primary-600 text-white shadow-sm"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                    }`}
+                  >
+                    {tab.id === "quick" ? <Zap className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {draft.activeTab === "quick" && renderQuickSetup()}
-
-          {draft.activeTab === "manual" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {renderSupabaseCard()}
-              {renderAICard()}
+          {draft.activeTab === "quick" && (
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-quick`}
+              aria-labelledby={`${tabIdPrefix}-quick`}
+              tabIndex={0}
+            >
+              {renderQuickSetup()}
+              <div className="mt-6">{renderAICard()}</div>
             </div>
           )}
 
-          {draft.activeTab === "quick" && (
-            <div className="mt-6">{renderAICard()}</div>
+          {draft.activeTab === "manual" && (
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-manual`}
+              aria-labelledby={`${tabIdPrefix}-manual`}
+              tabIndex={0}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+            >
+              {renderSupabaseCard()}
+              {renderAICard()}
+            </div>
           )}
         </div>
       </div>
@@ -1804,6 +1878,7 @@ export const Login = () => {
             ? t("configPage.switchToLightMode")
             : t("configPage.switchToDarkMode")
         }
+        aria-label={isDark ? t('register.switchToLight') : t('register.switchToDark')}
       >
         {isDark ? <Sun size={20} /> : <Moon size={20} />}
       </button>
@@ -1817,6 +1892,6 @@ export const Login = () => {
         confirmText={t("common.restore")}
         cancelText={t("common.discard")}
       />
-    </div>
+    </main>
   );
 };

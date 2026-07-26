@@ -103,7 +103,7 @@ export const CustomModuleEditor: React.FC<CustomModuleEditorProps> = ({
             transition-colors text-xs font-medium
             ${
               disabled
-                ? "border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600 cursor-not-allowed"
+                ? "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-600 cursor-not-allowed"
                 : "border-primary-300 dark:border-primary-700 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10"
             }
           `}
@@ -114,7 +114,7 @@ export const CustomModuleEditor: React.FC<CustomModuleEditorProps> = ({
       )}
 
       {!canAddMore && (
-        <p className="text-center text-xs text-gray-400 dark:text-gray-500 py-1">
+        <p className="text-center text-xs text-gray-500 dark:text-gray-500 py-1">
           已达上限 ({MAX_MODULES})
         </p>
       )}

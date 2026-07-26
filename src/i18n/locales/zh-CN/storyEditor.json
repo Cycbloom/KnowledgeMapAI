@@ -13,6 +13,7 @@
   "selectToEdit": "选择要编辑的内容",
   "selectHint": "从左侧结构树或角色列表中选择一个项目进行编辑",
   "structure": "故事结构",
+  "treeLabel": "故事结构树",
   "characters": "角色",
   "addCharacter": "添加角色",
   "initializeTemplate": "初始化模板",

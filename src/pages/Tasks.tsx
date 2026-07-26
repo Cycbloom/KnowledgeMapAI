@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useId } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -136,6 +136,7 @@ export const Tasks = () => {
     total: number;
   } | null>(null);
   const [showErrorDetails, setShowErrorDetails] = useState(false);
+  const errorDetailsId = useId();
   const limit = 10;
   // 虚拟列表容器高度：基于视口高度估算可用列表区域，resize 时更新。
   const [listContainerHeight, setListContainerHeight] = useState(() =>
@@ -272,6 +273,11 @@ export const Tasks = () => {
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
   }, []);
+
+  const isAllSelected =
+    selectedIds.size === filteredTasks.length && filteredTasks.length > 0;
+  const isPartialSelected =
+    selectedIds.size > 0 && selectedIds.size < filteredTasks.length;
 
   const handleBatchDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
@@ -470,8 +476,12 @@ export const Tasks = () => {
         </div>
       </div>
 
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+        {t("tasks.resultsCount", { count: filteredTasks.length })}
+      </span>
+
       {error ? (
-        <div className="p-8 text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/20">
+        <div role="alert" className="p-8 text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/20">
           <XCircle className="w-8 h-8 mx-auto mb-2" />
           <p>{t("toast.tasks.loadTasksFailed")}</p>
           <button
@@ -485,18 +495,27 @@ export const Tasks = () => {
               type="button"
               onClick={() => setShowErrorDetails((prev) => !prev)}
               className="text-xs text-red-500 dark:text-red-400 underline"
+              aria-expanded={showErrorDetails}
+              aria-controls={errorDetailsId}
             >
               {t("tasks.errorDetails")}
             </button>
             {showErrorDetails && (
-              <pre className="mt-2 mx-auto max-w-full overflow-x-auto text-left text-xs bg-white dark:bg-slate-800 text-red-700 dark:text-red-300 p-3 rounded border border-red-100 dark:border-red-900/20 whitespace-pre-wrap break-words">
+              <pre
+                id={errorDetailsId}
+                className="mt-2 mx-auto max-w-full overflow-x-auto text-left text-xs bg-white dark:bg-slate-800 text-red-700 dark:text-red-300 p-3 rounded border border-red-100 dark:border-red-900/20 whitespace-pre-wrap break-words"
+              >
                 {(error as Error).message}
               </pre>
             )}
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div
+          aria-busy={isLoading}
+          aria-label={t("common.aria.loadingRegion")}
+          className="space-y-4"
+        >
           {isLoading && !isFetching && (
             <div className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -556,16 +575,18 @@ export const Tasks = () => {
                         {isSelectMode && (
                           <button
                             onClick={() => toggleTaskSelection(task.id)}
+                            aria-label={t("tasks.selectRow", { title: task.title || getTypeLabel(task.task_type, t) })}
+                            aria-pressed={selectedIds.has(task.id)}
                             className="mt-1 flex-shrink-0 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
                           >
                             {selectedIds.has(task.id) ? (
-                              <CheckSquare className="w-5 h-5" />
+                              <CheckSquare className="w-5 h-5" aria-hidden="true" />
                             ) : (
-                              <Square className="w-5 h-5 text-gray-400 dark:text-slate-500" />
+                              <Square className="w-5 h-5 text-gray-400 dark:text-slate-500" aria-hidden="true" />
                             )}
                           </button>
                         )}
-                        <div aria-live="polite" className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span
                               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${getStatusBadgeClass(task.status)}`}
@@ -609,7 +630,7 @@ export const Tasks = () => {
                             </div>
 
                             {task.error_message && (
-                              <div className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 p-2 rounded text-xs break-words border border-red-100 dark:border-red-900/20">
+                              <div role="alert" className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 p-2 rounded text-xs break-words border border-red-100 dark:border-red-900/20">
                                 {task.error_message}
                               </div>
                             )}
@@ -731,10 +752,17 @@ export const Tasks = () => {
               {t("tasks.selectedCount", { count: selectedIds.size })}
             </span>
             <button
-              onClick={selectAll}
+              onClick={isAllSelected ? clearSelection : selectAll}
+              role="checkbox"
+              aria-checked={(isAllSelected
+                ? "true"
+                : isPartialSelected
+                  ? "mixed"
+                  : "false") as "true" | "false" | "mixed"}
+              aria-label={isAllSelected ? t("tasks.deselectAll") : t("tasks.selectAll")}
               className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium transition-colors"
             >
-              {t("tasks.selectAll")}
+              {isAllSelected ? t("tasks.deselectAll") : t("tasks.selectAll")}
             </button>
           </div>
           <div className="flex items-center gap-3">

@@ -98,7 +98,8 @@
     "copyFailed": "Copy failed",
     "openInNewWindow": "Open in New Window",
     "toggleFavorite": "Toggle Favorite",
-    "moveToTrash": "Move to Trash"
+    "moveToTrash": "Move to Trash",
+    "label": "Graph actions menu: {{title}}"
   },
   "recent": {
     "title": "Recently Edited",

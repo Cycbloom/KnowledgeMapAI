@@ -37,6 +37,8 @@ export const DashboardBatchActions: React.FC<DashboardBatchActionsProps> = ({
     >
       <button
         onClick={onToggleSelectAll}
+        role="checkbox"
+        aria-checked={(isAllSelected ? "true" : isPartialSelected ? "mixed" : "false") as "true" | "false" | "mixed"}
         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors min-h-[44px] ${
           isDark
             ? "hover:bg-slate-700 text-slate-300"

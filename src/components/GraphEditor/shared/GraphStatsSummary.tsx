@@ -1,6 +1,7 @@
 import React from 'react';
 import { Node } from '../../../types';
 import { PieChart, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface GraphStatsSummaryProps {
   nodes: Node[];
@@ -15,6 +16,7 @@ export const GraphStatsSummary = React.memo(({
   dueTodayCount,
   isolatedCount
 }: GraphStatsSummaryProps) => {
+  const { t } = useTranslation();
   const total = nodes.length;
   if (total === 0) return null;
 
@@ -31,8 +33,15 @@ export const GraphStatsSummary = React.memo(({
       </div>
       
       {/* Progress Bar */}
-      <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-3">
-        <div 
+      <div
+        role="progressbar"
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={t('common.aria.progress')}
+        className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-3"
+      >
+        <div
           className="h-full bg-primary-500 rounded-full transition-all duration-500"
           style={{ width: `${progress}%` }}
         />

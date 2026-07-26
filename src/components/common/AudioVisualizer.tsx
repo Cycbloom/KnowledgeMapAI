@@ -296,15 +296,18 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
         )}
         style={{ borderRadius: type === 'circle' ? '50%' : '12px' }}
       />
-      <canvas
-        ref={canvasRef}
-        width={width * 2}
-        height={height * 2}
-        style={canvasStyle}
-        className="relative z-10"
-        role="img"
-        aria-label={ariaLabel}
-      />
+      <figure className="contents">
+        <figcaption className="sr-only">{ariaLabel}</figcaption>
+        <canvas
+          ref={canvasRef}
+          width={width * 2}
+          height={height * 2}
+          style={canvasStyle}
+          className="relative z-10"
+          role="img"
+          aria-label={ariaLabel}
+        />
+      </figure>
       <div className="sr-only">{ariaLabel}</div>
       {type === 'circle' && (
         <div

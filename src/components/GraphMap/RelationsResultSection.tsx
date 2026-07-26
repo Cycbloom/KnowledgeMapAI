@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { motion } from 'framer-motion';
 import {
   GitBranch,
@@ -39,6 +39,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
   const [showFilters, setShowFilters] = useState(false);
   const [creatingRelationKey, setCreatingRelationKey] = useState<string | null>(null);
   const [createdRelations, setCreatedRelations] = useState<Set<string>>(new Set());
+  const filtersControlsId = useId();
 
   const getRelationKey = (rel: DiscoveredRelation) =>
     `${rel.source_graph_id}-${rel.target_graph_id}-${rel.relation_type}`;
@@ -102,6 +103,8 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
       <div className="flex items-center justify-between">
         <button
           onClick={() => setShowFilters(!showFilters)}
+          aria-expanded={showFilters}
+          aria-controls={filtersControlsId}
           className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         >
           <Filter className="w-4 h-4" />
@@ -124,6 +127,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
 
       {showFilters && (
         <motion.div
+          id={filtersControlsId}
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}

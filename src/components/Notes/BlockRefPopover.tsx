@@ -159,7 +159,7 @@ export const BlockRefPopover: React.FC<BlockRefPopoverProps> = ({
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t("notes.editor.blockRef.placeholder")}
-          className="flex-1 bg-transparent text-sm text-gray-700 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none"
+          className="flex-1 bg-transparent text-sm text-gray-700 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
         {showSearching && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400 dark:text-slate-500" />}
       </div>

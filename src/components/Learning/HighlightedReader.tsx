@@ -11,6 +11,7 @@ import { CodeBlock } from "../common/CodeBlock";
 import { preprocessMarkdown } from "../../utils/markdownPreprocessor";
 import { useFocusStore } from "../../store/useFocusStore";
 import { useShallow } from "zustand/react/shallow";
+import { useReducedMotionOrPreference } from "@/hooks/common/useReducedMotionOrPreference";
 
 interface HighlightRange {
   start: number;
@@ -427,6 +428,7 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
       highlightIntensity: s.highlightIntensity,
     })),
   );
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [highlightRanges, setHighlightRanges] = useState<HighlightRange[]>([]);
   const [hoveredReason, setHoveredReason] = useState<string | null>(null);
@@ -639,9 +641,10 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
       <AnimatePresence>
         {hoveredReason && (
           <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 5 }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 5 }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 5 }}
+            transition={transitionOverride}
             className="fixed z-50 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg max-w-xs pointer-events-none"
             style={{
               left: safePosition.left,

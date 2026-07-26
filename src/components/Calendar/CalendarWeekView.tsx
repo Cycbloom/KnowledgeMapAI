@@ -51,6 +51,14 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   );
   const [pendingDateValue, setPendingDateValue] = useState<string>("");
 
+  // 键盘拖动相关状态
+  const [draggingEventId, setDraggingEventId] = useState<string | null>(null);
+  const [dropTargetDayIndex, setDropTargetDayIndex] = useState<number | null>(
+    null,
+  );
+  const [dropTargetHour, setDropTargetHour] = useState<number | null>(null);
+  const [dragAnnouncement, setDragAnnouncement] = useState<string>("");
+
   const weekData = useMemo(() => {
     const days: {
       date: Date;
@@ -255,6 +263,129 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
     e: React.KeyboardEvent,
     event: CalendarEvent,
   ) => {
+    // 当前正有事件处于键盘拖动模式
+    if (draggingEventId !== null) {
+      // 其他事件正在被拖动：忽略
+      if (draggingEventId !== event.id) {
+        return;
+      }
+
+      if (
+        e.key === "ArrowLeft" &&
+        dropTargetDayIndex !== null &&
+        dropTargetDayIndex > 0
+      ) {
+        e.preventDefault();
+        const newDayIndex = dropTargetDayIndex - 1;
+        setDropTargetDayIndex(newDayIndex);
+        const targetDate = weekData[newDayIndex]?.date;
+        if (targetDate) {
+          setDragAnnouncement(
+            `${t("calendar.drag.targetDate", { date: formatDate(targetDate, "month-day-weekday") })}. ${t("calendar.drag.moveHintWeek")}`,
+          );
+        }
+      } else if (
+        e.key === "ArrowRight" &&
+        dropTargetDayIndex !== null &&
+        dropTargetDayIndex < weekData.length - 1
+      ) {
+        e.preventDefault();
+        const newDayIndex = dropTargetDayIndex + 1;
+        setDropTargetDayIndex(newDayIndex);
+        const targetDate = weekData[newDayIndex]?.date;
+        if (targetDate) {
+          setDragAnnouncement(
+            `${t("calendar.drag.targetDate", { date: formatDate(targetDate, "month-day-weekday") })}. ${t("calendar.drag.moveHintWeek")}`,
+          );
+        }
+      } else if (e.key === "ArrowUp" && dropTargetHour !== null) {
+        e.preventDefault();
+        const newHour = Math.max(0, dropTargetHour - 1);
+        setDropTargetHour(newHour);
+        setDragAnnouncement(
+          `${t("calendar.drag.targetHour", { hour: newHour })}. ${t("calendar.drag.moveHintWeek")}`,
+        );
+      } else if (e.key === "ArrowDown" && dropTargetHour !== null) {
+        e.preventDefault();
+        const newHour = Math.min(23, dropTargetHour + 1);
+        setDropTargetHour(newHour);
+        setDragAnnouncement(
+          `${t("calendar.drag.targetHour", { hour: newHour })}. ${t("calendar.drag.moveHintWeek")}`,
+        );
+      } else if (
+        e.key === "Enter" &&
+        dropTargetDayIndex !== null &&
+        dropTargetHour !== null
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (onEventDrop && dropTargetDayIndex !== null) {
+          const targetDate = weekData[dropTargetDayIndex]?.date;
+          if (targetDate) {
+            const newStart = new Date(targetDate);
+            newStart.setHours(dropTargetHour, 0, 0, 0);
+
+            const originalStart = new Date(event.start);
+            const originalEnd = event.end ? new Date(event.end) : null;
+            let newEnd: Date | undefined;
+            if (originalEnd) {
+              const duration =
+                originalEnd.getTime() - originalStart.getTime();
+              newEnd = new Date(newStart.getTime() + duration);
+            }
+
+            onEventDrop({
+              eventId: event.id,
+              newStart,
+              newEnd,
+            });
+          }
+        }
+        setDragAnnouncement(
+          t("calendar.drag.confirm", { hour: dropTargetHour }),
+        );
+        setDraggingEventId(null);
+        setDropTargetDayIndex(null);
+        setDropTargetHour(null);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setDraggingEventId(null);
+        setDropTargetDayIndex(null);
+        setDropTargetHour(null);
+        setDragAnnouncement(t("calendar.drag.cancel"));
+      }
+      return;
+    }
+
+    // 非拖动模式：Ctrl+Space / Shift+Space 进入键盘拖动模式
+    if (
+      (e.key === " " && (e.ctrlKey || e.shiftKey)) &&
+      onEventDrop
+    ) {
+      e.preventDefault();
+      e.stopPropagation();
+      const eventStart = new Date(event.start);
+      const startHour = eventStart.getHours();
+      // 计算事件所在当前周的 dayIndex
+      const startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      const dayDiff = Math.round(
+        (eventStart.getTime() - startOfWeek.getTime()) /
+          (24 * 60 * 60 * 1000),
+      );
+      const startIndex =
+        dayDiff >= 0 && dayDiff < 7 ? dayDiff : 0;
+      setDraggingEventId(event.id);
+      setDropTargetDayIndex(startIndex);
+      setDropTargetHour(startHour);
+      setDragAnnouncement(
+        `${t("calendar.drag.start", { title: event.title, hour: startHour })}. ${t("calendar.drag.moveHintWeek")}`,
+      );
+      return;
+    }
+
+    // 默认行为：Enter/Space 触发点击
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       e.stopPropagation();
@@ -264,6 +395,9 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
 
   return (
     <div className="h-full flex flex-col">
+      <span aria-live="polite" className="sr-only">
+        {dragAnnouncement}
+      </span>
       {/* Header */}
       <div className="flex border-b border-slate-200 dark:border-slate-500">
         <div className="w-16 flex-shrink-0" />
@@ -317,9 +451,11 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
               {HOURS.map((hour) => (
                 <div
                   key={hour}
+                  role="region"
+                  aria-label={`${hour.toString().padStart(2, "0")}:00`}
                   className={`absolute w-full border-t ${
                     isDark ? "border-slate-700/50" : "border-gray-100"
-                  } ${dragOverCell?.dayIndex === dayIndex && dragOverCell?.hour === hour ? "bg-primary-100/50 dark:bg-primary-500/20" : ""}`}
+                  } ${(dragOverCell?.dayIndex === dayIndex && dragOverCell?.hour === hour) || (draggingEventId !== null && dropTargetDayIndex === dayIndex && dropTargetHour === hour) ? "bg-primary-100/50 dark:bg-primary-500/20" : ""}`}
                   style={{ top: `${hour * 60}px`, height: "60px" }}
                   onDragOver={(e) => handleDragOver(e, dayIndex, hour)}
                   onDragLeave={handleDragLeave}
@@ -349,6 +485,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
               {day.events.map((event, i) => {
                 const position = getEventPosition(event);
                 const isDragging = draggedEvent?.id === event.id;
+                const isKeyboardDragging = draggingEventId === event.id;
                 const hasEnoughHeight =
                   position.height && parseInt(position.height) > 80;
                 const isEditingDate = editingDateEventId === event.id;
@@ -363,7 +500,9 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                     tabIndex={0}
                     aria-roledescription={t("calendar.a11y.draggableTask")}
                     aria-label={`${event.title}, ${formatDate(event.start, "long-date")}`}
-                    aria-grabbed={isDragging ? "true" : "false"}
+                    aria-grabbed={
+                      isDragging || isKeyboardDragging ? "true" : "false"
+                    }
                     onKeyDown={(e) => handleCardKeyDown(e, event)}
                     className={`absolute left-1 right-1 ${getEventColor(event)} text-white rounded shadow-sm cursor-pointer hover:opacity-90 overflow-hidden ${
                       isDragging ? "opacity-50" : ""
@@ -454,6 +593,34 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* 键盘拖动 drop indicator */}
+              {draggingEventId !== null &&
+                dropTargetDayIndex === dayIndex &&
+                dropTargetHour !== null &&
+                (() => {
+                  const draggedKeyEvent = weekData
+                    .flatMap((d) => d.events)
+                    .find((e) => e.id === draggingEventId);
+                  const indicatorHeight = draggedKeyEvent
+                    ? getEventPosition(draggedKeyEvent).height
+                    : "60px";
+                  return (
+                    <div
+                      aria-hidden="true"
+                      className="absolute left-1 right-1 bg-primary-400/30 border-2 border-primary-400 border-dashed rounded pointer-events-none"
+                      style={{
+                        top: `${(dropTargetHour ?? 0) * 60}px`,
+                        height: `${indicatorHeight}`,
+                      }}
+                    >
+                      <div className="flex items-center justify-center h-full text-primary-500 text-xs font-medium">
+                        <Move size={14} className="mr-1" />
+                        {t("calendar.drag.targetHour", { hour: dropTargetHour })}
+                      </div>
+                    </div>
+                  );
+                })()}
             </div>
           ))}
         </div>

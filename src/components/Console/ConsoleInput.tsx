@@ -172,7 +172,7 @@ export const ConsoleInput = forwardRef<ConsoleInputRef, ConsoleInputProps>(
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('console.input.searchPlaceholder')}
-                className={`flex-1 bg-transparent outline-none text-sm ${
+                className={`flex-1 bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:border-primary-500 text-sm ${
                   isDark ? 'text-slate-200 placeholder-slate-500' : 'text-gray-800 placeholder-gray-400'
                 }`}
                 autoFocus
@@ -182,11 +182,12 @@ export const ConsoleInput = forwardRef<ConsoleInputRef, ConsoleInputProps>(
             <input
               ref={inputRef}
               type="text"
+              aria-label={t('console.input.commandAria')}
               value={value}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder={pendingConfirmActive ? t('console.input.confirmPlaceholder') : t('console.input.commandPlaceholder')}
-              className={`flex-1 bg-transparent outline-none text-sm ml-2 ${
+              className={`flex-1 bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:border-primary-500 text-sm ml-2 ${
                 isDark ? 'text-slate-200 placeholder-slate-500' : 'text-gray-800 placeholder-gray-400'
               } ${pendingConfirmActive ? (isDark ? 'text-yellow-300 placeholder-yellow-600' : 'text-yellow-700 placeholder-yellow-500') : ''}`}
               disabled={isLoading}

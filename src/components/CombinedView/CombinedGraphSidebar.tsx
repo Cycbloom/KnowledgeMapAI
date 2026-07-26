@@ -289,7 +289,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
             className={`w-5 h-5 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-slate-700 mr-1 transition-colors ${hasChildren ? 'visible' : 'invisible'}`}
             onClick={(e) => hasChildren && toggleExpand(node.id, e)}
           >
-            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {isExpanded ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
           </div>
           
           <div 
@@ -399,7 +399,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                     : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                <List size={14} />
+                <List size={14} aria-hidden="true" />
                 大纲
               </button>
               <button
@@ -410,7 +410,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                     : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                <Link size={14} />
+                <Link size={14} aria-hidden="true" />
                 连接
                 {crossGraphConnections.length > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary-500 text-white rounded-full">
@@ -424,15 +424,19 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
               aria-label={t('common.aria.close')}
               className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors text-slate-400"
             >
-              <X size={16} />
+              <X size={16} aria-hidden="true" />
             </button>
           </div>
           
           {sidebarMode === 'outline' && (
             <>
               <div className="p-3 border-b border-slate-200 dark:border-slate-800">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <div
+                  role="search"
+                  aria-label={t('common.aria.search')}
+                  className="relative"
+                >
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
                   <input
                     type="text"
                     aria-label={t('common.aria.search')}
@@ -525,7 +529,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                   onClick={() => aiOps?.handleAnalyzeCrossGraphConnections?.()}
                   className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
                 >
-                  <Sparkles size={16} />
+                  <Sparkles size={16} aria-hidden="true" />
                   AI 分析连接
                 </button>
               </div>
@@ -541,7 +545,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                         <span className="text-sm font-medium truncate flex-1">{conn.node1.title}</span>
                       </div>
                       <div className="flex items-center justify-center my-1">
-                        <svg className="w-4 h-4 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg className="w-4 h-4 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                           <path d="M7 17L17 7M17 7H7M17 7V17" />
                         </svg>
                         <span className="text-xs text-primary-600 dark:text-primary-400 ml-1">相同知识点</span>
@@ -556,7 +560,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
               ) : (
                 <div className="h-full flex items-center justify-center p-4">
                   <EmptyState
-                    icon={<Link className="w-12 h-12 text-gray-400 dark:text-slate-400" />}
+                    icon={<Link className="w-12 h-12 text-gray-400 dark:text-slate-400" aria-hidden="true" />}
                     title={t('combinedViewPage.empty.sameKnowledgePoints')}
                   />
                 </div>

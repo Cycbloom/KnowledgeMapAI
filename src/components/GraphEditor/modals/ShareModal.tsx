@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Globe, Lock, Copy, Check, ExternalLink, Users, UserPlus, Link as LinkIcon } from 'lucide-react';
 import { api } from '../../../services/api';
@@ -38,6 +38,51 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [inviteRole, setInviteRole] = useState<CollaboratorRole>('viewer');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
+
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const shareLinkInputId = useId();
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const tabs = [
+    { id: 'collaborate', label: t('graphEditor.share.tabCollaborate') },
+    { id: 'public', label: t('graphEditor.share.tabPublic') },
+  ] as const;
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(tabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
 
   const isOwner = !!(ownerId && user?.id && ownerId === user.id);
 
@@ -201,14 +246,21 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
           <h2 id="share-modal-title" className="text-lg font-bold text-gray-800 dark:text-white">{t('graphEditor.share.title')}</h2>
-          <button onClick={onClose} aria-label={t('common.aria.close')} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            <X size={20} className="text-gray-500 dark:text-gray-400" />
+          <button onClick={onClose} aria-label={t('common.aria.close')} className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <X size={20} className="text-gray-500 dark:text-gray-400" aria-hidden="true" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-100 dark:border-gray-700">
+        <div className="flex border-b border-gray-100 dark:border-gray-700" role="tablist" aria-label={t('graphEditor.share.title')}>
           <button
+            ref={(el) => { tabRefs.current[0] = el; }}
+            role="tab"
+            id={`${tabIdPrefix}-collaborate`}
+            aria-selected={activeTab === 'collaborate'}
+            aria-controls={`${panelIdPrefix}-collaborate`}
+            tabIndex={activeTab === 'collaborate' ? 0 : -1}
+            onKeyDown={(e) => handleTabKeyDown(e, 0)}
             onClick={() => setActiveTab('collaborate')}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               activeTab === 'collaborate'
@@ -216,10 +268,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            <Users size={16} className="inline-block mr-1" />
+            <Users size={16} className="inline-block mr-1" aria-hidden="true" />
             {t('graphEditor.share.tabCollaborate')}
           </button>
           <button
+            ref={(el) => { tabRefs.current[1] = el; }}
+            role="tab"
+            id={`${tabIdPrefix}-public`}
+            aria-selected={activeTab === 'public'}
+            aria-controls={`${panelIdPrefix}-public`}
+            tabIndex={activeTab === 'public' ? 0 : -1}
+            onKeyDown={(e) => handleTabKeyDown(e, 1)}
             onClick={() => setActiveTab('public')}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               activeTab === 'public'
@@ -227,7 +286,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            <Globe size={16} className="inline-block mr-1" />
+            <Globe size={16} className="inline-block mr-1" aria-hidden="true" />
             {t('graphEditor.share.tabPublic')}
           </button>
         </div>
@@ -235,7 +294,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {/* Body */}
         <div className="p-6">
           {activeTab === 'collaborate' ? (
-            <div className="space-y-4">
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-collaborate`}
+              aria-labelledby={`${tabIdPrefix}-collaborate`}
+              tabIndex={0}
+              className="space-y-4"
+            >
               {collaboratorsLoading ? (
                 <div className="text-center py-4 text-gray-500">{t('graphEditor.share.loading')}</div>
               ) : (
@@ -268,9 +333,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         {collaborator.role !== 'owner' && (
                           <button
                             onClick={() => handleRemoveCollaborator(collaborator.user_id)}
+                            aria-label={t('common.aria.removeCollaborator')}
                             className="p-1 text-red-500 hover:text-red-700"
                           >
-                            <X size={16} />
+                            <X size={16} aria-hidden="true" />
                           </button>
                         )}
                       </div>
@@ -284,6 +350,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   <form onSubmit={handleInvite} className="flex gap-2">
                     <input
                       type="email"
+                      autoComplete="email"
+                      aria-label={t('graphEditor.share.emailLabel')}
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                       placeholder={t('graphEditor.share.inviteEmailPlaceholder')}
@@ -292,6 +360,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     <select
                       value={inviteRole}
                       onChange={(e) => setInviteRole(e.target.value as CollaboratorRole)}
+                      aria-label={t('graphEditor.share.roleLabel')}
                       className="px-2 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-sm"
                     >
                       <option value="editor">{t('graphEditor.share.roleEditor')}</option>
@@ -300,9 +369,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     <button
                       type="submit"
                       disabled={inviteLoading || !inviteEmail}
+                      aria-label={t('common.aria.invite')}
                       className="px-3 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 text-sm"
                     >
-                      <UserPlus size={16} />
+                      <UserPlus size={16} aria-hidden="true" />
                     </button>
                   </form>
 
@@ -310,29 +380,32 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     onClick={handleGenerateShareLink}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 border dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm"
                   >
-                    <LinkIcon size={16} />
+                    <LinkIcon size={16} aria-hidden="true" />
                     {t('graphEditor.share.generateShareLink')}
                   </button>
 
                   {shareToken && (
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label htmlFor={shareLinkInputId} className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         {t('graphEditor.share.shareLinkLabel')}
                       </label>
                       <div className="flex gap-2">
                         <input
                           type="text"
+                          id={shareLinkInputId}
                           value={`${window.location.origin}/collaboration/${shareToken}`}
                           readOnly
+                          aria-readonly="true"
                           className="flex-1 px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-sm"
                         />
                         <button
                           onClick={() => {
                             void copyToClipboard(`${window.location.origin}/collaboration/${shareToken}`, t('toast.common.copied'));
                           }}
+                          aria-label={t('graphEditor.share.copyLink')}
                           className="px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
                         >
-                          <Copy size={16} />
+                          <Copy size={16} aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -341,7 +414,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               )}
             </div>
           ) : (
-            <div className="space-y-6">
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-public`}
+              aria-labelledby={`${tabIdPrefix}-public`}
+              tabIndex={0}
+              className="space-y-6"
+            >
               <div className="flex items-start gap-4">
                 <div className={`p-3 rounded-full ${isPublic ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : 'bg-gray-100 text-gray-500 dark:bg-gray-700'}`}>
                   {isPublic ? <Globe size={24} /> : <Lock size={24} />}
@@ -351,9 +430,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     <h3 className="font-medium text-gray-900 dark:text-gray-100">
                       {isPublic ? t('graphEditor.share.publicAccess') : t('graphEditor.share.privateGraph')}
                     </h3>
-                    <button 
+                    <button
                       onClick={handleToggle}
                       disabled={loading}
+                      role="switch"
+                      aria-checked={isPublic}
+                      aria-label={t('graphEditor.share.publicToggleLabel')}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
                         isPublic ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-600'
                       }`}
@@ -383,9 +465,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     <button
                       onClick={handleCopy}
                       className="p-2 bg-primary-50 dark:bg-primary-900/30 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-900/50 rounded-lg transition-colors border border-primary-200 dark:border-primary-800"
+                      aria-label={t('graphEditor.share.copyLink')}
                       title={t('graphEditor.share.copyLink')}
                     >
-                      {copied ? <Check size={20} /> : <Copy size={20} />}
+                      {copied ? <Check size={20} aria-hidden="true" /> : <Copy size={20} aria-hidden="true" />}
                     </button>
                     <a
                       href={publicUrl}
@@ -393,8 +476,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       rel="noopener noreferrer"
                       className="p-2 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors border border-gray-200 dark:border-gray-600"
                       title={t('graphEditor.share.openInNewTab')}
+                      aria-label={t('graphEditor.share.openInNewTab')}
                     >
-                      <ExternalLink size={20} />
+                      <ExternalLink size={20} aria-hidden="true" />
                     </a>
                   </div>
                 </div>

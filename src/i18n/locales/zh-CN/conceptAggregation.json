@@ -59,7 +59,8 @@
     "inputPlaceholder": "输入新别名，按回车添加...",
     "addButton": "添加别名",
     "mergeHint": "合并后，以上概念将作为目标节点的别名保留",
-    "limitReached": "已达到最大别名数量限制"
+    "limitReached": "已达到最大别名数量限制",
+    "removeAria": "删除别名"
   },
   "hierarchy": {
     "level": {
@@ -79,7 +80,8 @@
     "collapseAll": "全部折叠",
     "highConfidence": "高置信度 ≥85%",
     "mediumConfidence": "中置信度 ≥70%",
-    "lowConfidence": "低置信度 <70%"
+    "lowConfidence": "低置信度 <70%",
+    "treeLabel": "概念层级树"
   },
   "mergeAlias": {
     "empty": "没有可合并的概念",

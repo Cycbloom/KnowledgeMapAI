@@ -177,7 +177,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             aria-activedescendant={activeId}
             aria-controls={listboxId}
             onKeyDown={(e) => handleKeyDown(e.nativeEvent)}
-            className={`flex-1 bg-transparent text-lg placeholder-gray-400 focus:outline-none`}
+            className={`flex-1 bg-transparent text-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
             placeholder="搜索命令或节点..."
             value={query}
             onChange={e => setQuery(e.target.value)}

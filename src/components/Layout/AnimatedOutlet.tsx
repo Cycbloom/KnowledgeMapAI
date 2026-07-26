@@ -2,6 +2,7 @@ import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
+import { useReducedMotionOrPreference } from "../../hooks/common/useReducedMotionOrPreference";
 
 const mobileVariants = {
   initial: {
@@ -34,13 +35,15 @@ const desktopVariants = {
 export const AnimatedOutlet: React.FC = () => {
   const location = useLocation();
   const { isMobile } = useIsMobile();
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
 
   return (
     <motion.div
       key={location.pathname}
       variants={isMobile ? mobileVariants : desktopVariants}
-      initial="initial"
+      initial={reduceMotion ? false : "initial"}
       animate="animate"
+      transition={transitionOverride}
       className="h-full gpu-accelerated"
     >
       <Outlet />

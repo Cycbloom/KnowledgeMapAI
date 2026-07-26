@@ -26,14 +26,14 @@ export function SyncDetailPanel({ status, onSync, onClose }: SyncDetailPanelProp
       <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">同步状态</h3>
         <button onClick={onClose} aria-label={t('common.aria.close')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-          <X className="w-4 h-4" />
+          <X aria-hidden="true" className="w-4 h-4" />
         </button>
       </div>
 
       <div className="p-3 space-y-3">
         {/* Last sync time */}
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <Clock className="w-4 h-4" />
+          <Clock aria-hidden="true" className="w-4 h-4" />
           <span>
             {status?.lastSyncAt
               ? `上次同步: ${formatDate(status.lastSyncAt, 'short-datetime')}`
@@ -44,13 +44,13 @@ export function SyncDetailPanel({ status, onSync, onClose }: SyncDetailPanelProp
         {/* Pending counts */}
         <div className="grid grid-cols-2 gap-2">
           <div className="flex items-center gap-2 text-sm">
-            <ArrowUp className="w-4 h-4 text-blue-500" />
+            <ArrowUp aria-hidden="true" className="w-4 h-4 text-blue-500" />
             <span className="text-gray-600 dark:text-gray-400">
               待推送: <span className="font-medium text-gray-900 dark:text-gray-100">{status?.pendingPush ?? 0}</span>
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <ArrowDown className="w-4 h-4 text-green-500" />
+            <ArrowDown aria-hidden="true" className="w-4 h-4 text-green-500" />
             <span className="text-gray-600 dark:text-gray-400">
               待拉取: <span className="font-medium text-gray-900 dark:text-gray-100">{status?.pendingPull ?? 0}</span>
             </span>
@@ -60,7 +60,7 @@ export function SyncDetailPanel({ status, onSync, onClose }: SyncDetailPanelProp
         {/* Conflicts */}
         {status?.conflicts ? (
           <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
-            <AlertTriangle className="w-4 h-4" />
+            <AlertTriangle aria-hidden="true" className="w-4 h-4" />
             <span>{status.conflicts} 个同步冲突</span>
           </div>
         ) : null}
@@ -78,7 +78,7 @@ export function SyncDetailPanel({ status, onSync, onClose }: SyncDetailPanelProp
           disabled={!status?.isOnline}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw aria-hidden="true" className="w-4 h-4" />
           立即同步
         </button>
       </div>

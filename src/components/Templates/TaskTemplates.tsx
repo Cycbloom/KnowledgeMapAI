@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -64,6 +64,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
 }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  const editTitleId = useId();
+  const applyTitleId = useId();
 
   const {
     loading,
@@ -252,7 +254,11 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
       </div>
 
       <div className="flex gap-4 mb-6">
-        <div className="relative flex-1">
+        <div
+          role="search"
+          aria-label={t('common.aria.searchWithTarget', { target: t('templates.taskTemplates') })}
+          className="relative flex-1"
+        >
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
             size={18}
@@ -435,12 +441,15 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={editTitleId}
               className={`w-full max-w-lg rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto ${
                 isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
               }`}
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold">
+                <h3 id={editTitleId} className="text-xl font-bold">
                   {isEditing ? t("templates.button.edit") : t("templates.createTemplate")}
                 </h3>
                 <button
@@ -675,12 +684,15 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={applyTitleId}
               className={`w-full max-w-lg rounded-2xl shadow-2xl p-6 ${
                 isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
               }`}
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold">
+                <h3 id={applyTitleId} className="text-xl font-bold">
                   {t("templates.button.useTemplate")}: {applyingTemplate.name}
                 </h3>
                 <button

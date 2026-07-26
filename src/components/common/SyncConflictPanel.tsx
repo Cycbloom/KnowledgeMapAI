@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, Cloud, Monitor, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useId } from 'react';
 import { formatDate } from '../../utils/formatters';
 import { useFocusTrap, useEscapeKey } from '../../hooks';
 
@@ -24,6 +25,7 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
   const hasConflicts = conflicts.length > 0;
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: hasConflicts });
   useEscapeKey(() => onClose(), hasConflicts);
+  const titleId = useId();
   if (conflicts.length === 0) return null;
 
   return (
@@ -36,6 +38,9 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
     >
       <motion.div
         ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
         exit={{ scale: 0.95 }}
@@ -45,7 +50,7 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               同步冲突 ({conflicts.length})
             </h2>
           </div>

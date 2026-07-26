@@ -80,39 +80,44 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
   };
 
   return (
-    <div className={`rounded-xl p-4 md:p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+    <figure className={`rounded-xl p-4 md:p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+      <figcaption className="sr-only">{t('learningStats.knowledgeHeatmap.title')}</figcaption>
       <div className="flex items-center justify-between mb-4">
         <h3 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
           {t('learningStats.knowledgeHeatmap.title')}
         </h3>
         {totalPages > 1 && (
-          <div className="flex items-center gap-2">
+          <nav aria-label={t("common.aria.pagination")} className="flex items-center gap-2">
             <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
               {currentPage} / {totalPages}
             </span>
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
+              aria-label={t("common.aria.previousPage")}
+              aria-disabled={currentPage === 1 ? "true" : undefined}
               className={`p-1 rounded-lg transition-colors ${
                 currentPage === 1
                   ? 'opacity-50 cursor-not-allowed'
                   : isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'
               }`}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={16} aria-hidden="true" />
             </button>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
+              aria-label={t("common.aria.nextPage")}
+              aria-disabled={currentPage === totalPages ? "true" : undefined}
               className={`p-1 rounded-lg transition-colors ${
                 currentPage === totalPages
                   ? 'opacity-50 cursor-not-allowed'
                   : isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'
               }`}
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={16} aria-hidden="true" />
             </button>
-          </div>
+          </nav>
         )}
       </div>
       
@@ -153,7 +158,7 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
           {t('learningStats.knowledgeHeatmap.noData')}
         </div>
       )}
-    </div>
+    </figure>
   );
 };
 
@@ -165,7 +170,8 @@ export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: C
   const total = distributionData.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className={`rounded-xl p-4 md:p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+    <figure className={`rounded-xl p-4 md:p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+      <figcaption className="sr-only">{t('learningStats.masteryDistribution.title')}</figcaption>
       <h3 className={`text-base md:text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
         {t('learningStats.masteryDistribution.title')}
       </h3>
@@ -229,7 +235,7 @@ export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: C
           ))}
         </div>
       </div>
-    </div>
+    </figure>
   );
 };
 
@@ -354,7 +360,8 @@ export const LearningTimeTrend: React.FC<{ data: Array<{ date: string; minutes: 
   }, [data]);
 
   return (
-    <div className={`rounded-xl p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+    <figure className={`rounded-xl p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+      <figcaption className="sr-only">{t('learningStats.learningTimeTrend.title')}</figcaption>
       <div className="flex items-center justify-between mb-4">
         <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
           {t('learningStats.learningTimeTrend.title')}
@@ -403,11 +410,11 @@ export const LearningTimeTrend: React.FC<{ data: Array<{ date: string; minutes: 
           </div>
         )}
       </div>
-    </div>
+    </figure>
   );
 };
 
-export const QuickStatsCards: React.FC<{ 
+export const QuickStatsCards: React.FC<{
   totalNodes: number; 
   masteredNodes: number;
   dueToday: number;

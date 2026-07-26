@@ -268,7 +268,8 @@
     "updateFailed": "Failed to update domain",
     "deleteFailed": "Failed to delete domain",
     "reorderFailed": "Failed to reorder domains",
-    "generateColorFailed": "Failed to generate color"
+    "generateColorFailed": "Failed to generate color",
+    "treeLabel": "Domain tree"
   },
   "agentAnalysis": {
     "title": "Agent Analysis",

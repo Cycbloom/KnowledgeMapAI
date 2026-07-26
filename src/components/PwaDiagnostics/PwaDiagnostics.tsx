@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 import {
@@ -64,6 +64,7 @@ function DiagRow({ label, children }: DiagRowProps) {
  */
 export function PwaDiagnostics() {
   const [expanded, setExpanded] = useState(false);
+  const contentId = useId();
   const [swStatus, setSwStatus] = useState<ServiceWorkerStatus | null>(null);
   const [storageEstimate, setStorageEstimate] =
     useState<StorageEstimateData | null>(null);
@@ -132,6 +133,7 @@ export function PwaDiagnostics() {
         onClick={() => setExpanded((prev) => !prev)}
         className="w-full flex items-center justify-between px-4 py-3 text-left bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
         aria-expanded={expanded}
+        aria-controls={contentId}
         data-testid="pwa-diagnostics-toggle"
       >
         <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
@@ -145,7 +147,7 @@ export function PwaDiagnostics() {
       </button>
 
       {expanded && (
-        <div className="px-4 py-3 space-y-2 text-sm">
+        <div id={contentId} className="px-4 py-3 space-y-2 text-sm">
           <DiagRow label="SW 注册状态">
             {swStatus ? (
               <span>

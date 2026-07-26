@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from "../../hooks";
 
@@ -9,6 +9,13 @@ interface ActivityHeatmapProps {
 export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ data }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
+
+  const { totalDays, totalReviews, bestDay } = useMemo(() => {
+    const reviews = data.reduce((sum, d) => sum + d.count, 0);
+    const days = data.filter(d => d.count > 0).length;
+    const best = data.reduce((max, d) => Math.max(max, d.count), 0);
+    return { totalDays: days, totalReviews: reviews, bestDay: best };
+  }, [data]);
 
   const today = new Date();
   const days = [];
@@ -55,10 +62,15 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ data }) => {
   }
 
   return (
-    <div className={`p-4 md:p-6 rounded-lg shadow-md border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+    <figure className={`p-4 md:p-6 rounded-lg shadow-md border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+      <figcaption className="sr-only">{t('stats.activity.title')}</figcaption>
       <h3 className={`text-base md:text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>{t('stats.activity.title')}</h3>
       <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
-        <div className="flex gap-0.5 md:gap-1 min-w-max">
+        <div
+          className="flex gap-0.5 md:gap-1 min-w-max"
+          role="img"
+          aria-label={t('stats.activity.ariaSummary', { totalDays, totalReviews, bestDay })}
+        >
           {weeks.map((week, weekIndex) => (
             <div key={weekIndex} className="flex flex-col gap-0.5 md:gap-1">
               {week.map((date, dayIndex) => {
@@ -66,6 +78,7 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ data }) => {
                   return (
                     <div
                       key={`empty-${weekIndex}-${dayIndex}`}
+                      aria-hidden="true"
                       className="w-2.5 h-2.5 md:w-3 md:h-3"
                     />
                   );
@@ -74,6 +87,7 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ data }) => {
                 return (
                   <div
                     key={date}
+                    aria-hidden="true"
                     className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm ${getColor(count)}`}
                     title={`${date}: ${t('stats.activity.reviewCount', { count })}`}
                   />
@@ -83,7 +97,10 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ data }) => {
           ))}
         </div>
       </div>
-      <div className={`flex items-center justify-end mt-4 text-xs gap-1 md:gap-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+      <div
+        aria-hidden="true"
+        className={`flex items-center justify-end mt-4 text-xs gap-1 md:gap-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}
+      >
         <span>{t('stats.activity.less')}</span>
         <div className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}></div>
         <div className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm ${isDark ? 'bg-green-900' : 'bg-green-200'}`}></div>
@@ -92,6 +109,6 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ data }) => {
         <div className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm ${isDark ? 'bg-green-400' : 'bg-green-800'}`}></div>
         <span>{t('stats.activity.more')}</span>
       </div>
-    </div>
+    </figure>
   );
 };

@@ -111,6 +111,8 @@
     "minimize": "最小化",
     "startTask": "开始任务",
     "pauseTask": "暂停任务",
+    "play": "播放",
+    "pause": "暂停",
     "completeTask": "完成任务",
     "deleteTask": "删除任务",
     "editTask": "编辑任务",
@@ -143,13 +145,50 @@
     "removeFromPath": "从路径中移除",
     "conceptAggregation": "概念聚合",
     "search": "搜索",
+    "addTag": "添加标签",
     "removeOption": "移除选项",
     "removeTag": "移除标签 {{tag}}",
     "selectColor": "选择颜色",
     "selectIcon": "选择图标",
     "showPassword": "显示密码",
     "hidePassword": "隐藏密码",
-    "required": "必填"
+    "required": "必填",
+    "removeParent": "移除父节点",
+    "removeCollaborator": "移除协作者",
+    "loading": "加载中...",
+    "dropzone": "拖放文件或点击选择",
+    "sortAscending": "升序排列",
+    "sortDescending": "降序排列",
+    "sortNone": "未排序",
+    "indeterminateProgress": "进行中",
+    "taskProgress": "任务进度",
+    "subtaskProgress": "子任务进度",
+    "analysisProgress": "分析进度",
+    "pomodoroProgress": "番茄钟进度",
+    "searchWithTarget": "搜索{{target}}",
+    "tabList": "选项卡列表",
+    "pagination": "分页",
+    "previousPage": "上一页",
+    "nextPage": "下一页",
+    "page": "第 {{number}} 页",
+    "breadcrumb": "面包屑",
+    "loadingRegion": "加载区域",
+    "scrollLeft": "向左滚动",
+    "scrollRight": "向右滚动",
+    "dragHandle": "拖拽手柄",
+    "progress": "进度",
+    "toolbar": {
+      "graph": "图谱工具栏",
+      "graphMap": "图谱地图工具栏",
+      "combinedGraph": "组合图谱工具栏"
+    },
+    "notifications": "通知",
+    "mainContent": "主内容",
+    "searchResultsRegion": "搜索结果区",
+    "messageListRegion": "消息列表区",
+    "achievementGalleryRegion": "成就画廊区",
+    "taskStatsRegion": "任务统计区",
+    "noteEditorRegion": "笔记编辑器区"
   },
   "clipboard": {
     "unavailable": "剪贴板不可用",
@@ -253,6 +292,7 @@
     "noMatch": "未找到匹配的快捷键",
     "customHint": "点击快捷键按钮可以自定义",
     "totalCount": "共 {{count}} 个快捷键",
+    "shortcutField": "快捷键",
     "categories": {
       "navigation": "导航",
       "view": "视图",
@@ -285,5 +325,8 @@
       "paused": "已暂停",
       "idle": "空闲"
     }
+  },
+  "shortcut": {
+    "captureLabel": "快捷键捕获"
   }
 }

@@ -13,6 +13,7 @@
   "selectToEdit": "Select Content to Edit",
   "selectHint": "Select an item from the structure tree or character list on the left to edit",
   "structure": "Story Structure",
+  "treeLabel": "Story structure tree",
   "characters": "Characters",
   "addCharacter": "Add Character",
   "initializeTemplate": "Initialize Template",

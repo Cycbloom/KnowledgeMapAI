@@ -104,25 +104,25 @@ const MetricCard: React.FC<{
       className={`p-4 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
     >
       <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <p
+        <dl className="flex-1 min-w-0">
+          <dt
             className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}
           >
             {title}
-          </p>
-          <h3
+          </dt>
+          <dd
             className={`text-xl md:text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-gray-900"}`}
           >
             {value}
-          </h3>
+          </dd>
           {subtext && (
-            <p
+            <dd
               className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}
             >
               {subtext}
-            </p>
+            </dd>
           )}
-        </div>
+        </dl>
         <div className={`p-2 rounded-full ${color} flex-shrink-0 ml-2`}>{icon}</div>
       </div>
       {change !== undefined && (
@@ -748,7 +748,11 @@ export const TaskStatsTab: React.FC = () => {
   } = analytics;
 
   return (
-    <div className="space-y-6">
+    <div
+      role="region"
+      aria-label={t('common.aria.taskStatsRegion')}
+      className="space-y-6"
+    >
       {/* Efficiency Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard

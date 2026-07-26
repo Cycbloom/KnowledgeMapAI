@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useId, useRef, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Search,
@@ -119,6 +119,49 @@ export const PluginMarketplace = () => {
   const [installing, setInstalling] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const pluginTabs: { id: Tab; label: string }[] = [
+    { id: "browse", label: t("pluginMarketplace.browse") },
+    { id: "installed", label: t("pluginMarketplace.installed") },
+  ];
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % pluginTabs.length;
+        setActiveTab(pluginTabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + pluginTabs.length) % pluginTabs.length;
+        setActiveTab(pluginTabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(pluginTabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = pluginTabs.length - 1;
+        setActiveTab(pluginTabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
   const loadRegistry = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -221,35 +264,46 @@ export const PluginMarketplace = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => setActiveTab("browse")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "browse"
-              ? "bg-primary-600 text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600"
-          }`}
-        >
-          <Store className="w-4 h-4" />
-          {t("pluginMarketplace.browse")}
-        </button>
-        <button
-          onClick={() => setActiveTab("installed")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "installed"
-              ? "bg-primary-600 text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600"
-          }`}
-        >
-          <Package className="w-4 h-4" />
-          {t("pluginMarketplace.installed")}
-        </button>
+      <div className="flex items-center gap-2" role="tablist" aria-label={t("pluginMarketplace.title")}>
+        {pluginTabs.map((tab, index) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              ref={(el) => { tabRefs.current[index] = el; }}
+              role="tab"
+              id={`${tabIdPrefix}-${tab.id}`}
+              aria-selected={isActive}
+              aria-controls={`${panelIdPrefix}-${tab.id}`}
+              tabIndex={isActive ? 0 : -1}
+              onClick={() => setActiveTab(tab.id)}
+              onKeyDown={(e) => handleTabKeyDown(e, index)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-primary-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600"
+              }`}
+            >
+              {tab.id === "browse" ? <Store className="w-4 h-4" /> : <Package className="w-4 h-4" />}
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {activeTab === "browse" && (
-        <>
+        <div
+          role="tabpanel"
+          id={`${panelIdPrefix}-browse`}
+          aria-labelledby={`${tabIdPrefix}-browse`}
+          tabIndex={0}
+        >
           <div className="flex gap-2">
-            <div className="relative flex-1">
+            <div
+              role="search"
+              aria-label={t('common.aria.searchWithTarget', { target: t('pluginMarketplace.title') })}
+              className="relative flex-1"
+            >
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
@@ -298,11 +352,16 @@ export const PluginMarketplace = () => {
               ))}
             </div>
           )}
-        </>
+        </div>
       )}
 
       {activeTab === "installed" && (
-        <>
+        <div
+          role="tabpanel"
+          id={`${panelIdPrefix}-installed`}
+          aria-labelledby={`${tabIdPrefix}-installed`}
+          tabIndex={0}
+        >
           {installedPlugins.length === 0 ? (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">{t("pluginMarketplace.noInstalledPlugins")}</div>
           ) : (
@@ -389,7 +448,7 @@ export const PluginMarketplace = () => {
               })}
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

@@ -68,9 +68,9 @@ export function SaveButton({
   };
 
   const icon = isPending ? (
-    <Loader2 className="w-4 h-4 animate-spin" />
+    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
   ) : isSuccess ? (
-    <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+    <Check className="w-4 h-4 text-green-600 dark:text-green-400" aria-hidden="true" />
   ) : (
     leftIcon
   );

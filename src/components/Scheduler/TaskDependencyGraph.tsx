@@ -114,11 +114,11 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="w-4 h-4 text-green-500" aria-hidden="true" />;
       case 'in_progress':
-        return <Clock className="w-4 h-4 text-primary-500" />;
+        return <Clock className="w-4 h-4 text-primary-500" aria-hidden="true" />;
       default:
-        return <Clock className="w-4 h-4 text-gray-400" />;
+        return <Clock className="w-4 h-4 text-gray-400" aria-hidden="true" />;
     }
   };
 
@@ -135,7 +135,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
 
   if (nodes.length <= 1) {
     return (
-      <EmptyState icon={<Network size={32} />} title={t('scheduler.empty.dependencies')} />
+      <EmptyState icon={<Network size={32} aria-hidden="true" />} title={t('scheduler.empty.dependencies')} />
     );
   }
 
@@ -146,6 +146,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
         width="100%"
         height="100%"
         style={{ minHeight: 200 }}
+        aria-hidden="true"
       >
         {edges.map((edge, index) => {
           const fromNode = nodes.find((n) => n.id === edge.from);

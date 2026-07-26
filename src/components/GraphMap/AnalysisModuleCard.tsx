@@ -175,6 +175,9 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
           className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 rounded-b-xl overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          role="progressbar"
+          aria-label={t('common.aria.analysisProgress')}
+          aria-valuetext={t('common.aria.indeterminateProgress')}
         >
           <motion.div
             className={`h-full ${colors.check}`}

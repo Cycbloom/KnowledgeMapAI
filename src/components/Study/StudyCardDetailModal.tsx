@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Info } from 'lucide-react';
 import { StudyCard } from '../../types';
@@ -21,6 +21,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
 }) => {
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen && Boolean(card) });
   useEscapeKey(() => onClose(), isOpen && Boolean(card));
+  const titleId = useId();
 
   if (!card) return null;
 
@@ -37,6 +38,9 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
           />
           <motion.div
             ref={containerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -53,7 +57,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
                   <Info size={20} />
                 </div>
                 <div>
-                  <h3 className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>卡片详情</h3>
+                  <h3 id={titleId} className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>卡片详情</h3>
                   <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
                     {card.card_type === 'choice' ? '单选题' : 
                      card.card_type === 'multi_choice' ? '多选题' : 

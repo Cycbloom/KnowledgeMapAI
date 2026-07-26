@@ -111,7 +111,9 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
   };
 
   return (
-    <div 
+    <div
+      role="toolbar"
+      aria-label={t("common.aria.toolbar.combinedGraph")}
       className={`absolute top-4 left-4 p-2 rounded-xl shadow-lg flex items-center space-x-2 z-10 backdrop-blur-md border ${themeClasses.container}`}
     >
       <Button onClick={onBack} icon={ArrowLeft} title={t('common.aria.back')} buttonClasses={themeClasses.button} isDark={isDark} />

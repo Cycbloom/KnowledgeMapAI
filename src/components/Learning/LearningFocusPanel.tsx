@@ -385,6 +385,12 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
 
               <motion.button
                 onClick={() => setIsLocked(!isLocked)}
+                aria-pressed={isLocked}
+                aria-label={
+                  isLocked
+                    ? t("learning.focusMode.unlock")
+                    : t("learning.focusMode.lock")
+                }
                 className={`p-2 rounded-lg transition-colors ${isLocked ? "bg-primary-100 text-primary-600 dark:bg-primary-500/30 dark:text-primary-300" : "bg-slate-200 hover:bg-slate-300 text-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"}`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -394,7 +400,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                     : t("learning.focusMode.lock")
                 }
               >
-                {isLocked ? <Lock size={16} /> : <Unlock size={16} />}
+                {isLocked ? <Lock size={16} aria-hidden="true" /> : <Unlock size={16} aria-hidden="true" />}
               </motion.button>
 
               <motion.button
@@ -582,6 +588,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                             onChange={(e) =>
                               setHighlightIntensity(parseFloat(e.target.value))
                             }
+                            aria-label={t("learning.focusMode.highlightIntensity")}
                             className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-yellow-500"
                           />
                         </div>
@@ -738,6 +745,9 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                       parseFloat(e.target.value),
                                     )
                                   }
+                                  aria-label={t(
+                                    `learning.focusMode.noiseOptions.${noise.type}`,
+                                  )}
                                   className="w-16 h-1 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-primary-500"
                                 />
                                 <button

@@ -40,7 +40,11 @@
     "title": "学习活跃度",
     "reviewCount": "{{count}} 次复习",
     "less": "少",
-    "more": "多"
+    "more": "多",
+    "ariaSummary": "活动热力图：{{totalDays}} 天累计 {{totalReviews}} 次复习，最佳一天 {{bestDay}} 次"
+  },
+  "taskDistribution": {
+    "ariaSummary": "任务分布饼图，共 {{total}} 个任务"
   },
   "metric": {
     "todayCompleted": "今日完成",

@@ -62,7 +62,7 @@ const DomainTreeItem: React.FC<DomainTreeItemProps> = ({
             }}
             className="flex-shrink-0 p-0.5"
           >
-            <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`} />
+            <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`} aria-hidden="true" />
           </span>
         ) : (
           <span className="w-3.5 flex-shrink-0" />
@@ -78,7 +78,7 @@ const DomainTreeItem: React.FC<DomainTreeItemProps> = ({
           </span>
         )}
         {isSelected && (
-          <Check className="w-4 h-4 flex-shrink-0 text-primary-500 dark:text-primary-400" />
+          <Check className="w-4 h-4 flex-shrink-0 text-primary-500 dark:text-primary-400" aria-hidden="true" />
         )}
       </button>
       {hasChildren && isExpanded && (
@@ -253,25 +253,27 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
+        aria-controls={`${baseId}-listbox`}
         aria-haspopup="listbox"
         role="combobox"
         aria-activedescendant={activeId}
         onKeyDown={(e) => handleKeyDown(e.nativeEvent)}
         className={`flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-slate-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors`}
       >
-        <Globe className="w-4 h-4" />
+        <Globe className="w-4 h-4" aria-hidden="true" />
         <span>{t('graphMap.domainFilter.title')}</span>
         {selectedCount > 0 && (
           <span className="min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-primary-500 text-white text-xs rounded-full">
             {selectedCount}
           </span>
         )}
-        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
       </button>
 
       {isOpen && (
         <div
           role="listbox"
+          id={`${baseId}-listbox`}
           className={`absolute top-full left-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-500 z-50 ${
             isMobile ? 'w-[280px]' : 'w-[240px]'
           } max-h-[360px] overflow-y-auto p-1.5`}
@@ -287,7 +289,7 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
             <span className="w-3.5" />
             <span>{t('graphMap.domainFilter.all')}</span>
             {selectedCount === 0 && (
-              <Check className="w-4 h-4 ml-auto text-primary-500 dark:text-primary-400" />
+              <Check className="w-4 h-4 ml-auto text-primary-500 dark:text-primary-400" aria-hidden="true" />
             )}
           </button>
 
@@ -301,7 +303,7 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
               className="w-full pl-7 pr-3 py-1.5 text-sm border border-gray-200 dark:border-slate-500 rounded-md bg-white dark:bg-slate-600 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-400 dark:focus:ring-primary-500"
               autoFocus={isOpen}
             />
-            <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>

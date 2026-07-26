@@ -73,6 +73,7 @@ export function EmptyState({
 
   return (
     <div
+      role="status"
       className={cn(
         'flex flex-col items-center justify-center px-4 text-center',
         variantContainerClasses[variant],

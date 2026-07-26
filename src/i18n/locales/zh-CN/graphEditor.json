@@ -355,7 +355,9 @@
     "batchDelete": "批量删除",
     "establishConnection": "建立连接",
     "ignore": "忽略",
-    "noNodes": "暂无节点"
+    "noNodes": "暂无节点",
+    "region": "大纲",
+    "treeLabel": "图谱大纲"
   },
   "region": {
     "title": "区域管理",
@@ -496,6 +498,7 @@
     "inviteEmailPlaceholder": "输入用户邮箱",
     "generateShareLink": "生成分享链接",
     "shareLinkLabel": "分享链接",
+    "linkLabel": "共享链接",
     "publicAccess": "公开访问",
     "privateGraph": "私有图谱",
     "publicDesc": "任何拥有链接的人都可以查看此图谱，但无法进行编辑。",
@@ -514,7 +517,10 @@
     "linkGenerated": "分享链接已生成",
     "linkGenerateFailed": "生成链接失败",
     "linkGenerateFailedRetry": "生成链接失败，请重试",
-    "fetchCollaboratorsFailed": "加载协作者失败"
+    "fetchCollaboratorsFailed": "加载协作者失败",
+    "publicToggleLabel": "公开访问",
+    "emailLabel": "邮箱地址",
+    "roleLabel": "权限角色"
   },
   "versionHistory": {
     "loadFailed": "加载版本历史失败",
@@ -594,7 +600,12 @@
     "directionTopDownHint": "传统的学习路径：从概览到细节。",
     "directionBottomUpHint": "构建式学习路径：从基础部分组装成整体。适合\"叶节点是父节点一部分\"的场景。",
     "saving": "保存中...",
-    "save": "保存设置"
+    "save": "保存设置",
+    "qualityGroupLabel": "质量",
+    "showStatsLabel": "显示统计",
+    "gamificationLabel": "游戏化",
+    "textDisplayLevelGroupLabel": "文本显示级别",
+    "learningDirectionGroupLabel": "学习方向"
   },
   "backbone": {
     "title": "骨干节点兼容性检查",
@@ -806,5 +817,16 @@
   },
   "planetView": {
     "ariaLabel": "3D 星球视图，{{count}} 个节点"
+  },
+  "miniMap": {
+    "ariaLabel": "缩略图，{{count}} 个节点",
+    "desc": "图谱缩略图，用于快速定位"
+  },
+  "timelineView": {
+    "ariaLabel": "时间线视图，{{count}} 个节点",
+    "desc": "按时间顺序排列的节点视图"
+  },
+  "nodeLinkSelector": {
+    "dialogLabel": "选择关联节点"
   }
 }

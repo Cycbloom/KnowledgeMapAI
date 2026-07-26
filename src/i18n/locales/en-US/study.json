@@ -328,6 +328,9 @@
     "expectedCount": "Estimated {{count}} questions",
     "selectAtLeastOne": "Please select at least one question type",
     "questionCount": "Question Count",
+    "typeLegend": "Question types",
+    "incrementCount": "Increase {{type}} question count",
+    "decrementCount": "Decrease {{type}} question count",
     "types": {
       "qa": {
         "label": "Q&A",
@@ -355,7 +358,11 @@
       }
     }
   },
+  "difficultySelector": {
+    "legend": "Difficulty"
+  },
   "questionForm": {
+    "trueFalseGroupLabel": "Answer",
     "answerLegend": "Answer selection",
     "questionLabel": "Question",
     "questionPlaceholder": "Enter question content...",

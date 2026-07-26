@@ -992,8 +992,8 @@ export const MindMapCanvas = React.memo(
                 description={t('graphEditor.mindMap.addNodeHint')}
               />
             ) : isLayoutCalculating ? (
-              <>
-                <div className="flex flex-col items-center gap-3 mx-auto mb-4">
+              <div aria-live="polite">
+                <div className="flex flex-col items-center gap-3 mx-auto mb-4" aria-hidden="true">
                   <div className="w-64 h-3 bg-gray-200 dark:bg-slate-700 rounded animate-pulse"></div>
                   <div className="w-48 h-3 bg-gray-200 dark:bg-slate-700 rounded animate-pulse"></div>
                   <div className="w-56 h-3 bg-gray-200 dark:bg-slate-700 rounded animate-pulse"></div>
@@ -1004,7 +1004,8 @@ export const MindMapCanvas = React.memo(
                     ? t('graphEditor.mindMap.semanticLoading', '正在计算语义布局...')
                     : t('graphEditor.mindMap.loading')}
                 </p>
-              </>
+                <span className="sr-only">{t('common.aria.loading')}</span>
+              </div>
             ) : (
               <EmptyState
                 variant="panel"

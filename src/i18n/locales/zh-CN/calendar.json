@@ -33,6 +33,7 @@
     "health": "健康",
     "review": "复习"
   },
+  "quickTagsGroupLabel": "快捷标签",
   "cancel": "取消",
   "create": "创建任务",
   "enterTaskTitle": "请输入任务标题",
@@ -60,7 +61,10 @@
     "more": "+{{count}} 更多",
     "estimatedDuration": "预计 {{minutes}} 分钟",
     "hiddenCount": "+{{count}} 个子任务",
-    "collapse": "收起"
+    "collapse": "收起",
+    "statusCompleted": "已完成",
+    "statusInProgress": "进行中",
+    "statusPending": "待办"
   },
   "scheduleView": {
     "addTask": "添加任务",
@@ -88,5 +92,14 @@
   "a11y": {
     "changeDate": "修改日期",
     "draggableTask": "可拖动任务卡片，使用修改日期按钮可键盘移动"
+  },
+  "drag": {
+    "start": "开始拖动：{{title}}，当前 {{hour}}:00",
+    "moveHint": "使用上下方向键调整目标小时，Enter 确认，Esc 取消",
+    "moveHintWeek": "使用方向键调整目标日期与小时，Enter 确认，Esc 取消",
+    "targetHour": "目标 {{hour}}:00",
+    "targetDate": "目标 {{date}}",
+    "confirm": "已放置到 {{hour}}:00",
+    "cancel": "已取消拖动"
   }
 }

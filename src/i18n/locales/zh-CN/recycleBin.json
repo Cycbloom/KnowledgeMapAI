@@ -7,6 +7,7 @@
   "selectAll": "全选",
   "deselectAll": "取消全选",
   "selected": "已选择 {{count}} 项",
+  "clearSelection": "清除选择",
   "batchRestore": "批量恢复",
   "batchDelete": "批量删除",
   "empty": "回收站为空",

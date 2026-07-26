@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
@@ -132,6 +132,7 @@ export const ListView: React.FC<ListViewProps> = ({
   const [filterQueue, setFilterQueue] = useState<number | null>(null);
   const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [showFilters, setShowFilters] = useState(false);
+  const filterPanelId = useId();
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [subtasksMap, setSubtasksMap] = useState<Map<string, TaskSubtask[]>>(
     new Map(),
@@ -367,6 +368,8 @@ export const ListView: React.FC<ListViewProps> = ({
 
           <button
             onClick={() => setShowFilters(!showFilters)}
+            aria-expanded={showFilters}
+            aria-controls={filterPanelId}
             className={`
               flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm transition-all min-h-[44px]
               ${
@@ -392,6 +395,7 @@ export const ListView: React.FC<ListViewProps> = ({
       <AnimatePresence>
         {showFilters && (
           <motion.div
+            id={filterPanelId}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -474,7 +478,12 @@ export const ListView: React.FC<ListViewProps> = ({
 
       <div className="flex-1 min-h-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-500/50 bg-white dark:bg-slate-900/60 backdrop-blur-sm">
         {/* Desktop: table view */}
-        <div className="hidden md:block h-full overflow-x-auto custom-scrollbar">
+        <div
+          role="region"
+          aria-label={t('scheduler.listView.tableRegion')}
+          tabIndex={0}
+          className="hidden md:block h-full overflow-x-auto custom-scrollbar"
+        >
           <table
             className="w-full min-w-[900px]"
             aria-label={t("scheduler.listView.tableAriaLabel", { defaultValue: "任务列表" })}
@@ -495,6 +504,17 @@ export const ListView: React.FC<ListViewProps> = ({
                     key={column.id}
                     scope="col"
                     aria-sort={ariaSort}
+                    tabIndex={isSortable ? 0 : undefined}
+                    onKeyDown={
+                      isSortable
+                        ? (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleSort(column.id as SortField);
+                            }
+                          }
+                        : undefined
+                    }
                     className={`
                       px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider
                       ${isSortable ? "cursor-pointer hover:text-slate-700 dark:hover:text-slate-200" : ""}

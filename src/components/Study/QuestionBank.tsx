@@ -185,12 +185,19 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
     }, 100);
   };
 
+  const isAllSelected = selectedIds.size === filteredCards.length && filteredCards.length > 0;
+  const isPartialSelected = selectedIds.size > 0 && selectedIds.size < filteredCards.length;
+
   return (
     <div className={`rounded-xl border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'} overflow-hidden`}>
       {/* Toolbar */}
       <div className="p-4 border-b flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2 flex-1">
-          <div className="relative flex-1 max-w-md">
+          <div
+            role="search"
+            aria-label={t('common.aria.searchWithTarget', { target: t('study.tabs.bank') })}
+            className="relative flex-1 max-w-md"
+          >
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
@@ -229,27 +236,35 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
           <button
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             className={`p-2 rounded-lg border transition-colors ${
-              showAdvancedFilters 
-                ? 'bg-primary-100 border-primary-200 text-primary-600' 
+              showAdvancedFilters
+                ? 'bg-primary-100 border-primary-200 text-primary-600'
                 : isDark ? 'bg-slate-800 border-slate-700 text-gray-400 hover:text-white' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600'
             }`}
             title={t('study.questionBank.advancedFilter')}
+            aria-label={t('study.questionBank.advancedFilter')}
           >
-            <Filter size={20} />
+            <Filter size={20} aria-hidden="true" />
           </button>
         </div>
 
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={handleSelectAll}
+            role="checkbox"
+            aria-checked={(isAllSelected ? "true" : isPartialSelected ? "mixed" : "false") as "true" | "false" | "mixed"}
+            aria-label={isAllSelected ? t('study.questionBank.deselectAll') : t('study.questionBank.selectAll')}
+            title={isAllSelected ? t('study.questionBank.deselectAll') : t('study.questionBank.selectAll')}
             className={`p-2 rounded-lg border transition-colors ${
-              selectedIds.size === filteredCards.length && filteredCards.length > 0
+              isAllSelected
                 ? 'bg-primary-100 border-primary-200 text-primary-600'
                 : isDark ? 'bg-slate-800 border-slate-700 text-gray-400' : 'bg-white border-gray-200 text-gray-400'
             }`}
-            title={selectedIds.size === filteredCards.length ? t('study.questionBank.deselectAll') : t('study.questionBank.selectAll')}
           >
-            {selectedIds.size === filteredCards.length && filteredCards.length > 0 ? <CheckSquare size={20} /> : <Square size={20} />}
+            {isAllSelected ? (
+              <CheckSquare size={20} aria-hidden="true" />
+            ) : (
+              <Square size={20} aria-hidden="true" />
+            )}
           </button>
 
           {selectedIds.size > 0 && (
@@ -401,7 +416,11 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
       {/* Pagination Footer */}
       {filteredCards.length > 0 && (
         <div className={`p-4 border-t flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
-          <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+          <div
+            className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}
+            aria-live="polite"
+            aria-atomic="true"
+          >
             {t('study.questionBank.pagination', {
               start: ((currentPage - 1) * pageSize) + 1,
               end: Math.min(currentPage * pageSize, filteredCards.length),
@@ -409,17 +428,19 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
             })}
           </div>
           
-          <div className="flex items-center gap-2">
+          <nav aria-label={t("common.aria.pagination")} className="flex items-center gap-2">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
+              aria-label={t("common.aria.previousPage")}
+              aria-disabled={currentPage === 1 ? "true" : undefined}
               className={`p-2 rounded-lg border transition-colors ${
                 currentPage === 1
                   ? (isDark ? 'border-slate-800 text-slate-600 cursor-not-allowed' : 'border-gray-100 text-gray-300 cursor-not-allowed')
                   : (isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50')
               }`}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={16} aria-hidden="true" />
             </button>
             
             <div className="flex items-center gap-1">
@@ -435,6 +456,8 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                   <button
                     key={pageNum}
                     onClick={() => setCurrentPage(pageNum)}
+                    aria-current={currentPage === pageNum ? "page" : undefined}
+                    aria-label={t("common.aria.page", { number: pageNum })}
                     className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                       currentPage === pageNum
                         ? 'bg-primary-600 text-white'
@@ -450,15 +473,17 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
+              aria-label={t("common.aria.nextPage")}
+              aria-disabled={currentPage === totalPages ? "true" : undefined}
               className={`p-2 rounded-lg border transition-colors ${
                 currentPage === totalPages
                   ? (isDark ? 'border-slate-800 text-slate-600 cursor-not-allowed' : 'border-gray-100 text-gray-300 cursor-not-allowed')
                   : (isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50')
               }`}
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={16} aria-hidden="true" />
             </button>
-          </div>
+          </nav>
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Save, Palette, Minus, ArrowRight } from 'lucide-react';
 import type { Edge, EdgeLineStyle, RelationshipCategory } from '../../../types';
@@ -56,6 +56,50 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
   const [showArrow, setShowArrow] = useState<boolean | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'style'>('basic');
+
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const tabs = [
+    { id: 'basic', label: '基本信息' },
+    { id: 'style', label: '样式设置' },
+  ] as const;
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(tabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     if (edge) {
@@ -133,8 +177,15 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
           </button>
         </div>
 
-        <div className="flex border-b border-gray-100 dark:border-slate-500">
+        <div className="flex border-b border-gray-100 dark:border-slate-500" role="tablist" aria-label="编辑边">
           <button
+            ref={(el) => { tabRefs.current[0] = el; }}
+            role="tab"
+            id={`${tabIdPrefix}-basic`}
+            aria-selected={activeTab === 'basic'}
+            aria-controls={`${panelIdPrefix}-basic`}
+            tabIndex={activeTab === 'basic' ? 0 : -1}
+            onKeyDown={(e) => handleTabKeyDown(e, 0)}
             onClick={() => setActiveTab('basic')}
             className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === 'basic'
@@ -145,6 +196,13 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
             基本信息
           </button>
           <button
+            ref={(el) => { tabRefs.current[1] = el; }}
+            role="tab"
+            id={`${tabIdPrefix}-style`}
+            aria-selected={activeTab === 'style'}
+            aria-controls={`${panelIdPrefix}-style`}
+            tabIndex={activeTab === 'style' ? 0 : -1}
+            onKeyDown={(e) => handleTabKeyDown(e, 1)}
             onClick={() => setActiveTab('style')}
             className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === 'style'
@@ -158,7 +216,13 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
 
         <div className="p-6 space-y-4 overflow-y-auto">
           {activeTab === 'basic' && (
-            <>
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-basic`}
+              aria-labelledby={`${tabIdPrefix}-basic`}
+              tabIndex={0}
+              className="space-y-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   标签
@@ -193,11 +257,17 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                   ))}
                 </select>
               </div>
-            </>
+            </div>
           )}
 
           {activeTab === 'style' && (
-            <>
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-style`}
+              aria-labelledby={`${tabIdPrefix}-style`}
+              tabIndex={0}
+              className="space-y-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Palette size={16} className="inline mr-1" />
@@ -284,7 +354,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                   ))}
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
 

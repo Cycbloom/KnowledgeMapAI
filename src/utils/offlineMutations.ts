@@ -42,6 +42,12 @@ export interface QueuedMutation {
   retryCount: number;
   /** 最后一次错误信息（非网络错误） */
   lastError?: string;
+  /**
+   * 标记为不可重放：replay 时若 mutationKey 未注册到 queryClient.setMutationDefaults，
+   * 会抛出 "No mutationFn found"——此错误重试永远不会成功，故立即标记为不可重放，
+   * 跳过 retry/drop 逻辑，避免静默数据丢失（被丢弃的用户操作不会再次尝试）。
+   */
+  unplayable?: boolean;
 }
 
 /**
@@ -169,6 +175,19 @@ function isNetworkError(error: unknown): boolean {
   return false;
 }
 
+/**
+ * 判断错误是否因 mutationFn 未注册导致（不可重放错误）
+ *
+ * 当应用未通过 queryClient.setMutationDefaults(mutationKey, { mutationFn })
+ * 注册默认 mutationFn 时，react-query 在 execute 阶段会抛出
+ * "No mutationFn found"。此错误重试永远失败（mutationKey 不变则结果不变），
+ * 故需在 replay 中识别并标记为 unplayable，跳过常规 retry/drop 逻辑，
+ * 防止离线期间的用户操作被静默丢弃。
+ */
+function isNoMutationFnError(error: unknown): boolean {
+  return error instanceof Error && /no mutationfn found/i.test(error.message);
+}
+
 function notifyListeners(): void {
   void getAllItems()
     .then((items) => {
@@ -261,12 +280,17 @@ export const offlineMutationQueue = {
     logger.debug(`Replaying ${pending.length} offline mutations`);
 
     for (const item of pending) {
+      // 跳过已标记为 unplayable 的项：mutationFn 未注册，重试永远不会成功，
+      // 再次执行只会重复抛错并写 IndexedDB。仍保留在队列中供用户/工具显式清理。
+      if (item.unplayable) {
+        continue;
+      }
       try {
         // 通过 mutationCache.build 重建 mutation 并执行。
         // 注意：此版本的 @tanstack/query-core 无 QueryClient.executeMutation 方法。
         // mutationFn 由应用通过 queryClient.setMutationDefaults(mutationKey, { mutationFn })
         // 注册的 defaults 提供；若未注册，execute 会抛出 "No mutationFn found"，
-        // 按非网络错误处理（重试到上限后丢弃）。
+        // 见下方 isNoMutationFnError 分支处理。
         const mutation = queryClient
           .getMutationCache()
           .build<unknown, DefaultError, unknown, unknown>(queryClient, {
@@ -293,6 +317,24 @@ export const offlineMutationQueue = {
             error,
           );
           break;
+        }
+
+        // 不可重放错误：mutationFn 未注册到 setMutationDefaults，重试永远失败。
+        // 标记为 unplayable 后保留在队列中（不递增 retryCount、不被丢弃），
+        // 避免用户操作在离线→在线切换时被静默丢失。队列仍可被用户/工具显式清理。
+        if (isNoMutationFnError(error)) {
+          await putItem({
+            ...item,
+            unplayable: true,
+            lastError: errorMessage,
+          });
+          logger.error(
+            `Mutation ${item.id} marked unplayable (no mutationFn registered for key ${JSON.stringify(item.mutationKey)}): ${errorMessage}. ` +
+              'This usually means queryClient.setMutationDefaults was not called for this key. ' +
+              'The mutation is kept in the queue to prevent silent data loss.',
+            error,
+          );
+          continue;
         }
 
         // 非网络错误：retryCount++，达到上限则丢弃

@@ -29,9 +29,9 @@ export function CopyButton({ text }: CopyButtonProps) {
       aria-label={t("common.copyError")}
     >
       {isSuccess ? (
-        <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+        <Check aria-hidden="true" className="w-4 h-4 text-green-600 dark:text-green-400" />
       ) : (
-        <Copy className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+        <Copy aria-hidden="true" className="w-4 h-4 text-gray-600 dark:text-gray-300" />
       )}
     </button>
   );

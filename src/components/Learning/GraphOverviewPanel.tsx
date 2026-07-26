@@ -188,10 +188,11 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
                             href={book.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-shrink-0 p-1.5 text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
+                            className="flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
                             title={t("learning.overview.viewLink")}
+                            aria-label={t("learning.overview.viewLink")}
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
+                            <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                           </a>
                         )}
                       </div>

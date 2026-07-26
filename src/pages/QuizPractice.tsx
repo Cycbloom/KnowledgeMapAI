@@ -406,7 +406,7 @@ export const QuizPractice: React.FC = () => {
           isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-50 text-gray-500'
         }`}
       >
-        <p className="text-red-500 mb-4">{t('study.quizPractice.loadFailed')}</p>
+        <p role="alert" className="text-red-500 mb-4">{t('study.quizPractice.loadFailed')}</p>
         <button
           onClick={handleBack}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"

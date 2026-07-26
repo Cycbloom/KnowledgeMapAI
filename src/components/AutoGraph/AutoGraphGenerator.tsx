@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -335,6 +335,11 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   const [sources, setSources] = useState<string[]>([]);
   const [newSource, setNewSource] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const advancedPanelId = useId();
+  const storyGenreId = useId();
+  const coreConflictId = useId();
+  const characterHintsId = useId();
+  const topicInputId = useId();
 
   const [storyGenre, setStoryGenre] = useState<string>("");
   const [coreConflict, setCoreConflict] = useState<string>("");
@@ -1096,11 +1101,13 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     <div className="space-y-3">
       <div>
         <label
+          htmlFor={storyGenreId}
           className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
         >
           {t("autoGraph.storyGenre")}
         </label>
         <select
+          id={storyGenreId}
           value={storyGenre}
           onChange={(e) => setStoryGenre(e.target.value)}
           className={`w-full ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white`}
@@ -1122,11 +1129,13 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
       <div>
         <label
+          htmlFor={coreConflictId}
           className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
         >
           {t("autoGraph.coreConflict")}
         </label>
         <textarea
+          id={coreConflictId}
           value={coreConflict}
           onChange={(e) => setCoreConflict(e.target.value)}
           placeholder={t("autoGraph.coreConflictPlaceholder")}
@@ -1137,11 +1146,13 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
       <div>
         <label
+          htmlFor={characterHintsId}
           className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
         >
           {t("autoGraph.characterHints")}
         </label>
         <textarea
+          id={characterHintsId}
           value={characterHints}
           onChange={(e) => setCharacterHints(e.target.value)}
           placeholder={t("autoGraph.characterHintsPlaceholder")}
@@ -1158,6 +1169,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
       <div>
         <label
+          htmlFor={topicInputId}
           className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
         >
           {selectedTemplateType === "story_creation"
@@ -1168,6 +1180,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         <div className="relative">
           <input
             type="text"
+            id={topicInputId}
             aria-required={true}
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
@@ -1346,6 +1359,8 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
+            aria-expanded={showAdvanced}
+            aria-controls={advancedPanelId}
             className={`flex items-center gap-2 ${isMobile ? "text-xs" : "text-sm"} text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200`}
           >
             {showAdvanced ? (

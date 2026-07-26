@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -41,6 +41,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
   const { t } = useTranslation();
   const [showDragTip, setShowDragTip] = useState(false);
   const isInProgress = task.status === "in_progress";
+  const dragTipId = useId();
 
   const {
     attributes,
@@ -101,6 +102,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
       aria-roledescription={t("scheduler.a11y.draggableTask")}
       aria-disabled={isInProgress}
       aria-grabbed={isDragging ? "true" : "false"}
+      aria-describedby={isInProgress ? dragTipId : undefined}
       onPointerDown={handlePointerDown}
       onMouseEnter={() => isInProgress && setShowDragTip(true)}
       onMouseLeave={() => setShowDragTip(false)}
@@ -276,6 +278,9 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
       {task.status === "in_progress" && (
         <div
           className={`absolute bottom-0 left-0 right-0 h-0.5 ${queueStyle.bg} overflow-hidden`}
+          role="progressbar"
+          aria-label={t('common.aria.taskProgress')}
+          aria-valuetext={t('common.aria.indeterminateProgress')}
         >
           <div
             className={`h-full ${queueStyle.accent} animate-pulse`}
@@ -286,7 +291,11 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
 
       {showDragTip && isInProgress && (
         <div className="absolute top-0 left-0 right-0 bottom-10 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-t-xl z-10 pointer-events-none">
-          <div className="flex items-center gap-2 text-white text-xs px-3 py-2 bg-slate-800/90 rounded-lg shadow-lg pointer-events-auto">
+          <div
+            role="tooltip"
+            id={dragTipId}
+            className="flex items-center gap-2 text-white text-xs px-3 py-2 bg-slate-800/90 rounded-lg shadow-lg pointer-events-auto"
+          >
             <Lock size={14} />
             <span>请先暂停任务再移动</span>
           </div>

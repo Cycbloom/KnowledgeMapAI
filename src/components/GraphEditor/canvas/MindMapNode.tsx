@@ -540,7 +540,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       }}
     >
       <title>{node.title ?? t("graphEditor.mindMap.unnamed")}</title>
-      <svg width={0} height={0}>
+      <svg width={0} height={0} aria-hidden="true">
         <defs>{gradientDefinitions}</defs>
       </svg>
 

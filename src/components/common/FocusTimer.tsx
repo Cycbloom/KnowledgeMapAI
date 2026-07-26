@@ -18,8 +18,9 @@ import {
   SkipForward,
 } from "lucide-react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
-import { formatTimeFromSeconds } from "@/utils/formatters";
+import { formatTimeFromSeconds, formatIsoDuration } from "@/utils/formatters";
 import { getModeLabel } from "@/constants/timer";
+import { useReducedMotionOrPreference } from "@/hooks/common/useReducedMotionOrPreference";
 
 export const FocusTimer: React.FC = () => {
   const { t } = useTranslation();
@@ -51,6 +52,7 @@ export const FocusTimer: React.FC = () => {
   const completedSessions = useTimerStore((s) => s.completedSessions);
 
   const isRunning = isActive && !isPaused;
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -95,6 +97,7 @@ export const FocusTimer: React.FC = () => {
       }}
       layout
       initial={false}
+      transition={transitionOverride}
       className={cn(
         "fixed z-50 shadow-xl border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 overflow-hidden",
         isExpanded
@@ -111,13 +114,23 @@ export const FocusTimer: React.FC = () => {
         {!isExpanded ? (
           <motion.div
             key="mini"
-            initial={{ opacity: 0 }}
+            initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+            transition={transitionOverride}
+            role="button"
+            tabIndex={0}
+            aria-label={t("common.aria.dragHandle")}
             className="flex items-center gap-2 p-2 cursor-pointer"
             onPointerDown={(e) => dragControls.start(e)}
             onClick={() => {
               if (!isDragging.current) {
+                setIsExpanded(!isExpanded);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === " " || e.key === "Enter") {
+                e.preventDefault();
                 setIsExpanded(!isExpanded);
               }
             }}
@@ -128,9 +141,12 @@ export const FocusTimer: React.FC = () => {
               {mode === "focus" ? <Brain size={20} /> : <Coffee size={20} />}
             </div>
             <div className="flex flex-col pr-2">
-              <span className="text-sm font-bold font-mono text-gray-800 dark:text-gray-200 select-none">
+              <time
+                dateTime={formatIsoDuration(timeLeft)}
+                className="text-sm font-bold font-mono text-gray-800 dark:text-gray-200 select-none"
+              >
                 {formatTimeFromSeconds(timeLeft)}
-              </span>
+              </time>
               {isRunning && (
                 <span className="text-[10px] text-gray-500 dark:text-gray-400 select-none">
                   {t("focusTimer.inProgress")}...
@@ -141,13 +157,22 @@ export const FocusTimer: React.FC = () => {
         ) : (
           <motion.div
             key="expanded"
-            initial={{ opacity: 0 }}
+            initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+            transition={transitionOverride}
           >
             <div
+              role="button"
+              tabIndex={0}
+              aria-label={t("common.aria.dragHandle")}
               className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-100 dark:border-slate-500 cursor-move"
               onPointerDown={(e) => dragControls.start(e)}
+              onKeyDown={(e) => {
+                if (e.key === " " || e.key === "Enter") {
+                  e.preventDefault();
+                }
+              }}
             >
               <div className="flex items-center gap-2 pointer-events-none">
                 <Brain className="text-primary-500" size={18} />
@@ -192,6 +217,7 @@ export const FocusTimer: React.FC = () => {
                         focusDuration: parseInt(e.target.value),
                       })
                     }
+                    aria-label={t("focusTimer.focusDuration")}
                     className="w-full accent-primary-500"
                   />
                   <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
@@ -305,9 +331,12 @@ export const FocusTimer: React.FC = () => {
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-4xl font-bold font-mono text-gray-800 dark:text-white">
+                    <time
+                      dateTime={formatIsoDuration(timeLeft)}
+                      className="text-4xl font-bold font-mono text-gray-800 dark:text-white"
+                    >
                       {formatTimeFromSeconds(timeLeft)}
-                    </span>
+                    </time>
                     <span className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                       {isRunning
                         ? mode === "focus"

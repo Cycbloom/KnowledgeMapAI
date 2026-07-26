@@ -33,6 +33,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
   return (
     <div
+      aria-hidden="true"
       className={cn(
         'animate-pulse bg-gray-200 dark:bg-slate-700',
         variantStyles[variant],

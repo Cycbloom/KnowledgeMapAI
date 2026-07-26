@@ -100,7 +100,7 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
           <div className="w-3 h-3 rounded-full bg-primary-500"></div>
           <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">编辑节点</h3>
         </div>
-        <button onClick={onClose} aria-label={t('common.aria.close')} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+        <button onClick={onClose} aria-label={t('common.aria.close')} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center">
           <X size={20} />
         </button>
       </div>

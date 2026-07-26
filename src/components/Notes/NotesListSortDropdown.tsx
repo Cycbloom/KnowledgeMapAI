@@ -121,6 +121,7 @@ export const NotesListSortDropdown: React.FC<Props> = ({
         }`}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls={baseId}
         aria-label={t("notes.sort.label")}
       >
         <SlidersHorizontal size={16} aria-hidden="true" />
@@ -130,6 +131,7 @@ export const NotesListSortDropdown: React.FC<Props> = ({
 
       {open && (
         <div
+          id={baseId}
           className={`absolute right-0 top-full mt-1 min-w-[160px] rounded-md border shadow-lg z-30 overflow-hidden ${
             isDark
               ? "bg-slate-800 border-slate-700"

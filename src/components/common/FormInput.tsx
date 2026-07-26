@@ -37,6 +37,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
           className={cn(baseClass, errorClass, userClass)}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
+          aria-errormessage={error ? errorId : undefined}
           aria-required={props.required ? true : undefined}
           {...props}
         />

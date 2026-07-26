@@ -270,7 +270,8 @@
     "hoursOnly": "{{hours}}h",
     "minutes": "{{count}} min",
     "hoursMinutes": "{{hours}}h {{minutes}}m",
-    "hours": "{{count}}h"
+    "hours": "{{count}}h",
+    "listLabel": "Learning path list"
   },
   "generateCards": {
     "title": "Question Generation Config",
@@ -588,6 +589,9 @@
     "enter": "Enter Focus Mode",
     "selectContent": "Please select learning content first"
   },
+  "pathWizard": {
+    "stepIndicator": "Step {{current}} of {{total}}"
+  },
   "path": {
     "title": "Path",
     "aiDriven": "AI Driven",
@@ -597,6 +601,7 @@
     "nodeRemoveFailed": "Failed to remove node",
     "nodeUpdated": "Status updated",
     "nodeUpdateFailed": "Failed to update status",
+    "stepIndicator": "Step {{current}} of {{total}}",
     "pathSaved": "Order saved",
     "pathSaveFailed": "Failed to save order",
     "pathPublished": "Learning path published",
@@ -709,5 +714,8 @@
     "empty": {
       "description": "No learning path selected, please create one in the graph"
     }
+  },
+  "pathWizard": {
+    "stepIndicator": "Step {{current}} of {{total}}"
   }
 }

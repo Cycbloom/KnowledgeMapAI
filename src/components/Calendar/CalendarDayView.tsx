@@ -48,6 +48,11 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   const [dragOverHour, setDragOverHour] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
 
+  // 键盘拖动相关状态
+  const [draggingEventId, setDraggingEventId] = useState<string | null>(null);
+  const [dropTargetHour, setDropTargetHour] = useState<number | null>(null);
+  const [dragAnnouncement, setDragAnnouncement] = useState<string>("");
+
   const dayData = useMemo(() => {
     const dateStr = currentDate.toDateString();
 
@@ -216,6 +221,79 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
     e: React.KeyboardEvent,
     event: CalendarEvent,
   ) => {
+    // 当前正有事件处于键盘拖动模式
+    if (draggingEventId !== null) {
+      // 其他事件正在被拖动：忽略
+      if (draggingEventId !== event.id) {
+        return;
+      }
+
+      if (e.key === "ArrowUp" && dropTargetHour !== null) {
+        e.preventDefault();
+        const newHour = Math.max(0, dropTargetHour - 1);
+        setDropTargetHour(newHour);
+        setDragAnnouncement(
+          `${t("calendar.drag.targetHour", { hour: newHour })}. ${t("calendar.drag.moveHint")}`,
+        );
+      } else if (e.key === "ArrowDown" && dropTargetHour !== null) {
+        e.preventDefault();
+        const newHour = Math.min(23, dropTargetHour + 1);
+        setDropTargetHour(newHour);
+        setDragAnnouncement(
+          `${t("calendar.drag.targetHour", { hour: newHour })}. ${t("calendar.drag.moveHint")}`,
+        );
+      } else if (e.key === "Enter" && dropTargetHour !== null) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (onEventDrop) {
+          const newStart = new Date(currentDate);
+          newStart.setHours(dropTargetHour, 0, 0, 0);
+
+          const originalStart = new Date(event.start);
+          const originalEnd = event.end ? new Date(event.end) : null;
+          let newEnd: Date | undefined;
+          if (originalEnd) {
+            const duration = originalEnd.getTime() - originalStart.getTime();
+            newEnd = new Date(newStart.getTime() + duration);
+          }
+
+          onEventDrop({
+            eventId: event.id,
+            newStart,
+            newEnd,
+          });
+        }
+        setDragAnnouncement(
+          t("calendar.drag.confirm", { hour: dropTargetHour }),
+        );
+        setDraggingEventId(null);
+        setDropTargetHour(null);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setDraggingEventId(null);
+        setDropTargetHour(null);
+        setDragAnnouncement(t("calendar.drag.cancel"));
+      }
+      return;
+    }
+
+    // 非拖动模式：Ctrl+Space / Shift+Space 进入键盘拖动模式
+    if (
+      (e.key === " " && (e.ctrlKey || e.shiftKey)) &&
+      onEventDrop
+    ) {
+      e.preventDefault();
+      e.stopPropagation();
+      const startHour = new Date(event.start).getHours();
+      setDraggingEventId(event.id);
+      setDropTargetHour(startHour);
+      setDragAnnouncement(
+        `${t("calendar.drag.start", { title: event.title, hour: startHour })}. ${t("calendar.drag.moveHint")}`,
+      );
+      return;
+    }
+
+    // 默认行为：Enter/Space 触发点击
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       e.stopPropagation();
@@ -228,6 +306,9 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
 
   return (
     <div className="h-full flex flex-col">
+      <span aria-live="polite" className="sr-only">
+        {dragAnnouncement}
+      </span>
       <div
         className={`px-4 py-3 border-b ${isDark ? "border-slate-700" : "border-gray-200"}`}
       >
@@ -277,10 +358,13 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
           {HOURS.map((hour) => (
             <div
               key={hour}
+              role="region"
+              aria-label={`${hour.toString().padStart(2, "0")}:00`}
               className={`flex min-h-[80px] border-b ${
                 isDark ? "border-slate-700/50" : "border-gray-100"
               } ${hoveredHour === hour ? "bg-primary-50/50 dark:bg-primary-500/5" : ""} ${
-                dragOverHour === hour
+                dragOverHour === hour ||
+                (draggingEventId !== null && dropTargetHour === hour)
                   ? "bg-primary-100/50 dark:bg-primary-500/20"
                   : ""
               }`}
@@ -307,6 +391,7 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                 {calendarMode === "plan" &&
                   dayData.eventsByHour[hour]?.map((event, i) => {
                     const isDragging = draggedEvent?.id === event.id;
+                    const isKeyboardDragging = draggingEventId === event.id;
                     const isEditingDate = editingDateEventId === event.id;
                     return (
                       <div
@@ -318,7 +403,9 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                         tabIndex={0}
                         aria-roledescription={t("calendar.a11y.draggableTask")}
                         aria-label={event.title}
-                        aria-grabbed={isDragging ? "true" : "false"}
+                        aria-grabbed={
+                          isDragging || isKeyboardDragging ? "true" : "false"
+                        }
                         onKeyDown={(e) => handleCardKeyDown(e, event)}
                         className={`mb-1 p-2 rounded-lg ${getEventColor(event)} text-white cursor-pointer hover:opacity-90 transition-opacity ${
                           isDragging ? "opacity-50" : ""
@@ -433,6 +520,27 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                     </div>
                   </div>
                 )}
+
+                {draggingEventId !== null &&
+                  dropTargetHour === hour && (
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-1 flex items-center justify-center pointer-events-none"
+                    >
+                      <div
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border-2 border-dashed ${
+                          isDark
+                            ? "border-primary-400 text-primary-400"
+                            : "border-primary-300 text-primary-500"
+                        }`}
+                      >
+                        <Move size={14} />
+                        <span className="text-sm">
+                          {t("calendar.dayView.moveTo", { hour })}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                 {calendarMode === "plan" &&
                   hoveredHour === hour &&

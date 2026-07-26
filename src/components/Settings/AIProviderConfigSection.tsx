@@ -275,6 +275,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                       <div className="relative">
                         <input
                           type={showApiKey ? "text" : "password"}
+                          autoComplete="off"
                           value={isEnvSource ? "" : form.apiKey}
                           onChange={(e) =>
                             setProviderForms((prev) => ({
@@ -316,6 +317,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                       </label>
                       <input
                         type="text"
+                        autoComplete="off"
                         value={form.baseURL}
                         onChange={(e) =>
                           setProviderForms((prev) => ({
@@ -337,6 +339,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                       </label>
                       <input
                         type="text"
+                        autoComplete="off"
                         value={form.model}
                         onChange={(e) =>
                           setProviderForms((prev) => ({

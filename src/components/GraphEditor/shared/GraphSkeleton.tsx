@@ -33,7 +33,7 @@ export const GraphSkeleton: React.FC = () => {
         <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" style={{ animationDelay: '600ms' }} />
       </div>
       
-      <svg className="absolute inset-0 w-full h-full pointer-events-none">
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
         <line x1="50%" y1="100" x2="25%" y2="160" stroke="currentColor" className="text-gray-200 dark:text-gray-700" strokeWidth="2" strokeDasharray="4" />
         <line x1="50%" y1="100" x2="75%" y2="160" stroke="currentColor" className="text-gray-200 dark:text-gray-700" strokeWidth="2" strokeDasharray="4" />
         <line x1="33%" y1="180" x2="25%" y2="256" stroke="currentColor" className="text-gray-200 dark:text-gray-700" strokeWidth="2" strokeDasharray="4" />

@@ -140,7 +140,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
   if (isSearching) {
     return (
-      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 z-50 p-3">
+      <div role="status" className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 z-50 p-3">
         <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
           <motion.div
             animate={{ rotate: 360 }}
@@ -160,7 +160,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
   if (!hasResults && query.length >= 2) {
     return (
-      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 z-50 p-3">
+      <div role="status" className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 z-50 p-3">
         <div className="text-center text-gray-500 dark:text-gray-400 text-sm">
           未找到「{query}」相关结果
         </div>
@@ -184,7 +184,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           <div className="py-1.5 border-b border-gray-200 dark:border-slate-500">
             <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
               <Network className="w-3 h-3 text-primary-500" />
-              <span>图谱 {results.graphs.length}</span>
+              <span aria-live="polite" aria-atomic="true">图谱 {results.graphs.length}</span>
             </div>
             <div>
               {results.graphs.map((graph) => (
@@ -237,7 +237,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           <div className="py-1.5">
             <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
               <FileText className="w-3 h-3 text-green-500" />
-              <span>节点 {results.nodes.length}</span>
+              <span aria-live="polite" aria-atomic="true">节点 {results.nodes.length}</span>
             </div>
             <div>
               {results.nodes.map((node, index) => (
@@ -313,7 +313,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           <div className="py-1.5 border-t border-gray-200 dark:border-slate-500">
             <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
               <NotebookPen className="w-3 h-3 text-amber-500" />
-              <span>
+              <span aria-live="polite" aria-atomic="true">
                 {t('dashboard.search.notes')} {results.notes.length}
               </span>
             </div>

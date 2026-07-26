@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useId } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import {
@@ -106,10 +106,13 @@ const TreeNodeItem: React.FC<{
           ) : (
             <div className="w-5" />
           )}
-          <GripVertical
-            size={14}
+          <button
+            type="button"
+            aria-label={t("common.aria.dragHandle")}
             className={`${isDark ? "text-slate-500" : "text-gray-400"} cursor-grab`}
-          />
+          >
+            <GripVertical size={14} aria-hidden="true" />
+          </button>
         </div>
 
         <div className="flex-1 min-w-0 space-y-2">
@@ -330,6 +333,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
   useEscapeKey(() => onCancel(), true);
+  const titleId = useId();
 
   const rootNodes = useMemo(() => nodes.filter((n) => !n.parentId), [nodes]);
 
@@ -451,6 +455,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
     >
       <div
         ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className={`w-full ${
           isMobile ? "h-full rounded-none" : "max-w-4xl rounded-2xl"
         } shadow-2xl ${isMobile ? "max-h-full" : "max-h-[90vh]"} flex flex-col ${
@@ -464,6 +471,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         >
           <div className="flex items-center justify-between">
             <h2
+              id={titleId}
               className={`text-lg md:text-xl font-bold ${
                 isDark ? "text-white" : "text-gray-900"
               }`}

@@ -166,6 +166,8 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
     <div
       className="absolute left-0 right-0 z-50 pointer-events-none"
       style={{ bottom: bottomOffset }}
+      role="region"
+      aria-label={t('common.aria.notifications')}
       aria-live={ariaLive}
       aria-atomic="false"
     >
@@ -183,8 +185,10 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
               'text-white flex items-center px-4 text-xs select-none shadow-lg pointer-events-auto'
             )}
             {...(msg.type === "loading"
-              ? { role: "status", "aria-busy": "true" }
-              : {})}
+              ? { role: "status", "aria-busy": "true", "aria-live": "polite" }
+              : msg.type === "error"
+                ? { role: "alert", "aria-live": "assertive" }
+                : { role: "status", "aria-live": "polite" })}
           >
             <div className="flex items-center gap-2 flex-1 overflow-hidden">
               <div className="flex items-center gap-2 truncate">

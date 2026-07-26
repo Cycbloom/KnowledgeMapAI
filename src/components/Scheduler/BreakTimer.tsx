@@ -10,8 +10,9 @@ import {
   ArrowRight,
   Sparkles
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTimerStore } from '../../store/useTimerStore';
-import { formatTimeFromSeconds } from '../../utils/formatters';
+import { formatTimeFromSeconds, formatIsoDuration } from '../../utils/formatters';
 import { useReducedMotionOrPreference } from '@/hooks/common/useReducedMotionOrPreference';
 
 interface BreakTimerProps {
@@ -38,6 +39,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
   onResumeTask,
   onSwitchTask,
 }) => {
+  const { t } = useTranslation();
   const timeLeft = useTimerStore(s => s.timeLeft);
   const isActive = useTimerStore(s => s.isActive);
   const isPaused = useTimerStore(s => s.isPaused);
@@ -93,7 +95,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
               transition={transitionOverride ?? { delay: 0.1 }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/20 border border-emerald-500/30 mb-4"
             >
-              <Coffee size={20} className="text-emerald-400" />
+              <Coffee size={20} className="text-emerald-400" aria-hidden="true" />
               <span className="text-emerald-300 font-medium">
                 {breakType === 'long' ? '长休息时间' : '小憩时间'}
               </span>
@@ -117,6 +119,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 <svg
                   className="w-full h-full transform -rotate-90"
                   viewBox="0 0 256 256"
+                  aria-hidden="true"
                 >
                   <defs>
                     <linearGradient id="breakGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -159,16 +162,22 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 </svg>
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <motion.div
+                  <motion.time
+                    dateTime={formatIsoDuration(timeLeft)}
                     className="text-5xl font-mono font-bold text-white"
                     key={timeLeft}
                     initial={reduceMotion ? false : { scale: 1.05 }}
                     animate={{ scale: 1 }}
                     transition={transitionOverride ?? { duration: 0.2 }}
+                    aria-live="polite"
+                    aria-atomic="true"
                   >
                     {formatTimeFromSeconds(timeLeft)}
-                  </motion.div>
-                  <div className="text-emerald-300/60 text-sm mt-2">
+                  </motion.time>
+                  <div
+                    className="text-emerald-300/60 text-sm mt-2"
+                    aria-live="polite"
+                  >
                     {isRunning ? '休息中...' : '已暂停'}
                   </div>
                 </div>
@@ -218,6 +227,8 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
 
                 <motion.button
                   onClick={() => isRunning ? useTimerStore.getState().pause() : useTimerStore.getState().resume()}
+                  aria-pressed={isRunning}
+                  aria-label={isRunning ? t('scheduler.currentTask.pause') : t('scheduler.currentTask.resume')}
                   className={`p-4 rounded-full shadow-lg ${
                     isRunning
                       ? 'bg-amber-500 text-white'
@@ -226,7 +237,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                   whileHover={reduceMotion ? undefined : { scale: 1.05 }}
                   whileTap={reduceMotion ? undefined : { scale: 0.95 }}
                 >
-                  {isRunning ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
+                  {isRunning ? <Pause size={24} aria-hidden="true" /> : <Play size={24} className="ml-0.5" aria-hidden="true" />}
                 </motion.button>
 
                 <motion.button
@@ -252,7 +263,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 transition={transitionOverride ?? { type: 'spring', delay: 0.1 }}
                 className="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-500/20 flex items-center justify-center"
               >
-                <CheckCircle size={40} className="text-emerald-400" />
+                <CheckCircle size={40} className="text-emerald-400" aria-hidden="true" />
               </motion.div>
 
               <h3 className="text-2xl font-bold text-white mb-2">休息结束！</h3>
@@ -265,7 +276,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                   whileHover={reduceMotion ? undefined : { scale: 1.02 }}
                   whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 >
-                  <Play size={18} />
+                  <Play size={18} aria-hidden="true" />
                   <span>继续当前任务</span>
                 </motion.button>
 
@@ -275,7 +286,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                   whileHover={reduceMotion ? undefined : { scale: 1.02 }}
                   whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 >
-                  <ArrowRight size={18} />
+                  <ArrowRight size={18} aria-hidden="true" />
                   <span>切换到下一个任务</span>
                 </motion.button>
 
@@ -285,7 +296,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                   whileHover={reduceMotion ? undefined : { scale: 1.02 }}
                   whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 >
-                  <Sparkles size={18} />
+                  <Sparkles size={18} aria-hidden="true" />
                   <span>稍后再说</span>
                 </motion.button>
               </div>

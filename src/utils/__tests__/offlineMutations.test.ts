@@ -300,5 +300,47 @@ describe("offlineMutations", () => {
       pending = await offlineMutationQueue.getPending();
       expect(pending).toHaveLength(0);
     });
+
+    it("应该把 'No mutationFn found' 错误标记为 unplayable，保留在队列中而不被丢弃", async () => {
+      // 模拟应用未通过 queryClient.setMutationDefaults 注册 mutationFn 的场景。
+      // 这是 offlineMutationQueue.replay 的真实失败模式——若不识别此错误，
+      // 离线期间的用户操作会在 3 次重试后被静默丢弃。
+      const noFnError = new Error("No mutationFn found");
+      const { queryClient, mutation } = createMockQueryClient(async () => {
+        throw noFnError;
+      });
+
+      const id = await offlineMutationQueue.enqueue({
+        mutationKey: ["graphs", "create"],
+        variables: { name: "test graph" },
+        context: undefined,
+        meta: undefined,
+      });
+
+      // 第 1 次 replay：标记为 unplayable，retryCount 不递增
+      await offlineMutationQueue.replay(queryClient);
+      let pending = await offlineMutationQueue.getPending();
+      expect(pending).toHaveLength(1);
+      expect(pending[0].id).toBe(id);
+      expect(pending[0].unplayable).toBe(true);
+      expect(pending[0].retryCount).toBe(0);
+      expect(pending[0].lastError).toBe("No mutationFn found");
+      const executeCountAfterFirst = mutation.execute.mock.calls.length;
+
+      // 第 2 次 replay：unplayable 项被跳过，不再执行（关键：避免重复抛错写库）
+      await offlineMutationQueue.replay(queryClient);
+      pending = await offlineMutationQueue.getPending();
+      expect(pending).toHaveLength(1);
+      expect(pending[0].unplayable).toBe(true);
+      expect(mutation.execute.mock.calls.length).toBe(executeCountAfterFirst);
+
+      // 经过 5+ 次 replay，mutation 仍在队列中（不会被 MAX_RETRY_COUNT 丢弃）
+      for (let i = 0; i < 5; i++) {
+        await offlineMutationQueue.replay(queryClient);
+      }
+      pending = await offlineMutationQueue.getPending();
+      expect(pending).toHaveLength(1);
+      expect(pending[0].id).toBe(id);
+    });
   });
 });

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from "../../../hooks";
 
 interface MiniMapProps {
@@ -27,6 +28,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({
   viewCenterY
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -157,8 +159,10 @@ export const MiniMap: React.FC<MiniMapProps> = ({
 
   if (nodes.length === 0) return null;
 
+  const miniMapAriaLabel = t('graphEditor.miniMap.ariaLabel', { count: nodes.length });
+
   return (
-    <div 
+    <div
       className={`bg-white/90 dark:bg-slate-800/90 border border-gray-200 dark:border-slate-500 rounded-lg shadow-lg overflow-hidden backdrop-blur-sm ${className}`}
       style={{ width, height }}
     >
@@ -166,9 +170,13 @@ export const MiniMap: React.FC<MiniMapProps> = ({
         ref={svgRef}
         width={width}
         height={height}
+        role="application"
+        aria-label={miniMapAriaLabel}
         onMouseDown={handleMouseDown}
         className="cursor-crosshair w-full h-full"
       >
+        <title>{miniMapAriaLabel}</title>
+        <desc>{t('graphEditor.miniMap.desc')}</desc>
         <g transform={`translate(${offsetX}, ${offsetY}) scale(${scale})`}>
           {/* Background for bounds */}
           <rect 

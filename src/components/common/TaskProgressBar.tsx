@@ -70,7 +70,11 @@ export const TaskProgressBar: React.FC<TaskProgressBarProps> = ({
       </div>
 
       {(statusText || progress.current) && (
-        <div className="text-xs text-gray-600 dark:text-slate-400 space-y-0.5">
+        <div
+          className="text-xs text-gray-600 dark:text-slate-400 space-y-0.5"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {statusText && (
             <div data-testid="task-progress-status">{statusText}</div>
           )}

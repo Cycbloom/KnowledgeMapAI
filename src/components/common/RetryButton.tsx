@@ -53,8 +53,13 @@ export function RetryButton({
         className,
       )}
     >
-      {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+      {isLoading && (
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+      )}
       {displayLabel}
+      {isLoading && (
+        <span className="sr-only">{t('common.aria.loading')}</span>
+      )}
     </button>
   );
 }

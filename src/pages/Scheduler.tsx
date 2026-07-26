@@ -6,6 +6,7 @@ import React, {
   useRef,
   lazy,
   Suspense,
+  useId,
 } from "react";
 import { useTimerStore } from "../store/useTimerStore";
 import { useFocusStore } from "../store/useFocusStore";
@@ -132,6 +133,9 @@ export const Scheduler: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const settingsModalRef = useFocusTrap<HTMLDivElement>({ enabled: showSettings });
   useEscapeKey(() => setShowSettings(false), showSettings);
+  const settingsTitleId = useId();
+  const settingsControlsId = useId();
+  const noDeadlineControlsId = useId();
   const [currentView, setCurrentView] = useState<ViewType>(() => {
     return (localStorage.getItem("scheduler-view") as ViewType) || "queue";
   });
@@ -554,6 +558,8 @@ export const Scheduler: React.FC = () => {
                 <ShortcutHint actionId="settings">
                   <button
                     onClick={() => setShowSettings(!showSettings)}
+                    aria-expanded={showSettings}
+                    aria-controls={settingsControlsId}
                     className={`p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 ${
                       showSettings
                         ? "bg-primary-100 dark:bg-primary-500/20 border-primary-300 dark:border-primary-500/50 text-primary-600 dark:text-primary-400"
@@ -661,7 +667,7 @@ export const Scheduler: React.FC = () => {
           </div>
         )}
 
-        <div ref={mainRef} role="region" aria-label={t("scheduler.regionLabel")} className="flex-1 min-h-0 flex flex-col p-3 sm:p-6">
+        <div ref={mainRef} role="region" aria-label={t("scheduler.regionLabel")} aria-busy={isLoading} className="flex-1 min-h-0 flex flex-col p-3 sm:p-6">
           {isLoading && !isFetching ? (
             <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="max-w-7xl mx-auto p-3 sm:p-6">
@@ -814,6 +820,7 @@ export const Scheduler: React.FC = () => {
         <AnimatePresence>
           {showSettings && (
             <motion.div
+              id={settingsControlsId}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
@@ -824,6 +831,9 @@ export const Scheduler: React.FC = () => {
             >
               <motion.div
                 ref={settingsModalRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={settingsTitleId}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
@@ -832,7 +842,7 @@ export const Scheduler: React.FC = () => {
               >
                 <div className="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
                   <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                    <h2 id={settingsTitleId} className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
                       {t("scheduler.taskSettings")}
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -842,12 +852,14 @@ export const Scheduler: React.FC = () => {
                   <button
                     onClick={() => setShowSettings(false)}
                     className="p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px]"
+                    aria-label={t("common.close")}
                   >
                     <svg
                       className="w-5 h-5 text-slate-500 dark:text-slate-400"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
+                      aria-hidden="true"
                     >
                       <path
                         strokeLinecap="round"
@@ -883,6 +895,8 @@ export const Scheduler: React.FC = () => {
                   <span className="text-slate-300 dark:text-slate-600">|</span>
                   <button
                     onClick={() => setShowNoDeadlineHint(!showNoDeadlineHint)}
+                    aria-expanded={showNoDeadlineHint}
+                    aria-controls={noDeadlineControlsId}
                     className="flex items-center gap-1 hover:text-amber-500 dark:hover:text-amber-400 transition-colors"
                   >
                     <Info size={12} />
@@ -901,6 +915,7 @@ export const Scheduler: React.FC = () => {
           <AnimatePresence>
             {showNoDeadlineHint && noDeadlineTasks.length > 0 && (
               <motion.div
+                id={noDeadlineControlsId}
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}

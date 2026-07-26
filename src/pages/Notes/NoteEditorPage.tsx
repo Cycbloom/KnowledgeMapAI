@@ -229,6 +229,7 @@ const NoteEditorPage: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-900">
+      <h1 className="sr-only">{t('notes.title')}</h1>
       {/* 顶部 header */}
       <header className="flex-shrink-0 border-b border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
@@ -330,7 +331,7 @@ const NoteEditorPage: React.FC = () => {
       </header>
 
       {/* 主体：BlockEditor(左) + 被引用的块侧边栏(右,P3 Task 10.2) */}
-      <div role="region" aria-label={t("notes.editor.regionLabel")} className="flex-1 overflow-hidden">
+      <div role="region" aria-label={t('common.aria.noteEditorRegion')} className="flex-1 overflow-hidden">
         <div className="h-full max-w-6xl mx-auto flex gap-4 px-4 sm:px-6 py-4">
           <div className="flex-1 min-w-0 h-full">
             <div className="max-w-4xl mx-auto h-full">
@@ -341,7 +342,7 @@ const NoteEditorPage: React.FC = () => {
                       <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
                         <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
                       </div>
-                      <p className="text-red-600 dark:text-red-400 mb-2 font-medium">
+                      <p role="alert" className="text-red-600 dark:text-red-400 mb-2 font-medium">
                         编辑器崩溃
                       </p>
                       <p className="text-xs text-gray-500 dark:text-slate-400 mb-4 font-mono break-all">

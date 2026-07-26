@@ -104,15 +104,26 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
   const renderNode = (
     node: StoryStructure,
     depth: number = 0,
+    setSize?: number,
+    posInSet?: number,
   ): React.ReactNode => {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedIds.has(node.id);
     const isSelected = selectedId === node.id;
+    const childrenId = `structure-children-${node.id}`;
+    const childCount = hasChildren ? node.children?.length ?? 0 : 0;
 
     return (
       <div key={node.id}>
         <div
-          className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer transition-colors
+          role="treeitem"
+          aria-level={depth + 1}
+          aria-expanded={hasChildren ? isExpanded : undefined}
+          aria-setsize={setSize}
+          aria-posinset={posInSet}
+          aria-selected={isSelected}
+          tabIndex={isSelected ? 0 : -1}
+          className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400
             ${
               isSelected
                 ? "bg-primary-50 dark:bg-primary-900/20 border-l-2 border-primary-500"
@@ -120,6 +131,22 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
             }`}
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
           onClick={() => onSelect(node)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight") {
+              if (hasChildren && !isExpanded) {
+                e.preventDefault();
+                toggleExpand(node.id);
+              }
+            } else if (e.key === "ArrowLeft") {
+              if (hasChildren && isExpanded) {
+                e.preventDefault();
+                toggleExpand(node.id);
+              }
+            } else if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onSelect(node);
+            }
+          }}
         >
           {/* Expand/Collapse Button */}
           <button
@@ -127,13 +154,23 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
               e.stopPropagation();
               if (hasChildren) toggleExpand(node.id);
             }}
+            aria-expanded={hasChildren ? isExpanded : undefined}
+            aria-controls={hasChildren ? childrenId : undefined}
+            aria-label={
+              hasChildren
+                ? isExpanded
+                  ? t("common.collapse", { defaultValue: "折叠" })
+                  : t("common.expand", { defaultValue: "展开" })
+                : undefined
+            }
+            tabIndex={-1}
             className={`w-4 h-4 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors
               ${!hasChildren ? "invisible" : ""}`}
           >
             {isExpanded ? (
-              <ChevronDown size={12} className="text-gray-500" />
+              <ChevronDown size={12} className="text-gray-500" aria-hidden="true" />
             ) : (
-              <ChevronRight size={12} className="text-gray-500" />
+              <ChevronRight size={12} className="text-gray-500" aria-hidden="true" />
             )}
           </button>
 
@@ -144,6 +181,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
                 ? "text-primary-600 dark:text-primary-400"
                 : "text-gray-500 dark:text-gray-400"
             }`}
+            aria-hidden="true"
           >
             {LEVEL_ICONS[node.structure_level]}
           </span>
@@ -159,30 +197,32 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
             {node.title}
           </span>
 
-          {/* Action Buttons - Show on Hover */}
-          <div className="hidden group-hover:flex items-center gap-0.5 flex-shrink-0">
+          {/* Action Buttons - Show on Hover or Focus */}
+          <div className="hidden group-hover:flex group-focus-within:flex items-center gap-0.5 flex-shrink-0">
             <button
               onClick={(e) => handleAddChild(e, node.id, node.structure_level)}
-              className="w-5 h-5 flex items-center justify-center rounded text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
-              title={t("storyEditor.addChild")}
+              className="w-5 h-5 flex items-center justify-center rounded text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400"
+              aria-label={t("storyEditor.addChild")}
+              tabIndex={-1}
             >
-              <Plus size={12} />
+              <Plus size={12} aria-hidden="true" />
             </button>
             <button
               onClick={(e) => handleDelete(e, node.id)}
-              className="w-5 h-5 flex items-center justify-center rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-              title={t("storyEditor.delete")}
+              className="w-5 h-5 flex items-center justify-center rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400"
+              aria-label={t("storyEditor.delete")}
+              tabIndex={-1}
             >
-              <Trash2 size={12} />
+              <Trash2 size={12} aria-hidden="true" />
             </button>
           </div>
         </div>
 
         {/* Children */}
         {hasChildren && isExpanded && (
-          <div>
-            {node.children?.map((child: StoryStructure) =>
-              renderNode(child, depth + 1),
+          <div role="group" id={childrenId}>
+            {node.children?.map((child: StoryStructure, index: number) =>
+              renderNode(child, depth + 1, childCount, index + 1),
             )}
           </div>
         )}
@@ -242,8 +282,14 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
           </div>
         ) : (
           /* Tree View */
-          <div className="space-y-0.5 px-1">
-            {structures.map((node) => renderNode(node))}
+          <div
+            className="space-y-0.5 px-1"
+            role="tree"
+            aria-label={t("storyEditor.treeLabel")}
+          >
+            {structures.map((node, index) =>
+              renderNode(node, 0, structures.length, index + 1),
+            )}
           </div>
         )}
 

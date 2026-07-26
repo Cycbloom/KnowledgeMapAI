@@ -151,12 +151,14 @@ const SortableNode: React.FC<SortableNodeProps> = ({
       aria-roledescription={t('learning.pathEditor.a11y.draggableNode')}
       aria-label={node.node?.title || t('learning.pathEditor.unknownNode')}
     >
-      <div
+      <button
+        type="button"
+        aria-label={t('common.aria.dragHandle')}
         {...listeners}
         className={`cursor-grab active:cursor-grabbing p-1 rounded ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
       >
-        <GripVertical className="w-4 h-4 text-gray-400" />
-      </div>
+        <GripVertical className="w-4 h-4 text-gray-400" aria-hidden="true" />
+      </button>
 
       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 text-sm font-medium">
         {index + 1}
@@ -435,8 +437,15 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                   )}
                 </div>
                 <div className="flex-1 mx-4">
-                  <div className={`h-2 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
-                    <div 
+                  <div
+                    role="progressbar"
+                    aria-valuenow={Math.round(learningPath.progress_percentage ?? 0)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={t('common.aria.progress')}
+                    className={`h-2 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}
+                  >
+                    <div
                       className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-500"
                       style={{ width: `${learningPath.progress_percentage ?? 0}%` }}
                     />

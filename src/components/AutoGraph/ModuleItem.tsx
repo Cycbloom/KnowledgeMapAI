@@ -46,10 +46,10 @@ const ModuleItemComponent: React.FC<ModuleItemProps> = ({
       <div className="flex items-start gap-2">
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-500 bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">
               #{index + 1}
             </span>
-            <span className="text-[10px] text-gray-400 dark:text-gray-500">
+            <span className="text-[10px] text-gray-500 dark:text-gray-500">
               {module.title.length}/20
             </span>
           </div>
@@ -57,6 +57,7 @@ const ModuleItemComponent: React.FC<ModuleItemProps> = ({
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <input
               type="text"
+              aria-label={t("autoGraph.module.namePlaceholder")}
               value={module.title}
               onChange={handleTitleChange}
               disabled={disabled}
@@ -88,6 +89,7 @@ const ModuleItemComponent: React.FC<ModuleItemProps> = ({
 
           <input
             type="text"
+            aria-label={t("autoGraph.module.descriptionPlaceholder")}
             value={module.description}
             onChange={handleDescriptionChange}
             disabled={disabled}
@@ -114,7 +116,7 @@ const ModuleItemComponent: React.FC<ModuleItemProps> = ({
             ${
               canDelete && !disabled
                 ? "text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                : "text-gray-500 dark:text-gray-600 cursor-not-allowed"
             }
           `}
           aria-label={canDelete ? t("autoGraph.module.deleteModule") : t("autoGraph.module.keepAtLeast3")}

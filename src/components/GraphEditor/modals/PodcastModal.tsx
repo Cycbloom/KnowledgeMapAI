@@ -159,17 +159,17 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
             </div>
             <button
               onClick={onClose}
-              aria-label="关闭"
+              aria-label={t("common.aria.close")}
               className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
             >
-              <X size={20} className="text-slate-500" />
+              <X size={20} className="text-slate-500" aria-hidden="true" />
             </button>
           </div>
 
           {/* Content Area */}
           <div className="flex-1 overflow-hidden flex flex-col relative">
             {isGenerating ? (
-              <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-8">
+              <div role="status" className="flex-1 flex flex-col items-center justify-center space-y-4 p-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
                 <p className="text-slate-600 dark:text-slate-300 animate-pulse">
                   {t("podcast.generating")}
@@ -252,23 +252,25 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
                 className="p-2 text-slate-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-full transition-colors disabled:opacity-50"
                 title={t("podcast.regenerate")}
               >
-                <RefreshCw size={20} />
+                <RefreshCw size={20} aria-hidden="true" />
               </button>
 
               {isSpeaking && !isPaused ? (
                 <button
                   onClick={pause}
+                  aria-label={t("common.aria.pause")}
                   className="p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-transform active:scale-95"
                 >
-                  <Pause size={24} fill="currentColor" />
+                  <Pause size={24} fill="currentColor" aria-hidden="true" />
                 </button>
               ) : (
                 <button
                   onClick={handlePlay}
+                  aria-label={t("common.aria.play")}
                   disabled={!script || isGenerating}
                   className="p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-transform active:scale-95 disabled:bg-slate-400"
                 >
-                  <Play size={24} fill="currentColor" className="ml-1" />
+                  <Play size={24} fill="currentColor" className="ml-1" aria-hidden="true" />
                 </button>
               )}
 
@@ -279,7 +281,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
                   className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-slate-800 rounded-full transition-colors"
                   title={t("podcast.stopPlayback")}
                 >
-                  <StopCircle size={20} />
+                  <StopCircle size={20} aria-hidden="true" />
                 </button>
               )}
             </div>

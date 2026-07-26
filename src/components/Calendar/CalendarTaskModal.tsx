@@ -59,6 +59,10 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const titleId = useId();
+  const titleInputId = useId();
+  const deadlineInputId = useId();
+  const durationInputId = useId();
+  const tagsInputId = useId();
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => onClose(), isOpen);
   const [saving, setSaving] = useState(false);
@@ -153,6 +157,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                 className={`p-3 rounded-lg min-h-[44px] min-w-[44px] ${isDark ? "hover:bg-slate-700" : "hover:bg-gray-100"}`}
               >
                 <X
+                  aria-hidden="true"
                   size={20}
                   className={isDark ? "text-slate-400" : "text-gray-500"}
                 />
@@ -163,6 +168,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
               {/* Title */}
               <div>
                 <label
+                  htmlFor={titleInputId}
                   className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
                 >
                   {t("calendar.taskTitle")}{" "}
@@ -170,6 +176,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                 </label>
                 <FormInput
                   type="text"
+                  id={titleInputId}
                   aria-required={true}
                   value={taskForm.title}
                   onChange={(e) => {
@@ -199,12 +206,14 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
               {/* Deadline */}
               <div>
                 <label
+                  htmlFor={deadlineInputId}
                   className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
                 >
-                  <Calendar size={14} className="inline mr-1" />
+                  <Calendar size={14} className="inline mr-1" aria-hidden="true" />
                   {t("calendar.deadline")}
                 </label>
                 <FormInput
+                  id={deadlineInputId}
                   type="datetime-local"
                   value={taskForm.deadline}
                   onChange={(e) =>
@@ -221,12 +230,14 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label
+                    htmlFor={durationInputId}
                     className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
                   >
-                    <Clock size={14} className="inline mr-1" />
+                    <Clock size={14} className="inline mr-1" aria-hidden="true" />
                     {t("calendar.estimatedDuration")}
                   </label>
                   <FormInput
+                    id={durationInputId}
                     type="number"
                     value={taskForm.estimated_duration}
                     onChange={(e) =>
@@ -260,14 +271,17 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
               {/* Tags */}
               <div>
                 <label
+                  htmlFor={tagsInputId}
                   className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
                 >
-                  <Tag size={14} className="inline mr-1" />
+                  <Tag size={14} className="inline mr-1" aria-hidden="true" />
                   {t("calendar.tags")}
                 </label>
                 <div className="flex gap-2">
                   <input
+                    id={tagsInputId}
                     type="text"
+                    aria-label={t("calendar.addTag")}
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     onKeyPress={(e) =>
@@ -302,10 +316,10 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                         {tag}
                         <button
                           onClick={() => removeTag(tag)}
-                          aria-label={t('common.aria.close')}
+                          aria-label={t('common.aria.removeTag', { tag })}
                           className="hover:text-red-500 p-1 min-h-[32px] min-w-[32px]"
                         >
-                          <X size={14} />
+                          <X aria-hidden="true" size={14} />
                         </button>
                       </span>
                     ))}
@@ -314,15 +328,21 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
               </div>
 
               {/* Quick tags */}
-              <div className="flex flex-wrap gap-2">
+              <div
+                role="group"
+                aria-label={t("calendar.quickTagsGroupLabel")}
+                className="flex flex-wrap gap-2"
+              >
                 {QUICK_TAG_KEYS.map((key, index) => {
                   const tagValue = QUICK_TAG_VALUES[index];
+                  const isSelected = taskForm.tags.includes(tagValue);
                   return (
                     <button
                       key={tagValue}
                       type="button"
+                      aria-pressed={isSelected}
                       onClick={() => {
-                        if (!taskForm.tags.includes(tagValue)) {
+                        if (!isSelected) {
                           setTaskForm({
                             ...taskForm,
                             tags: [...taskForm.tags, tagValue],
@@ -330,7 +350,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                         }
                       }}
                       className={`px-3 py-2 rounded text-sm min-h-[40px] ${
-                        taskForm.tags.includes(tagValue)
+                        isSelected
                           ? "bg-primary-600 text-white"
                           : isDark
                             ? "bg-slate-700 text-slate-400 hover:bg-slate-600"
@@ -345,7 +365,11 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 mt-6">
+            <div
+              className="flex justify-end gap-3 mt-6"
+              role="status"
+              aria-live="polite"
+            >
               <button
                 onClick={onClose}
                 className={`px-4 py-3 rounded-lg font-medium min-h-[44px] ${
@@ -362,7 +386,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                 className="px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-h-[44px]"
               >
                 {saving && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" aria-hidden="true" />
                 )}
                 {t("calendar.create")}
               </button>

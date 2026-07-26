@@ -277,7 +277,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 onChange={(e) => setEditText(e.target.value)}
                 onKeyDown={handleEditKeyDown}
                 rows={2}
-                className="w-full bg-transparent resize-none outline-none text-sm leading-relaxed text-white"
+                className="w-full bg-transparent resize-none outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm leading-relaxed text-white"
                 style={{ minHeight: "40px", maxHeight: "160px" }}
               />
               <div className="flex items-center justify-end gap-1.5">
@@ -323,9 +323,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                       ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
                       : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
                   }`}
+                  aria-label={t("aiChat.quoteThisMessage")}
                   title={t("aiChat.quoteThisMessage")}
                 >
-                  <Quote size={14} />
+                  <Quote size={14} aria-hidden="true" />
                 </button>
                 <button
                   onClick={handleCopyMessage}
@@ -334,9 +335,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                       ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
                       : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
                   }`}
+                  aria-label={copied ? t("aiChat.copiedMessage") : t("aiChat.copyMessage")}
                   title={copied ? t("aiChat.copiedMessage") : t("aiChat.copyMessage")}
                 >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
                 </button>
                 {isLast && onRegenerate && (
                   <button
@@ -351,9 +353,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                           ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
                           : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
                     }`}
+                    aria-label={t("aiChat.regenerateResponse")}
                     title={t("aiChat.regenerateResponse")}
                   >
-                    <RotateCcw size={14} />
+                    <RotateCcw size={14} aria-hidden="true" />
                   </button>
                 )}
               </>
@@ -418,9 +421,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                     ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
                     : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
               }`}
+              aria-label={t("aiChat.editMessage")}
               title={t("aiChat.editMessage")}
             >
-              <Pencil size={14} />
+              <Pencil size={14} aria-hidden="true" />
             </button>
           </div>
         )}
@@ -437,16 +441,20 @@ interface LoadingMessageProps {
 export const LoadingMessage: React.FC<LoadingMessageProps> = ({
   isDark,
   isTutorMode,
-}) => (
+}) => {
+  const { t } = useTranslation();
+  return (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     className="flex gap-3"
+    aria-live="polite"
   >
     <div
       className={`w-8 h-8 rounded-full flex items-center justify-center ${
         isDark ? "bg-slate-700" : "bg-gray-200"
       }`}
+      aria-hidden="true"
     >
       <Loader2
         size={16}
@@ -465,6 +473,7 @@ export const LoadingMessage: React.FC<LoadingMessageProps> = ({
       className={`p-3 rounded-2xl rounded-tl-sm ${
         isDark ? "bg-slate-700 text-slate-50" : "bg-gray-100"
       }`}
+      aria-hidden="true"
     >
       <div className="flex gap-1">
         <span
@@ -481,7 +490,9 @@ export const LoadingMessage: React.FC<LoadingMessageProps> = ({
         />
       </div>
     </div>
+    <span className="sr-only">{t("common.aria.loading")}</span>
   </motion.div>
-);
+  );
+};
 
 export default ChatMessage;

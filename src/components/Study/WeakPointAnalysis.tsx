@@ -80,7 +80,14 @@ export const WeakPointAnalysis = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-gray-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                  <div
+                    role="progressbar"
+                    aria-valuenow={Math.round(point.mastery)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={t('common.aria.progress')}
+                    className="flex-1 h-1.5 bg-gray-200 dark:bg-slate-600 rounded-full overflow-hidden"
+                  >
                     <div
                       className="h-full bg-gradient-to-r from-amber-500 to-red-500 rounded-full"
                       style={{ width: `${point.mastery}%` }}

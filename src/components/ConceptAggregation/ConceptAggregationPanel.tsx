@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useId } from "react";
+import React, { useState, useEffect, useCallback, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -47,6 +47,11 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const [settings, setSettings] = useState<AnalyzeOptions>({
     similarityThreshold: 0.8,
@@ -123,8 +128,12 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
 
     if (isAnalyzing) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 space-y-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+        <div
+          className="flex flex-col items-center justify-center h-64 space-y-4"
+          role="status"
+          aria-live="polite"
+        >
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" aria-hidden="true" />
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {t("conceptAggregation.panel.analyzingSimilarity")}
           </p>
@@ -188,8 +197,11 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
 
     if (isAnalyzing) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 space-y-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+        <div
+          className="flex flex-col items-center justify-center h-64 space-y-4"
+          role="status"
+        >
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" aria-hidden="true" />
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {t("conceptAggregation.panel.analyzingHierarchy")}
           </p>
@@ -257,6 +269,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
               similarityThreshold: parseFloat(e.target.value),
             }))
           }
+          aria-label={t("conceptAggregation.panel.similarityThreshold")}
           className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
         />
         <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -284,6 +297,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
               hierarchyThreshold: parseFloat(e.target.value),
             }))
           }
+          aria-label={t("conceptAggregation.panel.hierarchyThreshold")}
           className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
         />
         <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -324,6 +338,40 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
     { id: "settings", label: t("conceptAggregation.panel.tabSettings"), icon: <Settings2 size={16} /> },
   ];
 
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case "ArrowRight": {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case "ArrowLeft": {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case "Home": {
+        e.preventDefault();
+        setActiveTab(tabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case "End": {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
   const panelContent = (
     <div
       className={`${
@@ -358,7 +406,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
                 size="sm"
                 leftIcon={
                   isAnalyzing ? (
-                    <Loader2 size={16} className="animate-spin" />
+                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                   ) : (
                     <Play size={16} />
                   )
@@ -395,7 +443,14 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
                   className="overflow-hidden"
                 >
                   <div className="px-4 pt-2 pb-0">
-                    <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      role="progressbar"
+                      aria-valuenow={Math.round(progress)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={t('common.aria.progress')}
+                      className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden"
+                    >
                       <motion.div
                         className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full"
                         style={{ width: `${progress}%` }}
@@ -407,33 +462,70 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
             </AnimatePresence>
 
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 dark:border-slate-500">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? "text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <span className="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full">
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
+            <div className="flex border-b border-slate-200 dark:border-slate-500" role="tablist" aria-label={t("conceptAggregation.panel.title")}>
+              {tabs.map((tab, index) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    ref={(el) => { tabRefs.current[index] = el; }}
+                    role="tab"
+                    id={`${tabIdPrefix}-${tab.id}`}
+                    aria-selected={isActive}
+                    aria-controls={`${panelIdPrefix}-${tab.id}`}
+                    tabIndex={isActive ? 0 : -1}
+                    onKeyDown={(e) => handleTabKeyDown(e, index)}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                    {tab.count !== undefined && tab.count > 0 && (
+                      <span className="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full">
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto">
-              {activeTab === "aggregation" && renderAggregationTab()}
-              {activeTab === "hierarchy" && renderHierarchyTab()}
-              {activeTab === "settings" && renderSettingsTab()}
+              {activeTab === "aggregation" && (
+                <div
+                  role="tabpanel"
+                  id={`${panelIdPrefix}-aggregation`}
+                  aria-labelledby={`${tabIdPrefix}-aggregation`}
+                  tabIndex={0}
+                >
+                  {renderAggregationTab()}
+                </div>
+              )}
+              {activeTab === "hierarchy" && (
+                <div
+                  role="tabpanel"
+                  id={`${panelIdPrefix}-hierarchy`}
+                  aria-labelledby={`${tabIdPrefix}-hierarchy`}
+                  tabIndex={0}
+                >
+                  {renderHierarchyTab()}
+                </div>
+              )}
+              {activeTab === "settings" && (
+                <div
+                  role="tabpanel"
+                  id={`${panelIdPrefix}-settings`}
+                  aria-labelledby={`${tabIdPrefix}-settings`}
+                  tabIndex={0}
+                >
+                  {renderSettingsTab()}
+                </div>
+              )}
             </div>
 
             {/* Footer */}

@@ -40,5 +40,9 @@
   "retry": "Retry",
   "empty": {
     "sameKnowledgePoints": "No shared knowledge points between the two graphs"
+  },
+  "canvas": {
+    "ariaLabel": "Combined view, {{count}} nodes, focus: {{focus}}",
+    "desc": "Combined view displaying nodes and relationships across multiple graphs"
   }
 }

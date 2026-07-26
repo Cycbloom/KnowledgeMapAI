@@ -200,12 +200,13 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('graphEditor.batchGenerate.countLabel')}</label>
                     <span className="text-sm text-primary-600 font-medium">{count}</span>
                 </div>
-                <input 
-                  type="range" 
-                  min="1" 
-                  max="20" 
-                  value={count} 
+                <input
+                  type="range"
+                  min="1"
+                  max="20"
+                  value={count}
                   onChange={(e) => setCount(parseInt(e.target.value))}
+                  aria-label={t('graphEditor.batchGenerate.countLabel')}
                   className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700"
                 />
                 <div className="flex justify-between text-xs text-slate-400">

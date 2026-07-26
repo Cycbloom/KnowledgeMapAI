@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from 'react';
+import React, { useState, useEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { X, BookOpen, Link2, FileText, Plus, Pencil, Trash2, Save, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Graph, ReferenceBook, ExternalLink } from '../../../shared/types/graph';
@@ -80,6 +80,51 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
   const linkUrlId = useId();
   const linkUrlErrorId = useId();
   const linkDescriptionId = useId();
+
+  // Tab pattern a11y
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const overviewTabs: { id: TabType; label: string }[] = [
+    { id: 'books', label: t('learning.overviewEdit.referenceBooks') },
+    { id: 'links', label: t('learning.overviewEdit.externalLinks') },
+    { id: 'guide', label: t('learning.overviewEdit.learningGuide') },
+  ];
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % overviewTabs.length;
+        setActiveTab(overviewTabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + overviewTabs.length) % overviewTabs.length;
+        setActiveTab(overviewTabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(overviewTabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = overviewTabs.length - 1;
+        setActiveTab(overviewTabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     if (isOpen && graph) {
@@ -610,9 +655,16 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             </div>
           </div>
 
-          <div className="flex border-b border-slate-100 dark:border-slate-500 px-4 sm:px-6">
+          <div className="flex border-b border-slate-100 dark:border-slate-500 px-4 sm:px-6" role="tablist" aria-label={t('learning.overviewEdit.title')}>
             <button
+              ref={(el) => { tabRefs.current[0] = el; }}
               onClick={() => setActiveTab('books')}
+              role="tab"
+              id={`${tabIdPrefix}-books`}
+              aria-selected={activeTab === 'books'}
+              aria-controls={`${panelIdPrefix}-books`}
+              tabIndex={activeTab === 'books' ? 0 : -1}
+              onKeyDown={(e) => handleTabKeyDown(e, 0)}
               className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 min-h-[44px] ${
                 activeTab === 'books'
                   ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
@@ -628,7 +680,14 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               )}
             </button>
             <button
+              ref={(el) => { tabRefs.current[1] = el; }}
               onClick={() => setActiveTab('links')}
+              role="tab"
+              id={`${tabIdPrefix}-links`}
+              aria-selected={activeTab === 'links'}
+              aria-controls={`${panelIdPrefix}-links`}
+              tabIndex={activeTab === 'links' ? 0 : -1}
+              onKeyDown={(e) => handleTabKeyDown(e, 1)}
               className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 min-h-[44px] ${
                 activeTab === 'links'
                   ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
@@ -644,7 +703,14 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               )}
             </button>
             <button
+              ref={(el) => { tabRefs.current[2] = el; }}
               onClick={() => setActiveTab('guide')}
+              role="tab"
+              id={`${tabIdPrefix}-guide`}
+              aria-selected={activeTab === 'guide'}
+              aria-controls={`${panelIdPrefix}-guide`}
+              tabIndex={activeTab === 'guide' ? 0 : -1}
+              onKeyDown={(e) => handleTabKeyDown(e, 2)}
               className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 min-h-[44px] ${
                 activeTab === 'guide'
                   ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
@@ -657,9 +723,36 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
-            {activeTab === 'books' && renderBooksTab()}
-            {activeTab === 'links' && renderLinksTab()}
-            {activeTab === 'guide' && renderGuideTab()}
+            {activeTab === 'books' && (
+              <div
+                role="tabpanel"
+                id={`${panelIdPrefix}-books`}
+                aria-labelledby={`${tabIdPrefix}-books`}
+                tabIndex={0}
+              >
+                {renderBooksTab()}
+              </div>
+            )}
+            {activeTab === 'links' && (
+              <div
+                role="tabpanel"
+                id={`${panelIdPrefix}-links`}
+                aria-labelledby={`${tabIdPrefix}-links`}
+                tabIndex={0}
+              >
+                {renderLinksTab()}
+              </div>
+            )}
+            {activeTab === 'guide' && (
+              <div
+                role="tabpanel"
+                id={`${panelIdPrefix}-guide`}
+                aria-labelledby={`${tabIdPrefix}-guide`}
+                tabIndex={0}
+              >
+                {renderGuideTab()}
+              </div>
+            )}
           </div>
 
           <div className="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-500 flex justify-end gap-3">

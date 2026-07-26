@@ -1,4 +1,4 @@
-import React, { useState, useId } from 'react';
+import React, { useState, useId, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useRegisterMutation } from '../hooks/mutations';
@@ -39,6 +39,13 @@ export const Register = () => {
   const emailErrorId = useId();
   const passwordErrorId = useId();
   const confirmPasswordErrorId = useId();
+  // 公共路由 main 地标 ref，路由切换时 focus 便于键盘/SR 导航
+  const mainRef = useRef<HTMLElement>(null);
+
+  // 路由切换时自动 focus 公共 main 地标，便于键盘导航与屏幕阅读器
+  useEffect(() => {
+    mainRef.current?.focus({ preventScroll: true });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,9 +92,14 @@ export const Register = () => {
   const isConfirmPasswordInvalid = touched.confirmPassword && !validateConfirmPassword(password, confirmPassword);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-slate-900 transition-colors duration-300">
+    <main
+      id="public-main"
+      ref={mainRef}
+      tabIndex={-1}
+      className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-slate-900 transition-colors duration-300 focus:outline-none"
+    >
       <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-md w-full max-w-md mx-4 transition-colors duration-300">
-        <h2 className="text-2xl font-bold mb-2 text-center text-gray-900 dark:text-gray-100">{t('register.title')}</h2>
+        <h1 className="text-2xl font-bold mb-2 text-center text-gray-900 dark:text-gray-100">{t('register.title')}</h1>
         <div className="flex items-center justify-center gap-1.5 mb-6 text-xs text-gray-500 dark:text-gray-400">
           <Cloud size={14} />
           <span>{t(getAuthModeDisplay(), { defaultValue: '' })}</span>
@@ -120,7 +132,7 @@ export const Register = () => {
               id="register-email"
               type="email"
               name="email"
-              autoComplete="username"
+              autoComplete="email"
               value={draft.email}
               onChange={e => setDraft(prev => ({ ...prev, email: e.target.value }))}
               onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
@@ -206,6 +218,7 @@ export const Register = () => {
         onClick={toggleTheme}
         className="fixed bottom-6 right-6 p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-300"
         title={isDark ? t('register.switchToLight') : t('register.switchToDark')}
+        aria-label={isDark ? t('register.switchToLight') : t('register.switchToDark')}
       >
         {isDark ? <Sun size={20} /> : <Moon size={20} />}
       </button>
@@ -219,6 +232,6 @@ export const Register = () => {
         confirmText={t('common.restore')}
         cancelText={t('common.discard')}
       />
-    </div>
+    </main>
   );
 };

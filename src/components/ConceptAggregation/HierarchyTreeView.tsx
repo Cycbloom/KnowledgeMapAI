@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -108,6 +108,34 @@ function getConfidenceOpacity(level: ConfidenceLevel): string {
   }
 }
 
+interface FlatNode {
+  node: HierarchyNode;
+  depth: number;
+  parentId: string | null;
+  hasChildren: boolean;
+  isExpanded: boolean;
+}
+
+function flattenVisibleNodes(
+  nodes: HierarchyNode[],
+  expandedIds: Set<string>,
+  depth = 0,
+  parentId: string | null = null,
+): FlatNode[] {
+  const result: FlatNode[] = [];
+  for (const node of nodes) {
+    const hasChildren = !!node.children && node.children.length > 0;
+    const isExpanded = expandedIds.has(node.id);
+    result.push({ node, depth, parentId, hasChildren, isExpanded });
+    if (hasChildren && isExpanded && node.children) {
+      result.push(
+        ...flattenVisibleNodes(node.children, expandedIds, depth + 1, node.id),
+      );
+    }
+  }
+  return result;
+}
+
 interface TreeNodeProps {
   node: HierarchyNode;
   depth: number;
@@ -118,6 +146,9 @@ interface TreeNodeProps {
   onNodeClick: (nodeId: string) => void;
   onConfirmRelation: (suggestionId: string) => void;
   onRejectRelation: (suggestionId: string) => void;
+  focusedNodeId?: string;
+  siblingsCount: number;
+  indexInSiblings: number;
 }
 
 const TreeNode: React.FC<TreeNodeProps> = ({
@@ -130,13 +161,26 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   onNodeClick,
   onConfirmRelation,
   onRejectRelation,
+  focusedNodeId,
+  siblingsCount,
+  indexInSiblings,
 }) => {
   const { t } = useTranslation();
   const isExpanded = expandedIds.has(node.id);
   const isSelected = selectedNodeId === node.id;
+  const isFocused = focusedNodeId === node.id;
   const hasChildren = node.children !== undefined && node.children.length > 0;
   const confidenceLevel = getConfidenceLevel(node.confidence);
   const [showTooltip, setShowTooltip] = useState(false);
+  const tooltipId = useId();
+  const nodeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isFocused && nodeRef.current) {
+      nodeRef.current.focus();
+      nodeRef.current.scrollIntoView({ block: "nearest" });
+    }
+  }, [isFocused]);
 
   const nodeSuggestions = useMemo(
     () => suggestions.filter((s) => s.parentId === node.id),
@@ -146,6 +190,15 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   return (
     <div className="select-none">
       <div
+        ref={nodeRef}
+        role="treeitem"
+        aria-level={depth + 1}
+        aria-expanded={hasChildren ? isExpanded : undefined}
+        aria-setsize={siblingsCount}
+        aria-posinset={indexInSiblings}
+        aria-selected={isSelected}
+        aria-describedby={tooltipId}
+        tabIndex={isFocused ? 0 : -1}
         className={`group flex items-center gap-1.5 py-1.5 px-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 ${
           isSelected
             ? "bg-primary-50 dark:bg-primary-900/20 ring-1 ring-primary-500/30"
@@ -157,7 +210,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         onMouseLeave={() => setShowTooltip(false)}
         onFocus={() => setShowTooltip(true)}
         onBlur={() => setShowTooltip(false)}
-        tabIndex={0}
       >
         {hasChildren ? (
           <button
@@ -219,7 +271,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         </span>
 
         {showTooltip && (
-          <div className="absolute z-50 left-full ml-2 p-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-500 w-56">
+          <div
+            role="tooltip"
+            id={tooltipId}
+            className="absolute z-50 left-full ml-2 p-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-500 w-56"
+          >
             <div className="space-y-1.5">
               <p className="font-medium text-sm text-slate-800 dark:text-slate-200">
                 {node.title}
@@ -317,6 +373,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       <AnimatePresence initial={false}>
         {isExpanded && hasChildren && (
           <motion.div
+            role="group"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -324,7 +381,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             className={`overflow-hidden ${getConfidenceBorderStyle(confidenceLevel)}`}
           >
             <div className="py-0.5">
-              {node.children?.map((child) => (
+              {node.children?.map((child, idx) => (
                 <TreeNode
                   key={child.id}
                   node={child}
@@ -336,6 +393,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   onNodeClick={onNodeClick}
                   onConfirmRelation={onConfirmRelation}
                   onRejectRelation={onRejectRelation}
+                  focusedNodeId={focusedNodeId}
+                  siblingsCount={node.children?.length ?? 0}
+                  indexInSiblings={idx + 1}
                 />
               ))}
             </div>
@@ -355,6 +415,7 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
   selectedNodeId,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [focusedNodeId, setFocusedNodeId] = useState<string | undefined>(undefined);
   const { t } = useTranslation();
 
   const handleToggle = useCallback((id: string) => {
@@ -368,6 +429,81 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
       return next;
     });
   }, []);
+
+  const flatNodes = useMemo(
+    () => flattenVisibleNodes(hierarchyData, expandedIds),
+    [hierarchyData, expandedIds],
+  );
+
+  const effectiveFocusedNodeId = focusedNodeId ?? flatNodes[0]?.node.id;
+
+  const handleTreeKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (flatNodes.length === 0) return;
+      const focusedIndex = flatNodes.findIndex(
+        (fn) => fn.node.id === effectiveFocusedNodeId,
+      );
+      const currentIndex = focusedIndex >= 0 ? focusedIndex : 0;
+      const current = flatNodes[currentIndex];
+      if (!current) return;
+
+      switch (e.key) {
+        case "ArrowDown": {
+          e.preventDefault();
+          const next = flatNodes[currentIndex + 1];
+          if (next) setFocusedNodeId(next.node.id);
+          break;
+        }
+        case "ArrowUp": {
+          e.preventDefault();
+          const prev = flatNodes[currentIndex - 1];
+          if (prev) setFocusedNodeId(prev.node.id);
+          break;
+        }
+        case "ArrowRight": {
+          e.preventDefault();
+          if (current.hasChildren) {
+            if (current.isExpanded) {
+              const next = flatNodes[currentIndex + 1];
+              if (next && next.depth > current.depth) {
+                setFocusedNodeId(next.node.id);
+              }
+            } else {
+              handleToggle(current.node.id);
+            }
+          }
+          break;
+        }
+        case "ArrowLeft": {
+          e.preventDefault();
+          if (current.hasChildren && current.isExpanded) {
+            handleToggle(current.node.id);
+          } else if (current.parentId) {
+            setFocusedNodeId(current.parentId);
+          }
+          break;
+        }
+        case "Home": {
+          e.preventDefault();
+          setFocusedNodeId(flatNodes[0]?.node.id);
+          break;
+        }
+        case "End": {
+          e.preventDefault();
+          const last = flatNodes[flatNodes.length - 1];
+          if (last) setFocusedNodeId(last.node.id);
+          break;
+        }
+        case "Enter":
+        case " ": {
+          e.preventDefault();
+          onNodeClick(current.node.id);
+          break;
+        }
+      }
+    },
+    [flatNodes, effectiveFocusedNodeId, handleToggle, onNodeClick],
+  );
 
   const expandAll = useCallback(() => {
     const allIds = new Set<string>();
@@ -443,8 +579,13 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-2">
-        {hierarchyData.map((node) => (
+      <div
+        role="tree"
+        aria-label={t("conceptAggregation.hierarchy.treeLabel")}
+        className="flex-1 overflow-y-auto py-2"
+        onKeyDown={handleTreeKeyDown}
+      >
+        {hierarchyData.map((node, idx) => (
           <TreeNode
             key={node.id}
             node={node}
@@ -456,6 +597,9 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
             onNodeClick={onNodeClick}
             onConfirmRelation={onConfirmRelation}
             onRejectRelation={onRejectRelation}
+            focusedNodeId={effectiveFocusedNodeId}
+            siblingsCount={hierarchyData.length}
+            indexInSiblings={idx + 1}
           />
         ))}
       </div>

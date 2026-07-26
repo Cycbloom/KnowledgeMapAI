@@ -17,14 +17,14 @@ import { SkeletonList } from '../common';
 import { useNotificationsStore } from '../../store/useNotificationsStore';
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {
-  task_start: <Timer className="text-primary-500" size={16} />,
-  task_complete: <CheckCircle className="text-green-500" size={16} />,
-  time_slice_end: <Clock className="text-orange-500" size={16} />,
-  deadline: <AlertCircle className="text-red-500" size={16} />,
-  break_start: <Coffee className="text-primary-500" size={16} />,
-  break_end: <Coffee className="text-primary-500" size={16} />,
-  daily_summary: <CheckCircle className="text-primary-500" size={16} />,
-  system: <Bell className="text-slate-500" size={16} />,
+  task_start: <Timer aria-hidden="true" className="text-primary-500" size={16} />,
+  task_complete: <CheckCircle aria-hidden="true" className="text-green-500" size={16} />,
+  time_slice_end: <Clock aria-hidden="true" className="text-orange-500" size={16} />,
+  deadline: <AlertCircle aria-hidden="true" className="text-red-500" size={16} />,
+  break_start: <Coffee aria-hidden="true" className="text-primary-500" size={16} />,
+  break_end: <Coffee aria-hidden="true" className="text-primary-500" size={16} />,
+  daily_summary: <CheckCircle aria-hidden="true" className="text-primary-500" size={16} />,
+  system: <Bell aria-hidden="true" className="text-slate-500" size={16} />,
 };
 
 export const NotificationCenter: React.FC = () => {
@@ -230,9 +230,9 @@ export const NotificationCenter: React.FC = () => {
             : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
         }`}
       >
-        <Bell size={20} />
+        <Bell aria-hidden="true" size={20} />
         {unreadCount > 0 && (
-          <span aria-live="polite" className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+          <span aria-live="polite" aria-label={t('notifications.unreadCountAria', { count: unreadCount })} className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -281,7 +281,7 @@ export const NotificationCenter: React.FC = () => {
                     title={t('notifications.markAllRead')}
                     aria-label={t('notifications.markAllRead')}
                   >
-                    <Check size={16} />
+                    <Check aria-hidden="true" size={16} />
                   </button>
                 )}
                 {readNotifications.length > 0 && (
@@ -295,7 +295,7 @@ export const NotificationCenter: React.FC = () => {
                     title={t('notifications.deleteRead')}
                     aria-label={t('notifications.deleteRead')}
                   >
-                    <Trash2 size={16} />
+                    <Trash2 aria-hidden="true" size={16} />
                   </button>
                 )}
                 <button
@@ -311,7 +311,7 @@ export const NotificationCenter: React.FC = () => {
                   title={t('notifications.settings.title')}
                   aria-label={t('notifications.settings.title')}
                 >
-                  <Settings size={16} />
+                  <Settings aria-hidden="true" size={16} />
                 </button>
               </div>
             </div>
@@ -322,7 +322,7 @@ export const NotificationCenter: React.FC = () => {
                 <SkeletonList items={5} hasAvatar />
               ) : visibleNotifications.length === 0 ? (
                 <EmptyState
-                  icon={<Bell size={32} />}
+                  icon={<Bell aria-hidden="true" size={32} />}
                   title={t('notifications.empty')}
                   description={t('notifications.emptyHint')}
                 />
@@ -332,48 +332,56 @@ export const NotificationCenter: React.FC = () => {
                   {unreadNotifications.length > 0 && (
                     <div>
                       {unreadNotifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          role="listitem"
-                          onClick={() => handleNotificationClick(notification)}
-                          className={`px-4 py-3 cursor-pointer transition-colors border-l-2 border-primary-500 ${
-                            notificationIndexMap.get(notification.id) === activeIndex
-                              ? isDark
-                                ? 'bg-slate-700'
-                                : 'bg-primary-100'
-                              : isDark
-                                ? 'bg-slate-700/50 hover:bg-slate-700'
-                                : 'bg-primary-50/50 hover:bg-primary-50'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 mt-0.5">
-                              {notificationIcons[notification.type]}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`font-medium text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                {notification.title}
-                              </p>
-                              {notification.message && (
-                                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                                  {notification.message}
+                        <div key={notification.id} role="listitem">
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handleNotificationClick(notification)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleNotificationClick(notification);
+                              }
+                            }}
+                            className={`px-4 py-3 cursor-pointer transition-colors border-l-2 border-primary-500 ${
+                              notificationIndexMap.get(notification.id) === activeIndex
+                                ? isDark
+                                  ? 'bg-slate-700'
+                                  : 'bg-primary-100'
+                                : isDark
+                                  ? 'bg-slate-700/50 hover:bg-slate-700'
+                                  : 'bg-primary-50/50 hover:bg-primary-50'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 mt-0.5">
+                                {notificationIcons[notification.type]}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`font-medium text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                  {notification.title}
                                 </p>
-                              )}
-                              <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                                {formatTimeAgo(notification.created_at)}
-                              </p>
+                                {notification.message && (
+                                  <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                                    {notification.message}
+                                  </p>
+                                )}
+                                <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                                  {formatTimeAgo(notification.created_at)}
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => handleDelete(notification.id, e)}
+                                aria-label={t('common.aria.close')}
+                                className={`p-1 rounded transition-colors ${
+                                  isDark
+                                    ? 'hover:bg-slate-600 text-slate-500 hover:text-slate-300'
+                                    : 'hover:bg-gray-200 text-gray-400 hover:text-gray-600'
+                                }`}
+                              >
+                                <X aria-hidden="true" size={14} />
+                              </button>
                             </div>
-                            <button
-                              onClick={(e) => handleDelete(notification.id, e)}
-                              aria-label={t('common.aria.close')}
-                              className={`p-1 rounded transition-colors ${
-                                isDark
-                                  ? 'hover:bg-slate-600 text-slate-500 hover:text-slate-300'
-                                  : 'hover:bg-gray-200 text-gray-400 hover:text-gray-600'
-                              }`}
-                            >
-                              <X size={14} />
-                            </button>
                           </div>
                         </div>
                       ))}
@@ -391,48 +399,56 @@ export const NotificationCenter: React.FC = () => {
                         </div>
                       )}
                       {readNotifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          role="listitem"
-                          onClick={() => handleNotificationClick(notification)}
-                          className={`px-4 py-3 cursor-pointer transition-colors ${
-                            notificationIndexMap.get(notification.id) === activeIndex
-                              ? isDark
-                                ? 'bg-slate-700/50'
-                                : 'bg-gray-100'
-                              : isDark
-                                ? 'hover:bg-slate-700/50'
-                                : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 mt-0.5 opacity-50">
-                              {notificationIcons[notification.type]}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
-                                {notification.title}
-                              </p>
-                              {notification.message && (
-                                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                                  {notification.message}
+                        <div key={notification.id} role="listitem">
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handleNotificationClick(notification)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleNotificationClick(notification);
+                              }
+                            }}
+                            className={`px-4 py-3 cursor-pointer transition-colors ${
+                              notificationIndexMap.get(notification.id) === activeIndex
+                                ? isDark
+                                  ? 'bg-slate-700/50'
+                                  : 'bg-gray-100'
+                                : isDark
+                                  ? 'hover:bg-slate-700/50'
+                                  : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 mt-0.5 opacity-50">
+                                {notificationIcons[notification.type]}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                                  {notification.title}
                                 </p>
-                              )}
-                              <p className={`text-xs mt-1 ${isDark ? 'text-slate-600' : 'text-gray-300'}`}>
-                                {formatTimeAgo(notification.created_at)}
-                              </p>
+                                {notification.message && (
+                                  <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                                    {notification.message}
+                                  </p>
+                                )}
+                                <p className={`text-xs mt-1 ${isDark ? 'text-slate-600' : 'text-gray-300'}`}>
+                                  {formatTimeAgo(notification.created_at)}
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => handleDelete(notification.id, e)}
+                                aria-label={t('common.aria.close')}
+                                className={`p-1 rounded transition-colors ${
+                                  isDark
+                                    ? 'hover:bg-slate-600 text-slate-600 hover:text-slate-400'
+                                    : 'hover:bg-gray-200 text-gray-300 hover:text-gray-500'
+                                }`}
+                              >
+                                <X aria-hidden="true" size={14} />
+                              </button>
                             </div>
-                            <button
-                              onClick={(e) => handleDelete(notification.id, e)}
-                              aria-label={t('common.aria.close')}
-                              className={`p-1 rounded transition-colors ${
-                                isDark
-                                  ? 'hover:bg-slate-600 text-slate-600 hover:text-slate-400'
-                                  : 'hover:bg-gray-200 text-gray-300 hover:text-gray-500'
-                              }`}
-                            >
-                              <X size={14} />
-                            </button>
                           </div>
                         </div>
                       ))}

@@ -20,7 +20,7 @@ const variantStyles: Record<ButtonVariant, string> = {
     hover:bg-primary-700
     active:bg-primary-800
     disabled:bg-primary-300 disabled:dark:bg-primary-800
-    focus:ring-primary-500
+    focus-visible:ring-primary-500
   `,
   secondary: `
     bg-gray-100 text-gray-700
@@ -28,7 +28,7 @@ const variantStyles: Record<ButtonVariant, string> = {
     hover:bg-gray-200 dark:hover:bg-slate-600
     active:bg-gray-300 dark:active:bg-slate-500
     disabled:bg-gray-50 disabled:dark:bg-slate-800 disabled:text-gray-400 disabled:dark:text-gray-500
-    focus:ring-gray-300 dark:focus:ring-slate-600
+    focus-visible:ring-gray-300 dark:focus-visible:ring-slate-600
   `,
   ghost: `
     bg-transparent text-gray-700
@@ -37,14 +37,14 @@ const variantStyles: Record<ButtonVariant, string> = {
     hover:bg-gray-50 dark:hover:bg-slate-700
     active:bg-gray-100 dark:active:bg-slate-600
     disabled:text-gray-400 disabled:dark:text-gray-500 disabled:border-gray-200 disabled:dark:border-slate-500
-    focus:ring-gray-300 dark:focus:ring-slate-600
+    focus-visible:ring-gray-300 dark:focus-visible:ring-slate-600
   `,
   danger: `
     bg-red-600 text-white
     hover:bg-red-700
     active:bg-red-800
     disabled:bg-red-300 disabled:dark:bg-red-900
-    focus:ring-red-500
+    focus-visible:ring-red-500
   `,
 };
 
@@ -76,12 +76,14 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={isDisabled}
+        aria-disabled={isDisabled || undefined}
+        aria-busy={loading}
         className={cn(
           'inline-flex items-center justify-center gap-2',
           'font-medium rounded-lg',
           'transition-colors duration-150',
-          'focus:outline-none focus:ring-2 focus:ring-offset-2',
-          'dark:focus:ring-offset-slate-900',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+          'dark:focus-visible:ring-offset-slate-900',
           'disabled:cursor-not-allowed disabled:opacity-60',
           'min-w-[44px] min-h-[44px]',
           variantStyles[variant],
@@ -92,7 +94,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
         ) : (
           leftIcon
         )}

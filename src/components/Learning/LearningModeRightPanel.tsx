@@ -182,11 +182,16 @@ export const LearningModeRightPanel = ({
               {rightPanelMode === "concept-aggregation" ? (
                 <Suspense
                   fallback={
-                    <div className="flex items-center justify-center h-full">
+                    <div
+                      className="flex items-center justify-center h-full"
+                      aria-live="polite"
+                    >
                       <Loader2
                         size={24}
                         className="animate-spin text-primary-500"
+                        aria-hidden="true"
                       />
+                      <span className="sr-only">{t("common.aria.loading")}</span>
                     </div>
                   }
                 >

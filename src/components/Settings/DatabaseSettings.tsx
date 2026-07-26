@@ -270,6 +270,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
               </label>
               <input
                 type="text"
+                autoComplete="off"
                 value={dbForm.url}
                 onChange={(e) =>
                   setDbForm((prev) => ({ ...prev, url: e.target.value }))
@@ -286,6 +287,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
               <div className="relative">
                 <input
                   type={showDbAnonKey ? "text" : "password"}
+                  autoComplete="off"
                   value={dbForm.anonKey}
                   onChange={(e) =>
                     setDbForm((prev) => ({
@@ -313,6 +315,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
               <div className="relative">
                 <input
                   type={showDbServiceRoleKey ? "text" : "password"}
+                  autoComplete="off"
                   value={dbForm.serviceRoleKey}
                   onChange={(e) =>
                     setDbForm((prev) => ({
@@ -352,6 +355,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
               </div>
               <input
                 type="text"
+                autoComplete="off"
                 value={dbForm.databaseUrl}
                 onChange={(e) =>
                   setDbForm((prev) => ({

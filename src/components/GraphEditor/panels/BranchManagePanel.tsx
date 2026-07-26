@@ -173,7 +173,7 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" aria-busy={isLoading}>
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
@@ -357,6 +357,7 @@ const MergeDialogOverlay: React.FC<MergeDialogOverlayProps> = ({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
+      role="presentation"
     >
       <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={(e) => e.stopPropagation()}>{children}</div>
     </div>

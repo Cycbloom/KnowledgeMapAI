@@ -124,10 +124,10 @@ export const CreateNodeModal = ({
             </h3>
             <button
               onClick={onClose}
-              aria-label="关闭"
+              aria-label={t("common.aria.close")}
               className={`p-1.5 rounded-lg transition-colors ${isDark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
             >
-              <X size={20} />
+              <X size={20} aria-hidden="true" />
             </button>
           </div>
 
@@ -244,7 +244,7 @@ export const CreateNodeModal = ({
                   : "bg-primary-600 text-white hover:bg-primary-700"
               }`}
             >
-              <Plus size={18} />
+              <Plus size={18} aria-hidden="true" />
               {t("learning.node.createButton")}
             </button>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   ArrowLeft,
   Edit,
@@ -48,6 +48,11 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const [activeTab, setActiveTab] = useState<WorkTab>("notes");
   const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
   const { t } = useTranslation();
+
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     loadTaskDetail();
@@ -218,6 +223,40 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     { id: "executions", label: t('scheduler.taskWorkbench.tabExecutions'), icon: <Clock size={16} /> },
     { id: "progress", label: t('scheduler.taskWorkbench.tabProgress'), icon: <BarChart3 size={16} /> },
   ];
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(tabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
 
   if (loading) {
     return (
@@ -456,46 +495,90 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {/* Tab bar */}
           <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4">
-            <div className="flex items-center gap-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-3 py-2.5 text-sm font-medium border-b-2 transition-all ${
-                    activeTab === tab.id
-                      ? "border-primary-500 text-primary-600 dark:text-primary-400"
-                      : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
+            <div className="flex items-center gap-1" role="tablist" aria-label={t('layout.scheduler')}>
+              {tabs.map((tab, index) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    ref={(el) => { tabRefs.current[index] = el; }}
+                    role="tab"
+                    id={`${tabIdPrefix}-${tab.id}`}
+                    aria-selected={isActive}
+                    aria-controls={`${panelIdPrefix}-${tab.id}`}
+                    tabIndex={isActive ? 0 : -1}
+                    onClick={() => setActiveTab(tab.id)}
+                    onKeyDown={(e) => handleTabKeyDown(e, index)}
+                    className={`flex items-center gap-2 px-3 py-2.5 text-sm font-medium border-b-2 transition-all ${
+                      isActive
+                        ? "border-primary-500 text-primary-600 dark:text-primary-400"
+                        : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Tab content */}
           <div className="flex-1 min-h-0 overflow-hidden p-4">
             {activeTab === "notes" && (
-              <NotesTab
-                notes={task.notes || ""}
-                onChange={(notes) => setTask({ ...task, notes })}
-                onSave={handleSaveNotes}
-              />
+              <div
+                role="tabpanel"
+                id={`${panelIdPrefix}-notes`}
+                aria-labelledby={`${tabIdPrefix}-notes`}
+                tabIndex={0}
+                className="h-full"
+              >
+                <NotesTab
+                  notes={task.notes || ""}
+                  onChange={(notes) => setTask({ ...task, notes })}
+                  onSave={handleSaveNotes}
+                />
+              </div>
             )}
 
-            {activeTab === "subtasks" && <SubtaskList taskId={task.id} />}
+            {activeTab === "subtasks" && (
+              <div
+                role="tabpanel"
+                id={`${panelIdPrefix}-subtasks`}
+                aria-labelledby={`${tabIdPrefix}-subtasks`}
+                tabIndex={0}
+                className="h-full"
+              >
+                <SubtaskList taskId={task.id} />
+              </div>
+            )}
 
             {activeTab === "executions" && (
-              <ExecutionRecords taskId={task.id} />
+              <div
+                role="tabpanel"
+                id={`${panelIdPrefix}-executions`}
+                aria-labelledby={`${tabIdPrefix}-executions`}
+                tabIndex={0}
+                className="h-full"
+              >
+                <ExecutionRecords taskId={task.id} />
+              </div>
             )}
 
             {activeTab === "progress" && (
-              <ProgressDetail
-                taskId={task.id}
-                taskType={task.task_type}
-                progressPercentage={task.progress_percentage}
-              />
+              <div
+                role="tabpanel"
+                id={`${panelIdPrefix}-progress`}
+                aria-labelledby={`${tabIdPrefix}-progress`}
+                tabIndex={0}
+                className="h-full"
+              >
+                <ProgressDetail
+                  taskId={task.id}
+                  taskType={task.task_type}
+                  progressPercentage={task.progress_percentage}
+                />
+              </div>
             )}
           </div>
         </div>

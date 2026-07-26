@@ -280,7 +280,11 @@ export const Statistics = () => {
 
   if (isLoading) {
     return (
-      <div className="h-full overflow-y-auto p-8 bg-slate-50 dark:bg-slate-900">
+      <div
+        aria-busy={isLoading}
+        aria-label={t("common.aria.loadingRegion")}
+        className="h-full overflow-y-auto p-8 bg-slate-50 dark:bg-slate-900"
+      >
         <div className="mb-8">
           <Skeleton className="h-8 w-64 mb-2" />
           <Skeleton className="h-4 w-96" />
@@ -303,7 +307,7 @@ export const Statistics = () => {
   if (error) {return (
     <div className="p-8 flex flex-col items-center justify-center text-center">
       <AlertCircle size={48} className="text-red-500 mb-4" />
-      <p className="text-red-600 dark:text-red-400 mb-4">{t('statistics.loadError')}</p>
+      <p role="alert" className="text-red-600 dark:text-red-400 mb-4">{t('statistics.loadError')}</p>
       <button
         type="button"
         onClick={() => { void refetch(); }}

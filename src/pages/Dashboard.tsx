@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -65,6 +65,7 @@ export const Dashboard = () => {
   });
 
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
+  const aiGeneratorTitleId = useId();
 
   const [batchDeleteProgress, setBatchDeleteProgress] = useState<{
     completed: number;
@@ -326,6 +327,8 @@ export const Dashboard = () => {
   if (isLoading && !isFetching)
     {return (
       <div
+        aria-busy={isLoading}
+        aria-label={t("common.aria.loadingRegion")}
         className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
       >
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 space-y-4 lg:space-y-6">
@@ -343,7 +346,7 @@ export const Dashboard = () => {
     {return (
       <div className="p-8 flex flex-col items-center justify-center text-center">
         <AlertCircle size={48} className="text-red-500 mb-4" />
-        <p className="text-red-600 dark:text-red-400 mb-4">{t('toast.dashboard.loadError')}</p>
+        <p role="alert" className="text-red-600 dark:text-red-400 mb-4">{t('toast.dashboard.loadError')}</p>
         <button
           type="button"
           onClick={() => { void refetch(); }}
@@ -448,8 +451,14 @@ export const Dashboard = () => {
           >
             <div
               ref={aiGeneratorRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={aiGeneratorTitleId}
               className={`w-full ${isMobile ? "h-full" : "max-w-2xl max-h-[90vh]"} overflow-y-auto ${isMobile ? "rounded-none" : "rounded-2xl"} shadow-2xl`}
             >
+              <h2 id={aiGeneratorTitleId} className="sr-only">
+                {t("autoGraph.title")}
+              </h2>
               <ErrorBoundary
                 fallbackRender={(error, resetErrorBoundary) => (
                   <div className="p-6 border border-red-300 rounded-2xl bg-red-50 dark:bg-red-900/20 dark:border-red-700 text-center">
@@ -680,6 +689,7 @@ export const Dashboard = () => {
                 isMobile={isMobile}
                 isSelectMode={filters.isSelectMode}
                 isSelected={filters.selectedIds.has(graph.id)}
+                isMenuOpen={contextMenuGraph?.id === graph.id}
                 onToggleSelect={filters.toggleSelect}
                 onNavigate={handleNavigate}
                 onDelete={handleDeleteGraph}

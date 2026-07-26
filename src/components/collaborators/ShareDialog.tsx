@@ -82,7 +82,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               id="share-dialog-title"
               className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2"
             >
-              <Users className="w-5 h-5" />
+              <Users className="w-5 h-5" aria-hidden="true" />
               {t('collaborators.shareDialog.title')}
             </h2>
             <button
@@ -90,7 +90,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
               aria-label={t('common.close')}
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X aria-hidden="true" className="w-5 h-5 text-gray-500" />
             </button>
           </div>
 
@@ -113,7 +113,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                   onClick={() => setShowInvite(true)}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
                 >
-                  <UserPlus className="w-4 h-4" />
+                  <UserPlus className="w-4 h-4" aria-hidden="true" />
                   {t('collaborators.shareDialog.inviteCollaborator')}
                 </button>
 
@@ -121,7 +121,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                   onClick={handleGenerateShareLink}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 border dark:border-slate-500 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300"
                 >
-                  <LinkIcon className="w-4 h-4" />
+                  <LinkIcon className="w-4 h-4" aria-hidden="true" />
                   {t('collaborators.shareDialog.generateLink')}
                 </button>
 

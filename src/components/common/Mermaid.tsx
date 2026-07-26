@@ -42,7 +42,10 @@ export const Mermaid: React.FC<MermaidProps> = ({ chart }) => {
 
   if (error) {
     return (
-      <div className="p-2 bg-red-50 border border-red-100 rounded text-red-600 text-xs font-mono whitespace-pre-wrap">
+      <div
+        role="alert"
+        className="p-2 bg-red-50 border border-red-100 rounded text-red-600 text-xs font-mono whitespace-pre-wrap"
+      >
         Error rendering diagram: {error}
         <pre className="mt-1 text-gray-500">{chart}</pre>
       </div>
@@ -50,9 +53,11 @@ export const Mermaid: React.FC<MermaidProps> = ({ chart }) => {
   }
 
   return (
-    <div 
+    <div
+      role="img"
+      aria-label={chart}
       className="mermaid-container flex justify-center my-4 overflow-x-auto bg-white p-2 rounded-lg border border-gray-100"
-      dangerouslySetInnerHTML={{ __html: svg }} 
+      dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
 };

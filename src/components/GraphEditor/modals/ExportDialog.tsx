@@ -104,7 +104,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
             <FileText className="text-primary-600" size={20} />
             {t('graphEditor.export.title')}
           </h2>
-          <button onClick={onClose} aria-label={t('common.aria.close')} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
+          <button onClick={onClose} aria-label={t('common.aria.close')} className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1 rounded-full hover:bg-gray-100 transition-colors">
             <X size={20} className="text-gray-500" />
           </button>
         </div>

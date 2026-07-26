@@ -31,6 +31,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({
   const [isOpen, setIsOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
+  const iconListId = React.useId();
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -60,6 +61,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({
         aria-label={t("common.aria.selectIcon")}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={iconListId}
         className={`flex items-center justify-center w-8 h-8 border rounded-md transition-colors ${
           disabled
             ? "bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-50"
@@ -72,6 +74,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id={iconListId}
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}

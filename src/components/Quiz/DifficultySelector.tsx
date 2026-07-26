@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { GraduationCap, BookOpen, Mountain, Layers } from 'lucide-react';
 import { useTheme } from "../../hooks";
 
@@ -24,7 +25,7 @@ const difficultyOptions: DifficultyOption[] = [
     id: 'easy',
     label: '简单',
     description: '基础概念题，直接考查知识点记忆',
-    icon: <GraduationCap size={20} />,
+    icon: <GraduationCap size={20} aria-hidden="true" />,
     color: 'text-green-600',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-500',
@@ -35,7 +36,7 @@ const difficultyOptions: DifficultyOption[] = [
     id: 'medium',
     label: '中等',
     description: '应用理解题，考查理解能力和应用',
-    icon: <BookOpen size={20} />,
+    icon: <BookOpen size={20} aria-hidden="true" />,
     color: 'text-orange-600',
     bgColor: 'bg-orange-50',
     borderColor: 'border-orange-500',
@@ -46,7 +47,7 @@ const difficultyOptions: DifficultyOption[] = [
     id: 'hard',
     label: '困难',
     description: '综合分析题，考查深度理解和分析',
-    icon: <Mountain size={20} />,
+    icon: <Mountain size={20} aria-hidden="true" />,
     color: 'text-red-600',
     bgColor: 'bg-red-50',
     borderColor: 'border-red-500',
@@ -57,7 +58,7 @@ const difficultyOptions: DifficultyOption[] = [
     id: 'mixed',
     label: '混合',
     description: '综合各难度层次的题目',
-    icon: <Layers size={20} />,
+    icon: <Layers size={20} aria-hidden="true" />,
     color: 'text-primary-600',
     bgColor: 'bg-primary-50',
     borderColor: 'border-primary-500',
@@ -71,12 +72,39 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
   onChange,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFieldSetElement>) => {
+    const target = e.target;
+    if (!(target instanceof HTMLElement) || !target.matches('[role="radio"]')) {
+      return;
+    }
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowDown' && e.key !== 'ArrowLeft' && e.key !== 'ArrowUp') {
+      return;
+    }
+    e.preventDefault();
+    const radios = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]'));
+    if (radios.length === 0) return;
+    const currentIndex = radios.findIndex((radio) => radio === target);
+    if (currentIndex === -1) return;
+    const isNext = e.key === 'ArrowRight' || e.key === 'ArrowDown';
+    const nextIndex = isNext
+      ? (currentIndex + 1) % radios.length
+      : (currentIndex - 1 + radios.length) % radios.length;
+    const nextRadio = radios[nextIndex];
+    if (!nextRadio) return;
+    nextRadio.focus();
+    const nextOptionId = difficultyOptions[nextIndex]?.id;
+    if (nextOptionId) {
+      onChange(nextOptionId);
+    }
+  };
 
   return (
-    <div className="space-y-3">
-      <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-        难度选择
-      </label>
+    <fieldset className="space-y-3" onKeyDown={handleKeyDown}>
+      <legend className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+        {t('study.difficultySelector.legend')}
+      </legend>
 
       <div className="grid grid-cols-2 gap-3">
         {difficultyOptions.map((option) => {
@@ -85,6 +113,10 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
           return (
             <button
               key={option.id}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              tabIndex={isSelected ? 0 : -1}
               onClick={() => onChange(option.id)}
               className={`relative p-4 rounded-xl border-2 text-left transition-all ${
                 isSelected
@@ -151,6 +183,7 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
@@ -165,6 +198,6 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
           );
         })}
       </div>
-    </div>
+    </fieldset>
   );
 };

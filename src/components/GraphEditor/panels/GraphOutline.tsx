@@ -372,8 +372,8 @@ export const GraphOutline = React.memo(function GraphOutline({
     }
   }, [selectedNodeId, parentMap, searchQuery]);
 
-  const toggleExpand = useCallback((nodeId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const toggleExpand = useCallback((nodeId: string, e?: React.SyntheticEvent) => {
+    e?.stopPropagation();
     setExpandedNodeIds((prev) => {
       const next = new Set(prev);
       if (next.has(nodeId)) next.delete(nodeId);
@@ -705,25 +705,45 @@ export const GraphOutline = React.memo(function GraphOutline({
       );
     }
 
-    return moduleGroups.map((group) => {
+    return moduleGroups.map((group, groupIndex) => {
       const isExpanded = expandedModules.has(group.key);
       const hasNodes = group.nodes.length > 0;
       const allRefined =
         hasNodes && group.nodes.every((n) => !n.properties?.needsRefinement);
+      const groupChildrenId = `outline-module-children-${group.key}`;
 
       return (
         <div key={group.key} className="mb-1">
           <div
-            className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors"
+            role="treeitem"
+            aria-level={1}
+            aria-expanded={hasNodes ? isExpanded : undefined}
+            aria-setsize={moduleGroups.length}
+            aria-posinset={groupIndex + 1}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') {
+                if (hasNodes && !isExpanded) {
+                  e.preventDefault();
+                  toggleModuleExpand(group.key);
+                }
+              } else if (e.key === 'ArrowLeft') {
+                if (hasNodes && isExpanded) {
+                  e.preventDefault();
+                  toggleModuleExpand(group.key);
+                }
+              }
+            }}
+            className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400"
             style={{ borderLeft: `3px solid ${group.color}` }}
             onClick={() => toggleModuleExpand(group.key)}
           >
-            <span className="text-sm">{group.icon}</span>
+            <span className="text-sm" aria-hidden="true">{group.icon}</span>
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex-1">
               {group.label}
             </span>
             {hasNodes && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium" aria-hidden="true">
                 {group.nodes.length}
               </span>
             )}
@@ -732,22 +752,24 @@ export const GraphOutline = React.memo(function GraphOutline({
                 <CheckCircle2
                   size={14}
                   className="text-green-500 dark:text-green-400"
+                  aria-hidden="true"
                 />
               ) : (
                 <Circle
                   size={14}
                   className="text-gray-400 dark:text-gray-500"
+                  aria-hidden="true"
                 />
               ))}
             {isExpanded ? (
-              <ChevronDown size={14} className="text-slate-400" />
+              <ChevronDown size={14} className="text-slate-400" aria-hidden="true" />
             ) : (
-              <ChevronRight size={14} className="text-slate-400" />
+              <ChevronRight size={14} className="text-slate-400" aria-hidden="true" />
             )}
           </div>
           {isExpanded && hasNodes && (
-            <div className="ml-2">
-              {group.nodes.map((node) => {
+            <div className="ml-2" role="group" id={groupChildrenId}>
+              {group.nodes.map((node, nodeIndex) => {
                 const level = node.level || "leaf";
                 const isSelected = selectedNodeIds.has(node.id);
                 const backboneModule = node.properties?.backboneModule as
@@ -757,7 +779,13 @@ export const GraphOutline = React.memo(function GraphOutline({
                 return (
                   <div
                     key={node.id}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-left group
+                    role="treeitem"
+                    aria-level={2}
+                    aria-setsize={group.nodes.length}
+                    aria-posinset={nodeIndex + 1}
+                    aria-selected={selectedNodeId === node.id && !isMultiSelectMode}
+                    tabIndex={selectedNodeId === node.id && !isMultiSelectMode ? 0 : -1}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-left group focus:outline-none focus:ring-2 focus:ring-primary-400
                       ${
                         selectedNodeId === node.id && !isMultiSelectMode
                           ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
@@ -770,6 +798,16 @@ export const GraphOutline = React.memo(function GraphOutline({
                         onNodeClick(node);
                       }
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (isMultiSelectMode) {
+                          handleToggleSelection(node.id);
+                        } else {
+                          onNodeClick(node);
+                        }
+                      }
+                    }}
                   >
                     {isMultiSelectMode && (
                       <div
@@ -778,11 +816,12 @@ export const GraphOutline = React.memo(function GraphOutline({
                           handleToggleSelection(node.id);
                         }}
                         className="cursor-pointer text-slate-400 hover:text-primary-500"
+                        aria-hidden="true"
                       >
                         {isSelected ? (
-                          <CheckSquare size={16} className="text-primary-500" />
+                          <CheckSquare size={16} className="text-primary-500" aria-hidden="true" />
                         ) : (
-                          <Square size={16} />
+                          <Square size={16} aria-hidden="true" />
                         )}
                       </div>
                     )}
@@ -792,6 +831,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                         backgroundColor: getLevelColors(node.level || "leaf")
                           .primary,
                       }}
+                      aria-hidden="true"
                     />
                     <span className="truncate flex-1 font-medium flex items-center gap-1.5">
                       {backboneModule && (
@@ -809,6 +849,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                         backgroundColor: getLevelColors(level).background,
                         color: getLevelColors(level).text,
                       }}
+                      aria-hidden="true"
                     >
                       {level}
                     </span>
@@ -833,14 +874,34 @@ export const GraphOutline = React.memo(function GraphOutline({
 
     return (
       <div className="relative">
-        {literatureGroups.map((group) => {
+        {literatureGroups.map((group, groupIndex) => {
           const isExpanded = expandedLiteratures.has(group.key);
           const isUncategorized = group.key === "__uncategorized__";
+          const groupChildrenId = `outline-literature-children-${group.key}`;
 
           return (
             <div key={group.key} className="mb-1">
               <div
-                className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-md transition-colors relative group/literature ${
+                role="treeitem"
+                aria-level={1}
+                aria-expanded={isExpanded}
+                aria-setsize={literatureGroups.length}
+                aria-posinset={groupIndex + 1}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowRight') {
+                    if (!isExpanded) {
+                      e.preventDefault();
+                      toggleLiteratureExpand(group.key);
+                    }
+                  } else if (e.key === 'ArrowLeft') {
+                    if (isExpanded) {
+                      e.preventDefault();
+                      toggleLiteratureExpand(group.key);
+                    }
+                  }
+                }}
+                className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-md transition-colors relative group/literature focus:outline-none focus:ring-2 focus:ring-primary-400 ${
                   isUncategorized
                     ? "hover:bg-slate-50 dark:hover:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-500"
                     : "hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -883,9 +944,9 @@ export const GraphOutline = React.memo(function GraphOutline({
                 }}
               >
                 {isUncategorized ? (
-                  <FolderOpen size={14} className="text-slate-400" />
+                  <FolderOpen size={14} className="text-slate-400" aria-hidden="true" />
                 ) : (
-                  <FileText size={14} className="text-purple-500" />
+                  <FileText size={14} className="text-purple-500" aria-hidden="true" />
                 )}
                 <div className="flex-1 min-w-0">
                   <span
@@ -917,6 +978,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                       ? "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
                       : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
                   }`}
+                  aria-hidden="true"
                 >
                   {group.nodes.length}
                 </span>
@@ -924,17 +986,19 @@ export const GraphOutline = React.memo(function GraphOutline({
                   <ChevronDown
                     size={14}
                     className="text-slate-400 flex-shrink-0"
+                    aria-hidden="true"
                   />
                 ) : (
                   <ChevronRight
                     size={14}
                     className="text-slate-400 flex-shrink-0"
+                    aria-hidden="true"
                   />
                 )}
               </div>
               {isExpanded && (
-                <div className="ml-2 mt-0.5 space-y-0.5">
-                  {group.nodes.map((node) => {
+                <div className="ml-2 mt-0.5 space-y-0.5" role="group" id={groupChildrenId}>
+                  {group.nodes.map((node, nodeIndex) => {
                     const backboneModule = node.properties?.backboneModule as
                       | BackboneModule
                       | undefined;
@@ -942,7 +1006,13 @@ export const GraphOutline = React.memo(function GraphOutline({
                     return (
                       <div
                         key={node.id}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-colors ${
+                        role="treeitem"
+                        aria-level={2}
+                        aria-setsize={group.nodes.length}
+                        aria-posinset={nodeIndex + 1}
+                        aria-selected={selectedNodeId === node.id}
+                        tabIndex={selectedNodeId === node.id ? 0 : -1}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 ${
                           selectedNodeId === node.id
                             ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
                             : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
@@ -950,6 +1020,12 @@ export const GraphOutline = React.memo(function GraphOutline({
                         onClick={(e) => {
                           e.stopPropagation();
                           onNodeClick(node);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onNodeClick(node);
+                          }
                         }}
                       >
                         <div
@@ -959,6 +1035,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                               node.level || "leaf",
                             ).primary,
                           }}
+                          aria-hidden="true"
                         />
                         {backboneModule && (
                           <BackboneNodeIcon
@@ -1044,9 +1121,9 @@ export const GraphOutline = React.memo(function GraphOutline({
               className="cursor-pointer text-slate-400 hover:text-primary-500"
             >
               {isSelected ? (
-                <CheckSquare size={16} className="text-primary-500" />
+                <CheckSquare size={16} className="text-primary-500" aria-hidden="true" />
               ) : (
-                <Square size={16} />
+                <Square size={16} aria-hidden="true" />
               )}
             </div>
           )}
@@ -1141,11 +1218,15 @@ export const GraphOutline = React.memo(function GraphOutline({
       depth,
       visited,
       isReadOnly: isNodeReadOnly,
+      setSize,
+      posInSet,
     }: {
       node: Node;
       depth: number;
       visited: Set<string>;
       isReadOnly?: boolean;
+      setSize?: number;
+      posInSet?: number;
     }) => {
       if (visited.has(node.id)) return null;
       const newVisited = new Set(visited).add(node.id);
@@ -1159,11 +1240,19 @@ export const GraphOutline = React.memo(function GraphOutline({
         | undefined;
 
       const paddingLeft = 12 + depth * 16;
+      const childrenId = `outline-children-${node.id}`;
 
       return (
         <div className="select-none">
           <div
-            className={`w-full flex items-center pr-2 py-1.5 cursor-pointer text-sm transition-colors group
+            role="treeitem"
+            aria-level={depth + 1}
+            aria-expanded={hasChildren ? isExpanded : undefined}
+            aria-setsize={setSize}
+            aria-posinset={posInSet}
+            aria-selected={selectedNodeId === node.id && !isMultiSelectMode}
+            tabIndex={selectedNodeId === node.id && !isMultiSelectMode ? 0 : -1}
+            className={`w-full flex items-center pr-2 py-1.5 cursor-pointer text-sm transition-colors group focus:outline-none focus:ring-2 focus:ring-primary-400
             ${
               selectedNodeId === node.id && !isMultiSelectMode
                 ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
@@ -1177,15 +1266,36 @@ export const GraphOutline = React.memo(function GraphOutline({
                 onNodeClick(node);
               }
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') {
+                if (hasChildren && !isExpanded) {
+                  e.preventDefault();
+                  toggleExpand(node.id, e);
+                }
+              } else if (e.key === 'ArrowLeft') {
+                if (hasChildren && isExpanded) {
+                  e.preventDefault();
+                  toggleExpand(node.id, e);
+                }
+              } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (isMultiSelectMode) {
+                  handleToggleSelection(node.id);
+                } else {
+                  onNodeClick(node);
+                }
+              }
+            }}
           >
             <div
               className={`w-5 h-5 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-slate-700 mr-1 transition-colors ${hasChildren ? "visible" : "invisible"}`}
               onClick={(e) => hasChildren && toggleExpand(node.id, e)}
+              aria-hidden="true"
             >
               {isExpanded ? (
-                <ChevronDown size={14} />
+                <ChevronDown size={14} aria-hidden="true" />
               ) : (
-                <ChevronRight size={14} />
+                <ChevronRight size={14} aria-hidden="true" />
               )}
             </div>
 
@@ -1196,11 +1306,12 @@ export const GraphOutline = React.memo(function GraphOutline({
                   handleToggleSelection(node.id);
                 }}
                 className="mr-2 cursor-pointer text-slate-400 hover:text-primary-500"
+                aria-hidden="true"
               >
                 {isSelected ? (
-                  <CheckSquare size={16} className="text-primary-500" />
+                  <CheckSquare size={16} className="text-primary-500" aria-hidden="true" />
                 ) : (
-                  <Square size={16} />
+                  <Square size={16} aria-hidden="true" />
                 )}
               </div>
             )}
@@ -1210,6 +1321,7 @@ export const GraphOutline = React.memo(function GraphOutline({
               style={{
                 backgroundColor: getLevelColors(node.level || "leaf").primary,
               }}
+              aria-hidden="true"
             />
 
             <span className="truncate flex-1 font-medium flex items-center gap-1.5">
@@ -1225,7 +1337,7 @@ export const GraphOutline = React.memo(function GraphOutline({
 
             {node.level && (
               <span
-                className="text-[10px] uppercase ml-2 px-1 rounded hidden group-hover:inline-block"
+                className="text-[10px] uppercase ml-2 px-1 rounded hidden group-hover:inline-block group-focus-within:inline-block"
                 style={{
                   backgroundColor:
                     selectedNodeId === node.id
@@ -1244,23 +1356,26 @@ export const GraphOutline = React.memo(function GraphOutline({
             {hasChildren && !isNodeReadOnly && (
               <button
                 onClick={(e) => handleSelectChildren(node.id, e)}
-                className="ml-2 p-1 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded hidden group-hover:flex items-center justify-center transition-colors"
+                className="ml-2 p-1 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded hidden group-hover:flex group-focus-within:flex items-center justify-center transition-colors"
                 title={t("graphEditor.outline.selectAllChildren")}
+                aria-label={t("graphEditor.outline.selectAllChildren")}
               >
-                <ListChecks size={14} />
+                <ListChecks aria-hidden="true" size={14} />
               </button>
             )}
           </div>
 
           {hasChildren && isExpanded && (
-            <div>
-              {children.map((child) => (
+            <div role="group" id={childrenId}>
+              {children.map((child, index) => (
                 <TreeNode
                   key={child.id}
                   node={child}
                   depth={depth + 1}
                   visited={newVisited}
                   isReadOnly={isNodeReadOnly}
+                  setSize={children.length}
+                  posInSet={index + 1}
                 />
               ))}
             </div>
@@ -1293,8 +1408,9 @@ export const GraphOutline = React.memo(function GraphOutline({
                 onClick={onAddNode}
                 className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary-500"
                 title={t("graphEditor.outline.addNode")}
+                aria-label={t("graphEditor.outline.addNode")}
               >
-                <Plus size={16} />
+                <Plus aria-hidden="true" size={16} />
               </button>
             )}
             {!isReadOnly && (
@@ -1302,8 +1418,9 @@ export const GraphOutline = React.memo(function GraphOutline({
                 onClick={handleSelectIsolated}
                 className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-orange-500"
                 title={t("graphEditor.outline.selectIsolatedNodes")}
+                aria-label={t("graphEditor.outline.selectIsolatedNodes")}
               >
-                <Eraser size={16} />
+                <Eraser aria-hidden="true" size={16} />
               </button>
             )}
             {filteredSuggestions.length > 0 && !isReadOnly && (
@@ -1315,8 +1432,11 @@ export const GraphOutline = React.memo(function GraphOutline({
                 title={t("graphEditor.outline.connectionDiscovery", {
                   count: filteredSuggestions.length,
                 })}
+                aria-label={t("graphEditor.outline.connectionDiscovery", {
+                  count: filteredSuggestions.length,
+                })}
               >
-                <Network size={16} />
+                <Network aria-hidden="true" size={16} />
               </button>
             )}
             {!isReadOnly && (
@@ -1333,15 +1453,24 @@ export const GraphOutline = React.memo(function GraphOutline({
                     ? t("graphEditor.outline.exitMultiSelect")
                     : t("graphEditor.outline.multiSelectMode")
                 }
+                aria-label={
+                  isMultiSelectMode
+                    ? t("graphEditor.outline.exitMultiSelect")
+                    : t("graphEditor.outline.multiSelectMode")
+                }
               >
-                <MousePointer2 size={16} />
+                <MousePointer2 aria-hidden="true" size={16} />
               </button>
             )}
           </div>
         </div>
 
-        <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <div
+          role="search"
+          aria-label={t('common.aria.search')}
+          className="relative mb-3"
+        >
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
           <input
             type="text"
             placeholder={t("graphEditor.outline.searchNodes")}
@@ -1362,7 +1491,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                 title={t('common.aria.moduleView')}
                 aria-label={t('common.aria.moduleView')}
               >
-                <Network size={14} />
+                <Network aria-hidden="true" size={14} />
               </button>
             )}
             {templateType === "topic_research" && (
@@ -1372,29 +1501,31 @@ export const GraphOutline = React.memo(function GraphOutline({
                 title={t('common.aria.literatureView')}
                 aria-label={t('common.aria.literatureView')}
               >
-                <FileText size={14} />
+                <FileText aria-hidden="true" size={14} />
               </button>
             )}
             <button
               onClick={() => setViewMode("tree")}
               className={`p-1.5 rounded ${viewMode === "tree" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
               title={t("graphEditor.outline.treeView")}
+              aria-label={t("graphEditor.outline.treeView")}
             >
-              <Layers size={14} />
+              <Layers aria-hidden="true" size={14} />
             </button>
             <button
               onClick={() => setViewMode("list")}
               className={`p-1.5 rounded ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
               title={t("graphEditor.outline.listView")}
+              aria-label={t("graphEditor.outline.listView")}
             >
-              <List size={14} />
+              <List aria-hidden="true" size={14} />
             </button>
           </div>
 
           {/* Filter Dropdown */}
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-              <Filter size={12} className="text-slate-400" />
+              <Filter size={12} className="text-slate-400" aria-hidden="true" />
             </div>
             <select
               value={filterLevel}
@@ -1422,11 +1553,16 @@ export const GraphOutline = React.memo(function GraphOutline({
                   ? t("graphEditor.outline.sortByTitle")
                   : t("graphEditor.outline.sortByLevel")
               }
+              aria-label={
+                sortMode === "title"
+                  ? t("graphEditor.outline.sortByTitle")
+                  : t("graphEditor.outline.sortByLevel")
+              }
             >
               {sortMode === "title" ? (
-                <ArrowDownAZ size={14} />
+                <ArrowDownAZ aria-hidden="true" size={14} />
               ) : (
-                <ArrowUpAZ size={14} />
+                <ArrowUpAZ aria-hidden="true" size={14} />
               )}
             </button>
           )}
@@ -1440,11 +1576,12 @@ export const GraphOutline = React.memo(function GraphOutline({
                 onClick={handleSelectAll}
                 className="p-1.5 text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded"
                 title={t("graphEditor.outline.selectAll")}
+                aria-label={t("graphEditor.outline.selectAll")}
               >
                 {selectedNodeIds.size === nodes.length && nodes.length > 0 ? (
-                  <CheckSquare size={16} />
+                  <CheckSquare aria-hidden="true" size={16} />
                 ) : (
-                  <Square size={16} />
+                  <Square aria-hidden="true" size={16} />
                 )}
               </button>
               <span className="text-xs text-slate-500 font-medium">
@@ -1459,24 +1596,27 @@ export const GraphOutline = React.memo(function GraphOutline({
                 disabled={selectedNodeIds.size < 2}
                 className="p-1.5 text-purple-600 hover:bg-purple-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t("graphEditor.region.createRegion")}
+                aria-label={t("graphEditor.region.createRegion")}
               >
-                <Palette size={16} />
+                <Palette aria-hidden="true" size={16} />
               </button>
               <button
                 onClick={() => setIsBatchGenerateOpen(true)}
                 disabled={selectedNodeIds.size === 0}
                 className="p-1.5 text-primary-600 hover:bg-primary-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t("graphEditor.outline.batchGenerateQuestions")}
+                aria-label={t("graphEditor.outline.batchGenerateQuestions")}
               >
-                <Sparkles size={16} />
+                <Sparkles aria-hidden="true" size={16} />
               </button>
               <button
                 onClick={() => onBatchAction?.("expand_graph")}
                 disabled={selectedNodeIds.size === 0}
                 className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t("graphEditor.outline.backgroundExpand")}
+                aria-label={t("graphEditor.outline.backgroundExpand")}
               >
-                <Wand2 size={16} />
+                <Wand2 aria-hidden="true" size={16} />
               </button>
               <button
                 onClick={handleBatchDelete}
@@ -1485,7 +1625,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                 title={t("graphEditor.outline.batchDelete")}
                 aria-label={t('common.aria.batchDelete')}
               >
-                <Trash2 size={16} />
+                <Trash2 aria-hidden="true" size={16} />
               </button>
             </div>
           </div>
@@ -1499,7 +1639,7 @@ export const GraphOutline = React.memo(function GraphOutline({
           <div className="border-b border-slate-200 dark:border-slate-800 p-3 bg-primary-50/50 dark:bg-primary-900/10">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Network size={14} className="text-primary-500" />
+                <Network size={14} className="text-primary-500" aria-hidden="true" />
                 <span className="text-xs font-semibold text-primary-700 dark:text-primary-300">
                   {t("graphEditor.outline.connectionDiscovery", {
                     count: filteredSuggestions.length,
@@ -1509,8 +1649,9 @@ export const GraphOutline = React.memo(function GraphOutline({
               <button
                 onClick={() => setShowConnectionDiscovery(false)}
                 className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded"
+                aria-label={t('common.aria.close')}
               >
-                <X size={14} className="text-slate-400" />
+                <X aria-hidden="true" size={14} className="text-slate-400" />
               </button>
             </div>
             <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -1524,7 +1665,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                       <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[80px]">
                         {suggestion.sourceTitle}
                       </span>
-                      <Link2 size={10} className="text-primary-400" />
+                      <Link2 size={10} className="text-primary-400" aria-hidden="true" />
                       <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[80px]">
                         {suggestion.targetTitle}
                       </span>
@@ -1538,8 +1679,9 @@ export const GraphOutline = React.memo(function GraphOutline({
                       onClick={() => handleConnect(suggestion)}
                       className="p-1 text-primary-500 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded"
                       title={t("graphEditor.outline.establishConnection")}
+                      aria-label={t("graphEditor.outline.establishConnection")}
                     >
-                      <Link2 size={12} />
+                      <Link2 aria-hidden="true" size={12} />
                     </button>
                     <button
                       onClick={() =>
@@ -1550,8 +1692,9 @@ export const GraphOutline = React.memo(function GraphOutline({
                       }
                       className="p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
                       title={t("graphEditor.outline.ignore")}
+                      aria-label={t("graphEditor.outline.ignore")}
                     >
-                      <X size={12} />
+                      <X aria-hidden="true" size={12} />
                     </button>
                   </div>
                 </div>
@@ -1560,38 +1703,63 @@ export const GraphOutline = React.memo(function GraphOutline({
           </div>
         )}
 
-      <div className="flex-1 overflow-y-auto py-2">
+      <div
+        role="region"
+        aria-label={t('graphEditor.outline.region')}
+        tabIndex={0}
+        className="flex-1 overflow-y-auto py-2"
+      >
         {viewMode === "module" &&
         !searchQuery.trim() &&
         filterLevel === "all" ? (
-          <div className="space-y-0.5 px-2">{renderModuleView()}</div>
+          <div
+            className="space-y-0.5 px-2"
+            role="tree"
+            aria-label={t('graphEditor.outline.treeLabel')}
+          >
+            {renderModuleView()}
+          </div>
         ) : viewMode === "literature" &&
           !searchQuery.trim() &&
           filterLevel === "all" ? (
-          <div className="space-y-0.5 px-2">{renderLiteratureView()}</div>
+          <div
+            className="space-y-0.5 px-2"
+            role="tree"
+            aria-label={t('graphEditor.outline.treeLabel')}
+          >
+            {renderLiteratureView()}
+          </div>
         ) : viewMode === "list" ||
           searchQuery.trim() ||
           filterLevel !== "all" ? (
           <div className="space-y-0.5 px-2">{renderList()}</div>
         ) : (
-          <div className="space-y-0.5">
+          <div
+            className="space-y-0.5"
+            role="tree"
+            aria-label={t('graphEditor.outline.treeLabel')}
+          >
             {rootNodes.length === 0 && nodes.length > 0
-              ? nodes.map((node) => (
+              ? nodes.map((node, index) => (
                   <TreeNode
                     key={node.id}
                     node={node}
                     depth={0}
                     visited={new Set()}
                     isReadOnly={isReadOnly}
+                    setSize={nodes.length}
+                    posInSet={index + 1}
                   />
                 ))
-              : rootNodes.map((node) => (
+              : rootNodes.map((node, index) => (
                   <TreeNode
                     key={node.id}
                     node={node}
                     depth={0}
                     visited={new Set()}
                     isReadOnly={isReadOnly}
+                    setSize={rootNodes.length}
+                    posInSet={index + 1}
                   />
                 ))}
             {nodes.length === 0 && (

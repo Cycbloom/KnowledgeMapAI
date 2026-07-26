@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, Check, Maximize2, X, GripVertical } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatTimeFromSeconds } from '../../utils/formatters';
 import { QUEUE_COLORS, type QueueLevel } from '@/constants/scheduler';
 
@@ -31,6 +32,7 @@ export const MiniTimer: React.FC<MiniTimerProps> = ({
   onExpand,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null);
@@ -93,6 +95,14 @@ export const MiniTimer: React.FC<MiniTimerProps> = ({
       `}
     >
       <div
+        role="button"
+        tabIndex={0}
+        aria-label={t('common.aria.dragHandle')}
+        onKeyDown={(e) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+          }
+        }}
         onMouseDown={handleMouseDown}
         className={`
           w-64 rounded-2xl overflow-hidden
@@ -103,7 +113,7 @@ export const MiniTimer: React.FC<MiniTimerProps> = ({
       >
         <div className="bg-black/20 px-3 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2 text-white/80">
-            <GripVertical size={14} />
+            <GripVertical size={14} aria-hidden="true" />
             <span className="text-xs font-medium truncate max-w-[140px]">
               {isBreak ? '休息时间' : taskTitle}
             </span>
@@ -111,15 +121,17 @@ export const MiniTimer: React.FC<MiniTimerProps> = ({
           <div className="flex items-center gap-1">
             <button
               onClick={onExpand}
+              aria-label={t('common.aria.expand')}
               className="p-1 rounded hover:bg-white/20 transition-colors text-white/80 hover:text-white"
             >
-              <Maximize2 size={14} />
+              <Maximize2 size={14} aria-hidden="true" />
             </button>
             <button
               onClick={onClose}
+              aria-label={t('common.aria.close')}
               className="p-1 rounded hover:bg-white/20 transition-colors text-white/80 hover:text-white"
             >
-              <X size={14} />
+              <X size={14} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -133,28 +145,38 @@ export const MiniTimer: React.FC<MiniTimerProps> = ({
               {isRunning ? (
                 <button
                   onClick={onPause}
+                  aria-label={t('common.aria.pauseTask')}
                   className="p-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors"
                 >
-                  <Pause size={18} />
+                  <Pause size={18} aria-hidden="true" />
                 </button>
               ) : (
                 <button
                   onClick={onResume}
+                  aria-label={t('scheduler.currentTask.resume')}
                   className="p-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors"
                 >
-                  <Play size={18} />
+                  <Play size={18} aria-hidden="true" />
                 </button>
               )}
               <button
                 onClick={onComplete}
+                aria-label={t('common.aria.completeTask')}
                 className="p-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors"
               >
-                <Check size={18} />
+                <Check size={18} aria-hidden="true" />
               </button>
             </div>
           </div>
 
-          <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
+          <div
+            role="progressbar"
+            aria-valuenow={Math.round(progress * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={t('common.aria.progress')}
+            className="h-1.5 bg-white/20 rounded-full overflow-hidden"
+          >
             <motion.div
               className="h-full bg-white rounded-full"
               initial={{ width: 0 }}

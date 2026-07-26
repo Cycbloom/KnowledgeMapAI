@@ -6,6 +6,7 @@
   "deleteFailed": "Failed to delete notification",
   "markAllRead": "Mark all as read",
   "deleteRead": "Delete read notifications",
+  "unreadCountAria": "{{count}} unread notifications",
   "settings": {
     "title": "Notification settings",
     "savedSuccess": "Notification settings saved!",

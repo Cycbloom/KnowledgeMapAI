@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CombinedViewLayoutMode, KnowledgePoint, GraphNodeWithKnowledgePoint, Edge } from '../../types';
 
 interface MergedNode {
@@ -136,6 +137,7 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const { t } = useTranslation();
   
   useEffect(() => {
     const updateDimensions = () => {
@@ -211,7 +213,15 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
     if (!highlightedGraphId) return 0.6;
     return edge.graphId === highlightedGraphId ? 0.8 : 0.2;
   };
-  
+
+  const focusedNodeTitle = hoveredNodeId
+    ? nodes.find(n => n.id === hoveredNodeId)?.knowledgePoint.title ?? ''
+    : '';
+  const canvasAriaLabel = t('combinedViewPage.canvas.ariaLabel', {
+    count: nodes.length,
+    focus: focusedNodeTitle,
+  });
+
   return (
     <div 
       ref={containerRef}
@@ -222,12 +232,16 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
         ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
+        role="application"
+        aria-label={canvasAriaLabel}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
+        <title>{canvasAriaLabel}</title>
+        <desc>{t('combinedViewPage.canvas.desc')}</desc>
         <defs>
           {Object.entries(graphColors).map(([id, color]) => (
             <radialGradient key={`gradient-${id}`} id={`gradient-${id}`} cx="50%" cy="50%" r="50%">

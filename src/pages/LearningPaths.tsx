@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useId } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
@@ -108,6 +108,7 @@ export const LearningPaths = () => {
 
   const createModalRef = useFocusTrap<HTMLDivElement>({ enabled: isCreating });
   useEscapeKey(() => setIsCreating(false), isCreating);
+  const createPathTitleId = useId();
 
   const filteredPaths = (paths as LearningPathItem[] | undefined)?.filter((path) => {
     const matchesSearch =
@@ -459,12 +460,15 @@ export const LearningPaths = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div
             ref={createModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={createPathTitleId}
             className={`w-full max-w-md rounded-2xl shadow-2xl p-6 md:p-8 ${
               isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
             }`}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">{t("learningPaths.createDialog.title")}</h3>
+              <h3 id={createPathTitleId} className="text-xl font-bold">{t("learningPaths.createDialog.title")}</h3>
               <button
                 onClick={() => setIsCreating(false)}
                 className={`p-2 rounded-full hover:bg-opacity-10 transition-colors ${

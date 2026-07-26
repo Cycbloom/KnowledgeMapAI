@@ -308,22 +308,35 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
           </label>
           
           {formData.card_type === 'true_false' ? (
-              <fieldset className="flex gap-4">
+              <fieldset
+                role="radiogroup"
+                aria-label={t('study.questionForm.trueFalseGroupLabel')}
+                className="flex gap-4"
+              >
                   <legend className="sr-only">{t('study.questionForm.answerLegend')}</legend>
-                  {['True', 'False'].map(val => (
-                      <label key={val} className="flex items-center gap-2 cursor-pointer">
+                  {['True', 'False'].map(val => {
+                    const isChecked = formData.answer === val;
+                    return (
+                      <label
+                        key={val}
+                        role="radio"
+                        aria-checked={isChecked}
+                        tabIndex={isChecked ? 0 : -1}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
                           <input
                               type="radio"
                               name="tf_answer"
                               aria-required={true}
                               value={val}
-                              checked={formData.answer === val}
+                              checked={isChecked}
                               onChange={e => setFormData({...formData, answer: e.target.value})}
                               className="w-5 h-5 text-primary-600"
                           />
                           <span className="text-base">{val === 'True' ? t('study.questionForm.trueLabel') : t('study.questionForm.falseLabel')}</span>
                       </label>
-                  ))}
+                    );
+                  })}
               </fieldset>
           ) : (formData.card_type === 'choice' || formData.card_type === 'multi_choice') ? (
               <div className={`p-3 rounded-lg text-sm ${isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-100 text-gray-600'}`}>

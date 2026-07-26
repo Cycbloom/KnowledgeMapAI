@@ -610,6 +610,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                           max={30}
                           value={graphCount}
                           onChange={e => setGraphCount(parseInt(e.target.value))}
+                          aria-label={t('graphMap.domainGenerator.generateCount')}
                           className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
                         />
                         <input

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef, useId } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -151,6 +151,7 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
   onClose,
 }) => {
   const { t } = useTranslation();
+  const domainPickerTitleId = useId();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(currentDomains.map((d) => d.id)),
   );
@@ -181,9 +182,14 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={domainPickerTitleId}
+        className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-4"
+      >
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+          <h2 id={domainPickerTitleId} className="text-base font-semibold text-gray-900 dark:text-white">
             {t('graphMap.domainPicker.title')}
           </h2>
           <button
@@ -268,6 +274,9 @@ export const GraphMap = () => {
   const queryClient = useQueryClient();
   const { user } = useStore();
   const { isMobile } = useIsMobile();
+  const promptEditorTitleId = useId();
+  const batchDomainPickerTitleId = useId();
+  const crossDomainTitleId = useId();
 
   const fromGraphId = searchParams.get("from");
 
@@ -1066,7 +1075,7 @@ export const GraphMap = () => {
   if (error || domainTreeError) {return (
     <div className="p-8 flex flex-col items-center justify-center text-center">
       <AlertCircle size={48} className="text-red-500 mb-4" />
-      <p className="text-red-600 dark:text-red-400 mb-4">{t('graphMap.loadError')}</p>
+      <p role="alert" className="text-red-600 dark:text-red-400 mb-4">{t('graphMap.loadError')}</p>
       <button
         type="button"
         onClick={() => { void refetchMap(); void refetchDomainTree(); }}
@@ -1765,7 +1774,19 @@ export const GraphMap = () => {
 
       {isPromptEditorOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-3xl mx-4 h-[70vh] overflow-hidden flex flex-col">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={promptEditorTitleId}
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-3xl mx-4 h-[70vh] overflow-hidden flex flex-col"
+          >
+            <h2 id={promptEditorTitleId} className="sr-only">
+              {promptEditMode === "depth"
+                ? depthPromptType === "init"
+                  ? t('graphMap.prompt.editInitPrompt')
+                  : t('graphMap.prompt.editExpandPrompt')
+                : t('graphMap.prompt.editWidthPrompt')}
+            </h2>
             {showPromptSelector && promptEditMode === "depth" && (
               <div className="flex border-b border-gray-200 dark:border-gray-700">
                 <button
@@ -2003,8 +2024,13 @@ export const GraphMap = () => {
 
       {isBatchDomainPickerOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-4">
-            <h2 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={batchDomainPickerTitleId}
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-4"
+          >
+            <h2 id={batchDomainPickerTitleId} className="text-base font-semibold mb-3 text-gray-900 dark:text-white">
               {t('graphMap.domainPicker.batchTitle')}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
@@ -2085,11 +2111,14 @@ export const GraphMap = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={crossDomainTitleId}
             className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary-50 to-pink-50 dark:from-primary-900/30 dark:to-pink-900/30">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <h2 id={crossDomainTitleId} className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Layers className="w-5 h-5 text-primary-500" />
                 {t('graphMap.crossDomain.title')}
               </h2>

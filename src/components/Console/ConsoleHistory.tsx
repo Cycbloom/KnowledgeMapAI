@@ -82,12 +82,17 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
           )}
         </div>
 
-        <div className="relative">
+        <div
+          role="search"
+          aria-label={t('common.aria.search')}
+          className="relative"
+        >
           <Search size={12} className={`absolute left-2 top-1/2 -translate-y-1/2 ${
             isDark ? 'text-slate-500' : 'text-gray-400'
           }`} />
           <input
             type="text"
+            aria-label={t('common.aria.search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="搜索..."
@@ -100,7 +105,12 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div
+        role="region"
+        aria-label={t('console.history.region')}
+        tabIndex={0}
+        className="flex-1 overflow-y-auto custom-scrollbar"
+      >
         {filteredHistory.length === 0 ? (
           <EmptyState
             illustration={searchQuery ? 'search' : 'empty'}

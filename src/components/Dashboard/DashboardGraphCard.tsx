@@ -70,6 +70,7 @@ interface DashboardGraphCardProps {
   isMobile: boolean;
   isSelectMode: boolean;
   isSelected: boolean;
+  isMenuOpen: boolean;
   onToggleSelect: (id: string) => void;
   onNavigate: (graphId: string) => void;
   onDelete: (id: string, title: string) => void;
@@ -84,6 +85,7 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
   isMobile,
   isSelectMode,
   isSelected,
+  isMenuOpen,
   onToggleSelect,
   onNavigate,
   onDelete,
@@ -95,9 +97,11 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
   const navigate = useNavigate();
 
   return (
-    <div
+    <figure
       onMouseEnter={() => onPrefetch(graph.id)}
       onContextMenu={(e) => onContextMenu(e, graph)}
+      aria-haspopup="menu"
+      aria-expanded={isMenuOpen}
       className={`group relative rounded-2xl transition-all duration-300 ${
         isSelectMode
           ? isSelected
@@ -115,10 +119,11 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
           : "bg-white border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-xl hover:shadow-primary-500/5")
       }`}
     >
+      <figcaption className="sr-only">{graph.title}</figcaption>
       {/* Selection Checkbox - Select Mode */}
       {isSelectMode && (
         <div
-          className="absolute top-3 left-3 z-10"
+          className="absolute top-3 left-3 z-10 min-h-[44px] min-w-[44px] flex items-center justify-center"
           onClick={(e) => {
             e.stopPropagation();
             onToggleSelect(graph.id);
@@ -199,7 +204,7 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
                 <Link
                   to={`/graph/${graph.id}`}
                   onClick={(e) => e.stopPropagation()}
-                  className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                  className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                     isDark
                       ? "text-slate-400 hover:bg-primary-900/30 hover:text-primary-400"
                       : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
@@ -215,7 +220,7 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
                     e.stopPropagation();
                     onDelete(graph.id, graph.title);
                   }}
-                  className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                  className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                     isDark
                       ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
                       : "text-gray-400 hover:bg-red-50 hover:text-red-500"
@@ -232,7 +237,7 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
                       e.stopPropagation();
                       onToggleFavorite(graph.id, false);
                     }}
-                    className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                    className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                       isDark
                         ? "text-slate-400 hover:bg-yellow-900/30 hover:text-yellow-400"
                         : "text-gray-400 hover:bg-yellow-50 hover:text-yellow-500"
@@ -251,7 +256,7 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
                 <Link
                   to={`/graph/${graph.id}`}
                   onClick={(e) => e.stopPropagation()}
-                  className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                  className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                     isDark
                       ? "text-slate-400 hover:bg-primary-900/30 hover:text-primary-400"
                       : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
@@ -267,7 +272,7 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
                     e.stopPropagation();
                     onDelete(graph.id, graph.title);
                   }}
-                  className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                  className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                     isDark
                       ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
                       : "text-gray-400 hover:bg-red-50 hover:text-red-500"
@@ -287,7 +292,7 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
                   e.stopPropagation();
                   onToggleFavorite(graph.id, true);
                 }}
-                className={`p-2 rounded-lg text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors ${isMobile ? "min-h-[44px] min-w-[44px] flex items-center justify-center" : ""}`}
+                className={`p-2 rounded-lg text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${isMobile ? "min-h-[44px] min-w-[44px] flex items-center justify-center" : ""}`}
                 title={t("dashboard.card.unfavorite")}
                 aria-label={t("dashboard.card.unfavorite")}
               >
@@ -363,6 +368,6 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </figure>
   );
 };

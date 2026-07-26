@@ -33,6 +33,7 @@
     "health": "Health",
     "review": "Review"
   },
+  "quickTagsGroupLabel": "Quick tags",
   "cancel": "Cancel",
   "create": "Create Task",
   "enterTaskTitle": "Please enter task title",
@@ -60,7 +61,10 @@
     "more": "+{{count}} more",
     "estimatedDuration": "Est. {{minutes}} min",
     "hiddenCount": "+{{count}} subtasks",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "statusCompleted": "Completed",
+    "statusInProgress": "In progress",
+    "statusPending": "Pending"
   },
   "scheduleView": {
     "addTask": "Add Task",
@@ -88,5 +92,14 @@
   "a11y": {
     "changeDate": "Change date",
     "draggableTask": "Draggable task card, use the change date button to move via keyboard"
+  },
+  "drag": {
+    "start": "Started dragging: {{title}}, currently at {{hour}}:00",
+    "moveHint": "Use Up/Down arrows to adjust target hour, Enter to confirm, Esc to cancel",
+    "moveHintWeek": "Use arrow keys to adjust target date and hour, Enter to confirm, Esc to cancel",
+    "targetHour": "Target {{hour}}:00",
+    "targetDate": "Target {{date}}",
+    "confirm": "Dropped at {{hour}}:00",
+    "cancel": "Drag cancelled"
   }
 }

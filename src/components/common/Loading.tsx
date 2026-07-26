@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 type LoadingSize = 'sm' | 'md' | 'lg';
@@ -33,16 +34,24 @@ export const Loading: React.FC<LoadingProps> = ({
   text,
   fullScreen = false,
 }) => {
+  const { t } = useTranslation();
   const config = sizeConfig[size];
 
   const content = (
-    <div className={cn('flex items-center justify-center', config.gap)}>
-      <Loader2 className={cn(config.icon, 'animate-spin text-primary-600 dark:text-primary-400')} />
+    <div
+      className={cn('flex items-center justify-center', config.gap)}
+      aria-live="polite"
+    >
+      <Loader2
+        className={cn(config.icon, 'animate-spin text-primary-600 dark:text-primary-400')}
+        aria-hidden="true"
+      />
       {text && (
         <span className={cn(config.text, 'text-gray-600 dark:text-gray-300')}>
           {text}
         </span>
       )}
+      <span className="sr-only">{t('common.aria.loading')}</span>
     </div>
   );
 

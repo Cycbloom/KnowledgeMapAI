@@ -14,6 +14,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../../utils/formatters";
+import { useTranslation } from "react-i18next";
 import type { LearningPathDetail } from "./types";
 
 interface PathHeaderSectionProps {
@@ -36,6 +37,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
   onDeletePath,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const formatDate = (dateStr: string) => formatDateUtil(dateStr);
 
   return (
@@ -198,7 +200,14 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
               {pathDetail.progress.total_nodes} 节点
             </span>
           </div>
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            role="progressbar"
+            aria-valuenow={Math.round(progressPercentage)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={t('common.aria.progress')}
+            className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+          >
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPercentage}%` }}

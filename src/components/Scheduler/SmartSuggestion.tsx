@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Lightbulb,
@@ -46,6 +46,50 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
   const [activeTab, setActiveTab] = useState<"recommendations" | "tips">(
     "recommendations",
   );
+
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const tabs: { id: "recommendations" | "tips"; label: string }[] = [
+    { id: "recommendations", label: "任务推荐" },
+    { id: "tips", label: "效率提示" },
+  ];
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(tabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     loadSuggestions();
@@ -228,37 +272,42 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
                 </motion.div>
               )}
 
-              <div className="flex gap-2 mb-4">
-                <button
-                  onClick={() => setActiveTab("recommendations")}
-                  className={`
-                    flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all
-                    ${
-                      activeTab === "recommendations"
-                        ? "bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                    }
-                  `}
-                >
-                  任务推荐
-                </button>
-                <button
-                  onClick={() => setActiveTab("tips")}
-                  className={`
-                    flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all
-                    ${
-                      activeTab === "tips"
-                        ? "bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                    }
-                  `}
-                >
-                  效率提示
-                </button>
+              <div className="flex gap-2 mb-4" role="tablist" aria-label="智能建议">
+                {tabs.map((tab, index) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      ref={(el) => { tabRefs.current[index] = el; }}
+                      role="tab"
+                      id={`${tabIdPrefix}-${tab.id}`}
+                      aria-selected={isActive}
+                      aria-controls={`${panelIdPrefix}-${tab.id}`}
+                      tabIndex={isActive ? 0 : -1}
+                      onClick={() => setActiveTab(tab.id)}
+                      onKeyDown={(e) => handleTabKeyDown(e, index)}
+                      className={`
+                        flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all
+                        ${
+                          isActive
+                            ? "bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                        }
+                      `}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
               </div>
 
               {activeTab === "recommendations" && (
-                <>
+                <div
+                  role="tabpanel"
+                  id={`${panelIdPrefix}-recommendations`}
+                  aria-labelledby={`${tabIdPrefix}-recommendations`}
+                  tabIndex={0}
+                >
                   {suggestions?.timeBasedSuggestions &&
                     suggestions.timeBasedSuggestions.length > 0 && (
                       <div className="mb-4 p-3 rounded-lg bg-primary-50 dark:bg-primary-500/10 border border-primary-200 dark:border-primary-500/30">
@@ -288,11 +337,17 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
                     onStartTask={onStartTask}
                     isLoading={isLoading}
                   />
-                </>
+                </div>
               )}
 
               {activeTab === "tips" && (
-                <div className="space-y-3">
+                <div
+                  role="tabpanel"
+                  id={`${panelIdPrefix}-tips`}
+                  aria-labelledby={`${tabIdPrefix}-tips`}
+                  tabIndex={0}
+                  className="space-y-3"
+                >
                   {suggestions?.efficiencyTips &&
                   suggestions.efficiencyTips.length > 0 ? (
                     suggestions.efficiencyTips.map((tip, i) => (

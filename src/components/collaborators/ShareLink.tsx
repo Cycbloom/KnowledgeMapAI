@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useId } from "react";
 import { Copy, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { copyToClipboard } from "@/utils/clipboard";
@@ -11,6 +11,7 @@ interface ShareLinkProps {
 export const ShareLink: React.FC<ShareLinkProps> = ({ invitationToken, graphId: _graphId }) => {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const inputId = useId();
 
   const shareUrl = `${window.location.origin}/collaboration/${invitationToken}`;
 
@@ -24,14 +25,16 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ invitationToken, graphId: 
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
         分享链接
       </label>
       <div className="flex gap-2">
         <input
           type="text"
+          id={inputId}
           value={shareUrl}
           readOnly
+          aria-readonly="true"
           className="flex-1 px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-sm"
         />
         <button

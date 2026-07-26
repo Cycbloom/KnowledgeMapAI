@@ -168,6 +168,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
 
   const baseId = useId();
   const triggerId = `${baseId}-trigger`;
+  const listboxId = `${baseId}-listbox`;
   const getOptionId = useCallback((index: number) => `${baseId}-option-${index}`, [baseId]);
 
   const allTags = useMemo(() => {
@@ -209,6 +210,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
         role="combobox"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
+        aria-controls={listboxId}
         aria-activedescendant={activeId}
         className={cn(
           'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors',
@@ -235,6 +237,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
       {isOpen && (
         <div
           role="listbox"
+          id={listboxId}
           aria-labelledby={triggerId}
           className={cn(
             'absolute top-full left-0 mt-2 w-72 rounded-xl shadow-xl border z-50',
@@ -381,7 +384,15 @@ export const TagInput: React.FC<{
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const baseId = useId();
+  const listboxId = `${baseId}-listbox`;
+  const getOptionId = useCallback(
+    (index: number) => `${listboxId}-option-${index}`,
+    [listboxId],
+  );
 
   const filteredSuggestions = useMemo(() => {
     if (!inputValue.trim()) return suggestions.slice(0, 5);
@@ -397,6 +408,7 @@ export const TagInput: React.FC<{
     }
     setInputValue('');
     setShowSuggestions(false);
+    setActiveIndex(null);
   }, [tags, onChange]);
 
   const handleRemoveTag = useCallback((tag: string) => {
@@ -406,12 +418,29 @@ export const TagInput: React.FC<{
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && inputValue.trim()) {
       e.preventDefault();
-      handleAddTag(inputValue);
+      if (activeIndex !== null && filteredSuggestions[activeIndex]) {
+        handleAddTag(filteredSuggestions[activeIndex]);
+      } else {
+        handleAddTag(inputValue);
+      }
     }
     if (e.key === 'Backspace' && !inputValue && tags.length > 0) {
       handleRemoveTag(tags[tags.length - 1]);
     }
-  }, [inputValue, tags, handleAddTag, handleRemoveTag]);
+    if (e.key === 'Escape' && showSuggestions) {
+      e.preventDefault();
+      setShowSuggestions(false);
+      setActiveIndex(null);
+    }
+    if (e.key === 'ArrowDown' && showSuggestions && filteredSuggestions.length > 0) {
+      e.preventDefault();
+      setActiveIndex((i) => i === null ? 0 : (i + 1) % filteredSuggestions.length);
+    }
+    if (e.key === 'ArrowUp' && showSuggestions && filteredSuggestions.length > 0) {
+      e.preventDefault();
+      setActiveIndex((i) => i === null ? filteredSuggestions.length - 1 : (i - 1 + filteredSuggestions.length) % filteredSuggestions.length);
+    }
+  }, [inputValue, tags, activeIndex, filteredSuggestions, showSuggestions, handleAddTag, handleRemoveTag]);
 
   return (
     <div className="relative">
@@ -442,31 +471,44 @@ export const TagInput: React.FC<{
         <input
           ref={inputRef}
           type="text"
-          aria-label={t('common.aria.search')}
+          role="combobox"
+          aria-expanded={showSuggestions}
+          aria-controls={listboxId}
+          aria-activedescendant={activeIndex !== null ? getOptionId(activeIndex) : undefined}
+          aria-autocomplete="list"
+          aria-label={t('common.aria.addTag')}
           value={inputValue}
           onChange={(e) => {
             setInputValue(e.target.value);
             setShowSuggestions(true);
+            setActiveIndex(null);
           }}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           onKeyDown={handleKeyDown}
           placeholder={tags.length === 0 ? placeholder : ''}
           className={cn(
-            'flex-1 min-w-[100px] bg-transparent outline-none text-sm',
+            'flex-1 min-w-[100px] bg-transparent text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
             isDark ? 'text-white placeholder-slate-500' : 'text-gray-800 placeholder-gray-400'
           )}
         />
       </div>
 
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <div className={cn(
-          'absolute top-full left-0 right-0 mt-1 rounded-lg shadow-lg border z-50',
-          isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-gray-200'
-        )}>
-          {filteredSuggestions.map(suggestion => (
+        <div
+          id={listboxId}
+          role="listbox"
+          className={cn(
+            'absolute top-full left-0 right-0 mt-1 rounded-lg shadow-lg border z-50',
+            isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-gray-200'
+          )}
+        >
+          {filteredSuggestions.map((suggestion, index) => (
             <button
               key={suggestion}
+              id={getOptionId(index)}
+              role="option"
+              aria-selected={index === activeIndex}
               onClick={() => handleAddTag(suggestion)}
               className={cn(
                 'w-full text-left px-3 py-2 text-sm flex items-center gap-2',

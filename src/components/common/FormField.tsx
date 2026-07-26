@@ -20,6 +20,8 @@ const FormField: React.FC<FormFieldProps> = ({
   className = '',
 }) => {
   const generatedId = useId();
+  const errorId = useId();
+  const hintId = useId();
   const childrenArray = React.Children.toArray(children);
   const singleChild = childrenArray.length === 1 ? childrenArray[0] : null;
 
@@ -31,9 +33,31 @@ const FormField: React.FC<FormFieldProps> = ({
       singleChild as React.ReactElement<React.HTMLAttributes<HTMLElement>>;
     const existingId = typedChild.props.id;
     const existingAriaRequired = typedChild.props['aria-required'];
+    const existingAriaDescribedby = typedChild.props['aria-describedby'];
     fieldId = existingId ?? generatedId;
+
+    // Determine the aria-describedby value:
+    // - If error exists, point to errorId
+    // - Else if hint exists, point to hintId
+    // - Else preserve any existing aria-describedby
+    let ariaDescribedby: string | undefined;
+    if (error) {
+      ariaDescribedby = existingAriaDescribedby
+        ? `${existingAriaDescribedby} ${errorId}`
+        : errorId;
+    } else if (hint) {
+      ariaDescribedby = existingAriaDescribedby
+        ? `${existingAriaDescribedby} ${hintId}`
+        : hintId;
+    } else {
+      ariaDescribedby = existingAriaDescribedby;
+    }
+
     renderedChildren = React.cloneElement(typedChild, {
       id: fieldId,
+      'aria-invalid': error ? true : undefined,
+      'aria-describedby': ariaDescribedby,
+      'aria-errormessage': error ? errorId : undefined,
       ...(required && existingAriaRequired === undefined
         ? { 'aria-required': true as const }
         : {}),
@@ -51,9 +75,9 @@ const FormField: React.FC<FormFieldProps> = ({
       </label>
       {renderedChildren}
       {hint && !error && (
-        <span className="text-xs text-gray-500 dark:text-gray-400">{hint}</span>
+        <span id={hintId} className="text-xs text-gray-500 dark:text-gray-400">{hint}</span>
       )}
-      <FormError message={error} />
+      <FormError id={errorId} message={error} />
     </div>
   );
 };

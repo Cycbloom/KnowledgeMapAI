@@ -146,10 +146,10 @@ export class GlobalErrorBoundary extends Component<Props, State> {
         .join("\n");
 
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-900 p-4">
+        <div role="alert" className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-900 p-4">
           <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-lg max-w-lg w-full text-center border border-gray-100 dark:border-slate-500">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 mb-6">
-              <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+              <AlertTriangle aria-hidden="true" className="h-8 w-8 text-red-600 dark:text-red-400" />
             </div>
 
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">

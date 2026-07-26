@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   X, Plus, Trash2, Clock, Palette, AlertTriangle,
@@ -65,6 +66,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
   onReorder,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [localQueues, setLocalQueues] = useState<Queue[]>([...queues].sort((a, b) => a.order - b.order));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<UpdateQueueData>({});
@@ -293,9 +295,13 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
           hover:shadow-md transition-all
         `}
       >
-        <div className="cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400">
-          <GripVertical size={18} />
-        </div>
+        <button
+          type="button"
+          aria-label={t('common.aria.dragHandle')}
+          className="cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400"
+        >
+          <GripVertical size={18} aria-hidden="true" />
+        </button>
 
         <div className={`w-3 h-3 rounded-full bg-gradient-to-br ${colorStyle.gradient}`} />
 
@@ -374,7 +380,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
 
         <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
           <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-4">
-            <GripVertical size={14} />
+            <GripVertical size={14} aria-hidden="true" />
             <span>拖拽调整队列优先级（上方优先级更高）</span>
           </div>
 

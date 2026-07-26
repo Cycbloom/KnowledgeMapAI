@@ -1,4 +1,4 @@
-import React, { useState, useId } from 'react';
+import React, { useState, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -53,6 +53,11 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
   useEscapeKey(onClose, isOpen);
   const titleId = useId();
 
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
   if (!isOpen) return null;
 
   const getRelationKey = (rel: DiscoveredRelation) => 
@@ -69,6 +74,46 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
     }
     return a.relation_type.localeCompare(b.relation_type);
   });
+
+  const tabs = [
+    { id: 'relations', label: t('graphMap.relationDiscovery.discoveredRelations', { count: sortedRelations.length }) },
+    { id: 'insights', label: t('graphMap.relationDiscovery.crossDomainInsights', { count: discoveryResult?.cross_domain_insights.length ?? 0 }) },
+    { id: 'suggestions', label: t('graphEditor.graphMap.relationDiscovery.learningSuggestions') },
+  ] as const;
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(tabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
 
   const handleCreateRelation = async (rel: DiscoveredRelation) => {
     const key = getRelationKey(rel);
@@ -168,8 +213,15 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                   </div>
                 </div>
 
-                <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700" role="tablist" aria-label={t('graphMap.relationDiscovery.title')}>
                   <button
+                    ref={(el) => { tabRefs.current[0] = el; }}
+                    role="tab"
+                    id={`${tabIdPrefix}-relations`}
+                    aria-selected={activeTab === 'relations'}
+                    aria-controls={`${panelIdPrefix}-relations`}
+                    tabIndex={activeTab === 'relations' ? 0 : -1}
+                    onKeyDown={(e) => handleTabKeyDown(e, 0)}
                     onClick={() => setActiveTab('relations')}
                     className={`px-4 py-2 text-sm font-medium transition-colors ${
                       activeTab === 'relations'
@@ -180,6 +232,13 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                     {t('graphMap.relationDiscovery.discoveredRelations', { count: sortedRelations.length })}
                   </button>
                   <button
+                    ref={(el) => { tabRefs.current[1] = el; }}
+                    role="tab"
+                    id={`${tabIdPrefix}-insights`}
+                    aria-selected={activeTab === 'insights'}
+                    aria-controls={`${panelIdPrefix}-insights`}
+                    tabIndex={activeTab === 'insights' ? 0 : -1}
+                    onKeyDown={(e) => handleTabKeyDown(e, 1)}
                     onClick={() => setActiveTab('insights')}
                     className={`px-4 py-2 text-sm font-medium transition-colors ${
                       activeTab === 'insights'
@@ -190,6 +249,13 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                     {t('graphMap.relationDiscovery.crossDomainInsights', { count: discoveryResult.cross_domain_insights.length })}
                   </button>
                   <button
+                    ref={(el) => { tabRefs.current[2] = el; }}
+                    role="tab"
+                    id={`${tabIdPrefix}-suggestions`}
+                    aria-selected={activeTab === 'suggestions'}
+                    aria-controls={`${panelIdPrefix}-suggestions`}
+                    tabIndex={activeTab === 'suggestions' ? 0 : -1}
+                    onKeyDown={(e) => handleTabKeyDown(e, 2)}
                     onClick={() => setActiveTab('suggestions')}
                     className={`px-4 py-2 text-sm font-medium transition-colors ${
                       activeTab === 'suggestions'
@@ -202,7 +268,13 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                 </div>
 
                 {activeTab === 'relations' && (
-                  <div className="space-y-3">
+                  <div
+                    role="tabpanel"
+                    id={`${panelIdPrefix}-relations`}
+                    aria-labelledby={`${tabIdPrefix}-relations`}
+                    tabIndex={0}
+                    className="space-y-3"
+                  >
                     <div className="flex items-center justify-between">
                       <button
                         onClick={() => setShowFilters(!showFilters)}
@@ -370,7 +442,13 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                 )}
 
                 {activeTab === 'insights' && (
-                  <div className="space-y-3">
+                  <div
+                    role="tabpanel"
+                    id={`${panelIdPrefix}-insights`}
+                    aria-labelledby={`${tabIdPrefix}-insights`}
+                    tabIndex={0}
+                    className="space-y-3"
+                  >
                     {discoveryResult.cross_domain_insights.length === 0 ? (
                       <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                         {t('graphEditor.graphMap.relationDiscovery.noCrossDomainFound')}
@@ -423,7 +501,13 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                 )}
 
                 {activeTab === 'suggestions' && intelligentSuggestions && (
-                  <div className="space-y-4">
+                  <div
+                    role="tabpanel"
+                    id={`${panelIdPrefix}-suggestions`}
+                    aria-labelledby={`${tabIdPrefix}-suggestions`}
+                    tabIndex={0}
+                    className="space-y-4"
+                  >
                     {intelligentSuggestions.learning_path_suggestions.length > 0 && (
                       <div>
                         <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">

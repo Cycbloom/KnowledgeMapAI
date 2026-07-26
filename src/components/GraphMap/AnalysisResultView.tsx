@@ -73,14 +73,14 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-          <CheckCircle2 className="w-5 h-5" />
+          <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
           <span className="font-medium">{t('graphMap.analysisResult.complete')}</span>
         </div>
         <button
           onClick={handleCopy}
           className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
         >
-          {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          {copied ? <Check className="w-4 h-4" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
           {copied ? t('graphMap.analysisResult.copied') : t('graphMap.analysisResult.copy')}
         </button>
       </div>
@@ -93,7 +93,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
-              <Link2 className="w-4 h-4" />
+              <Link2 className="w-4 h-4" aria-hidden="true" />
               {t('graphMap.analysisResult.recommendedRelations')}
             </h4>
             <div className="flex items-center gap-2">
@@ -130,7 +130,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       {isApplied ? (
-                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" aria-hidden="true" />
                       ) : (
                         <div
                           className={`w-4 h-4 rounded border flex-shrink-0 ${
@@ -140,7 +140,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
                           }`}
                         >
                           {isSelected && (
-                            <svg className="w-4 h-4 text-white" viewBox="0 0 16 16" fill="currentColor">
+                            <svg className="w-4 h-4 text-white" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                               <path d="M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z" />
                             </svg>
                           )}
@@ -149,7 +149,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
                       <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
                         {rec.source_graph_title}
                       </span>
-                      <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
                       <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
                         {rec.target_graph_title}
                       </span>
@@ -174,12 +174,12 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
             >
               {isApplying ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                   {t('graphMap.analysisResult.applying')}
                 </>
               ) : (
                 <>
-                  <Link2 className="w-4 h-4" />
+                  <Link2 className="w-4 h-4" aria-hidden="true" />
                   {t('graphMap.analysisResult.applySelected', { count: selectedRecs.size })}
                 </>
               )}

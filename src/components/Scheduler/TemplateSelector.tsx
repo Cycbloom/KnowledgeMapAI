@@ -277,8 +277,16 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
             <div className="overflow-y-auto h-[calc(100%-100px)]">
               {loading ? (
-                <div className="flex items-center justify-center py-10">
-                  <Loader2 className="animate-spin text-primary-500" size={24} />
+                <div
+                  className="flex items-center justify-center py-10"
+                  aria-live="polite"
+                >
+                  <Loader2
+                    className="animate-spin text-primary-500"
+                    size={24}
+                    aria-hidden="true"
+                  />
+                  <span className="sr-only">{t("common.aria.loading")}</span>
                 </div>
               ) : filteredTemplates.length === 0 ? (
                 <EmptyState

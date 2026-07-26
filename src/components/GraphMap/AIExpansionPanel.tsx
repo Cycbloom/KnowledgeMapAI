@@ -453,6 +453,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                     value={depthLevel}
                     onChange={e => setDepthLevel(DEPTH_HINT_NUMBERS[Number(e.target.value) - 1])}
                     disabled={isRunning}
+                    aria-label={t('graphEditor.graphMap.aiExpansion.depthLevel', { count: depthLevel })}
                     className="w-full h-2 bg-primary-200 dark:bg-primary-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                   />
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -468,7 +469,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                 </div>
 
                 {depthProgress.status !== 'idle' && (
-                  <div className="p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                  <div role="status" className="p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
                     <div className="flex items-center gap-3 mb-3">
                       {depthProgress.status === 'completed' ? (
                         <Check className="w-5 h-5 text-green-500" />
@@ -535,6 +536,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                     value={maxDepth}
                     onChange={e => setMaxDepth(WIDTH_HINT_NUMBERS[Number(e.target.value) - 1])}
                     disabled={isRunning}
+                    aria-label={t('graphEditor.graphMap.aiExpansion.widthDepth', { count: maxDepth })}
                     className="w-full h-2 bg-emerald-200 dark:bg-emerald-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                   />
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -569,6 +571,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                         value={maxGraphsPerLevel}
                         onChange={e => setMaxGraphsPerLevel(Number(e.target.value))}
                         disabled={isRunning}
+                        aria-label={t('graphEditor.graphMap.aiExpansion.maxGraphsPerLevel', { count: maxGraphsPerLevel })}
                         className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                       />
                     </div>
@@ -600,6 +603,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                           value={nodeDepth}
                           onChange={e => setNodeDepth(Number(e.target.value))}
                           disabled={isRunning}
+                          aria-label={t('graphEditor.graphMap.aiExpansion.nodeDepth', { count: nodeDepth })}
                           className="w-full h-2 bg-primary-200 dark:bg-primary-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                         />
                       </div>
@@ -621,7 +625,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
             )}
 
             {(isRunning || isSubmitting) && progress && (
-              <div className="p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
+              <div role="status" className="p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
                   <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -672,7 +676,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
             )}
 
             {progress?.status === 'completed' && (
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div role="status" className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-2">
                   <Check className="w-5 h-5" />
                   <span className="font-medium">{t('graphEditor.graphMap.aiExpansion.expandComplete')}</span>

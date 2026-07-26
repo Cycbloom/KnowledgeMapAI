@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Copy, ExternalLink, Star, Trash2 } from "lucide-react";
 import type { Graph } from "@shared/types";
@@ -12,6 +12,8 @@ interface DashboardCardContextMenuProps {
   onDelete: (id: string) => void;
 }
 
+const MENU_ITEM_COUNT = 4;
+
 export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> = ({
   graph,
   position,
@@ -21,6 +23,12 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
 }) => {
   const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [focusedIndex, setFocusedIndex] = useState(0);
+
+  useEffect(() => {
+    itemRefs.current[0]?.focus();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -89,9 +97,29 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
     onClose();
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      const next = (focusedIndex + 1) % MENU_ITEM_COUNT;
+      setFocusedIndex(next);
+      itemRefs.current[next]?.focus();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      const prev = (focusedIndex - 1 + MENU_ITEM_COUNT) % MENU_ITEM_COUNT;
+      setFocusedIndex(prev);
+      itemRefs.current[prev]?.focus();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      onClose();
+    }
+  };
+
   return (
     <div
       ref={menuRef}
+      role="menu"
+      aria-label={t("dashboard.contextMenu.label", { title: graph.title })}
+      onKeyDown={handleKeyDown}
       className="fixed bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 py-1 z-50 min-w-[180px]"
       style={{ left: position.x, top: position.y }}
     >
@@ -99,6 +127,11 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
         {graph.title}
       </div>
       <button
+        ref={(el) => {
+          itemRefs.current[0] = el;
+        }}
+        role="menuitem"
+        tabIndex={focusedIndex === 0 ? 0 : -1}
         onClick={handleCopyId}
         className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
       >
@@ -106,6 +139,11 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
         {t("dashboard.contextMenu.copyId")}
       </button>
       <button
+        ref={(el) => {
+          itemRefs.current[1] = el;
+        }}
+        role="menuitem"
+        tabIndex={focusedIndex === 1 ? 0 : -1}
         onClick={handleOpenInNewWindow}
         className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
       >
@@ -113,6 +151,11 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
         {t("dashboard.contextMenu.openInNewWindow")}
       </button>
       <button
+        ref={(el) => {
+          itemRefs.current[2] = el;
+        }}
+        role="menuitem"
+        tabIndex={focusedIndex === 2 ? 0 : -1}
         onClick={handleToggleFavorite}
         className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
       >
@@ -129,6 +172,11 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
       </button>
       <hr className="my-1 border-gray-200 dark:border-slate-500" />
       <button
+        ref={(el) => {
+          itemRefs.current[3] = el;
+        }}
+        role="menuitem"
+        tabIndex={focusedIndex === 3 ? 0 : -1}
         onClick={handleDelete}
         className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"
       >

@@ -111,6 +111,8 @@
     "minimize": "Minimize",
     "startTask": "Start task",
     "pauseTask": "Pause task",
+    "play": "Play",
+    "pause": "Pause",
     "completeTask": "Complete task",
     "deleteTask": "Delete task",
     "editTask": "Edit task",
@@ -143,13 +145,50 @@
     "removeFromPath": "Remove from Path",
     "conceptAggregation": "Concept Aggregation",
     "search": "Search",
+    "addTag": "Add tag",
     "removeOption": "Remove option",
     "removeTag": "Remove tag {{tag}}",
     "selectColor": "Select color",
     "selectIcon": "Select icon",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
-    "required": "Required"
+    "required": "Required",
+    "removeParent": "Remove parent",
+    "removeCollaborator": "Remove collaborator",
+    "loading": "Loading...",
+    "dropzone": "Drop files or click to select",
+    "sortAscending": "Sorted ascending",
+    "sortDescending": "Sorted descending",
+    "sortNone": "Not sorted",
+    "indeterminateProgress": "In progress",
+    "taskProgress": "Task progress",
+    "subtaskProgress": "Subtask progress",
+    "analysisProgress": "Analysis progress",
+    "pomodoroProgress": "Pomodoro progress",
+    "searchWithTarget": "Search {{target}}",
+    "tabList": "Tab list",
+    "pagination": "Pagination",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "page": "Page {{number}}",
+    "breadcrumb": "Breadcrumb",
+    "loadingRegion": "Loading region",
+    "scrollLeft": "Scroll left",
+    "scrollRight": "Scroll right",
+    "dragHandle": "Drag handle",
+    "progress": "Progress",
+    "toolbar": {
+      "graph": "Graph toolbar",
+      "graphMap": "Graph map toolbar",
+      "combinedGraph": "Combined graph toolbar"
+    },
+    "notifications": "Notifications",
+    "mainContent": "Main content",
+    "searchResultsRegion": "Search results region",
+    "messageListRegion": "Message list region",
+    "achievementGalleryRegion": "Achievement gallery region",
+    "taskStatsRegion": "Task statistics region",
+    "noteEditorRegion": "Note editor region"
   },
   "clipboard": {
     "unavailable": "Clipboard unavailable",
@@ -253,6 +292,7 @@
     "noMatch": "No matching shortcuts found",
     "customHint": "Click a shortcut button to customize",
     "totalCount": "{{count}} shortcuts total",
+    "shortcutField": "Shortcut",
     "categories": {
       "navigation": "Navigation",
       "view": "View",
@@ -285,5 +325,8 @@
       "paused": "Paused",
       "idle": "Idle"
     }
+  },
+  "shortcut": {
+    "captureLabel": "Shortcut capture"
   }
 }

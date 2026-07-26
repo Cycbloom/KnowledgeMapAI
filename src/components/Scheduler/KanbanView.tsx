@@ -206,7 +206,7 @@ export const KanbanView: React.FC<{
 
   return (
     <div className="h-full min-h-0 overflow-x-auto custom-scrollbar">
-      <span aria-live="assertive" className="sr-only">
+      <span aria-live="polite" className="sr-only">
         {dragAnnouncement}
       </span>
       <div className="flex gap-3 sm:gap-4 min-w-max xl:min-w-0 h-full p-1">

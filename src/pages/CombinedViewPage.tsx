@@ -224,7 +224,7 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400">{error}</p>
+          <p role="alert" className="text-red-600 dark:text-red-400">{error}</p>
           <button
             onClick={() => setShowSelector(true)}
             className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
@@ -242,7 +242,7 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold text-white">{t('combinedViewPage.title')}</h1>
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-gray-500">
               {t('combinedViewPage.summary', { graphCount: graphIds.length, visibleNodes: stats.visibleNodes, totalNodes: stats.totalNodes })}
             </span>
           </div>
@@ -331,7 +331,7 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
               <button
                 onClick={() => setSelectedNode(null)}
                 aria-label={t('common.close')}
-                className={isDark ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-900'}
+                className={isDark ? 'text-gray-500 hover:text-white' : 'text-gray-500 hover:text-gray-900'}
               >
                 <X size={16} />
               </button>
@@ -344,7 +344,7 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
             )}
             
             <div className={isDark ? 'mt-3 pt-3 border-t border-gray-700' : 'mt-3 pt-3 border-t border-gray-200'}>
-              <p className="text-gray-400 text-xs mb-2">{t('combinedViewPage.nodeDetail.belongingGraphs')}</p>
+              <p className="text-gray-500 text-xs mb-2">{t('combinedViewPage.nodeDetail.belongingGraphs')}</p>
               <div className="flex flex-wrap gap-1">
                 {selectedNode.graphIds.map(gid => (
                   <span

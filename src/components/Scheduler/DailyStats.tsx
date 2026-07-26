@@ -214,7 +214,14 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
               </p>
             </div>
           </div>
-          <div className="w-32 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+          <div
+            role="progressbar"
+            aria-valuenow={Math.round(productivityScore)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={t('common.aria.progress')}
+            className="w-32 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden"
+          >
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${productivityScore}%` }}

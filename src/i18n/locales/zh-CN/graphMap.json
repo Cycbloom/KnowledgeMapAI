@@ -268,7 +268,8 @@
     "updateFailed": "更新域名失败",
     "deleteFailed": "删除域名失败",
     "reorderFailed": "排序域名失败",
-    "generateColorFailed": "生成颜色失败"
+    "generateColorFailed": "生成颜色失败",
+    "treeLabel": "域树"
   },
   "agentAnalysis": {
     "title": "Agent 分析",

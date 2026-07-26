@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, GitMerge, CheckSquare, Square, AlertCircle } from 'lucide-react';
 import { Button } from '../common/Button';
@@ -27,6 +27,7 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
 
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
   useEscapeKey(() => onCancel(), true);
+  const titleId = useId();
 
   const handleToggleAlias = useCallback((alias: string) => {
     setSelectedAliases((prev) => {
@@ -58,13 +59,16 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div
         ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
           <div className="flex items-center gap-2">
             <GitMerge className="text-primary-500" size={20} />
-            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+            <h3 id={titleId} className="text-lg font-semibold text-slate-800 dark:text-slate-200">
               {t("conceptAggregation.mergeAlias.title")}
             </h3>
           </div>

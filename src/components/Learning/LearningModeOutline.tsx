@@ -81,9 +81,13 @@ export const LearningModeOutline = ({
             className="h-full border-none"
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-slate-400">
-            <Loader2 className="animate-spin mr-2" />
+          <div
+            className="flex items-center justify-center h-full text-slate-400"
+            aria-live="polite"
+          >
+            <Loader2 className="animate-spin mr-2" aria-hidden="true" />
             {t("learning.header.loading")}
+            <span className="sr-only">{t("common.aria.loading")}</span>
           </div>
         )}
       </div>

@@ -102,7 +102,7 @@ const SingleNotification: React.FC<{
       <motion.div
         initial={{ scaleX: 1 }}
         animate={{ scaleX: 0 }}
-        transition={{ duration: 5, ease: "linear" }}
+        transition={transitionOverride ?? { duration: 5, ease: "linear" }}
         className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${DEFAULT_GRADIENT} origin-left`}
       />
     </motion.div>

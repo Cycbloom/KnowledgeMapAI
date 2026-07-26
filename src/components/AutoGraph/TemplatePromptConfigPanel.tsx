@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import {
   X,
@@ -210,6 +210,7 @@ export const TemplatePromptConfigPanel: React.FC<
 
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => handleClose(), isOpen);
+  const titleId = useId();
 
   if (!isOpen) return null;
 
@@ -219,11 +220,11 @@ export const TemplatePromptConfigPanel: React.FC<
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-modal p-4 backdrop-blur-sm">
-      <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-5xl h-[80vh] overflow-hidden flex flex-col">
+      <div ref={containerRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-5xl h-[80vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white">
               {t("autoGraph.templatePromptConfig")}
             </h2>
           </div>

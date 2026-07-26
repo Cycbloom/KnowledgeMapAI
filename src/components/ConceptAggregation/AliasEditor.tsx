@@ -199,8 +199,8 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
             {alias}
             <button
               onClick={() => handleRemoveAlias(alias)}
-              className="ml-0.5 hover:bg-white/20 rounded-full p-0.5 transition-colors"
-              aria-label={t('common.aria.close')}
+              className="ml-0.5 hover:bg-white/20 rounded-full p-0.5 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label={t('conceptAggregation.alias.removeAria')}
             >
               <X size={10} />
             </button>
@@ -210,6 +210,7 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
         <input
           ref={inputRef}
           type="text"
+          aria-label={t('conceptAggregation.alias.manageTitle')}
           value={inputValue}
           onChange={(e) => {
             setInputValue(e.target.value);
@@ -235,7 +236,7 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
       </div>
 
       {error && (
-        <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">
+        <div role="alert" className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">
           <AlertCircle size={12} />
           <span>{error}</span>
         </div>

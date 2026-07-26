@@ -280,6 +280,7 @@ export const Profile = () => {
               <input
                 ref={fileInputRef}
                 type="file"
+                autoComplete="off"
                 accept=".json"
                 onChange={handleImportBackup}
                 className="hidden"
@@ -303,6 +304,7 @@ export const Profile = () => {
                 <input
                   type="radio"
                   name="importMode"
+                  autoComplete="off"
                   value="replace"
                   checked={importMode === 'replace'}
                   onChange={() => setImportMode('replace')}
@@ -317,6 +319,7 @@ export const Profile = () => {
                 <input
                   type="radio"
                   name="importMode"
+                  autoComplete="off"
                   value="merge"
                   checked={importMode === 'merge'}
                   onChange={() => setImportMode('merge')}

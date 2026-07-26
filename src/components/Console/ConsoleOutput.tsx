@@ -101,7 +101,12 @@ const parseAsciiTable = (text: string): ParsedAsciiTable | null => {
 const renderAsciiTableHtml = (table: ParsedAsciiTable, isDark: boolean, t: TFunction): React.ReactNode => {
   const { headers, rows, isSubRow = [] } = table;
   return (
-    <div className={`overflow-x-auto rounded-lg my-2 ${isDark ? 'border-2 border-primary-500/40 shadow-lg shadow-primary-500/10' : 'border-2 border-primary-300 shadow-md'}`}>
+    <div
+      role="region"
+      aria-label={t('console.output.tableRegion')}
+      tabIndex={0}
+      className={`overflow-x-auto rounded-lg my-2 ${isDark ? 'border-2 border-primary-500/40 shadow-lg shadow-primary-500/10' : 'border-2 border-primary-300 shadow-md'}`}
+    >
       <table
         className="min-w-full text-sm"
         aria-label={t('console.output.asciiTableAriaLabel', { defaultValue: '命令输出表格' })}
@@ -190,7 +195,12 @@ const renderTable = (data: Record<string, unknown>[], isDark: boolean, t: TFunct
   const headers = Object.keys(data[0]);
 
   return (
-    <div className={`overflow-x-auto rounded-lg border ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+    <div
+      role="region"
+      aria-label={t('console.output.tableRegion')}
+      tabIndex={0}
+      className={`overflow-x-auto rounded-lg border ${isDark ? 'border-slate-700' : 'border-gray-200'}`}
+    >
       <table
         className="min-w-full text-sm"
         aria-label={t('console.output.dataTableAriaLabel', { defaultValue: '命令输出数据表' })}
@@ -245,7 +255,7 @@ const OutputItemComponent: React.FC<{
         transition={{ delay: index * 0.02 }}
         className="flex items-start gap-2 px-4 py-1.5"
       >
-        <ChevronRight size={14} className={`mt-0.5 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
+        <ChevronRight size={14} className={`mt-0.5 ${isDark ? 'text-green-400' : 'text-green-600'}`} aria-hidden="true" />
         <span className={`text-sm font-mono ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
           {item.content}
         </span>
@@ -300,12 +310,12 @@ const OutputItemComponent: React.FC<{
 
   const getIcon = () => {
     if (hasError) {
-      return <XCircle size={14} className={isDark ? 'text-red-400' : 'text-red-600'} />;
+      return <XCircle size={14} className={isDark ? 'text-red-400' : 'text-red-600'} aria-hidden="true" />;
     }
     if (isSuccess) {
-      return <CheckCircle size={14} className={isDark ? 'text-green-400' : 'text-green-600'} />;
+      return <CheckCircle size={14} className={isDark ? 'text-green-400' : 'text-green-600'} aria-hidden="true" />;
     }
-    return <Info size={14} className={isDark ? 'text-primary-400' : 'text-primary-600'} />;
+    return <Info size={14} className={isDark ? 'text-primary-400' : 'text-primary-600'} aria-hidden="true" />;
   };
 
   return (
@@ -432,7 +442,7 @@ export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
             }`}
             title={t('console.output.clear')}
           >
-            <Trash2 size={14} />
+            <Trash2 size={14} aria-hidden="true" />
           </button>
         )}
 
@@ -461,7 +471,7 @@ export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
                   }`}
                   onClick={loadMore}
                 >
-                  <ChevronUp size={12} />
+                  <ChevronUp size={12} aria-hidden="true" />
                   <span>{t('console.output.scrollMore', { count: hiddenCount })}</span>
                 </motion.div>
               )}
@@ -495,6 +505,7 @@ const Terminal = ({ className }: { className?: string }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
     className={className}
+    aria-hidden="true"
   >
     <polyline points="4 17 10 11 4 5" />
     <line x1="12" y1="19" x2="20" y2="19" />

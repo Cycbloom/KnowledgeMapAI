@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useId, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload, Globe, Link, Image as ImageIcon, WifiOff } from 'lucide-react';
 import { parseMarkdownToGraph } from '../../../utils/markdownParser';
@@ -51,6 +51,52 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
   const imageInputRef = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
+
+  const tablistId = useId();
+  const tabIdPrefix = `${tablistId}-tab`;
+  const panelIdPrefix = `${tablistId}-panel`;
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const tabs = [
+    { id: 'text', label: t('textToGraph.tabs.text') },
+    { id: 'file', label: t('textToGraph.tabs.file') },
+    { id: 'image', label: t('textToGraph.tabs.image') },
+    { id: 'url', label: t('textToGraph.tabs.url') },
+  ] as const;
+
+  const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight': {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        setActiveTab(tabs[nextIndex].id);
+        tabRefs.current[nextIndex]?.focus();
+        break;
+      }
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        setActiveTab(tabs[prevIndex].id);
+        tabRefs.current[prevIndex]?.focus();
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActiveTab(tabs[0].id);
+        tabRefs.current[0]?.focus();
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const lastIndex = tabs.length - 1;
+        setActiveTab(tabs[lastIndex].id);
+        tabRefs.current[lastIndex]?.focus();
+        break;
+      }
+      default:
+        break;
+    }
+  };
   
   const textToGraphMutation = useTextToGraphMutation();
   const documentToGraphMutation = useDocumentToGraphMutation();
@@ -403,12 +449,12 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
               {step === 'input' ? t('textToGraph.title.input') : t('textToGraph.title.preview')}
             </h2>
           </div>
-          <button 
+          <button
             onClick={handleClose}
-            aria-label="关闭"
+            aria-label={t('common.aria.close')}
             className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
           >
-            <X size={20} />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 
@@ -417,17 +463,31 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
           {step === 'input' ? (
             <div className="space-y-4 h-full flex flex-col">
               {/* Tabs */}
-              <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg self-start">
+              <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg self-start" role="tablist" aria-label={t('textToGraph.title.input')}>
                 <button
+                  ref={(el) => { tabRefs.current[0] = el; }}
+                  role="tab"
+                  id={`${tabIdPrefix}-text`}
+                  aria-selected={activeTab === 'text'}
+                  aria-controls={`${panelIdPrefix}-text`}
+                  tabIndex={activeTab === 'text' ? 0 : -1}
+                  onKeyDown={(e) => handleTabKeyDown(e, 0)}
                   onClick={() => setActiveTab('text')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                     activeTab === 'text' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  <FileText size={16} />
+                  <FileText size={16} aria-hidden="true" />
                   <span>{t('textToGraph.tabs.text')}</span>
                 </button>
                 <button
+                  ref={(el) => { tabRefs.current[1] = el; }}
+                  role="tab"
+                  id={`${tabIdPrefix}-file`}
+                  aria-selected={activeTab === 'file'}
+                  aria-controls={`${panelIdPrefix}-file`}
+                  tabIndex={activeTab === 'file' ? 0 : -1}
+                  onKeyDown={(e) => handleTabKeyDown(e, 1)}
                   onClick={() => setActiveTab('file')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                     activeTab === 'file' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
@@ -437,15 +497,29 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                   <span>{t('textToGraph.tabs.file')}</span>
                 </button>
                 <button
+                  ref={(el) => { tabRefs.current[2] = el; }}
+                  role="tab"
+                  id={`${tabIdPrefix}-image`}
+                  aria-selected={activeTab === 'image'}
+                  aria-controls={`${panelIdPrefix}-image`}
+                  tabIndex={activeTab === 'image' ? 0 : -1}
+                  onKeyDown={(e) => handleTabKeyDown(e, 2)}
                   onClick={() => setActiveTab('image')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                     activeTab === 'image' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  <ImageIcon size={16} />
+                  <ImageIcon size={16} aria-hidden="true" />
                   <span>{t('textToGraph.tabs.image')}</span>
                 </button>
                 <button
+                  ref={(el) => { tabRefs.current[3] = el; }}
+                  role="tab"
+                  id={`${tabIdPrefix}-url`}
+                  aria-selected={activeTab === 'url'}
+                  aria-controls={`${panelIdPrefix}-url`}
+                  tabIndex={activeTab === 'url' ? 0 : -1}
+                  onKeyDown={(e) => handleTabKeyDown(e, 3)}
                   onClick={() => setActiveTab('url')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                     activeTab === 'url' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
@@ -464,7 +538,13 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
               
               <div className="flex-1 min-h-[300px] flex flex-col">
                 {activeTab === 'text' && (
-                  <div className="relative group flex-1">
+                  <div
+                    role="tabpanel"
+                    id={`${panelIdPrefix}-text`}
+                    aria-labelledby={`${tabIdPrefix}-text`}
+                    tabIndex={0}
+                    className="relative group flex-1"
+                  >
                     <textarea
                       value={text}
                       onChange={(e) => setText(e.target.value)}
@@ -479,12 +559,23 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 )}
 
                 {activeTab === 'file' && (
-                  <div 
+                  <div
+                    role="tabpanel"
+                    id={`${panelIdPrefix}-file`}
+                    aria-labelledby={`${tabIdPrefix}-file`}
+                    tabIndex={0}
                     className={`flex-1 border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-8 transition-all ${
-                      isDragging 
-                        ? 'border-primary-500 bg-primary-50' 
+                      isDragging
+                        ? 'border-primary-500 bg-primary-50'
                         : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400'
                     }`}
+                    aria-label={t('common.aria.dropzone')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        fileInputRef.current?.click();
+                      }
+                    }}
                     onDragEnter={handleDragEnter}
                     onDragLeave={handleDragLeave}
                     onDragOver={handleDragOver}
@@ -519,12 +610,23 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 )}
 
                 {activeTab === 'image' && (
-                  <div 
+                  <div
+                    role="tabpanel"
+                    id={`${panelIdPrefix}-image`}
+                    aria-labelledby={`${tabIdPrefix}-image`}
+                    tabIndex={0}
                     className={`flex-1 border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-8 transition-all ${
-                      isDragging 
-                        ? 'border-primary-500 bg-primary-50' 
+                      isDragging
+                        ? 'border-primary-500 bg-primary-50'
                         : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400'
                     }`}
+                    aria-label={t('common.aria.dropzone')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        imageInputRef.current?.click();
+                      }
+                    }}
                     onDragEnter={handleDragEnter}
                     onDragLeave={handleDragLeave}
                     onDragOver={handleDragOver}
@@ -559,7 +661,13 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 )}
 
                 {activeTab === 'url' && (
-                  <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 rounded-xl border border-gray-200 p-8">
+                  <div
+                    role="tabpanel"
+                    id={`${panelIdPrefix}-url`}
+                    aria-labelledby={`${tabIdPrefix}-url`}
+                    tabIndex={0}
+                    className="flex-1 flex flex-col items-center justify-center bg-gray-50 rounded-xl border border-gray-200 p-8"
+                  >
                     {!isOnline ? (
                       <div className="text-center text-gray-500">
                         <WifiOff size={48} className="mx-auto mb-4 text-gray-400" />
@@ -672,7 +780,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
                 disabled={textToGraphMutation.isPending}
               >
-                <ArrowLeft size={18} className="mr-1" />
+                <ArrowLeft size={18} className="mr-1" aria-hidden="true" />
                 {t('textToGraph.buttons.back')}
               </button>
             )}
@@ -703,12 +811,12 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
               >
                 {textToGraphMutation.isPending ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={18} className="animate-spin" aria-hidden="true" />
                     <span>{t('textToGraph.buttons.saving')}</span>
                   </>
                 ) : (
                   <>
-                    <Network size={18} />
+                    <Network size={18} aria-hidden="true" />
                     <span>{t('textToGraph.buttons.generateGraph')}</span>
                   </>
                 )}

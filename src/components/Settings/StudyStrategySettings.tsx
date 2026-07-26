@@ -195,6 +195,7 @@ export const StudyStrategySettings = React.memo(
                     </span>
                     <input
                       type="number"
+                      autoComplete="off"
                       min="0.70"
                       max="0.99"
                       step="0.01"
@@ -211,6 +212,7 @@ export const StudyStrategySettings = React.memo(
                   </div>
                   <input
                     type="range"
+                    autoComplete="off"
                     min="0.70"
                     max="0.99"
                     step="0.01"
@@ -219,6 +221,7 @@ export const StudyStrategySettings = React.memo(
                       setIsDirty(true);
                       setRetention(Number(e.target.value));
                     }}
+                    aria-label={t("settings.requestRetention")}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -233,6 +236,7 @@ export const StudyStrategySettings = React.memo(
                     </span>
                     <input
                       type="number"
+                      autoComplete="off"
                       min="1"
                       max="36500"
                       value={maxInterval}
@@ -248,6 +252,7 @@ export const StudyStrategySettings = React.memo(
                   </div>
                   <input
                     type="range"
+                    autoComplete="off"
                     min="1"
                     max="36500"
                     step="10"
@@ -256,6 +261,7 @@ export const StudyStrategySettings = React.memo(
                       setIsDirty(true);
                       setMaxInterval(Number(e.target.value));
                     }}
+                    aria-label={t("settings.maxReviewInterval")}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -281,6 +287,7 @@ export const StudyStrategySettings = React.memo(
                   </div>
                   <input
                     type="range"
+                    autoComplete="off"
                     min="0.1"
                     max="0.5"
                     step="0.05"
@@ -292,6 +299,7 @@ export const StudyStrategySettings = React.memo(
                         learningReview: Number(e.target.value),
                       }));
                     }}
+                    aria-label="Learning / Review 分界值"
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -310,6 +318,7 @@ export const StudyStrategySettings = React.memo(
                   </div>
                   <input
                     type="range"
+                    autoComplete="off"
                     min="0.3"
                     max="0.7"
                     step="0.05"
@@ -321,6 +330,7 @@ export const StudyStrategySettings = React.memo(
                         reviewPractice: Number(e.target.value),
                       }));
                     }}
+                    aria-label="Review / Practice 分界值"
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -339,6 +349,7 @@ export const StudyStrategySettings = React.memo(
                   </div>
                   <input
                     type="range"
+                    autoComplete="off"
                     min="0.5"
                     max="0.9"
                     step="0.05"
@@ -350,6 +361,7 @@ export const StudyStrategySettings = React.memo(
                         practiceQuiz: Number(e.target.value),
                       }));
                     }}
+                    aria-label="Practice / Quiz 分界值"
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -392,6 +404,7 @@ export const StudyStrategySettings = React.memo(
                     </div>
                     <input
                       type="range"
+                      autoComplete="off"
                       min="0"
                       max="0.5"
                       step="0.05"
@@ -403,6 +416,7 @@ export const StudyStrategySettings = React.memo(
                           [item.key]: Number(e.target.value),
                         }));
                       }}
+                      aria-label={item.label}
                       className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                     />
                   </div>

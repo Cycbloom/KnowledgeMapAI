@@ -40,7 +40,11 @@
     "title": "Learning Activity",
     "reviewCount": "{{count}} reviews",
     "less": "Less",
-    "more": "More"
+    "more": "More",
+    "ariaSummary": "Activity heatmap: {{totalDays}} days, {{totalReviews}} total reviews, best day {{bestDay}}"
+  },
+  "taskDistribution": {
+    "ariaSummary": "Task distribution pie chart, {{total}} tasks total"
   },
   "metric": {
     "todayCompleted": "Today Completed",

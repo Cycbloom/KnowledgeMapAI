@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo, useId } from "react";
 import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
@@ -95,6 +95,7 @@ export const Layout = () => {
   const { isMobile } = useIsMobile();
   const { mainRef, handleSkip } = useSkipToContent();
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const sidebarId = useId();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [schemaStatus, setSchemaStatus] = useState<string | null>(null);
@@ -384,6 +385,7 @@ export const Layout = () => {
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {!isFullScreenPage && !isMobile && (
           <div
+            id={sidebarId}
             className={`
             bg-slate-900 text-white flex flex-col transition-all duration-300
             ${isCollapsed ? "w-20" : "w-64"}
@@ -396,6 +398,7 @@ export const Layout = () => {
                 className={`p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-800 rounded transition-colors`}
                 aria-label={isCollapsed ? t('layout.expandSidebar') : t('layout.collapseSidebar')}
                 aria-expanded={!isCollapsed}
+                aria-controls={sidebarId}
               >
                 {isCollapsed ? (
                   <ChevronRight size={20} aria-hidden="true" />
@@ -469,6 +472,7 @@ export const Layout = () => {
                   }`}
                   title={isDark ? t('layout.switchToLightMode') : t('layout.switchToDarkMode')}
                   aria-label={isDark ? t('layout.switchToLightMode') : t('layout.switchToDarkMode')}
+                  aria-pressed={isDark}
                 >
                   {isDark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
                 </button>
@@ -514,6 +518,9 @@ export const Layout = () => {
           )}
 
           <div
+            role="region"
+            aria-label={t('common.aria.mainContent')}
+            tabIndex={0}
             className={`flex-1 overflow-y-auto custom-scrollbar relative ${isMobile && !isFullScreenPage ? "pb-[calc(3.5rem+var(--safe-area-inset-bottom))]" : ""}`}
           >
             {schemaStatus && (

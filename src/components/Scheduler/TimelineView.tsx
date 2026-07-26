@@ -143,12 +143,14 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: index * 0.05 }}
+                role="region"
+                aria-label={day.label}
                 className={`
                   flex-shrink-0 w-64 sm:w-72 rounded-2xl border transition-all duration-300 flex flex-col
-                  ${day.isToday 
-                    ? 'border-primary-500/50 shadow-lg shadow-primary-500/20' 
-                    : day.isPast 
-                      ? 'border-slate-200 dark:border-slate-500/30 opacity-60' 
+                  ${day.isToday
+                    ? 'border-primary-500/50 shadow-lg shadow-primary-500/20'
+                    : day.isPast
+                      ? 'border-slate-200 dark:border-slate-500/30 opacity-60'
                       : 'border-slate-200 dark:border-slate-500/50'
                   }
                   bg-white dark:bg-slate-900/60 backdrop-blur-sm

@@ -203,7 +203,14 @@ export const ResearchProgressPanel: React.FC<ResearchProgressPanelProps> = ({
                             {module.nodeCount}
                           </span>
                         </div>
-                        <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          role="progressbar"
+                          aria-valuenow={Math.round(barWidth)}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-label={t('common.aria.progress')}
+                          className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden"
+                        >
                           <div
                             className="h-full rounded-full transition-all duration-500"
                             style={{

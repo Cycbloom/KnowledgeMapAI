@@ -162,7 +162,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       </div>
 
       {task.status === "in_progress" && (
-        <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${queueStyle.bg} overflow-hidden`}>
+        <div
+          className={`absolute bottom-0 left-0 right-0 h-0.5 ${queueStyle.bg} overflow-hidden`}
+          role="progressbar"
+          aria-label={t('common.aria.taskProgress')}
+          aria-valuetext={t('common.aria.indeterminateProgress')}
+        >
           <motion.div
             className={`h-full ${queueStyle.accent}`}
             initial={{ width: "0%" }}

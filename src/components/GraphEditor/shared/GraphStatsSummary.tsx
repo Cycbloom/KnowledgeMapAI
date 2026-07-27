@@ -27,7 +27,7 @@ export const GraphStatsSummary = React.memo(({
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
           <PieChart size={14} className="text-primary-500" />
-          <span>掌握进度</span>
+          <span>{t('graphEditor.graphStats.masteryProgress')}</span>
         </div>
         <span className="font-bold text-primary-600 dark:text-primary-400">{progress}%</span>
       </div>
@@ -51,7 +51,7 @@ export const GraphStatsSummary = React.memo(({
         <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-1.5 rounded border border-slate-100 dark:border-slate-500">
           <Clock size={12} className={dueTodayCount > 0 ? "text-amber-500" : "text-slate-400"} />
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500">今日复习</span>
+            <span className="text-[10px] text-slate-500">{t('graphEditor.graphStats.dueToday')}</span>
             <span className={`font-bold ${dueTodayCount > 0 ? "text-amber-600" : "text-slate-600"}`}>
               {dueTodayCount}
             </span>
@@ -65,7 +65,7 @@ export const GraphStatsSummary = React.memo(({
             <CheckCircle2 size={12} className="text-green-500" />
           )}
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500">孤立节点</span>
+            <span className="text-[10px] text-slate-500">{t('graphEditor.graphStats.isolatedNodes')}</span>
             <span className={`font-bold ${isolatedCount > 0 ? "text-orange-600" : "text-slate-600"}`}>
               {isolatedCount}
             </span>

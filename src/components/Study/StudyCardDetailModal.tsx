@@ -1,4 +1,5 @@
 import React, { useId } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Info } from 'lucide-react';
 import { StudyCard } from '../../types';
@@ -19,6 +20,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
   onPractice,
   isDark,
 }) => {
+  const { t } = useTranslation();
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen && Boolean(card) });
   useEscapeKey(() => onClose(), isOpen && Boolean(card));
   const titleId = useId();
@@ -57,13 +59,13 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
                   <Info size={20} />
                 </div>
                 <div>
-                  <h3 id={titleId} className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>卡片详情</h3>
+                  <h3 id={titleId} className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('study.cardDetail.title')}</h3>
                   <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                    {card.card_type === 'choice' ? '单选题' : 
-                     card.card_type === 'multi_choice' ? '多选题' : 
-                     card.card_type === 'fill_in_the_blank' ? '填空题' : 
-                     card.card_type === 'true_false' ? '判断题' :
-                     card.card_type === 'essay' ? '问答题' : '问答题'}
+                    {card.card_type === 'choice' ? t('study.quizPractice.cardType.choice') : 
+                     card.card_type === 'multi_choice' ? t('study.quizPractice.cardType.multi_choice') : 
+                     card.card_type === 'fill_in_the_blank' ? t('study.quizPractice.cardType.fill_in_the_blank') : 
+                     card.card_type === 'true_false' ? t('study.quizPractice.cardType.true_false') :
+                     card.card_type === 'essay' ? t('study.quizPractice.cardType.essay') : t('study.quizPractice.cardType.qa')}
                   </p>
                 </div>
               </div>
@@ -80,7 +82,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
             {/* Modal Content */}
             <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8">
               <section className="space-y-3">
-                <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>问题</h4>
+                <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('study.questionForm.questionLabel')}</h4>
                 <div className={`text-xl font-bold leading-relaxed ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   {card.question}
                 </div>
@@ -89,7 +91,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
               {/* Options for Choice Cards */}
               {(card.card_type === 'choice' || card.card_type === 'multi_choice') && card.options && (
                 <section className="space-y-3">
-                  <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>选项</h4>
+                  <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('study.cardDetail.options')}</h4>
                   <div className="grid gap-3">
                     {(() => {
                       let opts = [];
@@ -110,7 +112,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
               )}
 
               <section className="space-y-3">
-                <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>正确答案</h4>
+                <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('study.cardDetail.correctAnswer')}</h4>
                 <div className={`p-5 rounded-2xl font-bold ${
                   isDark ? 'bg-emerald-900/20 border border-emerald-900/50 text-emerald-400' : 'bg-emerald-50 border border-emerald-100 text-emerald-700'
                 }`}>
@@ -120,7 +122,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
 
               {card.explanation && (
                 <section className="space-y-3">
-                  <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>解析</h4>
+                  <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('study.quiz.explanation')}</h4>
                   <div className={`p-5 rounded-2xl leading-relaxed ${
                     isDark ? 'bg-slate-800/50 text-slate-300' : 'bg-slate-50 text-slate-600'
                   }`}>

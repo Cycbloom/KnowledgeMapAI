@@ -188,7 +188,17 @@
     "messageListRegion": "消息列表区",
     "achievementGalleryRegion": "成就画廊区",
     "taskStatsRegion": "任务统计区",
-    "noteEditorRegion": "笔记编辑器区"
+    "noteEditorRegion": "笔记编辑器区",
+    "minutesValue": "{{minutes}} 分钟",
+    "closeDialog": "关闭对话框",
+    "skip": "跳过",
+    "continue": "继续",
+    "complete": "完成",
+    "details": "详情",
+    "imageLoadFailed": "图片加载失败",
+    "start": "开始",
+    "clear": "清除",
+    "toggleSubtaskStatus": "切换子任务状态"
   },
   "clipboard": {
     "unavailable": "剪贴板不可用",
@@ -328,5 +338,13 @@
   },
   "shortcut": {
     "captureLabel": "快捷键捕获"
+  },
+  "pwaDiagnostics": {
+    "swRegistrationLabel": "SW 注册状态",
+    "swVersionLabel": "SW 当前版本",
+    "standaloneLabel": "Standalone 模式",
+    "installableLabel": "可安装状态",
+    "installedLabel": "已安装状态",
+    "cacheSizeLabel": "缓存大小"
   }
 }

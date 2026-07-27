@@ -1363,6 +1363,7 @@ export const Login = () => {
 
   const renderQuickSetup = () => (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-6 transition-colors">
+      <h2 className="sr-only">{t("quickSetup.quickSetup")}</h2>
       {renderStepIndicator()}
 
       {draft.step === 1 && renderQuickStep1()}

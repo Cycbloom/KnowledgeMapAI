@@ -161,7 +161,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard
           icon={<Clock size={20} className="text-primary-500" />}
-          label="专注时长"
+          label={t('scheduler.dailyStats.focusDurationLabel')}
           value={formatDuration(stats.total_duration, { format: 'compact', emptyText: '0m' })}
           subValue={formatDurationDetailed(stats.total_duration)}
           color="bg-primary-500"
@@ -169,7 +169,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
         />
         <StatCard
           icon={<Timer size={20} className="text-emerald-500" />}
-          label="番茄钟"
+          label={t('scheduler.dailyStats.pomodoroLabel')}
           value={stats.pomodoro_count}
           subValue="个番茄"
           color="bg-emerald-500"
@@ -177,7 +177,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
         />
         <StatCard
           icon={<Target size={20} className="text-violet-500" />}
-          label="专注次数"
+          label={t('scheduler.dailyStats.focusCountLabel')}
           value={stats.session_count}
           subValue={`平均 ${formatDuration(stats.avg_session_duration, { format: 'compact', emptyText: '0m' })}`}
           color="bg-violet-500"
@@ -185,7 +185,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
         />
         <StatCard
           icon={<CheckCircle size={20} className="text-amber-500" />}
-          label="完成任务"
+          label={t('scheduler.dailyStats.completedTasksLabel')}
           value={stats.tasks_completed}
           subValue="个任务"
           color="bg-amber-500"

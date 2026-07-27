@@ -250,6 +250,7 @@ export const UnifiedWorkbench: React.FC = () => {
 
   return (
     <div className="h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white overflow-hidden">
+      <h1 className="sr-only">{t('unifiedWorkbench.title')}</h1>
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/5 dark:bg-primary-500/10 rounded-full blur-3xl animate-pulse" />
         <div

@@ -460,7 +460,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                       aria-required={true}
                       value={title}
                       onChange={(e) => handleTitleChange(e.target.value)}
-                      placeholder="例如：第一章基础概念测验"
+                      placeholder={t('quiz.generation.titlePlaceholder')}
                       disabled={isGenerating}
                       className={`w-full px-4 py-2.5 pr-10 rounded-xl border text-sm transition-colors ${
                         isDark
@@ -488,7 +488,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                   <textarea
                     value={description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="测验的简要描述..."
+                    placeholder={t('quiz.generation.descriptionPlaceholder')}
                     disabled={isGenerating}
                     rows={2}
                     className={`w-full px-4 py-2.5 rounded-xl border text-sm resize-none transition-colors ${

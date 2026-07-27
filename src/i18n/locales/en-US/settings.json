@@ -263,5 +263,10 @@
     "aliyun": "Aliyun"
   },
   "navDesktop": "Desktop navigation",
-  "navMobile": "Mobile navigation"
+  "navMobile": "Mobile navigation",
+  "studyStrategy": {
+    "learningReviewDivider": "Learning / Review divider",
+    "reviewPracticeDivider": "Review / Practice divider",
+    "practiceQuizDivider": "Practice / Quiz divider"
+  }
 }

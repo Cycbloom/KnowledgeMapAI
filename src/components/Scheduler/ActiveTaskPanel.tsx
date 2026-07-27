@@ -396,7 +396,8 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                   onStop?.();
                 }}
                 className="p-3 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-all"
-                title="停止调度"
+                title={t('scheduler.activeTask.stopSchedule')}
+                aria-label={t('scheduler.activeTask.stopSchedule')}
               >
                 <Square size={16} fill="currentColor" />
               </motion.button>
@@ -406,7 +407,8 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 whileTap={{ scale: 0.95 }}
                 onClick={handleCompleteSubtask}
                 className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
-                title="完成子任务"
+                title={t('scheduler.activeTask.completeSubtask')}
+                aria-label={t('scheduler.activeTask.completeSubtask')}
               >
                 <Check size={20} />
               </motion.button>

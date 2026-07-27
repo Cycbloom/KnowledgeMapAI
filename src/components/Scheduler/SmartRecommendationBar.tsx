@@ -338,7 +338,8 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
           <button
             onClick={loadRecommendation}
             className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-500/20 text-primary-600 dark:text-primary-400 transition-colors"
-            title="刷新推荐"
+            title={t('scheduler.smartRecommendation.refresh')}
+            aria-label={t('scheduler.smartRecommendation.refresh')}
           >
             <RefreshCw className="w-4 h-4" />
           </button>

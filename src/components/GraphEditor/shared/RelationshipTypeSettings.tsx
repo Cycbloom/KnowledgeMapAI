@@ -310,8 +310,9 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
             )}
 
             {loading && !isCreating && !editingType && (
-              <div className="flex items-center justify-center py-8">
+              <div className="flex items-center justify-center py-8" role="status" aria-live="polite">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+                <span className="sr-only">{t('common.loading')}</span>
               </div>
             )}
 
@@ -493,6 +494,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                         type="color"
                         value={formData.color}
                         onChange={e => setFormData({ ...formData, color: e.target.value })}
+                        aria-label={t('graphEditor.relationshipType.colorLabel')}
                         className="w-10 h-10 rounded cursor-pointer border border-gray-300 dark:border-slate-500"
                       />
                       <input
@@ -508,6 +510,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                           key={color}
                           type="button"
                           onClick={() => setFormData({ ...formData, color })}
+                          aria-label={t('graphEditor.relationshipType.colorSwatch', { hex: color })}
                           className={`w-6 h-6 rounded-full border-2 ${
                             formData.color === color
                               ? 'border-primary-500 ring-2 ring-primary-200'

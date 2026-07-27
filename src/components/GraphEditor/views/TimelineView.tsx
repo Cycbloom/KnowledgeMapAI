@@ -534,7 +534,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
           <div className="flex-1 flex items-center gap-3">
             <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'} w-16`}>
-              {currentNodeCount} / {totalCount} 节点
+              {t('graphEditor.timelineView.nodeCount', { current: currentNodeCount, total: totalCount })}
             </span>
             
             <div
@@ -561,7 +561,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>速度</span>
+            <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('graphEditor.timelineView.speed')}</span>
             {[0.5, 1, 2, 4].map(speed => (
               <button
                 key={speed}

@@ -130,13 +130,15 @@
       "embedded": "Block embedded",
       "stale": "Source block is stale",
       "removed": "Source block removed, click to remove reference",
-      "tooltip": "Click to jump to source block"
+      "tooltip": "Click to jump to source block",
+      "label": "Block reference"
     },
     "blockEmbed": {
       "loading": "Loading block content…",
       "removed": "Source block removed",
       "jumpToSource": "Jump to source block",
       "unembed": "Unembed",
+      "label": "Block embed",
       "refreshPrompt": "Source block updated, click to refresh"
     },
     "footer": {

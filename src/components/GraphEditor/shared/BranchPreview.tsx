@@ -109,7 +109,7 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
 
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500 dark:text-gray-500">难度:</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-500">{t('graphEditor.branchPreview.difficulty')}</span>
                     <span className={`text-xs font-semibold ${getDifficultyColor(suggestion.estimatedDifficulty)}`}>
                       {'★'.repeat(suggestion.estimatedDifficulty)}
                     </span>
@@ -164,7 +164,7 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
               }
               shadow-xl
             `}
-            title="关闭分支预览"
+            title={t('common.aria.closeBranchPreview')}
             aria-label={t('common.aria.closeBranchPreview')}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">

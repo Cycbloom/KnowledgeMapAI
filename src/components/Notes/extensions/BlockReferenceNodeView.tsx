@@ -72,6 +72,10 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
         className="block-ref inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500"
         as="span"
         contentEditable={false}
+        role="textbox"
+        aria-label={t("notes.editor.blockRef.label")}
+        aria-multiline="false"
+        aria-readonly="true"
       >
         <AlertCircle className="w-3 h-3" />
         <span>{t("notes.editor.blockRef.stale")}</span>
@@ -86,6 +90,10 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
         className="block-ref inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 cursor-pointer relative"
         as="span"
         contentEditable={false}
+        role="textbox"
+        aria-label={t("notes.editor.blockRef.label")}
+        aria-multiline="false"
+        aria-readonly="true"
         onClick={handleClick}
         onFocus={() => setShowTooltip(true)}
         onBlur={() => setShowTooltip(false)}
@@ -127,6 +135,10 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
         className="block-ref inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300"
         as="span"
         contentEditable={false}
+        role="textbox"
+        aria-label={t("notes.editor.blockRef.label")}
+        aria-multiline="false"
+        aria-readonly="true"
       >
         <Link2 className="w-3 h-3" />
         <span className="font-mono text-[10px]">{blockId}</span>
@@ -144,6 +156,10 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
       className="block-ref inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
       as="span"
       contentEditable={false}
+      role="textbox"
+      aria-label={t("notes.editor.blockRef.label")}
+      aria-multiline="false"
+      aria-readonly="true"
       onClick={handleClick}
       title={t("notes.editor.blockRef.tooltip")}
       data-selected={selected}

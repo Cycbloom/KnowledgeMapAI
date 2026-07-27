@@ -438,5 +438,10 @@
   "generateQuestions": "Generate Questions",
   "batchDeleteFailed": "Batch delete failed",
   "updateFailed": "Update failed",
-  "createCardsFailed": "Failed to create cards"
+  "createCardsFailed": "Failed to create cards",
+  "cardDetail": {
+    "title": "Card Details",
+    "options": "Options",
+    "correctAnswer": "Correct Answer"
+  }
 }

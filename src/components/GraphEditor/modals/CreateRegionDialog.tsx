@@ -157,6 +157,7 @@ export const CreateRegionDialog: React.FC<CreateRegionDialogProps> = ({
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
+                aria-label={t('graphEditor.region.colorLabel')}
                 className="w-full h-10 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-500"
               />
             )}

@@ -375,7 +375,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                               handleToggleSubtask(subtask);
                             }}
                             className="flex-shrink-0 hover:scale-110 transition-transform p-1 flex items-center justify-center"
-                            aria-label="切换子任务状态"
+                            aria-label={t('common.aria.toggleSubtaskStatus')}
                           >
                             {subtask.status === "completed" ? (
                               <CheckCircle className="w-4 h-4 text-green-500" />

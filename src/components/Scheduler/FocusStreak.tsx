@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Trophy, Star, Zap, Target, Clock } from "lucide-react";
 import type { TimerMode } from "@shared/types";
@@ -6,7 +7,7 @@ import { formatDurationMinutes } from "../../utils/formatters";
 
 interface StreakMilestone {
   minutes: number;
-  label: string;
+  labelKey: string;
   icon: React.ReactNode;
   color: string;
   bgColor: string;
@@ -15,35 +16,35 @@ interface StreakMilestone {
 const STREAK_MILESTONES: StreakMilestone[] = [
   {
     minutes: 25,
-    label: "专注达人",
+    labelKey: 'scheduler.focusStreak.milestones.focusMaster',
     icon: <Star size={16} />,
     color: "text-yellow-400",
     bgColor: "bg-yellow-500/20",
   },
   {
     minutes: 50,
-    label: "持续专注",
+    labelKey: 'scheduler.focusStreak.milestones.sustainedFocus',
     icon: <Zap size={16} />,
     color: "text-orange-400",
     bgColor: "bg-orange-500/20",
   },
   {
     minutes: 100,
-    label: "深度专注",
+    labelKey: 'scheduler.focusStreak.milestones.deepFocus',
     icon: <Target size={16} />,
     color: "text-primary-400",
     bgColor: "bg-primary-500/20",
   },
   {
     minutes: 150,
-    label: "超级专注",
+    labelKey: 'scheduler.focusStreak.milestones.superFocus',
     icon: <Trophy size={16} />,
     color: "text-primary-400",
     bgColor: "bg-primary-500/20",
   },
   {
     minutes: 200,
-    label: "传奇专注",
+    labelKey: 'scheduler.focusStreak.milestones.legendaryFocus',
     icon: <Flame size={16} />,
     color: "text-red-400",
     bgColor: "bg-red-500/20",
@@ -67,6 +68,7 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
   timerMode = "focus",
   showAnimation = true,
 }) => {
+  const { t } = useTranslation();
   const [displayMinutes, setDisplayMinutes] = useState(totalMinutes);
   const [showMilestone, setShowMilestone] = useState<StreakMilestone | null>(
     null,
@@ -156,17 +158,17 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
                   transition={{ duration: 1.5, repeat: Infinity }}
                   className="text-xs text-primary-400"
                 >
-                  {timerMode === "focus" ? "专注中" : "休息中"}
+                  {timerMode === "focus" ? t('scheduler.focusStreak.focusing') : t('scheduler.focusStreak.breaking')}
                 </motion.span>
               )}
             </div>
             <div className="text-sm text-slate-400">
               {currentMilestone ? (
                 <span className={currentMilestone.color}>
-                  {currentMilestone.label}
+                  {t(currentMilestone.labelKey as never)}
                 </span>
               ) : (
-                <span>开始你的专注之旅</span>
+                <span>{t('scheduler.focusStreak.startJourney')}</span>
               )}
             </div>
           </div>
@@ -175,8 +177,8 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
         {nextMilestone && (
           <div className="mb-4">
             <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-              <span>下一个里程碑: {nextMilestone.label}</span>
-              <span>{nextMilestone.minutes}分钟</span>
+              <span>{t('scheduler.focusStreak.nextMilestone')} {t(nextMilestone.labelKey as never)}</span>
+              <span>{nextMilestone.minutes}{t('scheduler.focusStreak.minutesSuffix')}</span>
             </div>
             <div className="h-2 rounded-full bg-slate-700/50 overflow-hidden">
               <motion.div
@@ -196,25 +198,25 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
           <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-700/30">
             <Clock size={14} className="text-primary-400" />
             <div>
-              <div className="text-xs text-slate-400">当前连续</div>
+              <div className="text-xs text-slate-400">{t('scheduler.focusStreak.currentStreak')}</div>
               <div className="text-sm font-medium text-white">
-                {currentStreakMinutes}分钟
+                {currentStreakMinutes}{t('scheduler.focusStreak.minutesSuffix')}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-700/30">
             <Trophy size={14} className="text-amber-400" />
             <div>
-              <div className="text-xs text-slate-400">番茄钟</div>
+              <div className="text-xs text-slate-400">{t('scheduler.focusStreak.pomodoro')}</div>
               <div className="text-sm font-medium text-white">
-                {pomodorosCompleted}个
+                {pomodorosCompleted}{t('scheduler.focusStreak.countSuffix')}
               </div>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-700/50">
-          <span className="text-xs text-slate-500">里程碑:</span>
+          <span className="text-xs text-slate-500">{t('scheduler.focusStreak.milestoneLabel')}</span>
           <div className="flex items-center gap-1">
             {STREAK_MILESTONES.map((milestone, index) => (
               <motion.div
@@ -227,7 +229,7 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: index * 0.1 }}
-                title={milestone.label}
+                title={t(milestone.labelKey as never)}
               >
                 <span
                   className={
@@ -264,7 +266,7 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
                   {showMilestone.icon}
                 </motion.span>
                 <span className={`font-medium ${showMilestone.color}`}>
-                  🎉 {showMilestone.label}!
+                  🎉 {t(showMilestone.labelKey as never)}!
                 </span>
               </div>
             </div>

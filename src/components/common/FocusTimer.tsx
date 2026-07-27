@@ -218,6 +218,9 @@ export const FocusTimer: React.FC = () => {
                       })
                     }
                     aria-label={t("focusTimer.focusDuration")}
+                    aria-valuetext={t("common.aria.minutesValue", {
+                      minutes: focusDuration,
+                    })}
                     className="w-full accent-primary-500"
                   />
                   <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
@@ -240,6 +243,7 @@ export const FocusTimer: React.FC = () => {
                           shortBreakDuration: parseInt(e.target.value),
                         })
                       }
+                      aria-label={t("focusTimer.shortBreakLabel")}
                       className="w-1/2 p-2 rounded border dark:bg-slate-700 dark:border-slate-500 text-sm"
                       placeholder={t("focusTimer.shortBreakLabel")}
                     />

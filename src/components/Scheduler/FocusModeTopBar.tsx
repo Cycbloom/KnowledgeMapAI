@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, X, Minimize2, Maximize2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useTimerStore } from "../../store/useTimerStore";
 
 interface FocusModeTopBarProps {
@@ -20,6 +21,7 @@ export const FocusModeTopBar: React.FC<FocusModeTopBarProps> = ({
   onToggleFullscreen,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const timeLeft = useTimerStore((s) => s.timeLeft);
   const isActive = useTimerStore((s) => s.isActive);
   const progress = useTimerStore((s) => s.progress);
@@ -36,7 +38,7 @@ export const FocusModeTopBar: React.FC<FocusModeTopBarProps> = ({
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-500/20 border border-primary-500/30">
               <Shield size={16} className="text-primary-400" />
-              <span className="text-sm text-primary-300">专注模式已开启</span>
+              <span className="text-sm text-primary-300">{t('scheduler.focusModeTopBar.focusModeOn')}</span>
             </div>
             {taskTitle && (
               <span className="text-slate-400 text-sm">| {taskTitle}</span>

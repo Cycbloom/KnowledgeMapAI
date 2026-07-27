@@ -142,6 +142,7 @@ export const CalendarPage: React.FC = () => {
     <div
       className={`h-full flex flex-col ${isDark ? "bg-slate-900" : "bg-gray-50"}`}
     >
+      <h1 className="sr-only">{t('calendar.title')}</h1>
       <CalendarHeader
         currentDate={currentDate} viewType={viewType} calendarMode={calendarMode} showSubtasks={showSubtasks}
         onNavigate={navigate} goToToday={goToToday} onViewTypeChange={setViewType}

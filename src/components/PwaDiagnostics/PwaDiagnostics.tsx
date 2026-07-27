@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 import {
   getServiceWorkerStatus,
@@ -70,6 +71,7 @@ export function PwaDiagnostics() {
     useState<StorageEstimateData | null>(null);
   const [clearing, setClearing] = useState(false);
   const { canInstall, installed } = usePwaInstall();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!expanded) return;
@@ -148,7 +150,7 @@ export function PwaDiagnostics() {
 
       {expanded && (
         <div id={contentId} className="px-4 py-3 space-y-2 text-sm">
-          <DiagRow label="SW 注册状态">
+          <DiagRow label={t('common.pwaDiagnostics.swRegistrationLabel')}>
             {swStatus ? (
               <span>
                 已注册 {swStatus.registered ? "✓" : "✗"} · 活动{" "}
@@ -161,17 +163,17 @@ export function PwaDiagnostics() {
             )}
           </DiagRow>
 
-          <DiagRow label="SW 当前版本">{APP_VERSION}</DiagRow>
+          <DiagRow label={t('common.pwaDiagnostics.swVersionLabel')}>{APP_VERSION}</DiagRow>
 
-          <DiagRow label="Standalone 模式">
+          <DiagRow label={t('common.pwaDiagnostics.standaloneLabel')}>
             {renderBool(standaloneMode)}
           </DiagRow>
 
-          <DiagRow label="可安装状态">{renderBool(canInstall)}</DiagRow>
+          <DiagRow label={t('common.pwaDiagnostics.installableLabel')}>{renderBool(canInstall)}</DiagRow>
 
-          <DiagRow label="已安装状态">{renderBool(installed)}</DiagRow>
+          <DiagRow label={t('common.pwaDiagnostics.installedLabel')}>{renderBool(installed)}</DiagRow>
 
-          <DiagRow label="缓存大小">
+          <DiagRow label={t('common.pwaDiagnostics.cacheSizeLabel')}>
             {storageEstimate ? (
               <span>
                 已用 {formatBytes(storageEstimate.usage)} / 配额{" "}

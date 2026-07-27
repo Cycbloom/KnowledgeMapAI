@@ -29,10 +29,13 @@
     "helpHint": "输入 help 查看可用命令",
     "shortcutHint": "Tab 补全 · Ctrl+R 搜索历史 · Esc 关闭",
     "scrollMore": "向上滚动查看更多历史记录 ({{count}} 条)",
-    "tableRegion": "输出表格"
+    "tableRegion": "输出表格",
+    "scrollRegion": "控制台输出区域"
   },
   "history": {
-    "region": "命令历史"
+    "region": "命令历史",
+    "clearAll": "清空历史",
+    "searchPlaceholderShort": "搜索..."
   },
   "noHistoryTitle": "暂无历史记录",
   "noHistoryDesc": "执行的命令将出现在这里",
@@ -186,9 +189,11 @@
       "deepseek": "DeepSeek",
       "volcengine": "火山引擎",
       "aliyun": "阿里云"
-    }
+    },
+    "scrollRegion": "性能日志区域"
   },
   "commandAutocomplete": {
     "placeholder": "输入命令..."
-  }
+  },
+  "tablistLabel": "控制台选项卡"
 }

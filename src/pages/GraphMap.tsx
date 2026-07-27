@@ -1089,6 +1089,7 @@ export const GraphMap = () => {
   return (
     <>
     <div className="h-full w-full flex flex-col bg-gray-50 dark:bg-slate-900 overflow-hidden">
+      <h1 className="sr-only">{t('graphMap.title')}</h1>
       <GraphMapToolbar
         onBack={() => navigate("/dashboard")}
         onRefresh={() => { void refetchMap(); }}

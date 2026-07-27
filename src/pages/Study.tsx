@@ -1,5 +1,6 @@
 import { useLayoutEffect, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { AlertTriangle } from "lucide-react";
 import { useStudyCards, useSemanticGroups, useReviewForecast } from "../hooks/queries";
 import { StudyCard } from "../types";
@@ -22,6 +23,7 @@ export const Study = () => {
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const graphId = searchParams.get("graph_id");
   const nodeId = searchParams.get("node_id");
@@ -256,6 +258,7 @@ export const Study = () => {
         <div
           className={`${isMobile ? "max-w-full" : "max-w-6xl"} mx-auto space-y-6 md:space-y-8`}
         >
+          <h1 className="sr-only">{t('study.title')}</h1>
           <StudyHeader
             isDark={isDark}
             isMobile={isMobile ?? false}

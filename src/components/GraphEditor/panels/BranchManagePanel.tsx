@@ -161,11 +161,12 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
           <div className="flex items-center gap-2">
             <GitBranch className="text-primary-500" size={18} />
             <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              分支管理
+              {t('graphEditor.versionHistory.branchManageTitle')}
             </h2>
           </div>
           <button
             onClick={onClose}
+            aria-label={t('common.aria.close')}
             className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
           >
             <X size={18} className="text-slate-500" />
@@ -204,20 +205,20 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
             <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-500">
               <GitMerge size={18} className="text-primary-500" />
               <h3 id={mergeTitleId} className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                合并分支
+                {t('graphEditor.branchManage.mergeBranch')}
               </h3>
             </div>
 
             <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
               <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  分支名称
+                  {t('graphEditor.branchManage.branchName')}
                 </p>
                 <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   {mergeTarget.title || mergeTarget.branch_name}
                 </p>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                  创建于 {formatRelativeTime(mergeTarget.created_at)}
+                  {t('graphEditor.branchManage.createdAt', { time: formatRelativeTime(mergeTarget.created_at) })}
                 </p>
               </div>
 
@@ -241,14 +242,14 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
                 onClick={closeMergeDialog}
                 className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
-                取消
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleMerge}
                 disabled={mergeBranchMutation.isPending}
                 className="px-3 py-1.5 text-sm font-medium bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {mergeBranchMutation.isPending ? "合并中..." : "确认合并"}
+                {mergeBranchMutation.isPending ? t('graphEditor.branchManage.merging') : t('graphEditor.branchManage.confirmMerge')}
               </button>
             </div>
           </div>
@@ -260,12 +261,12 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
             <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-500">
               <Trash2 size={18} className="text-red-500" />
               <h3 id={deleteTitleId} className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                删除分支
+                {t('graphEditor.confirmDeleteBranchTitle')}
               </h3>
             </div>
             <div className="p-4">
               <p className="text-sm text-slate-600 dark:text-slate-300">
-                确定要删除分支「{deleteTarget.title || deleteTarget.branch_name}」吗？此操作将移至回收站。
+                {t('graphEditor.branchManage.confirmDeleteMessage', { name: deleteTarget.title || deleteTarget.branch_name })}
               </p>
             </div>
             <div className="flex justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-500">
@@ -273,14 +274,14 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
                 onClick={closeDeleteDialog}
                 className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
-                取消
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleteBranchMutation.isPending}
                 className="px-3 py-1.5 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {deleteBranchMutation.isPending ? "删除中..." : "确认删除"}
+                {deleteBranchMutation.isPending ? t('graphEditor.branchManage.deleting') : t('graphEditor.branchManage.confirmDelete')}
               </button>
             </div>
           </div>
@@ -298,6 +299,7 @@ interface BranchItemProps {
 }
 
 const BranchItem: React.FC<BranchItemProps> = ({ branch, onMerge, onView, onDelete }) => {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-500 group">
       <div className="flex items-center gap-3 min-w-0">
@@ -318,21 +320,21 @@ const BranchItem: React.FC<BranchItemProps> = ({ branch, onMerge, onView, onDele
           className="inline-flex items-center gap-1 px-2 py-1 text-xs text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded transition-colors"
         >
           <Eye size={12} />
-          查看
+          {t('common.view')}
         </button>
         <button
           onClick={onMerge}
           className="inline-flex items-center gap-1 px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
         >
           <GitMerge size={12} />
-          合并
+          {t('graphEditor.branchManage.merge')}
         </button>
         <button
           onClick={onDelete}
           className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
         >
           <Trash2 size={12} />
-          删除
+          {t('common.delete')}
         </button>
       </div>
     </div>
@@ -373,6 +375,7 @@ const MergeDiffPreview: React.FC<MergeDiffPreviewProps> = ({
   graphId,
   branchGraphId,
 }) => {
+  const { t } = useTranslation();
   const { data: diffResult, isLoading } = useGraphDiff(
     graphId,
     branchGraphId,
@@ -380,10 +383,10 @@ const MergeDiffPreview: React.FC<MergeDiffPreviewProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-4">
+      <div role="status" aria-live="polite" className="flex items-center justify-center py-4">
         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-500" />
         <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
-          加载变更对比...
+          {t('graphEditor.branchManage.loadingDiff')}
         </span>
       </div>
     );
@@ -396,31 +399,33 @@ const MergeDiffPreview: React.FC<MergeDiffPreviewProps> = ({
   return (
     <div className="space-y-2">
       <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-        变更概览
+        {t('graphEditor.branchManage.diffOverview')}
       </h4>
       <div className="grid grid-cols-3 gap-2">
         <DiffStatCard
-          label="新增"
+          label={t('graphEditor.diffDetail.changeType.added')}
           count={s.nodesAdded + s.edgesAdded}
           color="text-green-600 dark:text-green-400"
           bgColor="bg-green-50 dark:bg-green-900/20"
         />
         <DiffStatCard
-          label="删除"
+          label={t('graphEditor.diffDetail.changeType.removed')}
           count={s.nodesRemoved + s.edgesRemoved}
           color="text-red-600 dark:text-red-400"
           bgColor="bg-red-50 dark:bg-red-900/20"
         />
         <DiffStatCard
-          label="修改"
+          label={t('graphEditor.diffDetail.changeType.modified')}
           count={s.nodesModified + s.edgesModified}
           color="text-yellow-600 dark:text-yellow-400"
           bgColor="bg-yellow-50 dark:bg-yellow-900/20"
         />
       </div>
       <p className="text-xs text-slate-400 dark:text-slate-500">
-        节点: {s.nodesAdded + s.nodesRemoved + s.nodesModified} 处变更 · 边:{" "}
-        {s.edgesAdded + s.edgesRemoved + s.edgesModified} 处变更
+        {t('graphEditor.branchManage.diffSummary', {
+          nodes: s.nodesAdded + s.nodesRemoved + s.nodesModified,
+          edges: s.edgesAdded + s.edgesRemoved + s.edgesModified,
+        })}
       </p>
     </div>
   );
@@ -471,6 +476,7 @@ const MergeConflictList: React.FC<MergeConflictListProps> = ({
   onToggleExpand,
   onResolutionChange,
 }) => {
+  const { t } = useTranslation();
   const { data: mergeResult, isLoading } = useMergePreview(graphId, branchGraphId);
   const conflicts = mergeResult?.conflicts ?? [];
 
@@ -479,25 +485,25 @@ const MergeConflictList: React.FC<MergeConflictListProps> = ({
       <div className="flex items-center gap-2">
         <AlertTriangle size={14} className="text-yellow-500" />
         <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-          冲突检测
+          {t('graphEditor.branchManage.conflictDetection')}
         </h4>
       </div>
       {isLoading ? (
-        <div className="flex items-center justify-center py-2">
+        <div role="status" aria-live="polite" className="flex items-center justify-center py-2">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500" />
-          <span className="ml-2 text-xs text-slate-500">检测冲突中...</span>
+          <span className="ml-2 text-xs text-slate-500">{t('graphEditor.branchManage.detectingConflicts')}</span>
         </div>
       ) : conflicts.length === 0 ? (
         <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800/50">
           <p className="text-xs text-green-700 dark:text-green-300">
-            未检测到冲突，可以安全合并。
+            {t('graphEditor.branchManage.noConflicts')}
           </p>
         </div>
       ) : (
         <div className="space-y-2">
           <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800/50">
             <p className="text-xs text-yellow-700 dark:text-yellow-300">
-              检测到 {conflicts.length} 个冲突，请选择保留方式。
+              {t('graphEditor.branchManage.conflictsDetected', { count: conflicts.length })}
             </p>
           </div>
           {conflicts.map((conflict) => (
@@ -541,6 +547,10 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
       <div
         className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-yellow-100/50 dark:hover:bg-yellow-900/20 transition-colors"
         onClick={onToggleExpand}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleExpand(); } }}
       >
         {isExpanded ? (
           <ChevronDown size={14} className="text-yellow-600 dark:text-yellow-400 shrink-0" />
@@ -549,8 +559,7 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
         )}
         <AlertTriangle size={14} className="text-yellow-500 shrink-0" />
         <span className="text-sm text-slate-700 dark:text-slate-300 flex-1">
-          {isNodeConflict ? "节点" : "边"}冲突
-          {conflict.knowledgePointId ? ` · ${conflict.knowledgePointId}` : ""}
+          {isNodeConflict ? t('graphEditor.branchManage.conflict.nodeType') : t('graphEditor.branchManage.conflict.edgeType')}{t('graphEditor.branchManage.conflict.conflictLabel')}{conflict.knowledgePointId ? ` · ${conflict.knowledgePointId}` : ""}
         </span>
       </div>
 
@@ -560,23 +569,23 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
           <div className="space-y-1">
             {conflict.mainChange.changedFields.length > 0 && (
               <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-                变更字段: {conflict.mainChange.changedFields.join(", ")}
+                {t('graphEditor.branchManage.changedFields', { fields: conflict.mainChange.changedFields.join(", ") })}
               </div>
             )}
             {isNodeConflict && conflict.mainChange.changedFields.includes("content") && (
               <div className="space-y-1">
-                <span className="text-[10px] text-slate-400 font-medium">内容变更</span>
+                <span className="text-[10px] text-slate-400 font-medium">{t('graphEditor.branchManage.contentChange')}</span>
                 <div className="grid grid-cols-2 gap-1">
                   <div className="p-1 bg-blue-50 dark:bg-blue-900/10 rounded text-[10px] text-blue-700 dark:text-blue-300 whitespace-pre-wrap break-words max-h-16 overflow-y-auto">
-                    {(mainAfter && "content" in mainAfter ? String(mainAfter.content) : "") || "(空)"}
+                    {(mainAfter && "content" in mainAfter ? String(mainAfter.content) : "") || t('graphEditor.diffDetail.emptyValue')}
                   </div>
                   <div className="p-1 bg-purple-50 dark:bg-purple-900/10 rounded text-[10px] text-purple-700 dark:text-purple-300 whitespace-pre-wrap break-words max-h-16 overflow-y-auto">
-                    {(branchAfter && "content" in branchAfter ? String(branchAfter.content) : "") || "(空)"}
+                    {(branchAfter && "content" in branchAfter ? String(branchAfter.content) : "") || t('graphEditor.diffDetail.emptyValue')}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-400">
-                  <span className="text-center">主线</span>
-                  <span className="text-center">分支</span>
+                  <span className="text-center">{t('graphEditor.branchManage.mainline')}</span>
+                  <span className="text-center">{t('graphEditor.branchManage.branch')}</span>
                 </div>
               </div>
             )}
@@ -593,7 +602,7 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
                 className="text-primary-600 focus:ring-primary-500"
               />
               <span className="text-xs text-slate-600 dark:text-slate-400">
-                保留主线
+                {t('graphEditor.branchManage.keepMainline')}
               </span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -605,7 +614,7 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
                 className="text-primary-600 focus:ring-primary-500"
               />
               <span className="text-xs text-slate-600 dark:text-slate-400">
-                保留分支
+                {t('graphEditor.branchManage.keepBranch')}
               </span>
             </label>
           </fieldset>

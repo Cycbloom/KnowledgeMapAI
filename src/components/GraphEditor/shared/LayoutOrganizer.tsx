@@ -210,7 +210,8 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
       className={`p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors ${
         isApplying ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
       }`}
-      title="整理布局"
+      title={t('graphEditor.layoutOrganizer.title')}
+      aria-label={t('graphEditor.layoutOrganizer.title')}
     >
       {isApplying ? (
         <Loader2 className="w-5 h-5 animate-spin text-primary-500" />

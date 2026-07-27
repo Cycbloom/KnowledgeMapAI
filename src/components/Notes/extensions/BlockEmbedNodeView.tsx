@@ -129,6 +129,10 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
         className="block-embed my-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 overflow-hidden"
         as="div"
         contentEditable={false}
+        role="textbox"
+        aria-label={t("notes.editor.blockEmbed.label")}
+        aria-multiline="false"
+        aria-readonly="true"
       >
         <div className="flex items-center justify-between gap-2 px-3 py-2">
           <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
@@ -159,6 +163,10 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
       className="block-embed my-2 rounded-lg border border-gray-200 dark:border-slate-500 bg-gray-50 dark:bg-slate-800/50 overflow-hidden"
       as="div"
       contentEditable={false}
+      role="textbox"
+      aria-label={t("notes.editor.blockEmbed.label")}
+      aria-multiline="true"
+      aria-readonly="true"
     >
       {/* 顶部信息条:标题 + 操作按钮 */}
       <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-gray-100 dark:border-slate-500 bg-white/50 dark:bg-slate-800/30">

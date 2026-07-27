@@ -48,9 +48,9 @@ export const AnalysisResultViewer: React.FC<AnalysisResultViewerProps> = ({
       return (
         <div className="flex flex-col items-center justify-center py-16">
           <Loader2 className="w-10 h-10 text-primary-500 animate-spin mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">正在分析中...</p>
+          <p className="text-gray-500 dark:text-gray-400">{t('graphMap.analysisResult.analyzing')}</p>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            预计需要 {module.estimatedTime}
+            {t('graphMap.analysisResult.estimatedTime', { time: module.estimatedTime })}
           </p>
         </div>
       );
@@ -60,9 +60,9 @@ export const AnalysisResultViewer: React.FC<AnalysisResultViewerProps> = ({
       return (
         <div className="flex flex-col items-center justify-center py-16">
           <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-          <p className="text-gray-500 dark:text-gray-400 mb-2">分析失败</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-2">{t('graphMap.analysisResult.failed')}</p>
           <p className="text-sm text-red-500 dark:text-red-400 text-center max-w-md">
-            {module.error || '未知错误，请重试'}
+            {module.error || t('graphMap.analysisResult.unknownError')}
           </p>
         </div>
       );
@@ -150,7 +150,7 @@ export const AnalysisResultViewer: React.FC<AnalysisResultViewerProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
-              关闭
+              {t('graphMap.analysisResult.close')}
             </button>
           </div>
         </motion.div>

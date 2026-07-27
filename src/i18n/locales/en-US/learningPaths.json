@@ -76,5 +76,8 @@
     "loadingPath": "Loading learning path...",
     "pathNotExist": "Learning path does not exist",
     "pathNotExistDesc": "This learning path may have been deleted or you don't have access"
+  },
+  "learningPathDetail": {
+    "title": "Learning Path Detail"
   }
 }

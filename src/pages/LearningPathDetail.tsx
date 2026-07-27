@@ -354,6 +354,7 @@ const LearningPathDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <h1 className="sr-only">{t('learningPaths.learningPathDetail.title')}</h1>
         <PathHeaderSection
           pathDetail={pathDetail}
           progressPercentage={progressPercentage}

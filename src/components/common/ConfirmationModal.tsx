@@ -126,7 +126,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             <button
               onClick={onClose}
               className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 touch-target focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
-              aria-label="关闭对话框"
+              aria-label={t('common.aria.closeDialog')}
             >
               <X size={20} aria-hidden="true" />
             </button>

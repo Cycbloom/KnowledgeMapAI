@@ -270,6 +270,9 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
             }))
           }
           aria-label={t("conceptAggregation.panel.similarityThreshold")}
+          aria-valuetext={t("conceptAggregation.panel.similarityValue", {
+            value: settings.similarityThreshold ?? 0.8,
+          })}
           className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
         />
         <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -298,6 +301,9 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
             }))
           }
           aria-label={t("conceptAggregation.panel.hierarchyThreshold")}
+          aria-valuetext={t("conceptAggregation.panel.similarityValue", {
+            value: settings.hierarchyThreshold ?? 0.7,
+          })}
           className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
         />
         <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">

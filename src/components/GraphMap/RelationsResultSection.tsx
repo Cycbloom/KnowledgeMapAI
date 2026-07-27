@@ -1,4 +1,5 @@
 import React, { useState, useId } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   GitBranch,
@@ -34,6 +35,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
   onGraphClick,
   onCreateRelation,
 }) => {
+  const { t } = useTranslation();
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [sortBy, setSortBy] = useState<SortBy>('confidence');
   const [showFilters, setShowFilters] = useState(false);
@@ -84,19 +86,19 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
             {result.analysis_summary.total_graphs_analyzed}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">分析图谱</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.relationDiscovery.graphsAnalyzed')}</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             {result.analysis_summary.relations_discovered}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">发现关系</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.relationDiscovery.relationsFound')}</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
             {result.analysis_summary.isolated_graphs.length}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">孤立图谱</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.relationDiscovery.isolatedGraphsShort')}</div>
         </div>
       </div>
 
@@ -108,7 +110,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
           className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         >
           <Filter className="w-4 h-4" />
-          筛选
+          {t('graphMap.relationDiscovery.filter')}
           {showFilters ? (
             <ChevronUp className="w-4 h-4" />
           ) : (
@@ -120,8 +122,8 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
           onChange={(e) => setSortBy(e.target.value as SortBy)}
           className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300"
         >
-          <option value="confidence">按置信度</option>
-          <option value="type">按类型</option>
+          <option value="confidence">{t('graphMap.relationDiscovery.sortByConfidence')}</option>
+          <option value="type">{t('graphMap.relationDiscovery.sortByType')}</option>
         </select>
       </div>
 
@@ -141,7 +143,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
                 : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
             }`}
           >
-            全部
+            {t('graphMap.relationDiscovery.all')}
           </button>
           {(
             ['prerequisite', 'extension', 'related', 'cross_domain'] as GraphRelationType[]
@@ -168,7 +170,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
       {sortedRelations.length === 0 ? (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <GitBranch className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          没有发现符合条件的关系
+          {t('graphMap.relationDiscovery.noRelationsFound')}
         </div>
       ) : (
         <div className="space-y-2">
@@ -199,7 +201,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
                         {GRAPH_RELATION_LABELS[rel.relation_type]}
                       </span>
                       <span className="text-xs text-gray-400 dark:text-gray-500">
-                        置信度 {(rel.confidence * 100).toFixed(0)}%
+                        {t('graphMap.relationDiscovery.confidence', { value: (rel.confidence * 100).toFixed(0) })}
                       </span>
                     </div>
 
@@ -269,17 +271,17 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
                       {isCreated ? (
                         <>
                           <Check className="w-4 h-4" />
-                          已创建
+                          {t('graphMap.relationDiscovery.created')}
                         </>
                       ) : isCreating ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          创建中
+                          {t('graphMap.relationDiscovery.creating')}
                         </>
                       ) : (
                         <>
                           <Plus className="w-4 h-4" />
-                          创建
+                          {t('graphMap.relationDiscovery.create')}
                         </>
                       )}
                     </button>
@@ -294,8 +296,8 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
       {result.analysis_summary.isolated_graphs.length > 0 && (
         <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
           <p className="text-xs text-amber-700 dark:text-amber-300">
-            <span className="font-medium">提示：</span>
-            有 {result.analysis_summary.isolated_graphs.length} 个图谱暂未发现与其他图谱的关联关系
+            <span className="font-medium">{t('graphMap.relationDiscovery.tip')}</span>
+            {t('graphMap.relationDiscovery.isolatedTip', { count: result.analysis_summary.isolated_graphs.length })}
           </p>
         </div>
       )}

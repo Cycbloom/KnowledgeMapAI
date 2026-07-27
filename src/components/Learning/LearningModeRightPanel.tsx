@@ -124,6 +124,7 @@ export const LearningModeRightPanel = ({
                           : "hover:bg-gray-100 text-gray-500"
                     }`}
                     title={t("learning.chat.aiTutor")}
+                    aria-label={t("learning.chat.aiTutor")}
                   >
                     <MessageCircle size={14} />
                   </button>
@@ -137,6 +138,7 @@ export const LearningModeRightPanel = ({
                           : "hover:bg-gray-100 text-gray-500"
                     }`}
                     title={t("learning.path.title")}
+                    aria-label={t("learning.path.title")}
                   >
                     <Route size={14} />
                   </button>
@@ -150,6 +152,7 @@ export const LearningModeRightPanel = ({
                           : "hover:bg-gray-100 text-gray-500"
                     }`}
                     title={t("literatureExtract.title")}
+                    aria-label={t("literatureExtract.title")}
                   >
                     <FileText size={14} />
                   </button>
@@ -162,7 +165,8 @@ export const LearningModeRightPanel = ({
                           ? "hover:bg-slate-700 text-slate-400"
                           : "hover:bg-gray-100 text-gray-500"
                     }`}
-                    title="概念聚合"
+                    title={t("conceptAggregation.panel.title")}
+                    aria-label={t("conceptAggregation.panel.title")}
                   >
                     <GitMerge size={14} />
                   </button>

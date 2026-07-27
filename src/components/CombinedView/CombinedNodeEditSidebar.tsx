@@ -88,11 +88,11 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-2">
           {prevSidebarMode === 'outline' && (
-            <button 
+            <button
               onClick={onBack}
               className="mr-1 p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
-              title="返回大纲"
-              aria-label="返回大纲"
+              title={t('combinedViewPage.backToOutline')}
+              aria-label={t('combinedViewPage.backToOutline')}
             >
               <ArrowLeft size={18} />
             </button>
@@ -115,11 +115,11 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
 
       <div className="space-y-4 flex-1 overflow-y-auto pr-1">
         <FormInput
-          label="标题"
+          label={t('combinedViewPage.nodeEdit.titleLabel')}
           type="text"
           value={nodeForm.title}
           onChange={(e) => setNodeForm({ ...nodeForm, title: e.target.value })}
-          placeholder="输入节点标题"
+          placeholder={t('combinedViewPage.nodeEdit.titlePlaceholder')}
         />
 
         <div>
@@ -133,23 +133,23 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
             onChange={(e) => setNodeForm({ ...nodeForm, summary: e.target.value })}
             maxLength={200}
             className="text-sm"
-            placeholder="简短概览，概括核心内容..."
+            placeholder={t('combinedViewPage.nodeEdit.summaryPlaceholder')}
           />
         </div>
 
         <FormInput
-          label="标签 (逗号分隔)"
+          label={t('combinedViewPage.nodeEdit.tagsLabel')}
           type="text"
           value={nodeForm.tags.join(', ')}
           onChange={(e) => {
             const tags = e.target.value.split(/[,，]/).map(t => t.trim()).filter(Boolean);
             setNodeForm({ ...nodeForm, tags });
           }}
-          placeholder="例如: 重要, 待办, 概念"
+          placeholder={t('combinedViewPage.nodeEdit.tagsPlaceholder')}
         />
 
         <FormSelect
-          label="层级"
+          label={t('combinedViewPage.nodeEdit.levelLabel')}
           value={nodeForm.level}
           onChange={(e) => setNodeForm({ ...nodeForm, level: e.target.value })}
           className="text-sm"
@@ -162,11 +162,11 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
         </FormSelect>
 
         <FormTextarea
-          label="内容"
+          label={t('combinedViewPage.nodeEdit.contentLabel')}
           value={nodeForm.content}
           onChange={(e) => setNodeForm({ ...nodeForm, content: e.target.value })}
           className="h-64 resize-none font-mono text-sm"
-          placeholder="支持 Markdown 格式..."
+          placeholder={t('combinedViewPage.nodeEdit.contentPlaceholder')}
         />
       </div>
 

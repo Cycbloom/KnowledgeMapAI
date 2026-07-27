@@ -291,7 +291,7 @@ export const MobileFocusTimer: React.FC = () => {
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={handleReset}
-                  aria-label="重置"
+                  aria-label={t('common.aria.reset')}
                   className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
                   <RotateCcw size={18} />
@@ -318,7 +318,7 @@ export const MobileFocusTimer: React.FC = () => {
 
                 <button
                   onClick={() => useTimerStore.getState().skipToNext()}
-                  aria-label="跳过"
+                  aria-label={t('common.aria.skip')}
                   className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
                   <svg aria-hidden="true"

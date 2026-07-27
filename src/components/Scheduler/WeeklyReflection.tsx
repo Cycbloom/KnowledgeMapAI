@@ -298,7 +298,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                   <textarea
                     value={formData.content}
                     onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                    placeholder="这周整体感觉如何？有什么收获？"
+                    placeholder={t('scheduler.weeklyReflection.feelingPlaceholder')}
                     className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
@@ -312,7 +312,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                     <textarea
                       value={formData.improvements}
                       onChange={(e) => setFormData(prev => ({ ...prev, improvements: e.target.value }))}
-                      placeholder="下周想要改进什么？"
+                      placeholder={t('scheduler.weeklyReflection.improvementPlaceholder')}
                       className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -324,7 +324,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                     <textarea
                       value={formData.learnings}
                       onChange={(e) => setFormData(prev => ({ ...prev, learnings: e.target.value }))}
-                      placeholder="这周学到了什么新东西？"
+                      placeholder={t('scheduler.weeklyReflection.learningPlaceholder')}
                       className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>

@@ -117,10 +117,10 @@ export const VersionHistoryModal = ({
 
   const renderDiffItem = (diff: KnowledgePointVersionDiff) => {
     const fieldLabels: Record<string, string> = {
-      title: '标题',
-      content: '内容',
-      learning_material: '学习材料',
-      properties: '属性',
+      title: t('graphEditor.versionHistory.fieldLabel.title'),
+      content: t('graphEditor.versionHistory.fieldLabel.content'),
+      learning_material: t('graphEditor.versionHistory.fieldLabel.learningMaterial'),
+      properties: t('graphEditor.versionHistory.fieldLabel.properties'),
     };
 
     return (
@@ -130,19 +130,19 @@ export const VersionHistoryModal = ({
         </div>
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-100 dark:border-red-800">
-            <div className="text-red-600 dark:text-red-400 font-medium mb-1">旧值:</div>
+            <div className="text-red-600 dark:text-red-400 font-medium mb-1">{t('graphEditor.versionHistory.oldValueLabel')}</div>
             <div className="text-gray-600 dark:text-gray-400 line-clamp-3">
               {typeof diff.old_value === 'object' 
                 ? JSON.stringify(diff.old_value, null, 2) 
-                : String(diff.old_value || '(空)')}
+                : String(diff.old_value || t('graphEditor.diffDetail.emptyValue'))}
             </div>
           </div>
           <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-100 dark:border-green-800">
-            <div className="text-green-600 dark:text-green-400 font-medium mb-1">新值:</div>
+            <div className="text-green-600 dark:text-green-400 font-medium mb-1">{t('graphEditor.versionHistory.newValueLabel')}</div>
             <div className="text-gray-600 dark:text-gray-400 line-clamp-3">
               {typeof diff.new_value === 'object' 
                 ? JSON.stringify(diff.new_value, null, 2) 
-                : String(diff.new_value || '(空)')}
+                : String(diff.new_value || t('graphEditor.diffDetail.emptyValue'))}
             </div>
           </div>
         </div>
@@ -165,15 +165,15 @@ export const VersionHistoryModal = ({
               <History size={24} />
             </div>
             <div>
-              <h2 id="version-history-modal-title" className="text-xl font-bold text-gray-800 dark:text-gray-100">版本历史</h2>
+              <h2 id="version-history-modal-title" className="text-xl font-bold text-gray-800 dark:text-gray-100">{t('graphEditor.versionHistory.title')}</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
                 {knowledgePointTitle}
               </p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
-            aria-label="关闭"
+            aria-label={t('common.aria.close')}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <X size={24} />
@@ -189,7 +189,7 @@ export const VersionHistoryModal = ({
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
             }`}
           >
-            版本列表
+            {t('graphEditor.versionHistory.tabVersionList')}
           </button>
           <button
             onClick={() => { setCompareMode(true); setCompareResult(null); }}
@@ -200,7 +200,7 @@ export const VersionHistoryModal = ({
             }`}
           >
             <GitCompare size={16} className="mr-1" />
-            版本对比
+            {t('graphEditor.diffDetail.title')}
           </button>
         </div>
 
@@ -217,7 +217,7 @@ export const VersionHistoryModal = ({
                     onClick={() => setCompareResult(null)}
                     className="text-sm text-primary-600 dark:text-primary-400 underline"
                   >
-                    ← 返回选择
+                    {t('graphEditor.versionHistory.backToSelection')}
                   </button>
                   {compareResult.map((version, idx) => (
                     <div 
@@ -230,7 +230,7 @@ export const VersionHistoryModal = ({
                     >
                       <div className="flex justify-between items-center mb-3">
                         <h4 className="font-bold text-gray-800 dark:text-gray-200">
-                          版本 {version.version_number}
+                          {t('graphEditor.versionHistory.versionLabel', { number: version.version_number })}
                         </h4>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           {formatDate(version.created_at)}
@@ -247,7 +247,7 @@ export const VersionHistoryModal = ({
               ) : (
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    请选择两个版本进行对比
+                    {t('graphEditor.versionHistory.selectTwoToCompare')}
                   </p>
                   <div className="space-y-2 mb-4">
                     {versions.map((version) => (
@@ -262,7 +262,7 @@ export const VersionHistoryModal = ({
                       >
                         <div className="flex justify-between items-center">
                           <span className="font-medium text-gray-800 dark:text-gray-200">
-                            版本 {version.version_number}
+                            {t('graphEditor.versionHistory.versionLabel', { number: version.version_number })}
                           </span>
                           <span className="text-xs text-gray-500 dark:text-gray-400">
                             {formatDate(version.created_at)}
@@ -281,7 +281,7 @@ export const VersionHistoryModal = ({
                       onClick={executeCompare}
                       className="w-full py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
                     >
-                      对比版本 {compareVersions[0]} 和 {compareVersions[1]}
+                      {t('graphEditor.versionHistory.compareButton', { v1: compareVersions[0], v2: compareVersions[1] })}
                     </button>
                   )}
                 </div>
@@ -293,12 +293,12 @@ export const VersionHistoryModal = ({
                 onClick={() => setSelectedVersion(null)}
                 className="text-sm text-primary-600 dark:text-primary-400 underline mb-4"
               >
-                ← 返回列表
+                {t('graphEditor.versionHistory.backToList')}
               </button>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-4">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="font-bold text-gray-800 dark:text-gray-200">
-                    版本 {selectedVersion.version_number}
+                    {t('graphEditor.versionHistory.versionLabel', { number: selectedVersion.version_number })}
                   </h4>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
                     {formatDate(selectedVersion.created_at)}
@@ -313,13 +313,13 @@ export const VersionHistoryModal = ({
               
               <div className="space-y-4">
                 <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">标题</h5>
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('graphEditor.versionHistory.fieldLabel.title')}</h5>
                   <p className="text-gray-800 dark:text-gray-200">{selectedVersion.title}</p>
                 </div>
                 
                 {selectedVersion.content && (
                   <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">内容</h5>
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('graphEditor.versionHistory.fieldLabel.content')}</h5>
                     <div className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap text-sm max-h-60 overflow-y-auto">
                       {selectedVersion.content}
                     </div>
@@ -328,7 +328,7 @@ export const VersionHistoryModal = ({
 
                 {selectedVersion.learning_material && (
                   <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">学习材料</h5>
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('graphEditor.versionHistory.fieldLabel.learningMaterial')}</h5>
                     <div className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap text-sm max-h-60 overflow-y-auto">
                       {selectedVersion.learning_material}
                     </div>
@@ -337,7 +337,7 @@ export const VersionHistoryModal = ({
 
                 {selectedVersion.diffs && selectedVersion.diffs.length > 0 && (
                   <div className="mt-4">
-                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">变更内容</h5>
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('graphEditor.versionHistory.changeContent')}</h5>
                     {selectedVersion.diffs.map(renderDiffItem)}
                   </div>
                 )}
@@ -353,7 +353,7 @@ export const VersionHistoryModal = ({
                 ) : (
                   <RotateCcw size={18} className="mr-2" />
                 )}
-                回滚到此版本
+                {t('graphEditor.versionHistory.rollbackToThisVersion')}
               </button>
             </div>
           ) : (
@@ -396,9 +396,9 @@ export const VersionHistoryModal = ({
                               key={diff.field}
                               className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-400"
                             >
-                              {diff.field === 'title' ? '标题' : 
-                               diff.field === 'content' ? '内容' : 
-                               diff.field === 'learning_material' ? '学习材料' : diff.field}
+                              {diff.field === 'title' ? t('graphEditor.versionHistory.fieldLabel.title') :
+                               diff.field === 'content' ? t('graphEditor.versionHistory.fieldLabel.content') :
+                               diff.field === 'learning_material' ? t('graphEditor.versionHistory.fieldLabel.learningMaterial') : diff.field}
                             </span>
                           ))}
                         </div>
@@ -416,17 +416,17 @@ export const VersionHistoryModal = ({
                     className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft size={16} className="mr-1" />
-                    上一页
+                    {t('graphEditor.versionHistory.prevPage')}
                   </button>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {Math.floor(offset / pageSize) + 1} / {Math.ceil(total / pageSize)} 页
+                    {t('graphEditor.versionHistory.pageIndicator', { current: Math.floor(offset / pageSize) + 1, total: Math.ceil(total / pageSize) })}
                   </span>
                   <button
                     onClick={() => setOffset(offset + pageSize)}
                     disabled={offset + pageSize >= total}
                     className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    下一页
+                    {t('graphEditor.versionHistory.nextPage')}
                     <ChevronRight size={16} className="ml-1" />
                   </button>
                 </div>

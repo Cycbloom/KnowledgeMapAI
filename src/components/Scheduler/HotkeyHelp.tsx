@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Keyboard, X } from 'lucide-react';
 import { HOTKEY_LIST, useFocusTrap, useEscapeKey } from "../../hooks";
@@ -9,6 +10,7 @@ interface HotkeyHelpProps {
 }
 
 export const HotkeyHelp: React.FC<HotkeyHelpProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => onClose(), isOpen);
 
@@ -33,7 +35,7 @@ export const HotkeyHelp: React.FC<HotkeyHelpProps> = ({ isOpen, onClose }) => {
             <div className="bg-gradient-to-r from-slate-700 to-slate-800 p-4 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Keyboard size={24} />
-                <h2 className="text-lg font-bold">快捷键</h2>
+                <h2 className="text-lg font-bold">{t('scheduler.hotkeyHelp.title')}</h2>
               </div>
               <button
                 onClick={onClose}
@@ -64,7 +66,7 @@ export const HotkeyHelp: React.FC<HotkeyHelpProps> = ({ isOpen, onClose }) => {
 
             <div className="p-4 border-t border-slate-200 dark:border-slate-500">
               <p className="text-xs text-slate-400 text-center">
-                按 <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono">?</kbd> 随时显示此帮助
+                {t('scheduler.hotkeyHelp.pressHint')}<kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono">?</kbd>{t('scheduler.hotkeyHelp.showAnytimeHint')}
               </p>
             </div>
           </motion.div>

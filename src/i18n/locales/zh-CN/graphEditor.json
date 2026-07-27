@@ -38,7 +38,35 @@
     }
   },
   "edgeEdit": {
-    "saveFailed": "保存边失败"
+    "saveFailed": "保存边失败",
+    "tablistLabel": "编辑边",
+    "labelPlaceholder": "输入边的标签（可选）"
+  },
+  "commandPalette": {
+    "searchPlaceholder": "搜索命令或节点..."
+  },
+  "graphAnalysis": {
+    "title": "图谱分析",
+    "tabOverview": "概览",
+    "tabStructure": "结构分析",
+    "tabConnections": "连接建议",
+    "tabConnectionsWithCount": "连接建议 ({{count}})",
+    "loadFailed": "加载分析数据失败: {{message}}",
+    "healthScore": "健康度评分",
+    "nodeCount": "节点数",
+    "edgeCount": "连接数",
+    "avgDepth": "平均深度",
+    "avgDegree": "平均连接度",
+    "levelDistribution": "层级分布",
+    "centralNodes": "核心节点 (按连接度排序)",
+    "connectionCount": "{{count}} 连接",
+    "nodesWithManyChildren": "子节点较多的节点",
+    "childrenCount": "{{count}} 个子节点",
+    "issuesTitle": "需要关注的问题",
+    "isolatedNodes": "孤立节点: {{count}} 个",
+    "nodesWithoutContent": "缺少内容的节点: {{count}} 个",
+    "createConnection": "创建连接",
+    "loadFailedMessage": "无法加载分析数据"
   },
   "aiActionSettings": {
     "loadFailed": "加载 AI 动作设置失败"
@@ -367,6 +395,7 @@
     "regionName": "区域名称",
     "regionNamePlaceholder": "请输入区域名称",
     "regionColor": "区域颜色",
+    "colorLabel": "区域颜色",
     "selectedNodes": "已选节点",
     "noSelectedNodes": "暂无选中的节点",
     "noAvailableNodes": "暂无可用节点",
@@ -561,12 +590,34 @@
       "minutesAgo": "{{count}}分钟前",
       "hoursAgo": "{{count}}小时前",
       "daysAgo": "{{count}}天前"
+    },
+    "tabVersionList": "版本列表",
+    "backToSelection": "← 返回选择",
+    "backToList": "← 返回列表",
+    "versionLabel": "版本 {{number}}",
+    "selectTwoToCompare": "请选择两个版本进行对比",
+    "compareButton": "对比版本 {{v1}} 和 {{v2}}",
+    "changeContent": "变更内容",
+    "rollbackToThisVersion": "回滚到此版本",
+    "prevPage": "上一页",
+    "nextPage": "下一页",
+    "pageIndicator": "{{current}} / {{total}} 页",
+    "oldValueLabel": "旧值:",
+    "newValueLabel": "新值:",
+    "fieldLabel": {
+      "title": "标题",
+      "content": "内容",
+      "learningMaterial": "学习材料",
+      "properties": "属性"
     }
   },
   "layout": {
     "noNodes": "没有节点可以调整",
     "organized": "节点位置已整理",
     "organizeFailed": "整理节点位置失败"
+  },
+  "layoutOrganizer": {
+    "title": "整理布局"
   },
   "settings": {
     "saved": "设置已保存",
@@ -665,7 +716,37 @@
     "builtinType": "内置类型",
     "editAction": "编辑",
     "deleteAction": "删除",
-    "itemCount": "{{count}} 个"
+    "itemCount": "{{count}} 个",
+    "colorSwatch": "选择颜色 {{hex}}"
+  },
+  "branchManage": {
+    "conflict": {
+      "nodeType": "节点",
+      "edgeType": "边",
+      "conflictLabel": "冲突"
+    },
+    "loadingDiff": "加载变更对比...",
+    "detectingConflicts": "检测冲突中...",
+    "mergeBranch": "合并分支",
+    "branchName": "分支名称",
+    "createdAt": "创建于 {{time}}",
+    "merging": "合并中...",
+    "confirmMerge": "确认合并",
+    "confirmDeleteMessage": "确定要删除分支「{{name}}」吗？此操作将移至回收站。",
+    "deleting": "删除中...",
+    "confirmDelete": "确认删除",
+    "merge": "合并",
+    "diffOverview": "变更概览",
+    "diffSummary": "节点: {{nodes}} 处变更 · 边: {{edges}} 处变更",
+    "conflictDetection": "冲突检测",
+    "noConflicts": "未检测到冲突，可以安全合并。",
+    "conflictsDetected": "检测到 {{count}} 个冲突，请选择保留方式。",
+    "changedFields": "变更字段: {{fields}}",
+    "contentChange": "内容变更",
+    "mainline": "主线",
+    "branch": "分支",
+    "keepMainline": "保留主线",
+    "keepBranch": "保留分支"
   },
   "nodeEdit": {
     "backToOutline": "返回大纲",
@@ -764,7 +845,11 @@
       "edgesModified": "修改边"
     }
   },
+  "edge": {
+    "colorLabel": "边框颜色"
+  },
   "batchGenerate": {
+    "countValue": "{{count}} 题",
     "presets": {
       "quick": {
         "label": "快速自测",
@@ -824,9 +909,22 @@
   },
   "timelineView": {
     "ariaLabel": "时间线视图，{{count}} 个节点",
-    "desc": "按时间顺序排列的节点视图"
+    "desc": "按时间顺序排列的节点视图",
+    "nodeCount": "{{current}} / {{total}} 节点",
+    "speed": "速度"
   },
   "nodeLinkSelector": {
     "dialogLabel": "选择关联节点"
+  },
+  "graphStats": {
+    "masteryProgress": "掌握进度",
+    "dueToday": "今日复习",
+    "isolatedNodes": "孤立节点"
+  },
+  "branchPreview": {
+    "difficulty": "难度:"
+  },
+  "alternativeBranches": {
+    "difficulty": "难度:"
   }
 }

@@ -438,5 +438,10 @@
   "generateQuestions": "生成题目",
   "batchDeleteFailed": "批量删除失败",
   "updateFailed": "更新失败",
-  "createCardsFailed": "创建题目失败"
+  "createCardsFailed": "创建题目失败",
+  "cardDetail": {
+    "title": "卡片详情",
+    "options": "选项",
+    "correctAnswer": "正确答案"
+  }
 }

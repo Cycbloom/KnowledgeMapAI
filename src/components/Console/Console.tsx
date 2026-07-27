@@ -234,7 +234,7 @@ export const Console: React.FC<ConsoleProps> = ({
                 isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-gray-50'
               }`}
             >
-              <div className="flex items-center gap-1" role="tablist">
+              <div className="flex items-center gap-1" role="tablist" aria-label={t('console.tablistLabel')}>
                 <button
                   ref={(el) => { tabRefs.current[0] = el; }}
                   role="tab"

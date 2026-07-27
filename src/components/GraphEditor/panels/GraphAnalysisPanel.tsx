@@ -62,9 +62,9 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const tabs = [
-    { id: 'overview', label: '概览' },
-    { id: 'structure', label: '结构分析' },
-    { id: 'connections', label: '连接建议' },
+    { id: 'overview', label: t('graphEditor.graphAnalysis.tabOverview') },
+    { id: 'structure', label: t('graphEditor.graphAnalysis.tabStructure') },
+    { id: 'connections', label: t('graphEditor.graphAnalysis.tabConnections') },
   ] as const;
 
   const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
@@ -117,8 +117,8 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
       setAnalysis(analysisData);
       setMissingConnections(connectionsData?.suggestions || []);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "未知错误";
-      message.error(`加载分析数据失败: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : t('graphEditor.nodeCreation.unknownError');
+      message.error(t('graphEditor.graphAnalysis.loadFailed', { message: errorMessage }));
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +127,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
   const handleCreateConnection = (sourceId: string, targetId: string) => {
     if (onCreateConnection) {
       onCreateConnection(sourceId, targetId);
-      message.success('连接已创建');
+      message.success(t('graphEditor.connectionCreated'));
     }
   };
 
@@ -166,11 +166,11 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
             <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
               <div className="flex items-center gap-2">
                 <BarChart3 className="text-primary-500" size={20} />
-                <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">图谱分析</h2>
+                <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">{t('graphEditor.graphAnalysis.title')}</h2>
               </div>
               <button
                 onClick={onClose}
-                aria-label="关闭"
+                aria-label={t('common.aria.close')}
                 className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
               >
                 <X size={20} className="text-slate-500" />
@@ -178,7 +178,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 dark:border-slate-500" role="tablist" aria-label="图谱分析">
+            <div className="flex border-b border-slate-200 dark:border-slate-500" role="tablist" aria-label={t('graphEditor.graphAnalysis.title')}>
               <button
                 ref={(el) => { tabRefs.current[0] = el; }}
                 role="tab"
@@ -194,7 +194,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
-                概览
+                {t('graphEditor.graphAnalysis.tabOverview')}
               </button>
               <button
                 ref={(el) => { tabRefs.current[1] = el; }}
@@ -211,7 +211,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
-                结构分析
+                {t('graphEditor.graphAnalysis.tabStructure')}
               </button>
               <button
                 ref={(el) => { tabRefs.current[2] = el; }}
@@ -228,7 +228,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
-                连接建议 ({missingConnections.length})
+                {t('graphEditor.graphAnalysis.tabConnectionsWithCount', { count: missingConnections.length })}
               </button>
             </div>
 
@@ -253,7 +253,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <Activity className={getHealthColor(analysis.healthScore)} size={20} />
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">健康度评分</span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">{t('graphEditor.graphAnalysis.healthScore')}</span>
                           </div>
                           <span className={`text-2xl font-bold ${getHealthColor(analysis.healthScore)}`}>
                             {analysis.healthScore}/100
@@ -276,19 +276,19 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                       {/* Basic Metrics */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">节点数</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('graphEditor.graphAnalysis.nodeCount')}</div>
                           <div className="text-xl font-bold text-slate-800 dark:text-slate-200">{analysis.nodeCount}</div>
                         </div>
                         <div className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">连接数</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('graphEditor.graphAnalysis.edgeCount')}</div>
                           <div className="text-xl font-bold text-slate-800 dark:text-slate-200">{analysis.edgeCount}</div>
                         </div>
                         <div className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">平均深度</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('graphEditor.graphAnalysis.avgDepth')}</div>
                           <div className="text-xl font-bold text-slate-800 dark:text-slate-200">{analysis.avgDepth}</div>
                         </div>
                         <div className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">平均连接度</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('graphEditor.graphAnalysis.avgDegree')}</div>
                           <div className="text-xl font-bold text-slate-800 dark:text-slate-200">{analysis.avgDegree}</div>
                         </div>
                       </div>
@@ -297,7 +297,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                       <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
                         <div className="flex items-center gap-2 mb-3">
                           <Layers className="text-primary-500" size={18} />
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">层级分布</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{t('graphEditor.graphAnalysis.levelDistribution')}</span>
                         </div>
                         <div className="grid grid-cols-5 gap-2">
                           {Object.entries(analysis.levelDistribution).map(([level, count]) => (
@@ -323,7 +323,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                       <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
                         <div className="flex items-center gap-2 mb-3">
                           <Network className="text-primary-500" size={18} />
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">核心节点 (按连接度排序)</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{t('graphEditor.graphAnalysis.centralNodes')}</span>
                         </div>
                         <div className="space-y-2">
                           {analysis.centralNodes.map((node, idx) => (
@@ -336,7 +336,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                                 <span className="text-xs text-slate-500">#{idx + 1}</span>
                                 <span className="text-sm text-slate-800 dark:text-slate-200">{node.title}</span>
                               </div>
-                              <span className="text-xs font-medium text-primary-600 dark:text-primary-400">{node.degree} 连接</span>
+                              <span className="text-xs font-medium text-primary-600 dark:text-primary-400">{t('graphEditor.graphAnalysis.connectionCount', { count: node.degree })}</span>
                             </div>
                           ))}
                         </div>
@@ -347,7 +347,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                         <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
                           <div className="flex items-center gap-2 mb-3">
                             <TrendingUp className="text-primary-500" size={18} />
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">子节点较多的节点</span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">{t('graphEditor.graphAnalysis.nodesWithManyChildren')}</span>
                           </div>
                           <div className="space-y-2">
                             {analysis.nodesWithManyChildren.map((node) => (
@@ -357,7 +357,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                                 onClick={() => onNodeClick?.(node.id)}
                               >
                                 <span className="text-sm text-slate-800 dark:text-slate-200">{node.title}</span>
-                                <span className="text-xs font-medium text-primary-600 dark:text-primary-400">{node.childrenCount} 个子节点</span>
+                                <span className="text-xs font-medium text-primary-600 dark:text-primary-400">{t('graphEditor.graphAnalysis.childrenCount', { count: node.childrenCount })}</span>
                               </div>
                             ))}
                           </div>
@@ -369,17 +369,17 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                         <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg">
                           <div className="flex items-center gap-2 mb-3">
                             <AlertTriangle className="text-amber-500" size={18} />
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">需要关注的问题</span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">{t('graphEditor.graphAnalysis.issuesTitle')}</span>
                           </div>
                           <div className="space-y-2 text-sm">
                             {analysis.isolatedNodes.length > 0 && (
                               <div className="text-slate-700 dark:text-slate-300">
-                                孤立节点: {analysis.isolatedNodes.length} 个
+                                {t('graphEditor.graphAnalysis.isolatedNodes', { count: analysis.isolatedNodes.length })}
                               </div>
                             )}
                             {analysis.nodesWithoutContent.length > 0 && (
                               <div className="text-slate-700 dark:text-slate-300">
-                                缺少内容的节点: {analysis.nodesWithoutContent.length} 个
+                                {t('graphEditor.graphAnalysis.nodesWithoutContent', { count: analysis.nodesWithoutContent.length })}
                               </div>
                             )}
                           </div>
@@ -413,21 +413,21 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                                   onClick={() => onNodeClick?.(conn.sourceId)}
                                   className="text-sm font-medium text-primary-600 dark:text-primary-400 underline"
                                 >
-                                  {nodes.find(n => n.id === conn.sourceId)?.title || '未知节点'}
+                                  {nodes.find(n => n.id === conn.sourceId)?.title || t('graphEditor.diffDetail.unknownNode')}
                                 </button>
                                 <span className="text-slate-400">→</span>
                                 <button
                                   onClick={() => onNodeClick?.(conn.targetId)}
                                   className="text-sm font-medium text-primary-600 dark:text-primary-400 underline"
                                 >
-                                  {nodes.find(n => n.id === conn.targetId)?.title || '未知节点'}
+                                  {nodes.find(n => n.id === conn.targetId)?.title || t('graphEditor.diffDetail.unknownNode')}
                                 </button>
                               </div>
                               <button
                                 onClick={() => handleCreateConnection(conn.sourceId, conn.targetId)}
                                 className="px-3 py-1 text-xs bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
                               >
-                                创建连接
+                                {t('graphEditor.graphAnalysis.createConnection')}
                               </button>
                             </div>
                             <div className="text-xs text-slate-500 dark:text-slate-400">{conn.reason}</div>
@@ -439,7 +439,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                 </>
               ) : (
                 <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-                  无法加载分析数据
+                  {t('graphEditor.graphAnalysis.loadFailedMessage')}
                 </div>
               )}
             </div>

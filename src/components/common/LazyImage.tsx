@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 interface LazyImageProps {
@@ -30,6 +31,7 @@ export const LazyImage: React.FC<LazyImageProps> = memo(({
   aspectRatio,
   showSkeleton = true,
 }) => {
+  const { t } = useTranslation();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -117,7 +119,7 @@ export const LazyImage: React.FC<LazyImageProps> = memo(({
       {hasError && (
         <div
           className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-slate-800"
-          aria-label="图片加载失败"
+          aria-label={t('common.aria.imageLoadFailed')}
         >
           <svg
             className="w-12 h-12 text-gray-400 dark:text-slate-500"

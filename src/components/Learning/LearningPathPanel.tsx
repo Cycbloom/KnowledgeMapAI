@@ -458,6 +458,8 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                   step={10}
                   value={dailyTime}
                   onChange={(e) => setDailyTime(parseInt(e.target.value))}
+                  aria-label={t('learning.path.wizard.dailyTimeLabel')}
+                  aria-valuetext={t('common.aria.minutesValue', { minutes: dailyTime })}
                   className="w-full"
                 />
               </div>

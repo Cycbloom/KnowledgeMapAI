@@ -542,6 +542,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       onChange={(e) =>
                         updateField("estimated_duration", parseInt(e.target.value) || 25)
                       }
+                      aria-label={t("templates.form.estimatedDuration")}
                       className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                         isDark
                           ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"

@@ -248,7 +248,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                 onChange={(e) =>
                   setNewSubtask({ ...newSubtask, title: e.target.value })
                 }
-                placeholder="子任务标题"
+                placeholder={t('scheduler.subtask.titlePlaceholder')}
                 className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 autoFocus
               />
@@ -257,7 +257,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                 onChange={(e) =>
                   setNewSubtask({ ...newSubtask, description: e.target.value })
                 }
-                placeholder="描述（可选）"
+                placeholder={t('scheduler.subtask.descriptionPlaceholder')}
                 className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 rows={2}
               />
@@ -294,7 +294,8 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                         : undefined,
                     })
                   }
-                  placeholder="预计时长（分钟）"
+                  placeholder={t('scheduler.subtask.durationPlaceholder')}
+                  aria-label={t('scheduler.estimatedDuration')}
                   className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>

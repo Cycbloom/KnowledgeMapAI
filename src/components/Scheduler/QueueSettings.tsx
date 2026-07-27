@@ -248,7 +248,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
                 text-slate-900 dark:text-white
                 focus:outline-none focus:ring-2 focus:ring-${queue.color}-500/50
               `}
-              placeholder="输入队列名称"
+              placeholder={t('scheduler.queue.namePlaceholder')}
             />
           </div>
 
@@ -324,7 +324,8 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
           <button
             onClick={() => handleStartEdit(queue)}
             className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-            title="编辑"
+            title={t('common.aria.edit')}
+            aria-label={t('common.aria.edit')}
           >
             <Palette size={14} />
           </button>

@@ -75,7 +75,8 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
                   ? 'text-slate-500 hover:text-red-400 hover:bg-slate-700'
                   : 'text-gray-400 hover:text-red-500 hover:bg-gray-200'
               }`}
-              title="清空历史"
+              title={t('console.history.clearAll')}
+              aria-label={t('console.history.clearAll')}
             >
               <Trash2 size={12} />
             </button>
@@ -95,7 +96,7 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
             aria-label={t('common.aria.search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜索..."
+            placeholder={t('console.history.searchPlaceholderShort')}
             className={`w-full pl-7 pr-2 py-1 text-xs rounded-md border outline-none transition-colors ${
               isDark
                 ? 'bg-slate-900 border-slate-700 text-slate-300 placeholder-slate-500 focus:border-slate-600'

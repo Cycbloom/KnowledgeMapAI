@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Layers, ExternalLink, Globe, BookOpen } from 'lucide-react';
 import type { CrossDomainAnalysisResult } from './types';
@@ -13,6 +14,7 @@ export const CrossDomainInsightsSection: React.FC<CrossDomainInsightsSectionProp
   result,
   onGraphClick,
 }) => {
+  const { t } = useTranslation();
   const renderInsightCard = (insight: CrossDomainInsight, idx: number) => (
     <motion.div
       key={idx}
@@ -36,7 +38,7 @@ export const CrossDomainInsightsSection: React.FC<CrossDomainInsightsSectionProp
         <div className="mb-3">
           <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
             <BookOpen className="w-3 h-3" />
-            交叉主题
+            {t('graphMap.crossDomain.crossTopics')}
           </div>
           <div className="flex flex-wrap gap-1">
             {insight.intersection_topics.map((topic, i) => (
@@ -55,7 +57,7 @@ export const CrossDomainInsightsSection: React.FC<CrossDomainInsightsSectionProp
         <div>
           <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
             <Globe className="w-3 h-3" />
-            相关图谱
+            {t('graphMap.crossDomain.relatedGraphs')}
           </div>
           <div className="flex flex-wrap gap-2">
             {insight.related_graph_ids.slice(0, 5).map((graphId) => (
@@ -70,12 +72,12 @@ export const CrossDomainInsightsSection: React.FC<CrossDomainInsightsSectionProp
                 }`}
               >
                 <ExternalLink className="w-3 h-3" />
-                查看图谱
+                {t('graphMap.crossDomain.viewGraph')}
               </button>
             ))}
             {insight.related_graph_ids.length > 5 && (
               <span className="text-xs text-gray-400 dark:text-gray-500">
-                +{insight.related_graph_ids.length - 5} 更多
+                {t('graphMap.crossDomain.more', { count: insight.related_graph_ids.length - 5 })}
               </span>
             )}
           </div>
@@ -91,19 +93,19 @@ export const CrossDomainInsightsSection: React.FC<CrossDomainInsightsSectionProp
           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
             {result.analysis_summary.total_domains}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">涉及领域</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.crossDomain.domainsInvolved')}</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             {result.analysis_summary.cross_domain_clusters}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">交叉集群</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.crossDomain.crossDomainClustersShort')}</div>
         </div>
       </div>
 
       {Object.keys(result.domain_distribution).length > 0 && (
         <div className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">领域分布</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('graphMap.crossDomain.domainDistribution')}</div>
           <div className="flex flex-wrap gap-2">
             {Object.entries(result.domain_distribution).map(([domain, count]) => (
               <div
@@ -121,12 +123,12 @@ export const CrossDomainInsightsSection: React.FC<CrossDomainInsightsSectionProp
       {result.cross_domain_insights.length === 0 ? (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <Layers className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          没有发现跨学科交叉点
+          {t('graphMap.crossDomain.noCrossDomainFound')}
         </div>
       ) : (
         <div className="space-y-3">
           <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            发现 {result.cross_domain_insights.length} 个跨学科交叉点
+            {t('graphMap.crossDomain.insightsFound', { count: result.cross_domain_insights.length })}
           </div>
           {result.cross_domain_insights.map((insight, idx) => renderInsightCard(insight, idx))}
         </div>

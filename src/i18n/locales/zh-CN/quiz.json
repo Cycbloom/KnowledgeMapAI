@@ -4,16 +4,23 @@
     "noKnowledgePoints": "该图谱暂无知识点"
   },
   "knowledgePointSelector": {
-    "treeLabel": "知识点选择树"
+    "treeLabel": "知识点选择树",
+    "searchPlaceholder": "搜索知识点..."
   },
   "generation": {
     "started": "测验生成任务已开始...",
     "completed": "测验生成完成！",
     "failed": "测验生成失败",
-    "createFailed": "创建测验失败"
+    "createFailed": "创建测验失败",
+    "titlePlaceholder": "例如：第一章基础概念测验",
+    "descriptionPlaceholder": "测验的简要描述..."
   },
   "progressBar": {
     "ariaLabel": "答题进度"
+  },
+  "progress": {
+    "flaggedForReview": "已标记待复查",
+    "elapsedTime": "用时"
   },
   "questionList": {
     "type": {

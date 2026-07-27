@@ -188,7 +188,17 @@
     "messageListRegion": "Message list region",
     "achievementGalleryRegion": "Achievement gallery region",
     "taskStatsRegion": "Task statistics region",
-    "noteEditorRegion": "Note editor region"
+    "noteEditorRegion": "Note editor region",
+    "minutesValue": "{{minutes}} minutes",
+    "closeDialog": "Close dialog",
+    "skip": "Skip",
+    "continue": "Continue",
+    "complete": "Complete",
+    "details": "Details",
+    "imageLoadFailed": "Image load failed",
+    "start": "Start",
+    "clear": "Clear",
+    "toggleSubtaskStatus": "Toggle subtask status"
   },
   "clipboard": {
     "unavailable": "Clipboard unavailable",
@@ -328,5 +338,13 @@
   },
   "shortcut": {
     "captureLabel": "Shortcut capture"
+  },
+  "pwaDiagnostics": {
+    "swRegistrationLabel": "SW registration status",
+    "swVersionLabel": "SW current version",
+    "standaloneLabel": "Standalone mode",
+    "installableLabel": "Installable status",
+    "installedLabel": "Installed status",
+    "cacheSizeLabel": "Cache size"
   }
 }

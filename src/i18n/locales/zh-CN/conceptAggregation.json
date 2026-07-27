@@ -13,6 +13,7 @@
     "xPercentSimilar": "{{percent}}% 相似",
     "mergeable": "可合并:",
     "similarityThreshold": "相似度阈值",
+    "similarityValue": "{{value}} 相似度",
     "loose": "宽松",
     "strict": "严格",
     "hierarchyThreshold": "层次置信度阈值",

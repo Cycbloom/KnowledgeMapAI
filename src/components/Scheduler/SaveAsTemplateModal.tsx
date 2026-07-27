@@ -197,7 +197,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               aria-required={true}
               value={formData.name}
               onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="模板名称"
+              placeholder={t('scheduler.saveAsTemplate.namePlaceholder')}
               className={`w-full px-3 py-2 rounded-lg border text-sm ${
                 isDark
                   ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
@@ -213,7 +213,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             <textarea
               value={formData.description}
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-              placeholder="模板描述（可选）"
+              placeholder={t('scheduler.saveAsTemplate.descriptionPlaceholder')}
               rows={2}
               className={`w-full px-3 py-2 rounded-lg border text-sm resize-none ${
                 isDark
@@ -268,7 +268,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               aria-required={true}
               value={formData.titleTemplate}
               onChange={(e) => setFormData((prev) => ({ ...prev, titleTemplate: e.target.value }))}
-              placeholder="例如：学习：{{topic}}"
+              placeholder={t('scheduler.saveAsTemplate.titleTemplatePlaceholder')}
               className={`w-full px-3 py-2 rounded-lg border text-sm ${
                 isDark
                   ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
@@ -288,7 +288,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             <textarea
               value={formData.descriptionTemplate}
               onChange={(e) => setFormData((prev) => ({ ...prev, descriptionTemplate: e.target.value }))}
-              placeholder="描述模板（可选）"
+              placeholder={t('scheduler.saveAsTemplate.descriptionTemplatePlaceholder')}
               rows={2}
               className={`w-full px-3 py-2 rounded-lg border text-sm resize-none ${
                 isDark
@@ -310,6 +310,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, estimatedDuration: parseInt(e.target.value) || 25 }))
                 }
+                aria-label={t('scheduler.estimatedDuration')}
                 className={`w-full px-3 py-2 rounded-lg border text-sm ${
                   isDark
                     ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
@@ -351,7 +352,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 onKeyPress={(e) =>
                   e.key === "Enter" && (e.preventDefault(), addTag())
                 }
-                placeholder="添加标签"
+                placeholder={t('scheduler.saveAsTemplate.tagPlaceholder')}
                 className={`flex-1 px-3 py-2 rounded-lg border text-sm ${
                   isDark
                     ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"

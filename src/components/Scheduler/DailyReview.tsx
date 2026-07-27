@@ -298,7 +298,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                   <textarea
                     value={formData.content}
                     onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                    placeholder="记录今天的收获和感受..."
+                    placeholder={t('scheduler.dailyReview.harvestPlaceholder')}
                     className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
@@ -312,7 +312,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                     <textarea
                       value={formData.difficulties}
                       onChange={(e) => setFormData(prev => ({ ...prev, difficulties: e.target.value }))}
-                      placeholder="今天遇到了什么困难？"
+                      placeholder={t('scheduler.dailyReview.difficultyPlaceholder')}
                       className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -324,7 +324,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                     <textarea
                       value={formData.improvements}
                       onChange={(e) => setFormData(prev => ({ ...prev, improvements: e.target.value }))}
-                      placeholder="明天可以怎么改进？"
+                      placeholder={t('scheduler.dailyReview.improvementPlaceholder')}
                       className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -338,7 +338,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                   <textarea
                     value={formData.learnings}
                     onChange={(e) => setFormData(prev => ({ ...prev, learnings: e.target.value }))}
-                    placeholder="记录今天学到的新知识或技能..."
+                    placeholder={t('scheduler.dailyReview.learningPlaceholder')}
                     className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>

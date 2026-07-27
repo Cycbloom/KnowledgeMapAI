@@ -369,6 +369,7 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
         type="file"
         accept="image/*"
         className="hidden"
+        aria-label={t("notes.image.insertButton")}
         onChange={(event) => {
           void handleFileChange(event);
         }}

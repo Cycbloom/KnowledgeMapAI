@@ -44,5 +44,19 @@
   "canvas": {
     "ariaLabel": "Combined view, {{count}} nodes, focus: {{focus}}",
     "desc": "Combined view displaying nodes and relationships across multiple graphs"
+  },
+  "backToOutline": "Back to outline",
+  "nodeEdit": {
+    "titleLabel": "Title",
+    "levelLabel": "Level",
+    "contentLabel": "Content",
+    "titlePlaceholder": "Enter node title",
+    "summaryPlaceholder": "Brief summary of core content...",
+    "tagsPlaceholder": "e.g.: important, todo, concept",
+    "contentPlaceholder": "Supports Markdown format...",
+    "tagsLabel": "Tags (comma-separated)"
+  },
+  "graphSidebar": {
+    "searchPlaceholder": "Search nodes..."
   }
 }

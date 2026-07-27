@@ -1,5 +1,6 @@
 {
   "title": "Challenge Learning",
+  "modeTitle": "Learning Mode",
   "selectCourse": "Select a course chapter",
   "empty": "No learning nodes",
   "loading": "Loading...",

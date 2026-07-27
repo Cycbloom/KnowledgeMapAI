@@ -80,7 +80,16 @@
     "title": "Cross-Domain Insights Analysis",
     "reanalyze": "Re-analyze",
     "analyzeComplete": "Cross-domain analysis complete",
-    "analyzeFailed": "Cross-domain analysis failed"
+    "analyzeFailed": "Cross-domain analysis failed",
+    "crossTopics": "Cross topics",
+    "relatedGraphs": "Related graphs",
+    "viewGraph": "View graph",
+    "more": "+{{count}} more",
+    "domainsInvolved": "Domains involved",
+    "crossDomainClustersShort": "Cross-domain clusters",
+    "domainDistribution": "Domain distribution",
+    "noCrossDomainFound": "No cross-domain intersections found",
+    "insightsFound": "Found {{count}} cross-domain intersections"
   },
   "domainPicker": {
     "title": "Set Domain",
@@ -139,6 +148,18 @@
     "suggestedActionExpand": "Expand Existing Graphs",
     "crossDomainOpportunities": "Cross-Domain Learning Opportunities",
     "isolatedGraphs": "{{count}} graphs are still isolated",
+    "isolatedGraphsShort": "Isolated graphs",
+    "filter": "Filter",
+    "sortByConfidence": "By confidence",
+    "sortByType": "By type",
+    "all": "All",
+    "noRelationsFound": "No matching relations found",
+    "confidence": "Confidence {{value}}%",
+    "created": "Created",
+    "creating": "Creating",
+    "create": "Create",
+    "tip": "Tip:",
+    "isolatedTip": "{{count}} graphs have not yet been linked to other graphs",
     "close": "Close",
     "reanalyze": "Re-analyze"
   },
@@ -277,6 +298,11 @@
     "graphNumber": "Graph {{number}}"
   },
   "analysisResult": {
+    "analyzing": "Analyzing...",
+    "estimatedTime": "Estimated {{time}}",
+    "failed": "Analysis failed",
+    "unknownError": "Unknown error, please retry",
+    "close": "Close",
     "complete": "Analysis Complete",
     "copied": "Copied",
     "copy": "Copy",
@@ -419,6 +445,15 @@
     "title": "Relation Type Legend",
     "totalEdges": "{{count}} edges in total"
   },
+  "transformControls": {
+    "backToSource": "Back to {{title}}",
+    "sourceGraph": "source graph",
+    "showMiniMap": "Show mini map",
+    "hideMiniMap": "Hide mini map",
+    "showLegend": "Show legend",
+    "hideLegend": "Hide legend",
+    "statusSummary": "Zoom: {{zoom}}% | Graphs: {{graphs}} | Relations: {{relations}}"
+  },
   "analysisModuleCard": {
     "editPrompt": "Edit Prompt",
     "analyzing": "Analyzing...",
@@ -474,5 +509,16 @@
     "emptyFocus": "No focused node",
     "desc": "Knowledge graph visualization, use arrow keys to navigate nodes",
     "nodesContainer": "Nodes container, {{count}} nodes"
+  },
+  "learningPath": {
+    "pathCount": "Learning paths",
+    "avgLength": "Avg. length",
+    "noSuggestions": "No learning path suggestions found",
+    "recommendedTitle": "Recommended learning paths",
+    "pathLabel": "Path {{index}}",
+    "graphCount": "{{count}} graphs",
+    "learningOrder": "Learning order",
+    "tip": "Tip:",
+    "tipContent": "Learning paths are generated based on prerequisite relationships and knowledge dependencies between graphs. Following the recommended order yields the best results."
   }
 }

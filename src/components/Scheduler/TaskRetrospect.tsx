@@ -207,7 +207,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                 <textarea
                   value={formData.content}
                   onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  placeholder="这个任务完成得怎么样？有什么感受？"
+                  placeholder={t('scheduler.taskRetrospect.feelingPlaceholder')}
                   className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
@@ -221,7 +221,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                   <textarea
                     value={formData.difficulties}
                     onChange={(e) => setFormData(prev => ({ ...prev, difficulties: e.target.value }))}
-                    placeholder="有什么阻碍？"
+                    placeholder={t('scheduler.taskRetrospect.obstaclePlaceholder')}
                     className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
@@ -233,7 +233,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                   <textarea
                     value={formData.improvements}
                     onChange={(e) => setFormData(prev => ({ ...prev, improvements: e.target.value }))}
-                    placeholder="如何解决的？"
+                    placeholder={t('scheduler.taskRetrospect.solutionPlaceholder')}
                     className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
@@ -247,7 +247,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                 <textarea
                   value={formData.learnings}
                   onChange={(e) => setFormData(prev => ({ ...prev, learnings: e.target.value }))}
-                  placeholder="从这个任务中学到了什么新知识或技能？"
+                  placeholder={t('scheduler.taskRetrospect.learningPlaceholder')}
                   className="w-full h-16 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>

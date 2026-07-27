@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Play, Pause, Check, Coffee } from 'lucide-react';
 import { formatTimeFromSeconds, formatIsoDuration } from '../../utils/formatters';
@@ -25,6 +26,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
   const [displayTime, setDisplayTime] = useState(elapsed);
   const [glowOffset, setGlowOffset] = useState(0);
   const animationRef = useRef<number | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setDisplayTime(elapsed);
@@ -179,7 +181,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
             whileTap={{ scale: 0.95 }}
           >
             <Pause size={18} aria-hidden="true" />
-            <span className="font-medium">暂停</span>
+            <span className="font-medium">{t('scheduler.taskWorkbench.taskTimer.pause')}</span>
           </motion.button>
         ) : (
           <motion.button
@@ -189,7 +191,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
             whileTap={{ scale: 0.95 }}
           >
             <Play size={18} aria-hidden="true" />
-            <span className="font-medium">继续</span>
+            <span className="font-medium">{t('scheduler.taskWorkbench.taskTimer.resume')}</span>
           </motion.button>
         )}
 
@@ -200,7 +202,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
           whileTap={{ scale: 0.95 }}
         >
           <Check size={18} aria-hidden="true" />
-          <span className="font-medium">完成</span>
+          <span className="font-medium">{t('scheduler.taskWorkbench.taskTimer.complete')}</span>
         </motion.button>
       </div>
 
@@ -211,7 +213,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
           aria-atomic="true"
         >
           <span className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400" />
-          <span>已用: <time dateTime={formatIsoDuration(displayTime)}>{formatTimeFromSeconds(displayTime)}</time></span>
+          <span>{t('scheduler.taskWorkbench.taskTimer.elapsedLabel')} <time dateTime={formatIsoDuration(displayTime)}>{formatTimeFromSeconds(displayTime)}</time></span>
         </div>
         <div
           className="flex items-center gap-1"
@@ -219,7 +221,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
           aria-atomic="true"
         >
           <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-400" />
-          <span>总计: <time dateTime={formatIsoDuration(duration)}>{formatTimeFromSeconds(duration)}</time></span>
+          <span>{t('scheduler.taskWorkbench.taskTimer.totalLabel')} <time dateTime={formatIsoDuration(duration)}>{formatTimeFromSeconds(duration)}</time></span>
         </div>
       </div>
     </div>

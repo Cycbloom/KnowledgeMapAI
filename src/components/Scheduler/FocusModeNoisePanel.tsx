@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWhiteNoise } from "../../hooks/useWhiteNoise";
 import {
@@ -77,6 +78,7 @@ export const FocusModeNoisePanel: React.FC<FocusModeNoisePanelProps> = ({
   showNoiseSelector,
   onToggleNoiseSelector,
 }) => {
+  const { t } = useTranslation();
   const {
     mixedNoises,
     activePresetId,
@@ -103,7 +105,7 @@ export const FocusModeNoisePanel: React.FC<FocusModeNoisePanelProps> = ({
     <div className="max-w-2xl mx-auto space-y-4">
       {allPresets.length > 0 && (
         <div className="flex items-center justify-center gap-2 mb-4">
-          <span className="text-xs text-slate-400">预设</span>
+          <span className="text-xs text-slate-400">{t('scheduler.focusModeNoise.preset')}</span>
           <div className="flex items-center gap-1">
             {allPresets.slice(0, 4).map((preset) => (
               <motion.button
@@ -197,16 +199,16 @@ export const FocusModeNoisePanel: React.FC<FocusModeNoisePanelProps> = ({
         onClick={onToggleNoiseSelector}
         className="text-xs text-primary-400 hover:text-primary-300 mb-4 w-full text-center"
       >
-        {showNoiseSelector ? "收起" : "展开更多声音"}
+        {showNoiseSelector ? t('scheduler.focusModeNoise.collapse') : t('scheduler.focusModeNoise.expandMore')}
       </button>
 
       <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
         <div className="flex items-center gap-1">
           <Shield size={12} />
-          <span>干扰屏蔽中</span>
+          <span>{t('scheduler.focusModeNoise.blocking')}</span>
         </div>
         <span>|</span>
-        <span>按 ESC 退出专注模式</span>
+        <span>{t('scheduler.focusModeNoise.exitHint')}</span>
       </div>
     </div>
   );

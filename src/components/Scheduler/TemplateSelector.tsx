@@ -206,7 +206,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   />
                   <input
                     type="text"
-                    placeholder="搜索模板..."
+                    placeholder={t('scheduler.templateSelector.searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className={`w-full pl-9 pr-3 py-2 rounded-lg border text-sm ${

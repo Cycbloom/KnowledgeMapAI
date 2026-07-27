@@ -207,6 +207,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                   value={count}
                   onChange={(e) => setCount(parseInt(e.target.value))}
                   aria-label={t('graphEditor.batchGenerate.countLabel')}
+                  aria-valuetext={t('graphEditor.batchGenerate.countValue', { count })}
                   className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700"
                 />
                 <div className="flex justify-between text-xs text-slate-400">

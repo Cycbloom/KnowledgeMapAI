@@ -185,7 +185,7 @@ export const KnowledgePointAssociation: React.FC<
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="搜索知识点..."
+                  placeholder={t('scheduler.taskWorkbench.knowledgePointAssociation.searchPlaceholder')}
                   className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   autoFocus
                 />
@@ -282,7 +282,8 @@ export const KnowledgePointAssociation: React.FC<
                     <button
                       onClick={() => handleSetPrimary(association.id)}
                       className="p-1.5 text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-lg transition-colors"
-                      title="设为主要"
+                      title={t('scheduler.taskKnowledge.setPrimary')}
+                      aria-label={t('scheduler.taskKnowledge.setPrimary')}
                     >
                       <Star size={16} />
                     </button>
@@ -292,14 +293,16 @@ export const KnowledgePointAssociation: React.FC<
                       handleViewInGraph(association.knowledge_point_id)
                     }
                     className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
-                    title="在图谱中查看"
+                    title={t('scheduler.taskKnowledge.viewInGraph')}
+                    aria-label={t('scheduler.taskKnowledge.viewInGraph')}
                   >
                     <ExternalLink size={16} />
                   </button>
                   <button
                     onClick={() => handleRemoveAssociation(association.id)}
                     className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                    title="取消关联"
+                    title={t('scheduler.taskKnowledge.unlink')}
+                    aria-label={t('scheduler.taskKnowledge.unlink')}
                   >
                     <Trash2 size={16} />
                   </button>

@@ -788,6 +788,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         onChange={handleFileSelect}
         className="hidden"
         disabled={isProcessing}
+        aria-label={t("literatureExtract.fileInput.label")}
       />
 
       {!fileState.file ? (

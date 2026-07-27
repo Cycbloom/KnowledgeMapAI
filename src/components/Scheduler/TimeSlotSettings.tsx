@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Clock, Calendar, Info } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from '../../services/api';
 import type {UserTimeSlot} from '@shared/types';
 
@@ -34,6 +35,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
     is_available: true,
     label: "",
   });
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchTimeSlots();
@@ -157,7 +159,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                 onChange={(e) =>
                   setNewSlot({ ...newSlot, label: e.target.value })
                 }
-                placeholder="如：上午专注时间"
+                placeholder={t('scheduler.timeSlot.namePlaceholder')}
                 className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
               />
             </div>

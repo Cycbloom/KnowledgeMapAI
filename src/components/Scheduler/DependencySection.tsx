@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { TaskDependency } from '../../types';
 
@@ -13,17 +14,18 @@ export const DependencySection: React.FC<DependencySectionProps> = ({
   dependents,
   onTaskClick,
 }) => {
+  const { t } = useTranslation();
   if (dependencies.length === 0 && dependents.length === 0) {
     return null;
   }
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white">依赖关系</h3>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('scheduler.taskWorkbench.dependencySection.title')}</h3>
       
       {dependencies.length > 0 && (
         <div>
-          <label className="text-sm text-gray-500 dark:text-gray-400">前置任务</label>
+          <label className="text-sm text-gray-500 dark:text-gray-400">{t('scheduler.taskWorkbench.dependencySection.predecessors')}</label>
           <div className="mt-2 space-y-2">
             {dependencies.map((dep) => (
               <div
@@ -52,7 +54,7 @@ export const DependencySection: React.FC<DependencySectionProps> = ({
 
       {dependents.length > 0 && (
         <div>
-          <label className="text-sm text-gray-500 dark:text-gray-400">后置任务</label>
+          <label className="text-sm text-gray-500 dark:text-gray-400">{t('scheduler.taskWorkbench.dependencySection.successors')}</label>
           <div className="mt-2 space-y-2">
             {dependents.map((dep) => (
               <div

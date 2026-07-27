@@ -38,7 +38,35 @@
     }
   },
   "edgeEdit": {
-    "saveFailed": "Failed to save edge"
+    "saveFailed": "Failed to save edge",
+    "tablistLabel": "Edit edge",
+    "labelPlaceholder": "Enter edge label (optional)"
+  },
+  "commandPalette": {
+    "searchPlaceholder": "Search commands or nodes..."
+  },
+  "graphAnalysis": {
+    "title": "Graph analysis",
+    "tabOverview": "Overview",
+    "tabStructure": "Structure Analysis",
+    "tabConnections": "Connection Suggestions",
+    "tabConnectionsWithCount": "Connection Suggestions ({{count}})",
+    "loadFailed": "Failed to load analysis data: {{message}}",
+    "healthScore": "Health Score",
+    "nodeCount": "Node Count",
+    "edgeCount": "Edge Count",
+    "avgDepth": "Average Depth",
+    "avgDegree": "Average Degree",
+    "levelDistribution": "Level Distribution",
+    "centralNodes": "Central Nodes (sorted by degree)",
+    "connectionCount": "{{count}} connections",
+    "nodesWithManyChildren": "Nodes with Many Children",
+    "childrenCount": "{{count}} children",
+    "issuesTitle": "Issues Needing Attention",
+    "isolatedNodes": "Isolated nodes: {{count}}",
+    "nodesWithoutContent": "Nodes without content: {{count}}",
+    "createConnection": "Create Connection",
+    "loadFailedMessage": "Unable to load analysis data"
   },
   "aiActionSettings": {
     "loadFailed": "Failed to load AI action settings"
@@ -367,6 +395,7 @@
     "regionName": "Region Name",
     "regionNamePlaceholder": "Enter region name",
     "regionColor": "Region Color",
+    "colorLabel": "Region color",
     "selectedNodes": "Selected Nodes",
     "noSelectedNodes": "No selected nodes",
     "noAvailableNodes": "No available nodes",
@@ -561,12 +590,34 @@
       "minutesAgo": "{{count}} minutes ago",
       "hoursAgo": "{{count}} hours ago",
       "daysAgo": "{{count}} days ago"
+    },
+    "tabVersionList": "Version List",
+    "backToSelection": "← Back to Selection",
+    "backToList": "← Back to List",
+    "versionLabel": "Version {{number}}",
+    "selectTwoToCompare": "Please select two versions to compare",
+    "compareButton": "Compare Versions {{v1}} and {{v2}}",
+    "changeContent": "Changes",
+    "rollbackToThisVersion": "Rollback to this version",
+    "prevPage": "Previous Page",
+    "nextPage": "Next Page",
+    "pageIndicator": "Page {{current}} / {{total}}",
+    "oldValueLabel": "Old value:",
+    "newValueLabel": "New value:",
+    "fieldLabel": {
+      "title": "Title",
+      "content": "Content",
+      "learningMaterial": "Learning Material",
+      "properties": "Properties"
     }
   },
   "layout": {
     "noNodes": "No nodes to arrange",
     "organized": "Node positions organized",
     "organizeFailed": "Failed to organize node positions"
+  },
+  "layoutOrganizer": {
+    "title": "Organize layout"
   },
   "settings": {
     "saved": "Settings saved",
@@ -665,7 +716,37 @@
     "builtinType": "Built-in Type",
     "editAction": "Edit",
     "deleteAction": "Delete",
-    "itemCount": "{{count}} items"
+    "itemCount": "{{count}} items",
+    "colorSwatch": "Select color {{hex}}"
+  },
+  "branchManage": {
+    "conflict": {
+      "nodeType": "Node",
+      "edgeType": "Edge",
+      "conflictLabel": "Conflict"
+    },
+    "loadingDiff": "Loading diff...",
+    "detectingConflicts": "Detecting conflicts...",
+    "mergeBranch": "Merge Branch",
+    "branchName": "Branch Name",
+    "createdAt": "Created {{time}}",
+    "merging": "Merging...",
+    "confirmMerge": "Confirm Merge",
+    "confirmDeleteMessage": "Are you sure you want to delete branch \"{{name}}\"? This will be moved to recycle bin.",
+    "deleting": "Deleting...",
+    "confirmDelete": "Confirm Delete",
+    "merge": "Merge",
+    "diffOverview": "Change Overview",
+    "diffSummary": "Nodes: {{nodes}} changes · Edges: {{edges}} changes",
+    "conflictDetection": "Conflict Detection",
+    "noConflicts": "No conflicts detected, safe to merge.",
+    "conflictsDetected": "{{count}} conflicts detected. Please choose resolution.",
+    "changedFields": "Changed fields: {{fields}}",
+    "contentChange": "Content Change",
+    "mainline": "Mainline",
+    "branch": "Branch",
+    "keepMainline": "Keep Mainline",
+    "keepBranch": "Keep Branch"
   },
   "nodeEdit": {
     "backToOutline": "Back to Outline",
@@ -764,7 +845,11 @@
       "edgesModified": "Modified Edges"
     }
   },
+  "edge": {
+    "colorLabel": "Edge color"
+  },
   "batchGenerate": {
+    "countValue": "{{count}} questions",
     "presets": {
       "quick": {
         "label": "Quick Self-Test",
@@ -824,9 +909,22 @@
   },
   "timelineView": {
     "ariaLabel": "Timeline view, {{count}} nodes",
-    "desc": "Nodes arranged in chronological order"
+    "desc": "Nodes arranged in chronological order",
+    "nodeCount": "{{current}} / {{total}} nodes",
+    "speed": "Speed"
   },
   "nodeLinkSelector": {
     "dialogLabel": "Select linked node"
+  },
+  "graphStats": {
+    "masteryProgress": "Mastery progress",
+    "dueToday": "Due today",
+    "isolatedNodes": "Isolated nodes"
+  },
+  "branchPreview": {
+    "difficulty": "Difficulty:"
+  },
+  "alternativeBranches": {
+    "difficulty": "Difficulty:"
   }
 }

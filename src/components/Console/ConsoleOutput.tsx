@@ -448,6 +448,8 @@ export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
 
         <div
           ref={containerRef}
+          role="region"
+          aria-label={t('console.output.scrollRegion')}
           className={`h-full overflow-y-auto custom-scrollbar ${
             output.length === 0 ? 'flex items-center justify-center' : 'py-2'
           }`}

@@ -76,5 +76,8 @@
     "loadingPath": "加载学习路径...",
     "pathNotExist": "学习路径不存在",
     "pathNotExistDesc": "该学习路径可能已被删除或您没有访问权限"
+  },
+  "learningPathDetail": {
+    "title": "学习路径详情"
   }
 }

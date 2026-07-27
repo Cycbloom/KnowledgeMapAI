@@ -27,6 +27,7 @@ const TaskDetailPage: React.FC = () => {
 
   return (
     <div className="h-full overflow-hidden">
+      <h1 className="sr-only">{t('tasks.detailTitle')}</h1>
       <ErrorBoundary>
         <TaskWorkbench taskId={taskId} onBack={handleBack} onEdit={handleEdit} />
       </ErrorBoundary>

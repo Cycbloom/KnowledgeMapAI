@@ -13,6 +13,7 @@
     "xPercentSimilar": "{{percent}}% similar",
     "mergeable": "Mergeable:",
     "similarityThreshold": "Similarity Threshold",
+    "similarityValue": "{{value}} similarity",
     "loose": "Loose",
     "strict": "Strict",
     "hierarchyThreshold": "Hierarchy Confidence Threshold",

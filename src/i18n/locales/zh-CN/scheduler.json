@@ -93,6 +93,7 @@
     "urgentDesc": "紧急重要任务",
     "importantDesc": "重要任务",
     "todoDesc": "待办任务",
+    "namePlaceholder": "输入队列名称",
     "taskCount": "{{count}} 个任务",
     "pending": "待处理",
     "inProgress": "进行中",
@@ -494,10 +495,69 @@
     "pauseTask": "暂停任务",
     "completeTask": "完成任务",
     "continueTask": "继续任务",
-    "inProgressLabel": "进行中"
+    "inProgressLabel": "进行中",
+    "notesTab": {
+      "notesPlaceholder": "在这里记录任务笔记...\n\n支持 Markdown 语法：\n- **粗体** *斜体*\n- # 标题\n- 列表项\n- [链接](url)"
+    },
+    "progressDetail": {
+      "notePlaceholder": "添加备注..."
+    },
+    "taskLinks": {
+      "titlePlaceholder": "标题（可选，默认使用链接地址）",
+      "descriptionPlaceholder": "描述（可选）"
+    },
+    "knowledgePointAssociation": {
+      "searchPlaceholder": "搜索知识点..."
+    },
+    "basicInfo": {
+      "title": "基本信息",
+      "context": "上下文",
+      "priority": "优先级",
+      "completionProgress": "完成进度",
+      "estimatedTimeSlicesHint": "约 {{count}} 个时间片"
+    },
+    "taskTimer": {
+      "pause": "暂停",
+      "resume": "继续",
+      "complete": "完成",
+      "elapsedLabel": "已用:",
+      "totalLabel": "总计:"
+    },
+    "subtaskDetail": {
+      "estimatedMinutes": "预计：{{minutes}} 分钟",
+      "name": "名称",
+      "contentSummary": "内容摘要",
+      "notes": "备注",
+      "currentState": "当前状态",
+      "mastery": "掌握度",
+      "transitionableStates": "可转换状态",
+      "createdAt": "创建：{{date}}",
+      "updatedAt": "更新：{{date}}"
+    },
+    "progressSection": {
+      "title": "进度计划",
+      "overallProgress": "总体进度",
+      "dailyProgress": "每日进度"
+    },
+    "progressTimeline": {
+      "title": "进度时间线",
+      "totalProgress": "总进度",
+      "completed": "已完成",
+      "inProgress": "进行中",
+      "pending": "待完成"
+    },
+    "dependencySection": {
+      "title": "依赖关系",
+      "predecessors": "前置任务",
+      "successors": "后置任务"
+    },
+    "relatedResourcesSection": {
+      "title": "关联资源"
+    }
   },
   "templateSelector": {
-    "empty": "没有找到模板"
+    "empty": "没有找到模板",
+    "searchPlaceholder": "搜索模板..."
   },
   "weeklyReport": {
     "empty": "本周还没有专注记录",
@@ -531,7 +591,25 @@
   },
   "dailyStats": {
     "empty": "今天还没有专注记录",
-    "emptyHint": "开始一个专注会话来记录你的进度"
+    "emptyHint": "开始一个专注会话来记录你的进度",
+    "focusDurationLabel": "专注时长",
+    "pomodoroLabel": "番茄钟",
+    "focusCountLabel": "专注次数",
+    "completedTasksLabel": "完成任务"
+  },
+  "dailyReview": {
+    "harvestPlaceholder": "记录今天的收获和感受...",
+    "difficultyPlaceholder": "今天遇到了什么困难？",
+    "improvementPlaceholder": "明天可以怎么改进？",
+    "learningPlaceholder": "记录今天学到的新知识或技能..."
+  },
+  "weeklyReflection": {
+    "feelingPlaceholder": "这周整体感觉如何？有什么收获？",
+    "improvementPlaceholder": "下周想要改进什么？",
+    "learningPlaceholder": "这周学到了什么新东西？"
+  },
+  "achievementGallery": {
+    "searchPlaceholder": "搜索成就..."
   },
   "monthlyReport": {
     "empty": "本月还没有专注记录",
@@ -540,7 +618,18 @@
   "focusHeatmap": {
     "title": "年度专注热力图",
     "empty": "{{year}} 年还没有专注记录",
-    "emptyHint": "开始专注来填充你的热力图"
+    "emptyHint": "开始专注来填充你的热力图",
+    "noRecords": "无专注记录",
+    "activeDays": "活跃天数",
+    "totalDuration": "总时长",
+    "totalSessions": "总会话",
+    "avgDailyDuration": "日均时长",
+    "focusIntensity": "专注强度",
+    "less": "少",
+    "more": "多",
+    "focusSuffix": " 专注",
+    "sessionsSuffix": " 次会话",
+    "loadFailed": "加载热力图数据失败"
   },
   "taskActions": {
     "deleteTaskConfirm": {
@@ -555,7 +644,11 @@
   },
   "taskRetrospect": {
     "saveFailed": "保存复盘失败",
-    "loadFailed": "加载复盘失败"
+    "loadFailed": "加载复盘失败",
+    "feelingPlaceholder": "这个任务完成得怎么样？有什么感受？",
+    "obstaclePlaceholder": "有什么阻碍？",
+    "solutionPlaceholder": "如何解决的？",
+    "learningPlaceholder": "从这个任务中学到了什么新知识或技能？"
   },
   "heatmap": {
     "prevYear": "上一年",
@@ -568,5 +661,76 @@
     "dragConfirm": "确认移动",
     "dragStart": "进入拖动模式",
     "dragMoveHint": "使用左右方向键切换目标列，Enter 确认，Esc 取消"
+  },
+  "smartSuggestion": {
+    "tablistLabel": "智能建议",
+    "refresh": "刷新建议"
+  },
+  "smartRecommendation": {
+    "refresh": "刷新推荐"
+  },
+  "activeTask": {
+    "stopSchedule": "停止调度",
+    "completeSubtask": "完成子任务"
+  },
+  "taskKnowledge": {
+    "setPrimary": "设为主要",
+    "unlink": "取消关联",
+    "viewInGraph": "在图谱中查看"
+  },
+  "timeSlot": {
+    "namePlaceholder": "如：上午专注时间"
+  },
+  "subtask": {
+    "titlePlaceholder": "子任务标题",
+    "descriptionPlaceholder": "描述（可选）",
+    "durationPlaceholder": "预计时长（分钟）"
+  },
+  "saveAsTemplate": {
+    "namePlaceholder": "模板名称",
+    "descriptionPlaceholder": "模板描述（可选）",
+    "titleTemplatePlaceholder": "例如：学习：{{topic}}",
+    "descriptionTemplatePlaceholder": "描述模板（可选）",
+    "tagPlaceholder": "添加标签"
+  },
+  "focusModeNoise": {
+    "preset": "预设",
+    "collapse": "收起",
+    "expandMore": "展开更多声音",
+    "blocking": "干扰屏蔽中",
+    "exitHint": "按 ESC 退出专注模式"
+  },
+  "focusModeTopBar": {
+    "focusModeOn": "专注模式已开启"
+  },
+  "breakTimer": {
+    "breakEnded": "休息结束！",
+    "readyPrompt": "准备好继续专注了吗？",
+    "continueCurrentTask": "继续当前任务",
+    "switchToNextTask": "切换到下一个任务",
+    "later": "稍后再说"
+  },
+  "hotkeyHelp": {
+    "title": "快捷键",
+    "pressHint": "按 ",
+    "showAnytimeHint": " 随时显示此帮助"
+  },
+  "focusStreak": {
+    "focusing": "专注中",
+    "breaking": "休息中",
+    "startJourney": "开始你的专注之旅",
+    "nextMilestone": "下一个里程碑:",
+    "currentStreak": "当前连续",
+    "pomodoro": "番茄钟",
+    "milestoneLabel": "里程碑:",
+    "minutesSuffix": "分钟",
+    "countSuffix": "个",
+    "milestones": {
+      "focusMaster": "专注达人",
+      "sustainedFocus": "持续专注",
+      "deepFocus": "深度专注",
+      "superFocus": "超级专注",
+      "legendaryFocus": "传奇专注"
+    }
   }
 }

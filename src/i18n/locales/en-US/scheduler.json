@@ -93,6 +93,7 @@
     "urgentDesc": "Urgent & Important Tasks",
     "importantDesc": "Important Tasks",
     "todoDesc": "To Do Tasks",
+    "namePlaceholder": "Enter queue name",
     "taskCount": "{{count}} tasks",
     "pending": "Pending",
     "inProgress": "In Progress",
@@ -494,10 +495,69 @@
     "pauseTask": "Pause Task",
     "completeTask": "Complete Task",
     "continueTask": "Continue Task",
-    "inProgressLabel": "In Progress"
+    "inProgressLabel": "In Progress",
+    "notesTab": {
+      "notesPlaceholder": "Record task notes here...\n\nSupports Markdown syntax:\n- **bold** *italic*\n- # Heading\n- List item\n- [link](url)"
+    },
+    "progressDetail": {
+      "notePlaceholder": "Add note..."
+    },
+    "taskLinks": {
+      "titlePlaceholder": "Title (optional, defaults to link URL)",
+      "descriptionPlaceholder": "Description (optional)"
+    },
+    "knowledgePointAssociation": {
+      "searchPlaceholder": "Search knowledge points..."
+    },
+    "basicInfo": {
+      "title": "Basic Info",
+      "context": "Context",
+      "priority": "Priority",
+      "completionProgress": "Completion Progress",
+      "estimatedTimeSlicesHint": "About {{count}} time slices"
+    },
+    "taskTimer": {
+      "pause": "Pause",
+      "resume": "Resume",
+      "complete": "Complete",
+      "elapsedLabel": "Elapsed:",
+      "totalLabel": "Total:"
+    },
+    "subtaskDetail": {
+      "estimatedMinutes": "Estimated: {{minutes}} minutes",
+      "name": "Name",
+      "contentSummary": "Content Summary",
+      "notes": "Notes",
+      "currentState": "Current State",
+      "mastery": "Mastery",
+      "transitionableStates": "Transitionable States",
+      "createdAt": "Created: {{date}}",
+      "updatedAt": "Updated: {{date}}"
+    },
+    "progressSection": {
+      "title": "Progress Plan",
+      "overallProgress": "Overall Progress",
+      "dailyProgress": "Daily Progress"
+    },
+    "progressTimeline": {
+      "title": "Progress Timeline",
+      "totalProgress": "Total Progress",
+      "completed": "Completed",
+      "inProgress": "In Progress",
+      "pending": "Pending"
+    },
+    "dependencySection": {
+      "title": "Dependencies",
+      "predecessors": "Predecessors",
+      "successors": "Successors"
+    },
+    "relatedResourcesSection": {
+      "title": "Related Resources"
+    }
   },
   "templateSelector": {
-    "empty": "No templates found"
+    "empty": "No templates found",
+    "searchPlaceholder": "Search templates..."
   },
   "weeklyReport": {
     "empty": "No focus records this week yet",
@@ -530,8 +590,26 @@
     "weekOverview": "This week overview"
   },
   "dailyStats": {
-    "empty": "No focus records today yet",
-    "emptyHint": "Start a focus session to record your progress"
+    "empty": "No focus records today",
+    "emptyHint": "Start a focus session to track your progress",
+    "focusDurationLabel": "Focus duration",
+    "pomodoroLabel": "Pomodoro",
+    "focusCountLabel": "Focus count",
+    "completedTasksLabel": "Completed tasks"
+  },
+  "dailyReview": {
+    "harvestPlaceholder": "Record today's gains and feelings...",
+    "difficultyPlaceholder": "What difficulties did you encounter today?",
+    "improvementPlaceholder": "How can you improve tomorrow?",
+    "learningPlaceholder": "Record new knowledge or skills learned today..."
+  },
+  "weeklyReflection": {
+    "feelingPlaceholder": "How was this week overall? Any gains?",
+    "improvementPlaceholder": "What do you want to improve next week?",
+    "learningPlaceholder": "What new things did you learn this week?"
+  },
+  "achievementGallery": {
+    "searchPlaceholder": "Search achievements..."
   },
   "monthlyReport": {
     "empty": "No focus records this month yet",
@@ -540,7 +618,18 @@
   "focusHeatmap": {
     "title": "Annual Focus Heatmap",
     "empty": "No focus records in {{year}} yet",
-    "emptyHint": "Start a focus session to fill your heatmap"
+    "emptyHint": "Start a focus session to fill your heatmap",
+    "noRecords": "No focus records",
+    "activeDays": "Active days",
+    "totalDuration": "Total duration",
+    "totalSessions": "Total sessions",
+    "avgDailyDuration": "Avg daily duration",
+    "focusIntensity": "Focus intensity",
+    "less": "Less",
+    "more": "More",
+    "focusSuffix": " focus",
+    "sessionsSuffix": " sessions",
+    "loadFailed": "Failed to load heatmap data"
   },
   "taskActions": {
     "deleteTaskConfirm": {
@@ -555,7 +644,11 @@
   },
   "taskRetrospect": {
     "saveFailed": "Failed to save review",
-    "loadFailed": "Failed to load review"
+    "loadFailed": "Failed to load review",
+    "feelingPlaceholder": "How did this task go? Any feelings?",
+    "obstaclePlaceholder": "What were the obstacles?",
+    "solutionPlaceholder": "How did you resolve them?",
+    "learningPlaceholder": "What new knowledge or skills did you learn from this task?"
   },
   "heatmap": {
     "prevYear": "Previous year",
@@ -568,5 +661,76 @@
     "dragConfirm": "Confirm move",
     "dragStart": "Enter drag mode",
     "dragMoveHint": "Use left/right arrow keys to switch target column, Enter to confirm, Esc to cancel"
+  },
+  "smartSuggestion": {
+    "tablistLabel": "Smart suggestions",
+    "refresh": "Refresh suggestions"
+  },
+  "smartRecommendation": {
+    "refresh": "Refresh recommendations"
+  },
+  "activeTask": {
+    "stopSchedule": "Stop schedule",
+    "completeSubtask": "Complete subtask"
+  },
+  "taskKnowledge": {
+    "setPrimary": "Set as primary",
+    "unlink": "Unlink",
+    "viewInGraph": "View in graph"
+  },
+  "timeSlot": {
+    "namePlaceholder": "e.g.: Morning focus time"
+  },
+  "subtask": {
+    "titlePlaceholder": "Subtask title",
+    "descriptionPlaceholder": "Description (optional)",
+    "durationPlaceholder": "Estimated duration (minutes)"
+  },
+  "saveAsTemplate": {
+    "namePlaceholder": "Template name",
+    "descriptionPlaceholder": "Template description (optional)",
+    "titleTemplatePlaceholder": "e.g.: Study: {{topic}}",
+    "descriptionTemplatePlaceholder": "Description template (optional)",
+    "tagPlaceholder": "Add tag"
+  },
+  "focusModeNoise": {
+    "preset": "Preset",
+    "collapse": "Collapse",
+    "expandMore": "Show more sounds",
+    "blocking": "Distraction blocking",
+    "exitHint": "Press ESC to exit focus mode"
+  },
+  "focusModeTopBar": {
+    "focusModeOn": "Focus mode on"
+  },
+  "breakTimer": {
+    "breakEnded": "Break ended!",
+    "readyPrompt": "Ready to continue focusing?",
+    "continueCurrentTask": "Continue current task",
+    "switchToNextTask": "Switch to next task",
+    "later": "Maybe later"
+  },
+  "hotkeyHelp": {
+    "title": "Shortcuts",
+    "pressHint": "Press ",
+    "showAnytimeHint": " anytime to show this help"
+  },
+  "focusStreak": {
+    "focusing": "Focusing",
+    "breaking": "On break",
+    "startJourney": "Start your focus journey",
+    "nextMilestone": "Next milestone:",
+    "currentStreak": "Current streak",
+    "pomodoro": "Pomodoros",
+    "milestoneLabel": "Milestones:",
+    "minutesSuffix": "min",
+    "countSuffix": "",
+    "milestones": {
+      "focusMaster": "Focus Master",
+      "sustainedFocus": "Sustained Focus",
+      "deepFocus": "Deep Focus",
+      "superFocus": "Super Focus",
+      "legendaryFocus": "Legendary Focus"
+    }
   }
 }

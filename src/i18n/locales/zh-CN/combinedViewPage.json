@@ -44,5 +44,19 @@
   "canvas": {
     "ariaLabel": "组合视图，{{count}} 个节点，当前焦点：{{focus}}",
     "desc": "组合视图展示多个图谱的节点与关系"
+  },
+  "backToOutline": "返回大纲",
+  "nodeEdit": {
+    "titleLabel": "标题",
+    "levelLabel": "层级",
+    "contentLabel": "内容",
+    "titlePlaceholder": "输入节点标题",
+    "summaryPlaceholder": "简短概览，概括核心内容...",
+    "tagsPlaceholder": "例如: 重要, 待办, 概念",
+    "contentPlaceholder": "支持 Markdown 格式...",
+    "tagsLabel": "标签 (逗号分隔)"
+  },
+  "graphSidebar": {
+    "searchPlaceholder": "搜索节点..."
   }
 }

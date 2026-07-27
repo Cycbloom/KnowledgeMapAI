@@ -214,7 +214,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                 onChange={(e) =>
                   setNewLink({ ...newLink, title: e.target.value })
                 }
-                placeholder="标题（可选，默认使用链接地址）"
+                placeholder={t('scheduler.taskWorkbench.taskLinks.titlePlaceholder')}
                 className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <input
@@ -223,7 +223,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                 onChange={(e) =>
                   setNewLink({ ...newLink, description: e.target.value })
                 }
-                placeholder="描述（可选）"
+                placeholder={t('scheduler.taskWorkbench.taskLinks.descriptionPlaceholder')}
                 className="w-full px-3 py-2 mb-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <div className="flex justify-end gap-2">

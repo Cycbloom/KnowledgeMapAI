@@ -440,7 +440,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                   <input
                     type="text"
                     aria-label={t('common.aria.search')}
-                    placeholder="搜索节点..."
+                    placeholder={t('combinedViewPage.graphSidebar.searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-md text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"

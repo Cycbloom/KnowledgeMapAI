@@ -286,7 +286,8 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                     onDelete();
                   }}
                   className="p-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                  title="删除"
+                  title={t('common.aria.delete')}
+                  aria-label={t('common.aria.delete')}
                 >
                   <Trash2 size={18} />
                 </button>
@@ -295,7 +296,8 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                 <button
                   onClick={onEdit}
                   className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors"
-                  title="编辑"
+                  title={t('common.aria.edit')}
+                  aria-label={t('common.aria.edit')}
                 >
                   <Edit2 size={18} />
                 </button>

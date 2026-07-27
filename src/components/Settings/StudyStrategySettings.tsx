@@ -222,6 +222,7 @@ export const StudyStrategySettings = React.memo(
                       setRetention(Number(e.target.value));
                     }}
                     aria-label={t("settings.requestRetention")}
+                    aria-valuetext={`${(retention * 100).toFixed(0)}%`}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -262,6 +263,7 @@ export const StudyStrategySettings = React.memo(
                       setMaxInterval(Number(e.target.value));
                     }}
                     aria-label={t("settings.maxReviewInterval")}
+                    aria-valuetext={`${maxInterval}`}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -299,7 +301,8 @@ export const StudyStrategySettings = React.memo(
                         learningReview: Number(e.target.value),
                       }));
                     }}
-                    aria-label="Learning / Review 分界值"
+                    aria-label={t('settings.studyStrategy.learningReviewDivider')}
+                    aria-valuetext={`${masteryThresholds.learningReview.toFixed(2)}`}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -330,7 +333,8 @@ export const StudyStrategySettings = React.memo(
                         reviewPractice: Number(e.target.value),
                       }));
                     }}
-                    aria-label="Review / Practice 分界值"
+                    aria-label={t('settings.studyStrategy.reviewPracticeDivider')}
+                    aria-valuetext={`${masteryThresholds.reviewPractice.toFixed(2)}`}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -361,7 +365,8 @@ export const StudyStrategySettings = React.memo(
                         practiceQuiz: Number(e.target.value),
                       }));
                     }}
-                    aria-label="Practice / Quiz 分界值"
+                    aria-label={t('settings.studyStrategy.practiceQuizDivider')}
+                    aria-valuetext={`${masteryThresholds.practiceQuiz.toFixed(2)}`}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -417,6 +422,7 @@ export const StudyStrategySettings = React.memo(
                         }));
                       }}
                       aria-label={item.label}
+                      aria-valuetext={`${schedulerWeights[item.key].toFixed(2)}`}
                       className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                     />
                   </div>

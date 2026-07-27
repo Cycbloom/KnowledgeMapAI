@@ -1475,7 +1475,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         {onClose && (
           <button
             onClick={onClose}
-            aria-label="关闭"
+            aria-label={t('common.aria.close')}
             className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
           >
             <X size={isMobile ? 18 : 20} />

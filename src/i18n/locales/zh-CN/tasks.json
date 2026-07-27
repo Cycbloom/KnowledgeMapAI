@@ -1,5 +1,6 @@
 {
   "title": "任务中心",
+  "detailTitle": "任务详情",
   "subtitle": "查看后台任务进度与结果回填",
   "export": "导出",
   "refresh": "刷新",

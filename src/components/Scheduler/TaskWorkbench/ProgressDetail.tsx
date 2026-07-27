@@ -523,7 +523,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                     defaultValue={selectedPlan.notes || ""}
                     rows={3}
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-                    placeholder="添加备注..."
+                    placeholder={t('scheduler.taskWorkbench.progressDetail.notePlaceholder')}
                   />
                 </div>
               </div>

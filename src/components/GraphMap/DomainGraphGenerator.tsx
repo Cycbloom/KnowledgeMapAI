@@ -622,6 +622,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                             const value = Math.min(30, Math.max(5, parseInt(e.target.value) || 5));
                             setGraphCount(value);
                           }}
+                          aria-label={t('graphMap.domainGenerator.generateCount')}
                           className="w-16 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-center"
                         />
                       </div>

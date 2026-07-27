@@ -509,6 +509,7 @@ export const LearningMode = () => {
 
   return (
     <div className={`h-screen flex flex-col ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
+      <h1 className="sr-only">{t('learning.modeTitle')}</h1>
       <LearningModeHeader
         isDark={isDark} isMobile={isMobile} nodeId={nodeId} graphId={graphId}
         nodeTitle={nodeTitle} graphData={graphData} graphMeta={graphMeta}

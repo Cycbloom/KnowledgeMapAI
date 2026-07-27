@@ -65,7 +65,8 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
             <button
               onClick={handleReturnClick}
               className="p-2 bg-primary-500 dark:bg-primary-600 rounded shadow-lg hover:bg-primary-600 dark:hover:bg-primary-700 text-white transition-colors"
-              title={`返回 ${fromGraphTitle || "来源图谱"}`}
+              title={t('graphMap.transformControls.backToSource', { title: fromGraphTitle || t('graphMap.transformControls.sourceGraph') })}
+              aria-label={t('graphMap.transformControls.backToSource', { title: fromGraphTitle || t('graphMap.transformControls.sourceGraph') })}
             >
               <svg aria-hidden="true"
                 width="20"
@@ -84,7 +85,8 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
           <button
             onClick={handleMiniMapClick}
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-            title={showMiniMap ? "隐藏小地图" : "显示小地图"}
+            title={showMiniMap ? t('graphMap.transformControls.hideMiniMap') : t('graphMap.transformControls.showMiniMap')}
+            aria-label={showMiniMap ? t('graphMap.transformControls.hideMiniMap') : t('graphMap.transformControls.showMiniMap')}
           >
             <svg aria-hidden="true"
               width="20"
@@ -173,7 +175,8 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
                 ? "bg-primary-500 dark:bg-primary-600 text-white"
                 : "bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
             }`}
-            title={showLegend ? "隐藏图例" : "显示关系类型图例"}
+            title={showLegend ? t('graphMap.transformControls.hideLegend') : t('graphMap.transformControls.showLegend')}
+            aria-label={showLegend ? t('graphMap.transformControls.hideLegend') : t('graphMap.transformControls.showLegend')}
           >
             <svg aria-hidden="true"
               width="20"
@@ -190,8 +193,7 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
       </div>
 
       <div className="absolute bottom-[calc(3.5rem+var(--safe-area-inset-bottom))] md:bottom-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm">
-        缩放: {Math.round(transformK * 100)}% | 图谱: {graphsCount} | 关系:{" "}
-        {relationsCount}
+        {t('graphMap.transformControls.statusSummary', { zoom: Math.round(transformK * 100), graphs: graphsCount, relations: relationsCount })}
       </div>
     </>
   );

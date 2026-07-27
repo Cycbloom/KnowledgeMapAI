@@ -266,8 +266,8 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 <CheckCircle size={40} className="text-emerald-400" aria-hidden="true" />
               </motion.div>
 
-              <h3 className="text-2xl font-bold text-white mb-2">休息结束！</h3>
-              <p className="text-emerald-300/80 mb-8">准备好继续专注了吗？</p>
+              <h3 className="text-2xl font-bold text-white mb-2">{t('scheduler.breakTimer.breakEnded')}</h3>
+              <p className="text-emerald-300/80 mb-8">{t('scheduler.breakTimer.readyPrompt')}</p>
 
               <div className="space-y-3">
                 <motion.button
@@ -277,7 +277,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                   whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 >
                   <Play size={18} aria-hidden="true" />
-                  <span>继续当前任务</span>
+                  <span>{t('scheduler.breakTimer.continueCurrentTask')}</span>
                 </motion.button>
 
                 <motion.button
@@ -287,7 +287,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                   whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 >
                   <ArrowRight size={18} aria-hidden="true" />
-                  <span>切换到下一个任务</span>
+                  <span>{t('scheduler.breakTimer.switchToNextTask')}</span>
                 </motion.button>
 
                 <motion.button
@@ -297,7 +297,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                   whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 >
                   <Sparkles size={18} aria-hidden="true" />
-                  <span>稍后再说</span>
+                  <span>{t('scheduler.breakTimer.later')}</span>
                 </motion.button>
               </div>
             </motion.div>

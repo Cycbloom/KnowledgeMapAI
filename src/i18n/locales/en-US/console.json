@@ -29,10 +29,13 @@
     "helpHint": "Enter help to see available commands",
     "shortcutHint": "Tab for autocomplete · Ctrl+R to search history · Esc to close",
     "scrollMore": "Scroll up to view more history ({{count}} entries)",
-    "tableRegion": "Output table"
+    "tableRegion": "Output table",
+    "scrollRegion": "Console output region"
   },
   "history": {
-    "region": "Command history"
+    "region": "Command history",
+    "clearAll": "Clear history",
+    "searchPlaceholderShort": "Search..."
   },
   "noHistoryTitle": "No History",
   "noHistoryDesc": "Executed commands will appear here",
@@ -187,9 +190,11 @@
       "deepseek": "DeepSeek",
       "volcengine": "Volcengine",
       "aliyun": "Alibaba Cloud"
-    }
+    },
+    "scrollRegion": "Performance logs region"
   },
   "commandAutocomplete": {
     "placeholder": "Type a command..."
-  }
+  },
+  "tablistLabel": "Console tabs"
 }

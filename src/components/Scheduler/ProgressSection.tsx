@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, Circle, Clock } from 'lucide-react';
 import { TaskProgressPlan } from '../../types';
 import { formatDate as formatDateUtil } from '../../utils/formatters';
@@ -13,6 +14,7 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({
   progressPlans,
   progressPercentage,
 }) => {
+  const { t } = useTranslation();
   const formatDate = (dateStr: string) => {
     return formatDateUtil(dateStr, 'short');
   };
@@ -23,11 +25,11 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white">进度计划</h3>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('scheduler.taskWorkbench.progressSection.title')}</h3>
       
       <div>
         <div className="flex justify-between text-sm mb-2">
-          <span className="text-gray-600 dark:text-gray-400">总体进度</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('scheduler.taskWorkbench.progressSection.overallProgress')}</span>
           <span className="font-medium text-gray-900 dark:text-white">{progressPercentage}%</span>
         </div>
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
@@ -40,7 +42,7 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({
 
       {sortedPlans.length > 0 && (
         <div className="space-y-2">
-          <label className="text-sm text-gray-500 dark:text-gray-400">每日进度</label>
+          <label className="text-sm text-gray-500 dark:text-gray-400">{t('scheduler.taskWorkbench.progressSection.dailyProgress')}</label>
           <div className="max-h-60 overflow-y-auto space-y-2">
             {sortedPlans.map((plan) => {
               const isCompleted = plan.status === 'completed';

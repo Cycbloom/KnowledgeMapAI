@@ -80,7 +80,16 @@
     "title": "跨学科洞察分析",
     "reanalyze": "重新分析",
     "analyzeComplete": "跨域分析完成",
-    "analyzeFailed": "跨域分析失败"
+    "analyzeFailed": "跨域分析失败",
+    "crossTopics": "交叉主题",
+    "relatedGraphs": "相关图谱",
+    "viewGraph": "查看图谱",
+    "more": "+{{count}} 更多",
+    "domainsInvolved": "涉及领域",
+    "crossDomainClustersShort": "交叉集群",
+    "domainDistribution": "领域分布",
+    "noCrossDomainFound": "没有发现跨学科交叉点",
+    "insightsFound": "发现 {{count}} 个跨学科交叉点"
   },
   "domainPicker": {
     "title": "设置领域",
@@ -139,6 +148,18 @@
     "suggestedActionExpand": "扩展现有图谱",
     "crossDomainOpportunities": "跨领域学习机会",
     "isolatedGraphs": "{{count}} 个图谱仍处于孤立状态",
+    "isolatedGraphsShort": "孤立图谱",
+    "filter": "筛选",
+    "sortByConfidence": "按置信度",
+    "sortByType": "按类型",
+    "all": "全部",
+    "noRelationsFound": "没有发现符合条件的关系",
+    "confidence": "置信度 {{value}}%",
+    "created": "已创建",
+    "creating": "创建中",
+    "create": "创建",
+    "tip": "提示：",
+    "isolatedTip": "有 {{count}} 个图谱暂未发现与其他图谱的关联关系",
     "close": "关闭",
     "reanalyze": "重新分析"
   },
@@ -277,6 +298,11 @@
     "graphNumber": "图谱 {{number}}"
   },
   "analysisResult": {
+    "analyzing": "正在分析中...",
+    "estimatedTime": "预计需要 {{time}}",
+    "failed": "分析失败",
+    "unknownError": "未知错误，请重试",
+    "close": "关闭",
     "complete": "分析完成",
     "copied": "已复制",
     "copy": "复制",
@@ -419,6 +445,15 @@
     "title": "关系类型图例",
     "totalEdges": "共 {{count}} 条边"
   },
+  "transformControls": {
+    "backToSource": "返回 {{title}}",
+    "sourceGraph": "来源图谱",
+    "showMiniMap": "显示小地图",
+    "hideMiniMap": "隐藏小地图",
+    "showLegend": "显示图例",
+    "hideLegend": "隐藏图例",
+    "statusSummary": "缩放: {{zoom}}% | 图谱: {{graphs}} | 关系: {{relations}}"
+  },
   "analysisModuleCard": {
     "editPrompt": "编辑提示词",
     "analyzing": "分析中...",
@@ -474,5 +509,16 @@
     "emptyFocus": "无焦点节点",
     "desc": "知识图谱可视化，使用方向键浏览节点",
     "nodesContainer": "节点容器，共 {{count}} 个节点"
+  },
+  "learningPath": {
+    "pathCount": "学习路径",
+    "avgLength": "平均长度",
+    "noSuggestions": "没有发现学习路径建议",
+    "recommendedTitle": "推荐的学习路径",
+    "pathLabel": "路径 {{index}}",
+    "graphCount": "{{count}} 个图谱",
+    "learningOrder": "学习顺序",
+    "tip": "提示：",
+    "tipContent": "学习路径基于图谱间的前置关系和知识依赖分析生成，建议按照推荐顺序学习以获得最佳效果"
   }
 }

@@ -210,6 +210,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               aria-invalid={!!errors.name}
               aria-describedby={errors.name ? nameErrorId : undefined}
               type="text"
+              autoComplete="off"
               value={formData.name}
               onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder={t('scheduler.templateForm.fieldNamePlaceholder')}
@@ -284,6 +285,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               aria-invalid={!!errors.titleTemplate}
               aria-describedby={errors.titleTemplate ? titleTemplateErrorId : undefined}
               type="text"
+              autoComplete="off"
               value={formData.titleTemplate}
               onChange={e => setFormData(prev => ({ ...prev, titleTemplate: e.target.value }))}
               placeholder={t('scheduler.templateForm.fieldTitleTemplatePlaceholder', { example: '{{topic}}' })}
@@ -305,6 +307,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
             </label>
             <textarea
               id={descriptionTemplateFieldId}
+              autoComplete="off"
               value={formData.descriptionTemplate}
               onChange={e => setFormData(prev => ({ ...prev, descriptionTemplate: e.target.value }))}
               placeholder={t('scheduler.templateForm.fieldDescriptionTemplatePlaceholder', { example: `{{${t('scheduler.templateForm.descriptionPlaceholderExample')}}}` })}
@@ -393,6 +396,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
             <input
               id={tagsFieldId}
               type="text"
+              autoComplete="off"
               value={customTag}
               onChange={e => setCustomTag(e.target.value)}
               onKeyDown={handleKeyDown}

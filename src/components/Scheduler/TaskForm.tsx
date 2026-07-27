@@ -500,6 +500,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 aria-invalid={!!errors.title}
                 aria-describedby={errors.title ? titleErrorId : undefined}
                 type="text"
+                autoComplete="off"
                 value={title}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, title: e.target.value }))
@@ -550,6 +551,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             </label>
             <textarea
               id={descriptionFieldId}
+              autoComplete="off"
               value={description}
               onChange={(e) =>
                 setFormData((prev) => ({

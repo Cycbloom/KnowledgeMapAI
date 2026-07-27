@@ -310,6 +310,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                   placeholder="Max"
                   value={reviewCountRange.max}
                   onChange={(e) => setReviewCountRange({ ...reviewCountRange, max: e.target.value })}
+                  aria-label={`${t('study.questionBank.reviewCount')} Max`}
                   className={`w-20 px-2 py-1 text-sm border rounded ${
                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'
                   }`}

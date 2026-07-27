@@ -1216,7 +1216,11 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div
+        className="flex-1 overflow-y-auto custom-scrollbar"
+        role="region"
+        aria-label={t("console.performance.scrollRegion")}
+      >
         {errorMessage && (
           <div
             className={`p-4 text-center ${isDark ? "text-red-400" : "text-red-600"}`}

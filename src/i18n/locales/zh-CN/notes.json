@@ -130,13 +130,15 @@
       "embedded": "已嵌入当前块",
       "stale": "源块已失效",
       "removed": "源块已删除,可点击移除引用",
-      "tooltip": "点击跳转到源块"
+      "tooltip": "点击跳转到源块",
+      "label": "块引用"
     },
     "blockEmbed": {
       "loading": "加载块内容…",
       "removed": "源块已删除",
       "jumpToSource": "跳转到源块",
       "unembed": "解除嵌入",
+      "label": "块嵌入",
       "refreshPrompt": "源块已更新,点击刷新"
     },
     "footer": {

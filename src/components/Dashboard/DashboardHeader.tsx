@@ -324,6 +324,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               onChange={onFileChange}
               className="hidden"
               accept=".json,.md,.opml"
+              aria-label={t("dashboard.actions.import")}
             />
 
             {/* View Toggle */}

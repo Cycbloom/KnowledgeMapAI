@@ -179,8 +179,8 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 onStartTask(task);
               }}
               className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
-              title="开始"
-              aria-label="开始"
+              title={t('common.aria.start')}
+              aria-label={t('common.aria.start')}
             >
               <Play size={12} />
             </button>
@@ -193,8 +193,8 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 onStartTask(task);
               }}
               className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
-              title="继续"
-              aria-label="继续"
+              title={t('common.aria.continue')}
+              aria-label={t('common.aria.continue')}
             >
               <Play size={12} />
             </button>
@@ -207,8 +207,8 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 onPauseTask(task);
               }}
               className="p-1 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
-              title="暂停"
-              aria-label="暂停"
+              title={t('common.aria.pause')}
+              aria-label={t('common.aria.pause')}
             >
               <Pause size={12} />
             </button>
@@ -224,8 +224,8 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                   onCompleteTask(task);
                 }}
                 className="p-1 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
-                title="完成"
-              aria-label="完成"
+                title={t('common.aria.complete')}
+                aria-label={t('common.aria.complete')}
               >
                 <Check size={12} />
               </button>
@@ -238,8 +238,8 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 onViewTaskDetail(task);
               }}
               className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
-              title="详情"
-              aria-label="详情"
+              title={t('common.aria.details')}
+              aria-label={t('common.aria.details')}
             >
               <Info size={12} />
             </button>
@@ -252,8 +252,8 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 onEditTask(task);
               }}
               className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
-              title="编辑"
-              aria-label="编辑"
+              title={t('common.aria.edit')}
+              aria-label={t('common.aria.edit')}
             >
               <Edit2 size={12} />
             </button>
@@ -266,8 +266,8 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 onDeleteTask(task);
               }}
               className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
-              title="删除"
-              aria-label="删除"
+              title={t('common.aria.delete')}
+              aria-label={t('common.aria.delete')}
             >
               <Trash2 size={12} />
             </button>

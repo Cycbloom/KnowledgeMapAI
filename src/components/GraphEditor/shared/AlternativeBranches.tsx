@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { BranchSuggestion, Node, LayoutNode } from '../../../types';
 import { Sparkles } from 'lucide-react';
 
@@ -21,6 +22,7 @@ export const AlternativeBranches: React.FC<AlternativeBranchesProps> = ({
   pathItem,
   onSwitchBranch
 }) => {
+  const { t } = useTranslation();
   const handleBranchClick = (branch: BranchSuggestion) => {
     if (onSwitchBranch && pathItem) {
       onSwitchBranch(pathItem, branch);
@@ -149,9 +151,9 @@ export const AlternativeBranches: React.FC<AlternativeBranchesProps> = ({
 
                 <div className="flex items-center justify-between gap-1">
                   <div className="flex items-center gap-0.5">
-                    <span className={`text-[10px] ${isSelected 
-                      ? 'text-gray-600 dark:text-gray-400' 
-                      : 'text-gray-700 dark:text-gray-500'}`}>难度:</span>
+                    <span className={`text-[10px] ${isSelected
+                      ? 'text-gray-600 dark:text-gray-400'
+                      : 'text-gray-700 dark:text-gray-500'}`}>{t('graphEditor.alternativeBranches.difficulty')}</span>
                     <span className={`text-[10px] font-semibold ${getDifficultyColor(branch.estimatedDifficulty)}`}>
                       {'★'.repeat(branch.estimatedDifficulty)}
                     </span>

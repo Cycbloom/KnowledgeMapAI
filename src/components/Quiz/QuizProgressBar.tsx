@@ -44,7 +44,7 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
         </span>
         <div className="flex items-center gap-3">
           {flaggedCount > 0 && (
-            <span className="flex items-center gap-1 text-amber-500" title="已标记待复查">
+            <span className="flex items-center gap-1 text-amber-500" title={t('quiz.progress.flaggedForReview')}>
               <Flag size={12} fill="currentColor" aria-hidden="true" />
               {flaggedCount}
             </span>
@@ -52,7 +52,7 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
           {startTime && (
             <span
               className="flex items-center gap-1 text-gray-500 dark:text-slate-400"
-              title="用时"
+              title={t('quiz.progress.elapsedTime')}
               aria-live="polite"
               aria-atomic="true"
             >

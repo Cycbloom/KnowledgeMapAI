@@ -158,8 +158,8 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
         <Button 
           onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} 
           active={isExportMenuOpen}
-          icon={Download} 
-          title="导出"
+          icon={Download}
+          title={t('common.aria.export')}
           buttonClasses={themeClasses.button}
           isDark={isDark}
         />

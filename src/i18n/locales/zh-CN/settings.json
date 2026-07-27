@@ -263,5 +263,10 @@
     "aliyun": "阿里云 (Aliyun)"
   },
   "navDesktop": "桌面导航",
-  "navMobile": "移动导航"
+  "navMobile": "移动导航",
+  "studyStrategy": {
+    "learningReviewDivider": "Learning / Review 分界值",
+    "reviewPracticeDivider": "Review / Practice 分界值",
+    "practiceQuizDivider": "Practice / Quiz 分界值"
+  }
 }

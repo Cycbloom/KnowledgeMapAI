@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -57,6 +58,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
   onMasteryUpdate,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => onClose(), isOpen);
   const [loading, setLoading] = useState(false);
@@ -210,16 +212,16 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                 <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
                   <div className="flex items-center gap-1">
                     <Calendar size={14} />
-                    <span>创建：{formatDate(subtask.created_at)}</span>
+                    <span>{t('scheduler.taskWorkbench.subtaskDetail.createdAt', { date: formatDate(subtask.created_at) })}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock size={14} />
-                    <span>更新：{formatDate(subtask.updated_at)}</span>
+                    <span>{t('scheduler.taskWorkbench.subtaskDetail.updatedAt', { date: formatDate(subtask.updated_at) })}</span>
                   </div>
                   {subtask.estimated_duration && (
                     <div className="flex items-center gap-1">
                       <Clock size={14} />
-                      <span>预计：{subtask.estimated_duration} 分钟</span>
+                      <span>{t('scheduler.taskWorkbench.subtaskDetail.estimatedMinutes', { minutes: subtask.estimated_duration })}</span>
                     </div>
                   )}
                 </div>
@@ -233,14 +235,14 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                   </h4>
                   <div className="space-y-2">
                     <div>
-                      <span className="text-xs text-slate-400">名称</span>
+                      <span className="text-xs text-slate-400">{t('scheduler.taskWorkbench.subtaskDetail.name')}</span>
                       <p className="font-medium text-slate-900 dark:text-white">
                         {knowledgePoint.knowledge_point.title}
                       </p>
                     </div>
                     {knowledgePoint.knowledge_point.content && (
                       <div>
-                        <span className="text-xs text-slate-400">内容摘要</span>
+                        <span className="text-xs text-slate-400">{t('scheduler.taskWorkbench.subtaskDetail.contentSummary')}</span>
                         <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">
                           {knowledgePoint.knowledge_point.content}
                         </p>
@@ -248,7 +250,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                     )}
                     {knowledgePoint.notes && (
                       <div>
-                        <span className="text-xs text-slate-400">备注</span>
+                        <span className="text-xs text-slate-400">{t('scheduler.taskWorkbench.subtaskDetail.notes')}</span>
                         <p className="text-sm text-slate-600 dark:text-slate-300">
                           {knowledgePoint.notes}
                         </p>
@@ -265,12 +267,12 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                 </h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600 dark:text-slate-300">当前状态</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-300">{t('scheduler.taskWorkbench.subtaskDetail.currentState')}</span>
                     <LearningStateBadge state={subtask.learning_state} size="lg" />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-slate-600 dark:text-slate-300">掌握度</span>
+                      <span className="text-sm text-slate-600 dark:text-slate-300">{t('scheduler.taskWorkbench.subtaskDetail.mastery')}</span>
                       <span className={`font-medium ${getMasteryColor(subtask.mastery_level)}`}>
                         {subtask.mastery_level}%
                       </span>
@@ -326,7 +328,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                     )}
 
                     <div>
-                      <span className="text-xs text-slate-400 mb-2 block">可转换状态</span>
+                      <span className="text-xs text-slate-400 mb-2 block">{t('scheduler.taskWorkbench.subtaskDetail.transitionableStates')}</span>
                       <div className="flex flex-wrap gap-2">
                         {otherValidTransitions.map((state) => (
                             <button

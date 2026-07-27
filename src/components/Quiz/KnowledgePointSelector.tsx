@@ -384,7 +384,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
             />
             <input
               type="text"
-              placeholder="搜索知识点..."
+              placeholder={t('quiz.knowledgePointSelector.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={`w-full pl-9 pr-4 py-2 rounded-lg border text-sm ${

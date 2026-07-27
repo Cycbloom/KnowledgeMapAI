@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   Route,
@@ -40,6 +41,7 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
   result,
   onGraphClick,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
@@ -47,25 +49,25 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             {result.analysis_summary.total_paths}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">学习路径</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.learningPath.pathCount')}</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
             {result.analysis_summary.avg_path_length.toFixed(1)}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">平均长度</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.learningPath.avgLength')}</div>
         </div>
       </div>
 
       {result.learning_path_suggestions.length === 0 ? (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <Route className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          没有发现学习路径建议
+          {t('graphMap.learningPath.noSuggestions')}
         </div>
       ) : (
         <div className="space-y-3">
           <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            推荐的学习路径
+            {t('graphMap.learningPath.recommendedTitle')}
           </div>
           {result.learning_path_suggestions.map((path, idx) => {
             const difficulty = difficultyConfig[path.difficulty];
@@ -82,7 +84,7 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
                   <div className="flex items-center gap-2">
                     <Route className="w-4 h-4 text-green-500" />
                     <span className="text-sm font-medium text-green-700 dark:text-green-300">
-                      路径 {idx + 1}
+                      {t('graphMap.learningPath.pathLabel', { index: idx + 1 })}
                     </span>
                   </div>
                   <span
@@ -103,7 +105,7 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
                   </div>
                   <div className="flex items-center gap-1">
                     <BarChart3 className="w-3 h-3" />
-                    <span>{path.path.length} 个图谱</span>
+                    <span>{t('graphMap.learningPath.graphCount', { count: path.path.length })}</span>
                   </div>
                 </div>
 
@@ -111,7 +113,7 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
                   <div className="p-2 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
                       <BookOpen className="w-3 h-3" />
-                      学习顺序
+                      {t('graphMap.learningPath.learningOrder')}
                     </div>
                     <div className="flex flex-wrap items-center gap-1">
                       {path.path_titles.map((title, i) => (
@@ -145,8 +147,8 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
 
       <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
         <p className="text-xs text-primary-700 dark:text-primary-300">
-          <span className="font-medium">提示：</span>
-          学习路径基于图谱间的前置关系和知识依赖分析生成，建议按照推荐顺序学习以获得最佳效果
+          <span className="font-medium">{t('graphMap.learningPath.tip')}</span>
+          {t('graphMap.learningPath.tipContent')}
         </p>
       </div>
     </div>

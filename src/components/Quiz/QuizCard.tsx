@@ -132,7 +132,8 @@ export const QuizCard: React.FC<QuizCardProps> = ({
                   ? 'text-slate-400 hover:text-amber-400 hover:bg-slate-700'
                   : 'text-gray-400 hover:text-amber-600 hover:bg-gray-100'
               }`}
-              title="编辑"
+              title={t('common.aria.edit')}
+              aria-label={t('common.aria.edit')}
             >
               <Edit2 size={16} />
             </button>
@@ -149,7 +150,8 @@ export const QuizCard: React.FC<QuizCardProps> = ({
                   ? 'text-slate-400 hover:text-red-400 hover:bg-slate-700'
                   : 'text-gray-400 hover:text-red-600 hover:bg-gray-100'
               }`}
-              title="删除"
+              title={t('common.aria.delete')}
+              aria-label={t('common.aria.delete')}
             >
               <Trash2 size={16} />
             </button>

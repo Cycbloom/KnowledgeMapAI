@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format, addDays, differenceInDays, isSameDay, isBefore } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { CheckCircle, Circle, Clock } from 'lucide-react';
@@ -20,6 +21,7 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
   currentPercentage,
   onDayClick,
 }) => {
+  const { t } = useTranslation();
   const days = useMemo(() => {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -38,7 +40,7 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">进度时间线</h3>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('scheduler.taskWorkbench.progressTimeline.title')}</h3>
         <div className="text-sm text-gray-500">
           {completedDays}/{totalDays} 天完成
         </div>
@@ -46,7 +48,7 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
 
       <div className="mb-6">
         <div className="flex justify-between text-sm mb-2">
-          <span className="text-gray-600 dark:text-gray-400">总进度</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('scheduler.taskWorkbench.progressTimeline.totalProgress')}</span>
           <span className="font-medium text-gray-900 dark:text-white">{currentPercentage}%</span>
         </div>
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
@@ -150,15 +152,15 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
       <div className="flex items-center justify-center gap-6 mt-6 text-xs text-gray-500">
         <div className="flex items-center gap-1">
           <CheckCircle className="w-4 h-4 text-green-500" />
-          <span>已完成</span>
+          <span>{t('scheduler.taskWorkbench.progressTimeline.completed')}</span>
         </div>
         <div className="flex items-center gap-1">
           <Clock className="w-4 h-4 text-primary-500" />
-          <span>进行中</span>
+          <span>{t('scheduler.taskWorkbench.progressTimeline.inProgress')}</span>
         </div>
         <div className="flex items-center gap-1">
           <Circle className="w-4 h-4 text-gray-400" />
-          <span>待完成</span>
+          <span>{t('scheduler.taskWorkbench.progressTimeline.pending')}</span>
         </div>
       </div>
     </div>

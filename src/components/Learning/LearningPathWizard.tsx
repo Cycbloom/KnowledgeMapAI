@@ -576,6 +576,8 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                     step={10}
                     value={dailyTime}
                     onChange={(e) => setDailyTime(parseInt(e.target.value))}
+                    aria-label={t('learning.path.wizard.dailyTimeLabel')}
+                    aria-valuetext={t('common.aria.minutesValue', { minutes: dailyTime })}
                     className="flex-1"
                   />
                   <span className="text-sm font-medium text-primary-600 dark:text-primary-400 w-16 text-right">

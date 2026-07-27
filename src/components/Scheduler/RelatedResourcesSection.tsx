@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BookOpen, ExternalLink } from 'lucide-react';
 import { KnowledgePoint } from '../../types';
 import { request } from '../../services/api/client';
@@ -12,6 +13,7 @@ export const RelatedResourcesSection: React.FC<RelatedResourcesSectionProps> = (
   knowledgePointId,
   onKnowledgePointClick,
 }) => {
+  const { t } = useTranslation();
   const [knowledgePoint, setKnowledgePoint] = useState<KnowledgePoint | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +39,7 @@ export const RelatedResourcesSection: React.FC<RelatedResourcesSectionProps> = (
   if (loading) {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">关联资源</h3>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('scheduler.taskWorkbench.relatedResourcesSection.title')}</h3>
         <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-20 rounded-lg" />
       </div>
     );
@@ -49,7 +51,7 @@ export const RelatedResourcesSection: React.FC<RelatedResourcesSectionProps> = (
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white">关联资源</h3>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('scheduler.taskWorkbench.relatedResourcesSection.title')}</h3>
       
       <div
         className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"

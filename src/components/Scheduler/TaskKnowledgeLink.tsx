@@ -266,7 +266,8 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
                   type="button"
                   onClick={() => handleSetPrimary(kp.id)}
                   className="p-1.5 text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-lg transition-colors"
-                  title="设为主要"
+                  title={t('scheduler.taskKnowledge.setPrimary')}
+                  aria-label={t('scheduler.taskKnowledge.setPrimary')}
                 >
                   <Star size={16} />
                 </button>
@@ -275,7 +276,8 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
                 type="button"
                 onClick={() => handleRemoveKnowledgePoint(kp.id)}
                 className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                title="取消关联"
+                title={t('scheduler.taskKnowledge.unlink')}
+                aria-label={t('scheduler.taskKnowledge.unlink')}
               >
                 <X size={16} />
               </button>

@@ -4,16 +4,23 @@
     "noKnowledgePoints": "No knowledge points in this graph"
   },
   "knowledgePointSelector": {
-    "treeLabel": "Knowledge point selection tree"
+    "treeLabel": "Knowledge point selection tree",
+    "searchPlaceholder": "Search knowledge points..."
   },
   "generation": {
-    "started": "Quiz generation started...",
+    "started": "Quiz generation task started...",
     "completed": "Quiz generation complete!",
     "failed": "Quiz generation failed",
-    "createFailed": "Failed to create quiz"
+    "createFailed": "Failed to create quiz",
+    "titlePlaceholder": "e.g.: Chapter 1 Basic Concepts Quiz",
+    "descriptionPlaceholder": "Brief description of the quiz..."
   },
   "progressBar": {
     "ariaLabel": "Quiz progress"
+  },
+  "progress": {
+    "flaggedForReview": "Flagged for review",
+    "elapsedTime": "Elapsed time"
   },
   "questionList": {
     "type": {

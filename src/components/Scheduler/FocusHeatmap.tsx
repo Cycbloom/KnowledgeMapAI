@@ -54,6 +54,7 @@ const DayCell: React.FC<DayCellProps> = ({
   maxDuration,
   isToday,
 }) => {
+  const { t } = useTranslation();
   const [showTooltip, setShowTooltip] = useState(false);
   const colorClass = getColorForDuration(duration, maxDuration);
   const tooltipId = useId();
@@ -97,12 +98,12 @@ const DayCell: React.FC<DayCellProps> = ({
               {duration > 0 ? (
                 <>
                   <p className="text-emerald-400">
-                    {formatDuration(duration, { emptyText: "0分钟" })} 专注
+                    {formatDuration(duration, { emptyText: "0分钟" })} {t('scheduler.focusHeatmap.focusSuffix')}
                   </p>
-                  <p className="text-slate-400">{count} 次会话</p>
+                  <p className="text-slate-400">{count} {t('scheduler.focusHeatmap.sessionsSuffix')}</p>
                 </>
               ) : (
-                <p className="text-slate-400">无专注记录</p>
+                <p className="text-slate-400">{t('scheduler.focusHeatmap.noRecords')}</p>
               )}
             </div>
             <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-slate-700" />
@@ -134,7 +135,7 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
         setError(null);
       } catch (err) {
         console.error("Failed to fetch heatmap data:", err);
-        setError("加载热力图数据失败");
+        setError(t('scheduler.focusHeatmap.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -269,25 +270,25 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
         className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4"
       >
         <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-800/50">
-          <p className="text-xs text-slate-600 dark:text-slate-400">活跃天数</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('scheduler.focusHeatmap.activeDays')}</p>
           <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
             {totalDays}
           </p>
         </div>
         <div className="p-3 rounded-lg bg-primary-50 dark:bg-primary-500/10 border border-primary-200 dark:border-primary-800/50">
-          <p className="text-xs text-slate-600 dark:text-slate-400">总时长</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('scheduler.focusHeatmap.totalDuration')}</p>
           <p className="text-xl font-bold text-primary-600 dark:text-primary-400">
             {totalHours.toFixed(1)}h
           </p>
         </div>
         <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-800/50">
-          <p className="text-xs text-slate-600 dark:text-slate-400">总会话</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('scheduler.focusHeatmap.totalSessions')}</p>
           <p className="text-xl font-bold text-violet-600 dark:text-violet-400">
             {totalSessions}
           </p>
         </div>
         <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-800/50">
-          <p className="text-xs text-slate-600 dark:text-slate-400">日均时长</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('scheduler.focusHeatmap.avgDailyDuration')}</p>
           <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
             {totalDays > 0 ? (totalHours / totalDays).toFixed(1) : 0}h
           </p>
@@ -337,10 +338,10 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200 dark:border-slate-500">
           <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
             <Info size={12} />
-            <span>专注强度</span>
+            <span>{t('scheduler.focusHeatmap.focusIntensity')}</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-xs text-slate-400">少</span>
+            <span className="text-xs text-slate-400">{t('scheduler.focusHeatmap.less')}</span>
             <div className="flex gap-0.5">
               <div className="w-3 h-3 rounded-sm bg-slate-100 dark:bg-slate-800" />
               <div className="w-3 h-3 rounded-sm bg-emerald-200 dark:bg-emerald-900" />
@@ -348,7 +349,7 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
               <div className="w-3 h-3 rounded-sm bg-emerald-500 dark:bg-emerald-600" />
               <div className="w-3 h-3 rounded-sm bg-emerald-600 dark:bg-emerald-500" />
             </div>
-            <span className="text-xs text-slate-400">多</span>
+            <span className="text-xs text-slate-400">{t('scheduler.focusHeatmap.more')}</span>
           </div>
         </div>
       </motion.div>

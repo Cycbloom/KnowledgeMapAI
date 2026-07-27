@@ -177,7 +177,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
           </button>
         </div>
 
-        <div className="flex border-b border-gray-100 dark:border-slate-500" role="tablist" aria-label="编辑边">
+        <div className="flex border-b border-gray-100 dark:border-slate-500" role="tablist" aria-label={t('graphEditor.edgeEdit.tablistLabel')}>
           <button
             ref={(el) => { tabRefs.current[0] = el; }}
             role="tab"
@@ -231,7 +231,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                   type="text"
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
-                  placeholder="输入边的标签（可选）"
+                  placeholder={t('graphEditor.edgeEdit.labelPlaceholder')}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
                 />
               </div>
@@ -278,6 +278,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                     type="color"
                     value={customColor || '#3B82F6'}
                     onChange={(e) => setCustomColor(e.target.value)}
+                    aria-label={t('graphEditor.edge.colorLabel')}
                     className="w-10 h-10 rounded cursor-pointer border border-gray-300 dark:border-slate-500"
                   />
                   <input

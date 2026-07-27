@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Lightbulb,
@@ -35,6 +36,7 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
   taskTitle,
   taskDescription,
 }) => {
+  const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState<SmartSuggestions | null>(null);
   const [decisionRecommendations, setDecisionRecommendations] = useState<
     DecisionTaskRecommendation[]
@@ -208,7 +210,8 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
               loadSuggestions();
             }}
             className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-            title="刷新建议"
+            title={t('scheduler.smartSuggestion.refresh')}
+            aria-label={t('scheduler.smartSuggestion.refresh')}
           >
             <RefreshCw
               className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
@@ -272,7 +275,7 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
                 </motion.div>
               )}
 
-              <div className="flex gap-2 mb-4" role="tablist" aria-label="智能建议">
+              <div className="flex gap-2 mb-4" role="tablist" aria-label={t('scheduler.smartSuggestion.tablistLabel')}>
                 {tabs.map((tab, index) => {
                   const isActive = activeTab === tab.id;
                   return (

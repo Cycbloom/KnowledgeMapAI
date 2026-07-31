@@ -11,8 +11,8 @@
     "declaration": false,
     "sourceMap": true,
     "types": ["node"],
-    "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": ["electron/**/*", "api/**/*", "shared/**/*"],
   "exclude": ["node_modules", "dist-electron", "src", "api/__tests__", "**/*.test.ts"]

@@ -31,18 +31,79 @@
     "tasks": "任务成就",
     "special": "特殊成就"
   },
-  "streak": {
+  "streakDisplay": {
     "title": "连续完成记录",
     "daily": "每日任务连续",
     "weekly": "周任务连续",
     "monthly": "月任务连续",
     "quarterly": "季度任务连续",
-    "nextMilestone": "下个里程碑: {{milestone}}"
+    "nextMilestone": "下个里程碑: {{milestone}}",
+    "dailyDesc": "每日完成任务，养成良好学习习惯",
+    "weeklyDesc": "每周完成任务，保持周常节奏",
+    "monthlyDesc": "每月完成任务，坚持长期学习",
+    "quarterlyDesc": "每季度完成任务，达成季度目标",
+    "currentStreak": "当前连续",
+    "bestStreak": "最长连续",
+    "totalDays": "累计天数",
+    "streakActive": "连续进行中",
+    "streakBroken": "连续已中断",
+    "streakNew": "尚未开始",
+    "streakRecord": "历史最长: {{count}} 天",
+    "milestoneLabel": "里程碑",
+    "milestoneReached": "里程碑 {{milestone}} 已达成！",
+    "milestonesAllReached": "已达成所有里程碑",
+    "nextMilestoneIn": "距离下个里程碑还有 {{count}} 天",
+    "milestone7": "7天连续：初步养成习惯",
+    "milestone14": "14天连续：习惯逐渐巩固",
+    "milestone30": "30天连续：习惯已经形成",
+    "milestone60": "60天连续：深入学习阶段",
+    "milestone100": "100天连续：学习达人",
+    "weeklyMilestone4": "4周连续：月度坚持",
+    "weeklyMilestone8": "8周连续：双月坚持",
+    "weeklyMilestone12": "12周连续：季度坚持",
+    "monthlyMilestone3": "3月连续：季度坚持",
+    "monthlyMilestone6": "6月连续：半年坚持",
+    "monthlyMilestone12": "12月连续：全年坚持",
+    "quarterlyMilestone2": "2季度连续：半年坚持",
+    "quarterlyMilestone4": "4季度连续：全年坚持",
+    "keepGoing": "继续保持！",
+    "greatJob": "做得好！",
+    "streakStarted": "已开启连续打卡",
+    "streakInProgress": "已连续 {{count}} 天",
+    "streakEndedAt": "连续中断于 {{count}} 天",
+    "todayLabel": "今日",
+    "thisWeekLabel": "本周",
+    "thisMonthLabel": "本月",
+    "thisQuarterLabel": "本季度"
   },
   "periodic": {
     "weekly": "本周任务",
     "monthly": "本月任务",
     "quarterly": "本季度任务"
+  },
+  "periodicTask": {
+    "label": {
+      "focusTime": "专注时间",
+      "studyCards": "学习卡片",
+      "createNodes": "创建节点",
+      "completeTasks": "完成任务"
+    },
+    "unit": {
+      "minutes": "分钟",
+      "cards": "张",
+      "items": "个"
+    },
+    "period": {
+      "week": "周",
+      "month": "月",
+      "quarter": "季度"
+    },
+    "title": "{{period}}{{label}}",
+    "currentPeriod": "当前周期",
+    "target": "目标",
+    "progress": "{{current}} / {{target}} {{unit}}",
+    "totalCount": "共 {{count}} 项",
+    "pointsLabel": "积分"
   },
   "pass": {
     "weekly": "周通行证",

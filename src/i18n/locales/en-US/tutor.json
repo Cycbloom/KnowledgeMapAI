@@ -1,0 +1,25 @@
+{
+  "modes": {
+    "freeTalk": "Free Talk",
+    "guidedLearning": "Guided Learning",
+    "learningPath": "Learning Path",
+    "literatureExtraction": "Literature Extraction",
+    "conceptAggregation": "Concept Aggregation"
+  },
+  "messages": {
+    "tutorChatFailed": "Tutor chat failed, please retry",
+    "conceptsExtracted": "Extracted {{count}} concepts, ready to add to the graph",
+    "noConceptsExtracted": "No new concepts extracted",
+    "conceptExtractionFailed": "Concept extraction failed",
+    "selectParentNodeFirst": "Please select a parent node first",
+    "conceptAddedToGraph": "Added \"{{title}}\" to the graph",
+    "addConceptFailed": "Failed to add concept",
+    "allConceptsAdded": "Added {{count}} concepts to the graph",
+    "batchAddConceptsFailed": "Failed to batch add concepts",
+    "learningSuggestionsGenerated": "Generated {{count}} learning suggestions",
+    "generateSuggestionsFailed": "Failed to generate learning suggestions",
+    "tutorModeSwitched": "Switched to {{mode}} mode",
+    "tutorModeEnabled": "Tutor mode enabled",
+    "tutorModeDisabled": "Tutor mode disabled"
+  }
+}

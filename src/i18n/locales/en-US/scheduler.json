@@ -191,7 +191,25 @@
     "draftDetected": "Draft Detected",
     "draftDetectedMessage": "An unfinished draft was detected. Would you like to restore it?",
     "restoreDraft": "Restore Draft",
-    "discardDraft": "Discard Draft"
+    "discardDraft": "Discard Draft",
+    "autoGenerate": "Auto-generated",
+    "systemRecommendation": "System Recommendation",
+    "import": "Imported",
+    "relatedGraph": "Related Graph",
+    "clickToViewGraph": "Click to view graph",
+    "relatedKnowledgePoint": "Related Knowledge Point",
+    "clickToViewKnowledgePoint": "Click to view knowledge point",
+    "expansionDepth": "Expansion Depth",
+    "maxDepth": "Max Depth",
+    "expansionStyle": "Expansion Style",
+    "topic": "Topic",
+    "viewRawData": "View Raw Data",
+    "status": "Status",
+    "statusPending": "Pending",
+    "statusInProgress": "In Progress",
+    "statusCompleted": "Completed",
+    "statusInterrupted": "Interrupted",
+    "statusPaused": "Paused"
   },
   "templateForm": {
     "editTemplate": "Edit Template",
@@ -306,7 +324,9 @@
     "viewDetails": "View Details",
     "startTask": "Start Task",
     "recommendationDetails": "Recommendation Details",
-    "bestTimeSlots": "Best Time Slots"
+    "bestTimeSlots": "Best Time Slots",
+    "subtaskProgress": "Subtask progress: {{completed}}/{{total}}",
+    "startLearning": "Start learning"
   },
   "taskLink": {
     "linkedKnowledge": "Linked Knowledge",
@@ -320,7 +340,15 @@
     "primary": "Primary",
     "relevance": "Relevance",
     "noLinkedKnowledge": "No linked knowledge points",
-    "addLink": "Add knowledge link"
+    "addLink": "Add knowledge link",
+    "errors": {
+      "taskNotFound": "Task not found",
+      "fetchListFailed": "Failed to fetch link list",
+      "createFailed": "Failed to create link",
+      "updateFailed": "Failed to update link",
+      "linkNotFound": "Link not found",
+      "deleteFailed": "Failed to delete link"
+    }
   },
   "taskCard": {
     "typeLongTerm": "Long-term",
@@ -499,15 +527,85 @@
     "notesTab": {
       "notesPlaceholder": "Record task notes here...\n\nSupports Markdown syntax:\n- **bold** *italic*\n- # Heading\n- List item\n- [link](url)"
     },
+    "subtaskList": {
+      "unnamedKnowledgePoint": "Unnamed Knowledge Point",
+      "title": "Subtasks",
+      "completionFormat": "{{completed}}/{{total}} completed",
+      "avgMastery": "· Avg mastery {{percent}}%",
+      "add": "Add",
+      "selectKnowledgePoint": "Select knowledge point",
+      "estimatedDuration": "{{count}} min",
+      "addFirstSubtask": "Add first subtask"
+    },
     "progressDetail": {
-      "notePlaceholder": "Add note..."
+      "notePlaceholder": "Add note...",
+      "longTaskOnly": "Progress details only apply to long-term tasks",
+      "title": "Progress Details",
+      "progressFormat": "{{percent}}% complete",
+      "avgDailyCompletion": "Avg daily completion {{percent}}%",
+      "overallProgress": "Overall Progress",
+      "remaining": "{{percent}}% remaining",
+      "estimatedDays": "Estimated {{days}} days to complete",
+      "progressTrend": "Progress Trend",
+      "progressAnalysis": "Progress Analysis",
+      "statusAhead": "Ahead",
+      "statusNormal": "On Track",
+      "statusLagging": "Behind",
+      "currentVsPlan": "Current {{current}}% / Planned {{planned}}%",
+      "dailyPlanTitle": "Daily Progress Plan",
+      "tableAriaLabel": "Daily progress plan table",
+      "date": "Date",
+      "plan": "Plan",
+      "actual": "Actual",
+      "status": "Status",
+      "action": "Action",
+      "editProgress": "Edit Progress - {{date}}",
+      "plannedProgress": "Planned Progress",
+      "actualProgress": "Actual Progress",
+      "remark": "Notes",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save",
+      "suggestions": {
+        "ahead": "Progress is ahead; consider lowering daily goals",
+        "aheadExtra": "Consider finishing early or adding more content",
+        "onTrack": "Keep the current pace and follow the plan",
+        "behind": "Progress is behind; consider investing more time daily",
+        "blocked": "Check for blockers that need resolving"
+      },
+      "statusLabels": {
+        "skipped": "Skipped",
+        "overcompleted": "Overcompleted",
+        "completed": "Completed",
+        "notMet": "Not met",
+        "pending": "Pending"
+      },
+      "statusOptions": {
+        "pending": "Pending",
+        "completed": "Completed",
+        "skipped": "Skip"
+      }
     },
     "taskLinks": {
       "titlePlaceholder": "Title (optional, defaults to link URL)",
       "descriptionPlaceholder": "Description (optional)"
     },
     "knowledgePointAssociation": {
-      "searchPlaceholder": "Search knowledge points..."
+      "searchPlaceholder": "Search knowledge points...",
+      "associateSuccess": "Knowledge point linked",
+      "associateFailed": "Failed to link knowledge point",
+      "unassociateSuccess": "Link removed",
+      "unassociateFailed": "Failed to remove link",
+      "setPrimarySuccess": "Set as primary knowledge point",
+      "setPrimaryFailed": "Failed to set",
+      "title": "Linked Knowledge Points",
+      "count": "{{count}} item(s)",
+      "add": "Add",
+      "noMatch": "No matching knowledge points found",
+      "unknownKnowledgePoint": "Unknown knowledge point",
+      "primary": "Primary",
+      "relevance": "Relevance:",
+      "addAssociation": "Add knowledge point link"
     },
     "basicInfo": {
       "title": "Basic Info",
@@ -557,7 +655,25 @@
   },
   "templateSelector": {
     "empty": "No templates found",
-    "searchPlaceholder": "Search templates..."
+    "searchPlaceholder": "Search templates...",
+    "title": "Create task from template",
+    "new": "New",
+    "all": "All",
+    "fillVariables": "Fill variables",
+    "inputPlaceholder": "Enter {{placeholder}}",
+    "preview": "Preview",
+    "minutes": "{{count}} min",
+    "priority": "Priority:",
+    "useThisTemplate": "Use this template",
+    "selectTemplateHint": "Select a template to view details",
+    "tags": "Tags:",
+    "categories": {
+      "study": "Study",
+      "work": "Work",
+      "life": "Life",
+      "health": "Health",
+      "custom": "Custom"
+    }
   },
   "weeklyReport": {
     "empty": "No focus records this week yet",
@@ -590,33 +706,134 @@
     "weekOverview": "This week overview"
   },
   "dailyStats": {
-    "empty": "No focus records today",
+    "empty": "No focus records today yet",
     "emptyHint": "Start a focus session to track your progress",
-    "focusDurationLabel": "Focus duration",
+    "focusDurationLabel": "Focus Duration",
     "pomodoroLabel": "Pomodoro",
-    "focusCountLabel": "Focus count",
-    "completedTasksLabel": "Completed tasks"
+    "focusCountLabel": "Focus Count",
+    "completedTasksLabel": "Completed Tasks",
+    "hoursMinutes": "{{hours}} hr {{minutes}} min",
+    "minutesOnly": "{{minutes}} min",
+    "secondsOnly": "{{seconds}}s",
+    "dailyStats": "Daily Stats",
+    "pomodoroCount": "pomodoros",
+    "average": "Avg",
+    "taskCount": "tasks",
+    "productivityScore": "Productivity Score"
   },
   "dailyReview": {
     "harvestPlaceholder": "Record today's gains and feelings...",
     "difficultyPlaceholder": "What difficulties did you encounter today?",
     "improvementPlaceholder": "How can you improve tomorrow?",
-    "learningPlaceholder": "Record new knowledge or skills learned today..."
+    "learningPlaceholder": "Record new knowledge or skills learned today...",
+    "moods": {
+      "great": "Great",
+      "good": "Good",
+      "normal": "Normal",
+      "tired": "Tired",
+      "stressed": "Stressed"
+    },
+    "title": "Daily Review",
+    "todayCompleted": "Today's Completed",
+    "tasks": "Tasks",
+    "focusDuration": "Focus Duration",
+    "howDoYouFeel": "How do you feel today?",
+    "todayInsights": "Today's Insights",
+    "difficulties": "Difficulties",
+    "improvements": "Improvements",
+    "learned": "What I Learned",
+    "saving": "Saving...",
+    "updateReview": "Update Review",
+    "saveReview": "Save Review"
   },
   "weeklyReflection": {
     "feelingPlaceholder": "How was this week overall? Any gains?",
     "improvementPlaceholder": "What do you want to improve next week?",
-    "learningPlaceholder": "What new things did you learn this week?"
+    "learningPlaceholder": "What new things did you learn this week?",
+    "weekdays": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "title": "Weekly Reflection",
+    "thisWeek": "This Week",
+    "weeksAgo": "{{count}}w ago",
+    "completedTasks": "Completed Tasks",
+    "focusDuration": "Focus Duration",
+    "dailyReviews": "Daily Reviews",
+    "mainMood": "Main Mood",
+    "dailyCompletionTrend": "Daily Completion Trend",
+    "weeklySummary": "Weekly Summary",
+    "nextWeekPlan": "Next Week Plan",
+    "weeklyLearning": "Weekly Learning",
+    "saving": "Saving...",
+    "updateReflection": "Update Reflection",
+    "saveReflection": "Save Reflection",
+    "zeroMinutes": "0 min"
   },
   "achievementGallery": {
-    "searchPlaceholder": "Search achievements..."
+    "searchPlaceholder": "Search achievements...",
+    "loadFailed": "Failed to load achievement data",
+    "title": "Achievement Hall",
+    "unlockedCount": "Unlocked {{unlocked}}/{{total}} achievements",
+    "overallProgress": "Overall Progress",
+    "experienceGained": "XP Earned",
+    "filterAll": "All",
+    "filterUnlocked": "Unlocked",
+    "filterLocked": "Locked",
+    "unlockedAt": "Unlocked at",
+    "categories": {
+      "focus": "Focus",
+      "tasks": "Tasks",
+      "streak": "Streak",
+      "special": "Special",
+      "study": "Study",
+      "creation": "Creation"
+    }
   },
   "monthlyReport": {
     "empty": "No focus records this month yet",
-    "emptyHint": "Start a focus session to track your progress"
+    "emptyHint": "Start a focus session to track your progress",
+    "title": "Monthly Report",
+    "yearMonthFormat": "{{month}} {{year}}",
+    "totalFocusDuration": "Total Focus Duration",
+    "hourUnit": "hr",
+    "completedTasks": "Completed Tasks",
+    "countUnit": "",
+    "activeDays": "Active Days",
+    "dayUnit": "days",
+    "longestStreak": "Longest Streak",
+    "bestPerformanceDay": "Best Performance Day",
+    "focusDuration": "Focus Duration",
+    "weeklyDistribution": "Weekly Distribution",
+    "weekFormat": "Week {{week}}",
+    "sessionCountFormat": "{{count}} sessions",
+    "dailyAvgDuration": "Daily Avg",
+    "totalPomodoros": "Total Pomodoros",
+    "totalSessions": "Total Sessions",
+    "months": {
+      "jan": "January",
+      "feb": "February",
+      "mar": "March",
+      "apr": "April",
+      "may": "May",
+      "jun": "June",
+      "jul": "July",
+      "aug": "August",
+      "sep": "September",
+      "oct": "October",
+      "nov": "November",
+      "dec": "December"
+    }
   },
   "focusHeatmap": {
     "title": "Annual Focus Heatmap",
+    "yearLabel": "{{year}}",
+    "zeroMinutes": "0 min",
     "empty": "No focus records in {{year}} yet",
     "emptyHint": "Start a focus session to fill your heatmap",
     "noRecords": "No focus records",
@@ -629,7 +846,46 @@
     "more": "More",
     "focusSuffix": " focus",
     "sessionsSuffix": " sessions",
-    "loadFailed": "Failed to load heatmap data"
+    "loadFailed": "Failed to load heatmap data",
+    "months": {
+      "jan": "January",
+      "feb": "February",
+      "mar": "March",
+      "apr": "April",
+      "may": "May",
+      "jun": "June",
+      "jul": "July",
+      "aug": "August",
+      "sep": "September",
+      "oct": "October",
+      "nov": "November",
+      "dec": "December"
+    },
+    "weekdays": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    }
+  },
+  "taskDistribution": {
+    "title": "Task Distribution",
+    "subtitle": "Statistics by tag",
+    "untagged": "Untagged",
+    "taskCount": "{{count}} tasks",
+    "taskCountWithDuration": "{{count}} tasks · {{duration}}",
+    "durationMinutes": "{{count}} min",
+    "durationHoursMinutes": "{{hours}}h {{minutes}}m",
+    "durationHours": "{{hours}}h"
+  },
+  "achievementNotification": {
+    "achievementUnlocked": "Achievement Unlocked!",
+    "previous": "Previous",
+    "next": "Next",
+    "awesome": "Awesome!"
   },
   "taskActions": {
     "deleteTaskConfirm": {
@@ -648,7 +904,17 @@
     "feelingPlaceholder": "How did this task go? Any feelings?",
     "obstaclePlaceholder": "What were the obstacles?",
     "solutionPlaceholder": "How did you resolve them?",
-    "learningPlaceholder": "What new knowledge or skills did you learn from this task?"
+    "learningPlaceholder": "What new knowledge or skills did you learn from this task?",
+    "taskCompleted": "Task completed!",
+    "takeMomentToReview": "Take a moment to review",
+    "actualDuration": "Actual duration:",
+    "completionInsights": "Completion insights",
+    "difficulties": "Difficulties",
+    "solutions": "Solutions",
+    "learned": "What you learned",
+    "skip": "Skip",
+    "saving": "Saving...",
+    "saveRetrospect": "Save review"
   },
   "heatmap": {
     "prevYear": "Previous year",
@@ -664,14 +930,88 @@
   },
   "smartSuggestion": {
     "tablistLabel": "Smart suggestions",
-    "refresh": "Refresh suggestions"
+    "refresh": "Refresh suggestions",
+    "title": "Smart suggestions",
+    "greeting": "Good {{period}} · Based on your efficiency data",
+    "prioritySuggestion": "Priority suggestion",
+    "suggestedPriority": "Suggested priority:",
+    "queue": "Queue:",
+    "confidence": "Confidence:",
+    "needMoreTasks": "Complete more tasks and we'll provide personalized efficiency tips",
+    "tabs": {
+      "recommendations": "Recommendations",
+      "tips": "Efficiency tips"
+    },
+    "periods": {
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "evening": "Evening",
+      "night": "Night"
+    }
   },
   "smartRecommendation": {
     "refresh": "Refresh recommendations"
   },
+  "smartRecommendationBar": {
+    "cards": {
+      "peakEfficiency": {
+        "title": "Peak Efficiency",
+        "description": "You're in your peak efficiency period, suitable for important tasks"
+      },
+      "masteryAnalysis": {
+        "title": "Mastery Analysis",
+        "description": "Your completion rate for this type of task is {{rate}}%"
+      },
+      "deadline": {
+        "title": "Deadline",
+        "overdue": "Deadline passed",
+        "approaching": "Deadline approaching ({{hours}}h)",
+        "normal": "Deadline: {{date}}"
+      },
+      "highPriority": {
+        "title": "High Priority",
+        "description": "Priority {{priority}}, in Q{{queue}} queue"
+      }
+    },
+    "states": {
+      "learning": "Learning",
+      "review": "Review",
+      "practice": "Practice",
+      "quiz": "Quiz"
+    },
+    "learningInProgress": "Currently learning",
+    "otherRecommendations": "Other recommendations ({{count}})",
+    "start": "Start"
+  },
   "activeTask": {
     "stopSchedule": "Stop schedule",
     "completeSubtask": "Complete subtask"
+  },
+  "activeTaskPanel": {
+    "subtitle": "{{taskTitle}} · Subtask {{subtaskProgress}}",
+    "focusedOn": "Focused · Pomodoro {{pomodoro}}",
+    "pomodoroUnit": "pomodoros",
+    "estimated": "Est. {{duration}} min",
+    "done": "Done {{duration}} min",
+    "statusFocusing": "Focusing...",
+    "statusBreak": "On break...",
+    "statusPaused": "Paused",
+    "statusReady": "Ready to start",
+    "pomodoroIndex": "· {{current}}/{{total}} pomodoros",
+    "togglePause": "Pause",
+    "toggleResume": "Resume",
+    "currentLabel": "Current: {{title}}",
+    "states": {
+      "learning": "Learning",
+      "review": "Review",
+      "practice": "Practice",
+      "quiz": "Quiz"
+    },
+    "completeSubtask": "Complete subtask",
+    "mastery": "Mastery",
+    "overtime": "overtime",
+    "allSubtasks": "All subtasks ({{completed}}/{{total}})",
+    "inProgress": "In progress"
   },
   "taskKnowledge": {
     "setPrimary": "Set as primary",
@@ -679,19 +1019,72 @@
     "viewInGraph": "View in graph"
   },
   "timeSlot": {
-    "namePlaceholder": "e.g.: Morning focus time"
+    "namePlaceholder": "e.g.: Morning focus time",
+    "errors": {
+      "fetchFailed": "Failed to fetch time slot settings",
+      "endAfterStart": "End time must be later than start time",
+      "conflict": "Time slot conflicts with existing time slot",
+      "createFailed": "Failed to create time slot",
+      "notFound": "Time slot not found",
+      "updateFailed": "Failed to update time slot",
+      "deleteFailed": "Failed to delete time slot"
+    }
   },
   "subtask": {
     "titlePlaceholder": "Subtask title",
     "descriptionPlaceholder": "Description (optional)",
-    "durationPlaceholder": "Estimated duration (minutes)"
+    "durationPlaceholder": "Estimated duration (minutes)",
+    "errors": {
+      "taskNotFound": "Task not found",
+      "fetchListFailed": "Failed to fetch subtask list",
+      "knowledgeAlreadyLinked": "This knowledge point is already linked to this task",
+      "createFailed": "Failed to create subtask",
+      "updateFailed": "Failed to update subtask",
+      "subtaskNotFound": "Subtask not found",
+      "deleteFailed": "Failed to delete subtask",
+      "updateMasteryFailed": "Failed to update mastery level",
+      "invalidTransition": "Invalid state transition: {{from}} → {{to}}",
+      "transitionFailed": "State transition failed"
+    }
   },
   "saveAsTemplate": {
     "namePlaceholder": "Template name",
     "descriptionPlaceholder": "Template description (optional)",
     "titleTemplatePlaceholder": "e.g.: Study: {{topic}}",
     "descriptionTemplatePlaceholder": "Description template (optional)",
-    "tagPlaceholder": "Add tag"
+    "tagPlaceholder": "Add tag",
+    "categories": {
+      "knowledge": "Knowledge",
+      "project": "Project",
+      "analysis": "Analysis",
+      "architecture": "Architecture",
+      "topicResearch": "Topic Research",
+      "creative": "Creative"
+    },
+    "fillRequired": "Please fill in template name and title template",
+    "saveSuccess": "Template saved successfully!",
+    "saveFailed": "Failed to save template",
+    "title": "Save as Task Template",
+    "templateName": "Template Name",
+    "description": "Description",
+    "category": "Category",
+    "titleTemplate": "Title Template",
+    "autoExtractVariables": "Auto Extract Variables",
+    "descriptionTemplate": "Description Template",
+    "variableHint": "Use {{variableSyntax}} to create replaceable variables, e.g., {{example1}}, {{example2}}",
+    "estimatedDuration": "Estimated Duration (min)",
+    "priority": "Priority",
+    "priorityOptions": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "tags": "Tags",
+    "addTag": "Add",
+    "preview": "Preview",
+    "cancel": "Cancel",
+    "save": "Save Template"
   },
   "focusModeNoise": {
     "preset": "Preset",
@@ -708,7 +1101,48 @@
     "readyPrompt": "Ready to continue focusing?",
     "continueCurrentTask": "Continue current task",
     "switchToNextTask": "Switch to next task",
-    "later": "Maybe later"
+    "later": "Maybe later",
+    "longBreak": "Long Break",
+    "shortBreak": "Short Break",
+    "congratsPomodoros": "🎉 Congrats on completing {{count}} pomodoros! Enjoy your long break",
+    "breakRunning": "On break...",
+    "breakPaused": "Paused",
+    "breakSuggestions": {
+      "lookOut": "Look out the window and relax your eyes",
+      "deepBreath": "Take a few deep breaths",
+      "walk": "Stand up and walk around",
+      "drinkWater": "Have a glass of water",
+      "stretch": "Stretch your body",
+      "listenMusic": "Listen to a favorite song"
+    }
+  },
+  "draggableTaskCard": {
+    "durationMinutes": "{{count}} min",
+    "pauseBeforeMove": "Please pause the task before moving"
+  },
+  "timeSlotSettings": {
+    "availableTimeSlots": "Available Time Slots",
+    "addTimeSlot": "Add Time Slot",
+    "addNewTimeSlot": "Add New Time Slot",
+    "applicableDate": "Applicable Date",
+    "everyday": "Every Day",
+    "labelOptional": "Label (optional)",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "cancel": "Cancel",
+    "save": "Save",
+    "unavailable": "Unavailable",
+    "noTimeSlots": "No available time slots set yet",
+    "noTimeSlotsHint": "Click the button above to add your available time",
+    "daysOfWeek": {
+      "sunday": "Sun",
+      "monday": "Mon",
+      "tuesday": "Tue",
+      "wednesday": "Wed",
+      "thursday": "Thu",
+      "friday": "Fri",
+      "saturday": "Sat"
+    }
   },
   "hotkeyHelp": {
     "title": "Shortcuts",
@@ -723,14 +1157,522 @@
     "currentStreak": "Current streak",
     "pomodoro": "Pomodoros",
     "milestoneLabel": "Milestones:",
-    "minutesSuffix": "min",
-    "countSuffix": "",
+    "zeroMinutes": "0 min",
+    "minutesSuffix": "{{count}} min",
     "milestones": {
       "focusMaster": "Focus Master",
       "sustainedFocus": "Sustained Focus",
       "deepFocus": "Deep Focus",
       "superFocus": "Super Focus",
       "legendaryFocus": "Legendary Focus"
+    }
+  },
+  "subtaskDetail": {
+    "states": {
+      "learning": "Learning",
+      "review": "Review",
+      "practice": "Practice",
+      "quiz": "Quiz"
+    },
+    "stateDescriptions": {
+      "learning": "Initial learning stage, appears only once",
+      "review": "Review previously learned content",
+      "practice": "Quick check with simple questions",
+      "quiz": "Comprehensive assessment with complex questions"
+    },
+    "statusSwitched": "Status switched to {{status}}",
+    "statusSwitchFailed": "Failed to switch status",
+    "masteryUpdated": "Mastery updated",
+    "masteryUpdateFailed": "Failed to update mastery",
+    "title": "Subtask Details",
+    "basicInfo": "Basic Info",
+    "knowledgePointInfo": "Knowledge Point Info",
+    "learningState": "Learning State",
+    "stateTransition": "State Transition",
+    "recommendedState": "Recommended State",
+    "switching": "Switching",
+    "switch": "Switch",
+    "masteryTransition": "Mastery {{current}}% → {{next}}",
+    "masteryAdjustment": "Mastery Adjustment",
+    "sliderHint": "Drag the slider to adjust mastery (0-100%)",
+    "saving": "Saving",
+    "save": "Save",
+    "stateHistory": "State History",
+    "close": "Close"
+  },
+  "taskDetail": {
+    "statusCompleted": "Completed",
+    "statusInterrupted": "Interrupted",
+    "statusTimeSliceEnd": "Time Slice Ended",
+    "durationFormat": "{{mins}}m {{secs}}s",
+    "durationSecondsFormat": "{{secs}}s",
+    "highPriority": "High Priority",
+    "estimatedDuration": "Estimated Duration",
+    "actualDuration": "Actual Duration",
+    "deadline": "Deadline",
+    "notSet": "Not set",
+    "totalExecutionTime": "Total Execution Time",
+    "tags": "Tags",
+    "relatedKnowledgePoints": "Related Knowledge Points",
+    "executionHistory": "Execution History",
+    "createdAt": "Created:",
+    "updatedAt": "Updated:",
+    "completedAt": "Completed:",
+    "start": "Start",
+    "pause": "Pause",
+    "complete": "Complete",
+    "executionCountFormat": "({{count}} times)"
+  },
+  "queueColumn": {
+    "quadrantUrgentImportant": "Urgent & Important Tasks",
+    "quadrantImportant": "Important Tasks",
+    "quadrantTodo": "To-Do Tasks",
+    "timeSlice": "Time slice:",
+    "task": "Tasks:",
+    "estimated": "Estimated:",
+    "tasksInProgress": "{{count}} tasks in progress",
+    "releaseToPlace": "Release to place task",
+    "addTask": "Add Task",
+    "taskCount": "{{count}} tasks"
+  },
+  "queueSettings": {
+    "queueConfig": "Queue configuration",
+    "queueName": "Queue {{count}}",
+    "queueNameLabel": "Queue name",
+    "queueColor": "Queue color",
+    "timeSlice": "Time slice",
+    "timeSliceMinutes": "{{count}} min",
+    "timeSliceOptions": {
+      "15min": "15 min",
+      "25min": "25 min",
+      "30min": "30 min",
+      "45min": "45 min",
+      "60min": "1 hour",
+      "90min": "1.5 hours",
+      "120min": "2 hours"
+    },
+    "editQueue": "Edit queue #{{index}}",
+    "addQueue": "Add queue",
+    "complete": "Done",
+    "delete": "Delete",
+    "deleteQueue": "Delete queue",
+    "deleteConfirmTitle": "Delete queue",
+    "deleteConfirmWarning": "This action cannot be undone",
+    "deleteConfirmMessage": "Are you sure you want to delete queue \"{{queueName}}\"?",
+    "deleteConfirmHint": "Tasks in this queue will be migrated to other queues",
+    "selectTargetQueue": "Select target queue",
+    "cancel": "Cancel",
+    "confirmDelete": "Confirm delete",
+    "manageHint": "Manage queue priorities and settings ({{current}}/{{max}})",
+    "dragHint": "Drag to reorder queue priorities (top = higher priority)",
+    "maxQueuesReached": "Maximum queue limit reached ({{max}})",
+    "minQueuesRequired": "At least {{count}} queues are required"
+  },
+  "executionRecords": {
+    "title": "Execution Records",
+    "totalCount": "{{count}} executions total",
+    "totalDuration": "Total Duration",
+    "executionCount": "Execution Count",
+    "completionRate": "Completion Rate",
+    "dateGroupCount": "({{count}})",
+    "inProgress": "In Progress",
+    "unknownDuration": "Unknown",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "statusLabels": {
+      "completed": "Completed",
+      "interrupted": "Interrupted",
+      "time_slice_ended": "Time Slice Ended",
+      "unknown": "Unknown"
+    }
+  },
+  "markdownEditor": {
+    "defaultPlaceholder": "Record task notes here...",
+    "editorCrashed": "Editor Crashed",
+    "copyContent": "Copy Content",
+    "retry": "Retry",
+    "edit": "Edit",
+    "preview": "Preview",
+    "saving": "Saving...",
+    "save": "Save",
+    "markdownHint": "Supports Markdown syntax: **bold** *italic* `code` [link](url) # heading - list"
+  },
+  "dependencyGraph": {
+    "title": "Task Dependencies",
+    "description": "Visualize task dependencies",
+    "legendCompleted": "Completed",
+    "legendInProgress": "In Progress",
+    "legendBlocked": "Blocked",
+    "legendPending": "Pending",
+    "waitingTasks": "Waiting for {{count}} tasks",
+    "unlocked": "Unlocked"
+  },
+  "timeAnalysis": {
+    "title": "Time Period Analysis",
+    "subtitle": "24-hour Focus Distribution",
+    "peakPeriodMessage": "Your peak focus period is {{period}}",
+    "periodEarlyMorning": "Early Morning",
+    "periodMorning": "Morning",
+    "periodAfternoon": "Afternoon",
+    "periodEvening": "Evening"
+  },
+  "taskDetailPanel": {
+    "taskTypeOneTime": "One-time Task",
+    "taskTypeLongTerm": "Long-term Project",
+    "taskTypePeriodic": "Periodic Task",
+    "taskTypeLearning": "Learning Task",
+    "taskTypeDefault": "Regular Task",
+    "startTask": "Start Task",
+    "completeTask": "Complete Task",
+    "edit": "Edit"
+  },
+  "dependencySection": {
+    "unknownTask": "Unknown Task",
+    "strictDependency": "Strict Dependency",
+    "softDependency": "Soft Dependency",
+    "strictDependencyOnTask": "Strictly depends on this task",
+    "softDependencyOnTask": "Softly depends on this task"
+  },
+  "hotkeys": {
+    "newTask": "New Task",
+    "startPauseTask": "Start/Pause Task",
+    "completeTask": "Complete Task",
+    "closePopup": "Close Popup",
+    "closePopupExitFocus": "Close Popup/Exit Focus Mode",
+    "switchQ0": "Switch to Q0 Queue",
+    "switchQ0View": "Switch to Q0 Queue View",
+    "switchQ1": "Switch to Q1 Queue",
+    "switchQ1View": "Switch to Q1 Queue View",
+    "switchQ2": "Switch to Q2 Queue",
+    "switchQ2View": "Switch to Q2 Queue View",
+    "toggleFocusMode": "Toggle Focus Mode",
+    "toggleMiniMode": "Toggle Mini Mode"
+  },
+  "taskDependencyGraph": {
+    "currentTaskTitle": "Current Task",
+    "current": "Current",
+    "strictDep": "Strict Dependency",
+    "softDep": "Soft Dependency"
+  },
+  "efficiencyTrend": {
+    "title": "Efficiency Trend",
+    "subtitle": "Focus duration change",
+    "period7d": "7d",
+    "period30d": "30d",
+    "period90d": "90d",
+    "average": "Avg:",
+    "total": "Total:",
+    "focusDuration": "Focus Duration",
+    "dayCount": "{{count}} days"
+  },
+  "basicInfoSection": {
+    "zeroMinutes": "0 minutes",
+    "tags": "Tags"
+  },
+  "taskLinks": {
+    "typeWeb": "Web",
+    "typeFile": "File",
+    "typeLink": "Link",
+    "quickLinks": "Quick Links",
+    "linkCount": "{{count}} links",
+    "add": "Add",
+    "cancel": "Cancel",
+    "addFirstLink": "Add first link"
+  },
+  "taskRecommendation": {
+    "priorityUrgent": "Urgent",
+    "priorityHigh": "High Priority",
+    "priorityMedium": "Medium",
+    "priorityLow": "Low Priority",
+    "recommendationScore": "Recommendation Score:",
+    "durationMinutes": "{{count}} min",
+    "start": "Start",
+    "suggestedSlots": "Suggested Slots:",
+    "timeSlotMorning": "Morning",
+    "timeSlotAfternoon": "Afternoon",
+    "timeSlotEvening": "Evening",
+    "timeSlotNight": "Night",
+    "deadlinePassed": "Past deadline",
+    "deadlineApproachingHours": "Deadline approaching ({{hours}}h)",
+    "deadlineWithinDays": "Deadline within {{days}} days",
+    "highPriorityTask": "High priority task",
+    "inUrgentQueue": "In high priority queue Q0",
+    "suitableForTimeSlot": "Suitable for {{label}} time slot ({{tags}})",
+    "highHistoricalCompletionRate": "High historical completion rate",
+    "detectedCriticalKeyword": "Critical keyword detected",
+    "detectedHighPriorityKeyword": "High priority keyword detected",
+    "detectedMediumPriorityKeyword": "Medium priority keyword detected",
+    "detectedLowPriorityKeyword": "Low priority keyword detected",
+    "matchedKeywords": "Matched keywords: {{keywords}}",
+    "noPriorityKeywordDefault": "No priority keyword detected, using default medium priority",
+    "peakHourSuggestImportantTask": "You are in your peak efficiency period, recommended to handle important tasks",
+    "lowHourSuggestSimpleTask": "Current period has low efficiency, recommended to handle simple tasks or take a break",
+    "timeSlotSuitableFor": "{{label}} is suitable for: {{types}}",
+    "queueHighestCompletionRate": "Q{{queue}} queue has the highest completion rate ({{rate}}%)",
+    "performWellInTags": "You perform well in these task types: {{tags}}",
+    "peakHoursList": "Your peak efficiency hours: {{hours}}",
+    "blockedByTask": "⚠️ Blocked: must complete \"{{title}}\" first",
+    "suggestCompleteFirst": "💡 Suggestion: complete \"{{title}}\" first",
+    "urgentTaskHandleNow": "🚨 This task is very urgent, recommended to handle immediately",
+    "highPriorityTaskShort": "⚡ This task has a high priority",
+    "deadlineTodayTime": "⏰ Deadline: today {{time}}",
+    "deadlineDate": "📅 Deadline: {{date}}",
+    "peakHourForImportantTask": "📈 You are in your peak efficiency period, suitable for important tasks",
+    "estimatedDurationQuick": "⏱️ Estimated duration: {{duration}} min (quick completion)",
+    "estimatedDurationMinutes": "⏱️ Estimated duration: {{duration}} min",
+    "estimatedDurationHours": "⏱️ Estimated duration: {{hours}} hr",
+    "excellentPerformance": "✨ You perform excellently on this type of task",
+    "factorOverdue": "Overdue",
+    "factorOverdueDesc": "Task has passed the deadline",
+    "factorDueSoon": "Due soon",
+    "factorDueSoonDesc": "Due within {{hours}} hours",
+    "factorDueToday": "Due today",
+    "factorDueTodayDesc": "Needs to be completed today",
+    "factorDueSoonish": "Due soon",
+    "factorDueSoonishDesc": "Due within {{days}} days",
+    "factorPriority": "Priority",
+    "factorPriorityDesc": "Priority: {{priority}}",
+    "factorQueue": "Queue",
+    "factorQueueDesc": "Q{{queue}} queue",
+    "factorQuickTask": "Quick task",
+    "factorQuickTaskDesc": "Can be completed in a short time"
+  },
+  "progressTimeline": {
+    "daysCompleted": "{{completed}}/{{total}} days completed",
+    "plannedPercent": "Planned {{percent}}%",
+    "monthDayFormat": "EEEE, MMM d",
+    "plannedVsActual": "Planned: {{planned}} | Actual: {{actual}}"
+  },
+  "templateCategory": {
+    "all": "All",
+    "templateCount": "{{count}} templates"
+  },
+  "masteryProgressBar": {
+    "needsReview": "Needs Review",
+    "learning": "Learning",
+    "mastered": "Mastered"
+  },
+  "achievementBadge": {
+    "unlocked": "Achievement Unlocked!",
+    "great": "Great!"
+  },
+  "miniTimer": {
+    "breakTime": "Break Time"
+  },
+  "taskTimer": {
+    "breakTime": "Break Time",
+    "focusTime": "Focus Time"
+  },
+  "progressSection": {
+    "planned": "Planned {{percent}}%",
+    "actual": "Actual {{percent}}%"
+  },
+  "taskKnowledgeLink": {
+    "searchError": "Search failed, please retry"
+  },
+  "notifications": {
+    "taskStartTitle": "Task Started: {{title}}",
+    "taskStartBody": "Priority: {{priority}} | Estimated: {{duration}} min",
+    "taskCompleteTitle": "Task Completed: {{title}}",
+    "taskCompleteBody": "Actual time: {{duration}} min",
+    "timeSliceEndTitle": "Time Slice Ended: {{title}}",
+    "timeSliceEndBody": "Task moved to {{queueName}}",
+    "breakTitle": "Break Time",
+    "breakBody": "Please take a break and relax",
+    "breakEndTitle": "Break Ended",
+    "breakEndBody": "Ready to continue with the next task",
+    "deadlineTitle": "Deadline Reminder: {{title}}",
+    "deadlineBody": "Task is approaching deadline, please complete as soon as possible",
+    "notSet": "Not set",
+    "notRecorded": "Not recorded",
+    "queueExecution": "Execution Queue",
+    "queuePreparation": "Preparation Queue",
+    "queueTodo": "To-Do Queue",
+    "queueFallback": "Queue {{index}}"
+  },
+  "taskAnalytics": {
+    "priorityLow": "Low",
+    "priorityMedium": "Medium",
+    "priorityHigh": "High",
+    "priorityUrgent": "Urgent",
+    "insightCompletionRateExcellent": "Excellent task completion rate",
+    "insightCompletionRateExcellentDesc": "Your task completion rate reached {{rate}}%, excellent performance!",
+    "insightCompletionRateExcellentRec": "Keep up the current work pace",
+    "insightCompletionRateLow": "Low task completion rate",
+    "insightCompletionRateLowDesc": "Current task completion rate is {{rate}}%, there is room for improvement",
+    "insightCompletionRateLowRec": "Recommended to reduce the number of concurrent tasks and focus on important tasks",
+    "insightPeakHours": "Peak efficiency hours",
+    "insightPeakHoursDesc": "You are most efficient during {{hours}}",
+    "insightPeakHoursRec": "Recommended to schedule important or complex tasks during these periods",
+    "insightQueueEfficiency": "Q{{queue}} queue is most efficient",
+    "insightQueueEfficiencyDesc": "Completion rate reached {{rate}}%",
+    "insightQueueEfficiencyRec": "Focus mode is significantly effective, recommended to use more often",
+    "insightUrgentCompletionLow": "Insufficient urgent task completion rate",
+    "insightUrgentCompletionLowDesc": "Urgent priority task completion rate is only {{rate}}%",
+    "insightUrgentCompletionLowRec": "Recommended to prioritize urgent tasks to avoid delays",
+    "insightTagExcellent": "\"{{tag}}\" tasks perform excellently",
+    "insightTagExcellentDesc": "Completion rate reached {{rate}}%",
+    "insightTagNeedsAttention": "\"{{tag}}\" tasks need attention",
+    "insightTagNeedsAttentionDesc": "Completion rate is only {{rate}}%",
+    "insightTagNeedsAttentionRec": "Check for blockers and consider breaking down tasks"
+  },
+  "progressPlan": {
+    "customAllocationMustSumTo100": "Custom progress allocation percentages must sum to 100",
+    "taskNotFound": "Task not found",
+    "createProgressPlanFailed": "Failed to create progress plan",
+    "generateProgressPlanFailed": "Failed to generate progress plan",
+    "planDateRequired": "Please provide a plan date",
+    "noValidUpdateFields": "No valid fields to update",
+    "progressPlanNotFound": "Progress plan not found or update failed",
+    "getProgressPlansFailed": "Failed to get progress plans",
+    "noProgressPlanForDate": "No progress plan for this date",
+    "updateProgressFailed": "Failed to update progress",
+    "updateTaskProgressFailed": "Failed to update task progress"
+  },
+  "decisionEngine": {
+    "factorOverdue": "Overdue",
+    "factorDueSoon": "Due soon",
+    "factorDueIn3Days": "Due within 3 days",
+    "factorUrgencyDefault": "Priority {{priority}}, Queue Q{{queue}}",
+    "noEfficiencyData": "No efficiency data",
+    "peakHourForImportantTask": "Peak hours are suitable for important tasks",
+    "lowHourNotForImportantTask": "Low-efficiency periods are not recommended for important tasks",
+    "lowHourForSimpleTask": "Low-efficiency periods are suitable for simple tasks",
+    "currentEfficiency": "Current efficiency {{percent}}%",
+    "noLinkedKnowledgePoint": "No linked knowledge point",
+    "hasLinkedKnowledgePoint": "Has linked knowledge point",
+    "noBlockingDependency": "No blocking dependency",
+    "bestTimeSlotForType": "Best time slot for {{type}} tasks",
+    "okTimeSlotForType": "Suitable time slot for {{type}} tasks",
+    "notBestTimeSlot": "Not the best time slot",
+    "noAvailableTimeSlots": "No available time slots set",
+    "inAvailableTimeSlot": "Currently within available time slot",
+    "notInAvailableTimeSlot": "Currently not in an available time slot",
+    "recommendExecuteTask": "Recommended to execute this task"
+  },
+  "dependency": {
+    "errors": {
+      "taskNotFound": "Task not found",
+      "fetchDependenciesFailed": "Failed to fetch dependency list",
+      "fetchDependentsFailed": "Failed to fetch dependent tasks list",
+      "selfDependency": "Task cannot depend on itself",
+      "queryFailed": "Failed to query task",
+      "tasksNotFound": "One or more tasks not found",
+      "dependencyExists": "This dependency relationship already exists",
+      "cycleDetected": "Adding this dependency would create a circular dependency",
+      "createFailed": "Failed to create dependency",
+      "deleteFailed": "Failed to delete dependency"
+    }
+  },
+  "schedule": {
+    "messages": {
+      "fetchListFailed": "Failed to fetch periodic task list",
+      "templateNotFound": "Task template not found or does not belong to current user",
+      "createFailed": "Failed to create periodic task configuration",
+      "configNotFound": "Periodic configuration not found",
+      "updateFailed": "Failed to update periodic configuration",
+      "deleteFailed": "Failed to delete periodic configuration",
+      "manualRunFailed": "Failed to manually run schedule"
+    }
+  },
+  "subtaskState": {
+    "descriptions": {
+      "masteryLowToReview": "Mastery below 30%, entering review phase",
+      "masteryMidToPractice": "Mastery 30%-70%, entering practice phase",
+      "masteryHighToQuiz": "Mastery above 70%, entering quiz phase",
+      "reviewCompleteToPractice": "Review complete, entering practice phase",
+      "practicePassToQuiz": "Practice passed, entering quiz phase",
+      "practiceFailToReview": "Practice not passed, returning to review phase",
+      "quizFailToReview": "Quiz not passed, returning to review phase",
+      "quizPartialToPractice": "Quiz partially passed, entering practice phase",
+      "quizPassToQuizDeepen": "Quiz passed, continuing quiz phase for deeper practice"
+    }
+  },
+  "autoTask": {
+    "reasons": {
+      "studyExists": "Associated study task already exists",
+      "reviewExists": "Associated review task already exists",
+      "pathSubtaskExists": "Associated learning path subtask already exists",
+      "studyAutoGenerated": "Auto-generated study task",
+      "reviewAutoGenerated": "Auto-generated review task",
+      "pathSubtaskAutoGenerated": "Auto-generated learning path subtask"
+    },
+    "titles": {
+      "study": "Study: {{title}}",
+      "review": "Review: {{title}}",
+      "pathNode": "Learning path node: {{title}}",
+      "studyKnowledgePoint": "Study: {{title}}"
+    }
+  },
+  "learningLoop": {
+    "titles": {
+      "learn": "Learn: {{knowledgePoint}}",
+      "test": "Test: {{knowledgePoint}}",
+      "review": "Review: {{knowledgePoint}}",
+      "iterate": "Iterate: {{knowledgePoint}}"
+    },
+    "defaults": {
+      "knowledgePoint": "Knowledge point"
+    }
+  },
+  "graphTask": {
+    "titles": {
+      "studyGraph": "Study graph: {{title}}"
+    }
+  },
+  "calendarService": {
+    "calName": "KnowledgeMap Task Calendar",
+    "calDesc": "Calendar sync for KnowledgeMap task scheduling system",
+    "categories": {
+      "study": "Study",
+      "review": "Review",
+      "work": "Work",
+      "task": "Task",
+      "execution": "Execution Record"
+    },
+    "executionSummary": "✓ {{title}}",
+    "executionDescription": "Actual execution time: {{minutes}} minutes"
+  },
+  "systemTask": {
+    "errors": {
+      "cannotStartTask": "Cannot start task: current status is {{current}}, expected status is pending",
+      "cannotRetryTask": "Cannot retry task: current status is {{current}}",
+      "maxRetriesReached": "Task has reached maximum retry count",
+      "cannotCancelCompletedTask": "Cannot cancel a completed task"
+    }
+  },
+  "periodicTask": {
+    "messages": {
+      "passNotFound": "Pass not found",
+      "rewardNotFound": "Reward not found",
+      "insufficientPoints": "Insufficient points",
+      "rewardAlreadyClaimed": "Reward already claimed",
+      "rewardClaimedSuccessfully": "Reward claimed successfully"
+    }
+  },
+  "api": {
+    "errors": {
+      "getSettingsFailed": "Failed to get settings",
+      "createSettingsFailed": "Failed to create settings",
+      "noUpdateFields": "No valid fields to update",
+      "updateSettingsFailed": "Failed to update settings",
+      "updateNoteFailed": "Failed to update note",
+      "taskNotFound": "Task not found",
+      "getExecutionFailed": "Failed to get execution record",
+      "getExecutionHistoryFailed": "Failed to get execution history",
+      "executionNotFound": "Execution record not found",
+      "getStatsFailed": "Failed to get statistics",
+      "getExecutionStatsFailed": "Failed to get execution statistics",
+      "getHeatmapFailed": "Failed to get heatmap data",
+      "reviewCardExists": "Review card already exists for this knowledge point (FSRS)",
+      "reviewTaskNotFound": "Review task not found",
+      "knowledgePointNotFound": "Knowledge point not found or no access",
+      "knowledgePointLinkNotFound": "Knowledge point link not found"
+    },
+    "messages": {
+      "pendingReviewCount": "You have {{count}} knowledge points pending review",
+      "knowledgePointNeedsReview": "Knowledge point needs review: mastery has dropped to {{mastery}}%",
+      "quizTitle": "Quiz: {{title}}"
     }
   }
 }

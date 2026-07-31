@@ -264,7 +264,7 @@
     "syncComplete": "Sync Complete",
     "syncNow": "Sync Now"
   },
-  "commandPalette": {
+  "globalCommandPalette": {
     "categoryNavigation": "Navigation",
     "categoryRecent": "Recent",
     "categoryAction": "Quick Actions",
@@ -291,28 +291,6 @@
     "footerTitle": "Global Command Palette"
   },
   "comingSoon": "Coming Soon",
-  "shortcutHelp": {
-    "title": "Keyboard Shortcuts",
-    "resetAll": "Reset All",
-    "searchPlaceholder": "Search shortcuts...",
-    "disabled": "Disabled",
-    "pressNewShortcut": "Press new shortcut...",
-    "notSet": "Not set",
-    "resetToDefault": "Reset to default",
-    "noMatch": "No matching shortcuts found",
-    "customHint": "Click a shortcut button to customize",
-    "totalCount": "{{count}} shortcuts total",
-    "shortcutField": "Shortcut",
-    "categories": {
-      "navigation": "Navigation",
-      "view": "View",
-      "editing": "Editing",
-      "selection": "Selection",
-      "ai": "AI Assistant",
-      "tools": "Tools",
-      "general": "General"
-    }
-  },
   "preferences": {
     "reducedMotion": "Reduce motion",
     "reducedMotionDesc": "Reduce animation duration and intensity (active when the OS enables \"reduce motion\" or this toggle is on)"
@@ -326,7 +304,12 @@
   "tagSystem": {
     "selected": "{{count}} tags selected",
     "filter": "Filter tags",
-    "selectAll": "Select tags"
+    "selectAll": "Select tags",
+    "addTagPlaceholder": "Add tag...",
+    "cloudTitle": "Tag Cloud",
+    "countLabel": "{{count}} tags",
+    "clearAll": "Clear all",
+    "suggestions": "Suggested tags"
   },
   "audioVisualizer": {
     "ariaLabel": "Audio visualizer, state: {{state}}",
@@ -339,12 +322,126 @@
   "shortcut": {
     "captureLabel": "Shortcut capture"
   },
-  "pwaDiagnostics": {
-    "swRegistrationLabel": "SW registration status",
-    "swVersionLabel": "SW current version",
-    "standaloneLabel": "Standalone mode",
-    "installableLabel": "Installable status",
-    "installedLabel": "Installed status",
-    "cacheSizeLabel": "Cache size"
+  "shortcutHint": {
+    "noShortcutWarning": "[ShortcutHint] actionId \"{{actionId}}\" has no shortcut definition",
+    "tooltipAriaLabel": "Shortcut hint"
+  },
+  "saveButton": {
+    "idle": "Save",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "error": "Save failed"
+  },
+  "searchResults": {
+    "searching": "Searching...",
+    "graphLabel": "Graphs {{count}}",
+    "nodeLabel": "Nodes {{count}}",
+    "aiAnswer": "AI Answer",
+    "notFound": "No results found for \"{{query}}\""
+  },
+  "syncDetail": {
+    "title": "Sync Status",
+    "lastSync": "Last sync: {{time}}",
+    "notSynced": "Not synced yet",
+    "conflictCount": "{{count}} sync conflicts",
+    "pendingPush": "Pending push",
+    "pendingPull": "Pending pull"
+  },
+  "taskProgress": {
+    "completedFormat": "Completed {{completed}}/{{total}}",
+    "title": "Task progress",
+    "current": "Current: {{current}}"
+  },
+  "syncStatus": {
+    "synced": "Synced",
+    "syncing": "Syncing",
+    "offline": "Offline",
+    "error": "Sync error"
+  },
+  "mobileFocusTimer": {
+    "pauseAriaLabel": "Pause",
+    "startAriaLabel": "Start"
+  },
+  "nodeOperations": {
+    "createSuccess": "Node created successfully",
+    "saveSuccess": "Node saved successfully",
+    "saveFailed": "Save failed, please retry",
+    "hardDeleteConfirm": "Are you sure you want to completely delete the knowledge point \"{{title}}\"? This action will remove it from all graphs and cannot be undone!",
+    "removeNodeConfirm": "Are you sure you want to remove the node \"{{title}}\" from the current graph?",
+    "hardDeleteTitle": "Completely Delete Knowledge Point",
+    "removeNodeTitle": "Remove Node",
+    "batchDeleteTitle": "Batch Delete",
+    "batchDeleteConfirm": "Are you sure you want to delete the selected {{count}} node(s)?",
+    "batchDeleteSuccess": "Batch delete successful",
+    "batchDeleteFailed": "Batch delete failed",
+    "batchLevelUpdateSuccess": "Updated {{count}} node(s) level to {{level}}",
+    "batchLevelUpdateFailed": "Batch update level failed",
+    "updateSuccess": "Node status updated",
+    "updateFailed": "Failed to update node"
+  },
+  "aiOperations": {
+    "fetchRelatedNodesFailed": "Failed to fetch related nodes",
+    "unknownError": "Unknown error",
+    "fieldsUpdated": ". Updated: {{fields}}",
+    "childrenSpawned": ". Generated {{count}} child node(s)"
+  },
+  "audioSynthesis": {
+    "categories": {
+      "nature": "Nature",
+      "environment": "Environment",
+      "meditation": "Meditation"
+    },
+    "sounds": {
+      "rain": "Rain",
+      "thunder": "Thunder",
+      "ocean": "Ocean Waves",
+      "stream": "Stream",
+      "wind": "Wind",
+      "forest": "Forest",
+      "fire": "Campfire",
+      "cafe": "Café",
+      "library": "Library",
+      "night": "Night",
+      "train": "Train",
+      "airplane": "Airplane",
+      "singingBowl": "Singing Bowl",
+      "windChime": "Wind Chime",
+      "breathing": "Breathing Guide",
+      "whiteNoise": "White Noise",
+      "pinkNoise": "Pink Noise",
+      "brownNoise": "Brown Noise"
+    },
+    "presets": {
+      "rainyReading": "Rainy Reading",
+      "lateNightWork": "Late Night Work",
+      "forestMeditation": "Forest Meditation",
+      "beachRelax": "Beach Relax"
+    }
+  },
+  "errors": {
+    "networkError": "Network error, please check your network connection",
+    "authError": "Authentication failed, please log in again",
+    "tokenExpiredError": "Login expired, please log in again",
+    "forbiddenError": "No permission to perform this operation",
+    "notFoundError": "The requested resource does not exist",
+    "validationError": "Invalid input data format",
+    "serverError": "Server error, please try again later",
+    "timeoutError": "Request timed out, please try again later",
+    "rateLimitError": "Too many requests, please try again later",
+    "cancelledError": "Request cancelled",
+    "unknownError": "Unknown error",
+    "requestFailed": "Request failed",
+    "networkConnectionFailed": "Network connection failed, please check network settings",
+    "operationFailed": "Operation failed, please try again later"
+  },
+  "syncConflict": {
+    "title": "Sync Conflicts ({{count}})",
+    "tableLabel": "Table",
+    "recordIdLabel": "Record ID",
+    "timeLabel": "Time",
+    "localVersion": "Local Version",
+    "keepLocal": "Keep Local Version",
+    "remoteVersion": "Cloud Version",
+    "keepRemote": "Keep Cloud Version"
   }
 }

@@ -13,6 +13,8 @@ import layout from './layout.json';
 import console from './console.json';
 import graphMap from './graphMap.json';
 import learningPaths from './learningPaths.json';
+import learningPath from './learningPath.json';
+import ai from './ai.json';
 import learning from './learning.json';
 import statistics from './statistics.json';
 import stats from './stats.json';
@@ -40,6 +42,7 @@ import recycleBin from './recycleBin.json';
 import helpGuide from './helpGuide.json';
 import pluginMarketplace from './pluginMarketplace.json';
 import aiChat from './aiChat.json';
+import ragChat from './ragChat.json';
 import podcast from './podcast.json';
 import literatureExtract from './literatureExtract.json';
 import backboneModules from './backboneModules.json';
@@ -61,6 +64,11 @@ import toast from './toast.json';
 import relationshipTypes from './relationshipTypes.json';
 import learningStatus from './learningStatus.json';
 import syncStatus from './syncStatus.json';
+import pwaDiagnostics from './pwaDiagnostics.json';
+import conflictResolution from './conflictResolution.json';
+import offlineBanner from './offlineBanner.json';
+import tutor from './tutor.json';
+import pwaInstall from './pwaInstall.json';
 
 const zhCN = {
   dashboard,
@@ -78,6 +86,8 @@ const zhCN = {
   console,
   graphMap,
   learningPaths,
+  learningPath,
+  ai,
   learning,
   statistics,
   stats,
@@ -105,6 +115,7 @@ const zhCN = {
   helpGuide,
   pluginMarketplace,
   aiChat,
+  ragChat,
   podcast,
   literatureExtract,
   backboneModules,
@@ -126,6 +137,11 @@ const zhCN = {
   relationshipTypes,
   learningStatus,
   syncStatus,
+  pwaDiagnostics,
+  conflictResolution,
+  offlineBanner,
+  tutor,
+  pwaInstall,
 };
 
 export default zhCN;

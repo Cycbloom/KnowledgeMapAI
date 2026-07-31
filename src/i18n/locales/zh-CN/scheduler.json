@@ -191,7 +191,25 @@
     "draftDetected": "检测到未完成的草稿",
     "draftDetectedMessage": "检测到您之前有未完成的草稿，是否恢复？",
     "restoreDraft": "恢复草稿",
-    "discardDraft": "放弃草稿"
+    "discardDraft": "放弃草稿",
+    "autoGenerate": "自动生成",
+    "systemRecommendation": "系统推荐",
+    "import": "导入",
+    "relatedGraph": "关联图谱",
+    "clickToViewGraph": "点击查看图谱",
+    "relatedKnowledgePoint": "关联知识点",
+    "clickToViewKnowledgePoint": "点击查看知识点",
+    "expansionDepth": "扩展深度",
+    "maxDepth": "最大深度",
+    "expansionStyle": "扩展风格",
+    "topic": "主题",
+    "viewRawData": "查看原始数据",
+    "status": "状态",
+    "statusPending": "待处理",
+    "statusInProgress": "进行中",
+    "statusCompleted": "已完成",
+    "statusInterrupted": "已中断",
+    "statusPaused": "已暂停"
   },
   "templateForm": {
     "editTemplate": "编辑模板",
@@ -306,7 +324,9 @@
     "viewDetails": "查看详情",
     "startTask": "开始任务",
     "recommendationDetails": "推荐详情分析",
-    "bestTimeSlots": "最佳执行时段建议"
+    "bestTimeSlots": "最佳执行时段建议",
+    "subtaskProgress": "子任务进度：{{completed}}/{{total}}",
+    "startLearning": "开始学习"
   },
   "taskLink": {
     "linkedKnowledge": "关联知识点",
@@ -320,7 +340,15 @@
     "primary": "主要",
     "relevance": "关联度",
     "noLinkedKnowledge": "暂无关联的知识点",
-    "addLink": "添加知识点关联"
+    "addLink": "添加知识点关联",
+    "errors": {
+      "taskNotFound": "任务不存在",
+      "fetchListFailed": "获取链接列表失败",
+      "createFailed": "创建链接失败",
+      "updateFailed": "更新链接失败",
+      "linkNotFound": "链接不存在",
+      "deleteFailed": "删除链接失败"
+    }
   },
   "taskCard": {
     "typeLongTerm": "长期",
@@ -499,15 +527,85 @@
     "notesTab": {
       "notesPlaceholder": "在这里记录任务笔记...\n\n支持 Markdown 语法：\n- **粗体** *斜体*\n- # 标题\n- 列表项\n- [链接](url)"
     },
+    "subtaskList": {
+      "unnamedKnowledgePoint": "未命名知识点",
+      "title": "子任务",
+      "completionFormat": "{{completed}}/{{total}} 完成",
+      "avgMastery": "· 平均掌握度 {{percent}}%",
+      "add": "添加",
+      "selectKnowledgePoint": "选择知识点",
+      "estimatedDuration": "{{count}} 分钟",
+      "addFirstSubtask": "添加第一个子任务"
+    },
     "progressDetail": {
-      "notePlaceholder": "添加备注..."
+      "notePlaceholder": "添加备注...",
+      "longTaskOnly": "进度详情仅适用于长期任务",
+      "title": "进度详情",
+      "progressFormat": "{{percent}}% 完成",
+      "avgDailyCompletion": "平均每日完成 {{percent}}%",
+      "overallProgress": "总体进度",
+      "remaining": "剩余 {{percent}}%",
+      "estimatedDays": "预计 {{days}} 天完成",
+      "progressTrend": "进度趋势",
+      "progressAnalysis": "进度分析",
+      "statusAhead": "超前",
+      "statusNormal": "正常",
+      "statusLagging": "滞后",
+      "currentVsPlan": "当前 {{current}}% / 计划 {{planned}}%",
+      "dailyPlanTitle": "每日进度计划",
+      "tableAriaLabel": "每日进度计划表",
+      "date": "日期",
+      "plan": "计划",
+      "actual": "实际",
+      "status": "状态",
+      "action": "操作",
+      "editProgress": "编辑进度 - {{date}}",
+      "plannedProgress": "计划进度",
+      "actualProgress": "实际进度",
+      "remark": "备注",
+      "delete": "删除",
+      "cancel": "取消",
+      "save": "保存",
+      "suggestions": {
+        "ahead": "进度超前，可以适当降低每日目标",
+        "aheadExtra": "考虑提前完成任务或增加任务内容",
+        "onTrack": "保持当前节奏，按计划进行",
+        "behind": "进度滞后，建议增加每日投入时间",
+        "blocked": "检查是否有阻碍因素需要解决"
+      },
+      "statusLabels": {
+        "skipped": "已跳过",
+        "overcompleted": "超额完成",
+        "completed": "已完成",
+        "notMet": "未达标",
+        "pending": "待处理"
+      },
+      "statusOptions": {
+        "pending": "待处理",
+        "completed": "已完成",
+        "skipped": "跳过"
+      }
     },
     "taskLinks": {
       "titlePlaceholder": "标题（可选，默认使用链接地址）",
       "descriptionPlaceholder": "描述（可选）"
     },
     "knowledgePointAssociation": {
-      "searchPlaceholder": "搜索知识点..."
+      "searchPlaceholder": "搜索知识点...",
+      "associateSuccess": "知识点已关联",
+      "associateFailed": "关联知识点失败",
+      "unassociateSuccess": "已取消关联",
+      "unassociateFailed": "取消关联失败",
+      "setPrimarySuccess": "已设为主要知识点",
+      "setPrimaryFailed": "设置失败",
+      "title": "关联知识点",
+      "count": "{{count}} 个",
+      "add": "添加",
+      "noMatch": "未找到匹配的知识点",
+      "unknownKnowledgePoint": "未知知识点",
+      "primary": "主要",
+      "relevance": "关联度:",
+      "addAssociation": "添加知识点关联"
     },
     "basicInfo": {
       "title": "基本信息",
@@ -557,7 +655,25 @@
   },
   "templateSelector": {
     "empty": "没有找到模板",
-    "searchPlaceholder": "搜索模板..."
+    "searchPlaceholder": "搜索模板...",
+    "title": "从模板创建任务",
+    "new": "新建",
+    "all": "全部",
+    "fillVariables": "填写变量",
+    "inputPlaceholder": "输入 {{placeholder}}",
+    "preview": "预览",
+    "minutes": "{{count}}分钟",
+    "priority": "优先级:",
+    "useThisTemplate": "使用此模板",
+    "selectTemplateHint": "选择一个模板查看详情",
+    "tags": "标签:",
+    "categories": {
+      "study": "学习",
+      "work": "工作",
+      "life": "生活",
+      "health": "健康",
+      "custom": "自定义"
+    }
   },
   "weeklyReport": {
     "empty": "本周还没有专注记录",
@@ -595,28 +711,129 @@
     "focusDurationLabel": "专注时长",
     "pomodoroLabel": "番茄钟",
     "focusCountLabel": "专注次数",
-    "completedTasksLabel": "完成任务"
+    "completedTasksLabel": "完成任务",
+    "hoursMinutes": "{{hours}}小时{{minutes}}分钟",
+    "minutesOnly": "{{minutes}}分钟",
+    "secondsOnly": "{{seconds}}秒",
+    "dailyStats": "每日统计",
+    "pomodoroCount": "个番茄",
+    "average": "平均",
+    "taskCount": "个任务",
+    "productivityScore": "生产力评分"
   },
   "dailyReview": {
     "harvestPlaceholder": "记录今天的收获和感受...",
     "difficultyPlaceholder": "今天遇到了什么困难？",
     "improvementPlaceholder": "明天可以怎么改进？",
-    "learningPlaceholder": "记录今天学到的新知识或技能..."
+    "learningPlaceholder": "记录今天学到的新知识或技能...",
+    "moods": {
+      "great": "很棒",
+      "good": "不错",
+      "normal": "一般",
+      "tired": "疲惫",
+      "stressed": "压力大"
+    },
+    "title": "每日回顾",
+    "todayCompleted": "今日完成",
+    "tasks": "任务",
+    "focusDuration": "专注时长",
+    "howDoYouFeel": "今天感觉如何？",
+    "todayInsights": "今日心得",
+    "difficulties": "遇到的困难",
+    "improvements": "改进方向",
+    "learned": "学到了什么",
+    "saving": "保存中...",
+    "updateReview": "更新回顾",
+    "saveReview": "保存回顾"
   },
   "weeklyReflection": {
     "feelingPlaceholder": "这周整体感觉如何？有什么收获？",
     "improvementPlaceholder": "下周想要改进什么？",
-    "learningPlaceholder": "这周学到了什么新东西？"
+    "learningPlaceholder": "这周学到了什么新东西？",
+    "weekdays": {
+      "mon": "一",
+      "tue": "二",
+      "wed": "三",
+      "thu": "四",
+      "fri": "五",
+      "sat": "六",
+      "sun": "日"
+    },
+    "title": "周反思",
+    "thisWeek": "本周",
+    "weeksAgo": "{{count}}周前",
+    "completedTasks": "完成任务",
+    "focusDuration": "专注时长",
+    "dailyReviews": "每日回顾",
+    "mainMood": "主要心情",
+    "dailyCompletionTrend": "每日完成趋势",
+    "weeklySummary": "本周总结",
+    "nextWeekPlan": "下周改进计划",
+    "weeklyLearning": "本周学习收获",
+    "saving": "保存中...",
+    "updateReflection": "更新反思",
+    "saveReflection": "保存反思",
+    "zeroMinutes": "0分钟"
   },
   "achievementGallery": {
-    "searchPlaceholder": "搜索成就..."
+    "searchPlaceholder": "搜索成就...",
+    "loadFailed": "加载成就数据失败",
+    "title": "成就殿堂",
+    "unlockedCount": "已解锁 {{unlocked}}/{{total}} 个成就",
+    "overallProgress": "总体进度",
+    "experienceGained": "获得经验",
+    "filterAll": "全部",
+    "filterUnlocked": "已解锁",
+    "filterLocked": "未解锁",
+    "unlockedAt": "解锁于",
+    "categories": {
+      "focus": "专注",
+      "tasks": "任务",
+      "streak": "连续",
+      "special": "特殊",
+      "study": "学习",
+      "creation": "创作"
+    }
   },
   "monthlyReport": {
     "empty": "本月还没有专注记录",
-    "emptyHint": "开始专注来追踪你的进度"
+    "emptyHint": "开始专注来追踪你的进度",
+    "title": "月报",
+    "yearMonthFormat": "{{year}}年 {{month}}",
+    "totalFocusDuration": "总专注时长",
+    "hourUnit": "小时",
+    "completedTasks": "完成任务",
+    "countUnit": "个",
+    "activeDays": "活跃天数",
+    "dayUnit": "天",
+    "longestStreak": "最长连续",
+    "bestPerformanceDay": "最佳表现日",
+    "focusDuration": "专注时长",
+    "weeklyDistribution": "每周分布",
+    "weekFormat": "第{{week}}周",
+    "sessionCountFormat": "{{count}}次",
+    "dailyAvgDuration": "日均时长",
+    "totalPomodoros": "总番茄钟",
+    "totalSessions": "总会话",
+    "months": {
+      "jan": "一月",
+      "feb": "二月",
+      "mar": "三月",
+      "apr": "四月",
+      "may": "五月",
+      "jun": "六月",
+      "jul": "七月",
+      "aug": "八月",
+      "sep": "九月",
+      "oct": "十月",
+      "nov": "十一月",
+      "dec": "十二月"
+    }
   },
   "focusHeatmap": {
     "title": "年度专注热力图",
+    "yearLabel": "{{year}}年",
+    "zeroMinutes": "0分钟",
     "empty": "{{year}} 年还没有专注记录",
     "emptyHint": "开始专注来填充你的热力图",
     "noRecords": "无专注记录",
@@ -629,7 +846,46 @@
     "more": "多",
     "focusSuffix": " 专注",
     "sessionsSuffix": " 次会话",
-    "loadFailed": "加载热力图数据失败"
+    "loadFailed": "加载热力图数据失败",
+    "months": {
+      "jan": "一月",
+      "feb": "二月",
+      "mar": "三月",
+      "apr": "四月",
+      "may": "五月",
+      "jun": "六月",
+      "jul": "七月",
+      "aug": "八月",
+      "sep": "九月",
+      "oct": "十月",
+      "nov": "十一月",
+      "dec": "十二月"
+    },
+    "weekdays": {
+      "sun": "日",
+      "mon": "一",
+      "tue": "二",
+      "wed": "三",
+      "thu": "四",
+      "fri": "五",
+      "sat": "六"
+    }
+  },
+  "taskDistribution": {
+    "title": "任务分布",
+    "subtitle": "按标签分类统计",
+    "untagged": "未分类",
+    "taskCount": "{{count}} 个任务",
+    "taskCountWithDuration": "{{count}} 个任务 · {{duration}}",
+    "durationMinutes": "{{count}}分钟",
+    "durationHoursMinutes": "{{hours}}h {{minutes}}m",
+    "durationHours": "{{hours}}h"
+  },
+  "achievementNotification": {
+    "achievementUnlocked": "成就解锁!",
+    "previous": "上一个",
+    "next": "下一个",
+    "awesome": "太棒了!"
   },
   "taskActions": {
     "deleteTaskConfirm": {
@@ -648,7 +904,17 @@
     "feelingPlaceholder": "这个任务完成得怎么样？有什么感受？",
     "obstaclePlaceholder": "有什么阻碍？",
     "solutionPlaceholder": "如何解决的？",
-    "learningPlaceholder": "从这个任务中学到了什么新知识或技能？"
+    "learningPlaceholder": "从这个任务中学到了什么新知识或技能？",
+    "taskCompleted": "任务完成！",
+    "takeMomentToReview": "花点时间回顾一下",
+    "actualDuration": "实际用时:",
+    "completionInsights": "完成心得",
+    "difficulties": "遇到的困难",
+    "solutions": "解决方案",
+    "learned": "学到了什么",
+    "skip": "跳过",
+    "saving": "保存中...",
+    "saveRetrospect": "保存复盘"
   },
   "heatmap": {
     "prevYear": "上一年",
@@ -664,14 +930,88 @@
   },
   "smartSuggestion": {
     "tablistLabel": "智能建议",
-    "refresh": "刷新建议"
+    "refresh": "刷新建议",
+    "title": "智能建议",
+    "greeting": "{{period}}好 · 基于您的效率数据",
+    "prioritySuggestion": "优先级建议",
+    "suggestedPriority": "建议优先级:",
+    "queue": "队列:",
+    "confidence": "置信度:",
+    "needMoreTasks": "完成更多任务后，我们将提供个性化的效率建议",
+    "tabs": {
+      "recommendations": "任务推荐",
+      "tips": "效率提示"
+    },
+    "periods": {
+      "morning": "上午",
+      "afternoon": "下午",
+      "evening": "傍晚",
+      "night": "夜间"
+    }
   },
   "smartRecommendation": {
     "refresh": "刷新推荐"
   },
+  "smartRecommendationBar": {
+    "cards": {
+      "peakEfficiency": {
+        "title": "效率高峰期",
+        "description": "当前是您的效率高峰时段，适合处理重要任务"
+      },
+      "masteryAnalysis": {
+        "title": "掌握度分析",
+        "description": "您在此类任务上完成率 {{rate}}%"
+      },
+      "deadline": {
+        "title": "截止时间",
+        "overdue": "已超过截止日期",
+        "approaching": "截止时间临近 ({{hours}}小时)",
+        "normal": "截止时间: {{date}}"
+      },
+      "highPriority": {
+        "title": "高优先级",
+        "description": "优先级 {{priority}}，位于 Q{{queue}} 队列"
+      }
+    },
+    "states": {
+      "learning": "学习",
+      "review": "复习",
+      "practice": "练习",
+      "quiz": "测验"
+    },
+    "learningInProgress": "正在学习",
+    "otherRecommendations": "其他推荐 ({{count}})",
+    "start": "开始"
+  },
   "activeTask": {
     "stopSchedule": "停止调度",
     "completeSubtask": "完成子任务"
+  },
+  "activeTaskPanel": {
+    "subtitle": "{{taskTitle}} · 子任务 {{subtaskProgress}}",
+    "focusedOn": "已专注 · 第 {{pomodoro}}",
+    "pomodoroUnit": "个番茄",
+    "estimated": "预计 {{duration}} min",
+    "done": "已做 {{duration}} min",
+    "statusFocusing": "专注中...",
+    "statusBreak": "休息中...",
+    "statusPaused": "已暂停",
+    "statusReady": "准备开始",
+    "pomodoroIndex": "· 第 {{current}}/{{total}} 番茄",
+    "togglePause": "暂停",
+    "toggleResume": "继续",
+    "currentLabel": "当前：{{title}}",
+    "states": {
+      "learning": "学习",
+      "review": "复习",
+      "practice": "练习",
+      "quiz": "测验"
+    },
+    "completeSubtask": "完成此子任务",
+    "mastery": "掌握度",
+    "overtime": "超时",
+    "allSubtasks": "全部子任务 ({{completed}}/{{total}})",
+    "inProgress": "进行中"
   },
   "taskKnowledge": {
     "setPrimary": "设为主要",
@@ -679,19 +1019,72 @@
     "viewInGraph": "在图谱中查看"
   },
   "timeSlot": {
-    "namePlaceholder": "如：上午专注时间"
+    "namePlaceholder": "如：上午专注时间",
+    "errors": {
+      "fetchFailed": "获取时间段设置失败",
+      "endAfterStart": "结束时间必须晚于开始时间",
+      "conflict": "时间段与现有时间段冲突",
+      "createFailed": "创建时间段失败",
+      "notFound": "时间段不存在",
+      "updateFailed": "更新时间段失败",
+      "deleteFailed": "删除时间段失败"
+    }
   },
   "subtask": {
     "titlePlaceholder": "子任务标题",
     "descriptionPlaceholder": "描述（可选）",
-    "durationPlaceholder": "预计时长（分钟）"
+    "durationPlaceholder": "预计时长（分钟）",
+    "errors": {
+      "taskNotFound": "任务不存在",
+      "fetchListFailed": "获取子任务列表失败",
+      "knowledgeAlreadyLinked": "该知识点已关联到此任务",
+      "createFailed": "创建子任务失败",
+      "updateFailed": "更新子任务失败",
+      "subtaskNotFound": "子任务不存在",
+      "deleteFailed": "删除子任务失败",
+      "updateMasteryFailed": "更新掌握度失败",
+      "invalidTransition": "无效的状态转换: {{from}} → {{to}}",
+      "transitionFailed": "状态转换失败"
+    }
   },
   "saveAsTemplate": {
     "namePlaceholder": "模板名称",
     "descriptionPlaceholder": "模板描述（可选）",
     "titleTemplatePlaceholder": "例如：学习：{{topic}}",
     "descriptionTemplatePlaceholder": "描述模板（可选）",
-    "tagPlaceholder": "添加标签"
+    "tagPlaceholder": "添加标签",
+    "categories": {
+      "knowledge": "知识",
+      "project": "项目",
+      "analysis": "分析",
+      "architecture": "架构",
+      "topicResearch": "专题研究",
+      "creative": "创意"
+    },
+    "fillRequired": "请填写模板名称和标题模板",
+    "saveSuccess": "模板保存成功!",
+    "saveFailed": "保存模板失败",
+    "title": "保存为任务模板",
+    "templateName": "模板名称",
+    "description": "描述",
+    "category": "分类",
+    "titleTemplate": "标题模板",
+    "autoExtractVariables": "自动提取变量",
+    "descriptionTemplate": "描述模板",
+    "variableHint": "使用 {{variableSyntax}} 创建可替换的变量，如 {{example1}}、{{example2}}",
+    "estimatedDuration": "预计时长（分钟）",
+    "priority": "优先级",
+    "priorityOptions": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "urgent": "紧急"
+    },
+    "tags": "标签",
+    "addTag": "添加",
+    "preview": "预览",
+    "cancel": "取消",
+    "save": "保存模板"
   },
   "focusModeNoise": {
     "preset": "预设",
@@ -708,7 +1101,48 @@
     "readyPrompt": "准备好继续专注了吗？",
     "continueCurrentTask": "继续当前任务",
     "switchToNextTask": "切换到下一个任务",
-    "later": "稍后再说"
+    "later": "稍后再说",
+    "longBreak": "长休息时间",
+    "shortBreak": "小憩时间",
+    "congratsPomodoros": "🎉 恭喜完成 {{count}} 个番茄钟！享受你的长休息吧",
+    "breakRunning": "休息中...",
+    "breakPaused": "已暂停",
+    "breakSuggestions": {
+      "lookOut": "远眺窗外，放松眼睛",
+      "deepBreath": "做几个深呼吸",
+      "walk": "站起来走动一下",
+      "drinkWater": "喝杯水",
+      "stretch": "伸展一下身体",
+      "listenMusic": "听一首喜欢的歌"
+    }
+  },
+  "draggableTaskCard": {
+    "durationMinutes": "{{count}}分钟",
+    "pauseBeforeMove": "请先暂停任务再移动"
+  },
+  "timeSlotSettings": {
+    "availableTimeSlots": "可用时间段",
+    "addTimeSlot": "添加时间段",
+    "addNewTimeSlot": "添加新时间段",
+    "applicableDate": "适用日期",
+    "everyday": "每天",
+    "labelOptional": "标签（可选）",
+    "startTime": "开始时间",
+    "endTime": "结束时间",
+    "cancel": "取消",
+    "save": "保存",
+    "unavailable": "不可用",
+    "noTimeSlots": "还没有设置可用时间段",
+    "noTimeSlotsHint": "点击上方按钮添加你的可用时间",
+    "daysOfWeek": {
+      "sunday": "周日",
+      "monday": "周一",
+      "tuesday": "周二",
+      "wednesday": "周三",
+      "thursday": "周四",
+      "friday": "周五",
+      "saturday": "周六"
+    }
   },
   "hotkeyHelp": {
     "title": "快捷键",
@@ -723,14 +1157,522 @@
     "currentStreak": "当前连续",
     "pomodoro": "番茄钟",
     "milestoneLabel": "里程碑:",
-    "minutesSuffix": "分钟",
-    "countSuffix": "个",
+    "zeroMinutes": "0 分钟",
+    "minutesSuffix": "{{count}}分钟",
     "milestones": {
       "focusMaster": "专注达人",
       "sustainedFocus": "持续专注",
       "deepFocus": "深度专注",
       "superFocus": "超级专注",
       "legendaryFocus": "传奇专注"
+    }
+  },
+  "taskDetail": {
+    "statusCompleted": "已完成",
+    "statusInterrupted": "中断",
+    "statusTimeSliceEnd": "时间片结束",
+    "durationFormat": "{{mins}}分{{secs}}秒",
+    "durationSecondsFormat": "{{secs}}秒",
+    "highPriority": "高优先级",
+    "estimatedDuration": "预计时长",
+    "actualDuration": "实际用时",
+    "deadline": "截止日期",
+    "notSet": "未设置",
+    "totalExecutionTime": "累计执行时间",
+    "tags": "标签",
+    "relatedKnowledgePoints": "关联知识点",
+    "executionHistory": "执行历史",
+    "createdAt": "创建于:",
+    "updatedAt": "更新于:",
+    "completedAt": "完成于:",
+    "start": "开始",
+    "pause": "暂停",
+    "complete": "完成",
+    "executionCountFormat": "({{count}} 次)"
+  },
+  "queueColumn": {
+    "quadrantUrgentImportant": "紧急重要任务",
+    "quadrantImportant": "重要任务",
+    "quadrantTodo": "待办任务",
+    "timeSlice": "时间片:",
+    "task": "任务:",
+    "estimated": "预计:",
+    "tasksInProgress": "{{count}} 个任务进行中",
+    "releaseToPlace": "释放以放置任务",
+    "addTask": "添加任务",
+    "taskCount": "{{count}} 个任务"
+  },
+  "subtaskDetail": {
+    "states": {
+      "learning": "学习",
+      "review": "复习",
+      "practice": "练习",
+      "quiz": "测验"
+    },
+    "stateDescriptions": {
+      "learning": "初始学习阶段，仅出现一次",
+      "review": "复习已学内容",
+      "practice": "简单题目快速检验",
+      "quiz": "综合题目全面评估"
+    },
+    "statusSwitched": "状态已切换为 {{status}}",
+    "statusSwitchFailed": "状态切换失败",
+    "masteryUpdated": "掌握度已更新",
+    "masteryUpdateFailed": "掌握度更新失败",
+    "title": "子任务详情",
+    "basicInfo": "基本信息",
+    "knowledgePointInfo": "知识点信息",
+    "learningState": "学习状态",
+    "stateTransition": "状态转换",
+    "recommendedState": "推荐状态",
+    "switching": "切换中",
+    "switch": "切换",
+    "masteryTransition": "掌握度 {{current}}% → {{next}}",
+    "masteryAdjustment": "掌握度调整",
+    "sliderHint": "拖动滑块调整掌握度（0-100%）",
+    "saving": "保存中",
+    "save": "保存",
+    "stateHistory": "状态历史",
+    "close": "关闭"
+  },
+  "queueSettings": {
+    "timeSliceOptions": {
+      "15min": "15 分钟",
+      "25min": "25 分钟",
+      "30min": "30 分钟",
+      "45min": "45 分钟",
+      "60min": "1 小时",
+      "90min": "1.5 小时",
+      "120min": "2 小时"
+    },
+    "queueName": "队列 {{count}}",
+    "editQueue": "编辑队列 #{{index}}",
+    "queueNameLabel": "队列名称",
+    "queueColor": "队列颜色",
+    "timeSlice": "时间片",
+    "timeSliceMinutes": "{{count}} 分钟",
+    "delete": "删除",
+    "minQueuesRequired": "至少需要 {{count}} 个队列",
+    "queueConfig": "队列配置",
+    "addQueue": "添加队列",
+    "complete": "完成",
+    "deleteQueue": "删除队列",
+    "deleteConfirmTitle": "删除队列",
+    "deleteConfirmWarning": "此操作不可撤销",
+    "deleteConfirmMessage": "确定要删除队列「{{queueName}}」吗？",
+    "deleteConfirmHint": "该队列中的任务将迁移到其他队列",
+    "selectTargetQueue": "选择目标队列",
+    "cancel": "取消",
+    "confirmDelete": "确认删除",
+    "manageHint": "管理队列优先级和设置（{{current}}/{{max}}）",
+    "dragHint": "拖拽调整队列优先级（上方优先级更高）",
+    "maxQueuesReached": "已达到最大队列数量限制（{{max}} 个）"
+  },
+  "timeAnalysis": {
+    "title": "时间段分析",
+    "subtitle": "24小时专注分布",
+    "peakPeriodMessage": "你的高效时段是 {{period}}",
+    "periodEarlyMorning": "凌晨",
+    "periodMorning": "早晨",
+    "periodAfternoon": "下午",
+    "periodEvening": "傍晚"
+  },
+  "taskDetailPanel": {
+    "taskTypeOneTime": "一次性任务",
+    "taskTypeLongTerm": "长期项目",
+    "taskTypePeriodic": "周期任务",
+    "taskTypeLearning": "学习任务",
+    "taskTypeDefault": "普通任务",
+    "startTask": "开始任务",
+    "completeTask": "完成任务",
+    "edit": "编辑"
+  },
+  "dependencySection": {
+    "unknownTask": "未知任务",
+    "strictDependency": "严格依赖",
+    "softDependency": "软性依赖",
+    "strictDependencyOnTask": "严格依赖此任务",
+    "softDependencyOnTask": "软性依赖此任务"
+  },
+  "executionRecords": {
+    "title": "执行记录",
+    "totalCount": "共 {{count}} 次执行",
+    "totalDuration": "总时长",
+    "executionCount": "执行次数",
+    "completionRate": "完成率",
+    "dateGroupCount": "({{count}}次)",
+    "inProgress": "进行中",
+    "unknownDuration": "未知",
+    "today": "今日",
+    "yesterday": "昨日",
+    "statusLabels": {
+      "completed": "已完成",
+      "interrupted": "中断",
+      "time_slice_ended": "时间片结束",
+      "unknown": "未知"
+    }
+  },
+  "markdownEditor": {
+    "defaultPlaceholder": "在这里记录任务笔记...",
+    "editorCrashed": "编辑器崩溃",
+    "copyContent": "复制内容",
+    "retry": "重试",
+    "edit": "编辑",
+    "preview": "预览",
+    "saving": "保存中...",
+    "save": "保存",
+    "markdownHint": "支持 Markdown 语法：**粗体** *斜体* `代码` [链接](url) # 标题 - 列表"
+  },
+  "dependencyGraph": {
+    "title": "任务依赖关系",
+    "description": "可视化任务之间的依赖",
+    "legendCompleted": "已完成",
+    "legendInProgress": "进行中",
+    "legendBlocked": "被阻塞",
+    "legendPending": "待处理",
+    "waitingTasks": "等待 {{count}} 个任务",
+    "unlocked": "已解锁"
+  },
+  "hotkeys": {
+    "newTask": "新建任务",
+    "startPauseTask": "开始/暂停任务",
+    "completeTask": "完成任务",
+    "closePopup": "关闭弹窗",
+    "closePopupExitFocus": "关闭弹窗/退出专注模式",
+    "switchQ0": "切换到Q0队列",
+    "switchQ0View": "切换到Q0队列视图",
+    "switchQ1": "切换到Q1队列",
+    "switchQ1View": "切换到Q1队列视图",
+    "switchQ2": "切换到Q2队列",
+    "switchQ2View": "切换到Q2队列视图",
+    "toggleFocusMode": "切换专注模式",
+    "toggleMiniMode": "切换迷你模式"
+  },
+  "taskDependencyGraph": {
+    "currentTaskTitle": "当前任务",
+    "current": "当前",
+    "strictDep": "严格依赖",
+    "softDep": "软性依赖"
+  },
+  "efficiencyTrend": {
+    "title": "效率趋势",
+    "subtitle": "专注时长变化",
+    "period7d": "7天",
+    "period30d": "30天",
+    "period90d": "90天",
+    "average": "平均:",
+    "total": "总计:",
+    "focusDuration": "专注时长",
+    "dayCount": "{{count}} 天"
+  },
+  "basicInfoSection": {
+    "zeroMinutes": "0 分钟",
+    "tags": "标签"
+  },
+  "taskLinks": {
+    "typeWeb": "网页",
+    "typeFile": "文件",
+    "typeLink": "链接",
+    "quickLinks": "快速链接",
+    "linkCount": "{{count}} 个链接",
+    "add": "添加",
+    "cancel": "取消",
+    "addFirstLink": "添加第一个链接"
+  },
+  "taskRecommendation": {
+    "priorityUrgent": "紧急",
+    "priorityHigh": "高优先",
+    "priorityMedium": "中等",
+    "priorityLow": "低优先",
+    "recommendationScore": "推荐分数:",
+    "durationMinutes": "{{count}}分钟",
+    "start": "开始",
+    "suggestedSlots": "建议时段:",
+    "timeSlotMorning": "上午",
+    "timeSlotAfternoon": "下午",
+    "timeSlotEvening": "傍晚",
+    "timeSlotNight": "夜间",
+    "deadlinePassed": "已超过截止日期",
+    "deadlineApproachingHours": "截止日期临近 ({{hours}}小时)",
+    "deadlineWithinDays": "截止日期在{{days}}天内",
+    "highPriorityTask": "高优先级任务",
+    "inUrgentQueue": "位于高优先级队列 Q0",
+    "suitableForTimeSlot": "适合{{label}}时段 ({{tags}})",
+    "highHistoricalCompletionRate": "历史完成率较高",
+    "detectedCriticalKeyword": "检测到紧急关键词",
+    "detectedHighPriorityKeyword": "检测到重要关键词",
+    "detectedMediumPriorityKeyword": "检测到中等优先级关键词",
+    "detectedLowPriorityKeyword": "检测到低优先级关键词",
+    "matchedKeywords": "匹配关键词: {{keywords}}",
+    "noPriorityKeywordDefault": "未检测到优先级关键词，使用默认中等优先级",
+    "peakHourSuggestImportantTask": "当前是您的效率高峰期，建议处理重要任务",
+    "lowHourSuggestSimpleTask": "当前时段效率较低，建议处理简单任务或休息",
+    "timeSlotSuitableFor": "{{label}}适合处理: {{types}}",
+    "queueHighestCompletionRate": "Q{{queue}}队列任务完成率最高 ({{rate}}%)",
+    "performWellInTags": "您在以下类型任务表现较好: {{tags}}",
+    "peakHoursList": "您的效率高峰时段: {{hours}}",
+    "blockedByTask": "⚠️ 被阻塞: 需要先完成 \"{{title}}\"",
+    "suggestCompleteFirst": "💡 建议: 先完成 \"{{title}}\"",
+    "urgentTaskHandleNow": "🚨 此任务非常紧急，建议立即处理",
+    "highPriorityTaskShort": "⚡ 此任务优先级较高",
+    "deadlineTodayTime": "⏰ 截止时间: 今天 {{time}}",
+    "deadlineDate": "📅 截止时间: {{date}}",
+    "peakHourForImportantTask": "📈 当前是您的效率高峰期，适合处理重要任务",
+    "estimatedDurationQuick": "⏱️ 预计时长: {{duration}}分钟 (快速完成)",
+    "estimatedDurationMinutes": "⏱️ 预计时长: {{duration}}分钟",
+    "estimatedDurationHours": "⏱️ 预计时长: {{hours}}小时",
+    "excellentPerformance": "✨ 您在此类任务上表现优秀",
+    "factorOverdue": "已过期",
+    "factorOverdueDesc": "任务已超过截止日期",
+    "factorDueSoon": "即将截止",
+    "factorDueSoonDesc": "{{hours}}小时内截止",
+    "factorDueToday": "今日截止",
+    "factorDueTodayDesc": "今天内需要完成",
+    "factorDueSoonish": "近期截止",
+    "factorDueSoonishDesc": "{{days}}天内截止",
+    "factorPriority": "优先级",
+    "factorPriorityDesc": "优先级: {{priority}}",
+    "factorQueue": "队列",
+    "factorQueueDesc": "Q{{queue}}队列",
+    "factorQuickTask": "快速任务",
+    "factorQuickTaskDesc": "可以在短时间内完成"
+  },
+  "progressTimeline": {
+    "daysCompleted": "{{completed}}/{{total}} 天完成",
+    "plannedPercent": "计划 {{percent}}%",
+    "monthDayFormat": "M月d日 EEEE",
+    "plannedVsActual": "计划: {{planned}} | 实际: {{actual}}"
+  },
+  "templateCategory": {
+    "all": "全部",
+    "templateCount": "{{count}} 个模板"
+  },
+  "masteryProgressBar": {
+    "needsReview": "需要复习",
+    "learning": "学习中",
+    "mastered": "掌握良好"
+  },
+  "achievementBadge": {
+    "unlocked": "成就解锁!",
+    "great": "太棒了!"
+  },
+  "miniTimer": {
+    "breakTime": "休息时间"
+  },
+  "taskTimer": {
+    "breakTime": "休息时间",
+    "focusTime": "专注时间"
+  },
+  "progressSection": {
+    "planned": "计划 {{percent}}%",
+    "actual": "实际 {{percent}}%"
+  },
+  "taskKnowledgeLink": {
+    "searchError": "搜索失败，请重试"
+  },
+  "notifications": {
+    "taskStartTitle": "任务开始: {{title}}",
+    "taskStartBody": "优先级: {{priority}} | 预计时长: {{duration}}分钟",
+    "taskCompleteTitle": "任务完成: {{title}}",
+    "taskCompleteBody": "实际用时: {{duration}}分钟",
+    "timeSliceEndTitle": "时间片结束: {{title}}",
+    "timeSliceEndBody": "任务已移至 {{queueName}}",
+    "breakTitle": "休息时间",
+    "breakBody": "请休息一下，放松身心",
+    "breakEndTitle": "休息结束",
+    "breakEndBody": "准备继续下一个任务",
+    "deadlineTitle": "截止日期提醒: {{title}}",
+    "deadlineBody": "任务即将到期，请尽快完成",
+    "notSet": "未设置",
+    "notRecorded": "未记录",
+    "queueExecution": "执行队列",
+    "queuePreparation": "准备队列",
+    "queueTodo": "待办队列",
+    "queueFallback": "队列 {{index}}"
+  },
+  "taskAnalytics": {
+    "priorityLow": "低",
+    "priorityMedium": "中",
+    "priorityHigh": "高",
+    "priorityUrgent": "紧急",
+    "insightCompletionRateExcellent": "任务完成率优秀",
+    "insightCompletionRateExcellentDesc": "您的任务完成率达到 {{rate}}%，表现非常出色！",
+    "insightCompletionRateExcellentRec": "继续保持当前的工作节奏",
+    "insightCompletionRateLow": "任务完成率偏低",
+    "insightCompletionRateLowDesc": "当前任务完成率为 {{rate}}%，有提升空间",
+    "insightCompletionRateLowRec": "建议减少同时进行的任务数量，专注于重要任务",
+    "insightPeakHours": "效率高峰时段",
+    "insightPeakHoursDesc": "您在 {{hours}} 时段效率最高",
+    "insightPeakHoursRec": "建议在这些时段安排重要或复杂的任务",
+    "insightQueueEfficiency": "Q{{queue}}队列效率最高",
+    "insightQueueEfficiencyDesc": "完成率达到 {{rate}}%",
+    "insightQueueEfficiencyRec": "专注模式效果显著，建议多使用",
+    "insightUrgentCompletionLow": "紧急任务完成率不足",
+    "insightUrgentCompletionLowDesc": "紧急优先级任务完成率仅为 {{rate}}%",
+    "insightUrgentCompletionLowRec": "建议优先处理紧急任务，避免延期",
+    "insightTagExcellent": "\"{{tag}}\"类任务表现出色",
+    "insightTagExcellentDesc": "完成率达到 {{rate}}%",
+    "insightTagNeedsAttention": "\"{{tag}}\"类任务需要关注",
+    "insightTagNeedsAttentionDesc": "完成率仅为 {{rate}}%",
+    "insightTagNeedsAttentionRec": "检查是否有阻碍因素，考虑分解任务"
+  },
+  "progressPlan": {
+    "customAllocationMustSumTo100": "自定义进度分配百分比总和必须等于100",
+    "taskNotFound": "任务不存在",
+    "createProgressPlanFailed": "创建进度计划失败",
+    "generateProgressPlanFailed": "生成进度计划失败",
+    "planDateRequired": "请提供计划日期",
+    "noValidUpdateFields": "没有有效的更新字段",
+    "progressPlanNotFound": "进度计划不存在或更新失败",
+    "getProgressPlansFailed": "获取进度计划失败",
+    "noProgressPlanForDate": "该日期没有进度计划",
+    "updateProgressFailed": "更新进度失败",
+    "updateTaskProgressFailed": "更新任务进度失败"
+  },
+  "decisionEngine": {
+    "factorOverdue": "已超期",
+    "factorDueSoon": "即将到期",
+    "factorDueIn3Days": "3天内到期",
+    "factorUrgencyDefault": "优先级{{priority}}, 队列Q{{queue}}",
+    "noEfficiencyData": "无效率数据",
+    "peakHourForImportantTask": "高效时段适合重要任务",
+    "lowHourNotForImportantTask": "低效时段不建议做重要任务",
+    "lowHourForSimpleTask": "低效时段适合简单任务",
+    "currentEfficiency": "当前效率{{percent}}%",
+    "noLinkedKnowledgePoint": "无关联知识点",
+    "hasLinkedKnowledgePoint": "关联知识点",
+    "noBlockingDependency": "无阻塞依赖",
+    "bestTimeSlotForType": "{{type}}类型任务的最佳时段",
+    "okTimeSlotForType": "{{type}}类型任务的合适时段",
+    "notBestTimeSlot": "非最佳时段",
+    "noAvailableTimeSlots": "未设置可用时段",
+    "inAvailableTimeSlot": "当前在可用时段内",
+    "notInAvailableTimeSlot": "当前不在可用时段",
+    "recommendExecuteTask": "推荐执行此任务"
+  },
+  "dependency": {
+    "errors": {
+      "taskNotFound": "任务不存在",
+      "fetchDependenciesFailed": "获取依赖列表失败",
+      "fetchDependentsFailed": "获取后置任务列表失败",
+      "selfDependency": "任务不能依赖自身",
+      "queryFailed": "查询任务失败",
+      "tasksNotFound": "一个或多个任务不存在",
+      "dependencyExists": "该依赖关系已存在",
+      "cycleDetected": "添加此依赖会形成循环依赖",
+      "createFailed": "创建依赖关系失败",
+      "deleteFailed": "删除依赖关系失败"
+    }
+  },
+  "schedule": {
+    "messages": {
+      "fetchListFailed": "获取周期性任务列表失败",
+      "templateNotFound": "任务模板不存在或不属于当前用户",
+      "createFailed": "创建周期性任务配置失败",
+      "configNotFound": "周期配置不存在",
+      "updateFailed": "更新周期配置失败",
+      "deleteFailed": "删除周期配置失败",
+      "manualRunFailed": "手动运行调度失败"
+    }
+  },
+  "subtaskState": {
+    "descriptions": {
+      "masteryLowToReview": "掌握度低于30%，进入复习阶段",
+      "masteryMidToPractice": "掌握度30%-70%，进入练习阶段",
+      "masteryHighToQuiz": "掌握度高于70%，进入测验阶段",
+      "reviewCompleteToPractice": "复习完成，进入练习阶段",
+      "practicePassToQuiz": "练习达标，进入测验阶段",
+      "practiceFailToReview": "练习未达标，返回复习阶段",
+      "quizFailToReview": "测验未达标，返回复习阶段",
+      "quizPartialToPractice": "测验部分达标，进入练习阶段",
+      "quizPassToQuizDeepen": "测验达标，继续测验阶段深化"
+    }
+  },
+  "autoTask": {
+    "reasons": {
+      "studyExists": "已存在关联的学习任务",
+      "reviewExists": "已存在关联的复习任务",
+      "pathSubtaskExists": "已存在关联的学习路径子任务",
+      "studyAutoGenerated": "自动生成学习任务",
+      "reviewAutoGenerated": "自动生成复习任务",
+      "pathSubtaskAutoGenerated": "自动生成学习路径子任务"
+    },
+    "titles": {
+      "study": "学习: {{title}}",
+      "review": "复习: {{title}}",
+      "pathNode": "学习路径节点: {{title}}",
+      "studyKnowledgePoint": "学习: {{title}}"
+    }
+  },
+  "learningLoop": {
+    "titles": {
+      "learn": "学习: {{knowledgePoint}}",
+      "test": "测试: {{knowledgePoint}}",
+      "review": "复习: {{knowledgePoint}}",
+      "iterate": "迭代: {{knowledgePoint}}"
+    },
+    "defaults": {
+      "knowledgePoint": "知识点"
+    }
+  },
+  "graphTask": {
+    "titles": {
+      "studyGraph": "学习图谱: {{title}}"
+    }
+  },
+  "calendarService": {
+    "calName": "KnowledgeMap 任务日历",
+    "calDesc": "KnowledgeMap 任务调度系统的日历同步",
+    "categories": {
+      "study": "学习",
+      "review": "复习",
+      "work": "工作",
+      "task": "任务",
+      "execution": "执行记录"
+    },
+    "executionSummary": "✓ {{title}}",
+    "executionDescription": "实际执行时间: {{minutes}} 分钟"
+  },
+  "systemTask": {
+    "errors": {
+      "cannotStartTask": "无法启动任务：当前状态为 {{current}}，期望状态为 pending",
+      "cannotRetryTask": "无法重试任务：当前状态为 {{current}}",
+      "maxRetriesReached": "任务已达最大重试次数",
+      "cannotCancelCompletedTask": "无法取消已完成的任务"
+    }
+  },
+  "periodicTask": {
+    "messages": {
+      "passNotFound": "通行证不存在",
+      "rewardNotFound": "奖励不存在",
+      "insufficientPoints": "积分不足",
+      "rewardAlreadyClaimed": "奖励已领取",
+      "rewardClaimedSuccessfully": "奖励领取成功"
+    }
+  },
+  "api": {
+    "errors": {
+      "getSettingsFailed": "获取设置失败",
+      "createSettingsFailed": "创建设置失败",
+      "noUpdateFields": "没有有效的更新字段",
+      "updateSettingsFailed": "更新设置失败",
+      "updateNoteFailed": "更新笔记失败",
+      "taskNotFound": "任务不存在",
+      "getExecutionFailed": "获取执行记录失败",
+      "getExecutionHistoryFailed": "获取执行历史失败",
+      "executionNotFound": "执行记录不存在",
+      "getStatsFailed": "获取统计失败",
+      "getExecutionStatsFailed": "获取执行统计失败",
+      "getHeatmapFailed": "获取热力图数据失败",
+      "reviewCardExists": "该知识点已存在复习卡片 (FSRS)",
+      "reviewTaskNotFound": "复习任务不存在",
+      "knowledgePointNotFound": "知识点不存在或无权访问",
+      "knowledgePointLinkNotFound": "知识点关联不存在"
+    },
+    "messages": {
+      "pendingReviewCount": "你有 {{count}} 个待复习的知识点",
+      "knowledgePointNeedsReview": "知识点需要复习：掌握度已降至 {{mastery}}%",
+      "quizTitle": "测验: {{title}}"
     }
   }
 }

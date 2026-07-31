@@ -1,6 +1,6 @@
 {
   "title": "AI Personalization Settings",
-  "scenarios": "Configuration Scenarios",
+  "scenariosLabel": "Configuration Scenarios",
   "systemTemplate": "System Template",
   "userTemplate": "User Template",
   "graphTemplate": "Graph Template",
@@ -23,5 +23,122 @@
   "promptSaved": "Prompt configuration saved",
   "saveFailed": "Save failed",
   "resetToDefaultSuccess": "Reset to default template",
-  "resetFailed": "Reset failed"
+  "resetFailed": "Reset failed",
+  "saveSuccess": "Prompt configuration saved",
+  "selectScene": "Please select a configuration scenario from the left",
+  "configScene": "Configuration Scene",
+  "configured": "Configured",
+  "currentTemplate": "Current Template",
+  "scenarios": {
+    "learning_material": {
+      "name": "Learning Material Generation",
+      "description": "Prompt template for generating learning materials"
+    },
+    "graph_creation": {
+      "name": "Graph Creation",
+      "description": "AI generation prompt for creating a new knowledge graph"
+    },
+    "quiz_generation": {
+      "name": "Quiz Generation",
+      "description": "Prompt for AI-generated quiz questions"
+    },
+    "content_expansion": {
+      "name": "Content Expansion",
+      "description": "Prompt for expanding knowledge point content"
+    },
+    "relation_discovery": {
+      "name": "Relation Discovery Analysis",
+      "description": "AI prompt for discovering potential relations between graphs"
+    },
+    "cross_domain_insights": {
+      "name": "Cross-domain Insights",
+      "description": "AI prompt for analyzing cross-domain knowledge intersections"
+    },
+    "learning_path_suggestions": {
+      "name": "Learning Path Suggestions",
+      "description": "AI prompt for recommending optimal learning sequences"
+    },
+    "knowledge_gaps": {
+      "name": "Knowledge Gap Analysis",
+      "description": "AI prompt for identifying gaps in the knowledge system"
+    },
+    "template_generation": {
+      "name": "Template Generation",
+      "description": "Custom AI generation guidance text for each template type"
+    },
+    "templates": {
+      "template_type_knowledge_tree": {
+        "name": "Template: Knowledge Tree",
+        "description": "Hierarchical learning knowledge tree template prompt, from basics to advanced"
+      },
+      "template_type_skill_map": {
+        "name": "Template: Skill Map",
+        "description": "Skill map template prompt with prerequisite skill relations and learning paths"
+      },
+      "template_type_concept_network": {
+        "name": "Template: Concept Network",
+        "description": "Concept network template prompt for inter-concept relations and intersections"
+      },
+      "template_type_learning_path": {
+        "name": "Template: Learning Path",
+        "description": "Step-by-step learning path template prompt"
+      },
+      "template_type_topic_research": {
+        "name": "Template: Topic Research",
+        "description": "Topic research template prompt for in-depth exploration with six backbone modules"
+      },
+      "template_type_project_lifecycle": {
+        "name": "Template: Project Lifecycle",
+        "description": "Project lifecycle template prompt covering planning, execution, and delivery"
+      },
+      "template_type_dev_workflow": {
+        "name": "Template: Dev Workflow",
+        "description": "Development workflow template prompt: requirements, design, development, testing, deployment"
+      },
+      "template_type_task_breakdown": {
+        "name": "Template: Task Breakdown",
+        "description": "Task breakdown template prompt using WBS (Work Breakdown Structure)"
+      },
+      "template_type_sprint_planning": {
+        "name": "Template: Sprint Planning",
+        "description": "Sprint iteration planning template prompt"
+      },
+      "template_type_root_cause": {
+        "name": "Template: Root Cause Analysis",
+        "description": "Root cause analysis template prompt using 5 Whys / fishbone diagram"
+      },
+      "template_type_swot": {
+        "name": "Template: SWOT Analysis",
+        "description": "SWOT analysis template prompt for strengths, weaknesses, opportunities, and threats"
+      },
+      "template_type_comparison": {
+        "name": "Template: Comparison Analysis",
+        "description": "Multi-dimensional comparison analysis template prompt"
+      },
+      "template_type_decision_tree": {
+        "name": "Template: Decision Tree",
+        "description": "Decision tree template prompt with conditional branching"
+      },
+      "template_type_tech_ecosystem": {
+        "name": "Template: Tech Ecosystem",
+        "description": "Tech ecosystem template prompt for technology stack relations and dependencies"
+      },
+      "template_type_org_structure": {
+        "name": "Template: Org Structure",
+        "description": "Organizational structure template prompt for hierarchy and functional relations"
+      },
+      "template_type_system_architecture": {
+        "name": "Template: System Architecture",
+        "description": "System architecture template prompt for modules and dependency relations"
+      },
+      "template_type_knowledge_system": {
+        "name": "Template: Knowledge System",
+        "description": "Knowledge system template prompt for cross-domain knowledge relations"
+      },
+      "template_type_blank": {
+        "name": "Template: Blank Graph",
+        "description": "Blank graph template prompt for free-form creation without a specific structure"
+      }
+    }
+  }
 }

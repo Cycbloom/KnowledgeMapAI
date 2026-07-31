@@ -1,6 +1,6 @@
 {
   "title": "AI 个性化设置",
-  "scenarios": "配置场景",
+  "scenariosLabel": "配置场景",
   "systemTemplate": "系统级模板",
   "userTemplate": "用户级模板",
   "graphTemplate": "图谱级模板",
@@ -23,5 +23,122 @@
   "promptSaved": "Prompt配置已保存",
   "saveFailed": "保存失败",
   "resetToDefaultSuccess": "已重置为默认模板",
-  "resetFailed": "重置失败"
+  "resetFailed": "重置失败",
+  "saveSuccess": "Prompt配置已保存",
+  "selectScene": "请从左侧选择一个配置场景",
+  "configScene": "配置场景",
+  "configured": "已配置",
+  "currentTemplate": "当前模板",
+  "scenarios": {
+    "learning_material": {
+      "name": "学习资料生成",
+      "description": "生成学习教材时的提示词模板"
+    },
+    "graph_creation": {
+      "name": "图谱创建",
+      "description": "创建新知识图谱时的AI生成提示词"
+    },
+    "quiz_generation": {
+      "name": "测验生成",
+      "description": "AI生成测验题目时的提示词"
+    },
+    "content_expansion": {
+      "name": "内容扩充",
+      "description": "扩充知识点内容时的提示词"
+    },
+    "relation_discovery": {
+      "name": "关系发现分析",
+      "description": "发现图谱间潜在关联关系的AI提示词"
+    },
+    "cross_domain_insights": {
+      "name": "跨学科洞察",
+      "description": "分析跨领域知识交叉点的AI提示词"
+    },
+    "learning_path_suggestions": {
+      "name": "学习路径建议",
+      "description": "推荐最优学习顺序的AI提示词"
+    },
+    "knowledge_gaps": {
+      "name": "知识缺口分析",
+      "description": "识别知识体系空白的AI提示词"
+    },
+    "template_generation": {
+      "name": "模板生成",
+      "description": "自定义各模板类型的 AI 生成指导文本"
+    },
+    "templates": {
+      "template_type_knowledge_tree": {
+        "name": "模板: 知识树",
+        "description": "层级学习，从基础到进阶的知识树模板生成提示词"
+      },
+      "template_type_skill_map": {
+        "name": "模板: 技能图谱",
+        "description": "前置技能关系与学习路径的技能图谱模板生成提示词"
+      },
+      "template_type_concept_network": {
+        "name": "模板: 概念网络",
+        "description": "概念间关联和交叉的概念网络模板生成提示词"
+      },
+      "template_type_learning_path": {
+        "name": "模板: 学习路径",
+        "description": "循序渐进的学习步骤模板生成提示词"
+      },
+      "template_type_topic_research": {
+        "name": "模板: 专题研究",
+        "description": "深度探索某个专题的模板生成提示词，包含六大骨干模块"
+      },
+      "template_type_project_lifecycle": {
+        "name": "模板: 项目生命周期",
+        "description": "规划→执行→交付全流程的项目生命周期模板生成提示词"
+      },
+      "template_type_dev_workflow": {
+        "name": "模板: 开发流程",
+        "description": "需求→设计→开发→测试→部署的开发流程模板生成提示词"
+      },
+      "template_type_task_breakdown": {
+        "name": "模板: 任务分解",
+        "description": "WBS 工作分解结构的任务分解模板生成提示词"
+      },
+      "template_type_sprint_planning": {
+        "name": "模板: 迭代规划",
+        "description": "Sprint 迭代规划的模板生成提示词"
+      },
+      "template_type_root_cause": {
+        "name": "模板: 根因分析",
+        "description": "5Why/鱼骨图式分析的根因分析模板生成提示词"
+      },
+      "template_type_swot": {
+        "name": "模板: SWOT 分析",
+        "description": "优势/劣势/机会/威胁的 SWOT 分析模板生成提示词"
+      },
+      "template_type_comparison": {
+        "name": "模板: 对比分析",
+        "description": "多维度对比分析的模板生成提示词"
+      },
+      "template_type_decision_tree": {
+        "name": "模板: 决策树",
+        "description": "条件分支决策的决策树模板生成提示词"
+      },
+      "template_type_tech_ecosystem": {
+        "name": "模板: 技术生态",
+        "description": "技术栈关系和依赖的技术生态模板生成提示词"
+      },
+      "template_type_org_structure": {
+        "name": "模板: 组织架构",
+        "description": "层级与职能关系的组织架构模板生成提示词"
+      },
+      "template_type_system_architecture": {
+        "name": "模板: 系统架构",
+        "description": "模块与依赖关系的系统架构模板生成提示词"
+      },
+      "template_type_knowledge_system": {
+        "name": "模板: 知识体系",
+        "description": "跨领域知识关联的知识体系模板生成提示词"
+      },
+      "template_type_blank": {
+        "name": "模板: 空白图谱",
+        "description": "自由创建，不使用特定结构的空白图谱模板生成提示词"
+      }
+    }
+  }
 }

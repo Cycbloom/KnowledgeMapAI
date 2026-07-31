@@ -309,5 +309,137 @@
     "deletedMany": "Deleted {{count}} notes",
     "restored": "Restored",
     "restoreFailed": "Restore failed. Please restore manually from the recycle bin."
+  },
+  "blockEditorToolbar": {
+    "bold": "Bold",
+    "italic": "Italic",
+    "strike": "Strikethrough",
+    "code": "Inline code",
+    "undo": "Undo",
+    "redo": "Redo",
+    "moveUp": "Move block up",
+    "moveDown": "Move block down",
+    "copyBlockRef": "Copy block reference",
+    "embedBlock": "Embed this block",
+    "generateSummary": "Generate Daily Summary",
+    "extractConcepts": "Extract Concepts to Graph",
+    "insertImage": "Insert Image",
+    "writingContinue": "Continue",
+    "writingRewrite": "Rewrite",
+    "writingExpand": "Expand",
+    "refreshAggregation": "Refresh Today's Data"
+  },
+  "blockRefPopover": {
+    "title": "Block reference",
+    "placeholder": "Search blocks…",
+    "noMatch": "No matching blocks found"
+  },
+  "wikiLinkPopover": {
+    "title": "Wiki link suggestions",
+    "placeholder": "Search graph nodes…",
+    "noMatch": "No matching nodes found"
+  },
+  "writingAssistPopover": {
+    "title": "Writing Assist",
+    "loading": "Generating suggestion…",
+    "accept": "Accept",
+    "reject": "Reject"
+  },
+  "inboundBlockRefsPanel": {
+    "title": "Referenced blocks",
+    "empty": "No block references",
+    "loadFailed": "Failed to load block references",
+    "emptyBlock": "(empty block)",
+    "typeRef": "ref",
+    "typeEmbed": "embed",
+    "referrerCount": "{{count}} references"
+  },
+  "extractConceptsDialog": {
+    "title": "Extract Concepts to Graph",
+    "description": "Select concepts to create as graph nodes, then choose a target graph.",
+    "empty": "No candidate concepts extracted",
+    "related": "Suggested related: {{related}}",
+    "targetGraph": "Target Graph",
+    "selectGraph": "Select a graph",
+    "loading": "Creating nodes…",
+    "cancel": "Cancel",
+    "confirm": "Create Nodes",
+    "createNodesSuccess": "Created {{count}} nodes in graph",
+    "createNodesError": "Failed to create nodes"
+  },
+  "nodeBlockRefsPanel": {
+    "title": "Blocks referencing this node",
+    "empty": "No block references",
+    "loadFailed": "Failed to load block references",
+    "emptyBlock": "(empty block)"
+  },
+  "notesListPage": {
+    "srLiveRegion": {
+      "showingCount": "Showing {{count}} notes"
+    },
+    "errorBoundary": {
+      "listLoadFailed": "Failed to load notes list"
+    }
+  },
+  "templatesPage": {},
+  "noteEditorPage": {
+    "errorBoundary": {
+      "editorCrashed": "Editor crashed"
+    }
+  },
+  "blockEditor": {
+    "placeholder": "Type / for blocks, or start writing…",
+    "slashHint": "Type / to insert a block",
+    "saveStatus": {
+      "idle": "Not saved",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "error": "Save failed"
+    },
+    "footer": {
+      "wordCount": "{{count}} words",
+      "readingTime": "approx. {{minutes}} min"
+    },
+    "blockRef": {
+      "stale": "Source block is stale",
+      "copied": "Block reference copied",
+      "embedded": "Block embedded"
+    }
+  },
+  "slashCommandMenu": {
+    "title": "Block types",
+    "ariaLabel": "Block menu"
+  },
+  "blockEmbedNodeView": {
+    "label": "Block embed",
+    "loading": "Loading block content…",
+    "removed": "Source block removed",
+    "unembed": "Unembed",
+    "jumpToSource": "Jump to source block",
+    "refreshPrompt": "Source block updated, click to refresh"
+  },
+  "blockReferenceNodeView": {
+    "label": "Block reference",
+    "stale": "Source block is stale",
+    "removed": "Source block removed, click to remove reference",
+    "tooltip": "Click to jump to source block",
+    "unembed": "Unembed"
+  },
+  "api": {
+    "errors": {
+      "dailyOnly": "Only daily notes support generating today's summary",
+      "noteNotDaily": "Note is not a Daily type",
+      "aiSummaryFailed": "AI failed to generate today's summary"
+    },
+    "defaults": {
+      "templateName": "System Default - Three-Stage Learning Log",
+      "noReviewRecords": "(No review records today)",
+      "noCompletedTasks": "(No completed tasks today)",
+      "unnamedTask": "Unnamed Task"
+    },
+    "prompts": {
+      "generateDailySummary": "Please generate today's learning summary:",
+      "extractKnowledgePoints": "Please extract knowledge point candidates and return JSON:"
+    }
   }
 }

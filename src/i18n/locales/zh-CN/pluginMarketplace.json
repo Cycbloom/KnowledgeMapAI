@@ -20,5 +20,35 @@
   "uninstallFailed": "卸载失败，请稍后重试",
   "activateFailed": "激活失败，请稍后重试",
   "deactivateFailed": "停用失败，请稍后重试",
-  "loadFailed": "加载插件失败，请稍后重试"
+  "loadFailed": "加载插件失败，请稍后重试",
+  "marketplace": {
+    "categories": {
+      "all": "全部分类",
+      "productivity": "效率工具",
+      "visualization": "可视化",
+      "ai": "AI 增强",
+      "study": "学习辅助"
+    },
+    "pluginNames": {
+      "core": "核心服务",
+      "graph": "知识图谱",
+      "ai": "AI 服务",
+      "study": "学习系统",
+      "scheduler": "任务调度",
+      "agent": "智能代理"
+    },
+    "system": "系统",
+    "required": "必需组件",
+    "continueBrowse": "继续浏览其他插件",
+    "pluginLoadFailed": "插件加载失败",
+    "retry": "重试"
+  },
+  "serviceDescriptions": {
+    "core": "核心服务：认证、设置、健康检查、SSE 实时通信、事件总线",
+    "graph": "知识图谱服务：节点管理、边关系、知识点、自动图谱、协作者",
+    "ai": "AI 服务与路由插件，支持多模型提供商",
+    "study": "学习系统服务：学习进度、复习、题目生成、学习路径、测验集",
+    "scheduler": "任务调度插件：任务服务、执行器、专注模式、定时任务、事件订阅",
+    "agent": "智能代理插件：AI Agent 服务、工具注册与路由"
+  }
 }

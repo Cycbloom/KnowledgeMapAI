@@ -1,0 +1,12 @@
+{
+  "status": {
+    "offline": "Offline",
+    "syncing": "Syncing",
+    "pendingSync": "Pending sync"
+  },
+  "message": {
+    "offlineHint": "Currently offline. Edits will be saved locally.",
+    "syncingHint": "Syncing...",
+    "pendingCount": "{{count}} pending"
+  }
+}

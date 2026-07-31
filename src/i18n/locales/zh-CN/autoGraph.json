@@ -76,5 +76,25 @@
     "descriptionPlaceholder": "模块描述（可选）",
     "deleteModule": "删除模块",
     "keepAtLeast3": "至少保留 3 个模块"
+  },
+  "customModuleEditor": {
+    "moduleCount": "{{current}}/{{max}} 个模块",
+    "minModules": "至少 {{count}} 个",
+    "addModule": "添加模块",
+    "reachedLimit": "已达上限 ({{count}})"
+  },
+  "backboneModuleSelector": {
+    "selectModuleConfig": "选择模块配置",
+    "selectPresetOrCustom": "选择预设配置或自定义模块结构",
+    "presetConfig": "预设配置",
+    "custom": "自定义",
+    "createCustomDesc": "创建自定义模块结构，自由配置模块名称、颜色和图标",
+    "moduleCountRange": "3-10 个模块",
+    "modulePreview": "{{name}} 模块预览",
+    "cancel": "取消",
+    "confirmConfig": "确认配置"
+  },
+  "presetCard": {
+    "moduleCount": "{{count}} 个模块"
   }
 }

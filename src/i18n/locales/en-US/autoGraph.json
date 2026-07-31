@@ -76,5 +76,25 @@
     "descriptionPlaceholder": "Module description (optional)",
     "deleteModule": "Delete module",
     "keepAtLeast3": "Keep at least 3 modules"
+  },
+  "customModuleEditor": {
+    "moduleCount": "{{current}}/{{max}} modules",
+    "minModules": "At least {{count}}",
+    "addModule": "Add Module",
+    "reachedLimit": "Reached limit ({{count}})"
+  },
+  "backboneModuleSelector": {
+    "selectModuleConfig": "Select Module Configuration",
+    "selectPresetOrCustom": "Select preset configuration or custom module structure",
+    "presetConfig": "Preset Configuration",
+    "custom": "Custom",
+    "createCustomDesc": "Create custom module structure, freely configure module name, color and icon",
+    "moduleCountRange": "3-10 modules",
+    "modulePreview": "{{name}} Module Preview",
+    "cancel": "Cancel",
+    "confirmConfig": "Confirm Configuration"
+  },
+  "presetCard": {
+    "moduleCount": "{{count}} modules"
   }
 }

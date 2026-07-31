@@ -54,5 +54,7 @@
   "growth": {
     "title": "知识增长",
     "newCards": "新增卡片"
-  }
+  },
+  "studyStatistics": "学习统计",
+  "taskStatistics": "任务统计"
 }

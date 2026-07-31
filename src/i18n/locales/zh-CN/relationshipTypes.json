@@ -41,5 +41,19 @@
     "interaction": "交互行为",
     "causal": "因果推导",
     "custom": "自定义"
+  },
+  "api": {
+    "errors": {
+      "fetchFailed": "获取关系类型失败",
+      "nameExists": "关系类型名称已存在",
+      "createFailed": "创建关系类型失败",
+      "notFound": "关系类型不存在",
+      "builtInCannotModify": "内置关系类型不允许修改",
+      "noPermissionToModify": "无权限修改此关系类型",
+      "updateFailed": "更新关系类型失败",
+      "builtInCannotDelete": "内置关系类型不允许删除",
+      "noPermissionToDelete": "无权限删除此关系类型",
+      "deleteFailed": "删除关系类型失败"
+    }
   }
 }

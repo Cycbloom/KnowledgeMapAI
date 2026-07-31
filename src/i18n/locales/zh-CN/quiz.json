@@ -1,11 +1,74 @@
 {
+  "api": {
+    "errors": {
+      "fetchSetsFailed": "获取测验集合失败",
+      "fetchCardsFailed": "获取测验卡片失败",
+      "createSetFailed": "创建测验集合失败",
+      "updateSetFailed": "更新测验集合失败",
+      "deleteSetFailed": "删除测验集合失败",
+      "aiGenerateFailed": "AI 未能生成新卡片",
+      "quizSetNotFound": "未找到测验集合",
+      "cardNotFound": "未找到测验卡片",
+      "cardMissingKnowledgePoint": "卡片缺少知识点关联",
+      "knowledgePointNotFound": "未找到关联的知识点",
+      "createCardFailed": "创建新卡片失败",
+      "cardAlreadyInSet": "该卡片已在测验集合中",
+      "deleteCardAssociationFailed": "删除测验卡片关联失败",
+      "addCardFailed": "添加卡片到测验集合失败",
+      "removeCardFailed": "从测验集合移除卡片失败",
+      "generateQuizFailed": "生成测验失败",
+      "regenerateCardFailed": "重新生成卡片失败"
+    },
+    "messages": {
+      "setDeleted": "测验集合已删除",
+      "generationTaskCreated": "测验生成任务已创建",
+      "cardRegenerated": "卡片已重新生成",
+      "cardAdded": "卡片已添加到测验集合",
+      "cardRemoved": "卡片已从测验集合移除"
+    }
+  },
   "empty": {
     "noQuestions": "暂无题目",
     "noKnowledgePoints": "该图谱暂无知识点"
   },
+  "difficultySelector": {
+    "options": {
+      "easy": {
+        "label": "简单",
+        "description": "基础概念题，直接考查知识点记忆"
+      },
+      "medium": {
+        "label": "中等",
+        "description": "应用理解题，考查理解能力和应用"
+      },
+      "hard": {
+        "label": "困难",
+        "description": "综合分析题，考查深度理解和分析"
+      },
+      "mixed": {
+        "label": "混合",
+        "description": "综合各难度层次的题目"
+      }
+    }
+  },
   "knowledgePointSelector": {
     "treeLabel": "知识点选择树",
-    "searchPlaceholder": "搜索知识点..."
+    "searchPlaceholder": "搜索知识点...",
+    "selectGraph": "选择图谱",
+    "selectGraphPlaceholder": "请选择图谱",
+    "selectedCount": "已选择 {{count}} 个知识点",
+    "selectAll": "全选",
+    "deselectAll": "取消全选",
+    "noMatchingNodes": "没有找到匹配的知识点",
+    "pleaseSelectGraph": "请先选择一个图谱",
+    "unnamedNode": "未命名节点",
+    "levelLabels": {
+      "root": "核心主题",
+      "core": "主要概念",
+      "sub": "细分知识",
+      "normal": "具体内容",
+      "leaf": "实例细节"
+    }
   },
   "generation": {
     "started": "测验生成任务已开始...",
@@ -13,7 +76,25 @@
     "failed": "测验生成失败",
     "createFailed": "创建测验失败",
     "titlePlaceholder": "例如：第一章基础概念测验",
-    "descriptionPlaceholder": "测验的简要描述..."
+    "descriptionPlaceholder": "测验的简要描述...",
+    "selectDirection": "选择测验方向（学习路径）",
+    "stage": "阶段 {{index}}",
+    "countKnowledgePoints": "{{count}} 个知识点",
+    "selected": "已选择",
+    "quizTitle": "测验标题",
+    "aiGenerating": "AI 生成中...",
+    "descriptionOptional": "描述（可选）",
+    "aiNotConfigured": "AI 未配置",
+    "configureAiHint": "请在设置中配置 AI API Key 以使用测验生成功能",
+    "generating": "正在生成测验...",
+    "processing": "正在处理：{{current}}",
+    "completedProgress": "已完成 {{completed}} / {{total}} 题",
+    "selectedKnowledgePoints": "已选择 {{count}} 个知识点，预计生成 {{totalQuestions}} 道题目",
+    "progressLabel": "生成进度",
+    "selectKnowledgePoint": "请选择知识点",
+    "cancel": "取消",
+    "generatingButton": "生成中...",
+    "startGenerate": "开始生成"
   },
   "progressBar": {
     "ariaLabel": "答题进度"

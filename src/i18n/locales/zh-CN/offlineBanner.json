@@ -1,0 +1,12 @@
+{
+  "status": {
+    "offline": "离线",
+    "syncing": "同步中",
+    "pendingSync": "待同步"
+  },
+  "message": {
+    "offlineHint": "当前离线，编辑将暂存到本地",
+    "syncingHint": "同步中...",
+    "pendingCount": "{{count}} 项待同步"
+  }
+}

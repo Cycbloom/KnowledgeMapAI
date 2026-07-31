@@ -35,10 +35,27 @@
     "languageChinese": "中文",
     "languageEnglish": "英文"
   },
-  "aiStatus": "AI 状态与配置",
+  "aiStatus": {
+    "title": "AI 状态与配置",
+    "apiKeyHint": "API Key 请在上方「AI 服务密钥配置」中为此提供商设置"
+  },
   "modelManagement": "可用模型库管理",
   "modelManagementDesc": "在此添加各服务商支持的模型，以便在下方任务中选择。",
-  "provider": "提供方",
+  "providerColumnLabel": "提供方",
+  "provider": {
+    "volcengine": {
+      "name": "火山引擎 (Volcengine)"
+    },
+    "aliyun": {
+      "name": "阿里云 (Aliyun)"
+    },
+    "zhipu": {
+      "name": "智谱 AI (Zhipu)"
+    },
+    "moonshot": {
+      "name": "月之暗面 (Moonshot)"
+    }
+  },
   "modelName": "模型名称",
   "addModel": "添加",
   "noModels": "无模型",
@@ -265,8 +282,113 @@
   "navDesktop": "桌面导航",
   "navMobile": "移动导航",
   "studyStrategy": {
+    "title": "学习策略",
+    "resetDefaults": "恢复默认设置",
+    "defaultStudyMode": "默认学习模式",
+    "spacedRepetitionParams": "间隔重复参数",
+    "masteryThresholds": "掌握度阈值",
+    "schedulerWeights": "调度权重",
     "learningReviewDivider": "Learning / Review 分界值",
+    "learningReviewDesc": "低于此值视为学习阶段，高于此值进入复习阶段",
     "reviewPracticeDivider": "Review / Practice 分界值",
-    "practiceQuizDivider": "Practice / Quiz 分界值"
+    "reviewPracticeDesc": "低于此值需要复习巩固，高于此值进入练习阶段",
+    "practiceQuizDivider": "Practice / Quiz 分界值",
+    "practiceQuizDesc": "低于此值需要练习强化，高于此值可以进入测验",
+    "modes": {
+      "drill": {
+        "label": "刷题模式",
+        "description": "跳过学习材料，直接测验，短间隔高频"
+      },
+      "deep": {
+        "label": "深度学习",
+        "description": "完整工作流，标准FSRS参数"
+      },
+      "preview": {
+        "label": "快速浏览",
+        "description": "仅阅读材料，不生成复习卡片"
+      },
+      "review": {
+        "label": "间隔复习",
+        "description": "到期复习节点，标准调度"
+      },
+      "quiz": {
+        "label": "测验模式",
+        "description": "直接测验已学节点"
+      },
+      "mixed": {
+        "label": "混合模式",
+        "description": "自动按节点状态选择策略"
+      }
+    },
+    "schedulerWeightItems": {
+      "timeSlot": {
+        "label": "时间段适配",
+        "description": "根据当前时间段推荐适合的学习内容"
+      },
+      "mastery": {
+        "label": "掌握度优先",
+        "description": "优先推荐掌握度较低的节点进行学习"
+      },
+      "dependency": {
+        "label": "依赖关系",
+        "description": "优先学习前置依赖节点"
+      },
+      "typeMatch": {
+        "label": "类型匹配",
+        "description": "匹配当前学习模式的内容类型"
+      },
+      "priority": {
+        "label": "优先级",
+        "description": "按节点优先级排序"
+      },
+      "urgency": {
+        "label": "紧急程度",
+        "description": "临近截止日期的节点优先"
+      },
+      "availability": {
+        "label": "可用性",
+        "description": "考虑当前可用的学习资源"
+      }
+    }
+  },
+  "studyAlgorithm": {
+    "title": "学习算法",
+    "paramSource": "参数来源",
+    "sourceDefault": "默认参数",
+    "sourceOptimized": "已优化",
+    "sourceCustom": "自定义",
+    "lastOptimized": "上次优化",
+    "description": "FSRS-6 算法使用 21 个参数（w[0]-w[20]）控制遗忘曲线和复习间隔。默认参数适合大多数用户，优化后可更贴合个人记忆特征。",
+    "optimize": "优化参数",
+    "optimizing": "优化中...",
+    "resetToDefault": "重置为默认",
+    "optimizeFailed": "优化失败，请稍后重试",
+    "basedOnReviews": "基于 {{count}} 条复习记录优化"
+  },
+  "studyMode": {
+    "drill": {
+      "label": "刷题模式",
+      "description": "跳过学习材料，直接测验，短间隔高频"
+    },
+    "deep": {
+      "label": "深度学习",
+      "description": "完整工作流，标准FSRS参数"
+    },
+    "preview": {
+      "label": "快速浏览",
+      "description": "仅阅读材料，不生成复习卡片"
+    },
+    "review": {
+      "label": "间隔复习",
+      "description": "到期复习节点，标准调度"
+    },
+    "quiz": {
+      "label": "测验模式",
+      "description": "直接测验已学节点"
+    },
+    "mixed": {
+      "label": "混合模式",
+      "description": "自动按节点状态选择策略"
+    }
   }
 }

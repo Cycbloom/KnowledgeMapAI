@@ -9,6 +9,50 @@
       "emailInvalid": "邮箱格式不正确"
     },
     "inviting": "邀请中...",
-    "invite": "邀请"
+    "invite": "邀请",
+    "dialog": {
+      "title": "邀请协作者",
+      "emailLabel": "用户邮箱",
+      "roleLabel": "角色",
+      "cancel": "取消"
+    }
+  },
+  "shareLink": {
+    "label": "分享链接",
+    "copied": "已复制",
+    "copy": "复制",
+    "description": "通过此链接邀请用户加入协作"
+  },
+  "roleLabels": {
+    "owner": "所有者",
+    "editor": "编辑者",
+    "viewer": "查看者"
+  },
+  "errors": {
+    "fetchFailed": "获取协作者列表失败",
+    "inviteFailed": "邀请失败",
+    "updateRoleFailed": "更新角色失败",
+    "removeFailed": "移除失败",
+    "generateShareLinkFailed": "生成分享链接失败"
+  },
+  "api": {
+    "errors": {
+      "graphNotFound": "图谱不存在",
+      "onlyOwnerCanInvite": "只有图谱所有者可以邀请协作者",
+      "userNotFound": "未找到该用户",
+      "cannotInviteSelf": "不能邀请自己",
+      "alreadyCollaborator": "该用户已是协作者",
+      "onlyOwnerCanUpdateRole": "只有图谱所有者可以修改协作者角色",
+      "onlyOwnerCanRemove": "只有图谱所有者可以移除协作者",
+      "inviteNotFoundOrExpired": "邀请不存在或已过期",
+      "inviteNotForUser": "此邀请不属于当前用户",
+      "inviteLinkExpired": "邀请链接已过期",
+      "inviteAlreadyAccepted": "此邀请已被接受",
+      "onlyOwnerCanGenerateLink": "只有图谱所有者可以生成分享链接",
+      "shareLinkAlreadyExists": "分享链接已存在，请使用现有链接",
+      "shareLinkInvalid": "分享链接无效或已过期",
+      "shareLinkExpired": "分享链接已过期",
+      "alreadyCollaboratorOfGraph": "您已是此图谱的协作者"
+    }
   }
 }

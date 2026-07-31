@@ -1,0 +1,15 @@
+{
+  "conflict": {
+    "title": "Sync Conflict",
+    "description": "{{entity}} #{{id}} has a conflict. Please select a resolution:",
+    "resolution": {
+      "useLocal": "Use Local Version",
+      "useRemote": "Use Remote Version",
+      "merge": "Merge"
+    }
+  },
+  "version": {
+    "local": "Local Version",
+    "remote": "Remote Version"
+  }
+}

@@ -1,11 +1,74 @@
 {
+  "api": {
+    "errors": {
+      "fetchSetsFailed": "Failed to fetch quiz sets",
+      "fetchCardsFailed": "Failed to fetch quiz cards",
+      "createSetFailed": "Failed to create quiz set",
+      "updateSetFailed": "Failed to update quiz set",
+      "deleteSetFailed": "Failed to delete quiz set",
+      "aiGenerateFailed": "AI failed to generate new cards",
+      "quizSetNotFound": "Quiz set not found",
+      "cardNotFound": "Quiz card not found",
+      "cardMissingKnowledgePoint": "Card is missing knowledge point association",
+      "knowledgePointNotFound": "Associated knowledge point not found",
+      "createCardFailed": "Failed to create new card",
+      "cardAlreadyInSet": "Card is already in the quiz set",
+      "deleteCardAssociationFailed": "Failed to delete quiz card association",
+      "addCardFailed": "Failed to add card to quiz set",
+      "removeCardFailed": "Failed to remove card from quiz set",
+      "generateQuizFailed": "Failed to generate quiz",
+      "regenerateCardFailed": "Failed to regenerate card"
+    },
+    "messages": {
+      "setDeleted": "Quiz set deleted",
+      "generationTaskCreated": "Quiz generation task created",
+      "cardRegenerated": "Card regenerated",
+      "cardAdded": "Card added to quiz set",
+      "cardRemoved": "Card removed from quiz set"
+    }
+  },
   "empty": {
     "noQuestions": "No questions yet",
     "noKnowledgePoints": "No knowledge points in this graph"
   },
+  "difficultySelector": {
+    "options": {
+      "easy": {
+        "label": "Easy",
+        "description": "Basic concept questions, directly testing knowledge point memory"
+      },
+      "medium": {
+        "label": "Medium",
+        "description": "Application understanding questions, testing comprehension and application"
+      },
+      "hard": {
+        "label": "Hard",
+        "description": "Comprehensive analysis questions, testing deep understanding and analysis"
+      },
+      "mixed": {
+        "label": "Mixed",
+        "description": "Mixed questions across difficulty levels"
+      }
+    }
+  },
   "knowledgePointSelector": {
     "treeLabel": "Knowledge point selection tree",
-    "searchPlaceholder": "Search knowledge points..."
+    "searchPlaceholder": "Search knowledge points...",
+    "selectGraph": "Select Graph",
+    "selectGraphPlaceholder": "Please select a graph",
+    "selectedCount": "{{count}} knowledge points selected",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "noMatchingNodes": "No matching knowledge points found",
+    "pleaseSelectGraph": "Please select a graph first",
+    "unnamedNode": "Unnamed node",
+    "levelLabels": {
+      "root": "Core Theme",
+      "core": "Main Concept",
+      "sub": "Sub Knowledge",
+      "normal": "Specific Content",
+      "leaf": "Instance Detail"
+    }
   },
   "generation": {
     "started": "Quiz generation task started...",
@@ -13,7 +76,25 @@
     "failed": "Quiz generation failed",
     "createFailed": "Failed to create quiz",
     "titlePlaceholder": "e.g.: Chapter 1 Basic Concepts Quiz",
-    "descriptionPlaceholder": "Brief description of the quiz..."
+    "descriptionPlaceholder": "Brief description of the quiz...",
+    "selectDirection": "Select quiz direction (learning path)",
+    "stage": "Stage {{index}}",
+    "countKnowledgePoints": "{{count}} knowledge points",
+    "selected": "Selected",
+    "quizTitle": "Quiz Title",
+    "aiGenerating": "AI generating...",
+    "descriptionOptional": "Description (optional)",
+    "aiNotConfigured": "AI not configured",
+    "configureAiHint": "Please configure AI API Key in settings to use quiz generation",
+    "generating": "Generating quiz...",
+    "processing": "Processing: {{current}}",
+    "completedProgress": "Completed {{completed}} / {{total}} questions",
+    "selectedKnowledgePoints": "{{count}} knowledge points selected, estimated {{totalQuestions}} questions to generate",
+    "progressLabel": "Generation progress",
+    "selectKnowledgePoint": "Please select knowledge points",
+    "cancel": "Cancel",
+    "generatingButton": "Generating...",
+    "startGenerate": "Start Generation"
   },
   "progressBar": {
     "ariaLabel": "Quiz progress"

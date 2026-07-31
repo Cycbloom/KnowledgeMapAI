@@ -294,7 +294,9 @@
       "fill_in_the_blank": "填空",
       "essay": "简答"
     },
-    "noCardType": "无"
+    "noCardType": "无",
+    "cardCount": "{{count}} 张卡片",
+    "start": "开始"
   },
   "quizPractice": {
     "loading": "正在加载测验...",
@@ -443,5 +445,43 @@
     "title": "卡片详情",
     "options": "选项",
     "correctAnswer": "正确答案"
+  },
+  "knowledgePoint": {
+    "visibilityPublic": "公共",
+    "visibilityPrivate": "私有",
+    "moreGraphs": "还有 {{count}} 个图谱...",
+    "similarityFound": "发现相似知识点",
+    "similarityPrompt": "您要创建的「{{title}}」与以下知识点相似，是否复用？",
+    "usedInGraphs": "已在 {{count}} 个图谱中使用",
+    "similarityPercent": "{{percent}}% 相似",
+    "createNew": "创建新知识点",
+    "deleteTitle": "删除知识点",
+    "deleteConfirm": "确定要删除「{{name}}」吗？",
+    "usedInMultipleGraphs": "此知识点在多个图谱中使用",
+    "removeFromCurrentGraph": "从当前图谱移除",
+    "permanentDelete": "彻底删除"
+  },
+  "quizProgressBar": {
+    "questionProgress": "第 {{current}} / {{total}} 题",
+    "answeredCount": "已答 {{count}} 题",
+    "questionAria": "第 {{index}} 题{{answered}}",
+    "answeredSuffix": " (已答)"
+  },
+  "cardDetailModal": {
+    "startNow": "立即开始练习"
+  },
+  "api": {
+    "errors": {
+      "nodeNotFound": "未找到所属节点",
+      "createCardFailed": "创建学习卡片失败",
+      "getProgressFailed": "获取学习进度失败"
+    }
+  },
+  "fsrsParameter": {
+    "messages": {
+      "insufficientReviews": "复习数据不足（{{current}}/{{required}}），继续使用默认参数",
+      "validationFailed": "优化后参数验证失败，保留当前参数",
+      "optimizationComplete": "参数优化完成，预测误差降低 {{improvement}}%"
+    }
   }
 }

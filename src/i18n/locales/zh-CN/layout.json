@@ -20,6 +20,8 @@
   "helpGuide": "操作指南",
   "taskCompleted": "任务完成",
   "taskFailed": "任务失败",
+  "taskCompletedMessage": "任务完成：{{label}}",
+  "taskFailedMessage": "任务失败：{{label}}",
   "autoGenerateQuestions": "自动生成题目",
   "autoExpandGraph": "自动扩展图谱",
   "greeting": {
@@ -76,6 +78,7 @@
   },
   "importSuccess": "导入成功: {{title}}",
   "importFailed": "导入失败: {{message}}",
+  "formatError": "格式错误",
   "skipToMain": "跳到主内容",
   "expandSidebar": "展开侧边栏",
   "collapseSidebar": "收起侧边栏",

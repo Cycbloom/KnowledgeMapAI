@@ -101,5 +101,9 @@
     "targetDate": "目标 {{date}}",
     "confirm": "已放置到 {{hour}}:00",
     "cancel": "已取消拖动"
+  },
+  "executionTitle": "{{title}} - {{minutes}}分钟",
+  "weekView": {
+    "moveTo": "移动到 {{hour}}:00"
   }
 }

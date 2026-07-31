@@ -43,7 +43,20 @@
     "labelPlaceholder": "输入边的标签（可选）"
   },
   "commandPalette": {
-    "searchPlaceholder": "搜索命令或节点..."
+    "searchPlaceholder": "搜索命令或节点...",
+    "tabCreateChildHint": "请使用 Tab 键创建子节点",
+    "srTitle": "命令面板",
+    "categories": {
+      "navigation": "导航",
+      "view": "视图",
+      "action": "操作",
+      "ai": "AI 助手",
+      "node": "跳转至节点"
+    },
+    "kbdHints": {
+      "navHint": "↑↓ 导航",
+      "selectHint": "↵ 选择"
+    }
   },
   "graphAnalysis": {
     "title": "图谱分析",
@@ -296,6 +309,7 @@
     "colConcepts": "概念",
     "colModules": "模块",
     "footer": "共收录 {{count}} 篇文献",
+    "tableAriaLabel": "文献库列表",
     "typeLabel": {
       "paper": "论文",
       "book": "书籍",
@@ -385,7 +399,13 @@
     "ignore": "忽略",
     "noNodes": "暂无节点",
     "region": "大纲",
-    "treeLabel": "图谱大纲"
+    "treeLabel": "图谱大纲",
+    "commonTags": "共同标签: {{tags}}",
+    "mentionedEachOther": "内容中提及对方",
+    "possiblyRelated": "可能相关",
+    "researchTopic": "研究主题",
+    "uncategorized": "未分类",
+    "noSourceConcept": "无来源信息的概念节点"
   },
   "region": {
     "title": "区域管理",
@@ -443,9 +463,6 @@
     "createNodeFailed": "创建节点失败: {{message}}"
   },
   "backlinks": {
-    "tabContent": "内容",
-    "tabBacklinks": "反向链接",
-    "tabNotes": "关联笔记",
     "panelTitle": "反向链接",
     "empty": "暂无反向链接",
     "error": "加载失败",
@@ -463,7 +480,6 @@
     "snapshots": "暂无快照",
     "versionHistory": "暂无版本历史",
     "commandPaletteNoResult": "未找到相关结果",
-    "nodeEmptyContent": "暂无内容，请先在编辑模式输入...",
     "literatureEmpty": "暂无文献数据",
     "aggregationEmpty": "暂无聚合结果"
   },
@@ -495,8 +511,6 @@
   "loadingData": "正在加载数据...",
   "confirmDeleteRelationshipTitle": "删除关系类型",
   "confirmDeleteRelationshipMessage": "确定要删除此关系类型吗？此操作无法撤销。",
-  "confirmRemoveParentTitle": "移除父节点",
-  "confirmRemoveParentMessage": "确定要移除该父节点关系吗？",
   "createSnapshot": "创建快照",
   "batchGenerateSuccess": "生成完成！共生成 {{count}} 道题目",
   "batchGenerateFailed": "生成失败: {{message}}",
@@ -746,9 +760,13 @@
     "mainline": "主线",
     "branch": "分支",
     "keepMainline": "保留主线",
-    "keepBranch": "保留分支"
+    "keepBranch": "保留分支",
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}}分钟前",
+    "hoursAgo": "{{count}}小时前",
+    "daysAgo": "{{count}}天前"
   },
-  "nodeEdit": {
+  "nodeEditSidebar": {
     "backToOutline": "返回大纲",
     "headerCreate": "创建新节点",
     "headerEdit": "编辑节点",
@@ -756,6 +774,12 @@
     "selectParentDone": "完成",
     "backboneBadge": "(骨干节点)",
     "backboneImmutable": "{{module}} - 标题不可修改",
+    "tabContent": "内容",
+    "tabBacklinks": "反向链接",
+    "tabNotes": "关联笔记",
+    "emptyContent": "暂无内容，请先在编辑模式输入...",
+    "confirmRemoveParentTitle": "移除父节点",
+    "confirmRemoveParentMessage": "确定要移除该父节点关系吗？",
     "field": {
       "title": "标题",
       "titlePlaceholder": "输入节点标题",
@@ -891,14 +915,23 @@
   },
   "mindMapCanvas": {
     "ariaLabel": "思维导图视图，{{count}} 个节点，当前焦点：{{focus}}",
-    "emptyFocus": "无焦点节点"
+    "emptyFocus": "无焦点节点",
+    "title": "思维导图画布",
+    "desc": "交互式思维导图画布，包含 {{count}} 个知识节点。使用鼠标或触摸进行平移与缩放，按节点可查看详情。",
+    "semanticLoading": "正在计算语义布局...",
+    "layoutFailed": "布局计算失败，请刷新重试",
+    "layoutFailedHint": "正在使用备用方案重新计算..."
+  },
+  "mindMapNode": {
+    "needsRefinement": "待完善"
   },
   "quadrantCanvas": {
     "ariaLabel": "象限图谱视图，{{nodeCount}} 个节点，{{regionCount}} 个区域",
     "desc": "象限图谱可视化，支持平移、缩放、拖动中心点、点击节点查看详情",
     "zoomIn": "放大",
     "zoomOut": "缩小",
-    "resetView": "重置视图"
+    "resetView": "重置视图",
+    "zoomLabel": "缩放: {{percent}}%"
   },
   "planetView": {
     "ariaLabel": "3D 星球视图，{{count}} 个节点"
@@ -926,5 +959,169 @@
   },
   "alternativeBranches": {
     "difficulty": "难度:"
+  },
+  "unnamed": {
+    "node": "未命名节点",
+    "graph": "未命名图谱",
+    "nodeFallback": "未命名节点"
+  },
+  "errors": {
+    "unknownError": "未知错误",
+    "aiPanelError": "AI 面板出错",
+    "consoleCrash": "控制台崩溃",
+    "readOnlyModeHint": "只读模式 - 您正在查看公开图谱",
+    "loginToEdit": "登录以编辑"
+  },
+  "conceptExtraction": {
+    "literatureSource": "文献来源",
+    "addedCountConcepts": "已添加 {{addedCount}} 个概念，合并 {{mergedCount}} 个相似概念"
+  },
+  "nodePreviewCard": {
+    "mastered": "已掌握",
+    "locked": "锁定",
+    "reviewCount": "复习 {{count}} 次",
+    "childCountMore": "还有 {{count}} 个子节点",
+    "clickToViewDetail": "点击查看详情",
+    "markAsMastered": "标记已掌握"
+  },
+  "explorationTimeline": {
+    "unknownTime": "未知时间",
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}} 分钟前",
+    "hoursAgo": "{{count}} 小时前",
+    "title": "探索路径",
+    "nodeCount": "{{count}} 个节点",
+    "prevStep": "上一步",
+    "nextStep": "下一步",
+    "branchChoice": "分支选择：",
+    "history": "历史记录",
+    "branchLabel": "分支：",
+    "alternativeBranchs": "备选分支：",
+    "selected": "已选择"
+  },
+  "edgeEditDialog": {
+    "title": "编辑边",
+    "tabBasic": "基本信息",
+    "tabStyle": "样式设置",
+    "label": "标签",
+    "relationshipType": "关系类型",
+    "selectRelationshipType": "选择关系类型",
+    "customColor": "自定义颜色",
+    "clear": "清除",
+    "lineStyle": "线型",
+    "arrowDisplay": "箭头显示",
+    "cancel": "取消",
+    "saving": "保存中...",
+    "save": "保存",
+    "lineStyles": {
+      "solid": "实线",
+      "dashed": "虚线",
+      "dotted": "点线",
+      "double": "双线"
+    },
+    "arrowDisplayOptions": {
+      "auto": "自动",
+      "show": "显示",
+      "hide": "隐藏"
+    }
+  },
+  "sidebar": {
+    "unnamedKnowledgePoint": "未命名知识点",
+    "error": {
+      "componentError": "侧边栏组件出错",
+      "closeSidebar": "关闭侧边栏"
+    }
+  },
+  "promptSettings": {
+    "updatedAt": "更新于:",
+    "promptTypes": {
+      "expand_knowledge": "知识扩展",
+      "generate_cards": "生成卡片",
+      "generate_cards_qa": "生成卡片: 问答",
+      "generate_cards_choice": "生成卡片: 单选",
+      "generate_cards_true_false": "生成卡片: 判断",
+      "generate_cards_multi_choice": "生成卡片: 多选",
+      "generate_cards_fill_blank": "生成卡片: 填空",
+      "generate_cards_essay": "生成卡片: 问答/论述",
+      "branch_suggestions": "分支建议",
+      "generate_content": "内容生成",
+      "chat": "AI 对话",
+      "text_to_graph": "文本转图谱",
+      "recommend_connections": "推荐连线",
+      "tutor_chat": "AI 助教",
+      "document_to_graph": "文档转图谱",
+      "term_annotation": "术语标注",
+      "infinite_graph_expansion": "无限扩展知识网络",
+      "auto_graph_init": "图谱初始化",
+      "auto_graph_expand": "节点展开",
+      "generate_task_details": "任务详情生成",
+      "literature_concept_extraction": "文献概念提取",
+      "literature_relation_inference": "文献关系推断",
+      "template_generation": "模板生成",
+      "template_type_knowledge_tree": "模板: 知识树",
+      "template_type_skill_map": "模板: 技能图谱",
+      "template_type_concept_network": "模板: 概念网络",
+      "template_type_learning_path": "模板: 学习路径",
+      "template_type_topic_research": "模板: 专题研究",
+      "template_type_project_lifecycle": "模板: 项目生命周期",
+      "template_type_dev_workflow": "模板: 开发流程",
+      "template_type_task_breakdown": "模板: 任务分解",
+      "template_type_sprint_planning": "模板: 迭代规划",
+      "template_type_root_cause": "模板: 根因分析",
+      "template_type_swot": "模板: SWOT 分析",
+      "template_type_comparison": "模板: 对比分析",
+      "template_type_decision_tree": "模板: 决策树",
+      "template_type_tech_ecosystem": "模板: 技术生态",
+      "template_type_org_structure": "模板: 组织架构",
+      "template_type_system_architecture": "模板: 系统架构",
+      "template_type_knowledge_system": "模板: 知识体系",
+      "template_type_blank": "模板: 空白图谱"
+    },
+    "scopes": {
+      "graph": "图谱专属",
+      "user": "用户全局",
+      "system": "系统默认"
+    },
+    "categories": {
+      "graph_building": "知识图谱构建",
+      "card_generation": "卡片生成",
+      "ai_chat": "AI 对话",
+      "task_scheduler": "任务调度",
+      "literature_analysis": "文献分析",
+      "template_generation": "模板生成",
+      "other": "其他工具"
+    }
+  },
+  "nodeContextMenu": {
+    "termAnnotationInProgress": "正在进行术语标注...",
+    "termAnnotationDone": "术语标注已完成",
+    "annotationFailed": "标注失败",
+    "systemFunction": "系统功能",
+    "termAnnotation": "术语标注",
+    "aiAction": "AI 动作"
+  },
+  "edgeContextMenu": {
+    "editLabel": "编辑标签",
+    "changeRelationshipType": "更改关系类型",
+    "deleteEdge": "删除边"
+  },
+  "podcastModal": {
+    "unknownError": "未知错误",
+    "scriptFailed": "脚本生成失败: {{message}}"
+  },
+  "graphModalManager": {
+    "deleteConfirm": "删除"
+  },
+  "actionResultModal": {
+    "close": "关闭"
+  },
+  "quadrantNode": {
+    "unnamed": "未命名"
+  },
+  "regionHeader": {
+    "nodeCount": "{{count}} 个节点"
+  },
+  "promptEditor": {
+    "insertVariable": "插入 {{variable}}"
   }
 }

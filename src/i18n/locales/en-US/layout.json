@@ -20,6 +20,8 @@
   "helpGuide": "Help Guide",
   "taskCompleted": "Task completed",
   "taskFailed": "Task failed",
+  "taskCompletedMessage": "Task completed: {{label}}",
+  "taskFailedMessage": "Task failed: {{label}}",
   "autoGenerateQuestions": "Auto-generate questions",
   "autoExpandGraph": "Auto-expand graph",
   "greeting": {
@@ -76,6 +78,7 @@
   },
   "importSuccess": "Import successful: {{title}}",
   "importFailed": "Import failed: {{message}}",
+  "formatError": "Invalid format",
   "skipToMain": "Skip to main content",
   "expandSidebar": "Expand Sidebar",
   "collapseSidebar": "Collapse Sidebar",

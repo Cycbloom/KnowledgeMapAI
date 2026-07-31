@@ -121,6 +121,19 @@
     "deleteFailed": "删除关系失败",
     "discoveryFailed": "关系发现失败"
   },
+  "connectionDiscovery": {
+    "commonTags": "共同标签: {{tags}}",
+    "mentionTitle": "内容中提及对方标题",
+    "contentSimilarity": "内容相似度较高",
+    "possiblyRelated": "可能相关",
+    "title": "关联发现",
+    "refresh": "刷新",
+    "description": "基于标签、内容相似度分析，发现可能遗漏的节点关联",
+    "analyzing": "分析中...",
+    "relatedScore": "相关度 {{score}}",
+    "connect": "连接",
+    "suggestRelation": "建议关联"
+  },
   "relationDiscovery": {
     "title": "智能关系发现",
     "analyzing": "正在分析图谱关系...",
@@ -161,7 +174,11 @@
     "tip": "提示：",
     "isolatedTip": "有 {{count}} 个图谱暂未发现与其他图谱的关联关系",
     "close": "关闭",
-    "reanalyze": "重新分析"
+    "reanalyze": "重新分析",
+    "discoveredRelationsToast": "发现 {{count}} 个潜在关系",
+    "discoveryFailed": "关系发现失败: {{error}}",
+    "relationCreated": "已创建关系: {{source}} → {{target}}",
+    "createFailed": "创建关系失败: {{error}}"
   },
   "actionConfirmation": {
     "title": "待确认操作",
@@ -216,7 +233,22 @@
     "started": "无限扩展任务已启动",
     "startFailed": "启动扩展失败",
     "depthFailed": "深度拓展失败",
-    "nodeExpandFailed": "展开节点失败"
+    "nodeExpandFailed": "展开节点失败",
+    "errors": {
+      "noValidGraph": "未找到有效的图谱",
+      "graphNotFound": "图谱不存在",
+      "queryNodesFailed": "查询节点失败",
+      "graphAlreadyHasNodes": "图谱已有知识点，无法重复初始化",
+      "topicResearchOnly": "该端点仅支持专题研究图谱"
+    },
+    "reasons": {
+      "graphHasNodes": "图谱已有知识点"
+    },
+    "messages": {
+      "initTaskCreated": "初始化任务已创建，请通过任务状态查询进度",
+      "initGraphTaskTitle": "初始化知识图谱：{{title}}",
+      "graphTopicContext": "图谱主题：{{title}}"
+    }
   },
   "infiniteExpansion": {
     "title": "AI 无限扩展知识网络",
@@ -295,7 +327,12 @@
   "agentAnalysis": {
     "title": "Agent 分析",
     "analyzing": "正在分析...",
-    "graphNumber": "图谱 {{number}}"
+    "graphNumber": "图谱 {{number}}",
+    "callingTool": "正在调用 {{tool}}...",
+    "complete": "{{tool}} 完成",
+    "waitingConfirm": "等待确认操作",
+    "analysisComplete": "分析完成",
+    "analysisFailed": "分析失败: {{error}}"
   },
   "analysisResult": {
     "analyzing": "正在分析中...",
@@ -311,6 +348,10 @@
     "applying": "应用中...",
     "applySelected": "应用选中项 ({{count}})",
     "applyFailed": "应用推荐失败",
+    "relationDiscovery": "关系发现结果",
+    "crossDisciplineInsight": "跨学科洞察结果",
+    "learningPathSuggestion": "学习路径建议",
+    "knowledgeGap": "知识缺口分析",
     "relationTypes": {
       "prerequisite": "前置依赖",
       "extension": "扩展",
@@ -320,7 +361,29 @@
   },
   "analysisConfirm": {
     "title": "确认分析",
-    "analysisType": "分析类型：",
+    "analysisTypeLabel": "分析类型：",
+    "analysisType": {
+      "relationDiscovery": {
+        "name": "关系发现",
+        "description": "发现图谱间潜在的关联关系",
+        "estimatedTime": "5-10秒"
+      },
+      "crossDomainInsights": {
+        "name": "跨学科洞察",
+        "description": "分析跨领域知识交叉点",
+        "estimatedTime": "5-8秒"
+      },
+      "learningPath": {
+        "name": "学习路径",
+        "description": "推荐最优学习顺序",
+        "estimatedTime": "3-5秒"
+      },
+      "knowledgeGap": {
+        "name": "知识缺口",
+        "description": "识别知识体系中的空白",
+        "estimatedTime": "3-5秒"
+      }
+    },
     "analysisGoal": "分析目标",
     "analysisGoalPlaceholder": "描述你的分析目标，例如：分析这些图谱之间的知识关联，找出可以合并的重复内容...",
     "enterAnalysisGoal": "请输入分析目标",
@@ -349,7 +412,8 @@
   },
   "skillSelector": {
     "selectedForAnalysis": "已选择 {{count}} 个图谱进行分析",
-    "selectType": "选择分析类型"
+    "selectType": "选择分析类型",
+    "executionType": "执行型"
   },
   "domainGenerator": {
     "title": "领域图谱批量生成",
@@ -520,5 +584,156 @@
     "learningOrder": "学习顺序",
     "tip": "提示：",
     "tipContent": "学习路径基于图谱间的前置关系和知识依赖分析生成，建议按照推荐顺序学习以获得最佳效果"
+  },
+  "learningPathSuggestions": {
+    "beginner": "入门",
+    "intermediate": "中级",
+    "advanced": "高级"
+  },
+  "uncategorized": "未分类",
+  "domainLabel": "领域：{{domain}}",
+  "domainBackground": {
+    "graphCount": "{{count}} 个图谱"
+  },
+  "conceptTypes": {
+    "method": "方法",
+    "mechanism": "机制",
+    "operation": "操作",
+    "concept": "概念",
+    "technology": "技术",
+    "tool": "工具",
+    "theory": "理论",
+    "finding": "发现",
+    "trend": "趋势",
+    "challenge": "挑战"
+  },
+  "backboneModules": {
+    "researchBackground": {
+      "title": "研究背景",
+      "description": "研究领域的背景知识和发展历程"
+    },
+    "literatureReview": {
+      "title": "文献综述",
+      "description": "相关文献的综述和分析"
+    },
+    "researchMethods": {
+      "title": "研究方法",
+      "description": "研究采用的方法论和技术手段"
+    },
+    "coreConcepts": {
+      "title": "核心概念",
+      "description": "领域的核心概念和理论框架"
+    },
+    "applicationDomains": {
+      "title": "应用领域",
+      "description": "理论和方法的应用场景"
+    },
+    "futureDirections": {
+      "title": "未来方向",
+      "description": "未来发展趋势和研究方向"
+    }
+  },
+  "relationTypes": {
+    "prerequisite": "前置知识",
+    "extension": "扩展知识",
+    "related": "相关知识",
+    "crossDomain": "跨学科",
+    "unknown": "未知关系"
+  },
+  "domains": {
+    "errors": {
+      "notFound": "领域不存在",
+      "accessDenied": "无权访问该领域",
+      "parentNotFound": "父领域不存在",
+      "parentDeleted": "父领域已被删除",
+      "noPermissionToCreateUnderParent": "无权在该父领域下创建子领域",
+      "createFailed": "创建领域失败",
+      "onlyOwnerCanModify": "只有领域所有者才能修改该领域",
+      "systemCannotModify": "系统预置领域不可修改",
+      "cannotSetAsOwnChild": "不能将领域设置为自己的子领域",
+      "targetParentNotFound": "目标父领域不存在",
+      "targetParentDeleted": "目标父领域已被删除",
+      "updateFailed": "更新领域失败",
+      "onlyOwnerCanDelete": "只有领域所有者才能删除该领域",
+      "systemCannotDelete": "系统预置领域不可删除",
+      "deleteFailed": "删除领域失败",
+      "queryInfoFailed": "查询领域信息失败",
+      "partialNotFound": "部分领域不存在或已被删除",
+      "noPermissionToOperate": "无权操作该领域",
+      "fetchListFailed": "获取领域列表失败",
+      "extractJsonFailed": "无法提取 JSON 数组",
+      "nameAlreadyExists": "该领域名称已存在",
+      "cycleDetected": "检测到循环引用，无法将领域设置为自己的后代"
+    },
+    "uncategorized": {
+      "name": "未分类",
+      "description": "未归类到任何领域的图谱"
+    }
+  },
+  "relations": {
+    "errors": {
+      "graphNotFound": "图谱不存在",
+      "createGraphFailed": "创建图谱失败",
+      "selfReferenceNotAllowed": "不能创建自引用关系",
+      "noPermission": "无权操作此图谱",
+      "relationExists": "该关系已存在",
+      "relationNotFound": "关系不存在",
+      "noPermissionToDelete": "无权删除此关系"
+    },
+    "messages": {
+      "infiniteExpansionCreated": "无限扩展任务已创建"
+    }
+  },
+  "regions": {
+    "errors": {
+      "graphNotFound": "图谱不存在",
+      "createFailed": "创建区域失败",
+      "regionNotFound": "区域不存在",
+      "updateFailed": "更新区域失败",
+      "deleteFailed": "删除区域失败"
+    },
+    "messages": {
+      "deleted": "区域已删除"
+    }
+  },
+  "nodeBatch": {
+    "errors": {
+      "backboneTitleImmutable": "骨干节点标题不可修改",
+      "updateFailed": "知识点更新失败"
+    },
+    "messages": {
+      "noMatchingNodes": "未找到匹配的节点",
+      "deletedCount": "成功删除 {{count}} 个节点",
+      "updatedPositions": "成功更新 {{count}} 个节点位置",
+      "updatedWithSkipped": "成功更新 {{successCount}} 个节点，已跳过 {{skippedCount}} 个骨干节点的标题修改",
+      "updatedAll": "成功更新 {{count}} 个节点"
+    }
+  },
+  "nodes": {
+    "errors": {
+      "unauthorizedAccess": "未经授权访问图谱",
+      "fetchFailed": "获取节点失败",
+      "notFound": "节点不存在",
+      "backboneTitleImmutable": "骨干节点标题不可修改",
+      "deleteFailed": "删除失败"
+    },
+    "messages": {
+      "permanentlyDeleted": "知识点已彻底删除",
+      "removedFromGraph": "节点已从当前图谱移除"
+    }
+  },
+  "api": {
+    "errors": {
+      "graphNotFound": "图谱不存在",
+      "updateViewModeFailed": "更新视图模式失败",
+      "graphOrDomainNotFound": "未找到选中的图谱或领域",
+      "queryGraphFailed": "查询现有图谱失败",
+      "unsupportedExportFormat": "不支持的导出格式",
+      "confirmOrDryRunRequired": "需要设置 confirm=true 或 dry_run=true",
+      "dryRunHint": "使用 dry_run=true 预览将要删除的数据"
+    },
+    "defaults": {
+      "otherImportantConcepts": "其他重要概念"
+    }
   }
 }

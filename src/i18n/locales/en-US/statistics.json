@@ -54,5 +54,7 @@
   "growth": {
     "title": "Knowledge Growth",
     "newCards": "New Cards"
-  }
+  },
+  "studyStatistics": "Learning Statistics",
+  "taskStatistics": "Task Statistics"
 }

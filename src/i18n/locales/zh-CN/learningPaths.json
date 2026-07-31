@@ -79,5 +79,6 @@
   },
   "learningPathDetail": {
     "title": "学习路径详情"
-  }
+  },
+  "zeroMinutesEmptyText": "0分钟"
 }

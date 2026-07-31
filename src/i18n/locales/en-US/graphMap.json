@@ -161,7 +161,11 @@
     "tip": "Tip:",
     "isolatedTip": "{{count}} graphs have not yet been linked to other graphs",
     "close": "Close",
-    "reanalyze": "Re-analyze"
+    "reanalyze": "Re-analyze",
+    "discoveredRelationsToast": "Discovered {{count}} potential relations",
+    "discoveryFailed": "Relation discovery failed: {{error}}",
+    "relationCreated": "Relation created: {{source}} → {{target}}",
+    "createFailed": "Failed to create relation: {{error}}"
   },
   "actionConfirmation": {
     "title": "Pending Actions",
@@ -216,7 +220,22 @@
     "started": "Infinite expansion task started",
     "startFailed": "Failed to start expansion",
     "depthFailed": "Depth expansion failed",
-    "nodeExpandFailed": "Failed to expand node"
+    "nodeExpandFailed": "Failed to expand node",
+    "errors": {
+      "noValidGraph": "No valid graph found",
+      "graphNotFound": "Graph not found",
+      "queryNodesFailed": "Failed to query nodes",
+      "graphAlreadyHasNodes": "Graph already has knowledge points, cannot re-initialize",
+      "topicResearchOnly": "This endpoint only supports topic research graphs"
+    },
+    "reasons": {
+      "graphHasNodes": "Graph already has knowledge points"
+    },
+    "messages": {
+      "initTaskCreated": "Initialization task created, please check progress via task status",
+      "initGraphTaskTitle": "Initialize knowledge graph: {{title}}",
+      "graphTopicContext": "Graph topic: {{title}}"
+    }
   },
   "infiniteExpansion": {
     "title": "AI Infinite Knowledge Network Expansion",
@@ -295,7 +314,12 @@
   "agentAnalysis": {
     "title": "Agent Analysis",
     "analyzing": "Analyzing...",
-    "graphNumber": "Graph {{number}}"
+    "graphNumber": "Graph {{number}}",
+    "callingTool": "Calling {{tool}}...",
+    "complete": "{{tool}} complete",
+    "waitingConfirm": "Waiting for confirmation",
+    "analysisComplete": "Analysis complete",
+    "analysisFailed": "Analysis failed: {{error}}"
   },
   "analysisResult": {
     "analyzing": "Analyzing...",
@@ -311,6 +335,10 @@
     "applying": "Applying...",
     "applySelected": "Apply Selected ({{count}})",
     "applyFailed": "Failed to apply recommendation",
+    "relationDiscovery": "Relation Discovery Results",
+    "crossDisciplineInsight": "Cross-Discipline Insight Results",
+    "learningPathSuggestion": "Learning Path Suggestions",
+    "knowledgeGap": "Knowledge Gap Analysis",
     "relationTypes": {
       "prerequisite": "Prerequisite",
       "extension": "Extension",
@@ -320,7 +348,29 @@
   },
   "analysisConfirm": {
     "title": "Confirm Analysis",
-    "analysisType": "Analysis Type:",
+    "analysisTypeLabel": "Analysis Type:",
+    "analysisType": {
+      "relationDiscovery": {
+        "name": "Relation Discovery",
+        "description": "Discover potential relations between graphs",
+        "estimatedTime": "5-10s"
+      },
+      "crossDomainInsights": {
+        "name": "Cross-Domain Insights",
+        "description": "Analyze cross-domain knowledge intersections",
+        "estimatedTime": "5-8s"
+      },
+      "learningPath": {
+        "name": "Learning Path",
+        "description": "Recommend optimal learning order",
+        "estimatedTime": "3-5s"
+      },
+      "knowledgeGap": {
+        "name": "Knowledge Gap",
+        "description": "Identify gaps in knowledge system",
+        "estimatedTime": "3-5s"
+      }
+    },
     "analysisGoal": "Analysis Goal",
     "analysisGoalPlaceholder": "Describe your analysis goal, e.g., analyze knowledge relations between these graphs, find duplicate content to merge...",
     "enterAnalysisGoal": "Please enter analysis goal",
@@ -349,7 +399,8 @@
   },
   "skillSelector": {
     "selectedForAnalysis": "{{count}} graphs selected for analysis",
-    "selectType": "Select Analysis Type"
+    "selectType": "Select Analysis Type",
+    "executionType": "Execution"
   },
   "domainGenerator": {
     "title": "Batch Domain Graph Generation",
@@ -520,5 +571,169 @@
     "learningOrder": "Learning order",
     "tip": "Tip:",
     "tipContent": "Learning paths are generated based on prerequisite relationships and knowledge dependencies between graphs. Following the recommended order yields the best results."
+  },
+  "learningPathSuggestions": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "connectionDiscovery": {
+    "commonTags": "Common tags: {{tags}}",
+    "mentionTitle": "Content mentions the other's title",
+    "contentSimilarity": "High content similarity",
+    "possiblyRelated": "Possibly related",
+    "title": "Connection Discovery",
+    "refresh": "Refresh",
+    "description": "Based on tags and content similarity analysis, discover potentially missed node connections",
+    "analyzing": "Analyzing...",
+    "relatedScore": "Relevance {{score}}",
+    "connect": "Connect",
+    "suggestRelation": "Suggested relations"
+  },
+  "uncategorized": "Uncategorized",
+  "domainLabel": "Domain: {{domain}}",
+  "domainBackground": {
+    "graphCount": "{{count}} graphs"
+  },
+  "conceptTypes": {
+    "method": "Method",
+    "mechanism": "Mechanism",
+    "operation": "Operation",
+    "concept": "Concept",
+    "technology": "Technology",
+    "tool": "Tool",
+    "theory": "Theory",
+    "finding": "Finding",
+    "trend": "Trend",
+    "challenge": "Challenge"
+  },
+  "backboneModules": {
+    "researchBackground": {
+      "title": "Research Background",
+      "description": "Background knowledge and development history of the research field"
+    },
+    "literatureReview": {
+      "title": "Literature Review",
+      "description": "Review and analysis of related literature"
+    },
+    "researchMethods": {
+      "title": "Research Methods",
+      "description": "Methodology and technical means used in the research"
+    },
+    "coreConcepts": {
+      "title": "Core Concepts",
+      "description": "Core concepts and theoretical framework of the field"
+    },
+    "applicationDomains": {
+      "title": "Application Domains",
+      "description": "Application scenarios of theories and methods"
+    },
+    "futureDirections": {
+      "title": "Future Directions",
+      "description": "Future development trends and research directions"
+    }
+  },
+  "relationTypes": {
+    "prerequisite": "Prerequisite",
+    "extension": "Extension",
+    "related": "Related",
+    "crossDomain": "Cross-Domain",
+    "unknown": "Unknown Relation"
+  },
+  "domains": {
+    "errors": {
+      "notFound": "Domain not found",
+      "accessDenied": "Access denied to this domain",
+      "parentNotFound": "Parent domain not found",
+      "parentDeleted": "Parent domain has been deleted",
+      "noPermissionToCreateUnderParent": "No permission to create subdomain under this parent",
+      "createFailed": "Failed to create domain",
+      "onlyOwnerCanModify": "Only the domain owner can modify it",
+      "systemCannotModify": "System preset domain cannot be modified",
+      "cannotSetAsOwnChild": "Cannot set domain as its own subdomain",
+      "targetParentNotFound": "Target parent domain not found",
+      "targetParentDeleted": "Target parent domain has been deleted",
+      "updateFailed": "Failed to update domain",
+      "onlyOwnerCanDelete": "Only the domain owner can delete it",
+      "systemCannotDelete": "System preset domain cannot be deleted",
+      "deleteFailed": "Failed to delete domain",
+      "queryInfoFailed": "Failed to query domain info",
+      "partialNotFound": "Some domains not found or deleted",
+      "noPermissionToOperate": "No permission to operate this domain",
+      "fetchListFailed": "Failed to fetch domain list",
+      "extractJsonFailed": "Failed to extract JSON array",
+      "nameAlreadyExists": "Domain name already exists",
+      "cycleDetected": "Cycle detected: cannot set domain as its own descendant"
+    },
+    "uncategorized": {
+      "name": "Uncategorized",
+      "description": "Graphs not categorized to any domain"
+    }
+  },
+  "relations": {
+    "errors": {
+      "graphNotFound": "Graph not found",
+      "createGraphFailed": "Failed to create graph",
+      "selfReferenceNotAllowed": "Cannot create self-referencing relation",
+      "noPermission": "No permission to operate this graph",
+      "relationExists": "Relation already exists",
+      "relationNotFound": "Relation not found",
+      "noPermissionToDelete": "No permission to delete this relation"
+    },
+    "messages": {
+      "infiniteExpansionCreated": "Infinite expansion task created"
+    }
+  },
+  "regions": {
+    "errors": {
+      "graphNotFound": "Graph not found",
+      "createFailed": "Failed to create region",
+      "regionNotFound": "Region not found",
+      "updateFailed": "Failed to update region",
+      "deleteFailed": "Failed to delete region"
+    },
+    "messages": {
+      "deleted": "Region deleted"
+    }
+  },
+  "nodeBatch": {
+    "errors": {
+      "backboneTitleImmutable": "Backbone node title cannot be modified",
+      "updateFailed": "Knowledge point update failed"
+    },
+    "messages": {
+      "noMatchingNodes": "No matching nodes found",
+      "deletedCount": "Successfully deleted {{count}} nodes",
+      "updatedPositions": "Successfully updated {{count}} node positions",
+      "updatedWithSkipped": "Successfully updated {{successCount}} nodes, skipped {{skippedCount}} backbone node title modifications",
+      "updatedAll": "Successfully updated {{count}} nodes"
+    }
+  },
+  "nodes": {
+    "errors": {
+      "unauthorizedAccess": "Unauthorized access to graph",
+      "fetchFailed": "Failed to fetch node",
+      "notFound": "Node not found",
+      "backboneTitleImmutable": "Backbone node title cannot be modified",
+      "deleteFailed": "Delete failed"
+    },
+    "messages": {
+      "permanentlyDeleted": "Knowledge point permanently deleted",
+      "removedFromGraph": "Node removed from current graph"
+    }
+  },
+  "api": {
+    "errors": {
+      "graphNotFound": "Graph not found",
+      "updateViewModeFailed": "Failed to update view mode",
+      "graphOrDomainNotFound": "Selected graph or domain not found",
+      "queryGraphFailed": "Failed to query existing graphs",
+      "unsupportedExportFormat": "Unsupported export format",
+      "confirmOrDryRunRequired": "Either confirm=true or dry_run=true must be set",
+      "dryRunHint": "Use dry_run=true to preview the data to be deleted"
+    },
+    "defaults": {
+      "otherImportantConcepts": "Other Important Concepts"
+    }
   }
 }

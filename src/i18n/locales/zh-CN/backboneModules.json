@@ -4,5 +4,151 @@
   "research_methods": "研究方法",
   "core_concepts": "核心概念",
   "application_domains": "应用领域",
-  "future_directions": "未来方向"
+  "future_directions": "未来方向",
+  "presets": {
+    "academicResearch": {
+      "name": "通用学术研究",
+      "description": "适用于通用学术研究领域，包含研究背景、文献综述、研究方法、核心概念、应用领域、未来方向六个标准模块",
+      "modules": {
+        "research_background": {
+          "title": "研究背景",
+          "description": "研究主题的背景信息、发展历程和现状",
+          "relationshipToCore": "提供研究的基础和动机"
+        },
+        "literature_review": {
+          "title": "文献综述",
+          "description": "相关文献的综述和分析",
+          "relationshipToCore": "建立理论基础和研究脉络"
+        },
+        "research_methods": {
+          "title": "研究方法",
+          "description": "研究采用的方法论和技术手段",
+          "relationshipToCore": "提供研究的实施路径"
+        },
+        "core_concepts": {
+          "title": "核心概念",
+          "description": "研究的核心概念、定义和理论框架",
+          "relationshipToCore": "研究的核心内容和贡献"
+        },
+        "application_domains": {
+          "title": "应用领域",
+          "description": "研究成果的应用领域和实际场景",
+          "relationshipToCore": "展示研究的实际价值"
+        },
+        "future_directions": {
+          "title": "未来方向",
+          "description": "未来研究方向和发展趋势",
+          "relationshipToCore": "指明后续研究方向"
+        }
+      }
+    },
+    "experimentalScience": {
+      "name": "实验科学研究",
+      "description": "适用于实验科学领域，包含研究背景、文献综述、实验设计、数据收集、结果分析、应用领域六个模块",
+      "modules": {
+        "research_background": {
+          "title": "研究背景",
+          "description": "研究主题的背景信息、发展历程和研究动机",
+          "relationshipToCore": "提供研究的基础和动机"
+        },
+        "literature_review": {
+          "title": "文献综述",
+          "description": "相关文献的综述和理论基础",
+          "relationshipToCore": "建立理论基础和研究脉络"
+        },
+        "experiment_design": {
+          "title": "实验设计",
+          "description": "实验方案设计和实施流程",
+          "relationshipToCore": "确保实验的可靠性和有效性"
+        },
+        "data_collection": {
+          "title": "数据收集",
+          "description": "数据采集方法和数据处理流程",
+          "relationshipToCore": "保障数据质量和完整性"
+        },
+        "result_analysis": {
+          "title": "结果分析",
+          "description": "实验结果分析和结论推导",
+          "relationshipToCore": "从数据中提取科学结论"
+        },
+        "application_domains": {
+          "title": "应用领域",
+          "description": "研究成果的应用前景和实际场景",
+          "relationshipToCore": "展示研究的实际价值"
+        }
+      }
+    },
+    "engineeringResearch": {
+      "name": "工程技术研究",
+      "description": "适用于工程技术研究领域，包含问题背景、技术架构、工程实现、性能评估、应用案例、未来方向六个模块",
+      "modules": {
+        "problem_background": {
+          "title": "问题背景",
+          "description": "工程问题的背景和需求分析",
+          "relationshipToCore": "明确工程目标和约束条件"
+        },
+        "tech_architecture": {
+          "title": "技术架构",
+          "description": "系统的技术架构设计方案",
+          "relationshipToCore": "提供系统的整体蓝图"
+        },
+        "engineering_implementation": {
+          "title": "工程实现",
+          "description": "具体的工程实现方案和技术细节",
+          "relationshipToCore": "将设计转化为可运行系统"
+        },
+        "performance_evaluation": {
+          "title": "性能评估",
+          "description": "系统性能测试和评估结果",
+          "relationshipToCore": "验证系统是否达到预期目标"
+        },
+        "application_cases": {
+          "title": "应用案例",
+          "description": "系统在实际场景中的应用案例",
+          "relationshipToCore": "展示系统的实际应用价值"
+        },
+        "future_directions": {
+          "title": "未来方向",
+          "description": "未来的优化方向和发展规划",
+          "relationshipToCore": "指明系统的后续发展方向"
+        }
+      }
+    },
+    "policyResearch": {
+      "name": "政策研究",
+      "description": "适用于政策研究领域，包含政策背景、政策工具、实施机制、影响评估、案例分析、政策建议六个模块",
+      "modules": {
+        "policy_background": {
+          "title": "政策背景",
+          "description": "政策出台的背景、历史沿革和政策环境",
+          "relationshipToCore": "理解政策制定的大环境"
+        },
+        "policy_instruments": {
+          "title": "政策工具",
+          "description": "政策采用的工具和手段",
+          "relationshipToCore": "明确政策实施的具体手段"
+        },
+        "implementation_mechanism": {
+          "title": "实施机制",
+          "description": "政策的执行机制和落地方式",
+          "relationshipToCore": "确保政策能有效落地"
+        },
+        "impact_evaluation": {
+          "title": "影响评估",
+          "description": "政策实施效果和影响的评估",
+          "relationshipToCore": "衡量政策的实际效果"
+        },
+        "case_studies": {
+          "title": "案例分析",
+          "description": "国内外相关的政策案例分析",
+          "relationshipToCore": "提供实践参考和经验借鉴"
+        },
+        "policy_recommendations": {
+          "title": "政策建议",
+          "description": "基于研究的政策建议和优化方向",
+          "relationshipToCore": "提出建设性的政策建议"
+        }
+      }
+    }
+  }
 }

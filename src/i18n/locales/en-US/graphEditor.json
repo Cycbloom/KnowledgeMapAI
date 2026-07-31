@@ -43,7 +43,20 @@
     "labelPlaceholder": "Enter edge label (optional)"
   },
   "commandPalette": {
-    "searchPlaceholder": "Search commands or nodes..."
+    "searchPlaceholder": "Search commands or nodes...",
+    "tabCreateChildHint": "Press Tab to create a child node",
+    "srTitle": "Command Palette",
+    "categories": {
+      "navigation": "Navigation",
+      "view": "View",
+      "action": "Action",
+      "ai": "AI Assistant",
+      "node": "Jump to Node"
+    },
+    "kbdHints": {
+      "navHint": "↑↓ Navigate",
+      "selectHint": "↵ Select"
+    }
   },
   "graphAnalysis": {
     "title": "Graph analysis",
@@ -296,6 +309,7 @@
     "colConcepts": "Concepts",
     "colModules": "Modules",
     "footer": "{{count}} literature items total",
+    "tableAriaLabel": "Literature Library List",
     "typeLabel": {
       "paper": "Paper",
       "book": "Book",
@@ -385,7 +399,13 @@
     "ignore": "Ignore",
     "noNodes": "No nodes",
     "region": "Outline",
-    "treeLabel": "Graph outline"
+    "treeLabel": "Graph outline",
+    "commonTags": "Common tags: {{tags}}",
+    "mentionedEachOther": "Mention each other in content",
+    "possiblyRelated": "Possibly related",
+    "researchTopic": "Research Topic",
+    "uncategorized": "Uncategorized",
+    "noSourceConcept": "Concept node without source info"
   },
   "region": {
     "title": "Region Management",
@@ -443,9 +463,6 @@
     "createNodeFailed": "Failed to create node: {{message}}"
   },
   "backlinks": {
-    "tabContent": "Content",
-    "tabBacklinks": "Backlinks",
-    "tabNotes": "Linked Notes",
     "panelTitle": "Backlinks",
     "empty": "No backlinks yet",
     "error": "Failed to load",
@@ -463,7 +480,6 @@
     "snapshots": "No snapshots",
     "versionHistory": "No version history",
     "commandPaletteNoResult": "No results found",
-    "nodeEmptyContent": "No content yet, please enter edit mode...",
     "literatureEmpty": "No literature data",
     "aggregationEmpty": "No aggregation results"
   },
@@ -495,8 +511,6 @@
   "loadingData": "Loading data...",
   "confirmDeleteRelationshipTitle": "Delete Relationship Type",
   "confirmDeleteRelationshipMessage": "Are you sure you want to delete this relationship type? This action cannot be undone.",
-  "confirmRemoveParentTitle": "Remove Parent Node",
-  "confirmRemoveParentMessage": "Are you sure you want to remove this parent relationship?",
   "createSnapshot": "Create Snapshot",
   "batchGenerateSuccess": "Generation complete! {{count}} questions generated",
   "batchGenerateFailed": "Generation failed: {{message}}",
@@ -746,9 +760,13 @@
     "mainline": "Mainline",
     "branch": "Branch",
     "keepMainline": "Keep Mainline",
-    "keepBranch": "Keep Branch"
+    "keepBranch": "Keep Branch",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hours ago",
+    "daysAgo": "{{count}} days ago"
   },
-  "nodeEdit": {
+  "nodeEditSidebar": {
     "backToOutline": "Back to Outline",
     "headerCreate": "Create New Node",
     "headerEdit": "Edit Node",
@@ -756,6 +774,12 @@
     "selectParentDone": "Done",
     "backboneBadge": "(Backbone Node)",
     "backboneImmutable": "{{module}} - Title cannot be modified",
+    "tabContent": "Content",
+    "tabBacklinks": "Backlinks",
+    "tabNotes": "Linked Notes",
+    "emptyContent": "No content yet, please enter edit mode...",
+    "confirmRemoveParentTitle": "Remove Parent Node",
+    "confirmRemoveParentMessage": "Are you sure you want to remove this parent relationship?",
     "field": {
       "title": "Title",
       "titlePlaceholder": "Enter node title",
@@ -891,14 +915,23 @@
   },
   "mindMapCanvas": {
     "ariaLabel": "Mind map view, {{count}} nodes, focus: {{focus}}",
-    "emptyFocus": "No focused node"
+    "emptyFocus": "No focused node",
+    "title": "Mind Map Canvas",
+    "desc": "Interactive mind map canvas with {{count}} knowledge nodes. Use mouse or touch to pan and zoom, click nodes for details.",
+    "semanticLoading": "Calculating semantic layout...",
+    "layoutFailed": "Layout calculation failed, please refresh and retry",
+    "layoutFailedHint": "Recalculating with fallback method..."
+  },
+  "mindMapNode": {
+    "needsRefinement": "Needs refinement"
   },
   "quadrantCanvas": {
     "ariaLabel": "Quadrant graph view, {{nodeCount}} nodes, {{regionCount}} regions",
     "desc": "Quadrant graph visualization, supports pan, zoom, drag center, click node for details",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "resetView": "Reset view"
+    "resetView": "Reset view",
+    "zoomLabel": "Zoom: {{percent}}%"
   },
   "planetView": {
     "ariaLabel": "3D planet view, {{count}} nodes"
@@ -926,5 +959,169 @@
   },
   "alternativeBranches": {
     "difficulty": "Difficulty:"
+  },
+  "unnamed": {
+    "node": "Unnamed Node",
+    "graph": "Unnamed Graph",
+    "nodeFallback": "Unnamed Node"
+  },
+  "errors": {
+    "unknownError": "Unknown error",
+    "aiPanelError": "AI panel error",
+    "consoleCrash": "Console crashed",
+    "readOnlyModeHint": "Read-only mode - You are viewing a public graph",
+    "loginToEdit": "Log in to edit"
+  },
+  "conceptExtraction": {
+    "literatureSource": "Literature Source",
+    "addedCountConcepts": "Added {{addedCount}} concepts, merged {{mergedCount}} similar concepts"
+  },
+  "nodePreviewCard": {
+    "mastered": "Mastered",
+    "locked": "Locked",
+    "reviewCount": "Reviewed {{count}} times",
+    "childCountMore": "{{count}} more child nodes",
+    "clickToViewDetail": "Click to view details",
+    "markAsMastered": "Mark as mastered"
+  },
+  "explorationTimeline": {
+    "unknownTime": "Unknown time",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hours ago",
+    "title": "Exploration Path",
+    "nodeCount": "{{count}} nodes",
+    "prevStep": "Previous Step",
+    "nextStep": "Next Step",
+    "branchChoice": "Branch selection:",
+    "history": "History",
+    "branchLabel": "Branch:",
+    "alternativeBranchs": "Alternative branches:",
+    "selected": "Selected"
+  },
+  "edgeEditDialog": {
+    "title": "Edit Edge",
+    "tabBasic": "Basic Info",
+    "tabStyle": "Style Settings",
+    "label": "Label",
+    "relationshipType": "Relationship Type",
+    "selectRelationshipType": "Select relationship type",
+    "customColor": "Custom Color",
+    "clear": "Clear",
+    "lineStyle": "Line Style",
+    "arrowDisplay": "Arrow Display",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "save": "Save",
+    "lineStyles": {
+      "solid": "Solid",
+      "dashed": "Dashed",
+      "dotted": "Dotted",
+      "double": "Double"
+    },
+    "arrowDisplayOptions": {
+      "auto": "Auto",
+      "show": "Show",
+      "hide": "Hide"
+    }
+  },
+  "sidebar": {
+    "unnamedKnowledgePoint": "Unnamed Knowledge Point",
+    "error": {
+      "componentError": "Sidebar component error",
+      "closeSidebar": "Close sidebar"
+    }
+  },
+  "promptSettings": {
+    "updatedAt": "Updated:",
+    "promptTypes": {
+      "expand_knowledge": "Expand Knowledge",
+      "generate_cards": "Generate Cards",
+      "generate_cards_qa": "Generate QA",
+      "generate_cards_choice": "Generate Choice",
+      "generate_cards_true_false": "Generate True/False",
+      "generate_cards_multi_choice": "Generate Multi-Choice",
+      "generate_cards_fill_blank": "Generate Fill-Blank",
+      "generate_cards_essay": "Generate Essay",
+      "branch_suggestions": "Branch Suggestions",
+      "generate_content": "Generate Content",
+      "chat": "Chat",
+      "text_to_graph": "Text to Graph",
+      "recommend_connections": "Recommend Connections",
+      "tutor_chat": "Tutor Chat",
+      "document_to_graph": "Document to Graph",
+      "term_annotation": "Term Annotation",
+      "infinite_graph_expansion": "Infinite Graph Expansion",
+      "auto_graph_init": "Auto Graph Init",
+      "auto_graph_expand": "Auto Graph Expand",
+      "generate_task_details": "Generate Task Details",
+      "literature_concept_extraction": "Literature Concept Extraction",
+      "literature_relation_inference": "Literature Relation Inference",
+      "template_generation": "Template Generation",
+      "template_type_knowledge_tree": "Knowledge Tree",
+      "template_type_skill_map": "Skill Map",
+      "template_type_concept_network": "Concept Network",
+      "template_type_learning_path": "Learning Path",
+      "template_type_topic_research": "Topic Research",
+      "template_type_project_lifecycle": "Project Lifecycle",
+      "template_type_dev_workflow": "Dev Workflow",
+      "template_type_task_breakdown": "Task Breakdown",
+      "template_type_sprint_planning": "Sprint Planning",
+      "template_type_root_cause": "Root Cause Analysis",
+      "template_type_swot": "SWOT Analysis",
+      "template_type_comparison": "Comparison",
+      "template_type_decision_tree": "Decision Tree",
+      "template_type_tech_ecosystem": "Tech Ecosystem",
+      "template_type_org_structure": "Org Structure",
+      "template_type_system_architecture": "System Architecture",
+      "template_type_knowledge_system": "Knowledge System",
+      "template_type_blank": "Blank Graph"
+    },
+    "scopes": {
+      "graph": "Graph-specific",
+      "user": "User-wide",
+      "system": "System Default"
+    },
+    "categories": {
+      "graph_building": "Knowledge Graph Building",
+      "card_generation": "Card Generation",
+      "ai_chat": "AI Chat",
+      "task_scheduler": "Task Scheduler",
+      "literature_analysis": "Literature Analysis",
+      "template_generation": "Template Generation",
+      "other": "Other Tools"
+    }
+  },
+  "nodeContextMenu": {
+    "termAnnotationInProgress": "Performing term annotation...",
+    "termAnnotationDone": "Term annotation completed",
+    "annotationFailed": "Annotation failed",
+    "systemFunction": "System Function",
+    "termAnnotation": "Term Annotation",
+    "aiAction": "AI Action"
+  },
+  "edgeContextMenu": {
+    "editLabel": "Edit Label",
+    "changeRelationshipType": "Change Relationship Type",
+    "deleteEdge": "Delete Edge"
+  },
+  "podcastModal": {
+    "unknownError": "Unknown error",
+    "scriptFailed": "Script generation failed: {{message}}"
+  },
+  "graphModalManager": {
+    "deleteConfirm": "Delete"
+  },
+  "actionResultModal": {
+    "close": "Close"
+  },
+  "quadrantNode": {
+    "unnamed": "Unnamed"
+  },
+  "regionHeader": {
+    "nodeCount": "{{count}} nodes"
+  },
+  "promptEditor": {
+    "insertVariable": "Insert {{variable}}"
   }
 }

@@ -1,0 +1,40 @@
+{
+  "errors": {
+    "apiKeyMissing": {
+      "message": "AI service not configured",
+      "suggestion": "Please go to the settings page to configure the AI API Key"
+    },
+    "apiKeyInvalid": {
+      "message": "Invalid API Key",
+      "suggestion": "Please check if your API Key is correct, or go to the settings page to reconfigure it"
+    },
+    "quotaExceeded": {
+      "message": "API quota exhausted",
+      "suggestion": "Your API quota has been exhausted. Please check your account balance or wait for quota reset"
+    },
+    "rateLimited": {
+      "message": "Too many requests",
+      "suggestion": "Please try again later, or reduce the number of questions generated at once"
+    },
+    "networkError": {
+      "message": "Network connection failed",
+      "suggestion": "Please check your network connection and try again"
+    },
+    "timeout": {
+      "message": "Request timed out",
+      "suggestion": "The server response timed out, please try again later"
+    },
+    "invalidResponse": {
+      "message": "AI response format error",
+      "suggestion": "The data format returned by AI is incorrect, please try again"
+    },
+    "databaseError": {
+      "message": "Database write failed",
+      "suggestion": "Questions were generated successfully but saving failed. Please check the database connection and try again"
+    },
+    "unknown": {
+      "message": "Generation failed: {{message}}",
+      "suggestion": "Please try again later. If the problem persists, contact technical support"
+    }
+  }
+}

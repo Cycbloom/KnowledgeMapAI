@@ -9,6 +9,50 @@
       "emailInvalid": "Invalid email format"
     },
     "inviting": "Inviting...",
-    "invite": "Invite"
+    "invite": "Invite",
+    "dialog": {
+      "title": "Invite Collaborator",
+      "emailLabel": "User Email",
+      "roleLabel": "Role",
+      "cancel": "Cancel"
+    }
+  },
+  "shareLink": {
+    "label": "Share Link",
+    "copied": "Copied",
+    "copy": "Copy",
+    "description": "Invite users to collaborate via this link"
+  },
+  "roleLabels": {
+    "owner": "Owner",
+    "editor": "Editor",
+    "viewer": "Viewer"
+  },
+  "errors": {
+    "fetchFailed": "Failed to fetch collaborators list",
+    "inviteFailed": "Invitation failed",
+    "updateRoleFailed": "Failed to update role",
+    "removeFailed": "Failed to remove",
+    "generateShareLinkFailed": "Failed to generate share link"
+  },
+  "api": {
+    "errors": {
+      "graphNotFound": "Graph not found",
+      "onlyOwnerCanInvite": "Only graph owner can invite collaborators",
+      "userNotFound": "User not found",
+      "cannotInviteSelf": "Cannot invite yourself",
+      "alreadyCollaborator": "User is already a collaborator",
+      "onlyOwnerCanUpdateRole": "Only graph owner can update collaborator role",
+      "onlyOwnerCanRemove": "Only graph owner can remove collaborators",
+      "inviteNotFoundOrExpired": "Invitation not found or expired",
+      "inviteNotForUser": "This invitation does not belong to the current user",
+      "inviteLinkExpired": "Invitation link has expired",
+      "inviteAlreadyAccepted": "This invitation has been accepted",
+      "onlyOwnerCanGenerateLink": "Only graph owner can generate share link",
+      "shareLinkAlreadyExists": "Share link already exists, please use the existing link",
+      "shareLinkInvalid": "Share link is invalid or expired",
+      "shareLinkExpired": "Share link has expired",
+      "alreadyCollaboratorOfGraph": "You are already a collaborator of this graph"
+    }
   }
 }

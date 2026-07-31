@@ -43,9 +43,21 @@
   },
   "canvas": {
     "ariaLabel": "Combined view, {{count}} nodes, focus: {{focus}}",
-    "desc": "Combined view displaying nodes and relationships across multiple graphs"
+    "desc": "Combined view displaying nodes and relationships across multiple graphs",
+    "graphCount": "{{count}} graphs"
   },
   "backToOutline": "Back to outline",
+  "toolbar": {
+    "colorModeStructure": "Color mode: Structure",
+    "colorModeHeatmap": "Color mode: Heatmap",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "closeSidebar": "Close sidebar",
+    "openSidebar": "Open sidebar",
+    "exportImage": "Export image",
+    "exportJson": "Export JSON",
+    "selectedNode": "Selected: {{title}}"
+  },
   "nodeEdit": {
     "titleLabel": "Title",
     "levelLabel": "Level",
@@ -54,9 +66,26 @@
     "summaryPlaceholder": "Brief summary of core content...",
     "tagsPlaceholder": "e.g.: important, todo, concept",
     "contentPlaceholder": "Supports Markdown format...",
-    "tagsLabel": "Tags (comma-separated)"
+    "tagsLabel": "Tags (comma-separated)",
+    "editNodeTitle": "Edit node",
+    "summaryLabel": "Summary",
+    "summaryHint": "(20-30 chars brief summary)",
+    "saveNode": "Save node",
+    "level": {
+      "root": "Root node",
+      "core": "Core node",
+      "sub": "Sub node",
+      "normal": "Normal node",
+      "leaf": "Leaf node"
+    }
   },
   "graphSidebar": {
-    "searchPlaceholder": "Search nodes..."
+    "searchPlaceholder": "Search nodes...",
+    "untitledNode": "Untitled node",
+    "outline": "Outline",
+    "connections": "Connections",
+    "noMatchNodes": "No matching nodes",
+    "aiAnalyzeConnections": "AI analyze connections",
+    "sameKnowledge": "Same knowledge point"
   }
 }

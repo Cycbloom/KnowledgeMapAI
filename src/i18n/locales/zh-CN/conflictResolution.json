@@ -1,0 +1,15 @@
+{
+  "conflict": {
+    "title": "同步冲突",
+    "description": "{{entity}} #{{id}} 存在冲突，请选择解决方案：",
+    "resolution": {
+      "useLocal": "使用本地版本",
+      "useRemote": "使用远端版本",
+      "merge": "合并"
+    }
+  },
+  "version": {
+    "local": "本地版本",
+    "remote": "远端版本"
+  }
+}

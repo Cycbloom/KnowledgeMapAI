@@ -31,18 +31,79 @@
     "tasks": "Task Achievement",
     "special": "Special Achievement"
   },
-  "streak": {
+  "streakDisplay": {
     "title": "Completion Streak",
     "daily": "Daily Tasks Streak",
     "weekly": "Weekly Tasks Streak",
     "monthly": "Monthly Tasks Streak",
     "quarterly": "Quarterly Tasks Streak",
-    "nextMilestone": "Next milestone: {{milestone}}"
+    "nextMilestone": "Next milestone: {{milestone}}",
+    "dailyDesc": "Complete daily tasks to build good study habits",
+    "weeklyDesc": "Complete weekly tasks to maintain your weekly rhythm",
+    "monthlyDesc": "Complete monthly tasks to sustain long-term learning",
+    "quarterlyDesc": "Complete quarterly tasks to reach quarterly goals",
+    "currentStreak": "Current Streak",
+    "bestStreak": "Best Streak",
+    "totalDays": "Total Days",
+    "streakActive": "Streak Active",
+    "streakBroken": "Streak Broken",
+    "streakNew": "Not Started",
+    "streakRecord": "Best Streak: {{count}} days",
+    "milestoneLabel": "Milestone",
+    "milestoneReached": "Milestone {{milestone}} reached!",
+    "milestonesAllReached": "All milestones reached",
+    "nextMilestoneIn": "{{count}} days to next milestone",
+    "milestone7": "7-day streak: Habit forming",
+    "milestone14": "14-day streak: Habit consolidating",
+    "milestone30": "30-day streak: Habit established",
+    "milestone60": "60-day streak: Deep learning phase",
+    "milestone100": "100-day streak: Learning master",
+    "weeklyMilestone4": "4-week streak: Monthly persistence",
+    "weeklyMilestone8": "8-week streak: Bi-monthly persistence",
+    "weeklyMilestone12": "12-week streak: Quarterly persistence",
+    "monthlyMilestone3": "3-month streak: Quarterly persistence",
+    "monthlyMilestone6": "6-month streak: Half-year persistence",
+    "monthlyMilestone12": "12-month streak: Full-year persistence",
+    "quarterlyMilestone2": "2-quarter streak: Half-year persistence",
+    "quarterlyMilestone4": "4-quarter streak: Full-year persistence",
+    "keepGoing": "Keep going!",
+    "greatJob": "Great job!",
+    "streakStarted": "Streak started",
+    "streakInProgress": "{{count}} day streak in progress",
+    "streakEndedAt": "Streak ended at {{count}} days",
+    "todayLabel": "Today",
+    "thisWeekLabel": "This Week",
+    "thisMonthLabel": "This Month",
+    "thisQuarterLabel": "This Quarter"
   },
   "periodic": {
     "weekly": "This Week's Tasks",
     "monthly": "This Month's Tasks",
     "quarterly": "This Quarter's Tasks"
+  },
+  "periodicTask": {
+    "label": {
+      "focusTime": "Focus Time",
+      "studyCards": "Study Cards",
+      "createNodes": "Create Nodes",
+      "completeTasks": "Complete Tasks"
+    },
+    "unit": {
+      "minutes": "min",
+      "cards": "cards",
+      "items": "items"
+    },
+    "period": {
+      "week": "Week",
+      "month": "Month",
+      "quarter": "Quarter"
+    },
+    "title": "{{period}} {{label}}",
+    "currentPeriod": "Current Period",
+    "target": "Target",
+    "progress": "{{current}} / {{target}} {{unit}}",
+    "totalCount": "{{count}} items total",
+    "pointsLabel": "pts"
   },
   "pass": {
     "weekly": "Weekly Pass",

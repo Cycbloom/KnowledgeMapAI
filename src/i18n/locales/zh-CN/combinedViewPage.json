@@ -43,9 +43,21 @@
   },
   "canvas": {
     "ariaLabel": "组合视图，{{count}} 个节点，当前焦点：{{focus}}",
-    "desc": "组合视图展示多个图谱的节点与关系"
+    "desc": "组合视图展示多个图谱的节点与关系",
+    "graphCount": "{{count}} 个图谱"
   },
   "backToOutline": "返回大纲",
+  "toolbar": {
+    "colorModeStructure": "着色模式: 结构",
+    "colorModeHeatmap": "着色模式: 热力图",
+    "lightMode": "浅色模式",
+    "darkMode": "深色模式",
+    "closeSidebar": "关闭侧边栏",
+    "openSidebar": "打开侧边栏",
+    "exportImage": "导出图片",
+    "exportJson": "导出 JSON",
+    "selectedNode": "已选: {{title}}"
+  },
   "nodeEdit": {
     "titleLabel": "标题",
     "levelLabel": "层级",
@@ -54,9 +66,26 @@
     "summaryPlaceholder": "简短概览，概括核心内容...",
     "tagsPlaceholder": "例如: 重要, 待办, 概念",
     "contentPlaceholder": "支持 Markdown 格式...",
-    "tagsLabel": "标签 (逗号分隔)"
+    "tagsLabel": "标签 (逗号分隔)",
+    "editNodeTitle": "编辑节点",
+    "summaryLabel": "概览",
+    "summaryHint": "(20-30字短概述)",
+    "saveNode": "保存节点",
+    "level": {
+      "root": "根节点",
+      "core": "核心节点",
+      "sub": "次级节点",
+      "normal": "普通节点",
+      "leaf": "叶子节点"
+    }
   },
   "graphSidebar": {
-    "searchPlaceholder": "搜索节点..."
+    "searchPlaceholder": "搜索节点...",
+    "untitledNode": "未命名节点",
+    "outline": "大纲",
+    "connections": "连接",
+    "noMatchNodes": "无匹配节点",
+    "aiAnalyzeConnections": "AI 分析连接",
+    "sameKnowledge": "相同知识点"
   }
 }

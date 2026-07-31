@@ -264,7 +264,7 @@
     "syncComplete": "同步完成",
     "syncNow": "立即同步"
   },
-  "commandPalette": {
+  "globalCommandPalette": {
     "categoryNavigation": "导航",
     "categoryRecent": "最近访问",
     "categoryAction": "快速操作",
@@ -291,28 +291,6 @@
     "footerTitle": "全局命令面板"
   },
   "comingSoon": "即将推出",
-  "shortcutHelp": {
-    "title": "快捷键设置",
-    "resetAll": "重置全部",
-    "searchPlaceholder": "搜索快捷键...",
-    "disabled": "已禁用",
-    "pressNewShortcut": "按下新的快捷键...",
-    "notSet": "未设置",
-    "resetToDefault": "重置为默认",
-    "noMatch": "未找到匹配的快捷键",
-    "customHint": "点击快捷键按钮可以自定义",
-    "totalCount": "共 {{count}} 个快捷键",
-    "shortcutField": "快捷键",
-    "categories": {
-      "navigation": "导航",
-      "view": "视图",
-      "editing": "编辑",
-      "selection": "选择",
-      "ai": "AI助手",
-      "tools": "工具",
-      "general": "通用"
-    }
-  },
   "preferences": {
     "reducedMotion": "减少动态效果",
     "reducedMotionDesc": "降低界面动画时长与强度（系统开启“减少动态效果”或此处开启均生效）"
@@ -326,7 +304,12 @@
   "tagSystem": {
     "selected": "已选 {{count}} 个标签",
     "filter": "标签筛选",
-    "selectAll": "选择标签"
+    "selectAll": "选择标签",
+    "addTagPlaceholder": "添加标签...",
+    "cloudTitle": "标签云",
+    "countLabel": "{{count}} 个标签",
+    "clearAll": "清除全部",
+    "suggestions": "建议标签"
   },
   "audioVisualizer": {
     "ariaLabel": "音频可视化，当前状态：{{state}}",
@@ -339,12 +322,126 @@
   "shortcut": {
     "captureLabel": "快捷键捕获"
   },
-  "pwaDiagnostics": {
-    "swRegistrationLabel": "SW 注册状态",
-    "swVersionLabel": "SW 当前版本",
-    "standaloneLabel": "Standalone 模式",
-    "installableLabel": "可安装状态",
-    "installedLabel": "已安装状态",
-    "cacheSizeLabel": "缓存大小"
+  "shortcutHint": {
+    "noShortcutWarning": "[ShortcutHint] actionId \"{{actionId}}\" 没有快捷键定义",
+    "tooltipAriaLabel": "快捷键提示"
+  },
+  "saveButton": {
+    "idle": "保存",
+    "saving": "保存中...",
+    "saved": "已保存",
+    "error": "保存失败"
+  },
+  "searchResults": {
+    "searching": "搜索中...",
+    "graphLabel": "图谱 {{count}}",
+    "nodeLabel": "节点 {{count}}",
+    "aiAnswer": "AI 回答",
+    "notFound": "未找到「{{query}}」相关结果"
+  },
+  "syncDetail": {
+    "title": "同步状态",
+    "lastSync": "上次同步: {{time}}",
+    "notSynced": "尚未同步",
+    "conflictCount": "{{count}} 个同步冲突",
+    "pendingPush": "待推送",
+    "pendingPull": "待拉取"
+  },
+  "taskProgress": {
+    "completedFormat": "已完成 {{completed}}/{{total}}",
+    "title": "任务进度",
+    "current": "当前：{{current}}"
+  },
+  "syncStatus": {
+    "synced": "已同步",
+    "syncing": "同步中",
+    "offline": "离线",
+    "error": "同步错误"
+  },
+  "mobileFocusTimer": {
+    "pauseAriaLabel": "暂停",
+    "startAriaLabel": "开始"
+  },
+  "nodeOperations": {
+    "createSuccess": "节点创建成功",
+    "saveSuccess": "节点保存成功",
+    "saveFailed": "保存失败，请重试",
+    "hardDeleteConfirm": "确定要彻底删除知识点 \"{{title}}\" 吗？此操作将从所有图谱中移除此知识点，且不可恢复！",
+    "removeNodeConfirm": "确定要从当前图谱移除节点 \"{{title}}\" 吗？",
+    "hardDeleteTitle": "彻底删除知识点",
+    "removeNodeTitle": "移除节点",
+    "batchDeleteTitle": "批量删除",
+    "batchDeleteConfirm": "确定要删除选中的 {{count}} 个节点吗?",
+    "batchDeleteSuccess": "批量删除成功",
+    "batchDeleteFailed": "批量删除失败",
+    "batchLevelUpdateSuccess": "已将 {{count}} 个节点等级修改为 {{level}}",
+    "batchLevelUpdateFailed": "批量修改等级失败",
+    "updateSuccess": "节点状态已更新",
+    "updateFailed": "更新节点失败"
+  },
+  "aiOperations": {
+    "fetchRelatedNodesFailed": "获取相关节点失败",
+    "unknownError": "未知错误",
+    "fieldsUpdated": "。已更新: {{fields}}",
+    "childrenSpawned": "。已生成 {{count}} 个子节点"
+  },
+  "audioSynthesis": {
+    "categories": {
+      "nature": "自然",
+      "environment": "环境",
+      "meditation": "冥想"
+    },
+    "sounds": {
+      "rain": "雨声",
+      "thunder": "雷声",
+      "ocean": "海浪",
+      "stream": "溪流",
+      "wind": "风声",
+      "forest": "森林",
+      "fire": "篝火",
+      "cafe": "咖啡厅",
+      "library": "图书馆",
+      "night": "夜晚",
+      "train": "火车",
+      "airplane": "飞机",
+      "singingBowl": "钵音",
+      "windChime": "风铃",
+      "breathing": "呼吸引导",
+      "whiteNoise": "白噪声",
+      "pinkNoise": "粉噪声",
+      "brownNoise": "褐噪声"
+    },
+    "presets": {
+      "rainyReading": "雨天阅读",
+      "lateNightWork": "深夜工作",
+      "forestMeditation": "森林冥想",
+      "beachRelax": "海边放松"
+    }
+  },
+  "errors": {
+    "networkError": "网络错误，请检查网络连接",
+    "authError": "认证失败，请重新登录",
+    "tokenExpiredError": "登录已过期，请重新登录",
+    "forbiddenError": "没有权限执行此操作",
+    "notFoundError": "请求的资源不存在",
+    "validationError": "输入数据格式不正确",
+    "serverError": "服务器错误，请稍后重试",
+    "timeoutError": "请求超时，请稍后重试",
+    "rateLimitError": "请求过于频繁，请稍后重试",
+    "cancelledError": "请求已取消",
+    "unknownError": "未知错误",
+    "requestFailed": "请求失败",
+    "networkConnectionFailed": "网络连接失败，请检查网络设置",
+    "operationFailed": "操作失败，请稍后重试"
+  },
+  "syncConflict": {
+    "title": "同步冲突 ({{count}})",
+    "tableLabel": "表",
+    "recordIdLabel": "记录 ID",
+    "timeLabel": "时间",
+    "localVersion": "本地版本",
+    "keepLocal": "保留本地版本",
+    "remoteVersion": "云端版本",
+    "keepRemote": "保留云端版本"
   }
 }

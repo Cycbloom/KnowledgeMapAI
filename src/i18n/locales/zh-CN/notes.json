@@ -309,5 +309,137 @@
     "deletedMany": "已删除 {{count}} 条笔记",
     "restored": "已恢复",
     "restoreFailed": "恢复失败，请前往回收站手动恢复"
+  },
+  "blockEditorToolbar": {
+    "bold": "粗体",
+    "italic": "斜体",
+    "strike": "删除线",
+    "code": "行内代码",
+    "undo": "撤销",
+    "redo": "重做",
+    "moveUp": "上移块",
+    "moveDown": "下移块",
+    "copyBlockRef": "复制块引用",
+    "embedBlock": "嵌入此块",
+    "generateSummary": "生成今日总结",
+    "extractConcepts": "提取要点建图",
+    "insertImage": "插入图片",
+    "writingContinue": "续写",
+    "writingRewrite": "改写",
+    "writingExpand": "扩写",
+    "refreshAggregation": "刷新今日数据"
+  },
+  "blockRefPopover": {
+    "title": "块引用",
+    "placeholder": "搜索块…",
+    "noMatch": "未找到匹配的块"
+  },
+  "wikiLinkPopover": {
+    "title": "Wiki 链接建议",
+    "placeholder": "搜索图节点…",
+    "noMatch": "未找到匹配的节点"
+  },
+  "writingAssistPopover": {
+    "title": "写作辅助",
+    "loading": "正在生成建议…",
+    "accept": "采纳",
+    "reject": "放弃"
+  },
+  "inboundBlockRefsPanel": {
+    "title": "被引用的块",
+    "empty": "暂无块引用",
+    "loadFailed": "加载块引用失败",
+    "emptyBlock": "（空块）",
+    "typeRef": "引用",
+    "typeEmbed": "嵌入",
+    "referrerCount": "共 {{count}} 处引用"
+  },
+  "extractConceptsDialog": {
+    "title": "提取要点建图",
+    "description": "选择要创建为图谱节点的知识点，并选择目标图谱。",
+    "empty": "未提取到候选知识点",
+    "related": "建议关联：{{related}}",
+    "targetGraph": "目标图谱",
+    "selectGraph": "请选择图谱",
+    "loading": "正在创建节点…",
+    "cancel": "取消",
+    "confirm": "创建节点",
+    "createNodesSuccess": "已在图谱创建 {{count}} 个节点",
+    "createNodesError": "创建节点失败"
+  },
+  "nodeBlockRefsPanel": {
+    "title": "引用此节点的块",
+    "empty": "暂无块引用",
+    "loadFailed": "加载块引用失败",
+    "emptyBlock": "（空块）"
+  },
+  "notesListPage": {
+    "srLiveRegion": {
+      "showingCount": "当前显示 {{count}} 条笔记"
+    },
+    "errorBoundary": {
+      "listLoadFailed": "笔记列表加载失败"
+    }
+  },
+  "templatesPage": {},
+  "noteEditorPage": {
+    "errorBoundary": {
+      "editorCrashed": "编辑器崩溃"
+    }
+  },
+  "blockEditor": {
+    "placeholder": "输入 / 唤起块菜单，或直接开始记录…",
+    "slashHint": "输入 / 插入块",
+    "saveStatus": {
+      "idle": "未保存",
+      "saving": "保存中…",
+      "saved": "已保存",
+      "error": "保存失败"
+    },
+    "footer": {
+      "wordCount": "{{count}} 字",
+      "readingTime": "约 {{minutes}} 分钟"
+    },
+    "blockRef": {
+      "stale": "源块已失效",
+      "copied": "块引用已复制",
+      "embedded": "已嵌入当前块"
+    }
+  },
+  "slashCommandMenu": {
+    "title": "块类型",
+    "ariaLabel": "块菜单"
+  },
+  "blockEmbedNodeView": {
+    "label": "块嵌入",
+    "loading": "加载块内容…",
+    "removed": "源块已删除",
+    "unembed": "解除嵌入",
+    "jumpToSource": "跳转到源块",
+    "refreshPrompt": "源块已更新,点击刷新"
+  },
+  "blockReferenceNodeView": {
+    "label": "块引用",
+    "stale": "源块已失效",
+    "removed": "源块已删除,可点击移除引用",
+    "tooltip": "点击跳转到源块",
+    "unembed": "解除嵌入"
+  },
+  "api": {
+    "errors": {
+      "dailyOnly": "仅 daily 类型笔记支持生成今日总结",
+      "noteNotDaily": "笔记不是 Daily 类型",
+      "aiSummaryFailed": "AI 生成今日总结失败"
+    },
+    "defaults": {
+      "templateName": "系统默认 - 三段式学习日志",
+      "noReviewRecords": "（今日无复习记录）",
+      "noCompletedTasks": "（今日无完成任务）",
+      "unnamedTask": "未命名任务"
+    },
+    "prompts": {
+      "generateDailySummary": "请生成今日学习总结：",
+      "extractKnowledgePoints": "请提取知识点候选，返回 JSON："
+    }
   }
 }

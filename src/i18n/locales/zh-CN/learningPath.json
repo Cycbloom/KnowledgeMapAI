@@ -1,0 +1,167 @@
+{
+  "pathNodeList": {
+    "title": "学习节点",
+    "selectAllPending": "全选待学习",
+    "deselectAll": "取消全选",
+    "selectedCount": "已选择 {{count}} 个节点",
+    "batchSelect": "批量选择",
+    "converting": "转换中...",
+    "convertToTasks": "转为任务 ({{count}})",
+    "emptyDescription": "您可以添加学习节点，或从知识图谱生成学习路径",
+    "generateFromGraph": "从图谱生成",
+    "estimatedMinutes": "{{count}}分钟",
+    "difficulty": "难度 {{level}}/5",
+    "relatedTask": "已关联任务",
+    "contentLabel": "内容",
+    "prerequisites": "前置知识",
+    "updateStatus": "更新状态",
+    "convertToTask": "转为任务",
+    "viewTask": "查看任务"
+  },
+  "pathHeader": {
+    "back": "返回",
+    "target": "目标：{{date}}",
+    "statusActive": "进行中",
+    "statusPaused": "已暂停",
+    "statusCompleted": "已完成",
+    "statusArchived": "已归档",
+    "viewKnowledgeGraph": "查看知识图谱",
+    "autoSchedule": "自动排程",
+    "pauseLearning": "暂停学习",
+    "continueLearning": "继续学习",
+    "archive": "归档",
+    "delete": "删除",
+    "learningProgress": "学习进度",
+    "nodesCount": "{{completed}} / {{total}} 节点",
+    "estimatedTime": "预计时间：",
+    "learnedTime": "已学习："
+  },
+  "pathProgress": {
+    "title": "进度概览",
+    "totalNodes": "总节点",
+    "completed": "已完成",
+    "inProgress": "学习中",
+    "pending": "待学习",
+    "currentStreak": "连续学习",
+    "longestStreak": "最长连续",
+    "days": "天"
+  },
+  "pathActionBar": {
+    "viewGraph": "查看图谱",
+    "autoSchedule": "自动排程",
+    "pause": "暂停",
+    "resume": "继续",
+    "delete": "删除"
+  },
+  "milestonesSection": {
+    "title": "里程碑",
+    "targetDateLabel": "目标日期："
+  },
+  "plansSection": {
+    "title": "学习计划",
+    "planNodesCount": "计划 {{count}} 个节点",
+    "minutesSuffix": "{{count}}分钟"
+  },
+  "suggestionsSection": {
+    "title": "学习建议"
+  },
+  "statusLabels": {
+    "pending": "待学习",
+    "learning": "学习中",
+    "completed": "已完成",
+    "skipped": "已跳过"
+  },
+  "api": {
+    "errors": {
+      "notFound": "学习路径不存在",
+      "noNodesInGraph": "图谱中没有节点",
+      "nodeNotFound": "节点不存在",
+      "nodeAccessDenied": "无权访问此节点",
+      "createMainTaskFailed": "创建主任务失败",
+      "createSubtaskFailed": "创建子任务失败",
+      "createTaskFailed": "创建任务失败",
+      "taskNotFound": "任务不存在",
+      "graphNotFound": "图谱不存在",
+      "forbidden": "学习路径不存在或无权访问",
+      "planNotFound": "计划不存在",
+      "targetDateRequired": "请先设置学习目标和目标日期",
+      "targetDatePassed": "目标日期已过，请更新目标日期",
+      "generatePathFailed": "学习路径生成失败",
+      "getProgressFailed": "获取进度失败",
+      "generateQuestionsFailed": "生成问题失败",
+      "targetDateMustBeFuture": "目标日期必须是未来的日期",
+      "aiPathMatchFailed": "AI 生成的学习路径无法匹配到图谱中的知识点，请重试"
+    },
+    "defaults": {
+      "unnamedGraph": "未命名图谱",
+      "pathTitle": "{{title}}学习路径",
+      "notProvided": "未提供"
+    },
+    "goals": {
+      "masterCoreConcepts": "全面掌握 {{title}} 的核心概念",
+      "applyToSolveProblems": "能够应用 {{title}} 解决实际问题",
+      "understandPrinciples": "深入理解 {{title}} 的原理和机制"
+    },
+    "assessment": {
+      "basicKnowledgeTopic": "基础知识",
+      "basicKnowledgeDesc": "相关的基础概念",
+      "practicalExperienceTopic": "实践经验",
+      "practicalExperienceDesc": "相关的实践经验",
+      "options": {
+        "notFamiliar": "不了解",
+        "slightlyFamiliar": "了解一点",
+        "familiar": "比较熟悉",
+        "veryFamiliar": "非常熟悉"
+      }
+    },
+    "prompts": {
+      "descriptionLine": "描述：{{description}}",
+      "userMessage": "图谱标题：{{title}}\n{{descriptionLine}}\n知识点预览（共 {{count}} 个）：{{nodesPreview}}\n\n请根据以上信息，生成学习目标建议和前置知识评估问题。",
+      "pathUserMessage": "图谱标题：{{graphTitle}}\n目标：{{targetGoal}}\n学习风格：{{learningStyle}}\n每日学习时间：{{dailyTimeMinutes}} 分钟\n{{currentKnowledgeLine}}\n知识点列表（共 {{nodesCount}} 个）：\n{{nodesList}}\n\n知识点关系：\n{{relationsList}}\n\n请根据以上信息，规划一条最优的学习路径。注意：如果有明确的学习目标，只需要选择与目标直接相关的核心节点（5-15个），不需要包含图谱中的所有节点。"
+    },
+    "suggestions": {
+      "increaseDailyTime": "建议增加每日学习时间，有较多待学习/复习的知识点",
+      "lowMasteryPriority": "建议优先学习：{{nodes}}",
+      "dueReviews": "有 {{count}} 个知识点需要复习",
+      "advancedNodes": "有较多高级知识点，建议确保前置知识已掌握"
+    },
+    "reasons": {
+      "dueReview": "需要复习：已到复习时间",
+      "needLearning": "需要学习：尚未掌握",
+      "needConsolidation": "需要巩固：掌握程度较低",
+      "optionalReview": "可选复习：基本掌握",
+      "mastered": "已掌握：可跳过",
+      "targetPath": "目标路径上的知识点",
+      "lowMasteryPriority": "掌握度较低，建议优先学习"
+    },
+    "suggestionItems": {
+      "continueNext": {
+        "title": "继续学习下一个知识点",
+        "description": "当前进度 {{progress}}%，建议继续学习「{{nodeTitle}}」"
+      },
+      "strengthenWeak": {
+        "title": "加强薄弱知识点：{{nodeTitle}}",
+        "description": "该知识点记忆稳定性较低 ({{stability}})，建议增加复习频率"
+      },
+      "reviewDue": {
+        "title": "复习到期：{{nodeTitle}}",
+        "descriptionOverdue": "该知识点已过期 {{days}} 天，建议立即复习",
+        "descriptionToday": "该知识点今日需要复习"
+      },
+      "prereqIncomplete": {
+        "title": "前置知识未完成：{{nodeTitle}}",
+        "description": "请先完成前置知识点：{{prereqTitles}}"
+      },
+      "milestoneReady": {
+        "title": "里程碑已就绪：{{milestoneTitle}}",
+        "description": "所有前置知识点已完成，可以开始学习这个里程碑"
+      }
+    },
+    "taskIntegration": {
+      "pathTaskTitle": "[学习路径] {{title}}",
+      "pathTaskDescription": "学习路径任务",
+      "nodeTaskTitle": "[学习] {{title}}",
+      "nodeTaskContext": "学习路径节点 #{{index}}"
+    }
+  }
+}

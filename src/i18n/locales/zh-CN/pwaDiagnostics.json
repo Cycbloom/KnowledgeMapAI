@@ -1,0 +1,23 @@
+{
+  "diagnostics": {
+    "title": "PWA 诊断",
+    "loading": "加载中...",
+    "boolYes": "是 ✓",
+    "boolNo": "否 ✗",
+    "swRegistrationLabel": "SW 注册状态",
+    "swVersionLabel": "SW 当前版本",
+    "standaloneLabel": "Standalone 模式",
+    "installableLabel": "可安装状态",
+    "installedLabel": "已安装状态",
+    "cacheSizeLabel": "缓存大小",
+    "swRegistered": "已注册",
+    "swActive": "活动",
+    "swWaiting": "等待",
+    "swController": "控制器",
+    "cacheUsed": "已用",
+    "cacheQuota": "配额",
+    "clearing": "清除中...",
+    "clearCacheAndReload": "清除缓存并重新加载",
+    "clearCacheConfirm": "确定要清除所有缓存并重新加载吗？这将注销 Service Worker 并删除所有缓存。"
+  }
+}

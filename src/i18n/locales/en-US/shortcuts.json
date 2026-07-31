@@ -59,5 +59,27 @@
     "ai": "AI Assistant",
     "tools": "Tools",
     "general": "General"
+  },
+  "helpPanel": {
+    "title": "Keyboard Shortcuts",
+    "resetAll": "Reset All",
+    "searchPlaceholder": "Search shortcuts...",
+    "disabled": "Disabled",
+    "pressNewShortcut": "Press new shortcut...",
+    "notSet": "Not set",
+    "resetToDefault": "Reset to default",
+    "shortcutField": "Shortcut",
+    "noMatch": "No matching shortcuts found",
+    "customHint": "Click a shortcut button to customize",
+    "totalCount": "{{count}} shortcuts total",
+    "categories": {
+      "navigation": "Navigation",
+      "view": "View",
+      "editing": "Editing",
+      "selection": "Selection",
+      "ai": "AI Assistant",
+      "tools": "Tools",
+      "general": "General"
+    }
   }
 }

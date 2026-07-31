@@ -1,0 +1,23 @@
+{
+  "diagnostics": {
+    "title": "PWA Diagnostics",
+    "loading": "Loading...",
+    "boolYes": "Yes ✓",
+    "boolNo": "No ✗",
+    "swRegistrationLabel": "SW registration status",
+    "swVersionLabel": "SW current version",
+    "standaloneLabel": "Standalone mode",
+    "installableLabel": "Installable status",
+    "installedLabel": "Installed status",
+    "cacheSizeLabel": "Cache size",
+    "swRegistered": "Registered",
+    "swActive": "Active",
+    "swWaiting": "Waiting",
+    "swController": "Controller",
+    "cacheUsed": "Used",
+    "cacheQuota": "Quota",
+    "clearing": "Clearing...",
+    "clearCacheAndReload": "Clear cache and reload",
+    "clearCacheConfirm": "Are you sure you want to clear all caches and reload? This will unregister the Service Worker and delete all caches."
+  }
+}

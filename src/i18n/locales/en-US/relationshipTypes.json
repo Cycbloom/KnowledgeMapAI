@@ -41,5 +41,19 @@
     "interaction": "Interaction",
     "causal": "Causal",
     "custom": "Custom"
+  },
+  "api": {
+    "errors": {
+      "fetchFailed": "Failed to fetch relationship types",
+      "nameExists": "Relationship type name already exists",
+      "createFailed": "Failed to create relationship type",
+      "notFound": "Relationship type not found",
+      "builtInCannotModify": "Built-in relationship types cannot be modified",
+      "noPermissionToModify": "No permission to modify this relationship type",
+      "updateFailed": "Failed to update relationship type",
+      "builtInCannotDelete": "Built-in relationship types cannot be deleted",
+      "noPermissionToDelete": "No permission to delete this relationship type",
+      "deleteFailed": "Failed to delete relationship type"
+    }
   }
 }

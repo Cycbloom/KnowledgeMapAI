@@ -718,5 +718,94 @@
   },
   "pathWizard": {
     "stepIndicator": "Step {{current}} of {{total}}"
+  },
+  "articleReader": {
+    "linkedGraph": "Study graph: {{name}}",
+    "nodes": "({{completed}}/{{total}} nodes)"
+  },
+  "highlightedReader": {
+    "analyzing": "Analyzing...",
+    "statsFormat": "Keywords {{keywordHits}} · Local {{localHits}}",
+    "identifiedCount": "Identified {{count}} highlights",
+    "reasons": {
+      "keyTerm": "Key Term",
+      "importantConcept": "Important Concept",
+      "chapterTitle": "Chapter Title",
+      "keyPoints": "Key Points",
+      "numberedPoints": "Numbered Points",
+      "keyArgument": "Key Argument",
+      "importantNote": "Important Note",
+      "notice": "Notice",
+      "definition": "Definition",
+      "summary": "Summary",
+      "coreConcept": "Core Concept"
+    }
+  },
+  "focusPanel": {
+  "focusLearningTitle": "Focus Learning: {{name}}",
+  "defaultNodeTitle": "Knowledge Point"
+},
+  "modeRightPanel": {
+    "conceptAggregation": "Concept Aggregation",
+    "smartMergeConcepts": "Smart Merge Similar Concepts"
+  },
+  "pathPanel": {
+    "titleFormat": "Learning Path - {{title}}",
+    "progressFormat": "Learning Path Progress: {{title}}"
+  },
+  "modeHeader": {
+    "topicResearch": "Topic Research"
+  },
+  "stageLabels": {
+    "learning": "Learning",
+    "review": "Review",
+    "practice": "Practice",
+    "quiz": "Quiz"
+  },
+  "stageDescriptions": {
+    "learning": "Initial learning stage, appears only once",
+    "review": "Review previously learned content",
+    "practice": "Quick check with simple questions",
+    "quiz": "Comprehensive assessment with complex questions"
+  },
+  "studyModePresets": {
+    "drill": {
+      "label": "Drill Mode",
+      "description": "Skip learning materials, go directly to quizzes, short intervals and high frequency for memory reinforcement"
+    },
+    "deep": {
+      "label": "Deep Learning",
+      "description": "Full workflow: learning materials → active recall → practice → quiz → reflection, standard FSRS parameters"
+    },
+    "preview": {
+      "label": "Quick Preview",
+      "description": "Only read learning materials, marked as viewed after single exposure, no review cards generated"
+    },
+    "review": {
+      "label": "Spaced Review",
+      "description": "Only show due review nodes, execute review according to FSRS standard scheduling"
+    },
+    "quiz": {
+      "label": "Quiz Mode",
+      "description": "Directly quiz all learned nodes, update mastery based on quiz results"
+    },
+    "mixed": {
+      "label": "Mixed Mode",
+      "description": "Automatically select strategy based on node status: new nodes → deep learning, learned nodes → spaced review, decaying nodes → drill reinforcement"
+    }
+  },
+  "knowledgePoint": {
+    "searchSimilarFailed": "Failed to search similar knowledge points",
+    "reuseSuccess": "Reused existing knowledge point",
+    "reuseFailed": "Failed to reuse knowledge point",
+    "createFailed": "Failed to create node",
+    "deletedFromMultipleGraphs": "This knowledge point has been deleted from {{count}} graphs",
+    "hardDeleteSuccess": "Knowledge point permanently deleted",
+    "softDeleteSuccess": "Removed from current graph",
+    "deleteFailed": "Delete failed",
+    "getGraphsFailed": "Failed to get knowledge point graph list",
+    "visibilityPublicSuccess": "Knowledge point set to public",
+    "visibilityPrivateSuccess": "Knowledge point set to private",
+    "visibilityUpdateFailed": "Failed to update visibility"
   }
 }

@@ -4,5 +4,151 @@
   "research_methods": "Research Methods",
   "core_concepts": "Core Concepts",
   "application_domains": "Application Domains",
-  "future_directions": "Future Directions"
+  "future_directions": "Future Directions",
+  "presets": {
+    "academicResearch": {
+      "name": "General Academic Research",
+      "description": "Suitable for general academic research, including six standard modules: research background, literature review, research methods, core concepts, application domains, and future directions",
+      "modules": {
+        "research_background": {
+          "title": "Research Background",
+          "description": "Background information, development history, and current status of the research topic",
+          "relationshipToCore": "Provides the foundation and motivation for the research"
+        },
+        "literature_review": {
+          "title": "Literature Review",
+          "description": "Review and analysis of related literature",
+          "relationshipToCore": "Establishes the theoretical foundation and research context"
+        },
+        "research_methods": {
+          "title": "Research Methods",
+          "description": "Methodology and technical approaches used in the research",
+          "relationshipToCore": "Provides the implementation path for the research"
+        },
+        "core_concepts": {
+          "title": "Core Concepts",
+          "description": "Core concepts, definitions, and theoretical framework of the research",
+          "relationshipToCore": "The core content and contribution of the research"
+        },
+        "application_domains": {
+          "title": "Application Domains",
+          "description": "Application domains and practical scenarios of research outcomes",
+          "relationshipToCore": "Demonstrates the practical value of the research"
+        },
+        "future_directions": {
+          "title": "Future Directions",
+          "description": "Future research directions and development trends",
+          "relationshipToCore": "Points out follow-up research directions"
+        }
+      }
+    },
+    "experimentalScience": {
+      "name": "Experimental Science Research",
+      "description": "Suitable for experimental science, including six modules: research background, literature review, experiment design, data collection, result analysis, and application domains",
+      "modules": {
+        "research_background": {
+          "title": "Research Background",
+          "description": "Background information, development history, and research motivation of the research topic",
+          "relationshipToCore": "Provides the foundation and motivation for the research"
+        },
+        "literature_review": {
+          "title": "Literature Review",
+          "description": "Review and theoretical foundation of related literature",
+          "relationshipToCore": "Establishes the theoretical foundation and research context"
+        },
+        "experiment_design": {
+          "title": "Experiment Design",
+          "description": "Experimental scheme design and implementation process",
+          "relationshipToCore": "Ensures the reliability and validity of the experiment"
+        },
+        "data_collection": {
+          "title": "Data Collection",
+          "description": "Data collection methods and data processing workflow",
+          "relationshipToCore": "Ensures data quality and integrity"
+        },
+        "result_analysis": {
+          "title": "Result Analysis",
+          "description": "Experimental result analysis and conclusion derivation",
+          "relationshipToCore": "Extracts scientific conclusions from data"
+        },
+        "application_domains": {
+          "title": "Application Domains",
+          "description": "Application prospects and practical scenarios of research outcomes",
+          "relationshipToCore": "Demonstrates the practical value of the research"
+        }
+      }
+    },
+    "engineeringResearch": {
+      "name": "Engineering and Technical Research",
+      "description": "Suitable for engineering and technical research, including six modules: problem background, technical architecture, engineering implementation, performance evaluation, application cases, and future directions",
+      "modules": {
+        "problem_background": {
+          "title": "Problem Background",
+          "description": "Background and requirements analysis of the engineering problem",
+          "relationshipToCore": "Clarifies engineering goals and constraints"
+        },
+        "tech_architecture": {
+          "title": "Technical Architecture",
+          "description": "Technical architecture design scheme of the system",
+          "relationshipToCore": "Provides the overall blueprint of the system"
+        },
+        "engineering_implementation": {
+          "title": "Engineering Implementation",
+          "description": "Specific engineering implementation scheme and technical details",
+          "relationshipToCore": "Transforms design into a running system"
+        },
+        "performance_evaluation": {
+          "title": "Performance Evaluation",
+          "description": "System performance testing and evaluation results",
+          "relationshipToCore": "Verifies whether the system meets expected goals"
+        },
+        "application_cases": {
+          "title": "Application Cases",
+          "description": "Application cases of the system in real scenarios",
+          "relationshipToCore": "Demonstrates the practical application value of the system"
+        },
+        "future_directions": {
+          "title": "Future Directions",
+          "description": "Future optimization directions and development plans",
+          "relationshipToCore": "Points out the follow-up development direction of the system"
+        }
+      }
+    },
+    "policyResearch": {
+      "name": "Policy Research",
+      "description": "Suitable for policy research, including six modules: policy background, policy instruments, implementation mechanism, impact evaluation, case studies, and policy recommendations",
+      "modules": {
+        "policy_background": {
+          "title": "Policy Background",
+          "description": "Background, historical evolution, and policy environment of the policy",
+          "relationshipToCore": "Understands the broader context of policy making"
+        },
+        "policy_instruments": {
+          "title": "Policy Instruments",
+          "description": "Tools and means adopted by the policy",
+          "relationshipToCore": "Clarifies the specific means of policy implementation"
+        },
+        "implementation_mechanism": {
+          "title": "Implementation Mechanism",
+          "description": "Execution mechanism and implementation approach of the policy",
+          "relationshipToCore": "Ensures the policy can be effectively implemented"
+        },
+        "impact_evaluation": {
+          "title": "Impact Evaluation",
+          "description": "Evaluation of the effects and impacts of policy implementation",
+          "relationshipToCore": "Measures the actual effects of the policy"
+        },
+        "case_studies": {
+          "title": "Case Studies",
+          "description": "Analysis of related domestic and international policy cases",
+          "relationshipToCore": "Provides practical reference and experience for reference"
+        },
+        "policy_recommendations": {
+          "title": "Policy Recommendations",
+          "description": "Policy recommendations and optimization directions based on the research",
+          "relationshipToCore": "Proposes constructive policy recommendations"
+        }
+      }
+    }
+  }
 }

@@ -715,5 +715,94 @@
   },
   "pathWizard": {
     "stepIndicator": "第 {{current}} 步，共 {{total}} 步"
+  },
+  "articleReader": {
+    "linkedGraph": "学习图谱: {{name}}",
+    "nodes": "({{completed}}/{{total}} 节点)"
+  },
+  "highlightedReader": {
+    "analyzing": "分析中...",
+    "statsFormat": "关键词 {{keywordHits}} 处 · 本地 {{localHits}} 处",
+    "identifiedCount": "已识别 {{count}} 处重点",
+    "reasons": {
+      "keyTerm": "关键术语",
+      "importantConcept": "重要概念",
+      "chapterTitle": "章节标题",
+      "keyPoints": "要点列举",
+      "numberedPoints": "编号要点",
+      "keyArgument": "关键论述",
+      "importantNote": "重要说明",
+      "notice": "注意事项",
+      "definition": "定义说明",
+      "summary": "总结要点",
+      "coreConcept": "核心概念"
+    }
+  },
+  "focusPanel": {
+  "focusLearningTitle": "专注学习: {{name}}",
+  "defaultNodeTitle": "知识点"
+},
+  "modeRightPanel": {
+    "conceptAggregation": "概念聚合",
+    "smartMergeConcepts": "智能合并相似概念"
+  },
+  "pathPanel": {
+    "titleFormat": "学习路径 - {{title}}",
+    "progressFormat": "学习路径进展: {{title}}"
+  },
+  "modeHeader": {
+    "topicResearch": "专题研究"
+  },
+  "stageLabels": {
+    "learning": "学习",
+    "review": "复习",
+    "practice": "练习",
+    "quiz": "测验"
+  },
+  "stageDescriptions": {
+    "learning": "初始学习阶段，仅出现一次",
+    "review": "复习已学内容",
+    "practice": "简单题目快速检验",
+    "quiz": "综合题目全面评估"
+  },
+  "studyModePresets": {
+    "drill": {
+      "label": "刷题模式",
+      "description": "跳过学习材料，直接进入测验，短间隔高频率强化记忆"
+    },
+    "deep": {
+      "label": "深度学习",
+      "description": "完整工作流：学习材料→主动回忆→练习→测验→反思，标准FSRS参数"
+    },
+    "preview": {
+      "label": "快速浏览",
+      "description": "仅阅读学习材料，单次曝光后标记为已浏览，不生成复习卡片"
+    },
+    "review": {
+      "label": "间隔复习",
+      "description": "仅展示到期复习的节点，按FSRS标准调度执行复习"
+    },
+    "quiz": {
+      "label": "测验模式",
+      "description": "直接对所有已学节点进行测验，根据测验结果更新掌握度"
+    },
+    "mixed": {
+      "label": "混合模式",
+      "description": "根据节点状态自动选择策略：新节点→深度学习，已学节点→间隔复习，衰减节点→刷题强化"
+    }
+  },
+  "knowledgePoint": {
+    "searchSimilarFailed": "搜索相似知识点失败",
+    "reuseSuccess": "已复用现有知识点",
+    "reuseFailed": "复用知识点失败",
+    "createFailed": "创建节点失败",
+    "deletedFromMultipleGraphs": "此知识点已在 {{count}} 个图谱中删除",
+    "hardDeleteSuccess": "知识点已彻底删除",
+    "softDeleteSuccess": "已从当前图谱移除",
+    "deleteFailed": "删除失败",
+    "getGraphsFailed": "获取知识点图谱列表失败",
+    "visibilityPublicSuccess": "知识点已设为公开",
+    "visibilityPrivateSuccess": "知识点已设为私有",
+    "visibilityUpdateFailed": "更新可见性失败"
   }
 }

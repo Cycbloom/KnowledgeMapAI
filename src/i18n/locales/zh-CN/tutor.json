@@ -1,0 +1,25 @@
+{
+  "modes": {
+    "freeTalk": "自由对话",
+    "guidedLearning": "引导学习",
+    "learningPath": "学习路径",
+    "literatureExtraction": "文献提取",
+    "conceptAggregation": "概念聚合"
+  },
+  "messages": {
+    "tutorChatFailed": "助教对话失败，请重试",
+    "conceptsExtracted": "提取了 {{count}} 个概念，可以添加到图谱中",
+    "noConceptsExtracted": "未提取到新的概念",
+    "conceptExtractionFailed": "概念提取失败",
+    "selectParentNodeFirst": "请先选择一个父节点",
+    "conceptAddedToGraph": "已将 \"{{title}}\" 添加到图谱中",
+    "addConceptFailed": "添加概念失败",
+    "allConceptsAdded": "已将 {{count}} 个概念添加到图谱中",
+    "batchAddConceptsFailed": "批量添加概念失败",
+    "learningSuggestionsGenerated": "生成了 {{count}} 个学习建议",
+    "generateSuggestionsFailed": "生成学习建议失败",
+    "tutorModeSwitched": "已切换到{{mode}}模式",
+    "tutorModeEnabled": "助教模式已开启",
+    "tutorModeDisabled": "助教模式已关闭"
+  }
+}

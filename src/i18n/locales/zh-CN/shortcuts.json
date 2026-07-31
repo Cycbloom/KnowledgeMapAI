@@ -59,5 +59,27 @@
     "ai": "AI助手",
     "tools": "工具",
     "general": "通用"
+  },
+  "helpPanel": {
+    "title": "快捷键设置",
+    "resetAll": "重置全部",
+    "searchPlaceholder": "搜索快捷键...",
+    "disabled": "已禁用",
+    "pressNewShortcut": "按下新的快捷键...",
+    "notSet": "未设置",
+    "resetToDefault": "重置为默认",
+    "shortcutField": "快捷键",
+    "noMatch": "未找到匹配的快捷键",
+    "customHint": "点击快捷键按钮可以自定义",
+    "totalCount": "共 {{count}} 个快捷键",
+    "categories": {
+      "navigation": "导航",
+      "view": "视图",
+      "editing": "编辑",
+      "selection": "选择",
+      "ai": "AI助手",
+      "tools": "工具",
+      "general": "通用"
+    }
   }
 }

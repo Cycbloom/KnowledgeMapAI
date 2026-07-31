@@ -101,5 +101,9 @@
     "targetDate": "Target {{date}}",
     "confirm": "Dropped at {{hour}}:00",
     "cancel": "Drag cancelled"
+  },
+  "executionTitle": "{{title}} - {{minutes}} min",
+  "weekView": {
+    "moveTo": "Move to {{hour}}:00"
   }
 }

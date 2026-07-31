@@ -81,7 +81,9 @@
     "nodes": "节点",
     "createdAt": "创建时间",
     "updatedAt": "更新时间",
-    "actions": "操作"
+    "actions": "操作",
+    "tableAriaLabel": "知识图谱列表",
+    "selectAllAriaLabel": "全选"
   },
   "card": {
     "noDescription": "暂无描述",
@@ -135,9 +137,30 @@
     "restoreFailed": "恢复失败，请前往回收站手动恢复"
   },
   "deleteGraphTitle": "删除图谱",
+  "graphCounter": "{{count}} 个图谱",
+  "aiPanelError": "AI 生成面板出错",
+  "deleteConfirmTitle": "删除图谱",
+  "deleteConfirmMessage": "确定要删除图谱 \"{{title}}\" 吗？此操作将永久删除所有相关的节点和关系，无法撤销。",
   "mobileFAB": {
     "aiGenerate": "AI 生成",
     "import": "导入",
     "importing": "导入中..."
+  },
+  "graphTypeLabels": {
+    "topicResearch": "专题研究",
+    "knowledgeTree": "知识树",
+    "learningPath": "学习路径",
+    "conceptNetwork": "概念网络",
+    "skillMap": "技能图谱",
+    "projectLifecycle": "项目生命周期",
+    "storyCreation": "小说/故事创作"
+  },
+  "tagCloud": {
+    "title": "标签云",
+    "totalCount": "共 {{count}} 个标签",
+    "clearFilter": "清除筛选",
+    "clearShort": "清除",
+    "collapse": "收起",
+    "viewAll": "查看全部 {{count}} 个标签"
   }
 }

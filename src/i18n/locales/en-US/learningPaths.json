@@ -79,5 +79,6 @@
   },
   "learningPathDetail": {
     "title": "Learning Path Detail"
-  }
+  },
+  "zeroMinutesEmptyText": "0 min"
 }

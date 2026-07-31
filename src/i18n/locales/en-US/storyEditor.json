@@ -1,4 +1,40 @@
 {
+  "api": {
+    "errors": {
+      "structure": {
+        "fetchFailed": "Failed to fetch story structure",
+        "createFailed": "Failed to create story structure",
+        "notFound": "Story structure not found",
+        "updateFailed": "Failed to update story structure",
+        "deleteFailed": "Failed to delete story structure",
+        "templateNotFound": "Template not found",
+        "initTemplateFailed": "Failed to initialize template"
+      },
+      "character": {
+        "fetchFailed": "Failed to fetch character list",
+        "createFailed": "Failed to create character",
+        "notFound": "Character not found",
+        "updateFailed": "Failed to update character",
+        "deleteFailed": "Failed to delete character"
+      },
+      "scene": {
+        "fetchFailed": "Failed to fetch scene details",
+        "createFailed": "Failed to create scene details",
+        "notFound": "Scene details not found",
+        "updateFailed": "Failed to update scene details"
+      },
+      "appearance": {
+        "addFailed": "Failed to add appearance record",
+        "deleteFailed": "Failed to delete appearance record",
+        "fetchStatsFailed": "Failed to fetch appearance stats"
+      },
+      "relationship": {
+        "fetchFailed": "Failed to fetch character relationships",
+        "createFailed": "Failed to create character relationship",
+        "deleteFailed": "Failed to delete character relationship"
+      }
+    }
+  },
   "title": "Story Editor",
   "storyCreationMode": "Story Creation Mode",
   "untitledStory": "Untitled Story",

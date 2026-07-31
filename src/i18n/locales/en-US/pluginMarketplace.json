@@ -20,5 +20,35 @@
   "uninstallFailed": "Uninstallation failed, please try again later",
   "activateFailed": "Activation failed, please try again later",
   "deactivateFailed": "Deactivation failed, please try again later",
-  "loadFailed": "Failed to load plugins, please try again later"
+  "loadFailed": "Failed to load plugins, please try again later",
+  "marketplace": {
+    "categories": {
+      "all": "All Categories",
+      "productivity": "Productivity",
+      "visualization": "Visualization",
+      "ai": "AI Enhancement",
+      "study": "Study Aids"
+    },
+    "pluginNames": {
+      "core": "Core Service",
+      "graph": "Knowledge Graph",
+      "ai": "AI Service",
+      "study": "Study System",
+      "scheduler": "Task Scheduler",
+      "agent": "AI Agent"
+    },
+    "system": "System",
+    "required": "Required",
+    "continueBrowse": "Continue browsing other plugins",
+    "pluginLoadFailed": "Plugin failed to load",
+    "retry": "Retry"
+  },
+  "serviceDescriptions": {
+    "core": "Core service: authentication, settings, health checks, SSE real-time communication, event bus",
+    "graph": "Knowledge graph service: node management, edge relationships, knowledge points, auto graph, collaborators",
+    "ai": "AI service and routing plugin, supports multiple model providers",
+    "study": "Study system service: learning progress, review, question generation, learning paths, quiz sets",
+    "scheduler": "Task scheduler plugin: task service, executors, focus mode, scheduled tasks, event subscriptions",
+    "agent": "AI agent plugin: AI Agent service, tool registration and routing"
+  }
 }

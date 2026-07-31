@@ -18,5 +18,6 @@
     "weak": "弱",
     "medium": "中",
     "strong": "强"
-  }
+  },
+  "registerFailed": "注册失败"
 }

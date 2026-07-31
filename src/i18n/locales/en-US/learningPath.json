@@ -1,0 +1,167 @@
+{
+  "pathNodeList": {
+    "title": "Learning Nodes",
+    "selectAllPending": "Select All Pending",
+    "deselectAll": "Deselect All",
+    "selectedCount": "{{count}} nodes selected",
+    "batchSelect": "Batch Select",
+    "converting": "Converting...",
+    "convertToTasks": "Convert to Tasks ({{count}})",
+    "emptyDescription": "You can add learning nodes, or generate a learning path from a knowledge graph",
+    "generateFromGraph": "Generate from Graph",
+    "estimatedMinutes": "{{count}} min",
+    "difficulty": "Difficulty {{level}}/5",
+    "relatedTask": "Linked Task",
+    "contentLabel": "Content",
+    "prerequisites": "Prerequisites",
+    "updateStatus": "Update Status",
+    "convertToTask": "Convert to Task",
+    "viewTask": "View Task"
+  },
+  "pathHeader": {
+    "back": "Back",
+    "target": "Target: {{date}}",
+    "statusActive": "In Progress",
+    "statusPaused": "Paused",
+    "statusCompleted": "Completed",
+    "statusArchived": "Archived",
+    "viewKnowledgeGraph": "View Knowledge Graph",
+    "autoSchedule": "Auto Schedule",
+    "pauseLearning": "Pause Learning",
+    "continueLearning": "Continue Learning",
+    "archive": "Archive",
+    "delete": "Delete",
+    "learningProgress": "Learning Progress",
+    "nodesCount": "{{completed}} / {{total}} nodes",
+    "estimatedTime": "Estimated time: ",
+    "learnedTime": "Learned: "
+  },
+  "pathProgress": {
+    "title": "Progress Overview",
+    "totalNodes": "Total Nodes",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "pending": "Pending",
+    "currentStreak": "Current Streak",
+    "longestStreak": "Longest Streak",
+    "days": "days"
+  },
+  "pathActionBar": {
+    "viewGraph": "View Graph",
+    "autoSchedule": "Auto Schedule",
+    "pause": "Pause",
+    "resume": "Resume",
+    "delete": "Delete"
+  },
+  "milestonesSection": {
+    "title": "Milestones",
+    "targetDateLabel": "Target Date: "
+  },
+  "plansSection": {
+    "title": "Learning Plans",
+    "planNodesCount": "Planned {{count}} nodes",
+    "minutesSuffix": "{{count}} min"
+  },
+  "suggestionsSection": {
+    "title": "Learning Suggestions"
+  },
+  "statusLabels": {
+    "pending": "Pending",
+    "learning": "Learning",
+    "completed": "Completed",
+    "skipped": "Skipped"
+  },
+  "api": {
+    "errors": {
+      "notFound": "Learning path not found",
+      "noNodesInGraph": "No nodes in graph",
+      "nodeNotFound": "Node not found",
+      "nodeAccessDenied": "No permission to access this node",
+      "createMainTaskFailed": "Failed to create main task",
+      "createSubtaskFailed": "Failed to create subtask",
+      "createTaskFailed": "Failed to create task",
+      "taskNotFound": "Task not found",
+      "graphNotFound": "Graph not found",
+      "forbidden": "Learning path not found or access denied",
+      "planNotFound": "Plan not found",
+      "targetDateRequired": "Please set learning goals and target date first",
+      "targetDatePassed": "Target date has passed, please update the target date",
+      "generatePathFailed": "Failed to generate learning path",
+      "getProgressFailed": "Failed to get progress",
+      "generateQuestionsFailed": "Failed to generate questions",
+      "targetDateMustBeFuture": "Target date must be a future date",
+      "aiPathMatchFailed": "AI-generated learning path could not be matched to knowledge points in the graph, please retry"
+    },
+    "defaults": {
+      "unnamedGraph": "Unnamed Graph",
+      "pathTitle": "{{title}} Learning Path",
+      "notProvided": "Not provided"
+    },
+    "goals": {
+      "masterCoreConcepts": "Fully master the core concepts of {{title}}",
+      "applyToSolveProblems": "Be able to apply {{title}} to solve practical problems",
+      "understandPrinciples": "Deeply understand the principles and mechanisms of {{title}}"
+    },
+    "assessment": {
+      "basicKnowledgeTopic": "Basic Knowledge",
+      "basicKnowledgeDesc": "Related basic concepts",
+      "practicalExperienceTopic": "Practical Experience",
+      "practicalExperienceDesc": "Related practical experience",
+      "options": {
+        "notFamiliar": "Not familiar",
+        "slightlyFamiliar": "Slightly familiar",
+        "familiar": "Familiar",
+        "veryFamiliar": "Very familiar"
+      }
+    },
+    "prompts": {
+      "descriptionLine": "Description: {{description}}",
+      "userMessage": "Graph title: {{title}}\n{{descriptionLine}}\nKnowledge points preview ({{count}} total): {{nodesPreview}}\n\nBased on the above information, please generate learning goal suggestions and prerequisite knowledge assessment questions.",
+      "pathUserMessage": "Graph title: {{graphTitle}}\nGoal: {{targetGoal}}\nLearning style: {{learningStyle}}\nDaily study time: {{dailyTimeMinutes}} minutes\n{{currentKnowledgeLine}}\nKnowledge points list ({{nodesCount}} total):\n{{nodesList}}\n\nKnowledge point relations:\n{{relationsList}}\n\nBased on the above information, plan an optimal learning path. Note: If there is a clear learning goal, only select the core nodes directly related to the goal (5-15 nodes); do not include all nodes in the graph."
+    },
+    "suggestions": {
+      "increaseDailyTime": "Suggest increasing daily study time; there are many pending/review knowledge points",
+      "lowMasteryPriority": "Suggest prioritizing: {{nodes}}",
+      "dueReviews": "There are {{count}} knowledge points to review",
+      "advancedNodes": "There are many advanced knowledge points; suggest ensuring prerequisites are mastered"
+    },
+    "reasons": {
+      "dueReview": "Needs review: review time has arrived",
+      "needLearning": "Needs learning: not yet mastered",
+      "needConsolidation": "Needs consolidation: mastery level is low",
+      "optionalReview": "Optional review: basically mastered",
+      "mastered": "Mastered: can be skipped",
+      "targetPath": "Knowledge point on the target path",
+      "lowMasteryPriority": "Low mastery, suggest prioritizing"
+    },
+    "suggestionItems": {
+      "continueNext": {
+        "title": "Continue with the next knowledge point",
+        "description": "Current progress {{progress}}%, suggest continuing to learn \"{{nodeTitle}}\""
+      },
+      "strengthenWeak": {
+        "title": "Strengthen weak knowledge point: {{nodeTitle}}",
+        "description": "This knowledge point has low memory stability ({{stability}}), suggest increasing review frequency"
+      },
+      "reviewDue": {
+        "title": "Review due: {{nodeTitle}}",
+        "descriptionOverdue": "This knowledge point is {{days}} days overdue, suggest reviewing immediately",
+        "descriptionToday": "This knowledge point needs review today"
+      },
+      "prereqIncomplete": {
+        "title": "Prerequisite incomplete: {{nodeTitle}}",
+        "description": "Please complete prerequisite knowledge points first: {{prereqTitles}}"
+      },
+      "milestoneReady": {
+        "title": "Milestone ready: {{milestoneTitle}}",
+        "description": "All prerequisite knowledge points are complete; you can start learning this milestone"
+      }
+    },
+    "taskIntegration": {
+      "pathTaskTitle": "[Learning Path] {{title}}",
+      "pathTaskDescription": "Learning path task",
+      "nodeTaskTitle": "[Study] {{title}}",
+      "nodeTaskContext": "Learning path node #{{index}}"
+    }
+  }
+}

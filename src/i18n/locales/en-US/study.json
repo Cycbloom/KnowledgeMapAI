@@ -294,7 +294,9 @@
       "fill_in_the_blank": "Fill in the Blank",
       "essay": "Essay"
     },
-    "noCardType": "None"
+    "noCardType": "None",
+    "cardCount": "{{count}} cards",
+    "start": "Start"
   },
   "quizPractice": {
     "loading": "Loading quiz...",
@@ -443,5 +445,43 @@
     "title": "Card Details",
     "options": "Options",
     "correctAnswer": "Correct Answer"
+  },
+  "knowledgePoint": {
+    "visibilityPublic": "Public",
+    "visibilityPrivate": "Private",
+    "moreGraphs": "{{count}} more graphs...",
+    "similarityFound": "Similar knowledge point found",
+    "similarityPrompt": "The \"{{title}}\" you want to create is similar to the following knowledge points. Reuse it?",
+    "usedInGraphs": "Used in {{count}} graphs",
+    "similarityPercent": "{{percent}}% similar",
+    "createNew": "Create new knowledge point",
+    "deleteTitle": "Delete knowledge point",
+    "deleteConfirm": "Are you sure you want to delete \"{{name}}\"?",
+    "usedInMultipleGraphs": "This knowledge point is used in multiple graphs",
+    "removeFromCurrentGraph": "Remove from current graph",
+    "permanentDelete": "Delete permanently"
+  },
+  "quizProgressBar": {
+    "questionProgress": "Question {{current}} / {{total}}",
+    "answeredCount": "Answered {{count}}",
+    "questionAria": "Question {{index}}{{answered}}",
+    "answeredSuffix": " (Answered)"
+  },
+  "cardDetailModal": {
+    "startNow": "Start practice now"
+  },
+  "api": {
+    "errors": {
+      "nodeNotFound": "Parent node not found",
+      "createCardFailed": "Failed to create study card",
+      "getProgressFailed": "Failed to get study progress"
+    }
+  },
+  "fsrsParameter": {
+    "messages": {
+      "insufficientReviews": "Insufficient review data ({{current}}/{{required}}), continuing with default parameters",
+      "validationFailed": "Optimized parameter validation failed, keeping current parameters",
+      "optimizationComplete": "Parameter optimization complete, prediction error reduced by {{improvement}}%"
+    }
   }
 }

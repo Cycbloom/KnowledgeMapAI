@@ -1,4 +1,40 @@
 {
+  "api": {
+    "errors": {
+      "structure": {
+        "fetchFailed": "获取故事结构失败",
+        "createFailed": "创建故事结构失败",
+        "notFound": "故事结构不存在",
+        "updateFailed": "更新故事结构失败",
+        "deleteFailed": "删除故事结构失败",
+        "templateNotFound": "模板不存在",
+        "initTemplateFailed": "初始化模板失败"
+      },
+      "character": {
+        "fetchFailed": "获取角色列表失败",
+        "createFailed": "创建角色失败",
+        "notFound": "角色不存在",
+        "updateFailed": "更新角色失败",
+        "deleteFailed": "删除角色失败"
+      },
+      "scene": {
+        "fetchFailed": "获取场景详情失败",
+        "createFailed": "创建场景详情失败",
+        "notFound": "场景详情不存在",
+        "updateFailed": "更新场景详情失败"
+      },
+      "appearance": {
+        "addFailed": "添加出场记录失败",
+        "deleteFailed": "删除出场记录失败",
+        "fetchStatsFailed": "获取出场统计失败"
+      },
+      "relationship": {
+        "fetchFailed": "获取角色关系失败",
+        "createFailed": "创建角色关系失败",
+        "deleteFailed": "删除角色关系失败"
+      }
+    }
+  },
   "title": "故事编辑器",
   "storyCreationMode": "故事创作模式",
   "untitledStory": "未命名故事",

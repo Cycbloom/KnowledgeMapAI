@@ -81,7 +81,9 @@
     "nodes": "Nodes",
     "createdAt": "Created At",
     "updatedAt": "Updated At",
-    "actions": "Actions"
+    "actions": "Actions",
+    "tableAriaLabel": "Knowledge Graph List",
+    "selectAllAriaLabel": "Select All"
   },
   "card": {
     "noDescription": "No description",
@@ -135,9 +137,30 @@
     "restoreFailed": "Restore failed. Please restore manually from the recycle bin."
   },
   "deleteGraphTitle": "Delete Graph",
+  "graphCounter": "{{count}} graphs",
+  "aiPanelError": "AI generation panel error",
+  "deleteConfirmTitle": "Delete Graph",
+  "deleteConfirmMessage": "Are you sure you want to delete the graph \"{{title}}\"? This will permanently delete all related nodes and relationships and cannot be undone.",
   "mobileFAB": {
     "aiGenerate": "AI Generate",
     "import": "Import",
     "importing": "Importing..."
+  },
+  "graphTypeLabels": {
+    "topicResearch": "Topic Research",
+    "knowledgeTree": "Knowledge Tree",
+    "learningPath": "Learning Path",
+    "conceptNetwork": "Concept Network",
+    "skillMap": "Skill Map",
+    "projectLifecycle": "Project Lifecycle",
+    "storyCreation": "Story Creation"
+  },
+  "tagCloud": {
+    "title": "Tag Cloud",
+    "totalCount": "{{count}} tags",
+    "clearFilter": "Clear Filter",
+    "clearShort": "Clear",
+    "collapse": "Collapse",
+    "viewAll": "View all {{count}} tags"
   }
 }

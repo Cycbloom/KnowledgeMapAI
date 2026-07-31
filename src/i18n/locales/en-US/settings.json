@@ -35,10 +35,27 @@
     "languageChinese": "Chinese",
     "languageEnglish": "English"
   },
-  "aiStatus": "AI Status & Configuration",
+  "aiStatus": {
+    "title": "AI Status & Configuration",
+    "apiKeyHint": "Please set the API Key for this provider in the \"AI Service Key Configuration\" above"
+  },
   "modelManagement": "Available Models Management",
   "modelManagementDesc": "Add models supported by each provider for selection in tasks below.",
-  "provider": "Provider",
+  "providerColumnLabel": "Provider",
+  "provider": {
+    "volcengine": {
+      "name": "Volcengine"
+    },
+    "aliyun": {
+      "name": "Aliyun"
+    },
+    "zhipu": {
+      "name": "Zhipu AI"
+    },
+    "moonshot": {
+      "name": "Moonshot"
+    }
+  },
   "modelName": "Model Name",
   "addModel": "Add",
   "noModels": "No models",
@@ -265,8 +282,113 @@
   "navDesktop": "Desktop navigation",
   "navMobile": "Mobile navigation",
   "studyStrategy": {
+    "title": "Study Strategy",
+    "resetDefaults": "Reset to Defaults",
+    "defaultStudyMode": "Default Study Mode",
+    "spacedRepetitionParams": "Spaced Repetition Parameters",
+    "masteryThresholds": "Mastery Thresholds",
+    "schedulerWeights": "Scheduler Weights",
     "learningReviewDivider": "Learning / Review divider",
+    "learningReviewDesc": "Below this value is considered learning stage; above enters review stage",
     "reviewPracticeDivider": "Review / Practice divider",
-    "practiceQuizDivider": "Practice / Quiz divider"
+    "reviewPracticeDesc": "Below this value needs review consolidation; above enters practice stage",
+    "practiceQuizDivider": "Practice / Quiz divider",
+    "practiceQuizDesc": "Below this value needs practice reinforcement; above can enter quiz",
+    "modes": {
+      "drill": {
+        "label": "Drill Mode",
+        "description": "Skip learning material, quiz directly, short interval high frequency"
+      },
+      "deep": {
+        "label": "Deep Learning",
+        "description": "Complete workflow, standard FSRS parameters"
+      },
+      "preview": {
+        "label": "Quick Preview",
+        "description": "Only read material, no review cards generated"
+      },
+      "review": {
+        "label": "Spaced Review",
+        "description": "Review due nodes, standard scheduling"
+      },
+      "quiz": {
+        "label": "Quiz Mode",
+        "description": "Quiz learned nodes directly"
+      },
+      "mixed": {
+        "label": "Mixed Mode",
+        "description": "Automatically select strategy based on node status"
+      }
+    },
+    "schedulerWeightItems": {
+      "timeSlot": {
+        "label": "Time Slot Fit",
+        "description": "Recommend learning content matching the current time slot"
+      },
+      "mastery": {
+        "label": "Mastery Priority",
+        "description": "Prioritize nodes with lower mastery"
+      },
+      "dependency": {
+        "label": "Dependency",
+        "description": "Prioritize prerequisite nodes"
+      },
+      "typeMatch": {
+        "label": "Type Match",
+        "description": "Match content type to current study mode"
+      },
+      "priority": {
+        "label": "Priority",
+        "description": "Sort by node priority"
+      },
+      "urgency": {
+        "label": "Urgency",
+        "description": "Nodes near deadline come first"
+      },
+      "availability": {
+        "label": "Availability",
+        "description": "Consider currently available learning resources"
+      }
+    }
+  },
+  "studyAlgorithm": {
+    "title": "Study Algorithm",
+    "paramSource": "Parameter Source",
+    "sourceDefault": "Default",
+    "sourceOptimized": "Optimized",
+    "sourceCustom": "Custom",
+    "lastOptimized": "Last optimized",
+    "description": "FSRS-6 algorithm uses 21 parameters (w[0]-w[20]) to control the forgetting curve and review intervals. Default parameters suit most users; optimization can better fit individual memory characteristics.",
+    "optimize": "Optimize Parameters",
+    "optimizing": "Optimizing...",
+    "resetToDefault": "Reset to Default",
+    "optimizeFailed": "Optimization failed, please try again later",
+    "basedOnReviews": "Optimized based on {{count}} review records"
+  },
+  "studyMode": {
+    "drill": {
+      "label": "Drill Mode",
+      "description": "Skip learning materials, direct quiz, short interval high frequency"
+    },
+    "deep": {
+      "label": "Deep Learning",
+      "description": "Complete workflow, standard FSRS parameters"
+    },
+    "preview": {
+      "label": "Quick Preview",
+      "description": "Only read materials, no review cards generated"
+    },
+    "review": {
+      "label": "Spaced Review",
+      "description": "Review due nodes, standard scheduling"
+    },
+    "quiz": {
+      "label": "Quiz Mode",
+      "description": "Direct quiz on learned nodes"
+    },
+    "mixed": {
+      "label": "Mixed Mode",
+      "description": "Auto-select strategy based on node status"
+    }
   }
 }

@@ -10,7 +10,7 @@ export function setupRealtimeSTT(server: Server): void {
 
   server.on('upgrade', (request, socket, head) => {
     const url = new URL(request.url || '', `http://${request.headers.host}`);
-    if (url.pathname !== '/api/ai/stt-realtime') {
+    if (url.pathname !== '/api/v1/ai/stt-realtime') {
       return;
     }
 
@@ -128,5 +128,5 @@ export function setupRealtimeSTT(server: Server): void {
     }
   });
 
-  logger.info('[STT-Realtime] WebSocket server initialized on /api/ai/stt-realtime');
+  logger.info('[STT-Realtime] WebSocket server initialized on /api/v1/ai/stt-realtime');
 }

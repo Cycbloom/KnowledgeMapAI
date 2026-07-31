@@ -1,0 +1,48 @@
+# 依赖
+node_modules/
+.git/
+
+# 构建产物
+dist/
+build/
+.next/
+out/
+__pycache__/
+*.pyc
+
+# 锁文件
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 媒体和二进制文件
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.woff
+*.woff2
+*.ttf
+*.eot
+*.mp4
+*.webm
+*.pdf
+
+# 生成代码
+*.generated.*
+*.min.js
+*.min.css
+
+# 敏感文件
+.env
+.env.*
+credentials.json
+*.key
+*.pem
+
+# IDE 和系统
+.idea/
+.vscode/
+*.log

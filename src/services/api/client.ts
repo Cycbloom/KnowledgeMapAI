@@ -4,7 +4,7 @@ import { apiClient, getCookie } from './createApiClient';
 import { isElectronProduction, getElectronApiUrl } from '@/config/electronConfig';
 import type { Method } from 'axios';
 
-const API_URL = '/api';
+const API_URL = '/api/v1';
 
 export { initCsrf } from './createApiClient';
 export { getCookie };

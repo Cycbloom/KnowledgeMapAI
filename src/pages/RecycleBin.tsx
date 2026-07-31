@@ -25,7 +25,7 @@ import {
 import { ConfirmationModal, SkeletonCard, EmptyState, ErrorState } from "../components/common";
 import { useTheme } from "../hooks";
 import { useNavigate } from "react-router-dom";
-import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
+import { useDebouncedSearch } from "../hooks/common/useDebouncedSearch";
 import { formatDate } from "../utils/formatters";
 import { message } from "@/utils/messageHelper";
 import { themeClasses } from "@/utils/themeClasses";

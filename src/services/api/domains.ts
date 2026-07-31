@@ -41,7 +41,7 @@ export const domainsApi = {
     request<void>(`/domains/${domainId}`, { method: 'DELETE' }),
 
   ensureUncategorized: () =>
-    request<{ id: string; name: string }>('/api/domains/ensure-uncategorized', { method: 'GET' }),
+    request<{ id: string; name: string }>('/domains/ensure-uncategorized', { method: 'GET' }),
 
   reorder: (data: {
     reorder_items: Array<{

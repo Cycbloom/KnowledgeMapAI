@@ -18,7 +18,7 @@ import { useGraphs } from "@/hooks/queries";
 import { useCreateNodesFromConceptsMutation } from "@/hooks/mutations";
 import { message } from "@/utils/messageHelper";
 import type { NoteExtractedConcept } from "@shared/types/note";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/utils";
 
 export interface ExtractConceptsDialogProps {
   open: boolean;

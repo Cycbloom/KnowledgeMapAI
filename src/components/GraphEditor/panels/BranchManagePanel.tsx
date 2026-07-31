@@ -12,7 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { cn } from "../../../lib/utils";
+import { cn } from "../../../utils/utils";
 import { formatDate } from "../../../utils/formatters";
 import { asyncConfirm } from "../../../utils/asyncConfirm";
 import { useBranches, useGraphDiff, useMergePreview } from "../../../hooks/queries/useGraphVersionQueries";

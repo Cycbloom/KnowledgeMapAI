@@ -3,7 +3,7 @@ import { Copy, Check } from 'lucide-react';
 import type { Element } from 'hast';
 import { useTranslation } from 'react-i18next';
 import { message } from '@/utils/messageHelper';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 
 const CodeHighlighter = lazy(() => import('./CodeHighlighter'));
 

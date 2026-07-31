@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Node, Edge, NodeStatus } from '../../../types';
 import { getLearningStatus, getStatusColors } from '../../../config/learningStatusColors';
-import { getLevel, getLevelLabel } from '../../../lib/graphUtils';
+import { getLevel, getLevelLabel } from '../../../utils/graph/graphUtils';
 import { useTheme } from "../../../hooks";
 import { useTranslation } from 'react-i18next';
 import { 

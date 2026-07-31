@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import type { StudyMode } from "@shared/types/scheduler";
 import { StudyModeSelector } from "./StudyModeSelector";
-import type { StudyModeIconType } from "../../hooks/useStudyModeLogic";
+import type { StudyModeIconType } from "../../hooks/study/useStudyModeLogic";
 
 interface LearningModeHeaderProps {
   isDark: boolean;

@@ -44,7 +44,7 @@ class DeviceDiscoveryService {
   private async pollForDevices(): Promise<void> {
     try {
       // 通过后端 API 查询在线设备
-      const response = await fetch('/api/sync/devices', {
+      const response = await fetch('/api/v1/sync/devices', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ class DeviceDiscoveryService {
 
   private async registerDevice(): Promise<void> {
     try {
-      await fetch('/api/sync/devices', {
+      await fetch('/api/v1/sync/devices', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

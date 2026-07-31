@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { HighlightedReader } from "./HighlightedReader";
 import { Skeleton } from "../common";
 import type { Keyword } from "../../types";
-import type { LinkedTask } from "../../hooks/useLinkedTask";
+import type { LinkedTask } from "../../hooks/scheduler/useLinkedTask";
 import type { StudyMode } from "@shared/types/scheduler";
-import type { StudyModeIconType } from "../../hooks/useStudyModeLogic";
+import type { StudyModeIconType } from "../../hooks/study/useStudyModeLogic";
 import { STUDY_MODE_PRESETS } from "@shared/constants/studyModePresets";
 
 interface LearningArticleReaderProps {

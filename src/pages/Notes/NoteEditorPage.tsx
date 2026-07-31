@@ -20,8 +20,8 @@ import {
   useRestoreNoteMutation,
 } from "@/hooks/mutations";
 import { useError } from "@/hooks";
-import { useUndoableAction } from "@/hooks/useUndoableAction";
-import { addRecentNote } from "@/hooks/useRecentNotes";
+import { useUndoableAction } from "@/hooks/common/useUndoableAction";
+import { addRecentNote } from "@/hooks/queries/useRecentNotes";
 import { BlockEditor } from "@/components/Notes/BlockEditor";
 import { InboundBlockRefsPanel } from "@/components/Notes/InboundBlockRefsPanel";
 import { Skeleton, EmptyState, ErrorBoundary } from "@/components/common";

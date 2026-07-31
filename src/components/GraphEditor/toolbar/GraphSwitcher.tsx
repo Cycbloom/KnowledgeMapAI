@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Star, Network } from "lucide-react";
 import { useTheme, useMenuNavigation } from "../../../hooks";
-import { useRecentGraphs, type RecentGraphEntry } from "../../../hooks/useRecentGraphs";
+import { useRecentGraphs, type RecentGraphEntry } from "../../../hooks/queries/useRecentGraphs";
 
 interface GraphSwitcherProps {
   currentGraphId?: string;

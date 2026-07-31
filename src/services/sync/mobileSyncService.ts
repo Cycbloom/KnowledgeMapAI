@@ -13,7 +13,7 @@ import {
   type SyncConflict,
   type SyncStatus,
 } from "../../../shared/sync";
-import { getSupabaseClient } from "../../lib/supabase";
+import { getSupabaseClient } from "../../utils/supabase";
 import { withRetry } from "../../../shared/utils/retry";
 import { AppError, SharedErrorCodes } from "@/utils/errors";
 import { logger } from "@/utils/logger";

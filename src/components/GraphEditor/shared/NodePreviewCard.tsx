@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Node, Edge, NodeStatus } from '../../../types';
 import { getLearningStatus, getStatusColors } from '../../../config/learningStatusColors';
-import { getLevel, getLevelLabel } from '../../../lib/graphUtils';
+import { getLevel, getLevelLabel } from '../../../utils/graph/graphUtils';
 import { formatDate } from '../../../utils/formatters';
 import { useTheme } from "../../../hooks";
 import { 

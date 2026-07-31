@@ -46,10 +46,10 @@ import {
   useTutorOperations,
   useQuoteShortcut,
 } from "../hooks";
-import { useRecentGraphs } from "../hooks/useRecentGraphs";
-import { addRecentNode } from "../hooks/useRecentNodes";
+import { useRecentGraphs } from "../hooks/queries/useRecentGraphs";
+import { addRecentNode } from "../hooks/queries/useRecentNodes";
 import { isAppError } from "../utils/errors";
-import { computeRegions } from "../lib/graph";
+import { computeRegions } from "../utils/graph";
 import {
   useGraph,
   useGraphData,

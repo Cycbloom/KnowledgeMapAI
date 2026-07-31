@@ -32,7 +32,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         const electronApiUrl = await getElectronApiUrl();
         exportUrl = `${electronApiUrl}/calendar/export/ics`;
       } else {
-        exportUrl = "/api/calendar/export/ics";
+        exportUrl = "/api/v1/calendar/export/ics";
       }
 
       const response = await fetch(exportUrl, {

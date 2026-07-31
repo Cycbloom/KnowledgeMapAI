@@ -1,4 +1,4 @@
-import { getMobileSupabaseClient } from '@/lib/supabase';
+import { getMobileSupabaseClient } from '@/utils/supabase';
 import type { GraphNodeRow } from '@shared/types/database';
 import type { Graph, Edge } from '@shared/types/graph';
 

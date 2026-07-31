@@ -7,7 +7,7 @@ import {
   isSupabaseConfigured,
   authConfig,
 } from "../config/authConfig";
-import { getSupabaseClient, resetSupabaseClient } from "../lib/supabase";
+import { getSupabaseClient, resetSupabaseClient } from "../utils/supabase";
 import { useStore } from "../store/useStore";
 import { useTheme, useFormDraft } from "../hooks";
 import { ConfirmationModal } from "../components/common/ConfirmationModal";
@@ -715,7 +715,7 @@ export const Login = () => {
     timers.push(setTimeout(() => setCreateProgress(3), 15000));
 
     try {
-      const response = (await apiClient.post("/api/supabase/quick-setup", {
+      const response = (await apiClient.post("/supabase/quick-setup", {
         accessToken: pat,
         organizationId: selectedOrg,
         projectName,

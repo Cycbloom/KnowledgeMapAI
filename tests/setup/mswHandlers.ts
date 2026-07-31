@@ -10,12 +10,12 @@
  * 注意:MSW 仅拦截 HTTP 请求。Supabase 客户端直连(若不走 HTTP)不在 MSW 覆盖范围内。
  *
  * 路由来源(基于 api/services/plugins/*.ts 的 registerRoutes 调用):
- * - core 插件:   /api/auth, /api/health, /api/dashboard, /api/sync ...
- * - graph 插件:  /api/graphs, /api/nodes, /api/graph-nodes, /api/domains ...
- * - notes 插件:  /api/notes
- * - ai 插件:     /api/ai, /api/ai-actions, /api/prompts, /api/rag, /api/search ...
- * - scheduler:   /api/tasks, /api/scheduler, /api/achievements ...
- * - SSE 端点:    /api/tasks/events (在 api/routes/tasks.ts 中定义)
+ * - core 插件:   /api/v1/auth, /api/v1/health, /api/v1/dashboard, /api/v1/sync ...
+ * - graph 插件:  /api/v1/graphs, /api/v1/nodes, /api/v1/graph-nodes, /api/v1/domains ...
+ * - notes 插件:  /api/v1/notes
+ * - ai 插件:     /api/v1/ai, /api/v1/ai-actions, /api/v1/prompts, /api/v1/rag, /api/v1/search ...
+ * - scheduler:   /api/v1/tasks, /api/v1/scheduler, /api/v1/achievements ...
+ * - SSE 端点:    /api/v1/tasks/events (在 api/routes/tasks.ts 中定义)
  */
 import { http, HttpResponse } from "msw";
 
@@ -167,30 +167,30 @@ const createSseStream = (): ReadableStream<Uint8Array> => {
 };
 
 // ============================================================
-// Auth 端点 (/api/auth)
+// Auth 端点 (/api/v1/auth)
 // ============================================================
 
-export const registerHandler = http.post("/api/auth/register", () =>
+export const registerHandler = http.post("/api/v1/auth/register", () =>
   HttpResponse.json({ user: defaultUser, session: defaultSession }, { status: 201 }),
 );
 
-export const loginHandler = http.post("/api/auth/login", () =>
+export const loginHandler = http.post("/api/v1/auth/login", () =>
   HttpResponse.json({ user: defaultUser, session: defaultSession }),
 );
 
-export const refreshHandler = http.post("/api/auth/refresh", () =>
+export const refreshHandler = http.post("/api/v1/auth/refresh", () =>
   HttpResponse.json({ user: defaultUser, session: defaultSession }),
 );
 
-export const logoutHandler = http.post("/api/auth/logout", () =>
+export const logoutHandler = http.post("/api/v1/auth/logout", () =>
   HttpResponse.json({ message: "退出登录成功" }),
 );
 
-export const getUserHandler = http.get("/api/auth/user", () =>
+export const getUserHandler = http.get("/api/v1/auth/user", () =>
   HttpResponse.json({ user: defaultUser }),
 );
 
-export const updateProfileHandler = http.put("/api/auth/profile", () =>
+export const updateProfileHandler = http.put("/api/v1/auth/profile", () =>
   HttpResponse.json({ user: defaultUser }),
 );
 
@@ -198,103 +198,103 @@ export const updateProfileHandler = http.put("/api/auth/profile", () =>
 // CSRF token 端点
 // ============================================================
 
-export const csrfTokenHandler = http.get("/api/csrf-token", () =>
+export const csrfTokenHandler = http.get("/api/v1/csrf-token", () =>
   HttpResponse.json({ csrfToken: "mock-csrf-token" }),
 );
 
 // ============================================================
-// Graph 端点 (/api/graphs)
+// Graph 端点 (/api/v1/graphs)
 // ============================================================
 
-export const listGraphsHandler = http.get("/api/graphs", () =>
+export const listGraphsHandler = http.get("/api/v1/graphs", () =>
   HttpResponse.json([defaultGraph]),
 );
 
-export const getGraphHandler = http.get("/api/graphs/:id", () =>
+export const getGraphHandler = http.get("/api/v1/graphs/:id", () =>
   HttpResponse.json(defaultGraph),
 );
 
-export const createGraphHandler = http.post("/api/graphs", () =>
+export const createGraphHandler = http.post("/api/v1/graphs", () =>
   HttpResponse.json(defaultGraph, { status: 201 }),
 );
 
-export const updateGraphHandler = http.put("/api/graphs/:id", () =>
+export const updateGraphHandler = http.put("/api/v1/graphs/:id", () =>
   HttpResponse.json(defaultGraph),
 );
 
-export const deleteGraphHandler = http.delete("/api/graphs/:id", () =>
+export const deleteGraphHandler = http.delete("/api/v1/graphs/:id", () =>
   HttpResponse.json({ success: true }),
 );
 
-export const listTrashHandler = http.get("/api/graphs/trash", () =>
+export const listTrashHandler = http.get("/api/v1/graphs/trash", () =>
   HttpResponse.json([]),
 );
 
-export const getGraphTagsHandler = http.get("/api/graphs/tags", () =>
+export const getGraphTagsHandler = http.get("/api/v1/graphs/tags", () =>
   HttpResponse.json([]),
 );
 
-export const getGraphDomainsHandler = http.get("/api/graphs/domains", () =>
+export const getGraphDomainsHandler = http.get("/api/v1/graphs/domains", () =>
   HttpResponse.json([]),
 );
 
 // ============================================================
 // Node 端点
-// - /api/graphs/:id/nodes  (图节点列表,定义在 graphs/analysis.ts)
-// - /api/nodes             (节点 CRUD,挂载前缀 /api)
+// - /api/v1/graphs/:id/nodes  (图节点列表,定义在 graphs/analysis.ts)
+// - /api/v1/nodes             (节点 CRUD,挂载前缀 /api)
 // ============================================================
 
 export const getGraphNodesHandler = http.get(
-  "/api/graphs/:id/nodes",
+  "/api/v1/graphs/:id/nodes",
   () => HttpResponse.json([defaultNode]),
 );
 
-export const createNodeHandler = http.post("/api/nodes", () =>
+export const createNodeHandler = http.post("/api/v1/nodes", () =>
   HttpResponse.json(defaultNode, { status: 201 }),
 );
 
-export const getNodeHandler = http.get("/api/nodes/:id", () =>
+export const getNodeHandler = http.get("/api/v1/nodes/:id", () =>
   HttpResponse.json(defaultNode),
 );
 
-export const updateNodeHandler = http.put("/api/nodes/:id", () =>
+export const updateNodeHandler = http.put("/api/v1/nodes/:id", () =>
   HttpResponse.json(defaultNode),
 );
 
-export const deleteNodeHandler = http.delete("/api/nodes/:id", () =>
+export const deleteNodeHandler = http.delete("/api/v1/nodes/:id", () =>
   HttpResponse.json({ success: true }),
 );
 
 // ============================================================
-// Note 端点 (/api/notes)
+// Note 端点 (/api/v1/notes)
 // ============================================================
 
-export const listNotesHandler = http.get("/api/notes", () =>
+export const listNotesHandler = http.get("/api/v1/notes", () =>
   HttpResponse.json({ items: [defaultNote], total: 1, page: 1, pageSize: 20 }),
 );
 
-export const getNoteHandler = http.get("/api/notes/:id", () =>
+export const getNoteHandler = http.get("/api/v1/notes/:id", () =>
   HttpResponse.json(defaultNote),
 );
 
-export const createNoteHandler = http.post("/api/notes", () =>
+export const createNoteHandler = http.post("/api/v1/notes", () =>
   HttpResponse.json(defaultNote, { status: 201 }),
 );
 
-export const updateNoteHandler = http.put("/api/notes/:id", () =>
+export const updateNoteHandler = http.put("/api/v1/notes/:id", () =>
   HttpResponse.json(defaultNote),
 );
 
-export const deleteNoteHandler = http.delete("/api/notes/:id", () =>
+export const deleteNoteHandler = http.delete("/api/v1/notes/:id", () =>
   HttpResponse.json({ success: true }),
 );
 
 // ============================================================
-// SSE 端点 (/api/tasks/events)
+// SSE 端点 (/api/v1/tasks/events)
 // 返回 text/event-stream 流,默认发送 connected 事件与 heartbeat
 // ============================================================
 
-export const sseEventsHandler = http.get("/api/tasks/events", () =>
+export const sseEventsHandler = http.get("/api/v1/tasks/events", () =>
   new HttpResponse(createSseStream(), {
     headers: {
       "Content-Type": "text/event-stream",
@@ -306,12 +306,12 @@ export const sseEventsHandler = http.get("/api/tasks/events", () =>
 );
 
 // ============================================================
-// AI 端点 (/api/ai)
+// AI 端点 (/api/v1/ai)
 // - chat 默认返回简单 JSON(非流式);流式响应由具体测试通过 server.use() 覆盖
 // - extract-concepts / suggest-next-topic 返回 JSON
 // ============================================================
 
-export const aiChatHandler = http.post("/api/ai/chat", () =>
+export const aiChatHandler = http.post("/api/v1/ai/chat", () =>
   HttpResponse.json({
     response: "Mock AI response",
     session_id: "mock-session-id",
@@ -319,20 +319,20 @@ export const aiChatHandler = http.post("/api/ai/chat", () =>
 );
 
 export const aiExtractConceptsHandler = http.post(
-  "/api/ai/extract-concepts",
+  "/api/v1/ai/extract-concepts",
   () => HttpResponse.json({ concepts: [] }),
 );
 
 export const aiSuggestNextTopicHandler = http.post(
-  "/api/ai/suggest-next-topic",
+  "/api/v1/ai/suggest-next-topic",
   () => HttpResponse.json({ suggestions: [] }),
 );
 
 // ============================================================
-// Health 端点 (/api/health)
+// Health 端点 (/api/v1/health)
 // ============================================================
 
-export const healthHandler = http.get("/api/health", () =>
+export const healthHandler = http.get("/api/v1/health", () =>
   HttpResponse.json({ status: "ok" }),
 );
 

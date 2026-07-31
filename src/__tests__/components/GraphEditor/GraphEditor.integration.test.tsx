@@ -180,17 +180,17 @@ function renderGraphEditor() {
  */
 function setupGraphHandlers() {
   server.use(
-    http.get(`/api/graphs/${TEST_GRAPH_ID}`, () =>
+    http.get(`/api/v1/graphs/${TEST_GRAPH_ID}`, () =>
       HttpResponse.json(mockGraph),
     ),
-    http.get(`/api/graphs/${TEST_GRAPH_ID}/nodes`, () =>
+    http.get(`/api/v1/graphs/${TEST_GRAPH_ID}/nodes`, () =>
       HttpResponse.json(mockGraphData),
     ),
-    http.get("/api/graphs/:id/nodes", () =>
+    http.get("/api/v1/graphs/:id/nodes", () =>
       HttpResponse.json(mockGraphData),
     ),
-    http.get("/api/graphs/:id", () => HttpResponse.json(mockGraph)),
-    http.get("/api/ai/status", () =>
+    http.get("/api/v1/graphs/:id", () => HttpResponse.json(mockGraph)),
+    http.get("/api/v1/ai/status", () =>
       HttpResponse.json({ enabled: true }),
     ),
   );
@@ -220,11 +220,11 @@ describe("GraphEditor Integration", () => {
       // setTimeout 纯粹在 MSW handler 内部模拟服务端延迟（属于 mock 而非测试体）。
       // 该延迟不直接触发 React 状态更新；act() 警告（"suspended resource finished
       // loading"）来源于本测试为同步结构、未 await 异步 fetch，与 setTimeout 本身无关。
-      http.get(`/api/graphs/${TEST_GRAPH_ID}/nodes`, async () => {
+      http.get(`/api/v1/graphs/${TEST_GRAPH_ID}/nodes`, async () => {
         await new Promise((resolve) => setTimeout(resolve, 500));
         return HttpResponse.json(mockGraphData);
       }),
-      http.get(`/api/graphs/${TEST_GRAPH_ID}`, () =>
+      http.get(`/api/v1/graphs/${TEST_GRAPH_ID}`, () =>
         HttpResponse.json(mockGraph),
       ),
     );

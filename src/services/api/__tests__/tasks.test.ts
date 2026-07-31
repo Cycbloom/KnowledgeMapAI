@@ -134,7 +134,7 @@ describe('dataApi', () => {
 
     beforeEach(() => {
       setUserMock = vi.fn();
-      vi.mocked(getApiUrl).mockResolvedValue('/api');
+      vi.mocked(getApiUrl).mockResolvedValue('/api/v1');
       vi.mocked(useStore.getState).mockReturnValue({
         token: 'token-123',
         setUser: setUserMock,
@@ -155,7 +155,7 @@ describe('dataApi', () => {
       const result = await dataApi.export('graph-1', 'json');
 
       expect(fetchSpy).toHaveBeenCalledWith(
-        '/api/data/export/json?graph_id=graph-1',
+        '/api/v1/data/export/json?graph_id=graph-1',
         {
           headers: {
             Authorization: 'Bearer token-123',
@@ -176,7 +176,7 @@ describe('dataApi', () => {
       await dataApi.export('graph-2', 'pdf');
 
       expect(fetchSpy).toHaveBeenCalledWith(
-        '/api/data/export/pdf?graph_id=graph-2',
+        '/api/v1/data/export/pdf?graph_id=graph-2',
         {
           headers: {},
         },
@@ -190,7 +190,7 @@ describe('dataApi', () => {
       await dataApi.export('graph a&b=c', 'markdown');
 
       expect(fetchSpy).toHaveBeenCalledWith(
-        '/api/data/export/markdown?graph_id=graph%20a%26b%3Dc',
+        '/api/v1/data/export/markdown?graph_id=graph%20a%26b%3Dc',
         expect.objectContaining({
           headers: { Authorization: 'Bearer token-123' },
         }),

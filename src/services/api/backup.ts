@@ -1,7 +1,7 @@
 import { useStore } from '@/store/useStore';
 import { AppError, SharedErrorCodes } from "@/utils/errors";
 
-const API_URL = '/api';
+const API_URL = '/api/v1';
 
 export interface BackupSnapshot {
   id: string;

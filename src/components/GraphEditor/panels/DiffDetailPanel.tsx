@@ -10,7 +10,7 @@ import {
   Loader2,
   GitCompare,
 } from "lucide-react";
-import { cn } from "../../../lib/utils";
+import { cn } from "../../../utils/utils";
 import { graphVersionsApi } from "../../../services/api/graphVersions";
 import type {
   DiffResult,

@@ -1,4 +1,4 @@
-import { getMobileSupabaseClient } from '@/lib/supabase';
+import { getMobileSupabaseClient } from '@/utils/supabase';
 import type {
   AuthResponse,
   RegisterData,

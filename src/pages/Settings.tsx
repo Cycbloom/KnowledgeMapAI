@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import { useUser } from "../hooks/queries";
 import { useStore } from "../store/useStore";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
-import { cn } from "../lib/utils";
+import { cn } from "../utils/utils";
 import { isElectron } from "../config/electronConfig";
 import { AvailableModels } from "../types";
 import {

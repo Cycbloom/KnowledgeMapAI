@@ -1,4 +1,4 @@
-import { getMobileSupabaseClient } from '@/lib/supabase';
+import { getMobileSupabaseClient } from '@/utils/supabase';
 import type { Edge } from '@shared/types/graph';
 import type { CreateEdgeData } from '@shared/types/api';
 import type { IEdgesApi } from '../api/contracts/IEdgesApi';

@@ -17,7 +17,7 @@ import { QuickCreateGraphPanel } from "../components/GraphMap/QuickCreateGraphPa
 import { DomainManager } from "../components/GraphMap/DomainManager";
 import { CrossDomainInsightsSection } from "../components/GraphMap/CrossDomainInsightsSection";
 import type { CrossDomainAnalysisResult, AnalysisModuleState } from "../components/GraphMap/types";
-import { useAnalysisModules } from "../hooks/useAnalysisModules";
+import { useAnalysisModules } from "../hooks/graphAI/useAnalysisModules";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { message } from "../utils/messageHelper";
 import type {

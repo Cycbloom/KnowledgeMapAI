@@ -1,6 +1,6 @@
 import React from 'react';
 import { Skeleton } from './Skeleton';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 
 interface SkeletonListProps {
   items?: number;

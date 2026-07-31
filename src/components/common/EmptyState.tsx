@@ -1,6 +1,6 @@
 import React from 'react';
 import { FileX, SearchX, AlertCircle, Database } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 import { Button } from './Button';
 
 type IllustrationType = 'empty' | 'search' | 'error' | 'no-data';

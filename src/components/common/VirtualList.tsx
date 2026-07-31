@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { useVirtualScroll } from '../../hooks/common/useVirtualScroll';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 
 interface VirtualListProps<T> {
   items: T[];

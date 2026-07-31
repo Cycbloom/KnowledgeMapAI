@@ -32,7 +32,7 @@ vi.mock('../../../store/useStore', () => ({
 }));
 
 // Mock getAILanguage(chat/chatStream 在 data.language 缺省时注入默认语言)
-vi.mock('../../../hooks/useAILanguage', () => ({
+vi.mock('../../../hooks/ai/useAILanguage', () => ({
   getAILanguage: vi.fn(() => 'zh-CN'),
 }));
 
@@ -45,7 +45,7 @@ vi.mock('../../../utils/logger', () => ({
 
 import { ragApi } from '../rag';
 import { request, getAIConfig, getApiUrl } from '../client';
-import { getAILanguage } from '../../../hooks/useAILanguage';
+import { getAILanguage } from '../../../hooks/ai/useAILanguage';
 import { logger } from '../../../utils/logger';
 
 // --- Helpers ---

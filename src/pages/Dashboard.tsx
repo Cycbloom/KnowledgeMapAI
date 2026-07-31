@@ -21,9 +21,9 @@ import { ConfirmationModal, SkeletonCard, ErrorBoundary, EmptyState } from "../c
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
 import { useTheme, useIsMobile } from "../hooks";
 import { useFocusTrap, useEscapeKey, useFirstRunHint } from "@/hooks/common";
-import { useUndoableAction } from "@/hooks/useUndoableAction";
-import { useDashboardFilters } from "../hooks/useDashboardFilters";
-import { useRecentGraphs } from "../hooks/useRecentGraphs";
+import { useUndoableAction } from "@/hooks/common/useUndoableAction";
+import { useDashboardFilters } from "../hooks/dashboard/useDashboardFilters";
+import { useRecentGraphs } from "../hooks/queries/useRecentGraphs";
 import {
   DashboardHeader,
   TagCloudSection,

@@ -1,4 +1,4 @@
-import { getMobileSupabaseClient } from "@/lib/supabase";
+import { getMobileSupabaseClient } from "@/utils/supabase";
 import type { AchievementRow } from "@shared/types/database";
 import type { IAchievementsApi, Achievement, DailyTask } from "../api/contracts/IAchievementsApi";
 import { logger } from "@/utils/logger";

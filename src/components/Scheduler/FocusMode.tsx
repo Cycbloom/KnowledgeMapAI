@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useWhiteNoise } from "../../hooks/useWhiteNoise";
-import { useFullscreen } from "../../hooks/useFullscreen";
+import { useWhiteNoise } from "../../hooks/common/useWhiteNoise";
+import { useFullscreen } from "../../hooks/common/useFullscreen";
 import { useTimerStore } from "../../store/useTimerStore";
 import { useFocusStore } from "../../store/useFocusStore";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";

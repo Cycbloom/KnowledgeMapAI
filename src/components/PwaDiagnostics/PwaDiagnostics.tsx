@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { usePwaInstall } from "@/hooks/usePwaInstall";
+import { usePwaInstall } from "@/hooks/common/usePwaInstall";
 import {
   getServiceWorkerStatus,
   unregisterServiceWorker,

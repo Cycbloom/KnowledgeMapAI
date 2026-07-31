@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../hooks';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 
 interface AudioVisualizerProps {
   analyserData: Uint8Array | null;

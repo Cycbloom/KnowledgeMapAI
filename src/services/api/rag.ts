@@ -1,6 +1,6 @@
 import { request, getAIConfig, getApiUrl } from './client';
 import { useStore } from '@/store/useStore';
-import { getAILanguage } from '@/hooks/useAILanguage';
+import { getAILanguage } from '@/hooks/ai/useAILanguage';
 import { logger } from '@/utils/logger';
 import { AppError, SharedErrorCodes } from "@/utils/errors";
 

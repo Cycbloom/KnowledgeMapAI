@@ -53,7 +53,7 @@ import {
   calculateEdgeStrength,
   calculateGlobalMaxDegree,
   calculateGlobalMaxChildren,
-} from "../../../lib/graphUtils";
+} from "../../../utils/graph/graphUtils";
 import {
   useCanvasTransform,
   useCanvasInteraction,

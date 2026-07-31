@@ -4,7 +4,7 @@ import { apiClient } from "../../services/api/createApiClient";
 import { message } from "../../utils/messageHelper";
 import { isElectron } from "../../config/electronConfig";
 import { updateSupabaseConfig } from "../../config/authConfig";
-import { resetSupabaseClient } from "../../lib/supabase";
+import { resetSupabaseClient } from "../../utils/supabase";
 import { useStore } from "../../store/useStore";
 import {
   Database,

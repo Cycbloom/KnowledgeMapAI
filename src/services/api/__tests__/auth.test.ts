@@ -34,7 +34,7 @@ vi.mock('../client', () => ({
 }));
 
 // Mock getSupabaseClient from @/lib/supabase
-vi.mock('../../../lib/supabase', () => ({
+vi.mock('../../../utils/supabase', () => ({
   getSupabaseClient: vi.fn(),
 }));
 
@@ -49,7 +49,7 @@ vi.mock('../../../config/authConfig', () => ({
 
 import { authApi } from '../auth';
 import { request } from '../client';
-import { getSupabaseClient } from '../../../lib/supabase';
+import { getSupabaseClient } from '../../../utils/supabase';
 import { authConfig } from '../../../config/authConfig';
 
 // --- Types & Helpers ---

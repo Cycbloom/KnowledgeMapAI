@@ -1,4 +1,4 @@
-import { getMobileSupabaseClient } from "@/lib/supabase";
+import { getMobileSupabaseClient } from "@/utils/supabase";
 import type { IStatisticsApi } from "../../api/contracts/IStatisticsApi";
 import { AppError, SharedErrorCodes } from "@/utils/errors";
 

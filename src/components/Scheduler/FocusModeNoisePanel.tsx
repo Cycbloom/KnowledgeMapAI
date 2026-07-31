@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { useWhiteNoise } from "../../hooks/useWhiteNoise";
+import { useWhiteNoise } from "../../hooks/common/useWhiteNoise";
 import {
   NOISE_OPTIONS,
   WhiteNoiseType as AudioWhiteNoiseType,

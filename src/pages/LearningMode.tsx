@@ -20,9 +20,9 @@ import {
   queryKeys,
   defaultQueryConfig,
 } from "../hooks/queries";
-import { useStudyModeLogic } from "../hooks/useStudyModeLogic";
-import { useLearningModeTimer } from "../hooks/useLearningModeTimer";
-import { useLinkedTask } from "../hooks/useLinkedTask";
+import { useStudyModeLogic } from "../hooks/study/useStudyModeLogic";
+import { useLearningModeTimer } from "../hooks/study/useLearningModeTimer";
+import { useLinkedTask } from "../hooks/scheduler/useLinkedTask";
 import {
   isAppError,
   isNetworkError,
@@ -31,7 +31,7 @@ import {
 } from "../utils/errors";
 import { isCapacitorMobile } from "../config/mobileApiConfig";
 import { mobileAIService, AICardGenError } from "../services/mobile/aiService";
-import { getMobileSupabaseClient } from "../lib/supabase";
+import { getMobileSupabaseClient } from "../utils/supabase";
 import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
 import { GraphOverviewPanel } from "../components/Learning/GraphOverviewPanel";
 import { GraphOverviewEditModal } from "../components/Learning/GraphOverviewEditModal";

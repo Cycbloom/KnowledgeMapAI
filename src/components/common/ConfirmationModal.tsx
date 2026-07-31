@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { useFocusTrap, useEscapeKey } from '../../hooks/common';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 
 interface ConfirmationModalProps {
   isOpen: boolean;

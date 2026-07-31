@@ -415,7 +415,7 @@ describe('notesApi', () => {
     let fetchSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-      vi.mocked(getApiUrl).mockResolvedValue('/api');
+      vi.mocked(getApiUrl).mockResolvedValue('/api/v1');
       vi.mocked(getCookie).mockReturnValue('csrf-abc');
       vi.mocked(isElectronProduction).mockReturnValue(false);
       vi.mocked(handleResponse).mockResolvedValue({ url: 'http://img.png' });
@@ -443,7 +443,7 @@ describe('notesApi', () => {
       const result = await notesApi.uploadImage('note-1', file);
 
       expect(fetchSpy).toHaveBeenCalledWith(
-        '/api/notes/note-1/upload-image',
+        '/api/v1/notes/note-1/upload-image',
         expect.objectContaining({
           method: 'POST',
           headers: {

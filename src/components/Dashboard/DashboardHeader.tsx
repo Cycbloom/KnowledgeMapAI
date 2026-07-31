@@ -22,7 +22,7 @@ import type {
   SortBy,
   StatusFilter,
   TimeRangeFilter,
-} from "../../hooks/useDashboardFilters";
+} from "../../hooks/dashboard/useDashboardFilters";
 import type { Graph } from "@shared/types";
 import { useMenuNavigation } from "../../hooks";
 

@@ -6,7 +6,7 @@ import { StudyCardDetailModal } from "./StudyCardDetailModal";
 import { StatsOverview } from "../Statistics/StatsOverview";
 import { WeakPointAnalysis, type WeakPoint, type Prediction } from "./WeakPointAnalysis";
 import type { ReviewForecast } from "../../hooks/queries/useStudyQueries";
-import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
+import { useDebouncedSearch } from "../../hooks/common/useDebouncedSearch";
 import {
   Trophy,
   Clock,

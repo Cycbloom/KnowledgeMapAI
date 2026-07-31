@@ -2,11 +2,11 @@ import React, { useMemo, useState, useCallback, useRef, useId } from 'react';
 import { Tag, X, Plus, Hash, Filter, Sparkles, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from "../../hooks";
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 import { Node } from '../../types';
 import { EmptyState } from './EmptyState';
 import { useEscapeKey } from '../../hooks/common/useEscapeKey';
-import { useCombobox } from '../../hooks/useCombobox';
+import { useCombobox } from '../../hooks/common/useCombobox';
 
 interface TagData {
   name: string;

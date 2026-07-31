@@ -45,13 +45,13 @@ describe('backupApi', () => {
   // ============================================================
 
   describe('export', () => {
-    it('应该以 GET 请求 /api/backup/export 并返回 blob', async () => {
+    it('应该以 GET 请求 /api/v1/backup/export 并返回 blob', async () => {
       const blob = new Blob(['backup-data'], { type: 'application/zip' });
       fetchSpy.mockResolvedValue(new Response(blob, { status: 200 }));
 
       const result = await backupApi.export();
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/backup/export', {
+      expect(fetchSpy).toHaveBeenCalledWith('/api/v1/backup/export', {
         method: 'GET',
         headers: { Authorization: 'Bearer token-123' },
         credentials: 'include',
@@ -76,7 +76,7 @@ describe('backupApi', () => {
   // ============================================================
 
   describe('getSnapshots', () => {
-    it('应该以 GET 请求 /api/backup/snapshots 并返回 snapshots 数组', async () => {
+    it('应该以 GET 请求 /api/v1/backup/snapshots 并返回 snapshots 数组', async () => {
       fetchSpy.mockResolvedValue(
         new Response(JSON.stringify({ snapshots: [mockSnapshot] }), {
           status: 200,
@@ -86,7 +86,7 @@ describe('backupApi', () => {
 
       const result = await backupApi.getSnapshots();
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/backup/snapshots', {
+      expect(fetchSpy).toHaveBeenCalledWith('/api/v1/backup/snapshots', {
         method: 'GET',
         headers: { Authorization: 'Bearer token-123' },
         credentials: 'include',
@@ -123,7 +123,7 @@ describe('backupApi', () => {
   // ============================================================
 
   describe('createSnapshot', () => {
-    it('应该以 POST 请求 /api/backup/snapshots 默认 type=manual 并传递 JSON body', async () => {
+    it('应该以 POST 请求 /api/v1/backup/snapshots 默认 type=manual 并传递 JSON body', async () => {
       fetchSpy.mockResolvedValue(
         new Response(JSON.stringify({ id: 'snap-2' }), {
           status: 200,
@@ -133,7 +133,7 @@ describe('backupApi', () => {
 
       const result = await backupApi.createSnapshot();
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/backup/snapshots', {
+      expect(fetchSpy).toHaveBeenCalledWith('/api/v1/backup/snapshots', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,7 +175,7 @@ describe('backupApi', () => {
   // ============================================================
 
   describe('deleteSnapshot', () => {
-    it('应该以 DELETE 请求 /api/backup/snapshots/{id} 并对路径参数进行编码', async () => {
+    it('应该以 DELETE 请求 /api/v1/backup/snapshots/{id} 并对路径参数进行编码', async () => {
       fetchSpy.mockResolvedValue(
         new Response(JSON.stringify({ success: true }), {
           status: 200,
@@ -186,7 +186,7 @@ describe('backupApi', () => {
       const result = await backupApi.deleteSnapshot('snap/1');
 
       expect(fetchSpy).toHaveBeenCalledWith(
-        '/api/backup/snapshots/snap%2F1',
+        '/api/v1/backup/snapshots/snap%2F1',
         {
           method: 'DELETE',
           headers: { Authorization: 'Bearer token-123' },
@@ -215,7 +215,7 @@ describe('backupApi', () => {
   // ============================================================
 
   describe('restoreSnapshot', () => {
-    it('应该以 POST 请求 /api/backup/restore/{id} 并对路径参数进行编码', async () => {
+    it('应该以 POST 请求 /api/v1/backup/restore/{id} 并对路径参数进行编码', async () => {
       fetchSpy.mockResolvedValue(
         new Response(JSON.stringify({ restored: true }), {
           status: 200,
@@ -226,7 +226,7 @@ describe('backupApi', () => {
       const result = await backupApi.restoreSnapshot('snap 1');
 
       expect(fetchSpy).toHaveBeenCalledWith(
-        '/api/backup/restore/snap%201',
+        '/api/v1/backup/restore/snap%201',
         {
           method: 'POST',
           headers: { Authorization: 'Bearer token-123' },
@@ -255,7 +255,7 @@ describe('backupApi', () => {
   // ============================================================
 
   describe('import', () => {
-    it('应该以 POST 请求 /api/backup/import 默认 mode=merge 并传递 JSON body', async () => {
+    it('应该以 POST 请求 /api/v1/backup/import 默认 mode=merge 并传递 JSON body', async () => {
       const data = { graphs: [], nodes: [] };
       fetchSpy.mockResolvedValue(
         new Response(JSON.stringify({ imported: true }), {
@@ -267,7 +267,7 @@ describe('backupApi', () => {
       const result = await backupApi.import(data);
 
       expect(fetchSpy).toHaveBeenCalledWith(
-        '/api/backup/import?mode=merge',
+        '/api/v1/backup/import?mode=merge',
         {
           method: 'POST',
           headers: {
@@ -293,7 +293,7 @@ describe('backupApi', () => {
       await backupApi.import(data, 'replace');
 
       expect(fetchSpy).toHaveBeenCalledWith(
-        '/api/backup/import?mode=replace',
+        '/api/v1/backup/import?mode=replace',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(data),

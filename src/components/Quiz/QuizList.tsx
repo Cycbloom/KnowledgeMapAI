@@ -18,7 +18,7 @@ import { useGraphs } from '../../hooks/queries/useGraphQueries';
 import { QuizCard } from './QuizCard';
 import type { QuizSet, QuizSetStatus } from '@shared/types/quiz';
 import { asyncConfirm } from '@/utils/asyncConfirm';
-import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
+import { useDebouncedSearch } from '../../hooks/common/useDebouncedSearch';
 
 interface QuizListProps {
   onCreateQuiz?: () => void;

@@ -28,7 +28,7 @@ import { api } from "../../services/api";
 import { LearningStateBadge } from "./LearningStateBadge";
 import { MasteryProgressBar } from "./MasteryProgressBar";
 import { formatDate as formatDateUtil } from "../../utils/formatters";
-import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
+import { useDebouncedSearch } from "../../hooks/common/useDebouncedSearch";
 
 interface ListViewProps {
   tasks: UserTask[];

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { useTasks } from "../hooks/queries";
-import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
+import { useDebouncedSearch } from "@/hooks/common/useDebouncedSearch";
 import {
   useRetryTaskMutation,
   useDeleteTaskMutation,

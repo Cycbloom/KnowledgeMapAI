@@ -1,4 +1,4 @@
-﻿import { useStore } from "@/store/useStore";
+import { useStore } from "@/store/useStore";
 import { createErrorFromResponse, AppError, SharedErrorCodes } from "@/utils/errors";
 import { getAIConfig, injectAIConfig } from "../api/client";
 import type { AIAction, TutorMode, BranchSuggestion } from "@shared/types";
@@ -6,8 +6,8 @@ import type { Keyword } from "@shared/types/graph";
 import type { IAiApi, IAiActionsApi } from "../api/contracts/IAiApi";
 import { mobileAIService } from "./aiService";
 import { isCapacitorMobile } from "@/config/mobileApiConfig";
-import { getAILanguage } from "@/hooks/useAILanguage";
-import { getMobileSupabaseClient } from "@/lib/supabase";
+import { getAILanguage } from "@/hooks/ai/useAILanguage";
+import { getMobileSupabaseClient } from "@/utils/supabase";
 import {
   createStreamHandler,
   handleUnauthorized,
@@ -18,7 +18,7 @@ const getCloudApiBaseUrl = (): string => {
   return import.meta.env.VITE_API_URL || "";
 };
 
-const baseURL = getCloudApiBaseUrl() || "/api";
+const baseURL = getCloudApiBaseUrl() || "/api/v1";
 
 const buildHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = {

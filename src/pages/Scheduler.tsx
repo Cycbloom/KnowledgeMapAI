@@ -37,7 +37,7 @@ import {
   useCompleteUserTaskMutation,
   useSchedulerSettings,
 } from "../hooks";
-import { useScrollDirection } from "../hooks/useScrollDirection";
+import { useScrollDirection } from "../hooks/common/useScrollDirection";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
 import { useFocusTrap, useEscapeKey, useCelebration } from "@/hooks/common";
 import { message } from "../utils/messageHelper";

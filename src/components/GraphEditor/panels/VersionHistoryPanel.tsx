@@ -9,7 +9,7 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
-import { cn } from "../../../lib/utils";
+import { cn } from "../../../utils/utils";
 import { formatDate } from "../../../utils/formatters";
 import { useSnapshots } from "../../../hooks/queries/useGraphVersionQueries";
 import {

@@ -10,7 +10,7 @@ import {
 import { frontendKernel } from "../../App";
 import { iconMap } from "../../utils/iconMap";
 import type { NavLabelKey } from "../../services/kernel/types";
-import { useMenuNavigation } from "../../hooks/useMenuNavigation";
+import { useMenuNavigation } from "../../hooks/common/useMenuNavigation";
 
 interface NavItem {
   to: string;

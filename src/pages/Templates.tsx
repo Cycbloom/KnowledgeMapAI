@@ -27,7 +27,7 @@ import { message } from "../utils/messageHelper";
 import { TaskTemplates } from "../components/Templates/TaskTemplates";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
-import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
+import { useDebouncedSearch } from "../hooks/common/useDebouncedSearch";
 import { EmptyState } from "@/components/common/EmptyState";
 import { SkeletonCard, FormError, ErrorState } from "@/components/common";
 

@@ -8,7 +8,7 @@ import {
 } from "./client";
 import { useStore } from "@/store/useStore";
 import type { AIAction, TutorMode } from "@shared/types";
-import { getAILanguage } from "@/hooks/useAILanguage";
+import { getAILanguage } from "@/hooks/ai/useAILanguage";
 import {
   createStreamHandler,
   handleUnauthorized,

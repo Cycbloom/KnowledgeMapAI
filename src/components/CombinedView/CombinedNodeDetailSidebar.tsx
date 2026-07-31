@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Node, Edge } from "../../types";
 import { levelLabels } from "../../config/graphConfig";
-import { getLevel } from "../../lib/graphUtils";
+import { getLevel } from "../../utils/graph/graphUtils";
 import { preprocessMarkdown } from "../../utils/markdownPreprocessor";
 import { TermTooltip, LazyImage } from "../common";
 import { CodeBlock } from "../common/CodeBlock";

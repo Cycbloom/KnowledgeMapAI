@@ -34,7 +34,7 @@ import {
   FileText,
 } from "lucide-react";
 import type { Editor } from "@tiptap/core";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/utils";
 import {
   useGenerateDailySummaryMutation,
   useExtractConceptsMutation,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, AlertTriangle, XCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 
 type ErrorStateIcon = 'alert' | 'error' | 'warning';
 type ErrorStateVariant = 'page' | 'panel' | 'inline';

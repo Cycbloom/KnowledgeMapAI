@@ -315,10 +315,10 @@ describe("BlockEditor 集成测试", () => {
   // ============================================================
   // 2. 编辑后失焦触发保存
   // ============================================================
-  it("编辑后失焦应触发 PUT /api/notes/:id 保存请求", async () => {
+  it("编辑后失焦应触发 PUT /api/v1/notes/:id 保存请求", async () => {
     const updateFn = vi.fn();
     server.use(
-      http.put(`/api/notes/${TEST_NOTE_ID}`, async ({ request }) => {
+      http.put(`/api/v1/notes/${TEST_NOTE_ID}`, async ({ request }) => {
         updateFn(await request.json());
         return HttpResponse.json({
           id: TEST_NOTE_ID,
@@ -371,7 +371,7 @@ describe("BlockEditor 集成测试", () => {
   it("内容未变更时失焦不应触发保存请求", async () => {
     const updateFn = vi.fn();
     server.use(
-      http.put(`/api/notes/${TEST_NOTE_ID}`, async ({ request }) => {
+      http.put(`/api/v1/notes/${TEST_NOTE_ID}`, async ({ request }) => {
         updateFn(await request.json());
         return HttpResponse.json({
           id: TEST_NOTE_ID,
@@ -420,7 +420,7 @@ describe("BlockEditor 集成测试", () => {
   it("写作辅助:选中文本后点击续写应调用 writing-assist 端点并显示建议", async () => {
     const assistFn = vi.fn();
     server.use(
-      http.post(`/api/notes/${TEST_NOTE_ID}/writing-assist`, async ({ request }) => {
+      http.post(`/api/v1/notes/${TEST_NOTE_ID}/writing-assist`, async ({ request }) => {
         assistFn(await request.json());
         return HttpResponse.json({ suggestion: "AI 续写建议内容" });
       }),
@@ -481,7 +481,7 @@ describe("BlockEditor 集成测试", () => {
   it("daily 笔记点击刷新今日数据应调用 refresh-aggregation 端点", async () => {
     const refreshFn = vi.fn();
     server.use(
-      http.post(`/api/notes/${TEST_NOTE_ID}/refresh-aggregation`, () => {
+      http.post(`/api/v1/notes/${TEST_NOTE_ID}/refresh-aggregation`, () => {
         refreshFn();
         return HttpResponse.json({
           note: {

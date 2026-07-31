@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { apiClient } from "../services/api/createApiClient";
 import { updateSupabaseConfig } from "../config/authConfig";
-import { resetSupabaseClient } from "../lib/supabase";
+import { resetSupabaseClient } from "../utils/supabase";
 import { isElectron } from "../config/electronConfig";
 import type { AIProviderType } from "@shared/types/ai";
 

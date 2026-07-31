@@ -4,7 +4,7 @@ import { CloudOff, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNetworkStatus } from '@/hooks/common/useNetworkStatus';
 import { offlineMutationQueue } from '@/utils/offlineMutations';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 
 /**
  * 离线状态横幅

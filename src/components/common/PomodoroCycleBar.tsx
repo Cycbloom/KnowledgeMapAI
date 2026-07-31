@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { TimerMode } from "@shared/types";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/utils";
 import { TIMER_MODE_COLORS, getModeLabel } from "@/constants/timer";
 import { useReducedMotionOrPreference } from "@/hooks/common/useReducedMotionOrPreference";
 

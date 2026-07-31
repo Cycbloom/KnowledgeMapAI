@@ -1,6 +1,6 @@
 import { Component, ErrorInfo, ReactNode, useState, useCallback } from "react";
 import i18next from "i18next";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/utils";
 import {
   RefreshCcw,
   AlertTriangle,

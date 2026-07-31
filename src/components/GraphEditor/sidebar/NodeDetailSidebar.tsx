@@ -6,7 +6,7 @@ import {
   getLearningStatus,
   getStatusColors,
 } from "../../../config/learningStatusColors";
-import { getLevel } from "../../../lib/graphUtils";
+import { getLevel } from "../../../utils/graph/graphUtils";
 import { preprocessMarkdown } from "../../../utils/markdownPreprocessor";
 import { formatDate } from "../../../utils/formatters";
 import {

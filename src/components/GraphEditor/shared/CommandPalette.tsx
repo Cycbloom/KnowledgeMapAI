@@ -6,7 +6,7 @@ import {
   SearchX
 } from 'lucide-react';
 import { useTheme } from "../../../hooks";
-import { useCombobox } from "../../../hooks/useCombobox";
+import { useCombobox } from "../../../hooks/common/useCombobox";
 import { Node } from '../../../types';
 import { EmptyState } from '../../common/EmptyState';
 

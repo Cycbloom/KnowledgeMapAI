@@ -1,6 +1,6 @@
 import { request } from './client';
 import { authConfig } from '@/config/authConfig';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient } from '@/utils/supabase';
 import type {
   AuthResponse,
   RegisterData,

@@ -10,7 +10,7 @@ import {
   ShortcutDefinition,
   ShortcutKey
 } from '../../config/shortcuts';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 
 interface ShortcutListContentProps {
   /**

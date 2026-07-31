@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { LayoutNode, LayoutLink, LinkStyle, LinkAnimation, EdgeWidthMode, Edge, Node, RelationshipTypeConfig, RelationshipCategory } from '../../../types';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
-import { calculateEdgeStrength } from '../../../lib/graphUtils';
+import { calculateEdgeStrength } from '../../../utils/graph/graphUtils';
 import { getRelationshipTypeConfig, getDefaultRelationshipType } from '../../../config/relationshipTypes';
 
 interface MindMapLinkProps {

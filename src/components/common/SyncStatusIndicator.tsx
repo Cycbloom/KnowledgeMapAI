@@ -4,7 +4,7 @@ import { Check, RefreshCw, WifiOff, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSyncStatus } from '../../hooks/common/useSyncStatus';
 import { SyncDetailPanel } from './SyncDetailPanel';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 import { useReducedMotionOrPreference } from '../../hooks/common/useReducedMotionOrPreference';
 
 type SyncState = 'synced' | 'syncing' | 'offline' | 'error';

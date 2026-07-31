@@ -1,4 +1,4 @@
-import { getMobileSupabaseClient } from "@/lib/supabase";
+import { getMobileSupabaseClient } from "@/utils/supabase";
 import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 type MobileSupabaseClient = NonNullable<ReturnType<typeof getMobileSupabaseClient>>;

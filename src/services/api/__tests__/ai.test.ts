@@ -25,7 +25,7 @@ vi.mock('@/store/useStore', () => ({
   useStore: { getState: () => ({ token: null }) },
 }));
 
-vi.mock('@/hooks/useAILanguage', () => ({
+vi.mock('@/hooks/ai/useAILanguage', () => ({
   getAILanguage: vi.fn(() => 'zh-CN'),
 }));
 
@@ -34,7 +34,7 @@ vi.mock('@/hooks/useAILanguage', () => ({
 import { aiApi, aiActionsApi } from '../ai';
 import { request, handleResponse } from '../client';
 import { createStreamHandler } from '../../shared/streamHandler';
-import { getAILanguage } from '@/hooks/useAILanguage';
+import { getAILanguage } from '@/hooks/ai/useAILanguage';
 
 // --- Helpers ---
 

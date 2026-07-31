@@ -35,6 +35,7 @@ declare module "axios" {
   }
   interface InternalAxiosRequestConfig {
     _inflightKey?: string;
+    _requestId?: string;
   }
 }
 
@@ -86,7 +87,7 @@ const initCsrf = async (): Promise<void> => {
       const electronApiUrl = await getElectronApiUrl();
       csrfUrl = `${electronApiUrl}/csrf-token`;
     } else {
-      csrfUrl = "/api/csrf-token";
+      csrfUrl = "/api/v1/csrf-token";
     }
 
     await fetch(csrfUrl, {
@@ -185,7 +186,7 @@ function localFirstAdapter(config: InternalAxiosRequestConfig): Promise<AxiosRes
 }
 
 export const createApiClient = (): AxiosInstance => {
-  let initialBaseURL = "/api";
+  let initialBaseURL = "/api/v1";
 
   if (isMobileClient()) {
     initialBaseURL = getMobileApiBaseUrl();
@@ -230,6 +231,15 @@ export const createApiClient = (): AxiosInstance => {
         config.headers["x-electron-client"] = "true";
       }
 
+      // Add request tracing headers
+      const requestId = crypto.randomUUID();
+      config.headers["X-Request-Id"] = requestId;
+      config.headers["X-Client-Version"] = "1.0.1";
+      config._requestId = requestId;
+
+      // Mark request start for performance monitoring
+      performance.mark(`request-start-${requestId}`);
+
       // Mark in-flight key for GET requests (unless explicitly skipped)
       const method = (config.method || "get").toLowerCase();
       if (method === "get" && !config._skipDedupe) {
@@ -249,6 +259,21 @@ export const createApiClient = (): AxiosInstance => {
       if (key) {
         inflightRequests.delete(key);
       }
+
+      // Record request timing
+      const requestId = response.config?._requestId;
+      if (requestId) {
+        performance.mark(`request-end-${requestId}`);
+        performance.measure(`request-${requestId}`, `request-start-${requestId}`, `request-end-${requestId}`);
+        const duration = performance.getEntriesByName(`request-${requestId}`)[0]?.duration;
+        if (duration !== undefined) {
+          console.warn(`[API] ${response.config?.method?.toUpperCase()} ${response.config?.url} - ${duration.toFixed(0)}ms`);
+        }
+        performance.clearMarks(`request-start-${requestId}`);
+        performance.clearMarks(`request-end-${requestId}`);
+        performance.clearMeasures(`request-${requestId}`);
+      }
+
       return response.data;
     },
     async (error: AxiosError) => {
@@ -264,6 +289,20 @@ export const createApiClient = (): AxiosInstance => {
 
       if (!originalRequest) {
         return Promise.reject(error);
+      }
+
+      // Record request timing on error
+      const requestId = originalRequest._requestId;
+      if (requestId) {
+        performance.mark(`request-end-${requestId}`);
+        performance.measure(`request-${requestId}`, `request-start-${requestId}`, `request-end-${requestId}`);
+        const duration = performance.getEntriesByName(`request-${requestId}`)[0]?.duration;
+        if (duration !== undefined) {
+          console.warn(`[API] ${originalRequest.method?.toUpperCase()} ${originalRequest.url} - ${duration.toFixed(0)}ms - ERROR`);
+        }
+        performance.clearMarks(`request-start-${requestId}`);
+        performance.clearMarks(`request-end-${requestId}`);
+        performance.clearMeasures(`request-${requestId}`);
       }
 
       const appError = createErrorFromResponse({

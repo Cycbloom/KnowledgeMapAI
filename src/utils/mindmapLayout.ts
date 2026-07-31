@@ -1,7 +1,7 @@
 import { Node, Edge, LayoutNode, LayoutLink, NodeLevel } from '../types';
 import * as d3 from 'd3-force';
 import type { SimulationNodeDatum } from 'd3-force';
-import { getLevel } from '../lib/graphUtils';
+import { getLevel } from '../utils/graph/graphUtils';
 import { UMAP } from 'umap-js';
 
 export interface LayoutResult {

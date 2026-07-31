@@ -7,7 +7,7 @@ import { createMindMapLayout, LayoutResult } from '../../../utils/mindmapLayout'
 import { THEME_COLORS } from '../../../config/learningStatusColors';
 import { useTheme } from "../../../hooks";
 import { useGraphWorker } from "../../../hooks/common/useWorker";
-import { calculateNodeImportance, calculateEdgeStrength } from '../../../lib/graphUtils';
+import { calculateNodeImportance, calculateEdgeStrength } from '../../../utils/graph/graphUtils';
 import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 
 interface TimelineViewProps {

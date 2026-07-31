@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import type {
   MessageShowPayload,

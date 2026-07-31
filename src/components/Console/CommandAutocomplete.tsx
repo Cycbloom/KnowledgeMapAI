@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Terminal, Settings, FileText, Hash } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AutocompleteSuggestion } from '@/services/console';
-import { useCombobox } from '@/hooks/useCombobox';
+import { useCombobox } from '@/hooks/common/useCombobox';
 
 interface CommandAutocompleteProps {
   suggestions: AutocompleteSuggestion[];

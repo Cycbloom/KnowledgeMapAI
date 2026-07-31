@@ -3,7 +3,7 @@ import { RefreshCw, AlertCircle, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { offlineMutationQueue, type QueuedMutation } from "@/utils/offlineMutations";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/utils";
 
 /**
  * SyncStatusBadge 组件

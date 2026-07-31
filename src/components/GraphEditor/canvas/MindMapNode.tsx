@@ -31,7 +31,7 @@ import {
   getDecayColors,
 } from "../../../config/learningStatusColors";
 import { HEATMAP_CONFIG, DECAY_CONFIG, type SemanticZoomLevel } from "../../../config/graphConfig";
-import { getLevel, calculateNodeImportance } from "../../../lib/graphUtils";
+import { getLevel, calculateNodeImportance } from "../../../utils/graph/graphUtils";
 import { truncateText } from "../../../utils/textUtils";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
 

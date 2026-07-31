@@ -26,7 +26,7 @@ import { FileText, ExternalLink, Unlink, RefreshCw, AlertCircle } from "lucide-r
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useBlockContent } from "../../../hooks/queries/useNoteQueries";
-import { useBlockSSE } from "../../../hooks/useBlockSSE";
+import { useBlockSSE } from "../../../hooks/common/useBlockSSE";
 
 /** 从 editor.storage 安全读取 BlockEmbed 扩展的 currentNoteId。 */
 const readCurrentNoteId = (editor: NodeViewProps["editor"]): string | undefined => {

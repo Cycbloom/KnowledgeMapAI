@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { Node, Edge, type NodeStatus } from "../../../types";
 import { createClient } from "@supabase/supabase-js";
-import { useDebouncedSearch } from "../../../hooks/useDebouncedSearch";
+import { useDebouncedSearch } from "../../../hooks/common/useDebouncedSearch";
 import { BatchGenerateDialog, type BatchGenerateConfig } from "../modals/BatchGenerateDialog";
 import {
   LiteratureSourceDB,

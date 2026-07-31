@@ -1,4 +1,4 @@
-import { getMobileSupabaseClient } from "@/lib/supabase";
+import { getMobileSupabaseClient } from "@/utils/supabase";
 import { mobilePromptService } from "../prompt/index";
 import type { StudyCard } from "@shared/types/common";
 import {

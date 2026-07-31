@@ -31,11 +31,6 @@ src/
 │   ├── graphEditor/    # 图谱编辑器状态
 │   └── *.ts            # 其他 hooks
 │
-├── lib/                # 工具库
-│   ├── graph/          # 图谱算法
-│   ├── graphUtils.ts
-│   └── utils.ts
-│
 ├── pages/              # 页面组件
 │   ├── Dashboard.tsx
 │   ├── GraphEditor.tsx
@@ -55,9 +50,12 @@ src/
 ├── types/              # 类型定义
 │   └── index.ts
 │
-├── utils/              # 工具函数
+├── utils/              # 工具函数（唯一工具函数目录，取代原 lib/）
 │   ├── layouts/        # 布局算法
 │   ├── errors.ts
+│   ├── formatters.ts
+│   ├── logger.ts
+│   ├── sanitize.ts
 │   └── ...
 │
 └── __tests__/          # 测试文件

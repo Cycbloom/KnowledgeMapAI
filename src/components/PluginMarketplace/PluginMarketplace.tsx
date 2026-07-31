@@ -17,7 +17,7 @@ import {
 import { pluginsApi, type RegistryPlugin, type InstalledPlugin } from "../../services/api/plugins";
 import { PluginCard } from "./PluginCard";
 import { useStore } from "../../store/useStore";
-import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
+import { useDebouncedSearch } from "../../hooks/common/useDebouncedSearch";
 import { message } from "@/utils/messageHelper";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 

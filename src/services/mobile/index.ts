@@ -51,7 +51,7 @@ function createNotSupportedModule<T>(moduleName: string): T {
   ) as T;
 }
 
-export { getMobileSupabaseClient, resetMobileSupabaseClient, getSupabaseClient, resetSupabaseClient } from "@/lib/supabase";
+export { getMobileSupabaseClient, resetMobileSupabaseClient, getSupabaseClient, resetSupabaseClient } from "@/utils/supabase";
 export { mobileAuthApi } from "./auth";
 export { mobileGraphsApi } from "./graphs";
 export { mobileNodesApi } from "./nodes";

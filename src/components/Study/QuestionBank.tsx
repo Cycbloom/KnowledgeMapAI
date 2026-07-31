@@ -8,7 +8,7 @@ import { asyncConfirm } from '@/utils/asyncConfirm';
 import { QuestionForm, QuestionFormData } from './QuestionForm';
 import { StudyCardPreview } from './StudyCardPreview';
 import { StudyCardDetailModal } from './StudyCardDetailModal';
-import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
+import { useDebouncedSearch } from '../../hooks/common/useDebouncedSearch';
 import { EmptyState } from '@/components/common/EmptyState';
 import { message } from '@/utils/messageHelper';
 

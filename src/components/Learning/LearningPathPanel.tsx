@@ -21,7 +21,7 @@ import { api } from "../../services/api";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { message } from "../../utils/messageHelper";
 import { useError } from "../../hooks";
-import { useActivityTracker } from "../../hooks/useActivityTracker";
+import { useActivityTracker } from "../../hooks/scheduler/useActivityTracker";
 import { LearningPathWizard } from "./LearningPathWizard";
 import {
   useLearningPaths,

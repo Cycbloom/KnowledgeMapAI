@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Search, LayoutGrid, FileText, Loader2, X, Sparkles, Clock, Filter, CheckCircle, Lock, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 import { api } from '../../services/api';
 import { useTheme } from "../../hooks";
-import { useCombobox } from '../../hooks/useCombobox';
+import { useCombobox } from '../../hooks/common/useCombobox';
 import { queryKeys, defaultQueryConfig } from '@/hooks/queries/config';
 import { formatDate as formatDateUtil } from '../../utils/formatters';
 

@@ -3,7 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { StudyMode } from "@shared/types/scheduler";
 import { STUDY_MODE_PRESETS } from "@shared/constants/studyModePresets";
-import type { StudyModeIconType } from "../../hooks/useStudyModeLogic";
+import type { StudyModeIconType } from "../../hooks/study/useStudyModeLogic";
 
 interface StudyModeSelectorProps {
   studyMode: StudyMode;

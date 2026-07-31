@@ -7,7 +7,7 @@ import { AlternativeBranches } from '../shared/AlternativeBranches';
 import { createTreeLayout } from '../../../utils/layouts/treeLayout';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
 import { useTheme } from "../../../hooks";
-import { calculateNodeImportance, calculateEdgeStrength } from '../../../lib/graphUtils';
+import { calculateNodeImportance, calculateEdgeStrength } from '../../../utils/graph/graphUtils';
 
 interface TreeViewProps {
   nodes: Node[];

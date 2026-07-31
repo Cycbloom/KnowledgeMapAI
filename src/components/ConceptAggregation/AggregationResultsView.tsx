@@ -14,7 +14,7 @@ import type { NodeLevel, ConceptSource } from '../../types';
 import { Button } from '../common/Button';
 import { EmptyState } from '../common/EmptyState';
 import { SkeletonCard } from '../common/SkeletonCard';
-import { getLevelLabel, getLevelColorHex } from '../../lib/graph/levelUtils';
+import { getLevelLabel, getLevelColorHex } from '../../utils/graph/levelUtils';
 
 export interface SimilarConceptMember {
   knowledgePointId: string;

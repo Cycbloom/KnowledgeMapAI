@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useFocusTrap } from '../../hooks/common';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 
 interface ModalShellProps {
   isOpen: boolean;

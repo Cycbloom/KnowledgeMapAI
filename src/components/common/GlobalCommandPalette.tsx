@@ -22,15 +22,15 @@ import {
   Clock,
 } from "lucide-react";
 import { useTheme, useFocusTrap } from "../../hooks";
-import { useCombobox } from "../../hooks/useCombobox";
+import { useCombobox } from "../../hooks/common/useCombobox";
 import { frontendKernel } from "../../App";
 import { iconMap } from "../../utils/iconMap";
 import {
   useRecentGraphs,
   type RecentGraphEntry,
-} from "../../hooks/useRecentGraphs";
-import { useRecentNodes } from "../../hooks/useRecentNodes";
-import { useRecentNotes } from "../../hooks/useRecentNotes";
+} from "../../hooks/queries/useRecentGraphs";
+import { useRecentNodes } from "../../hooks/queries/useRecentNodes";
+import { useRecentNotes } from "../../hooks/queries/useRecentNotes";
 
 export interface GlobalCommandPaletteProps {
   isOpen: boolean;

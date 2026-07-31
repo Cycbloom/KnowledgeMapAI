@@ -7,7 +7,7 @@ import {
   getFocusedNodes,
   getFocusedLinks,
   getDirectChildren,
-} from "../../../lib/graphUtils";
+} from "../../../utils/graph/graphUtils";
 import { NodeDetailSidebar } from "./NodeDetailSidebar";
 import { NodeEditSidebar } from "./NodeEditSidebar";
 import { GraphOutline } from "../panels/GraphOutline";

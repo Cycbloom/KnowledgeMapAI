@@ -6,13 +6,13 @@ import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, Skeleton, C
 import { GlobalErrorBoundary } from "./components/common/GlobalErrorBoundary";
 import { RenderProfiler } from "./components/dev/RenderProfiler";
 import { QueryErrorResetBoundary } from "@tanstack/react-query";
-import { useDeepLink } from "./hooks/useDeepLink";
-import { useMobileInit } from "./hooks/useMobileInit";
+import { useDeepLink } from "./hooks/common/useDeepLink";
+import { useMobileInit } from "./hooks/mobile/useMobileInit";
 import { useNetworkStatus } from "./hooks/common/useNetworkStatus";
 import { useDocumentTitle } from "./hooks/common/useDocumentTitle";
 import { useTranslation } from "react-i18next";
 import { message } from "@/utils/messageHelper";
-import { getSupabaseClient } from "./lib/supabase";
+import { getSupabaseClient } from "./utils/supabase";
 import { authConfig, isSupabaseConfigured } from "./config/authConfig";
 import { isElectron } from "./config/electronConfig";
 import { toUser } from "@shared/types/database";

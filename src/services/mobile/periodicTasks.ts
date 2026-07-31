@@ -1,5 +1,5 @@
 import i18next from "i18next";
-import { getMobileSupabaseClient } from "@/lib/supabase";
+import { getMobileSupabaseClient } from "@/utils/supabase";
 import type { PeriodicTaskRow } from "@shared/types/database";
 import type { IPeriodicTasksApi } from "../api/contracts/IPeriodicTasksApi";
 import { logger } from "@/utils/logger";

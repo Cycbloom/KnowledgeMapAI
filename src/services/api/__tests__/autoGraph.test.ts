@@ -8,8 +8,8 @@ vi.mock('../client', () => ({
   getAIConfig: vi.fn(),
 }));
 
-// Mock getAILanguage from @/hooks/useAILanguage
-vi.mock('@/hooks/useAILanguage', () => ({
+// Mock getAILanguage from @/hooks/ai/useAILanguage
+vi.mock('@/hooks/ai/useAILanguage', () => ({
   getAILanguage: vi.fn(),
 }));
 
@@ -17,7 +17,7 @@ vi.mock('@/hooks/useAILanguage', () => ({
 
 import { autoGraphApi } from '../autoGraph';
 import { request, getAIConfig } from '../client';
-import { getAILanguage } from '@/hooks/useAILanguage';
+import { getAILanguage } from '@/hooks/ai/useAILanguage';
 
 // --- Tests ---
 

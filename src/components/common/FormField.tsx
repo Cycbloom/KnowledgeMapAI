@@ -1,6 +1,6 @@
 import React, { useId } from 'react';
 import { FormError } from './FormError';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 
 interface FormFieldProps {
   label: string;

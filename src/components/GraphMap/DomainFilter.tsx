@@ -3,7 +3,7 @@ import { Globe, ChevronDown, Check, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { DomainTreeNode } from '@shared/types/graph';
 import { useIsMobile } from '../../hooks';
-import { useCombobox } from '../../hooks/useCombobox';
+import { useCombobox } from '../../hooks/common/useCombobox';
 
 interface DomainFilterProps {
   domains: DomainTreeNode[];

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Node as GraphNode, NodeLevel } from "../../../types";
-import { getLevelColor, getLevelLabel } from "../../../lib/graphUtils";
+import { getLevelColor, getLevelLabel } from "../../../utils/graph/graphUtils";
 import {
   X,
   ArrowLeft,

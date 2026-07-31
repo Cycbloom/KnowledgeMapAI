@@ -15,7 +15,7 @@ const mockSignInAnonymously = vi.fn();
 const mockSignUp = vi.fn();
 const mockSignInWithPassword = vi.fn();
 
-vi.mock("@/lib/supabase", () => ({
+vi.mock("@/utils/supabase", () => ({
   getSupabaseClient: () => ({
     auth: {
       getSession: mockGetSession,

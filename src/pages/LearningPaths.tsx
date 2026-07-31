@@ -30,7 +30,7 @@ import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/fo
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { EmptyState, ErrorState, SkeletonCard } from "@/components/common";
-import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
+import { useDebouncedSearch } from "../hooks/common/useDebouncedSearch";
 import { message } from "../utils/messageHelper";
 
 type PathStatus = LearningPathStatus | "all";

@@ -83,10 +83,10 @@ describe('domainsApi', () => {
   });
 
   describe('ensureUncategorized', () => {
-    it('应该以 GET 请求 /api/domains/ensure-uncategorized', async () => {
+    it('应该以 GET 请求 /domains/ensure-uncategorized', async () => {
       await domainsApi.ensureUncategorized();
       expect(request).toHaveBeenCalledWith(
-        '/api/domains/ensure-uncategorized',
+        '/domains/ensure-uncategorized',
         { method: 'GET' },
       );
     });

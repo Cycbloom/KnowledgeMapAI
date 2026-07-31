@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 import type { SSEStatusChangedPayload } from '../../services/FrontendEventTypes';
 import { Wifi, WifiOff, Loader2, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 
 type SSEConnectionStatus = SSEStatusChangedPayload['status'];
 

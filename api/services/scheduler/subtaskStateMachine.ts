@@ -17,7 +17,7 @@ interface StateTransitionConfig {
   to: LearningState;
   minMastery?: number;
   maxMastery?: number;
-  description: string;
+  descriptionKey: string;
 }
 
 const VALID_TRANSITIONS: Record<LearningState, StateTransitionConfig[]> = {
@@ -25,54 +25,54 @@ const VALID_TRANSITIONS: Record<LearningState, StateTransitionConfig[]> = {
     {
       to: "review",
       maxMastery: MASTERY_THRESHOLDS.LEARNING_REVIEW,
-      description: "掌握度低于30%，进入复习阶段",
+      descriptionKey: "scheduler.subtaskState.descriptions.masteryLowToReview",
     },
     {
       to: "practice",
       minMastery: MASTERY_THRESHOLDS.LEARNING_REVIEW,
       maxMastery: MASTERY_THRESHOLDS.PRACTICE_QUIZ,
-      description: "掌握度30%-70%，进入练习阶段",
+      descriptionKey: "scheduler.subtaskState.descriptions.masteryMidToPractice",
     },
     {
       to: "quiz",
       minMastery: MASTERY_THRESHOLDS.PRACTICE_QUIZ,
-      description: "掌握度高于70%，进入测验阶段",
+      descriptionKey: "scheduler.subtaskState.descriptions.masteryHighToQuiz",
     },
   ],
   review: [
     {
       to: "practice",
-      description: "复习完成，进入练习阶段",
+      descriptionKey: "scheduler.subtaskState.descriptions.reviewCompleteToPractice",
     },
   ],
   practice: [
     {
       to: "quiz",
       minMastery: MASTERY_THRESHOLDS.REVIEW_PRACTICE,
-      description: "练习达标，进入测验阶段",
+      descriptionKey: "scheduler.subtaskState.descriptions.practicePassToQuiz",
     },
     {
       to: "review",
       maxMastery: MASTERY_THRESHOLDS.REVIEW_PRACTICE,
-      description: "练习未达标，返回复习阶段",
+      descriptionKey: "scheduler.subtaskState.descriptions.practiceFailToReview",
     },
   ],
   quiz: [
     {
       to: "review",
       maxMastery: MASTERY_THRESHOLDS.REVIEW_PRACTICE,
-      description: "测验未达标，返回复习阶段",
+      descriptionKey: "scheduler.subtaskState.descriptions.quizFailToReview",
     },
     {
       to: "practice",
       minMastery: MASTERY_THRESHOLDS.REVIEW_PRACTICE,
       maxMastery: MASTERY_THRESHOLDS.QUIZ_MASTERY,
-      description: "测验部分达标，进入练习阶段",
+      descriptionKey: "scheduler.subtaskState.descriptions.quizPartialToPractice",
     },
     {
       to: "quiz",
       minMastery: MASTERY_THRESHOLDS.QUIZ_MASTERY,
-      description: "测验达标，继续测验阶段深化",
+      descriptionKey: "scheduler.subtaskState.descriptions.quizPassToQuizDeepen",
     },
   ],
 };
@@ -315,7 +315,7 @@ class SubtaskStateMachine {
     }
 
     const transition = transitions.find((t) => t.to === to);
-    return transition?.description;
+    return transition?.descriptionKey;
   }
 
   isLearningCompleted(stateHistory: StateHistoryEntry[]): boolean {

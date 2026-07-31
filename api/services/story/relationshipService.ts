@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import i18next from "i18next";
 
 interface CreateRelationshipData {
   source_character_id: string;
@@ -36,7 +37,7 @@ class RelationshipService {
     } catch (error: unknown) {
       logger.error("Get relationships error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("获取角色关系失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.relationship.fetchFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -74,7 +75,7 @@ class RelationshipService {
     } catch (error: unknown) {
       logger.error("Create relationship error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("创建角色关系失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.relationship.createFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -94,7 +95,7 @@ class RelationshipService {
     } catch (error: unknown) {
       logger.error("Delete relationship error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("删除角色关系失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.relationship.deleteFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 }

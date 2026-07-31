@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -97,7 +98,7 @@ class ScheduleService {
     if (error) {
       logger.error("Get schedules error:", error);
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-        message: "获取周期性任务列表失败",
+        message: i18next.t("scheduler.schedule.messages.fetchListFailed"),
       });
     }
 
@@ -126,7 +127,7 @@ class ScheduleService {
 
     if (taskError || !taskTemplate) {
       throw new AppError(ErrorCodes.RESOURCE_TASK_NOT_FOUND, {
-        message: "任务模板不存在或不属于当前用户",
+        message: i18next.t("scheduler.schedule.messages.templateNotFound"),
       });
     }
 
@@ -148,7 +149,7 @@ class ScheduleService {
     if (error) {
       logger.error("Create schedule error:", error);
       throw new AppError(ErrorCodes.SCHEDULER_TASK_CREATION_FAILED, {
-        message: "创建周期性任务配置失败",
+        message: i18next.t("scheduler.schedule.messages.createFailed"),
       });
     }
 
@@ -175,7 +176,7 @@ class ScheduleService {
 
     if (fetchError || !existingSchedule) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "周期配置不存在",
+        message: i18next.t("scheduler.schedule.messages.configNotFound"),
       });
     }
 
@@ -210,7 +211,7 @@ class ScheduleService {
     if (error) {
       logger.error("Update schedule error:", error);
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-        message: "更新周期配置失败",
+        message: i18next.t("scheduler.schedule.messages.updateFailed"),
       });
     }
 
@@ -231,7 +232,7 @@ class ScheduleService {
     if (error) {
       logger.error("Delete schedule error:", error);
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-        message: "删除周期配置失败",
+        message: i18next.t("scheduler.schedule.messages.deleteFailed"),
       });
     }
   }
@@ -264,14 +265,14 @@ class ScheduleService {
 
     if (scheduleError || !schedule) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "周期配置不存在",
+        message: i18next.t("scheduler.schedule.messages.configNotFound"),
       });
     }
 
     const template = schedule.task_template;
     if (!template) {
       throw new AppError(ErrorCodes.RESOURCE_TASK_NOT_FOUND, {
-        message: "任务模板不存在",
+        message: i18next.t("scheduler.schedule.messages.templateNotFound"),
       });
     }
 
@@ -303,7 +304,7 @@ class ScheduleService {
     if (taskError) {
       logger.error("Create task from schedule error:", taskError);
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, {
-        message: "手动运行调度失败",
+        message: i18next.t("scheduler.schedule.messages.manualRunFailed"),
       });
     }
 

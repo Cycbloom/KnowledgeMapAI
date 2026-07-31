@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import i18next from "i18next";
 
 interface StoryStructure {
   id: string;
@@ -77,7 +78,7 @@ class StructureService {
     } catch (error: unknown) {
       logger.error("Get story structures error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("获取故事结构失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.structure.fetchFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -125,7 +126,7 @@ class StructureService {
     } catch (error: unknown) {
       logger.error("Create story structure error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("创建故事结构失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.structure.createFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -152,14 +153,14 @@ class StructureService {
       if (error) throw error;
 
       if (!structure) {
-        throw new AppError("故事结构不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+        throw new AppError(i18next.t("storyEditor.api.errors.structure.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       return structure as Record<string, unknown>;
     } catch (error: unknown) {
       logger.error("Update story structure error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("更新故事结构失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.structure.updateFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -179,7 +180,7 @@ class StructureService {
     } catch (error: unknown) {
       logger.error("Delete story structure error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("删除故事结构失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.structure.deleteFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -202,7 +203,7 @@ class StructureService {
         .single();
 
       if (templateError || !template) {
-        throw new AppError("模板不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+        throw new AppError(i18next.t("storyEditor.api.errors.structure.templateNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       const beats = template.beats as StoryTemplateBeat[];
@@ -299,7 +300,7 @@ class StructureService {
     } catch (error: unknown) {
       logger.error("Initialize template error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("初始化模板失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.structure.initTemplateFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 }

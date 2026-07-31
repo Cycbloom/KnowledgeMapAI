@@ -1,6 +1,9 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { RelationshipTypeConfig, RelationshipCategory, EdgeLineStyle } from '@shared/types';
 import { logger } from '../../utils/logger';
+import i18next from "i18next";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 interface CreateRelationshipTypeData {
   name: string;
@@ -30,7 +33,7 @@ export class RelationshipTypeService {
 
     if (error) {
       logger.error('Get all relationship types error:', error);
-      throw new Error('获取关系类型失败');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.fetchFailed"), 500, ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return (data || []).map(this.mapRelationshipType);
@@ -50,7 +53,7 @@ export class RelationshipTypeService {
 
     if (error) {
       logger.error('Get relationship types by category error:', error);
-      throw new Error('获取关系类型失败');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.fetchFailed"), 500, ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return (data || []).map(this.mapRelationshipType);
@@ -65,7 +68,7 @@ export class RelationshipTypeService {
 
     if (error) {
       logger.error('Get relationship type by name error:', error);
-      throw new Error('获取关系类型失败');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.fetchFailed"), 500, ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return data ? this.mapRelationshipType(data) : null;
@@ -80,7 +83,7 @@ export class RelationshipTypeService {
 
     if (error) {
       logger.error('Get relationship type by id error:', error);
-      throw new Error('获取关系类型失败');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.fetchFailed"), 500, ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return data ? this.mapRelationshipType(data) : null;
@@ -98,7 +101,7 @@ export class RelationshipTypeService {
       .maybeSingle();
 
     if (existingType) {
-      throw new Error('关系类型名称已存在');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.nameExists"), 409, ErrorCodes.DATABASE_DUPLICATE_ENTRY);
     }
 
     const { data: newType, error } = await supabase
@@ -118,7 +121,7 @@ export class RelationshipTypeService {
 
     if (error) {
       logger.error('Create relationship type error:', error);
-      throw new Error('创建关系类型失败');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.createFailed"), 500, ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return this.mapRelationshipType(newType);
@@ -133,15 +136,15 @@ export class RelationshipTypeService {
     const existingType = await this.getById(supabase, id);
 
     if (!existingType) {
-      throw new Error('关系类型不存在');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (existingType.is_builtin) {
-      throw new Error('内置关系类型不允许修改');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.builtInCannotModify"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     if (existingType.user_id !== userId) {
-      throw new Error('无权限修改此关系类型');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.noPermissionToModify"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const { data: updatedType, error } = await supabase
@@ -153,7 +156,7 @@ export class RelationshipTypeService {
 
     if (error) {
       logger.error('Update relationship type error:', error);
-      throw new Error('更新关系类型失败');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.updateFailed"), 500, ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return this.mapRelationshipType(updatedType);
@@ -163,15 +166,15 @@ export class RelationshipTypeService {
     const existingType = await this.getById(supabase, id);
 
     if (!existingType) {
-      throw new Error('关系类型不存在');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (existingType.is_builtin) {
-      throw new Error('内置关系类型不允许删除');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.builtInCannotDelete"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     if (existingType.user_id !== userId) {
-      throw new Error('无权限删除此关系类型');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.noPermissionToDelete"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const { error } = await supabase
@@ -181,7 +184,7 @@ export class RelationshipTypeService {
 
     if (error) {
       logger.error('Delete relationship type error:', error);
-      throw new Error('删除关系类型失败');
+      throw new AppError(i18next.t("relationshipTypes.api.errors.deleteFailed"), 500, ErrorCodes.DATABASE_QUERY_ERROR);
     }
   }
 

@@ -7,6 +7,7 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { logger } from '../../utils/logger';
 import { notDeleted } from '../common/softDeleteHelper';
+import i18next from 'i18next';
 
 class GraphExpansionService {
   async batchInitialize(
@@ -24,7 +25,7 @@ class GraphExpansionService {
       );
 
     if (graphsError || !graphs || graphs.length === 0) {
-      throw new AppError('未找到有效的图谱', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.expansion.errors.noValidGraph'), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const results: Array<{
@@ -49,7 +50,7 @@ class GraphExpansionService {
           graphId: graph.id,
           title: graph.title,
           status: 'skipped',
-          reason: '图谱已有知识点',
+          reason: i18next.t('graphMap.expansion.reasons.graphHasNodes'),
         });
         continue;
       }
@@ -64,7 +65,7 @@ class GraphExpansionService {
           style,
           batchSessionId,
         },
-        `初始化知识图谱：${graph.title}`,
+        i18next.t('graphMap.expansion.messages.initGraphTaskTitle', { title: graph.title }),
       );
 
       results.push({
@@ -101,7 +102,7 @@ class GraphExpansionService {
       .single();
 
     if (graphError || !graph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.expansion.errors.graphNotFound'), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: existingNodes } = await supabase
@@ -112,7 +113,7 @@ class GraphExpansionService {
 
     if (existingNodes && existingNodes.length > 0) {
       throw new AppError(
-        '图谱已有知识点，无法重复初始化',
+        i18next.t('graphMap.expansion.errors.graphAlreadyHasNodes'),
         400,
         ErrorCodes.VALIDATION_ERROR,
       );
@@ -134,14 +135,14 @@ class GraphExpansionService {
         depth: 2,
         style,
       },
-      `初始化知识图谱：${graph.title}`,
+      i18next.t('graphMap.expansion.messages.initGraphTaskTitle', { title: graph.title }),
     );
 
     return {
       success: true,
       taskId: task.id,
       graphId,
-      message: '初始化任务已创建，请通过任务状态查询进度',
+      message: i18next.t('graphMap.expansion.messages.initTaskCreated'),
     };
   }
 
@@ -166,10 +167,10 @@ class GraphExpansionService {
       .single();
 
     if (!graph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.expansion.errors.graphNotFound'), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
-    const validationContext = context || `图谱主题：${graph.title}`;
+    const validationContext = context || i18next.t('graphMap.expansion.messages.graphTopicContext', { title: graph.title });
 
     let result;
     if (useAI) {
@@ -213,12 +214,12 @@ class GraphExpansionService {
       .single();
 
     if (graphError || !graph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.expansion.errors.graphNotFound'), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (graph.template_type !== 'topic_research') {
       throw new AppError(
-        '该端点仅支持专题研究图谱',
+        i18next.t('graphMap.expansion.errors.topicResearchOnly'),
         400,
         ErrorCodes.VALIDATION_ERROR,
       );
@@ -244,7 +245,7 @@ class GraphExpansionService {
         graphId,
         error: nodesError.message,
       });
-      throw new AppError('查询节点失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t('graphMap.expansion.errors.queryNodesFailed'), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const details: Array<{

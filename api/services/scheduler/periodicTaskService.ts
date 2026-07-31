@@ -3,6 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { logger } from '../../utils/logger';
+import i18next from 'i18next';
 import type { AchievementRow, PeriodicTaskRow } from '@shared/types/database';
 import { notDeleted } from '../common/softDeleteHelper';
 
@@ -343,7 +344,7 @@ export class PeriodicTaskService {
       .single();
 
     if (!pass) {
-      return { success: false, reward: null, message: '通行证不存在' };
+      return { success: false, reward: null, message: i18next.t("scheduler.periodicTask.messages.passNotFound") };
     }
 
     const { data: reward } = await getSupabaseAdmin()
@@ -354,11 +355,11 @@ export class PeriodicTaskService {
       .single();
 
     if (!reward) {
-      return { success: false, reward: null, message: '奖励不存在' };
+      return { success: false, reward: null, message: i18next.t("scheduler.periodicTask.messages.rewardNotFound") };
     }
 
     if (pass.total_points < reward.points_required) {
-      return { success: false, reward: null, message: '积分不足' };
+      return { success: false, reward: null, message: i18next.t("scheduler.periodicTask.messages.insufficientPoints") };
     }
 
     const { data: existingProgress } = await getSupabaseAdmin()
@@ -369,7 +370,7 @@ export class PeriodicTaskService {
       .single();
 
     if (existingProgress?.claimed) {
-      return { success: false, reward: null, message: '奖励已领取' };
+      return { success: false, reward: null, message: i18next.t("scheduler.periodicTask.messages.rewardAlreadyClaimed") };
     }
 
     await getSupabaseAdmin()
@@ -414,7 +415,7 @@ export class PeriodicTaskService {
         .eq('id', passId);
     }
 
-    return { success: true, reward, message: '奖励领取成功' };
+    return { success: true, reward, message: i18next.t("scheduler.periodicTask.messages.rewardClaimedSuccessfully") };
   }
 
   async checkDailyTaskStreak(userId: string): Promise<{ streak: number; bonusAwarded: number }> {

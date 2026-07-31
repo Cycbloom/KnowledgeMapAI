@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -80,7 +81,7 @@ function generateProgressAllocations(
   if (mode === "custom" && customAllocations && customAllocations.length > 0) {
     const total = customAllocations.reduce((sum, a) => sum + a.percentage, 0);
     if (Math.abs(total - 100) > 0.01) {
-      throw new Error("自定义进度分配百分比总和必须等于100");
+      throw new Error(i18next.t("scheduler.progressPlan.customAllocationMustSumTo100"));
     }
     return customAllocations.sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -144,7 +145,7 @@ class ProgressPlanService {
 
     if (taskError || !task) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "任务不存在",
+        message: i18next.t("scheduler.progressPlan.taskNotFound"),
         context: { userId, taskId },
       });
     }
@@ -182,7 +183,7 @@ class ProgressPlanService {
       if (insertError) {
         logger.error("Insert progress plans error:", insertError);
         throw new AppError(ErrorCodes.SCHEDULER_TASK_CREATION_FAILED, {
-          message: "创建进度计划失败",
+          message: i18next.t("scheduler.progressPlan.createProgressPlanFailed"),
           context: { userId, taskId },
         });
       }
@@ -203,7 +204,7 @@ class ProgressPlanService {
       const err = error as Error;
       logger.error("Generate progress allocations error:", err);
       throw new AppError(ErrorCodes.VALIDATION_ERROR, {
-        message: err.message || "生成进度计划失败",
+        message: err.message || i18next.t("scheduler.progressPlan.generateProgressPlanFailed"),
         context: { userId, taskId },
       });
     }
@@ -223,7 +224,7 @@ class ProgressPlanService {
 
     if (!plan_date) {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, {
-        message: "请提供计划日期",
+        message: i18next.t("scheduler.progressPlan.planDateRequired"),
         context: { userId, taskId },
       });
     }
@@ -238,7 +239,7 @@ class ProgressPlanService {
 
     if (taskError || !task) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "任务不存在",
+        message: i18next.t("scheduler.progressPlan.taskNotFound"),
         context: { userId, taskId },
       });
     }
@@ -253,7 +254,7 @@ class ProgressPlanService {
 
     if (Object.keys(updateData).length === 0) {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, {
-        message: "没有有效的更新字段",
+        message: i18next.t("scheduler.progressPlan.noValidUpdateFields"),
         context: { userId, taskId },
       });
     }
@@ -268,7 +269,7 @@ class ProgressPlanService {
 
     if (error || !plan) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "进度计划不存在或更新失败",
+        message: i18next.t("scheduler.progressPlan.progressPlanNotFound"),
         context: { userId, taskId, plan_date },
       });
     }
@@ -291,7 +292,7 @@ class ProgressPlanService {
 
     if (taskError || !task) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "任务不存在",
+        message: i18next.t("scheduler.progressPlan.taskNotFound"),
         context: { userId, taskId },
       });
     }
@@ -305,7 +306,7 @@ class ProgressPlanService {
     if (error) {
       logger.error("Get progress plans error:", error);
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, {
-        message: "获取进度计划失败",
+        message: i18next.t("scheduler.progressPlan.getProgressPlansFailed"),
         context: { userId, taskId },
       });
     }
@@ -344,7 +345,7 @@ class ProgressPlanService {
 
     if (taskError || !task) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "任务不存在",
+        message: i18next.t("scheduler.progressPlan.taskNotFound"),
         context: { userId, taskId },
       });
     }
@@ -358,7 +359,7 @@ class ProgressPlanService {
 
     if (planError || !plan) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "该日期没有进度计划",
+        message: i18next.t("scheduler.progressPlan.noProgressPlanForDate"),
         context: { userId, taskId, progressDate },
       });
     }
@@ -374,7 +375,7 @@ class ProgressPlanService {
     if (updatePlanError) {
       logger.error("Update progress plan error:", updatePlanError);
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, {
-        message: "更新进度失败",
+        message: i18next.t("scheduler.progressPlan.updateProgressFailed"),
         context: { userId, taskId },
       });
     }
@@ -416,7 +417,7 @@ class ProgressPlanService {
     if (updateTaskError) {
       logger.error("Update task progress error:", updateTaskError);
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, {
-        message: "更新任务进度失败",
+        message: i18next.t("scheduler.progressPlan.updateTaskProgressFailed"),
         context: { userId, taskId },
       });
     }

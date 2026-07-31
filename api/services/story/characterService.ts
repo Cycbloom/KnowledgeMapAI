@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import i18next from "i18next";
 
 class CharacterService {
   async list(
@@ -68,7 +69,7 @@ class CharacterService {
     } catch (error: unknown) {
       logger.error("Get story characters error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("获取角色列表失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.character.fetchFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -95,7 +96,7 @@ class CharacterService {
     } catch (error: unknown) {
       logger.error("Create story character error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("创建角色失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.character.createFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -122,14 +123,14 @@ class CharacterService {
       if (error) throw error;
 
       if (!character) {
-        throw new AppError("角色不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+        throw new AppError(i18next.t("storyEditor.api.errors.character.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       return character as Record<string, unknown>;
     } catch (error: unknown) {
       logger.error("Update story character error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("更新角色失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.character.updateFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -149,7 +150,7 @@ class CharacterService {
     } catch (error: unknown) {
       logger.error("Delete story character error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("删除角色失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.character.deleteFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 }

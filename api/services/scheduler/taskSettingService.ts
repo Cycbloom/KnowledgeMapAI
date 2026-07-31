@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
+import i18next from "i18next";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { notDeleted } from '../common/softDeleteHelper';
@@ -22,7 +23,7 @@ class TaskSettingService {
       .maybeSingle();
 
     if (error) {
-      throw new AppError("获取设置失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("scheduler.api.errors.getSettingsFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!settings) {
@@ -33,7 +34,7 @@ class TaskSettingService {
         .single();
 
       if (createError) {
-        throw new AppError("创建设置失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        throw new AppError(i18next.t("scheduler.api.errors.createSettingsFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       return newSettings;
@@ -52,7 +53,7 @@ class TaskSettingService {
     }
 
     if (Object.keys(updateData).length === 0) {
-      throw new AppError("没有有效的更新字段", 400, ErrorCodes.VALIDATION_ERROR);
+      throw new AppError(i18next.t("scheduler.api.errors.noUpdateFields"), 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const { data: settings, error } = await supabase
@@ -63,7 +64,7 @@ class TaskSettingService {
       .single();
 
     if (error) {
-      throw new AppError("更新设置失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("scheduler.api.errors.updateSettingsFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return settings;
@@ -86,11 +87,11 @@ class TaskSettingService {
 
     if (error) {
       logger.error("Update notes error:", error);
-      throw new AppError("更新笔记失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("scheduler.api.errors.updateNoteFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!task) {
-      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("scheduler.api.errors.taskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     return task;

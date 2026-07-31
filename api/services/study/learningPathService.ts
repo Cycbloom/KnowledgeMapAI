@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -479,7 +480,7 @@ export class LearningPathService {
     }
 
     if (!data) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     return (await this.getLearningPath(
@@ -503,7 +504,7 @@ export class LearningPathService {
       .single();
 
     if (checkError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (hardDelete) {
@@ -675,7 +676,7 @@ export class LearningPathService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const targetDate = new Date(input.target_date);
@@ -684,7 +685,7 @@ export class LearningPathService {
 
     if (targetDate <= today) {
       throw new AppError(
-        "目标日期必须是未来的日期",
+        i18next.t("learningPath.api.errors.targetDateMustBeFuture"),
         400,
         ErrorCodes.VALIDATION_ERROR,
       );
@@ -754,7 +755,7 @@ export class LearningPathService {
     const path = await this.getLearningPath(supabase, pathId, userId);
 
     if (!path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const nodes = path.nodes || [];
@@ -897,7 +898,7 @@ export class LearningPathService {
     const path = await this.getLearningPath(supabase, pathId, userId);
 
     if (!path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const nodes = path.nodes || [];
@@ -919,8 +920,8 @@ export class LearningPathService {
           type: "milestone",
           priority: "high",
           node_id: nextNode.id,
-          title: "继续学习下一个知识点",
-          description: `当前进度 ${progress.progress_percentage}%，建议继续学习「${nextNode.title}」`,
+          title: i18next.t("learningPath.api.suggestionItems.continueNext.title"),
+          description: i18next.t("learningPath.api.suggestionItems.continueNext.description", { nodeTitle: nextNode.title, progress: progress.progress_percentage }),
           action: "start_learning",
         });
       }
@@ -973,8 +974,8 @@ export class LearningPathService {
             type: "weak_point",
             priority: "high",
             node_id: node.id,
-            title: `加强薄弱知识点：${node.title}`,
-            description: `该知识点记忆稳定性较低 (${data.stability.toFixed(1)})，建议增加复习频率`,
+            title: i18next.t("learningPath.api.suggestionItems.strengthenWeak.title", { nodeTitle: node.title }),
+            description: i18next.t("learningPath.api.suggestionItems.strengthenWeak.description", { stability: data.stability.toFixed(1) }),
             action: "review",
           });
         }
@@ -990,11 +991,11 @@ export class LearningPathService {
             type: "review_needed",
             priority: daysOverdue > 3 ? "high" : "medium",
             node_id: node.id,
-            title: `复习到期：${node.title}`,
+            title: i18next.t("learningPath.api.suggestionItems.reviewDue.title", { nodeTitle: node.title }),
             description:
               daysOverdue > 0
-                ? `该知识点已过期 ${daysOverdue} 天，建议立即复习`
-                : "该知识点今日需要复习",
+                ? i18next.t("learningPath.api.suggestionItems.reviewDue.descriptionOverdue", { days: daysOverdue })
+                : i18next.t("learningPath.api.suggestionItems.reviewDue.descriptionToday"),
             action: "review",
           });
         }
@@ -1018,8 +1019,8 @@ export class LearningPathService {
           type: "prerequisite_gap",
           priority: "high",
           node_id: node.id,
-          title: `前置知识未完成：${node.title}`,
-          description: `请先完成前置知识点：${prereqTitles}`,
+          title: i18next.t("learningPath.api.suggestionItems.prereqIncomplete.title", { nodeTitle: node.title }),
+          description: i18next.t("learningPath.api.suggestionItems.prereqIncomplete.description", { prereqTitles }),
           action: "complete_prerequisites",
         });
       }
@@ -1041,8 +1042,8 @@ export class LearningPathService {
             type: "milestone",
             priority: "medium",
             node_id: milestone.id,
-            title: `里程碑已就绪：${milestone.title}`,
-            description: "所有前置知识点已完成，可以开始学习这个里程碑",
+            title: i18next.t("learningPath.api.suggestionItems.milestoneReady.title", { milestoneTitle: milestone.title }),
+            description: i18next.t("learningPath.api.suggestionItems.milestoneReady.description"),
             action: "start_learning",
           });
         }
@@ -1246,7 +1247,7 @@ export class LearningPathService {
     );
 
     if (nodes.length === 0) {
-      throw new AppError("图谱中没有节点", 400, ErrorCodes.VALIDATION_ERROR);
+      throw new AppError(i18next.t("learningPath.api.errors.noNodesInGraph"), 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const graphMeta = await this.getGraphMeta(supabase, graphId);
@@ -1310,7 +1311,7 @@ export class LearningPathService {
 
     const learningPath: LearningPathResult = {
       graphId,
-      graphTitle: graphMeta?.title || "未命名图谱",
+      graphTitle: graphMeta?.title || i18next.t("learningPath.api.defaults.unnamedGraph"),
       totalNodes: nodes.length,
       completedNodes: completedCount,
       estimatedTotalTime: totalEstimatedTime,
@@ -1340,7 +1341,7 @@ export class LearningPathService {
 
       if (validStages.length === 0) {
         throw new AppError(
-          "AI 生成的学习路径无法匹配到图谱中的知识点，请重试",
+          i18next.t("learningPath.api.errors.aiPathMatchFailed"),
           400,
           ErrorCodes.VALIDATION_ERROR,
         );
@@ -1353,7 +1354,7 @@ export class LearningPathService {
         supabase,
         userId,
         {
-          title: path_title || `${graphMeta?.title || "图谱"}学习路径`,
+          title: path_title || i18next.t("learningPath.api.defaults.pathTitle", { title: graphMeta?.title || i18next.t("learningPath.api.defaults.unnamedGraph") }),
           goal: target_goal,
           source_graph_id: graphId,
           total_estimated_time: totalEstimatedTime,

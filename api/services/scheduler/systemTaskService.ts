@@ -7,6 +7,7 @@ import type {
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
+import i18next from "i18next";
 
 const DEFAULT_PRIORITY = 5;
 const DEFAULT_MAX_RETRIES = 3;
@@ -147,7 +148,7 @@ export class SystemTaskService {
     if (task.status !== "pending") {
       throw new AppError(ErrorCodes.VALIDATION_INVALID_PARAMS, {
         details: {
-          message: `无法启动任务：当前状态为 ${task.status}，期望状态为 pending`,
+          message: i18next.t("scheduler.systemTask.errors.cannotStartTask", { current: task.status, expected: "pending" }),
         },
       });
     }
@@ -258,7 +259,7 @@ export class SystemTaskService {
     if (task.status !== "failed") {
       throw new AppError(ErrorCodes.VALIDATION_INVALID_PARAMS, {
         details: {
-          message: `无法重试任务：当前状态为 ${task.status}，期望状态为 failed`,
+          message: i18next.t("scheduler.systemTask.errors.cannotRetryTask", { current: task.status }),
         },
       });
     }
@@ -266,7 +267,7 @@ export class SystemTaskService {
     if (task.retry_count >= task.max_retries) {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, {
         details: {
-          message: `已达到最大重试次数 ${task.max_retries}`,
+          message: i18next.t("scheduler.systemTask.errors.maxRetriesReached"),
         },
       });
     }
@@ -311,7 +312,7 @@ export class SystemTaskService {
     if (task.status === "completed") {
       throw new AppError(ErrorCodes.VALIDATION_INVALID_PARAMS, {
         details: {
-          message: "无法取消已完成的任务",
+          message: i18next.t("scheduler.systemTask.errors.cannotCancelCompletedTask"),
         },
       });
     }

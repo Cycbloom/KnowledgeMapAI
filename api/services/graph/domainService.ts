@@ -5,6 +5,7 @@ import { logger } from "../../utils/logger";
 import { aiService } from "../ai/aiService";
 import { getAIProviderForTask } from "../ai/factory";
 import { notDeleted } from '../common/softDeleteHelper';
+import i18next from "i18next";
 
 interface DomainRecord {
   id: string;
@@ -112,7 +113,6 @@ async function ensureUncategorizedDomain(
   const { data: existing } = await supabase
     .from("domains")
     .select("id")
-    .eq("name", "未分类")
     .eq("is_system", true)
     .eq("user_id", userId)
     .maybeSingle();
@@ -122,8 +122,8 @@ async function ensureUncategorizedDomain(
   const { data: newDomain, error } = await supabase
     .from("domains")
     .insert({
-      name: "未分类",
-      description: "未归类到任何领域的图谱",
+      name: i18next.t("graphMap.domains.uncategorized.name"),
+      description: i18next.t("graphMap.domains.uncategorized.description"),
       color: "#94A3B8",
       icon: "FolderOpen",
       is_system: true,
@@ -150,18 +150,18 @@ export const domainService = {
 
     if (error) {
       logger.error("获取领域列表失败", { error: error.message, userId });
-      throw new AppError("获取领域列表失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("graphMap.domains.errors.fetchListFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const tree = buildTree(domains as DomainRecord[]);
 
-    const hasUncategorized = tree.some((d) => d.name === "未分类");
+    const hasUncategorized = tree.some((d) => d.is_system === true);
     if (!hasUncategorized) {
       const uncategorizedId = await ensureUncategorizedDomain(supabase, userId);
       const uncategorizedNode: DomainTreeNode = {
         id: uncategorizedId,
-        name: "未分类",
-        description: "未归类到任何领域的图谱",
+        name: i18next.t("graphMap.domains.uncategorized.name"),
+        description: i18next.t("graphMap.domains.uncategorized.description"),
         color: "#94A3B8",
         icon: "FolderOpen",
         parent_id: null,
@@ -193,14 +193,14 @@ export const domainService = {
       .single();
 
     if (error || !domain) {
-      throw new AppError("领域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("graphMap.domains.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const isOwner = domain.user_id === userId;
     const isSystem = domain.is_system;
 
     if (!isOwner && !isSystem) {
-      throw new AppError("无权访问该领域", 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t("graphMap.domains.errors.accessDenied"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const { count: graphCount } = await supabase
@@ -245,18 +245,18 @@ export const domainService = {
         .single();
 
       if (parentError || !parentDomain) {
-        throw new AppError("父领域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+        throw new AppError(i18next.t("graphMap.domains.errors.parentNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       if (parentDomain.deleted_at) {
-        throw new AppError("父领域已被删除", 400, ErrorCodes.VALIDATION_ERROR);
+        throw new AppError(i18next.t("graphMap.domains.errors.parentDeleted"), 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       const isParentAccessible =
         parentDomain.user_id === userId || parentDomain.is_system;
 
       if (!isParentAccessible) {
-        throw new AppError("无权在该父领域下创建子领域", 403, ErrorCodes.AUTH_FORBIDDEN);
+        throw new AppError(i18next.t("graphMap.domains.errors.noPermissionToCreateUnderParent"), 403, ErrorCodes.AUTH_FORBIDDEN);
       }
     }
 
@@ -284,7 +284,7 @@ export const domainService = {
         );
       }
       logger.error("创建领域失败", { error: error.message, userId, name });
-      throw new AppError("创建领域失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("graphMap.domains.errors.createFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     logger.info("创建领域成功", { domainId: newDomain.id, userId, name });
@@ -315,20 +315,20 @@ export const domainService = {
       .single();
 
     if (fetchError || !existing) {
-      throw new AppError("领域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("graphMap.domains.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (existing.user_id !== userId) {
-      throw new AppError("只有领域所有者才能修改该领域", 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t("graphMap.domains.errors.onlyOwnerCanModify"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     if (existing.is_system) {
-      throw new AppError("系统预置领域不可修改", 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t("graphMap.domains.errors.systemCannotModify"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     if (updates.parent_id !== undefined) {
       if (updates.parent_id === id) {
-        throw new AppError("不能将领域设置为自己的子领域", 400, ErrorCodes.VALIDATION_ERROR);
+        throw new AppError(i18next.t("graphMap.domains.errors.cannotSetAsOwnChild"), 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       if (updates.parent_id !== null) {
@@ -339,11 +339,11 @@ export const domainService = {
           .single();
 
         if (parentError || !parentDomain) {
-          throw new AppError("父领域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+          throw new AppError(i18next.t("graphMap.domains.errors.targetParentNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
         }
 
         if (parentDomain.deleted_at) {
-          throw new AppError("目标父领域已被删除", 400, ErrorCodes.VALIDATION_ERROR);
+          throw new AppError(i18next.t("graphMap.domains.errors.targetParentDeleted"), 400, ErrorCodes.VALIDATION_ERROR);
         }
       }
     }
@@ -358,13 +358,13 @@ export const domainService = {
     if (error) {
       if (error.code === "23505") {
         throw new AppError(
-          "该领域名称已存在",
+          i18next.t("graphMap.domains.errors.nameAlreadyExists"),
           409,
           ErrorCodes.DATABASE_DUPLICATE_ENTRY,
         );
       }
       logger.error("更新领域失败", { error: error.message, domainId: id, userId });
-      throw new AppError("更新领域失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("graphMap.domains.errors.updateFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     logger.info("更新领域成功", { domainId: id, userId });
@@ -385,15 +385,15 @@ export const domainService = {
       .single();
 
     if (fetchError || !existing) {
-      throw new AppError("领域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("graphMap.domains.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (existing.user_id !== userId) {
-      throw new AppError("只有领域所有者才能删除该领域", 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t("graphMap.domains.errors.onlyOwnerCanDelete"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     if (existing.is_system) {
-      throw new AppError("系统预置领域不可删除", 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t("graphMap.domains.errors.systemCannotDelete"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const { error } = await supabase
@@ -403,7 +403,7 @@ export const domainService = {
 
     if (error) {
       logger.error("删除领域失败", { error: error.message, domainId: id, userId });
-      throw new AppError("删除领域失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("graphMap.domains.errors.deleteFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     logger.info("删除领域成功（软删除）", { domainId: id, userId });
@@ -424,14 +424,14 @@ export const domainService = {
 
     if (error) {
       logger.error("查询领域信息失败", { error: error.message, userId });
-      throw new AppError("查询领域信息失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("graphMap.domains.errors.queryInfoFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!domains || domains.length !== domainIds.length) {
       const foundIds = new Set(domains?.map((d) => d.id) ?? []);
       const missingIds = domainIds.filter((id) => !foundIds.has(id));
       logger.warn("部分领域不存在或已被删除", { missingIds, userId });
-      throw new AppError("部分领域不存在或已被删除", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("graphMap.domains.errors.partialNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     for (const domain of domains) {
@@ -440,7 +440,7 @@ export const domainService = {
 
       if (!isOwner && !isSystem) {
         logger.warn("用户尝试重排序无权访问的领域", { domainId: domain.id, userId });
-        throw new AppError("无权操作该领域", 403, ErrorCodes.AUTH_FORBIDDEN);
+        throw new AppError(i18next.t("graphMap.domains.errors.noPermissionToOperate"), 403, ErrorCodes.AUTH_FORBIDDEN);
       }
     }
 
@@ -448,7 +448,7 @@ export const domainService = {
     if (hasCycle) {
       logger.warn("检测到领域循环引用", { userId, itemCount: items.length });
       throw new AppError(
-        "检测到循环引用，无法将领域设置为自己的后代",
+        i18next.t("graphMap.domains.errors.cycleDetected"),
         400,
         ErrorCodes.VALIDATION_ERROR,
       );
@@ -585,7 +585,7 @@ ${description ? `领域描述：${description}` : ""}
 
     if (error) {
       logger.error("获取领域列表失败", { error: error.message, userId });
-      throw new AppError("获取领域列表失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("graphMap.domains.errors.fetchListFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!domains || domains.length === 0) {
@@ -623,7 +623,7 @@ ${domains.map((d, i) => `${i + 1}. ${d.name}${d.description ? ` (${d.description
       try {
         const jsonMatch = response.match(/\[[\s\S]*\]/);
         if (!jsonMatch) {
-          throw new Error("无法提取 JSON 数组");
+          throw new Error(i18next.t("graphMap.domains.errors.extractJsonFailed"));
         }
         parsed = JSON.parse(jsonMatch[0]);
       } catch (parseError) {

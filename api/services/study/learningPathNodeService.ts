@@ -9,6 +9,7 @@ import type {
   UpdateNodeStatusInput,
 } from "./learningPathService";
 import type { LearningPathProgressService } from "./learningPathProgressService";
+import i18next from "i18next";
 
 export class LearningPathNodeService {
   private progressService: LearningPathProgressService;
@@ -31,7 +32,7 @@ export class LearningPathNodeService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: node, error } = await supabase
@@ -76,7 +77,7 @@ export class LearningPathNodeService {
       .single();
 
     if (nodeError || !node) {
-      throw new AppError("节点不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.nodeNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: path, error: pathError } = await supabase
@@ -87,7 +88,7 @@ export class LearningPathNodeService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在或无权访问", 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t("learningPath.api.errors.forbidden"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const now = new Date().toISOString();
@@ -342,7 +343,7 @@ export class LearningPathNodeService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const updates = nodeOrders.map((item) =>
@@ -380,7 +381,7 @@ export class LearningPathNodeService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { error } = await supabase

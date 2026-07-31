@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { notDeleted } from '../common/softDeleteHelper';
 
 interface UserTaskRow {
@@ -290,7 +291,12 @@ export class TaskAnalyticsService {
   }
 
   private calculatePriorityStats(tasks: UserTaskRow[]) {
-    const priorityLabels = ["低", "中", "高", "紧急"];
+    const priorityLabels = [
+      i18next.t("scheduler.taskAnalytics.priorityLow"),
+      i18next.t("scheduler.taskAnalytics.priorityMedium"),
+      i18next.t("scheduler.taskAnalytics.priorityHigh"),
+      i18next.t("scheduler.taskAnalytics.priorityUrgent"),
+    ];
     const stats: Array<{
       priority: number;
       label: string;
@@ -387,16 +393,16 @@ export class TaskAnalyticsService {
     if (analytics.overview.completionRate >= 80) {
       insights.push({
         type: "positive",
-        title: "任务完成率优秀",
-        description: `您的任务完成率达到 ${analytics.overview.completionRate}%，表现非常出色！`,
-        recommendation: "继续保持当前的工作节奏",
+        title: i18next.t("scheduler.taskAnalytics.insightCompletionRateExcellent"),
+        description: i18next.t("scheduler.taskAnalytics.insightCompletionRateExcellentDesc", { rate: analytics.overview.completionRate }),
+        recommendation: i18next.t("scheduler.taskAnalytics.insightCompletionRateExcellentRec"),
       });
     } else if (analytics.overview.completionRate < 50) {
       insights.push({
         type: "negative",
-        title: "任务完成率偏低",
-        description: `当前任务完成率为 ${analytics.overview.completionRate}%，有提升空间`,
-        recommendation: "建议减少同时进行的任务数量，专注于重要任务",
+        title: i18next.t("scheduler.taskAnalytics.insightCompletionRateLow"),
+        description: i18next.t("scheduler.taskAnalytics.insightCompletionRateLowDesc", { rate: analytics.overview.completionRate }),
+        recommendation: i18next.t("scheduler.taskAnalytics.insightCompletionRateLowRec"),
       });
     }
 
@@ -404,9 +410,9 @@ export class TaskAnalyticsService {
     if (peakHours.length > 0) {
       insights.push({
         type: "neutral",
-        title: "效率高峰时段",
-        description: `您在 ${peakHours.map((h) => `${h}:00`).join("、")} 时段效率最高`,
-        recommendation: "建议在这些时段安排重要或复杂的任务",
+        title: i18next.t("scheduler.taskAnalytics.insightPeakHours"),
+        description: i18next.t("scheduler.taskAnalytics.insightPeakHoursDesc", { hours: peakHours.map((h) => `${h}:00`).join("、") }),
+        recommendation: i18next.t("scheduler.taskAnalytics.insightPeakHoursRec"),
       });
     }
 
@@ -416,11 +422,11 @@ export class TaskAnalyticsService {
     if (bestQueue.completionRate > 0) {
       insights.push({
         type: "positive",
-        title: `Q${bestQueue.queueLevel}队列效率最高`,
-        description: `完成率达到 ${bestQueue.completionRate}%`,
+        title: i18next.t("scheduler.taskAnalytics.insightQueueEfficiency", { queue: bestQueue.queueLevel }),
+        description: i18next.t("scheduler.taskAnalytics.insightQueueEfficiencyDesc", { rate: bestQueue.completionRate }),
         recommendation:
           bestQueue.queueLevel === 0
-            ? "专注模式效果显著，建议多使用"
+            ? i18next.t("scheduler.taskAnalytics.insightQueueEfficiencyRec")
             : undefined,
       });
     }
@@ -432,9 +438,9 @@ export class TaskAnalyticsService {
     if (highPriorityTasks && highPriorityTasks.completionRate < 70) {
       insights.push({
         type: "negative",
-        title: "紧急任务完成率不足",
-        description: `紧急优先级任务完成率仅为 ${highPriorityTasks.completionRate}%`,
-        recommendation: "建议优先处理紧急任务，避免延期",
+        title: i18next.t("scheduler.taskAnalytics.insightUrgentCompletionLow"),
+        description: i18next.t("scheduler.taskAnalytics.insightUrgentCompletionLowDesc", { rate: highPriorityTasks.completionRate }),
+        recommendation: i18next.t("scheduler.taskAnalytics.insightUrgentCompletionLowRec"),
       });
     }
 
@@ -443,8 +449,8 @@ export class TaskAnalyticsService {
       if (bestTag.completionRate >= 70) {
         insights.push({
           type: "positive",
-          title: `"${bestTag.tag}"类任务表现出色`,
-          description: `完成率达到 ${bestTag.completionRate}%`,
+          title: i18next.t("scheduler.taskAnalytics.insightTagExcellent", { tag: bestTag.tag }),
+          description: i18next.t("scheduler.taskAnalytics.insightTagExcellentDesc", { rate: bestTag.completionRate }),
         });
       }
 
@@ -452,9 +458,9 @@ export class TaskAnalyticsService {
       if (worstTag.completionRate < 50) {
         insights.push({
           type: "negative",
-          title: `"${worstTag.tag}"类任务需要关注`,
-          description: `完成率仅为 ${worstTag.completionRate}%`,
-          recommendation: "检查是否有阻碍因素，考虑分解任务",
+          title: i18next.t("scheduler.taskAnalytics.insightTagNeedsAttention", { tag: worstTag.tag }),
+          description: i18next.t("scheduler.taskAnalytics.insightTagNeedsAttentionDesc", { rate: worstTag.completionRate }),
+          recommendation: i18next.t("scheduler.taskAnalytics.insightTagNeedsAttentionRec"),
         });
       }
     }

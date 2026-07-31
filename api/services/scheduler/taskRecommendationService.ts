@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { UserTask } from "./taskService";
 import { logger } from "../../utils/logger";
 import { notDeleted } from '../common/softDeleteHelper';
@@ -67,25 +68,25 @@ const TIME_SLOT_CONFIG = {
   morning: {
     start: 6,
     end: 12,
-    label: "上午",
+    label: i18next.t("scheduler.taskRecommendation.timeSlotMorning"),
     recommendedTypes: ["学习", "编程", "写作", "阅读"],
   },
   afternoon: {
     start: 12,
     end: 18,
-    label: "下午",
+    label: i18next.t("scheduler.taskRecommendation.timeSlotAfternoon"),
     recommendedTypes: ["工作", "会议", "项目", "复习"],
   },
   evening: {
     start: 18,
     end: 22,
-    label: "傍晚",
+    label: i18next.t("scheduler.taskRecommendation.timeSlotEvening"),
     recommendedTypes: ["复习", "阅读", "运动", "休息"],
   },
   night: {
     start: 22,
     end: 6,
-    label: "夜间",
+    label: i18next.t("scheduler.taskRecommendation.timeSlotNight"),
     recommendedTypes: ["休息", "阅读", "学习"],
   },
 };
@@ -356,7 +357,7 @@ export class TaskRecommendationService {
     return {
       start: new Date(now),
       end: new Date(now),
-      label: "上午",
+      label: i18next.t("scheduler.taskRecommendation.timeSlotMorning"),
       type: "morning",
     };
   }
@@ -443,20 +444,20 @@ export class TaskRecommendationService {
           (deadline.getTime() - now.getTime()) / (1000 * 60 * 60),
         );
         if (hoursUntil < 0) {
-          reasons.push("已超过截止日期");
+          reasons.push(i18next.t("scheduler.taskRecommendation.deadlinePassed"));
         } else if (hoursUntil < 24) {
-          reasons.push(`截止日期临近 (${hoursUntil}小时)`);
+          reasons.push(i18next.t("scheduler.taskRecommendation.deadlineApproachingHours", { hours: hoursUntil }));
         } else if (hoursUntil < 72) {
-          reasons.push(`截止日期在${Math.round(hoursUntil / 24)}天内`);
+          reasons.push(i18next.t("scheduler.taskRecommendation.deadlineWithinDays", { days: Math.round(hoursUntil / 24) }));
         }
       }
 
       if (task.priority >= 3) {
-        reasons.push("高优先级任务");
+        reasons.push(i18next.t("scheduler.taskRecommendation.highPriorityTask"));
       }
 
       if (task.queue_level === 0) {
-        reasons.push("位于高优先级队列 Q0");
+        reasons.push(i18next.t("scheduler.taskRecommendation.inUrgentQueue"));
       }
 
       if (task.tags && task.tags.length > 0) {
@@ -465,7 +466,7 @@ export class TaskRecommendationService {
         );
         if (matchingTags.length > 0) {
           reasons.push(
-            `适合${currentTimeSlot.label}时段 (${matchingTags.join(", ")})`,
+            i18next.t("scheduler.taskRecommendation.suitableForTimeSlot", { label: currentTimeSlot.label, tags: matchingTags.join(", ") }),
           );
         }
       }
@@ -482,7 +483,7 @@ export class TaskRecommendationService {
           tagEfficiencies.reduce((a: number, b: number) => a + b, 0) /
           tagEfficiencies.length;
         if (avgEfficiency > 0.7) {
-          reasons.push("历史完成率较高");
+          reasons.push(i18next.t("scheduler.taskRecommendation.highHistoricalCompletionRate"));
         }
       }
 
@@ -528,17 +529,17 @@ export class TaskRecommendationService {
       const reasons: string[] = [];
 
       if (matchedLevel === "critical") {
-        reasons.push("检测到紧急关键词");
+        reasons.push(i18next.t("scheduler.taskRecommendation.detectedCriticalKeyword"));
       } else if (matchedLevel === "high") {
-        reasons.push("检测到重要关键词");
+        reasons.push(i18next.t("scheduler.taskRecommendation.detectedHighPriorityKeyword"));
       } else if (matchedLevel === "medium") {
-        reasons.push("检测到中等优先级关键词");
+        reasons.push(i18next.t("scheduler.taskRecommendation.detectedMediumPriorityKeyword"));
       } else {
-        reasons.push("检测到低优先级关键词");
+        reasons.push(i18next.t("scheduler.taskRecommendation.detectedLowPriorityKeyword"));
       }
 
       if (foundKeywords.length > 0) {
-        reasons.push(`匹配关键词: ${foundKeywords.slice(0, 3).join(", ")}`);
+        reasons.push(i18next.t("scheduler.taskRecommendation.matchedKeywords", { keywords: foundKeywords.slice(0, 3).join(", ") }));
       }
 
       return {
@@ -554,7 +555,7 @@ export class TaskRecommendationService {
       suggestedPriority: 2,
       suggestedQueue: 1,
       confidence: 0.5,
-      reasons: ["未检测到优先级关键词，使用默认中等优先级"],
+      reasons: [i18next.t("scheduler.taskRecommendation.noPriorityKeywordDefault")],
       keywords: [],
     };
   }
@@ -583,15 +584,15 @@ export class TaskRecommendationService {
     const currentTimeSlot = this.getCurrentTimeSlot(now);
 
     if (efficiencyData.peakHours.includes(currentHour)) {
-      timeBasedSuggestions.push(`当前是您的效率高峰期，建议处理重要任务`);
+      timeBasedSuggestions.push(i18next.t("scheduler.taskRecommendation.peakHourSuggestImportantTask"));
     } else if (efficiencyData.lowHours.includes(currentHour)) {
-      timeBasedSuggestions.push(`当前时段效率较低，建议处理简单任务或休息`);
+      timeBasedSuggestions.push(i18next.t("scheduler.taskRecommendation.lowHourSuggestSimpleTask"));
     }
 
     const config = TIME_SLOT_CONFIG[currentTimeSlot.type];
     if (config) {
       timeBasedSuggestions.push(
-        `${config.label}适合处理: ${config.recommendedTypes.join("、")}`,
+        i18next.t("scheduler.taskRecommendation.timeSlotSuitableFor", { label: config.label, types: config.recommendedTypes.join("、") }),
       );
     }
 
@@ -602,7 +603,7 @@ export class TaskRecommendationService {
     )[0];
     if (bestQueue && bestQueue[1].completionRate > 0.7) {
       efficiencyTips.push(
-        `Q${bestQueue[0]}队列任务完成率最高 (${Math.round(bestQueue[1].completionRate * 100)}%)`,
+        i18next.t("scheduler.taskRecommendation.queueHighestCompletionRate", { queue: bestQueue[0], rate: Math.round(bestQueue[1].completionRate * 100) }),
       );
     }
 
@@ -613,14 +614,14 @@ export class TaskRecommendationService {
 
     if (bestTags.length > 0) {
       efficiencyTips.push(
-        `您在以下类型任务表现较好: ${bestTags.map(([tag]) => tag).join("、")}`,
+        i18next.t("scheduler.taskRecommendation.performWellInTags", { tags: bestTags.map(([tag]) => tag).join("、") }),
       );
     }
 
     if (efficiencyData.peakHours.length > 0) {
       const formatHour = (h: number) => `${h}:00`;
       efficiencyTips.push(
-        `您的效率高峰时段: ${efficiencyData.peakHours.map(formatHour).join("、")}`,
+        i18next.t("scheduler.taskRecommendation.peakHoursList", { hours: efficiencyData.peakHours.map(formatHour).join("、") }),
       );
     }
 
@@ -775,7 +776,7 @@ export class TaskRecommendationService {
 
       if (!depCheck.canStart) {
         rec.reasons.push(
-          `⚠️ 被阻塞: 需要先完成 "${depCheck.blockedBy[0].title}"`,
+          i18next.t("scheduler.taskRecommendation.blockedByTask", { title: depCheck.blockedBy[0].title }),
         );
         rec.score *= 0.3;
         alternativeTasks.push(rec);
@@ -784,7 +785,7 @@ export class TaskRecommendationService {
 
       if (depCheck.softBlockedBy.length > 0) {
         rec.reasons.push(
-          `💡 建议: 先完成 "${depCheck.softBlockedBy[0].title}"`,
+          i18next.t("scheduler.taskRecommendation.suggestCompleteFirst", { title: depCheck.softBlockedBy[0].title }),
         );
         rec.score *= 0.8;
       }
@@ -869,9 +870,9 @@ export class TaskRecommendationService {
     const task = recommendation.task;
 
     if (recommendation.urgencyLevel === "critical") {
-      reasons.push("🚨 此任务非常紧急，建议立即处理");
+      reasons.push(i18next.t("scheduler.taskRecommendation.urgentTaskHandleNow"));
     } else if (recommendation.urgencyLevel === "high") {
-      reasons.push("⚡ 此任务优先级较高");
+      reasons.push(i18next.t("scheduler.taskRecommendation.highPriorityTaskShort"));
     }
 
     if (task.deadline) {
@@ -882,10 +883,10 @@ export class TaskRecommendationService {
       if (hoursUntil > 0) {
         if (hoursUntil < 24) {
           reasons.push(
-            `⏰ 截止时间: 今天 ${deadline.getHours()}:${String(deadline.getMinutes()).padStart(2, "0")}`,
+            i18next.t("scheduler.taskRecommendation.deadlineTodayTime", { time: `${deadline.getHours()}:${String(deadline.getMinutes()).padStart(2, "0")}` }),
           );
         } else {
-          reasons.push(`📅 截止时间: ${deadline.toLocaleDateString("zh-CN")}`);
+          reasons.push(i18next.t("scheduler.taskRecommendation.deadlineDate", { date: deadline.toLocaleDateString("zh-CN") }));
         }
       }
     }
@@ -897,23 +898,23 @@ export class TaskRecommendationService {
       );
       if (matchingTags.length > 0) {
         reasons.push(
-          `🎯 适合${timeSlot.label}时段 (${matchingTags.join("、")})`,
+          i18next.t("scheduler.taskRecommendation.suitableForTimeSlot", { label: timeSlot.label, tags: matchingTags.join("、") }),
         );
       }
     }
 
     if (isPeakHour && task.priority >= 3) {
-      reasons.push("📈 当前是您的效率高峰期，适合处理重要任务");
+      reasons.push(i18next.t("scheduler.taskRecommendation.peakHourForImportantTask"));
     }
 
     if (task.estimated_duration) {
       const duration = task.estimated_duration;
       if (duration <= 30) {
-        reasons.push(`⏱️ 预计时长: ${duration}分钟 (快速完成)`);
+        reasons.push(i18next.t("scheduler.taskRecommendation.estimatedDurationQuick", { duration }));
       } else if (duration <= 60) {
-        reasons.push(`⏱️ 预计时长: ${duration}分钟`);
+        reasons.push(i18next.t("scheduler.taskRecommendation.estimatedDurationMinutes", { duration }));
       } else {
-        reasons.push(`⏱️ 预计时长: ${Math.round(duration / 60)}小时`);
+        reasons.push(i18next.t("scheduler.taskRecommendation.estimatedDurationHours", { hours: Math.round(duration / 60) }));
       }
     }
 
@@ -926,7 +927,7 @@ export class TaskRecommendationService {
         const avgRate =
           tagEfficiencies.reduce((a, b) => a + b, 0) / tagEfficiencies.length;
         if (avgRate > 0.7) {
-          reasons.push("✨ 您在此类任务上表现优秀");
+          reasons.push(i18next.t("scheduler.taskRecommendation.excellentPerformance"));
         }
       }
     }
@@ -956,30 +957,30 @@ export class TaskRecommendationService {
       if (hoursUntil < 0) {
         totalScore += 40;
         factors.push({
-          name: "已过期",
+          name: i18next.t("scheduler.taskRecommendation.factorOverdue"),
           impact: 40,
-          description: "任务已超过截止日期",
+          description: i18next.t("scheduler.taskRecommendation.factorOverdueDesc"),
         });
       } else if (hoursUntil < 4) {
         totalScore += 35;
         factors.push({
-          name: "即将截止",
+          name: i18next.t("scheduler.taskRecommendation.factorDueSoon"),
           impact: 35,
-          description: `${Math.round(hoursUntil)}小时内截止`,
+          description: i18next.t("scheduler.taskRecommendation.factorDueSoonDesc", { hours: Math.round(hoursUntil) }),
         });
       } else if (hoursUntil < 24) {
         totalScore += 25;
         factors.push({
-          name: "今日截止",
+          name: i18next.t("scheduler.taskRecommendation.factorDueToday"),
           impact: 25,
-          description: "今天内需要完成",
+          description: i18next.t("scheduler.taskRecommendation.factorDueTodayDesc"),
         });
       } else if (hoursUntil < 72) {
         totalScore += 15;
         factors.push({
-          name: "近期截止",
+          name: i18next.t("scheduler.taskRecommendation.factorDueSoonish"),
           impact: 15,
-          description: `${Math.round(hoursUntil / 24)}天内截止`,
+          description: i18next.t("scheduler.taskRecommendation.factorDueSoonishDesc", { days: Math.round(hoursUntil / 24) }),
         });
       }
     }
@@ -987,25 +988,25 @@ export class TaskRecommendationService {
     const priorityImpact = (task.priority || 1) * 8;
     totalScore += priorityImpact;
     factors.push({
-      name: "优先级",
+      name: i18next.t("scheduler.taskRecommendation.factorPriority"),
       impact: priorityImpact,
-      description: `优先级: ${task.priority}`,
+      description: i18next.t("scheduler.taskRecommendation.factorPriorityDesc", { priority: task.priority }),
     });
 
     const queueImpact = (3 - task.queue_level) * 5;
     totalScore += queueImpact;
     factors.push({
-      name: "队列",
+      name: i18next.t("scheduler.taskRecommendation.factorQueue"),
       impact: queueImpact,
-      description: `Q${task.queue_level}队列`,
+      description: i18next.t("scheduler.taskRecommendation.factorQueueDesc", { queue: task.queue_level }),
     });
 
     if (task.estimated_duration && task.estimated_duration <= 30) {
       totalScore += 10;
       factors.push({
-        name: "快速任务",
+        name: i18next.t("scheduler.taskRecommendation.factorQuickTask"),
         impact: 10,
-        description: "可以在短时间内完成",
+        description: i18next.t("scheduler.taskRecommendation.factorQuickTaskDesc"),
       });
     }
 

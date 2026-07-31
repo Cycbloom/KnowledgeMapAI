@@ -7,6 +7,7 @@ import { BackboneModule } from '../../../shared/types/graph';
 import { logger } from '../../utils/logger';
 import { withThreeLevelFallback } from '../../utils/rpcFallback';
 import { notDeleted } from '../common/softDeleteHelper';
+import i18next from 'i18next';
 
 interface PositionUpdate {
   id: string;
@@ -44,7 +45,7 @@ export class NodeBatchService {
     }
 
     if (!graphNodes || graphNodes.length === 0) {
-      return { message: '未找到匹配的节点', count: 0 };
+      return { message: i18next.t('graphMap.nodeBatch.messages.noMatchingNodes'), count: 0 };
     }
 
     if (nodeIds.length >= 3) {
@@ -70,7 +71,7 @@ export class NodeBatchService {
     await cacheService.invalidateUserGraphsCache(userId);
 
     return {
-      message: `成功删除 ${deletedCount} 个节点`,
+      message: i18next.t('graphMap.nodeBatch.messages.deletedCount', { count: deletedCount }),
       count: deletedCount,
     };
   }
@@ -94,7 +95,7 @@ export class NodeBatchService {
     }
 
     if (!graphNodes || graphNodes.length === 0) {
-      return { message: '未找到匹配的节点', count: 0 };
+      return { message: i18next.t('graphMap.nodeBatch.messages.noMatchingNodes'), count: 0 };
     }
 
     const kpIdToGnId = new Map(
@@ -113,7 +114,7 @@ export class NodeBatchService {
         });
         if (rpcResult.error) throw rpcResult.error;
         return {
-          message: `成功更新 ${validPositions.length} 个节点位置`,
+          message: i18next.t('graphMap.nodeBatch.messages.updatedPositions', { count: validPositions.length }),
           count: validPositions.length,
         };
       },
@@ -133,7 +134,7 @@ export class NodeBatchService {
           logger.error('Batch position update errors:', errors);
         }
         return {
-          message: `成功更新 ${validPositions.length} 个节点位置`,
+          message: i18next.t('graphMap.nodeBatch.messages.updatedPositions', { count: validPositions.length }),
           count: validPositions.length,
         };
       },
@@ -177,7 +178,7 @@ export class NodeBatchService {
     }
 
     if (!graphNodes || graphNodes.length === 0) {
-      return { message: '未找到匹配的节点', count: 0 };
+      return { message: i18next.t('graphMap.nodeBatch.messages.noMatchingNodes'), count: 0 };
     }
 
     const kpIdToGnMap = new Map(
@@ -247,7 +248,7 @@ export class NodeBatchService {
           updateResults.push({
             id: nodeUpdate.id,
             updated: false,
-            reason: '骨干节点标题不可修改',
+            reason: i18next.t('graphMap.nodeBatch.errors.backboneTitleImmutable'),
           });
           continue;
         }
@@ -353,7 +354,9 @@ export class NodeBatchService {
     const failedCount = updateResults.filter((r) => !r.updated).length;
 
     return {
-      message: `成功更新 ${successCount} 个节点${skippedCount > 0 ? `，已跳过 ${skippedCount} 个骨干节点的标题修改` : ''}`,
+      message: skippedCount > 0
+        ? i18next.t('graphMap.nodeBatch.messages.updatedWithSkipped', { successCount, skippedCount })
+        : i18next.t('graphMap.nodeBatch.messages.updatedAll', { count: successCount }),
       count: successCount,
       skipped: skippedCount,
       failed: failedCount,
@@ -396,7 +399,7 @@ export class NodeBatchService {
         updateResults.push({
           id: item.nodeUpdateId,
           updated: false,
-          reason: error instanceof Error ? error.message : '知识点更新失败',
+          reason: error instanceof Error ? error.message : i18next.t('graphMap.nodeBatch.errors.updateFailed'),
         });
       }
     }

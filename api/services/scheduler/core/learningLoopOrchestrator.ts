@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { logger } from "../../../utils/logger";
 import { autoTaskGenerator } from "../autoTaskGenerator";
 import type {
@@ -140,11 +141,12 @@ class LearningLoopOrchestrator {
     loop: LearningLoop,
     stage: LoopStage,
   ) {
+    const knowledgePoint = loop.knowledgePointId ?? i18next.t("scheduler.learningLoop.defaults.knowledgePoint");
     const stageConfig: Record<LoopStage, { title: string; queueLevel: number; priority: number }> = {
-      learn: { title: `学习: ${loop.knowledgePointId ?? "知识点"}`, queueLevel: 1, priority: 5 },
-      test: { title: `测试: ${loop.knowledgePointId ?? "知识点"}`, queueLevel: 1, priority: 5 },
-      review: { title: `复习: ${loop.knowledgePointId ?? "知识点"}`, queueLevel: 0, priority: 8 },
-      iterate: { title: `迭代: ${loop.knowledgePointId ?? "知识点"}`, queueLevel: 1, priority: 3 },
+      learn: { title: i18next.t("scheduler.learningLoop.titles.learn", { knowledgePoint }), queueLevel: 1, priority: 5 },
+      test: { title: i18next.t("scheduler.learningLoop.titles.test", { knowledgePoint }), queueLevel: 1, priority: 5 },
+      review: { title: i18next.t("scheduler.learningLoop.titles.review", { knowledgePoint }), queueLevel: 0, priority: 8 },
+      iterate: { title: i18next.t("scheduler.learningLoop.titles.iterate", { knowledgePoint }), queueLevel: 1, priority: 3 },
     };
 
     const config = stageConfig[stage];

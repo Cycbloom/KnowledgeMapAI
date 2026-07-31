@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import i18next from "i18next";
 
 interface CreateAppearanceData {
   character_id: string;
@@ -37,7 +38,7 @@ class AppearanceService {
     } catch (error: unknown) {
       logger.error("Create appearance error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("添加出场记录失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.appearance.addFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -57,7 +58,7 @@ class AppearanceService {
     } catch (error: unknown) {
       logger.error("Delete appearance error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("删除出场记录失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.appearance.deleteFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -138,7 +139,7 @@ class AppearanceService {
     } catch (error: unknown) {
       logger.error("Get appearance stats error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("获取出场统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.appearance.fetchStatsFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 }

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { type Request, type Response, type NextFunction } from 'express';
+import i18next from 'i18next';
 import { AppError, errorHandler } from '../../middleware/errorHandler';
-import { ErrorCodes, ErrorCodeMessages } from '../../../shared/types/errorCodes';
+import { ErrorCodes, ErrorCodeMessageKeys } from '../../../shared/types/errorCodes';
 import { logger } from '../../utils/logger';
 
 // Mock logger to avoid console output during tests
@@ -72,7 +73,7 @@ describe('errorHandler middleware', () => {
       const error = new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
 
       expect(error.code).toBe(ErrorCodes.RESOURCE_NOT_FOUND);
-      expect(error.message).toBe(ErrorCodeMessages.RESOURCE_NOT_FOUND);
+      expect(error.message).toBe(i18next.t(ErrorCodeMessageKeys.RESOURCE_NOT_FOUND));
       expect(error.statusCode).toBe(404);
     });
 

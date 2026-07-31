@@ -4,6 +4,9 @@ import { subtaskKnowledgeSyncService } from "./subtaskKnowledgeSync";
 import { logger } from "../../utils/logger";
 import type { LearningState, StateHistoryEntry } from "../../../shared/types/scheduler";
 import { notDeleted } from '../common/softDeleteHelper';
+import i18next from "i18next";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 interface CreateSubtaskData {
   title: string;
@@ -48,7 +51,7 @@ export class SubtaskService {
       .single();
 
     if (!task) {
-      throw new Error("任务不存在");
+      throw new AppError(i18next.t("scheduler.subtask.errors.taskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: subtasks, error } = await supabase
@@ -59,7 +62,7 @@ export class SubtaskService {
 
     if (error) {
       logger.error("Get subtasks error:", error);
-      throw new Error("获取子任务列表失败");
+      throw new AppError(i18next.t("scheduler.subtask.errors.fetchListFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return (subtasks ?? []).map((s) => this.flattenSubtaskMastery(s));
@@ -80,7 +83,7 @@ export class SubtaskService {
       .single();
 
     if (!task) {
-      throw new Error("任务不存在");
+      throw new AppError(i18next.t("scheduler.subtask.errors.taskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: existingSubtask } = await supabase
@@ -91,7 +94,7 @@ export class SubtaskService {
       .maybeSingle();
 
     if (existingSubtask) {
-      throw new Error("该知识点已关联到此任务");
+      throw new AppError(i18next.t("scheduler.subtask.errors.knowledgeAlreadyLinked"), 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const { count } = await supabase
@@ -120,7 +123,7 @@ export class SubtaskService {
 
     if (error) {
       logger.error("Create subtask error:", error);
-      throw new Error("创建子任务失败");
+      throw new AppError(i18next.t("scheduler.subtask.errors.createFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return this.flattenSubtaskMastery(subtask);
@@ -142,7 +145,7 @@ export class SubtaskService {
       .single();
 
     if (!task) {
-      throw new Error("任务不存在");
+      throw new AppError(i18next.t("scheduler.subtask.errors.taskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     // mastery_level 单一来源：从 task_subtasks 更新中剥离，重定向到 knowledge_points
@@ -163,11 +166,11 @@ export class SubtaskService {
 
     if (error) {
       logger.error("Update subtask error:", error);
-      throw new Error("更新子任务失败");
+      throw new AppError(i18next.t("scheduler.subtask.errors.updateFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!subtask) {
-      throw new Error("子任务不存在");
+      throw new AppError(i18next.t("scheduler.subtask.errors.subtaskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     // 如果显式提供了 mastery_level，写入 knowledge_points（单一来源）
@@ -235,7 +238,7 @@ export class SubtaskService {
 
     if (error) {
       logger.error("Delete subtask error:", error);
-      throw new Error("删除子任务失败");
+      throw new AppError(i18next.t("scheduler.subtask.errors.deleteFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -257,7 +260,7 @@ export class SubtaskService {
       .single();
 
     if (!task) {
-      throw new Error("任务不存在");
+      throw new AppError(i18next.t("scheduler.subtask.errors.taskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: subtask, error: fetchError } = await supabase
@@ -268,7 +271,7 @@ export class SubtaskService {
       .single();
 
     if (fetchError || !subtask) {
-      throw new Error("子任务不存在");
+      throw new AppError(i18next.t("scheduler.subtask.errors.subtaskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const currentState = subtask.learning_state as LearningState;
@@ -276,9 +279,11 @@ export class SubtaskService {
     if (!subtaskStateMachine.canTransition(currentState, toState)) {
       const validTransitions =
         subtaskStateMachine.getValidTransitions(currentState);
-      const error = new Error(
-        `无效的状态转换: ${currentState} → ${toState}`,
-      ) as Error & { validTransitions?: LearningState[] };
+      const error = new AppError(
+        i18next.t("scheduler.subtask.errors.invalidTransition", { from: currentState, to: toState }),
+        400,
+        ErrorCodes.VALIDATION_ERROR,
+      ) as AppError & { validTransitions?: LearningState[] };
       error.validTransitions = validTransitions;
       throw error;
     }
@@ -292,7 +297,7 @@ export class SubtaskService {
     );
 
     if (!result.success) {
-      throw new Error(result.error || "状态转换失败");
+      throw new AppError(result.error || i18next.t("scheduler.subtask.errors.transitionFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     await subtaskKnowledgeSyncService.syncSubtaskStateToKnowledgePoint(
@@ -320,7 +325,7 @@ export class SubtaskService {
       .single();
 
     if (fetchError || !subtask) {
-      throw new Error("更新掌握度失败");
+      throw new AppError(i18next.t("scheduler.subtask.errors.updateMasteryFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     // mastery_level 单一来源：写入 knowledge_points（不再写入 task_subtasks）
@@ -334,7 +339,7 @@ export class SubtaskService {
         .eq("id", subtask.knowledge_point_id);
 
       if (kpError) {
-        throw new Error("更新掌握度失败");
+        throw new AppError(i18next.t("scheduler.subtask.errors.updateMasteryFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
     }
 
@@ -362,7 +367,7 @@ export class SubtaskService {
       .single();
 
     if (!subtask) {
-      throw new Error("子任务不存在");
+      throw new AppError(i18next.t("scheduler.subtask.errors.subtaskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const currentState = subtask.learning_state as LearningState;

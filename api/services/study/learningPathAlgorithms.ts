@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { logger } from "../../utils/logger";
 import { getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
@@ -247,7 +248,7 @@ export function generateSuggestions(
     (s) => s.priority === "high" && !s.isCompleted,
   ).length;
   if (highPriorityCount > 5) {
-    suggestions.push("建议增加每日学习时间，有较多待学习/复习的知识点");
+    suggestions.push(i18next.t("learningPath.api.suggestions.increaseDailyTime"));
   }
 
   const lowMasteryNodes = stages.filter(
@@ -255,10 +256,12 @@ export function generateSuggestions(
   );
   if (lowMasteryNodes.length > 0) {
     suggestions.push(
-      `建议优先学习：${lowMasteryNodes
-        .slice(0, 3)
-        .map((n) => n.nodeTitle)
-        .join("、")}`,
+      i18next.t("learningPath.api.suggestions.lowMasteryPriority", {
+        nodes: lowMasteryNodes
+          .slice(0, 3)
+          .map((n) => n.nodeTitle)
+          .join("、"),
+      }),
     );
   }
 
@@ -266,14 +269,14 @@ export function generateSuggestions(
     (s) => s.nextReviewDate && new Date(s.nextReviewDate) <= today,
   );
   if (dueReviews.length > 0) {
-    suggestions.push(`有 ${dueReviews.length} 个知识点需要复习`);
+    suggestions.push(i18next.t("learningPath.api.suggestions.dueReviews", { count: dueReviews.length }));
   }
 
   const advancedNodes = stages.filter(
     (s) => s.level === "advanced" && !s.isCompleted,
   );
   if (advancedNodes.length > 3) {
-    suggestions.push("有较多高级知识点，建议确保前置知识已掌握");
+    suggestions.push(i18next.t("learningPath.api.suggestions.advancedNodes"));
   }
 
   return suggestions;
@@ -341,26 +344,26 @@ export function generateRulePath(
       new Date(progress.nextReviewDate) <= today
     ) {
       priority = "high";
-      reason = "需要复习：已到复习时间";
+      reason = i18next.t("learningPath.api.reasons.dueReview");
     } else if (!progress || progress.masteryLevel < 0.3) {
       priority = "high";
-      reason = "需要学习：尚未掌握";
+      reason = i18next.t("learningPath.api.reasons.needLearning");
     } else if (progress.masteryLevel < 0.6) {
       priority = "medium";
-      reason = "需要巩固：掌握程度较低";
+      reason = i18next.t("learningPath.api.reasons.needConsolidation");
     } else if (progress.masteryLevel < 0.8) {
       priority = "low";
-      reason = "可选复习：基本掌握";
+      reason = i18next.t("learningPath.api.reasons.optionalReview");
     } else {
       priority = "low";
-      reason = "已掌握：可跳过";
+      reason = i18next.t("learningPath.api.reasons.mastered");
     }
 
     if (targetNodeId) {
       const pathToTarget = findPath(nodeId, targetNodeId, childMap);
       if (pathToTarget.length > 0) {
         priority = "high";
-        reason = "目标路径上的知识点";
+        reason = i18next.t("learningPath.api.reasons.targetPath");
       }
     }
 
@@ -483,7 +486,7 @@ export async function generateAIPath(
       targetGoal,
       learningStyle,
       dailyTimeMinutes,
-      currentKnowledge: currentKnowledge || "未提供",
+      currentKnowledge: currentKnowledge || i18next.t("learningPath.api.defaults.notProvided"),
       nodesCount: nodes.length,
       isSequential: learningStyle === "sequential",
       isExploratory: learningStyle === "exploratory",
@@ -494,16 +497,25 @@ export async function generateAIPath(
     graphId,
   );
 
-  const userMessage = `图谱标题：${graphTitle}
-目标：${targetGoal}
-学习风格：${learningStyle === "sequential" ? "顺序学习" : learningStyle === "exploratory" ? "探索学习" : learningStyle === "focused" ? "专注学习" : "自定义"}
-每日学习时间：${dailyTimeMinutes} 分钟
-${currentKnowledge ? `当前知识背景：${currentKnowledge}` : ""}
-知识点列表（共 ${nodes.length} 个）：
-${JSON.stringify(nodesInfo, null, 2)}
-知识点关系：
-${JSON.stringify(edgesInfo, null, 2)}
-请根据以上信息，规划一条最优的学习路径。注意：如果有明确的学习目标，只需要选择与目标直接相关的核心节点（5-15个），不需要包含图谱中的所有节点。`;
+  const userMessage = i18next.t("learningPath.api.prompts.pathUserMessage", {
+    graphTitle,
+    targetGoal,
+    learningStyle:
+      learningStyle === "sequential"
+        ? "顺序学习"
+        : learningStyle === "exploratory"
+          ? "探索学习"
+          : learningStyle === "focused"
+            ? "专注学习"
+            : "自定义",
+    dailyTimeMinutes,
+    currentKnowledgeLine: currentKnowledge
+      ? `当前知识背景：${currentKnowledge}`
+      : "",
+    nodesCount: nodes.length,
+    nodesList: JSON.stringify(nodesInfo, null, 2),
+    relationsList: JSON.stringify(edgesInfo, null, 2),
+  });
 
   try {
     const completion = await provider.client.chat.completions.create({

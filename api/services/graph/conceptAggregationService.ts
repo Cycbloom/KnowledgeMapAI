@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { aiService } from "../ai/aiService";
 import { logger } from "../../utils/logger";
+import i18next from "i18next";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { notDeleted } from '../common/softDeleteHelper';
 import {
@@ -655,7 +656,7 @@ export class ConceptAggregationService {
 
     if (unclassified.length >= threshold) {
       suggestedModules.push({
-        title: "其他重要概念",
+        title: i18next.t("graphMap.api.defaults.otherImportantConcepts"),
         description: `包含 ${unclassified.length} 个尚未分类的知识点，建议根据内容主题创建新的分类模块`,
         reasoning: `图谱中存在 ${unclassified.length} 个未归类到现有骨干模块的知识点，可能代表被忽略的研究领域`,
       });

@@ -7,6 +7,7 @@ import type {
   UpdateCollaboratorRoleRequest,
 } from "@shared/types";
 import { logger } from "../../utils/logger";
+import i18next from "i18next";
 
 export interface CollaboratorServiceResult<T = void> {
   success: boolean;
@@ -27,7 +28,7 @@ export class CollaboratorService {
       .single();
 
     if (graphError || !graph) {
-      return { success: false, error: "图谱不存在" };
+      return { success: false, error: i18next.t("collaborators.api.errors.graphNotFound") };
     }
 
     const { data: collaborators, error } = await supabase
@@ -110,11 +111,11 @@ export class CollaboratorService {
       .single();
 
     if (graphError || !graph) {
-      return { success: false, error: "图谱不存在" };
+      return { success: false, error: i18next.t("collaborators.api.errors.graphNotFound") };
     }
 
     if (graph.user_id !== userId) {
-      return { success: false, error: "只有图谱所有者可以邀请协作者" };
+      return { success: false, error: i18next.t("collaborators.api.errors.onlyOwnerCanInvite") };
     }
 
     const { data: targetUser, error: userError } = await supabase
@@ -124,11 +125,11 @@ export class CollaboratorService {
       .single();
 
     if (userError || !targetUser) {
-      return { success: false, error: "未找到该用户" };
+      return { success: false, error: i18next.t("collaborators.api.errors.userNotFound") };
     }
 
     if (targetUser.id === userId) {
-      return { success: false, error: "不能邀请自己" };
+      return { success: false, error: i18next.t("collaborators.api.errors.cannotInviteSelf") };
     }
 
     const { data: existing } = await supabase
@@ -139,7 +140,7 @@ export class CollaboratorService {
       .single();
 
     if (existing) {
-      return { success: false, error: "该用户已是协作者" };
+      return { success: false, error: i18next.t("collaborators.api.errors.alreadyCollaborator") };
     }
 
     const { data, error } = await supabase
@@ -175,11 +176,11 @@ export class CollaboratorService {
       .single();
 
     if (graphError || !graph) {
-      return { success: false, error: "图谱不存在" };
+      return { success: false, error: i18next.t("collaborators.api.errors.graphNotFound") };
     }
 
     if (graph.user_id !== userId) {
-      return { success: false, error: "只有图谱所有者可以修改协作者角色" };
+      return { success: false, error: i18next.t("collaborators.api.errors.onlyOwnerCanUpdateRole") };
     }
 
     const { data, error } = await supabase
@@ -211,11 +212,11 @@ export class CollaboratorService {
       .single();
 
     if (graphError || !graph) {
-      return { success: false, error: "图谱不存在" };
+      return { success: false, error: i18next.t("collaborators.api.errors.graphNotFound") };
     }
 
     if (graph.user_id !== userId) {
-      return { success: false, error: "只有图谱所有者可以移除协作者" };
+      return { success: false, error: i18next.t("collaborators.api.errors.onlyOwnerCanRemove") };
     }
 
     const { error } = await supabase
@@ -244,19 +245,19 @@ export class CollaboratorService {
       .single();
 
     if (inviteError || !invitation) {
-      return { success: false, error: "邀请不存在或已过期" };
+      return { success: false, error: i18next.t("collaborators.api.errors.inviteNotFoundOrExpired") };
     }
 
     if (invitation.user_id !== userId) {
-      return { success: false, error: "此邀请不属于当前用户" };
+      return { success: false, error: i18next.t("collaborators.api.errors.inviteNotForUser") };
     }
 
     if (invitation.invitation_expires_at && new Date(invitation.invitation_expires_at) < new Date()) {
-      return { success: false, error: "邀请链接已过期" };
+      return { success: false, error: i18next.t("collaborators.api.errors.inviteLinkExpired") };
     }
 
     if (invitation.accepted_at) {
-      return { success: false, error: "此邀请已被接受" };
+      return { success: false, error: i18next.t("collaborators.api.errors.inviteAlreadyAccepted") };
     }
 
     const { data, error } = await supabase
@@ -349,7 +350,7 @@ export class CollaboratorService {
       .single();
 
     if (graphError || !graph) {
-      return { success: false, error: "图谱不存在" };
+      return { success: false, error: i18next.t("collaborators.api.errors.graphNotFound") };
     }
 
     if (graph.user_id !== userId) {
@@ -362,7 +363,7 @@ export class CollaboratorService {
         .single();
 
       if (!collaborator || collaborator.role !== "owner") {
-        return { success: false, error: "只有图谱所有者可以生成分享链接" };
+        return { success: false, error: i18next.t("collaborators.api.errors.onlyOwnerCanGenerateLink") };
       }
     }
 
@@ -381,7 +382,7 @@ export class CollaboratorService {
 
     if (error) {
       if (error.code === "23505") {
-        return { success: false, error: "分享链接已存在，请使用现有链接" };
+        return { success: false, error: i18next.t("collaborators.api.errors.shareLinkAlreadyExists") };
       }
       logger.error("Generate share link error:", error);
       return { success: false, error: error.message };
@@ -413,11 +414,11 @@ export class CollaboratorService {
       .single();
 
     if (inviteError || !invitation) {
-      return { success: false, error: "分享链接无效或已过期" };
+      return { success: false, error: i18next.t("collaborators.api.errors.shareLinkInvalid") };
     }
 
     if (invitation.invitation_expires_at && new Date(invitation.invitation_expires_at) < new Date()) {
-      return { success: false, error: "分享链接已过期" };
+      return { success: false, error: i18next.t("collaborators.api.errors.shareLinkExpired") };
     }
 
     const { data: existing } = await supabase
@@ -428,7 +429,7 @@ export class CollaboratorService {
       .single();
 
     if (existing) {
-      return { success: false, error: "您已是此图谱的协作者" };
+      return { success: false, error: i18next.t("collaborators.api.errors.alreadyCollaboratorOfGraph") };
     }
 
     const { data, error } = await supabase
@@ -480,11 +481,11 @@ export class CollaboratorService {
       .single();
 
     if (error || !invitation) {
-      return { success: false, error: "邀请不存在或已过期" };
+      return { success: false, error: i18next.t("collaborators.api.errors.inviteNotFoundOrExpired") };
     }
 
     if (invitation.invitation_expires_at && new Date(invitation.invitation_expires_at) < new Date()) {
-      return { success: false, error: "邀请链接已过期" };
+      return { success: false, error: i18next.t("collaborators.api.errors.inviteLinkExpired") };
     }
 
     return {

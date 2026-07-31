@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
+import i18next from "i18next";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { StudyCard } from "../../../shared/types/common";
@@ -767,7 +768,7 @@ export class SubtaskQuizIntegrationService {
     const { error: quizSetError } = await supabase.from("quiz_sets").insert({
       id: quizSetId,
       user_id: userId,
-      title: `测验: ${knowledgePoint.title}`,
+      title: i18next.t("scheduler.api.messages.quizTitle", { title: knowledgePoint.title }),
       description: `针对知识点 "${knowledgePoint.title}" 的综合测验`,
       config,
       status: "generating",

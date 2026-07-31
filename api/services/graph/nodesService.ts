@@ -12,6 +12,7 @@ import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { transactionExecutor } from '../../database/transactionExecutor';
 import { notDeleted } from '../common/softDeleteHelper';
 import { nodeBatchService } from './nodeBatchService';
+import i18next from 'i18next';
 
 const REUSE_SIMILARITY_THRESHOLD = 0.85;
 
@@ -98,7 +99,7 @@ export class NodesService {
       .single();
 
     if (!graph) {
-      throw new AppError('未经授权访问图谱', 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t('graphMap.nodes.errors.unauthorizedAccess'), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     let knowledgePointId = existingKpId;
@@ -328,11 +329,11 @@ export class NodesService {
 
     if (error) {
       logger.error('Get node error:', error);
-      throw new AppError('获取节点失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t('graphMap.nodes.errors.fetchFailed'), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!graphNode) {
-      throw new AppError('节点不存在', 404, ErrorCodes.RESOURCE_NODE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.nodes.errors.notFound'), 404, ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
     return buildNodeFromGraphNode(graphNode);
@@ -406,7 +407,7 @@ export class NodesService {
       updates.title !== undefined &&
       updates.title !== kp?.title
     ) {
-      throw new AppError('骨干节点标题不可修改', 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t('graphMap.nodes.errors.backboneTitleImmutable'), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const kpUpdates: {
@@ -670,13 +671,13 @@ export class NodesService {
       );
 
       if (!result?.success) {
-        throw new AppError('删除失败', 400, ErrorCodes.VALIDATION_ERROR);
+        throw new AppError(i18next.t('graphMap.nodes.errors.deleteFailed'), 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       await cacheService.invalidateGraphCache(userId, graphNode.graph_id);
 
       return {
-        message: '知识点已彻底删除',
+        message: i18next.t('graphMap.nodes.messages.permanentlyDeleted'),
         affected_graphs: result.affected_graphs,
         deleted_graph_nodes: result.deleted_graph_nodes,
         deleted_edges: result.deleted_edges,
@@ -703,7 +704,7 @@ export class NodesService {
 
     await cacheService.invalidateGraphCache(userId, graphNode.graph_id);
 
-    return { message: '节点已从当前图谱移除' };
+    return { message: i18next.t('graphMap.nodes.messages.removedFromGraph') };
   }
 
   async batchDeleteNodes(
@@ -759,7 +760,7 @@ export class NodesService {
     }
 
     if (!graphNode) {
-      throw new AppError('节点不存在', 404, ErrorCodes.RESOURCE_NODE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.nodes.errors.notFound'), 404, ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
     interface KnowledgePointWithEmbedding {

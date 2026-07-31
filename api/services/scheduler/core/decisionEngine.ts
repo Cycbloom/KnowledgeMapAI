@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { logger } from "../../../utils/logger";
 import { efficiencyService } from "../efficiencyService";
 import { notDeleted } from '../../common/softDeleteHelper';
@@ -191,13 +192,13 @@ class SchedulerDecisionEngine {
         (new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60);
       if (hoursUntilDeadline < 0) {
         score = 100;
-        descriptions.push("已超期");
+        descriptions.push(i18next.t("scheduler.decisionEngine.factorOverdue"));
       } else if (hoursUntilDeadline < 24) {
         score = 80;
-        descriptions.push("即将到期");
+        descriptions.push(i18next.t("scheduler.decisionEngine.factorDueSoon"));
       } else if (hoursUntilDeadline < 72) {
         score = 60;
-        descriptions.push("3天内到期");
+        descriptions.push(i18next.t("scheduler.decisionEngine.factorDueIn3Days"));
       } else {
         score = 30;
       }
@@ -211,7 +212,7 @@ class SchedulerDecisionEngine {
       weight: 3,
       score: Math.min(100, score),
       description:
-        descriptions.join(", ") || `优先级${priority}, 队列Q${queueLevel}`,
+        descriptions.join(", ") || i18next.t("scheduler.decisionEngine.factorUrgencyDefault", { priority, queue: queueLevel }),
     };
   }
 
@@ -224,7 +225,7 @@ class SchedulerDecisionEngine {
         name: "time_efficiency",
         weight: 2,
         score: 50,
-        description: "无效率数据",
+        description: i18next.t("scheduler.decisionEngine.noEfficiencyData"),
       };
     }
 
@@ -240,16 +241,16 @@ class SchedulerDecisionEngine {
 
     if (isHighPriorityTask && efficiency > 0.7) {
       score = 90;
-      description = "高效时段适合重要任务";
+      description = i18next.t("scheduler.decisionEngine.peakHourForImportantTask");
     } else if (isHighPriorityTask && efficiency <= 0.7) {
       score = 30;
-      description = "低效时段不建议做重要任务";
+      description = i18next.t("scheduler.decisionEngine.lowHourNotForImportantTask");
     } else if (!isHighPriorityTask && efficiency <= 0.5) {
       score = 70;
-      description = "低效时段适合简单任务";
+      description = i18next.t("scheduler.decisionEngine.lowHourForSimpleTask");
     } else {
       score = 50;
-      description = `当前效率${Math.round(efficiency * 100)}%`;
+      description = i18next.t("scheduler.decisionEngine.currentEfficiency", { percent: Math.round(efficiency * 100) });
     }
 
     return { name: "time_efficiency", weight: 2, score, description };
@@ -262,11 +263,11 @@ class SchedulerDecisionEngine {
         name: "mastery",
         weight: 1,
         score: 50,
-        description: "无关联知识点",
+        description: i18next.t("scheduler.decisionEngine.noLinkedKnowledgePoint"),
       };
     }
 
-    return { name: "mastery", weight: 2, score: 50, description: "关联知识点" };
+    return { name: "mastery", weight: 2, score: 50, description: i18next.t("scheduler.decisionEngine.hasLinkedKnowledgePoint") };
   }
 
   private scoreDependency(_task: Record<string, unknown>): DecisionFactor {
@@ -274,7 +275,7 @@ class SchedulerDecisionEngine {
       name: "dependency",
       weight: 1,
       score: 70,
-      description: "无阻塞依赖",
+      description: i18next.t("scheduler.decisionEngine.noBlockingDependency"),
     };
   }
 
@@ -311,14 +312,14 @@ class SchedulerDecisionEngine {
         name: "task_type_match",
         weight: 1,
         score: 80,
-        description: `${taskType}类型任务的最佳时段`,
+        description: i18next.t("scheduler.decisionEngine.bestTimeSlotForType", { type: taskType }),
       };
     } else if (match.ok.includes(currentHour)) {
       return {
         name: "task_type_match",
         weight: 1,
         score: 50,
-        description: `${taskType}类型任务的合适时段`,
+        description: i18next.t("scheduler.decisionEngine.okTimeSlotForType", { type: taskType }),
       };
     }
 
@@ -326,7 +327,7 @@ class SchedulerDecisionEngine {
       name: "task_type_match",
       weight: 1,
       score: 20,
-      description: "非最佳时段",
+      description: i18next.t("scheduler.decisionEngine.notBestTimeSlot"),
     };
   }
 
@@ -339,7 +340,7 @@ class SchedulerDecisionEngine {
         name: "availability",
         weight: 1,
         score: 50,
-        description: "未设置可用时段",
+        description: i18next.t("scheduler.decisionEngine.noAvailableTimeSlots"),
       };
     }
 
@@ -362,7 +363,7 @@ class SchedulerDecisionEngine {
         name: "availability",
         weight: 2,
         score: 80,
-        description: "当前在可用时段内",
+        description: i18next.t("scheduler.decisionEngine.inAvailableTimeSlot"),
       };
     }
 
@@ -370,7 +371,7 @@ class SchedulerDecisionEngine {
       name: "availability",
       weight: 2,
       score: 10,
-      description: "当前不在可用时段",
+      description: i18next.t("scheduler.decisionEngine.notInAvailableTimeSlot"),
     };
   }
 
@@ -384,7 +385,7 @@ class SchedulerDecisionEngine {
       .slice(0, 3);
 
     if (topFactors.length === 0) {
-      return "推荐执行此任务";
+      return i18next.t("scheduler.decisionEngine.recommendExecuteTask");
     }
 
     return topFactors.map((f) => f.description).join("；");

@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import i18next from "i18next";
 
 interface CreateSceneData {
   structure_id: string;
@@ -79,7 +80,7 @@ class SceneService {
     } catch (error: unknown) {
       logger.error("Get scene detail error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("获取场景详情失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.scene.fetchFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -113,7 +114,7 @@ class SceneService {
     } catch (error: unknown) {
       logger.error("Create scene detail error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("创建场景详情失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.scene.createFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -140,14 +141,14 @@ class SceneService {
       if (error) throw error;
 
       if (!scene) {
-        throw new AppError("场景详情不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+        throw new AppError(i18next.t("storyEditor.api.errors.scene.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       return scene;
     } catch (error: unknown) {
       logger.error("Update scene detail error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("更新场景详情失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("storyEditor.api.errors.scene.updateFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 }

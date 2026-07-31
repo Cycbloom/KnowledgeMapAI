@@ -3,6 +3,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
 import { notDeleted } from '../common/softDeleteHelper';
+import i18next from "i18next";
 
 interface CustomRegion {
   id: string;
@@ -40,7 +41,7 @@ class RegionService {
       .single();
 
     if (graphError || !graph) {
-      throw new AppError("图谱不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("graphMap.regions.errors.graphNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const settings = (graph.settings as Record<string, unknown>) || {};
@@ -70,7 +71,7 @@ class RegionService {
       .single();
 
     if (graphError || !graph) {
-      throw new AppError("图谱不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("graphMap.regions.errors.graphNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const settings = (graph.settings as Record<string, unknown>) || {};
@@ -106,7 +107,7 @@ class RegionService {
 
     if (updateError) {
       logger.error("创建区域失败", { graphId, error: updateError.message });
-      throw new AppError("创建区域失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("graphMap.regions.errors.createFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     logger.info("区域创建成功", { graphId, regionId: newRegion.id, userId });
@@ -130,7 +131,7 @@ class RegionService {
       .single();
 
     if (graphError || !graph) {
-      throw new AppError("图谱不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("graphMap.regions.errors.graphNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const settings = (graph.settings as Record<string, unknown>) || {};
@@ -142,7 +143,7 @@ class RegionService {
     const regionIndex = customRegions.findIndex((r) => r.id === regionId);
 
     if (regionIndex === -1) {
-      throw new AppError("区域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("graphMap.regions.errors.regionNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const updatedRegion: CustomRegion = {
@@ -174,7 +175,7 @@ class RegionService {
         regionId,
         error: updateError.message,
       });
-      throw new AppError("更新区域失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("graphMap.regions.errors.updateFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     logger.info("区域更新成功", { graphId, regionId, userId });
@@ -197,7 +198,7 @@ class RegionService {
       .single();
 
     if (graphError || !graph) {
-      throw new AppError("图谱不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("graphMap.regions.errors.graphNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const settings = (graph.settings as Record<string, unknown>) || {};
@@ -209,7 +210,7 @@ class RegionService {
     const regionIndex = customRegions.findIndex((r) => r.id === regionId);
 
     if (regionIndex === -1) {
-      throw new AppError("区域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("graphMap.regions.errors.regionNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const updatedRegions = customRegions.filter((r) => r.id !== regionId);
@@ -234,12 +235,12 @@ class RegionService {
         regionId,
         error: updateError.message,
       });
-      throw new AppError("删除区域失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("graphMap.regions.errors.deleteFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     logger.info("区域删除成功", { graphId, regionId, userId });
 
-    return { success: true, message: "区域已删除" };
+    return { success: true, message: i18next.t("graphMap.regions.messages.deleted") };
   }
 }
 

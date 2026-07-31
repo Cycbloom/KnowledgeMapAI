@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import { ErrorCodes, type ErrorCode, ErrorCodeMessages, ErrorCodeStatus } from '../../shared/types/errorCodes';
+import i18next from 'i18next';
+import { ErrorCodes, type ErrorCode, ErrorCodeMessageKeys, ErrorCodeStatus } from '../../shared/types/errorCodes';
 import { AppErrorBase, type ErrorSerialization } from '../../shared/types/appError';
 import { logger } from '../utils/logger';
 
@@ -113,7 +114,7 @@ export class AppError extends AppErrorBase {
       errorCode = code ?? ErrorCodes.SYSTEM_INTERNAL_ERROR;
     } else {
       errorCode = codeOrMessage as ErrorCode;
-      message = optionsOrStatusCode?.message ?? ErrorCodeMessages[errorCode] ?? '未知错误';
+      message = optionsOrStatusCode?.message ?? i18next.t(ErrorCodeMessageKeys[errorCode]) ?? i18next.t('errors.errorCodes.unknownError');
       statusCode = optionsOrStatusCode?.statusCode ?? ErrorCodeStatus[errorCode] ?? 500;
       details = optionsOrStatusCode?.details;
       context = optionsOrStatusCode?.context;
@@ -217,7 +218,7 @@ export const errorHandler = (err: unknown, req: Request, res: Response, _next: N
     const { response, status } = buildErrorResponse(
       req,
       ErrorCodes.DATABASE_DUPLICATE_ENTRY,
-      ErrorCodeMessages.DATABASE_DUPLICATE_ENTRY,
+      i18next.t(ErrorCodeMessageKeys.DATABASE_DUPLICATE_ENTRY),
       409
     );
     return res.status(status).json(response);
@@ -227,7 +228,7 @@ export const errorHandler = (err: unknown, req: Request, res: Response, _next: N
     const { response, status } = buildErrorResponse(
       req,
       ErrorCodes.DATABASE_FOREIGN_KEY_VIOLATION,
-      ErrorCodeMessages.DATABASE_FOREIGN_KEY_VIOLATION,
+      i18next.t(ErrorCodeMessageKeys.DATABASE_FOREIGN_KEY_VIOLATION),
       400
     );
     return res.status(status).json(response);
@@ -248,7 +249,7 @@ export const errorHandler = (err: unknown, req: Request, res: Response, _next: N
     const { response, status } = buildErrorResponse(
       req,
       ErrorCodes.VALIDATION_INVALID_JSON,
-      ErrorCodeMessages.VALIDATION_INVALID_JSON,
+      i18next.t(ErrorCodeMessageKeys.VALIDATION_INVALID_JSON),
       400
     );
     return res.status(status).json(response);

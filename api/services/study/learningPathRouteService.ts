@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { graphService } from "../graph/index";
 import { getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
@@ -75,7 +76,7 @@ class LearningPathRouteService {
       );
 
       if (nodes.length === 0) {
-        throw new AppError("图谱中没有节点", 400, ErrorCodes.VALIDATION_ERROR);
+        throw new AppError(i18next.t("learningPath.api.errors.noNodesInGraph"), 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       const { data: graphMeta } = await supabase
@@ -143,7 +144,7 @@ class LearningPathRouteService {
 
       const learningPath: LearningPath = {
         graphId: graph_id,
-        graphTitle: graphMeta?.title || "未命名图谱",
+        graphTitle: graphMeta?.title || i18next.t("learningPath.api.defaults.unnamedGraph"),
         totalNodes: nodes.length,
         completedNodes: completedCount,
         estimatedTotalTime: totalEstimatedTime,
@@ -167,7 +168,7 @@ class LearningPathRouteService {
       logger.error("Learning Path Generation Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        (error as Error).message || "学习路径生成失败",
+        (error as Error).message || i18next.t("learningPath.api.errors.generatePathFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -272,7 +273,7 @@ class LearningPathRouteService {
     } catch (error) {
       logger.error("Progress Fetch Error:", error);
       throw new AppError(
-        (error as Error).message || "获取进度失败",
+        (error as Error).message || i18next.t("learningPath.api.errors.getProgressFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -308,7 +309,7 @@ class LearningPathRouteService {
         .single();
 
       if (!graphMeta) {
-        throw new AppError("图谱不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+        throw new AppError(i18next.t("learningPath.api.errors.graphNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       const { nodes } = await graphService.getGraphNodes(
@@ -318,7 +319,7 @@ class LearningPathRouteService {
       );
 
       if (nodes.length === 0) {
-        throw new AppError("图谱中没有节点", 400, ErrorCodes.VALIDATION_ERROR);
+        throw new AppError(i18next.t("learningPath.api.errors.noNodesInGraph"), 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       const provider = await getAIProviderForTask("text");
@@ -327,20 +328,30 @@ class LearningPathRouteService {
         const defaultQuestions = {
           graphTitle: graphMeta.title,
           suggestedGoals: [
-            `全面掌握 ${graphMeta.title} 的核心概念`,
-            `能够应用 ${graphMeta.title} 解决实际问题`,
-            `深入理解 ${graphMeta.title} 的原理和机制`,
+            i18next.t("learningPath.api.goals.masterCoreConcepts", { title: graphMeta.title }),
+            i18next.t("learningPath.api.goals.applyToSolveProblems", { title: graphMeta.title }),
+            i18next.t("learningPath.api.goals.understandPrinciples", { title: graphMeta.title }),
           ],
           prerequisiteQuestions: [
             {
-              topic: "基础知识",
-              description: "相关的基础概念",
-              options: ["不了解", "了解一点", "比较熟悉", "非常熟悉"],
+              topic: i18next.t("learningPath.api.assessment.basicKnowledgeTopic"),
+              description: i18next.t("learningPath.api.assessment.basicKnowledgeDesc"),
+              options: [
+                i18next.t("learningPath.api.assessment.options.notFamiliar"),
+                i18next.t("learningPath.api.assessment.options.slightlyFamiliar"),
+                i18next.t("learningPath.api.assessment.options.familiar"),
+                i18next.t("learningPath.api.assessment.options.veryFamiliar"),
+              ],
             },
             {
-              topic: "实践经验",
-              description: "相关的实践经验",
-              options: ["不了解", "了解一点", "比较熟悉", "非常熟悉"],
+              topic: i18next.t("learningPath.api.assessment.practicalExperienceTopic"),
+              description: i18next.t("learningPath.api.assessment.practicalExperienceDesc"),
+              options: [
+                i18next.t("learningPath.api.assessment.options.notFamiliar"),
+                i18next.t("learningPath.api.assessment.options.slightlyFamiliar"),
+                i18next.t("learningPath.api.assessment.options.familiar"),
+                i18next.t("learningPath.api.assessment.options.veryFamiliar"),
+              ],
             },
           ],
         };
@@ -368,11 +379,15 @@ class LearningPathRouteService {
         graph_id,
       );
 
-      const userMessage = `图谱标题：${graphMeta.title}
-${graphMeta.description ? `描述：${graphMeta.description}` : ""}
-知识点预览（共 ${nodes.length} 个）：${nodesInfo}
-
-请根据以上信息，生成学习目标建议和前置知识评估问题。`;
+      const descriptionLine = graphMeta.description
+        ? i18next.t("learningPath.api.prompts.descriptionLine", { description: graphMeta.description })
+        : "";
+      const userMessage = i18next.t("learningPath.api.prompts.userMessage", {
+        title: graphMeta.title,
+        descriptionLine,
+        count: nodes.length,
+        nodesPreview: nodesInfo,
+      });
 
       const completion = await provider.client.chat.completions.create({
         messages: [
@@ -447,7 +462,7 @@ ${graphMeta.description ? `描述：${graphMeta.description}` : ""}
       logger.error("Learning Path Questions Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        (error as Error).message || "生成问题失败",
+        (error as Error).message || i18next.t("learningPath.api.errors.generateQuestionsFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );

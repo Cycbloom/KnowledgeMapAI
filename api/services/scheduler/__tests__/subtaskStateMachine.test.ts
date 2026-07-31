@@ -269,7 +269,7 @@ describe("SubtaskStateMachine", () => {
   describe("getTransitionDescription", () => {
     it("返回有效的转换描述", () => {
       const desc = stateMachine.getTransitionDescription("learning", "review");
-      expect(desc).toBe("掌握度低于30%，进入复习阶段");
+      expect(desc).toBe("scheduler.subtaskState.descriptions.masteryLowToReview");
     });
 
     it("返回 undefined 对于无效转换", () => {

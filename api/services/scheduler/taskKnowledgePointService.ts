@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import i18next from "i18next";
 import { notDeleted } from '../common/softDeleteHelper';
 
 export interface CreateTaskKPData {
@@ -80,7 +81,7 @@ class TaskKnowledgePointService {
 
     if (!kp) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        details: { message: "知识点不存在或无权访问" },
+        details: { message: i18next.t("scheduler.api.errors.knowledgePointNotFound") },
       });
     }
 
@@ -166,7 +167,7 @@ class TaskKnowledgePointService {
 
     if (!taskKP) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        details: { message: "知识点关联不存在" },
+        details: { message: i18next.t("scheduler.api.errors.knowledgePointLinkNotFound") },
       });
     }
 

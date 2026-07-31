@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
+import i18next from "i18next";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { LearningState } from "../../../shared/types/scheduler";
@@ -414,7 +415,7 @@ export class SubtaskKnowledgeSyncService {
       {
         userId: taskData.user_id,
         type: "review_reminder",
-        message: `知识点需要复习：掌握度已降至 ${Math.round(subtaskMastery * 100)}%`,
+        message: i18next.t("scheduler.api.messages.knowledgePointNeedsReview", { mastery: Math.round(subtaskMastery * 100) }),
         data: {
           subtaskId: subtaskData.id,
           taskId: taskData.id,

@@ -1,6 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { notDeleted } from '../common/softDeleteHelper';
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
+import i18next from "i18next";
 
 interface DependencyRecord {
   id: string;
@@ -36,7 +39,7 @@ class TaskDependencyService {
       .maybeSingle();
 
     if (!task) {
-      throw new Error("任务不存在");
+      throw new AppError(i18next.t("scheduler.dependency.errors.taskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: dependencies, error } = await supabase
@@ -49,7 +52,7 @@ class TaskDependencyService {
 
     if (error) {
       logger.error("Get dependencies error:", error);
-      throw new Error("获取依赖列表失败");
+      throw new AppError(i18next.t("scheduler.dependency.errors.fetchDependenciesFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return (dependencies || []).map((dep) => ({
@@ -74,7 +77,7 @@ class TaskDependencyService {
       .maybeSingle();
 
     if (!task) {
-      throw new Error("任务不存在");
+      throw new AppError(i18next.t("scheduler.dependency.errors.taskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: dependents, error } = await supabase
@@ -87,7 +90,7 @@ class TaskDependencyService {
 
     if (error) {
       logger.error("Get dependents error:", error);
-      throw new Error("获取后置任务列表失败");
+      throw new AppError(i18next.t("scheduler.dependency.errors.fetchDependentsFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return (dependents || []).map((dep) => ({
@@ -105,7 +108,7 @@ class TaskDependencyService {
     data: CreateDependencyData,
   ) {
     if (taskId === data.depends_on_task_id) {
-      throw new Error("任务不能依赖自身");
+      throw new AppError(i18next.t("scheduler.dependency.errors.selfDependency"), 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const { data: tasks, error: tasksError } = await notDeleted(supabase
@@ -116,11 +119,11 @@ class TaskDependencyService {
       );
 
     if (tasksError) {
-      throw new Error("查询任务失败");
+      throw new AppError(i18next.t("scheduler.dependency.errors.queryFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!tasks || tasks.length !== 2) {
-      throw new Error("一个或多个任务不存在");
+      throw new AppError(i18next.t("scheduler.dependency.errors.tasksNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: existingDep } = await supabase
@@ -132,7 +135,7 @@ class TaskDependencyService {
       .maybeSingle();
 
     if (existingDep) {
-      throw new Error("该依赖关系已存在");
+      throw new AppError(i18next.t("scheduler.dependency.errors.dependencyExists"), 409, ErrorCodes.DATABASE_DUPLICATE_ENTRY);
     }
 
     const hasCircular = await this.checkCircularDependency(
@@ -143,7 +146,7 @@ class TaskDependencyService {
     );
 
     if (hasCircular) {
-      throw new Error("添加此依赖会形成循环依赖");
+      throw new AppError(i18next.t("scheduler.dependency.errors.cycleDetected"), 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const { data: dependency, error } = await supabase
@@ -159,7 +162,7 @@ class TaskDependencyService {
 
     if (error) {
       logger.error("Create dependency error:", error);
-      throw new Error("创建依赖关系失败");
+      throw new AppError(i18next.t("scheduler.dependency.errors.createFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return dependency;
@@ -179,7 +182,7 @@ class TaskDependencyService {
       .eq("user_id", userId);
 
     if (error) {
-      throw new Error("删除依赖关系失败");
+      throw new AppError(i18next.t("scheduler.dependency.errors.deleteFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 

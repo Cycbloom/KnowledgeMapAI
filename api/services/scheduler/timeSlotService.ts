@@ -1,5 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 interface TimeSlot {
   id: string;
@@ -72,7 +75,7 @@ class TimeSlotService {
 
     if (error) {
       logger.error("Get time slots error:", error);
-      throw new Error("获取时间段设置失败");
+      throw new AppError(i18next.t("scheduler.timeSlot.errors.fetchFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const weekViewData: Record<number, TimeSlot[]> = {
@@ -113,7 +116,7 @@ class TimeSlotService {
     const endMinutes = this.parseTimeToMinutes(end_time);
 
     if (endMinutes <= startMinutes) {
-      throw new Error("结束时间必须晚于开始时间");
+      throw new AppError(i18next.t("scheduler.timeSlot.errors.endAfterStart"), 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     let existingSlotsQuery = supabase
@@ -138,7 +141,7 @@ class TimeSlotService {
         endMinutes,
       );
       if (conflictingSlot) {
-        const error = new Error("时间段与现有时间段冲突") as Error & {
+        const error = new AppError(i18next.t("scheduler.timeSlot.errors.conflict"), 409, ErrorCodes.DATABASE_DUPLICATE_ENTRY) as AppError & {
           conflictingSlot?: TimeSlot;
         };
         error.conflictingSlot = conflictingSlot;
@@ -161,7 +164,7 @@ class TimeSlotService {
 
     if (error) {
       logger.error("Create time slot error:", error);
-      throw new Error("创建时间段失败");
+      throw new AppError(i18next.t("scheduler.timeSlot.errors.createFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return timeSlot as TimeSlot;
@@ -183,7 +186,7 @@ class TimeSlotService {
       .single();
 
     if (fetchError || !existingSlot) {
-      throw new Error("时间段不存在");
+      throw new AppError(i18next.t("scheduler.timeSlot.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const finalStartTime = start_time ?? existingSlot.start_time;
@@ -193,7 +196,7 @@ class TimeSlotService {
     const endMinutes = this.parseTimeToMinutes(finalEndTime);
 
     if (endMinutes <= startMinutes) {
-      throw new Error("结束时间必须晚于开始时间");
+      throw new AppError(i18next.t("scheduler.timeSlot.errors.endAfterStart"), 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     if (start_time || end_time) {
@@ -217,7 +220,7 @@ class TimeSlotService {
           endMinutes,
         );
         if (conflictingSlot) {
-          const error = new Error("时间段与现有时间段冲突") as Error & {
+          const error = new AppError(i18next.t("scheduler.timeSlot.errors.conflict"), 409, ErrorCodes.DATABASE_DUPLICATE_ENTRY) as AppError & {
             conflictingSlot?: TimeSlot;
           };
           error.conflictingSlot = conflictingSlot;
@@ -242,7 +245,7 @@ class TimeSlotService {
 
     if (error) {
       logger.error("Update time slot error:", error);
-      throw new Error("更新时间段失败");
+      throw new AppError(i18next.t("scheduler.timeSlot.errors.updateFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return timeSlot as TimeSlot;
@@ -261,7 +264,7 @@ class TimeSlotService {
 
     if (error) {
       logger.error("Delete time slot error:", error);
-      throw new Error("删除时间段失败");
+      throw new AppError(i18next.t("scheduler.timeSlot.errors.deleteFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 }

@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { logger } from "../../utils/logger";
 import { notDeleted } from '../common/softDeleteHelper';
 
@@ -136,8 +137,8 @@ class CalendarService {
       start: task.scheduled_start || task.deadline,
       end: task.scheduled_end,
       allDay: !task.scheduled_start,
-      type: task.tags?.includes("学习") ? "study"
-        : task.tags?.includes("复习") ? "review"
+      type: task.tags?.includes("study") ? "study"
+        : task.tags?.includes("review") ? "review"
         : "task",
       color: task.priority === 4 ? "red" : task.priority === 3 ? "orange" : "blue",
       estimated_duration: task.estimated_duration,
@@ -156,9 +157,9 @@ VERSION:2.0
 PRODID:-//KnowledgeMap//Calendar//CN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
-X-WR-CALNAME:KnowledgeMap 任务日历
+X-WR-CALNAME:${i18next.t("scheduler.calendarService.calName")}
 X-WR-TIMEZONE:Asia/Shanghai
-X-WR-CALDESC:KnowledgeMap 任务调度系统的日历同步
+X-WR-CALDESC:${i18next.t("scheduler.calendarService.calDesc")}
 `;
 
     tasks.forEach((task) => {
@@ -180,10 +181,10 @@ X-WR-CALDESC:KnowledgeMap 任务调度系统的日历同步
       const priorityNum = task.priority ? parseInt(task.priority) : 0;
       const priority = priorityNum >= 4 ? "1" : priorityNum >= 3 ? "5" : "9";
 
-      const category = task.tags?.includes("学习") ? "学习"
-        : task.tags?.includes("复习") ? "复习"
-        : task.tags?.includes("工作") ? "工作"
-        : "任务";
+      const category = task.tags?.includes("study") ? i18next.t("scheduler.calendarService.categories.study")
+        : task.tags?.includes("review") ? i18next.t("scheduler.calendarService.categories.review")
+        : task.tags?.includes("work") ? i18next.t("scheduler.calendarService.categories.work")
+        : i18next.t("scheduler.calendarService.categories.task");
 
       ics += `BEGIN:VEVENT
 UID:${task.id}@knowledgemap
@@ -228,10 +229,10 @@ UID:exec-${exec.id}@knowledgemap
 DTSTAMP:${timestamp}
 DTSTART:${formatDate(startDate)}
 DTEND:${formatDate(endDate)}
-SUMMARY:✓ ${exec.task_title || "执行记录"}
-DESCRIPTION:实际执行时间: ${Math.round((exec.duration || 0) / 60)} 分钟
+SUMMARY:${i18next.t("scheduler.calendarService.executionSummary", { title: exec.task_title || i18next.t("scheduler.calendarService.categories.execution") })}
+DESCRIPTION:${i18next.t("scheduler.calendarService.executionDescription", { minutes: Math.round((exec.duration || 0) / 60) })}
 STATUS:CONFIRMED
-CATEGORIES:执行记录
+CATEGORIES:${i18next.t("scheduler.calendarService.categories.execution")}
 X-STATUS:${exec.status || "completed"}
 END:VEVENT
 `;

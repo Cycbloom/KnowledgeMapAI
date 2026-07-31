@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -34,7 +35,7 @@ export class LearningPathTaskIntegration {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { count } = await notDeleted(supabase
@@ -56,8 +57,8 @@ export class LearningPathTaskIntegration {
       .from("user_tasks")
       .insert({
         user_id: userId,
-        title: `[学习路径] ${path.title}`,
-        description: path.description || path.goal || "学习路径任务",
+        title: i18next.t("learningPath.api.taskIntegration.pathTaskTitle", { title: path.title }),
+        description: path.description || path.goal || i18next.t("learningPath.api.taskIntegration.pathTaskDescription"),
         queue_level: 0,
         position: count ?? 0,
         estimated_duration: totalEstimatedTime,
@@ -76,7 +77,7 @@ export class LearningPathTaskIntegration {
 
     if (taskError) {
       logger.error("createLearningPathMainTask error:", taskError);
-      throw new AppError("创建主任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("learningPath.api.errors.createMainTaskFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return task.id;
@@ -107,14 +108,14 @@ export class LearningPathTaskIntegration {
       .single();
 
     if (nodeError || !node) {
-      throw new AppError("节点不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.nodeNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const pathData = Array.isArray(node.learning_paths)
       ? node.learning_paths[0]
       : node.learning_paths;
     if (!pathData || pathData.user_id !== userId) {
-      throw new AppError("无权访问此节点", 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t("learningPath.api.errors.nodeAccessDenied"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const { data: subtask, error: subtaskError } = await supabase
@@ -134,7 +135,7 @@ export class LearningPathTaskIntegration {
 
     if (subtaskError) {
       logger.error("convertNodeToSubtask error:", subtaskError);
-      throw new AppError("创建子任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("learningPath.api.errors.createSubtaskFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return subtask.id;
@@ -168,14 +169,14 @@ export class LearningPathTaskIntegration {
       .single();
 
     if (nodeError || !node) {
-      throw new AppError("节点不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.nodeNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const pathData = Array.isArray(node.learning_paths)
       ? node.learning_paths[0]
       : node.learning_paths;
     if (!pathData || pathData.user_id !== userId) {
-      throw new AppError("无权访问此节点", 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t("learningPath.api.errors.nodeAccessDenied"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const { count } = await notDeleted(supabase
@@ -189,7 +190,7 @@ export class LearningPathTaskIntegration {
       .from("user_tasks")
       .insert({
         user_id: userId,
-        title: `[学习] ${node.title}`,
+        title: i18next.t("learningPath.api.taskIntegration.nodeTaskTitle", { title: node.title }),
         description: node.description,
         queue_level: options?.queue_level ?? 0,
         position: count ?? 0,
@@ -199,14 +200,14 @@ export class LearningPathTaskIntegration {
         status: "pending",
         scheduled_start: options?.scheduled_start,
         scheduled_end: options?.scheduled_end,
-        context: `学习路径节点 #${node.order_index + 1}`,
+        context: i18next.t("learningPath.api.taskIntegration.nodeTaskContext", { index: node.order_index + 1 }),
       })
       .select("id")
       .single();
 
     if (taskError) {
       logger.error("convertNodeToTask error:", taskError);
-      throw new AppError("创建任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("learningPath.api.errors.createTaskFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     await supabase.from("task_knowledge_points").insert({
@@ -241,7 +242,7 @@ export class LearningPathTaskIntegration {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: nodes, error: nodesError } = await supabase
@@ -472,8 +473,8 @@ export class LearningPathTaskIntegration {
              RETURNING id`,
             [
               userId,
-              `[学习路径] ${path.title}`,
-              path.description || path.goal || "学习路径任务",
+              i18next.t("learningPath.api.taskIntegration.pathTaskTitle", { title: path.title }),
+              path.description || path.goal || i18next.t("learningPath.api.taskIntegration.pathTaskDescription"),
               position,
               totalEstimatedTime,
               startDate.toISOString(),
@@ -583,7 +584,7 @@ export class LearningPathTaskIntegration {
       .single();
 
     if (taskError || !task) {
-      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.taskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (task.status !== "completed") {

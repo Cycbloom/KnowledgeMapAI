@@ -8,6 +8,7 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { StudyCard } from "../../../shared/types/common";
 import { transactionExecutor } from "../../database/transactionExecutor";
 import { notDeleted } from '../common/softDeleteHelper';
+import i18next from "i18next";
 
 interface CreateQuizSetData {
   title: string;
@@ -49,7 +50,7 @@ class QuizSetsService {
 
       if (error) {
         logger.error("Error fetching quiz sets:", error);
-        throw new AppError("获取测验集合失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        throw new AppError(i18next.t("quiz.api.errors.fetchSetsFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       return data || [];
@@ -58,7 +59,7 @@ class QuizSetsService {
       const err = error as Error;
       logger.error("Error fetching quiz sets:", error);
       throw new AppError(
-        err.message || "获取测验集合失败",
+        err.message || i18next.t("quiz.api.errors.fetchSetsFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -80,7 +81,7 @@ class QuizSetsService {
 
       if (quizSetError || !quizSet) {
         throw new AppError(
-          "未找到测验集合",
+          i18next.t("quiz.api.errors.quizSetNotFound"),
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
@@ -111,7 +112,7 @@ class QuizSetsService {
 
       if (cardsError) {
         logger.error("Error fetching quiz set cards:", cardsError);
-        throw new AppError("获取测验卡片失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        throw new AppError(i18next.t("quiz.api.errors.fetchCardsFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       const cards = (quizSetCards || []).map((qsc: Record<string, unknown>) => {
@@ -131,7 +132,7 @@ class QuizSetsService {
       const err = error as Error;
       logger.error("Error fetching quiz set:", error);
       throw new AppError(
-        err.message || "获取测验集合失败",
+        err.message || i18next.t("quiz.api.errors.fetchSetsFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -162,7 +163,7 @@ class QuizSetsService {
 
       if (error) {
         logger.error("Error creating quiz set:", error);
-        throw new AppError("创建测验集合失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        throw new AppError(i18next.t("quiz.api.errors.createSetFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       return result;
@@ -171,7 +172,7 @@ class QuizSetsService {
       const err = error as Error;
       logger.error("Error creating quiz set:", error);
       throw new AppError(
-        err.message || "创建测验集合失败",
+        err.message || i18next.t("quiz.api.errors.createSetFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -196,7 +197,7 @@ class QuizSetsService {
 
       if (fetchError || !existing) {
         throw new AppError(
-          "未找到测验集合",
+          i18next.t("quiz.api.errors.quizSetNotFound"),
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
@@ -218,7 +219,7 @@ class QuizSetsService {
 
       if (error) {
         logger.error("Error updating quiz set:", error);
-        throw new AppError("更新测验集合失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        throw new AppError(i18next.t("quiz.api.errors.updateSetFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       return result;
@@ -227,7 +228,7 @@ class QuizSetsService {
       const err = error as Error;
       logger.error("Error updating quiz set:", error);
       throw new AppError(
-        err.message || "更新测验集合失败",
+        err.message || i18next.t("quiz.api.errors.updateSetFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -249,7 +250,7 @@ class QuizSetsService {
 
       if (fetchError || !existing) {
         throw new AppError(
-          "未找到测验集合",
+          i18next.t("quiz.api.errors.quizSetNotFound"),
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
@@ -278,7 +279,7 @@ class QuizSetsService {
         if (deleteCardsError) {
           logger.error("Error deleting quiz set cards:", deleteCardsError);
           throw new AppError(
-            "删除测验卡片关联失败",
+            i18next.t("quiz.api.errors.deleteCardAssociationFailed"),
             500,
             ErrorCodes.SYSTEM_INTERNAL_ERROR,
           );
@@ -291,17 +292,17 @@ class QuizSetsService {
 
         if (error) {
           logger.error("Error deleting quiz set:", error);
-          throw new AppError("删除测验集合失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+          throw new AppError(i18next.t("quiz.api.errors.deleteSetFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
         }
       }
 
-      return { success: true, message: "测验集合已删除" };
+      return { success: true, message: i18next.t("quiz.api.messages.setDeleted") };
     } catch (error: unknown) {
       if (error instanceof AppError) throw error;
       const err = error as Error;
       logger.error("Error deleting quiz set:", error);
       throw new AppError(
-        err.message || "删除测验集合失败",
+        err.message || i18next.t("quiz.api.errors.deleteSetFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -326,7 +327,7 @@ class QuizSetsService {
 
       if (quizSetError || !quizSet) {
         throw new AppError(
-          "未找到测验集合",
+          i18next.t("quiz.api.errors.quizSetNotFound"),
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
@@ -346,7 +347,7 @@ class QuizSetsService {
       return {
         success: true,
         task_id: task.id,
-        message: "测验生成任务已创建",
+        message: i18next.t("quiz.api.messages.generationTaskCreated"),
       };
     } catch (error: unknown) {
       if (error instanceof AppError) throw error;
@@ -363,7 +364,7 @@ class QuizSetsService {
       }
 
       throw new AppError(
-        err.message || "生成测验失败",
+        err.message || i18next.t("quiz.api.errors.generateQuizFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -386,7 +387,7 @@ class QuizSetsService {
 
       if (quizSetError || !quizSet) {
         throw new AppError(
-          "未找到测验集合",
+          i18next.t("quiz.api.errors.quizSetNotFound"),
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
@@ -401,7 +402,7 @@ class QuizSetsService {
 
       if (cardLinkError || !cardLink) {
         throw new AppError(
-          "未找到测验卡片",
+          i18next.t("quiz.api.errors.cardNotFound"),
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
@@ -412,7 +413,7 @@ class QuizSetsService {
 
       if (!oldCard?.knowledge_point_id) {
         throw new AppError(
-          "卡片缺少知识点关联",
+          i18next.t("quiz.api.errors.cardMissingKnowledgePoint"),
           400,
           ErrorCodes.VALIDATION_ERROR,
         );
@@ -427,7 +428,7 @@ class QuizSetsService {
 
       if (!graphNode) {
         throw new AppError(
-          "未找到关联的知识点",
+          i18next.t("quiz.api.errors.knowledgePointNotFound"),
           404,
           ErrorCodes.RESOURCE_NODE_NOT_FOUND,
         );
@@ -454,7 +455,7 @@ class QuizSetsService {
 
       const newCards = aiResult.cards || [];
       if (newCards.length === 0) {
-        throw new AppError("AI 未能生成新卡片", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        throw new AppError(i18next.t("quiz.api.errors.aiGenerateFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       const newCardData = newCards[0] as {
@@ -492,7 +493,7 @@ class QuizSetsService {
             const insertedCard = insertResult.rows[0];
             if (!insertedCard) {
               throw new AppError(
-                "创建新卡片失败",
+                i18next.t("quiz.api.errors.createCardFailed"),
                 500,
                 ErrorCodes.SYSTEM_INTERNAL_ERROR,
               );
@@ -522,7 +523,7 @@ class QuizSetsService {
         return {
           success: true,
           card: newCard as unknown as Record<string, unknown>,
-          message: "卡片已重新生成",
+          message: i18next.t("quiz.api.messages.cardRegenerated"),
         };
       }
 
@@ -555,14 +556,14 @@ class QuizSetsService {
       return {
         success: true,
         card: newCard as unknown as Record<string, unknown>,
-        message: "卡片已重新生成",
+        message: i18next.t("quiz.api.messages.cardRegenerated"),
       };
     } catch (error: unknown) {
       if (error instanceof AppError) throw error;
       const err = error as Error;
       logger.error("Error regenerating card:", error);
       throw new AppError(
-        err.message || "重新生成卡片失败",
+        err.message || i18next.t("quiz.api.errors.regenerateCardFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -585,7 +586,7 @@ class QuizSetsService {
 
       if (quizSetError || !quizSet) {
         throw new AppError(
-          "未找到测验集合",
+          i18next.t("quiz.api.errors.quizSetNotFound"),
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
@@ -600,7 +601,7 @@ class QuizSetsService {
 
       if (existingLink) {
         throw new AppError(
-          "该卡片已在测验集合中",
+          i18next.t("quiz.api.errors.cardAlreadyInSet"),
           400,
           ErrorCodes.VALIDATION_ERROR,
         );
@@ -643,7 +644,7 @@ class QuizSetsService {
         if (insertError) {
           logger.error("Error adding card to quiz set:", insertError);
           throw new AppError(
-            "添加卡片到测验集合失败",
+            i18next.t("quiz.api.errors.addCardFailed"),
             500,
             ErrorCodes.SYSTEM_INTERNAL_ERROR,
           );
@@ -660,14 +661,14 @@ class QuizSetsService {
 
       return {
         success: true,
-        message: "卡片已添加到测验集合",
+        message: i18next.t("quiz.api.messages.cardAdded"),
       };
     } catch (error: unknown) {
       if (error instanceof AppError) throw error;
       const err = error as Error;
       logger.error("Error adding card to quiz set:", error);
       throw new AppError(
-        err.message || "添加卡片到测验集合失败",
+        err.message || i18next.t("quiz.api.errors.addCardFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -690,7 +691,7 @@ class QuizSetsService {
 
       if (quizSetError || !quizSet) {
         throw new AppError(
-          "未找到测验集合",
+          i18next.t("quiz.api.errors.quizSetNotFound"),
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
@@ -721,7 +722,7 @@ class QuizSetsService {
         if (deleteError) {
           logger.error("Error removing card from quiz set:", deleteError);
           throw new AppError(
-            "从测验集合移除卡片失败",
+            i18next.t("quiz.api.errors.removeCardFailed"),
             500,
             ErrorCodes.SYSTEM_INTERNAL_ERROR,
           );
@@ -738,14 +739,14 @@ class QuizSetsService {
 
       return {
         success: true,
-        message: "卡片已从测验集合移除",
+        message: i18next.t("quiz.api.messages.cardRemoved"),
       };
     } catch (error: unknown) {
       if (error instanceof AppError) throw error;
       const err = error as Error;
       logger.error("Error removing card from quiz set:", error);
       throw new AppError(
-        err.message || "从测验集合移除卡片失败",
+        err.message || i18next.t("quiz.api.errors.removeCardFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );

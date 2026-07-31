@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "../../../supabase";
 import { logger } from "../../../utils/logger";
+import i18next from "i18next";
 import { appEventBus } from "../../core/eventBus";
 import type { ScheduleExecutedPayload } from "../../../../shared/types/scheduler";
 import type { NotificationNeededPayload } from "../../../../shared/types/events";
@@ -346,7 +347,7 @@ class SchedulerCronService {
           {
             userId,
             type: "review_reminder",
-            message: `你有 ${count} 个待复习的知识点`,
+            message: i18next.t("scheduler.api.messages.pendingReviewCount", { count }),
             data: { count, date: today },
             cacheKeys: [["study", "review"]],
           },

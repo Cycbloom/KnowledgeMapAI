@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -89,7 +90,7 @@ export class StudyRouteService {
       .single();
 
     if (!graphNode) {
-      throw new AppError("未找到所属节点", 404, ErrorCodes.RESOURCE_NODE_NOT_FOUND);
+      throw new AppError(i18next.t("study.api.errors.nodeNotFound"), 404, ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
     try {
@@ -109,7 +110,7 @@ export class StudyRouteService {
       const err = error as Error;
       logger.error("Error creating card:", error);
       throw new AppError(
-        err.message || "创建学习卡片失败",
+        err.message || i18next.t("study.api.errors.createCardFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -156,7 +157,7 @@ export class StudyRouteService {
       const err = error as Error;
       logger.error("Error creating cards batch:", error);
       throw new AppError(
-        err.message || "创建学习卡片失败",
+        err.message || i18next.t("study.api.errors.createCardFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
@@ -177,7 +178,7 @@ export class StudyRouteService {
 
     if (error && error.code !== "PGRST116") {
       throw new AppError(
-        error.message || "获取学习进度失败",
+        error.message || i18next.t("study.api.errors.getProgressFailed"),
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );

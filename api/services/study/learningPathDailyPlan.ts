@@ -4,6 +4,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { LearningPathService, LearningPathNode, LearningPlan } from "./learningPathService";
 import { topologicalSortNodes } from "./learningPathAlgorithms";
+import i18next from "i18next";
 
 export class LearningPathDailyPlan {
   private learningPathService: LearningPathService;
@@ -31,7 +32,7 @@ export class LearningPathDailyPlan {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data, error } = await supabase
@@ -135,7 +136,7 @@ export class LearningPathDailyPlan {
       .single();
 
     if (checkError || !plan) {
-      throw new AppError("计划不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.planNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const updateData: Record<string, unknown> = {
@@ -171,12 +172,12 @@ export class LearningPathDailyPlan {
     const path = await this.learningPathService.getLearningPath(supabase, pathId, userId);
 
     if (!path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (!path.target_date) {
       throw new AppError(
-        "请先设置学习目标和目标日期",
+        i18next.t("learningPath.api.errors.targetDateRequired"),
         400,
         ErrorCodes.VALIDATION_ERROR,
       );
@@ -199,7 +200,7 @@ export class LearningPathDailyPlan {
 
     if (daysUntilTarget <= 0) {
       throw new AppError(
-        "目标日期已过，请更新目标日期",
+        i18next.t("learningPath.api.errors.targetDatePassed"),
         400,
         ErrorCodes.VALIDATION_ERROR,
       );

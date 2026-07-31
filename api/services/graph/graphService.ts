@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import { cacheService } from "../common/cacheService";
 import { notDeleted } from "../common/softDeleteHelper";
 import { logger } from "../../utils/logger";
@@ -338,7 +339,7 @@ export class GraphService {
         const modulesToInsert = preset.modules.map((mod, index) => ({
           graph_id: data.id,
           module_type: mod.module_type,
-          title: mod.title,
+          title: i18next.t(mod.title),
           icon: mod.icon,
           color: mod.color,
           display_order: index,

@@ -5,6 +5,7 @@ import { domainContextService } from '../ai/domainContextService';
 import { checkDuplicateGraphTopic } from '../../utils/similaritySearch';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import i18next from "i18next";
 import { notDeleted } from '../common/softDeleteHelper';
 
 class DomainExpansionService {
@@ -114,7 +115,7 @@ class DomainExpansionService {
       }
 
       if (sourceGraphs.length === 0) {
-        throw new AppError('未找到选中的图谱或领域', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+        throw new AppError(i18next.t("graphMap.api.errors.graphOrDomainNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       const { data: existingGraphs } = await notDeleted(supabase
@@ -394,7 +395,7 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
 
       if (queryError) {
         logger.error('Failed to query existing graphs:', queryError);
-        throw new AppError('查询现有图谱失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        throw new AppError(i18next.t("graphMap.api.errors.queryGraphFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       if (allExistingGraphs) {

@@ -31,6 +31,7 @@ import {
   DEFAULT_TIMEOUT,
 } from '../../../shared/utils/retry';
 import { logger } from '../../utils/logger';
+import i18next from "i18next";
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { notDeleted } from '../common/softDeleteHelper';
@@ -727,7 +728,7 @@ export class NotesService {
       return {
         id: '',
         userId: null,
-        name: '系统默认 - 三段式学习日志',
+        name: i18next.t("notes.api.defaults.templateName"),
         content:
           '# {{date}} 学习日志\n\n## 今日数据\n- 复习卡片: {{today_reviewed_cards}}\n- 完成任务: {{today_completed_tasks}}\n- 专注时长: {{today_focus_time}}\n\n## 今日学习\n\n## 今日复习\n\n## 今日反思\n',
         isDefault: false,
@@ -1359,7 +1360,7 @@ export class NotesService {
     const note = await this.get(supabase, userId, noteId);
     if (note.type !== 'daily') {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, {
-        message: '仅 daily 类型笔记支持生成今日总结',
+        message: i18next.t("notes.api.errors.dailyOnly"),
         context: { userId, noteId, type: note.type },
       });
     }
@@ -1410,7 +1411,7 @@ export class NotesService {
           provider.client.chat.completions.create({
             messages: [
               { role: 'system', content: prompt },
-              { role: 'user', content: '请生成今日学习总结：' },
+              { role: 'user', content: i18next.t("notes.api.prompts.generateDailySummary") },
             ],
             model: provider.model,
           }),
@@ -1481,7 +1482,7 @@ export class NotesService {
       }
       throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
         message:
-          error instanceof Error ? error.message : 'AI 生成今日总结失败',
+          error instanceof Error ? error.message : i18next.t("notes.api.errors.aiSummaryFailed"),
         context: { userId, noteId },
       });
     }
@@ -1536,7 +1537,7 @@ export class NotesService {
           provider.client.chat.completions.create({
             messages: [
               { role: 'system', content: prompt },
-              { role: 'user', content: '请提取知识点候选，返回 JSON：' },
+              { role: 'user', content: i18next.t("notes.api.prompts.extractKnowledgePoints") },
             ],
             model: provider.model,
             response_format: { type: 'json_object' },
@@ -1924,7 +1925,7 @@ export class NotesService {
     const note = await this.get(supabase, userId, noteId);
     if (note.type !== 'daily') {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, {
-        message: '笔记不是 Daily 类型',
+        message: i18next.t("notes.api.errors.noteNotDaily"),
         context: { userId, noteId, type: note.type },
       });
     }
@@ -2019,7 +2020,7 @@ export class NotesService {
     }
 
     if (!data || data.length === 0) {
-      return '（今日无复习记录）';
+      return i18next.t("notes.api.defaults.noReviewRecords");
     }
 
     const rows = data as unknown as Array<{
@@ -2069,7 +2070,7 @@ export class NotesService {
     }
 
     if (!data || data.length === 0) {
-      return '（今日无完成任务）';
+      return i18next.t("notes.api.defaults.noCompletedTasks");
     }
 
     // user_tasks 是 many-to-one join,结果为对象(非数组)
@@ -2082,7 +2083,7 @@ export class NotesService {
         const title = Array.isArray(row.user_tasks)
           ? row.user_tasks[0]?.title
           : row.user_tasks?.title;
-        return `${i + 1}. ${title ?? '未命名任务'}`;
+        return `${i + 1}. ${title ?? i18next.t("notes.api.defaults.unnamedTask")}`;
       })
       .join('\n');
   }

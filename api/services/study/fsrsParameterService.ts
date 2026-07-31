@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import i18next from "i18next";
 import {
   fsrs,
   createEmptyCard,
@@ -143,7 +144,7 @@ export class FsrsParameterService {
         newW: [...default_w],
         improvement: 0,
         reviewCount: reviews.length,
-        message: `复习数据不足（${reviews.length}/${MIN_REVIEW_COUNT}），继续使用默认参数`,
+        message: i18next.t("study.fsrsParameter.messages.insufficientReviews", { current: reviews.length, required: MIN_REVIEW_COUNT }),
       };
     }
 
@@ -165,7 +166,7 @@ export class FsrsParameterService {
         newW: oldW,
         improvement: 0,
         reviewCount: reviews.length,
-        message: "优化后参数验证失败，保留当前参数",
+        message: i18next.t("study.fsrsParameter.messages.validationFailed"),
       };
     }
 
@@ -189,7 +190,7 @@ export class FsrsParameterService {
       newW: optimizedW,
       improvement: Math.round(improvement * 10000) / 10000,
       reviewCount: reviews.length,
-      message: `参数优化完成，预测误差降低 ${Math.round(improvement * 100)}%`,
+      message: i18next.t("study.fsrsParameter.messages.optimizationComplete", { improvement: Math.round(improvement * 100) }),
     };
   }
 

@@ -9,6 +9,7 @@ import { studyService } from "../study/studyService";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
+import i18next from "i18next";
 import type { StudyCard } from "@shared/types/common";
 import type {
   ReviewTask,
@@ -39,7 +40,7 @@ export class ReviewTaskService {
 
     if (existingCard) {
       throw new AppError(ErrorCodes.DATABASE_DUPLICATE_ENTRY, {
-        details: { message: "该知识点已存在复习卡片 (FSRS)" },
+        details: { message: i18next.t("scheduler.api.errors.reviewCardExists") },
       });
     }
 
@@ -95,7 +96,7 @@ export class ReviewTaskService {
     if (fetchError) {
       if (fetchError.code === "PGRST116") {
         throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-          details: { message: "复习任务不存在" },
+          details: { message: i18next.t("scheduler.api.errors.reviewTaskNotFound") },
         });
       }
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {

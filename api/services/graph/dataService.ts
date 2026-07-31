@@ -8,6 +8,7 @@ import { transactionExecutor } from '../../database/transactionExecutor';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import i18next from "i18next";
 import { notDeleted } from '../common/softDeleteHelper';
 
 interface GraphNodeQueryResult {
@@ -209,7 +210,7 @@ export class DataService {
       };
     }
 
-    throw new AppError('不支持的导出格式', 400, ErrorCodes.VALIDATION_ERROR);
+    throw new AppError(i18next.t("graphMap.api.errors.unsupportedExportFormat"), 400, ErrorCodes.VALIDATION_ERROR);
   }
 
   /**
@@ -729,8 +730,8 @@ export class DataService {
 
     if (!confirm && !dry_run) {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, {
-        message: '需要设置 confirm=true 或 dry_run=true',
-        details: { hint: '使用 dry_run=true 预览将要删除的数据' },
+        message: i18next.t("graphMap.api.errors.confirmOrDryRunRequired"),
+        details: { hint: i18next.t("graphMap.api.errors.dryRunHint") },
       });
     }
 

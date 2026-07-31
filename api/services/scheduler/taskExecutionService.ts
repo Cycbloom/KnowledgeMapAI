@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import i18next from "i18next";
 import { notDeleted } from '../common/softDeleteHelper';
 
 class TaskExecutionService {
@@ -18,7 +19,7 @@ class TaskExecutionService {
       .single();
 
     if (!task) {
-      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("scheduler.api.errors.taskNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: executions, error } = await supabase
@@ -28,7 +29,7 @@ class TaskExecutionService {
       .order("started_at", { ascending: false });
 
     if (error) {
-      throw new AppError("获取执行记录失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("scheduler.api.errors.getExecutionFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return executions;
@@ -58,7 +59,7 @@ class TaskExecutionService {
     );
 
     if (error) {
-      throw new AppError("获取执行历史失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw new AppError(i18next.t("scheduler.api.errors.getExecutionHistoryFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return { data: data || [], total: count ?? 0 };
@@ -77,7 +78,7 @@ class TaskExecutionService {
       .single();
 
     if (error || !execution) {
-      throw new AppError("执行记录不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t("scheduler.api.errors.executionNotFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     return execution;

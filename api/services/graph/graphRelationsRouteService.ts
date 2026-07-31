@@ -6,6 +6,7 @@ import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { notDeleted } from '../common/softDeleteHelper';
+import i18next from 'i18next';
 
 interface FormattedRelation {
   id: string;
@@ -90,7 +91,7 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!graph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.relations.errors.graphNotFound'), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const relations = await graphRelationService.getRelations(supabase, graphId);
@@ -196,7 +197,7 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!sourceGraph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.relations.errors.graphNotFound'), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const duplicateCheck = await checkDuplicateGraphTopic(
@@ -230,7 +231,7 @@ export class GraphRelationsRouteService {
         .single();
 
       if (createError || !newGraph) {
-        throw new AppError('创建图谱失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        throw new AppError(i18next.t('graphMap.relations.errors.createGraphFailed'), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       targetGraphId = newGraph.id;
@@ -292,7 +293,7 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!sourceGraph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.relations.errors.graphNotFound'), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const results: BatchCreateResultItem[] = [];
@@ -394,7 +395,7 @@ export class GraphRelationsRouteService {
     const { source_graph_id, target_graph_id, relation_type, context } = data;
 
     if (source_graph_id === target_graph_id) {
-      throw new AppError('不能创建自引用关系', 400, ErrorCodes.VALIDATION_ERROR);
+      throw new AppError(i18next.t('graphMap.relations.errors.selfReferenceNotAllowed'), 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const { data: sourceGraph } = await supabase
@@ -410,11 +411,11 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!sourceGraph || !targetGraph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.relations.errors.graphNotFound'), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (sourceGraph.user_id !== userId) {
-      throw new AppError('无权操作此图谱', 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t('graphMap.relations.errors.noPermission'), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const exists = await graphRelationService.checkRelationExists(
@@ -424,7 +425,7 @@ export class GraphRelationsRouteService {
       relation_type as 'prerequisite' | 'extension' | 'related' | 'cross_domain',
     );
     if (exists) {
-      throw new AppError('该关系已存在', 400, ErrorCodes.VALIDATION_ERROR);
+      throw new AppError(i18next.t('graphMap.relations.errors.relationExists'), 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const newRelation = await graphRelationService.createRelation(supabase, {
@@ -449,7 +450,7 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!relation) {
-      throw new AppError('关系不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.relations.errors.relationNotFound'), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: sourceGraph } = await supabase
@@ -459,7 +460,7 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!sourceGraph || sourceGraph.user_id !== userId) {
-      throw new AppError('无权删除此关系', 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t('graphMap.relations.errors.noPermissionToDelete'), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     await graphRelationService.deleteRelation(supabase, relationId);
@@ -486,11 +487,11 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!sourceGraph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError(i18next.t('graphMap.relations.errors.graphNotFound'), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (sourceGraph.user_id !== userId) {
-      throw new AppError('无权操作此图谱', 403, ErrorCodes.AUTH_FORBIDDEN);
+      throw new AppError(i18next.t('graphMap.relations.errors.noPermission'), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const task = await asyncTaskService.createTask(
@@ -511,7 +512,7 @@ export class GraphRelationsRouteService {
     return {
       taskId: task.id,
       status: 'pending',
-      message: '无限扩展任务已创建',
+      message: i18next.t('graphMap.relations.messages.infiniteExpansionCreated'),
     };
   }
 }

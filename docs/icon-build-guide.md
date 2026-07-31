@@ -28,7 +28,7 @@
 # 安装工具
 npm install -D electron-icon-builder
 
-# 从 SVG 生成所有平台的图标
+# 生成图标
 npx electron-icon-builder --input=build/icon.svg --output=build
 ```
 

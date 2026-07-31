@@ -92,3 +92,6 @@ coverage/
 
 # Electron
 *.blockmap
+
+# Package manager leftovers
+--fix/

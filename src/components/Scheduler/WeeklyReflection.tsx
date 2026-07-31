@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
@@ -61,6 +61,19 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
   const [weekStats, setWeekStats] = useState<UserTaskStats | null>(null);
   const [weekReviews, setWeekReviews] = useState<TaskReview[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
+
+  const getWeekdayName = useCallback((dayIndex: number): string => {
+    const names = [
+      t('scheduler.weeklyReflection.weekdays.mon'),
+      t('scheduler.weeklyReflection.weekdays.tue'),
+      t('scheduler.weeklyReflection.weekdays.wed'),
+      t('scheduler.weeklyReflection.weekdays.thu'),
+      t('scheduler.weeklyReflection.weekdays.fri'),
+      t('scheduler.weeklyReflection.weekdays.sat'),
+      t('scheduler.weeklyReflection.weekdays.sun'),
+    ];
+    return names[dayIndex] ?? '';
+  }, [t]);
 
   const getWeekRange = (offset: number = 0) => {
     const now = new Date();
@@ -191,7 +204,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                     <Calendar size={24} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold">周反思</h2>
+                    <h2 className="text-xl font-bold">{t('scheduler.weeklyReflection.title')}</h2>
                     <p className="text-sm text-white/80">
                       {formatDate(weekRange.startObj, 'short')} - {formatDate(weekRange.endObj, 'short')}
                     </p>
@@ -205,7 +218,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                     <ChevronLeft size={20} />
                   </button>
                   <span className="text-sm px-2">
-                    {weekOffset === 0 ? '本周' : `${Math.abs(weekOffset)}周前`}
+                    {weekOffset === 0 ? t('scheduler.weeklyReflection.thisWeek') : t('scheduler.weeklyReflection.weeksAgo', { count: Math.abs(weekOffset) })}
                   </span>
                   <button
                     onClick={() => setWeekOffset(o => Math.min(0, o - 1))}
@@ -241,23 +254,23 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
                     <div className="text-3xl font-bold text-primary-500">{weekStats?.completed_tasks || 0}</div>
-                    <div className="text-xs text-slate-500 mt-1">完成任务</div>
+                    <div className="text-xs text-slate-500 mt-1">{t('scheduler.weeklyReflection.completedTasks')}</div>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
                     <div className="text-3xl font-bold text-emerald-500">
-                      {formatDuration(weekStats?.total_duration || 0, { emptyText: "0分钟" })}
+                      {formatDuration(weekStats?.total_duration || 0, { emptyText: t('scheduler.weeklyReflection.zeroMinutes') })}
                     </div>
-                    <div className="text-xs text-slate-500 mt-1">专注时长</div>
+                    <div className="text-xs text-slate-500 mt-1">{t('scheduler.weeklyReflection.focusDuration')}</div>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
                     <div className="text-3xl font-bold text-primary-500">{weekReviews.length}</div>
-                    <div className="text-xs text-slate-500 mt-1">每日回顾</div>
+                    <div className="text-xs text-slate-500 mt-1">{t('scheduler.weeklyReflection.dailyReviews')}</div>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
                     <div className="text-3xl">
                       {dominantMood && dominantMood[1] > 0 ? MOOD_EMOJIS[dominantMood[0]] : '🤔'}
                     </div>
-                    <div className="text-xs text-slate-500 mt-1">主要心情</div>
+                    <div className="text-xs text-slate-500 mt-1">{t('scheduler.weeklyReflection.mainMood')}</div>
                   </div>
                 </div>
 
@@ -265,7 +278,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
                     <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
                       <BarChart3 size={16} className="text-primary-500" />
-                      每日完成趋势
+                      {t('scheduler.weeklyReflection.dailyCompletionTrend')}
                     </h3>
                     <div className="flex items-end gap-1 h-20">
                       {weekStats.daily.map((day: { date: string; completed: number; duration: number }, i: number) => {
@@ -281,7 +294,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                               transition={{ delay: i * 0.1 }}
                             />
                             <div className="text-xs text-slate-400 mt-1">
-                              {['一', '二', '三', '四', '五', '六', '日'][i]}
+                              {getWeekdayName(i)}
                             </div>
                           </div>
                         );
@@ -293,7 +306,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                 <div>
                   <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
                     <Target size={16} className="text-primary-500" />
-                    本周总结
+                    {t('scheduler.weeklyReflection.weeklySummary')}
                   </h3>
                   <textarea
                     value={formData.content}
@@ -307,7 +320,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                   <div>
                     <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
                       <Lightbulb size={16} className="text-amber-500" />
-                      下周改进计划
+                      {t('scheduler.weeklyReflection.nextWeekPlan')}
                     </h3>
                     <textarea
                       value={formData.improvements}
@@ -319,7 +332,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                   <div>
                     <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
                       <Brain size={16} className="text-primary-500" />
-                      本周学习收获
+                      {t('scheduler.weeklyReflection.weeklyLearning')}
                     </h3>
                     <textarea
                       value={formData.learnings}
@@ -337,7 +350,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    取消
+                    {t('common.cancel')}
                   </motion.button>
                   <motion.button
                     onClick={handleSave}
@@ -347,7 +360,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                     whileTap={{ scale: 0.98 }}
                   >
                     <Save size={18} />
-                    {saving ? '保存中...' : existingReview ? '更新反思' : '保存反思'}
+                    {saving ? t('scheduler.weeklyReflection.saving') : existingReview ? t('scheduler.weeklyReflection.updateReflection') : t('scheduler.weeklyReflection.saveReflection')}
                   </motion.button>
                 </div>
               </div>

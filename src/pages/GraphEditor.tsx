@@ -481,7 +481,7 @@ export const GraphEditor = () => {
 
     const titleMap = new Map<string, string>();
     for (const node of nodes) {
-      titleMap.set(node.id, node.title ?? "未命名节点");
+      titleMap.set(node.id, node.title ?? t("graphEditor.unnamed.node"));
     }
 
     const chain: NodeBreadcrumbItem[] = [];
@@ -491,14 +491,14 @@ export const GraphEditor = () => {
       visited.add(currentParentId);
       chain.push({
         id: currentParentId,
-        title: titleMap.get(currentParentId) ?? "未命名节点",
+        title: titleMap.get(currentParentId) ?? t("graphEditor.unnamed.node"),
       });
       currentParentId = parentMap.get(currentParentId);
     }
 
     chain.reverse();
     return chain;
-  }, [selectedNode?.id, edges, nodes]);
+  }, [selectedNode?.id, edges, nodes, t]);
 
   // 记录最近访问节点：仅 nodeId 变化时写入，避免频繁写入 localStorage
   const lastRecordedNodeIdRef = useRef<string | null>(null);
@@ -508,11 +508,11 @@ export const GraphEditor = () => {
     lastRecordedNodeIdRef.current = selectedNode.id;
     addRecentNode({
       id: selectedNode.id,
-      title: selectedNode.title ?? "未命名节点",
+      title: selectedNode.title ?? t("graphEditor.unnamed.node"),
       graphId: id,
-      graphTopic: graphMeta.title ?? "未命名图谱",
+      graphTopic: graphMeta.title ?? t("graphEditor.unnamed.graph"),
     });
-  }, [selectedNode?.id, id, graphMeta]);
+  }, [selectedNode?.id, id, graphMeta, t]);
 
   // Narrative mode + learning path handlers (extracted hook)
   const {
@@ -808,7 +808,7 @@ export const GraphEditor = () => {
         });
         message.success(t("graphEditor.connectionCreated"));
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "未知错误";
+        const errorMessage = error instanceof Error ? error.message : t("graphEditor.errors.unknownError");
         message.error(
           t("graphEditor.connectionCreateFailed", { message: errorMessage }),
         );
@@ -1235,7 +1235,7 @@ export const GraphEditor = () => {
           <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
             <Lock size={16} />
             <span className="text-sm font-medium">
-              只读模式 - 您正在查看公开图谱
+              {t("graphEditor.errors.readOnlyModeHint")}
             </span>
           </div>
           <button
@@ -1243,7 +1243,7 @@ export const GraphEditor = () => {
             className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg transition-colors"
           >
             <LogIn size={14} />
-            登录以编辑
+            {t("graphEditor.errors.loginToEdit")}
           </button>
         </div>
       )}
@@ -1297,12 +1297,12 @@ export const GraphEditor = () => {
           {/* 节点层级面包屑：顶部居中浮层，点击父节点复用 focusNode 居中并选中 */}
           <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 w-max max-w-[60vw]">
             <NodeBreadcrumb
-              graphTitle={graphMeta?.title ?? "未命名图谱"}
+              graphTitle={graphMeta?.title ?? t("graphEditor.unnamed.graph")}
               selectedNode={
                 selectedNode
                   ? {
                       id: selectedNode.id,
-                      title: selectedNode.title ?? "未命名节点",
+                      title: selectedNode.title ?? t("graphEditor.unnamed.node"),
                     }
                   : null
               }
@@ -1468,7 +1468,7 @@ export const GraphEditor = () => {
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
-        title={graphMeta?.title || "未命名图谱"}
+        title={graphMeta?.title || t("graphEditor.unnamed.graph")}
         sidebarMode={sidebarMode}
         setSidebarMode={setSidebarMode}
         showGrid={showGrid}
@@ -1709,7 +1709,7 @@ export const GraphEditor = () => {
             <div className="p-4 border border-red-300 rounded-xl bg-red-50 dark:bg-red-900/20 dark:border-red-700 max-w-md mx-auto mt-4">
               <div className="flex items-center gap-2 text-red-700 dark:text-red-400 font-medium">
                 <AlertTriangle size={18} />
-                <span>AI 面板出错</span>
+                <span>{t("graphEditor.errors.aiPanelError")}</span>
               </div>
               <p className="text-sm text-red-600 dark:text-red-300 mt-2 break-words">
                 {error.message}
@@ -1718,7 +1718,7 @@ export const GraphEditor = () => {
                 onClick={resetErrorBoundary}
                 className="mt-3 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
               >
-                重试
+                {t("common.retry")}
               </button>
             </div>
           )}
@@ -1782,7 +1782,7 @@ export const GraphEditor = () => {
                   <div className="flex items-start gap-2 mb-3">
                     <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-gray-100">控制台崩溃</p>
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">{t("graphEditor.errors.consoleCrash")}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-words">
                         {error.message}
                       </p>
@@ -1793,13 +1793,13 @@ export const GraphEditor = () => {
                       onClick={panelState.closeConsole}
                       className="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                     >
-                      关闭
+                      {t("common.close")}
                     </button>
                     <button
                       onClick={resetErrorBoundary}
                       className="px-3 py-1.5 text-sm rounded-md bg-primary-600 text-white hover:bg-primary-700 transition-colors"
                     >
-                      重试
+                      {t("common.retry")}
                     </button>
                   </div>
                 </div>

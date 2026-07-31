@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import React, { useState, useEffect, useId, useRef, useMemo, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Save, Palette, Minus, ArrowRight } from 'lucide-react';
 import type { Edge, EdgeLineStyle, RelationshipCategory } from '../../../types';
@@ -21,19 +21,6 @@ interface EdgeEditDialogProps {
   onSave: (data: UpdateEdgeData) => Promise<void>;
   relationshipTypes: PresetRelationshipTypeConfig[];
 }
-
-const LINE_STYLE_OPTIONS: { value: EdgeLineStyle; label: string }[] = [
-  { value: 'solid', label: '实线' },
-  { value: 'dashed', label: '虚线' },
-  { value: 'dotted', label: '点线' },
-  { value: 'double', label: '双线' },
-];
-
-const ARROW_OPTIONS: { value: boolean | null; label: string }[] = [
-  { value: null, label: '自动' },
-  { value: true, label: '显示' },
-  { value: false, label: '隐藏' },
-];
 
 const PRESET_COLORS = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
@@ -62,10 +49,23 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
   const panelIdPrefix = `${tablistId}-panel`;
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  const tabs = [
-    { id: 'basic', label: '基本信息' },
-    { id: 'style', label: '样式设置' },
-  ] as const;
+  const tabs = useMemo(() => [
+    { id: 'basic', label: t('graphEditor.edgeEditDialog.tabBasic') },
+    { id: 'style', label: t('graphEditor.edgeEditDialog.tabStyle') },
+  ] as const, [t]);
+
+  const lineStyleOptions = useMemo<{ value: EdgeLineStyle; label: string }[]>(() => [
+    { value: 'solid', label: t('graphEditor.edgeEditDialog.lineStyles.solid') },
+    { value: 'dashed', label: t('graphEditor.edgeEditDialog.lineStyles.dashed') },
+    { value: 'dotted', label: t('graphEditor.edgeEditDialog.lineStyles.dotted') },
+    { value: 'double', label: t('graphEditor.edgeEditDialog.lineStyles.double') },
+  ], [t]);
+
+  const arrowOptions = useMemo<{ value: boolean | null; label: string }[]>(() => [
+    { value: null, label: t('graphEditor.edgeEditDialog.arrowDisplayOptions.auto') },
+    { value: true, label: t('graphEditor.edgeEditDialog.arrowDisplayOptions.show') },
+    { value: false, label: t('graphEditor.edgeEditDialog.arrowDisplayOptions.hide') },
+  ], [t]);
 
   const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
     switch (e.key) {
@@ -167,7 +167,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-500">
           <h2 id="edge-edit-dialog-title" className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            编辑边
+            {t('graphEditor.edgeEditDialog.title')}
           </h2>
           <button
             onClick={onClose}
@@ -193,7 +193,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            基本信息
+            {t('graphEditor.edgeEditDialog.tabBasic')}
           </button>
           <button
             ref={(el) => { tabRefs.current[1] = el; }}
@@ -210,7 +210,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            样式设置
+            {t('graphEditor.edgeEditDialog.tabStyle')}
           </button>
         </div>
 
@@ -225,7 +225,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
             >
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  标签
+                  {t('graphEditor.edgeEditDialog.label')}
                 </label>
                 <input
                   type="text"
@@ -238,14 +238,14 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  关系类型
+                  {t('graphEditor.edgeEditDialog.relationshipType')}
                 </label>
                 <select
                   value={relationshipType}
                   onChange={(e) => setRelationshipType(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
                 >
-                  <option value="">选择关系类型</option>
+                  <option value="">{t('graphEditor.edgeEditDialog.selectRelationshipType')}</option>
                   {Object.entries(groupedRelationshipTypes).map(([category, types]) => (
                     <optgroup key={category} label={t(RELATIONSHIP_CATEGORY_LABELS[category as RelationshipCategory]) || category}>
                       {types.map((type) => (
@@ -271,7 +271,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Palette size={16} className="inline mr-1" />
-                  自定义颜色
+                  {t('graphEditor.edgeEditDialog.customColor')}
                 </label>
                 <div className="flex items-center gap-2 mb-2">
                   <input
@@ -293,7 +293,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                       onClick={() => setCustomColor('')}
                       className="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                     >
-                      清除
+                      {t('graphEditor.edgeEditDialog.clear')}
                     </button>
                   )}
                 </div>
@@ -315,10 +315,10 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Minus size={16} className="inline mr-1" />
-                  线型
+                  {t('graphEditor.edgeEditDialog.lineStyle')}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {LINE_STYLE_OPTIONS.map((option) => (
+                  {lineStyleOptions.map((option) => (
                     <button
                       key={option.value}
                       onClick={() => setCustomLineStyle(option.value)}
@@ -337,10 +337,10 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <ArrowRight size={16} className="inline mr-1" />
-                  箭头显示
+                  {t('graphEditor.edgeEditDialog.arrowDisplay')}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
-                  {ARROW_OPTIONS.map((option) => (
+                  {arrowOptions.map((option) => (
                     <button
                       key={String(option.value)}
                       onClick={() => setShowArrow(option.value)}
@@ -364,7 +364,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-200/50 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
-            取消
+            {t('graphEditor.edgeEditDialog.cancel')}
           </button>
           <button
             onClick={handleSave}
@@ -374,12 +374,12 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
             {isSaving ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                保存中...
+                {t('graphEditor.edgeEditDialog.saving')}
               </>
             ) : (
               <>
                 <Save size={16} />
-                保存
+                {t('graphEditor.edgeEditDialog.save')}
               </>
             )}
           </button>

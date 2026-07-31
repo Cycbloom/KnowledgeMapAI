@@ -327,7 +327,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                               className="w-2 h-2 rounded-full" 
                               style={{ backgroundColor: GRAPH_RELATION_COLORS[type] }}
                             />
-                            {GRAPH_RELATION_LABELS[type]}
+                            {t(GRAPH_RELATION_LABELS[type])}
                           </button>
                         ))}
                       </motion.div>
@@ -363,7 +363,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                                       style={{ backgroundColor: GRAPH_RELATION_COLORS[rel.relation_type] }}
                                     />
                                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                      {GRAPH_RELATION_LABELS[rel.relation_type]}
+                                      {t(GRAPH_RELATION_LABELS[rel.relation_type])}
                                     </span>
                                     <span className="text-xs text-gray-400 dark:text-gray-500">
                                       {t('graphEditor.graphMap.relationDiscovery.confidence')} {(rel.confidence * 100).toFixed(0)}%

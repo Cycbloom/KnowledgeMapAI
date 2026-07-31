@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Edit2, Trash2, Layers } from "lucide-react";
 import {
-  BACKBONE_MODULE_LABELS,
+  BACKBONE_MODULE_LABEL_I18N_KEYS,
   BACKBONE_MODULE_COLORS,
   type Node,
   type CustomRegion,
@@ -34,14 +34,18 @@ export const RegionManagePanel = React.memo(function RegionManagePanel({
       const module = node.properties?.backboneModule as string | undefined;
       if (
         module &&
-        BACKBONE_MODULE_LABELS[module as keyof typeof BACKBONE_MODULE_LABELS]
+        BACKBONE_MODULE_LABEL_I18N_KEYS[
+          module as keyof typeof BACKBONE_MODULE_LABEL_I18N_KEYS
+        ]
       ) {
         if (!regionMap.has(module)) {
           regionMap.set(module, {
             id: module,
-            name: BACKBONE_MODULE_LABELS[
-              module as keyof typeof BACKBONE_MODULE_LABELS
-            ],
+            name: t(
+              BACKBONE_MODULE_LABEL_I18N_KEYS[
+                module as keyof typeof BACKBONE_MODULE_LABEL_I18N_KEYS
+              ],
+            ),
             color:
               BACKBONE_MODULE_COLORS[
                 module as keyof typeof BACKBONE_MODULE_COLORS
@@ -58,7 +62,7 @@ export const RegionManagePanel = React.memo(function RegionManagePanel({
     });
 
     return Array.from(regionMap.values());
-  }, [nodes]);
+  }, [nodes, t]);
 
   const customRegionsWithNodes = useMemo(() => {
     return customRegions.map((region) => {

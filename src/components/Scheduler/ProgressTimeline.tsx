@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format, addDays, differenceInDays, isSameDay, isBefore } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
+import { zhCN, enUS } from 'date-fns/locale';
 import { CheckCircle, Circle, Clock } from 'lucide-react';
 import { TaskProgressPlan } from '../../types';
 
@@ -21,7 +21,10 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
   currentPercentage,
   onDayClick,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const dateLocale = useMemo(() => {
+    return i18n.language?.startsWith('zh') ? zhCN : enUS;
+  }, [i18n.language]);
   const days = useMemo(() => {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -42,7 +45,7 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('scheduler.taskWorkbench.progressTimeline.title')}</h3>
         <div className="text-sm text-gray-500">
-          {completedDays}/{totalDays} 天完成
+          {t('scheduler.progressTimeline.daysCompleted', { completed: completedDays, total: totalDays })}
         </div>
       </div>
 
@@ -127,7 +130,7 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
                         {plan.actual_percentage > 0 ? `${plan.actual_percentage}%` : '-'}
                       </div>
                       <div className="text-xs text-gray-400">
-                        计划 {plan.planned_percentage}%
+                        {t('scheduler.progressTimeline.plannedPercent', { percent: plan.planned_percentage })}
                       </div>
                     </>
                   )}
@@ -135,10 +138,13 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
 
                 <div className="absolute bottom-full mb-2 hidden group-hover:block">
                   <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                    {format(day, 'M月d日 EEEE', { locale: zhCN })}
+                    {format(day, t('scheduler.progressTimeline.monthDayFormat'), { locale: dateLocale })}
                     {plan && (
                       <div className="mt-1">
-                        计划: {plan.planned_percentage}% | 实际: {plan.actual_percentage}%
+                        {t('scheduler.progressTimeline.plannedVsActual', {
+                          planned: `${plan.planned_percentage}%`,
+                          actual: `${plan.actual_percentage}%`,
+                        })}
                       </div>
                     )}
                   </div>

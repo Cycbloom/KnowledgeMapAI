@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GraduationCap, BookOpen, Mountain, Layers } from 'lucide-react';
 import { useTheme } from "../../hooks";
@@ -20,59 +20,59 @@ interface DifficultyOption {
   darkBorderColor: string;
 }
 
-const difficultyOptions: DifficultyOption[] = [
-  {
-    id: 'easy',
-    label: '简单',
-    description: '基础概念题，直接考查知识点记忆',
-    icon: <GraduationCap size={20} aria-hidden="true" />,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-500',
-    darkBgColor: 'dark:bg-green-900/20',
-    darkBorderColor: 'dark:border-green-500',
-  },
-  {
-    id: 'medium',
-    label: '中等',
-    description: '应用理解题，考查理解能力和应用',
-    icon: <BookOpen size={20} aria-hidden="true" />,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-500',
-    darkBgColor: 'dark:bg-orange-900/20',
-    darkBorderColor: 'dark:border-orange-500',
-  },
-  {
-    id: 'hard',
-    label: '困难',
-    description: '综合分析题，考查深度理解和分析',
-    icon: <Mountain size={20} aria-hidden="true" />,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-500',
-    darkBgColor: 'dark:bg-red-900/20',
-    darkBorderColor: 'dark:border-red-500',
-  },
-  {
-    id: 'mixed',
-    label: '混合',
-    description: '综合各难度层次的题目',
-    icon: <Layers size={20} aria-hidden="true" />,
-    color: 'text-primary-600',
-    bgColor: 'bg-primary-50',
-    borderColor: 'border-primary-500',
-    darkBgColor: 'dark:bg-primary-900/20',
-    darkBorderColor: 'dark:border-primary-500',
-  },
-];
-
 export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
   difficulty,
   onChange,
 }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+
+  const difficultyOptions = useMemo<DifficultyOption[]>(() => [
+    {
+      id: 'easy',
+      label: t('quiz.difficultySelector.options.easy.label'),
+      description: t('quiz.difficultySelector.options.easy.description'),
+      icon: <GraduationCap size={20} aria-hidden="true" />,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      borderColor: 'border-green-500',
+      darkBgColor: 'dark:bg-green-900/20',
+      darkBorderColor: 'dark:border-green-500',
+    },
+    {
+      id: 'medium',
+      label: t('quiz.difficultySelector.options.medium.label'),
+      description: t('quiz.difficultySelector.options.medium.description'),
+      icon: <BookOpen size={20} aria-hidden="true" />,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      borderColor: 'border-orange-500',
+      darkBgColor: 'dark:bg-orange-900/20',
+      darkBorderColor: 'dark:border-orange-500',
+    },
+    {
+      id: 'hard',
+      label: t('quiz.difficultySelector.options.hard.label'),
+      description: t('quiz.difficultySelector.options.hard.description'),
+      icon: <Mountain size={20} aria-hidden="true" />,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+      borderColor: 'border-red-500',
+      darkBgColor: 'dark:bg-red-900/20',
+      darkBorderColor: 'dark:border-red-500',
+    },
+    {
+      id: 'mixed',
+      label: t('quiz.difficultySelector.options.mixed.label'),
+      description: t('quiz.difficultySelector.options.mixed.description'),
+      icon: <Layers size={20} aria-hidden="true" />,
+      color: 'text-primary-600',
+      bgColor: 'bg-primary-50',
+      borderColor: 'border-primary-500',
+      darkBgColor: 'dark:bg-primary-900/20',
+      darkBorderColor: 'dark:border-primary-500',
+    },
+  ], [t]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLFieldSetElement>) => {
     const target = e.target;

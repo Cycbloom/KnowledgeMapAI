@@ -1,3 +1,5 @@
+import i18next from "i18next";
+
 export interface GeneratedCard {
   type: "qa" | "choice" | "true_false" | "multi_choice" | "fill_in_the_blank";
   question: string;
@@ -44,8 +46,8 @@ export function classifyError(error: unknown): AICardGenError {
   ) {
     return {
       type: "api_key_missing",
-      message: "AI 服务未配置",
-      suggestion: "请前往设置页面配置 AI API Key",
+      message: i18next.t("ai.errors.apiKeyMissing.message"),
+      suggestion: i18next.t("ai.errors.apiKeyMissing.suggestion"),
       retryable: false,
     };
   }
@@ -59,8 +61,8 @@ export function classifyError(error: unknown): AICardGenError {
   ) {
     return {
       type: "api_key_invalid",
-      message: "API Key 无效",
-      suggestion: "请检查您的 API Key 是否正确，或前往设置页面重新配置",
+      message: i18next.t("ai.errors.apiKeyInvalid.message"),
+      suggestion: i18next.t("ai.errors.apiKeyInvalid.suggestion"),
       retryable: false,
     };
   }
@@ -73,8 +75,8 @@ export function classifyError(error: unknown): AICardGenError {
   ) {
     return {
       type: "quota_exceeded",
-      message: "API 配额已用尽",
-      suggestion: "您的 API 配额已用尽，请检查账户余额或等待配额重置",
+      message: i18next.t("ai.errors.quotaExceeded.message"),
+      suggestion: i18next.t("ai.errors.quotaExceeded.suggestion"),
       retryable: false,
     };
   }
@@ -86,8 +88,8 @@ export function classifyError(error: unknown): AICardGenError {
   ) {
     return {
       type: "rate_limited",
-      message: "请求过于频繁",
-      suggestion: "请稍后再试，或减少单次生成的题目数量",
+      message: i18next.t("ai.errors.rateLimited.message"),
+      suggestion: i18next.t("ai.errors.rateLimited.suggestion"),
       retryable: true,
     };
   }
@@ -102,8 +104,8 @@ export function classifyError(error: unknown): AICardGenError {
   ) {
     return {
       type: "network_error",
-      message: "网络连接失败",
-      suggestion: "请检查网络连接后重试",
+      message: i18next.t("ai.errors.networkError.message"),
+      suggestion: i18next.t("ai.errors.networkError.suggestion"),
       retryable: true,
     };
   }
@@ -111,8 +113,8 @@ export function classifyError(error: unknown): AICardGenError {
   if (errorMessage.includes("timeout") || errorMessage.includes("timed out")) {
     return {
       type: "timeout",
-      message: "请求超时",
-      suggestion: "服务器响应超时，请稍后重试",
+      message: i18next.t("ai.errors.timeout.message"),
+      suggestion: i18next.t("ai.errors.timeout.suggestion"),
       retryable: true,
     };
   }
@@ -125,8 +127,8 @@ export function classifyError(error: unknown): AICardGenError {
   ) {
     return {
       type: "invalid_response",
-      message: "AI 响应格式错误",
-      suggestion: "AI 返回的数据格式不正确，请重试",
+      message: i18next.t("ai.errors.invalidResponse.message"),
+      suggestion: i18next.t("ai.errors.invalidResponse.suggestion"),
       retryable: true,
     };
   }
@@ -140,16 +142,16 @@ export function classifyError(error: unknown): AICardGenError {
   ) {
     return {
       type: "database_error",
-      message: "数据库写入失败",
-      suggestion: "题目生成成功但保存失败，请检查数据库连接后重试",
+      message: i18next.t("ai.errors.databaseError.message"),
+      suggestion: i18next.t("ai.errors.databaseError.suggestion"),
       retryable: true,
     };
   }
 
   return {
     type: "unknown",
-    message: `生成失败: ${originalMessage}`,
-    suggestion: "请稍后重试，如问题持续请联系技术支持",
+    message: i18next.t("ai.errors.unknown.message", { message: originalMessage }),
+    suggestion: i18next.t("ai.errors.unknown.suggestion"),
     retryable: true,
   };
 }

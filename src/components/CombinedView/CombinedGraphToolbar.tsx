@@ -15,11 +15,11 @@ const Divider: React.FC<DividerProps> = ({ className }) => (
   <div className={`w-px h-6 mx-1 flex-shrink-0 ${className}`} />
 );
 
-interface ButtonProps { 
-  onClick: () => void; 
-  active?: boolean; 
-  disabled?: boolean; 
-  title: string; 
+interface ButtonProps {
+  onClick: () => void;
+  active?: boolean;
+  disabled?: boolean;
+  title: string;
   icon: React.ElementType;
   colorClass?: string;
   buttonClasses: {
@@ -29,18 +29,18 @@ interface ButtonProps {
   isDark: boolean;
 }
 
-const Button: React.FC<ButtonProps> = ({ 
-  onClick, 
-  active, 
-  disabled, 
-  title, 
-  icon: Icon, 
+const Button: React.FC<ButtonProps> = ({
+  onClick,
+  active,
+  disabled,
+  title,
+  icon: Icon,
   colorClass,
   buttonClasses,
   isDark
 }) => {
   let className = 'p-1.5 rounded transition-colors flex-shrink-0 ';
-  
+
   if (disabled) {
     className += isDark ? 'text-slate-600 cursor-not-allowed' : 'text-gray-300 cursor-not-allowed';
   } else if (active) {
@@ -92,20 +92,20 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
   const themeClasses = {
-    container: isDark 
-      ? 'bg-slate-800/90 border-slate-700 text-gray-100' 
+    container: isDark
+      ? 'bg-slate-800/90 border-slate-700 text-gray-100'
       : 'bg-white/90 border-gray-200 text-gray-800',
     button: {
-      default: isDark 
-        ? 'text-gray-300 hover:bg-slate-700' 
+      default: isDark
+        ? 'text-gray-300 hover:bg-slate-700'
         : 'text-gray-600 hover:bg-gray-100',
-      active: isDark 
-        ? 'bg-primary-900/50 text-primary-400' 
+      active: isDark
+        ? 'bg-primary-900/50 text-primary-400'
         : 'bg-primary-50 text-primary-600',
     },
     divider: isDark ? 'bg-slate-600' : 'bg-gray-300',
-    dropdown: isDark 
-      ? 'bg-slate-800 border-slate-700 text-gray-100' 
+    dropdown: isDark
+      ? 'bg-slate-800 border-slate-700 text-gray-100'
       : 'bg-white border-gray-200 text-gray-800',
     itemHover: isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-50'
   };
@@ -118,7 +118,7 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
     >
       <Button onClick={onBack} icon={ArrowLeft} title={t('common.aria.back')} buttonClasses={themeClasses.button} isDark={isDark} />
       <Divider className={themeClasses.divider} />
-      
+
       <div className="flex items-center gap-2 px-2">
         <div className="w-2 h-2 rounded-full bg-primary-500" />
         <span className="text-sm font-medium max-w-[100px] truncate">{graph1Title}</span>
@@ -126,37 +126,37 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
         <div className="w-2 h-2 rounded-full bg-green-500" />
         <span className="text-sm font-medium max-w-[100px] truncate">{graph2Title}</span>
       </div>
-      
+
       <Divider className={themeClasses.divider} />
-      
+
       <div className="flex items-center space-x-1">
-        <Button 
-          onClick={onToggleColoringMode} 
-          icon={coloringMode === 'level' ? Layers : Activity} 
-          title={coloringMode === 'level' ? '着色模式: 结构' : '着色模式: 热力图'}
+        <Button
+          onClick={onToggleColoringMode}
+          icon={coloringMode === 'level' ? Layers : Activity}
+          title={coloringMode === 'level' ? t('combinedViewPage.toolbar.colorModeStructure') : t('combinedViewPage.toolbar.colorModeHeatmap')}
           colorClass={coloringMode === 'level' ? 'text-primary-500' : 'text-orange-500'}
           buttonClasses={themeClasses.button}
           isDark={isDark}
         />
-        <Button onClick={toggleTheme} icon={isDark ? Sun : Moon} title={isDark ? '浅色模式' : '深色模式'} buttonClasses={themeClasses.button} isDark={isDark} />
+        <Button onClick={toggleTheme} icon={isDark ? Sun : Moon} title={isDark ? t('combinedViewPage.toolbar.lightMode') : t('combinedViewPage.toolbar.darkMode')} buttonClasses={themeClasses.button} isDark={isDark} />
       </div>
-      
+
       <Divider className={themeClasses.divider} />
-      
-      <Button 
-        onClick={onToggleSidebar} 
-        active={isSidebarOpen} 
-        icon={List} 
-        title={isSidebarOpen ? '关闭侧边栏' : '打开侧边栏'}
+
+      <Button
+        onClick={onToggleSidebar}
+        active={isSidebarOpen}
+        icon={List}
+        title={isSidebarOpen ? t('combinedViewPage.toolbar.closeSidebar') : t('combinedViewPage.toolbar.openSidebar')}
         buttonClasses={themeClasses.button}
         isDark={isDark}
       />
-      
+
       <Divider className={themeClasses.divider} />
-      
+
       <div className="relative">
-        <Button 
-          onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} 
+        <Button
+          onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
           active={isExportMenuOpen}
           icon={Download}
           title={t('common.aria.export')}
@@ -165,30 +165,30 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
         />
         {isExportMenuOpen && (
           <div className={`absolute top-full right-0 mt-2 shadow-xl rounded-lg border w-40 py-1 z-50 ${themeClasses.dropdown}`}>
-            <button 
+            <button
               onClick={() => { onExportImage(); setIsExportMenuOpen(false); }}
               className={`flex items-center gap-2 w-full text-left px-3 py-2 text-sm ${themeClasses.itemHover}`}
             >
               <Image size={14} />
-              导出图片
+              {t('combinedViewPage.toolbar.exportImage')}
             </button>
-            <button 
+            <button
               onClick={() => { onExportJSON(); setIsExportMenuOpen(false); }}
               className={`flex items-center gap-2 w-full text-left px-3 py-2 text-sm ${themeClasses.itemHover}`}
             >
               <FileJson size={14} />
-              导出 JSON
+              {t('combinedViewPage.toolbar.exportJson')}
             </button>
           </div>
         )}
       </div>
-      
+
       {selectedNode && (
         <>
           <Divider className={themeClasses.divider} />
           <div className="flex items-center gap-2 px-2 py-1 bg-primary-50 dark:bg-primary-900/30 rounded-lg">
             <span className="text-xs text-primary-600 dark:text-primary-400">
-              已选: {selectedNode.title}
+              {t('combinedViewPage.toolbar.selectedNode', { title: selectedNode.title })}
             </span>
           </div>
         </>

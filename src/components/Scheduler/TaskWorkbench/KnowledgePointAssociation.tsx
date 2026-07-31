@@ -86,9 +86,9 @@ export const KnowledgePointAssociation: React.FC<
       setIsAdding(false);
       setSearchQuery("");
       setSearchResults([]);
-      message.success("知识点已关联");
+      message.success(t('scheduler.taskWorkbench.knowledgePointAssociation.associateSuccess'));
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "关联知识点失败";
+      const errorMessage = error instanceof Error ? error.message : t('scheduler.taskWorkbench.knowledgePointAssociation.associateFailed');
       message.error(errorMessage);
     }
   };
@@ -97,9 +97,9 @@ export const KnowledgePointAssociation: React.FC<
     try {
       await api.scheduler.removeTaskKnowledgePoint(taskId, kpId);
       setAssociations(associations.filter((a) => a.id !== kpId));
-      message.success("已取消关联");
+      message.success(t('scheduler.taskWorkbench.knowledgePointAssociation.unassociateSuccess'));
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "取消关联失败";
+      const errorMessage = error instanceof Error ? error.message : t('scheduler.taskWorkbench.knowledgePointAssociation.unassociateFailed');
       message.error(errorMessage);
     }
   };
@@ -117,9 +117,9 @@ export const KnowledgePointAssociation: React.FC<
           is_primary: a.id === kpId,
         })),
       );
-      message.success("已设为主要知识点");
+      message.success(t('scheduler.taskWorkbench.knowledgePointAssociation.setPrimarySuccess'));
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "设置失败";
+      const errorMessage = error instanceof Error ? error.message : t('scheduler.taskWorkbench.knowledgePointAssociation.setPrimaryFailed');
       message.error(errorMessage);
     }
   };
@@ -154,10 +154,10 @@ export const KnowledgePointAssociation: React.FC<
           {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           <BookOpen size={18} className="text-primary-500" />
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-            关联知识点
+            {t('scheduler.taskWorkbench.knowledgePointAssociation.title')}
           </h3>
           <span className="text-sm text-slate-500 dark:text-slate-400">
-            {associations.length} 个
+            {t('scheduler.taskWorkbench.knowledgePointAssociation.count', { count: associations.length })}
           </span>
         </div>
         <button
@@ -168,7 +168,7 @@ export const KnowledgePointAssociation: React.FC<
           className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
         >
           <Plus size={14} />
-          添加
+          {t('scheduler.taskWorkbench.knowledgePointAssociation.add')}
         </button>
       </div>
 
@@ -225,7 +225,7 @@ export const KnowledgePointAssociation: React.FC<
 
               {searchQuery && !isSearching && searchResults.length === 0 && (
                 <p className="mt-2 text-sm text-slate-400 dark:text-slate-500 text-center py-4">
-                  未找到匹配的知识点
+                  {t('scheduler.taskWorkbench.knowledgePointAssociation.noMatch')}
                 </p>
               )}
 
@@ -238,7 +238,7 @@ export const KnowledgePointAssociation: React.FC<
                   }}
                   className="px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 >
-                  取消
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -258,11 +258,11 @@ export const KnowledgePointAssociation: React.FC<
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-slate-900 dark:text-white truncate">
-                      {association.knowledge_point?.title || "未知知识点"}
+                      {association.knowledge_point?.title || t('scheduler.taskWorkbench.knowledgePointAssociation.unknownKnowledgePoint')}
                     </p>
                     {association.is_primary && (
                       <span className="px-1.5 py-0.5 text-xs bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 rounded">
-                        主要
+                        {t('scheduler.taskWorkbench.knowledgePointAssociation.primary')}
                       </span>
                     )}
                   </div>
@@ -273,7 +273,7 @@ export const KnowledgePointAssociation: React.FC<
                   )}
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-xs text-slate-400 dark:text-slate-500">
-                      关联度: {association.relevance_score}%
+                      {t('scheduler.taskWorkbench.knowledgePointAssociation.relevance')} {association.relevance_score}%
                     </span>
                   </div>
                 </div>
@@ -314,7 +314,7 @@ export const KnowledgePointAssociation: React.FC<
               <EmptyState
                 icon={<Link size={32} />}
                 title={t('scheduler.empty.associationEmpty')}
-                action={{ label: '添加知识点关联', onClick: () => setIsAdding(true) }}
+                action={{ label: t('scheduler.taskWorkbench.knowledgePointAssociation.addAssociation'), onClick: () => setIsAdding(true) }}
               />
             )}
           </div>

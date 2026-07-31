@@ -56,7 +56,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
     } else {
       nodeMap.set(taskId, {
         id: taskId,
-        title: '当前任务',
+        title: t('scheduler.taskDependencyGraph.currentTaskTitle'),
         status: 'pending',
         queueLevel: 0,
         priority: 0,
@@ -109,7 +109,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
     });
 
     return { nodes: Array.from(nodeMap.values()), edges: edgeList };
-  }, [taskId, dependencies, dependents, allTasks]);
+  }, [taskId, dependencies, dependents, allTasks, t]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -211,7 +211,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
           </p>
           {node.isCurrent && (
             <span className="absolute -top-2 -right-2 px-1 text-xs bg-primary-500 text-white rounded">
-              当前
+              {t('scheduler.taskDependencyGraph.current')}
             </span>
           )}
         </div>
@@ -220,11 +220,11 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
       <div className="absolute bottom-0 right-0 flex items-center gap-4 text-xs text-gray-500 bg-white dark:bg-gray-800 p-2 rounded">
         <div className="flex items-center gap-1">
           <div className="w-6 h-0.5 bg-primary-500" />
-          <span>严格依赖</span>
+          <span>{t('scheduler.taskDependencyGraph.strictDep')}</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-6 h-0.5 bg-gray-400 border-dashed border-t-2 border-gray-400" />
-          <span>软性依赖</span>
+          <span>{t('scheduler.taskDependencyGraph.softDep')}</span>
         </div>
       </div>
     </div>

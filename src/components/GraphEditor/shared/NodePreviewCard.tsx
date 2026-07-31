@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Node, Edge, NodeStatus } from '../../../types';
 import { getLearningStatus, getStatusColors } from '../../../config/learningStatusColors';
 import { getLevel, getLevelLabel } from '../../../lib/graphUtils';
@@ -38,6 +39,7 @@ const NodePreviewCardComponent: React.FC<NodePreviewCardProps> = ({
   onMouseLeave
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = getStatusColors(status, isDark);
@@ -118,12 +120,12 @@ const NodePreviewCardComponent: React.FC<NodePreviewCardProps> = ({
               </span>
               {isMastered && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium flex items-center gap-1">
-                  <Check size={10} /> 已掌握
+                  <Check size={10} /> {t('graphEditor.nodePreviewCard.mastered')}
                 </span>
               )}
               {isLocked && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium flex items-center gap-1">
-                  <Lock size={10} /> 锁定
+                  <Lock size={10} /> {t('graphEditor.nodePreviewCard.locked')}
                 </span>
               )}
             </div>
@@ -166,7 +168,7 @@ const NodePreviewCardComponent: React.FC<NodePreviewCardProps> = ({
         <div className={`grid grid-cols-2 gap-2 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
           <div className="flex items-center gap-1.5">
             <BookOpen size={12} />
-            <span>复习 {reviewCount} 次</span>
+            <span>{t('graphEditor.nodePreviewCard.reviewCount', { count: reviewCount })}</span>
           </div>
           {nextReview && (
             <div className="flex items-center gap-1.5">
@@ -213,7 +215,7 @@ const NodePreviewCardComponent: React.FC<NodePreviewCardProps> = ({
                 ))}
                 {childNodes.length > 3 && (
                   <div className={`text-xs text-center py-1 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                    还有 {childNodes.length - 3} 个子节点
+                    {t('graphEditor.nodePreviewCard.childCountMore', { count: childNodes.length - 3 })}
                   </div>
                 )}
               </div>
@@ -229,7 +231,7 @@ const NodePreviewCardComponent: React.FC<NodePreviewCardProps> = ({
         `}
       >
         <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-          点击查看详情
+          {t('graphEditor.nodePreviewCard.clickToViewDetail')}
         </span>
         {!isMastered && !isLocked && onMarkMastered && (
           <button
@@ -239,7 +241,7 @@ const NodePreviewCardComponent: React.FC<NodePreviewCardProps> = ({
             }}
             className="text-xs px-2 py-1 rounded-md bg-green-500 text-white hover:bg-green-600 transition-colors"
           >
-            标记已掌握
+            {t('graphEditor.nodePreviewCard.markAsMastered')}
           </button>
         )}
       </div>

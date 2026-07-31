@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Edit, Zap } from 'lucide-react';
 import { PromptEditor } from '../GraphEditor/panels/PromptEditor';
 import { PROMPT_SCENARIOS, getScenarioById, type PromptScenario } from './promptScenarios';
@@ -14,6 +15,7 @@ interface PromptConfigContentProps {
 export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
   initialScenarioId,
 }) => {
+  const { t } = useTranslation();
   const { token } = useStore();
   const { data: userData } = useUser(!!token);
   const updateProfileMutation = useUpdateProfileMutation();
@@ -68,11 +70,11 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
         },
       });
 
-      message.success('Prompt配置已保存');
+      message.success(t('promptConfig.saveSuccess'));
       setEditingScenario(null);
     } catch (error) {
       console.error('Failed to save prompt config:', error);
-      message.error('保存失败');
+      message.error(t('promptConfig.saveFailed'));
     }
   };
 
@@ -89,7 +91,7 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
     <div className="flex flex-1 overflow-hidden h-full">
       <div className="w-64 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-4 flex-shrink-0">
         <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
-          配置场景
+          {t('promptConfig.configScene')}
         </h3>
         <div className="space-y-2">
           {PROMPT_SCENARIOS.map((scenario) => {
@@ -117,16 +119,16 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
                     {scenario.icon}
                   </div>
                   <span className="font-medium text-gray-900 dark:text-white text-sm">
-                    {scenario.name}
+                    {t(scenario.name as never)}
                   </span>
                   {hasCustomConfig && (
                     <span className="ml-auto text-xs text-primary-600 dark:text-primary-400">
-                      已配置
+                      {t('promptConfig.configured')}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 ml-7">
-                  {scenario.description}
+                  {t(scenario.description as never)}
                 </p>
               </button>
             );
@@ -144,10 +146,10 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white">
-                    {editingScenario.name}
+                    {t(editingScenario.name as never)}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {editingScenario.description}
+                    {t(editingScenario.description as never)}
                   </p>
                 </div>
               </div>
@@ -155,7 +157,7 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
                 onClick={handleResetToDefault}
                 className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
-                重置为默认
+                {t('promptConfig.resetToDefault')}
               </button>
             </div>
             <div className="flex-1 min-h-0">
@@ -177,10 +179,10 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white">
-                    {selectedScenario.name}
+                    {t(selectedScenario.name as never)}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {selectedScenario.description}
+                    {t(selectedScenario.description as never)}
                   </p>
                 </div>
               </div>
@@ -189,14 +191,14 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
                 className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               >
                 <Edit size={16} />
-                编辑
+                {t('common.edit')}
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto">
               <div className="mb-4">
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  可用变量
+                  {t('promptConfig.availableVariables')}
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {selectedScenario.variables.map((variable) => (
@@ -212,7 +214,7 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
 
               <div>
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  当前模板
+                  {t('promptConfig.currentTemplate')}
                 </h4>
                 <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                   <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono">
@@ -226,7 +228,7 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
           <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
             <div className="text-center">
               <Zap className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>请从左侧选择一个配置场景</p>
+              <p>{t('promptConfig.selectScene')}</p>
             </div>
           </div>
         )}

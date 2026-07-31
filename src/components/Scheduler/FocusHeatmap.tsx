@@ -12,22 +12,6 @@ interface FocusHeatmapProps {
   className?: string;
 }
 
-const MONTHS = [
-  "一月",
-  "二月",
-  "三月",
-  "四月",
-  "五月",
-  "六月",
-  "七月",
-  "八月",
-  "九月",
-  "十月",
-  "十一月",
-  "十二月",
-];
-const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
-
 const getColorForDuration = (duration: number, maxDuration: number): string => {
   if (duration === 0) return "bg-slate-100 dark:bg-slate-800";
 
@@ -98,7 +82,7 @@ const DayCell: React.FC<DayCellProps> = ({
               {duration > 0 ? (
                 <>
                   <p className="text-emerald-400">
-                    {formatDuration(duration, { emptyText: "0分钟" })} {t('scheduler.focusHeatmap.focusSuffix')}
+                    {formatDuration(duration, { emptyText: t('scheduler.focusHeatmap.zeroMinutes') })} {t('scheduler.focusHeatmap.focusSuffix')}
                   </p>
                   <p className="text-slate-400">{count} {t('scheduler.focusHeatmap.sessionsSuffix')}</p>
                 </>
@@ -125,6 +109,31 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
   const [currentYear, setCurrentYear] = useState(
     year ?? new Date().getFullYear(),
   );
+
+  const MONTHS = useMemo(() => [
+    t('scheduler.focusHeatmap.months.jan'),
+    t('scheduler.focusHeatmap.months.feb'),
+    t('scheduler.focusHeatmap.months.mar'),
+    t('scheduler.focusHeatmap.months.apr'),
+    t('scheduler.focusHeatmap.months.may'),
+    t('scheduler.focusHeatmap.months.jun'),
+    t('scheduler.focusHeatmap.months.jul'),
+    t('scheduler.focusHeatmap.months.aug'),
+    t('scheduler.focusHeatmap.months.sep'),
+    t('scheduler.focusHeatmap.months.oct'),
+    t('scheduler.focusHeatmap.months.nov'),
+    t('scheduler.focusHeatmap.months.dec'),
+  ], [t]);
+
+  const WEEKDAYS = useMemo(() => [
+    t('scheduler.focusHeatmap.weekdays.sun'),
+    t('scheduler.focusHeatmap.weekdays.mon'),
+    t('scheduler.focusHeatmap.weekdays.tue'),
+    t('scheduler.focusHeatmap.weekdays.wed'),
+    t('scheduler.focusHeatmap.weekdays.thu'),
+    t('scheduler.focusHeatmap.weekdays.fri'),
+    t('scheduler.focusHeatmap.weekdays.sat'),
+  ], [t]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -239,10 +248,10 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
         >
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             <Calendar size={20} className="text-emerald-500" />
-            年度专注热力图
+            {t('scheduler.focusHeatmap.title')}
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {currentYear}年
+            {t('scheduler.focusHeatmap.yearLabel', { year: currentYear })}
           </p>
         </motion.div>
 

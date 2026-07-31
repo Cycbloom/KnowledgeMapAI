@@ -1,5 +1,6 @@
 import { useEffect, useState, useId } from "react";
 import { AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { offlineMutationQueue } from "@/utils/offlineMutations";
 import { frontendEventBus } from "@/services/timer/FrontendEventBus";
 import type { SyncConflictDetectedPayload } from "@/services/FrontendEventTypes";
@@ -10,6 +11,7 @@ type ResolutionStrategy = "local" | "remote" | "merge";
 
 export function ConflictResolutionDialog() {
   const [conflict, setConflict] = useState<SyncConflictDetectedPayload | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const unsubscribe = frontendEventBus.subscribe(
@@ -55,21 +57,21 @@ export function ConflictResolutionDialog() {
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
         <div className="p-4 border-b border-gray-200 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-yellow-500" />
-          <h2 id={titleId} className="text-lg font-semibold">同步冲突</h2>
+          <h2 id={titleId} className="text-lg font-semibold">{t("conflictResolution.conflict.title")}</h2>
         </div>
         <div className="p-4">
           <p className="text-sm text-gray-600 mb-4">
-            {conflict.entity} #{conflict.id} 存在冲突，请选择解决方案：
+            {t("conflictResolution.conflict.description", { entity: conflict.entity, id: conflict.id })}
           </p>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div data-testid="conflict-local-version">
-              <h3 className="font-medium text-sm mb-2">本地版本</h3>
+              <h3 className="font-medium text-sm mb-2">{t("conflictResolution.version.local")}</h3>
               <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
                 {JSON.stringify(conflict.localData, null, 2)}
               </pre>
             </div>
             <div data-testid="conflict-remote-version">
-              <h3 className="font-medium text-sm mb-2">远端版本</h3>
+              <h3 className="font-medium text-sm mb-2">{t("conflictResolution.version.remote")}</h3>
               <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
                 {JSON.stringify(conflict.remoteData, null, 2)}
               </pre>
@@ -84,7 +86,7 @@ export function ConflictResolutionDialog() {
               }}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
             >
-              使用本地版本
+              {t("conflictResolution.conflict.resolution.useLocal")}
             </button>
             <button
               type="button"
@@ -94,7 +96,7 @@ export function ConflictResolutionDialog() {
               }}
               className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
             >
-              使用远端版本
+              {t("conflictResolution.conflict.resolution.useRemote")}
             </button>
             <button
               type="button"
@@ -104,7 +106,7 @@ export function ConflictResolutionDialog() {
               }}
               className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
             >
-              合并
+              {t("conflictResolution.conflict.resolution.merge")}
             </button>
           </div>
         </div>

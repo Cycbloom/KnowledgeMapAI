@@ -62,7 +62,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
       <div ref={containerRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
           <h2 id={titleId} className="text-lg font-bold text-gray-800 dark:text-gray-100">
-            邀请协作者
+            {t('collaborators.invite.dialog.title')}
           </h2>
           <button
             onClick={onClose}
@@ -76,7 +76,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
           <div className="p-6 space-y-4">
             <div>
               <label htmlFor="invite-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                用户邮箱
+                {t('collaborators.invite.dialog.emailLabel')}
               </label>
               <input
                 id="invite-email"
@@ -97,7 +97,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
             </div>
             <div>
               <label htmlFor="invite-role" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                角色
+                {t('collaborators.invite.dialog.roleLabel')}
               </label>
               <select
                 id="invite-role"
@@ -105,8 +105,8 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
                 onChange={(e) => setDraft(prev => ({ ...prev, role: e.target.value as CollaboratorRole }))}
                 className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
-                <option value="editor">{COLLABORATOR_ROLE_LABELS.editor}</option>
-                <option value="viewer">{COLLABORATOR_ROLE_LABELS.viewer}</option>
+                <option value="editor">{t(COLLABORATOR_ROLE_LABELS.editor)}</option>
+                <option value="viewer">{t(COLLABORATOR_ROLE_LABELS.viewer)}</option>
               </select>
             </div>
           </div>
@@ -116,7 +116,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              取消
+              {t('collaborators.invite.dialog.cancel')}
             </button>
             <button
               type="submit"

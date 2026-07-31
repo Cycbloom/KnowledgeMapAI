@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Tag, X } from "lucide-react";
 import { api } from "../../services/api";
 
@@ -38,6 +39,7 @@ export const TagCloudSection: React.FC<TagCloudSectionProps> = ({
   onTagsChange,
 }) => {
   const [showAll, setShowAll] = useState(false);
+  const { t } = useTranslation();
 
   const { data: tagsData } = useQuery({
     queryKey: ["graphTags"],
@@ -98,12 +100,12 @@ export const TagCloudSection: React.FC<TagCloudSectionProps> = ({
             <h3
               className={`text-base sm:text-lg font-bold ${isDark ? "text-white" : "text-gray-800"}`}
             >
-              标签云
+              {t('dashboard.tagCloud.title')}
             </h3>
             <p
               className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
             >
-              共 {allTags.length} 个标签
+              {t('dashboard.tagCloud.totalCount', { count: allTags.length })}
             </p>
           </div>
         </div>
@@ -118,8 +120,8 @@ export const TagCloudSection: React.FC<TagCloudSectionProps> = ({
             }`}
           >
             <X size={14} />
-            <span className="hidden sm:inline">清除筛选</span>
-            <span className="sm:hidden">清除</span>
+            <span className="hidden sm:inline">{t('dashboard.tagCloud.clearFilter')}</span>
+            <span className="sm:hidden">{t('dashboard.tagCloud.clearShort')}</span>
             <span>({selectedTags.length})</span>
           </button>
         )}
@@ -167,7 +169,7 @@ export const TagCloudSection: React.FC<TagCloudSectionProps> = ({
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
-          {showAll ? "收起" : `查看全部 ${allTags.length} 个标签`}
+          {showAll ? t('dashboard.tagCloud.collapse') : t('dashboard.tagCloud.viewAll', { count: allTags.length })}
         </button>
       )}
     </div>

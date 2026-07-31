@@ -29,10 +29,6 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(decimals)} ${units[i] ?? "B"}`;
 }
 
-function renderBool(value: boolean): string {
-  return value ? "是 ✓" : "否 ✗";
-}
-
 function getStandaloneMode(): boolean {
   if (typeof window === "undefined") return false;
   if (typeof window.matchMedia !== "function") return false;
@@ -73,6 +69,11 @@ export function PwaDiagnostics() {
   const { canInstall, installed } = usePwaInstall();
   const { t } = useTranslation();
 
+  const renderBool = (value: boolean): string =>
+    value
+      ? t("pwaDiagnostics.diagnostics.boolYes")
+      : t("pwaDiagnostics.diagnostics.boolNo");
+
   useEffect(() => {
     if (!expanded) return;
     let cancelled = false;
@@ -106,11 +107,7 @@ export function PwaDiagnostics() {
 
   async function handleClearCache() {
     if (typeof window === "undefined") return;
-    if (
-      !window.confirm(
-        "确定要清除所有缓存并重新加载吗？这将注销 Service Worker 并删除所有缓存。",
-      )
-    ) {
+    if (!window.confirm(t("pwaDiagnostics.diagnostics.clearCacheConfirm"))) {
       return;
     }
     setClearing(true);
@@ -139,7 +136,7 @@ export function PwaDiagnostics() {
         data-testid="pwa-diagnostics-toggle"
       >
         <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-          PWA 诊断
+          {t("pwaDiagnostics.diagnostics.title")}
         </span>
         {expanded ? (
           <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -150,37 +147,43 @@ export function PwaDiagnostics() {
 
       {expanded && (
         <div id={contentId} className="px-4 py-3 space-y-2 text-sm">
-          <DiagRow label={t('common.pwaDiagnostics.swRegistrationLabel')}>
+          <DiagRow label={t("pwaDiagnostics.diagnostics.swRegistrationLabel")}>
             {swStatus ? (
               <span>
-                已注册 {swStatus.registered ? "✓" : "✗"} · 活动{" "}
-                {swStatus.active ? "✓" : "✗"} · 等待{" "}
-                {swStatus.waiting ? "✓" : "✗"} · 控制器{" "}
+                {t("pwaDiagnostics.diagnostics.swRegistered")}{" "}
+                {swStatus.registered ? "✓" : "✗"} ·{" "}
+                {t("pwaDiagnostics.diagnostics.swActive")}{" "}
+                {swStatus.active ? "✓" : "✗"} ·{" "}
+                {t("pwaDiagnostics.diagnostics.swWaiting")}{" "}
+                {swStatus.waiting ? "✓" : "✗"} ·{" "}
+                {t("pwaDiagnostics.diagnostics.swController")}{" "}
                 {swStatus.controller ? "✓" : "✗"}
               </span>
             ) : (
-              <span>加载中...</span>
+              <span>{t("pwaDiagnostics.diagnostics.loading")}</span>
             )}
           </DiagRow>
 
-          <DiagRow label={t('common.pwaDiagnostics.swVersionLabel')}>{APP_VERSION}</DiagRow>
+          <DiagRow label={t("pwaDiagnostics.diagnostics.swVersionLabel")}>{APP_VERSION}</DiagRow>
 
-          <DiagRow label={t('common.pwaDiagnostics.standaloneLabel')}>
+          <DiagRow label={t("pwaDiagnostics.diagnostics.standaloneLabel")}>
             {renderBool(standaloneMode)}
           </DiagRow>
 
-          <DiagRow label={t('common.pwaDiagnostics.installableLabel')}>{renderBool(canInstall)}</DiagRow>
+          <DiagRow label={t("pwaDiagnostics.diagnostics.installableLabel")}>{renderBool(canInstall)}</DiagRow>
 
-          <DiagRow label={t('common.pwaDiagnostics.installedLabel')}>{renderBool(installed)}</DiagRow>
+          <DiagRow label={t("pwaDiagnostics.diagnostics.installedLabel")}>{renderBool(installed)}</DiagRow>
 
-          <DiagRow label={t('common.pwaDiagnostics.cacheSizeLabel')}>
+          <DiagRow label={t("pwaDiagnostics.diagnostics.cacheSizeLabel")}>
             {storageEstimate ? (
               <span>
-                已用 {formatBytes(storageEstimate.usage)} / 配额{" "}
+                {t("pwaDiagnostics.diagnostics.cacheUsed")}{" "}
+                {formatBytes(storageEstimate.usage)} /{" "}
+                {t("pwaDiagnostics.diagnostics.cacheQuota")}{" "}
                 {formatBytes(storageEstimate.quota)}
               </span>
             ) : (
-              <span>加载中...</span>
+              <span>{t("pwaDiagnostics.diagnostics.loading")}</span>
             )}
           </DiagRow>
 
@@ -193,7 +196,9 @@ export function PwaDiagnostics() {
               onClick={handleClearCache}
               data-testid="pwa-clear-cache-button"
             >
-              {clearing ? "清除中..." : "清除缓存并重新加载"}
+              {clearing
+                ? t("pwaDiagnostics.diagnostics.clearing")
+                : t("pwaDiagnostics.diagnostics.clearCacheAndReload")}
             </Button>
           </div>
         </div>

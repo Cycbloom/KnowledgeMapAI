@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -238,6 +238,17 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
       : null;
   const currentPomodoro = completedSessions + 1;
 
+  const learningStateLabels = useMemo(
+    () =>
+      ({
+        learning: t("scheduler.activeTaskPanel.states.learning"),
+        review: t("scheduler.activeTaskPanel.states.review"),
+        practice: t("scheduler.activeTaskPanel.states.practice"),
+        quiz: t("scheduler.activeTaskPanel.states.quiz"),
+      }) as Record<string, string>,
+    [t],
+  );
+
   return (
     <AnimatePresence>
       <motion.div
@@ -284,31 +295,30 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
               </div>
               {/* 副标题：大任务名 + 子任务进度 */}
               <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">
-                {task.title}
-                {totalSubtasks > 0 && (
-                  <>
-                    {" · "}子任务{" "}
-                    <span className={config.accentColor}>
-                      {currentSubtaskIndex >= 0 ? currentSubtaskIndex + 1 : "-"}
-                      /{totalSubtasks}
-                    </span>
-                  </>
-                )}
+                {totalSubtasks > 0
+                  ? t("scheduler.activeTaskPanel.subtitle", {
+                      taskTitle: task.title,
+                      subtaskProgress: `${currentSubtaskIndex >= 0 ? currentSubtaskIndex + 1 : "-"}/${totalSubtasks}`,
+                    })
+                  : task.title}
               </p>
               {/* 第三行信息：番茄数 + 预计时间 + 已做时间 */}
               {currentActiveSubtask && (
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                  已专注 · 第{" "}
-                  <span className={config.accentColor}>
-                    {completedSessions + 1}
-                  </span>{" "}
-                  个番茄 · 预计 {currentActiveSubtask.estimated_duration || "-"}
-                  min · 已做{" "}
-                  {(currentActiveSubtask.actual_duration || 0) +
-                    (isActive && !isPaused && mode === "focus"
-                      ? Math.round((totalTime - timeLeft) / 60)
-                      : 0)}
-                  min
+                  {t("scheduler.activeTaskPanel.focusedOn", {
+                    pomodoro: completedSessions + 1,
+                  })}{" "}
+                  {t("scheduler.activeTaskPanel.pomodoroUnit")} ·{" "}
+                  {t("scheduler.activeTaskPanel.estimated", {
+                    duration: currentActiveSubtask.estimated_duration || "-",
+                  })}{" · "}
+                  {t("scheduler.activeTaskPanel.done", {
+                    duration:
+                      (currentActiveSubtask.actual_duration || 0) +
+                      (isActive && !isPaused && mode === "focus"
+                        ? Math.round((totalTime - timeLeft) / 60)
+                        : 0),
+                  })}
                 </p>
               )}
             </div>
@@ -327,18 +337,17 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
               <p className="text-xs text-slate-400 dark:text-slate-500">
                 {isActive && !isPaused
                   ? mode === "focus"
-                    ? "专注中..."
-                    : "休息中..."
+                    ? t("scheduler.activeTaskPanel.statusFocusing")
+                    : t("scheduler.activeTaskPanel.statusBreak")
                   : timeLeft > 0
-                    ? "已暂停"
-                    : "准备开始"}
+                    ? t("scheduler.activeTaskPanel.statusPaused")
+                    : t("scheduler.activeTaskPanel.statusReady")}
                 {totalPomodoros && (
                   <span className="ml-1.5">
-                    · 第{" "}
-                    <span className={config.accentColor}>
-                      {currentPomodoro}
-                    </span>
-                    /{totalPomodoros} 番茄
+                    {t("scheduler.activeTaskPanel.pomodoroIndex", {
+                      current: currentPomodoro,
+                      total: totalPomodoros,
+                    })}
                   </span>
                 )}
               </p>
@@ -357,7 +366,11 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                       : "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 hover:bg-primary-200 dark:hover:bg-primary-500/30"
                   }
                 `}
-                title={isActive && !isPaused ? "暂停" : "继续"}
+                title={
+                  isActive && !isPaused
+                    ? t("scheduler.activeTaskPanel.togglePause")
+                    : t("scheduler.activeTaskPanel.toggleResume")
+                }
               >
                 {isActive && !isPaused ? (
                   <Pause size={20} />
@@ -444,7 +457,9 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse shrink-0" />
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
-                  当前：{currentActiveSubtask.title}
+                  {t("scheduler.activeTaskPanel.currentLabel", {
+                    title: currentActiveSubtask.title,
+                  })}
                 </span>
                 <span
                   className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
@@ -457,14 +472,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                           : "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"
                   }`}
                 >
-                  {(
-                    {
-                      learning: "学习",
-                      review: "复习",
-                      practice: "练习",
-                      quiz: "测验",
-                    } as Record<string, string>
-                  )[currentActiveSubtask.learning_state] ||
+                  {learningStateLabels[currentActiveSubtask.learning_state] ||
                     String(currentActiveSubtask.learning_state)}
                 </span>
               </div>
@@ -472,7 +480,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 onClick={handleCompleteSubtask}
                 className="shrink-0 px-3 py-1 text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors"
               >
-                完成此子任务
+                {t("scheduler.activeTaskPanel.completeSubtask")}
               </button>
             </div>
 
@@ -494,7 +502,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                     <>
                       <div className="flex items-center justify-between text-xs mb-1">
                         <span className="text-slate-400 dark:text-slate-500">
-                          掌握度
+                          {t("scheduler.activeTaskPanel.mastery")}
                         </span>
                         <span
                           className={
@@ -503,7 +511,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                               : "text-slate-500 dark:text-slate-400"
                           }
                         >
-                          {displayPct}%{isOver && " 超时"}
+                          {displayPct}%{isOver && ` ${t("scheduler.activeTaskPanel.overtime")}`}
                         </span>
                       </div>
                       <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden relative">
@@ -535,9 +543,11 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
               className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
             >
               <span>
-                全部子任务 (
-                {subtasks.filter((s) => s.status === "completed").length}/
-                {subtasks.length})
+                {t("scheduler.activeTaskPanel.allSubtasks", {
+                  completed: subtasks.filter((s) => s.status === "completed")
+                    .length,
+                  total: subtasks.length,
+                })}
               </span>
               <svg aria-hidden="true"
                 className={`w-3 h-3 transition-transform ${subtasksExpanded ? "rotate-180" : ""}`}
@@ -632,7 +642,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                         mode === "focus" && (
                           <span className="shrink-0 flex items-center gap-0.5 text-[10px] font-medium text-primary-500">
                             <span className="w-1 h-1 rounded-full bg-current animate-pulse" />
-                            进行中
+                            {t("scheduler.activeTaskPanel.inProgress")}
                           </span>
                         )}
 
@@ -649,14 +659,8 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                                   : "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400"
                           }`}
                         >
-                          {(
-                            {
-                              learning: "学习",
-                              review: "复习",
-                              practice: "练习",
-                              quiz: "测验",
-                            } as Record<string, string>
-                          )[st.learning_state] || String(st.learning_state)}
+                          {learningStateLabels[st.learning_state] ||
+                            String(st.learning_state)}
                         </span>
                       )}
 

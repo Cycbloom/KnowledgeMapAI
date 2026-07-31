@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Achievement } from "@shared/types";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import type { AchievementUnlockedPayload } from "../../services/FrontendEventTypes";
@@ -30,6 +31,7 @@ const SingleNotification: React.FC<{
   notification: NotificationItem;
   onDismiss: (id: string) => void;
 }> = ({ notification, onDismiss }) => {
+  const { t } = useTranslation();
   const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
 
   return (
@@ -75,7 +77,7 @@ const SingleNotification: React.FC<{
               transition={transitionOverride ?? { delay: 0.2 }}
             >
               <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                成就解锁!
+                {t('scheduler.achievementNotification.achievementUnlocked')}
               </p>
               <p className="text-base font-bold text-slate-900 dark:text-white truncate">
                 {notification.title}
@@ -182,6 +184,7 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => onClose(), isOpen);
@@ -275,7 +278,7 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
                   transition={transitionOverride ?? { delay: 0.2 }}
                   className="text-sm text-amber-600 dark:text-amber-400 font-medium"
                 >
-                  成就解锁!
+                  {t('scheduler.achievementNotification.achievementUnlocked')}
                 </motion.p>
 
                 <motion.h3
@@ -315,7 +318,7 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
                     onClick={handlePrev}
                     className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg font-medium transition-colors"
                   >
-                    上一个
+                    {t('scheduler.achievementNotification.previous')}
                   </button>
                 )}
 
@@ -324,14 +327,14 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
                     onClick={handleNext}
                     className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-lg font-medium transition-all"
                   >
-                    下一个
+                    {t('scheduler.achievementNotification.next')}
                   </button>
                 ) : (
                   <button
                     onClick={onClose}
                     className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-lg font-medium transition-all"
                   >
-                    太棒了!
+                    {t('scheduler.achievementNotification.awesome')}
                   </button>
                 )}
               </div>

@@ -8,15 +8,15 @@ import { TaskStatsTab } from "../components/Statistics/TaskStatsTab";
 
 type StatsTab = "learning" | "tasks";
 
-const tabs: { id: StatsTab; label: string; icon: React.ReactNode; translationKey: "statistics.tabs.learning" | "statistics.tabs.tasks" }[] = [
-  { id: "learning", label: "学习统计", icon: <BookOpen size={18} />, translationKey: "statistics.tabs.learning" },
-  { id: "tasks", label: "任务统计", icon: <CheckSquare size={18} />, translationKey: "statistics.tabs.tasks" },
-];
-
 export const StatisticsCenter: React.FC = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<StatsTab>("learning");
+
+  const tabs: { id: StatsTab; label: string; icon: React.ReactNode; translationKey: "statistics.tabs.learning" | "statistics.tabs.tasks" }[] = [
+    { id: "learning", label: t("statistics.studyStatistics"), icon: <BookOpen size={18} />, translationKey: "statistics.tabs.learning" },
+    { id: "tasks", label: t("statistics.taskStatistics"), icon: <CheckSquare size={18} />, translationKey: "statistics.tabs.tasks" },
+  ];
 
   const tablistId = useId();
   const tabIdPrefix = `${tablistId}-tab`;

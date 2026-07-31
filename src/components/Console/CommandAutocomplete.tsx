@@ -38,17 +38,10 @@ const getTypeColor = (type: AutocompleteSuggestion['type'], isDark: boolean): st
   }
 };
 
-const getTypeLabel = (type: AutocompleteSuggestion['type']): string => {
-  switch (type) {
-    case 'command':
-      return '命令';
-    case 'option':
-      return '选项';
-    case 'value':
-      return '值';
-    default:
-      return '其他';
-  }
+const typeKeyMap: Record<AutocompleteSuggestion['type'], 'Command' | 'Option' | 'Value'> = {
+  command: 'Command',
+  option: 'Option',
+  value: 'Value',
 };
 
 export const CommandAutocomplete: React.FC<CommandAutocompleteProps> = ({
@@ -100,6 +93,10 @@ export const CommandAutocomplete: React.FC<CommandAutocompleteProps> = ({
   const handleClick = useCallback((suggestion: AutocompleteSuggestion) => {
     onSelect(suggestion);
   }, [onSelect]);
+
+  const getTypeLabel = useCallback((type: AutocompleteSuggestion['type']): string => {
+    return t(`console.commandAutocomplete.type${typeKeyMap[type]}` as const);
+  }, [t]);
 
   if (suggestions.length === 0) return null;
 
@@ -178,8 +175,8 @@ export const CommandAutocomplete: React.FC<CommandAutocompleteProps> = ({
       <div className={`px-3 py-1.5 border-t text-[10px] flex items-center justify-between ${
         isDark ? 'border-slate-700 text-slate-500' : 'border-gray-200 text-gray-400'
       }`}>
-        <span>↑↓ 导航 · Tab/Enter 选择 · Esc 关闭</span>
-        <span>{suggestions.length} 个建议</span>
+        <span>{t('console.commandAutocomplete.navigateHint')}</span>
+        <span>{t('console.commandAutocomplete.suggestionsCount', { count: suggestions.length })}</span>
       </div>
     </motion.div>
   );

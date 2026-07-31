@@ -1052,7 +1052,9 @@ export const NotesListPage = () => {
         >
           {/* sr-only 实时区域:筛选结果数量变化时向 SR 用户播报 */}
           <span className="sr-only" aria-live="polite" aria-atomic="true">
-            当前显示 {filteredNotes.length} 条笔记
+            {t("notes.notesListPage.srLiveRegion.showingCount", {
+              count: filteredNotes.length,
+            })}
           </span>
           {isLoading && !isFetching && <NoteListSkeleton />}
 
@@ -1131,7 +1133,7 @@ export const NotesListPage = () => {
                   <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-red-200 dark:border-red-900/40 p-8 text-center">
                     <XCircle className="w-8 h-8 mx-auto mb-3 text-red-600 dark:text-red-400" />
                     <p role="alert" className="text-red-600 dark:text-red-400 mb-2 font-medium">
-                      笔记列表加载失败
+                      {t("notes.notesListPage.errorBoundary.listLoadFailed")}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-slate-400 mb-4 font-mono break-all">
                       {error.message}

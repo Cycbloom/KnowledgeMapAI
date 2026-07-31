@@ -1001,7 +1001,7 @@ export const MindMapCanvas = React.memo(
                 </div>
                 <p className="text-gray-500 dark:text-gray-500 text-sm">
                   {_layoutMode === "semantic"
-                    ? t('graphEditor.mindMap.semanticLoading', '正在计算语义布局...')
+                    ? t('graphEditor.mindMapCanvas.semanticLoading')
                     : t('graphEditor.mindMap.loading')}
                 </p>
                 <span className="sr-only">{t('common.aria.loading')}</span>
@@ -1010,8 +1010,8 @@ export const MindMapCanvas = React.memo(
               <EmptyState
                 variant="panel"
                 illustration="error"
-                title={t('graphEditor.mindMap.layoutFailed', '布局计算失败，请刷新重试')}
-                description={t('graphEditor.mindMap.layoutFailedHint', '正在使用备用方案重新计算...')}
+                title={t('graphEditor.mindMapCanvas.layoutFailed')}
+                description={t('graphEditor.mindMapCanvas.layoutFailedHint')}
               />
             )}
           </div>
@@ -1028,7 +1028,7 @@ export const MindMapCanvas = React.memo(
       >
         {semanticLayoutUnavailable && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-modal-overlay bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-lg text-sm text-amber-800 dark:text-amber-200">
-            {t('graphEditor.mindMap.semanticUnavailable', '当前图谱节点缺少语义向量数据，已切换为常规布局。请确保知识点已通过 AI 功能生成向量数据。')}
+            {t('graphEditor.mindMap.semanticUnavailable')}
           </div>
         )}
         <svg
@@ -1036,7 +1036,7 @@ export const MindMapCanvas = React.memo(
           width="100%"
           height="100%"
           role="application"
-          aria-label={t('graphEditor.mindMapCanvas.ariaLabel', '思维导图画布，共 {{count}} 个节点，当前焦点：{{focus}}', { count: nodes.length, focus: focusedNodeTitle ?? t('graphEditor.mindMapCanvas.emptyFocus', '无焦点') })}
+          aria-label={t('graphEditor.mindMapCanvas.ariaLabel', { count: nodes.length, focus: focusedNodeTitle ?? t('graphEditor.mindMapCanvas.emptyFocus') })}
           style={{
             backgroundColor: colors.background,
             cursor: interaction.isDragging ? "grabbing" : "grab",
@@ -1059,8 +1059,8 @@ export const MindMapCanvas = React.memo(
             }
           }}
         >
-          <title>{t('graphEditor.mindMapCanvas.title', '思维导图画布')}</title>
-          <desc>{t('graphEditor.mindMapCanvas.desc', '交互式思维导图画布，包含 {{count}} 个知识节点。使用鼠标或触摸进行平移与缩放，按节点可查看详情。', { count: nodes.length })}</desc>
+          <title>{t('graphEditor.mindMapCanvas.title')}</title>
+          <desc>{t('graphEditor.mindMapCanvas.desc', { count: nodes.length })}</desc>
           <g ref={contentRef}>
             <CanvasLayout
               layout={templateLayout}

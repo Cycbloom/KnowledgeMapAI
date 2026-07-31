@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStore } from '@/store/useStore';
 
 interface RealtimeSTTState {
@@ -46,6 +47,7 @@ let eventIdCounter = 0;
 const nextEventId = () => `event_${++eventIdCounter}`;
 
 export const useRealtimeSTT = (): UseRealtimeSTTReturn => {
+  const { t } = useTranslation();
   const [isListening, setIsListening] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState('');
   const [finalTranscript, setFinalTranscript] = useState('');
@@ -170,7 +172,7 @@ export const useRealtimeSTT = (): UseRealtimeSTTReturn => {
               cleanup();
               break;
             case 'error':
-              setError(data.error?.message || '语音识别错误');
+              setError(data.error?.message || t('errors.realtimeSTT.recognitionError'));
               setIsListening(false);
               cleanup();
               break;
@@ -181,7 +183,7 @@ export const useRealtimeSTT = (): UseRealtimeSTTReturn => {
       };
 
       ws.onerror = () => {
-        setError('WebSocket 连接错误');
+        setError(t('errors.realtimeSTT.websocketError'));
         setIsConnecting(false);
         setIsListening(false);
         cleanup();
@@ -193,12 +195,12 @@ export const useRealtimeSTT = (): UseRealtimeSTTReturn => {
       };
 
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : '启动语音识别失败';
+      const message = err instanceof Error ? err.message : t('errors.realtimeSTT.startFailed');
       setError(message);
       setIsConnecting(false);
       cleanup();
     }
-  }, [getWsUrl, cleanup]);
+  }, [getWsUrl, cleanup, t]);
 
   const stopListening = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {

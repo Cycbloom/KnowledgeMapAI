@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { getMobileSupabaseClient } from "@/lib/supabase";
 import type { PeriodicTaskRow } from "@shared/types/database";
 import type { IPeriodicTasksApi } from "../api/contracts/IPeriodicTasksApi";
@@ -428,7 +429,7 @@ export const mobilePeriodicTasksApi: IPeriodicTasksApi = {
   ): Promise<{ success: boolean; reward: PassReward | null; message: string }> => {
     const client = getMobileSupabaseClient();
     if (!client) {
-      return { success: false, reward: null, message: "客户端未初始化" };
+      return { success: false, reward: null, message: i18next.t("errors.periodicTasks.clientNotInitialized") };
     }
 
     const {
@@ -436,7 +437,7 @@ export const mobilePeriodicTasksApi: IPeriodicTasksApi = {
     } = await client.auth.getUser();
 
     if (!user) {
-      return { success: false, reward: null, message: "用户未登录" };
+      return { success: false, reward: null, message: i18next.t("errors.periodicTasks.userNotLoggedIn") };
     }
 
     const { data: pass } = await client
@@ -447,7 +448,7 @@ export const mobilePeriodicTasksApi: IPeriodicTasksApi = {
       .single();
 
     if (!pass) {
-      return { success: false, reward: null, message: "通行证不存在" };
+      return { success: false, reward: null, message: i18next.t("errors.periodicTasks.passNotFound") };
     }
 
     const passRow = pass as PeriodicPassRow;
@@ -460,13 +461,13 @@ export const mobilePeriodicTasksApi: IPeriodicTasksApi = {
       .single();
 
     if (!reward) {
-      return { success: false, reward: null, message: "奖励不存在" };
+      return { success: false, reward: null, message: i18next.t("errors.periodicTasks.rewardNotFound") };
     }
 
     const rewardRow = reward as PassReward;
 
     if (passRow.total_points < rewardRow.points_required) {
-      return { success: false, reward: null, message: "积分不足" };
+      return { success: false, reward: null, message: i18next.t("errors.periodicTasks.insufficientPoints") };
     }
 
     const { data: existingProgress } = await client
@@ -477,7 +478,7 @@ export const mobilePeriodicTasksApi: IPeriodicTasksApi = {
       .single();
 
     if (existingProgress && (existingProgress as UserPassProgress).claimed) {
-      return { success: false, reward: null, message: "奖励已领取" };
+      return { success: false, reward: null, message: i18next.t("errors.periodicTasks.rewardAlreadyClaimed") };
     }
 
     await client.from("user_pass_progress").upsert(
@@ -518,7 +519,7 @@ export const mobilePeriodicTasksApi: IPeriodicTasksApi = {
       await client.from("periodic_passes").update({ current_level: level }).eq("id", passId);
     }
 
-    return { success: true, reward: rewardRow, message: "奖励领取成功" };
+    return { success: true, reward: rewardRow, message: i18next.t("errors.periodicTasks.rewardClaimedSuccess") };
   },
 
   checkStreak: async (): Promise<{ streak: number; bonusAwarded: number }> => {

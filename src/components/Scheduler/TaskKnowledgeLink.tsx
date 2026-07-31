@@ -65,12 +65,12 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
       );
     } catch (error) {
       console.error("Search error:", error);
-      setSearchError("搜索失败，请重试");
+      setSearchError(t('scheduler.taskKnowledgeLink.searchError'));
       setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
-  }, [selectedKnowledgePoints]);
+  }, [selectedKnowledgePoints, t]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

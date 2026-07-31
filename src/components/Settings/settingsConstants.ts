@@ -1,4 +1,5 @@
 import type { AIProviderType } from "@shared/types";
+import type { TFunction } from "i18next";
 
 export interface ProviderConfig {
   configured: boolean;
@@ -25,6 +26,7 @@ export const PROVIDER_DEFAULTS: Record<
   string,
   {
     name: string;
+    nameKey?: string;
     baseURL: string;
     model: string;
     embeddingModel?: string;
@@ -39,14 +41,16 @@ export const PROVIDER_DEFAULTS: Record<
     supportsEmbedding: false,
   },
   volcengine: {
-    name: "火山引擎 (Volcengine)",
+    name: "Volcengine",
+    nameKey: "settings.provider.volcengine.name",
     baseURL: "https://ark.cn-beijing.volces.com/api/v3",
     model: "doubao-pro-4k",
     embeddingModel: "doubao-embedding-vision-251215",
     supportsEmbedding: true,
   },
   aliyun: {
-    name: "阿里云 (Aliyun)",
+    name: "Aliyun",
+    nameKey: "settings.provider.aliyun.name",
     baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     model: "qwen-max",
     embeddingModel: "text-embedding-v3",
@@ -60,14 +64,16 @@ export const PROVIDER_DEFAULTS: Record<
     supportsEmbedding: true,
   },
   zhipu: {
-    name: "智谱 AI (Zhipu)",
+    name: "Zhipu",
+    nameKey: "settings.provider.zhipu.name",
     baseURL: "https://open.bigmodel.cn/api/paas/v4",
     model: "glm-4-flash",
     embeddingModel: "embedding-3",
     supportsEmbedding: true,
   },
   moonshot: {
-    name: "月之暗面 (Moonshot)",
+    name: "Moonshot",
+    nameKey: "settings.provider.moonshot.name",
     baseURL: "https://api.moonshot.cn/v1",
     model: "moonshot-v1-8k",
     embeddingModel: undefined,
@@ -76,13 +82,26 @@ export const PROVIDER_DEFAULTS: Record<
 };
 
 export const STUDY_MODE_OPTIONS = [
-  { value: "drill", label: "刷题模式", description: "跳过学习材料，直接测验，短间隔高频" },
-  { value: "deep", label: "深度学习", description: "完整工作流，标准FSRS参数" },
-  { value: "preview", label: "快速浏览", description: "仅阅读材料，不生成复习卡片" },
-  { value: "review", label: "间隔复习", description: "到期复习节点，标准调度" },
-  { value: "quiz", label: "测验模式", description: "直接测验已学节点" },
-  { value: "mixed", label: "混合模式", description: "自动按节点状态选择策略" },
+  { value: "drill", labelKey: "settings.studyMode.drill.label", descriptionKey: "settings.studyMode.drill.description" },
+  { value: "deep", labelKey: "settings.studyMode.deep.label", descriptionKey: "settings.studyMode.deep.description" },
+  { value: "preview", labelKey: "settings.studyMode.preview.label", descriptionKey: "settings.studyMode.preview.description" },
+  { value: "review", labelKey: "settings.studyMode.review.label", descriptionKey: "settings.studyMode.review.description" },
+  { value: "quiz", labelKey: "settings.studyMode.quiz.label", descriptionKey: "settings.studyMode.quiz.description" },
+  { value: "mixed", labelKey: "settings.studyMode.mixed.label", descriptionKey: "settings.studyMode.mixed.description" },
 ] as const;
+
+/**
+ * 获取提供商的本地化显示名称。
+ * 优先使用 i18n key（如中文环境显示"火山引擎"），否则回退到英文 name（如 "Volcengine"）。
+ */
+export function getProviderDisplayName(
+  providerKey: string,
+  t: TFunction,
+): string {
+  const config = PROVIDER_DEFAULTS[providerKey];
+  if (!config) return providerKey;
+  return config.nameKey ? t(config.nameKey as never) : config.name;
+}
 
 export const STUDY_MODE_PRESETS: Record<string, { requestRetention: number; maximumInterval: number }> = {
   drill: { requestRetention: 0.85, maximumInterval: 30 },

@@ -117,7 +117,7 @@ export const ConceptTypeBadge: React.FC<ConceptTypeBadgeProps> = ({
   const { isDark } = useTheme();
 
   const color = CONCEPT_TYPE_COLORS[type] || "#6B7280";
-  const label = CONCEPT_TYPE_LABELS[type] || type;
+  const labelKey = CONCEPT_TYPE_LABELS[type] ?? `graphMap.conceptTypes.${type}`;
   const Icon = CONCEPT_TYPE_ICONS[type];
   const sizeConfig = SIZE_CONFIG[size];
 
@@ -131,10 +131,10 @@ export const ConceptTypeBadge: React.FC<ConceptTypeBadgeProps> = ({
         ${colorClasses}
         ${className}
       `}
-      title={t(`conceptTypes.${type}`, label)}
+      title={t(labelKey)}
     >
       {showIcon && Icon && <Icon size={sizeConfig.icon} aria-hidden="true" />}
-      {showLabel && <span>{t(`conceptTypes.${type}`, label)}</span>}
+      {showLabel && <span>{t(labelKey)}</span>}
     </span>
   );
 };

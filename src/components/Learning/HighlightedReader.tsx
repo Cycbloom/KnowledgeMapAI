@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { debounce } from "@/utils/performanceUtils";
 import remarkGfm from "remark-gfm";
@@ -70,27 +71,11 @@ const extractDomPlainText = (container: HTMLElement): string => {
 const analyzeTextLocally = (
   content: string,
   intensity: number,
+  patterns: Array<{ regex: RegExp; reason: string; score: number }>,
 ): HighlightRange[] => {
   if (content.length === 0) return [];
 
   const highlights: Array<HighlightRange & { score: number }> = [];
-  const patterns = [
-    { regex: /【[^】]+】/g, reason: "关键术语", score: 10 },
-    { regex: /「[^」]+」/g, reason: "重要概念", score: 9 },
-    { regex: /第[一二三四五六七八九十]+[章节][^\n]*/g, reason: "章节标题", score: 8 },
-    {
-      regex: /[一二三四五六七八九十]+[、.．][^。\n]{1,30}/g,
-      reason: "要点列举",
-      score: 5,
-    },
-    { regex: /\d+[、.．][^。\n]{1,30}/g, reason: "编号要点", score: 4 },
-    { regex: /关键[是在于：:][^。\n]{1,50}/g, reason: "关键论述", score: 7 },
-    { regex: /重要[的是：:][^。\n]{1,50}/g, reason: "重要说明", score: 7 },
-    { regex: /注意[：:][^。\n]{1,50}/g, reason: "注意事项", score: 6 },
-    { regex: /定义[是为：:][^。\n]{1,80}/g, reason: "定义说明", score: 8 },
-    { regex: /总结[：:][^。\n]{1,100}/g, reason: "总结要点", score: 7 },
-    { regex: /核心[概念是：:][^。\n]{1,50}/g, reason: "核心概念", score: 9 },
-  ];
 
   patterns.forEach(({ regex, reason, score }) => {
     let match;
@@ -422,6 +407,7 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
   keywords,
   onKeywordClick,
 }) => {
+  const { t } = useTranslation();
   const { highlightEnabled, highlightIntensity } = useFocusStore(
     useShallow((s) => ({
       highlightEnabled: s.highlightEnabled,
@@ -429,6 +415,26 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
     })),
   );
   const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
+  const patterns = useMemo(
+    () => [
+      { regex: /【[^】]+】/g, reason: t("learning.highlightedReader.reasons.keyTerm"), score: 10 },
+      { regex: /「[^」]+」/g, reason: t("learning.highlightedReader.reasons.importantConcept"), score: 9 },
+      { regex: /第[一二三四五六七八九十]+[章节][^\n]*/g, reason: t("learning.highlightedReader.reasons.chapterTitle"), score: 8 },
+      {
+        regex: /[一二三四五六七八九十]+[、.．][^。\n]{1,30}/g,
+        reason: t("learning.highlightedReader.reasons.keyPoints"),
+        score: 5,
+      },
+      { regex: /\d+[、.．][^。\n]{1,30}/g, reason: t("learning.highlightedReader.reasons.numberedPoints"), score: 4 },
+      { regex: /关键[是在于：:][^。\n]{1,50}/g, reason: t("learning.highlightedReader.reasons.keyArgument"), score: 7 },
+      { regex: /重要[的是：:][^。\n]{1,50}/g, reason: t("learning.highlightedReader.reasons.importantNote"), score: 7 },
+      { regex: /注意[：:][^。\n]{1,50}/g, reason: t("learning.highlightedReader.reasons.notice"), score: 6 },
+      { regex: /定义[是为：:][^。\n]{1,80}/g, reason: t("learning.highlightedReader.reasons.definition"), score: 8 },
+      { regex: /总结[：:][^。\n]{1,100}/g, reason: t("learning.highlightedReader.reasons.summary"), score: 7 },
+      { regex: /核心[概念是：:][^。\n]{1,50}/g, reason: t("learning.highlightedReader.reasons.coreConcept"), score: 9 },
+    ],
+    [t],
+  );
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [highlightRanges, setHighlightRanges] = useState<HighlightRange[]>([]);
   const [hoveredReason, setHoveredReason] = useState<string | null>(null);
@@ -509,7 +515,7 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
       } else if (onAnalyze) {
         onAnalyze(plainText).then(finishHighlight);
       } else {
-        finishHighlight(analyzeTextLocally(plainText, highlightIntensity));
+        finishHighlight(analyzeTextLocally(plainText, highlightIntensity, patterns));
       }
     });
 
@@ -517,7 +523,7 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
       cancelled = true;
       cancelAnimationFrame(rafId);
     };
-  }, [needsHighlight, highlightIntensity, keywords, onAnalyze, isDark]);
+  }, [needsHighlight, highlightIntensity, keywords, onAnalyze, isDark, patterns]);
 
   useEffect(() => {
     const container = contentRef.current;
@@ -577,13 +583,13 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
           {isAnalyzing ? (
             <>
               <Loader2 size={12} className="animate-spin text-yellow-500" />
-              <span>分析中...</span>
+              <span>{t("learning.highlightedReader.analyzing")}</span>
             </>
           ) : highlightStats ? (
             <>
               <Sparkles size={12} className="text-yellow-500" />
               <span>
-                关键词 {highlightStats.keywordHits} 处 · 本地 {highlightStats.localHits} 处
+                {t("learning.highlightedReader.statsFormat", { keywordHits: highlightStats.keywordHits, localHits: highlightStats.localHits })}
                 {Object.entries(highlightStats.importanceBreakdown)
                   .sort(([a], [b]) => Number(b) - Number(a))
                   .map(([imp, count]) => ` | ★${imp}:${count}`)
@@ -593,7 +599,7 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
           ) : highlightRanges.length > 0 ? (
             <>
               <Sparkles size={12} className="text-yellow-500" />
-              <span>已识别 {highlightRanges.length} 处重点</span>
+              <span>{t("learning.highlightedReader.identifiedCount", { count: highlightRanges.length })}</span>
             </>
           ) : null}
         </div>

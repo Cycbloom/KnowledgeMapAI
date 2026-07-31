@@ -3,7 +3,6 @@ import { commandRegistry } from '../CommandRegistry';
 import i18n from '../../../i18n';
 
 const VERSION = '1.0.0';
-const APP_NAME = 'KnowledgeMap 控制台';
 
 interface HistoryStore {
   items: CommandHistoryItem[];
@@ -29,7 +28,7 @@ const handleHelp = async (args: ParsedArgs, _context: CommandContext): Promise<C
     }
     return {
       success: false,
-      error: `未找到命令 "${commandName}"`,
+      error: i18n.t('console.commands.system.commandNotFound', { command: commandName }),
     };
   }
 
@@ -50,9 +49,9 @@ const handleHelp = async (args: ParsedArgs, _context: CommandContext): Promise<C
     }
   };
 
-  let helpText = `📖 ${APP_NAME}\n\n`;
+  let helpText = `${i18n.t('console.commands.system.helpTitle', { appName: i18n.t('console.commands.system.appName') })}\n\n`;
   helpText += `┌────────────────────┬──────────────────────────────┬─────┐\n`;
-  helpText += `│ 命令               │ 描述                          │ 级别│\n`;
+  helpText += `│ ${i18n.t('console.commands.system.helpHeaderCommand').padEnd(18)} │ ${i18n.t('console.commands.system.helpHeaderDescription').padEnd(28)} │ ${i18n.t('console.commands.system.helpHeaderLevel')}   │\n`;
   helpText += `├────────────────────┼──────────────────────────────┼─────┤\n`;
 
   for (const cmd of commands) {
@@ -71,8 +70,8 @@ const handleHelp = async (args: ParsedArgs, _context: CommandContext): Promise<C
   }
 
   helpText += `└────────────────────┴──────────────────────────────┴─────┘\n\n`;
-  helpText += `使用 help <命令> 查看详细帮助\n\n`;
-  helpText += `权限级别: 🟢安全  🟡警告  🔴危险`;
+  helpText += `${i18n.t('console.commands.system.helpFooter')}\n\n`;
+  helpText += `${i18n.t('console.commands.system.helpPermissionLevels')}`;
 
   return {
     success: true,
@@ -91,7 +90,7 @@ const handleHistory = async (args: ParsedArgs, _context: CommandContext): Promis
     historyStore.items = [];
     return {
       success: true,
-      message: '命令历史已清除',
+      message: i18n.t('console.commands.system.historyCleared'),
     };
   }
 
@@ -102,13 +101,13 @@ const handleHistory = async (args: ParsedArgs, _context: CommandContext): Promis
     success: item.result?.success ?? false,
   }));
 
-  let historyText = '📜 命令历史\n\n';
+  let historyText = `${i18n.t('console.commands.system.historyTitle')}\n\n`;
 
   if (historyList.length === 0) {
     historyText += i18n.t('console.noHistory');
   } else {
     historyText += `┌────┬───────────────────────────────┬───────────┬──────┐\n`;
-    historyText += `│ #  │ 命令                          │ 时间      │ 状态  │\n`;
+    historyText += `│ ${i18n.t('console.commands.system.historyHeaderIndex').padEnd(2)}  │ ${i18n.t('console.commands.system.historyHeaderCommand').padEnd(28)} │ ${i18n.t('console.commands.system.historyHeaderTime').padEnd(9)} │ ${i18n.t('console.commands.system.historyHeaderStatus').padEnd(4)} │\n`;
     historyText += `├────┼───────────────────────────────┼───────────┼──────┤\n`;
 
     for (const item of historyList) {
@@ -121,7 +120,7 @@ const handleHistory = async (args: ParsedArgs, _context: CommandContext): Promis
     }
 
     historyText += `└────┴───────────────────────────────┴───────────┴──────┘\n\n`;
-    historyText += `共 ${historyList.length} 条记录  ·  使用 --clear 清除历史`;
+    historyText += i18n.t('console.commands.system.historyTotal', { count: historyList.length });
   }
 
   return {
@@ -144,20 +143,20 @@ const handleClear = async (_args: ParsedArgs, _context: CommandContext): Promise
 
 const handleVersion = async (_args: ParsedArgs, _context: CommandContext): Promise<CommandResult> => {
   const versionInfo = {
-    name: APP_NAME,
+    name: i18n.t('console.commands.system.appName'),
     version: VERSION,
     buildDate: new Date().toISOString().split('T')[0],
     node: typeof process !== 'undefined' ? process.version : 'browser',
     platform: typeof navigator !== 'undefined' ? navigator.platform : 'unknown',
   };
 
-  let versionText = `📦 ${APP_NAME}\n\n`;
+  let versionText = `${i18n.t('console.commands.system.versionTitle', { appName: i18n.t('console.commands.system.appName') })}\n\n`;
   versionText += `┌──────────────┬─────────────────────┐\n`;
-  versionText += `│ 属性          │ 值                   │\n`;
+  versionText += `│ ${i18n.t('console.commands.system.versionHeaderProperty').padEnd(12)} │ ${i18n.t('console.commands.system.versionHeaderValue').padEnd(19)} │\n`;
   versionText += `├──────────────┼─────────────────────┤\n`;
-  versionText += `│ 版本          │ v${VERSION.padEnd(19)}│\n`;
-  versionText += `│ 构建日期      │ ${versionInfo.buildDate.padEnd(13)}│\n`;
-  versionText += `│ 平台          │ ${versionInfo.platform.padEnd(13)}│\n`;
+  versionText += `│ ${i18n.t('console.commands.system.versionVersion').padEnd(12)} │ v${VERSION.padEnd(19)}│\n`;
+  versionText += `│ ${i18n.t('console.commands.system.versionBuildDate').padEnd(12)} │ ${versionInfo.buildDate.padEnd(13)}│\n`;
+  versionText += `│ ${i18n.t('console.commands.system.versionPlatform').padEnd(12)} │ ${versionInfo.platform.padEnd(13)}│\n`;
   versionText += `└──────────────┴─────────────────────┘`;
 
   return {
@@ -172,26 +171,26 @@ const handleHome = async (_args: ParsedArgs, _context: CommandContext): Promise<
     window.location.href = '/';
     return {
       success: true,
-      message: '正在跳转到首页...',
+      message: i18n.t('console.commands.system.homeRedirecting'),
     };
   }
   return {
     success: false,
-    error: '无法在当前环境执行跳转',
+    error: i18n.t('console.commands.system.homeCannotRedirect'),
   };
 };
 
 export const helpCommand: Command = {
   name: 'help',
-  description: '显示帮助信息',
-  usage: 'help [命令]',
+  description: i18n.t('console.commands.system.helpDesc'),
+  usage: i18n.t('console.commands.system.helpUsage'),
   aliases: ['h', '?', '帮助'],
   options: [
     {
       name: 'command',
       alias: 'c',
       type: 'string',
-      description: '要查看帮助的命令名称',
+      description: i18n.t('console.commands.system.helpCommandOption'),
       required: false,
     },
   ],
@@ -201,15 +200,15 @@ export const helpCommand: Command = {
 
 export const historyCommand: Command = {
   name: 'history',
-  description: '显示或清除命令历史',
-  usage: 'history [--clear]',
+  description: i18n.t('console.commands.system.historyDesc'),
+  usage: i18n.t('console.commands.system.historyUsage'),
   aliases: ['历史'],
   options: [
     {
       name: 'clear',
       alias: 'c',
       type: 'boolean',
-      description: '清除命令历史',
+      description: i18n.t('console.commands.system.historyClearOption'),
       required: false,
     },
   ],
@@ -219,8 +218,8 @@ export const historyCommand: Command = {
 
 export const clearCommand: Command = {
   name: 'clear',
-  description: '清空控制台屏幕',
-  usage: 'clear',
+  description: i18n.t('console.commands.system.clearDesc'),
+  usage: i18n.t('console.commands.system.clearUsage'),
   aliases: ['cls', '清屏'],
   options: [],
   permission: 'safe',
@@ -229,8 +228,8 @@ export const clearCommand: Command = {
 
 export const versionCommand: Command = {
   name: 'version',
-  description: '显示版本信息',
-  usage: 'version',
+  description: i18n.t('console.commands.system.versionDesc'),
+  usage: i18n.t('console.commands.system.versionUsage'),
   aliases: ['v', '-v', '--version', '版本'],
   options: [],
   permission: 'safe',
@@ -239,8 +238,8 @@ export const versionCommand: Command = {
 
 export const homeCommand: Command = {
   name: 'home',
-  description: '返回首页',
-  usage: 'home',
+  description: i18n.t('console.commands.system.homeDesc'),
+  usage: i18n.t('console.commands.system.homeUsage'),
   aliases: ['首页', '主页'],
   options: [],
   permission: 'safe',

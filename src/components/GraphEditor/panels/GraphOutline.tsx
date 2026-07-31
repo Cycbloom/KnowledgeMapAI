@@ -33,7 +33,7 @@ import { BatchGenerateDialog, type BatchGenerateConfig } from "../modals/BatchGe
 import {
   LiteratureSourceDB,
   BackboneModule,
-  BACKBONE_MODULE_LABELS,
+  BACKBONE_MODULE_LABEL_I18N_KEYS,
   BACKBONE_MODULE_ICONS,
   BACKBONE_MODULE_COLORS,
   ConceptSource,
@@ -468,7 +468,7 @@ export const GraphOutline = React.memo(function GraphOutline({
         const commonTags = [...nodeTags].filter((t) => otherTags.has(t));
         if (commonTags.length > 0) {
           score += commonTags.length * 10;
-          reasons.push(`共同标签: ${commonTags.slice(0, 2).join(", ")}`);
+          reasons.push(`${t('graphEditor.outline.commonTags')}: ${commonTags.slice(0, 2).join(", ")}`);
         }
 
         const otherContent = (otherNode.content || "").toLowerCase();
@@ -477,7 +477,7 @@ export const GraphOutline = React.memo(function GraphOutline({
           otherContent.includes(node.title.toLowerCase())
         ) {
           score += 15;
-          reasons.push("内容中提及对方");
+          reasons.push(t('graphEditor.outline.mentionedEachOther'));
         }
 
         if (score >= 10) {
@@ -486,7 +486,7 @@ export const GraphOutline = React.memo(function GraphOutline({
             sourceTitle: node.title,
             targetId: otherNode.id,
             targetTitle: otherNode.title,
-            reason: reasons[0] || "可能相关",
+            reason: reasons[0] || t('graphEditor.outline.possiblyRelated'),
             score,
           });
         }
@@ -507,7 +507,7 @@ export const GraphOutline = React.memo(function GraphOutline({
       .slice(0, 10);
 
     return uniqueSuggestions;
-  }, [nodes, edges, existingConnections]);
+  }, [nodes, edges, existingConnections, t]);
 
   const [dismissedConnections, setDismissedConnections] = useState<Set<string>>(
     new Set(),
@@ -579,7 +579,7 @@ export const GraphOutline = React.memo(function GraphOutline({
     if (rootNodes.length > 0) {
       groups.push({
         key: "__root__",
-        label: "研究主题",
+        label: t('graphEditor.outline.researchTopic'),
         icon: "📌",
         color: "var(--secondary-500)",
         nodes: rootNodes,
@@ -593,7 +593,7 @@ export const GraphOutline = React.memo(function GraphOutline({
       );
       groups.push({
         key: mod,
-        label: BACKBONE_MODULE_LABELS[mod],
+        label: t(BACKBONE_MODULE_LABEL_I18N_KEYS[mod]),
         icon: BACKBONE_MODULE_ICONS[mod],
         color: BACKBONE_MODULE_COLORS[mod],
         nodes: moduleNodes,
@@ -601,7 +601,7 @@ export const GraphOutline = React.memo(function GraphOutline({
     }
 
     return groups;
-  }, [nodes, templateType, literatureSourcesMap]);
+  }, [nodes, templateType, literatureSourcesMap, t]);
 
   const literatureGroups = useMemo(() => {
     if (templateType !== "topic_research") return [];
@@ -670,13 +670,13 @@ export const GraphOutline = React.memo(function GraphOutline({
     if (uncategorizedNodes.length > 0) {
       groups.push({
         key: "__uncategorized__",
-        title: "未分类",
+        title: t('graphEditor.outline.uncategorized'),
         nodes: uncategorizedNodes,
       });
     }
 
     return groups;
-  }, [nodes, templateType, literatureSourcesMap]);
+  }, [nodes, templateType, literatureSourcesMap, t]);
 
   const toggleModuleExpand = useCallback((moduleKey: string) => {
     setExpandedModules((prev) => {
@@ -960,7 +960,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                   </span>
                   {isUncategorized ? (
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 italic block">
-                      无来源信息的概念节点
+                      {t('graphEditor.outline.noSourceConcept')}
                     </span>
                   ) : (
                     group.authors &&

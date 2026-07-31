@@ -2,13 +2,14 @@ import type { Command, CommandResult, ParsedArgs, CommandContext } from '../type
 import { dataApi, tasksApi } from '../../api/tasks';
 import { graphsApi } from '../../api/graphs';
 import { AppError, SharedErrorCodes } from "@/utils/errors";
+import i18next from 'i18next';
 
 const createParentHandler = (_commandName: string, subcommands: Command[]) => {
   return async (_args: ParsedArgs, _context: CommandContext): Promise<CommandResult> => {
     const subcommandNames = subcommands.map((s) => s.name).join(', ');
     return {
       success: false,
-      error: `请指定子命令。可用子命令: ${subcommandNames}`,
+      error: i18next.t('console.commands.common.specifySubcommand', { subcommands: subcommandNames }),
     };
   };
 };
@@ -19,12 +20,12 @@ const handleExportGraph = async (args: ParsedArgs, _context: CommandContext): Pr
   const outputPath = args.options.output as string | undefined;
 
   if (!graphId) {
-    return { success: false, error: '图谱 ID 是必需的' };
+    return { success: false, error: i18next.t('console.commands.data.graphIdRequired') };
   }
 
   const validFormats = ['json', 'markdown', 'pdf'];
   if (!validFormats.includes(format)) {
-    return { success: false, error: `无效的格式。有效格式: ${validFormats.join(', ')}` };
+    return { success: false, error: i18next.t('console.commands.data.invalidFormat', { formats: validFormats.join(', ') }) };
   }
 
   try {
@@ -48,10 +49,10 @@ const handleExportGraph = async (args: ParsedArgs, _context: CommandContext): Pr
     return {
       success: true,
       data: result,
-      message: `图谱 ${graphId} 导出成功，格式: ${format} (${blob.size} 字节)`,
+      message: i18next.t('console.commands.data.exportSuccess', { graphId, format, size: blob.size }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '导出图谱失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.data.exportFailed');
     return { success: false, error: message };
   }
 };
@@ -61,16 +62,16 @@ const handleImportData = async (args: ParsedArgs, _context: CommandContext): Pro
   const type = args.options.type as string;
 
   if (!filePath) {
-    return { success: false, error: '文件路径是必需的 (--file)' };
+    return { success: false, error: i18next.t('console.commands.data.filePathRequired') };
   }
 
   if (!type) {
-    return { success: false, error: '导入类型是必需的 (--type)' };
+    return { success: false, error: i18next.t('console.commands.data.importTypeRequired') };
   }
 
   const validTypes = ['graph', 'nodes', 'backup'];
   if (!validTypes.includes(type)) {
-    return { success: false, error: `无效的导入类型。有效类型: ${validTypes.join(', ')}` };
+    return { success: false, error: i18next.t('console.commands.data.invalidImportType', { types: validTypes.join(', ') }) };
   }
 
   try {
@@ -85,10 +86,10 @@ const handleImportData = async (args: ParsedArgs, _context: CommandContext): Pro
     return {
       success: true,
       data: result,
-      message: `数据从 ${filePath} 导入成功`,
+      message: i18next.t('console.commands.data.importSuccess', { filePath }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '导入数据失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.data.importFailed');
     return { success: false, error: message };
   }
 };
@@ -131,11 +132,11 @@ const handleBackupCreate = async (args: ParsedArgs, _context: CommandContext): P
           status: 'success',
         });
       } catch (error) {
-        const message = error instanceof Error ? error.message : '未知错误';
+        const message = error instanceof Error ? error.message : i18next.t('console.commands.data.unknownError');
         backupResults.push({
           table,
           count: 0,
-          status: `失败: ${message}`,
+          status: i18next.t('console.commands.data.backupTableFailed', { message }),
         });
       }
     }
@@ -154,31 +155,31 @@ const handleBackupCreate = async (args: ParsedArgs, _context: CommandContext): P
           totalRecords: totalCount,
         },
       },
-      message: `备份创建成功: ${successCount}/${backupResults.length} 个表, 共 ${totalCount} 条记录`,
+      message: i18next.t('console.commands.data.backupSuccess', { success: successCount, total: backupResults.length, count: totalCount }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '创建备份失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.data.createBackupFailed');
     return { success: false, error: message };
   }
 };
 
 export const exportCommand: Command = {
   name: 'export',
-  description: '导出数据操作',
-  usage: 'export graph <图谱ID> --format <json|markdown> [--output <路径>]',
+  description: i18next.t('console.commands.data.exportDesc'),
+  usage: i18next.t('console.commands.data.exportUsage'),
   options: [
     {
       name: 'graph-id',
       alias: 'g',
       type: 'string',
-      description: '要导出的图谱 ID',
+      description: i18next.t('console.commands.data.graphIdOption'),
       required: false,
     },
     {
       name: 'format',
       alias: 'f',
       type: 'string',
-      description: '导出格式 (json, markdown, pdf)',
+      description: i18next.t('console.commands.data.formatOption'),
       required: false,
       default: 'json',
     },
@@ -186,7 +187,7 @@ export const exportCommand: Command = {
       name: 'output',
       alias: 'o',
       type: 'string',
-      description: '输出文件路径',
+      description: i18next.t('console.commands.data.outputOption'),
       required: false,
     },
   ],
@@ -196,21 +197,21 @@ export const exportCommand: Command = {
 
 export const importCommand: Command = {
   name: 'import',
-  description: '导入数据操作',
-  usage: 'import --file <路径> --type <类型>',
+  description: i18next.t('console.commands.data.importDesc'),
+  usage: i18next.t('console.commands.data.importUsage'),
   options: [
     {
       name: 'file',
       alias: 'f',
       type: 'string',
-      description: '要导入的文件路径',
+      description: i18next.t('console.commands.data.fileOption'),
       required: true,
     },
     {
       name: 'type',
       alias: 't',
       type: 'string',
-      description: '导入类型 (graph, nodes, backup)',
+      description: i18next.t('console.commands.data.importTypeOption'),
       required: true,
     },
   ],
@@ -220,8 +221,8 @@ export const importCommand: Command = {
 
 export const backupCommand: Command = {
   name: 'backup',
-  description: '备份操作',
-  usage: 'backup <子命令> [选项]',
+  description: i18next.t('console.commands.data.backupDesc'),
+  usage: i18next.t('console.commands.data.backupUsage'),
   options: [],
   permission: 'safe',
   handler: createParentHandler('backup', [
@@ -230,14 +231,14 @@ export const backupCommand: Command = {
   subcommands: [
     {
       name: 'create',
-      description: '创建备份（警告操作）',
-      usage: 'backup create [--tables <表名>]',
+      description: i18next.t('console.commands.data.backupCreateDesc'),
+      usage: i18next.t('console.commands.data.backupCreateUsage'),
       options: [
         {
           name: 'tables',
           alias: 't',
           type: 'string',
-          description: '逗号分隔的表名 (graphs, nodes, edges, tasks)',
+          description: i18next.t('console.commands.data.tablesOption'),
           required: false,
         },
       ],
@@ -253,7 +254,7 @@ const handleReset = async (args: ParsedArgs, _context: CommandContext): Promise<
 
   const validTypes = ['all', 'graphs', 'tasks', 'study'];
   if (!validTypes.includes(type)) {
-    return { success: false, error: `无效的数据类型。有效类型: ${validTypes.join(', ')}` };
+    return { success: false, error: i18next.t('console.commands.data.invalidDataType', { types: validTypes.join(', ') }) };
   }
 
   try {
@@ -277,7 +278,7 @@ const handleReset = async (args: ParsedArgs, _context: CommandContext): Promise<
           useStore.getState().setUser(null, null);
         }
         const errorText = await response.text();
-        throw new AppError(errorText || '重置操作失败', SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
+        throw new AppError(errorText || i18next.t('console.commands.data.resetFailed'), SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500);
       }
 
       return response.json();
@@ -290,24 +291,24 @@ const handleReset = async (args: ParsedArgs, _context: CommandContext): Promise<
 
       const tableRows = tables.map((t: { table: string; count: number }) => {
         const countStr = String(t.count || 0).padStart(8);
-        return `  │ ${t.table.padEnd(20)} │ ${countStr} │ 待删除`;
+        return `  │ ${t.table.padEnd(20)} │ ${countStr} │ ${i18next.t('console.commands.data.toDelete')}`;
       }).join('\n');
 
       const output = [
-        '📋 数据重置预览（Dry Run）',
+        i18next.t('console.commands.data.resetPreviewTitle'),
         '',
-        `  类型: ${type}`,
-        `  模式: 仅预览，不执行删除`,
+        i18next.t('console.commands.data.resetPreviewType', { type }),
+        i18next.t('console.commands.data.resetPreviewMode'),
         '',
         '  ┌────────────────────┬──────────┬────────────┐',
-        '  │ 表名               │ 记录数   │ 状态       │',
+        `  │ ${i18next.t('console.commands.data.tableName')}               │ ${i18next.t('console.commands.data.recordCount')}   │ ${i18next.t('console.commands.common.tableHeaderStatus')}       │`,
         '  ├────────────────────┼──────────┼────────────┤',
-        tableRows || '  │ (无数据)            │          │            │',
+        tableRows || `  │ ${i18next.t('console.commands.data.noData')}            │          │            │`,
         '  └────────────────────┴──────────┴────────────┘',
         '',
-        `  总计: ${totalRecords} 条记录将被删除`,
+        i18next.t('console.commands.data.resetPreviewTotal', { count: totalRecords }),
         '',
-        '💡 直接输入 reset 即可执行删除（会弹出确认对话框）',
+        i18next.t('console.commands.data.resetPreviewHint'),
       ].join('\n');
 
       return {
@@ -340,23 +341,23 @@ const handleReset = async (args: ParsedArgs, _context: CommandContext): Promise<
     const tableRows = deletedTables.map((t: { table: string; count: number; deleted: number }, index: number) => {
       const prevCount = previewTables[index]?.count ?? 0;
       const countStr = String(prevCount).padStart(8);
-      const statusStr = (t.deleted ?? 0) > 0 ? '已删除' : '跳过';
+      const statusStr = (t.deleted ?? 0) > 0 ? i18next.t('console.commands.data.deleted') : i18next.t('console.commands.data.skipped');
       return `  │ ${t.table.padEnd(20)} │ ${countStr} │ ${statusStr}`;
     }).join('\n');
 
     const output = [
-      '🗑️ 数据重置完成',
+      i18next.t('console.commands.data.resetCompleteTitle'),
       '',
-      `  类型: ${type}`,
-      `  时间: ${new Date().toLocaleString('zh-CN')}`,
+      i18next.t('console.commands.data.resetCompleteType', { type }),
+      `  ${i18next.t('console.commands.common.time')}: ${new Date().toLocaleString('zh-CN')}`,
       '',
       '  ┌────────────────────┬──────────┬──────────┐',
-      '  │ 表名               │ 删除数量  │ 状态     │',
+      `  │ ${i18next.t('console.commands.data.tableName')}               │ ${i18next.t('console.commands.data.deleteCount')}  │ ${i18next.t('console.commands.common.tableHeaderStatus')}     │`,
       '  ├────────────────────┼──────────┼──────────┤',
-      tableRows || '  │ (无数据)            │          │          │',
+      tableRows || `  │ ${i18next.t('console.commands.data.noData')}            │          │          │`,
       '  └────────────────────┴──────────┴──────────┘',
       '',
-      `  总计: 已删除 ${previewTotal} 条记录`,
+      i18next.t('console.commands.data.resetCompleteTotal', { count: previewTotal }),
     ].join('\n');
 
     return {
@@ -364,15 +365,15 @@ const handleReset = async (args: ParsedArgs, _context: CommandContext): Promise<
       message: output,
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '重置操作失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.data.resetFailed');
     return { success: false, error: message };
   }
 };
 
 export const resetCommand: Command = {
   name: 'reset',
-  description: '清空当前用户的个人数据（调试用途）⚠️危险操作',
-  usage: 'reset [--type <all|graphs|tasks|study>] [--dry-run]',
+  description: i18next.t('console.commands.data.resetDesc'),
+  usage: i18next.t('console.commands.data.resetUsage'),
   aliases: ['重置', '清除'],
   permission: 'danger',
   options: [
@@ -380,7 +381,7 @@ export const resetCommand: Command = {
       name: 'type',
       alias: 't',
       type: 'string',
-      description: '数据类型: all(全部), graphs(图谱), tasks(任务), study(学习)',
+      description: i18next.t('console.commands.data.resetTypeOption'),
       required: false,
       default: 'all'
     },
@@ -388,7 +389,7 @@ export const resetCommand: Command = {
       name: 'dry-run',
       alias: 'd',
       type: 'boolean',
-      description: '仅预览将要删除的数据，不实际删除',
+      description: i18next.t('console.commands.data.dryRunOption'),
       required: false
     }
   ],

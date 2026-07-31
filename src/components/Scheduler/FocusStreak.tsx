@@ -150,7 +150,7 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-2xl font-bold text-white">
-                {formatDurationMinutes(displayMinutes, { emptyText: '0分钟' })}
+                {formatDurationMinutes(displayMinutes, { emptyText: t('scheduler.focusStreak.zeroMinutes') })}
               </span>
               {isActivelyFocusing && (
                 <motion.span
@@ -200,7 +200,7 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
             <div>
               <div className="text-xs text-slate-400">{t('scheduler.focusStreak.currentStreak')}</div>
               <div className="text-sm font-medium text-white">
-                {currentStreakMinutes}{t('scheduler.focusStreak.minutesSuffix')}
+                {t('scheduler.focusStreak.minutesSuffix', { count: currentStreakMinutes })}
               </div>
             </div>
           </div>
@@ -209,7 +209,7 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
             <div>
               <div className="text-xs text-slate-400">{t('scheduler.focusStreak.pomodoro')}</div>
               <div className="text-sm font-medium text-white">
-                {pomodorosCompleted}{t('scheduler.focusStreak.countSuffix')}
+                {pomodorosCompleted}
               </div>
             </div>
           </div>
@@ -300,6 +300,7 @@ export const MiniStreak: React.FC<MiniStreakProps> = ({
   streakMinutes,
   pomodorosCompleted,
 }) => {
+  const { t } = useTranslation();
   const getMilestone = () => {
     for (let i = STREAK_MILESTONES.length - 1; i >= 0; i--) {
       if (streakMinutes >= STREAK_MILESTONES[i].minutes) {
@@ -325,7 +326,7 @@ export const MiniStreak: React.FC<MiniStreakProps> = ({
         <Flame size={14} />
       </motion.div>
       <span className="text-xs font-medium text-white">
-        {streakMinutes}分钟
+        {t('scheduler.focusStreak.minutesSuffix', { count: streakMinutes })}
       </span>
       <span className="text-xs text-slate-500">|</span>
       <span className="text-xs text-slate-400">{pomodorosCompleted}🍅</span>

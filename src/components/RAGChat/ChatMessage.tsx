@@ -381,7 +381,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                         <BookOpen size={10} />
                         {source.hopDistance && source.hopDistance > 0 && (
                           <span className="text-[10px] text-amber-500 font-medium">
-                            [{source.hopDistance}跳]
+                            {t('ragChat.chatMessage.hopDistance', { count: source.hopDistance })}
                           </span>
                         )}
                         <span className="truncate max-w-[80px]">

@@ -51,7 +51,7 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
             <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              同步冲突 ({conflicts.length})
+              {t('common.syncConflict.title', { count: conflicts.length })}
             </h2>
           </div>
           <button
@@ -67,8 +67,8 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
           {conflicts.map(conflict => (
             <div key={conflict.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                表: {conflict.tableName} | 记录 ID: {conflict.recordId.slice(0, 8)}... |
-                时间: {formatDate(conflict.createdAt, 'short-datetime')}
+                {t('common.syncConflict.tableLabel')}: {conflict.tableName} | {t('common.syncConflict.recordIdLabel')}: {conflict.recordId.slice(0, 8)}... |
+                {t('common.syncConflict.timeLabel')}: {formatDate(conflict.createdAt, 'short-datetime')}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -76,7 +76,7 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
                 <div className="space-y-2">
                   <div className="flex items-center gap-1 text-sm font-medium text-blue-600">
                     <Monitor className="w-4 h-4" />
-                    本地版本
+                    {t('common.syncConflict.localVersion')}
                   </div>
                   <pre className="text-xs bg-gray-50 dark:bg-gray-900 rounded p-2 overflow-auto max-h-32">
                     {formatJson(conflict.localData)}
@@ -86,7 +86,7 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
                     className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
                   >
                     <Check className="w-3 h-3" />
-                    保留本地版本
+                    {t('common.syncConflict.keepLocal')}
                   </button>
                 </div>
 
@@ -94,7 +94,7 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
                 <div className="space-y-2">
                   <div className="flex items-center gap-1 text-sm font-medium text-green-600">
                     <Cloud className="w-4 h-4" />
-                    云端版本
+                    {t('common.syncConflict.remoteVersion')}
                   </div>
                   <pre className="text-xs bg-gray-50 dark:bg-gray-900 rounded p-2 overflow-auto max-h-32">
                     {formatJson(conflict.remoteData)}
@@ -104,7 +104,7 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
                     className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800"
                   >
                     <Check className="w-3 h-3" />
-                    保留云端版本
+                    {t('common.syncConflict.keepRemote')}
                   </button>
                 </div>
               </div>

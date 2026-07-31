@@ -29,14 +29,6 @@ const levelColors: Record<string, string> = {
   leaf: 'bg-green-500',
 };
 
-const levelLabels: Record<string, string> = {
-  root: '核心主题',
-  core: '主要概念',
-  sub: '细分知识',
-  normal: '具体内容',
-  leaf: '实例细节',
-};
-
 export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
   graphId: initialGraphId,
   selectedIds,
@@ -53,6 +45,10 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
   const { data: graphs } = useGraphs();
   const { data: graphData, isLoading: nodesLoading } = useGraphData(selectedGraphId);
 
+  const getLevelLabel = (level: string): string => {
+    return t(`quiz.knowledgePointSelector.levelLabels.${level}`, { defaultValue: level });
+  };
+
   const treeData = useMemo(() => {
     if (!graphData?.nodes) return [];
 
@@ -62,7 +58,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
     graphData.nodes.forEach((node: Node) => {
       nodeMap.set(node.knowledge_point_id, {
         id: node.knowledge_point_id,
-        title: node.title || '未命名节点',
+        title: node.title || t('quiz.knowledgePointSelector.unnamedNode'),
         level: node.level || 'leaf',
         children: [],
       });
@@ -84,7 +80,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
     });
 
     return rootNodes;
-  }, [graphData]);
+  }, [graphData, t]);
 
   const filteredNodes = useMemo(() => {
     if (!searchTerm) return null;
@@ -222,7 +218,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
           <button
             role="checkbox"
             aria-checked={isSelected}
-            aria-label={[node.title, levelLabels[node.level]].filter(Boolean).join('，')}
+            aria-label={[node.title, getLevelLabel(node.level)].filter(Boolean).join('，')}
             onClick={() => toggleSelect(node.id)}
             tabIndex={-1}
             className="flex items-center gap-2 flex-1 min-w-0"
@@ -243,7 +239,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
             <div
               aria-hidden="true"
               className={`w-2 h-2 rounded-full ${levelColors[node.level] || 'bg-gray-400'}`}
-              title={levelLabels[node.level] || node.level}
+              title={getLevelLabel(node.level)}
             />
 
             <span
@@ -277,7 +273,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
     if (filteredNodes.length === 0) {
       return (
         <div className={`text-center py-8 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-          没有找到匹配的知识点
+          {t('quiz.knowledgePointSelector.noMatchingNodes')}
         </div>
       );
     }
@@ -324,7 +320,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
 
               <div
                 className={`w-2 h-2 rounded-full ${levelColors[node.level || 'leaf']}`}
-                title={levelLabels[node.level || 'leaf']}
+                title={getLevelLabel(node.level || 'leaf')}
               />
 
               <div className="flex-1 min-w-0">
@@ -348,7 +344,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
     <div className="space-y-4">
       <div className="space-y-2">
         <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-          选择图谱
+          {t('quiz.knowledgePointSelector.selectGraph')}
         </label>
         <select
           value={selectedGraphId}
@@ -366,7 +362,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
               : 'bg-white border-gray-200 text-gray-900'
           }`}
         >
-          <option value="">请选择图谱</option>
+          <option value="">{t('quiz.knowledgePointSelector.selectGraphPlaceholder')}</option>
           {graphs?.map((graph: Graph) => (
             <option key={graph.id} value={graph.id}>
               {graph.title}
@@ -397,13 +393,15 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
 
           <div className="flex items-center justify-between">
             <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-              已选择 <span className="font-bold text-primary-600">{selectedIds.length}</span> 个知识点
+              {t('quiz.knowledgePointSelector.selectedCount', { count: selectedIds.length })}
             </div>
             <button
               onClick={toggleSelectAll}
               className="text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
-              {selectedIds.length === graphData?.nodes?.length ? '取消全选' : '全选'}
+              {selectedIds.length === graphData?.nodes?.length
+                ? t('quiz.knowledgePointSelector.deselectAll')
+                : t('quiz.knowledgePointSelector.selectAll')}
             </button>
           </div>
 
@@ -447,7 +445,9 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
           }`}
         >
           <Layers size={32} className={`mx-auto mb-2 opacity-50 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
-          <p className={isDark ? 'text-slate-500' : 'text-gray-500'}>请先选择一个图谱</p>
+          <p className={isDark ? 'text-slate-500' : 'text-gray-500'}>
+            {t('quiz.knowledgePointSelector.pleaseSelectGraph')}
+          </p>
         </div>
       )}
     </div>

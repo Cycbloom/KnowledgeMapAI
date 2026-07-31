@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, GraduationCap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from "../../hooks";
 import { TutorMode, TutorExtractedConcept } from '../../types';
 
@@ -31,6 +32,7 @@ const SimpleRAGChatButton: React.FC<SimpleRAGChatButtonProps> = ({
   isMobilePreviewMode,
   hasSelectedNode
 }) => {
+  const { t } = useTranslation();
   const shouldMoveUp = isMobilePreviewMode && hasSelectedNode;
   
   return (
@@ -49,7 +51,7 @@ const SimpleRAGChatButton: React.FC<SimpleRAGChatButtonProps> = ({
             ? 'bg-primary-600 hover:bg-primary-500 text-white' 
             : 'bg-primary-500 hover:bg-primary-600 text-white'
       }`}
-      title={isTutorMode ? 'AI 助教' : '智能问答'}
+      title={isTutorMode ? t('ragChat.chat.tutorMode') : t('ragChat.chat.smartQA')}
     >
       {isTutorMode ? <GraduationCap size={18} /> : <MessageCircle size={18} />}
       <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white animate-pulse" />

@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Node, Edge, GraphColorMode, NodeLevel, NodeStatus } from "@shared/types/graph";
 import type { ColorScheme } from "@shared/types/styles";
 import { NodeRing } from "./NodeRing";
@@ -90,6 +91,8 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
 
+  const { t } = useTranslation();
+
   const level = (node.level || "leaf") as NodeLevel;
   const status = getLearningStatus(nodeStatus?.[node.id]);
 
@@ -113,8 +116,8 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
   const nodeOpacity = (!hasFocusMode ? 1 : focused ? 1 : 0.45) * decayOpacity;
 
   const titleInfo = useMemo(
-    () => truncateText(node.title || "未命名"),
-    [node.title],
+    () => truncateText(node.title || t("graphEditor.quadrantNode.unnamed")),
+    [node.title, t],
   );
 
   const styleConfig = useMemo(() => {

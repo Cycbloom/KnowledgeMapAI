@@ -21,7 +21,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useTheme, useIsMobile, useAutoSave, useBeforeUnload } from "../../../hooks";
-import { BACKBONE_MODULE_LABELS, type BackboneModule } from "@shared/types/graph";
+import { BACKBONE_MODULE_LABEL_I18N_KEYS, type BackboneModule } from "@shared/types/graph";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -319,8 +319,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
 
   const handleRemoveParent = async (parentId: string) => {
     const confirmed = await asyncConfirm({
-      title: t("graphEditor.confirmRemoveParentTitle"),
-      message: t("graphEditor.confirmRemoveParentMessage"),
+      title: t("graphEditor.nodeEditSidebar.confirmRemoveParentTitle"),
+      message: t("graphEditor.nodeEditSidebar.confirmRemoveParentMessage"),
       isDangerous: true,
     });
     if (!confirmed) return;
@@ -374,21 +374,21 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   );
 
   const handleBold = useCallback(
-    () => wrapSelection("**", "**", t("graphEditor.nodeEdit.placeholder.bold")),
+    () => wrapSelection("**", "**", t("graphEditor.nodeEditSidebar.placeholder.bold")),
     [wrapSelection, t],
   );
   const handleItalic = useCallback(
-    () => wrapSelection("*", "*", t("graphEditor.nodeEdit.placeholder.italic")),
+    () => wrapSelection("*", "*", t("graphEditor.nodeEditSidebar.placeholder.italic")),
     [wrapSelection, t],
   );
   const handleHeading = useCallback(() => insertAtLineStart("## "), [insertAtLineStart]);
   const handleLink = useCallback(
     () =>
-      wrapSelection("[", "](https://)", t("graphEditor.nodeEdit.placeholder.link")),
+      wrapSelection("[", "](https://)", t("graphEditor.nodeEditSidebar.placeholder.link")),
     [wrapSelection, t],
   );
   const handleCodeBlock = useCallback(
-    () => wrapSelection("```\n", "\n```", t("graphEditor.nodeEdit.placeholder.code")),
+    () => wrapSelection("```\n", "\n```", t("graphEditor.nodeEditSidebar.placeholder.code")),
     [wrapSelection, t],
   );
 
@@ -505,8 +505,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             <button
               onClick={onBack}
               className={`text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-all ${isMobile ? "mr-2 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center" : "mr-1 p-1.5"}`}
-              title={t("graphEditor.nodeEdit.backToOutline")}
-              aria-label={t("graphEditor.nodeEdit.backToOutline")}
+              title={t("graphEditor.nodeEditSidebar.backToOutline")}
+              aria-label={t("graphEditor.nodeEditSidebar.backToOutline")}
             >
               <ArrowLeft size={isMobile ? 20 : 18} aria-hidden="true" />
             </button>
@@ -518,8 +518,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             className="font-bold text-gray-800 dark:text-gray-100 text-base sm:text-lg md:text-xl"
           >
             {mode === "create"
-              ? t("graphEditor.nodeEdit.headerCreate")
-              : t("graphEditor.nodeEdit.headerEdit")}
+              ? t("graphEditor.nodeEditSidebar.headerCreate")
+              : t("graphEditor.nodeEditSidebar.headerEdit")}
           </h3>
         </div>
         <button
@@ -544,14 +544,14 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 className="text-amber-600 dark:text-amber-400 animate-pulse"
               />
               <span className="text-sm text-amber-700 dark:text-amber-300 font-medium">
-                {t("graphEditor.nodeEdit.selectParentHint")}
+                {t("graphEditor.nodeEditSidebar.selectParentHint")}
               </span>
             </div>
             <button
               onClick={onCancelSelectingParent}
               className={`bg-amber-100 dark:bg-amber-800 hover:bg-amber-200 dark:hover:bg-amber-700 text-amber-700 dark:text-amber-200 rounded transition-colors ${isMobile ? "w-full py-2.5 min-h-[44px] text-sm font-medium" : "px-2 py-1 text-xs"}`}
             >
-              {t("graphEditor.nodeEdit.selectParentDone")}
+              {t("graphEditor.nodeEditSidebar.selectParentDone")}
             </button>
           </div>
         </div>
@@ -569,7 +569,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             }`}
           >
-            {t("graphEditor.backlinks.tabContent")}
+            {t("graphEditor.nodeEditSidebar.tabContent")}
           </button>
           <button
             type="button"
@@ -580,7 +580,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             }`}
           >
-            {t("graphEditor.backlinks.tabBacklinks")}
+            {t("graphEditor.nodeEditSidebar.tabBacklinks")}
           </button>
           <button
             type="button"
@@ -591,7 +591,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             }`}
           >
-            {t("graphEditor.backlinks.tabNotes")}
+            {t("graphEditor.nodeEditSidebar.tabNotes")}
           </button>
         </div>
       )}
@@ -623,10 +623,10 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             htmlFor={titleId}
             className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
           >
-            {t("graphEditor.nodeEdit.field.title")}
+            {t("graphEditor.nodeEditSidebar.field.title")}
             {isBackboneNode && (
               <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
-                {t("graphEditor.nodeEdit.backboneBadge")}
+                {t("graphEditor.nodeEditSidebar.backboneBadge")}
               </span>
             )}
           </label>
@@ -634,8 +634,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
               <BackboneNodeIcon module={backboneModule} size="small" />
               <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">
-                {t("graphEditor.nodeEdit.backboneImmutable", {
-                  module: BACKBONE_MODULE_LABELS[backboneModule],
+                {t("graphEditor.nodeEditSidebar.backboneImmutable", {
+                  module: t(BACKBONE_MODULE_LABEL_I18N_KEYS[backboneModule]),
                 })}
               </span>
             </div>
@@ -650,7 +650,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             }
             readOnly={isBackboneNode}
             className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "px-4 py-3 min-h-[44px] text-base" : "px-3 py-2"} ${isBackboneNode ? "cursor-not-allowed opacity-75" : ""}`}
-            placeholder={t("graphEditor.nodeEdit.field.titlePlaceholder")}
+            placeholder={t("graphEditor.nodeEditSidebar.field.titlePlaceholder")}
           />
         </div>
 
@@ -659,9 +659,9 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             htmlFor={summaryId}
             className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
           >
-            {t("graphEditor.nodeEdit.field.summary")}
+            {t("graphEditor.nodeEditSidebar.field.summary")}
             <span className="ml-1 text-xs font-normal text-gray-400 dark:text-gray-500">
-              {t("graphEditor.nodeEdit.field.summaryHint")}
+              {t("graphEditor.nodeEditSidebar.field.summaryHint")}
             </span>
           </label>
           <input
@@ -674,7 +674,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             }
             maxLength={200}
             className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "px-4 py-3 min-h-[44px] text-base" : "px-3 py-2 text-sm"}`}
-            placeholder={t("graphEditor.nodeEdit.field.summaryPlaceholder")}
+            placeholder={t("graphEditor.nodeEditSidebar.field.summaryPlaceholder")}
           />
         </div>
 
@@ -683,13 +683,13 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             htmlFor={parentSearchId}
             className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
           >
-            {t("graphEditor.nodeEdit.field.parent")}
+            {t("graphEditor.nodeEditSidebar.field.parent")}
           </label>
 
           <div className={`flex gap-2 ${isMobile ? "flex-col" : ""}`}>
             <div
               role="search"
-              aria-label={t('common.aria.searchWithTarget', { target: t('graphEditor.nodeEdit.field.parent') })}
+              aria-label={t('common.aria.searchWithTarget', { target: t('graphEditor.nodeEditSidebar.field.parent') })}
               className={`relative ${isMobile ? "w-full" : "flex-1"}`}
             >
               <div
@@ -707,7 +707,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 onFocus={handleParentInputFocus}
                 onBlur={handleParentInputBlur}
                 className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "pl-11 pr-10 py-3 min-h-[44px] text-base" : "pl-9 pr-8 py-2"}`}
-                placeholder={t("graphEditor.nodeEdit.field.parentPlaceholder")}
+                placeholder={t("graphEditor.nodeEditSidebar.field.parentPlaceholder")}
               />
               <div
                 className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 ${isMobile ? "right-3" : "right-2"}`}
@@ -716,8 +716,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   <button
                     onClick={clearAllParents}
                     className={`text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded ${isMobile ? "p-1.5 min-h-[36px] min-w-[36px]" : "p-1"}`}
-                    title={t("graphEditor.nodeEdit.field.clearAll")}
-                    aria-label={t("graphEditor.nodeEdit.field.clearAll")}
+                    title={t("graphEditor.nodeEditSidebar.field.clearAll")}
+                    aria-label={t("graphEditor.nodeEditSidebar.field.clearAll")}
                   >
                     <X size={isMobile ? 16 : 14} aria-hidden="true" />
                   </button>
@@ -750,7 +750,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   >
                     <Circle size={12} className="text-gray-400" />
                     <span className={`${isMobile ? "text-base" : "text-sm"}`}>
-                      {t("graphEditor.nodeEdit.field.noParent")}
+                      {t("graphEditor.nodeEditSidebar.field.noParent")}
                     </span>
                   </button>
 
@@ -759,8 +759,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                       className={`text-center text-gray-400 dark:text-gray-500 ${isMobile ? "px-4 py-5 text-base" : "px-3 py-4 text-sm"}`}
                     >
                       {parentSearch
-                        ? t("graphEditor.nodeEdit.field.noMatchingNodes")
-                        : t("graphEditor.nodeEdit.field.noAvailableNodes")}
+                        ? t("graphEditor.nodeEditSidebar.field.noMatchingNodes")
+                        : t("graphEditor.nodeEditSidebar.field.noAvailableNodes")}
                     </div>
                   ) : (
                     filteredNodes.map((node) => {
@@ -825,13 +825,13 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               } ${isMobile ? "w-full py-3 min-h-[48px] flex items-center justify-center gap-2 font-medium" : "p-2"}`}
               title={
                 isSelectingParent
-                  ? t("graphEditor.nodeEdit.field.finishSelect")
-                  : t("graphEditor.nodeEdit.field.selectFromGraph")
+                  ? t("graphEditor.nodeEditSidebar.field.finishSelect")
+                  : t("graphEditor.nodeEditSidebar.field.selectFromGraph")
               }
               aria-label={
                 isSelectingParent
-                  ? t("graphEditor.nodeEdit.field.finishSelect")
-                  : t("graphEditor.nodeEdit.field.selectFromGraph")
+                  ? t("graphEditor.nodeEditSidebar.field.finishSelect")
+                  : t("graphEditor.nodeEditSidebar.field.selectFromGraph")
               }
             >
               <MousePointer2
@@ -842,8 +842,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               {isMobile && (
                 <span>
                   {isSelectingParent
-                    ? t("graphEditor.nodeEdit.field.finishSelect")
-                    : t("graphEditor.nodeEdit.field.selectFromGraph")}
+                    ? t("graphEditor.nodeEditSidebar.field.finishSelect")
+                    : t("graphEditor.nodeEditSidebar.field.selectFromGraph")}
                 </span>
               )}
             </button>
@@ -884,7 +884,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             htmlFor={tagsId}
             className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
           >
-            {t("graphEditor.nodeEdit.field.tags")}
+            {t("graphEditor.nodeEditSidebar.field.tags")}
           </label>
           <input
             id={tagsId}
@@ -899,7 +899,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               setNodeForm({ ...nodeForm, tags });
             }}
             className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "px-4 py-3 min-h-[44px] text-base" : "px-3 py-2"}`}
-            placeholder={t("graphEditor.nodeEdit.field.tagsPlaceholder")}
+            placeholder={t("graphEditor.nodeEditSidebar.field.tagsPlaceholder")}
           />
         </div>
 
@@ -908,7 +908,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             htmlFor={levelId}
             className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
           >
-            {t("graphEditor.nodeEdit.field.level")}
+            {t("graphEditor.nodeEditSidebar.field.level")}
           </label>
           <select
             id={levelId}
@@ -918,11 +918,11 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             }
             className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "px-4 py-3 min-h-[44px] text-base" : "px-3 py-2 text-sm"}`}
           >
-            <option value="root">{t("graphEditor.nodeEdit.field.levelRoot")}</option>
-            <option value="core">{t("graphEditor.nodeEdit.field.levelCore")}</option>
-            <option value="sub">{t("graphEditor.nodeEdit.field.levelSub")}</option>
-            <option value="normal">{t("graphEditor.nodeEdit.field.levelNormal")}</option>
-            <option value="leaf">{t("graphEditor.nodeEdit.field.levelLeaf")}</option>
+            <option value="root">{t("graphEditor.nodeEditSidebar.field.levelRoot")}</option>
+            <option value="core">{t("graphEditor.nodeEditSidebar.field.levelCore")}</option>
+            <option value="sub">{t("graphEditor.nodeEditSidebar.field.levelSub")}</option>
+            <option value="normal">{t("graphEditor.nodeEditSidebar.field.levelNormal")}</option>
+            <option value="leaf">{t("graphEditor.nodeEditSidebar.field.levelLeaf")}</option>
           </select>
         </div>
 
@@ -932,7 +932,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               htmlFor={contentId}
               className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base" : "text-sm"}`}
             >
-              {t("graphEditor.nodeEdit.field.content")}
+              {t("graphEditor.nodeEditSidebar.field.content")}
             </label>
             <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
               <button
@@ -943,10 +943,10 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                     ? "bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
-                title={t("graphEditor.nodeEdit.toolbar.editMode")}
+                title={t("graphEditor.nodeEditSidebar.toolbar.editMode")}
               >
                 <Pencil size={12} />
-                {t("graphEditor.nodeEdit.toolbar.edit")}
+                {t("graphEditor.nodeEditSidebar.toolbar.edit")}
               </button>
               <button
                 type="button"
@@ -956,10 +956,10 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                     ? "bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
-                title={t("graphEditor.nodeEdit.toolbar.previewMode")}
+                title={t("graphEditor.nodeEditSidebar.toolbar.previewMode")}
               >
                 <Eye size={12} />
-                {t("graphEditor.nodeEdit.toolbar.preview")}
+                {t("graphEditor.nodeEditSidebar.toolbar.preview")}
               </button>
             </div>
           </div>
@@ -972,7 +972,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   type="button"
                   onClick={handleBold}
                   className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  title={t("graphEditor.nodeEdit.toolbar.bold")}
+                  title={t("graphEditor.nodeEditSidebar.toolbar.bold")}
                   aria-label={t("common.aria.bold")}
                 >
                   <Bold size={14} aria-hidden="true" />
@@ -981,7 +981,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   type="button"
                   onClick={handleItalic}
                   className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  title={t("graphEditor.nodeEdit.toolbar.italic")}
+                  title={t("graphEditor.nodeEditSidebar.toolbar.italic")}
                   aria-label={t("common.aria.italic")}
                 >
                   <Italic size={14} aria-hidden="true" />
@@ -990,8 +990,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   type="button"
                   onClick={handleHeading}
                   className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  title={t("graphEditor.nodeEdit.toolbar.heading")}
-                  aria-label={t("graphEditor.nodeEdit.toolbar.heading")}
+                  title={t("graphEditor.nodeEditSidebar.toolbar.heading")}
+                  aria-label={t("graphEditor.nodeEditSidebar.toolbar.heading")}
                 >
                   <Heading size={14} aria-hidden="true" />
                 </button>
@@ -999,8 +999,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   type="button"
                   onClick={handleLink}
                   className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors min-h-[24px] min-w-[24px] flex items-center justify-center"
-                  title={t("graphEditor.nodeEdit.toolbar.link")}
-                  aria-label={t("graphEditor.nodeEdit.toolbar.link")}
+                  title={t("graphEditor.nodeEditSidebar.toolbar.link")}
+                  aria-label={t("graphEditor.nodeEditSidebar.toolbar.link")}
                 >
                   <LinkIcon size={14} aria-hidden="true" />
                 </button>
@@ -1008,8 +1008,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   type="button"
                   onClick={handleCodeBlock}
                   className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  title={t("graphEditor.nodeEdit.toolbar.codeBlock")}
-                  aria-label={t("graphEditor.nodeEdit.toolbar.codeBlock")}
+                  title={t("graphEditor.nodeEditSidebar.toolbar.codeBlock")}
+                  aria-label={t("graphEditor.nodeEditSidebar.toolbar.codeBlock")}
                 >
                   <Code size={14} aria-hidden="true" />
                 </button>
@@ -1021,7 +1021,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 value={nodeForm.content}
                 onChange={handleContentChange}
                 className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all resize-none font-mono bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "h-48 px-4 py-3 text-base" : "h-64 px-3 py-2 text-sm"}`}
-                placeholder={t("graphEditor.nodeEdit.placeholder.content")}
+                placeholder={t("graphEditor.nodeEditSidebar.placeholder.content")}
               />
             </>
           ) : (
@@ -1049,7 +1049,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               ) : (
                 <EmptyState
                   icon={<FileText size={32} />}
-                  title={t('graphEditor.empty.nodeEmptyContent')}
+                  title={t('graphEditor.nodeEditSidebar.emptyContent')}
                 />
               )}
             </div>
@@ -1074,12 +1074,12 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             {autoSaveStatus === "saving" ? (
               <span className="flex items-center justify-center gap-1">
                 <Loader2 className="animate-spin" size={12} aria-hidden="true" />
-                {t("graphEditor.nodeEdit.autoSaveSaving")}
+                {t("graphEditor.nodeEditSidebar.autoSaveSaving")}
               </span>
             ) : (
               <span className="flex items-center justify-center gap-1">
                 <Check size={12} aria-hidden="true" />
-                {t("graphEditor.nodeEdit.autoSaveSaved")}
+                {t("graphEditor.nodeEditSidebar.autoSaveSaved")}
               </span>
             )}
           </div>
@@ -1090,7 +1090,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               onClick={onClose}
               className="flex-1 py-3 rounded-xl flex items-center justify-center font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all min-h-[48px]"
             >
-              {t("graphEditor.nodeEdit.cancel")}
+              {t("graphEditor.nodeEditSidebar.cancel")}
             </button>
             <SaveButton
               onSave={handleManualSave}
@@ -1098,7 +1098,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               size="md"
               disabled={!nodeForm.title.trim()}
               className="flex-1 min-h-[48px]"
-              idleLabel={t("graphEditor.nodeEdit.save")}
+              idleLabel={t("graphEditor.nodeEditSidebar.save")}
             />
           </div>
         ) : (
@@ -1108,7 +1108,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             size="md"
             fullWidth
             disabled={!nodeForm.title.trim()}
-            idleLabel={t("graphEditor.nodeEdit.saveNode")}
+            idleLabel={t("graphEditor.nodeEditSidebar.saveNode")}
           />
         )}
       </div>

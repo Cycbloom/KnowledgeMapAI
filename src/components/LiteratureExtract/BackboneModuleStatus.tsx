@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { CheckCircle2, Circle } from "lucide-react";
 import {
   BackboneModule,
-  BACKBONE_MODULE_LABELS,
+  BACKBONE_MODULE_LABEL_I18N_KEYS,
   BACKBONE_MODULE_COLORS,
 } from "@shared/types/graph";
 
@@ -28,7 +28,7 @@ export const BackboneModuleStatus: React.FC<BackboneModuleStatusProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const moduleLabel = BACKBONE_MODULE_LABELS[module];
+  const moduleLabelKey = BACKBONE_MODULE_LABEL_I18N_KEYS[module];
   const moduleColor = BACKBONE_MODULE_COLORS[module];
 
   const sizeClasses = {
@@ -82,7 +82,7 @@ export const BackboneModuleStatus: React.FC<BackboneModuleStatusProps> = ({
 
       {showLabel && (
         <span className="font-medium" style={{ color: moduleColor }}>
-          {moduleLabel}
+          {t(moduleLabelKey)}
         </span>
       )}
 

@@ -14,7 +14,7 @@ const handleAuditList = async (args: ParsedArgs, _context: CommandContext): Prom
     };
   }
 
-  let output = '审计日志 - 最近命令\n';
+  let output = `${i18n.t('console.commands.audit.auditListTitle')}\n`;
   output += `${'='.repeat(60)  }\n\n`;
 
   for (const log of logs) {
@@ -24,16 +24,16 @@ const handleAuditList = async (args: ParsedArgs, _context: CommandContext): Prom
     const duration = log.duration ? ` (${log.duration}ms)` : '';
 
     output += `${status} ${permBadge} ${log.command}${duration}\n`;
-    output += `  时间: ${date.toLocaleString()}\n`;
+    output += `  ${i18n.t('console.commands.audit.auditTime', { time: date.toLocaleString() })}\n`;
     if (!log.result.success && log.result.error) {
-      output += `  错误: ${log.result.error}\n`;
+      output += `  ${i18n.t('console.commands.audit.auditError', { error: log.result.error })}\n`;
     }
     output += '\n';
   }
 
   const stats = consoleLogger.getStats();
   output += `${'-'.repeat(60)  }\n`;
-  output += `总计: ${stats.total} | 成功: ${stats.successful} | 失败: ${stats.failed}\n`;
+  output += `${i18n.t('console.commands.audit.auditStatsLine', { total: stats.total, success: stats.successful, failed: stats.failed })}\n`;
 
   return {
     success: true,
@@ -52,7 +52,7 @@ const handleAuditSearch = async (args: ParsedArgs, _context: CommandContext): Pr
   if (!command) {
     return {
       success: false,
-      error: '命令模式是必需的 (--command)',
+      error: i18n.t('console.commands.audit.commandPatternRequired'),
     };
   }
 
@@ -61,11 +61,11 @@ const handleAuditSearch = async (args: ParsedArgs, _context: CommandContext): Pr
   if (logs.length === 0) {
     return {
       success: true,
-      message: `未找到匹配 "${command}" 的审计日志`,
+      message: i18n.t('console.commands.audit.auditSearchNoMatch', { command }),
     };
   }
 
-  let output = `审计日志 - 搜索结果 "${command}"\n`;
+  let output = `${i18n.t('console.commands.audit.auditSearchTitle', { command })}\n`;
   output += `${'='.repeat(60)  }\n\n`;
 
   for (const log of logs) {
@@ -75,15 +75,15 @@ const handleAuditSearch = async (args: ParsedArgs, _context: CommandContext): Pr
     const duration = log.duration ? ` (${log.duration}ms)` : '';
 
     output += `${status} ${permBadge} ${log.command}${duration}\n`;
-    output += `  时间: ${date.toLocaleString()}\n`;
+    output += `  ${i18n.t('console.commands.audit.auditTime', { time: date.toLocaleString() })}\n`;
     if (!log.result.success && log.result.error) {
-      output += `  错误: ${log.result.error}\n`;
+      output += `  ${i18n.t('console.commands.audit.auditError', { error: log.result.error })}\n`;
     }
     output += '\n';
   }
 
   output += `${'-'.repeat(60)  }\n`;
-  output += `找到: ${logs.length} 条记录\n`;
+  output += `${i18n.t('console.commands.audit.auditSearchFound', { count: logs.length })}\n`;
 
   return {
     success: true,
@@ -98,15 +98,15 @@ const handleAuditSearch = async (args: ParsedArgs, _context: CommandContext): Pr
 const handleAuditStats = async (_args: ParsedArgs, _context: CommandContext): Promise<CommandResult> => {
   const stats = consoleLogger.getStats();
 
-  let output = '审计统计\n';
+  let output = `${i18n.t('console.commands.audit.auditStatsTitle')}\n`;
   output += `${'='.repeat(40)  }\n\n`;
-  output += `总命令数: ${stats.total}\n`;
-  output += `成功: ${stats.successful}\n`;
-  output += `失败: ${stats.failed}\n\n`;
-  output += '按权限级别:\n';
-  output += `  安全:    ${stats.byPermission.safe}\n`;
-  output += `  警告:    ${stats.byPermission.warning}\n`;
-  output += `  危险:    ${stats.byPermission.danger}\n`;
+  output += `${i18n.t('console.commands.audit.auditStatsTotal', { total: stats.total })}\n`;
+  output += `${i18n.t('console.commands.audit.auditStatsSuccess', { count: stats.successful })}\n`;
+  output += `${i18n.t('console.commands.audit.auditStatsFailed', { count: stats.failed })}\n\n`;
+  output += `${i18n.t('console.commands.audit.auditStatsByPermission')}\n`;
+  output += `  ${i18n.t('console.commands.audit.auditStatsSafe', { count: stats.byPermission.safe })}\n`;
+  output += `  ${i18n.t('console.commands.audit.auditStatsWarning', { count: stats.byPermission.warning })}\n`;
+  output += `  ${i18n.t('console.commands.audit.auditStatsDanger', { count: stats.byPermission.danger })}\n`;
 
   return {
     success: true,
@@ -120,7 +120,7 @@ const handleAuditClear = async (_args: ParsedArgs, _context: CommandContext): Pr
 
   return {
     success: true,
-    message: '审计日志已清除',
+    message: i18n.t('console.commands.audit.auditClearSuccess'),
   };
 };
 
@@ -129,15 +129,15 @@ const createParentHandler = (_commandName: string, subcommands: Command[]) => {
     const subcommandNames = subcommands.map((s) => s.name).join(', ');
     return {
       success: false,
-      error: `请指定子命令。可用子命令: ${subcommandNames}`,
+      error: i18n.t('console.commands.common.specifySubcommand', { subcommands: subcommandNames }),
     };
   };
 };
 
 export const auditCommand: Command = {
   name: 'audit',
-  description: '查看和管理命令执行审计日志',
-  usage: 'audit <子命令> [选项]',
+  description: i18n.t('console.commands.audit.auditDesc'),
+  usage: i18n.t('console.commands.audit.auditUsage'),
   options: [],
   permission: 'safe',
   handler: createParentHandler('audit', [
@@ -149,14 +149,14 @@ export const auditCommand: Command = {
   subcommands: [
     {
       name: 'list',
-      description: '列出最近的审计日志',
-      usage: 'audit list [--limit 10]',
+      description: i18n.t('console.commands.audit.auditListDesc'),
+      usage: i18n.t('console.commands.audit.auditListUsage'),
       options: [
         {
           name: 'limit',
           alias: 'l',
           type: 'number',
-          description: '显示的日志数量',
+          description: i18n.t('console.commands.audit.auditLimitOption'),
           required: false,
           default: 10,
         },
@@ -166,21 +166,21 @@ export const auditCommand: Command = {
     },
     {
       name: 'search',
-      description: '按命令搜索审计日志',
-      usage: 'audit search --command <模式> [--limit 10]',
+      description: i18n.t('console.commands.audit.auditSearchDesc'),
+      usage: i18n.t('console.commands.audit.auditSearchUsage'),
       options: [
         {
           name: 'command',
           alias: 'c',
           type: 'string',
-          description: '要搜索的命令模式',
+          description: i18n.t('console.commands.audit.auditCommandOption'),
           required: true,
         },
         {
           name: 'limit',
           alias: 'l',
           type: 'number',
-          description: '显示的日志数量',
+          description: i18n.t('console.commands.audit.auditLimitOption'),
           required: false,
           default: 10,
         },
@@ -190,16 +190,16 @@ export const auditCommand: Command = {
     },
     {
       name: 'stats',
-      description: '显示审计统计',
-      usage: 'audit stats',
+      description: i18n.t('console.commands.audit.auditStatsDesc'),
+      usage: i18n.t('console.commands.audit.auditStatsUsage'),
       options: [],
       permission: 'safe',
       handler: handleAuditStats,
     },
     {
       name: 'clear',
-      description: '清除所有审计日志（危险操作）',
-      usage: 'audit clear',
+      description: i18n.t('console.commands.audit.auditClearDesc'),
+      usage: i18n.t('console.commands.audit.auditClearUsage'),
       options: [],
       permission: 'danger',
       handler: handleAuditClear,

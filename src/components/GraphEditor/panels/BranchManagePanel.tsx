@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   X,
   GitBranch,
@@ -33,17 +34,17 @@ interface BranchInfo {
   created_at: string;
 }
 
-function formatRelativeTime(dateStr: string): string {
+function formatRelativeTime(dateStr: string, t: TFunction): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return "刚刚";
-  if (diffMins < 60) return `${diffMins}分钟前`;
+  if (diffMins < 1) return t('graphEditor.branchManage.justNow');
+  if (diffMins < 60) return t('graphEditor.branchManage.minutesAgo', { count: diffMins });
   const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}小时前`;
+  if (diffHours < 24) return t('graphEditor.branchManage.hoursAgo', { count: diffHours });
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 30) return `${diffDays}天前`;
+  if (diffDays < 30) return t('graphEditor.branchManage.daysAgo', { count: diffDays });
   return formatDate(date, "short");
 }
 
@@ -218,7 +219,7 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
                   {mergeTarget.title || mergeTarget.branch_name}
                 </p>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                  {t('graphEditor.branchManage.createdAt', { time: formatRelativeTime(mergeTarget.created_at) })}
+                  {t('graphEditor.branchManage.createdAt', { time: formatRelativeTime(mergeTarget.created_at, t) })}
                 </p>
               </div>
 
@@ -309,7 +310,7 @@ const BranchItem: React.FC<BranchItemProps> = ({ branch, onMerge, onView, onDele
             {branch.title || branch.branch_name}
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-500">
-            {formatRelativeTime(branch.created_at)}
+            {formatRelativeTime(branch.created_at, t)}
           </p>
         </div>
       </div>

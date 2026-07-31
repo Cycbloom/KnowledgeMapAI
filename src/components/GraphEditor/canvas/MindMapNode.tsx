@@ -884,7 +884,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
             fill="white"
             style={{ pointerEvents: "none" }}
           >
-            {t("graphEditor.node.needsRefinement", "待完善")}
+            {t("graphEditor.mindMapNode.needsRefinement")}
           </text>
         </g>
       )}

@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, AlertCircle } from "lucide-react";
 import type { BackboneModuleCustomConfig } from "@shared/types/graph";
 import { ModuleItem } from "./ModuleItem";
@@ -34,6 +35,7 @@ export const CustomModuleEditor: React.FC<CustomModuleEditorProps> = ({
   onChange,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const defaultModuleColor = useMemo(() => getThemePrimaryColor(), []);
 
   const handleModuleChange = (
@@ -66,12 +68,12 @@ export const CustomModuleEditor: React.FC<CustomModuleEditorProps> = ({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs text-gray-500 dark:text-gray-400">
-          {modules.length}/{MAX_MODULES} 个模块
+          {t('autoGraph.customModuleEditor.moduleCount', { current: modules.length, max: MAX_MODULES })}
         </span>
         {modules.length < MIN_MODULES && (
           <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
             <AlertCircle size={12} />
-            <span>至少 {MIN_MODULES} 个</span>
+            <span>{t('autoGraph.customModuleEditor.minModules', { count: MIN_MODULES })}</span>
           </div>
         )}
       </div>
@@ -109,13 +111,13 @@ export const CustomModuleEditor: React.FC<CustomModuleEditorProps> = ({
           `}
         >
           <Plus size={14} />
-          <span>添加模块</span>
+          <span>{t('autoGraph.customModuleEditor.addModule')}</span>
         </button>
       )}
 
       {!canAddMore && (
         <p className="text-center text-xs text-gray-500 dark:text-gray-500 py-1">
-          已达上限 ({MAX_MODULES})
+          {t('autoGraph.customModuleEditor.reachedLimit', { count: MAX_MODULES })}
         </p>
       )}
     </div>

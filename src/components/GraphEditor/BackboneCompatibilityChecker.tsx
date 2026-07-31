@@ -3,7 +3,7 @@ import { AlertTriangle, Check, X, RefreshCw, Info } from "lucide-react";
 import { Node, BackboneModule } from "../../types";
 import {
   BACKBONE_MODULE_TITLES,
-  BACKBONE_MODULE_LABELS,
+  BACKBONE_MODULE_LABEL_I18N_KEYS,
   BACKBONE_MODULE_COLORS,
 } from "@shared/types/graph";
 import { api } from "../../services/api";
@@ -309,11 +309,11 @@ export const BackboneCompatibilityChecker: React.FC<
   const getIssueDescription = (issue: CompatibilityIssue): string => {
     switch (issue.issueType) {
       case "missing_module": {
-        const moduleLabel = issue.suggestedModule ? BACKBONE_MODULE_LABELS[issue.suggestedModule] : t("graphEditor.backbone.unknown");
+        const moduleLabel = issue.suggestedModule ? t(BACKBONE_MODULE_LABEL_I18N_KEYS[issue.suggestedModule]) : t("graphEditor.backbone.unknown");
         return t("graphEditor.backbone.missingModule", { module: moduleLabel });
       }
       case "invalid_module": {
-        const moduleLabel = issue.suggestedModule ? BACKBONE_MODULE_LABELS[issue.suggestedModule] : t("graphEditor.backbone.unknown");
+        const moduleLabel = issue.suggestedModule ? t(BACKBONE_MODULE_LABEL_I18N_KEYS[issue.suggestedModule]) : t("graphEditor.backbone.unknown");
         return t("graphEditor.backbone.invalidModule", { current: issue.currentModule ?? "", suggested: moduleLabel });
       }
       case "invalid_title":
@@ -457,7 +457,7 @@ export const BackboneCompatibilityChecker: React.FC<
                               BACKBONE_MODULE_COLORS[issue.suggestedModule],
                           }}
                         >
-                          {BACKBONE_MODULE_LABELS[issue.suggestedModule]}
+                          {t(BACKBONE_MODULE_LABEL_I18N_KEYS[issue.suggestedModule])}
                         </span>
                       )}
                     </div>

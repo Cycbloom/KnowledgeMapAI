@@ -398,11 +398,11 @@ export const LearningPaths = () => {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Clock size={14} />
-                    <span>{formatDurationMinutes(path.total_estimated_time, { emptyText: '0分钟' })}</span>
+                    <span>{formatDurationMinutes(path.total_estimated_time, { emptyText: t('learningPaths.zeroMinutesEmptyText') })}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <TrendingUp size={14} />
-                    <span>{formatDurationMinutes(path.daily_minutes_target, { emptyText: '0分钟' })}</span>
+                    <span>{formatDurationMinutes(path.daily_minutes_target, { emptyText: t('learningPaths.zeroMinutesEmptyText') })}</span>
                   </div>
                   {path.target_date && (
                     <div className="flex items-center gap-2 text-xs text-gray-500">

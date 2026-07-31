@@ -88,10 +88,10 @@ export const LearningArticleReader = ({
           </div>
           <div>
             <h3 className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-              {STUDY_MODE_PRESETS[studyMode]?.label ?? studyMode}
+              {STUDY_MODE_PRESETS[studyMode]?.labelKey ? t(STUDY_MODE_PRESETS[studyMode].labelKey) : studyMode}
             </h3>
             <p className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-              {STUDY_MODE_PRESETS[studyMode]?.description ?? ""}
+              {STUDY_MODE_PRESETS[studyMode]?.descriptionKey ? t(STUDY_MODE_PRESETS[studyMode].descriptionKey) : ""}
             </p>
           </div>
           {shouldShowQuiz() && (
@@ -207,9 +207,9 @@ export const LearningArticleReader = ({
           {linkedTask && (
             <div className="mb-4 px-3 py-2 rounded-lg flex items-center gap-2 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
               <Route size={16} />
-              <span>学习图谱: {linkedTask.graphName}</span>
+              <span>{t("learning.articleReader.linkedGraph", { name: linkedTask.graphName })}</span>
               <span className="text-xs opacity-75">
-                ({linkedTask.completedNodes}/{linkedTask.totalNodes} 节点)
+                {t("learning.articleReader.nodes", { completed: linkedTask.completedNodes, total: linkedTask.totalNodes })}
               </span>
               <span className="ml-auto">{linkedTask.progress}%</span>
             </div>

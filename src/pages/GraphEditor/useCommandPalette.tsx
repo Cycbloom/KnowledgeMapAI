@@ -117,7 +117,7 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
       shortcut: 'Tab',
       action: () => {
         if (selectedNode) {
-          addMessage({ type: 'info', content: '请使用 Tab 键创建子节点' });
+          addMessage({ type: 'info', content: t('graphEditor.commandPalette.tabCreateChildHint') });
         } else {
           addMessage({ type: 'warning', content: t('graphEditor.commands.selectNodeFirst') });
         }

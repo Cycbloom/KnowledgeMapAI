@@ -14,22 +14,6 @@ interface ConsoleHistoryProps {
   isDark: boolean;
 }
 
-const formatTime = (timestamp: number): string => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return '刚刚';
-  if (diffMins < 60) return `${diffMins}分钟前`;
-  if (diffHours < 24) return `${diffHours}小时前`;
-  if (diffDays < 7) return `${diffDays}天前`;
-
-  return formatDate(timestamp, 'short-datetime');
-};
-
 export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
   history,
   onSelect,
@@ -38,6 +22,22 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const { t } = useTranslation();
+
+  const formatTime = useCallback((timestamp: number): string => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return t('common.timeAgo.justNow');
+    if (diffMins < 60) return t('common.timeAgo.minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('common.timeAgo.hoursAgo', { count: diffHours });
+    if (diffDays < 7) return t('common.timeAgo.daysAgo', { count: diffDays });
+
+    return formatDate(timestamp, 'short-datetime');
+  }, [t]);
 
   const filteredHistory = useMemo(() => {
     if (!searchQuery.trim()) return history;
@@ -65,7 +65,7 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
           <span className={`text-xs font-semibold uppercase tracking-wider ${
             isDark ? 'text-slate-400' : 'text-gray-500'
           }`}>
-            历史记录
+            {t('console.history.title')}
           </span>
           {history.length > 0 && (
             <button
@@ -167,7 +167,7 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
         <div className={`px-3 py-1.5 border-t text-[10px] ${
           isDark ? 'border-slate-700 text-slate-500' : 'border-gray-200 text-gray-400'
         }`}>
-          共 {history.length} 条记录
+          {t('console.history.totalCount', { count: history.length })}
         </div>
       )}
     </div>

@@ -140,7 +140,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
           </motion.time>
 
           <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-            {isBreak ? '休息时间' : '专注时间'}
+            {isBreak ? t('scheduler.taskTimer.breakTime') : t('scheduler.taskTimer.focusTime')}
           </div>
 
           {duration > 0 && (

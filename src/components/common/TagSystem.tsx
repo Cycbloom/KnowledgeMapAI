@@ -113,10 +113,10 @@ export const TagCloud: React.FC<TagCloudProps> = ({
     <div className={cn('rounded-xl p-6 shadow-sm border', isDark ? 'bg-slate-800' : 'bg-white', isDark ? 'border-slate-700' : 'border-gray-100')}>
       <div className="flex items-center justify-between mb-4">
         <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-gray-800')}>
-          标签云
+          {t('common.tagSystem.cloudTitle')}
         </h3>
         <span className={cn('text-xs', isDark ? 'text-slate-400' : 'text-gray-500')}>
-          {tagData.length} 个标签
+          {t('common.tagSystem.countLabel', { count: tagData.length })}
         </span>
       </div>
       
@@ -254,7 +254,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
                   onClick={clearAll}
                   className={cn('text-xs min-h-[44px] px-3 py-2', isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')}
                 >
-                  清除全部
+                  {t('common.tagSystem.clearAll')}
                 </button>
               )}
             </div>
@@ -304,6 +304,7 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({
   onAddTag
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -342,14 +343,14 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({
       <div className="flex items-center gap-2 mb-2">
         <Sparkles size={14} className="text-primary-500" />
         <span className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-gray-500')}>
-          建议标签
+          {t('common.tagSystem.suggestions')}
         </span>
       </div>
       
       {loading ? (
         <div className={cn('flex items-center gap-2 text-sm', isDark ? 'text-slate-400' : 'text-gray-500')}>
           <Loader2 size={14} className="animate-spin" />
-          分析中...
+          {t('common.analyzing')}
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
@@ -379,7 +380,7 @@ export const TagInput: React.FC<{
   onChange: (tags: string[]) => void;
   suggestions?: string[];
   placeholder?: string;
-}> = ({ tags, onChange, suggestions = [], placeholder = '添加标签...' }) => {
+}> = ({ tags, onChange, suggestions = [], placeholder }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
@@ -486,7 +487,7 @@ export const TagInput: React.FC<{
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           onKeyDown={handleKeyDown}
-          placeholder={tags.length === 0 ? placeholder : ''}
+          placeholder={tags.length === 0 ? (placeholder ?? t('common.tagSystem.addTagPlaceholder')) : ''}
           className={cn(
             'flex-1 min-w-[100px] bg-transparent text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
             isDark ? 'text-white placeholder-slate-500' : 'text-gray-800 placeholder-gray-400'

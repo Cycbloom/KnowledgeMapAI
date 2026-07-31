@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import type { UserTask } from '@shared/types';
 import type { SSETaskUpdatePayload } from '../services/FrontendEventTypes';
 import { frontendEventBus } from '../services/timer/FrontendEventBus';
@@ -49,44 +50,55 @@ class SchedulerNotificationService {
   }
 
   notifyTaskStart(task: UserTask): void {
-    this.sendNotification(`任务开始: ${task.title}`, {
-      body: `优先级: ${task.priority} | 预计时长: ${task.estimated_duration || '未设置'}分钟`,
+    this.sendNotification(i18next.t('scheduler.notifications.taskStartTitle', { title: task.title }), {
+      body: i18next.t('scheduler.notifications.taskStartBody', {
+        priority: task.priority,
+        duration: task.estimated_duration || i18next.t('scheduler.notifications.notSet'),
+      }),
       tag: `task-start-${task.id}`,
     });
   }
 
   notifyTaskComplete(task: UserTask): void {
-    this.sendNotification(`任务完成: ${task.title}`, {
-      body: `实际用时: ${task.actual_duration || '未记录'}分钟`,
+    this.sendNotification(i18next.t('scheduler.notifications.taskCompleteTitle', { title: task.title }), {
+      body: i18next.t('scheduler.notifications.taskCompleteBody', {
+        duration: task.actual_duration || i18next.t('scheduler.notifications.notRecorded'),
+      }),
       tag: `task-complete-${task.id}`,
     });
   }
 
   notifyTimeSliceEnd(task: UserTask, nextQueue: number): void {
-    const queueNames = ['执行队列', '准备队列', '待办队列'];
-    this.sendNotification(`时间片结束: ${task.title}`, {
-      body: `任务已移至 ${queueNames[nextQueue] || `队列 ${nextQueue}`}`,
+    const queueNames = [
+      i18next.t('scheduler.notifications.queueExecution'),
+      i18next.t('scheduler.notifications.queuePreparation'),
+      i18next.t('scheduler.notifications.queueTodo'),
+    ];
+    this.sendNotification(i18next.t('scheduler.notifications.timeSliceEndTitle', { title: task.title }), {
+      body: i18next.t('scheduler.notifications.timeSliceEndBody', {
+        queueName: queueNames[nextQueue] || i18next.t('scheduler.notifications.queueFallback', { index: nextQueue }),
+      }),
       tag: `time-slice-${task.id}`,
     });
   }
 
   notifyBreak(): void {
-    this.sendNotification('休息时间', {
-      body: '请休息一下，放松身心',
+    this.sendNotification(i18next.t('scheduler.notifications.breakTitle'), {
+      body: i18next.t('scheduler.notifications.breakBody'),
       tag: 'break-start',
     });
   }
 
   notifyBreakEnd(): void {
-    this.sendNotification('休息结束', {
-      body: '准备继续下一个任务',
+    this.sendNotification(i18next.t('scheduler.notifications.breakEndTitle'), {
+      body: i18next.t('scheduler.notifications.breakEndBody'),
       tag: 'break-end',
     });
   }
 
   notifyDeadline(task: UserTask): void {
-    this.sendNotification(`截止日期提醒: ${task.title}`, {
-      body: '任务即将到期，请尽快完成',
+    this.sendNotification(i18next.t('scheduler.notifications.deadlineTitle', { title: task.title }), {
+      body: i18next.t('scheduler.notifications.deadlineBody'),
       tag: `deadline-${task.id}`,
       requireInteraction: true,
     });

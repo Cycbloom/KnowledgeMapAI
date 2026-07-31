@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../../services/api';
 import { message } from '../../utils/messageHelper';
 import { createAsyncHandler } from '../../utils/asyncHandler';
@@ -20,6 +21,7 @@ export const useKnowledgePointOperations = ({
   onNodeCreated,
   onNodeDeleted
 }: UseKnowledgePointOperationsProps) => {
+  const { t } = useTranslation();
   const asyncHandler = createAsyncHandler();
   const [similarPoints, setSimilarPoints] = useState<SimilarKnowledgePoint[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -50,12 +52,12 @@ export const useKnowledgePointOperations = ({
       },
       {
         loadingSetter: setIsSearching,
-        errorMessage: '搜索相似知识点失败'
+        errorMessage: t('learning.knowledgePoint.searchSimilarFailed')
       }
     );
     
     return result || [];
-  }, [asyncHandler]);
+  }, [asyncHandler, t]);
 
   const createNodeWithReuseCheck = useCallback(async (data: {
     title: string;
@@ -108,13 +110,13 @@ export const useKnowledgePointOperations = ({
         return node;
       },
       {
-        successMessage: '已复用现有知识点',
-        errorMessage: '复用知识点失败'
+        successMessage: t('learning.knowledgePoint.reuseSuccess'),
+        errorMessage: t('learning.knowledgePoint.reuseFailed')
       }
     );
     
     return result;
-  }, [graphId, pendingNodeData, onNodeCreated, asyncHandler]);
+  }, [graphId, pendingNodeData, onNodeCreated, asyncHandler, t]);
 
   const createNewAnyway = useCallback(async () => {
     if (!pendingNodeData) return null;
@@ -134,12 +136,12 @@ export const useKnowledgePointOperations = ({
         return node;
       },
       {
-        errorMessage: '创建节点失败'
+        errorMessage: t('learning.knowledgePoint.createFailed')
       }
     );
     
     return result;
-  }, [graphId, pendingNodeData, onNodeCreated, asyncHandler]);
+  }, [graphId, pendingNodeData, onNodeCreated, asyncHandler, t]);
 
   const deleteNodeWithOption = useCallback(async (
     nodeId: string,
@@ -151,7 +153,7 @@ export const useKnowledgePointOperations = ({
           const result = await api.nodes.delete(nodeId, true);
           
           if (result.affected_graphs && result.affected_graphs.length > 1) {
-            message.warning(`此知识点已在 ${result.affected_graphs.length} 个图谱中删除`);
+            message.warning(t('learning.knowledgePoint.deletedFromMultipleGraphs', { count: result.affected_graphs.length }));
           }
         } else {
           await api.nodes.delete(nodeId, false);
@@ -161,13 +163,13 @@ export const useKnowledgePointOperations = ({
         return { success: true };
       },
       {
-        successMessage: options.hardDelete ? '知识点已彻底删除' : '已从当前图谱移除',
-        errorMessage: '删除失败'
+        successMessage: options.hardDelete ? t('learning.knowledgePoint.hardDeleteSuccess') : t('learning.knowledgePoint.softDeleteSuccess'),
+        errorMessage: t('learning.knowledgePoint.deleteFailed')
       }
     );
     
     return result || { success: false };
-  }, [onNodeDeleted, asyncHandler]);
+  }, [onNodeDeleted, asyncHandler, t]);
 
   const getKnowledgePointGraphs = useCallback(async (nodeId: string) => {
     const result = await asyncHandler(
@@ -176,12 +178,12 @@ export const useKnowledgePointOperations = ({
         return graphs;
       },
       {
-        errorMessage: '获取知识点图谱列表失败'
+        errorMessage: t('learning.knowledgePoint.getGraphsFailed')
       }
     );
     
     return result || [];
-  }, [asyncHandler]);
+  }, [asyncHandler, t]);
 
   const updateKnowledgePointVisibility = useCallback(async (
     knowledgePointId: string,
@@ -193,13 +195,13 @@ export const useKnowledgePointOperations = ({
         return { success: true };
       },
       {
-        successMessage: visibility === 'public' ? '知识点已设为公开' : '知识点已设为私有',
-        errorMessage: '更新可见性失败'
+        successMessage: visibility === 'public' ? t('learning.knowledgePoint.visibilityPublicSuccess') : t('learning.knowledgePoint.visibilityPrivateSuccess'),
+        errorMessage: t('learning.knowledgePoint.visibilityUpdateFailed')
       }
     );
     
     return result || { success: false };
-  }, [asyncHandler]);
+  }, [asyncHandler, t]);
 
   return {
     similarPoints,

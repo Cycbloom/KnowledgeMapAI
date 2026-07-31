@@ -166,7 +166,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
 
   // 扩展配置（含占位文案）
   const extensions = useMemo(
-    () => buildEditorExtensions(t("notes.editor.placeholder")),
+    () => buildEditorExtensions(t("notes.blockEditor.placeholder")),
     [t],
   );
 
@@ -913,16 +913,16 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     if (!editor) return;
     const result = ensureCurrentBlockId(editor);
     if (!result) {
-      message.error(t("notes.editor.blockRef.stale"));
+      message.error(t("notes.blockEditor.blockRef.stale"));
       return;
     }
     const { blockId, isNew } = result;
     const refText = `((${blockId}))`;
     try {
       await navigator.clipboard.writeText(refText);
-      message.success(t("notes.editor.blockRef.copied"));
+      message.success(t("notes.blockEditor.blockRef.copied"));
     } catch {
-      message.error(t("notes.editor.blockRef.stale"));
+      message.error(t("notes.blockEditor.blockRef.stale"));
       return;
     }
     // 若新生成了 blockId,立即保存(取消防抖定时器)
@@ -938,12 +938,12 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     if (!editor) return;
     const result = ensureCurrentBlockId(editor);
     if (!result) {
-      message.error(t("notes.editor.blockRef.stale"));
+      message.error(t("notes.blockEditor.blockRef.stale"));
       return;
     }
     const { blockId, isNew } = result;
     editor.chain().focus().insertBlockEmbed(blockId).run();
-    message.success(t("notes.editor.blockRef.embedded"));
+    message.success(t("notes.blockEditor.blockRef.embedded"));
     // 若新生成了 blockId,立即保存
     if (isNew) {
       resetAutoSave();
@@ -956,13 +956,13 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
   const saveStatusText = (() => {
     switch (saveStatus) {
       case "saving":
-        return t("notes.editor.saveStatus.saving");
+        return t("notes.blockEditor.saveStatus.saving");
       case "saved":
-        return t("notes.editor.saveStatus.saved");
+        return t("notes.blockEditor.saveStatus.saved");
       case "error":
-        return t("notes.editor.saveStatus.error");
+        return t("notes.blockEditor.saveStatus.error");
       default:
-        return t("notes.editor.saveStatus.idle");
+        return t("notes.blockEditor.saveStatus.idle");
     }
   })();
 
@@ -1016,12 +1016,12 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
             </span>
           ) : wordCount > 0 ? (
             <span>
-              {t("notes.editor.footer.wordCount", { count: wordCount })}
+              {t("notes.blockEditor.footer.wordCount", { count: wordCount })}
               {" · "}
-              {t("notes.editor.footer.readingTime", { minutes: readingMinutes })}
+              {t("notes.blockEditor.footer.readingTime", { minutes: readingMinutes })}
             </span>
           ) : (
-            t("notes.editor.slashHint")
+            t("notes.blockEditor.slashHint")
           )}
         </span>
         <span className={saveStatusColor} role="status">

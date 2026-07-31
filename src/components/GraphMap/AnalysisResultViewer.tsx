@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, AlertCircle, BarChart3 } from 'lucide-react';
@@ -25,13 +25,6 @@ interface AnalysisResultViewerProps {
   onCreateGraph?: (title: string, domain?: string) => Promise<void>;
 }
 
-const moduleTitles: Record<AnalysisModuleId, string> = {
-  relations: '关系发现结果',
-  crossDomain: '跨学科洞察结果',
-  learningPaths: '学习路径建议',
-  knowledgeGaps: '知识缺口分析',
-};
-
 export const AnalysisResultViewer: React.FC<AnalysisResultViewerProps> = ({
   isOpen,
   onClose,
@@ -41,6 +34,12 @@ export const AnalysisResultViewer: React.FC<AnalysisResultViewerProps> = ({
   onCreateGraph,
 }) => {
   const { t } = useTranslation();
+  const moduleTitles = useMemo<Record<AnalysisModuleId, string>>(() => ({
+    relations: t('graphMap.analysisResult.relationDiscovery'),
+    crossDomain: t('graphMap.analysisResult.crossDisciplineInsight'),
+    learningPaths: t('graphMap.analysisResult.learningPathSuggestion'),
+    knowledgeGaps: t('graphMap.analysisResult.knowledgeGap'),
+  }), [t]);
   if (!isOpen || !module) return null;
 
   const renderContent = () => {
@@ -50,7 +49,7 @@ export const AnalysisResultViewer: React.FC<AnalysisResultViewerProps> = ({
           <Loader2 className="w-10 h-10 text-primary-500 animate-spin mb-4" />
           <p className="text-gray-500 dark:text-gray-400">{t('graphMap.analysisResult.analyzing')}</p>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            {t('graphMap.analysisResult.estimatedTime', { time: module.estimatedTime })}
+            {t('graphMap.analysisResult.estimatedTime', { time: t(module.estimatedTimeKey as never) })}
           </p>
         </div>
       );

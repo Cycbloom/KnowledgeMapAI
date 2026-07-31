@@ -73,12 +73,12 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
         as="span"
         contentEditable={false}
         role="textbox"
-        aria-label={t("notes.editor.blockRef.label")}
+        aria-label={t("notes.blockReferenceNodeView.label")}
         aria-multiline="false"
         aria-readonly="true"
       >
         <AlertCircle className="w-3 h-3" />
-        <span>{t("notes.editor.blockRef.stale")}</span>
+        <span>{t("notes.blockReferenceNodeView.stale")}</span>
       </NodeViewWrapper>
     );
   }
@@ -91,7 +91,7 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
         as="span"
         contentEditable={false}
         role="textbox"
-        aria-label={t("notes.editor.blockRef.label")}
+        aria-label={t("notes.blockReferenceNodeView.label")}
         aria-multiline="false"
         aria-readonly="true"
         onClick={handleClick}
@@ -104,14 +104,14 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
       >
         <AlertCircle className="w-3 h-3" />
         <span className="font-mono text-[10px]">{blockId}</span>
-        <span>{t("notes.editor.blockRef.stale")}</span>
+        <span>{t("notes.blockReferenceNodeView.stale")}</span>
         {showTooltip && (
           <span
             role="tooltip"
             id={staleTooltipId}
             className="absolute z-10 top-full left-0 mt-1 px-2 py-1 rounded bg-gray-800 dark:bg-slate-900 text-white text-[10px] whitespace-nowrap shadow-lg"
           >
-            {t("notes.editor.blockRef.removed")}
+            {t("notes.blockReferenceNodeView.removed")}
             <button
               type="button"
               onClick={(e) => {
@@ -120,7 +120,7 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
               }}
               className="ml-1 underline hover:text-amber-300"
             >
-              {t("notes.editor.blockEmbed.unembed")}
+              {t("notes.blockReferenceNodeView.unembed")}
             </button>
           </span>
         )}
@@ -136,7 +136,7 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
         as="span"
         contentEditable={false}
         role="textbox"
-        aria-label={t("notes.editor.blockRef.label")}
+        aria-label={t("notes.blockReferenceNodeView.label")}
         aria-multiline="false"
         aria-readonly="true"
       >
@@ -157,11 +157,11 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
       as="span"
       contentEditable={false}
       role="textbox"
-      aria-label={t("notes.editor.blockRef.label")}
+      aria-label={t("notes.blockReferenceNodeView.label")}
       aria-multiline="false"
       aria-readonly="true"
       onClick={handleClick}
-      title={t("notes.editor.blockRef.tooltip")}
+      title={t("notes.blockReferenceNodeView.tooltip")}
       data-selected={selected}
     >
       <Link2 className="w-3 h-3" />

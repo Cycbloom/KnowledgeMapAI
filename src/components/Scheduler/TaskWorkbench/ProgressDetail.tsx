@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp,
@@ -49,6 +49,28 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
   );
   const [analysis, setAnalysis] = useState<ProgressAnalysis | null>(null);
   const { t } = useTranslation();
+
+  const statusOptions = useMemo(
+    () =>
+      [
+        {
+          value: "pending",
+          label: t("scheduler.taskWorkbench.progressDetail.statusOptions.pending"),
+          icon: Calendar,
+        },
+        {
+          value: "completed",
+          label: t("scheduler.taskWorkbench.progressDetail.statusOptions.completed"),
+          icon: CheckCircle,
+        },
+        {
+          value: "skipped",
+          label: t("scheduler.taskWorkbench.progressDetail.statusOptions.skipped"),
+          icon: SkipForward,
+        },
+      ] as const,
+    [t],
+  );
 
   useEffect(() => {
     loadProgressPlans();
@@ -105,17 +127,17 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
 
     const suggestions: string[] = [];
     if (status === "ahead") {
-      suggestions.push("进度超前，可以适当降低每日目标");
-      suggestions.push("考虑提前完成任务或增加任务内容");
+      suggestions.push(t('scheduler.taskWorkbench.progressDetail.suggestions.ahead'));
+      suggestions.push(t('scheduler.taskWorkbench.progressDetail.suggestions.aheadExtra'));
     } else if (status === "on_track") {
-      suggestions.push("保持当前节奏，按计划进行");
+      suggestions.push(t('scheduler.taskWorkbench.progressDetail.suggestions.onTrack'));
     } else {
-      suggestions.push("进度滞后，建议增加每日投入时间");
-      suggestions.push("检查是否有阻碍因素需要解决");
+      suggestions.push(t('scheduler.taskWorkbench.progressDetail.suggestions.behind'));
+      suggestions.push(t('scheduler.taskWorkbench.progressDetail.suggestions.blocked'));
     }
 
     if (avgDaily > 0) {
-      suggestions.push(`平均每日完成 ${avgDaily.toFixed(1)}%`);
+      suggestions.push(t('scheduler.taskWorkbench.progressDetail.avgDailyCompletion', { percent: avgDaily.toFixed(1) }));
     }
 
     setAnalysis({
@@ -167,18 +189,18 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
     plan: TaskProgressPlan,
   ): { text: string; color: string } => {
     if (plan.status === "skipped") {
-      return { text: "已跳过", color: "text-slate-400" };
+      return { text: t('scheduler.taskWorkbench.progressDetail.statusLabels.skipped'), color: "text-slate-400" };
     }
     if (plan.status === "completed") {
       if (plan.actual_percentage > plan.planned_percentage) {
-        return { text: "超额完成", color: "text-green-500" };
+        return { text: t('scheduler.taskWorkbench.progressDetail.statusLabels.overcompleted'), color: "text-green-500" };
       }
       if (plan.actual_percentage >= plan.planned_percentage * 0.9) {
-        return { text: "已完成", color: "text-green-500" };
+        return { text: t('scheduler.taskWorkbench.progressDetail.statusLabels.completed'), color: "text-green-500" };
       }
-      return { text: "未达标", color: "text-yellow-500" };
+      return { text: t('scheduler.taskWorkbench.progressDetail.statusLabels.notMet'), color: "text-yellow-500" };
     }
-    return { text: "待处理", color: "text-slate-400" };
+    return { text: t('scheduler.taskWorkbench.progressDetail.statusLabels.pending'), color: "text-slate-400" };
   };
 
   if (loading) {
@@ -203,7 +225,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
       <div className={`text-center py-8 ${className}`}>
         <Target className="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" aria-hidden="true" />
         <p className="text-slate-400 dark:text-slate-500">
-          进度详情仅适用于长期任务
+          {t('scheduler.taskWorkbench.progressDetail.longTaskOnly')}
         </p>
       </div>
     );
@@ -214,10 +236,10 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary-500" aria-hidden="true" />
-          进度详情
+          {t('scheduler.taskWorkbench.progressDetail.title')}
         </h3>
         <span className="text-sm text-slate-500 dark:text-slate-400">
-          {progressPercentage}% 完成
+          {t('scheduler.taskWorkbench.progressDetail.progressFormat', { percent: progressPercentage })}
         </span>
       </div>
 
@@ -225,7 +247,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-slate-600 dark:text-slate-400">
-            总体进度
+            {t("scheduler.taskWorkbench.progressDetail.overallProgress")}
           </span>
           <span className="text-sm font-medium text-slate-900 dark:text-white">
             {progressPercentage}%
@@ -241,8 +263,16 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
         </div>
         {analysis && (
           <div className="flex items-center justify-between mt-2 text-xs text-slate-500 dark:text-slate-400">
-            <span>剩余 {100 - progressPercentage}%</span>
-            <span>预计 {analysis.daysRemaining} 天完成</span>
+            <span>
+              {t("scheduler.taskWorkbench.progressDetail.remaining", {
+                percent: 100 - progressPercentage,
+              })}
+            </span>
+            <span>
+              {t("scheduler.taskWorkbench.progressDetail.estimatedDays", {
+                days: analysis.daysRemaining,
+              })}
+            </span>
           </div>
         )}
       </div>
@@ -251,7 +281,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
       {plans.length > 0 && (
         <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
           <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-            进度趋势
+            {t("scheduler.taskWorkbench.progressDetail.progressTrend")}
           </h4>
           <ProgressChart plans={plans} onPointClick={setSelectedPlan} />
         </div>
@@ -264,7 +294,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
             <Lightbulb className="w-5 h-5 text-primary-500 mt-0.5" aria-hidden="true" />
             <div>
               <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
-                进度分析
+                {t("scheduler.taskWorkbench.progressDetail.progressAnalysis")}
               </h4>
               <div className="flex items-center gap-2 mb-2">
                 <span
@@ -277,14 +307,16 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                   }`}
                 >
                   {analysis.status === "ahead"
-                    ? "超前"
+                    ? t("scheduler.taskWorkbench.progressDetail.statusAhead")
                     : analysis.status === "on_track"
-                      ? "正常"
-                      : "滞后"}
+                      ? t("scheduler.taskWorkbench.progressDetail.statusNormal")
+                      : t("scheduler.taskWorkbench.progressDetail.statusLagging")}
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400">
-                  当前 {analysis.currentProgress}% / 计划{" "}
-                  {analysis.plannedProgress}%
+                  {t("scheduler.taskWorkbench.progressDetail.currentVsPlan", {
+                    current: analysis.currentProgress,
+                    planned: analysis.plannedProgress,
+                  })}
                 </span>
               </div>
               <ul className="space-y-1">
@@ -306,29 +338,29 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
       {/* 每日进度计划表格 */}
       <div>
         <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-          每日进度计划
+          {t("scheduler.taskWorkbench.progressDetail.dailyPlanTitle")}
         </h4>
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-500 overflow-hidden">
           <table
             className="w-full"
-            aria-label={t("scheduler.progressDetail.tableAriaLabel", { defaultValue: "每日进度计划表" })}
+            aria-label={t("scheduler.taskWorkbench.progressDetail.tableAriaLabel")}
           >
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-700/50">
                 <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">
-                  日期
+                  {t("scheduler.taskWorkbench.progressDetail.date")}
                 </th>
                 <th scope="col" className="px-4 py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
-                  计划
+                  {t("scheduler.taskWorkbench.progressDetail.plan")}
                 </th>
                 <th scope="col" className="px-4 py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
-                  实际
+                  {t("scheduler.taskWorkbench.progressDetail.actual")}
                 </th>
                 <th scope="col" className="px-4 py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
-                  状态
+                  {t("scheduler.taskWorkbench.progressDetail.status")}
                 </th>
                 <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400">
-                  操作
+                  {t("scheduler.taskWorkbench.progressDetail.action")}
                 </th>
               </tr>
             </thead>
@@ -416,7 +448,9 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
             >
               <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-500 p-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                  编辑进度 - {formatDate(selectedPlan.plan_date)}
+                  {t("scheduler.taskWorkbench.progressDetail.editProgress", {
+                    date: formatDate(selectedPlan.plan_date),
+                  })}
                 </h3>
                 <button
                   onClick={() => setSelectedPlan(null)}
@@ -429,7 +463,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
               <div className="p-4 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    计划进度
+                    {t("scheduler.taskWorkbench.progressDetail.plannedProgress")}
                   </label>
                   <p className="text-lg font-semibold text-slate-900 dark:text-white">
                     {selectedPlan.planned_percentage}%
@@ -441,7 +475,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                     htmlFor="actual-progress-input"
                     className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
                   >
-                    实际进度
+                    {t("scheduler.taskWorkbench.progressDetail.actualProgress")}
                   </label>
                   <input
                     type="number"
@@ -455,22 +489,14 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    状态
+                    {t("scheduler.taskWorkbench.progressDetail.status")}
                   </label>
                   <div
                     role="radiogroup"
                     aria-label={t('scheduler.task.statusGroupLabel')}
                     className="space-y-2"
                   >
-                    {[
-                      { value: "pending", label: "待处理", icon: Calendar },
-                      {
-                        value: "completed",
-                        label: "已完成",
-                        icon: CheckCircle,
-                      },
-                      { value: "skipped", label: "跳过", icon: SkipForward },
-                    ].map((option) => {
+                    {statusOptions.map((option) => {
                       const isChecked = selectedPlan.status === option.value;
                       return (
                       <label
@@ -516,7 +542,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    备注
+                    {t("scheduler.taskWorkbench.progressDetail.remark")}
                   </label>
                   <textarea
                     id="notes-input"
@@ -538,14 +564,14 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                   className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                 >
                   <Trash2 className="w-4 h-4" aria-hidden="true" />
-                  删除
+                  {t("scheduler.taskWorkbench.progressDetail.delete")}
                 </button>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setSelectedPlan(null)}
                     className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                   >
-                    取消
+                    {t("scheduler.taskWorkbench.progressDetail.cancel")}
                   </button>
                   <button
                     onClick={() => {
@@ -574,7 +600,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                     }}
                     className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 transition-all"
                   >
-                    保存
+                    {t("scheduler.taskWorkbench.progressDetail.save")}
                   </button>
                 </div>
               </div>
@@ -590,6 +616,7 @@ const ProgressChart: React.FC<{
   plans: TaskProgressPlan[];
   onPointClick: (plan: TaskProgressPlan) => void;
 }> = ({ plans, onPointClick }) => {
+  const { t } = useTranslation();
   const sortedPlans = [...plans].sort(
     (a, b) => new Date(a.plan_date).getTime() - new Date(b.plan_date).getTime(),
   );
@@ -746,11 +773,15 @@ const ProgressChart: React.FC<{
             className="w-3 h-0.5 bg-primary-400"
             style={{ borderTop: "2px dashed rgb(34, 211, 238)" }}
           />
-          <span className="text-slate-500 dark:text-slate-400">计划</span>
+          <span className="text-slate-500 dark:text-slate-400">
+            {t("scheduler.taskWorkbench.progressDetail.plan")}
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-0.5 bg-primary-500" />
-          <span className="text-slate-500 dark:text-slate-400">实际</span>
+          <span className="text-slate-500 dark:text-slate-400">
+            {t("scheduler.taskWorkbench.progressDetail.actual")}
+          </span>
         </div>
       </div>
     </div>

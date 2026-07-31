@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../../services/api';
 
 /**
@@ -34,6 +35,7 @@ const checkRecognitionSupport = (): boolean => {
  * 进行文件转写，转写完成后通过 `transcript` 输出文本。
  */
 export const useSpeechRecognition = (lang: string = 'zh') => {
+  const { t } = useTranslation();
   const [isListening, setIsListening] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -62,7 +64,7 @@ export const useSpeechRecognition = (lang: string = 'zh') => {
   const startListening = useCallback(async () => {
     if (isListening || isTranscribing || isStartingRef.current) return;
     if (!checkRecognitionSupport()) {
-      setError('当前环境不支持语音录制');
+      setError(t('errors.speechRecognition.environmentNotSupported'));
       return;
     }
 
@@ -96,13 +98,13 @@ export const useSpeechRecognition = (lang: string = 'zh') => {
       mediaRecorder.start();
       setIsListening(true);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : '启动录音失败';
+      const message = err instanceof Error ? err.message : t('errors.speechRecognition.startFailed');
       setError(message);
       cleanupMedia();
     } finally {
       isStartingRef.current = false;
     }
-  }, [isListening, isTranscribing, cleanupMedia]);
+  }, [isListening, isTranscribing, cleanupMedia, t]);
 
   const stopListening = useCallback(async (): Promise<void> => {
     const recorder = mediaRecorderRef.current;
@@ -148,7 +150,7 @@ export const useSpeechRecognition = (lang: string = 'zh') => {
           });
           setTranscript(result.text);
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : '语音转文字失败';
+          const message = err instanceof Error ? err.message : t('errors.speechRecognition.transcribeFailed');
           setError(message);
         } finally {
           setIsTranscribing(false);
@@ -164,7 +166,7 @@ export const useSpeechRecognition = (lang: string = 'zh') => {
         resolve();
       }
     });
-  }, [isListening, cleanupMedia]);
+  }, [isListening, cleanupMedia, t]);
 
   const resetTranscript = useCallback(() => {
     setTranscript('');

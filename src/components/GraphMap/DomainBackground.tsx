@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { LayoutNode } from '../../types';
 
 function getConvexHullPath(nodes: Array<{ x: number; y: number }>): string {
@@ -98,6 +99,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
   selectedDomainIds,
   domainIdToInfo,
 }) => {
+  const { t } = useTranslation();
   const domainGroups = useMemo(() => {
     const groups: Map<string, DomainGroup> = new Map();
 
@@ -266,7 +268,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
                   textShadow: '0 1px 2px rgba(0,0,0,0.1)',
                 }}
               >
-                {group.nodes.length} 个图谱
+                {t('graphMap.domainBackground.graphCount', { count: group.nodes.length })}
               </text>
             </g>
           );

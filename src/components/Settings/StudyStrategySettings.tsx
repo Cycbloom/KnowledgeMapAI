@@ -149,21 +149,21 @@ export const StudyStrategySettings = React.memo(
             <div className="flex items-center gap-2">
               <Brain className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                学习策略
+                {t("settings.studyStrategy.title")}
               </h2>
             </div>
             <button
               onClick={handleResetStudyStrategyDefaults}
               className="px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
             >
-              恢复默认设置
+              {t("settings.studyStrategy.resetDefaults")}
             </button>
           </div>
 
           <div className="space-y-6">
             <div className="space-y-3">
               <label className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
-                默认学习模式
+                {t("settings.studyStrategy.defaultStudyMode")}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {STUDY_MODE_OPTIONS.map((mode) => (
@@ -176,8 +176,8 @@ export const StudyStrategySettings = React.memo(
                     }`}
                     onClick={() => handleStudyModeChange(mode.value)}
                   >
-                    <div className="font-medium text-sm text-gray-900 dark:text-gray-100">{mode.label}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{mode.description}</div>
+                    <div className="font-medium text-sm text-gray-900 dark:text-gray-100">{t(mode.labelKey as never)}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t(mode.descriptionKey as never)}</div>
                   </div>
                 ))}
               </div>
@@ -185,7 +185,7 @@ export const StudyStrategySettings = React.memo(
 
             <div className="space-y-4">
               <label className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
-                间隔重复参数
+                {t("settings.studyStrategy.spacedRepetitionParams")}
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
@@ -275,13 +275,13 @@ export const StudyStrategySettings = React.memo(
 
             <div className="space-y-4">
               <label className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
-                掌握度阈值
+                {t("settings.studyStrategy.masteryThresholds")}
               </label>
               <div className="space-y-4">
                 <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                      Learning / Review 分界值
+                      {t('settings.studyStrategy.learningReviewDivider')}
                     </span>
                     <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
                       {masteryThresholds.learningReview.toFixed(1)}
@@ -306,14 +306,14 @@ export const StudyStrategySettings = React.memo(
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    低于此值视为学习阶段，高于此值进入复习阶段
+                    {t('settings.studyStrategy.learningReviewDesc')}
                   </p>
                 </div>
 
                 <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                      Review / Practice 分界值
+                      {t('settings.studyStrategy.reviewPracticeDivider')}
                     </span>
                     <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
                       {masteryThresholds.reviewPractice.toFixed(1)}
@@ -338,14 +338,14 @@ export const StudyStrategySettings = React.memo(
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    低于此值需要复习巩固，高于此值进入练习阶段
+                    {t('settings.studyStrategy.reviewPracticeDesc')}
                   </p>
                 </div>
 
                 <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                      Practice / Quiz 分界值
+                      {t('settings.studyStrategy.practiceQuizDivider')}
                     </span>
                     <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
                       {masteryThresholds.practiceQuiz.toFixed(1)}
@@ -370,7 +370,7 @@ export const StudyStrategySettings = React.memo(
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    低于此值需要练习强化，高于此值可以进入测验
+                    {t('settings.studyStrategy.practiceQuizDesc')}
                   </p>
                 </div>
               </div>
@@ -378,17 +378,17 @@ export const StudyStrategySettings = React.memo(
 
             <div className="space-y-4">
               <label className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
-                调度权重
+                {t("settings.studyStrategy.schedulerWeights")}
               </label>
               <div className="space-y-4">
                 {[
-                  { key: "timeSlot" as const, label: "时间段适配", desc: "根据当前时间段推荐适合的学习内容" },
-                  { key: "mastery" as const, label: "掌握度优先", desc: "优先推荐掌握度较低的节点进行学习" },
-                  { key: "dependency" as const, label: "依赖关系", desc: "优先学习前置依赖节点" },
-                  { key: "typeMatch" as const, label: "类型匹配", desc: "匹配当前学习模式的内容类型" },
-                  { key: "priority" as const, label: "优先级", desc: "按节点优先级排序" },
-                  { key: "urgency" as const, label: "紧急程度", desc: "临近截止日期的节点优先" },
-                  { key: "availability" as const, label: "可用性", desc: "考虑当前可用的学习资源" },
+                  { key: "timeSlot" as const },
+                  { key: "mastery" as const },
+                  { key: "dependency" as const },
+                  { key: "typeMatch" as const },
+                  { key: "priority" as const },
+                  { key: "urgency" as const },
+                  { key: "availability" as const },
                 ].map((item) => (
                   <div
                     key={item.key}
@@ -397,10 +397,10 @@ export const StudyStrategySettings = React.memo(
                     <div className="flex justify-between items-center mb-2">
                       <div>
                         <span className="text-sm text-gray-700 dark:text-gray-300">
-                          {item.label}
+                          {t(`settings.studyStrategy.schedulerWeightItems.${item.key}.label`)}
                         </span>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          {item.desc}
+                          {t(`settings.studyStrategy.schedulerWeightItems.${item.key}.description`)}
                         </p>
                       </div>
                       <span className="text-sm font-bold text-primary-600 dark:text-primary-400 ml-4 shrink-0">
@@ -421,7 +421,7 @@ export const StudyStrategySettings = React.memo(
                           [item.key]: Number(e.target.value),
                         }));
                       }}
-                      aria-label={item.label}
+                      aria-label={t(`settings.studyStrategy.schedulerWeightItems.${item.key}.label`)}
                       aria-valuetext={`${schedulerWeights[item.key].toFixed(2)}`}
                       className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                     />

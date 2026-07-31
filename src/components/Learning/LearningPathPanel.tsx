@@ -230,7 +230,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
       }));
 
       await createMutation.mutateAsync({
-        title: tempPath.targetGoal || `学习路径 - ${tempPath.graphTitle}`,
+        title: tempPath.targetGoal || t('learning.pathPanel.titleFormat', { title: tempPath.graphTitle }),
         description: t("learning.learningPath.pathDescription", {
           hours: Math.round(tempPath.estimatedTotalTime / 60),
         }),
@@ -722,10 +722,10 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                             <button
                               onClick={onStartNarrative}
                               className="py-1.5 px-2 text-xs rounded flex items-center justify-center gap-1 transition-colors bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50"
-                              title={t("graphEditor.narrative.startNarrative", "叙事播放")}
+                              title={t("graphEditor.narrative.startNarrative")}
                             >
                               <Play className="w-3 h-3" />
-                              {t("graphEditor.narrative.startNarrative", "叙事播放")}
+                              {t("graphEditor.narrative.startNarrative")}
                             </button>
                           )}
                           <button
@@ -798,7 +798,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                                             };
                                             recordActivity({
                                               activity_type: "path_progress",
-                                              title: `学习路径进展: ${node.title}`,
+                                              title: t('learning.pathPanel.progressFormat', { title: node.title }),
                                               knowledge_point_id: kpId,
                                               graph_id: graphId,
                                               metadata: {

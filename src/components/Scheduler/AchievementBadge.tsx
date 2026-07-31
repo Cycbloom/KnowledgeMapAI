@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Lock, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Achievement } from "@shared/types";
 import { formatDate } from "../../utils/formatters";
 import { useReducedMotionOrPreference } from "@/hooks/common/useReducedMotionOrPreference";
@@ -230,6 +231,7 @@ interface AchievementBadgeNotificationProps {
 export const AchievementBadgeNotification: React.FC<
   AchievementBadgeNotificationProps
 > = ({ achievement, onClose }) => {
+  const { t } = useTranslation();
   const categoryGradient = CATEGORY_COLORS[achievement.category];
   const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
 
@@ -280,7 +282,7 @@ export const AchievementBadgeNotification: React.FC<
         className="relative mt-4 text-center"
       >
         <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
-          成就解锁!
+          {t("scheduler.achievementBadge.unlocked")}
         </p>
         <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
           {achievement.name}
@@ -310,7 +312,7 @@ export const AchievementBadgeNotification: React.FC<
           onClick={onClose}
           className="relative mt-6 px-6 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg font-medium transition-colors"
         >
-          太棒了!
+          {t("scheduler.achievementBadge.great")}
         </motion.button>
       )}
     </motion.div>

@@ -371,7 +371,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                     <label
                       className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}
                     >
-                      选择测验方向（学习路径）
+                      {t('quiz.generation.selectDirection')}
                     </label>
                   </div>
                   <div className="space-y-2">
@@ -404,15 +404,15 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                           <div className="flex items-center justify-between">
                             <div>
                               <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                {stage.title || `阶段 ${index + 1}`}
+                                {stage.title || t('quiz.generation.stage', { index: index + 1 })}
                               </span>
                               <span className={`ml-2 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                                {stageKnowledgePoints.length} 个知识点
+                                {t('quiz.generation.countKnowledgePoints', { count: stageKnowledgePoints.length })}
                               </span>
                             </div>
                             {isSelected && (
                               <span className={`text-xs font-medium ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>
-                                已选择
+                                {t('quiz.generation.selected')}
                               </span>
                             )}
                           </div>
@@ -445,12 +445,12 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                     <label
                       className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}
                     >
-                      测验标题 <span aria-hidden="true" className="text-red-500">*</span>
+                      {t('quiz.generation.quizTitle')} <span aria-hidden="true" className="text-red-500">*</span>
                     </label>
                     {isGeneratingTitle && (
                       <span role="status" className={`flex items-center gap-1 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                         <Loader2 size={12} className="animate-spin" />
-                        AI 生成中...
+                        {t('quiz.generation.aiGenerating')}
                       </span>
                     )}
                   </div>
@@ -483,7 +483,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                       isDark ? 'text-slate-300' : 'text-gray-700'
                     }`}
                   >
-                    描述（可选）
+                    {t('quiz.generation.descriptionOptional')}
                   </label>
                   <textarea
                     value={description}
@@ -523,8 +523,8 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                 >
                   <AlertCircle size={20} />
                   <div>
-                    <p className="font-medium">AI 未配置</p>
-                    <p className="text-sm opacity-80">请在设置中配置 AI API Key 以使用测验生成功能</p>
+                    <p className="font-medium">{t('quiz.generation.aiNotConfigured')}</p>
+                    <p className="text-sm opacity-80">{t('quiz.generation.configureAiHint')}</p>
                   </div>
                 </div>
               )}
@@ -541,7 +541,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                     <div className="flex items-center gap-2">
                       <Loader2 size={18} className="animate-spin text-primary-600" />
                       <span className={`font-medium ${isDark ? 'text-primary-300' : 'text-primary-700'}`}>
-                        正在生成测验...
+                        {t('quiz.generation.generating')}
                       </span>
                     </div>
                     <span className={`text-sm font-bold ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>
@@ -559,18 +559,18 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                       aria-valuenow={progressPercent}
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      aria-label={t('quiz.generation.progressLabel', { defaultValue: '生成进度' })}
+                      aria-label={t('quiz.generation.progressLabel')}
                     />
                   </div>
 
                   {progress.current && (
                     <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                      正在处理：{progress.current}
+                      {t('quiz.generation.processing', { current: progress.current })}
                     </p>
                   )}
 
                   <p className={`mt-1 text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                    已完成 {progress.completed} / {progress.total} 题
+                    {t('quiz.generation.completedProgress', { completed: progress.completed, total: progress.total })}
                   </p>
                 </div>
               )}
@@ -584,11 +584,10 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
               <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                 {selectedKnowledgePoints.length > 0 ? (
                   <span>
-                    已选择 <span className="font-bold text-primary-600">{selectedKnowledgePoints.length}</span> 个知识点，
-                    预计生成 <span className="font-bold text-primary-600">{totalQuestions}</span> 道题目
+                    {t('quiz.generation.selectedKnowledgePoints', { count: selectedKnowledgePoints.length, totalQuestions })}
                   </span>
                 ) : (
-                  <span>请选择知识点</span>
+                  <span>{t('quiz.generation.selectKnowledgePoint')}</span>
                 )}
               </div>
 
@@ -603,7 +602,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                         : 'text-gray-600 hover:bg-gray-100'
                     } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    取消
+                    {t('quiz.generation.cancel')}
                   </button>
 
                   <button
@@ -620,12 +619,12 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                     {isGenerating ? (
                       <>
                         <Loader2 size={18} className="animate-spin" aria-hidden="true" />
-                        生成中...
+                        {t('quiz.generation.generatingButton')}
                       </>
                     ) : (
                       <>
                         <Sparkles size={18} aria-hidden="true" />
-                        开始生成
+                        {t('quiz.generation.startGenerate')}
                       </>
                     )}
                   </button>

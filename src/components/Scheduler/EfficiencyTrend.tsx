@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, Calendar } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import { api } from '../../services/api';
 import { formatDuration } from '../../utils/formatters';
 import type {UserTaskStats} from '@shared/types';
@@ -15,6 +16,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
   period = "7d",
   className = "",
 }) => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<UserTaskStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -76,9 +78,9 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
           </div>
           <div>
             <h3 className="font-semibold text-slate-900 dark:text-white">
-              效率趋势
+              {t('scheduler.efficiencyTrend.title')}
             </h3>
-            <p className="text-xs text-slate-500">专注时长变化</p>
+            <p className="text-xs text-slate-500">{t('scheduler.efficiencyTrend.subtitle')}</p>
           </div>
         </div>
         <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
@@ -92,7 +94,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
-              {p === "7d" ? "7天" : p === "30d" ? "30天" : "90天"}
+              {p === "7d" ? t('scheduler.efficiencyTrend.period7d') : p === "30d" ? t('scheduler.efficiencyTrend.period30d') : t('scheduler.efficiencyTrend.period90d')}
             </button>
           ))}
         </div>
@@ -127,13 +129,13 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
 
           <div className="flex items-center justify-between text-sm">
             <div className="text-slate-500">
-              平均:{" "}
+              {t('scheduler.efficiencyTrend.average')}{" "}
               <span className="font-medium text-primary-500">
                 {formatDuration(avgDuration, { format: 'compact', emptyText: '0m' })}
               </span>
             </div>
             <div className="text-slate-500">
-              总计:{" "}
+              {t('scheduler.efficiencyTrend.total')}{" "}
               <span className="font-medium text-emerald-500">
                 {formatDuration(stats?.total_duration || 0, { format: 'compact', emptyText: '0m' })}
               </span>
@@ -144,11 +146,11 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
             <div className="flex items-center gap-4 text-xs text-slate-500">
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 rounded bg-gradient-to-r from-primary-500 to-primary-500" />
-                <span>专注时长</span>
+                <span>{t('scheduler.efficiencyTrend.focusDuration')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar size={12} />
-                <span>{chartData.length} 天</span>
+                <span>{t('scheduler.efficiencyTrend.dayCount', { count: chartData.length })}</span>
               </div>
             </div>
           </div>

@@ -50,15 +50,15 @@ export const CollaboratorList: React.FC<CollaboratorListProps> = ({
                 onChange={(e) => onUpdateRole?.(collaborator.user_id, e.target.value as CollaboratorRole)}
                 className="px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
               >
-                <option value="editor">{COLLABORATOR_ROLE_LABELS.editor}</option>
-                <option value="viewer">{COLLABORATOR_ROLE_LABELS.viewer}</option>
+                <option value="editor">{t(COLLABORATOR_ROLE_LABELS.editor)}</option>
+                <option value="viewer">{t(COLLABORATOR_ROLE_LABELS.viewer)}</option>
               </select>
             ) : (
               <span
                 className="px-2 py-1 text-sm rounded"
                 style={{ backgroundColor: `${COLLABORATOR_ROLE_COLORS[collaborator.role]  }20`, color: COLLABORATOR_ROLE_COLORS[collaborator.role] }}
               >
-                {COLLABORATOR_ROLE_LABELS[collaborator.role]}
+                {t(COLLABORATOR_ROLE_LABELS[collaborator.role])}
               </span>
             )}
             {isOwner && collaborator.role !== "owner" && (

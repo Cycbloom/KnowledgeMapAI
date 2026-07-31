@@ -1,5 +1,6 @@
 import type { Command, CommandResult, ParsedArgs, CommandContext } from '../types';
 import { tasksApi } from '../../api/tasks';
+import i18next from 'i18next';
 
 interface TaskItem {
   id: string;
@@ -15,7 +16,7 @@ const createParentHandler = (_commandName: string, subcommands: Command[]) => {
     const subcommandNames = subcommands.map((s) => s.name).join(', ');
     return {
       success: false,
-      error: `请指定子命令。可用子命令: ${subcommandNames}`,
+      error: i18next.t('console.commands.common.specifySubcommand', { subcommands: subcommandNames }),
     };
   };
 };
@@ -25,7 +26,7 @@ const handleTaskCreate = async (args: ParsedArgs, _context: CommandContext): Pro
   const priority = (args.options.priority as string) || 'medium';
 
   if (!title) {
-    return { success: false, error: '任务标题是必需的 (--title)' };
+    return { success: false, error: i18next.t('console.commands.task.taskTitleRequired') };
   }
 
   try {
@@ -41,10 +42,10 @@ const handleTaskCreate = async (args: ParsedArgs, _context: CommandContext): Pro
     return {
       success: true,
       data: result,
-      message: `任务 "${title}" 创建成功，优先级: ${priority}`,
+      message: i18next.t('console.commands.task.taskCreateSuccess', { title, priority }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '创建任务失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.task.createTaskFailed');
     return { success: false, error: message };
   }
 };
@@ -64,7 +65,7 @@ const handleTaskList = async (args: ParsedArgs, _context: CommandContext): Promi
       id: t.id,
       type: t.type,
       status: t.status,
-      title: (t.payload?.title as string) || '无标题',
+      title: (t.payload?.title as string) || i18next.t('console.commands.common.noTitle'),
       created_at: t.created_at || '',
     }));
 
@@ -75,10 +76,13 @@ const handleTaskList = async (args: ParsedArgs, _context: CommandContext): Promi
         page,
         limit,
       },
-      message: `找到 ${tasks.length} 个任务${status ? `，状态: "${status}"` : ''}`,
+      message: i18next.t('console.commands.task.taskListFound', {
+        count: tasks.length,
+        statusFilter: status ? i18next.t('console.commands.task.taskListStatusFilter', { status }) : '',
+      }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '获取任务列表失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.task.getTaskListFailed');
     return { success: false, error: message };
   }
 };
@@ -87,7 +91,7 @@ const handleTaskShow = async (args: ParsedArgs, _context: CommandContext): Promi
   const taskId = args.positional[0] || (args.options['task-id'] as string);
 
   if (!taskId) {
-    return { success: false, error: '任务 ID 是必需的' };
+    return { success: false, error: i18next.t('console.commands.task.taskIdRequired') };
   }
 
   try {
@@ -96,16 +100,16 @@ const handleTaskShow = async (args: ParsedArgs, _context: CommandContext): Promi
     const task = tasks.find((t) => t.id === taskId);
 
     if (!task) {
-      return { success: false, error: `未找到任务 ${taskId}` };
+      return { success: false, error: i18next.t('console.commands.task.taskNotFound', { taskId }) };
     }
 
     return {
       success: true,
       data: task,
-      message: `任务 ${taskId} 的详细信息`,
+      message: i18next.t('console.commands.task.taskDetail', { taskId }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '获取任务详情失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.task.getTaskDetailFailed');
     return { success: false, error: message };
   }
 };
@@ -115,16 +119,16 @@ const handleTaskStatus = async (args: ParsedArgs, _context: CommandContext): Pro
   const status = args.options.status as string;
 
   if (!idsStr) {
-    return { success: false, error: '任务 ID 是必需的 (--ids)' };
+    return { success: false, error: i18next.t('console.commands.task.taskIdRequiredOption') };
   }
 
   if (!status) {
-    return { success: false, error: '状态是必需的 (--status)' };
+    return { success: false, error: i18next.t('console.commands.task.statusRequired') };
   }
 
   const validStatuses = ['pending', 'processing', 'completed', 'failed'];
   if (!validStatuses.includes(status)) {
-    return { success: false, error: `无效的状态。有效状态: ${validStatuses.join(', ')}` };
+    return { success: false, error: i18next.t('console.commands.task.invalidStatus', { statuses: validStatuses.join(', ') }) };
   }
 
   const ids = idsStr.split(',').map((id) => id.trim());
@@ -139,7 +143,7 @@ const handleTaskStatus = async (args: ParsedArgs, _context: CommandContext): Pro
         }
         results.push({ id, success: true });
       } catch (error) {
-        const message = error instanceof Error ? error.message : '更新任务失败';
+        const message = error instanceof Error ? error.message : i18next.t('console.commands.task.updateTaskFailed');
         results.push({ id, success: false, error: message });
       }
     }
@@ -157,10 +161,10 @@ const handleTaskStatus = async (args: ParsedArgs, _context: CommandContext): Pro
           failed: failCount,
         },
       },
-      message: `已更新 ${successCount}/${ids.length} 个任务状态为 "${status}"`,
+      message: i18next.t('console.commands.task.taskStatusUpdated', { success: successCount, total: ids.length, status }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '更新任务失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.task.updateTaskFailed');
     return { success: false, error: message };
   }
 };
@@ -169,25 +173,25 @@ const handleTaskDelete = async (args: ParsedArgs, _context: CommandContext): Pro
   const taskId = args.positional[0] || (args.options['task-id'] as string);
 
   if (!taskId) {
-    return { success: false, error: '任务 ID 是必需的' };
+    return { success: false, error: i18next.t('console.commands.task.taskIdRequired') };
   }
 
   try {
     await tasksApi.delete(taskId);
     return {
       success: true,
-      message: `任务 ${taskId} 已删除`,
+      message: i18next.t('console.commands.task.taskDeleteSuccess', { taskId }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '删除任务失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.task.deleteTaskFailed');
     return { success: false, error: message };
   }
 };
 
 export const taskCommand: Command = {
   name: 'task',
-  description: '任务管理操作',
-  usage: 'task <子命令> [选项]',
+  description: i18next.t('console.commands.task.taskDesc'),
+  usage: i18next.t('console.commands.task.taskUsage'),
   options: [],
   permission: 'safe',
   handler: createParentHandler('task', [
@@ -200,21 +204,21 @@ export const taskCommand: Command = {
   subcommands: [
     {
       name: 'create',
-      description: '创建新任务',
-      usage: 'task create --title <标题> [--priority <优先级>]',
+      description: i18next.t('console.commands.task.taskCreateDesc'),
+      usage: i18next.t('console.commands.task.taskCreateUsage'),
       options: [
         {
           name: 'title',
           alias: 't',
           type: 'string',
-          description: '任务标题',
+          description: i18next.t('console.commands.task.taskTitleOption'),
           required: true,
         },
         {
           name: 'priority',
           alias: 'p',
           type: 'string',
-          description: '任务优先级 (low, medium, high)',
+          description: i18next.t('console.commands.task.priorityOption'),
           required: false,
           default: 'medium',
         },
@@ -224,20 +228,20 @@ export const taskCommand: Command = {
     },
     {
       name: 'list',
-      description: '列出任务',
-      usage: 'task list [--status <状态>] [--page 1] [--limit 10]',
+      description: i18next.t('console.commands.task.taskListDesc'),
+      usage: i18next.t('console.commands.task.taskListUsage'),
       options: [
         {
           name: 'status',
           alias: 's',
           type: 'string',
-          description: '按状态筛选 (pending, processing, completed, failed)',
+          description: i18next.t('console.commands.task.statusFilterOption'),
           required: false,
         },
         {
           name: 'page',
           type: 'number',
-          description: '页码',
+          description: i18next.t('console.commands.task.taskPageOption'),
           required: false,
           default: 1,
         },
@@ -245,7 +249,7 @@ export const taskCommand: Command = {
           name: 'limit',
           alias: 'l',
           type: 'number',
-          description: '每页数量',
+          description: i18next.t('console.commands.task.taskLimitOption'),
           required: false,
           default: 10,
         },
@@ -255,14 +259,14 @@ export const taskCommand: Command = {
     },
     {
       name: 'show',
-      description: '显示任务详情',
-      usage: 'task show <任务ID>',
+      description: i18next.t('console.commands.task.taskShowDesc'),
+      usage: i18next.t('console.commands.task.taskShowUsage'),
       options: [
         {
           name: 'task-id',
           alias: 't',
           type: 'string',
-          description: '要查看的任务 ID',
+          description: i18next.t('console.commands.task.taskIdOptionToShow'),
           required: true,
         },
       ],
@@ -271,20 +275,20 @@ export const taskCommand: Command = {
     },
     {
       name: 'status',
-      description: '批量更新任务状态（警告操作）',
-      usage: 'task status --ids <id1,id2,id3> --status <状态>',
+      description: i18next.t('console.commands.task.taskStatusDesc'),
+      usage: i18next.t('console.commands.task.taskStatusUsage'),
       options: [
         {
           name: 'ids',
           type: 'string',
-          description: '逗号分隔的任务 ID',
+          description: i18next.t('console.commands.task.idsOption'),
           required: true,
         },
         {
           name: 'status',
           alias: 's',
           type: 'string',
-          description: '新状态 (pending, processing, completed, failed)',
+          description: i18next.t('console.commands.task.newStatusOption'),
           required: true,
         },
       ],
@@ -293,14 +297,14 @@ export const taskCommand: Command = {
     },
     {
       name: 'delete',
-      description: '删除任务（危险操作）',
-      usage: 'task delete <任务ID>',
+      description: i18next.t('console.commands.task.taskDeleteDesc'),
+      usage: i18next.t('console.commands.task.taskDeleteUsage'),
       options: [
         {
           name: 'task-id',
           alias: 't',
           type: 'string',
-          description: '要删除的任务 ID',
+          description: i18next.t('console.commands.task.taskIdOptionToDelete'),
           required: true,
         },
       ],

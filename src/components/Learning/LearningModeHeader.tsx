@@ -170,7 +170,7 @@ export const LearningModeHeader = ({
           <div className={isMobile && nodeId ? "hidden sm:block" : "block"}>
             <h1 className="font-bold text-sm lg:text-lg whitespace-nowrap">
               {graphMeta?.template_type === "topic_research"
-                ? "专题研究"
+                ? t('learning.modeHeader.topicResearch')
                 : t("learning.header.title")}
             </h1>
             {!isMobile && (

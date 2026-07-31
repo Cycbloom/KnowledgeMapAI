@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
@@ -38,42 +38,6 @@ interface DailyReviewProps {
   onSave?: (review: TaskReview) => void;
 }
 
-const MOOD_CONFIG: Record<
-  Mood,
-  { icon: React.ReactNode; label: string; color: string; bg: string }
-> = {
-  great: {
-    icon: <Smile size={24} />,
-    label: "很棒",
-    color: "text-emerald-500",
-    bg: "bg-emerald-100 dark:bg-emerald-500/20 border-emerald-300 dark:border-emerald-500/50",
-  },
-  good: {
-    icon: <Sun size={24} />,
-    label: "不错",
-    color: "text-primary-500",
-    bg: "bg-primary-100 dark:bg-primary-500/20 border-primary-300 dark:border-primary-500/50",
-  },
-  neutral: {
-    icon: <Meh size={24} />,
-    label: "一般",
-    color: "text-slate-500",
-    bg: "bg-slate-100 dark:bg-slate-500/20 border-slate-300 dark:border-slate-500/50",
-  },
-  tired: {
-    icon: <Moon size={24} />,
-    label: "疲惫",
-    color: "text-amber-500",
-    bg: "bg-amber-100 dark:bg-amber-500/20 border-amber-300 dark:border-amber-500/50",
-  },
-  stressed: {
-    icon: <CloudRain size={24} />,
-    label: "压力大",
-    color: "text-red-500",
-    bg: "bg-red-100 dark:bg-red-500/20 border-red-300 dark:border-red-500/50",
-  },
-};
-
 export const DailyReview: React.FC<DailyReviewProps> = ({
   isOpen,
   onClose,
@@ -81,6 +45,44 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
   onSave,
 }) => {
   const { t } = useTranslation();
+
+  const MOOD_CONFIG = useMemo<
+    Record<Mood, { icon: React.ReactNode; label: string; color: string; bg: string }>
+  >(
+    () => ({
+      great: {
+        icon: <Smile size={24} />,
+        label: t("scheduler.dailyReview.moods.great"),
+        color: "text-emerald-500",
+        bg: "bg-emerald-100 dark:bg-emerald-500/20 border-emerald-300 dark:border-emerald-500/50",
+      },
+      good: {
+        icon: <Sun size={24} />,
+        label: t("scheduler.dailyReview.moods.good"),
+        color: "text-primary-500",
+        bg: "bg-primary-100 dark:bg-primary-500/20 border-primary-300 dark:border-primary-500/50",
+      },
+      neutral: {
+        icon: <Meh size={24} />,
+        label: t("scheduler.dailyReview.moods.normal"),
+        color: "text-slate-500",
+        bg: "bg-slate-100 dark:bg-slate-500/20 border-slate-300 dark:border-slate-500/50",
+      },
+      tired: {
+        icon: <Moon size={24} />,
+        label: t("scheduler.dailyReview.moods.tired"),
+        color: "text-amber-500",
+        bg: "bg-amber-100 dark:bg-amber-500/20 border-amber-300 dark:border-amber-500/50",
+      },
+      stressed: {
+        icon: <CloudRain size={24} />,
+        label: t("scheduler.dailyReview.moods.stressed"),
+        color: "text-red-500",
+        bg: "bg-red-100 dark:bg-red-500/20 border-red-300 dark:border-red-500/50",
+      },
+    }),
+    [t],
+  );
   const {
     value: formData,
     setValue: setFormData,
@@ -200,7 +202,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Calendar size={24} className="text-primary-500" />
-                  每日回顾
+                  {t("scheduler.dailyReview.title")}
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                   {formatDate(targetDate, "long-date")}
@@ -233,20 +235,20 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
                   <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
                     <CheckCircle size={16} className="text-emerald-500" />
-                    今日完成
+                    {t("scheduler.dailyReview.todayCompleted")}
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-white dark:bg-slate-900 rounded-lg">
                       <div className="text-2xl font-bold text-primary-500">
                         {completedTasks.length}
                       </div>
-                      <div className="text-xs text-slate-500">任务</div>
+                      <div className="text-xs text-slate-500">{t("scheduler.dailyReview.tasks")}</div>
                     </div>
                     <div className="text-center p-3 bg-white dark:bg-slate-900 rounded-lg">
                       <div className="text-2xl font-bold text-emerald-500">
                         {formatDurationMinutes(totalDuration)}
                       </div>
-                      <div className="text-xs text-slate-500">专注时长</div>
+                      <div className="text-xs text-slate-500">{t("scheduler.dailyReview.focusDuration")}</div>
                     </div>
                   </div>
                 </div>
@@ -254,7 +256,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                 <div>
                   <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
                     <Smile size={16} className="text-amber-500" />
-                    今天感觉如何？
+                    {t("scheduler.dailyReview.howDoYouFeel")}
                   </h3>
                   <div className="flex gap-2 flex-wrap">
                     {(Object.keys(MOOD_CONFIG) as Mood[]).map((moodKey) => {
@@ -293,7 +295,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                 <div>
                   <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
                     <Brain size={16} className="text-primary-500" />
-                    今日心得
+                    {t("scheduler.dailyReview.todayInsights")}
                   </h3>
                   <textarea
                     value={formData.content}
@@ -307,7 +309,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                   <div>
                     <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
                       <CloudRain size={16} className="text-red-500" />
-                      遇到的困难
+                      {t("scheduler.dailyReview.difficulties")}
                     </h3>
                     <textarea
                       value={formData.difficulties}
@@ -319,7 +321,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                   <div>
                     <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
                       <Lightbulb size={16} className="text-amber-500" />
-                      改进方向
+                      {t("scheduler.dailyReview.improvements")}
                     </h3>
                     <textarea
                       value={formData.improvements}
@@ -333,7 +335,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                 <div>
                   <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
                     <Zap size={16} className="text-primary-500" />
-                    学到了什么
+                    {t("scheduler.dailyReview.learned")}
                   </h3>
                   <textarea
                     value={formData.learnings}
@@ -350,7 +352,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    取消
+                    {t("common.cancel")}
                   </motion.button>
                   <motion.button
                     onClick={handleSave}
@@ -361,10 +363,10 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                   >
                     <Save size={18} />
                     {saving
-                      ? "保存中..."
+                      ? t("scheduler.dailyReview.saving")
                       : existingReview
-                        ? "更新回顾"
-                        : "保存回顾"}
+                        ? t("scheduler.dailyReview.updateReview")
+                        : t("scheduler.dailyReview.saveReview")}
                   </motion.button>
                 </div>
               </div>

@@ -15,7 +15,7 @@ import {
   ExtractedConcept,
   BackboneModule,
   ConceptType,
-  BACKBONE_MODULE_LABELS,
+  BACKBONE_MODULE_LABEL_I18N_KEYS,
   BACKBONE_MODULE_COLORS,
   CONCEPT_TYPE_LABELS,
   CONCEPT_TYPE_COLORS,
@@ -115,7 +115,7 @@ const ConceptCard: React.FC<ConceptCardProps> = ({
                   color: conceptColor,
                 }}
               >
-                {CONCEPT_TYPE_LABELS[currentConcept.type]}
+                {t(CONCEPT_TYPE_LABELS[currentConcept.type])}
               </span>
               {currentConcept.similarity !== undefined && (
                 <span
@@ -172,10 +172,10 @@ const ConceptCard: React.FC<ConceptCardProps> = ({
                         : "bg-white border-gray-300 text-gray-700"
                     }`}
                   >
-                    {Object.entries(BACKBONE_MODULE_LABELS).map(
-                      ([key, label]) => (
+                    {Object.entries(BACKBONE_MODULE_LABEL_I18N_KEYS).map(
+                      ([key, labelKey]) => (
                         <option key={key} value={key}>
-                          {label}
+                          {t(labelKey)}
                         </option>
                       ),
                     )}
@@ -188,12 +188,12 @@ const ConceptCard: React.FC<ConceptCardProps> = ({
                       color: moduleColor,
                     }}
                   >
-                    {
-                      BACKBONE_MODULE_LABELS[
+                    {t(
+                      BACKBONE_MODULE_LABEL_I18N_KEYS[
                         currentConcept.targetModule ??
                           CONCEPT_TO_MODULE_MAP[currentConcept.type]
-                      ]
-                    }
+                      ],
+                    )}
                   </span>
                 )}
               </div>
@@ -349,9 +349,9 @@ const ConceptCard: React.FC<ConceptCardProps> = ({
                       : "bg-white border-gray-300 text-gray-900"
                   }`}
                 >
-                  {Object.entries(CONCEPT_TYPE_LABELS).map(([key, label]) => (
+                  {Object.entries(CONCEPT_TYPE_LABELS).map(([key, labelKey]) => (
                     <option key={key} value={key}>
-                      {label}
+                      {t(labelKey)}
                     </option>
                   ))}
                 </select>

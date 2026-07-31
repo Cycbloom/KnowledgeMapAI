@@ -276,7 +276,7 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
                 variables={getPromptVariables(editingPromptModule)}
                 onSave={(content) => handleSavePrompt(editingPromptModule, content)}
                 onCancel={() => setEditingPromptModule(null)}
-                title={t('graphMap.modularAnalysis.promptEditTitle', { name: modules.find(m => m.id === editingPromptModule)?.name ?? '' })}
+                title={t('graphMap.modularAnalysis.promptEditTitle', { name: t((modules.find(m => m.id === editingPromptModule)?.nameKey ?? '') as never) })}
               />
             )}
           </div>

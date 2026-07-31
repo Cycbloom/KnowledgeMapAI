@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api, AIAction } from '../../../services/api';
 import { Zap, Loader2, BookOpen } from 'lucide-react';
 import { message } from "../../../utils/messageHelper";
@@ -18,6 +19,7 @@ interface NodeContextMenuProps {
 export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
   x, y, nodeId, graphId, nodeContent, onClose, onExecuteAction, onRefresh
 }) => {
+  const { t } = useTranslation();
   const [actions, setActions] = useState<AIAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [annotating, setAnnotating] = useState(false);
@@ -50,18 +52,18 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
   const handleAnnotateTerms = async () => {
     if (!nodeContent) return;
     setAnnotating(true);
-    message.info('正在进行术语标注...');
+    message.info(t('graphEditor.nodeContextMenu.termAnnotationInProgress'));
     try {
         await api.ai.annotateTerms({
             node_id: nodeId,
             node_content: nodeContent,
             graph_id: graphId
         });
-        message.success('术语标注已完成');
+        message.success(t('graphEditor.nodeContextMenu.termAnnotationDone'));
         if (onRefresh) onRefresh();
         onClose();
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '标注失败';
+        const errorMessage = error instanceof Error ? error.message : t('graphEditor.nodeContextMenu.annotationFailed');
         message.error(errorMessage);
     } finally {
         setAnnotating(false);
@@ -102,7 +104,7 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
         style={{ top: y, left: x }}
     >
         <div className="px-3 py-2 text-xs font-bold text-gray-500 border-b border-gray-100 dark:border-gray-700 mb-1">
-            系统功能
+            {t('graphEditor.nodeContextMenu.systemFunction')}
         </div>
         <button
             className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-gray-700 dark:text-gray-200 ${
@@ -114,13 +116,13 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
             disabled={annotating}
         >
             {annotating ? <Loader2 size={14} className="animate-spin" /> : <BookOpen size={14} className="text-primary-500" />}
-            术语标注
+            {t('graphEditor.nodeContextMenu.termAnnotation')}
         </button>
 
         {actions.length > 0 && (
             <>
                 <div className="px-3 py-2 text-xs font-bold text-gray-500 border-b border-gray-100 dark:border-gray-700 mt-1 mb-1">
-                    AI 动作
+                    {t('graphEditor.nodeContextMenu.aiAction')}
                 </div>
                 {actions.map((action, index) => (
                     <button

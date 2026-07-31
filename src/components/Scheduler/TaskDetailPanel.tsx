@@ -42,11 +42,11 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
 
   const getTaskTypeLabel = (type: string) => {
     switch (type) {
-      case 'one_time': return '一次性任务';
-      case 'long_term': return '长期项目';
-      case 'periodic': return '周期任务';
-      case 'learning': return '学习任务';
-      default: return '普通任务';
+      case 'one_time': return t('scheduler.taskDetailPanel.taskTypeOneTime');
+      case 'long_term': return t('scheduler.taskDetailPanel.taskTypeLongTerm');
+      case 'periodic': return t('scheduler.taskDetailPanel.taskTypePeriodic');
+      case 'learning': return t('scheduler.taskDetailPanel.taskTypeLearning');
+      default: return t('scheduler.taskDetailPanel.taskTypeDefault');
     }
   };
 
@@ -106,7 +106,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
               onClick={onStart}
               className="flex-1 py-2 px-4 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
             >
-              开始任务
+              {t('scheduler.taskDetailPanel.startTask')}
             </button>
           )}
           {task.status === 'in_progress' && onComplete && (
@@ -114,7 +114,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
               onClick={onComplete}
               className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600"
             >
-              完成任务
+              {t('scheduler.taskDetailPanel.completeTask')}
             </button>
           )}
           {onEdit && (
@@ -122,7 +122,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
               onClick={onEdit}
               className="py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              编辑
+              {t('scheduler.taskDetailPanel.edit')}
             </button>
           )}
         </div>

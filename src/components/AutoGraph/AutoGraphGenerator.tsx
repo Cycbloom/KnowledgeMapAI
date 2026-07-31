@@ -752,12 +752,12 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       const defaultModules =
         PRESET_MAP["academic_research"]?.modules.map((m) => ({
           module_type: m.module_type,
-          title: m.title,
+          title: t(m.title as never),
           icon: m.icon,
           color: m.color,
-          description: m.description,
+          description: t(m.description as never),
           suggestedNodes: m.suggestedNodes,
-          relationshipToCore: m.relationshipToCore,
+          relationshipToCore: t(m.relationshipToCore as never),
         })) || [];
       setTopicResearchCustomModules(defaultModules);
     }
@@ -957,7 +957,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                                   : "text-gray-900 dark:text-white"
                               }`}
                             >
-                              {preset.name}
+                              {t(preset.name as never)}
                             </p>
                             <div className="flex items-center gap-0.5 mt-1 flex-wrap">
                               {preset.modules.map((mod, idx) => (
@@ -969,7 +969,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                                     color: mod.color,
                                     border: `1px solid ${mod.color}40`,
                                   }}
-                                  title={mod.title}
+                                  title={t(mod.title as never)}
                                 >
                                   {mod.icon}
                                 </span>

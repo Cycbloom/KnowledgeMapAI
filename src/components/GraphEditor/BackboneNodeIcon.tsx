@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   BookOpen,
   FileText,
@@ -9,7 +10,7 @@ import {
 } from "lucide-react";
 import {
   BackboneModule,
-  BACKBONE_MODULE_LABELS,
+  BACKBONE_MODULE_LABEL_I18N_KEYS,
   BACKBONE_MODULE_COLORS,
 } from "@shared/types/graph";
 
@@ -43,10 +44,12 @@ export const BackboneNodeIcon = React.memo(({
   showTooltip = true,
   className = "",
 }: BackboneNodeIconProps) => {
+  const { t } = useTranslation();
   const Icon = iconMap[module];
   const iconSize = sizeMap[size];
   const color = BACKBONE_MODULE_COLORS[module];
-  const label = BACKBONE_MODULE_LABELS[module];
+  const labelKey = BACKBONE_MODULE_LABEL_I18N_KEYS[module];
+  const label = t(labelKey);
 
   return (
     <div

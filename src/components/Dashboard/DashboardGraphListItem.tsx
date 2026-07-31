@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -15,49 +15,42 @@ import { formatDate } from "@/utils/formatters";
 
 const TEMPLATE_TYPE_CONFIG: Record<
   string,
-  { icon: React.ElementType; color: string; bgColor: string; label: string }
+  { icon: React.ElementType; color: string; bgColor: string }
 > = {
   topic_research: {
     icon: () => null,
     color: "text-purple-600 dark:text-purple-400",
     bgColor: "bg-purple-100 dark:bg-purple-900/30",
-    label: "专题研究",
   },
   knowledge_tree: {
     icon: () => null,
     color: "text-blue-600 dark:text-blue-400",
     bgColor: "bg-blue-100 dark:bg-blue-900/30",
-    label: "知识树",
   },
   learning_path: {
     icon: () => null,
     color: "text-green-600 dark:text-green-400",
     bgColor: "bg-green-100 dark:bg-green-900/30",
-    label: "学习路径",
   },
   concept_network: {
     icon: () => null,
     color: "text-amber-600 dark:text-amber-400",
     bgColor: "bg-amber-100 dark:bg-amber-900/30",
-    label: "概念网络",
   },
   skill_map: {
     icon: () => null,
     color: "text-red-600 dark:text-red-400",
     bgColor: "bg-red-100 dark:bg-red-900/30",
-    label: "技能图谱",
   },
   project_lifecycle: {
     icon: () => null,
     color: "text-cyan-600 dark:text-cyan-400",
     bgColor: "bg-cyan-100 dark:bg-cyan-900/30",
-    label: "项目生命周期",
   },
   story_creation: {
     icon: () => null,
     color: "text-pink-600 dark:text-pink-400",
     bgColor: "bg-pink-100 dark:bg-pink-900/30",
-    label: "小说/故事创作",
   },
 };
 
@@ -95,6 +88,19 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
   variant,
 }) => {
   const { t } = useTranslation();
+
+  const templateTypeLabels = useMemo<Record<string, string>>(
+    () => ({
+      topic_research: t("dashboard.graphTypeLabels.topicResearch"),
+      knowledge_tree: t("dashboard.graphTypeLabels.knowledgeTree"),
+      learning_path: t("dashboard.graphTypeLabels.learningPath"),
+      concept_network: t("dashboard.graphTypeLabels.conceptNetwork"),
+      skill_map: t("dashboard.graphTypeLabels.skillMap"),
+      project_lifecycle: t("dashboard.graphTypeLabels.projectLifecycle"),
+      story_creation: t("dashboard.graphTypeLabels.storyCreation"),
+    }),
+    [t],
+  );
 
   if (variant === "mobile") {
     return (
@@ -151,7 +157,7 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
                       className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${config.bgColor} ${config.color}`}
                     >
                       <Icon size={10} />
-                      <span>{config.label}</span>
+                      <span>{templateTypeLabels[graph.template_type ?? ""]}</span>
                     </span>
                   );
                 })()}
@@ -302,7 +308,7 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
                       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${config.bgColor} ${config.color}`}
                     >
                       <Icon size={10} />
-                      <span>{config.label}</span>
+                      <span>{templateTypeLabels[graph.template_type ?? ""]}</span>
                     </span>
                   );
                 })()}

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -35,24 +35,6 @@ interface TaskDetailProps {
   onClose: () => void;
 }
 
-const EXECUTION_STATUS_CONFIG = {
-  completed: {
-    label: "已完成",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-  },
-  interrupted: {
-    label: "中断",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-  },
-  time_slice_ended: {
-    label: "时间片结束",
-    color: "text-primary-400",
-    bg: "bg-primary-500/10",
-  },
-};
-
 export const TaskDetail: React.FC<TaskDetailProps> = ({
   task,
   executions,
@@ -68,6 +50,27 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
     TASK_DETAIL_QUEUE_CONFIG[2];
   const statusConfig = TASK_DETAIL_STATUS_CONFIG[task.status as keyof typeof TASK_DETAIL_STATUS_CONFIG] || TASK_DETAIL_STATUS_CONFIG.pending;
   const { t } = useTranslation();
+
+  const executionStatusConfig = useMemo(
+    () => ({
+      completed: {
+        label: t("scheduler.taskDetail.statusCompleted"),
+        color: "text-emerald-400",
+        bg: "bg-emerald-500/10",
+      },
+      interrupted: {
+        label: t("scheduler.taskDetail.statusInterrupted"),
+        color: "text-amber-400",
+        bg: "bg-amber-500/10",
+      },
+      time_slice_ended: {
+        label: t("scheduler.taskDetail.statusTimeSliceEnd"),
+        color: "text-primary-400",
+        bg: "bg-primary-500/10",
+      },
+    }),
+    [t],
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -87,7 +90,9 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
     if (!seconds) return "--";
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return mins > 0 ? `${mins}分${secs}秒` : `${secs}秒`;
+    return mins > 0
+      ? t("scheduler.taskDetail.durationFormat", { mins, secs })
+      : t("scheduler.taskDetail.durationSecondsFormat", { secs });
   };
 
   const totalExecutionTime = executions.reduce(
@@ -128,7 +133,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                   {task.priority >= 3 && (
                     <span className="flex items-center gap-1 text-red-400 text-xs">
                       <Star size={12} fill="currentColor" />
-                      高优先级
+                      {t("scheduler.taskDetail.highPriority")}
                     </span>
                   )}
                 </div>
@@ -156,7 +161,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
               <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
                 <div className="flex items-center gap-2 text-slate-400 mb-2">
                   <Clock size={16} />
-                  <span className="text-sm">预计时长</span>
+                  <span className="text-sm">{t("scheduler.taskDetail.estimatedDuration")}</span>
                 </div>
                 <p className="text-lg font-semibold text-white">
                   {formatDurationMinutes(task.estimated_duration, { format: 'zh-spaced' })}
@@ -166,7 +171,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
               <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
                 <div className="flex items-center gap-2 text-slate-400 mb-2">
                   <Timer size={16} />
-                  <span className="text-sm">实际用时</span>
+                  <span className="text-sm">{t("scheduler.taskDetail.actualDuration")}</span>
                 </div>
                 <p className="text-lg font-semibold text-white">
                   {formatDurationMinutes(task.actual_duration, { format: 'zh-spaced' })}
@@ -176,17 +181,17 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
               <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
                 <div className="flex items-center gap-2 text-slate-400 mb-2">
                   <Calendar size={16} />
-                  <span className="text-sm">截止日期</span>
+                  <span className="text-sm">{t("scheduler.taskDetail.deadline")}</span>
                 </div>
                 <p className="text-lg font-semibold text-white">
-                  {task.deadline ? formatDateTime(task.deadline) : "未设置"}
+                  {task.deadline ? formatDateTime(task.deadline) : t("scheduler.taskDetail.notSet")}
                 </p>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
                 <div className="flex items-center gap-2 text-slate-400 mb-2">
                   <TrendingUp size={16} />
-                  <span className="text-sm">累计执行时间</span>
+                  <span className="text-sm">{t("scheduler.taskDetail.totalExecutionTime")}</span>
                 </div>
                 <p className="text-lg font-semibold text-white">
                   {formatExecutionDuration(totalExecutionTime)}
@@ -198,7 +203,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
               <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
                 <div className="flex items-center gap-2 text-slate-400 mb-2">
                   <Tag size={16} />
-                  <span className="text-sm">标签</span>
+                  <span className="text-sm">{t("scheduler.taskDetail.tags")}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {task.tags.map((tag) => (
@@ -217,7 +222,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
               <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
                 <div className="flex items-center gap-2 text-slate-400 mb-2">
                   <Link size={16} />
-                  <span className="text-sm">关联知识点</span>
+                  <span className="text-sm">{t("scheduler.taskDetail.relatedKnowledgePoints")}</span>
                 </div>
                 <p className="text-white">{task.knowledge_point_id}</p>
               </div>
@@ -225,12 +230,12 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
 
             <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
               <div className="flex items-center gap-2 text-slate-400 mb-3">
-                <History size={16} />
-                <span className="text-sm">执行历史</span>
-                <span className="text-xs text-slate-500">
-                  ({executions.length} 次)
-                </span>
-              </div>
+                  <History size={16} />
+                  <span className="text-sm">{t("scheduler.taskDetail.executionHistory")}</span>
+                  <span className="text-xs text-slate-500">
+                    {t("scheduler.taskDetail.executionCountFormat", { count: executions.length })}
+                  </span>
+                </div>
 
               {executions.length === 0 ? (
                 <EmptyState icon={<ListChecks size={32} />} title={t('scheduler.empty.executionRecords')} />
@@ -238,8 +243,8 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {executions.map((execution, index) => {
                     const execStatus =
-                      EXECUTION_STATUS_CONFIG[execution.status] ||
-                      EXECUTION_STATUS_CONFIG.completed;
+                      executionStatusConfig[execution.status as keyof typeof executionStatusConfig] ||
+                      executionStatusConfig.completed;
                     return (
                       <div
                         key={execution.id}
@@ -269,10 +274,10 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
             </div>
 
             <div className="text-xs text-slate-500 flex items-center gap-4">
-              <span>创建于: {formatDateTime(task.created_at)}</span>
-              <span>更新于: {formatDateTime(task.updated_at)}</span>
+              <span>{t("scheduler.taskDetail.createdAt")} {formatDateTime(task.created_at)}</span>
+              <span>{t("scheduler.taskDetail.updatedAt")} {formatDateTime(task.updated_at)}</span>
               {task.completed_at && (
-                <span>完成于: {formatDateTime(task.completed_at)}</span>
+                <span>{t("scheduler.taskDetail.completedAt")} {formatDateTime(task.completed_at)}</span>
               )}
             </div>
           </div>
@@ -311,7 +316,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500/20 text-primary-400 hover:bg-primary-500/30 transition-colors"
                 >
                   <Play size={16} />
-                  开始
+                  {t("scheduler.taskDetail.start")}
                 </button>
               )}
 
@@ -321,7 +326,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
                 >
                   <Pause size={16} />
-                  暂停
+                  {t("scheduler.taskDetail.pause")}
                 </button>
               )}
 
@@ -334,8 +339,8 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
                   >
                     <Check size={16} />
-                    完成
-                  </button>
+                  {t("scheduler.taskDetail.complete")}
+                </button>
                 )}
             </div>
           </div>

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, RefreshCw, WifiOff, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSyncStatus } from '../../hooks/common/useSyncStatus';
@@ -16,17 +17,21 @@ function getSyncState(status: ReturnType<typeof useSyncStatus>['status']): SyncS
   return 'synced';
 }
 
-const stateConfig: Record<SyncState, { icon: typeof Check; color: string; label: string; spin?: boolean }> = {
-  synced: { icon: Check, color: 'text-green-500', label: '已同步' },
-  syncing: { icon: RefreshCw, color: 'text-blue-500', label: '同步中', spin: true },
-  offline: { icon: WifiOff, color: 'text-gray-400', label: '离线' },
-  error: { icon: AlertCircle, color: 'text-red-500', label: '同步错误' },
-};
-
 export function SyncStatusIndicator() {
+  const { t } = useTranslation();
   const { status, isLocalAvailable, manualSync } = useSyncStatus();
   const [showPanel, setShowPanel] = useState(false);
   const { reduceMotion } = useReducedMotionOrPreference();
+
+  const stateConfig = useMemo<Record<SyncState, { icon: typeof Check; color: string; label: string; spin?: boolean }>>(
+    () => ({
+      synced: { icon: Check, color: 'text-green-500', label: t('common.syncStatus.synced') },
+      syncing: { icon: RefreshCw, color: 'text-blue-500', label: t('common.syncStatus.syncing'), spin: true },
+      offline: { icon: WifiOff, color: 'text-gray-400', label: t('common.syncStatus.offline') },
+      error: { icon: AlertCircle, color: 'text-red-500', label: t('common.syncStatus.error') },
+    }),
+    [t],
+  );
 
   // Don't render if local DB is not available (web mode or dev mode)
   if (!isLocalAvailable) return null;

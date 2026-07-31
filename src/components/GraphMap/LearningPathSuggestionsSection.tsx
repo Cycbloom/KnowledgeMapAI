@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
@@ -18,19 +18,16 @@ interface LearningPathSuggestionsSectionProps {
 
 const difficultyConfig = {
   beginner: {
-    label: '入门',
     color: 'text-green-600 dark:text-green-400',
     bg: 'bg-green-100 dark:bg-green-900/30',
     border: 'border-green-200 dark:border-green-800',
   },
   intermediate: {
-    label: '中级',
     color: 'text-amber-600 dark:text-amber-400',
     bg: 'bg-amber-100 dark:bg-amber-900/30',
     border: 'border-amber-200 dark:border-amber-800',
   },
   advanced: {
-    label: '高级',
     color: 'text-red-600 dark:text-red-400',
     bg: 'bg-red-100 dark:bg-red-900/30',
     border: 'border-red-200 dark:border-red-800',
@@ -42,6 +39,11 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
   onGraphClick,
 }) => {
   const { t } = useTranslation();
+  const difficultyLabels = useMemo<Record<string, string>>(() => ({
+    beginner: t('graphMap.learningPathSuggestions.beginner'),
+    intermediate: t('graphMap.learningPathSuggestions.intermediate'),
+    advanced: t('graphMap.learningPathSuggestions.advanced'),
+  }), [t]);
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
@@ -90,7 +92,7 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
                   <span
                     className={`px-2 py-0.5 text-xs rounded ${difficulty.bg} ${difficulty.color}`}
                   >
-                    {difficulty.label}
+                    {difficultyLabels[path.difficulty]}
                   </span>
                 </div>
 

@@ -90,7 +90,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
         setKnowledgePoints(
           data.map((kp: { id: string; title?: string }) => ({
             id: kp.id,
-            title: kp.title || "未命名知识点",
+            title: kp.title || t('scheduler.taskWorkbench.subtaskList.unnamedKnowledgePoint'),
           })),
         );
       }
@@ -199,14 +199,14 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
         <div className="flex items-center gap-2">
           {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-            子任务
+            {t('scheduler.taskWorkbench.subtaskList.title')}
           </h3>
           <span className="text-sm text-slate-500 dark:text-slate-400">
-            {completedCount}/{subtasks.length} 完成
+            {t('scheduler.taskWorkbench.subtaskList.completionFormat', { completed: completedCount, total: subtasks.length })}
           </span>
           {subtasks.length > 0 && (
             <span className="text-sm text-slate-500 dark:text-slate-400">
-              · 平均掌握度 {avgMastery.toFixed(0)}%
+              {t('scheduler.taskWorkbench.subtaskList.avgMastery', { percent: avgMastery.toFixed(0) })}
             </span>
           )}
         </div>
@@ -218,7 +218,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
         >
           <Plus size={14} />
-          添加
+          {t('scheduler.taskWorkbench.subtaskList.add')}
         </button>
       </div>
 
@@ -273,7 +273,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                   }
                   className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
-                  <option value="">选择知识点</option>
+                  <option value="">{t('scheduler.taskWorkbench.subtaskList.selectKnowledgePoint')}</option>
                   {knowledgePoints.map((kp) => (
                     <option key={kp.id} value={kp.id}>
                       {kp.title}
@@ -312,13 +312,13 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                   }}
                   className="px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 >
-                  取消
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleAddSubtask}
                   className="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 transition-all"
                 >
-                  添加
+                  {t('scheduler.taskWorkbench.subtaskList.add')}
                 </button>
               </div>
             </div>
@@ -378,7 +378,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                     {subtask.estimated_duration && (
                       <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
                         <Clock size={12} />
-                        {subtask.estimated_duration} 分钟
+                        {t('scheduler.taskWorkbench.subtaskList.estimatedDuration', { count: subtask.estimated_duration })}
                       </p>
                     )}
                   </div>
@@ -396,7 +396,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
               <EmptyState
                 icon={<ListTodo size={32} />}
                 title={t('scheduler.empty.subtasks')}
-                action={{ label: '添加第一个子任务', onClick: () => setIsAdding(true) }}
+                action={{ label: t('scheduler.taskWorkbench.subtaskList.addFirstSubtask'), onClick: () => setIsAdding(true) }}
               />
             )}
           </div>

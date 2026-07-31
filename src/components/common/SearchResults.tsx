@@ -148,7 +148,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           >
             <Sparkles className="w-4 h-4" />
           </motion.div>
-          <span>搜索中...</span>
+          <span>{t('common.searchResults.searching')}</span>
         </div>
       </div>
     );
@@ -162,7 +162,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     return (
       <div role="status" className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 z-50 p-3">
         <div className="text-center text-gray-500 dark:text-gray-400 text-sm">
-          未找到「{query}」相关结果
+          {t('common.searchResults.notFound', { query })}
         </div>
       </div>
     );
@@ -184,7 +184,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           <div className="py-1.5 border-b border-gray-200 dark:border-slate-500">
             <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
               <Network className="w-3 h-3 text-primary-500" />
-              <span aria-live="polite" aria-atomic="true">图谱 {results.graphs.length}</span>
+              <span aria-live="polite" aria-atomic="true">{t('common.searchResults.graphLabel', { count: results.graphs.length })}</span>
             </div>
             <div>
               {results.graphs.map((graph) => (
@@ -237,7 +237,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           <div className="py-1.5">
             <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
               <FileText className="w-3 h-3 text-green-500" />
-              <span aria-live="polite" aria-atomic="true">节点 {results.nodes.length}</span>
+              <span aria-live="polite" aria-atomic="true">{t('common.searchResults.nodeLabel', { count: results.nodes.length })}</span>
             </div>
             <div>
               {results.nodes.map((node, index) => (
@@ -370,7 +370,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           <div className="p-2 border-t border-gray-200 dark:border-slate-500 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20">
             <div className="flex items-center gap-1.5 mb-1">
               <Sparkles className="w-3 h-3 text-primary-500" />
-              <span className="text-xs font-medium text-primary-700 dark:text-primary-300">AI 回答</span>
+              <span className="text-xs font-medium text-primary-700 dark:text-primary-300">{t('common.searchResults.aiAnswer')}</span>
             </div>
             <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-3">{results.answer}</p>
           </div>

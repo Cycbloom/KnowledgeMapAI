@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TTSEngine } from '../../types';
 import { api } from '../../services/api';
 import { cleanTextForSpeech } from '../../utils/textCleaning';
@@ -58,6 +59,7 @@ const setCachedSambertUrl = (key: string, url: string): void => {
 };
 
 const useBrowserTTS = () => {
+  const { t } = useTranslation();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,12 +93,12 @@ const useBrowserTTS = () => {
 
   const speak = useCallback((text: string, options: TextToSpeechOptions = {}) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      setError('您的浏览器不支持语音合成功能');
+      setError(t('errors.tts.browserNotSupported'));
       return;
     }
 
     if (!text || text.trim() === '') {
-      setError('没有可朗读的文本');
+      setError(t('errors.tts.noText'));
       return;
     }
 
@@ -105,7 +107,7 @@ const useBrowserTTS = () => {
     const cleanText = cleanTextForSpeech(text);
 
     if (!cleanText) {
-      setError('没有可朗读的文本');
+      setError(t('errors.tts.noText'));
       return;
     }
 
@@ -135,16 +137,16 @@ const useBrowserTTS = () => {
       
       switch (event.error) {
         case 'not-allowed':
-          setError('请允许语音权限以使用语音功能');
+          setError(t('errors.tts.notAllowed'));
           break;
         case 'canceled':
-          setError('语音播放已取消');
+          setError(t('errors.tts.canceled'));
           break;
         case 'interrupted':
-          setError('语音播放被中断');
+          setError(t('errors.tts.interrupted'));
           break;
         default:
-          setError(`语音合成出错: ${event.error}`);
+          setError(t('errors.tts.synthesisError', { error: event.error }));
       }
     };
 
@@ -157,7 +159,7 @@ const useBrowserTTS = () => {
     };
 
     window.speechSynthesis.speak(utterance);
-  }, [selectedVoice]);
+  }, [selectedVoice, t]);
 
   const pause = useCallback(() => {
     if (window.speechSynthesis && isSpeaking) {
@@ -200,6 +202,7 @@ const useBrowserTTS = () => {
 };
 
 export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
+  const { t } = useTranslation();
   const [currentEngine, setCurrentEngine] = useState<TTSEngine>(engine);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -236,14 +239,14 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
       browserTTS.speak(text, options);
     } else {
       if (!text || text.trim() === '') {
-        setError('没有可朗读的文本');
+        setError(t('errors.tts.noText'));
         return;
       }
 
       const cleanText = cleanTextForSpeech(text);
 
       if (!cleanText) {
-        setError('没有可朗读的文本');
+        setError(t('errors.tts.noText'));
         return;
       }
 
@@ -295,7 +298,7 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
           setIsSpeaking(false);
           setIsPaused(false);
           setProgress(0);
-          setError('音频播放失败');
+          setError(t('errors.tts.audioPlaybackFailed'));
           audioRef.current = null;
         };
         audio.ontimeupdate = () => {
@@ -318,12 +321,12 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
         setIsSpeaking(false);
         setIsPaused(false);
         setProgress(0);
-        setError(err instanceof Error ? err.message : '语音合成失败');
+        setError(err instanceof Error ? err.message : t('errors.tts.synthesisFailed'));
       } finally {
         setIsLoading(false);
       }
     }
-  }, [currentEngine, browserTTS, selectedVoice, audioUrl]);
+  }, [currentEngine, browserTTS, selectedVoice, audioUrl, t]);
 
   const pause = useCallback(() => {
     if (currentEngine === 'browser') {
@@ -383,10 +386,10 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
         setVoices(data);
         setError(null);
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : '获取语音列表失败');
+        setError(err instanceof Error ? err.message : t('errors.tts.getVoicesFailed'));
       }
     }
-  }, [currentEngine, browserTTS]);
+  }, [currentEngine, browserTTS, t]);
 
   // 浏览器引擎：音色异步加载后同步
   useEffect(() => {
@@ -407,11 +410,11 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
       }
     }).catch((err) => {
       if (!cancelled) {
-        setError(err instanceof Error ? err.message : '获取语音列表失败');
+        setError(err instanceof Error ? err.message : t('errors.tts.getVoicesFailed'));
       }
     });
     return () => { cancelled = true; };
-  }, [currentEngine]);
+  }, [currentEngine, t]);
 
   // 仅在 audioUrl 变化时清理旧 URL（不暂停音频，避免新音频被误杀）
   useEffect(() => {

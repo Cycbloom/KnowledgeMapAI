@@ -3,13 +3,14 @@ import { aiApi } from '../../api/ai';
 import { graphsApi } from '../../api/graphs';
 import { nodesApi } from '../../api/nodes';
 import { AppError, SharedErrorCodes } from "@/utils/errors";
+import i18n from '../../../i18n';
 
 const createParentHandler = (_commandName: string, subcommands: Command[]) => {
   return async (_args: ParsedArgs, _context: CommandContext): Promise<CommandResult> => {
     const subcommandNames = subcommands.map((s) => s.name).join(', ');
     return {
       success: false,
-      error: `请指定子命令。可用子命令: ${subcommandNames}`,
+      error: i18n.t('console.commands.common.specifySubcommand', { subcommands: subcommandNames }),
     };
   };
 };
@@ -19,12 +20,12 @@ const handleAiAnalyze = async (args: ParsedArgs, _context: CommandContext): Prom
   const type = (args.options.type as string) || 'structure';
 
   if (!graphId) {
-    return { success: false, error: '图谱 ID 是必需的 (--graph)' };
+    return { success: false, error: i18n.t('console.commands.ai.graphIdRequiredOption') };
   }
 
   const validTypes = ['structure', 'content', 'connections', 'learning-path'];
   if (!validTypes.includes(type)) {
-    return { success: false, error: `无效的分析类型。有效类型: ${validTypes.join(', ')}` };
+    return { success: false, error: i18n.t('console.commands.ai.invalidAnalysisType', { types: validTypes.join(', ') }) };
   }
 
   try {
@@ -55,10 +56,10 @@ const handleAiAnalyze = async (args: ParsedArgs, _context: CommandContext): Prom
     return {
       success: true,
       data: result,
-      message: `图谱 ${graphId} 分析成功 (类型: ${type})`,
+      message: i18n.t('console.commands.ai.analyzeSuccess', { graphId, type }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '分析图谱失败';
+    const message = error instanceof Error ? error.message : i18n.t('console.commands.ai.analyzeGraphFailed');
     return { success: false, error: message };
   }
 };
@@ -68,21 +69,21 @@ const handleAiGenerate = async (args: ParsedArgs, _context: CommandContext): Pro
   const nodeId = args.options.node as string;
 
   if (!type) {
-    return { success: false, error: '生成类型是必需的 (--type)' };
+    return { success: false, error: i18n.t('console.commands.ai.generateTypeRequired') };
   }
 
   if (!nodeId) {
-    return { success: false, error: '节点 ID 是必需的 (--node)' };
+    return { success: false, error: i18n.t('console.commands.ai.nodeIdRequiredOption') };
   }
 
   const validTypes = ['content', 'learning-material', 'cards', 'expansion'];
   if (!validTypes.includes(type)) {
-    return { success: false, error: `无效的生成类型。有效类型: ${validTypes.join(', ')}` };
+    return { success: false, error: i18n.t('console.commands.ai.invalidGenerateType', { types: validTypes.join(', ') }) };
   }
 
   try {
     const node = await nodesApi.get(nodeId);
-    const nodeTitle = node.title || '无标题';
+    const nodeTitle = node.title || i18n.t('console.commands.common.noTitle');
     const nodeContent = node.content || '';
 
     let result: unknown;
@@ -123,10 +124,10 @@ const handleAiGenerate = async (args: ParsedArgs, _context: CommandContext): Pro
     return {
       success: true,
       data: result,
-      message: `已为节点 ${nodeId} 生成 ${type}`,
+      message: i18n.t('console.commands.ai.generateSuccess', { nodeId, type }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '生成内容失败';
+    const message = error instanceof Error ? error.message : i18n.t('console.commands.ai.generateContentFailed');
     return { success: false, error: message };
   }
 };
@@ -136,16 +137,16 @@ const handleAiBatch = async (args: ParsedArgs, _context: CommandContext): Promis
   const operation = args.options.operation as string;
 
   if (!graphId) {
-    return { success: false, error: '图谱 ID 是必需的 (--graph)' };
+    return { success: false, error: i18n.t('console.commands.ai.graphIdRequiredOption') };
   }
 
   if (!operation) {
-    return { success: false, error: '操作类型是必需的 (--operation)' };
+    return { success: false, error: i18n.t('console.commands.ai.operationTypeRequired') };
   }
 
   const validOperations = ['expand', 'cards', 'analyze'];
   if (!validOperations.includes(operation)) {
-    return { success: false, error: `无效的操作类型。有效操作: ${validOperations.join(', ')}` };
+    return { success: false, error: i18n.t('console.commands.ai.invalidOperationType', { operations: validOperations.join(', ') }) };
   }
 
   try {
@@ -153,7 +154,7 @@ const handleAiBatch = async (args: ParsedArgs, _context: CommandContext): Promis
     const nodeArray = nodes as unknown as Array<{ id: string; title: string; content?: string }>;
 
     if (!nodeArray || nodeArray.length === 0) {
-      return { success: false, error: '图谱中没有节点' };
+      return { success: false, error: i18n.t('console.commands.ai.noNodesInGraph') };
     }
 
     let result: unknown;
@@ -190,7 +191,7 @@ const handleAiBatch = async (args: ParsedArgs, _context: CommandContext): Promis
             analysisResults.push({
               nodeId: node.id,
               title: node.title,
-              error: '分析失败',
+              error: i18n.t('console.commands.ai.analysisFailed'),
             });
           }
         }
@@ -198,7 +199,7 @@ const handleAiBatch = async (args: ParsedArgs, _context: CommandContext): Promis
         break;
       }
       default:
-        throw new AppError('未知操作', SharedErrorCodes.VALIDATION_ERROR, 400);
+        throw new AppError(i18n.t('console.commands.ai.unknownOperation'), SharedErrorCodes.VALIDATION_ERROR, 400);
     }
 
     return {
@@ -209,18 +210,18 @@ const handleAiBatch = async (args: ParsedArgs, _context: CommandContext): Promis
         processedCount,
         result,
       },
-      message: `批量 ${operation} 完成，处理了图谱 ${graphId} 中的 ${processedCount} 个节点`,
+      message: i18n.t('console.commands.ai.batchSuccess', { operation, graphId, count: processedCount }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '批量操作失败';
+    const message = error instanceof Error ? error.message : i18n.t('console.commands.ai.batchOperationFailed');
     return { success: false, error: message };
   }
 };
 
 export const aiCommand: Command = {
   name: 'ai',
-  description: 'AI 功能操作',
-  usage: 'ai <子命令> [选项]',
+  description: i18n.t('console.commands.ai.aiDesc'),
+  usage: i18n.t('console.commands.ai.aiUsage'),
   options: [],
   permission: 'safe',
   handler: createParentHandler('ai', [
@@ -231,21 +232,21 @@ export const aiCommand: Command = {
   subcommands: [
     {
       name: 'analyze',
-      description: '使用 AI 分析图谱',
-      usage: 'ai analyze --graph <图谱ID> --type <类型>',
+      description: i18n.t('console.commands.ai.aiAnalyzeDesc'),
+      usage: i18n.t('console.commands.ai.aiAnalyzeUsage'),
       options: [
         {
           name: 'graph',
           alias: 'g',
           type: 'string',
-          description: '要分析的图谱 ID',
+          description: i18n.t('console.commands.ai.graphToAnalyzeOption'),
           required: true,
         },
         {
           name: 'type',
           alias: 't',
           type: 'string',
-          description: '分析类型 (structure, content, connections, learning-path)',
+          description: i18n.t('console.commands.ai.analysisTypeOption'),
           required: false,
           default: 'structure',
         },
@@ -255,21 +256,21 @@ export const aiCommand: Command = {
     },
     {
       name: 'generate',
-      description: '使用 AI 为节点生成内容',
-      usage: 'ai generate --type <类型> --node <节点ID>',
+      description: i18n.t('console.commands.ai.aiGenerateDesc'),
+      usage: i18n.t('console.commands.ai.aiGenerateUsage'),
       options: [
         {
           name: 'type',
           alias: 't',
           type: 'string',
-          description: '生成类型 (content, learning-material, cards, expansion)',
+          description: i18n.t('console.commands.ai.generateTypeOption'),
           required: true,
         },
         {
           name: 'node',
           alias: 'n',
           type: 'string',
-          description: '节点 ID',
+          description: i18n.t('console.commands.ai.nodeOption'),
           required: true,
         },
       ],
@@ -278,21 +279,21 @@ export const aiCommand: Command = {
     },
     {
       name: 'batch',
-      description: '批量处理图谱节点（警告操作）',
-      usage: 'ai batch --graph <图谱ID> --operation <操作>',
+      description: i18n.t('console.commands.ai.aiBatchDesc'),
+      usage: i18n.t('console.commands.ai.aiBatchUsage'),
       options: [
         {
           name: 'graph',
           alias: 'g',
           type: 'string',
-          description: '图谱 ID',
+          description: i18n.t('console.commands.ai.graphOptionAi'),
           required: true,
         },
         {
           name: 'operation',
           alias: 'o',
           type: 'string',
-          description: '操作类型 (expand, cards, analyze)',
+          description: i18n.t('console.commands.ai.operationOption'),
           required: true,
         },
       ],

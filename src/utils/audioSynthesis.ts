@@ -1,3 +1,5 @@
+import i18next from 'i18next';
+
 export type WhiteNoiseType =
   | 'rain'
   | 'thunder'
@@ -985,35 +987,35 @@ export class NoiseMixer {
 }
 
 export const NOISE_CATEGORIES: { id: NoiseCategory; label: string }[] = [
-  { id: 'nature', label: '自然' },
-  { id: 'environment', label: '环境' },
-  { id: 'meditation', label: '冥想' },
+  { id: 'nature', label: i18next.t('common.audioSynthesis.categories.nature') },
+  { id: 'environment', label: i18next.t('common.audioSynthesis.categories.environment') },
+  { id: 'meditation', label: i18next.t('common.audioSynthesis.categories.meditation') },
 ];
 
 export const NOISE_OPTIONS: NoiseOption[] = [
-  { id: 'rain', label: '雨声', icon: 'CloudRain', category: 'nature' },
-  { id: 'thunder', label: '雷声', icon: 'CloudLightning', category: 'nature' },
-  { id: 'ocean', label: '海浪', icon: 'Waves', category: 'nature' },
-  { id: 'stream', label: '溪流', icon: 'Droplets', category: 'nature' },
-  { id: 'wind', label: '风声', icon: 'Wind', category: 'nature' },
-  { id: 'forest', label: '森林', icon: 'Trees', category: 'nature' },
-  { id: 'fire', label: '篝火', icon: 'Flame', category: 'nature' },
-  { id: 'cafe', label: '咖啡厅', icon: 'Coffee', category: 'environment' },
-  { id: 'library', label: '图书馆', icon: 'BookOpen', category: 'environment' },
-  { id: 'night', label: '夜晚', icon: 'Moon', category: 'environment' },
-  { id: 'train', label: '火车', icon: 'Train', category: 'environment' },
-  { id: 'airplane', label: '飞机', icon: 'Plane', category: 'environment' },
-  { id: 'singing_bowl', label: '钵音', icon: 'Circle', category: 'meditation' },
-  { id: 'wind_chime', label: '风铃', icon: 'Bell', category: 'meditation' },
-  { id: 'breathing', label: '呼吸引导', icon: 'Activity', category: 'meditation' },
-  { id: 'white_noise', label: '白噪声', icon: 'Radio', category: 'meditation' },
-  { id: 'pink_noise', label: '粉噪声', icon: 'Waves', category: 'meditation' },
+  { id: 'rain', label: i18next.t('common.audioSynthesis.sounds.rain'), icon: 'CloudRain', category: 'nature' },
+  { id: 'thunder', label: i18next.t('common.audioSynthesis.sounds.thunder'), icon: 'CloudLightning', category: 'nature' },
+  { id: 'ocean', label: i18next.t('common.audioSynthesis.sounds.ocean'), icon: 'Waves', category: 'nature' },
+  { id: 'stream', label: i18next.t('common.audioSynthesis.sounds.stream'), icon: 'Droplets', category: 'nature' },
+  { id: 'wind', label: i18next.t('common.audioSynthesis.sounds.wind'), icon: 'Wind', category: 'nature' },
+  { id: 'forest', label: i18next.t('common.audioSynthesis.sounds.forest'), icon: 'Trees', category: 'nature' },
+  { id: 'fire', label: i18next.t('common.audioSynthesis.sounds.fire'), icon: 'Flame', category: 'nature' },
+  { id: 'cafe', label: i18next.t('common.audioSynthesis.sounds.cafe'), icon: 'Coffee', category: 'environment' },
+  { id: 'library', label: i18next.t('common.audioSynthesis.sounds.library'), icon: 'BookOpen', category: 'environment' },
+  { id: 'night', label: i18next.t('common.audioSynthesis.sounds.night'), icon: 'Moon', category: 'environment' },
+  { id: 'train', label: i18next.t('common.audioSynthesis.sounds.train'), icon: 'Train', category: 'environment' },
+  { id: 'airplane', label: i18next.t('common.audioSynthesis.sounds.airplane'), icon: 'Plane', category: 'environment' },
+  { id: 'singing_bowl', label: i18next.t('common.audioSynthesis.sounds.singingBowl'), icon: 'Circle', category: 'meditation' },
+  { id: 'wind_chime', label: i18next.t('common.audioSynthesis.sounds.windChime'), icon: 'Bell', category: 'meditation' },
+  { id: 'breathing', label: i18next.t('common.audioSynthesis.sounds.breathing'), icon: 'Activity', category: 'meditation' },
+  { id: 'white_noise', label: i18next.t('common.audioSynthesis.sounds.whiteNoise'), icon: 'Radio', category: 'meditation' },
+  { id: 'pink_noise', label: i18next.t('common.audioSynthesis.sounds.pinkNoise'), icon: 'Waves', category: 'meditation' },
 ];
 
 export const BUILT_IN_PRESETS = [
   {
     id: 'rainy-reading',
-    name: '雨天阅读',
+    name: i18next.t('common.audioSynthesis.presets.rainyReading'),
     noises: [
       { type: 'rain', volume: 0.6 },
       { type: 'thunder', volume: 0.2 },
@@ -1023,7 +1025,7 @@ export const BUILT_IN_PRESETS = [
   },
   {
     id: 'late-night-work',
-    name: '深夜工作',
+    name: i18next.t('common.audioSynthesis.presets.lateNightWork'),
     noises: [
       { type: 'night', volume: 0.7 },
       { type: 'singing_bowl', volume: 0.3 },
@@ -1032,7 +1034,7 @@ export const BUILT_IN_PRESETS = [
   },
   {
     id: 'forest-meditation',
-    name: '森林冥想',
+    name: i18next.t('common.audioSynthesis.presets.forestMeditation'),
     noises: [
       { type: 'forest', volume: 0.5 },
       { type: 'stream', volume: 0.3 },
@@ -1042,7 +1044,7 @@ export const BUILT_IN_PRESETS = [
   },
   {
     id: 'beach-relax',
-    name: '海边放松',
+    name: i18next.t('common.audioSynthesis.presets.beachRelax'),
     noises: [
       { type: 'ocean', volume: 0.8 },
       { type: 'wind', volume: 0.2 },

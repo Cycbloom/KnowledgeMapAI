@@ -57,7 +57,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
   const filteredShortcuts = DEFAULT_SHORTCUTS.filter(shortcut =>
     t(shortcut.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
     t(shortcut.description).toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t(`common.shortcutHelp.categories.${shortcut.category}`, { defaultValue: '' }).toLowerCase().includes(searchQuery.toLowerCase())
+    t(`shortcuts.helpPanel.categories.${shortcut.category}`, { defaultValue: '' }).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const groupedShortcuts = CATEGORY_ORDER.reduce((acc, category) => {
@@ -102,7 +102,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
       <div className={cn('flex items-center justify-between px-6 py-4 border-b', isDark ? 'border-slate-700' : 'border-gray-200')}>
         <div className="flex items-center gap-3">
           <Keyboard className="w-5 h-5 text-primary-500" />
-          <h2 id={titleId} className="text-lg font-semibold">{t('common.shortcutHelp.title')}</h2>
+          <h2 id={titleId} className="text-lg font-semibold">{t('shortcuts.helpPanel.title')}</h2>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -114,7 +114,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
             )}
           >
             <RotateCcw size={14} />
-            {t('common.shortcutHelp.resetAll')}
+            {t('shortcuts.helpPanel.resetAll')}
           </button>
           {onClose && (
             <button
@@ -136,7 +136,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
           <input
             type="text"
             aria-label={t('common.aria.search')}
-            placeholder={t('common.shortcutHelp.searchPlaceholder')}
+            placeholder={t('shortcuts.helpPanel.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={cn('flex-1 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
@@ -152,7 +152,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
             <h3 className={cn('text-xs font-semibold uppercase tracking-wider mb-3 px-2',
               isDark ? 'text-slate-500' : 'text-gray-400'
             )}>
-              {t(`common.shortcutHelp.categories.${category}`, { defaultValue: '' })}
+              {t(`shortcuts.helpPanel.categories.${category}`, { defaultValue: '' })}
             </h3>
             <div className="space-y-1">
               {shortcuts.map(shortcut => {
@@ -174,7 +174,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
                           <span className={cn('text-xs px-1.5 py-0.5 rounded',
                             isDark ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-600'
                           )}>
-                            {t('common.shortcutHelp.disabled')}
+                            {t('shortcuts.helpPanel.disabled')}
                           </span>
                         )}
                       </div>
@@ -190,8 +190,8 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
                           type="text"
                           readOnly
                           aria-readonly="true"
-                          aria-label={t('common.shortcutHelp.shortcutField')}
-                          placeholder={t('common.shortcutHelp.pressNewShortcut')}
+                          aria-label={t('shortcuts.helpPanel.shortcutField')}
+                          placeholder={t('shortcuts.helpPanel.pressNewShortcut')}
                           onKeyDown={(e) => handleKeyCapture(e, shortcut.id)}
                           onBlur={() => {
                             setEditingId(null);
@@ -213,7 +213,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
                               : 'bg-gray-100 border-gray-200 text-gray-600 hover:border-gray-300'
                           )}
                         >
-                          {binding ? formatShortcutKey(binding.keys) : t('common.shortcutHelp.notSet')}
+                          {binding ? formatShortcutKey(binding.keys) : t('shortcuts.helpPanel.notSet')}
                         </button>
                       )}
 
@@ -225,8 +225,8 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
                               ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
                               : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
                           )}
-                          title={t('common.shortcutHelp.resetToDefault')}
-                          aria-label={t('common.shortcutHelp.resetToDefault')}
+                          title={t('shortcuts.helpPanel.resetToDefault')}
+                          aria-label={t('shortcuts.helpPanel.resetToDefault')}
                         >
                           <RotateCcw size={12} />
                         </button>
@@ -242,7 +242,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
         {Object.keys(groupedShortcuts).length === 0 && (
           <div className="py-12 text-center">
             <p className={isDark ? 'text-slate-500' : 'text-gray-400'}>
-              {t('common.shortcutHelp.noMatch')}
+              {t('shortcuts.helpPanel.noMatch')}
             </p>
           </div>
         )}
@@ -250,8 +250,8 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
 
       <div className={cn('px-6 py-3 border-t text-xs', isDark ? 'border-slate-700 text-slate-500' : 'border-gray-200 text-gray-400')}>
         <div className="flex justify-between items-center">
-          <span>{t('common.shortcutHelp.customHint')}</span>
-          <span>{t('common.shortcutHelp.totalCount', { count: DEFAULT_SHORTCUTS.length })}</span>
+          <span>{t('shortcuts.helpPanel.customHint')}</span>
+          <span>{t('shortcuts.helpPanel.totalCount', { count: DEFAULT_SHORTCUTS.length })}</span>
         </div>
       </div>
     </div>

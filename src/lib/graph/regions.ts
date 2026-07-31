@@ -1,13 +1,14 @@
 import type { Node, Edge } from "@shared/types";
 import {
   BackboneModule,
-  BACKBONE_MODULE_TITLES,
+  BACKBONE_MODULE_LABEL_I18N_KEYS,
   BACKBONE_MODULE_COLORS,
   BACKBONE_MODULE_ICONS,
   type CustomRegion,
   type RegionInfo,
   type GraphBackboneModule,
 } from "@shared/types/graph";
+import i18n from "../../i18n";
 
 export interface ComputeRegionsParams {
   nodes: Node[];
@@ -88,7 +89,7 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
 
       return {
         id: `region-${module}`,
-        name: BACKBONE_MODULE_TITLES[module],
+        name: i18n.t(BACKBONE_MODULE_LABEL_I18N_KEYS[module]),
         color: BACKBONE_MODULE_COLORS[module],
         icon: BACKBONE_MODULE_ICONS[module],
         angleStart,
@@ -120,10 +121,10 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
           id: `region-${level}`,
           name:
             level === "root"
-              ? "根节点"
+              ? i18n.t("graphMap.levelLabels.root")
               : level === "core"
-                ? "骨干节点"
-                : "叶节点",
+                ? i18n.t("graphMap.levelLabels.core")
+                : i18n.t("graphMap.levelLabels.leaf"),
           color: `hsl(${(index * 360) / levels.length}, 70%, 50%)`,
           angleStart,
           angleEnd,

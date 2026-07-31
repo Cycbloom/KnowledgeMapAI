@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CloudOff, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNetworkStatus } from '@/hooks/common/useNetworkStatus';
 import { offlineMutationQueue } from '@/utils/offlineMutations';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ import { cn } from '@/lib/utils';
  */
 export function OfflineBanner() {
   const { online } = useNetworkStatus();
+  const { t } = useTranslation();
   const [pendingCount, setPendingCount] = useState(0);
   const [wasOffline, setWasOffline] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -59,16 +61,16 @@ export function OfflineBanner() {
   let bgColor: string;
 
   if (isOffline) {
-    message = '当前离线，编辑将暂存到本地';
+    message = t('offlineBanner.message.offlineHint');
     icon = <CloudOff className="h-4 w-4" />;
     bgColor = 'bg-amber-500';
   } else if (isSyncing) {
-    message = '同步中...';
+    message = t('offlineBanner.message.syncingHint');
     icon = <RefreshCw className="h-4 w-4 animate-spin" />;
     bgColor = 'bg-blue-500';
   } else {
     // 在线但有 pending（非 syncing 状态）
-    message = '待同步';
+    message = t('offlineBanner.status.pendingSync');
     icon = <RefreshCw className="h-4 w-4" />;
     bgColor = 'bg-blue-500';
   }
@@ -95,7 +97,7 @@ export function OfflineBanner() {
             data-testid="offline-banner-pending"
             className="text-sm font-bold"
           >
-            {pendingCount} 项待同步
+            {t('offlineBanner.message.pendingCount', { count: pendingCount })}
           </span>
         )}
       </motion.div>

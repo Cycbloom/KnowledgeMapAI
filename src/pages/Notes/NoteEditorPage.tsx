@@ -343,7 +343,7 @@ const NoteEditorPage: React.FC = () => {
                         <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
                       </div>
                       <p role="alert" className="text-red-600 dark:text-red-400 mb-2 font-medium">
-                        编辑器崩溃
+                        {t("notes.noteEditorPage.errorBoundary.editorCrashed")}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-slate-400 mb-4 font-mono break-all">
                         {error.message}

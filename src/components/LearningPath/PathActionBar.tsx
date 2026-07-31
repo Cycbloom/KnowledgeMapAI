@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   BookOpen,
   CalendarClock,
@@ -26,6 +27,7 @@ const PathActionBar: React.FC<PathActionBarProps> = ({
   onDeletePath,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="mt-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm p-4">
@@ -37,7 +39,7 @@ const PathActionBar: React.FC<PathActionBarProps> = ({
               className="px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 flex items-center gap-2"
             >
               <BookOpen className="w-4 h-4" />
-              查看图谱
+              {t('learningPath.pathActionBar.viewGraph')}
             </button>
           )}
           <button
@@ -50,7 +52,7 @@ const PathActionBar: React.FC<PathActionBarProps> = ({
             ) : (
               <CalendarClock className="w-4 h-4" />
             )}
-            自动排程
+            {t('learningPath.pathActionBar.autoSchedule')}
           </button>
         </div>
 
@@ -61,7 +63,7 @@ const PathActionBar: React.FC<PathActionBarProps> = ({
               className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-900/50 flex items-center gap-2"
             >
               <Pause className="w-4 h-4" />
-              暂停
+              {t('learningPath.pathActionBar.pause')}
             </button>
           )}
           {pathDetail.status === "paused" && (
@@ -70,7 +72,7 @@ const PathActionBar: React.FC<PathActionBarProps> = ({
               className="px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center gap-2"
             >
               <Play className="w-4 h-4" />
-              继续
+              {t('learningPath.pathActionBar.resume')}
             </button>
           )}
           <button
@@ -78,7 +80,7 @@ const PathActionBar: React.FC<PathActionBarProps> = ({
             className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
-            删除
+            {t('learningPath.pathActionBar.delete')}
           </button>
         </div>
       </div>

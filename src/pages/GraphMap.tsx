@@ -1991,7 +1991,7 @@ export const GraphMap = () => {
           onCreateGraph={async (title, domain) => {
             await handleQuickCreateGraph({
               title,
-              description: domain ? `领域：${domain}` : undefined,
+              description: domain ? t('graphMap.domainLabel', { domain }) : undefined,
             });
           }}
         />

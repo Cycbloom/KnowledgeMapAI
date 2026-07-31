@@ -19,7 +19,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   value,
   onChange,
   onSave,
-  placeholder = "在这里记录任务笔记...",
+  placeholder,
   className = "",
 }) => {
   const [isEditing, setIsEditing] = useState(true);
@@ -37,6 +37,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   });
   const [isSaving, setIsSaving] = useState(false);
   const { t } = useTranslation();
+  const effectivePlaceholder = placeholder ?? t('scheduler.markdownEditor.defaultPlaceholder');
 
   const { status: autoSaveStatus, save: autoSaveNow } = useAutoSave<string>({
     value: localValue,
@@ -163,7 +164,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     <ErrorBoundary
       fallbackRender={(error, resetErrorBoundary) => (
         <div className="p-4 border border-red-300 rounded-xl bg-red-50 dark:bg-red-900/20 dark:border-red-700">
-          <p className="text-red-700 dark:text-red-400 font-medium">编辑器崩溃</p>
+          <p className="text-red-700 dark:text-red-400 font-medium">{t('scheduler.markdownEditor.editorCrashed')}</p>
           <p className="text-sm text-red-600 dark:text-red-300 mt-1 break-words">
             {error.message}
           </p>
@@ -174,13 +175,13 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               }}
               className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors"
             >
-              复制内容
+              {t('scheduler.markdownEditor.copyContent')}
             </button>
             <button
               onClick={resetErrorBoundary}
               className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
             >
-              重试
+              {t('scheduler.markdownEditor.retry')}
             </button>
           </div>
         </div>
@@ -199,7 +200,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 }`}
               >
                 <Edit3 size={14} className="inline mr-1" />
-                编辑
+                {t('scheduler.markdownEditor.edit')}
               </button>
               <button
                 onClick={() => setIsEditing(false)}
@@ -210,7 +211,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 }`}
               >
                 <Eye size={14} className="inline mr-1" />
-                预览
+                {t('scheduler.markdownEditor.preview')}
               </button>
             </div>
             <div className="flex items-center gap-2">
@@ -228,7 +229,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg text-sm font-medium hover:from-primary-600 hover:to-primary-600 disabled:opacity-50 transition-all"
                 >
                   <Save size={14} />
-                  {isSaving ? "保存中..." : "保存"}
+                  {isSaving ? t('scheduler.markdownEditor.saving') : t('scheduler.markdownEditor.save')}
                 </button>
               )}
               <button
@@ -246,7 +247,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 value={localValue}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                placeholder={placeholder}
+                placeholder={effectivePlaceholder}
                 className="w-full h-full p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-500 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-400"
               />
             ) : (
@@ -261,7 +262,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           </div>
 
           <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-            支持 Markdown 语法：**粗体** *斜体* `代码` [链接](url) # 标题 - 列表
+            {t('scheduler.markdownEditor.markdownHint')}
           </div>
         </div>
         <ConfirmationModal

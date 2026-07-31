@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useId } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Sparkles } from "lucide-react";
 import type {
@@ -35,15 +37,15 @@ const PRESETS: BackboneModulePreset[] = [
 
 const DEFAULT_PRESET_ID = ACADEMIC_RESEARCH.id;
 
-const createDefaultCustomModules = (): BackboneModuleCustomConfig[] => {
+const createDefaultCustomModules = (t: TFunction): BackboneModuleCustomConfig[] => {
   return ACADEMIC_RESEARCH.modules.map((m: BackboneModuleCustomConfig) => ({
     module_type: m.module_type,
-    title: m.title,
+    title: t(m.title as never),
     icon: m.icon,
     color: m.color,
-    description: m.description,
+    description: t(m.description as never),
     suggestedNodes: m.suggestedNodes,
-    relationshipToCore: m.relationshipToCore,
+    relationshipToCore: t(m.relationshipToCore as never),
   }));
 };
 
@@ -54,6 +56,7 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
   initialPresetId,
   initialCustomModules,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const titleId = useId();
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(
@@ -67,7 +70,7 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
   >(
     initialCustomModules && initialCustomModules.length > 0
       ? initialCustomModules
-      : createDefaultCustomModules(),
+      : createDefaultCustomModules(t),
   );
 
   const handlePresetClick = (presetId: string) => {
@@ -155,10 +158,10 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
               </div>
               <div>
                 <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white">
-                  选择模块配置
+                  {t("autoGraph.backboneModuleSelector.selectModuleConfig")}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  选择预设配置或自定义模块结构
+                  {t("autoGraph.backboneModuleSelector.selectPresetOrCustom")}
                 </p>
               </div>
             </div>
@@ -180,7 +183,7 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
           <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-180px)]">
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                预设配置
+                {t("autoGraph.backboneModuleSelector.presetConfig")}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {PRESETS.map((preset) => (
@@ -224,7 +227,7 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                          自定义
+                          {t("autoGraph.backboneModuleSelector.custom")}
                         </h3>
                         {showCustomEditor && (
                           <motion.div
@@ -239,11 +242,11 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
                         )}
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                        创建自定义模块结构，自由配置模块名称、颜色和图标
+                        {t("autoGraph.backboneModuleSelector.createCustomDesc")}
                       </p>
                       <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500 mt-1">
                         <span className="px-2 py-0.5 bg-gray-100 dark:bg-slate-700 rounded-full">
-                          3-10 个模块
+                          {t("autoGraph.backboneModuleSelector.moduleCountRange")}
                         </span>
                       </div>
                     </div>
@@ -283,7 +286,9 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
                 `}
               >
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  {selectedPreset.name} 模块预览
+                  {t("autoGraph.backboneModuleSelector.modulePreview", {
+                    count: selectedPreset.modules.length,
+                  })}
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {selectedPreset.modules.map((module, index) => (
@@ -297,7 +302,7 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
                     >
                       <span>{module.icon}</span>
                       <span className="text-gray-700 dark:text-gray-300">
-                        {module.title}
+                        {t(module.title as never)}
                       </span>
                     </div>
                   ))}
@@ -319,7 +324,7 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
                 ${isDark ? "hover:bg-slate-800 text-gray-300" : "hover:bg-gray-100 text-gray-700"}
               `}
             >
-              取消
+              {t("autoGraph.backboneModuleSelector.cancel")}
             </button>
             <button
               onClick={handleConfirm}
@@ -333,7 +338,7 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
               `}
             >
               <Check size={18} />
-              确认配置
+              {t("autoGraph.backboneModuleSelector.confirmConfig")}
             </button>
           </div>
         </motion.div>

@@ -30,7 +30,7 @@ const PathMilestonesSection: React.FC<PathMilestonesSectionProps> = ({
         <div className="flex items-center gap-3">
           <Flag className="w-5 h-5 text-yellow-500" />
           <span className="font-semibold text-gray-900 dark:text-white">
-            里程碑
+            {t('learningPath.milestonesSection.title')}
           </span>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             (
@@ -83,7 +83,7 @@ const PathMilestonesSection: React.FC<PathMilestonesSectionProps> = ({
                         )}
                         {milestone.target_date && (
                           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            目标日期：
+                            {t('learningPath.milestonesSection.targetDateLabel')}
                             {formatDate(milestone.target_date)}
                           </p>
                         )}

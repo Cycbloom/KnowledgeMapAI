@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   X,
@@ -27,15 +27,6 @@ const categoryIcons: Record<string, React.ReactNode> = {
   creative: <Sparkles size={18} />,
 };
 
-const categoryLabels: Record<string, string> = {
-  knowledge: "知识",
-  project: "项目",
-  analysis: "分析",
-  architecture: "架构",
-  topicResearch: "专题研究",
-  creative: "创意",
-};
-
 interface SaveAsTemplateModalProps {
   task: {
     id: string;
@@ -56,6 +47,17 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
 }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const categoryLabels = useMemo<Record<string, string>>(
+    () => ({
+      knowledge: t("scheduler.saveAsTemplate.categories.knowledge"),
+      project: t("scheduler.saveAsTemplate.categories.project"),
+      analysis: t("scheduler.saveAsTemplate.categories.analysis"),
+      architecture: t("scheduler.saveAsTemplate.categories.architecture"),
+      topicResearch: t("scheduler.saveAsTemplate.categories.topicResearch"),
+      creative: t("scheduler.saveAsTemplate.categories.creative"),
+    }),
+    [t],
+  );
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
   useEscapeKey(() => onClose());
   const [loading, setLoading] = useState(false);
@@ -115,7 +117,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.titleTemplate) {
-      message.error("请填写模板名称和标题模板");
+      message.error(t("scheduler.saveAsTemplate.fillRequired"));
       return;
     }
 
@@ -132,11 +134,11 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
         priority: formData.priority,
       });
       clearDraft();
-      message.success("模板保存成功!");
+      message.success(t("scheduler.saveAsTemplate.saveSuccess"));
       onSuccess?.();
       onClose();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "保存模板失败";
+      const errorMessage = error instanceof Error ? error.message : t("scheduler.saveAsTemplate.saveFailed");
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -174,7 +176,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
       >
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-            保存为任务模板
+            {t("scheduler.saveAsTemplate.title")}
           </h3>
           <button
             onClick={onClose}
@@ -190,7 +192,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
         >
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              模板名称 <span aria-hidden="true" className="text-red-500">*</span>
+              {t("scheduler.saveAsTemplate.templateName")} <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -208,7 +210,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              描述
+              {t("scheduler.saveAsTemplate.description")}
             </label>
             <textarea
               value={formData.description}
@@ -225,7 +227,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              分类
+              {t("scheduler.saveAsTemplate.category")}
             </label>
             <div className="flex gap-2">
               {(["knowledge", "project", "analysis", "architecture", "topicResearch", "creative"] as const).map(
@@ -253,14 +255,14 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                标题模板 <span aria-hidden="true" className="text-red-500">*</span>
+                {t("scheduler.saveAsTemplate.titleTemplate")} <span aria-hidden="true" className="text-red-500">*</span>
               </label>
               <button
                 type="button"
                 onClick={suggestVariables}
                 className="text-xs text-primary-500 hover:text-primary-600"
               >
-                自动提取变量
+                {t("scheduler.saveAsTemplate.autoExtractVariables")}
               </button>
             </div>
             <input
@@ -276,14 +278,17 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               }`}
             />
             <p className="text-xs text-slate-400 mt-1">
-              使用 {"{{变量名}}"} 创建可替换的变量，如 {"{{topic}}"}、
-              {"{{date}}"}
+              {t("scheduler.saveAsTemplate.variableHint", {
+                variableSyntax: "{{variableName}}",
+                example1: "{{topic}}",
+                example2: "{{date}}",
+              })}
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              描述模板
+              {t("scheduler.saveAsTemplate.descriptionTemplate")}
             </label>
             <textarea
               value={formData.descriptionTemplate}
@@ -302,7 +307,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 <Clock size={14} className="inline mr-1" />
-                预计时长（分钟）
+                {t("scheduler.saveAsTemplate.estimatedDuration")}
               </label>
               <input
                 type="number"
@@ -320,7 +325,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                优先级
+                {t("scheduler.saveAsTemplate.priority")}
               </label>
               <select
                 value={formData.priority}
@@ -331,10 +336,10 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                     : "bg-slate-50 border-slate-200 text-slate-900 focus:border-primary-500"
                 }`}
               >
-                <option value={1}>低</option>
-                <option value={2}>中</option>
-                <option value={3}>高</option>
-                <option value={4}>紧急</option>
+                <option value={1}>{t("scheduler.saveAsTemplate.priorityOptions.low")}</option>
+                <option value={2}>{t("scheduler.saveAsTemplate.priorityOptions.medium")}</option>
+                <option value={3}>{t("scheduler.saveAsTemplate.priorityOptions.high")}</option>
+                <option value={4}>{t("scheduler.saveAsTemplate.priorityOptions.urgent")}</option>
               </select>
             </div>
           </div>
@@ -342,7 +347,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               <Tag size={14} className="inline mr-1" />
-              标签
+              {t("scheduler.saveAsTemplate.tags")}
             </label>
             <div className="flex gap-2">
               <input
@@ -364,7 +369,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 onClick={addTag}
                 className="px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               >
-                添加
+                {t("scheduler.saveAsTemplate.addTag")}
               </button>
             </div>
             {formData.tags.length > 0 && (
@@ -398,7 +403,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             <h5
               className={`text-xs font-medium mb-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}
             >
-              预览
+              {t("scheduler.saveAsTemplate.preview")}
             </h5>
             <p
               className={`font-medium ${isDark ? "text-white" : "text-slate-900"}`}
@@ -437,7 +442,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
-            取消
+            {t("scheduler.saveAsTemplate.cancel")}
           </button>
           <button
             onClick={handleSubmit}
@@ -449,7 +454,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             ) : (
               <Save size={16} />
             )}
-            保存模板
+            {t("scheduler.saveAsTemplate.save")}
           </button>
         </div>
       </motion.div>

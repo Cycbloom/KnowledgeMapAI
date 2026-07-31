@@ -281,7 +281,7 @@ export const Layout = () => {
         await importGraphMutation.mutateAsync(importData);
         message.success(t('layout.importSuccess', { title: importData.graph_title }));
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : "格式错误";
+        const errorMessage = err instanceof Error ? err.message : t('layout.formatError');
         message.error(t('layout.importFailed', { message: errorMessage }));
       }
     }
@@ -323,13 +323,13 @@ export const Layout = () => {
 
     const handler = (payload: { taskId: string; oldStatus: string; newStatus: string; taskType?: string }) => {
       if (payload.newStatus === "completed") {
-        message.success(`${t('layout.taskCompleted')}：${typeLabel(payload.taskType ?? "")}`, {
+        message.success(t('layout.taskCompletedMessage', { label: typeLabel(payload.taskType ?? "") }), {
           duration: 8000,
           action: { label: t('common.view'), onClick: () => navigate("/tasks") },
         });
       }
       if (payload.newStatus === "failed") {
-        message.error(`${t('layout.taskFailed')}：${typeLabel(payload.taskType ?? "")}`, {
+        message.error(t('layout.taskFailedMessage', { label: typeLabel(payload.taskType ?? "") }), {
           duration: 10000,
           action: { label: t('common.view'), onClick: () => navigate("/tasks") },
         });

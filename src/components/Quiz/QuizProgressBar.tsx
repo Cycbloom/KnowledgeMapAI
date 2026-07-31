@@ -40,7 +40,7 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
     <div className="w-full space-y-3">
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium">
-          第 <span className="text-primary-600 font-bold">{current + 1}</span> / {total} 题
+          {t('study.quizProgressBar.questionProgress', { current: current + 1, total })}
         </span>
         <div className="flex items-center gap-3">
           {flaggedCount > 0 && (
@@ -65,7 +65,7 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
             aria-live="polite"
             aria-atomic="true"
           >
-            已答 {answered.filter(Boolean).length} 题
+            {t('study.quizProgressBar.answeredCount', { count: answered.filter(Boolean).length })}
           </span>
         </div>
       </div>
@@ -102,7 +102,7 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
                     : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
                 }
               `}
-              aria-label={`第 ${index + 1} 题${isAnswered ? ' (已答)' : ''}`}
+              aria-label={t('study.quizProgressBar.questionAria', { index: index + 1, answered: isAnswered ? t('study.quizProgressBar.answeredSuffix') : '' })}
             >
               {isAnswered ? (
                 <Check size={14} className="mx-auto" aria-hidden="true" />

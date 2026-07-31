@@ -105,8 +105,8 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
         .replace(/\s*```$/, "");
       setScript(cleanedScript);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "未知错误";
-      message.error(`脚本生成失败: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : t('graphEditor.podcastModal.unknownError');
+      message.error(t('graphEditor.podcastModal.scriptFailed', { message: errorMessage }));
     } finally {
       setIsGenerating(false);
     }

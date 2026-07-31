@@ -79,7 +79,7 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({
                         />
                       </div>
                       <span className="text-xs text-gray-500 w-12">
-                        计划 {plan.planned_percentage}%
+                        {t('scheduler.progressSection.planned', { percent: plan.planned_percentage })}
                       </span>
                     </div>
                     {plan.actual_percentage > 0 && (
@@ -95,7 +95,7 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({
                         <span className={`text-xs w-12 ${
                           progressDiff >= 0 ? 'text-green-500' : 'text-orange-500'
                         }`}>
-                          实际 {plan.actual_percentage}%
+                          {t('scheduler.progressSection.actual', { percent: plan.actual_percentage })}
                         </span>
                       </div>
                     )}

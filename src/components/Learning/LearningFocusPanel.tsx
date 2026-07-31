@@ -236,7 +236,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
         const elapsed = state.totalTime - state.timeLeft;
         recordActivityRef.current({
           activity_type: "focus_study",
-          title: `专注学习: ${nodeTitle || "知识点"}`,
+          title: t('learning.focusPanel.focusLearningTitle', { name: nodeTitle || t('learning.focusPanel.defaultNodeTitle') }),
           started_at: sessionStartRef.current || new Date().toISOString(),
           ended_at: new Date().toISOString(),
           duration: elapsed,
@@ -247,7 +247,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
       prevCompletedSessions = state.completedSessions;
     });
     return () => unsubscribe();
-  }, [isOpen, nodeTitle, currentNodeId]);
+  }, [isOpen, nodeTitle, currentNodeId, t]);
 
   const handleClose = useCallback(() => {
     if (isActive && mode === "focus" && sessionStartRef.current) {
@@ -256,7 +256,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
       );
       recordActivityRef.current({
         activity_type: "focus_study",
-        title: `专注学习: ${nodeTitle || "知识点"}`,
+        title: t('learning.focusPanel.focusLearningTitle', { name: nodeTitle || t('learning.focusPanel.defaultNodeTitle') }),
         started_at: sessionStartRef.current,
         ended_at: new Date().toISOString(),
         duration: elapsed,
@@ -274,6 +274,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
     mode,
     nodeTitle,
     currentNodeId,
+    t,
   ]);
 
   useEffect(() => {

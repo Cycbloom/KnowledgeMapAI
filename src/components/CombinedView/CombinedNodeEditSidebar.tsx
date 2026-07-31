@@ -98,7 +98,7 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
             </button>
           )}
           <div className="w-3 h-3 rounded-full bg-primary-500"></div>
-          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">编辑节点</h3>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{t('combinedViewPage.nodeEdit.editNodeTitle')}</h3>
         </div>
         <button onClick={onClose} aria-label={t('common.aria.close')} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center">
           <X size={20} />
@@ -106,7 +106,7 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
       </div>
 
       <div className="flex items-center gap-2 mb-4">
-        <div 
+        <div
           className="w-2 h-2 rounded-full"
           style={{ backgroundColor: graphColor }}
         />
@@ -124,8 +124,8 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            概览
-            <span className="ml-1 text-xs font-normal text-gray-400 dark:text-gray-500">(20-30字短概述)</span>
+            {t('combinedViewPage.nodeEdit.summaryLabel')}
+            <span className="ml-1 text-xs font-normal text-gray-400 dark:text-gray-500">{t('combinedViewPage.nodeEdit.summaryHint')}</span>
           </label>
           <FormInput
             type="text"
@@ -154,11 +154,11 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
           onChange={(e) => setNodeForm({ ...nodeForm, level: e.target.value })}
           className="text-sm"
         >
-          <option value="root">根节点</option>
-          <option value="core">核心节点</option>
-          <option value="sub">次级节点</option>
-          <option value="normal">普通节点</option>
-          <option value="leaf">叶子节点</option>
+          <option value="root">{t('combinedViewPage.nodeEdit.level.root')}</option>
+          <option value="core">{t('combinedViewPage.nodeEdit.level.core')}</option>
+          <option value="sub">{t('combinedViewPage.nodeEdit.level.sub')}</option>
+          <option value="normal">{t('combinedViewPage.nodeEdit.level.normal')}</option>
+          <option value="leaf">{t('combinedViewPage.nodeEdit.level.leaf')}</option>
         </FormSelect>
 
         <FormTextarea
@@ -181,7 +181,7 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
           }`}
         >
           <Save className="mr-2" size={18} />
-          保存节点
+          {t('combinedViewPage.nodeEdit.saveNode')}
         </button>
       </div>
       <ConfirmationModal

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   CalendarClock,
@@ -55,19 +55,6 @@ const StatCard: React.FC<{
   </motion.div>
 );
 
-const formatDurationDetailed = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  if (hours > 0) {
-    return `${hours}小时${minutes}分钟`;
-  }
-  if (minutes > 0) {
-    return `${minutes}分钟${secs}秒`;
-  }
-  return `${secs}秒`;
-};
-
 export const DailyStats: React.FC<DailyStatsProps> = ({
   date,
   className = "",
@@ -77,6 +64,19 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+
+  const formatDurationDetailed = useCallback((seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return t('scheduler.dailyStats.hoursMinutes', { hours, minutes });
+    }
+    if (minutes > 0) {
+      return t('scheduler.dailyStats.minutesOnly', { minutes });
+    }
+    return t('scheduler.dailyStats.secondsOnly', { seconds: secs });
+  }, [t]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -151,7 +151,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
       >
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
           <TrendingUp size={20} className="text-primary-500" />
-          每日统计
+          {t('scheduler.dailyStats.dailyStats')}
         </h3>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           {displayDate}
@@ -171,7 +171,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
           icon={<Timer size={20} className="text-emerald-500" />}
           label={t('scheduler.dailyStats.pomodoroLabel')}
           value={stats.pomodoro_count}
-          subValue="个番茄"
+          subValue={t('scheduler.dailyStats.pomodoroCount', { count: stats.pomodoro_count })}
           color="bg-emerald-500"
           delay={0.2}
         />
@@ -179,7 +179,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
           icon={<Target size={20} className="text-violet-500" />}
           label={t('scheduler.dailyStats.focusCountLabel')}
           value={stats.session_count}
-          subValue={`平均 ${formatDuration(stats.avg_session_duration, { format: 'compact', emptyText: '0m' })}`}
+          subValue={`${t('scheduler.dailyStats.average')} ${formatDuration(stats.avg_session_duration, { format: 'compact', emptyText: '0m' })}`}
           color="bg-violet-500"
           delay={0.3}
         />
@@ -187,7 +187,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
           icon={<CheckCircle size={20} className="text-amber-500" />}
           label={t('scheduler.dailyStats.completedTasksLabel')}
           value={stats.tasks_completed}
-          subValue="个任务"
+          subValue={t('scheduler.dailyStats.taskCount', { count: stats.tasks_completed })}
           color="bg-amber-500"
           delay={0.4}
         />
@@ -206,7 +206,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
             </div>
             <div>
               <p className="text-sm text-slate-600 dark:text-slate-300">
-                生产力评分
+                {t('scheduler.dailyStats.productivityScore')}
               </p>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">
                 {productivityScore}

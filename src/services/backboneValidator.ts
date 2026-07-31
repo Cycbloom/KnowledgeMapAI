@@ -1,9 +1,10 @@
 import type { Node } from '../types';
 import {
   BackboneModule,
-  BACKBONE_MODULE_LABELS,
+  BACKBONE_MODULE_LABEL_I18N_KEYS,
   BACKBONE_MODULE_ICONS,
   BACKBONE_MODULE_COLORS,
+  type BackboneModuleLabelKey,
 } from '@shared/types/graph';
 
 export const isBackboneNode = (node: Node): boolean => {
@@ -14,9 +15,9 @@ export const getBackboneModule = (node: Node): BackboneModule | undefined => {
   return node.properties?.backboneModule as BackboneModule | undefined;
 };
 
-export const getBackboneModuleTitle = (node: Node): string | undefined => {
+export const getBackboneModuleTitleKey = (node: Node): BackboneModuleLabelKey | undefined => {
   const module = getBackboneModule(node);
-  return module ? BACKBONE_MODULE_LABELS[module] : undefined;
+  return module ? BACKBONE_MODULE_LABEL_I18N_KEYS[module] : undefined;
 };
 
 export const getBackboneModuleIcon = (node: Node): string | undefined => {
@@ -34,7 +35,7 @@ export const getBackboneModuleInfo = (
 ): {
   isBackbone: boolean;
   module?: BackboneModule;
-  title?: string;
+  titleKey?: BackboneModuleLabelKey;
   icon?: string;
   color?: string;
 } => {
@@ -44,7 +45,7 @@ export const getBackboneModuleInfo = (
   return {
     isBackbone,
     module,
-    title: module ? BACKBONE_MODULE_LABELS[module] : undefined,
+    titleKey: module ? BACKBONE_MODULE_LABEL_I18N_KEYS[module] : undefined,
     icon: module ? BACKBONE_MODULE_ICONS[module] : undefined,
     color: module ? BACKBONE_MODULE_COLORS[module] : undefined,
   };

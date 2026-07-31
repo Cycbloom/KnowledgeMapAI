@@ -260,28 +260,28 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
     <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-gray-200 dark:border-slate-500 flex-wrap">
       <ToolbarButton
         icon={Bold}
-        label={t("notes.editor.toolbar.bold")}
+        label={t("notes.blockEditorToolbar.bold")}
         onClick={() => editor.chain().focus().toggleBold().run()}
         isActive={editor.isActive("bold")}
         disabled={!editor.can().toggleBold()}
       />
       <ToolbarButton
         icon={Italic}
-        label={t("notes.editor.toolbar.italic")}
+        label={t("notes.blockEditorToolbar.italic")}
         onClick={() => editor.chain().focus().toggleItalic().run()}
         isActive={editor.isActive("italic")}
         disabled={!editor.can().toggleItalic()}
       />
       <ToolbarButton
         icon={Strikethrough}
-        label={t("notes.editor.toolbar.strike")}
+        label={t("notes.blockEditorToolbar.strike")}
         onClick={() => editor.chain().focus().toggleStrike().run()}
         isActive={editor.isActive("strike")}
         disabled={!editor.can().toggleStrike()}
       />
       <ToolbarButton
         icon={Code}
-        label={t("notes.editor.toolbar.code")}
+        label={t("notes.blockEditorToolbar.code")}
         onClick={() => editor.chain().focus().toggleCode().run()}
         isActive={editor.isActive("code")}
         disabled={!editor.can().toggleCode()}
@@ -290,7 +290,7 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
       <ShortcutHint actionId="undo">
         <ToolbarButton
           icon={Undo2}
-          label={t("notes.editor.toolbar.undo")}
+          label={t("notes.blockEditorToolbar.undo")}
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
         />
@@ -298,7 +298,7 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
       <ShortcutHint actionId="redo">
         <ToolbarButton
           icon={Redo2}
-          label={t("notes.editor.toolbar.redo")}
+          label={t("notes.blockEditorToolbar.redo")}
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
         />
@@ -306,13 +306,13 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
       <ToolbarDivider />
       <ToolbarButton
         icon={ChevronUp}
-        label={t("notes.editor.toolbar.moveUp")}
+        label={t("notes.blockEditorToolbar.moveUp")}
         onClick={onMoveBlockUp}
         disabled={!canMoveUp}
       />
       <ToolbarButton
         icon={ChevronDown}
-        label={t("notes.editor.toolbar.moveDown")}
+        label={t("notes.blockEditorToolbar.moveDown")}
         onClick={onMoveBlockDown}
         disabled={!canMoveDown}
       />
@@ -323,7 +323,7 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
           {onCopyBlockRef && (
             <ToolbarButton
               icon={Copy}
-              label={t("notes.editor.toolbar.copyBlockRef")}
+              label={t("notes.blockEditorToolbar.copyBlockRef")}
               onClick={onCopyBlockRef}
               disabled={aiLoading}
             />
@@ -331,7 +331,7 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
           {onEmbedBlock && (
             <ToolbarButton
               icon={FileText}
-              label={t("notes.editor.toolbar.embedBlock")}
+              label={t("notes.blockEditorToolbar.embedBlock")}
               onClick={onEmbedBlock}
               disabled={aiLoading}
             />
@@ -342,7 +342,7 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
       {isDaily && (
         <ToolbarButton
           icon={Sparkles}
-          label={t("notes.ai.summary.button")}
+          label={t("notes.blockEditorToolbar.generateSummary")}
           onClick={handleGenerateSummary}
           loading={summaryMutation.isPending}
           disabled={aiLoading}
@@ -350,7 +350,7 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
       )}
       <ToolbarButton
         icon={Network}
-        label={t("notes.ai.extractConcepts.button")}
+        label={t("notes.blockEditorToolbar.extractConcepts")}
         onClick={handleExtractConcepts}
         loading={extractMutation.isPending}
         disabled={aiLoading}
@@ -358,7 +358,7 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
       <ToolbarDivider />
       <ToolbarButton
         icon={ImageIcon}
-        label={t("notes.image.insertButton")}
+        label={t("notes.blockEditorToolbar.insertImage")}
         onClick={handlePickImage}
         loading={isUploadingImage}
         disabled={!onInsertImage || isUploadingImage || aiLoading}
@@ -369,7 +369,7 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
         type="file"
         accept="image/*"
         className="hidden"
-        aria-label={t("notes.image.insertButton")}
+        aria-label={t("notes.blockEditorToolbar.insertImage")}
         onChange={(event) => {
           void handleFileChange(event);
         }}
@@ -380,21 +380,21 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
           <ToolbarDivider />
           <ToolbarButton
             icon={Forward}
-            label={t("notes.writingAssist.button.continue")}
+            label={t("notes.blockEditorToolbar.writingContinue")}
             onClick={() => onWritingAssist("continue")}
             loading={isWritingAssistLoading}
             disabled={!hasSelection || aiLoading}
           />
           <ToolbarButton
             icon={Pencil}
-            label={t("notes.writingAssist.button.rewrite")}
+            label={t("notes.blockEditorToolbar.writingRewrite")}
             onClick={() => onWritingAssist("rewrite")}
             loading={isWritingAssistLoading}
             disabled={!hasSelection || aiLoading}
           />
           <ToolbarButton
             icon={Maximize2}
-            label={t("notes.writingAssist.button.expand")}
+            label={t("notes.blockEditorToolbar.writingExpand")}
             onClick={() => onWritingAssist("expand")}
             loading={isWritingAssistLoading}
             disabled={!hasSelection || aiLoading}
@@ -407,7 +407,7 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
           <ToolbarDivider />
           <ToolbarButton
             icon={RefreshCw}
-            label={t("notes.refreshAggregation.button")}
+            label={t("notes.blockEditorToolbar.refreshAggregation")}
             onClick={onRefreshAggregation}
             loading={isRefreshingAggregation}
             disabled={aiLoading}

@@ -69,9 +69,9 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
     yesterday.setDate(yesterday.getDate() - 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return "今日";
+      return t('scheduler.executionRecords.today');
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return "昨日";
+      return t('scheduler.executionRecords.yesterday');
     }
     return formatDate(date, 'month-day');
   };
@@ -96,13 +96,13 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
   const getStatusLabel = (status: string): string => {
     switch (status) {
       case "completed":
-        return "已完成";
+        return t('scheduler.executionRecords.statusLabels.completed');
       case "interrupted":
-        return "中断";
+        return t('scheduler.executionRecords.statusLabels.interrupted');
       case "time_slice_ended":
-        return "时间片结束";
+        return t('scheduler.executionRecords.statusLabels.time_slice_ended');
       default:
-        return "未知";
+        return t('scheduler.executionRecords.statusLabels.unknown');
     }
   };
 
@@ -146,10 +146,10 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
           <Clock className="w-5 h-5 text-primary-500" />
-          执行记录
+          {t('scheduler.executionRecords.title')}
         </h3>
         <span className="text-sm text-slate-500 dark:text-slate-400">
-          共 {executions.length} 次执行
+          {t('scheduler.executionRecords.totalCount', { count: executions.length })}
         </span>
       </div>
 
@@ -157,15 +157,15 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
-            {formatDuration(totalDuration, { emptyText: "未知", round: true })}
+            {formatDuration(totalDuration, { emptyText: t('scheduler.executionRecords.unknownDuration'), round: true })}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">总时长</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('scheduler.executionRecords.totalDuration')}</p>
         </div>
         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
             {executions.length}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">执行次数</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('scheduler.executionRecords.executionCount')}</p>
         </div>
         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-green-500">
@@ -174,7 +174,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
               : 0}
             %
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">完成率</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('scheduler.executionRecords.completionRate')}</p>
         </div>
       </div>
 
@@ -201,7 +201,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
                     {formatDateLabel(date)}
                   </span>
                   <span className="text-sm text-slate-500 dark:text-slate-400">
-                    ({execs.length}次)
+                    {t('scheduler.executionRecords.dateGroupCount', { count: execs.length })}
                   </span>
                 </div>
                 {expandedGroups.has(date) ? (
@@ -236,7 +236,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
                                 {formatTime(exec.started_at)} -{" "}
                                 {exec.ended_at
                                   ? formatTime(exec.ended_at)
-                                  : "进行中"}
+                                  : t('scheduler.executionRecords.inProgress')}
                               </p>
                               <p className="text-xs text-slate-500 dark:text-slate-400">
                                 Q{exec.queue_level} ·{" "}
@@ -246,7 +246,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-medium text-slate-900 dark:text-white">
-                              {formatDuration(exec.duration, { emptyText: "未知", round: true })}
+                              {formatDuration(exec.duration, { emptyText: t('scheduler.executionRecords.unknownDuration'), round: true })}
                             </p>
                           </div>
                         </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { SimilarKnowledgePoint } from '../../types';
 import { useFocusTrap, useEscapeKey } from '../../hooks/common';
 
@@ -21,6 +22,7 @@ export const KnowledgePointReuseDialog: React.FC<KnowledgePointReuseDialogProps>
   onCancel,
   isLoading = false
 }) => {
+  const { t } = useTranslation();
   const contentRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(onCancel, isOpen);
 
@@ -43,10 +45,10 @@ export const KnowledgePointReuseDialog: React.FC<KnowledgePointReuseDialogProps>
       >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h3 id="kp-reuse-dialog-title" className="text-lg font-semibold text-gray-900 dark:text-white">
-            发现相似知识点
+            {t('study.knowledgePoint.similarityFound')}
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            您要创建的「{pendingTitle}」与以下知识点相似，是否复用？
+            {t('study.knowledgePoint.similarityPrompt', { title: pendingTitle })}
           </p>
         </div>
 
@@ -74,18 +76,18 @@ export const KnowledgePointReuseDialog: React.FC<KnowledgePointReuseDialogProps>
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                           : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                       }`}>
-                        {point.visibility === 'public' ? '公共' : '私有'}
+                        {point.visibility === 'public' ? t('study.knowledgePoint.visibilityPublic') : t('study.knowledgePoint.visibilityPrivate')}
                       </span>
                       {point.graphs_count !== undefined && (
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          已在 {point.graphs_count} 个图谱中使用
+                          {t('study.knowledgePoint.usedInGraphs', { count: point.graphs_count })}
                         </span>
                       )}
                     </div>
                   </div>
                   <div className="ml-3 flex-shrink-0">
                     <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
-                      {Math.round(point.similarity * 100)}% 相似
+                      {t('study.knowledgePoint.similarityPercent', { percent: Math.round(point.similarity * 100) })}
                     </span>
                   </div>
                 </div>
@@ -100,14 +102,14 @@ export const KnowledgePointReuseDialog: React.FC<KnowledgePointReuseDialogProps>
             disabled={isLoading}
             className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
           >
-            取消
+            {t('common.cancel')}
           </button>
           <button
             onClick={onCreateNew}
             disabled={isLoading}
             className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
           >
-            创建新知识点
+            {t('study.knowledgePoint.createNew')}
           </button>
         </div>
       </div>
@@ -134,6 +136,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   onCancel,
   isLoading = false
 }) => {
+  const { t } = useTranslation();
   const contentRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(onCancel, isOpen);
 
@@ -158,26 +161,26 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
       >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h3 id="kp-delete-confirm-dialog-title" className="text-lg font-semibold text-gray-900 dark:text-white">
-            删除知识点
+            {t('study.knowledgePoint.deleteTitle')}
           </h3>
         </div>
 
         <div className="p-4">
           <p className="text-gray-700 dark:text-gray-300">
-            确定要删除「{nodeName}」吗？
+            {t('study.knowledgePoint.deleteConfirm', { name: nodeName })}
           </p>
 
           {hasMultipleGraphs && (
             <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
               <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
-                此知识点在多个图谱中使用
+                {t('study.knowledgePoint.usedInMultipleGraphs')}
               </p>
               <ul className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
                 {affectedGraphs.slice(0, 5).map((g) => (
                   <li key={g.graph_id}>• {g.graph_title}</li>
                 ))}
                 {affectedGraphs.length > 5 && (
-                  <li>• 还有 {affectedGraphs.length - 5} 个图谱...</li>
+                  <li>• {t('study.knowledgePoint.moreGraphs', { count: affectedGraphs.length - 5 })}</li>
                 )}
               </ul>
             </div>
@@ -190,14 +193,14 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
             disabled={isLoading}
             className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
           >
-            取消
+            {t('common.cancel')}
           </button>
           <button
             onClick={onSoftDelete}
             disabled={isLoading}
             className="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-md hover:bg-orange-700 disabled:opacity-50"
           >
-            从当前图谱移除
+            {t('study.knowledgePoint.removeFromCurrentGraph')}
           </button>
           {hasMultipleGraphs && (
             <button
@@ -205,7 +208,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
               disabled={isLoading}
               className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
             >
-              彻底删除
+              {t('study.knowledgePoint.permanentDelete')}
             </button>
           )}
         </div>

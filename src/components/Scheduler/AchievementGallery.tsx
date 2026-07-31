@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Award,
@@ -27,44 +27,14 @@ interface AchievementGalleryProps {
 type CategoryFilter = "all" | "focus" | "tasks" | "streak" | "special";
 type StatusFilter = "all" | "unlocked" | "locked";
 
-const CATEGORY_INFO = {
-  focus: {
-    label: "专注",
-    icon: Target,
-    color: "text-primary-500",
-    bg: "bg-primary-500/10",
-  },
-  tasks: {
-    label: "任务",
-    icon: Trophy,
-    color: "text-emerald-500",
-    bg: "bg-emerald-500/10",
-  },
-  streak: {
-    label: "连续",
-    icon: Flame,
-    color: "text-amber-500",
-    bg: "bg-amber-500/10",
-  },
-  special: {
-    label: "特殊",
-    icon: Sparkles,
-    color: "text-violet-500",
-    bg: "bg-violet-500/10",
-  },
-  study: {
-    label: "学习",
-    icon: Award,
-    color: "text-primary-500",
-    bg: "bg-primary-500/10",
-  },
-  creation: {
-    label: "创作",
-    icon: Sparkles,
-    color: "text-rose-500",
-    bg: "bg-rose-500/10",
-  },
-};
+interface CategoryInfo {
+  label: string;
+  icon: React.ComponentType<{ size?: number | string; className?: string }>;
+  color: string;
+  bg: string;
+}
+
+type CategoryInfoMap = Record<string, CategoryInfo>;
 
 export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
   className = "",
@@ -84,6 +54,45 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  const CATEGORY_INFO = useMemo<CategoryInfoMap>(() => ({
+    focus: {
+      label: t('scheduler.achievementGallery.categories.focus'),
+      icon: Target,
+      color: "text-primary-500",
+      bg: "bg-primary-500/10",
+    },
+    tasks: {
+      label: t('scheduler.achievementGallery.categories.tasks'),
+      icon: Trophy,
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
+    },
+    streak: {
+      label: t('scheduler.achievementGallery.categories.streak'),
+      icon: Flame,
+      color: "text-amber-500",
+      bg: "bg-amber-500/10",
+    },
+    special: {
+      label: t('scheduler.achievementGallery.categories.special'),
+      icon: Sparkles,
+      color: "text-violet-500",
+      bg: "bg-violet-500/10",
+    },
+    study: {
+      label: t('scheduler.achievementGallery.categories.study'),
+      icon: Award,
+      color: "text-primary-500",
+      bg: "bg-primary-500/10",
+    },
+    creation: {
+      label: t('scheduler.achievementGallery.categories.creation'),
+      icon: Sparkles,
+      color: "text-rose-500",
+      bg: "bg-rose-500/10",
+    },
+  }), [t]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -97,7 +106,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
         setError(null);
       } catch (err) {
         console.error("Failed to fetch achievements:", err);
-        setError("加载成就数据失败");
+        setError(t('scheduler.achievementGallery.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -198,10 +207,10 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
       >
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
           <Award size={20} className="text-amber-500" />
-          成就殿堂
+          {t('scheduler.achievementGallery.title')}
         </h3>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          已解锁 {stats.unlocked}/{stats.total} 个成就
+          {t('scheduler.achievementGallery.unlockedCount', { unlocked: stats.unlocked, total: stats.total })}
         </p>
       </motion.div>
 
@@ -218,7 +227,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
             </div>
             <div>
               <p className="text-sm text-slate-600 dark:text-slate-300">
-                总体进度
+                {t('scheduler.achievementGallery.overallProgress')}
               </p>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">
                 {completionPercentage}%
@@ -227,7 +236,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              获得经验
+              {t('scheduler.achievementGallery.experienceGained')}
             </p>
             <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
               +{stats.totalXp} XP
@@ -329,10 +338,10 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
               `}
             >
               {status === "all"
-                ? "全部"
+                ? t('scheduler.achievementGallery.filterAll')
                 : status === "unlocked"
-                  ? "已解锁"
-                  : "未解锁"}
+                  ? t('scheduler.achievementGallery.filterUnlocked')
+                  : t('scheduler.achievementGallery.filterLocked')}
             </button>
           ))}
         </div>
@@ -466,7 +475,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
                   if (!ua) return null;
                   return (
                     <p className="mt-4 text-xs text-slate-400">
-                      解锁于{" "}
+                      {t('scheduler.achievementGallery.unlockedAt')}{" "}
                       {formatDate(ua.unlocked_at, 'short')}
                     </p>
                   );

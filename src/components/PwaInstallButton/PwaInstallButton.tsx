@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 import { Button } from "@/components/common/Button";
 
 export interface PwaInstallButtonProps {
-  /** 自定义按钮文本，默认 "安装到桌面" */
+  /** 自定义按钮文本，默认走 i18n key pwaInstall.install */
   label?: string;
   /** 自定义 className */
   className?: string;
@@ -16,9 +17,10 @@ export interface PwaInstallButtonProps {
  * 点击后触发 deferredPrompt.prompt()。
  */
 export function PwaInstallButton({
-  label = "安装到桌面",
+  label,
   className,
 }: PwaInstallButtonProps) {
+  const { t } = useTranslation();
   const { canInstall, installed, promptInstall } = usePwaInstall();
   const [installing, setInstalling] = useState(false);
 
@@ -42,7 +44,7 @@ export function PwaInstallButton({
       className={className}
       data-testid="pwa-install-button"
     >
-      {installing ? "安装中..." : label}
+      {installing ? t('pwaInstall.installing') : label ?? t('pwaInstall.install')}
     </Button>
   );
 }

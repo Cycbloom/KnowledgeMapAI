@@ -36,14 +36,6 @@ const categoryIcons: Record<string, React.ReactNode> = {
   custom: <Star size={16} />,
 };
 
-const categoryLabels: Record<string, string> = {
-  study: "学习",
-  work: "工作",
-  life: "生活",
-  health: "健康",
-  custom: "自定义",
-};
-
 interface TemplateSelectorProps {
   onSelect: (data: {
     title: string;
@@ -76,6 +68,17 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   const [placeholderValues, setPlaceholderValues] = useState<
     Record<string, string>
   >({});
+
+  const categoryLabels = useMemo<Record<string, string>>(
+    () => ({
+      study: t('scheduler.templateSelector.categories.study'),
+      work: t('scheduler.templateSelector.categories.work'),
+      life: t('scheduler.templateSelector.categories.life'),
+      health: t('scheduler.templateSelector.categories.health'),
+      custom: t('scheduler.templateSelector.categories.custom'),
+    }),
+    [t],
+  );
 
   useEffect(() => {
     loadTemplates();
@@ -182,7 +185,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       >
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-            从模板创建任务
+            {t('scheduler.templateSelector.title')}
           </h3>
           <button
             onClick={onClose}
@@ -222,7 +225,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium hover:from-primary-400 hover:to-primary-500 transition-all"
                   >
                     <Plus size={16} />
-                    新建
+                    {t('scheduler.templateSelector.new')}
                   </button>
                 )}
               </div>
@@ -237,7 +240,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }`}
                 >
-                  全部
+                  {t('scheduler.templateSelector.all')}
                 </button>
                 {categories.length > 0 ? (
                   categories.map((cat) => (
@@ -441,7 +444,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                       <h5
                         className={`text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-slate-700"}`}
                       >
-                        填写变量
+                        {t('scheduler.templateSelector.fillVariables')}
                       </h5>
                       <div className="space-y-2">
                         {extractPlaceholders(selectedTemplate).map(
@@ -461,7 +464,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                                     [placeholder]: e.target.value,
                                   })
                                 }
-                                placeholder={`输入 ${placeholder}`}
+                                placeholder={t('scheduler.templateSelector.inputPlaceholder', { placeholder })}
                                 className={`w-full px-3 py-2 rounded-lg border text-sm ${
                                   isDark
                                     ? "bg-slate-800 border-slate-700 text-white focus:border-primary-500"
@@ -481,7 +484,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     <h5
                       className={`text-xs font-medium mb-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}
                     >
-                      预览
+                      {t('scheduler.templateSelector.preview')}
                     </h5>
                     <p
                       className={`font-medium ${isDark ? "text-white" : "text-slate-900"}`}
@@ -498,12 +501,12 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     <div className="flex gap-4 mt-2 text-xs text-slate-500">
                       <span className="flex items-center gap-1">
                         <Clock size={12} />
-                        {selectedTemplate.estimated_duration}分钟
+                        {t('scheduler.templateSelector.minutes', { count: selectedTemplate.estimated_duration })}
                       </span>
-                      <span>优先级: {selectedTemplate.priority}</span>
+                      <span>{t('scheduler.templateSelector.priority')} {selectedTemplate.priority}</span>
                       {selectedTemplate.tags &&
                         selectedTemplate.tags.length > 0 && (
-                          <span>标签: {selectedTemplate.tags.join(", ")}</span>
+                          <span>{t('scheduler.templateSelector.tags')} {selectedTemplate.tags.join(", ")}</span>
                         )}
                     </div>
                   </div>
@@ -515,13 +518,13 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     className="w-full px-4 py-2.5 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <Check size={18} />
-                    使用此模板
-                  </button>
+                  {t('scheduler.templateSelector.useThisTemplate')}
+                </button>
                 </div>
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-slate-400">
-                <p>选择一个模板查看详情</p>
+                <p>{t('scheduler.templateSelector.selectTemplateHint')}</p>
               </div>
             )}
           </div>

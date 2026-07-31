@@ -68,7 +68,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
     if (isOpen && task) {
       loadExistingReview();
     }
-  }, [isOpen, task]);
+  }, [isOpen, task, t]);
 
   const titleId = useId();
   const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
@@ -165,8 +165,8 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                     <CheckCircle size={24} />
                   </div>
                   <div>
-                    <h2 id={titleId} className="text-lg font-bold">任务完成！</h2>
-                    <p className="text-sm text-white/80">花点时间回顾一下</p>
+                    <h2 id={titleId} className="text-lg font-bold">{t('scheduler.taskRetrospect.taskCompleted')}</h2>
+                    <p className="text-sm text-white/80">{t('scheduler.taskRetrospect.takeMomentToReview')}</p>
                   </div>
                 </div>
                 <button
@@ -187,7 +187,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                   <div className="flex items-center gap-1">
                     <Clock size={14} />
                     <span>
-                      实际用时: {formatDurationMinutes(task.actual_duration)}
+                      {t('scheduler.taskRetrospect.actualDuration')} {formatDurationMinutes(task.actual_duration)}
                     </span>
                   </div>
                   {task.tags && task.tags.length > 0 && (
@@ -202,7 +202,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
                   <MessageSquare size={16} className="text-primary-500" />
-                  完成心得
+                  {t('scheduler.taskRetrospect.completionInsights')}
                 </label>
                 <textarea
                   value={formData.content}
@@ -216,7 +216,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
                     <AlertTriangle size={16} className="text-amber-500" />
-                    遇到的困难
+                    {t('scheduler.taskRetrospect.difficulties')}
                   </label>
                   <textarea
                     value={formData.difficulties}
@@ -228,7 +228,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
                     <Lightbulb size={16} className="text-yellow-500" />
-                    解决方案
+                    {t('scheduler.taskRetrospect.solutions')}
                   </label>
                   <textarea
                     value={formData.improvements}
@@ -242,7 +242,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
                   <Brain size={16} className="text-primary-500" />
-                  学到了什么
+                  {t('scheduler.taskRetrospect.learned')}
                 </label>
                 <textarea
                   value={formData.learnings}
@@ -262,7 +262,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  跳过
+                  {t('scheduler.taskRetrospect.skip')}
                 </motion.button>
                 <motion.button
                   onClick={handleSave}
@@ -272,7 +272,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                   whileTap={{ scale: 0.98 }}
                 >
                   <Save size={18} />
-                  {saving ? "保存中..." : "保存复盘"}
+                  {saving ? t('scheduler.taskRetrospect.saving') : t('scheduler.taskRetrospect.saveRetrospect')}
                 </motion.button>
               </div>
             </div>

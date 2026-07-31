@@ -39,10 +39,10 @@ export const DependencySection: React.FC<DependencySectionProps> = ({
                 }`} />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {dep.depends_on_task?.title || '未知任务'}
+                    {dep.depends_on_task?.title || t('scheduler.dependencySection.unknownTask')}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {dep.dependency_type === 'strict' ? '严格依赖' : '软性依赖'}
+                    {dep.dependency_type === 'strict' ? t('scheduler.dependencySection.strictDependency') : t('scheduler.dependencySection.softDependency')}
                   </p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -65,10 +65,10 @@ export const DependencySection: React.FC<DependencySectionProps> = ({
                 <ArrowRight className="w-4 h-4 text-gray-400" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {dep.depends_on_task?.title || '未知任务'}
+                    {dep.depends_on_task?.title || t('scheduler.dependencySection.unknownTask')}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {dep.dependency_type === 'strict' ? '严格依赖此任务' : '软性依赖此任务'}
+                    {dep.dependency_type === 'strict' ? t('scheduler.dependencySection.strictDependencyOnTask') : t('scheduler.dependencySection.softDependencyOnTask')}
                   </p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-400" />

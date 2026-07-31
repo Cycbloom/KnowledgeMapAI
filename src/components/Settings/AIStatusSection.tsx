@@ -15,7 +15,7 @@ import {
   Info,
   KeyRound,
 } from "lucide-react";
-import { PROVIDER_DEFAULTS, type EmbeddingAiConfig } from "./settingsConstants";
+import { PROVIDER_DEFAULTS, getProviderDisplayName, type EmbeddingAiConfig } from "./settingsConstants";
 
 interface AIStatusSectionProps {
   token: string | null;
@@ -260,24 +260,21 @@ export const AIStatusSection = React.memo(function AIStatusSection({
       if (response.success) {
         message.success(t("settings.providerTestSuccess", {
           provider:
-            PROVIDER_DEFAULTS[mainAiConfig.provider]?.name ||
-            mainAiConfig.provider,
+            getProviderDisplayName(mainAiConfig.provider, t),
         }));
       } else {
         message.error(
           response.message ||
             t("settings.providerTestFailed", {
               provider:
-                PROVIDER_DEFAULTS[mainAiConfig.provider]?.name ||
-                mainAiConfig.provider,
+                getProviderDisplayName(mainAiConfig.provider, t),
             }),
         );
       }
     } catch {
       message.error(t("settings.providerTestFailed", {
         provider:
-          PROVIDER_DEFAULTS[mainAiConfig.provider]?.name ||
-          mainAiConfig.provider,
+          getProviderDisplayName(mainAiConfig.provider, t),
       }));
     } finally {
       setTestingMainAi(false);
@@ -294,24 +291,21 @@ export const AIStatusSection = React.memo(function AIStatusSection({
       if (response.success) {
         message.success(t("settings.providerTestSuccess", {
           provider:
-            PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name ||
-            embeddingAiConfig.provider,
+            getProviderDisplayName(embeddingAiConfig.provider, t),
         }));
       } else {
         message.error(
           response.message ||
             t("settings.providerTestFailed", {
               provider:
-                PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name ||
-                embeddingAiConfig.provider,
+                getProviderDisplayName(embeddingAiConfig.provider, t),
             }),
         );
       }
     } catch {
       message.error(t("settings.providerTestFailed", {
         provider:
-          PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name ||
-          embeddingAiConfig.provider,
+          getProviderDisplayName(embeddingAiConfig.provider, t),
       }));
     } finally {
       setTestingEmbedding(false);
@@ -324,7 +318,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
         <div className="flex items-center gap-2">
           <Cpu className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-            {t("settings.aiStatus")}
+            {t("settings.aiStatus.title")}
           </h2>
         </div>
       </div>
@@ -348,7 +342,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
           >
             {Object.entries(PROVIDER_DEFAULTS).map(([key, defaults]) => (
               <option key={key} value={key}>
-                {defaults.name}
+                {defaults.nameKey ? t(defaults.nameKey as never) : defaults.name}
               </option>
             ))}
           </select>
@@ -442,13 +436,13 @@ export const AIStatusSection = React.memo(function AIStatusSection({
 
           <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2 mb-4">
             <Info className="w-4 h-4 mt-0.5 shrink-0" />
-            <span>API Key 请在上方「AI 服务密钥配置」中为此提供商设置</span>
+            <span>{t('settings.aiStatus.apiKeyHint')}</span>
           </div>
 
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                {t("settings.provider")}
+                {t("settings.providerColumnLabel")}
               </label>
               <select
                 value={mainAiConfig.provider}
@@ -458,7 +452,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
                 {Object.entries(PROVIDER_DEFAULTS).map(
                   ([key, defaults]) => (
                     <option key={key} value={key}>
-                      {defaults.name}
+                      {defaults.nameKey ? t(defaults.nameKey as never) : defaults.name}
                     </option>
                   ),
                 )}
@@ -582,13 +576,13 @@ export const AIStatusSection = React.memo(function AIStatusSection({
               <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2 mb-2">
                 <Info className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>
-                  API Key 请在上方「AI 服务密钥配置」中为此提供商设置
+                  {t('settings.aiStatus.apiKeyHint')}
                 </span>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  {t("settings.provider")}
+                  {t("settings.providerColumnLabel")}
                 </label>
                 <select
                   value={embeddingAiConfig.provider}
@@ -601,7 +595,7 @@ export const AIStatusSection = React.memo(function AIStatusSection({
                     .filter(([, defaults]) => defaults.supportsEmbedding)
                     .map(([key, defaults]) => (
                       <option key={key} value={key}>
-                        {defaults.name}
+                        {defaults.nameKey ? t(defaults.nameKey as never) : defaults.name}
                       </option>
                     ))}
                 </select>

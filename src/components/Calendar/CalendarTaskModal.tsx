@@ -48,8 +48,6 @@ const QUICK_TAG_KEYS: readonly QuickTagKey[] = [
   "calendar.quickTags.review",
 ];
 
-const QUICK_TAG_VALUES = ["学习", "工作", "生活", "健康", "复习"];
-
 export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
   isOpen,
   onClose,
@@ -333,8 +331,8 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                 aria-label={t("calendar.quickTagsGroupLabel")}
                 className="flex flex-wrap gap-2"
               >
-                {QUICK_TAG_KEYS.map((key, index) => {
-                  const tagValue = QUICK_TAG_VALUES[index];
+                {QUICK_TAG_KEYS.map((key) => {
+                  const tagValue = t(key);
                   const isSelected = taskForm.tags.includes(tagValue);
                   return (
                     <button

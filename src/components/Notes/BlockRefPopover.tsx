@@ -137,7 +137,7 @@ export const BlockRefPopover: React.FC<BlockRefPopoverProps> = ({
     <div
       ref={popoverRef}
       role="dialog"
-      aria-label={t("notes.editor.blockRef.placeholder")}
+      aria-label={t("notes.blockRefPopover.title")}
       className="fixed z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 shadow-lg shadow-black/5 dark:shadow-black/30 overflow-hidden"
       style={{ top: anchorRect.bottom + 4, left: anchorRect.left }}
     >
@@ -154,11 +154,11 @@ export const BlockRefPopover: React.FC<BlockRefPopoverProps> = ({
           aria-activedescendant={
             items.length > 0 ? getOptionId(selectedIndex) : undefined
           }
-          aria-label={t("notes.editor.blockRef.placeholder")}
+          aria-label={t("notes.blockRefPopover.placeholder")}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={t("notes.editor.blockRef.placeholder")}
+          placeholder={t("notes.blockRefPopover.placeholder")}
           className="flex-1 bg-transparent text-sm text-gray-700 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
         {showSearching && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400 dark:text-slate-500" />}
@@ -168,12 +168,12 @@ export const BlockRefPopover: React.FC<BlockRefPopoverProps> = ({
       <div
         id={listboxId}
         role="listbox"
-        aria-label={t("notes.editor.blockRef.placeholder")}
+        aria-label={t("notes.blockRefPopover.title")}
         className="max-h-[280px] overflow-y-auto"
       >
         {showEmpty ? (
           <div className="px-3 py-2 text-sm text-gray-400 dark:text-slate-500">
-            {t("notes.editor.blockRef.noMatch")}
+            {t("notes.blockRefPopover.noMatch")}
           </div>
         ) : (
           items.map((item, index) => {

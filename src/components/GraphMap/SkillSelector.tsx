@@ -48,7 +48,7 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
                 <div className="font-medium text-gray-900 dark:text-white">{skill.name}</div>
                 {skill.allowWrite && (
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                    执行型
+                    {t('graphMap.skillSelector.executionType')}
                   </span>
                 )}
               </div>

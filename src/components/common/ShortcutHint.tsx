@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useShortcutLabel } from "../../hooks/common/useShortcutLabel";
 import { usePreferencesStore } from "../../store/usePreferencesStore";
 
@@ -58,16 +59,17 @@ export const ShortcutHint: React.FC<ShortcutHintProps> = ({
   const shortcutHintEnabled = usePreferencesStore(
     (state) => state.shortcutHintEnabled,
   );
+  const { t } = useTranslation();
   const [isHovering, setIsHovering] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (import.meta.env.DEV && shortcutLabel === null) {
       console.warn(
-        `[ShortcutHint] actionId "${actionId}" has no shortcut definition`,
+        t("common.shortcutHint.noShortcutWarning", { actionId }),
       );
     }
-  }, [actionId, shortcutLabel]);
+  }, [actionId, shortcutLabel, t]);
 
   useEffect(() => {
     return () => {

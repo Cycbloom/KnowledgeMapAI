@@ -67,7 +67,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
         <div className="flex items-center gap-3">
           <BookOpen className="w-5 h-5 text-primary-500" />
           <span className="font-semibold text-gray-900 dark:text-white">
-            学习节点
+            {t('learningPath.pathNodeList.title')}
           </span>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             ({pathDetail.nodes.length})
@@ -96,11 +96,11 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                         className="text-sm text-primary-600 dark:text-primary-400 underline"
                       >
                         {selectedNodeIds.size === pathDetail.nodes.filter((n) => n.status === "pending" && !n.related_task_id).length
-                          ? "取消全选"
-                          : "全选待学习"}
+                          ? t('learningPath.pathNodeList.deselectAll')
+                          : t('learningPath.pathNodeList.selectAllPending')}
                       </button>
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        已选择 {selectedNodeIds.size} 个节点
+                        {t('learningPath.pathNodeList.selectedCount', { count: selectedNodeIds.size })}
                       </span>
                     </>
                   ) : (
@@ -109,7 +109,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                       className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
                     >
                       <CheckSquare className="w-4 h-4" />
-                      批量选择
+                      {t('learningPath.pathNodeList.batchSelect')}
                     </button>
                   )}
                 </div>
@@ -124,12 +124,12 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                         {isBatchConverting ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            转换中...
+                            {t('learningPath.pathNodeList.converting')}
                           </>
                         ) : (
                           <>
                             <ListTodo className="w-4 h-4" />
-                            转为任务 ({selectedNodeIds.size})
+                            {t('learningPath.pathNodeList.convertToTasks', { count: selectedNodeIds.size })}
                           </>
                         )}
                       </button>
@@ -149,8 +149,8 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                 <EmptyState
                   icon={<BookOpen size={32} />}
                   title={t('learning.empty')}
-                  description="您可以添加学习节点，或从知识图谱生成学习路径"
-                  action={{ label: '从图谱生成', onClick: () => navigate("/graphs") }}
+                  description={t('learningPath.pathNodeList.emptyDescription')}
+                  action={{ label: t('learningPath.pathNodeList.generateFromGraph'), onClick: () => navigate("/graphs") }}
                 />
               ) : (
                 pathDetail.nodes.map((node, index) => (
@@ -211,19 +211,19 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                             {node.estimated_minutes && (
                               <span className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
-                                {node.estimated_minutes}分钟
+                                {t('learningPath.pathNodeList.estimatedMinutes', { count: node.estimated_minutes })}
                               </span>
                             )}
                             {node.difficulty_level && (
                               <span className="flex items-center gap-1">
                                 <BarChart3 className="w-3 h-3" />
-                                难度 {node.difficulty_level}/5
+                                {t('learningPath.pathNodeList.difficulty', { level: node.difficulty_level })}
                               </span>
                             )}
                             {node.related_task && (
                               <span className="flex items-center gap-1 text-primary-500">
                                 <ListTodo className="w-3 h-3" />
-                                已关联任务
+                                {t('learningPath.pathNodeList.relatedTask')}
                               </span>
                             )}
                           </div>
@@ -232,7 +232,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                           <span
                             className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_CONFIG[node.status].bgColor} ${STATUS_CONFIG[node.status].color}`}
                           >
-                            {STATUS_CONFIG[node.status].label}
+                            {t(STATUS_CONFIG[node.status].labelKey)}
                           </span>
                           {!isSelectionMode && (
                             <ChevronRight
@@ -255,7 +255,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                             {node.content && (
                               <div>
                                 <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                                  内容
+                                  {t('learningPath.pathNodeList.contentLabel')}
                                 </h4>
                                 <p className="text-sm text-gray-700 dark:text-gray-300">
                                   {node.content}
@@ -267,7 +267,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                               node.prerequisites.length > 0 && (
                                 <div>
                                   <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                                    前置知识
+                                    {t('learningPath.pathNodeList.prerequisites')}
                                   </h4>
                                   <div className="flex flex-wrap gap-1">
                                     {node.prerequisites.map(
@@ -286,7 +286,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
 
                             <div>
                               <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                                更新状态
+                                {t('learningPath.pathNodeList.updateStatus')}
                               </h4>
                               <div className="flex flex-wrap gap-2">
                                 {(
@@ -313,7 +313,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                                     } disabled:opacity-50`}
                                   >
                                     {STATUS_CONFIG[status].icon}
-                                    {STATUS_CONFIG[status].label}
+                                    {t(STATUS_CONFIG[status].labelKey)}
                                   </button>
                                 ))}
                               </div>
@@ -327,7 +327,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                                 className="flex-1 px-3 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 flex items-center justify-center gap-2"
                               >
                                 <ListTodo className="w-4 h-4" />
-                                转为任务
+                                {t('learningPath.pathNodeList.convertToTask')}
                               </button>
                               {node.related_task && (
                                 <button
@@ -338,7 +338,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                                   }
                                   className="px-3 py-2 bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-slate-500 flex items-center gap-2"
                                 >
-                                  查看任务
+                                  {t('learningPath.pathNodeList.viewTask')}
                                 </button>
                               )}
                             </div>

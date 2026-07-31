@@ -298,7 +298,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
           />
           
           <span className="truncate flex-1 font-medium">
-            {node.title || '未命名节点'}
+            {node.title || t('combinedViewPage.graphSidebar.untitledNode')}
           </span>
           
           {node.level && (
@@ -345,7 +345,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
           style={{ backgroundColor: graphColor }}
         />
         <span className="truncate flex-1 font-medium">
-          {node.title || '未命名节点'}
+          {node.title || t('combinedViewPage.graphSidebar.untitledNode')}
         </span>
         <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded uppercase">
           {node.level || 'leaf'}
@@ -400,7 +400,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                 }`}
               >
                 <List size={14} aria-hidden="true" />
-                大纲
+                {t('combinedViewPage.graphSidebar.outline')}
               </button>
               <button
                 onClick={handleSwitchToConnections}
@@ -411,7 +411,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                 }`}
               >
                 <Link size={14} aria-hidden="true" />
-                连接
+                {t('combinedViewPage.graphSidebar.connections')}
                 {crossGraphConnections.length > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary-500 text-white rounded-full">
                     {crossGraphConnections.length}
@@ -474,7 +474,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                       </div>
                     )}
                     {(!filteredNodes1?.length && !filteredNodes2?.length) && (
-                      <div className="text-center py-8 text-slate-500 text-sm">无匹配节点</div>
+                      <div className="text-center py-8 text-slate-500 text-sm">{t('combinedViewPage.graphSidebar.noMatchNodes')}</div>
                     )}
                   </div>
                 ) : (
@@ -530,7 +530,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                   className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
                 >
                   <Sparkles size={16} aria-hidden="true" />
-                  AI 分析连接
+                  {t('combinedViewPage.graphSidebar.aiAnalyzeConnections')}
                 </button>
               </div>
               {crossGraphConnections.length > 0 ? (
@@ -548,7 +548,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                         <svg className="w-4 h-4 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                           <path d="M7 17L17 7M17 7H7M17 7V17" />
                         </svg>
-                        <span className="text-xs text-primary-600 dark:text-primary-400 ml-1">相同知识点</span>
+                        <span className="text-xs text-primary-600 dark:text-primary-400 ml-1">{t('combinedViewPage.graphSidebar.sameKnowledge')}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500" />

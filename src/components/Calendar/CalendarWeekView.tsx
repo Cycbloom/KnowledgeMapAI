@@ -23,7 +23,7 @@ interface CalendarWeekViewProps {
   onSubtaskClick?: (subtask: TaskSubtask, parentEvent: CalendarEvent) => void;
 }
 
-const WEEKDAYS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
@@ -39,6 +39,8 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
 }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const getWeekdayName = (index: number) =>
+    t(`calendar.weekdays.${WEEKDAY_KEYS[index] ?? "sun"}`);
   const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{
     dayIndex: number;
@@ -412,7 +414,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
             <div
               className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
             >
-              {WEEKDAYS[index]}
+              {getWeekdayName(index)}
             </div>
             <div
               className={`text-sm font-medium ${day.isToday ? "text-primary-500" : isDark ? "text-white" : "text-gray-900"}`}
@@ -472,7 +474,10 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                     key={`exec-${i}`}
                     className="absolute left-1 right-1 bg-green-200/50 dark:bg-green-500/20 border-l-2 border-green-500 rounded-r"
                     style={position}
-                    title={`${execution.task_title} - ${Math.round((execution.duration || 0) / 60)}分钟`}
+                    title={t("calendar.executionTitle", {
+                      title: execution.task_title,
+                      minutes: Math.round((execution.duration || 0) / 60),
+                    })}
                   >
                     <div className="p-1 text-xs text-green-700 dark:text-green-300 truncate">
                       ✓ {execution.task_title}
@@ -589,7 +594,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                 >
                   <div className="flex items-center justify-center h-full text-primary-500 text-xs font-medium">
                     <Move size={14} className="mr-1" />
-                    移动到 {dragOverCell.hour}:00
+                    {t('calendar.weekView.moveTo', { hour: dragOverCell.hour })}
                   </div>
                 </div>
               )}

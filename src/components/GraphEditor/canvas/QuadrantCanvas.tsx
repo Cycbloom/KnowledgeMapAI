@@ -861,7 +861,7 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
         </div>
 
         <div className="absolute left-4 bottom-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm">
-          缩放: {Math.round(transform.k * 100)}%
+          {t("graphEditor.quadrantCanvas.zoomLabel", { percent: Math.round(transform.k * 100) })}
         </div>
       </div>
     );

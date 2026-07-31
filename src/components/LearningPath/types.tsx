@@ -109,30 +109,36 @@ export interface LearningPathDetail {
   };
 }
 
+type StatusLabelKey =
+  | "learningPath.statusLabels.pending"
+  | "learningPath.statusLabels.learning"
+  | "learningPath.statusLabels.completed"
+  | "learningPath.statusLabels.skipped";
+
 export const STATUS_CONFIG: Record<
   NodeStatus,
-  { label: string; color: string; bgColor: string; icon: React.ReactNode }
+  { labelKey: StatusLabelKey; color: string; bgColor: string; icon: React.ReactNode }
 > = {
   pending: {
-    label: "待学习",
+    labelKey: "learningPath.statusLabels.pending",
     color: "text-gray-500",
     bgColor: "bg-gray-100 dark:bg-gray-700",
     icon: <Circle className="w-4 h-4" />,
   },
   in_progress: {
-    label: "学习中",
+    labelKey: "learningPath.statusLabels.learning",
     color: "text-primary-500",
     bgColor: "bg-primary-100 dark:bg-primary-900/30",
     icon: <Play className="w-4 h-4" />,
   },
   completed: {
-    label: "已完成",
+    labelKey: "learningPath.statusLabels.completed",
     color: "text-green-500",
     bgColor: "bg-green-100 dark:bg-green-900/30",
     icon: <CheckCircle2 className="w-4 h-4" />,
   },
   skipped: {
-    label: "已跳过",
+    labelKey: "learningPath.statusLabels.skipped",
     color: "text-yellow-500",
     bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
     icon: <SkipForward className="w-4 h-4" />,

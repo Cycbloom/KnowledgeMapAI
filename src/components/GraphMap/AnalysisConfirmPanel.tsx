@@ -96,7 +96,7 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
             {modeConfig.icon}
           </span>
           <span className="font-medium text-gray-700 dark:text-gray-300">
-            {t('graphMap.analysisConfirm.analysisType')}
+            {t('graphMap.analysisConfirm.analysisTypeLabel')}
           </span>
           <span className="text-gray-900 dark:text-white font-medium">
             {modeConfig.label}

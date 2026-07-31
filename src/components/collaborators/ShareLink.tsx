@@ -26,7 +26,7 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ invitationToken, graphId: 
   return (
     <div className="space-y-2">
       <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        分享链接
+        {t('collaborators.shareLink.label')}
       </label>
       <div className="flex gap-2">
         <input
@@ -42,11 +42,11 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ invitationToken, graphId: 
           className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
         >
           {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-          {copied ? "已复制" : "复制"}
+          {copied ? t('collaborators.shareLink.copied') : t('collaborators.shareLink.copy')}
         </button>
       </div>
       <p className="text-xs text-gray-500 dark:text-gray-400">
-        通过此链接邀请用户加入协作
+        {t('collaborators.shareLink.description')}
       </p>
     </div>
   );

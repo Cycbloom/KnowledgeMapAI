@@ -299,7 +299,7 @@ export const MobileFocusTimer: React.FC = () => {
 
                 <motion.button
                   onClick={handleStartPause}
-                  aria-label={isRunning ? "暂停" : "开始"}
+                  aria-label={isRunning ? t('common.mobileFocusTimer.pauseAriaLabel') : t('common.mobileFocusTimer.startAriaLabel')}
                   className="p-4 rounded-full shadow-lg"
                   style={{ backgroundColor: colors.primary }}
                   whileTap={{ scale: 0.95 }}

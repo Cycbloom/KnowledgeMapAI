@@ -8,9 +8,9 @@ export type AnalysisModuleStatus = 'idle' | 'loading' | 'completed' | 'error';
 
 export interface AnalysisModuleState {
   id: AnalysisModuleId;
-  name: string;
-  description: string;
-  estimatedTime: string;
+  nameKey: string;
+  descriptionKey: string;
+  estimatedTimeKey: string;
   status: AnalysisModuleStatus;
   result: unknown;
   error?: string;
@@ -100,36 +100,36 @@ export interface KnowledgeGapAnalysisResult {
 export const DEFAULT_MODULES: AnalysisModuleState[] = [
   {
     id: 'relations',
-    name: '关系发现',
-    description: '发现图谱间潜在的关联关系',
-    estimatedTime: '5-10秒',
+    nameKey: 'graphMap.analysisConfirm.analysisType.relationDiscovery.name',
+    descriptionKey: 'graphMap.analysisConfirm.analysisType.relationDiscovery.description',
+    estimatedTimeKey: 'graphMap.analysisConfirm.analysisType.relationDiscovery.estimatedTime',
     status: 'idle',
     result: null,
     selected: true,
   },
   {
     id: 'crossDomain',
-    name: '跨学科洞察',
-    description: '分析跨领域知识交叉点',
-    estimatedTime: '5-8秒',
+    nameKey: 'graphMap.analysisConfirm.analysisType.crossDomainInsights.name',
+    descriptionKey: 'graphMap.analysisConfirm.analysisType.crossDomainInsights.description',
+    estimatedTimeKey: 'graphMap.analysisConfirm.analysisType.crossDomainInsights.estimatedTime',
     status: 'idle',
     result: null,
     selected: true,
   },
   {
     id: 'learningPaths',
-    name: '学习路径',
-    description: '推荐最优学习顺序',
-    estimatedTime: '3-5秒',
+    nameKey: 'graphMap.analysisConfirm.analysisType.learningPath.name',
+    descriptionKey: 'graphMap.analysisConfirm.analysisType.learningPath.description',
+    estimatedTimeKey: 'graphMap.analysisConfirm.analysisType.learningPath.estimatedTime',
     status: 'idle',
     result: null,
     selected: true,
   },
   {
     id: 'knowledgeGaps',
-    name: '知识缺口',
-    description: '识别知识体系中的空白',
-    estimatedTime: '3-5秒',
+    nameKey: 'graphMap.analysisConfirm.analysisType.knowledgeGap.name',
+    descriptionKey: 'graphMap.analysisConfirm.analysisType.knowledgeGap.description',
+    estimatedTimeKey: 'graphMap.analysisConfirm.analysisType.knowledgeGap.estimatedTime',
     status: 'idle',
     result: null,
     selected: true,

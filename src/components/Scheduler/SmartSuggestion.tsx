@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import React, { useState, useEffect, useCallback, useId, useRef, useMemo, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -54,10 +54,13 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
   const panelIdPrefix = `${tablistId}-panel`;
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  const tabs: { id: "recommendations" | "tips"; label: string }[] = [
-    { id: "recommendations", label: "任务推荐" },
-    { id: "tips", label: "效率提示" },
-  ];
+  const tabs = useMemo<{ id: "recommendations" | "tips"; label: string }[]>(
+    () => [
+      { id: "recommendations", label: t('scheduler.smartSuggestion.tabs.recommendations') },
+      { id: "tips", label: t('scheduler.smartSuggestion.tabs.tips') },
+    ],
+    [t],
+  );
 
   const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
     switch (e.key) {
@@ -176,10 +179,10 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
 
   const getCurrentTimeInfo = () => {
     const hour = new Date().getHours();
-    if (hour >= 6 && hour < 12) return { period: "上午", icon: "🌅" };
-    if (hour >= 12 && hour < 18) return { period: "下午", icon: "☀️" };
-    if (hour >= 18 && hour < 22) return { period: "傍晚", icon: "🌆" };
-    return { period: "夜间", icon: "🌙" };
+    if (hour >= 6 && hour < 12) return { period: t('scheduler.smartSuggestion.periods.morning'), icon: "🌅" };
+    if (hour >= 12 && hour < 18) return { period: t('scheduler.smartSuggestion.periods.afternoon'), icon: "☀️" };
+    if (hour >= 18 && hour < 22) return { period: t('scheduler.smartSuggestion.periods.evening'), icon: "🌆" };
+    return { period: t('scheduler.smartSuggestion.periods.night'), icon: "🌙" };
   };
 
   const timeInfo = getCurrentTimeInfo();
@@ -196,10 +199,10 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
           </div>
           <div>
             <h3 className="font-semibold text-slate-900 dark:text-white">
-              智能建议
+              {t('scheduler.smartSuggestion.title')}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {timeInfo.icon} {timeInfo.period}好 · 基于您的效率数据
+              {timeInfo.icon} {t('scheduler.smartSuggestion.greeting', { period: timeInfo.period })}
             </p>
           </div>
         </div>
@@ -245,23 +248,23 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
                     <Zap className="w-4 h-4 text-primary-500 dark:text-primary-400 mt-0.5" />
                     <div className="flex-1">
                       <h4 className="text-sm font-medium text-primary-700 dark:text-primary-300 mb-1">
-                        优先级建议
+                        {t('scheduler.smartSuggestion.prioritySuggestion')}
                       </h4>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs text-slate-600 dark:text-slate-400">
-                          建议优先级:{" "}
+                          {t('scheduler.smartSuggestion.suggestedPriority')}{" "}
                           <strong className="text-primary-600 dark:text-primary-400">
                             P{prioritySuggestion.suggestedPriority}
                           </strong>
                         </span>
                         <span className="text-xs text-slate-600 dark:text-slate-400">
-                          队列:{" "}
+                          {t('scheduler.smartSuggestion.queue')}{" "}
                           <strong className="text-primary-600 dark:text-primary-400">
                             Q{prioritySuggestion.suggestedQueue}
                           </strong>
                         </span>
                         <span className="text-xs text-slate-400 dark:text-slate-500">
-                          置信度:{" "}
+                          {t('scheduler.smartSuggestion.confidence')}{" "}
                           {Math.round(prioritySuggestion.confidence * 100)}%
                         </span>
                       </div>
@@ -373,7 +376,7 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
                     <div className="text-center py-6">
                       <Lightbulb className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
                       <p className="text-sm text-slate-500 dark:text-slate-400">
-                        完成更多任务后，我们将提供个性化的效率建议
+                        {t('scheduler.smartSuggestion.needMoreTasks')}
                       </p>
                     </div>
                   )}

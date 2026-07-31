@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -151,6 +151,17 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
     loadRecommendation();
   }, [loadRecommendation, currentTaskId]);
 
+  const learningStateLabels = useMemo(
+    () =>
+      ({
+        learning: t("scheduler.smartRecommendationBar.states.learning"),
+        review: t("scheduler.smartRecommendationBar.states.review"),
+        practice: t("scheduler.smartRecommendationBar.states.practice"),
+        quiz: t("scheduler.smartRecommendationBar.states.quiz"),
+      }) as Record<string, string>,
+    [t],
+  );
+
   const handleAcceptRecommendation = () => {
     if (recommendation?.recommendedTask && onStartTask) {
       onStartTask(recommendation.recommendedTask.task.id);
@@ -206,8 +217,10 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
       details.push({
         type: "efficiency",
         icon: <TrendingUp className="w-4 h-4" />,
-        title: "效率高峰期",
-        description: "当前是您的效率高峰时段，适合处理重要任务",
+        title: t("scheduler.smartRecommendationBar.cards.peakEfficiency.title"),
+        description: t(
+          "scheduler.smartRecommendationBar.cards.peakEfficiency.description",
+        ),
         score: efficiencyProfile.hourlyEfficiency[new Date().getHours()] || 0,
       });
     }
@@ -227,8 +240,11 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
         details.push({
           type: "mastery",
           icon: <Target className="w-4 h-4" />,
-          title: "掌握度分析",
-          description: `您在此类任务上完成率 ${Math.round(avgRate * 100)}%`,
+          title: t("scheduler.smartRecommendationBar.cards.masteryAnalysis.title"),
+          description: t(
+            "scheduler.smartRecommendationBar.cards.masteryAnalysis.description",
+            { rate: Math.round(avgRate * 100) },
+          ),
           score: avgRate,
         });
       }
@@ -242,13 +258,18 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
       details.push({
         type: "deadline",
         icon: <AlertCircle className="w-4 h-4" />,
-        title: "截止时间",
+        title: t("scheduler.smartRecommendationBar.cards.deadline.title"),
         description:
           hoursUntil < 0
-            ? "已超过截止日期"
+            ? t("scheduler.smartRecommendationBar.cards.deadline.overdue")
             : hoursUntil < 24
-              ? `截止时间临近 (${hoursUntil}小时)`
-              : `截止时间: ${formatDate(deadline, 'short')}`,
+              ? t(
+                  "scheduler.smartRecommendationBar.cards.deadline.approaching",
+                  { hours: hoursUntil },
+                )
+              : t("scheduler.smartRecommendationBar.cards.deadline.normal", {
+                  date: formatDate(deadline, "short"),
+                }),
       });
     }
 
@@ -256,8 +277,11 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
       details.push({
         type: "priority",
         icon: <Zap className="w-4 h-4" />,
-        title: "高优先级",
-        description: `优先级 ${task.priority}，位于 Q${task.queue_level} 队列`,
+        title: t("scheduler.smartRecommendationBar.cards.highPriority.title"),
+        description: t(
+          "scheduler.smartRecommendationBar.cards.highPriority.description",
+          { priority: task.priority, queue: task.queue_level },
+        ),
       });
     }
 
@@ -382,8 +406,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
                               {t(
-                                "scheduler.recommendation.currentlyLearning",
-                                "正在学习",
+                                "scheduler.smartRecommendationBar.learningInProgress",
                               )}
                             </span>
                             <span className="text-sm text-slate-700 dark:text-slate-300 font-semibold">
@@ -403,22 +426,17 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                                       : "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"
                               }`}
                             >
-                              {{
-                                learning: "学习",
-                                review: "复习",
-                                practice: "练习",
-                                quiz: "测验",
-                              }[
+                              {learningStateLabels[
                                 recommendedTask.task.nextSubtask.learning_state
                               ] ||
-                                recommendedTask.task.nextSubtask.learning_state}
+                                recommendedTask.task.nextSubtask
+                                  .learning_state}
                             </span>
                           </div>
                           {recommendedTask.task.subtaskProgress && (
                             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
                               {t(
                                 "scheduler.recommendation.subtaskProgress",
-                                "子任务进度：{{completed}}/{{total}}",
                                 {
                                   completed:
                                     recommendedTask.task.subtaskProgress
@@ -464,9 +482,8 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                         {recommendedTask.task.nextSubtask
                           ? t(
                               "scheduler.recommendation.startLearning",
-                              "开始学习",
                             )
-                          : t("scheduler.recommendation.startTask", "开始任务")}
+                          : t("scheduler.recommendation.startTask")}
                       </button>
                     </div>
                   </div>
@@ -546,7 +563,9 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                     <ChevronRight
                       className={`w-4 h-4 transition-transform ${showAlternatives ? "rotate-90" : ""}`}
                     />
-                    其他推荐 ({alternativeTasks.length})
+                    {t("scheduler.smartRecommendationBar.otherRecommendations", {
+                      count: alternativeTasks.length,
+                    })}
                   </button>
 
                   <AnimatePresence>
@@ -579,7 +598,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                               onClick={() => onStartTask?.(alt.task.id)}
                               className="px-3 py-1 text-sm font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
                             >
-                              开始
+                              {t("scheduler.smartRecommendationBar.start")}
                             </button>
                           </div>
                         ))}

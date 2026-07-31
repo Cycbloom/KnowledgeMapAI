@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { TEMPLATE_CATEGORIES, getCategoryBgClass, getCategoryTextClass } from '../../services/api/taskTemplates';
 
 interface TemplateCategoryProps {
@@ -13,6 +14,7 @@ export const TemplateCategory: React.FC<TemplateCategoryProps> = ({
   onSelectCategory,
   categoryCounts = {},
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-wrap gap-2">
       <motion.button
@@ -25,7 +27,7 @@ export const TemplateCategory: React.FC<TemplateCategoryProps> = ({
             : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
         }`}
       >
-        全部
+        {t('scheduler.templateCategory.all')}
       </motion.button>
       
       {TEMPLATE_CATEGORIES.map(category => {
@@ -79,6 +81,7 @@ export const TemplateCategoryCard: React.FC<TemplateCategoryCardProps> = ({
   isSelected,
   onClick,
 }) => {
+  const { t } = useTranslation();
   return (
     <motion.button
       whileHover={{ scale: 1.02, y: -2 }}
@@ -104,7 +107,7 @@ export const TemplateCategoryCard: React.FC<TemplateCategoryCardProps> = ({
       <p className={`text-sm ${
         isSelected ? 'opacity-80' : 'text-slate-500 dark:text-slate-400'
       }`}>
-        {count} 个模板
+        {t('scheduler.templateCategory.templateCount', { count })}
       </p>
     </motion.button>
   );
@@ -126,6 +129,8 @@ export const TemplateCategoryGrid: React.FC<TemplateCategoryGridProps> = ({
   selectedCategory,
   onSelectCategory,
 }) => {
+  const { t } = useTranslation();
+  const totalCount = categories.reduce((sum, c) => sum + c.count, 0);
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
       <motion.button
@@ -147,12 +152,12 @@ export const TemplateCategoryGrid: React.FC<TemplateCategoryGridProps> = ({
         <h3 className={`font-medium mb-1 ${
           !selectedCategory ? '' : 'text-slate-900 dark:text-white'
         }`}>
-          全部
+          {t('scheduler.templateCategory.all')}
         </h3>
         <p className={`text-sm ${
           !selectedCategory ? 'opacity-80' : 'text-slate-500 dark:text-slate-400'
         }`}>
-          {categories.reduce((sum, c) => sum + c.count, 0)} 个模板
+          {t('scheduler.templateCategory.templateCount', { count: totalCount })}
         </p>
       </motion.button>
       

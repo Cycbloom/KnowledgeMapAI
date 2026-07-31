@@ -37,7 +37,7 @@ export interface CalendarEvent {
   start: string;
   /** 从 UserTask.scheduled_end 映射 */
   end?: UserTask["scheduled_end"];
-  /** 从 UserTask.tags 计算：包含"学习"→study，包含"复习"→review，否则→task */
+  /** 从 UserTask.tags 计算：包含"study"→study，包含"review"→review，否则→task */
   type: "task" | "study" | "review" | "other";
   /** 从 UserTask.priority 计算：4→red，3→orange，其他→blue */
   color?: string;

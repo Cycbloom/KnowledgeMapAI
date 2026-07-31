@@ -35,7 +35,7 @@ export const NodeBlockRefsPanel: React.FC<NodeBlockRefsPanelProps> = ({
     return (
       <EmptyState
         illustration="empty"
-        title={t("notes.blockRefsPanel.empty")}
+        title={t("notes.nodeBlockRefsPanel.empty")}
         className="py-6 min-h-[120px]"
       />
     );
@@ -56,7 +56,7 @@ export const NodeBlockRefsPanel: React.FC<NodeBlockRefsPanelProps> = ({
     return (
       <EmptyState
         illustration="error"
-        title={t("notes.blockRefsPanel.loadFailed")}
+        title={t("notes.nodeBlockRefsPanel.loadFailed")}
         className="py-6 min-h-[120px]"
       />
     );
@@ -67,7 +67,7 @@ export const NodeBlockRefsPanel: React.FC<NodeBlockRefsPanelProps> = ({
     return (
       <EmptyState
         illustration="empty"
-        title={t("notes.blockRefsPanel.empty")}
+        title={t("notes.nodeBlockRefsPanel.empty")}
         className="py-6 min-h-[120px]"
       />
     );
@@ -91,7 +91,7 @@ export const NodeBlockRefsPanel: React.FC<NodeBlockRefsPanelProps> = ({
                 aria-hidden="true"
               />
               <p className="flex-1 text-xs text-gray-600 dark:text-gray-300 line-clamp-2">
-                {item.blockSummary || t("notes.blockRefsPanel.emptyBlock")}
+                {item.blockSummary || t("notes.nodeBlockRefsPanel.emptyBlock")}
               </p>
             </div>
             {/* 引用方笔记 */}

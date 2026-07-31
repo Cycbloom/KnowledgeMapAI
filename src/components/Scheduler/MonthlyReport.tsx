@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -25,20 +25,10 @@ interface MonthlyReportProps {
   className?: string;
 }
 
-const MONTHS = [
-  "一月",
-  "二月",
-  "三月",
-  "四月",
-  "五月",
-  "六月",
-  "七月",
-  "八月",
-  "九月",
-  "十月",
-  "十一月",
-  "十二月",
-];
+const MONTH_KEYS = [
+  "jan", "feb", "mar", "apr", "may", "jun",
+  "jul", "aug", "sep", "oct", "nov", "dec",
+] as const;
 
 export const MonthlyReport: React.FC<MonthlyReportProps> = ({
   year,
@@ -56,6 +46,14 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
     month ?? new Date().getMonth() + 1,
   );
   const [retryCount, setRetryCount] = useState(0);
+
+  const getMonthName = useCallback(
+    (monthIndex: number): string => {
+      const key = MONTH_KEYS[monthIndex - 1] ?? MONTH_KEYS[0];
+      return t(`scheduler.monthlyReport.months.${key}`);
+    },
+    [t],
+  );
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -142,10 +140,13 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
         >
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             <Calendar size={20} className="text-pink-500" />
-            月报
+            {t("scheduler.monthlyReport.title")}
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {currentYear}年 {MONTHS[currentMonth - 1]}
+            {t("scheduler.monthlyReport.yearMonthFormat", {
+              year: currentYear,
+              month: getMonthName(currentMonth),
+            })}
           </p>
         </motion.div>
 
@@ -175,13 +176,13 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
           <div className="flex items-center gap-2 mb-2">
             <Clock size={16} className="text-primary-500" />
             <span className="text-xs text-slate-600 dark:text-slate-300">
-              总专注时长
+              {t("scheduler.monthlyReport.totalFocusDuration")}
             </span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
             {totalHours.toFixed(1)}
             <span className="text-sm font-normal text-slate-500 ml-1">
-              小时
+              {t("scheduler.monthlyReport.hourUnit")}
             </span>
           </p>
         </motion.div>
@@ -195,12 +196,12 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
           <div className="flex items-center gap-2 mb-2">
             <Target size={16} className="text-emerald-500" />
             <span className="text-xs text-slate-600 dark:text-slate-300">
-              完成任务
+              {t("scheduler.monthlyReport.completedTasks")}
             </span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
             {stats.tasks_completed}
-            <span className="text-sm font-normal text-slate-500 ml-1">个</span>
+            <span className="text-sm font-normal text-slate-500 ml-1">{t("scheduler.monthlyReport.countUnit")}</span>
           </p>
         </motion.div>
 
@@ -213,12 +214,12 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp size={16} className="text-violet-500" />
             <span className="text-xs text-slate-600 dark:text-slate-300">
-              活跃天数
+              {t("scheduler.monthlyReport.activeDays")}
             </span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
             {stats.active_days}
-            <span className="text-sm font-normal text-slate-500 ml-1">天</span>
+            <span className="text-sm font-normal text-slate-500 ml-1">{t("scheduler.monthlyReport.dayUnit")}</span>
           </p>
         </motion.div>
 
@@ -231,12 +232,12 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
           <div className="flex items-center gap-2 mb-2">
             <Flame size={16} className="text-amber-500" />
             <span className="text-xs text-slate-600 dark:text-slate-300">
-              最长连续
+              {t("scheduler.monthlyReport.longestStreak")}
             </span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
             {stats.streak_longest}
-            <span className="text-sm font-normal text-slate-500 ml-1">天</span>
+            <span className="text-sm font-normal text-slate-500 ml-1">{t("scheduler.monthlyReport.dayUnit")}</span>
           </p>
         </motion.div>
       </div>
@@ -255,7 +256,7 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
               </div>
               <div>
                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                  最佳表现日
+                  {t("scheduler.monthlyReport.bestPerformanceDay")}
                 </p>
                 <p className="text-lg font-semibold text-slate-900 dark:text-white">
                   {formatDate(stats.best_day.date, "month-day")}
@@ -267,7 +268,7 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
                 {formatDuration(stats.best_day.duration, { format: 'compact', emptyText: '0m' })}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                专注时长
+                {t("scheduler.monthlyReport.focusDuration")}
               </p>
             </div>
           </div>
@@ -283,7 +284,7 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
         <div className="flex items-center gap-2 mb-4">
           <BarChart3 size={18} className="text-slate-500" />
           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            每周分布
+            {t("scheduler.monthlyReport.weeklyDistribution")}
           </span>
         </div>
 
@@ -299,7 +300,7 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
             return (
               <div key={week.week} className="flex items-center gap-3">
                 <span className="text-xs text-slate-500 dark:text-slate-400 w-12">
-                  第{week.week}周
+                  {t("scheduler.monthlyReport.weekFormat", { week: week.week })}
                 </span>
                 <div className="flex-1 h-6 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden relative">
                   <motion.div
@@ -313,7 +314,7 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
                   </span>
                 </div>
                 <span className="text-xs text-slate-500 dark:text-slate-400 w-16 text-right">
-                  {week.sessions}次
+                  {t("scheduler.monthlyReport.sessionCountFormat", { count: week.sessions })}
                 </span>
               </div>
             );
@@ -330,7 +331,7 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              日均时长
+              {t("scheduler.monthlyReport.dailyAvgDuration")}
             </p>
             <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">
               {avgHoursPerDay.toFixed(1)}h
@@ -338,14 +339,14 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
           </div>
           <div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              总番茄钟
+              {t("scheduler.monthlyReport.totalPomodoros")}
             </p>
             <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">
               {stats.total_pomodoros}
             </p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">总会话</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t("scheduler.monthlyReport.totalSessions")}</p>
             <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">
               {stats.total_sessions}
             </p>

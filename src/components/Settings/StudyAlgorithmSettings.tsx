@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { studyApi } from "../../services/api/study";
 import {
   Cpu,
@@ -12,6 +13,7 @@ import type { FsrsParams, FsrsOptimizeResult } from "./settingsConstants";
 import { formatDate } from "../../utils/formatters";
 
 export const StudyAlgorithmSettings = React.memo(function StudyAlgorithmSettings() {
+  const { t } = useTranslation();
   const [fsrsParams, setFsrsParams] = useState<FsrsParams | null>(null);
   const [fsrsLoading, setFsrsLoading] = useState(false);
   const [fsrsOptimizing, setFsrsOptimizing] = useState(false);
@@ -39,11 +41,11 @@ export const StudyAlgorithmSettings = React.memo(function StudyAlgorithmSettings
         await loadFsrsParameters();
       }
     } catch {
-      setFsrsOptimizeResult({ success: false, improvement: 0, reviewCount: 0, message: "优化失败，请稍后重试" });
+      setFsrsOptimizeResult({ success: false, improvement: 0, reviewCount: 0, message: t("settings.studyAlgorithm.optimizeFailed") });
     } finally {
       setFsrsOptimizing(false);
     }
-  }, [loadFsrsParameters]);
+  }, [loadFsrsParameters, t]);
 
   const handleResetFsrs = useCallback(async () => {
     try {
@@ -65,7 +67,7 @@ export const StudyAlgorithmSettings = React.memo(function StudyAlgorithmSettings
         <div className="flex items-center gap-2">
           <Cpu className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-            学习算法
+            {t("settings.studyAlgorithm.title")}
           </h2>
         </div>
       </div>
@@ -74,26 +76,26 @@ export const StudyAlgorithmSettings = React.memo(function StudyAlgorithmSettings
         <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500 transition-colors">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              参数来源
+              {t("settings.studyAlgorithm.paramSource")}
             </span>
             <span className={`text-sm font-bold ${
               fsrsParams?.source === "default" ? "text-gray-500 dark:text-gray-400" :
               fsrsParams?.source === "optimized" ? "text-green-600 dark:text-green-400" :
               "text-primary-600 dark:text-primary-400"
             }`}>
-              {fsrsLoading ? "加载中..." :
-               fsrsParams?.source === "default" ? "默认参数" :
-               fsrsParams?.source === "optimized" ? "已优化" :
-               fsrsParams?.source === "custom" ? "自定义" : "加载中..."}
+              {fsrsLoading ? t("settings.loading") :
+               fsrsParams?.source === "default" ? t("settings.studyAlgorithm.sourceDefault") :
+               fsrsParams?.source === "optimized" ? t("settings.studyAlgorithm.sourceOptimized") :
+               fsrsParams?.source === "custom" ? t("settings.studyAlgorithm.sourceCustom") : t("settings.loading")}
             </span>
           </div>
           {fsrsParams?.last_optimized_at && (
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              上次优化: {formatDate(fsrsParams.last_optimized_at, 'short-datetime')}
+              {t("settings.studyAlgorithm.lastOptimized")}: {formatDate(fsrsParams.last_optimized_at, 'short-datetime')}
             </p>
           )}
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            FSRS-6 算法使用 21 个参数（w[0]-w[20]）控制遗忘曲线和复习间隔。默认参数适合大多数用户，优化后可更贴合个人记忆特征。
+            {t("settings.studyAlgorithm.description")}
           </p>
         </div>
 
@@ -106,12 +108,12 @@ export const StudyAlgorithmSettings = React.memo(function StudyAlgorithmSettings
             {fsrsOptimizing ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                优化中...
+                {t("settings.studyAlgorithm.optimizing")}
               </>
             ) : (
               <>
                 <Zap className="w-4 h-4" />
-                优化参数
+                {t("settings.studyAlgorithm.optimize")}
               </>
             )}
           </button>
@@ -121,7 +123,7 @@ export const StudyAlgorithmSettings = React.memo(function StudyAlgorithmSettings
             className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
-            重置为默认
+            {t("settings.studyAlgorithm.resetToDefault")}
           </button>
         </div>
 
@@ -141,7 +143,7 @@ export const StudyAlgorithmSettings = React.memo(function StudyAlgorithmSettings
             </div>
             {fsrsOptimizeResult.success && fsrsOptimizeResult.reviewCount > 0 && (
               <p className="text-xs mt-1 opacity-80">
-                基于 {fsrsOptimizeResult.reviewCount} 条复习记录优化
+                {t("settings.studyAlgorithm.basedOnReviews", { count: fsrsOptimizeResult.reviewCount })}
               </p>
             )}
           </div>

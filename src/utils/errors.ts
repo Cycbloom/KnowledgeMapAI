@@ -1,6 +1,8 @@
+import i18next from "i18next";
+
 import {
   ErrorCodes as SharedErrorCodes,
-  ErrorCodeMessages as SharedErrorCodeMessages,
+  ErrorCodeMessageKeys as SharedErrorCodeMessageKeys,
   type ErrorCode as SharedErrorCode,
 } from "../../shared/types/errorCodes";
 
@@ -10,7 +12,7 @@ import {
   type ErrorSerialization,
 } from "@shared/types/appError";
 
-export { SharedErrorCodes, SharedErrorCodeMessages };
+export { SharedErrorCodes, SharedErrorCodeMessageKeys };
 export type { SharedErrorCode };
 // Re-export ErrorContext from shared for consumers of this module
 export type { ErrorContext };
@@ -65,7 +67,7 @@ export class AppError extends AppErrorBase {
 
 export class NetworkError extends AppError {
   constructor(
-    message: string = "网络错误，请检查网络连接",
+    message: string = i18next.t("common.errors.networkError"),
     context?: ErrorContext,
   ) {
     super(message, "NETWORK_ERROR", 0, context);
@@ -75,7 +77,7 @@ export class NetworkError extends AppError {
 
 export class AuthError extends AppError {
   constructor(
-    message: string = "认证失败，请重新登录",
+    message: string = i18next.t("common.errors.authError"),
     context?: ErrorContext,
   ) {
     super(message, SharedErrorCodes.AUTH_UNAUTHORIZED, 401, context);
@@ -85,7 +87,7 @@ export class AuthError extends AppError {
 
 export class TokenExpiredError extends AppError {
   constructor(
-    message: string = "登录已过期，请重新登录",
+    message: string = i18next.t("common.errors.tokenExpiredError"),
     context?: ErrorContext,
   ) {
     super(message, SharedErrorCodes.AUTH_TOKEN_EXPIRED, 401, context);
@@ -94,14 +96,14 @@ export class TokenExpiredError extends AppError {
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message: string = "没有权限执行此操作", context?: ErrorContext) {
+  constructor(message: string = i18next.t("common.errors.forbiddenError"), context?: ErrorContext) {
     super(message, SharedErrorCodes.AUTH_FORBIDDEN, 403, context);
     this.name = "ForbiddenError";
   }
 }
 
 export class NotFoundError extends AppError {
-  constructor(message: string = "请求的资源不存在", context?: ErrorContext) {
+  constructor(message: string = i18next.t("common.errors.notFoundError"), context?: ErrorContext) {
     super(message, SharedErrorCodes.RESOURCE_NOT_FOUND, 404, context);
     this.name = "NotFoundError";
   }
@@ -111,7 +113,7 @@ export class ValidationError extends AppError {
   public readonly details?: Array<{ field: string; message: string }>;
 
   constructor(
-    message: string = "输入数据格式不正确",
+    message: string = i18next.t("common.errors.validationError"),
     details?: Array<{ field: string; message: string }>,
     context?: ErrorContext,
   ) {
@@ -130,7 +132,7 @@ export class ValidationError extends AppError {
 
 export class ServerError extends AppError {
   constructor(
-    message: string = "服务器错误，请稍后重试",
+    message: string = i18next.t("common.errors.serverError"),
     context?: ErrorContext,
   ) {
     super(message, SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500, context);
@@ -140,7 +142,7 @@ export class ServerError extends AppError {
 
 export class TimeoutError extends AppError {
   constructor(
-    message: string = "请求超时，请稍后重试",
+    message: string = i18next.t("common.errors.timeoutError"),
     context?: ErrorContext,
   ) {
     super(message, SharedErrorCodes.AI_TIMEOUT, 408, context);
@@ -152,7 +154,7 @@ export class RateLimitError extends AppError {
   public readonly retryAfter?: number;
 
   constructor(
-    message: string = "请求过于频繁，请稍后重试",
+    message: string = i18next.t("common.errors.rateLimitError"),
     retryAfter?: number,
     context?: ErrorContext,
   ) {
@@ -170,7 +172,7 @@ export class RateLimitError extends AppError {
 }
 
 export class CancelledError extends AppError {
-  constructor(message: string = "请求已取消", context?: ErrorContext) {
+  constructor(message: string = i18next.t("common.errors.cancelledError"), context?: ErrorContext) {
     super(message, "CANCELLED_ERROR", 0, context);
     this.name = "CancelledError";
   }
@@ -254,7 +256,7 @@ export function getErrorMessage(error: unknown): string {
   if (typeof error === "string") {
     return error;
   }
-  return "未知错误";
+  return i18next.t("common.errors.unknownError");
 }
 
 /**
@@ -321,22 +323,24 @@ export function getErrorCode(error: unknown): ErrorCode {
 }
 
 export const FrontendErrorCodeMessages: Record<FrontendErrorCode, string> = {
-  NETWORK_ERROR: "网络连接失败，请检查网络设置",
-  CANCELLED_ERROR: "请求已取消",
-  UNKNOWN_ERROR: "操作失败，请稍后重试",
+  NETWORK_ERROR: "common.errors.networkConnectionFailed",
+  CANCELLED_ERROR: "common.errors.cancelledError",
+  UNKNOWN_ERROR: "common.errors.operationFailed",
 };
 
 export const USER_FRIENDLY_MESSAGES: Record<ErrorCode, string> = {
-  ...SharedErrorCodeMessages,
+  ...SharedErrorCodeMessageKeys,
   ...FrontendErrorCodeMessages,
 };
 
 export function getUserFriendlyMessage(error: unknown): string {
   const code = getErrorCode(error);
-  if (isAppError(error) && error.message !== USER_FRIENDLY_MESSAGES[code]) {
+  const messageKey = USER_FRIENDLY_MESSAGES[code];
+  const friendlyMessage = i18next.t(messageKey as never) as string;
+  if (isAppError(error) && error.message !== friendlyMessage) {
     return error.message;
   }
-  return USER_FRIENDLY_MESSAGES[code];
+  return friendlyMessage;
 }
 
 export function createErrorFromResponse(response: {
@@ -350,7 +354,7 @@ export function createErrorFromResponse(response: {
   };
 }): AppError {
   const { status, statusText, data } = response;
-  const message = data?.message || data?.error || statusText || "请求失败";
+  const message = data?.message || data?.error || statusText || i18next.t("common.errors.requestFailed");
 
   switch (status) {
     case 0:
@@ -405,5 +409,5 @@ export function wrapUnknownError(error: unknown): AppError {
     return new AppError(error, "UNKNOWN_ERROR", 500);
   }
 
-  return new AppError("未知错误", "UNKNOWN_ERROR", 500);
+  return new AppError(i18next.t("common.errors.unknownError"), "UNKNOWN_ERROR", 500);
 }

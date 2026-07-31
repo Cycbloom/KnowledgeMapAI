@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { TermTooltip } from "../../common";
@@ -22,6 +23,7 @@ export const ActionResultModal: React.FC<ActionResultModalProps> = ({
   content,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => onClose(), isOpen);
 
@@ -104,7 +106,7 @@ export const ActionResultModal: React.FC<ActionResultModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
-            关闭
+            {t("graphEditor.actionResultModal.close")}
           </button>
         </div>
       </div>

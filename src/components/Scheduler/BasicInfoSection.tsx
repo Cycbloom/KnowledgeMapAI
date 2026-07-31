@@ -39,7 +39,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ task }) => {
             <div>
               <label className="text-xs text-gray-500 dark:text-gray-400">{t('scheduler.taskWorkbench.totalDuration')}</label>
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                {formatDurationMinutes(task.total_duration, { format: 'zh-spaced', emptyText: '0 分钟' })}
+                {formatDurationMinutes(task.total_duration, { format: 'zh-spaced', emptyText: t('scheduler.basicInfoSection.zeroMinutes') })}
               </p>
             </div>
           </div>
@@ -51,7 +51,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ task }) => {
             <div>
               <label className="text-xs text-gray-500 dark:text-gray-400">{t('scheduler.taskWorkbench.estimatedDuration')}</label>
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                {formatDurationMinutes(task.estimated_duration, { format: 'zh-spaced', emptyText: '0 分钟' })}
+                {formatDurationMinutes(task.estimated_duration, { format: 'zh-spaced', emptyText: t('scheduler.basicInfoSection.zeroMinutes') })}
               </p>
             </div>
           </div>
@@ -83,7 +83,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ task }) => {
       {task.tags && task.tags.length > 0 && (
         <div>
           <label className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-            <Tag className="w-4 h-4" /> 标签
+            <Tag className="w-4 h-4" /> {t('scheduler.basicInfoSection.tags')}
           </label>
           <div className="mt-1 flex flex-wrap gap-2">
             {task.tags.map((tag, index) => (

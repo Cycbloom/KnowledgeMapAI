@@ -73,7 +73,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
           const commonTags = [...nodeTags].filter(t => otherTags.has(t));
           if (commonTags.length > 0) {
             score += commonTags.length * 10;
-            reasons.push(`共同标签: ${commonTags.slice(0, 3).join(', ')}`);
+            reasons.push(t('graphMap.connectionDiscovery.commonTags', { tags: commonTags.slice(0, 3).join(', ') }));
           }
           
           const otherContent = (otherNode.content || '').toLowerCase();
@@ -81,7 +81,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
                                   otherContent.includes(node.title.toLowerCase());
           if (titleInContent) {
             score += 15;
-            reasons.push('内容中提及对方标题');
+            reasons.push(t('graphMap.connectionDiscovery.mentionTitle'));
           }
           
           const commonWords = nodeContent.split(/\s+/).filter(word => 
@@ -89,7 +89,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
           );
           if (commonWords.length > 3) {
             score += 5;
-            reasons.push('内容相似度较高');
+            reasons.push(t('graphMap.connectionDiscovery.contentSimilarity'));
           }
           
           if (node.level === 'root' && otherNode.level === 'core') {
@@ -104,7 +104,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
               sourceTitle: node.title,
               targetId: otherNode.id,
               targetTitle: otherNode.title,
-              reason: reasons[0] || '可能相关',
+              reason: reasons[0] || t('graphMap.connectionDiscovery.possiblyRelated'),
               score
             });
           }
@@ -127,7 +127,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [nodes, edges, existingConnections, dismissedIds]);
+  }, [nodes, edges, existingConnections, dismissedIds, t]);
 
   useEffect(() => {
     if (nodes.length > 1) {
@@ -176,7 +176,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
         <div className="flex items-center gap-2">
           <Network size={18} className="text-primary-500" />
           <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            关联发现
+            {t('graphMap.connectionDiscovery.title')}
           </h3>
         </div>
         <button
@@ -191,18 +191,18 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
           `}
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          刷新
+          {t('graphMap.connectionDiscovery.refresh')}
         </button>
       </div>
 
       <p className={`text-sm mb-4 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-        基于标签、内容相似度分析，发现可能遗漏的节点关联
+        {t('graphMap.connectionDiscovery.description')}
       </p>
 
       {loading ? (
         <div className={`flex items-center justify-center py-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
           <Loader2 size={24} className="animate-spin mr-2" />
-          分析中...
+          {t('graphMap.connectionDiscovery.analyzing')}
         </div>
       ) : filteredSuggestions.length > 0 ? (
         <div className="space-y-3">
@@ -236,7 +236,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                         isDark ? 'bg-primary-900/30 text-primary-400' : 'bg-primary-100 text-primary-600'
                       }`}>
-                        相关度 {suggestion.score}
+                        {t('graphMap.connectionDiscovery.relatedScore', { score: suggestion.score })}
                       </span>
                     </div>
                   </div>
@@ -258,7 +258,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
                       ) : (
                         <Link2 size={14} />
                       )}
-                      连接
+                      {t('graphMap.connectionDiscovery.connect')}
                     </button>
                     <button
                       onClick={() => handleDismiss(suggestion)}
@@ -295,6 +295,7 @@ export const NodeConnectionSuggestions: React.FC<{
   onConnect: (targetId: string) => void;
 }> = ({ node, allNodes, edges, onConnect }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   
   const suggestions = useMemo(() => {
     const connectedIds = new Set(
@@ -334,7 +335,7 @@ export const NodeConnectionSuggestions: React.FC<{
       <div className="flex items-center gap-2 mb-3">
         <Sparkles size={14} className="text-primary-500" />
         <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-          建议关联
+          {t('graphMap.connectionDiscovery.suggestRelation')}
         </span>
       </div>
       

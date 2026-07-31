@@ -106,9 +106,9 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
         </div>
         <div>
           <h3 className="font-semibold text-slate-900 dark:text-white">
-            任务依赖关系
+            {t('scheduler.dependencyGraph.title')}
           </h3>
-          <p className="text-xs text-slate-500">可视化任务之间的依赖</p>
+          <p className="text-xs text-slate-500">{t('scheduler.dependencyGraph.description')}</p>
         </div>
       </div>
 
@@ -208,19 +208,19 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
           <div className="flex items-center gap-4 mt-4 text-xs text-slate-500">
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded bg-emerald-500" />
-              <span>已完成</span>
+              <span>{t('scheduler.dependencyGraph.legendCompleted')}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded bg-primary-500" />
-              <span>进行中</span>
+              <span>{t('scheduler.dependencyGraph.legendInProgress')}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded bg-amber-500" />
-              <span>被阻塞</span>
+              <span>{t('scheduler.dependencyGraph.legendBlocked')}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded bg-slate-500" />
-              <span>待处理</span>
+              <span>{t('scheduler.dependencyGraph.legendPending')}</span>
             </div>
           </div>
         </div>
@@ -238,6 +238,7 @@ export const DependencyIndicator: React.FC<DependencyIndicatorProps> = ({
   blockingTasks = [],
   className = "",
 }) => {
+  const { t } = useTranslation();
   const isBlocked = blockingTasks.some((t) => t.status !== "completed");
   const pendingBlockers = blockingTasks.filter((t) => t.status !== "completed");
 
@@ -248,12 +249,12 @@ export const DependencyIndicator: React.FC<DependencyIndicatorProps> = ({
       {isBlocked ? (
         <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
           <Lock size={10} aria-hidden="true" />
-          <span>等待 {pendingBlockers.length} 个任务</span>
+          <span>{t('scheduler.dependencyGraph.waitingTasks', { count: pendingBlockers.length })}</span>
         </div>
       ) : (
         <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs">
           <Unlock size={10} aria-hidden="true" />
-          <span>已解锁</span>
+          <span>{t('scheduler.dependencyGraph.unlocked')}</span>
         </div>
       )}
     </div>

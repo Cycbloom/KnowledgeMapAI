@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 interface MasteryProgressBarProps {
   masteryLevel: number;
@@ -51,12 +52,6 @@ const getMasteryColor = (
   };
 };
 
-const getMasteryLabel = (level: number): string => {
-  if (level < 30) return "需要复习";
-  if (level < 70) return "学习中";
-  return "掌握良好";
-};
-
 export const MasteryProgressBar: React.FC<MasteryProgressBarProps> = ({
   masteryLevel,
   showLabel = true,
@@ -64,9 +59,15 @@ export const MasteryProgressBar: React.FC<MasteryProgressBarProps> = ({
   size = "md",
   className = "",
 }) => {
+  const { t } = useTranslation();
   const clampedLevel = Math.min(100, Math.max(0, masteryLevel));
   const colors = getMasteryColor(clampedLevel);
   const sizeConfig = SIZE_CONFIGS[size];
+  const label = useMemo(() => {
+    if (clampedLevel < 30) return t("scheduler.masteryProgressBar.needsReview");
+    if (clampedLevel < 70) return t("scheduler.masteryProgressBar.learning");
+    return t("scheduler.masteryProgressBar.mastered");
+  }, [clampedLevel, t]);
 
   const ProgressComponent = animated ? motion.div : "div";
   const progressProps = animated
@@ -96,7 +97,7 @@ export const MasteryProgressBar: React.FC<MasteryProgressBarProps> = ({
         >
           <span className="font-medium">{clampedLevel}%</span>
           <span className="hidden sm:inline opacity-70">
-            ({getMasteryLabel(clampedLevel)})
+            ({label})
           </span>
         </div>
       )}

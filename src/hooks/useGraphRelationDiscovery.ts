@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { graphsApi } from '../services/api/graphs';
 import { message } from '../utils/messageHelper';
@@ -15,6 +16,7 @@ interface UseGraphRelationDiscoveryOptions {
 }
 
 export function useGraphRelationDiscovery(options: UseGraphRelationDiscoveryOptions = {}) {
+  const { t } = useTranslation();
   const { autoFetch = false, graphIds } = options;
   const [discoveryResult, setDiscoveryResult] = useState<DiscoveryResult | null>(null);
   const [intelligentSuggestions, setIntelligentSuggestions] = useState<IntelligentSuggestion | null>(null);
@@ -25,10 +27,10 @@ export function useGraphRelationDiscovery(options: UseGraphRelationDiscoveryOpti
       graphsApi.discoverRelations(opts),
     onSuccess: (data: DiscoveryResult) => {
       setDiscoveryResult(data);
-      message.success(`发现 ${data.analysis_summary.relations_discovered} 个潜在关系`);
+      message.success(t('graphMap.relationDiscovery.discoveredRelationsToast', { count: data.analysis_summary.relations_discovered }));
     },
     onError: (error: Error) => {
-      message.error(`关系发现失败: ${error.message}`);
+      message.error(t('graphMap.relationDiscovery.discoveryFailed', { error: error.message }));
     },
   });
 
@@ -45,10 +47,10 @@ export function useGraphRelationDiscovery(options: UseGraphRelationDiscoveryOpti
     onSuccess: (_, relation) => {
       const key = `${relation.source_graph_id}-${relation.target_graph_id}-${relation.relation_type}`;
       setCreatedRelationIds(prev => new Set(prev).add(key));
-      message.success(`已创建关系: ${relation.source_graph_title} → ${relation.target_graph_title}`);
+      message.success(t('graphMap.relationDiscovery.relationCreated', { source: relation.source_graph_title, target: relation.target_graph_title }));
     },
     onError: (error: Error) => {
-      message.error(`创建关系失败: ${error.message}`);
+      message.error(t('graphMap.relationDiscovery.createFailed', { error: error.message }));
     },
   });
 

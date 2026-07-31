@@ -79,7 +79,7 @@ const InboundBlockRefGroup: React.FC<{
                   : "text-gray-600 dark:text-gray-300"
               }`}
             >
-              {summary || t("notes.blockRefsPanel.emptyBlock")}
+              {summary || t("notes.inboundBlockRefsPanel.emptyBlock")}
             </p>
           )}
           <span className="font-mono text-[10px] text-gray-400 dark:text-gray-500 flex-shrink-0">
@@ -95,8 +95,8 @@ const InboundBlockRefGroup: React.FC<{
             ref.sourceNoteTitle || t("notes.fields.untitled");
           const typeLabel =
             ref.type === "embed"
-              ? t("notes.blockRefsPanel.typeEmbed")
-              : t("notes.blockRefsPanel.typeRef");
+              ? t("notes.inboundBlockRefsPanel.typeEmbed")
+              : t("notes.inboundBlockRefsPanel.typeRef");
           return (
             <li key={ref.id}>
               <button
@@ -144,7 +144,7 @@ export const InboundBlockRefsPanel: React.FC<InboundBlockRefsPanelProps> = ({
     return (
       <EmptyState
         illustration="error"
-        title={t("notes.blockRefsPanel.loadFailed")}
+        title={t("notes.inboundBlockRefsPanel.loadFailed")}
         className="py-6 min-h-[120px]"
       />
     );
@@ -155,7 +155,7 @@ export const InboundBlockRefsPanel: React.FC<InboundBlockRefsPanelProps> = ({
     return (
       <EmptyState
         illustration="empty"
-        title={t("notes.blockRefsPanel.empty")}
+        title={t("notes.inboundBlockRefsPanel.empty")}
         className="py-6 min-h-[120px]"
       />
     );

@@ -18,18 +18,32 @@ interface PeriodicTaskCardProps {
   };
 }
 
-const taskTypeConfig: Record<string, { label: string; icon: React.ElementType; color: string; unit: string }> = {
-  focus: { label: '专注时间', icon: Clock, color: 'from-primary-500 to-primary-500', unit: '分钟' },
-  study: { label: '学习卡片', icon: BookOpen, color: 'from-green-500 to-emerald-500', unit: '张' },
-  create: { label: '创建节点', icon: Zap, color: 'from-primary-500 to-pink-500', unit: '个' },
-  tasks: { label: '完成任务', icon: ListTodo, color: 'from-orange-500 to-amber-500', unit: '个' },
-};
+const taskTypeConfig = {
+  focus: { icon: Clock, color: 'from-primary-500 to-primary-500' },
+  study: { icon: BookOpen, color: 'from-green-500 to-emerald-500' },
+  create: { icon: Zap, color: 'from-primary-500 to-pink-500' },
+  tasks: { icon: ListTodo, color: 'from-orange-500 to-amber-500' },
+} as const;
 
-const periodTypeLabels: Record<string, string> = {
-  weekly: '周',
-  monthly: '月',
-  quarterly: '季度',
-};
+const taskTypeLabelKeys = {
+  focus: 'focusTime',
+  study: 'studyCards',
+  create: 'createNodes',
+  tasks: 'completeTasks',
+} as const;
+
+const taskTypeUnitKeys = {
+  focus: 'minutes',
+  study: 'cards',
+  create: 'items',
+  tasks: 'items',
+} as const;
+
+const periodTypeKeys = {
+  weekly: 'week',
+  monthly: 'month',
+  quarterly: 'quarter',
+} as const;
 
 const PeriodicTaskCardComponent: React.FC<PeriodicTaskCardProps> = ({ task }) => {
   const { t } = useTranslation();
@@ -37,6 +51,17 @@ const PeriodicTaskCardComponent: React.FC<PeriodicTaskCardProps> = ({ task }) =>
   const Icon = config.icon;
   const progressPercent = Math.min(100, (task.progress / task.target) * 100);
   const isCompleted = task.status === 'completed';
+
+  const label = t(`achievements.periodicTask.label.${taskTypeLabelKeys[task.task_type]}` as const);
+  const unit = t(`achievements.periodicTask.unit.${taskTypeUnitKeys[task.task_type]}` as const);
+  const period = t(`achievements.periodicTask.period.${periodTypeKeys[task.period_type]}` as const);
+  const title = t('achievements.periodicTask.title', { period, label });
+  const progressText = t('achievements.periodicTask.progress', {
+    current: task.progress,
+    target: task.target,
+    unit,
+  });
+  const pointsLabel = t('achievements.periodicTask.pointsLabel');
 
   return (
     <motion.div
@@ -56,7 +81,7 @@ const PeriodicTaskCardComponent: React.FC<PeriodicTaskCardProps> = ({ task }) =>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <h4 className="font-medium text-slate-900 dark:text-white">
-              {periodTypeLabels[task.period_type]}{config.label}
+              {title}
             </h4>
             {isCompleted ? (
               <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -68,7 +93,7 @@ const PeriodicTaskCardComponent: React.FC<PeriodicTaskCardProps> = ({ task }) =>
           <div className="mb-2">
             <div className="flex items-center justify-between text-sm mb-1">
               <span className="text-slate-500 dark:text-slate-400">
-                {task.progress} / {task.target} {config.unit}
+                {progressText}
               </span>
               <span className="text-slate-600 dark:text-slate-300 font-medium">
                 {Math.round(progressPercent)}%
@@ -98,7 +123,7 @@ const PeriodicTaskCardComponent: React.FC<PeriodicTaskCardProps> = ({ task }) =>
             </span>
             <span className="flex items-center gap-1">
               <span className="text-primary-500">🎫</span>
-              {task.pass_points} 积分
+              {task.pass_points} {pointsLabel}
             </span>
           </div>
         </div>

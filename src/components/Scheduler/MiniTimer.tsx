@@ -115,7 +115,7 @@ export const MiniTimer: React.FC<MiniTimerProps> = ({
           <div className="flex items-center gap-2 text-white/80">
             <GripVertical size={14} aria-hidden="true" />
             <span className="text-xs font-medium truncate max-w-[140px]">
-              {isBreak ? '休息时间' : taskTitle}
+              {isBreak ? t('scheduler.miniTimer.breakTime') : taskTitle}
             </span>
           </div>
           <div className="flex items-center gap-1">

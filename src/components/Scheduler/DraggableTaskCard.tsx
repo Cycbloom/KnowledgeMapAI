@@ -76,7 +76,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
   // 保留本地实现：< 60 分钟使用中文，>= 60 分钟使用无空格紧凑格式 "XhYm"，混合格式无法直接复用 @/utils/formatters
   const formatDuration = (minutes?: number) => {
     if (!minutes) return "--";
-    if (minutes < 60) return `${minutes}分钟`;
+    if (minutes < 60) return t('scheduler.draggableTaskCard.durationMinutes', { count: minutes });
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return mins > 0 ? `${hours}h${mins}m` : `${hours}h`;
@@ -297,7 +297,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
             className="flex items-center gap-2 text-white text-xs px-3 py-2 bg-slate-800/90 rounded-lg shadow-lg pointer-events-auto"
           >
             <Lock size={14} />
-            <span>请先暂停任务再移动</span>
+            <span>{t('scheduler.draggableTaskCard.pauseBeforeMove')}</span>
           </div>
         </div>
       )}

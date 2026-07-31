@@ -129,6 +129,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     }
   }, [activeIndex]);
 
+  const categoryLabels: Record<string, string> = useMemo(() => ({
+    navigation: t('graphEditor.commandPalette.categories.navigation'),
+    view: t('graphEditor.commandPalette.categories.view'),
+    action: t('graphEditor.commandPalette.categories.action'),
+    ai: t('graphEditor.commandPalette.categories.ai'),
+    node: t('graphEditor.commandPalette.categories.node')
+  }), [t]);
+
   if (!isOpen) return null;
 
   // Group commands by category
@@ -137,14 +145,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     acc[cmd.category].push(cmd);
     return acc;
   }, {} as Record<string, CommandItem[]>);
-
-  const categoryLabels: Record<string, string> = {
-    navigation: '导航',
-    view: '视图',
-    action: '操作',
-    ai: 'AI 助手',
-    node: '跳转至节点'
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4">
@@ -164,7 +164,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         transform transition-all duration-200 scale-100 opacity-100
         ${isDark ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-white border border-gray-200 text-gray-900'}
       `}>
-        <h2 id={titleId} className="sr-only">命令面板</h2>
+        <h2 id={titleId} className="sr-only">{t('graphEditor.commandPalette.srTitle')}</h2>
         {/* Search Input */}
         <div className={`flex items-center px-4 py-3 border-b ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
           <Search className={`w-5 h-5 mr-3 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} />
@@ -258,8 +258,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           isDark ? 'bg-slate-800/50 border-slate-800 text-slate-500' : 'bg-gray-50 border-gray-100 text-gray-400'
         }`}>
           <div className="flex gap-3">
-            <span>↑↓ 导航</span>
-            <span>↵ 选择</span>
+            <span>{t('graphEditor.commandPalette.kbdHints.navHint')}</span>
+            <span>{t('graphEditor.commandPalette.kbdHints.selectHint')}</span>
           </div>
           <div>
             Command Palette

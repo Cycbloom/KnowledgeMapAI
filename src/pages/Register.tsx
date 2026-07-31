@@ -62,7 +62,7 @@ export const Register = () => {
         const detailMessages = err.details?.map(d => `${d.field}: ${d.message}`) || [err.message];
         setErrors(detailMessages);
       } else {
-        const errorMessage = err instanceof Error ? err.message : '注册失败';
+        const errorMessage = err instanceof Error ? err.message : t('register.registerFailed');
         setErrors([errorMessage]);
       }
     }
@@ -185,7 +185,7 @@ export const Register = () => {
             )}
           </div>
           <div>
-            <label htmlFor="register-confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.confirmPassword') ?? '确认密码'}</label>
+            <label htmlFor="register-confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.confirmPassword')}</label>
             <input
               id="register-confirm-password"
               type="password"

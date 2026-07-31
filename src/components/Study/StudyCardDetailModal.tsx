@@ -143,7 +143,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
                   className="flex-1 py-4 bg-primary-600 text-white rounded-2xl font-black shadow-lg shadow-primary-200 hover:bg-primary-700 transition-all flex items-center justify-center gap-2"
                 >
                   <Play size={20} fill="currentColor" />
-                  立即开始练习
+                  {t('study.cardDetailModal.startNow')}
                 </button>
               </div>
             )}

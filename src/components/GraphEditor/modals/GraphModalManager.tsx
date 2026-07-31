@@ -227,7 +227,7 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
         onConfirm={confirmModal.onConfirm}
         title={confirmModal.title}
         message={confirmModal.message}
-        confirmText="删除"
+        confirmText={t('graphEditor.graphModalManager.deleteConfirm')}
         isDangerous={true}
       />
     </>

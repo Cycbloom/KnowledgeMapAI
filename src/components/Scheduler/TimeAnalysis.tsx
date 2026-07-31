@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Sun, Moon, Coffee, Sunset, BarChart3 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -19,19 +19,19 @@ interface HourData {
   label: string;
 }
 
-const TIME_PERIODS = [
-  { name: '凌晨', hours: [0, 1, 2, 3, 4, 5], icon: Moon, color: '#6366f1' },
-  { name: '早晨', hours: [6, 7, 8, 9, 10, 11], icon: Sun, color: '#f59e0b' },
-  { name: '下午', hours: [12, 13, 14, 15, 16, 17], icon: Coffee, color: '#06b6d4' },
-  { name: '傍晚', hours: [18, 19, 20, 21, 22, 23], icon: Sunset, color: '#8b5cf6' },
-];
-
 export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
   className = '',
 }) => {
   const [executions, setExecutions] = useState<TaskExecution[]>([]);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+
+  const timePeriods = useMemo(() => [
+    { name: t('scheduler.timeAnalysis.periodEarlyMorning'), hours: [0, 1, 2, 3, 4, 5], icon: Moon, color: '#6366f1' },
+    { name: t('scheduler.timeAnalysis.periodMorning'), hours: [6, 7, 8, 9, 10, 11], icon: Sun, color: '#f59e0b' },
+    { name: t('scheduler.timeAnalysis.periodAfternoon'), hours: [12, 13, 14, 15, 16, 17], icon: Coffee, color: '#06b6d4' },
+    { name: t('scheduler.timeAnalysis.periodEvening'), hours: [18, 19, 20, 21, 22, 23], icon: Sunset, color: '#8b5cf6' },
+  ], [t]);
 
   useEffect(() => {
     loadData();
@@ -77,8 +77,8 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
 
   const getPeriodStats = () => {
     const hourlyData = getHourlyData();
-    
-    return TIME_PERIODS.map(period => {
+
+    return timePeriods.map(period => {
       const periodData = period.hours.map(h => hourlyData[h]);
       const totalDuration = periodData.reduce((sum, d) => sum + d.duration, 0);
       const totalCount = periodData.reduce((sum, d) => sum + d.count, 0);
@@ -105,14 +105,14 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
 
   return (
     <figure className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-500 p-6 ${className}`}>
-      <figcaption className="sr-only">时间段分析</figcaption>
+      <figcaption className="sr-only">{t('scheduler.timeAnalysis.title')}</figcaption>
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-amber-100 dark:bg-amber-500/20 rounded-xl">
           <Clock size={20} className="text-amber-500" />
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900 dark:text-white">时间段分析</h3>
-          <p className="text-xs text-slate-500">24小时专注分布</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white">{t('scheduler.timeAnalysis.title')}</h3>
+          <p className="text-xs text-slate-500">{t('scheduler.timeAnalysis.subtitle')}</p>
         </div>
       </div>
 
@@ -199,7 +199,7 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
             <div className="flex items-center gap-2">
               <peakPeriod.icon size={16} style={{ color: peakPeriod.color }} />
               <span className="text-sm text-slate-600 dark:text-slate-300">
-                你的高效时段是 <strong className="text-amber-600 dark:text-amber-400">{peakPeriod.name}</strong>
+                {t('scheduler.timeAnalysis.peakPeriodMessage', { period: peakPeriod.name })}
               </span>
             </div>
           </div>

@@ -1,13 +1,14 @@
 import type { Command, CommandResult, ParsedArgs, CommandContext } from '../types';
 import { graphsApi } from '../../api/graphs';
 import { nodesApi } from '../../api/nodes';
+import i18next from 'i18next';
 
 const createParentHandler = (_commandName: string, subcommands: Command[]) => {
   return async (_args: ParsedArgs, _context: CommandContext): Promise<CommandResult> => {
     const subcommandNames = subcommands.map((s) => s.name).join(', ');
     return {
       success: false,
-      error: `请指定子命令。可用子命令: ${subcommandNames}`,
+      error: i18next.t('console.commands.common.specifySubcommand', { subcommands: subcommandNames }),
     };
   };
 };
@@ -17,7 +18,7 @@ const handleGraphCreate = async (args: ParsedArgs, _context: CommandContext): Pr
   const description = args.options.description as string | undefined;
 
   if (!name) {
-    return { success: false, error: '图谱名称是必需的' };
+    return { success: false, error: i18next.t('console.commands.graph.graphNameRequired') };
   }
 
   try {
@@ -29,10 +30,10 @@ const handleGraphCreate = async (args: ParsedArgs, _context: CommandContext): Pr
     return {
       success: true,
       data: result,
-      message: `图谱 "${name}" 创建成功`,
+      message: i18next.t('console.commands.graph.graphCreateSuccess', { name }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '创建图谱失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.graph.createGraphFailed');
     return { success: false, error: message };
   }
 };
@@ -64,10 +65,10 @@ const handleGraphList = async (args: ParsedArgs, _context: CommandContext): Prom
         limit,
         totalPages: Math.ceil(graphs.length / limit),
       },
-      message: `找到 ${graphs.length} 个图谱，当前第 ${page} 页`,
+      message: i18next.t('console.commands.graph.graphListFound', { count: graphs.length, page }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '获取图谱列表失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.graph.getGraphListFailed');
     return { success: false, error: message };
   }
 };
@@ -76,17 +77,17 @@ const handleGraphDelete = async (args: ParsedArgs, _context: CommandContext): Pr
   const graphId = args.positional[0] || (args.options['graph-id'] as string);
 
   if (!graphId) {
-    return { success: false, error: '图谱 ID 是必需的' };
+    return { success: false, error: i18next.t('console.commands.graph.graphIdRequired') };
   }
 
   try {
     await graphsApi.delete(graphId);
     return {
       success: true,
-      message: `图谱 ${graphId} 已删除`,
+      message: i18next.t('console.commands.graph.graphDeleteSuccess', { graphId }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '删除图谱失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.graph.deleteGraphFailed');
     return { success: false, error: message };
   }
 };
@@ -95,7 +96,7 @@ const handleGraphShow = async (args: ParsedArgs, _context: CommandContext): Prom
   const graphId = args.positional[0] || (args.options['graph-id'] as string);
 
   if (!graphId) {
-    return { success: false, error: '图谱 ID 是必需的' };
+    return { success: false, error: i18next.t('console.commands.graph.graphIdRequired') };
   }
 
   try {
@@ -103,10 +104,10 @@ const handleGraphShow = async (args: ParsedArgs, _context: CommandContext): Prom
     return {
       success: true,
       data: result,
-      message: `图谱 ${graphId} 的详细信息`,
+      message: i18next.t('console.commands.graph.graphDetail', { graphId }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '获取图谱详情失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.graph.getGraphDetailFailed');
     return { success: false, error: message };
   }
 };
@@ -115,7 +116,7 @@ const handleNodeList = async (args: ParsedArgs, _context: CommandContext): Promi
   const graphId = args.options.graph as string;
 
   if (!graphId) {
-    return { success: false, error: '图谱 ID 是必需的 (--graph)' };
+    return { success: false, error: i18next.t('console.commands.graph.graphIdRequiredOption') };
   }
 
   try {
@@ -135,10 +136,10 @@ const handleNodeList = async (args: ParsedArgs, _context: CommandContext): Promi
         nodes: nodeList,
         total: nodes.length,
       },
-      message: `在图谱 ${graphId} 中找到 ${nodes.length} 个节点`,
+      message: i18next.t('console.commands.graph.nodeListFound', { graphId, count: nodes.length }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '获取节点列表失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.graph.getNodeListFailed');
     return { success: false, error: message };
   }
 };
@@ -148,11 +149,11 @@ const handleNodeCreate = async (args: ParsedArgs, _context: CommandContext): Pro
   const title = args.options.title as string;
 
   if (!graphId) {
-    return { success: false, error: '图谱 ID 是必需的 (--graph)' };
+    return { success: false, error: i18next.t('console.commands.graph.graphIdRequiredOption') };
   }
 
   if (!title) {
-    return { success: false, error: '节点标题是必需的 (--title)' };
+    return { success: false, error: i18next.t('console.commands.graph.nodeTitleRequired') };
   }
 
   try {
@@ -164,10 +165,10 @@ const handleNodeCreate = async (args: ParsedArgs, _context: CommandContext): Pro
     return {
       success: true,
       data: result,
-      message: `节点 "${title}" 在图谱 ${graphId} 中创建成功`,
+      message: i18next.t('console.commands.graph.nodeCreateSuccess', { title, graphId }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '创建节点失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.graph.createNodeFailed');
     return { success: false, error: message };
   }
 };
@@ -176,25 +177,25 @@ const handleNodeDelete = async (args: ParsedArgs, _context: CommandContext): Pro
   const nodeId = args.positional[0] || (args.options['node-id'] as string);
 
   if (!nodeId) {
-    return { success: false, error: '节点 ID 是必需的' };
+    return { success: false, error: i18next.t('console.commands.graph.nodeIdRequired') };
   }
 
   try {
     await nodesApi.delete(nodeId);
     return {
       success: true,
-      message: `节点 ${nodeId} 已删除`,
+      message: i18next.t('console.commands.graph.nodeDeleteSuccess', { nodeId }),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '删除节点失败';
+    const message = error instanceof Error ? error.message : i18next.t('console.commands.graph.deleteNodeFailed');
     return { success: false, error: message };
   }
 };
 
 export const graphCommand: Command = {
   name: 'graph',
-  description: '图谱操作',
-  usage: 'graph <子命令> [选项]',
+  description: i18next.t('console.commands.graph.graphDesc'),
+  usage: i18next.t('console.commands.graph.graphUsage'),
   options: [],
   permission: 'safe',
   handler: createParentHandler('graph', [
@@ -206,21 +207,21 @@ export const graphCommand: Command = {
   subcommands: [
     {
       name: 'create',
-      description: '创建新图谱',
-      usage: 'graph create --name <名称> [--description <描述>]',
+      description: i18next.t('console.commands.graph.graphCreateDesc'),
+      usage: i18next.t('console.commands.graph.graphCreateUsage'),
       options: [
         {
           name: 'name',
           alias: 'n',
           type: 'string',
-          description: '图谱名称',
+          description: i18next.t('console.commands.graph.nameOption'),
           required: true,
         },
         {
           name: 'description',
           alias: 'd',
           type: 'string',
-          description: '图谱描述',
+          description: i18next.t('console.commands.graph.descriptionOption'),
           required: false,
         },
       ],
@@ -229,14 +230,14 @@ export const graphCommand: Command = {
     },
     {
       name: 'list',
-      description: '列出所有图谱',
-      usage: 'graph list [--page 1] [--limit 10]',
+      description: i18next.t('console.commands.graph.graphListDesc'),
+      usage: i18next.t('console.commands.graph.graphListUsage'),
       options: [
         {
           name: 'page',
           alias: 'p',
           type: 'number',
-          description: '页码',
+          description: i18next.t('console.commands.graph.pageOption'),
           required: false,
           default: 1,
         },
@@ -244,7 +245,7 @@ export const graphCommand: Command = {
           name: 'limit',
           alias: 'l',
           type: 'number',
-          description: '每页数量',
+          description: i18next.t('console.commands.graph.limitOption'),
           required: false,
           default: 10,
         },
@@ -254,14 +255,14 @@ export const graphCommand: Command = {
     },
     {
       name: 'delete',
-      description: '删除图谱（危险操作）',
-      usage: 'graph delete <图谱ID>',
+      description: i18next.t('console.commands.graph.graphDeleteDesc'),
+      usage: i18next.t('console.commands.graph.graphDeleteUsage'),
       options: [
         {
           name: 'graph-id',
           alias: 'g',
           type: 'string',
-          description: '要删除的图谱 ID',
+          description: i18next.t('console.commands.graph.graphIdOptionToDelete'),
           required: true,
         },
       ],
@@ -270,14 +271,14 @@ export const graphCommand: Command = {
     },
     {
       name: 'show',
-      description: '显示图谱详情',
-      usage: 'graph show <图谱ID>',
+      description: i18next.t('console.commands.graph.graphShowDesc'),
+      usage: i18next.t('console.commands.graph.graphShowUsage'),
       options: [
         {
           name: 'graph-id',
           alias: 'g',
           type: 'string',
-          description: '要查看的图谱 ID',
+          description: i18next.t('console.commands.graph.graphIdOptionToShow'),
           required: true,
         },
       ],
@@ -289,8 +290,8 @@ export const graphCommand: Command = {
 
 export const nodeCommand: Command = {
   name: 'node',
-  description: '节点操作',
-  usage: 'node <子命令> [选项]',
+  description: i18next.t('console.commands.graph.nodeDesc'),
+  usage: i18next.t('console.commands.graph.nodeUsage'),
   options: [],
   permission: 'safe',
   handler: createParentHandler('node', [
@@ -301,14 +302,14 @@ export const nodeCommand: Command = {
   subcommands: [
     {
       name: 'list',
-      description: '列出图谱中的节点',
-      usage: 'node list --graph <图谱ID>',
+      description: i18next.t('console.commands.graph.nodeListDesc'),
+      usage: i18next.t('console.commands.graph.nodeListUsage'),
       options: [
         {
           name: 'graph',
           alias: 'g',
           type: 'string',
-          description: '图谱 ID',
+          description: i18next.t('console.commands.graph.graphOption'),
           required: true,
         },
       ],
@@ -317,21 +318,21 @@ export const nodeCommand: Command = {
     },
     {
       name: 'create',
-      description: '创建新节点',
-      usage: 'node create --graph <图谱ID> --title <标题>',
+      description: i18next.t('console.commands.graph.nodeCreateDesc'),
+      usage: i18next.t('console.commands.graph.nodeCreateUsage'),
       options: [
         {
           name: 'graph',
           alias: 'g',
           type: 'string',
-          description: '图谱 ID',
+          description: i18next.t('console.commands.graph.graphOption'),
           required: true,
         },
         {
           name: 'title',
           alias: 't',
           type: 'string',
-          description: '节点标题',
+          description: i18next.t('console.commands.graph.titleOption'),
           required: true,
         },
       ],
@@ -340,14 +341,14 @@ export const nodeCommand: Command = {
     },
     {
       name: 'delete',
-      description: '删除节点（危险操作）',
-      usage: 'node delete <节点ID>',
+      description: i18next.t('console.commands.graph.nodeDeleteDesc'),
+      usage: i18next.t('console.commands.graph.nodeDeleteUsage'),
       options: [
         {
           name: 'node-id',
           alias: 'n',
           type: 'string',
-          description: '要删除的节点 ID',
+          description: i18next.t('console.commands.graph.nodeIdOption'),
           required: true,
         },
       ],

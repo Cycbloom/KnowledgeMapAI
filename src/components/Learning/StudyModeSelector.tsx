@@ -90,7 +90,7 @@ export const StudyModeSelector = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">
-                      {preset.label}
+                      {t(preset.labelKey)}
                     </span>
                     {isActive && (
                       <span
@@ -107,7 +107,7 @@ export const StudyModeSelector = ({
                   <p
                     className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-gray-500"}`}
                   >
-                    {preset.description}
+                    {t(preset.descriptionKey)}
                   </p>
                 </div>
               </button>

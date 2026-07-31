@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ChevronDown, AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { SUGGESTION_ICONS, type LearningPathSuggestion } from "./types";
 
 interface PathSuggestionsSectionProps {
@@ -14,6 +15,7 @@ const PathSuggestionsSection: React.FC<PathSuggestionsSectionProps> = ({
   expandedSections,
   onToggleSection,
 }) => {
+  const { t } = useTranslation();
   if (suggestions.length === 0) return null;
 
   return (
@@ -25,7 +27,7 @@ const PathSuggestionsSection: React.FC<PathSuggestionsSectionProps> = ({
         <div className="flex items-center gap-3">
           <Sparkles className="w-5 h-5 text-yellow-500" />
           <span className="font-semibold text-gray-900 dark:text-white">
-            学习建议
+            {t('learningPath.suggestionsSection.title')}
           </span>
         </div>
         <ChevronDown

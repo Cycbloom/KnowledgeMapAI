@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import type { RegionInfo } from "@shared/types/graph";
 
@@ -19,6 +20,7 @@ export const RegionHeader = React.memo(({
   radius,
   isDark,
 }: RegionHeaderProps) => {
+  const { t } = useTranslation();
   const midAngle = (region.angleStart + region.angleEnd) / 2;
 
   const labelOffset = 25;
@@ -88,7 +90,7 @@ export const RegionHeader = React.memo(({
             style={{ pointerEvents: "none" }}
             transform={`rotate(${textRotation}, ${labelX}, ${labelY})`}
           >
-            {nodeCount} 个节点
+            {t("graphEditor.regionHeader.nodeCount", { count: nodeCount })}
           </motion.text>
         )}
 

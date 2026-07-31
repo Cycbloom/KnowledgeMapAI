@@ -70,8 +70,9 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
           });
         });
       } else {
-        const existing = tagMap.get("未分类") || { count: 0, duration: 0 };
-        tagMap.set("未分类", {
+        const untagged = t('scheduler.taskDistribution.untagged');
+        const existing = tagMap.get(untagged) || { count: 0, duration: 0 };
+        tagMap.set(untagged, {
           count: existing.count + 1,
           duration: existing.duration + (task.actual_duration || 0),
         });
@@ -101,10 +102,12 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
 
   // 保留本地实现：< 60 分钟使用中文，>= 60 分钟使用带空格紧凑格式 "Xh Ym"，混合格式无法直接复用 @/utils/formatters
   const formatDuration = (minutes: number) => {
-    if (minutes < 60) return `${minutes}分钟`;
+    if (minutes < 60) return t('scheduler.taskDistribution.durationMinutes', { count: minutes });
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    return mins > 0
+      ? t('scheduler.taskDistribution.durationHoursMinutes', { hours, minutes: mins })
+      : t('scheduler.taskDistribution.durationHours', { count: hours });
   };
 
   const renderPieChart = () => {
@@ -177,9 +180,9 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
         </div>
         <div>
           <h3 className="font-semibold text-slate-900 dark:text-white">
-            任务分布
+            {t('scheduler.taskDistribution.title')}
           </h3>
-          <p className="text-xs text-slate-500">按标签分类统计</p>
+          <p className="text-xs text-slate-500">{t('scheduler.taskDistribution.subtitle')}</p>
         </div>
       </div>
 
@@ -230,7 +233,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
                     {item.tag}
                   </div>
                   <div className="text-xs text-slate-400">
-                    {item.count} 个任务 · {formatDuration(item.duration)}
+                    {t('scheduler.taskDistribution.taskCountWithDuration', { count: item.count, duration: formatDuration(item.duration) })}
                   </div>
                 </div>
                 <div className="text-sm font-medium text-slate-500">

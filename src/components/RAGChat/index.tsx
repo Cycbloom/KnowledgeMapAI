@@ -224,23 +224,34 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
     }
   }, [isOpen]);
 
+  const getSuggestedQuestions = useCallback(
+    (topic: string, context: "initial" | "followup"): string[] => {
+      const initialTutorKeys = ["understandCore", "applicationScenarios", "prerequisites"] as const;
+      const initialNormalKeys = ["whatIs", "coreConcept", "applicationScenarios"] as const;
+      const followupTutorKeys = ["analyzeDeep", "howToApply", "relatedKnowledge"] as const;
+      const followupNormalKeys = ["analyzeDeep", "relatedConcepts", "howToApply"] as const;
+
+      const keys =
+        context === "initial"
+          ? isTutorMode
+            ? initialTutorKeys
+            : initialNormalKeys
+          : isTutorMode
+            ? followupTutorKeys
+            : followupNormalKeys;
+
+      return keys.map((key) => t(`ragChat.suggestedQuestions.${key}`, { topic }));
+    },
+    [isTutorMode, t],
+  );
+
   useEffect(() => {
     if (currentNodeTitle && chatState.messages.length === 0) {
       chatState.setSuggestedQuestions(
-        isTutorMode
-          ? [
-              `帮我理解${currentNodeTitle}的核心概念`,
-              `${currentNodeTitle}有哪些应用场景？`,
-              `学习${currentNodeTitle}需要哪些前置知识？`,
-            ]
-          : [
-              `什么是${currentNodeTitle}？`,
-              `${currentNodeTitle}的核心概念是什么？`,
-              `${currentNodeTitle}有哪些应用场景？`,
-            ],
+        getSuggestedQuestions(currentNodeTitle, "initial"),
       );
     }
-  }, [currentNodeTitle, chatState.messages.length, isTutorMode]);
+  }, [currentNodeTitle, chatState.messages.length, getSuggestedQuestions]);
 
   const handlePlayMessage = (messageId: string, content: string) => {
     if (chatState.currentSpeakingMessageId === messageId && isSpeaking) {
@@ -328,17 +339,7 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
         chatState.setSuggestedQuestions(extractedQuestions);
       } else if (currentNodeTitle) {
         chatState.setSuggestedQuestions(
-          isTutorMode
-            ? [
-                `深入解释${currentNodeTitle}的原理`,
-                `如何应用${currentNodeTitle}？`,
-                `有哪些相关的知识点？`,
-              ]
-            : [
-                `深入解释${currentNodeTitle}的原理`,
-                `${currentNodeTitle}与其他概念有什么关联？`,
-                `如何应用${currentNodeTitle}？`,
-              ],
+          getSuggestedQuestions(currentNodeTitle, "followup"),
         );
       }
     } catch (error: unknown) {
@@ -665,7 +666,7 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
                       : "bg-white text-amber-600 hover:bg-amber-100"
                 }`}
               >
-                概念聚合
+                {t("ragChat.chat.conceptAggregation")}
               </button>
             </div>
           </div>

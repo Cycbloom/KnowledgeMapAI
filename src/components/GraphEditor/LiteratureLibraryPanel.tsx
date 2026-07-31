@@ -15,7 +15,7 @@ import {
 import { useError, useIsMobile } from "../../hooks";
 import {
   BackboneModule,
-  BACKBONE_MODULE_LABELS,
+  BACKBONE_MODULE_LABEL_I18N_KEYS,
   BACKBONE_MODULE_COLORS,
 } from "@shared/types/graph";
 import { graphsApi } from "../../services/api/graphs";
@@ -112,7 +112,7 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
     { value: null, label: t("literatureExtract.allModules") },
     ...ALL_MODULES.map((m) => ({
       value: m,
-      label: BACKBONE_MODULE_LABELS[m],
+      label: t(BACKBONE_MODULE_LABEL_I18N_KEYS[m]),
     })),
   ];
 
@@ -204,7 +204,7 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
               <div className="overflow-x-auto">
                 <table
                   className="w-full text-sm"
-                  aria-label={t("graphEditor.literatureLibrary.tableAriaLabel", { defaultValue: "文献库列表" })}
+                  aria-label={t("graphEditor.literatureLibrary.tableAriaLabel")}
                 >
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-500">
@@ -312,7 +312,7 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
                                     "var(--gray-500)",
                                 }}
                               >
-                                {BACKBONE_MODULE_LABELS[module as BackboneModule] ||
+                                {t(BACKBONE_MODULE_LABEL_I18N_KEYS[module as BackboneModule]) ||
                                   module}
                               </span>
                             ))}

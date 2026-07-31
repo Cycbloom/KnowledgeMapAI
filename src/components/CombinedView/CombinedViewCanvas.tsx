@@ -380,7 +380,7 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
                       fill="#aaa"
                       fontSize={10}
                     >
-                      {node.graphIds.length} 个图谱
+                      {t('combinedViewPage.canvas.graphCount', { count: node.graphIds.length })}
                     </text>
                     <text
                       x={radius + 15}
@@ -388,7 +388,7 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
                       fill="#888"
                       fontSize={9}
                     >
-                      {node.isShared ? '共享知识点' : '独立知识点'}
+                      {node.isShared ? t('combinedViewPage.nodeDetail.shared') : t('combinedViewPage.nodeDetail.independent')}
                     </text>
                   </g>
                 )}

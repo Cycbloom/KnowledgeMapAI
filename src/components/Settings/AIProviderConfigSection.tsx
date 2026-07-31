@@ -13,7 +13,7 @@ import {
   AlertTriangle,
   Info,
 } from "lucide-react";
-import { PROVIDER_DEFAULTS, type ProviderConfig, type ProviderFormData } from "./settingsConstants";
+import { PROVIDER_DEFAULTS, getProviderDisplayName, type ProviderConfig, type ProviderFormData } from "./settingsConstants";
 import { useStore } from "../../store/useStore";
 
 export const AIProviderConfigSection = React.memo(function AIProviderConfigSection() {
@@ -102,7 +102,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
       };
       await apiClient.put("/ai/config/providers", { providers: updateData });
       message.success(t("settings.providerConfigSaved", {
-        provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+        provider: getProviderDisplayName(provider, t),
       }));
       await fetchProviderConfigs();
     } catch (error) {
@@ -125,20 +125,20 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
       })) as { success: boolean; message: string };
       if (response.success) {
         message.success(t("settings.providerTestSuccess", {
-          provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+          provider: getProviderDisplayName(provider, t),
         }));
       } else {
         message.error(
           response.message ||
             t("settings.providerTestFailed", {
-              provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+              provider: getProviderDisplayName(provider, t),
             }),
         );
       }
     } catch (error) {
       console.error("Failed to test provider connection:", error);
       message.error(t("settings.providerTestFailed", {
-        provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+        provider: getProviderDisplayName(provider, t),
       }));
     } finally {
       setTestingProvider(null);
@@ -162,7 +162,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
         },
       }));
       message.success(t("settings.providerConfigCleared", {
-        provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+        provider: getProviderDisplayName(provider, t),
       }));
       await fetchProviderConfigs();
     } catch (error) {
@@ -239,7 +239,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                   <div className="flex items-center gap-3">
                     <Zap className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                     <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                      {defaults.name}
+                      {defaults.nameKey ? t(defaults.nameKey as never) : defaults.name}
                     </span>
                     {config && renderProviderBadge(config)}
                   </div>
@@ -263,7 +263,7 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                       <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-sm text-amber-700 dark:text-amber-300 flex items-start gap-2">
                         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                         {t("settings.noApiKeyHint", {
-                          provider: defaults.name,
+                          provider: defaults.nameKey ? t(defaults.nameKey as never) : defaults.name,
                         })}
                       </div>
                     )}

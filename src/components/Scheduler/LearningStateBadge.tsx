@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { BookOpen, RefreshCw, Pencil, FileCheck } from "lucide-react";
 import { LearningState, LEARNING_STATE_CONFIGS } from "@shared/types";
 
@@ -25,6 +26,7 @@ export const LearningStateBadge: React.FC<LearningStateBadgeProps> = ({
   showIcon = true,
   className = "",
 }) => {
+  const { t } = useTranslation();
   const config = LEARNING_STATE_CONFIGS[state];
   const Icon = STATE_ICONS[state];
 
@@ -50,7 +52,7 @@ export const LearningStateBadge: React.FC<LearningStateBadgeProps> = ({
       `}
     >
       {showIcon && Icon && <Icon size={iconSizes[size]} />}
-      <span>{config.label}</span>
+      <span>{t(config.labelKey)}</span>
     </span>
   );
 };

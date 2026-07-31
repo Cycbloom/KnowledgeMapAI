@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { commandRegistry, consoleLogger, allCommands, type CommandResult, type CommandHistoryItem, type CommandContext, type CommandPermission } from '@/services/console';
 import { useConsoleStore, type ConfirmDialogType } from '@/store/useConsoleStore';
 
@@ -40,6 +41,7 @@ export interface UseConsoleReturn {
 }
 
 export function useConsole(options: UseConsoleOptions): UseConsoleReturn {
+  const { t } = useTranslation();
   const { userId, autoRegisterCommands = true } = options;
 
   const commandsRegistered = useRef(false);
@@ -89,11 +91,11 @@ export function useConsole(options: UseConsoleOptions): UseConsoleReturn {
     }
 
     if (permission === 'danger') {
-      return `您即将执行危险操作: "${operation}"\n\n此操作可能会造成不可逆的数据变更或删除，请确认您了解操作后果。`;
+      return t('console.confirmation.dangerMessage', { operation });
     }
 
-    return `您即将执行警告操作: "${operation}"\n\n此操作可能会影响系统状态，请确认是否继续。`;
-  }, []);
+    return t('console.confirmation.warningMessage', { operation });
+  }, [t]);
 
   const executeCommandInternal = useCallback(async (command: string) => {
     if (!command.trim()) return;
@@ -140,13 +142,13 @@ export function useConsole(options: UseConsoleOptions): UseConsoleReturn {
       store.setConfirmState({
         isOpen: true,
         type,
-        title: type === 'danger' ? '危险操作确认' : '操作确认',
+        title: type === 'danger' ? t('console.confirmation.dangerTitle') : t('console.confirmation.warningTitle'),
         message,
         confirmText: type === 'danger' ? 'CONFIRM' : undefined,
         onConfirm,
       });
     },
-    [getCommandPermission, getConfirmMessage, store]
+    [getCommandPermission, getConfirmMessage, store, t]
   );
 
   const cancelConfirm = useCallback(() => {

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Edit3, GitBranch, Trash2 } from 'lucide-react';
 import type { Edge } from '../../../types';
 
@@ -19,6 +20,7 @@ export const EdgeContextMenu: React.FC<EdgeContextMenuProps> = ({
   onChangeRelationshipType,
   onDelete
 }) => {
+  const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -82,7 +84,7 @@ export const EdgeContextMenu: React.FC<EdgeContextMenuProps> = ({
         className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
       >
         <Edit3 size={16} className="text-gray-500 dark:text-gray-400" />
-        编辑标签
+        {t('graphEditor.edgeContextMenu.editLabel')}
       </button>
       <button
         onClick={() => {
@@ -92,7 +94,7 @@ export const EdgeContextMenu: React.FC<EdgeContextMenuProps> = ({
         className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
       >
         <GitBranch size={16} className="text-gray-500 dark:text-gray-400" />
-        更改关系类型
+        {t('graphEditor.edgeContextMenu.changeRelationshipType')}
       </button>
       <hr className="my-1 border-gray-200 dark:border-slate-500" />
       <button
@@ -103,7 +105,7 @@ export const EdgeContextMenu: React.FC<EdgeContextMenuProps> = ({
         className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"
       >
         <Trash2 size={16} />
-        删除边
+        {t('graphEditor.edgeContextMenu.deleteEdge')}
       </button>
     </div>
   );

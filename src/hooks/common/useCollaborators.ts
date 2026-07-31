@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   CollaboratorRole,
   CollaboratorWithUser,
@@ -17,6 +18,7 @@ interface UseCollaboratorsResult {
 }
 
 export function useCollaborators(): UseCollaboratorsResult {
+  const { t } = useTranslation();
   const [collaborators, setCollaborators] = useState<CollaboratorWithUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +30,11 @@ export function useCollaborators(): UseCollaboratorsResult {
       const data = await apiClient.get(`/collaborations/graphs/${graphId}/collaborators`);
       setCollaborators(data as unknown as CollaboratorWithUser[]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "获取协作者列表失败");
+      setError(err instanceof Error ? err.message : t("collaborators.errors.fetchFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const inviteCollaborator = useCallback(async (graphId: string, email: string, role: CollaboratorRole): Promise<boolean> => {
     setError(null);
@@ -41,10 +43,10 @@ export function useCollaborators(): UseCollaboratorsResult {
       await fetchCollaborators(graphId);
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "邀请失败");
+      setError(err instanceof Error ? err.message : t("collaborators.errors.inviteFailed"));
       return false;
     }
-  }, [fetchCollaborators]);
+  }, [fetchCollaborators, t]);
 
   const updateRole = useCallback(async (graphId: string, userId: string, role: CollaboratorRole): Promise<boolean> => {
     setError(null);
@@ -53,10 +55,10 @@ export function useCollaborators(): UseCollaboratorsResult {
       await fetchCollaborators(graphId);
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "更新角色失败");
+      setError(err instanceof Error ? err.message : t("collaborators.errors.updateRoleFailed"));
       return false;
     }
-  }, [fetchCollaborators]);
+  }, [fetchCollaborators, t]);
 
   const removeCollaborator = useCallback(async (graphId: string, userId: string): Promise<boolean> => {
     setError(null);
@@ -65,10 +67,10 @@ export function useCollaborators(): UseCollaboratorsResult {
       await fetchCollaborators(graphId);
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "移除失败");
+      setError(err instanceof Error ? err.message : t("collaborators.errors.removeFailed"));
       return false;
     }
-  }, [fetchCollaborators]);
+  }, [fetchCollaborators, t]);
 
   const generateShareLink = useCallback(async (graphId: string, role: CollaboratorRole = "viewer") => {
     setError(null);
@@ -76,10 +78,10 @@ export function useCollaborators(): UseCollaboratorsResult {
       const data = await apiClient.post(`/collaborations/graphs/${graphId}/share`, { role });
       return data as unknown as { invitationToken: string; shareUrl: string };
     } catch (err) {
-      setError(err instanceof Error ? err.message : "生成分享链接失败");
+      setError(err instanceof Error ? err.message : t("collaborators.errors.generateShareLinkFailed"));
       return null;
     }
-  }, []);
+  }, [t]);
 
   return {
     collaborators,

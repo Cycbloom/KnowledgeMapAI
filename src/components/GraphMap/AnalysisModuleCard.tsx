@@ -95,7 +95,7 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
             <div className="flex items-center gap-2">
               <Icon className={`w-4 h-4 ${colors.icon}`} />
               <span className="font-medium text-gray-900 dark:text-white text-sm">
-                {module.name}
+                {t(module.nameKey as never)}
               </span>
             </div>
             {onEditPrompt && (
@@ -114,13 +114,13 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
           </div>
 
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">
-            {module.description}
+            {t(module.descriptionKey as never)}
           </p>
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
               <Clock className="w-3 h-3" />
-              <span>{module.estimatedTime}</span>
+              <span>{t(module.estimatedTimeKey as never)}</span>
             </div>
 
             {isLoading && (

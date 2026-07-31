@@ -93,7 +93,7 @@ export const LearningModeRightPanel = ({
                 <div>
                   <h3 className="font-bold text-sm">
                     {rightPanelMode === "concept-aggregation"
-                      ? "概念聚合"
+                      ? t('learning.modeRightPanel.conceptAggregation')
                       : rightPanelMode === "chat"
                         ? t("learning.chat.aiTutor")
                         : rightPanelMode === "learning-path"
@@ -103,7 +103,7 @@ export const LearningModeRightPanel = ({
                   <div className="flex items-center text-[10px] text-green-500">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span>
                     {rightPanelMode === "concept-aggregation"
-                      ? "智能合并相似概念"
+                      ? t('learning.modeRightPanel.smartMergeConcepts')
                       : rightPanelMode === "chat"
                         ? t("learning.chat.online")
                         : rightPanelMode === "learning-path"

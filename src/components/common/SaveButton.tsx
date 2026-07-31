@@ -13,7 +13,7 @@ import { message } from '@/utils/messageHelper';
  *   - pending：禁用按钮 + 显示 Loader2 旋转图标 + savingLabel
  *   - success：显示 Check 图标（绿色）+ savedLabel，1500ms 后回 idle
  *   - error：通过 message.error 弹错误 toast，按钮立即回 idle（不进入 success 态）
- * - 文案可通过 idleLabel / savingLabel / savedLabel 覆盖，默认走 i18n（common.save / saving / saved / saveFailed）。
+ * - 文案可通过 idleLabel / savingLabel / savedLabel 覆盖，默认走 i18n（common.saveButton.idle / saving / saved / error）。
  *
  * 集成约束：
  * - **不要使用底层 Button 的 `loading` prop**：SaveButtonProps 已通过 Omit 移除 loading，
@@ -45,9 +45,9 @@ export function SaveButton({
     resetMs: 1500,
   });
 
-  const idleText = idleLabel ?? t('common.save');
-  const savingText = savingLabel ?? t('common.saving');
-  const savedText = savedLabel ?? t('toast.common.saved');
+  const idleText = idleLabel ?? t('common.saveButton.idle');
+  const savingText = savingLabel ?? t('common.saveButton.saving');
+  const savedText = savedLabel ?? t('common.saveButton.saved');
 
   const handleSave = async () => {
     try {
@@ -56,7 +56,7 @@ export function SaveButton({
       const errorMsg =
         err instanceof Error && err.message
           ? err.message
-          : t('toast.common.saveFailed');
+          : t('common.saveButton.error');
       message.error(
         errorMsg,
         errorToastDuration !== undefined

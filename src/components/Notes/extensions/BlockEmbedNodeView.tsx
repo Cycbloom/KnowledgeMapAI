@@ -98,7 +98,7 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
       >
         <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{t("notes.editor.blockEmbed.removed")}</span>
+          <span>{t("notes.blockEmbedNodeView.removed")}</span>
         </div>
       </NodeViewWrapper>
     );
@@ -115,7 +115,7 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
           <FileText className="w-4 h-4 flex-shrink-0" />
           <span className="font-mono text-xs">{blockId}</span>
           <span className="inline-block w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-          <span>{t("notes.editor.blockEmbed.loading")}</span>
+          <span>{t("notes.blockEmbedNodeView.loading")}</span>
         </div>
       </NodeViewWrapper>
     );
@@ -130,24 +130,24 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
         as="div"
         contentEditable={false}
         role="textbox"
-        aria-label={t("notes.editor.blockEmbed.label")}
+        aria-label={t("notes.blockEmbedNodeView.label")}
         aria-multiline="false"
         aria-readonly="true"
       >
         <div className="flex items-center justify-between gap-2 px-3 py-2">
           <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{t("notes.editor.blockEmbed.removed")}</span>
+            <span>{t("notes.blockEmbedNodeView.removed")}</span>
             <span className="font-mono text-xs opacity-70">{blockId}</span>
           </div>
           <button
             type="button"
             onClick={handleUnembed}
             className="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-800/50 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-700/50 transition-colors"
-            title={t("notes.editor.blockEmbed.unembed")}
+            title={t("notes.blockEmbedNodeView.unembed")}
           >
             <Unlink className="w-3 h-3" />
-            {t("notes.editor.blockEmbed.unembed")}
+            {t("notes.blockEmbedNodeView.unembed")}
           </button>
         </div>
       </NodeViewWrapper>
@@ -164,7 +164,7 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
       as="div"
       contentEditable={false}
       role="textbox"
-      aria-label={t("notes.editor.blockEmbed.label")}
+      aria-label={t("notes.blockEmbedNodeView.label")}
       aria-multiline="true"
       aria-readonly="true"
     >
@@ -179,18 +179,18 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
           <button
             type="button"
             onClick={handleJumpToSource}
-            aria-label={t("notes.editor.blockEmbed.jumpToSource")}
+            aria-label={t("notes.blockEmbedNodeView.jumpToSource")}
             className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-            title={t("notes.editor.blockEmbed.jumpToSource")}
+            title={t("notes.blockEmbedNodeView.jumpToSource")}
           >
             <ExternalLink className="w-3 h-3" />
           </button>
           <button
             type="button"
             onClick={handleUnembed}
-            aria-label={t("notes.editor.blockEmbed.unembed")}
+            aria-label={t("notes.blockEmbedNodeView.unembed")}
             className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-            title={t("notes.editor.blockEmbed.unembed")}
+            title={t("notes.blockEmbedNodeView.unembed")}
           >
             <Unlink className="w-3 h-3" />
           </button>
@@ -205,7 +205,7 @@ export const BlockEmbedNodeView: React.FC<NodeViewProps> = ({
           className="w-full flex items-center gap-1.5 px-3 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors border-b border-amber-100 dark:border-amber-800/50"
         >
           <RefreshCw className="w-3 h-3" />
-          {t("notes.editor.blockEmbed.refreshPrompt")}
+          {t("notes.blockEmbedNodeView.refreshPrompt")}
         </button>
       )}
 

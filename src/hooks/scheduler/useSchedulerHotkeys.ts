@@ -1,4 +1,6 @@
 import { useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18next from 'i18next';
 
 export interface HotkeyConfig {
   key: string;
@@ -24,6 +26,7 @@ export interface SchedulerHotkeysOptions {
 }
 
 export const useSchedulerHotkeys = (options: SchedulerHotkeysOptions) => {
+  const { t } = useTranslation();
   const {
     onNewTask,
     onStartPause,
@@ -127,28 +130,28 @@ export const useSchedulerHotkeys = (options: SchedulerHotkeysOptions) => {
   }, [enabled, handleKeyDown]);
 
   const hotkeys: HotkeyConfig[] = [
-    { key: 'N', action: () => onNewTask?.(), description: '新建任务' },
-    { key: 'Space', action: () => onStartPause?.(), description: '开始/暂停任务' },
-    { key: 'C', action: () => onComplete?.(), description: '完成任务' },
-    { key: 'Esc', action: () => onClose?.(), description: '关闭弹窗' },
-    { key: '1', action: () => onQueue0?.(), description: '切换到Q0队列' },
-    { key: '2', action: () => onQueue1?.(), description: '切换到Q1队列' },
-    { key: '3', action: () => onQueue2?.(), description: '切换到Q2队列' },
-    { key: 'F', action: () => onToggleFocusMode?.(), description: '切换专注模式' },
-    { key: 'M', action: () => onToggleMiniMode?.(), description: '切换迷你模式' },
+    { key: 'N', action: () => onNewTask?.(), description: t('scheduler.hotkeys.newTask') },
+    { key: 'Space', action: () => onStartPause?.(), description: t('scheduler.hotkeys.startPauseTask') },
+    { key: 'C', action: () => onComplete?.(), description: t('scheduler.hotkeys.completeTask') },
+    { key: 'Esc', action: () => onClose?.(), description: t('scheduler.hotkeys.closePopup') },
+    { key: '1', action: () => onQueue0?.(), description: t('scheduler.hotkeys.switchQ0') },
+    { key: '2', action: () => onQueue1?.(), description: t('scheduler.hotkeys.switchQ1') },
+    { key: '3', action: () => onQueue2?.(), description: t('scheduler.hotkeys.switchQ2') },
+    { key: 'F', action: () => onToggleFocusMode?.(), description: t('scheduler.hotkeys.toggleFocusMode') },
+    { key: 'M', action: () => onToggleMiniMode?.(), description: t('scheduler.hotkeys.toggleMiniMode') },
   ];
 
   return { hotkeys };
 };
 
 export const HOTKEY_LIST = [
-  { key: 'N', description: '新建任务' },
-  { key: 'Space', description: '开始/暂停任务' },
-  { key: 'C', description: '完成任务' },
-  { key: 'Esc', description: '关闭弹窗/退出专注模式' },
-  { key: '1', description: '切换到Q0队列视图' },
-  { key: '2', description: '切换到Q1队列视图' },
-  { key: '3', description: '切换到Q2队列视图' },
-  { key: 'F', description: '切换专注模式' },
-  { key: 'M', description: '切换迷你模式' },
+  { key: 'N', description: i18next.t('scheduler.hotkeys.newTask') },
+  { key: 'Space', description: i18next.t('scheduler.hotkeys.startPauseTask') },
+  { key: 'C', description: i18next.t('scheduler.hotkeys.completeTask') },
+  { key: 'Esc', description: i18next.t('scheduler.hotkeys.closePopupExitFocus') },
+  { key: '1', description: i18next.t('scheduler.hotkeys.switchQ0View') },
+  { key: '2', description: i18next.t('scheduler.hotkeys.switchQ1View') },
+  { key: '3', description: i18next.t('scheduler.hotkeys.switchQ2View') },
+  { key: 'F', description: i18next.t('scheduler.hotkeys.toggleFocusMode') },
+  { key: 'M', description: i18next.t('scheduler.hotkeys.toggleMiniMode') },
 ];

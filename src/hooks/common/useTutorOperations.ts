@@ -63,6 +63,17 @@ export const useTutorOperations = ({
     return chatSessionIdRef.current;
   }, []);
 
+  const getModeLabel = useCallback((mode: TutorMode): string => {
+    const modeLabels: Record<TutorMode, string> = {
+      free: t("tutor.modes.freeTalk"),
+      guided: t("tutor.modes.guidedLearning"),
+      "learning-path": t("tutor.modes.learningPath"),
+      "literature-extract": t("tutor.modes.literatureExtraction"),
+      "concept-aggregation": t("tutor.modes.conceptAggregation"),
+    };
+    return modeLabels[mode];
+  }, [t]);
+
   const handleTutorChat = async (
     userMessage: string,
     history: TutorChatMessage[] = [],
@@ -90,7 +101,7 @@ export const useTutorOperations = ({
       );
     } catch (error: unknown) {
       console.error("Tutor chat error:", error);
-      message.error("助教对话失败，请重试");
+      message.error(t("tutor.messages.tutorChatFailed"));
       throw error;
     }
   };
@@ -109,13 +120,13 @@ export const useTutorOperations = ({
       setExtractedConcepts(result.concepts || []);
 
       if (result.concepts && result.concepts.length > 0) {
-        message.success(`提取了 ${result.concepts.length} 个概念，可以添加到图谱中`);
+        message.success(t("tutor.messages.conceptsExtracted", { count: result.concepts.length }));
       } else {
-        message.info("未提取到新的概念");
+        message.info(t("tutor.messages.noConceptsExtracted"));
       }
     } catch (error: unknown) {
       console.error("Extract concepts error:", error);
-      message.error("概念提取失败");
+      message.error(t("tutor.messages.conceptExtractionFailed"));
     } finally {
       setLoading(false);
     }
@@ -129,7 +140,7 @@ export const useTutorOperations = ({
       const parentNode = selectedNode || nodes.find((n) => n.level === "root");
 
       if (!parentNode) {
-        message.error("请先选择一个父节点");
+        message.error(t("tutor.messages.selectParentNodeFirst"));
         return;
       }
 
@@ -170,12 +181,12 @@ export const useTutorOperations = ({
         prev.filter((c) => c.title !== concept.title),
       );
 
-      message.success(`已将 "${concept.title}" 添加到图谱中`);
+      message.success(t("tutor.messages.conceptAddedToGraph", { title: concept.title }));
 
       return newNode;
     } catch (error: unknown) {
       console.error("Add concept to graph error:", error);
-      message.error("添加概念失败");
+      message.error(t("tutor.messages.addConceptFailed"));
       return null;
     } finally {
       setLoading(false);
@@ -192,7 +203,7 @@ export const useTutorOperations = ({
       const parentNode = selectedNode || nodes.find((n) => n.level === "root");
 
       if (!parentNode) {
-        message.error("请先选择一个父节点");
+        message.error(t("tutor.messages.selectParentNodeFirst"));
         return;
       }
 
@@ -235,10 +246,10 @@ export const useTutorOperations = ({
 
       setExtractedConcepts([]);
 
-      message.success(`已将 ${addedNodes.length} 个概念添加到图谱中`);
+      message.success(t("tutor.messages.allConceptsAdded", { count: addedNodes.length }));
     } catch (error: unknown) {
       console.error("Add all concepts error:", error);
-      message.error("批量添加概念失败");
+      message.error(t("tutor.messages.batchAddConceptsFailed"));
     } finally {
       setLoading(false);
     }
@@ -265,13 +276,13 @@ export const useTutorOperations = ({
       setSuggestedNextTopics(result.suggestions || []);
 
       if (result.suggestions && result.suggestions.length > 0) {
-        message.success(`生成了 ${result.suggestions.length} 个学习建议`);
+        message.success(t("tutor.messages.learningSuggestionsGenerated", { count: result.suggestions.length }));
       } else {
         message.info(t("common.tutor.empty"));
       }
     } catch (error: unknown) {
       console.error("Suggest next topics error:", error);
-      message.error("生成学习建议失败");
+      message.error(t("tutor.messages.generateSuggestionsFailed"));
     } finally {
       setLoading(false);
     }
@@ -280,23 +291,16 @@ export const useTutorOperations = ({
   const handleSwitchTutorMode = (mode: TutorMode) => {
     setTutorMode(mode);
     setIsTutorMode(true);
-    const modeLabels: Record<TutorMode, string> = {
-      free: "自由对话",
-      guided: "引导学习",
-      "learning-path": "学习路径",
-      "literature-extract": "文献提取",
-      "concept-aggregation": "概念聚合",
-    };
-    message.info(`已切换到${modeLabels[mode]}模式`);
+    message.info(t("tutor.messages.tutorModeSwitched", { mode: getModeLabel(mode) }));
   };
 
   const handleToggleTutorMode = () => {
     setIsTutorMode(!isTutorMode);
     if (!isTutorMode) {
       setTutorMode("free");
-      message.info("助教模式已开启");
+      message.info(t("tutor.messages.tutorModeEnabled"));
     } else {
-      message.info("助教模式已关闭");
+      message.info(t("tutor.messages.tutorModeDisabled"));
     }
   };
 

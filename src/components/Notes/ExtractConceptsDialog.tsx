@@ -87,10 +87,10 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
         data: { graphId, selectedConcepts },
       });
       const successCount = result.results.filter((r) => r.success).length;
-      message.success(t("notes.ai.createNodes.success", { count: successCount }));
+      message.success(t("notes.extractConceptsDialog.createNodesSuccess", { count: successCount }));
       onClose();
     } catch {
-      message.error(t("notes.ai.createNodes.error"));
+      message.error(t("notes.extractConceptsDialog.createNodesError"));
     }
   };
 
@@ -111,14 +111,14 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
           id={titleId}
           className="text-base font-semibold text-gray-900 dark:text-gray-100"
         >
-          {t("notes.ai.extractConcepts.dialog.title")}
+          {t("notes.extractConceptsDialog.title")}
         </h3>
       </div>
 
       {/* 描述 */}
       <div className="px-5 pt-3 pb-2">
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          {t("notes.ai.extractConcepts.dialog.description")}
+          {t("notes.extractConceptsDialog.description")}
         </p>
       </div>
 
@@ -126,7 +126,7 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
       <div className="flex-1 overflow-y-auto px-5 py-2">
         {concepts.length === 0 ? (
           <p className="text-sm text-gray-400 dark:text-slate-500 py-4 text-center">
-            {t("notes.ai.extractConcepts.dialog.empty")}
+            {t("notes.extractConceptsDialog.empty")}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -168,7 +168,7 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
                         )}
                         {concept.related && concept.related.length > 0 && (
                           <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 break-words">
-                            {t("notes.ai.extractConcepts.dialog.related", {
+                            {t("notes.extractConceptsDialog.related", {
                               related: concept.related.join(", "),
                             })}
                           </p>
@@ -189,7 +189,7 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
           htmlFor="extract-concepts-graph-select"
           className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5"
         >
-          {t("notes.ai.extractConcepts.dialog.targetGraph")}
+          {t("notes.extractConceptsDialog.targetGraph")}
         </label>
         <div className="relative">
           <select
@@ -208,11 +208,11 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
           >
             {graphsQuery.isLoading ? (
               <option value="">
-                {t("notes.ai.extractConcepts.dialog.selectGraph")}
+                {t("notes.extractConceptsDialog.selectGraph")}
               </option>
             ) : graphs.length === 0 ? (
               <option value="">
-                {t("notes.ai.extractConcepts.dialog.selectGraph")}
+                {t("notes.extractConceptsDialog.selectGraph")}
               </option>
             ) : (
               graphs.map((g) => (
@@ -232,7 +232,7 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
       {/* 操作栏 */}
       <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-200 dark:border-slate-500 bg-gray-50 dark:bg-slate-900/50">
         {createNodesMutation.isPending && (
-          <Loading size="sm" text={t("notes.ai.extractConcepts.loading")} />
+          <Loading size="sm" text={t("notes.extractConceptsDialog.loading")} />
         )}
         <Button
           variant="ghost"
@@ -240,7 +240,7 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
           onClick={onClose}
           disabled={createNodesMutation.isPending}
         >
-          {t("notes.ai.extractConcepts.dialog.cancel")}
+          {t("notes.extractConceptsDialog.cancel")}
         </Button>
         <Button
           variant="primary"
@@ -249,7 +249,7 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
           disabled={!canConfirm}
           loading={createNodesMutation.isPending}
         >
-          {t("notes.ai.extractConcepts.dialog.confirm")}
+          {t("notes.extractConceptsDialog.confirm")}
         </Button>
       </div>
     </ModalShell>

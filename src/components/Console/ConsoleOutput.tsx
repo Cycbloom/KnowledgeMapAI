@@ -109,7 +109,7 @@ const renderAsciiTableHtml = (table: ParsedAsciiTable, isDark: boolean, t: TFunc
     >
       <table
         className="min-w-full text-sm"
-        aria-label={t('console.output.asciiTableAriaLabel', { defaultValue: '命令输出表格' })}
+        aria-label={t('console.output.asciiTableAriaLabel')}
       >
         <thead className={isDark ? 'bg-slate-800/90' : 'bg-gray-100'}>
           <tr>
@@ -203,7 +203,7 @@ const renderTable = (data: Record<string, unknown>[], isDark: boolean, t: TFunct
     >
       <table
         className="min-w-full text-sm"
-        aria-label={t('console.output.dataTableAriaLabel', { defaultValue: '命令输出数据表' })}
+        aria-label={t('console.output.dataTableAriaLabel')}
       >
         <thead className={isDark ? 'bg-slate-800' : 'bg-gray-50'}>
           <tr>

@@ -25,31 +25,6 @@ type Tab = "browse" | "installed";
 
 const BUILTIN_PLUGIN_NAMES = new Set(["core", "graph", "ai", "study", "scheduler", "agent"]);
 
-const categoryLabels: Record<string, string> = {
-  productivity: "效率工具",
-  visualization: "可视化",
-  ai: "AI 增强",
-  study: "学习辅助",
-};
-
-const pluginNameLabels: Record<string, string> = {
-  core: "核心服务",
-  graph: "知识图谱",
-  ai: "AI 服务",
-  study: "学习系统",
-  scheduler: "任务调度",
-  agent: "智能代理",
-};
-
-const pluginDescriptionLabels: Record<string, string> = {
-  core: "核心服务：认证、设置、健康检查、SSE 实时通信、事件总线",
-  graph: "知识图谱服务：节点管理、边关系、知识点、自动图谱、协作者",
-  ai: "AI 服务与路由插件，支持多模型提供商",
-  study: "学习系统服务：学习进度、复习、题目生成、学习路径、测验集",
-  scheduler: "任务调度插件：任务服务、执行器、专注模式、定时任务、事件订阅",
-  agent: "智能代理插件：AI Agent 服务、工具注册与路由",
-};
-
 const pluginIcons: Record<string, LucideIcon> = {
   core: ShieldCheck,
   graph: Network,
@@ -69,6 +44,7 @@ const pluginIconColors: Record<string, string> = {
 };
 
 const PluginCardBoundary = ({ children }: { children: ReactNode }) => {
+  const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(false);
 
   if (dismissed) return null;
@@ -80,7 +56,7 @@ const PluginCardBoundary = ({ children }: { children: ReactNode }) => {
           <div className="flex items-start gap-2 mb-3">
             <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
             <div className="min-w-0">
-              <p className="font-semibold text-gray-900 dark:text-gray-100">插件加载失败</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">{t("pluginMarketplace.marketplace.pluginLoadFailed")}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-words">
                 {error.message}
               </p>
@@ -91,13 +67,13 @@ const PluginCardBoundary = ({ children }: { children: ReactNode }) => {
               onClick={() => setDismissed(true)}
               className="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
             >
-              继续浏览其他插件
+              {t("pluginMarketplace.marketplace.continueBrowse")}
             </button>
             <button
               onClick={resetErrorBoundary}
               className="px-3 py-1.5 text-sm rounded-md bg-primary-600 text-white hover:bg-primary-700 transition-colors"
             >
-              重试
+              {t("pluginMarketplace.marketplace.retry")}
             </button>
           </div>
         </div>
@@ -177,7 +153,7 @@ export const PluginMarketplace = () => {
     } finally {
       setLoading(false);
     }
-  }, [token, selectedCategory, debouncedSearchQuery]);
+  }, [token, selectedCategory, debouncedSearchQuery, t]);
 
   const loadInstalled = useCallback(async () => {
     if (!token) return;
@@ -188,7 +164,7 @@ export const PluginMarketplace = () => {
       console.error("Failed to load installed plugins:", err);
       message.error(t("pluginMarketplace.loadFailed"));
     }
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => {
     loadRegistry();
@@ -251,12 +227,14 @@ export const PluginMarketplace = () => {
 
   const categories = Array.from(new Set(registryPlugins.map((p) => p.category).filter((c): c is string => Boolean(c))));
 
-  const getCategoryLabel = (category: string): string => categoryLabels[category] ?? category;
+  const getCategoryLabel = (category: string): string =>
+    t(`pluginMarketplace.marketplace.categories.${category}` as const, { defaultValue: category });
 
-  const getPluginLabel = (name: string): string => pluginNameLabels[name] ?? name;
+  const getPluginLabel = (name: string): string =>
+    t(`pluginMarketplace.marketplace.pluginNames.${name}` as const, { defaultValue: name });
 
   const getPluginDescription = (name: string, originalDesc?: string): string =>
-    pluginDescriptionLabels[name] ?? originalDesc ?? "";
+    t(`pluginMarketplace.serviceDescriptions.${name}` as const, { defaultValue: originalDesc ?? "" });
 
   const getPluginIcon = (name: string): LucideIcon | null => pluginIcons[name] ?? null;
 
@@ -390,7 +368,7 @@ export const PluginMarketplace = () => {
                             <span className="text-xs text-gray-500 dark:text-gray-400">v{plugin.version ?? plugin.manifest?.version ?? "?"}</span>
                             {builtin && (
                               <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-                                系统
+                                {t("pluginMarketplace.marketplace.system")}
                               </span>
                             )}
                             <span
@@ -438,7 +416,7 @@ export const PluginMarketplace = () => {
                         )}
                         {builtin && (
                           <span className="text-xs text-gray-400 dark:text-gray-500 italic px-2">
-                            必需组件
+                            {t("pluginMarketplace.marketplace.required")}
                           </span>
                         )}
                       </div>

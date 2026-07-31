@@ -131,7 +131,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
             key={v}
             onClick={() => handleInsertVariable(v)}
             className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded dark:text-primary-400 dark:bg-primary-900/30 dark:hover:bg-primary-900/50 transition-colors whitespace-nowrap"
-            title={`插入 {{${v}}}`}
+            title={t("graphEditor.promptEditor.insertVariable", { variable: v })}
           >
             <Variable size={12} />
             {v}

@@ -169,8 +169,8 @@ export const useGraphNodeOperations = ({
       },
       {
         loadingSetter: setLoading,
-        successMessage: sidebarMode === 'create' ? '节点创建成功' : '节点保存成功',
-        errorMessage: '保存失败，请重试'
+        successMessage: sidebarMode === 'create' ? t('common.nodeOperations.createSuccess') : t('common.nodeOperations.saveSuccess'),
+        errorMessage: t('common.nodeOperations.saveFailed')
       }
     );
   };
@@ -209,13 +209,13 @@ export const useGraphNodeOperations = ({
       e.source_knowledge_point_id === nodeToDelete.id || e.target_knowledge_point_id === nodeToDelete.id
     );
     
-    const confirmMessage = hardDelete 
-      ? `确定要彻底删除知识点 "${nodeToDelete.title}" 吗？此操作将从所有图谱中移除此知识点，且不可恢复！`
-      : `确定要从当前图谱移除节点 "${nodeToDelete.title}" 吗？`;
-    
+    const confirmMessage = hardDelete
+      ? t('common.nodeOperations.hardDeleteConfirm', { title: nodeToDelete.title })
+      : t('common.nodeOperations.removeNodeConfirm', { title: nodeToDelete.title });
+
     setConfirmModal({
       isOpen: true,
-      title: hardDelete ? '彻底删除知识点' : '移除节点',
+      title: hardDelete ? t('common.nodeOperations.hardDeleteTitle') : t('common.nodeOperations.removeNodeTitle'),
       message: confirmMessage,
       onConfirm: () => {
         deleteNodeMutation.mutate({ id: nodeToDelete.id, graphId: id, hardDelete }, {
@@ -265,8 +265,8 @@ export const useGraphNodeOperations = ({
 
     setConfirmModal({
       isOpen: true,
-      title: '批量删除',
-      message: `确定要删除选中的 ${selectedNodeIds.size} 个节点吗?`,
+      title: t('common.nodeOperations.batchDeleteTitle'),
+      message: t('common.nodeOperations.batchDeleteConfirm', { count: selectedNodeIds.size }),
       onConfirm: () => {
         const nodeIds = Array.from(selectedNodeIds);
         const total = nodeIds.length;
@@ -294,8 +294,8 @@ export const useGraphNodeOperations = ({
           },
           {
             loadingSetter: setLoading,
-            successMessage: '批量删除成功',
-            errorMessage: '批量删除失败',
+            successMessage: t('common.nodeOperations.batchDeleteSuccess'),
+            errorMessage: t('common.nodeOperations.batchDeleteFailed'),
             onFinally: () => {
               setConfirmModal({ ...state.confirmModal, isOpen: false });
               setBatchDeleteProgress(null);
@@ -342,8 +342,8 @@ export const useGraphNodeOperations = ({
       },
       {
         loadingSetter: setLoading,
-        successMessage: `已将 ${selectedNodeIds.size} 个节点等级修改为 ${t(levelLabels[level], { defaultValue: level })}`,
-        errorMessage: '批量修改等级失败'
+        successMessage: t('common.nodeOperations.batchLevelUpdateSuccess', { count: selectedNodeIds.size, level: t(levelLabels[level], { defaultValue: level }) }),
+        errorMessage: t('common.nodeOperations.batchLevelUpdateFailed')
       }
     );
   };
@@ -388,8 +388,8 @@ export const useGraphNodeOperations = ({
       },
       {
         loadingSetter: setLoading,
-        successMessage: '节点状态已更新',
-        errorMessage: '更新节点失败'
+        successMessage: t('common.nodeOperations.updateSuccess'),
+        errorMessage: t('common.nodeOperations.updateFailed')
       }
     );
   };

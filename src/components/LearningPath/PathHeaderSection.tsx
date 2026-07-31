@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -40,6 +40,19 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
   const { t } = useTranslation();
   const formatDate = (dateStr: string) => formatDateUtil(dateStr);
 
+  const statusLabel = useMemo(() => {
+    switch (pathDetail.status) {
+      case "active":
+        return t('learningPath.pathHeader.statusActive');
+      case "paused":
+        return t('learningPath.pathHeader.statusPaused');
+      case "completed":
+        return t('learningPath.pathHeader.statusCompleted');
+      default:
+        return t('learningPath.pathHeader.statusArchived');
+    }
+  }, [pathDetail.status, t]);
+
   return (
     <div className="mb-6">
       <button
@@ -47,7 +60,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
         className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mb-4"
       >
         <ArrowLeft className="w-4 h-4" />
-        返回
+        {t('learningPath.pathHeader.back')}
       </button>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
@@ -75,7 +88,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                 {pathDetail.target_completion_date && (
                   <span className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    目标：{formatDate(pathDetail.target_completion_date)}
+                    {t('learningPath.pathHeader.target', { date: formatDate(pathDetail.target_completion_date) })}
                   </span>
                 )}
                 <span
@@ -89,13 +102,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                           : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                   }`}
                 >
-                  {pathDetail.status === "active"
-                    ? "进行中"
-                    : pathDetail.status === "paused"
-                      ? "已暂停"
-                      : pathDetail.status === "completed"
-                        ? "已完成"
-                        : "已归档"}
+                  {statusLabel}
                 </span>
               </div>
             </div>
@@ -129,7 +136,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                         className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
                       >
                         <BookOpen className="w-4 h-4" />
-                        查看知识图谱
+                        {t('learningPath.pathHeader.viewKnowledgeGraph')}
                       </button>
                     )}
                     <button
@@ -140,7 +147,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
                     >
                       <CalendarClock className="w-4 h-4" />
-                      自动排程
+                      {t('learningPath.pathHeader.autoSchedule')}
                     </button>
                     <button
                       onClick={() => {
@@ -159,8 +166,8 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                         <Play className="w-4 h-4" />
                       )}
                       {pathDetail.status === "active"
-                        ? "暂停学习"
-                        : "继续学习"}
+                        ? t('learningPath.pathHeader.pauseLearning')
+                        : t('learningPath.pathHeader.continueLearning')}
                     </button>
                     <button
                       onClick={() => {
@@ -170,7 +177,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
                     >
                       <Archive className="w-4 h-4" />
-                      归档
+                      {t('learningPath.pathHeader.archive')}
                     </button>
                     <hr className="my-1 dark:border-slate-500" />
                     <button
@@ -181,7 +188,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                       className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                     >
                       <Trash2 className="w-4 h-4" />
-                      删除
+                      {t('learningPath.pathHeader.delete')}
                     </button>
                   </motion.div>
                 )}
@@ -193,11 +200,10 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
         <div className="mt-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              学习进度
+              {t('learningPath.pathHeader.learningProgress')}
             </span>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              {pathDetail.progress.completed_nodes} /{" "}
-              {pathDetail.progress.total_nodes} 节点
+              {t('learningPath.pathHeader.nodesCount', { completed: pathDetail.progress.completed_nodes, total: pathDetail.progress.total_nodes })}
             </span>
           </div>
           <div
@@ -217,14 +223,14 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
           </div>
           <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
             <span>
-              预计时间：
-              {formatDurationMinutes(pathDetail.progress.estimated_total_time, { emptyText: '0分钟' })}
+              {t('learningPath.pathHeader.estimatedTime')}
+              {formatDurationMinutes(pathDetail.progress.estimated_total_time, { emptyText: t('learningPath.pathNodeList.estimatedMinutes', { count: 0 }) })}
             </span>
             <span>
-              已学习：
+              {t('learningPath.pathHeader.learnedTime')}
               {formatDurationMinutes(
                 Math.round(pathDetail.progress.total_time_spent / 60),
-                { emptyText: '0分钟' },
+                { emptyText: t('learningPath.pathNodeList.estimatedMinutes', { count: 0 }) },
               )}
             </span>
           </div>

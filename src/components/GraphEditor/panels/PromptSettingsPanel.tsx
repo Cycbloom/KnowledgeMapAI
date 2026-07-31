@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
 import { asyncConfirm } from "@/utils/asyncConfirm";
@@ -33,60 +33,9 @@ interface PromptTemplates {
   graph: PromptTemplateEntry[];
 }
 
-const PROMPT_NAME_MAP: Record<string, string> = {
-  expand_knowledge: "知识扩展 (Expand Knowledge)",
-  generate_cards: "生成卡片 (Generate Cards - Generic)",
-  generate_cards_qa: "生成卡片: 问答 (Generate QA)",
-  generate_cards_choice: "生成卡片: 单选 (Generate Choice)",
-  generate_cards_true_false: "生成卡片: 判断 (Generate True/False)",
-  generate_cards_multi_choice: "生成卡片: 多选 (Generate Multi-Choice)",
-  generate_cards_fill_blank: "生成卡片: 填空 (Generate Fill-Blank)",
-  generate_cards_essay: "生成卡片: 问答/论述 (Generate Essay)",
-  branch_suggestions: "分支建议 (Branch Suggestions)",
-  generate_content: "内容生成 (Generate Content)",
-  chat: "AI 对话 (Chat)",
-  text_to_graph: "文本转图谱 (Text to Graph)",
-  recommend_connections: "推荐连线 (Recommend Connections)",
-  tutor_chat: "AI 助教 (Tutor Chat)",
-  document_to_graph: "文档转图谱 (Document to Graph)",
-  term_annotation: "术语标注 (Term Annotation)",
-  infinite_graph_expansion: "无限扩展知识网络 (Infinite Graph Expansion)",
-  auto_graph_init: "图谱初始化 (Auto Graph Init)",
-  auto_graph_expand: "节点展开 (Auto Graph Expand)",
-  generate_task_details: "任务详情生成 (Generate Task Details)",
-  literature_concept_extraction: "文献概念提取 (Literature Concept Extraction)",
-  literature_relation_inference: "文献关系推断 (Literature Relation Inference)",
-  template_generation: "模板生成 (Template Generation)",
-  template_type_knowledge_tree: "模板: 知识树 (Knowledge Tree)",
-  template_type_skill_map: "模板: 技能图谱 (Skill Map)",
-  template_type_concept_network: "模板: 概念网络 (Concept Network)",
-  template_type_learning_path: "模板: 学习路径 (Learning Path)",
-  template_type_topic_research: "模板: 专题研究 (Topic Research)",
-  template_type_project_lifecycle: "模板: 项目生命周期 (Project Lifecycle)",
-  template_type_dev_workflow: "模板: 开发流程 (Dev Workflow)",
-  template_type_task_breakdown: "模板: 任务分解 (Task Breakdown)",
-  template_type_sprint_planning: "模板: 迭代规划 (Sprint Planning)",
-  template_type_root_cause: "模板: 根因分析 (Root Cause Analysis)",
-  template_type_swot: "模板: SWOT 分析 (SWOT Analysis)",
-  template_type_comparison: "模板: 对比分析 (Comparison)",
-  template_type_decision_tree: "模板: 决策树 (Decision Tree)",
-  template_type_tech_ecosystem: "模板: 技术生态 (Tech Ecosystem)",
-  template_type_org_structure: "模板: 组织架构 (Org Structure)",
-  template_type_system_architecture: "模板: 系统架构 (System Architecture)",
-  template_type_knowledge_system: "模板: 知识体系 (Knowledge System)",
-  template_type_blank: "模板: 空白图谱 (Blank Graph)",
-};
-
-const SOURCE_NAME_MAP: Record<string, { zh: string; en: string }> = {
-  Graph: { zh: "图谱专属", en: "Graph-specific" },
-  User: { zh: "用户全局", en: "User-wide" },
-  System: { zh: "系统默认", en: "System Default" },
-};
-
 const PROMPT_CATEGORIES = [
   {
     id: "graph_building",
-    name: "知识图谱构建",
     icon: Network,
     color: "emerald",
     codes: [
@@ -102,7 +51,6 @@ const PROMPT_CATEGORIES = [
   },
   {
     id: "card_generation",
-    name: "卡片生成",
     icon: Layers,
     color: "violet",
     codes: [
@@ -117,28 +65,24 @@ const PROMPT_CATEGORIES = [
   },
   {
     id: "ai_chat",
-    name: "AI 对话",
     icon: MessageSquare,
     color: "amber",
     codes: ["chat", "tutor_chat", "generate_content"],
   },
   {
     id: "task_scheduler",
-    name: "任务调度",
     icon: Wrench,
     color: "cyan",
     codes: ["generate_task_details"],
   },
   {
     id: "literature_analysis",
-    name: "文献分析",
     icon: BookOpen,
     color: "blue",
     codes: ["literature_concept_extraction", "literature_relation_inference"],
   },
   {
     id: "template_generation",
-    name: "模板生成",
     icon: LayoutTemplate,
     color: "rose",
     codes: [
@@ -165,7 +109,6 @@ const PROMPT_CATEGORIES = [
   },
   {
     id: "other",
-    name: "其他工具",
     icon: Wrench,
     color: "slate",
     codes: ["term_annotation"],
@@ -224,7 +167,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
   graphId,
   scope,
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [templates, setTemplates] = useState<PromptTemplates>({
     system: [],
     user: [],
@@ -236,14 +179,27 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     new Set(),
   );
 
-  const getSourceName = (source: string) => {
-    const isZh = i18n.language.startsWith("zh");
-    const sourceMap = SOURCE_NAME_MAP[source];
-    if (sourceMap) {
-      return isZh ? sourceMap.zh : sourceMap.en;
-    }
-    return source;
-  };
+  const getPromptTypeLabel = useCallback((code: string): string => {
+    return t(`graphEditor.promptSettings.promptTypes.${code}`, {
+      defaultValue: code,
+    });
+  }, [t]);
+
+  const getSourceName = useCallback((source: string): string => {
+    const lowerSource = source.toLowerCase();
+    return t(`graphEditor.promptSettings.scopes.${lowerSource}`, {
+      defaultValue: source,
+    });
+  }, [t]);
+
+  const categories = useMemo(() => {
+    return PROMPT_CATEGORIES.map((category) => ({
+      ...category,
+      name: t(`graphEditor.promptSettings.categories.${category.id}`, {
+        defaultValue: category.id,
+      }),
+    }));
+  }, [t]);
 
   const fetchTemplates = useCallback(async () => {
     setLoading(true);
@@ -382,7 +338,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
 
   if (editingCode) {
     const currentTemp = getEffectiveTemplate(editingCode);
-    const displayName = PROMPT_NAME_MAP[editingCode] || editingCode;
+    const displayName = getPromptTypeLabel(editingCode);
     return (
       <div className="h-[600px]">
         <PromptEditor
@@ -412,7 +368,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
 
   return (
     <div className="space-y-3">
-      {PROMPT_CATEGORIES.map((category) => {
+      {categories.map((category) => {
         const isExpanded = expandedCategories.has(category.id);
         const IconComponent = category.icon;
         const colorStyle =
@@ -434,10 +390,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
                   <IconComponent size={18} />
                 </div>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {t(
-                    `profile.promptSettings.categories.${category.id}`,
-                    category.name,
-                  )}
+                  {category.name}
                 </span>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
                   ({category.codes.length})
@@ -467,7 +420,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
                     >
                       <div>
                         <h4 className="font-medium text-gray-900 dark:text-white">
-                          {PROMPT_NAME_MAP[code] || code}
+                          {getPromptTypeLabel(code)}
                         </h4>
                         <div className="flex items-center gap-2 text-xs mt-1">
                           <span
@@ -483,7 +436,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
                           </span>
                           {typeof effective.updated_at === 'string' && effective.updated_at && (
                             <span className="text-gray-400">
-                              更新于:{" "}
+                              {t('graphEditor.promptSettings.updatedAt')}{" "}
                               {formatDate(effective.updated_at as string, "short")}
                             </span>
                           )}

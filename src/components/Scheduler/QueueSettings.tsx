@@ -38,15 +38,7 @@ interface QueueSettingsProps {
   onClose: () => void;
 }
 
-const TIME_SLICE_OPTIONS = [
-  { value: 15, label: '15 分钟' },
-  { value: 25, label: '25 分钟' },
-  { value: 30, label: '30 分钟' },
-  { value: 45, label: '45 分钟' },
-  { value: 60, label: '1 小时' },
-  { value: 90, label: '1.5 小时' },
-  { value: 120, label: '2 小时' },
-];
+const TIME_SLICE_VALUES = [15, 25, 30, 45, 60, 90, 120] as const;
 
 const MIN_QUEUES = 2;
 const MAX_QUEUES = 5;
@@ -79,6 +71,14 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
 
   const canAddQueue = localQueues.length < MAX_QUEUES;
   const canDeleteQueue = localQueues.length > MIN_QUEUES;
+
+  const timeSliceOptions = useMemo(
+    () => TIME_SLICE_VALUES.map(value => ({
+      value,
+      label: t(`scheduler.queueSettings.timeSliceOptions.${value}min`),
+    })),
+    [t],
+  );
 
   const targetQueueOptions = useMemo(
     () => localQueues.filter(q => q.id !== deleteConfirm.queueId),
@@ -137,7 +137,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
       ) || 'cyan';
       
       const newQueueData: CreateQueueData = {
-        name: `队列 ${localQueues.length}`,
+        name: t('scheduler.queueSettings.queueName', { count: localQueues.length }),
         color: availableColor,
         timeSlice: 25,
       };
@@ -215,7 +215,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
         >
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-              编辑队列 #{index + 1}
+              {t('scheduler.queueSettings.editQueue', { index: index + 1 })}
             </span>
             <div className="flex gap-1">
               <button
@@ -236,7 +236,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
 
           <div>
             <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
-              队列名称
+              {t('scheduler.queueSettings.queueNameLabel')}
             </label>
             <input
               type="text"
@@ -255,7 +255,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
           <div>
             <label className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
               <Palette size={12} />
-              队列颜色
+              {t('scheduler.queueSettings.queueColor')}
             </label>
             <ColorPicker
               value={editData.color || queue.color}
@@ -266,7 +266,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
           <div>
             <label className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
               <Clock size={12} />
-              时间片
+              {t('scheduler.queueSettings.timeSlice')}
             </label>
             <select
               value={editData.timeSlice || queue.timeSlice}
@@ -278,7 +278,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
                 focus:outline-none focus:ring-2 focus:ring-${queue.color}-500/50
               `}
             >
-              {TIME_SLICE_OPTIONS.map(opt => (
+              {timeSliceOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
@@ -316,7 +316,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
             <Clock size={12} />
-            <span>{queue.timeSlice} 分钟</span>
+            <span>{t('scheduler.queueSettings.timeSliceMinutes', { count: queue.timeSlice })}</span>
           </div>
         </div>
 
@@ -338,7 +338,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
                 ? 'bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-red-500 dark:hover:text-red-400'
                 : 'bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 cursor-not-allowed'}
             `}
-            title={canDeleteQueue ? '删除' : `至少需要 ${MIN_QUEUES} 个队列`}
+            title={canDeleteQueue ? t('scheduler.queueSettings.delete') : t('scheduler.queueSettings.minQueuesRequired', { count: MIN_QUEUES })}
           >
             <Trash2 size={14} />
           </button>
@@ -365,10 +365,10 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500 bg-slate-50 dark:bg-slate-800/50">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              队列配置
+              {t('scheduler.queueSettings.queueConfig')}
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              管理队列优先级和设置（{localQueues.length}/{MAX_QUEUES}）
+              {t('scheduler.queueSettings.manageHint', { current: localQueues.length, max: MAX_QUEUES })}
             </p>
           </div>
           <button
@@ -382,7 +382,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
         <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
           <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-4">
             <GripVertical size={14} aria-hidden="true" />
-            <span>拖拽调整队列优先级（上方优先级更高）</span>
+            <span>{t('scheduler.queueSettings.dragHint')}</span>
           </div>
 
           <Reorder.Group
@@ -407,7 +407,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
           {!canAddQueue && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-300 text-sm">
               <AlertTriangle size={16} />
-              <span>已达到最大队列数量限制（{MAX_QUEUES} 个）</span>
+              <span>{t('scheduler.queueSettings.maxQueuesReached', { max: MAX_QUEUES })}</span>
             </div>
           )}
         </div>
@@ -428,14 +428,14 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
             ) : (
               <Plus size={16} />
             )}
-            <span className="font-medium">添加队列</span>
+            <span className="font-medium">{t('scheduler.queueSettings.addQueue')}</span>
           </button>
 
           <button
             onClick={onClose}
             className="px-6 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
           >
-            完成
+            {t('scheduler.queueSettings.complete')}
           </button>
         </div>
       </motion.div>
@@ -463,27 +463,27 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                      删除队列
+                      {t('scheduler.queueSettings.deleteQueue')}
                     </h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      此操作不可撤销
+                      {t('scheduler.queueSettings.deleteConfirmWarning')}
                     </p>
                   </div>
                 </div>
 
                 <p className="text-slate-600 dark:text-slate-300 mb-4">
-                  确定要删除队列 <span className="font-semibold text-slate-900 dark:text-white">「{deleteConfirm.queueName}」</span> 吗？
+                  {t('scheduler.queueSettings.deleteConfirmMessage', { queueName: deleteConfirm.queueName })}
                 </p>
 
                 <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 mb-4">
                   <p className="text-sm text-amber-700 dark:text-amber-300">
-                    该队列中的任务将迁移到其他队列
+                    {t('scheduler.queueSettings.deleteConfirmHint')}
                   </p>
                 </div>
 
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    选择目标队列
+                    {t('scheduler.queueSettings.selectTargetQueue')}
                   </label>
                   <select
                     value={deleteConfirm.targetQueueId || ''}
@@ -511,7 +511,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
                     onClick={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
                     className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                   >
-                    取消
+                    {t('scheduler.queueSettings.cancel')}
                   </button>
                   <button
                     onClick={handleConfirmDelete}
@@ -519,7 +519,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
                   >
                     {loading && <Loader2 size={16} className="animate-spin" />}
-                    确认删除
+                    {t('scheduler.queueSettings.confirmDelete')}
                   </button>
                 </div>
               </div>

@@ -35,20 +35,6 @@ interface SubtaskDetailModalProps {
   onMasteryUpdate?: (subtaskId: string, masteryLevel: number) => void;
 }
 
-const STATE_LABELS: Record<LearningState, string> = {
-  learning: "学习",
-  review: "复习",
-  practice: "练习",
-  quiz: "测验",
-};
-
-const STATE_DESCRIPTIONS: Record<LearningState, string> = {
-  learning: "初始学习阶段，仅出现一次",
-  review: "复习已学内容",
-  practice: "简单题目快速检验",
-  quiz: "综合题目全面评估",
-};
-
 export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
   isOpen,
   onClose,
@@ -59,6 +45,27 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
 }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+
+  const STATE_LABELS = useMemo<Record<LearningState, string>>(
+    () => ({
+      learning: t("scheduler.subtaskDetail.states.learning"),
+      review: t("scheduler.subtaskDetail.states.review"),
+      practice: t("scheduler.subtaskDetail.states.practice"),
+      quiz: t("scheduler.subtaskDetail.states.quiz"),
+    }),
+    [t],
+  );
+
+  const STATE_DESCRIPTIONS = useMemo<Record<LearningState, string>>(
+    () => ({
+      learning: t("scheduler.subtaskDetail.stateDescriptions.learning"),
+      review: t("scheduler.subtaskDetail.stateDescriptions.review"),
+      practice: t("scheduler.subtaskDetail.stateDescriptions.practice"),
+      quiz: t("scheduler.subtaskDetail.stateDescriptions.quiz"),
+    }),
+    [t],
+  );
+
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => onClose(), isOpen);
   const [loading, setLoading] = useState(false);
@@ -111,17 +118,17 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
           mastery_level: masteryLevel,
         });
 
-        message.success(`状态已切换为 ${STATE_LABELS[toState]}`);
+        message.success(t("scheduler.subtaskDetail.statusSwitched", { status: STATE_LABELS[toState] }));
         onStateTransition?.(subtask.id, toState, masteryLevel);
         loadRelatedData();
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "状态切换失败";
+        const errorMessage = error instanceof Error ? error.message : t("scheduler.subtaskDetail.statusSwitchFailed");
         message.error(errorMessage);
       } finally {
         setTransitioningState(null);
       }
     },
-    [subtask, taskId, masteryLevel, transitioningState, onStateTransition]
+    [subtask, taskId, masteryLevel, transitioningState, onStateTransition, t, STATE_LABELS]
   );
 
   const handleMasterySave = useCallback(async () => {
@@ -131,15 +138,15 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
     try {
       await subtasksApi.updateMastery(taskId, subtask.id, masteryLevel);
 
-      message.success("掌握度已更新");
+      message.success(t("scheduler.subtaskDetail.masteryUpdated"));
       onMasteryUpdate?.(subtask.id, masteryLevel);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "掌握度更新失败";
+      const errorMessage = error instanceof Error ? error.message : t("scheduler.subtaskDetail.masteryUpdateFailed");
       message.error(errorMessage);
     } finally {
       setIsSaving(false);
     }
-  }, [subtask, taskId, masteryLevel, isSaving, onMasteryUpdate]);
+  }, [subtask, taskId, masteryLevel, isSaving, onMasteryUpdate, t]);
 
   const formatDate = (dateString: string) => {
     return formatDateUtil(dateString, 'full-datetime');
@@ -186,7 +193,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
             <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <BookOpen size={20} className="text-primary-500" />
-                子任务详情
+                {t("scheduler.subtaskDetail.title")}
               </h3>
               <button
                 onClick={onClose}
@@ -199,7 +206,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
             <div className="p-4 space-y-4 overflow-y-auto max-h-[calc(90vh-140px)]">
               <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
                 <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
-                  基本信息
+                  {t("scheduler.subtaskDetail.basicInfo")}
                 </h4>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
                   {subtask.title}
@@ -231,7 +238,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                 <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
                   <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
                     <BookOpen size={14} />
-                    知识点信息
+                    {t("scheduler.subtaskDetail.knowledgePointInfo")}
                   </h4>
                   <div className="space-y-2">
                     <div>
@@ -263,7 +270,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
               <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
                 <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
                   <AlertCircle size={14} />
-                  学习状态
+                  {t("scheduler.subtaskDetail.learningState")}
                 </h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -289,7 +296,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                 <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
                   <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
                     <ArrowRight size={14} />
-                    状态转换
+                    {t("scheduler.subtaskDetail.stateTransition")}
                   </h4>
                   <div className="space-y-3">
                     {validTransitions.recommended_next && (
@@ -297,7 +304,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                         <div className="flex items-center gap-2 mb-1">
                           <Lightbulb size={14} className="text-primary-500" />
                           <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
-                            推荐状态
+                            {t("scheduler.subtaskDetail.recommendedState")}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
@@ -314,15 +321,18 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                             {transitioningState === validTransitions.recommended_next ? (
                               <span className="flex items-center gap-1">
                                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
-                                切换中
+                                {t("scheduler.subtaskDetail.switching")}
                               </span>
                             ) : (
-                              "切换"
+                              t("scheduler.subtaskDetail.switch")
                             )}
                           </button>
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          掌握度 {subtask.mastery_level}% → {STATE_LABELS[validTransitions.recommended_next]}
+                          {t("scheduler.subtaskDetail.masteryTransition", {
+                            current: subtask.mastery_level,
+                            next: STATE_LABELS[validTransitions.recommended_next],
+                          })}
                         </p>
                       </div>
                     )}
@@ -357,7 +367,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
               <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
                 <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
                   <Save size={14} />
-                  掌握度调整
+                  {t("scheduler.subtaskDetail.masteryAdjustment")}
                 </h4>
                 <div className="space-y-3">
                   <div className="flex items-center gap-4">
@@ -375,7 +385,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                   </div>
                   <div className="flex justify-between items-center">
                     <p className="text-xs text-slate-400">
-                      拖动滑块调整掌握度（0-100%）
+                      {t("scheduler.subtaskDetail.sliderHint")}
                     </p>
                     <button
                       onClick={handleMasterySave}
@@ -385,12 +395,12 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                       {isSaving ? (
                         <>
                           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
-                          保存中
+                          {t("scheduler.subtaskDetail.saving")}
                         </>
                       ) : (
                         <>
                           <Save size={14} />
-                          保存
+                          {t("scheduler.subtaskDetail.save")}
                         </>
                       )}
                     </button>
@@ -402,7 +412,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                 <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
                   <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
                     <History size={14} />
-                    状态历史
+                    {t("scheduler.subtaskDetail.stateHistory")}
                   </h4>
                   <div className="space-y-2">
                     {subtask.state_history
@@ -439,7 +449,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
-                关闭
+                {t("scheduler.subtaskDetail.close")}
               </button>
             </div>
           </motion.div>

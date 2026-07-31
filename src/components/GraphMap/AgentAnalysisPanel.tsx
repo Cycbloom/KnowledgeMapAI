@@ -150,7 +150,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
         setSseEvents(prev => [...prev, {
           id: eventId,
           type: event.type,
-          label: `正在调用 ${data.toolName}...`,
+          label: t('graphMap.agentAnalysis.callingTool', { tool: data.toolName }),
           detail: Object.keys(data.args).length > 0 ? JSON.stringify(data.args) : undefined,
           status: 'running',
         }]);
@@ -170,7 +170,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
             return [...updated, {
               id: eventId,
               type: event.type,
-              label: `${data.toolName} 完成`,
+              label: t('graphMap.agentAnalysis.complete', { tool: data.toolName }),
               detail: data.result !== undefined ? String(data.result).slice(0, 200) : undefined,
               status: 'completed',
             }];
@@ -178,7 +178,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
           return [...prev, {
             id: eventId,
             type: event.type,
-            label: `${data.toolName} 完成`,
+            label: t('graphMap.agentAnalysis.complete', { tool: data.toolName }),
             detail: data.result !== undefined ? String(data.result).slice(0, 200) : undefined,
             status: 'completed',
           }];
@@ -201,7 +201,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
         setSseEvents(prev => [...prev, {
           id: eventId,
           type: event.type,
-          label: '等待确认操作',
+          label: t('graphMap.agentAnalysis.waitingConfirm'),
           status: 'running',
         }]);
         break;
@@ -212,7 +212,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
         setSseEvents(prev => [...prev, {
           id: eventId,
           type: event.type,
-          label: '分析完成',
+          label: t('graphMap.agentAnalysis.analysisComplete'),
           status: 'completed',
         }]);
         break;
@@ -223,13 +223,13 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
         setSseEvents(prev => [...prev, {
           id: eventId,
           type: event.type,
-          label: `分析失败: ${data.error}`,
+          label: t('graphMap.agentAnalysis.analysisFailed', { error: data.error }),
           status: 'failed',
         }]);
         break;
       }
     }
-  }, []);
+  }, [t]);
 
   const handleConfirmAnalysis = useCallback(async () => {
     if (!confirmState.skill && confirmState.mode !== 'custom') return;

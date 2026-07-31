@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ExplorationPathItem, BranchSuggestion } from '../../../types';
 import { formatDate } from '../../../utils/formatters';
 import { Clock, ArrowRight, ChevronRight, ChevronDown, ChevronUp, GitBranch } from 'lucide-react';
@@ -33,6 +34,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
   onSwitchBranch
 }) => {
   const [expandedBranches, setExpandedBranches] = useState<Set<number>>(new Set());
+  const { t } = useTranslation();
 
   const toggleBranchExpansion = (index: number) => {
     setExpandedBranches(prev => {
@@ -45,21 +47,21 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
       return newSet;
     });
   };
-  const formatTime = (date: Date | string) => {
+  const formatTime = useCallback((date: Date | string) => {
     const dateObj = date instanceof Date ? date : new Date(date);
-    if (isNaN(dateObj.getTime())) return '未知时间';
-    
+    if (isNaN(dateObj.getTime())) return t('graphEditor.explorationTimeline.unknownTime');
+
     const now = new Date();
     const diff = now.getTime() - dateObj.getTime();
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
 
-    if (seconds < 60) return '刚刚';
-    if (minutes < 60) return `${minutes} 分钟前`;
-    if (hours < 24) return `${hours} 小时前`;
+    if (seconds < 60) return t('graphEditor.explorationTimeline.justNow');
+    if (minutes < 60) return t('graphEditor.explorationTimeline.minutesAgo', { count: minutes });
+    if (hours < 24) return t('graphEditor.explorationTimeline.hoursAgo', { count: hours });
     return formatDate(dateObj, 'short');
-  };
+  }, [t]);
 
   const getCurrentItem = () => {
     if (currentPathIndex >= 0 && currentPathIndex < explorationPath.length) {
@@ -82,7 +84,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold flex items-center gap-2">
             <Clock size={16} />
-            探索路径
+            {t('graphEditor.explorationTimeline.title')}
           </h3>
           <button
             onClick={onToggleCollapse}
@@ -103,7 +105,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
           <>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {explorationPath.length} 个节点
+                {t('graphEditor.explorationTimeline.nodeCount', { count: explorationPath.length })}
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -118,7 +120,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
                   `}
                 >
                   <ChevronRight size={14} className="rotate-180" />
-                  <span className="text-xs">上一步</span>
+                  <span className="text-xs">{t('graphEditor.explorationTimeline.prevStep')}</span>
                 </button>
                 <button
                   onClick={onGoForward}
@@ -131,7 +133,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
                     }
                   `}
                 >
-                  <span className="text-xs">下一步</span>
+                  <span className="text-xs">{t('graphEditor.explorationTimeline.nextStep')}</span>
                   <ChevronRight size={14} />
                 </button>
               </div>
@@ -155,7 +157,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
                 </div>
                 {currentItem.branchChoice && (
                   <div className="text-xs text-gray-600 dark:text-gray-400">
-                    分支选择：{currentItem.branchChoice}
+                    {t('graphEditor.explorationTimeline.branchChoice')}{currentItem.branchChoice}
                   </div>
                 )}
               </div>
@@ -163,7 +165,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
 
             <div className="space-y-2">
               <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
-                历史记录
+                {t('graphEditor.explorationTimeline.history')}
               </div>
               {explorationPath.map((item, index) => {
                 const isExpanded = expandedBranches.has(index);
@@ -199,7 +201,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
                         </div>
                         {item.branchChoice && (
                           <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            分支：{item.branchChoice}
+                            {t('graphEditor.explorationTimeline.branchLabel')}{item.branchChoice}
                           </div>
                         )}
                       </div>
@@ -223,7 +225,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
                       <div className="ml-6 mt-1 space-y-1">
                         <div className="flex items-center justify-between mb-1">
                           <div className="text-[10px] text-gray-500 dark:text-gray-400">
-                            备选分支：
+                            {t('graphEditor.explorationTimeline.alternativeBranchs')}
                           </div>
                         </div>
                         {item.alternativeBranches?.map((branch, _branchIndex) => {
@@ -257,7 +259,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
                                 <span className="truncate flex-1">{branch.title}</span>
                                 {isSelected && (
                                   <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500 text-white">
-                                    已选择
+                                    {t('graphEditor.explorationTimeline.selected')}
                                   </span>
                                 )}
                               </div>

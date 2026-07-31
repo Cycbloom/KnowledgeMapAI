@@ -176,7 +176,7 @@ export const Dashboard = () => {
     setDeleteConfirm({
       isOpen: true,
       id: "",
-      title: `${filters.selectedIds.size} 个图谱`,
+      title: t("dashboard.graphCounter", { count: filters.selectedIds.size }),
     });
   };
 
@@ -465,7 +465,7 @@ export const Dashboard = () => {
                   <div className="p-6 border border-red-300 rounded-2xl bg-red-50 dark:bg-red-900/20 dark:border-red-700 text-center">
                     <div className="flex items-center justify-center gap-2 text-red-700 dark:text-red-400 font-medium">
                       <AlertTriangle size={20} />
-                      <span>AI 生成面板出错</span>
+                      <span>{t("dashboard.aiPanelError")}</span>
                     </div>
                     <p className="text-sm text-red-600 dark:text-red-300 mt-2 break-words">
                       {error.message}
@@ -474,7 +474,7 @@ export const Dashboard = () => {
                       onClick={resetErrorBoundary}
                       className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
                     >
-                      重试
+                      {t("common.retry")}
                     </button>
                   </div>
                 )}
@@ -586,7 +586,7 @@ export const Dashboard = () => {
               <div className={`overflow-x-auto ${isMobile ? "hidden" : ""}`}>
                 <table
                   className="w-full"
-                  aria-label={t("dashboard.list.tableAriaLabel", { defaultValue: "知识图谱列表" })}
+                  aria-label={t("dashboard.list.tableAriaLabel")}
                 >
                   <thead>
                     <tr
@@ -600,7 +600,7 @@ export const Dashboard = () => {
                         <th scope="col" className="w-12 px-4 py-3">
                           <button
                             onClick={filters.toggleSelectAll}
-                            aria-label={t("dashboard.list.selectAllAriaLabel", { defaultValue: "全选" })}
+                            aria-label={t("dashboard.list.selectAllAriaLabel")}
                             aria-pressed={filters.isAllSelected}
                             className={`flex items-center justify-center w-5 h-5 rounded ${
                               filters.isAllSelected
@@ -714,7 +714,7 @@ export const Dashboard = () => {
         <ConfirmationModal
           isOpen={deleteConfirm.isOpen}
           title={t("dashboard.deleteGraphTitle")}
-          message={`确定要删除图谱 "${deleteConfirm.title}" 吗？此操作将永久删除所有相关的节点和关系，无法撤销。`}
+          message={t("dashboard.deleteConfirmMessage", { title: deleteConfirm.title })}
           onConfirm={handleConfirmDelete}
           onClose={() =>
             setDeleteConfirm((prev) => ({ ...prev, isOpen: false }))

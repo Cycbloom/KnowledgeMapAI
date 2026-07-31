@@ -1,4 +1,4 @@
-import React, { useState, useId } from "react";
+import React, { useState, useId, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDroppable } from "@dnd-kit/core";
 import {
@@ -46,7 +46,6 @@ const QUEUE_CONFIG = {
       "bg-gradient-to-r from-primary-100 to-primary-100 dark:from-primary-500/20 dark:to-primary-500/20",
     accentColor: "text-primary-600 dark:text-primary-400",
     badgeBg: "bg-primary-100 dark:bg-primary-500/20",
-    description: "紧急重要任务",
     ringColor: "ring-primary-400",
   },
   1: {
@@ -58,7 +57,6 @@ const QUEUE_CONFIG = {
       "bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-500/20 dark:to-teal-500/20",
     accentColor: "text-emerald-600 dark:text-emerald-400",
     badgeBg: "bg-emerald-100 dark:bg-emerald-500/20",
-    description: "重要任务",
     ringColor: "ring-emerald-400",
   },
   2: {
@@ -70,7 +68,6 @@ const QUEUE_CONFIG = {
       "bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-500/20 dark:to-orange-500/20",
     accentColor: "text-amber-600 dark:text-amber-400",
     badgeBg: "bg-amber-100 dark:bg-amber-500/20",
-    description: "待办任务",
     ringColor: "ring-amber-400",
   },
 };
@@ -99,6 +96,18 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
   const config =
     QUEUE_CONFIG[level as keyof typeof QUEUE_CONFIG] || QUEUE_CONFIG[2];
   const IconComponent = config.icon;
+
+  const queueDescriptions = useMemo(
+    () => ({
+      0: t("scheduler.queueColumn.quadrantUrgentImportant"),
+      1: t("scheduler.queueColumn.quadrantImportant"),
+      2: t("scheduler.queueColumn.quadrantTodo"),
+    }),
+    [t],
+  );
+  const queueDescription =
+    queueDescriptions[level as keyof typeof queueDescriptions] ??
+    queueDescriptions[2];
 
   const { setNodeRef, isOver } = useDroppable({
     id: `queue-${level}`,
@@ -153,7 +162,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {config.description}
+                {queueDescription}
               </p>
             </div>
           </div>
@@ -173,7 +182,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
           <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
             <Clock size={12} className={config.accentColor} />
             <span>
-              时间片:{" "}
+              {t("scheduler.queueColumn.timeSlice")}{" "}
               <span className={config.accentColor}>
                 {formatDurationMinutes(timeSlice, { format: 'compact' })}
               </span>
@@ -181,7 +190,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
           </div>
           <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
             <span>
-              任务:{" "}
+              {t("scheduler.queueColumn.task")}{" "}
               <span className="text-slate-900 dark:text-white font-medium">
                 {tasks.length}
               </span>
@@ -190,7 +199,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
           {totalEstimatedTime > 0 && (
             <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
               <span>
-                预计:{" "}
+                {t("scheduler.queueColumn.estimated")}{" "}
                 <span className="text-slate-900 dark:text-white font-medium">
                   {formatDurationMinutes(totalEstimatedTime, { format: 'compact' })}
                 </span>
@@ -203,7 +212,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
           <div className="mt-2 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
             <span className="text-xs text-primary-600 dark:text-primary-400">
-              {inProgressTasks.length} 个任务进行中
+              {t("scheduler.queueColumn.tasksInProgress", { count: inProgressTasks.length })}
             </span>
           </div>
         )}
@@ -224,8 +233,8 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
                 <EmptyState
                   icon={<ListTodo size={32} />}
                   title={t('scheduler.empty.queueEmpty')}
-                  description={isOver ? '释放以放置任务' : undefined}
-                  action={onAddTask ? { label: '+ 添加任务', onClick: onAddTask } : undefined}
+                  description={isOver ? t('scheduler.queueColumn.releaseToPlace') : undefined}
+                  action={onAddTask ? { label: `+ ${t('scheduler.queueColumn.addTask')}`, onClick: onAddTask } : undefined}
                   className="min-h-[100px] py-8"
                 />
               ) : (
@@ -263,7 +272,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
                   `}
                 >
                   <Plus size={16} />
-                  添加任务
+                  {t("scheduler.queueColumn.addTask")}
                 </button>
               </div>
             )}
@@ -273,7 +282,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
 
       {isCollapsed && (
         <div className="p-3 text-center text-slate-400 dark:text-slate-500 text-sm">
-          {tasks.length} 个任务
+          {t("scheduler.queueColumn.taskCount", { count: tasks.length })}
         </div>
       )}
     </div>

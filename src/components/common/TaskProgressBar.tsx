@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import type { TaskRuntimeProgress } from '@shared/types/common';
 
@@ -23,6 +24,7 @@ export const TaskProgressBar: React.FC<TaskProgressBarProps> = ({
   progress,
   className,
 }) => {
+  const { t } = useTranslation();
   if (!progress) return null;
 
   const hasPercent = typeof progress.percent === 'number';
@@ -36,7 +38,10 @@ export const TaskProgressBar: React.FC<TaskProgressBarProps> = ({
     statusParts.push(progress.stageLabel);
   }
   if (hasCount) {
-    statusParts.push(`已完成 ${progress.completed}/${progress.total}`);
+    statusParts.push(t('common.taskProgress.completedFormat', {
+      completed: progress.completed ?? 0,
+      total: progress.total ?? 0,
+    }));
   }
   const statusText = statusParts.join(' · ');
 
@@ -52,7 +57,7 @@ export const TaskProgressBar: React.FC<TaskProgressBarProps> = ({
         aria-valuenow={hasPercent ? safePercent : undefined}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={statusText || progress.stageLabel || '任务进度'}
+        aria-label={statusText || progress.stageLabel || t('common.taskProgress.title')}
         className="h-2 rounded-full overflow-hidden bg-gray-200 dark:bg-slate-700"
       >
         {hasPercent ? (
@@ -79,7 +84,7 @@ export const TaskProgressBar: React.FC<TaskProgressBarProps> = ({
             <div data-testid="task-progress-status">{statusText}</div>
           )}
           {progress.current && (
-            <div data-testid="task-progress-current">当前：{progress.current}</div>
+            <div data-testid="task-progress-current">{t('common.taskProgress.current', { current: progress.current })}</div>
           )}
         </div>
       )}

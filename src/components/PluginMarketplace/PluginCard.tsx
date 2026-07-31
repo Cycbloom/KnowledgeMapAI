@@ -10,32 +10,14 @@ interface PluginCardProps {
   installing?: boolean;
 }
 
-const categoryLabels: Record<string, string> = {
-  productivity: "效率工具",
-  visualization: "可视化",
-  ai: "AI 增强",
-  study: "学习辅助",
-};
-
-const pluginNameLabels: Record<string, string> = {
-  core: "核心服务",
-  graph: "知识图谱",
-  ai: "AI 服务",
-  study: "学习系统",
-  scheduler: "任务调度",
-  agent: "智能代理",
-};
-
 export const PluginCard = ({ plugin, isInstalled, onInstall, onUninstall, installing }: PluginCardProps) => {
   const { t } = useTranslation();
 
-  const getCategoryLabel = (category: string): string => {
-    return categoryLabels[category] ?? category;
-  };
+  const getCategoryLabel = (category: string): string =>
+    t(`pluginMarketplace.marketplace.categories.${category}` as const, { defaultValue: category });
 
-  const getPluginLabel = (name: string): string => {
-    return pluginNameLabels[name] ?? name;
-  };
+  const getPluginLabel = (name: string): string =>
+    t(`pluginMarketplace.marketplace.pluginNames.${name}` as const, { defaultValue: name });
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 transition-colors hover:shadow-md">

@@ -80,15 +80,15 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
   );
 
   const categoryLabels: Record<CommandCategory, string> = {
-    navigation: t("common.commandPalette.categoryNavigation"),
-    recent: t("common.commandPalette.categoryRecent"),
-    action: t("common.commandPalette.categoryAction"),
+    navigation: t("common.globalCommandPalette.categoryNavigation"),
+    recent: t("common.globalCommandPalette.categoryRecent"),
+    action: t("common.globalCommandPalette.categoryAction"),
   };
 
   const recentSubGroupLabels: Record<RecentSubGroup, string> = {
-    graph: t("common.commandPalette.recentGraph"),
-    node: t("common.commandPalette.recentNode"),
-    note: t("common.commandPalette.recentNote"),
+    graph: t("common.globalCommandPalette.recentGraph"),
+    node: t("common.globalCommandPalette.recentNode"),
+    note: t("common.globalCommandPalette.recentNote"),
   };
 
   const { getRecentGraphs } = useRecentGraphs();
@@ -128,7 +128,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     recentGraphs.forEach((graph) => {
       items.push({
         id: `recent-graph-${graph.id}`,
-        label: graph.topic || t("common.commandPalette.untitledGraph"),
+        label: graph.topic || t("common.globalCommandPalette.untitledGraph"),
         category: "recent",
         recentSubGroup: "graph",
         icon: <Network size={16} />,
@@ -141,7 +141,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     recentNodes.forEach((node) => {
       items.push({
         id: `recent-node-${node.id}`,
-        label: node.title || t("common.commandPalette.untitledNode"),
+        label: node.title || t("common.globalCommandPalette.untitledNode"),
         category: "recent",
         recentSubGroup: "node",
         icon: <FileText size={16} />,
@@ -155,7 +155,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     recentNotes.forEach((note) => {
       items.push({
         id: `recent-note-${note.id}`,
-        label: note.title || t("common.commandPalette.untitledNote"),
+        label: note.title || t("common.globalCommandPalette.untitledNote"),
         category: "recent",
         recentSubGroup: "note",
         icon: <FileText size={16} />,
@@ -167,34 +167,34 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     // action - 快速操作
     items.push({
       id: "action-new-graph",
-      label: t("common.commandPalette.actionNewGraph"),
+      label: t("common.globalCommandPalette.actionNewGraph"),
       category: "action",
       icon: <Plus size={16} />,
-      keywords: t("common.commandPalette.actionNewGraphKeywords"),
+      keywords: t("common.globalCommandPalette.actionNewGraphKeywords"),
       action: () => navigate("/"),
     });
     items.push({
       id: "action-toggle-theme",
-      label: t("common.commandPalette.actionToggleTheme"),
+      label: t("common.globalCommandPalette.actionToggleTheme"),
       category: "action",
       icon: isDark ? <Sun size={16} /> : <Moon size={16} />,
-      keywords: t("common.commandPalette.actionToggleThemeKeywords"),
+      keywords: t("common.globalCommandPalette.actionToggleThemeKeywords"),
       action: () => toggleTheme(),
     });
     items.push({
       id: "action-settings",
-      label: t("common.commandPalette.actionSettings"),
+      label: t("common.globalCommandPalette.actionSettings"),
       category: "action",
       icon: <Settings size={16} />,
-      keywords: t("common.commandPalette.actionSettingsKeywords"),
+      keywords: t("common.globalCommandPalette.actionSettingsKeywords"),
       action: () => navigate("/settings"),
     });
     items.push({
       id: "action-trash",
-      label: t("common.commandPalette.actionTrash"),
+      label: t("common.globalCommandPalette.actionTrash"),
       category: "action",
       icon: <Trash2 size={16} />,
-      keywords: t("common.commandPalette.actionTrashKeywords"),
+      keywords: t("common.globalCommandPalette.actionTrashKeywords"),
       action: () => navigate("/trash"),
     });
 
@@ -330,7 +330,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        aria-label={t("common.commandPalette.ariaLabel")}
+        aria-label={t("common.globalCommandPalette.ariaLabel")}
         className={`relative w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col transform transition-all duration-200 scale-100 opacity-100 ${
           isDark
             ? "bg-slate-900 border border-slate-700 text-white"
@@ -339,7 +339,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
       >
         {/* 对话框标题（仅供 aria-labelledby 引用，视觉隐藏） */}
         <h2 id={titleId} className="sr-only">
-          {t("common.commandPalette.ariaLabel")}
+          {t("common.globalCommandPalette.ariaLabel")}
         </h2>
 
         {/* Search Input */}
@@ -362,7 +362,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
             aria-controls={listboxId}
             aria-activedescendant={activeId}
             className="flex-1 bg-transparent text-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            placeholder={t("common.commandPalette.searchPlaceholder")}
+            placeholder={t("common.globalCommandPalette.searchPlaceholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
@@ -388,7 +388,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
         >
           {filteredCommands.length === 0 ? (
             <div className="py-8 text-center text-gray-500 dark:text-slate-400">
-              <p>{t("common.commandPalette.noMatch")}</p>
+              <p>{t("common.globalCommandPalette.noMatch")}</p>
             </div>
           ) : (
             ORDERED_CATEGORIES.map((category) => {
@@ -453,11 +453,11 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
           }`}
         >
           <div className="flex gap-3">
-            <span>{t("common.commandPalette.footerNavigate")}</span>
-            <span>{t("common.commandPalette.footerSelect")}</span>
-            <span>{t("common.commandPalette.footerClose")}</span>
+            <span>{t("common.globalCommandPalette.footerNavigate")}</span>
+            <span>{t("common.globalCommandPalette.footerSelect")}</span>
+            <span>{t("common.globalCommandPalette.footerClose")}</span>
           </div>
-          <div>{t("common.commandPalette.footerTitle")}</div>
+          <div>{t("common.globalCommandPalette.footerTitle")}</div>
         </div>
       </div>
     </div>

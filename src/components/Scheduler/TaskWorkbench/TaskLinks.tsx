@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus,
   ExternalLink,
@@ -35,19 +35,6 @@ const getLinkTypeIcon = (type: string) => {
   }
 };
 
-const getLinkTypeLabel = (type: string) => {
-  switch (type) {
-    case "web":
-      return "网页";
-    case "file":
-      return "文件";
-    case "api":
-      return "API";
-    default:
-      return "链接";
-  }
-};
-
 export const TaskLinks: React.FC<TaskLinksProps> = ({
   taskId,
   className = "",
@@ -63,6 +50,21 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
     url: "",
     description: "",
   });
+
+  const getLinkTypeLabel = useMemo(() => {
+    return (type: string): string => {
+      switch (type) {
+        case "web":
+          return t('scheduler.taskLinks.typeWeb');
+        case "file":
+          return t('scheduler.taskLinks.typeFile');
+        case "api":
+          return "API";
+        default:
+          return t('scheduler.taskLinks.typeLink');
+      }
+    };
+  }, [t]);
 
   useEffect(() => {
     loadLinks();
@@ -149,10 +151,10 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
         <div className="flex items-center gap-2">
           {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-            快速链接
+            {t('scheduler.taskLinks.quickLinks')}
           </h3>
           <span className="text-sm text-slate-500 dark:text-slate-400">
-            {links.length} 个链接
+            {t('scheduler.taskLinks.linkCount', { count: links.length })}
           </span>
         </div>
         <button
@@ -163,7 +165,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
           className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
         >
           <Plus size={14} />
-          添加
+          {t('scheduler.taskLinks.add')}
         </button>
       </div>
 
@@ -239,13 +241,13 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                   }}
                   className="px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 >
-                  取消
+                  {t('scheduler.taskLinks.cancel')}
                 </button>
                 <button
                   onClick={handleAddLink}
                   className="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 transition-all"
                 >
-                  添加
+                  {t('scheduler.taskLinks.add')}
                 </button>
               </div>
             </div>
@@ -305,7 +307,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
               <EmptyState
                 icon={<Link2 size={32} />}
                 title={t('scheduler.empty.links')}
-                action={{ label: '添加第一个链接', onClick: () => setIsAdding(true) }}
+                action={{ label: t('scheduler.taskLinks.addFirstLink'), onClick: () => setIsAdding(true) }}
               />
             )}
           </div>

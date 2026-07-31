@@ -105,7 +105,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
       <div className="flex flex-wrap gap-2 mb-4">
         <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
           <Layers size={12} className="text-primary-400" />
-          <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>{quiz.card_count} 张卡片</span>
+          <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>{t('study.quizCard.cardCount', { count: quiz.card_count })}</span>
         </div>
         <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
           <FileText size={12} className="text-emerald-400" />
@@ -170,7 +170,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
               }`}
             >
               <Play size={12} />
-              开始
+              {t('study.quizCard.start')}
             </button>
           )}
         </div>

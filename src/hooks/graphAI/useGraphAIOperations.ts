@@ -119,25 +119,25 @@ export const useGraphAIOperations = ({
 
   const handleAIGenerate = async () => {
     if (!nodeForm.title) return;
-    
+
     await asyncHandler(
       async () => {
         let prompt = aiPrompt;
-        
+
         if (!prompt && selectedNode) {
           const nodeAiPrompt = selectedNode.properties?.ai_prompt;
           if (nodeAiPrompt && typeof nodeAiPrompt === 'string') {
             prompt = nodeAiPrompt.replace(/{主题}/g, selectedNode.title || '');
-            
+
             const parentNode = nodes.find(n => n.id === edges.find(e => e.target_knowledge_point_id === selectedNode.id)?.source_knowledge_point_id);
             if (parentNode) {
               prompt = prompt.replace(/{父节点内容}/g, parentNode.content || parentNode.title || '');
             }
-            
-            const siblingNodes = nodes.filter(n => 
-              n.id !== selectedNode.id && 
-              edges.some(e => 
-                e.source_knowledge_point_id === parentNode?.id && 
+
+            const siblingNodes = nodes.filter(n =>
+              n.id !== selectedNode.id &&
+              edges.some(e =>
+                e.source_knowledge_point_id === parentNode?.id &&
                 e.target_knowledge_point_id === n.id
               )
             );
@@ -147,23 +147,23 @@ export const useGraphAIOperations = ({
             }
           }
         }
-        
+
         if (!prompt) {
           prompt = `请详细解释 ${nodeForm.title} 的核心概念、特点和应用`;
         }
-        
+
         setAiPrompt(prompt);
-        
+
         await api.ai.generateContentStream(
-          { 
-            topic: nodeForm.title, 
+          {
+            topic: nodeForm.title,
             context: prompt,
             level: nodeForm.level
           },
           (chunk) => {
-            state.setNodeForm(prev => ({ 
-              ...prev, 
-              content: (prev.content || '') + chunk 
+            state.setNodeForm(prev => ({
+              ...prev,
+              content: (prev.content || '') + chunk
             }));
           }
         );
@@ -172,20 +172,20 @@ export const useGraphAIOperations = ({
       },
       {
         loadingSetter: setLoading,
-        successMessage: 'AI 内容生成完成',
-        errorMessage: 'AI 生成失败'
+        successMessage: t('toast.graphAI.generateContent.completed'),
+        errorMessage: t('toast.graphAI.generateContent.failed')
       }
     );
   };
 
   const handleAIExpand = async () => {
     if (!selectedNode || !id) return;
-    
+
     if (!selectedNode.title) {
       message.error(t('toast.graphAI.nodeTitleRequired'));
       return;
     }
-    
+
     await asyncHandler(
       async () => {
         const parentLevel = getLevel(selectedNode, edges);
@@ -195,7 +195,7 @@ export const useGraphAIOperations = ({
 
         const expandPrompt = aiPrompt || buildDefaultExpandPrompt(selectedNode.title);
 
-        const res = await aiExpandMutation.mutateAsync({ 
+        const res = await aiExpandMutation.mutateAsync({
           node_title: selectedNode.title,
           node_content: selectedNode.content,
           node_level: parentLevel,
@@ -203,7 +203,7 @@ export const useGraphAIOperations = ({
           current_children: currentChildrenTitles,
           expand_prompt: expandPrompt,
         });
-        
+
         const result = await processExpandSuggestions({
           selectedNode,
           nodes,
@@ -240,14 +240,14 @@ export const useGraphAIOperations = ({
 
   const handleAIGenerateCards = async () => {
     if (!selectedNode || !id) return;
-    
+
     await asyncHandler(
       async () => {
-        const res = await aiGenerateCardsMutation.mutateAsync({ 
-          node_title: selectedNode.title, 
+        const res = await aiGenerateCardsMutation.mutateAsync({
+          node_title: selectedNode.title,
           node_content: selectedNode.content
         });
-        
+
         const cards = res.cards.map((c: AIGeneratedCard) => ({
           node_id: selectedNode.id,
           question: c.question,
@@ -280,8 +280,8 @@ export const useGraphAIOperations = ({
   const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions' | 'deep_analysis', params?: BatchGenerateConfig | Record<string, unknown>) => {
     if (selectedNodeIds.size === 0 && !selectedNode) return;
     if (!id) return;
-    
-    const nodesToProcess = selectedNodeIds.size > 0 
+
+    const nodesToProcess = selectedNodeIds.size > 0
       ? Array.from(selectedNodeIds).map(nid => nodes.find(n => n.id === nid)).filter((n): n is NonNullable<typeof n> => Boolean(n))
       : [selectedNode].filter((n): n is NonNullable<typeof n> => Boolean(n));
 
@@ -314,7 +314,7 @@ export const useGraphAIOperations = ({
 
         for (const node of nodesToProcess) {
           if (!node) continue;
-          
+
           const payload: Record<string, unknown> = {
             graph_id: id,
             node_id: node.id,
@@ -327,14 +327,14 @@ export const useGraphAIOperations = ({
 
           if (type === 'expand_graph') {
             const existingTitles = nodes.map(n => n.title);
-            
+
             const currentChildrenIds = edges
               .filter(e => e.source_knowledge_point_id === node.id)
               .map(e => e.target_knowledge_point_id);
             const currentChildrenTitles = nodes
               .filter(n => currentChildrenIds.includes(n.id))
               .map(n => n.title);
-              
+
             payload.existing_nodes = existingTitles;
             payload.child_nodes = currentChildrenTitles;
           }
@@ -344,7 +344,7 @@ export const useGraphAIOperations = ({
             payload
           });
         }
-        
+
         return true;
       },
       {
@@ -371,7 +371,7 @@ export const useGraphAIOperations = ({
     if (!selectedNode) return;
     state.setIsRelatedLoading(true);
     state.setShowRelatedSection(true);
-    
+
     await asyncHandler(
       async () => {
         const res = await api.nodes.getRelated(selectedNode.id);
@@ -379,7 +379,7 @@ export const useGraphAIOperations = ({
         return res;
       },
       {
-        errorMessage: '获取相关节点失败',
+        errorMessage: t('common.aiOperations.fetchRelatedNodesFailed'),
         onFinally: () => state.setIsRelatedLoading(false)
       }
     );
@@ -387,13 +387,13 @@ export const useGraphAIOperations = ({
 
   const handleGetBranchSuggestions = async () => {
     if (!selectedNode || !id) return [];
-    
+
     const result = await asyncHandler(
       async () => {
         const parentLevel = getLevel(selectedNode, edges);
-        
+
         const existingTitles = nodes.map(n => n.title);
-        
+
         const currentChildrenIds = edges
           .filter(e => e.source_knowledge_point_id === selectedNode.id)
           .map(e => e.target_knowledge_point_id);
@@ -413,16 +413,16 @@ export const useGraphAIOperations = ({
       },
       {
         loadingSetter: setLoading,
-        errorMessage: '获取分支建议失败'
+        errorMessage: t('toast.graphAI.branch.getSuggestionsFailed')
       }
     );
-    
+
     return result || [];
   };
 
   const handleCreateBranch = async (suggestion: BranchSuggestion, isAccepted: boolean = true) => {
     if (!selectedNode || !id) return null;
-    
+
     return await asyncHandler(
       async () => {
         const parentLevel = getLevel(selectedNode, edges);
@@ -470,7 +470,7 @@ export const useGraphAIOperations = ({
 
   const handleSwitchBranch = async (pathItem: ExplorationPathItem, suggestion: BranchSuggestion) => {
     if (!id) return;
-    
+
     await asyncHandler(
       async () => {
         const parentNode = nodes.find(n => n.id === pathItem.parentNodeId);
@@ -483,7 +483,7 @@ export const useGraphAIOperations = ({
           const isAccepted = branch.id === suggestion.id;
       const parentLevel = getLevel(parentNode, edges);
       const newLevel = getNextLevel(parentLevel);
-      
+
       const newNode = await createNodeMutation.mutateAsync({
         graph_id: id,
         title: branch.title,
@@ -550,7 +550,7 @@ export const useGraphAIOperations = ({
       },
       {
         loadingSetter: setLoading,
-        errorMessage: '切换分支失败',
+        errorMessage: t('toast.graphAI.branch.switchFailed'),
         onSuccess: (result) => {
           if (result) {
             message.success(t('toast.graphAI.branchSwitched'));
@@ -562,18 +562,18 @@ export const useGraphAIOperations = ({
 
   const handleGenerateNodeContent = async () => {
     if (!selectedNode || !id) return;
-    
-    const loadingId = message.loading('AI 内容生成任务已开始...');
+
+    const loadingId = message.loading(t('toast.graphAI.generateContent.started'));
 
     await asyncHandler(
       async () => {
         const prompt = `请详细解释 ${selectedNode.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如"好的"、"作为..."）、结束语或无关的对话内容。`;
-        
+
         let generatedContent = '';
-        
+
         await api.ai.generateContentStream(
-          { 
-            topic: selectedNode.title || '', 
+          {
+            topic: selectedNode.title || '',
             context: prompt,
             level: selectedNode.level
           },
@@ -588,16 +588,16 @@ export const useGraphAIOperations = ({
               graphId: id,
               data: { content: generatedContent }
           });
-          
+
           queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
         }
-        
+
         return generatedContent;
       },
       {
         loadingSetter: setLoading,
-        successMessage: 'AI 内容生成完成',
-        errorMessage: 'AI 生成失败',
+        successMessage: t('toast.graphAI.generateContent.completed'),
+        errorMessage: t('toast.graphAI.generateContent.failed'),
         onFinally: () => {
           message.dismiss(loadingId);
         }
@@ -628,15 +628,15 @@ export const useGraphAIOperations = ({
         if (res.message) feedback += ` (${res.message})`;
 
         if (action.target_mode === "update_node" && res.data?.updatedFields) {
-          feedback += `。已更新: ${res.data.updatedFields.join(", ")}`;
+          feedback += t('common.aiOperations.fieldsUpdated', { fields: res.data.updatedFields.join(", ") });
         } else if (action.target_mode === "spawn_children" && res.data?.createdCount) {
-          feedback += `。已生成 ${res.data.createdCount} 个子节点`;
+          feedback += t('common.aiOperations.childrenSpawned', { count: res.data.createdCount });
         }
 
         message.success(feedback);
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : '未知错误';
+      const errorMessage = err instanceof Error ? err.message : t('common.aiOperations.unknownError');
       message.error(`${t('toast.graphAI.actionFailed')}: ${errorMessage}`);
     }
   };

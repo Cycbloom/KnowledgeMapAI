@@ -45,18 +45,18 @@ export const WikiLinkPopover: React.FC<WikiLinkPopoverProps> = ({
   return (
     <div
       role="listbox"
-      aria-label="wiki link suggestions"
+      aria-label={t("notes.wikiLinkPopover.title")}
       className="fixed z-50 min-w-[240px] max-w-[360px] py-1 rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-800 shadow-lg shadow-black/5 dark:shadow-black/30 overflow-hidden"
       style={{ top: position.top, left: position.left }}
     >
       <div className="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-slate-500 border-b border-gray-100 dark:border-slate-500 flex items-center gap-1.5">
         {loading && <Loader2 className="w-3 h-3 animate-spin" />}
-        <span>{t("notes.editor.wikiLink.placeholder")}</span>
+        <span>{t("notes.wikiLinkPopover.placeholder")}</span>
       </div>
       <div className="max-h-[280px] overflow-y-auto">
         {items.length === 0 && !loading ? (
           <div className="px-3 py-2 text-sm text-gray-400 dark:text-slate-500">
-            {t("notes.editor.wikiLink.noMatch")}
+            {t("notes.wikiLinkPopover.noMatch")}
           </div>
         ) : (
           items.map((item, index) => {

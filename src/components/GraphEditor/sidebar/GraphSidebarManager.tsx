@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Node, Edge, GraphColorMode, NodeStatus } from "../../../types";
 import { GraphEditorState, useIsMobile } from "../../../hooks";
@@ -111,6 +112,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
   } = state;
 
   const { isMobile } = useIsMobile();
+  const { t } = useTranslation();
   const [isResizing, setIsResizing] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isCreateRegionOpen, setIsCreateRegionOpen] = useState(false);
@@ -187,7 +189,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
       isOpen={isVersionHistoryOpen}
       onClose={() => setIsVersionHistoryOpen(false)}
       knowledgePointId={selectedNode.knowledge_point_id || selectedNode.id}
-      knowledgePointTitle={selectedNode.title || "未命名知识点"}
+      knowledgePointTitle={selectedNode.title || t('graphEditor.sidebar.unnamedKnowledgePoint')}
       onRollback={() => {
         if (nodeOps?.handleRefreshNode) {
           nodeOps.handleRefreshNode();
@@ -403,12 +405,12 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
       <ErrorBoundary
         fallback={
           <div className="w-80 bg-white dark:bg-gray-900 shadow-lg border-l border-gray-200 dark:border-gray-700 absolute right-0 top-0 bottom-0 z-20 flex flex-col p-4 items-center justify-center">
-            <div className="text-red-500 font-bold mb-2">侧边栏组件出错</div>
+            <div className="text-red-500 font-bold mb-2">{t('graphEditor.sidebar.error.componentError')}</div>
             <button
               onClick={handleCloseSidebar}
               className="text-primary-600 underline"
             >
-              关闭侧边栏
+              {t('graphEditor.sidebar.error.closeSidebar')}
             </button>
           </div>
         }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Coffee,
@@ -23,14 +23,14 @@ interface BreakTimerProps {
   onSwitchTask: () => void;
 }
 
-const BREAK_SUGGESTIONS = [
-  { icon: '👀', text: '远眺窗外，放松眼睛' },
-  { icon: '🧘', text: '做几个深呼吸' },
-  { icon: '🚶', text: '站起来走动一下' },
-  { icon: '💧', text: '喝杯水' },
-  { icon: '💪', text: '伸展一下身体' },
-  { icon: '🎵', text: '听一首喜欢的歌' },
-];
+const BREAK_SUGGESTION_KEYS = [
+  { icon: '👀', key: 'lookOut' },
+  { icon: '🧘', key: 'deepBreath' },
+  { icon: '🚶', key: 'walk' },
+  { icon: '💧', key: 'drinkWater' },
+  { icon: '💪', key: 'stretch' },
+  { icon: '🎵', key: 'listenMusic' },
+] as const;
 
 export const BreakTimer: React.FC<BreakTimerProps> = ({
   isOpen,
@@ -40,6 +40,15 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
   onSwitchTask,
 }) => {
   const { t } = useTranslation();
+
+  const BREAK_SUGGESTIONS = useMemo(
+    () =>
+      BREAK_SUGGESTION_KEYS.map((s) => ({
+        icon: s.icon,
+        text: t(`scheduler.breakTimer.breakSuggestions.${s.key}`),
+      })),
+    [t],
+  );
   const timeLeft = useTimerStore(s => s.timeLeft);
   const isActive = useTimerStore(s => s.isActive);
   const isPaused = useTimerStore(s => s.isPaused);
@@ -97,7 +106,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
             >
               <Coffee size={20} className="text-emerald-400" aria-hidden="true" />
               <span className="text-emerald-300 font-medium">
-                {breakType === 'long' ? '长休息时间' : '小憩时间'}
+                {breakType === 'long' ? t('scheduler.breakTimer.longBreak') : t('scheduler.breakTimer.shortBreak')}
               </span>
             </motion.div>
 
@@ -108,7 +117,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 transition={transitionOverride ?? { delay: 0.2 }}
                 className="text-emerald-400/80 text-sm"
               >
-                🎉 恭喜完成 {pomodorosCompleted} 个番茄钟！享受你的长休息吧
+                {t('scheduler.breakTimer.congratsPomodoros', { count: pomodorosCompleted })}
               </motion.p>
             )}
           </div>
@@ -178,7 +187,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                     className="text-emerald-300/60 text-sm mt-2"
                     aria-live="polite"
                   >
-                    {isRunning ? '休息中...' : '已暂停'}
+                    {isRunning ? t('scheduler.breakTimer.breakRunning') : t('scheduler.breakTimer.breakPaused')}
                   </div>
                 </div>
 

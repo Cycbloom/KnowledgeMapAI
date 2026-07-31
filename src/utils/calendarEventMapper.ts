@@ -3,11 +3,11 @@ import type { CalendarEvent } from "../types/calendar";
 
 /**
  * 将 UserTask 的 tags 映射为日历事件的类型。
- * 包含"学习"→study，包含"复习"→review，否则→task
+ * 包含"study"→study，包含"review"→review，否则→task
  */
 function mapTaskType(tags: string[]): CalendarEvent["type"] {
-  if (tags?.includes("学习")) return "study";
-  if (tags?.includes("复习")) return "review";
+  if (tags?.includes("study")) return "study";
+  if (tags?.includes("review")) return "review";
   return "task";
 }
 

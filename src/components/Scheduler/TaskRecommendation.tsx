@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, AlertTriangle, Zap, TrendingUp, Calendar, Tag, ClipboardList } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -18,28 +18,24 @@ interface TaskRecommendationProps {
 
 const URGENCY_CONFIG = {
   critical: {
-    label: '紧急',
     color: 'text-red-600 dark:text-red-400',
     bg: 'bg-red-100 dark:bg-red-500/20',
     border: 'border-red-300 dark:border-red-500/50',
     icon: AlertTriangle,
   },
   high: {
-    label: '高优先',
     color: 'text-amber-600 dark:text-amber-400',
     bg: 'bg-amber-100 dark:bg-amber-500/20',
     border: 'border-amber-300 dark:border-amber-500/50',
     icon: Zap,
   },
   medium: {
-    label: '中等',
     color: 'text-primary-600 dark:text-primary-400',
     bg: 'bg-primary-100 dark:bg-primary-500/20',
     border: 'border-primary-300 dark:border-primary-500/50',
     icon: TrendingUp,
   },
   low: {
-    label: '低优先',
     color: 'text-slate-600 dark:text-slate-400',
     bg: 'bg-slate-100 dark:bg-slate-500/20',
     border: 'border-slate-300 dark:border-slate-500/50',
@@ -55,6 +51,23 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const getUrgencyLabel = useMemo(() => {
+    return (urgency: keyof typeof URGENCY_CONFIG): string => {
+      switch (urgency) {
+        case 'critical':
+          return t('scheduler.taskRecommendation.priorityUrgent');
+        case 'high':
+          return t('scheduler.taskRecommendation.priorityHigh');
+        case 'medium':
+          return t('scheduler.taskRecommendation.priorityMedium');
+        case 'low':
+          return t('scheduler.taskRecommendation.priorityLow');
+        default:
+          return '';
+      }
+    };
+  }, [t]);
 
   if (isLoading) {
     return (
@@ -114,10 +127,10 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
                       Q{rec.task.queue_level}
                     </span>
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${urgencyConfig.bg} ${urgencyConfig.color}`}>
-                      {urgencyConfig.label}
+                      {getUrgencyLabel(rec.urgencyLevel)}
                     </span>
                     <span className="text-xs text-slate-400 dark:text-slate-500">
-                      推荐分数: {Math.round(rec.score)}
+                      {t('scheduler.taskRecommendation.recommendationScore')} {Math.round(rec.score)}
                     </span>
                   </div>
 
@@ -135,7 +148,7 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
                     {rec.task.estimated_duration && (
                       <span className="flex items-center gap-1">
                         <Clock size={12} />
-                        {rec.task.estimated_duration}分钟
+                        {t('scheduler.taskRecommendation.durationMinutes', { count: rec.task.estimated_duration })}
                       </span>
                     )}
                     {rec.task.deadline && (
@@ -179,7 +192,7 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
                       transition-all shadow-lg shadow-primary-500/20
                     `}
                   >
-                    开始
+                    {t('scheduler.taskRecommendation.start')}
                   </button>
                 )}
               </div>
@@ -187,7 +200,7 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
               {rec.suggestedTimeSlot && (
                 <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <span className="text-xs text-slate-400 dark:text-slate-500">
-                    建议时段: {rec.suggestedTimeSlot.label}
+                    {t('scheduler.taskRecommendation.suggestedSlots')} {rec.suggestedTimeSlot.label}
                   </span>
                 </div>
               )}

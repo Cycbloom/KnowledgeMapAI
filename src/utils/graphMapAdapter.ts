@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { Node, Edge, NodeLevel, Graph, GraphRelation, GraphRelationType } from '../types';
 
 export const calculateGraphLevel = (
@@ -81,12 +82,12 @@ export const getRelationColor = (relationType: GraphRelationType): string => {
 
 export const getRelationLabel = (relationType: GraphRelationType): string => {
   const labels: Record<GraphRelationType, string> = {
-    prerequisite: '前置知识',
-    extension: '扩展知识',
-    related: '相关知识',
-    cross_domain: '跨学科',
+    prerequisite: i18next.t('graphMap.relationTypes.prerequisite'),
+    extension: i18next.t('graphMap.relationTypes.extension'),
+    related: i18next.t('graphMap.relationTypes.related'),
+    cross_domain: i18next.t('graphMap.relationTypes.crossDomain'),
   };
-  return labels[relationType] || '未知关系';
+  return labels[relationType] || i18next.t('graphMap.relationTypes.unknown');
 };
 
 export const filterRelationsByType = (

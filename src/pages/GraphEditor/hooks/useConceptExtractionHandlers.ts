@@ -54,7 +54,7 @@ export const useConceptExtractionHandlers = ({
           concepts: selectedConcepts,
           relations: [],
           literature: selectedConcepts[0]?.source || {
-            title: "文献来源",
+            title: t("graphEditor.conceptExtraction.literatureSource"),
             type: "document",
             processedAt: new Date().toISOString(),
           },
@@ -62,7 +62,10 @@ export const useConceptExtractionHandlers = ({
 
         if (result.success) {
           message.success(
-            `已添加 ${result.addedCount} 个概念，合并 ${result.mergedCount} 个相似概念`,
+            t("graphEditor.conceptExtraction.addedCountConcepts", {
+              addedCount: result.addedCount,
+              mergedCount: result.mergedCount,
+            }),
           );
           await queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id || "") });
         }

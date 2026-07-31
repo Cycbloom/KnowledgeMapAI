@@ -1,13 +1,13 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
-import { migrationService } from "../services/migration/migrationService";
+import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { migrationService } from "../../services/migration/migrationService";
 import {
   reinitializeSupabaseClients,
   getCurrentSupabaseConfig,
-} from "../supabase";
-import { logger } from "../utils/logger";
-import { AppError } from "../middleware/errorHandler";
-import { ErrorCodes } from "../../shared/types/errorCodes";
+} from "../../supabase";
+import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 

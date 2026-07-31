@@ -7,14 +7,14 @@ const CSRF_HEADER = "x-csrf-token";
 const CSRF_COOKIE_NAME = "csrf-token";
 
 const SKIP_CSRF_ROUTES = [
-  "/api/auth/login",
-  "/api/auth/register",
-  "/api/auth/refresh",
-  "/api/auth/logout",
-  "/api/health",
-  "/api/health/system",
-  "/api/analytics",
-  "/api/system-monitor",
+  "/api/v1/auth/login",
+  "/api/v1/auth/register",
+  "/api/v1/auth/refresh",
+  "/api/v1/auth/logout",
+  "/api/v1/health",
+  "/api/v1/health/system",
+  "/api/v1/analytics",
+  "/api/v1/system-monitor",
 ];
 
 const generateToken = (): string => {

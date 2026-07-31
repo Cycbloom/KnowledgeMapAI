@@ -219,14 +219,14 @@ describe('csrf middleware', () => {
 
   describe('skip routes (whitelist)', () => {
     const skipRoutes = [
-      '/api/auth/login',
-      '/api/auth/register',
-      '/api/auth/refresh',
-      '/api/auth/logout',
-      '/api/health',
-      '/api/health/system',
-      '/api/analytics',
-      '/api/system-monitor',
+      '/api/v1/auth/login',
+      '/api/v1/auth/register',
+      '/api/v1/auth/refresh',
+      '/api/v1/auth/logout',
+      '/api/v1/health',
+      '/api/v1/health/system',
+      '/api/v1/analytics',
+      '/api/v1/system-monitor',
     ];
 
     skipRoutes.forEach((route) => {
@@ -250,7 +250,7 @@ describe('csrf middleware', () => {
     it('should skip CSRF for sub-paths of whitelisted routes', () => {
       const req = createMockReq({
         method: 'POST',
-        path: '/api/auth/login/sub-path',
+        path: '/api/v1/auth/login/sub-path',
         cookies: {},
         headers: {},
       });

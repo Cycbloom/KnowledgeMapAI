@@ -1,9 +1,9 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthedRequest } from '../middleware/auth';
-import { AppError } from '../middleware/errorHandler';
-import { ErrorCodes } from '../../shared/types/errorCodes';
-import { logger } from '../utils/logger';
-import { healthService } from "../services/core";
+import { requireAuth, type AuthedRequest } from '../../middleware/auth';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { logger } from '../../utils/logger';
+import { healthService } from "../../services/core";
 
 const router = Router();
 

@@ -1,16 +1,16 @@
 import { Router, type Response } from "express";
-import { requireAuth, requireAdmin, type AuthedRequest } from "../middleware/auth";
-import { validate } from "../middleware/validate";
-import { AppError } from "../middleware/errorHandler";
-import { ErrorCodes } from "../../shared/types/errorCodes";
-import { aiService } from "../services/ai";
+import { requireAuth, requireAdmin, type AuthedRequest } from "../../middleware/auth";
+import { validate } from "../../middleware/validate";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { aiService } from "../../services/ai";
 import {
   knowledgePointService,
   knowledgePointVersionService,
   conceptAggregationService,
-} from "../services/graph";
-import { requireKnowledgePointOwnership } from "../middleware/ownership";
-import { logger } from "../utils/logger";
+} from "../../services/graph";
+import { requireKnowledgePointOwnership } from "../../middleware/ownership";
+import { logger } from "../../utils/logger";
 import { z } from "zod";
 import {
   createKnowledgePointSchema,
@@ -18,7 +18,7 @@ import {
   searchSimilarSchema,
   submitPublicSchema,
   rejectSuggestionSchema,
-} from "../schemas/index";
+} from "../../schemas/index";
 
 const router = Router();
 

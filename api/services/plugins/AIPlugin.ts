@@ -4,7 +4,7 @@ import aiActionRoutes from "../../routes/aiActions";
 import promptRoutes from "../../routes/prompts";
 import ragRoutes from "../../routes/rag";
 import searchRoutes from "../../routes/search";
-import literatureRoutes from "../../routes/literature";
+import literatureRoutes from "../../routes/knowledge/literature";
 
 export const AIPlugin: Plugin = {
   name: "ai",
@@ -13,11 +13,11 @@ export const AIPlugin: Plugin = {
   dependencies: ["core"],
 
   onInstall(kernel: KernelAPI): void {
-    kernel.registerRoutes("/api/ai", aiRoutes, { rateLimiter: "ai" });
-    kernel.registerRoutes("/api/ai-actions", aiActionRoutes, { rateLimiter: "ai" });
-    kernel.registerRoutes("/api/prompts", promptRoutes, { rateLimiter: "ai" });
-    kernel.registerRoutes("/api/rag", ragRoutes);
-    kernel.registerRoutes("/api/search", searchRoutes);
-    kernel.registerRoutes("/api/literature", literatureRoutes, { rateLimiter: "aiHeavy" });
+    kernel.registerRoutes("/api/v1/ai", aiRoutes, { rateLimiter: "ai" });
+    kernel.registerRoutes("/api/v1/ai-actions", aiActionRoutes, { rateLimiter: "ai" });
+    kernel.registerRoutes("/api/v1/prompts", promptRoutes, { rateLimiter: "ai" });
+    kernel.registerRoutes("/api/v1/rag", ragRoutes);
+    kernel.registerRoutes("/api/v1/search", searchRoutes);
+    kernel.registerRoutes("/api/v1/literature", literatureRoutes, { rateLimiter: "aiHeavy" });
   },
 };

@@ -1,15 +1,15 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthedRequest } from "../middleware/auth";
-import { validate } from "../middleware/validate";
-import { AppError } from "../middleware/errorHandler";
-import { ErrorCodes } from "../../shared/types/errorCodes";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
+import { validate } from "../../middleware/validate";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { AIProviderType } from "@shared/types";
-import { getAIProviderForTask, conceptExtractorService, literatureMetadataService, aiService } from "../services/ai";
-import { logger } from "../utils/logger";
-import { scrapeUrl } from "../utils/scraper";
-import { conceptAggregationService } from "../services/graph";
-import { literatureApplyService } from "../services/literature";
-import { upload } from "./ai/utils";
+import { getAIProviderForTask, conceptExtractorService, literatureMetadataService, aiService } from "../../services/ai";
+import { logger } from "../../utils/logger";
+import { scrapeUrl } from "../../utils/scraper";
+import { conceptAggregationService } from "../../services/graph";
+import { literatureApplyService } from "../../services/literature";
+import { upload } from "../ai/utils";
 import type { LiteratureInfo, ConceptType } from "@shared/types/graph";
 import { z } from "zod";
 

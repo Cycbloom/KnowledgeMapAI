@@ -1,15 +1,15 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthedRequest } from "../middleware/auth";
-import { requireQuizSetOwnership } from "../middleware/ownership";
-import { validate } from "../middleware/validate";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
+import { requireQuizSetOwnership } from "../../middleware/ownership";
+import { validate } from "../../middleware/validate";
 import {
   createQuizSetSchema,
   updateQuizSetSchema,
   generateQuizSchema,
   regenerateCardSchema,
   uuidParamsSchema,
-} from "../schemas/index";
-import { quizSetsService } from "../services/quiz";
+} from "../../schemas/index";
+import { quizSetsService } from "../../services/quiz";
 
 const router = Router();
 

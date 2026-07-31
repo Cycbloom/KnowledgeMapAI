@@ -34,10 +34,15 @@ api/
 │
 ├── repositories/       # 数据访问层（未使用，计划移除）
 │
-├── routes/             # API 路由
-│   ├── ai/             # AI 相关路由
-│   ├── scheduler/      # 调度相关路由
-│   └── *.ts            # 其他路由模块
+├── routes/             # API 路由（按业务域分组）
+│   ├── ai/             # AI 路由（config/, content/, cards, chat, document...）
+│   ├── autoGraph/      # 自动图谱路由（embeddings, graph, prompt, templates）
+│   ├── graphs/         # 图谱路由（analysis, crud, expansion, versions）
+│   ├── learningPaths/  # 学习路径路由（crud, generation, nodes, plans, progress）
+│   ├── scheduler/      # 调度路由（tasks, schedules, focus, analytics...）
+│   ├── story/          # 故事路由（characters, scenes, structures...）
+│   ├── study/          # 学习路由（practiceSessions, quizSessions）
+│   └── *.ts            # 其他独立路由模块（auth, notes, search, sync...）
 │
 ├── schemas/            # 请求/响应 Schema
 │   └── index.ts

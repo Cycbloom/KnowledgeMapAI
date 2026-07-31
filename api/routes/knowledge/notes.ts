@@ -3,8 +3,8 @@ import { z } from "zod";
 import path from "node:path";
 import fs from "node:fs";
 import multer from "multer";
-import { requireAuth, type AuthedRequest } from "../middleware/auth";
-import { validate } from "../middleware/validate";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
+import { validate } from "../../middleware/validate";
 import {
   uuidParamsSchema,
   createNoteSchema,
@@ -14,13 +14,13 @@ import {
   updateNoteTemplateSchema,
   createNodesFromConceptsSchema,
   writingAssistSchema,
-} from "../schemas/index";
-import { notesService } from "../services/notes";
-import { blockRefService } from "../services/notes/blockRefService";
-import { rateLimiters } from "../middleware/rateLimiter";
-import { AppError } from "../middleware/errorHandler";
-import { ErrorCodes } from "../../shared/types/errorCodes";
-import { logger } from "../utils/logger";
+} from "../../schemas/index";
+import { notesService } from "../../services/notes";
+import { blockRefService } from "../../services/notes/blockRefService";
+import { rateLimiters } from "../../middleware/rateLimiter";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { logger } from "../../utils/logger";
 
 const nodeIdParamsSchema = z.object({
   nodeId: z.string().uuid("无效的节点ID"),

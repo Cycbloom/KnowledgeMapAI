@@ -1,6 +1,6 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthedRequest } from '../middleware/auth';
-import { studyService } from "../services/study";
+import { requireAuth, type AuthedRequest } from '../../middleware/auth';
+import { studyService } from "../../services/study";
 
 const router = Router();
 

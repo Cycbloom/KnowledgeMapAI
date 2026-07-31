@@ -8,6 +8,6 @@ export const AgentPlugin: Plugin = {
   dependencies: ["graph", "ai"],
 
   onInstall(kernel: KernelAPI): void {
-    kernel.registerRoutes("/api/agent", agentRoutes);
+    kernel.registerRoutes("/api/v1/agent", agentRoutes);
   },
 };

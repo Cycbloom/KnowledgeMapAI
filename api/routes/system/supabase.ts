@@ -1,9 +1,9 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
-import { supabaseManagementApi } from "../services/supabase/managementApi";
-import { logger } from "../utils/logger";
-import { AppError } from "../middleware/errorHandler";
-import { ErrorCodes } from "../../shared/types/errorCodes";
+import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { supabaseManagementApi } from "../../services/supabase/managementApi";
+import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 

@@ -1,17 +1,17 @@
 import type { Plugin, KernelAPI } from "../kernel/types";
 import { cacheInvalidationSubscriber } from "../core/subscribers/cacheInvalidationSubscriber";
 import { sseNotificationSubscriber } from "../core/subscribers/sseNotificationSubscriber";
-import authRoutes from "../../routes/auth";
-import healthRoutes from "../../routes/health";
+import authRoutes from "../../routes/system/auth";
+import healthRoutes from "../../routes/system/health";
 import dataRoutes from "../../routes/data";
 import dashboardRoutes from "../../routes/dashboard";
 import alertsRoutes from "../../routes/alerts";
-import systemMonitorRoutes from "../../routes/systemMonitor";
-import backupRoutes from "../../routes/backup";
+import systemMonitorRoutes from "../../routes/system/systemMonitor";
+import backupRoutes from "../../routes/system/backup";
 import pluginsRoutes from "../../routes/plugins";
-import databaseRoutes from "../../routes/database";
-import supabaseRoutes from "../../routes/supabase";
-import syncRoutes from "../../routes/sync";
+import databaseRoutes from "../../routes/system/database";
+import supabaseRoutes from "../../routes/system/supabase";
+import syncRoutes from "../../routes/system/sync";
 
 export const corePlugin: Plugin = {
   name: "core",
@@ -19,17 +19,17 @@ export const corePlugin: Plugin = {
   description: "Core services: authentication, settings, health, SSE, event bus",
 
   onInstall(kernel: KernelAPI): void {
-    kernel.registerRoutes("/api/auth", authRoutes, { rateLimiter: "auth" });
-    kernel.registerRoutes("/api/health", healthRoutes);
-    kernel.registerRoutes("/api/data", dataRoutes);
-    kernel.registerRoutes("/api/dashboard", dashboardRoutes);
-    kernel.registerRoutes("/api/alerts", alertsRoutes);
-    kernel.registerRoutes("/api/system-monitor", systemMonitorRoutes);
-    kernel.registerRoutes("/api/backup", backupRoutes);
-    kernel.registerRoutes("/api/plugins", pluginsRoutes);
-    kernel.registerRoutes("/api/database", databaseRoutes);
-    kernel.registerRoutes("/api/supabase", supabaseRoutes);
-    kernel.registerRoutes("/api/sync", syncRoutes);
+    kernel.registerRoutes("/api/v1/auth", authRoutes, { rateLimiter: "auth" });
+    kernel.registerRoutes("/api/v1/health", healthRoutes);
+    kernel.registerRoutes("/api/v1/data", dataRoutes);
+    kernel.registerRoutes("/api/v1/dashboard", dashboardRoutes);
+    kernel.registerRoutes("/api/v1/alerts", alertsRoutes);
+    kernel.registerRoutes("/api/v1/system-monitor", systemMonitorRoutes);
+    kernel.registerRoutes("/api/v1/backup", backupRoutes);
+    kernel.registerRoutes("/api/v1/plugins", pluginsRoutes);
+    kernel.registerRoutes("/api/v1/database", databaseRoutes);
+    kernel.registerRoutes("/api/v1/supabase", supabaseRoutes);
+    kernel.registerRoutes("/api/v1/sync", syncRoutes);
   },
 
   async onActivate(): Promise<void> {

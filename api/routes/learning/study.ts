@@ -1,19 +1,19 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthedRequest } from "../middleware/auth";
-import { validate } from "../middleware/validate";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
+import { validate } from "../../middleware/validate";
 import {
   createCardSchema,
   createCardsBatchSchema,
   updateCardProgressSchema,
-} from "../schemas/index";
-import { cacheService, CacheKeys } from "../services/common";
-import { ErrorCodes } from "../../shared/types/errorCodes";
-import { AppError } from "../middleware/errorHandler";
-import { studyService, studyRouteService, StudyRouteService } from "../services/study";
-import { fsrsParameterService } from "../services/study/fsrsParameterService";
-import { semanticInterferenceService } from "../services/study/semanticInterferenceService";
-import type { StudyCard } from "../../shared/types/common";
-import { logger } from "../utils/logger";
+} from "../../schemas/index";
+import { cacheService, CacheKeys } from "../../services/common";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { AppError } from "../../middleware/errorHandler";
+import { studyService, studyRouteService, StudyRouteService } from "../../services/study";
+import { fsrsParameterService } from "../../services/study/fsrsParameterService";
+import { semanticInterferenceService } from "../../services/study/semanticInterferenceService";
+import type { StudyCard } from "../../../shared/types/common";
+import { logger } from "../../utils/logger";
 
 const router = Router();
 

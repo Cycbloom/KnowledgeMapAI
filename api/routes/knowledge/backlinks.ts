@@ -1,7 +1,7 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthedRequest } from "../middleware/auth";
-import { rateLimiters } from "../middleware/rateLimiter";
-import { backlinkService } from "../services/graph";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
+import { rateLimiters } from "../../middleware/rateLimiter";
+import { backlinkService } from "../../services/graph";
 
 const router = Router();
 

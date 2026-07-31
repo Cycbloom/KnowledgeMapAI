@@ -7,11 +7,11 @@ import { reviewSchedulerSubscriber } from "../core/subscribers/reviewSchedulerSu
 import { getSupabaseAdmin } from "../../supabase";
 import schedulerRouter from "../../routes/scheduler/index";
 import tasksRouter from "../../routes/tasks";
-import achievementsRouter from "../../routes/achievements";
+import achievementsRouter from "../../routes/learning/achievements";
 import periodicTasksRouter from "../../routes/periodicTasks";
 import calendarRouter from "../../routes/calendar";
 import notificationsRouter from "../../routes/notifications";
-import statisticsRoutes from "../../routes/statistics";
+import statisticsRoutes from "../../routes/learning/statistics";
 import templateRoutes from "../../routes/templates";
 import analyticsRoutes from "../../routes/analytics";
 
@@ -22,15 +22,15 @@ export const SchedulerPlugin: Plugin = {
   dependencies: ["core"],
 
   onInstall(kernel: KernelAPI): void {
-    kernel.registerRoutes("/api/scheduler", schedulerRouter);
-    kernel.registerRoutes("/api/tasks", tasksRouter);
-    kernel.registerRoutes("/api/achievements", achievementsRouter);
-    kernel.registerRoutes("/api/periodic-tasks", periodicTasksRouter);
-    kernel.registerRoutes("/api/calendar", calendarRouter);
-    kernel.registerRoutes("/api/notifications", notificationsRouter);
-    kernel.registerRoutes("/api/statistics", statisticsRoutes);
-    kernel.registerRoutes("/api/templates", templateRoutes);
-    kernel.registerRoutes("/api/analytics", analyticsRoutes);
+    kernel.registerRoutes("/api/v1/scheduler", schedulerRouter);
+    kernel.registerRoutes("/api/v1/tasks", tasksRouter);
+    kernel.registerRoutes("/api/v1/achievements", achievementsRouter);
+    kernel.registerRoutes("/api/v1/periodic-tasks", periodicTasksRouter);
+    kernel.registerRoutes("/api/v1/calendar", calendarRouter);
+    kernel.registerRoutes("/api/v1/notifications", notificationsRouter);
+    kernel.registerRoutes("/api/v1/statistics", statisticsRoutes);
+    kernel.registerRoutes("/api/v1/templates", templateRoutes);
+    kernel.registerRoutes("/api/v1/analytics", analyticsRoutes);
   },
 
   async onActivate(): Promise<void> {

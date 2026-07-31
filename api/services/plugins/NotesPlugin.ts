@@ -1,8 +1,8 @@
 import type { Plugin, KernelAPI } from "../kernel/types";
-import notesRoutes from "../../routes/notes";
+import notesRoutes from "../../routes/knowledge/notes";
 
 /**
- * Notes 插件:注册笔记模块相关路由(/api/notes)。
+ * Notes 插件:注册笔记模块相关路由(/api/v1/notes)。
  *
  * 包含:
  * - 笔记 CRUD(list / get / create / update / delete / restore)
@@ -23,6 +23,6 @@ export const NotesPlugin: Plugin = {
   dependencies: ["core", "graph"],
 
   onInstall(kernel: KernelAPI): void {
-    kernel.registerRoutes("/api/notes", notesRoutes, { rateLimiter: "general" });
+    kernel.registerRoutes("/api/v1/notes", notesRoutes, { rateLimiter: "general" });
   },
 };

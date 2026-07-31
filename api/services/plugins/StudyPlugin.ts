@@ -1,7 +1,7 @@
 import type { Plugin, KernelAPI } from "../kernel/types";
-import studyRoutes from "../../routes/study";
+import studyRoutes from "../../routes/learning/study";
 import learningPathsRoutes from "../../routes/learningPaths";
-import quizSetRoutes from "../../routes/quizSets";
+import quizSetRoutes from "../../routes/learning/quizSets";
 import practiceSessionRoutes from "../../routes/study/practiceSessions";
 import quizSessionRoutes from "../../routes/study/quizSessions";
 
@@ -12,10 +12,10 @@ export const StudyPlugin: Plugin = {
   dependencies: ["graph", "ai"],
 
   onInstall(kernel: KernelAPI): void {
-    kernel.registerRoutes("/api/study", studyRoutes);
-    kernel.registerRoutes("/api/learning-paths", learningPathsRoutes);
-    kernel.registerRoutes("/api/quiz-sets", quizSetRoutes);
-    kernel.registerRoutes("/api/study/practice-sessions", practiceSessionRoutes);
-    kernel.registerRoutes("/api/study/quiz-sessions", quizSessionRoutes);
+    kernel.registerRoutes("/api/v1/study", studyRoutes);
+    kernel.registerRoutes("/api/v1/learning-paths", learningPathsRoutes);
+    kernel.registerRoutes("/api/v1/quiz-sets", quizSetRoutes);
+    kernel.registerRoutes("/api/v1/study/practice-sessions", practiceSessionRoutes);
+    kernel.registerRoutes("/api/v1/study/quiz-sessions", quizSessionRoutes);
   },
 };

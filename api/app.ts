@@ -146,7 +146,15 @@ export function createApp(kernel?: Kernel): express.Express {
     }),
   );
 
-  app.get("/api/csrf-token", getCsrfToken);
+  // 旧路径重定向: /api/* → /api/v1/* (308 永久重定向)
+  app.use("/api/", (req, res, next) => {
+    if (req.path.startsWith("/v1/")) {
+      return next();
+    }
+    res.redirect(308, `/api/v1${req.path}`);
+  });
+
+  app.get("/api/v1/csrf-token", getCsrfToken);
 
   if (kernel) {
     /**

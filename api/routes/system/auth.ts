@@ -1,12 +1,12 @@
 import { Router, type Request, type Response } from 'express';
-import { getSupabaseAdmin } from '../supabase';
-import { requireAuth, type AuthRequest } from '../middleware/auth';
-import { authService, authRouteService } from '../services/core';
-import { validate } from '../middleware/validate';
-import { registerSchema, loginSchema, updateProfileSchema } from '../schemas/index';
-import { AppError } from '../middleware/errorHandler';
-import { ErrorCodes } from '../../shared/types/errorCodes';
-import { logger } from '../utils/logger';
+import { getSupabaseAdmin } from '../../supabase';
+import { requireAuth, type AuthRequest } from '../../middleware/auth';
+import { authService, authRouteService } from '../../services/core';
+import { validate } from '../../middleware/validate';
+import { registerSchema, loginSchema, updateProfileSchema } from '../../schemas/index';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { logger } from '../../utils/logger';
 
 const router = Router();
 

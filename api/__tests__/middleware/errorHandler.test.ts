@@ -30,7 +30,7 @@ const createMockReq = (overrides: {
     // absent entirely.
     requestId: 'requestId' in overrides ? overrides.requestId : 'test-req-id',
     user: overrides.user as unknown as Request['user'],
-    originalUrl: overrides.originalUrl ?? '/api/test',
+    originalUrl: overrides.originalUrl ?? '/api/v1/test',
     method: overrides.method ?? 'POST',
   } as unknown as Request;
 };

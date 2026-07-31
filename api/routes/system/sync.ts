@@ -1,8 +1,8 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthedRequest } from "../middleware/auth";
-import { syncService } from "../services/sync";
-import { p2pSyncService } from "../services/sync/p2pSyncService";
-import type { SyncOperation } from "../../shared/sync/types";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
+import { syncService } from "../../services/sync";
+import { p2pSyncService } from "../../services/sync/p2pSyncService";
+import type { SyncOperation } from "../../../shared/sync/types";
 
 const router = Router();
 

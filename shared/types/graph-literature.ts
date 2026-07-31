@@ -123,17 +123,29 @@ export interface LiteratureApplyResponse {
   nodeMapping: Record<string, string>;
 }
 
-export const CONCEPT_TYPE_LABELS: Record<ConceptType, string> = {
-  method: "方法",
-  mechanism: "机制",
-  operation: "操作",
-  concept: "概念",
-  technology: "技术",
-  tool: "工具",
-  theory: "理论",
-  finding: "发现",
-  trend: "趋势",
-  challenge: "挑战",
+export type ConceptTypeLabelKey =
+  | "graphMap.conceptTypes.method"
+  | "graphMap.conceptTypes.mechanism"
+  | "graphMap.conceptTypes.operation"
+  | "graphMap.conceptTypes.concept"
+  | "graphMap.conceptTypes.technology"
+  | "graphMap.conceptTypes.tool"
+  | "graphMap.conceptTypes.theory"
+  | "graphMap.conceptTypes.finding"
+  | "graphMap.conceptTypes.trend"
+  | "graphMap.conceptTypes.challenge";
+
+export const CONCEPT_TYPE_LABELS: Record<ConceptType, ConceptTypeLabelKey> = {
+  method: "graphMap.conceptTypes.method",
+  mechanism: "graphMap.conceptTypes.mechanism",
+  operation: "graphMap.conceptTypes.operation",
+  concept: "graphMap.conceptTypes.concept",
+  technology: "graphMap.conceptTypes.technology",
+  tool: "graphMap.conceptTypes.tool",
+  theory: "graphMap.conceptTypes.theory",
+  finding: "graphMap.conceptTypes.finding",
+  trend: "graphMap.conceptTypes.trend",
+  challenge: "graphMap.conceptTypes.challenge",
 };
 
 export const CONCEPT_TYPE_COLORS: Record<ConceptType, string> = {
@@ -147,6 +159,40 @@ export const CONCEPT_TYPE_COLORS: Record<ConceptType, string> = {
   finding: "#6366F1",
   trend: "#EC4899",
   challenge: "#F59E0B",
+};
+
+export type BackboneModuleLabelKey =
+  | "graphMap.backboneModules.researchBackground.title"
+  | "graphMap.backboneModules.literatureReview.title"
+  | "graphMap.backboneModules.researchMethods.title"
+  | "graphMap.backboneModules.coreConcepts.title"
+  | "graphMap.backboneModules.applicationDomains.title"
+  | "graphMap.backboneModules.futureDirections.title";
+
+export type BackboneModuleDescriptionKey =
+  | "graphMap.backboneModules.researchBackground.description"
+  | "graphMap.backboneModules.literatureReview.description"
+  | "graphMap.backboneModules.researchMethods.description"
+  | "graphMap.backboneModules.coreConcepts.description"
+  | "graphMap.backboneModules.applicationDomains.description"
+  | "graphMap.backboneModules.futureDirections.description";
+
+// i18n key mapping for backbone module labels (for frontend t() usage)
+export const BACKBONE_MODULE_LABEL_I18N_KEYS: Record<
+  BackboneModule,
+  BackboneModuleLabelKey
+> = {
+  [BackboneModule.RESEARCH_BACKGROUND]:
+    "graphMap.backboneModules.researchBackground.title",
+  [BackboneModule.LITERATURE_REVIEW]:
+    "graphMap.backboneModules.literatureReview.title",
+  [BackboneModule.RESEARCH_METHODS]:
+    "graphMap.backboneModules.researchMethods.title",
+  [BackboneModule.CORE_CONCEPTS]: "graphMap.backboneModules.coreConcepts.title",
+  [BackboneModule.APPLICATION_DOMAINS]:
+    "graphMap.backboneModules.applicationDomains.title",
+  [BackboneModule.FUTURE_DIRECTIONS]:
+    "graphMap.backboneModules.futureDirections.title",
 };
 
 export const BACKBONE_MODULE_LABELS: Record<BackboneModule, string> = {
@@ -194,13 +240,22 @@ export const BACKBONE_MODULE_ICONS: Record<BackboneModule, string> = {
   [BackboneModule.FUTURE_DIRECTIONS]: "🚀",
 };
 
-export const BACKBONE_MODULE_DESCRIPTIONS: Record<BackboneModule, string> = {
-  [BackboneModule.RESEARCH_BACKGROUND]: "研究领域的背景知识和发展历程",
-  [BackboneModule.LITERATURE_REVIEW]: "相关文献的综述和分析",
-  [BackboneModule.RESEARCH_METHODS]: "研究采用的方法论和技术手段",
-  [BackboneModule.CORE_CONCEPTS]: "领域的核心概念和理论框架",
-  [BackboneModule.APPLICATION_DOMAINS]: "理论和方法的应用场景",
-  [BackboneModule.FUTURE_DIRECTIONS]: "未来发展趋势和研究方向",
+export const BACKBONE_MODULE_DESCRIPTIONS: Record<
+  BackboneModule,
+  BackboneModuleDescriptionKey
+> = {
+  [BackboneModule.RESEARCH_BACKGROUND]:
+    "graphMap.backboneModules.researchBackground.description",
+  [BackboneModule.LITERATURE_REVIEW]:
+    "graphMap.backboneModules.literatureReview.description",
+  [BackboneModule.RESEARCH_METHODS]:
+    "graphMap.backboneModules.researchMethods.description",
+  [BackboneModule.CORE_CONCEPTS]:
+    "graphMap.backboneModules.coreConcepts.description",
+  [BackboneModule.APPLICATION_DOMAINS]:
+    "graphMap.backboneModules.applicationDomains.description",
+  [BackboneModule.FUTURE_DIRECTIONS]:
+    "graphMap.backboneModules.futureDirections.description",
 };
 
 export const CONCEPT_TO_MODULE_MAP: Record<ConceptType, BackboneModule> = {

@@ -41,11 +41,21 @@ export const GRAPH_RELATION_COLORS: Record<GraphRelationType, string> = {
   cross_domain: "#8B5CF6",
 };
 
-export const GRAPH_RELATION_LABELS: Record<GraphRelationType, string> = {
-  prerequisite: "前置知识",
-  extension: "扩展知识",
-  related: "相关知识",
-  cross_domain: "跨学科",
+export type GraphRelationLabelKey =
+  | "graphMap.relationTypes.prerequisite"
+  | "graphMap.relationTypes.extension"
+  | "graphMap.relationTypes.related"
+  | "graphMap.relationTypes.crossDomain"
+  | "graphMap.relationTypes.unknown";
+
+export const GRAPH_RELATION_LABELS: Record<
+  GraphRelationType,
+  GraphRelationLabelKey
+> = {
+  prerequisite: "graphMap.relationTypes.prerequisite",
+  extension: "graphMap.relationTypes.extension",
+  related: "graphMap.relationTypes.related",
+  cross_domain: "graphMap.relationTypes.crossDomain",
 };
 
 export interface DiscoveredRelation {

@@ -45,10 +45,18 @@ export interface GraphWithCollaborators extends Graph {
   user_role?: CollaboratorRole;
 }
 
-export const COLLABORATOR_ROLE_LABELS: Record<CollaboratorRole, string> = {
-  owner: "所有者",
-  editor: "编辑者",
-  viewer: "查看者",
+export type CollaboratorRoleLabelKey =
+  | "collaborators.roleLabels.owner"
+  | "collaborators.roleLabels.editor"
+  | "collaborators.roleLabels.viewer";
+
+export const COLLABORATOR_ROLE_LABELS: Record<
+  CollaboratorRole,
+  CollaboratorRoleLabelKey
+> = {
+  owner: "collaborators.roleLabels.owner",
+  editor: "collaborators.roleLabels.editor",
+  viewer: "collaborators.roleLabels.viewer",
 };
 
 export const COLLABORATOR_ROLE_COLORS: Record<CollaboratorRole, string> = {

@@ -1,5 +1,17 @@
 import type { LearningState, SubtaskStatus } from "./scheduler-core";
 
+export type LearningStageLabelKey =
+  | "learning.stageLabels.learning"
+  | "learning.stageLabels.review"
+  | "learning.stageLabels.practice"
+  | "learning.stageLabels.quiz";
+
+export type LearningStageDescriptionKey =
+  | "learning.stageDescriptions.learning"
+  | "learning.stageDescriptions.review"
+  | "learning.stageDescriptions.practice"
+  | "learning.stageDescriptions.quiz";
+
 export interface StateTransition {
   from: LearningState;
   to: LearningState;
@@ -11,12 +23,12 @@ export interface StateTransition {
 
 export interface LearningStateConfig {
   state: LearningState;
-  label: string;
+  labelKey: LearningStageLabelKey;
   color: string;
   bgColor: string;
   borderColor: string;
   icon: string;
-  description: string;
+  descriptionKey: LearningStageDescriptionKey;
 }
 
 export const LEARNING_STATE_CONFIGS: Record<
@@ -25,39 +37,39 @@ export const LEARNING_STATE_CONFIGS: Record<
 > = {
   learning: {
     state: "learning",
-    label: "学习",
+    labelKey: "learning.stageLabels.learning",
     color: "text-blue-600 dark:text-blue-400",
     bgColor: "bg-blue-100 dark:bg-blue-500/20",
     borderColor: "border-blue-300 dark:border-blue-500/30",
     icon: "BookOpen",
-    description: "初始学习阶段，仅出现一次",
+    descriptionKey: "learning.stageDescriptions.learning",
   },
   review: {
     state: "review",
-    label: "复习",
+    labelKey: "learning.stageLabels.review",
     color: "text-green-600 dark:text-green-400",
     bgColor: "bg-green-100 dark:bg-green-500/20",
     borderColor: "border-green-300 dark:border-green-500/30",
     icon: "RefreshCw",
-    description: "复习已学内容",
+    descriptionKey: "learning.stageDescriptions.review",
   },
   practice: {
     state: "practice",
-    label: "练习",
+    labelKey: "learning.stageLabels.practice",
     color: "text-orange-600 dark:text-orange-400",
     bgColor: "bg-orange-100 dark:bg-orange-500/20",
     borderColor: "border-orange-300 dark:border-orange-500/30",
     icon: "Pencil",
-    description: "简单题目快速检验",
+    descriptionKey: "learning.stageDescriptions.practice",
   },
   quiz: {
     state: "quiz",
-    label: "测验",
+    labelKey: "learning.stageLabels.quiz",
     color: "text-purple-600 dark:text-purple-400",
     bgColor: "bg-purple-100 dark:bg-purple-500/20",
     borderColor: "border-purple-300 dark:border-purple-500/30",
     icon: "FileCheck",
-    description: "综合题目全面评估",
+    descriptionKey: "learning.stageDescriptions.quiz",
   },
 };
 
@@ -88,6 +100,22 @@ export interface TransitionSubtaskData {
 
 export type StudyMode = "drill" | "deep" | "preview" | "review" | "quiz" | "mixed";
 
+export type StudyModePresetLabelKey =
+  | "learning.studyModePresets.drill.label"
+  | "learning.studyModePresets.deep.label"
+  | "learning.studyModePresets.preview.label"
+  | "learning.studyModePresets.review.label"
+  | "learning.studyModePresets.quiz.label"
+  | "learning.studyModePresets.mixed.label";
+
+export type StudyModePresetDescriptionKey =
+  | "learning.studyModePresets.drill.description"
+  | "learning.studyModePresets.deep.description"
+  | "learning.studyModePresets.preview.description"
+  | "learning.studyModePresets.review.description"
+  | "learning.studyModePresets.quiz.description"
+  | "learning.studyModePresets.mixed.description";
+
 export type StudyWorkflowStage = "learn" | "recall" | "practice" | "quiz" | "review" | "reflect";
 
 export type RatingMode = "binary" | "ternary" | "full";
@@ -113,8 +141,8 @@ export interface FsrsParamOverride {
 
 export interface StudyModePreset {
   mode: StudyMode;
-  label: string;
-  description: string;
+  labelKey: StudyModePresetLabelKey;
+  descriptionKey: StudyModePresetDescriptionKey;
   icon: string;
   workflow: StudyWorkflowConfig;
   fsrsOverride: FsrsParamOverride;

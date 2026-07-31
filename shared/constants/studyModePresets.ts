@@ -3,8 +3,8 @@ import type { StudyMode, StudyModePreset } from "../types/scheduler";
 export const STUDY_MODE_PRESETS: Record<string, StudyModePreset> = {
   drill: {
     mode: "drill",
-    label: "刷题模式",
-    description: "跳过学习材料，直接进入测验，短间隔高频率强化记忆",
+    labelKey: "learning.studyModePresets.drill.label",
+    descriptionKey: "learning.studyModePresets.drill.description",
     icon: "Zap",
     workflow: {
       stages: ["recall", "quiz", "review"],
@@ -25,8 +25,8 @@ export const STUDY_MODE_PRESETS: Record<string, StudyModePreset> = {
   },
   deep: {
     mode: "deep",
-    label: "深度学习",
-    description: "完整工作流：学习材料→主动回忆→练习→测验→反思，标准FSRS参数",
+    labelKey: "learning.studyModePresets.deep.label",
+    descriptionKey: "learning.studyModePresets.deep.description",
     icon: "BookOpen",
     workflow: {
       stages: ["learn", "recall", "practice", "quiz", "reflect"],
@@ -51,8 +51,8 @@ export const STUDY_MODE_PRESETS: Record<string, StudyModePreset> = {
   },
   preview: {
     mode: "preview",
-    label: "快速浏览",
-    description: "仅阅读学习材料，单次曝光后标记为已浏览，不生成复习卡片",
+    labelKey: "learning.studyModePresets.preview.label",
+    descriptionKey: "learning.studyModePresets.preview.description",
     icon: "Eye",
     workflow: {
       stages: ["learn"],
@@ -66,8 +66,8 @@ export const STUDY_MODE_PRESETS: Record<string, StudyModePreset> = {
   },
   review: {
     mode: "review",
-    label: "间隔复习",
-    description: "仅展示到期复习的节点，按FSRS标准调度执行复习",
+    labelKey: "learning.studyModePresets.review.label",
+    descriptionKey: "learning.studyModePresets.review.description",
     icon: "RefreshCw",
     workflow: {
       stages: ["review"],
@@ -82,8 +82,8 @@ export const STUDY_MODE_PRESETS: Record<string, StudyModePreset> = {
   },
   quiz: {
     mode: "quiz",
-    label: "测验模式",
-    description: "直接对所有已学节点进行测验，根据测验结果更新掌握度",
+    labelKey: "learning.studyModePresets.quiz.label",
+    descriptionKey: "learning.studyModePresets.quiz.description",
     icon: "FileCheck",
     workflow: {
       stages: ["quiz", "review"],
@@ -103,8 +103,8 @@ export const STUDY_MODE_PRESETS: Record<string, StudyModePreset> = {
   },
   mixed: {
     mode: "mixed",
-    label: "混合模式",
-    description: "根据节点状态自动选择策略：新节点→深度学习，已学节点→间隔复习，衰减节点→刷题强化",
+    labelKey: "learning.studyModePresets.mixed.label",
+    descriptionKey: "learning.studyModePresets.mixed.description",
     icon: "Layers",
     workflow: {
       stages: ["learn", "recall", "practice", "quiz", "review"],

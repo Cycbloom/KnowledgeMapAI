@@ -17,6 +17,7 @@ release
 # TypeScript and ESLint cache
 node_modules/.cache/
 node_modules/.tmp/
+.eslintcache
 
 # TypeScript build info files (project references incremental cache)
 *.tsbuildinfo

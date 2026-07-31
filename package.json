@@ -89,7 +89,7 @@
     "mobile:build:debug": "npm run mobile:sync && cd android && gradlew assembleDebug",
     "mobile:test": "npx playwright test --grep=\"移动端\"",
     "mobile:clean": "cd android && gradlew clean",
-    "postinstall": "electron-rebuild"
+    "rebuild:electron": "electron-rebuild"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",

@@ -1,5 +1,5 @@
 import { Node, Edge } from '../../types';
-import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
+import { getLevel, getNextLevel, getLevelColorHex } from '../../utils/graph/graphUtils';
 import { logger } from '../../utils/logger';
 
 export interface ExpandSuggestion {

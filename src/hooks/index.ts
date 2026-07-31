@@ -46,9 +46,9 @@ export {
 export type { GraphEditorState } from "./graphEditor";
 
 // Standalone hooks: only hooks actually called through the main barrel
-export { useConsole } from "./useConsole";
-export { useAILanguage } from "./useAILanguage";
-export { useNoteWordCount } from "./useNoteWordCount";
-export { useBacklinks } from "./useBacklinks";
-export { useTaskActions } from "./useTaskActions";
-export { useMenuNavigation } from "./useMenuNavigation";
+export { useConsole } from "./console";
+export { useAILanguage } from "./ai";
+export { useNoteWordCount } from "./notes";
+export { useBacklinks } from "./graphAI";
+export { useTaskActions } from "./scheduler";
+export { useMenuNavigation } from "./common";

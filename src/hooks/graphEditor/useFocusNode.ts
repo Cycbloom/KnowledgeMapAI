@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { Node, Edge } from '../../types';
-import { getFocusedNodes, getFocusedLinks, getDirectChildren } from '../../lib/graphUtils';
+import { getFocusedNodes, getFocusedLinks, getDirectChildren } from '../../utils/graph/graphUtils';
 
 interface UseFocusNodeProps {
   nodes: Node[];

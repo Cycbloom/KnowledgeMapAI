@@ -3,7 +3,7 @@ import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
 import type { AIAction } from '@shared/types/ai';
 import type { BatchGenerateConfig } from '../../components/GraphEditor/modals/BatchGenerateDialog';
 import type { RelatedNode } from '../graphEditor/useMiscState';
-import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
+import { getLevel, getNextLevel, getLevelColorHex } from '../../utils/graph/graphUtils';
 import { HistoryAction } from '../common/useHistory';
 import { GraphEditorState } from '../graphEditor';
 import { message } from '../../utils/messageHelper';

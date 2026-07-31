@@ -1,0 +1,1 @@
+export { useMobileInit, useSafeAreaInsets } from "./useMobileInit";

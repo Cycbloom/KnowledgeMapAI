@@ -86,7 +86,7 @@ export function useNetworkStatus(options: NetworkStatusOptions = {}): NetworkSta
         const electronApiUrl = await getElectronApiUrl();
         healthUrl = `${electronApiUrl}/health/system`;
       } else {
-        healthUrl = '/api/health/system';
+        healthUrl = '/api/v1/health/system';
       }
 
       const response = await fetch(healthUrl, {

@@ -1,6 +1,6 @@
 import type { Node, Edge, TutorExtractedConcept, TutorMode } from "../../types";
 import type { CreateNodeData } from "@shared/types/api";
-import { getNextLevel, getLevelColorHex } from "../../lib/graphUtils";
+import { getNextLevel, getLevelColorHex } from "../../utils/graph/graphUtils";
 import { HistoryAction } from "./useHistory";
 import { GraphEditorState } from "../graphEditor";
 import { message } from "../../utils/messageHelper";

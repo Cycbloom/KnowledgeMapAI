@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Node, Edge, BranchSuggestion, ExplorationPathItem } from '../../types';
 import type { CreateNodeData } from '@shared/types/api';
-import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
+import { getLevel, getNextLevel, getLevelColorHex } from '../../utils/graph/graphUtils';
 import { message } from "../../utils/messageHelper";
 import { api } from '../../services/api';
 import { UseMutationResult } from '@tanstack/react-query';

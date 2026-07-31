@@ -1,5 +1,5 @@
 import { Node, Edge } from '../../types';
-import { getLevel } from '../../lib/graphUtils';
+import { getLevel } from '../../utils/graph/graphUtils';
 import { message } from '../../utils/messageHelper';
 import { api } from '../../services/api';
 import { useStore } from '../../store/useStore';

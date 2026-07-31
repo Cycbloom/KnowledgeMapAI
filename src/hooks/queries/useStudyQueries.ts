@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
 import { queryKeys, realtimeQueryConfig } from "./config";
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseClient } from "@/utils/supabase";
 
 export const useStudyCards = (
   params?: {

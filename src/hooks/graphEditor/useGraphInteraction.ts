@@ -1,7 +1,7 @@
 import { Node, Edge, NodeStatus } from '../../types';
 import { GraphEditorState } from './index';
 import { message } from "../../utils/messageHelper";
-import { findShortestPath } from '../../lib/graphUtils';
+import { findShortestPath } from '../../utils/graph/graphUtils';
 import { useTranslation } from 'react-i18next';
 
 interface UseGraphInteractionProps {

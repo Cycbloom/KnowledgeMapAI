@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useConsole } from '../useConsole';
+import { useConsole } from '../console/useConsole';
 import type { CommandContext } from '@/services/console';
 import type { ExtractedConcept } from '../../types';
 

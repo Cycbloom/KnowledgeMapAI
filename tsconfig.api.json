@@ -11,7 +11,7 @@
     "typeRoots": ["./node_modules/@types", "./api/types"]
   },
   "include": ["api/**/*"],
-  "exclude": ["api/__tests__", "**/*.test.ts"],
+  "exclude": ["api/__tests__", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts"],
   "references": [
     { "path": "./tsconfig.shared.json" }
   ]

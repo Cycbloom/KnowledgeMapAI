@@ -93,5 +93,9 @@ coverage/
 # Electron
 *.blockmap
 
+# Vercel CLI auto-generated files
+.env.check
+.env.vercel
+
 # Package manager leftovers
 --fix/

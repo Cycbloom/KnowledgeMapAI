@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { http, HttpResponse } from "msw";
+import { server } from "../../../tests/setup/mswServer";
 import { Login } from "../../pages/Login";
 import { renderWithProviders } from "../../../tests/helpers/renderWithProviders";
 import { useStore } from "../../store/useStore";
@@ -15,7 +17,7 @@ const mockSignInAnonymously = vi.fn();
 const mockSignUp = vi.fn();
 const mockSignInWithPassword = vi.fn();
 
-vi.mock("@/utils/supabase", () => ({
+vi.mock("../../utils/supabase", () => ({
   getSupabaseClient: () => ({
     auth: {
       getSession: mockGetSession,
@@ -45,19 +47,6 @@ vi.mock("@/config/authConfig", async () => {
     },
   };
 });
-
-vi.mock("@/services/api/createApiClient", () => ({
-  apiClient: {
-    get: vi.fn().mockImplementation((url: string) => {
-      if (url.includes("/database/status")) {
-        return Promise.resolve({ status: "ready" });
-      }
-      return Promise.resolve({});
-    }),
-    put: vi.fn().mockResolvedValue({}),
-    post: vi.fn().mockResolvedValue({}),
-  },
-}));
 
 vi.mock("react-router-dom", async () => {
   const actual =
@@ -112,6 +101,25 @@ describe("Login 页面", () => {
     localStorage.clear();
     sessionStorage.clear();
     vi.clearAllMocks();
+
+    // 注册 MSW handlers 覆盖 Login 组件初始化及 handleTestConnection 中调用的 API 端点
+    // 注意：不要 mock window.electronAPI，否则 isElectron() 返回 true
+    // 导致 axios baseURL 从 /api/v1 变为 http://localhost:3001/api
+    // 源组件使用可选链 window.electronAPI?.config，undefined 是安全的
+    server.use(
+      http.get("/api/v1/ai/config/database", () =>
+        HttpResponse.json({}),
+      ),
+      http.get("/api/v1/database/status", () =>
+        HttpResponse.json({ status: "ready" }),
+      ),
+      http.get("/api/v1/ai/config/providers", () =>
+        HttpResponse.json({}),
+      ),
+      http.put("/api/v1/ai/config/database", () =>
+        HttpResponse.json({}),
+      ),
+    );
 
     // 默认：getSession 返回无 session，signInAnonymously 失败
     // → 触发 attemptAutoAuth 调用 setShowAuthForm(true)

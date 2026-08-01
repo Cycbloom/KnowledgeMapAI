@@ -106,6 +106,9 @@ function detectCycle(
   return false;
 }
 
+const UNCATEGORIZED_DOMAIN_ICON = "FolderOpen";
+const UNCATEGORIZED_DOMAIN_COLOR = "#94A3B8";
+
 async function ensureUncategorizedDomain(
   supabase: SupabaseClient,
   userId: string,
@@ -114,6 +117,7 @@ async function ensureUncategorizedDomain(
     .from("domains")
     .select("id")
     .eq("is_system", true)
+    .eq("icon", UNCATEGORIZED_DOMAIN_ICON)
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -124,8 +128,8 @@ async function ensureUncategorizedDomain(
     .insert({
       name: i18next.t("graphMap.domains.uncategorized.name"),
       description: i18next.t("graphMap.domains.uncategorized.description"),
-      color: "#94A3B8",
-      icon: "FolderOpen",
+      color: UNCATEGORIZED_DOMAIN_COLOR,
+      icon: UNCATEGORIZED_DOMAIN_ICON,
       is_system: true,
       user_id: userId,
     })
@@ -155,15 +159,17 @@ export const domainService = {
 
     const tree = buildTree(domains as DomainRecord[]);
 
-    const hasUncategorized = tree.some((d) => d.is_system === true);
+    const hasUncategorized = tree.some(
+      (d) => d.is_system === true && d.icon === UNCATEGORIZED_DOMAIN_ICON,
+    );
     if (!hasUncategorized) {
       const uncategorizedId = await ensureUncategorizedDomain(supabase, userId);
       const uncategorizedNode: DomainTreeNode = {
         id: uncategorizedId,
         name: i18next.t("graphMap.domains.uncategorized.name"),
         description: i18next.t("graphMap.domains.uncategorized.description"),
-        color: "#94A3B8",
-        icon: "FolderOpen",
+        color: UNCATEGORIZED_DOMAIN_COLOR,
+        icon: UNCATEGORIZED_DOMAIN_ICON,
         parent_id: null,
         sort_order: 9999,
         user_id: userId,

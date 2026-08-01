@@ -306,7 +306,7 @@ describe("BlockEditor 集成测试", () => {
     expect(screen.getByLabelText("撤销")).toBeInTheDocument();
 
     // 底部状态栏应显示"已保存"(初始 saveStatus = "saved")
-    expect(screen.getByText("已保存")).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "已保存" })).toBeInTheDocument();
 
     // 编辑器容器应渲染
     expect(screen.getByTestId("tiptap-editor")).toBeInTheDocument();

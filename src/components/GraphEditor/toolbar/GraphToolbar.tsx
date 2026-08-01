@@ -56,7 +56,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useTheme, useIsMobile } from "../../../hooks";
-import { useEscapeKey } from "../../../hooks/common/useEscapeKey";
+import { useEscapeKey, useShortcutLabel } from "../../../hooks/common";
 import { ShortcutHint } from "../../common/ShortcutHint";
 import { GraphSwitcher } from "./GraphSwitcher";
 import {
@@ -409,6 +409,24 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   }, []);
 
   useEscapeKey(() => setOpenDropdown(null), !!openDropdown);
+
+  // Shortcut labels for dropdown menu items
+  const searchShortcut = useShortcutLabel("search");
+  const toggleGridShortcut = useShortcutLabel("toggle-grid");
+  const toggleFocusModeShortcut = useShortcutLabel("toggle-focus-mode");
+  const toggleThemeShortcut = useShortcutLabel("toggle-theme");
+  const toggleDeleteModeShortcut = useShortcutLabel("toggle-delete-mode");
+  const togglePathfindingShortcut = useShortcutLabel("toggle-pathfinding-mode");
+  const toggleExplorationShortcut = useShortcutLabel("toggle-exploration-mode");
+  const aiChatShortcut = useShortcutLabel("ai-chat");
+  const aiExpandShortcut = useShortcutLabel("ai-expand");
+  const settingsShortcut = useShortcutLabel("settings");
+  const helpShortcut = useShortcutLabel("help");
+  const exportShortcut = useShortcutLabel("export");
+  const viewMindmapShortcut = useShortcutLabel("view-mindmap");
+  const viewTimelineShortcut = useShortcutLabel("view-timeline");
+  const viewTreeShortcut = useShortcutLabel("view-tree");
+  const viewPlanetShortcut = useShortcutLabel("view-planet");
 
   const themeClasses = {
     container: isDark
@@ -1179,6 +1197,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     keepDropdownOpen,
     subMenuOpen,
     onSubMenuToggle,
+    shortcutHint,
   }: {
     onClick?: () => void;
     icon: React.ComponentType<{ size?: number | string; className?: string }>;
@@ -1192,6 +1211,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     keepDropdownOpen?: boolean;
     subMenuOpen?: boolean;
     onSubMenuToggle?: () => void;
+    shortcutHint?: string | null;
   }) => {
     const [internalSubMenuOpen, setInternalSubMenuOpen] = useState(false);
     const [subMenuPosition, setSubMenuPosition] = useState({
@@ -1289,6 +1309,17 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         >
           <Icon size={18} className="flex-shrink-0" aria-hidden="true" />
           <span className="flex-grow text-left font-medium">{label}</span>
+          {shortcutHint && (
+            <kbd
+              className={`hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded border mr-1 ${
+                isDark
+                  ? "bg-slate-800 border-slate-700 text-slate-400"
+                  : "bg-gray-100 border-gray-200 text-gray-500"
+              }`}
+            >
+              {shortcutHint}
+            </kbd>
+          )}
           {children && (
             <ChevronRight
               size={14}
@@ -1430,6 +1461,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               }
               active={isDeleteMode}
               activeClass="bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+              shortcutHint={toggleDeleteModeShortcut}
             />
             <MenuItem
               onClick={onDeleteSelected}
@@ -1584,6 +1616,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             icon={Navigation}
             label={t("graphEditor.toolbar.intelligentExpand")}
             colorClass="text-green-500"
+            shortcutHint={aiExpandShortcut}
           />
           <MenuItem
             onClick={() => {
@@ -1602,6 +1635,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             label={t("graphEditor.toolbar.intelligentQnA")}
             active={isChatOpen}
             colorClass="text-primary-500"
+            shortcutHint={aiChatShortcut}
           />
           <MenuItem
             onClick={() => {
@@ -1615,6 +1649,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                 : t("graphEditor.toolbar.pathfinding")
             }
             active={isPathfindingMode}
+            shortcutHint={togglePathfindingShortcut}
           />
         </DropdownButton>
       )}
@@ -1644,21 +1679,25 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                 mode: "mindmap" as const,
                 label: t("graphEditor.toolbar.mindmap"),
                 icon: Network,
+                shortcut: viewMindmapShortcut,
               },
               {
                 mode: "timeline" as const,
                 label: t("graphEditor.toolbar.timeline"),
                 icon: Clock,
+                shortcut: viewTimelineShortcut,
               },
               {
                 mode: "tree" as const,
                 label: t("graphEditor.toolbar.treeView"),
                 icon: GitBranch,
+                shortcut: viewTreeShortcut,
               },
               {
                 mode: "planet" as const,
                 label: t("graphEditor.toolbar.knowledgePlanet"),
                 icon: Globe,
+                shortcut: viewPlanetShortcut,
               },
               {
                 mode: "semantic" as const,
@@ -1670,7 +1709,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                 label: t("graphEditor.toolbar.quadrant"),
                 icon: LayoutGrid,
               },
-            ].map(({ mode, label, icon: Icon }) => (
+            ].map(({ mode, label, icon: Icon, shortcut }) => (
               <MenuItem
                 key={mode}
                 onClick={() => setViewMode(mode)}
@@ -1678,6 +1717,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                 label={label}
                 active={viewMode === mode}
                 colorClass="text-primary-600"
+                shortcutHint={shortcut}
               />
             ))}
           </div>
@@ -1767,6 +1807,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           onClick={() => setSidebarMode("outline")}
           icon={Search}
           label={t("graphEditor.toolbar.searchNodes")}
+          shortcutHint={searchShortcut}
         />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem
@@ -1779,6 +1820,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           }
           active={isExplorationMode}
           colorClass="text-primary-600"
+          shortcutHint={toggleExplorationShortcut}
         />
 
         <MenuItem
@@ -1884,13 +1926,16 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
                 <ZoomOut size={18} aria-hidden="true" />
               </button>
             </ShortcutHint>
-            <button
-              onClick={() => onZoomReset?.()}
-              className={`px-2 py-1 rounded-lg text-xs font-medium tabular-nums min-w-[3.5rem] text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.button.default}`}
-              title={t("graphEditor.mindMap.resetView")}
-            >
-              {Math.round(zoomLevel * 100)}%
-            </button>
+            <ShortcutHint actionId="zoom-reset">
+              <button
+                onClick={() => onZoomReset?.()}
+                className={`px-2 py-1 rounded-lg text-xs font-medium tabular-nums min-w-[3.5rem] text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.button.default}`}
+                title={t("graphEditor.mindMap.resetView")}
+                aria-label={t("graphEditor.mindMap.resetView")}
+              >
+                {Math.round(zoomLevel * 100)}%
+              </button>
+            </ShortcutHint>
             <ShortcutHint actionId="zoom-in">
               <button
                 onClick={onZoomIn}
@@ -1982,6 +2027,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           icon={HelpCircle}
           label={t("graphEditor.toolbar.helpGuide")}
           disabled={!onOpenHelp}
+          shortcutHint={helpShortcut}
         />
         <MenuItem
           onClick={onReplayTutorial}
@@ -2016,6 +2062,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               : t("graphEditor.toolbar.showGrid")
           }
           active={showGrid}
+          shortcutHint={toggleGridShortcut}
         />
         <MenuItem
           onClick={toggleTheme}
@@ -2025,17 +2072,20 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               ? t("graphEditor.toolbar.lightMode")
               : t("graphEditor.toolbar.darkMode")
           }
+          shortcutHint={toggleThemeShortcut}
         />
         <MenuItem
           onClick={() => setIsFocusMode(true)}
           icon={Maximize}
           label={t("graphEditor.toolbar.focusMode")}
+          shortcutHint={toggleFocusModeShortcut}
         />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem
           onClick={onOpenSettings}
           icon={Settings}
           label={t("graphEditor.toolbar.graphSettings")}
+          shortcutHint={settingsShortcut}
         />
         <MenuItem
           onClick={onOpenAnalysis}
@@ -2052,7 +2102,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
 
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
 
-        <MenuItem icon={Download} label={t("graphEditor.toolbar.exportGraph")}>
+        <MenuItem icon={Download} label={t("graphEditor.toolbar.exportGraph")} shortcutHint={exportShortcut}>
           <MenuItem
             onClick={exportActions.onMarkdown}
             icon={Download}

@@ -1,7 +1,7 @@
 import React, { useState, useLayoutEffect, useRef, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StudyCard } from '../../types';
-import { CheckSquare, Plus, X } from 'lucide-react';
+import { CheckSquare, Plus, X, Loader2 } from 'lucide-react';
 import { useTheme, useFormDraft, useBeforeUnload } from "../../hooks";
 import { ConfirmationModal } from '../common/ConfirmationModal';
 
@@ -63,6 +63,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     initialValue: getInitialFormData(initialData),
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
   const prevInitialDataRef = useRef(initialData);
 
   // 可访问性：为各字段及错误消息生成唯一 id
@@ -124,8 +125,14 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    await onSubmit(formData);
-    clearDraft();
+    if (submitting || isSubmitting) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(formData);
+      clearDraft();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Option Handlers
@@ -382,10 +389,12 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
           </button>
           <button 
             onClick={handleSubmit}
-            disabled={!formData.question || !formData.answer || isSubmitting}
-            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 min-h-[44px] touch-target font-medium"
+            disabled={!formData.question || !formData.answer || isSubmitting || submitting}
+            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 min-h-[44px] touch-target font-medium inline-flex items-center gap-2"
           >
-            {isSubmitting ? t('study.questionForm.saving') : t('study.questionForm.save')}
+            {(isSubmitting || submitting) ? (
+              <><Loader2 size={16} className="animate-spin" />{t('study.questionForm.saving')}</>
+            ) : t('study.questionForm.save')}
           </button>
         </div>
       </div>

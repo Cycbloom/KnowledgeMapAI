@@ -172,13 +172,18 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
       aria-atomic="false"
     >
       <AnimatePresence>
-        {messages.map((msg) => (
+        {messages.map((msg, index) => (
           <motion.div
             key={msg.id}
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            style={{
+              marginBottom: index > 0 ? `${-index * 28}px` : 0,
+              position: 'relative',
+              zIndex: messages.length - index,
+            }}
             className={cn(
               'w-full h-8',
               getBackgroundColor(msg.type),

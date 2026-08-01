@@ -394,7 +394,8 @@
       "idle": "未保存",
       "saving": "保存中…",
       "saved": "已保存",
-      "error": "保存失败"
+      "error": "保存失败",
+      "clickToRetry": "点击重试"
     },
     "footer": {
       "wordCount": "{{count}} 字",

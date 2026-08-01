@@ -4,7 +4,7 @@ import { render, screen, act } from "@testing-library/react";
 import type { ReactNode, HTMLAttributes } from "react";
 
 // Mock useTheme 以避免需要 ThemeProvider
-vi.mock("@/hooks", () => ({
+vi.mock("../../../hooks", () => ({
   useTheme: () => ({ isDark: false }),
 }));
 
@@ -34,8 +34,8 @@ vi.mock("framer-motion", async () => {
   };
 });
 
-import { frontendEventBus } from "@/services/timer/FrontendEventBus";
-import type { MessageShowPayload } from "@/services/FrontendEventTypes";
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import type { MessageShowPayload } from "../../../services/FrontendEventTypes";
 import { MessageBar } from "../MessageBar";
 
 function publishMessage(payload: MessageShowPayload) {

@@ -14,16 +14,16 @@ vi.mock("canvas-confetti", () => ({
 }));
 
 // mock usePreferencesStore：仅暴露 getState()，返回 mockState.celebrationEnabled
-vi.mock("@/store/usePreferencesStore", () => ({
+vi.mock("../../../store/usePreferencesStore", () => ({
   usePreferencesStore: {
     getState: () => ({ celebrationEnabled: mockState.celebrationEnabled }),
   },
 }));
 
 import confetti from "canvas-confetti";
-import { frontendEventBus } from "@/services/timer/FrontendEventBus";
-import { CELEBRATION_PRESETS } from "@/services/celebrationService";
-import type { CelebrationBurstPayload } from "@/services/FrontendEventTypes";
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { CELEBRATION_PRESETS } from "../../../services/celebrationService";
+import type { CelebrationBurstPayload } from "../../../services/FrontendEventTypes";
 import { CelebrationOverlay } from "../CelebrationOverlay";
 
 function buildPayload(

@@ -3,7 +3,7 @@ import { render, screen, fireEvent, act, waitFor } from "@testing-library/react"
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { SaveButton } from "../SaveButton";
 
-vi.mock("@/utils/messageHelper", () => ({
+vi.mock("../../../utils/messageHelper", () => ({
   message: {
     error: vi.fn(),
     success: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock("@/utils/messageHelper", () => ({
   },
 }));
 
-import { message } from "@/utils/messageHelper";
+import { message } from "../../../utils/messageHelper";
 
 // i18n 默认语言已在 src/setupTests.ts 全局设置为 zh-CN,无需在此重复调用。
 

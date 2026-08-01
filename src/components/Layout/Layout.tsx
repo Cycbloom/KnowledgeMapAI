@@ -14,6 +14,7 @@ import {
   HelpCircle,
   Sun,
   Moon,
+  Menu,
   LucideIcon,
   AlertTriangle,
   Upload,
@@ -33,6 +34,7 @@ import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
 import { NotificationCenter } from "../Notifications/NotificationCenter";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { MobileSidebarDrawer } from "./MobileSidebarDrawer";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { api } from "../../services/api";
@@ -98,6 +100,7 @@ export const Layout = () => {
   const sidebarId = useId();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [schemaStatus, setSchemaStatus] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const importGraphMutation = useImportGraphMutation();
@@ -345,6 +348,11 @@ export const Layout = () => {
     mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname, mainRef]);
 
+  // 路由切换时自动关闭移动端抽屉
+  useEffect(() => {
+    setIsMobileDrawerOpen(false);
+  }, [location.pathname]);
+
   const navItems = useMemo(() => frontendKernel.getNavItems(), [frontendKernel]);
 
   if (!!token && !user && isUserLoading) {
@@ -452,6 +460,13 @@ export const Layout = () => {
               }`}
             >
               <div className="flex-shrink-0 flex items-center gap-2">
+                <button
+                  className="md:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded transition-colors hover:bg-black/5"
+                  onClick={() => setIsMobileDrawerOpen(true)}
+                  aria-label={t('layout.openSidebar')}
+                >
+                  <Menu size={20} aria-hidden="true" />
+                </button>
                 <Breadcrumb />
               </div>
 
@@ -550,6 +565,15 @@ export const Layout = () => {
           </div>
           {isMobile && !isFullScreenPage && (
             <MobileBottomNav isDark={isDark} currentPath={location.pathname} />
+          )}
+          {isMobile && !isFullScreenPage && (
+            <MobileSidebarDrawer
+              isOpen={isMobileDrawerOpen}
+              onClose={() => setIsMobileDrawerOpen(false)}
+              navItems={navItems}
+              isDark={isDark}
+              currentPath={location.pathname}
+            />
           )}
           <MessageBar bottomOffset={isMobile && !isFullScreenPage ? 56 : 0} />
           <OfflineIndicator />

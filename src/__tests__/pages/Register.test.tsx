@@ -21,7 +21,7 @@ vi.mock('react-router-dom', async () => {
 });
 
 // authApi mock：控制 register 返回值
-vi.mock('@/services/api/auth', () => ({
+vi.mock('../../services/api/auth', () => ({
   authApi: {
     register: vi.fn(),
     login: vi.fn(),
@@ -32,7 +32,7 @@ vi.mock('@/services/api/auth', () => ({
   },
 }));
 
-import { authApi } from '@/services/api/auth';
+import { authApi } from '../../services/api/auth';
 
 describe('Register 页面', () => {
   beforeEach(() => {

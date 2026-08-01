@@ -47,6 +47,7 @@ import { canMoveBlock, moveBlock } from "./blockMovement";
 import { WritingAssistPopover } from "./WritingAssistPopover";
 import { BlockRefPopover } from "./BlockRefPopover";
 import { extractBlockId, generateBlockId } from "@shared/utils/blockRef";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -105,6 +106,13 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
   const [editorMarkdown, setEditorMarkdown] = useState<string>(initialContent);
   const [moveAvailability, setMoveAvailability] = useState({ up: false, down: false });
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // —— 保存状态自动淡出：saved → idle（2 秒后） ——
+  useEffect(() => {
+    if (saveStatus !== "saved") return;
+    const timer = setTimeout(() => setSaveStatus("idle"), 2000);
+    return () => clearTimeout(timer);
+  }, [saveStatus]);
 
   // P2 Task 7:选区跟踪(仅 hasSelection,用于工具栏按钮启用/禁用)
   const [hasSelection, setHasSelection] = useState(false);
@@ -1024,8 +1032,16 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
             t("notes.blockEditor.slashHint")
           )}
         </span>
-        <span className={saveStatusColor} role="status">
-          {saveStatusText}
+        <span
+          className={`${saveStatusColor} inline-flex items-center gap-1 ${saveStatus === "error" ? "cursor-pointer hover:opacity-80" : ""}`}
+          role="status"
+          aria-label={saveStatusText}
+          onClick={saveStatus === "error" ? () => save(readMarkdown(editor)) : undefined}
+          title={saveStatus === "error" ? t("notes.blockEditor.saveStatus.clickToRetry") : undefined}
+        >
+          {saveStatus === "saving" && <Loader2 size={14} className="animate-spin" />}
+          {saveStatus === "saved" && <CheckCircle2 size={14} className="text-green-500" />}
+          {saveStatus === "error" && <AlertCircle size={14} className="text-red-500" />}
         </span>
       </div>
 

@@ -1,26 +1,25 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import type { ReactNode, ComponentPropsWithoutRef } from "react";
 import { OfflineBanner } from "../OfflineBanner";
 import type { QueuedMutation } from "@/utils/offlineMutations";
 
-// 共享 mock 状态：通过 vi.hoisted 确保 vi.mock 工厂可访问
+// Use a shared object for mutable state accessed in vi.mock factories
 const mockState = vi.hoisted(() => ({
-  networkStatus: { online: true },
+  online: true,
   queue: [] as QueuedMutation[],
   listener: null as ((queue: QueuedMutation[]) => void) | null,
 }));
 
-vi.mock("@/hooks/common/useNetworkStatus", () => ({
-  useNetworkStatus: () => mockState.networkStatus,
+vi.mock("../../../hooks/common/useNetworkStatus", () => ({
+  useNetworkStatus: () => ({ online: mockState.online }),
 }));
 
-vi.mock("@/utils/offlineMutations", () => ({
+vi.mock("../../../utils/offlineMutations", () => ({
   offlineMutationQueue: {
     subscribe: (listener: (queue: QueuedMutation[]) => void) => {
       mockState.listener = listener;
-      // 模拟真实 subscribe 的立即触发行为
       listener(mockState.queue);
       return () => {
         mockState.listener = null;
@@ -29,9 +28,7 @@ vi.mock("@/utils/offlineMutations", () => ({
   },
 }));
 
-// mock framer-motion：jsdom 环境下 framer-motion 会给 motion.div 设置
-// opacity:0 / transform 等内联样式，导致 toBeVisible() 失败。
-// 这里将 motion.div 渲染为普通 div，过滤掉动画相关 props。
+// mock framer-motion
 vi.mock("framer-motion", () => ({
   AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
   motion: {
@@ -65,19 +62,17 @@ function buildQueuedMutation(
 
 describe("OfflineBanner", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-    mockState.networkStatus.online = true;
+    mockState.online = true;
     mockState.queue = [];
     mockState.listener = null;
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.clearAllMocks();
   });
 
   it("应该在线且无 pending 时不渲染横幅", () => {
-    mockState.networkStatus.online = true;
+    mockState.online = true;
     mockState.queue = [];
 
     render(<OfflineBanner />);
@@ -85,19 +80,19 @@ describe("OfflineBanner", () => {
     expect(screen.queryByTestId("offline-banner")).not.toBeInTheDocument();
   });
 
-  it("应该离线时渲染横幅并显示当前离线文本", () => {
-    mockState.networkStatus.online = false;
+  it("应该离线时渲染横幅并显示当前离线文本", async () => {
+    mockState.online = false;
     mockState.queue = [];
 
     render(<OfflineBanner />);
 
-    const banner = screen.getByTestId("offline-banner");
+    const banner = await screen.findByTestId("offline-banner");
     expect(banner).toBeVisible();
     expect(banner).toHaveTextContent("当前离线");
   });
 
-  it("应该离线且有 pending 时显示待同步计数", () => {
-    mockState.networkStatus.online = false;
+  it("应该离线且有 pending 时显示待同步计数", async () => {
+    mockState.online = false;
     mockState.queue = [
       buildQueuedMutation({ id: "m1" }),
       buildQueuedMutation({ id: "m2" }),
@@ -106,28 +101,35 @@ describe("OfflineBanner", () => {
 
     render(<OfflineBanner />);
 
+    const banner = await screen.findByTestId("offline-banner");
+    expect(banner).toBeVisible();
+
     const pendingBadge = screen.getByTestId("offline-banner-pending");
     expect(pendingBadge).toBeVisible();
     expect(pendingBadge).toHaveTextContent("3 项待同步");
   });
 
-  it("应该网络恢复后切换为同步中状态", () => {
-    mockState.networkStatus.online = false;
+  it("应该网络恢复后切换为同步中状态", async () => {
+    mockState.online = false;
     mockState.queue = [];
 
     const { rerender } = render(<OfflineBanner />);
 
-    // 离线时显示当前离线
-    expect(screen.getByTestId("offline-banner")).toHaveTextContent("当前离线");
+    // 离线时显示当前离线（使用真实定时器，确保 findByTestId 正常工作）
+    const banner = await screen.findByTestId("offline-banner");
+    expect(banner).toHaveTextContent("当前离线");
+
+    // 切换到 fake timers 用于控制 setTimeout
+    vi.useFakeTimers();
 
     // 模拟网络恢复
-    mockState.networkStatus.online = true;
-    rerender(<OfflineBanner />);
+    mockState.online = true;
+    act(() => {
+      rerender(<OfflineBanner />);
+    });
 
-    // 网络恢复后应显示同步中
-    const banner = screen.getByTestId("offline-banner");
-    expect(banner).toBeVisible();
-    expect(banner).toHaveTextContent("同步中");
+    // 网络恢复后应显示同步中（act 已同步刷新所有 effect）
+    expect(screen.getByTestId("offline-banner")).toHaveTextContent("同步中");
 
     // 2 秒后同步完成且无 pending，横幅应消失
     act(() => {

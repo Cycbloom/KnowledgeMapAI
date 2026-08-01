@@ -394,7 +394,8 @@
       "idle": "Not saved",
       "saving": "Saving…",
       "saved": "Saved",
-      "error": "Save failed"
+      "error": "Save failed",
+      "clickToRetry": "Click to retry"
     },
     "footer": {
       "wordCount": "{{count}} words",

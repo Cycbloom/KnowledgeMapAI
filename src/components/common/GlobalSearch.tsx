@@ -457,6 +457,11 @@ export const GlobalSearch = () => {
             </div>
           ) : filteredResults ? (
             <div className="max-h-[60vh] overflow-y-auto custom-scrollbar" aria-live="polite" aria-atomic="true" role="listbox" id={listboxId}>
+              {(filteredResults.graphs.length > 0 || filteredResults.nodes.length > 0) && (
+                <div className={cn("px-4 py-2 border-b text-xs font-medium", isDark ? 'text-slate-400 border-slate-700' : 'text-gray-500 border-gray-100')}>
+                  {t('common.search.resultCount', { count: filteredResults.graphs.length + filteredResults.nodes.length })}
+                </div>
+              )}
               {filteredResults.answer && (
                 <div className={cn("p-4 border-b", isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-primary-50/50')}>
                   <div className="flex items-center gap-2 mb-2">

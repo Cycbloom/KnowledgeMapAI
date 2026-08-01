@@ -33,6 +33,7 @@
     "graphs": "Graphs ({{count}})",
     "nodes": "Nodes ({{count}})",
     "unknownGraph": "Unknown Graph",
+    "resultCount": "Found {{count}} results",
     "noResults": "No results found",
     "inputToStart": "Type a keyword to start searching",
     "shortcut": "Press Enter to search · Ctrl+/ shortcut",

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { X, Clock, Tag, Star, AlertCircle, HelpCircle } from 'lucide-react';
+import { X, Clock, Tag, Star, AlertCircle, HelpCircle, Loader2 } from 'lucide-react';
 import {
   TaskTemplate,
   CreateTemplateData,
@@ -25,6 +25,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
   const { t } = useTranslation();
   const [customTag, setCustomTag] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
   const isEditing = !!template;
@@ -126,24 +127,30 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    if (isSubmitting) return;
 
-    const data: CreateTemplateData | UpdateTemplateData = {
-      name: formData.name.trim(),
-      description: formData.description.trim() || undefined,
-      category: formData.category as 'knowledge' | 'project' | 'analysis' | 'architecture' | 'topicResearch' | 'creative',
-      title_template: formData.titleTemplate.trim(),
-      description_template: formData.descriptionTemplate.trim() || undefined,
-      estimated_duration: formData.estimatedDuration,
-      tags: formData.tags.length > 0 ? formData.tags : undefined,
-      priority: formData.priority,
-      is_default: formData.isDefault,
-    };
+    setIsSubmitting(true);
+    try {
+      const data: CreateTemplateData | UpdateTemplateData = {
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
+        category: formData.category as 'knowledge' | 'project' | 'analysis' | 'architecture' | 'topicResearch' | 'creative',
+        title_template: formData.titleTemplate.trim(),
+        description_template: formData.descriptionTemplate.trim() || undefined,
+        estimated_duration: formData.estimatedDuration,
+        tags: formData.tags.length > 0 ? formData.tags : undefined,
+        priority: formData.priority,
+        is_default: formData.isDefault,
+      };
 
-    onSubmit(data);
-    clearDraft();
+      onSubmit(data);
+      clearDraft();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const addTag = (tag: string) => {
@@ -430,9 +437,12 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
           </button>
           <button
             onClick={handleSubmit}
-            className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-400 hover:to-primary-400 transition-all shadow-lg shadow-primary-500/20 min-h-[44px] touch-target"
+            disabled={isSubmitting}
+            className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-400 hover:to-primary-400 transition-all shadow-lg shadow-primary-500/20 min-h-[44px] touch-target disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
           >
-            {isEditing ? t('scheduler.templateForm.buttonSaveChanges') : t('scheduler.templateForm.buttonCreateTemplate')}
+            {isSubmitting ? (
+              <><Loader2 size={16} className="animate-spin" />{t('common.saveButton.saving')}</>
+            ) : (isEditing ? t('scheduler.templateForm.buttonSaveChanges') : t('scheduler.templateForm.buttonCreateTemplate'))}
           </button>
         </div>
       </motion.div>

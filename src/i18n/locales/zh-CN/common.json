@@ -33,6 +33,7 @@
     "graphs": "图谱 ({{count}})",
     "nodes": "节点 ({{count}})",
     "unknownGraph": "未知图谱",
+    "resultCount": "找到 {{count}} 条结果",
     "noResults": "未找到相关内容",
     "inputToStart": "输入关键词开始搜索",
     "shortcut": "按 Enter 搜索 · Ctrl+/ 快捷键",

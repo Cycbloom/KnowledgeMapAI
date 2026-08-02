@@ -65,6 +65,21 @@ function getChunkStrategy(id: string): string | undefined {
   if (id.includes("lucide-react")) return "vendor-lucide";
   if (id.includes("framer-motion")) return "vendor-framer";
 
+  // Task 5: 从 vendor-react 中拆分 react-router-dom 为独立 chunk，
+  // 减少 vendor-react 体积，使路由代码可独立缓存。
+  if (id.includes("react-router")) return "vendor-router";
+
+  // Task 5: 从 vendor-react 中拆分 @tiptap 编辑器生态为独立 chunk。
+  // @tiptap/react 会匹配 vendor-react 的 "react-" 规则，必须在之前匹配。
+  if (id.includes("@tiptap")) return "vendor-tiptap";
+
+  // Task 5: 从 vendor-react 中拆分 i18next 国际化生态为独立 chunk。
+  // react-i18next 会匹配 vendor-react 的 "react-" 规则，必须在之前匹配。
+  if (id.includes("i18next")) return "vendor-i18n";
+
+  // Task 5: 从 vendor-react 中拆分 @tanstack/react-virtual 为独立 chunk。
+  if (id.includes("@tanstack/react-virtual")) return "vendor-virtual";
+
   if (id.includes("@dnd-kit/core")) return "vendor-dnd-core";
   if (id.includes("@dnd-kit/sortable")) return "vendor-dnd-sortable";
   if (id.includes("@dnd-kit/utilities")) return "vendor-dnd-utils";

@@ -2,8 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useNotesByNode } from "../../hooks/queries";
-import { Skeleton } from "../common/Skeleton";
+import { SkeletonList } from "../common/SkeletonList";
 import { EmptyState } from "../common/EmptyState";
+import { VirtualList } from "../common/VirtualList";
 import { formatDate } from "../../utils/formatters";
 import type { NoteType } from "@shared/types/note";
 
@@ -12,6 +13,14 @@ export interface NotesPanelProps {
   nodeId?: string | null;
   /** 当前图谱 ID（保留以对齐 BacklinksPanel 签名，目前未使用） */
   graphId?: string;
+}
+
+interface NoteItem {
+  id: string;
+  title: string | null;
+  type: NoteType;
+  updatedAt: string;
+  isPinned: boolean;
 }
 
 /** 类型徽章样式：daily 用紫色，note 用蓝色（与 NotesListPage 保持一致）。 */
@@ -28,10 +37,9 @@ const getTypeBadgeClass = (type: NoteType): string => {
  * 列出挂载到当前节点的所有笔记（基于 note_node_links 表，
  * 由笔记正文 `[[节点名]]` 自动建立挂载关系）。点击笔记项跳转到笔记编辑器。
  *
- * 复用 BacklinksPanel 的加载/错误/空状态模式，
- * 通过 useNotesByNode hook 拉取数据。
+ * 使用 VirtualList 优化长列表渲染性能。
  */
-export const NotesPanel: React.FC<NotesPanelProps> = ({ nodeId, graphId: _graphId }) => {
+const NotesPanelComponent: React.FC<NotesPanelProps> = ({ nodeId }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: notes, isLoading, error } = useNotesByNode(nodeId);
@@ -48,13 +56,11 @@ export const NotesPanel: React.FC<NotesPanelProps> = ({ nodeId, graphId: _graphI
     );
   }
 
-  // 加载态：渲染 3 个 Skeleton 卡片
+  // 加载态：渲染 SkeletonList 骨架屏
   if (isLoading) {
     return (
-      <div className="space-y-2">
-        <Skeleton variant="rectangular" height={64} className="rounded-lg" />
-        <Skeleton variant="rectangular" height={64} className="rounded-lg" />
-        <Skeleton variant="rectangular" height={64} className="rounded-lg" />
+      <div>
+        <SkeletonList items={3} />
       </div>
     );
   }
@@ -70,7 +76,7 @@ export const NotesPanel: React.FC<NotesPanelProps> = ({ nodeId, graphId: _graphI
     );
   }
 
-  // 空态：CTA 跳转到 /notes 列表页新建笔记
+  // 空态
   if (!notes || notes.length === 0) {
     return (
       <EmptyState
@@ -86,9 +92,24 @@ export const NotesPanel: React.FC<NotesPanelProps> = ({ nodeId, graphId: _graphI
     );
   }
 
+  const noteItems: NoteItem[] = notes.map((note) => ({
+    id: note.id,
+    title: note.title,
+    type: note.type,
+    updatedAt: note.updatedAt,
+    isPinned: note.isPinned,
+  }));
+
   return (
-    <div className="space-y-2">
-      {notes.map((note) => {
+    <VirtualList
+      items={noteItems}
+      estimateSize={() => 80}
+      overscan={3}
+      className="min-h-0"
+      style={{ height: '100%' }}
+      role="list"
+      getItemKey={(index) => noteItems[index].id}
+      renderItem={(note) => {
         const typeLabel =
           note.type === "daily"
             ? t("notes.badges.daily")
@@ -125,7 +146,13 @@ export const NotesPanel: React.FC<NotesPanelProps> = ({ nodeId, graphId: _graphI
             </span>
           </button>
         );
-      })}
-    </div>
+      }}
+    />
   );
 };
+
+const areEqual = (prev: NotesPanelProps, next: NotesPanelProps) => {
+  return prev.nodeId === next.nodeId;
+};
+
+export const NotesPanel = React.memo(NotesPanelComponent, areEqual);

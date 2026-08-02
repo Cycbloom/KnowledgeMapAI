@@ -49,7 +49,7 @@ const moduleColors = {
   },
 };
 
-export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
+const AnalysisModuleCardComponent: React.FC<AnalysisModuleCardProps> = ({
   module,
   onToggle,
   onViewResult,
@@ -190,3 +190,17 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
     </motion.div>
   );
 };
+
+const areEqual = (prev: AnalysisModuleCardProps, next: AnalysisModuleCardProps) => {
+  return (
+    prev.module.id === next.module.id &&
+    prev.module.selected === next.module.selected &&
+    prev.module.status === next.module.status &&
+    prev.disabled === next.disabled &&
+    prev.onToggle === next.onToggle &&
+    prev.onViewResult === next.onViewResult &&
+    prev.onEditPrompt === next.onEditPrompt
+  );
+};
+
+export const AnalysisModuleCard = React.memo(AnalysisModuleCardComponent, areEqual);

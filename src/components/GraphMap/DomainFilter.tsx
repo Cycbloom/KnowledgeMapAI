@@ -25,7 +25,7 @@ interface DomainTreeItemProps {
   optionIdMap?: Map<string, string>;
 }
 
-const DomainTreeItem: React.FC<DomainTreeItemProps> = ({
+const DomainTreeItemComponent: React.FC<DomainTreeItemProps> = ({
   domain,
   selectedDomainIds,
   onToggle,
@@ -102,6 +102,20 @@ const DomainTreeItem: React.FC<DomainTreeItemProps> = ({
     </div>
   );
 };
+
+const areEqual = (prev: DomainTreeItemProps, next: DomainTreeItemProps) => {
+  return (
+    prev.domain.id === next.domain.id &&
+    prev.depth === next.depth &&
+    prev.graphCount === next.graphCount &&
+    prev.selectedDomainIds.has(prev.domain.id) === next.selectedDomainIds.has(next.domain.id) &&
+    prev.expandedIds.has(prev.domain.id) === next.expandedIds.has(next.domain.id) &&
+    prev.onToggle === next.onToggle &&
+    prev.onToggleExpand === next.onToggleExpand
+  );
+};
+
+const DomainTreeItem = React.memo(DomainTreeItemComponent, areEqual);
 
 export const DomainFilter: React.FC<DomainFilterProps> = ({
   domains,

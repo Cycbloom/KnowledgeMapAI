@@ -8,7 +8,7 @@ import { api } from "../services/api";
 import { useStore } from "../store/useStore";
 import { queryKeys } from "../hooks/queries/config";
 import { useIsMobile } from "../hooks/common/useIsMobile";
-import { ErrorBoundary, Skeleton, SkeletonCard } from "../components/common";
+import { ErrorBoundary, Skeleton, LazyLoadFallback } from "../components/common";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
 import { domainsApi, graphDomainsApi } from "../services/api/domains";
 import type { DomainTreeNode, Domain } from "@shared/types/graph";
@@ -97,14 +97,6 @@ const AgentAnalysisPanel = lazy(() =>
   import("../components/GraphMap/AgentAnalysisPanel").then((module) => ({
     default: module.AgentAnalysisPanel,
   }))
-);
-
-const LoadingFallback = () => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-    {Array.from({ length: 3 }).map((_, i) => (
-      <SkeletonCard key={i} />
-    ))}
-  </div>
 );
 
 interface CoreNode {
@@ -1122,7 +1114,7 @@ export const GraphMap = () => {
       />
 
       <div className="flex-1 relative">
-        <Suspense fallback={<LoadingFallback />}>
+        <Suspense fallback={<LazyLoadFallback variant="card" count={3} />}>
           <ErrorBoundary>
             <GraphMapCanvas
               graphs={graphs}
@@ -1750,7 +1742,7 @@ export const GraphMap = () => {
         domains={domainTree}
       />
 
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<LazyLoadFallback variant="card" count={3} />}>
         <AIExpansionPanel
           isOpen={isAIExpansionOpen}
           onClose={() => setIsAIExpansionOpen(false)}
@@ -1812,7 +1804,7 @@ export const GraphMap = () => {
                 </button>
               </div>
             )}
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<LazyLoadFallback variant="card" count={3} />}>
               <PromptEditor
                 key={`${promptEditMode}-${depthPromptType}`}
                 initialContent={promptContent}
@@ -1857,7 +1849,7 @@ export const GraphMap = () => {
         </div>
       )}
 
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<LazyLoadFallback variant="card" count={3} />}>
         <DomainGraphGenerator
           isOpen={isDomainGeneratorOpen}
           onClose={() => {
@@ -1912,7 +1904,7 @@ export const GraphMap = () => {
         />
       </Suspense>
 
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<LazyLoadFallback variant="card" count={3} />}>
         <NodeSelectorModal
           isOpen={isNodeSelectorOpen}
           onClose={() => setIsNodeSelectorOpen(false)}
@@ -1924,7 +1916,7 @@ export const GraphMap = () => {
         />
       </Suspense>
 
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<LazyLoadFallback variant="card" count={3} />}>
         <GenerateCardsModal
           isOpen={isGenerateCardsModalOpen}
           onClose={() => setIsGenerateCardsModalOpen(false)}
@@ -1933,7 +1925,7 @@ export const GraphMap = () => {
         />
       </Suspense>
 
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<LazyLoadFallback variant="card" count={3} />}>
         <GraphRelationDiscoveryPanel
           isOpen={isDiscoveryPanelOpen}
           onClose={() => setIsDiscoveryPanelOpen(false)}
@@ -1950,7 +1942,7 @@ export const GraphMap = () => {
         />
       </Suspense>
 
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<LazyLoadFallback variant="card" count={3} />}>
         <ModularAnalysisPanel
           isOpen={isModularAnalysisOpen}
           onClose={() => {
@@ -1972,7 +1964,7 @@ export const GraphMap = () => {
         />
       </Suspense>
 
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<LazyLoadFallback variant="card" count={3} />}>
         <AnalysisResultViewer
           isOpen={viewingModule !== null}
           onClose={() => setViewingModule(null)}
@@ -1997,7 +1989,7 @@ export const GraphMap = () => {
         />
       </Suspense>
 
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<LazyLoadFallback variant="card" count={3} />}>
         <BatchOperationPanel
           selectedCount={multiSelectedGraphIds.size}
           onBatchCreateRelation={handleBatchCreateRelation}
@@ -2008,7 +2000,7 @@ export const GraphMap = () => {
         />
       </Suspense>
 
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<LazyLoadFallback variant="card" count={3} />}>
         <AgentAnalysisPanel
           isOpen={isAgentAnalysisOpen}
           onClose={() => setIsAgentAnalysisOpen(false)}

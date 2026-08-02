@@ -4,6 +4,7 @@
  * 比对 en-US 与 zh-CN 目录下所有 JSON 文件的 key 路径，报告缺失的 key
  *
  * 用法: npx tsx scripts/check-i18n-keys.ts
+ *       npx tsx scripts/check-i18n-keys.ts --json   (JSON 输出，供 CI 解析)
  */
 
 import { readFileSync, readdirSync } from "fs";
@@ -15,6 +16,8 @@ const localesDir = resolve(__dirname, "../src/i18n/locales");
 
 const EN_DIR = join(localesDir, "en-US");
 const ZH_DIR = join(localesDir, "zh-CN");
+
+const useJsonOutput = process.argv.includes("--json");
 
 /** 递归提取所有 key 路径（用点号分隔） */
 function extractKeyPaths(obj: unknown, prefix = ""): string[] {
@@ -58,6 +61,13 @@ const zhFiles = getJsonFiles(ZH_DIR);
 const allFiles = new Set([...enFiles, ...zhFiles]);
 const sortedFiles = [...allFiles].sort();
 
+const results: {
+  file: string;
+  status: "ok" | "missing-file" | "missing-keys";
+  missingInZh: string[];
+  missingInEn: string[];
+}[] = [];
+
 let hasDiff = false;
 let totalMissing = 0;
 
@@ -66,13 +76,15 @@ for (const file of sortedFiles) {
   const inZh = zhFiles.has(file);
 
   if (!inEn) {
-    console.log(`❌ ${file}: file only exists in zh-CN (missing in en-US)`);
+    if (!useJsonOutput) console.log(`❌ ${file}: file only exists in zh-CN (missing in en-US)`);
+    results.push({ file, status: "missing-file", missingInZh: [], missingInEn: [`[file] ${file}`] });
     hasDiff = true;
     totalMissing++;
     continue;
   }
   if (!inZh) {
-    console.log(`❌ ${file}: file only exists in en-US (missing in zh-CN)`);
+    if (!useJsonOutput) console.log(`❌ ${file}: file only exists in en-US (missing in zh-CN)`);
+    results.push({ file, status: "missing-file", missingInZh: [`[file] ${file}`], missingInEn: [] });
     hasDiff = true;
     totalMissing++;
     continue;
@@ -88,31 +100,40 @@ for (const file of sortedFiles) {
   const missingInEn = [...zhKeys].filter((k) => !enKeys.has(k)).sort();
 
   if (missingInZh.length === 0 && missingInEn.length === 0) {
-    console.log(`✅ ${file}: keys match`);
+    if (!useJsonOutput) console.log(`✅ ${file}: keys match`);
+    results.push({ file, status: "ok", missingInZh: [], missingInEn: [] });
     continue;
   }
 
   hasDiff = true;
+  results.push({ file, status: "missing-keys", missingInZh, missingInEn });
 
-  if (missingInZh.length > 0) {
-    console.log(
-      `❌ ${file}: ${missingInZh.length} keys missing in zh-CN (present in en-US)`,
-    );
-    for (const key of missingInZh) {
-      console.log(`   - ${key}`);
+  if (!useJsonOutput) {
+    if (missingInZh.length > 0) {
+      console.log(
+        `❌ ${file}: ${missingInZh.length} key(s) missing in zh-CN (present in en-US)`,
+      );
+      for (const key of missingInZh) {
+        console.log(`   - ${key}`);
+      }
+      totalMissing += missingInZh.length;
     }
-    totalMissing += missingInZh.length;
-  }
 
-  if (missingInEn.length > 0) {
-    console.log(
-      `❌ ${file}: ${missingInEn.length} keys missing in en-US (present in zh-CN)`,
-    );
-    for (const key of missingInEn) {
-      console.log(`   - ${key}`);
+    if (missingInEn.length > 0) {
+      console.log(
+        `❌ ${file}: ${missingInEn.length} key(s) missing in en-US (present in zh-CN)`,
+      );
+      for (const key of missingInEn) {
+        console.log(`   - ${key}`);
+      }
+      totalMissing += missingInEn.length;
     }
-    totalMissing += missingInEn.length;
   }
+}
+
+if (useJsonOutput) {
+  process.stdout.write(JSON.stringify({ hasDiff, totalMissing, results }, null, 2));
+  process.exit(hasDiff ? 1 : 0);
 }
 
 console.log("");

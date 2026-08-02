@@ -75,4 +75,17 @@ const GraphEdgesComponent: React.FC<GraphEdgesProps> = ({
   );
 };
 
-export const GraphEdges = memo(GraphEdgesComponent);
+const areEqual = (prev: GraphEdgesProps, next: GraphEdgesProps) => {
+  return (
+    prev.links.length === next.links.length &&
+    prev.edges.length === next.edges.length &&
+    prev.focusedGraphId === next.focusedGraphId &&
+    prev.neighborLinkIds.size === next.neighborLinkIds.size &&
+    prev.selectedDomainIds.size === next.selectedDomainIds.size &&
+    prev.isDark === next.isDark &&
+    prev.linkStyle === next.linkStyle &&
+    prev.linkAnimation === next.linkAnimation
+  );
+};
+
+export const GraphEdges = memo(GraphEdgesComponent, areEqual);

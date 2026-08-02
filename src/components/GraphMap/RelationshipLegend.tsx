@@ -16,7 +16,7 @@ const LINE_STYLE_SAMPLES: Record<string, string> = {
   double: 'M 0 8 L 40 8 M 0 12 L 40 12',
 };
 
-export const RelationshipLegend: React.FC<RelationshipLegendProps> = ({
+const RelationshipLegendComponent: React.FC<RelationshipLegendProps> = ({
   edges,
   isDark,
   onClose,
@@ -122,3 +122,13 @@ export const RelationshipLegend: React.FC<RelationshipLegendProps> = ({
     </div>
   );
 };
+
+const areEqual = (prev: RelationshipLegendProps, next: RelationshipLegendProps) => {
+  return (
+    prev.edges.length === next.edges.length &&
+    prev.isDark === next.isDark &&
+    prev.onClose === next.onClose
+  );
+};
+
+export const RelationshipLegend = React.memo(RelationshipLegendComponent, areEqual);

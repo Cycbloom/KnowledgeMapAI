@@ -4,6 +4,7 @@ import { useBacklinks } from "../../../hooks";
 import { formatDate } from "../../../utils/formatters";
 import { Skeleton } from "../../common/Skeleton";
 import { EmptyState } from "../../common/EmptyState";
+import { VirtualList } from "../../common/VirtualList";
 import type { BacklinkItem } from "@shared/types";
 
 export interface BacklinksPanelProps {
@@ -68,13 +69,19 @@ export const BacklinksPanel: React.FC<BacklinksPanelProps> = ({
   }
 
   return (
-    <div className="space-y-2">
-      {backlinks.map((item: BacklinkItem) => {
+    <VirtualList
+      items={backlinks}
+      estimateSize={() => 80}
+      overscan={3}
+      className="min-h-0"
+      style={{ height: '100%' }}
+      role="list"
+      getItemKey={(index) => `${backlinks[index].sourceKnowledgePointId}-${backlinks[index].graphId}`}
+      renderItem={(item: BacklinkItem) => {
         const isInCurrentGraph =
           !!currentGraphId && item.graphId === currentGraphId;
         return (
           <button
-            key={`${item.sourceKnowledgePointId}-${item.graphId}`}
             type="button"
             onClick={() =>
               onNavigateToNode?.(item.sourceKnowledgePointId, item.graphId)
@@ -108,7 +115,7 @@ export const BacklinksPanel: React.FC<BacklinksPanelProps> = ({
             </span>
           </button>
         );
-      })}
-    </div>
+      }}
+    />
   );
 };

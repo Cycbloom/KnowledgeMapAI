@@ -1,9 +1,11 @@
 import React, { useLayoutEffect, useState, useRef } from 'react';
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { usePageLoading } from '../../hooks/common/usePageLoading';
 
 export const LoadingBar: React.FC = () => {
   const { t } = useTranslation();
+  const { isPageLoading } = usePageLoading();
   const isFetching = useIsFetching({
     predicate: (query) => !query.meta?.silent
   });
@@ -12,7 +14,7 @@ export const LoadingBar: React.FC = () => {
   const isMutating = useIsMutating({
     predicate: (mutation) => !mutation.options.meta?.silent,
   });
-  const isLoading = isFetching > 0 || isMutating > 0;
+  const isLoading = isFetching > 0 || isMutating > 0 || isPageLoading;
   
   const [progress, setProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);

@@ -8,7 +8,7 @@ interface SkeletonCardProps {
   className?: string;
 }
 
-export const SkeletonCard: React.FC<SkeletonCardProps> = ({
+const SkeletonCardComponent: React.FC<SkeletonCardProps> = ({
   hasImage = false,
   lines = 3,
   className,
@@ -46,5 +46,7 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
     </div>
   );
 };
+
+export const SkeletonCard = React.memo(SkeletonCardComponent);
 
 export type { SkeletonCardProps };

@@ -99,7 +99,7 @@ const HighlightText: React.FC<{ text: string; query: string; className?: string 
   return <span className={className}>{highlighted}</span>;
 };
 
-export const SearchResults: React.FC<SearchResultsProps> = ({
+const SearchResultsComponent: React.FC<SearchResultsProps> = ({
   results,
   isSearching,
   query,
@@ -379,3 +379,14 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     </AnimatePresence>
   );
 };
+
+const areEqual = (prev: SearchResultsProps, next: SearchResultsProps) => {
+  return (
+    prev.isSearching === next.isSearching &&
+    prev.query === next.query &&
+    prev.onClose === next.onClose &&
+    prev.results === next.results
+  );
+};
+
+export const SearchResults = React.memo(SearchResultsComponent, areEqual);

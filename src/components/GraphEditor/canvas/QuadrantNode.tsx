@@ -66,7 +66,7 @@ const QUADRANT_NODE_STYLE_OVERRIDES: Partial<
   leaf: { baseRadius: 16, rings: 1 },
 };
 
-export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
+const QuadrantNodeComponent: React.FC<QuadrantNodeProps> = ({
   node,
   edges: _edges,
   nodeStatus,
@@ -363,3 +363,30 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
     </g>
   );
 };
+
+const areEqual = (prev: QuadrantNodeProps, next: QuadrantNodeProps) => {
+  return (
+    prev.node.id === next.node.id &&
+    prev.node.title === next.node.title &&
+    prev.node.level === next.node.level &&
+    prev.selected === next.selected &&
+    prev.isDark === next.isDark &&
+    prev.zoomLevel === next.zoomLevel &&
+    prev.originX === next.originX &&
+    prev.originY === next.originY &&
+    prev.regionRadius === next.regionRadius &&
+    prev.angle === next.angle &&
+    prev.focused === next.focused &&
+    prev.hasFocusMode === next.hasFocusMode &&
+    prev.positionX === next.positionX &&
+    prev.positionY === next.positionY &&
+    prev.regionNodeCount === next.regionNodeCount &&
+    prev.colorScheme === next.colorScheme &&
+    prev.coloringMode === next.coloringMode &&
+    prev.onClick === next.onClick &&
+    // 比较 nodeStatus 中当前节点的状态
+    prev.nodeStatus?.[prev.node.id] === next.nodeStatus?.[next.node.id]
+  );
+};
+
+export const QuadrantNode = React.memo(QuadrantNodeComponent, areEqual);

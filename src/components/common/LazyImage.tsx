@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/utils';
 
 interface LazyImageProps {
@@ -14,6 +15,12 @@ interface LazyImageProps {
   rootMargin?: string;
   aspectRatio?: number;
   showSkeleton?: boolean;
+  /** WebP 格式图片 URL，提供后使用 <picture> 标签自动选择格式 */
+  webpSrc?: string;
+  /** 响应式图片 srcSet */
+  srcSet?: string;
+  /** 响应式图片 sizes */
+  sizes?: string;
 }
 
 const DEFAULT_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23f1f5f9" width="400" height="300"/%3E%3C/svg%3E';
@@ -30,17 +37,20 @@ export const LazyImage: React.FC<LazyImageProps> = memo(({
   rootMargin = '50px',
   aspectRatio,
   showSkeleton = true,
+  webpSrc,
+  srcSet,
+  sizes,
 }) => {
   const { t } = useTranslation();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
-    const img = imgRef.current;
-    if (!img) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     observerRef.current = new IntersectionObserver(
       ([entry]) => {
@@ -55,7 +65,7 @@ export const LazyImage: React.FC<LazyImageProps> = memo(({
       }
     );
 
-    observerRef.current.observe(img);
+    observerRef.current.observe(container);
 
     return () => {
       observerRef.current?.disconnect();
@@ -76,10 +86,49 @@ export const LazyImage: React.FC<LazyImageProps> = memo(({
     ? { aspectRatio: `${aspectRatio}` }
     : {};
 
+  const renderImage = () => {
+    if (hasError) return null;
+
+    const imgClasses = cn(
+      'w-full h-full object-cover',
+      'transition-all duration-500 ease-out',
+      isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105',
+    );
+
+    const imgElement = (
+      <img
+        src={isInView ? src : placeholder}
+        srcSet={isInView ? srcSet : undefined}
+        sizes={isInView ? sizes : undefined}
+        alt={alt}
+        className={imgClasses}
+        onLoad={handleLoad}
+        onError={handleError}
+        loading="lazy"
+        decoding="async"
+      />
+    );
+
+    if (webpSrc && isInView) {
+      return (
+        <picture>
+          <source srcSet={webpSrc} type="image/webp" />
+          {imgElement}
+        </picture>
+      );
+    }
+
+    return imgElement;
+  };
+
   return (
-    <div
+    <motion.div
+      ref={containerRef}
       className={cn('relative overflow-hidden', className)}
       style={containerStyle}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
     >
       {showSkeleton && !isLoaded && !hasError && (
         <div
@@ -100,44 +149,39 @@ export const LazyImage: React.FC<LazyImageProps> = memo(({
         />
       )}
 
-      <img
-        ref={imgRef}
-        src={isInView && !hasError ? src : placeholder}
-        alt={alt}
-        className={cn(
-          'w-full h-full object-cover',
-          'transition-all duration-500 ease-out',
-          isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105',
-          hasError ? 'opacity-50 grayscale' : '',
-        )}
-        onLoad={handleLoad}
-        onError={handleError}
-        loading="lazy"
-        decoding="async"
-      />
+      {renderImage()}
 
-      {hasError && (
-        <div
-          className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-slate-800"
-          aria-label={t('common.aria.imageLoadFailed')}
-        >
-          <svg
-            className="w-12 h-12 text-gray-400 dark:text-slate-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
+      <AnimatePresence>
+        {hasError && (
+          <motion.div
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-100 dark:bg-slate-800"
+            aria-label={t('common.aria.imageLoadFailed')}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-        </div>
-      )}
-    </div>
+            <svg
+              className="w-10 h-10 text-gray-400 dark:text-slate-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <span className="text-xs text-gray-400 dark:text-slate-500">
+              {t('common.aria.imageLoadFailed')}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 });
 

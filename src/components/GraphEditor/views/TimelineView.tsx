@@ -35,7 +35,7 @@ interface Transform {
   k: number;
 }
 
-export const TimelineView: React.FC<TimelineViewProps> = ({
+const TimelineViewComponent: React.FC<TimelineViewProps> = ({
   nodes,
   edges,
   nodeStatus,
@@ -585,3 +585,21 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     </div>
   );
 };
+
+const areEqual = (prev: TimelineViewProps, next: TimelineViewProps) => {
+  return (
+    prev.nodes.length === next.nodes.length &&
+    prev.edges.length === next.edges.length &&
+    prev.selectedNodeId === next.selectedNodeId &&
+    prev.colorScheme === next.colorScheme &&
+    prev.linkStyle === next.linkStyle &&
+    prev.linkAnimation === next.linkAnimation &&
+    prev.nodeSizeMode === next.nodeSizeMode &&
+    prev.edgeWidthMode === next.edgeWidthMode &&
+    prev.coloringMode === next.coloringMode &&
+    prev.onNodeClick === next.onNodeClick &&
+    prev.onCanvasClick === next.onCanvasClick
+  );
+};
+
+export const TimelineView = React.memo(TimelineViewComponent, areEqual);

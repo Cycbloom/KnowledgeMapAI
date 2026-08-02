@@ -31,6 +31,9 @@ jobs:
       - name: Type Check (Electron)
         run: npm run check:electron
 
+      - name: i18n Key Consistency
+        run: npm run check:i18n
+
   unit-test:
     name: Unit Tests (with coverage)
     runs-on: ubuntu-latest

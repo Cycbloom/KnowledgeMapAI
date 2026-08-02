@@ -12,7 +12,7 @@ interface QuizProgressBarProps {
   flaggedCount?: number;
 }
 
-export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
+const QuizProgressBarComponent: React.FC<QuizProgressBarProps> = ({
   current,
   total,
   answered,
@@ -119,3 +119,17 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
     </div>
   );
 };
+
+const areEqual = (prev: QuizProgressBarProps, next: QuizProgressBarProps) => {
+  return (
+    prev.current === next.current &&
+    prev.total === next.total &&
+    prev.startTime === next.startTime &&
+    prev.flaggedCount === next.flaggedCount &&
+    prev.onJump === next.onJump &&
+    prev.answered.length === next.answered.length &&
+    prev.answered.every((v, i) => v === next.answered[i])
+  );
+};
+
+export const QuizProgressBar = React.memo(QuizProgressBarComponent, areEqual);

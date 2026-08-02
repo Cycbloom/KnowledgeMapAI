@@ -89,6 +89,7 @@
     "loadFailed": "Failed to load quiz list",
     "retry": "Retry",
     "noQuizzesFound": "No matching quizzes found",
+    "deleted": "(deleted)",
     "createFirstQuiz": "Create First Quiz",
     "deleteConfirm": "Are you sure you want to delete quiz \"{{title}}\"? This action cannot be undone.",
     "pagination": "Showing {{start}} - {{end}} of {{total}}"

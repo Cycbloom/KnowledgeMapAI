@@ -84,6 +84,7 @@
     "statusDraft": "草稿",
     "statusGenerating": "生成中",
     "statusReady": "就绪",
+    "deleted": "(已删除)",
     "newQuiz": "新建测验",
     "loading": "正在加载测验列表...",
     "loadFailed": "加载测验列表失败",

@@ -19,7 +19,7 @@ import { taskReviewApi, TaskReview, Mood } from "../../services/api/review";
 import { api } from "../../services/api";
 import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import type { UserTask } from "@shared/types";
-import { Skeleton } from "../common";
+import { SkeletonList } from "@/components/common/SkeletonList";
 import { useFormDraft } from "../../hooks";
 import { ConfirmationModal } from "../common/ConfirmationModal";
 
@@ -217,19 +217,13 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
             </div>
 
             {loading ? (
-              <div className="p-6 space-y-6">
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    {Array.from({ length: 2 }).map((_, i) => (
-                      <div key={i} className="text-center p-3 bg-white dark:bg-slate-900 rounded-lg">
-                        <Skeleton className="h-8 w-12 mx-auto mb-2" />
-                        <Skeleton className="h-3 w-16 mx-auto" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <Skeleton className="h-32 w-full" />
-              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="p-6"
+              >
+                <SkeletonList items={5} hasAvatar />
+              </motion.div>
             ) : (
               <div className="p-6 space-y-6">
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">

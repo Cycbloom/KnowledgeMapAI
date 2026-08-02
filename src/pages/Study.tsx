@@ -14,7 +14,8 @@ import { useQuizLogic } from "../hooks/quiz/useQuizLogic";
 import { StudyHeader } from "../components/Study/StudyHeader";
 import { CardReviewView } from "../components/Study/CardReviewView";
 import { QuizViewFinished, QuizViewActive } from "../components/Study/QuizView";
-import { ErrorBoundary } from "../components/common/ErrorBoundary";
+import { ErrorBoundary, Skeleton } from "../components/common";
+import { motion } from "framer-motion";
 import { useCelebration } from "@/hooks/common";
 import type { WeakPoint, Prediction } from "../components/Study/WeakPointAnalysis";
 import { themeClasses } from "@/utils/themeClasses";
@@ -196,7 +197,10 @@ export const Study = () => {
 
   if (isLoading)
     {return (
-      <div
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
         className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"} ${isMobile ? "p-3" : "p-8"}`}
       >
         <div
@@ -204,8 +208,8 @@ export const Study = () => {
         >
           {/* Header skeleton */}
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-lg animate-pulse ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
-            <div className={`h-7 w-40 rounded animate-pulse ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+            <Skeleton variant="rectangular" width={32} height={32} />
+            <Skeleton variant="text" width={160} height={28} />
           </div>
 
           {/* Stats cards skeleton */}
@@ -213,13 +217,13 @@ export const Study = () => {
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className={`p-3 rounded-xl border animate-pulse ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
+                className={`p-3 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-8 h-8 rounded-lg ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
-                  <div className={`h-3 w-16 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                  <Skeleton variant="rectangular" width={32} height={32} />
+                  <Skeleton variant="text" width={64} height={12} />
                 </div>
-                <div className={`h-6 w-12 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                <Skeleton variant="text" width={48} height={24} />
               </div>
             ))}
           </div>
@@ -229,19 +233,21 @@ export const Study = () => {
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className={`p-4 rounded-xl border animate-pulse ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
+                className={`p-4 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className={`h-5 w-48 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
-                  <div className={`h-4 w-20 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                  <Skeleton variant="text" width={192} height={20} />
+                  <Skeleton variant="text" width={80} height={16} />
                 </div>
-                <div className={`h-4 w-full rounded mb-2 ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
-                <div className={`h-4 w-2/3 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                <div className="space-y-2">
+                  <Skeleton variant="text" width="100%" height={16} />
+                  <Skeleton variant="text" width="66.67%" height={16} />
+                </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
     );}
 
   // --- Dashboard & Bank & Focus & Quizzes View ---

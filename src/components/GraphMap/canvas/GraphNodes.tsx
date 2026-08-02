@@ -139,4 +139,21 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
   );
 };
 
-export const GraphNodes = memo(GraphNodesComponent);
+const areEqual = (prev: GraphNodesProps, next: GraphNodesProps) => {
+  return (
+    prev.nodes.length === next.nodes.length &&
+    prev.graphs.length === next.graphs.length &&
+    prev.selectedGraphId === next.selectedGraphId &&
+    prev.focusedGraphId === next.focusedGraphId &&
+    prev.neighborGraphIds.size === next.neighborGraphIds.size &&
+    prev.isDark === next.isDark &&
+    prev.zoomLevel === next.zoomLevel &&
+    prev.colorScheme === next.colorScheme &&
+    prev.containerWidth === next.containerWidth &&
+    prev.containerHeight === next.containerHeight &&
+    prev.onGraphClick === next.onGraphClick &&
+    prev.setFocusedGraphId === next.setFocusedGraphId
+  );
+};
+
+export const GraphNodes = memo(GraphNodesComponent, areEqual);

@@ -16,7 +16,7 @@ const variantStyles: Record<SkeletonVariant, string> = {
   rectangular: 'rounded-lg',
 };
 
-export const Skeleton: React.FC<SkeletonProps> = ({
+const SkeletonComponent: React.FC<SkeletonProps> = ({
   variant = 'text',
   width,
   height,
@@ -43,5 +43,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
     />
   );
 };
+
+export const Skeleton = React.memo(SkeletonComponent);
 
 export type { SkeletonProps, SkeletonVariant };

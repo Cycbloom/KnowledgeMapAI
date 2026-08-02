@@ -10,7 +10,7 @@ import { taskReviewApi, TaskReview, Mood } from '../../services/api/review';
 import { api } from '../../services/api';
 import { formatDuration, formatDate } from '../../utils/formatters';
 import type {UserTaskStats} from '@shared/types';
-import { Skeleton } from '../common';
+import { SkeletonList } from '@/components/common/SkeletonList';
 import { useFormDraft } from '../../hooks';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 
@@ -238,17 +238,13 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
             </div>
 
             {loading ? (
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
-                      <Skeleton className="h-8 w-12 mx-auto mb-2" />
-                      <Skeleton className="h-3 w-16 mx-auto" />
-                    </div>
-                  ))}
-                </div>
-                <Skeleton className="h-40 w-full" />
-              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="p-6"
+              >
+                <SkeletonList items={5} hasAvatar />
+              </motion.div>
             ) : (
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

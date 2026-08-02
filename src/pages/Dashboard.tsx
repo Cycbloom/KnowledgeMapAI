@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useId } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -639,7 +640,42 @@ export const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filters.paginatedGraphs.map((graph) => (
+                    {filters.paginatedGraphs.map((graph, index) => (
+                      <motion.tr
+                        key={graph.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.02, duration: 0.2 }}
+                      >
+                        <DashboardGraphListItem
+                          key={graph.id}
+                          graph={graph}
+                          isDark={isDark}
+                          isMobile={isMobile}
+                          isSelectMode={filters.isSelectMode}
+                          isSelected={filters.selectedIds.has(graph.id)}
+                          onToggleSelect={filters.toggleSelect}
+                          onNavigate={handleNavigate}
+                          onDelete={handleDeleteGraph}
+                          onToggleFavorite={handleToggleFavorite}
+                          onPrefetch={prefetchGraph}
+                          onContextMenu={handleContextMenu}
+                          variant="desktop"
+                        />
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {isMobile && (
+                <div className="divide-y divide-gray-100 dark:divide-slate-700">
+                  {filters.paginatedGraphs.map((graph, index) => (
+                    <motion.div
+                      key={graph.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.02, duration: 0.2 }}
+                    >
                       <DashboardGraphListItem
                         key={graph.id}
                         graph={graph}
@@ -653,52 +689,42 @@ export const Dashboard = () => {
                         onToggleFavorite={handleToggleFavorite}
                         onPrefetch={prefetchGraph}
                         onContextMenu={handleContextMenu}
-                        variant="desktop"
+                        variant="mobile"
                       />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {isMobile && (
-                <div className="divide-y divide-gray-100 dark:divide-slate-700">
-                  {filters.paginatedGraphs.map((graph) => (
-                    <DashboardGraphListItem
-                      key={graph.id}
-                      graph={graph}
-                      isDark={isDark}
-                      isMobile={isMobile}
-                      isSelectMode={filters.isSelectMode}
-                      isSelected={filters.selectedIds.has(graph.id)}
-                      onToggleSelect={filters.toggleSelect}
-                      onNavigate={handleNavigate}
-                      onDelete={handleDeleteGraph}
-                      onToggleFavorite={handleToggleFavorite}
-                      onPrefetch={prefetchGraph}
-                      onContextMenu={handleContextMenu}
-                      variant="mobile"
-                    />
+                    </motion.div>
                   ))}
                 </div>
               )}
             </div>
           ) : (
-            filters.paginatedGraphs.map((graph, index) => (
-              <DashboardGraphCard
-                key={graph.id || index}
-                graph={graph}
-                isDark={isDark}
-                isMobile={isMobile}
-                isSelectMode={filters.isSelectMode}
-                isSelected={filters.selectedIds.has(graph.id)}
-                isMenuOpen={contextMenuGraph?.id === graph.id}
-                onToggleSelect={filters.toggleSelect}
-                onNavigate={handleNavigate}
-                onDelete={handleDeleteGraph}
-                onToggleFavorite={handleToggleFavorite}
-                onPrefetch={prefetchGraph}
-                onContextMenu={handleContextMenu}
-              />
-            ))
+            <AnimatePresence mode="popLayout">
+              {filters.paginatedGraphs.map((graph, index) => (
+                <motion.div
+                  key={graph.id || index}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+                  transition={{ delay: index * 0.03, duration: 0.3 }}
+                >
+                  <DashboardGraphCard
+                    key={graph.id || index}
+                    graph={graph}
+                    isDark={isDark}
+                    isMobile={isMobile}
+                    isSelectMode={filters.isSelectMode}
+                    isSelected={filters.selectedIds.has(graph.id)}
+                    isMenuOpen={contextMenuGraph?.id === graph.id}
+                    onToggleSelect={filters.toggleSelect}
+                    onNavigate={handleNavigate}
+                    onDelete={handleDeleteGraph}
+                    onToggleFavorite={handleToggleFavorite}
+                    onPrefetch={prefetchGraph}
+                    onContextMenu={handleContextMenu}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           )}
         </div>
 

@@ -6,6 +6,7 @@ import {
   useCallback,
   memo,
 } from "react";
+import { motion } from "framer-motion";
 import { debounce } from "@/utils/performanceUtils";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -1150,13 +1151,19 @@ export const NotesListPage = () => {
               >
                 <VirtualList
                   items={sortedFilteredNotes}
-                  itemHeight={140}
-                  containerHeight={listContainerHeight}
+                  estimateSize={() => 140}
+                  style={{ height: listContainerHeight }}
                   role="list"
                   className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-500"
-                  renderItem={(note) => (
-                    <div
+                  renderItem={(note, index) => (
+                    <motion.div
+                      key={note.id}
                       role="listitem"
+                      layout
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+                      transition={{ delay: (index % 20) * 0.02, duration: 0.25 }}
                       className="border-b border-gray-100 dark:border-slate-500"
                     >
                       <NoteCard
@@ -1170,7 +1177,7 @@ export const NotesListPage = () => {
                         isSelected={selectedIds.has(note.id)}
                         onToggleSelect={toggleSelect}
                       />
-                    </div>
+                    </motion.div>
                   )}
                 />
               </ErrorBoundary>

@@ -1,11 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 import { FileText, Quote } from "lucide-react";
 import {
   useInboundBlockRefs,
   useBlockContent,
 } from "../../hooks/queries";
+import { SkeletonList } from "../common/SkeletonList";
 import { Skeleton } from "../common/Skeleton";
 import { EmptyState } from "../common/EmptyState";
 import type { BlockRef, BlockId } from "@shared/types/note";
@@ -132,10 +134,13 @@ export const InboundBlockRefsPanel: React.FC<InboundBlockRefsPanelProps> = ({
   // 加载态
   if (isLoading) {
     return (
-      <div className="space-y-2">
-        <Skeleton variant="rectangular" height={64} className="rounded-lg" />
-        <Skeleton variant="rectangular" height={64} className="rounded-lg" />
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <SkeletonList items={2} />
+      </motion.div>
     );
   }
 

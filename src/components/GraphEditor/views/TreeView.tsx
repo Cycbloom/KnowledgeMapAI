@@ -40,7 +40,7 @@ interface Transform {
   k: number;
 }
 
-export const TreeView: React.FC<TreeViewProps> = ({
+const TreeViewComponent: React.FC<TreeViewProps> = ({
   nodes,
   edges,
   nodeStatus,
@@ -337,3 +337,22 @@ export const TreeView: React.FC<TreeViewProps> = ({
     </div>
   );
 };
+
+const areEqual = (prev: TreeViewProps, next: TreeViewProps) => {
+  return (
+    prev.nodes.length === next.nodes.length &&
+    prev.edges.length === next.edges.length &&
+    prev.selectedNodeId === next.selectedNodeId &&
+    prev.colorScheme === next.colorScheme &&
+    prev.linkStyle === next.linkStyle &&
+    prev.linkAnimation === next.linkAnimation &&
+    prev.nodeSizeMode === next.nodeSizeMode &&
+    prev.edgeWidthMode === next.edgeWidthMode &&
+    prev.coloringMode === next.coloringMode &&
+    prev.isExplorationMode === next.isExplorationMode &&
+    prev.onNodeClick === next.onNodeClick &&
+    prev.onCanvasClick === next.onCanvasClick
+  );
+};
+
+export const TreeView = React.memo(TreeViewComponent, areEqual);

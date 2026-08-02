@@ -44,7 +44,7 @@ import { message } from "../utils/messageHelper";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { UserTask, CreateUserTaskData, QueueData, TaskSubtask } from "@shared/types";
 import { api } from "../services/api";
-import { SkeletonCard, ErrorBoundary, ErrorState } from "../components/common";
+import { SkeletonCard, ErrorBoundary, ErrorState, LazyLoadFallback } from "../components/common";
 import { ShortcutHint } from "../components/common/ShortcutHint";
 
 const HorizontalQueueView = lazy(() =>
@@ -93,16 +93,6 @@ const SmartRecommendationBar = lazy(() =>
   import("../components/Scheduler/SmartRecommendationBar").then((module) => ({
     default: module.SmartRecommendationBar,
   })),
-);
-
-const LoadingFallback = () => (
-  <div className="max-w-7xl mx-auto p-6">
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <SkeletonCard key={i} />
-      ))}
-    </div>
-  </div>
 );
 
 const SectionErrorFallback = (error: Error, resetErrorBoundary: () => void) => (
@@ -682,7 +672,7 @@ export const Scheduler: React.FC = () => {
             <div className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-6">
               {!activeTask && (
                 <div className="flex-shrink-0">
-                  <Suspense fallback={<LoadingFallback />}>
+                  <Suspense fallback={<LazyLoadFallback variant="card" count={6} />}>
                     <SmartRecommendationBar
                       onStartTask={(taskId) => {
                         const task = findTaskById(taskId);
@@ -703,7 +693,7 @@ export const Scheduler: React.FC = () => {
 
               {activeTask && (
                 <div className="flex-shrink-0">
-                  <Suspense fallback={<LoadingFallback />}>
+                  <Suspense fallback={<LazyLoadFallback variant="card" count={6} />}>
                     <ActiveTaskPanel
                       task={activeTask}
                       timeSlice={activeTaskTimeSlice}
@@ -726,7 +716,7 @@ export const Scheduler: React.FC = () => {
                 }
                 tabIndex={currentView === "queue" ? 0 : undefined}
               >
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<LazyLoadFallback variant="card" count={6} />}>
                   <HorizontalQueueView
                     queues={queues}
                     timeSlices={timeSlices}
@@ -753,7 +743,7 @@ export const Scheduler: React.FC = () => {
                           tabIndex={0}
                           className="h-full"
                         >
-                          <Suspense fallback={<LoadingFallback />}>
+                          <Suspense fallback={<LazyLoadFallback variant="card" count={6} />}>
                             <ErrorBoundary
                               fallbackRender={SectionErrorFallback}
                             >
@@ -773,7 +763,7 @@ export const Scheduler: React.FC = () => {
                           tabIndex={0}
                           className="h-full"
                         >
-                          <Suspense fallback={<LoadingFallback />}>
+                          <Suspense fallback={<LazyLoadFallback variant="card" count={6} />}>
                             <ErrorBoundary
                               fallbackRender={SectionErrorFallback}
                             >
@@ -793,7 +783,7 @@ export const Scheduler: React.FC = () => {
                           tabIndex={0}
                           className="h-full"
                         >
-                          <Suspense fallback={<LoadingFallback />}>
+                          <Suspense fallback={<LazyLoadFallback variant="card" count={6} />}>
                             <ErrorBoundary
                               fallbackRender={SectionErrorFallback}
                             >
@@ -871,7 +861,7 @@ export const Scheduler: React.FC = () => {
                   </button>
                 </div>
                 <div className="p-4 sm:p-6">
-                  <Suspense fallback={<LoadingFallback />}>
+                  <Suspense fallback={<LazyLoadFallback variant="card" count={6} />}>
                     <TimeSlotSettings onClose={() => setShowSettings(false)} />
                   </Suspense>
                 </div>
@@ -946,7 +936,7 @@ export const Scheduler: React.FC = () => {
 
       <AnimatePresence>
         {showTaskForm && (
-          <Suspense fallback={<LoadingFallback />}>
+          <Suspense fallback={<LazyLoadFallback variant="card" count={6} />}>
             <TaskForm
               task={editingTask || undefined}
               onSubmit={editingTask ? handleUpdateTask : handleCreateTask}

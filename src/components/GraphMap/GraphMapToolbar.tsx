@@ -47,7 +47,7 @@ interface GraphMapToolbarProps {
   onManageDomains?: () => void;
 }
 
-export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
+const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
   onBack,
   onRefresh,
   onCreateRelation,
@@ -636,3 +636,32 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
     </div>
   );
 };
+
+const areEqual = (prev: GraphMapToolbarProps, next: GraphMapToolbarProps) => {
+  return (
+    prev.filterMode === next.filterMode &&
+    prev.graphCount === next.graphCount &&
+    prev.relationCount === next.relationCount &&
+    prev.isLoading === next.isLoading &&
+    prev.analysisMode === next.analysisMode &&
+    prev.fromGraphId === next.fromGraphId &&
+    prev.fromGraphTitle === next.fromGraphTitle &&
+    prev.onBack === next.onBack &&
+    prev.onRefresh === next.onRefresh &&
+    prev.onCreateRelation === next.onCreateRelation &&
+    prev.onCreateGraph === next.onCreateGraph &&
+    prev.onIntelligentAnalyze === next.onIntelligentAnalyze &&
+    prev.onAgentAnalysis === next.onAgentAnalysis &&
+    prev.onCustomAnalysis === next.onCustomAnalysis &&
+    prev.onDomainGenerate === next.onDomainGenerate &&
+    prev.onFilterChange === next.onFilterChange &&
+    prev.onReturnToGraph === next.onReturnToGraph &&
+    prev.onAnalysisModeChange === next.onAnalysisModeChange &&
+    prev.onManageDomains === next.onManageDomains &&
+    prev.domains === next.domains &&
+    prev.selectedDomainIds === next.selectedDomainIds &&
+    prev.onDomainSelectionChange === next.onDomainSelectionChange
+  );
+};
+
+export const GraphMapToolbar = React.memo(GraphMapToolbarComponent, areEqual);

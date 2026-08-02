@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../../services/api';
 import { formatDuration } from '../../utils/formatters';
 import { EmptyState } from '../common/EmptyState';
-import { Skeleton } from '../common';
+import { SkeletonList } from '@/components/common/SkeletonList';
 import type {TaskExecution} from '@shared/types';
 
 interface TimeAnalysisProps {
@@ -117,7 +117,12 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
       </div>
 
       {loading ? (
-        <Skeleton className="h-48 w-full" />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <SkeletonList items={3} />
+        </motion.div>
       ) : executions.length === 0 ? (
         <EmptyState icon={<BarChart3 size={32} />} title={t('scheduler.empty.timeAnalysis')} />
       ) : (

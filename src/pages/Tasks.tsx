@@ -545,10 +545,10 @@ export const Tasks = () => {
             <>
               <VirtualList
                 items={filteredTasks}
-                itemHeight={220}
-                containerHeight={listContainerHeight}
+                estimateSize={() => 220}
+                style={{ height: listContainerHeight }}
                 onEndReached={handleEndReached}
-                endReachedThreshold={3}
+                endReachedThreshold={660}
                 className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-500"
                 renderItem={(task) => {
                   const context = (() => {

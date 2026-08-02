@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useId } from 'react';
-import { X, RotateCcw, Search, Keyboard } from 'lucide-react';
+import { X, RotateCcw, Search, Keyboard, MousePointer2, Sparkles, Command } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import { useShortcutStore } from '../../store/useShortcutStore';
@@ -143,6 +143,62 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
               isDark ? 'placeholder-slate-500' : 'placeholder-gray-400'
             )}
           />
+        </div>
+      </div>
+
+      {/* 鼠标控制区域 */}
+      <div className={cn('px-6 py-4 border-b', isDark ? 'border-slate-700' : 'border-gray-200')}>
+        <div className="flex items-center gap-2 text-primary-600 mb-3">
+          <MousePointer2 size={18} />
+          <h3 className="font-bold text-base">{t('helpGuide.mouseControls.title')}</h3>
+        </div>
+        <div className={cn('rounded-xl p-4 space-y-3', isDark ? 'bg-primary-900/20 border border-primary-800' : 'bg-primary-50/50 border border-primary-100')}>
+          <div className="flex justify-between items-center">
+            <span className={cn('font-medium', isDark ? 'text-gray-300' : 'text-gray-700')}>{t('helpGuide.mouseControls.rotateView')}</span>
+            <span className={cn('text-sm px-2 py-1 rounded border shadow-sm', isDark ? 'bg-slate-700 border-primary-700 text-gray-300' : 'bg-white border-primary-200 text-gray-600')}>{t('helpGuide.mouseControls.rotateViewShortcut')}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className={cn('font-medium', isDark ? 'text-gray-300' : 'text-gray-700')}>{t('helpGuide.mouseControls.panCanvas')}</span>
+            <span className={cn('text-sm px-2 py-1 rounded border shadow-sm', isDark ? 'bg-slate-700 border-primary-700 text-gray-300' : 'bg-white border-primary-200 text-gray-600')}>{t('helpGuide.mouseControls.panCanvasShortcut')}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className={cn('font-medium', isDark ? 'text-gray-300' : 'text-gray-700')}>{t('helpGuide.mouseControls.zoomView')}</span>
+            <span className={cn('text-sm px-2 py-1 rounded border shadow-sm', isDark ? 'bg-slate-700 border-primary-700 text-gray-300' : 'bg-white border-primary-200 text-gray-600')}>{t('helpGuide.mouseControls.zoomViewShortcut')}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className={cn('font-medium', isDark ? 'text-gray-300' : 'text-gray-700')}>{t('helpGuide.mouseControls.selectNode')}</span>
+            <span className={cn('text-sm px-2 py-1 rounded border shadow-sm', isDark ? 'bg-slate-700 border-primary-700 text-gray-300' : 'bg-white border-primary-200 text-gray-600')}>{t('helpGuide.mouseControls.selectNodeShortcut')}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className={cn('font-medium', isDark ? 'text-gray-300' : 'text-gray-700')}>{t('helpGuide.mouseControls.boxSelect')}</span>
+            <span className={cn('text-sm px-2 py-1 rounded border shadow-sm', isDark ? 'bg-slate-700 border-primary-700 text-gray-300' : 'bg-white border-primary-200 text-gray-600')}>{t('helpGuide.mouseControls.boxSelectShortcut')}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* AI 功能说明区域 */}
+      <div className={cn('px-6 py-4 border-b', isDark ? 'border-slate-700' : 'border-gray-200')}>
+        <div className="flex items-center gap-2 text-primary-600 mb-3">
+          <Sparkles size={18} />
+          <h3 className="font-bold text-base">{t('helpGuide.aiFeatures.title')}</h3>
+        </div>
+        <div className="space-y-3">
+          <div className={cn('p-4 rounded-xl border', isDark ? 'bg-primary-900/20 border-primary-800' : 'bg-primary-50/50 border-primary-100')}>
+            <h4 className={cn('font-bold mb-2 flex items-center gap-2', isDark ? 'text-primary-300' : 'text-primary-800')}>
+              <Command size={16} /> {t('helpGuide.aiFeatures.smartExpand.title')}
+            </h4>
+            <p className={cn('text-sm leading-relaxed', isDark ? 'text-gray-400' : 'text-gray-600')}>
+              {t('helpGuide.aiFeatures.smartExpand.description')}
+            </p>
+          </div>
+          <div className={cn('p-4 rounded-xl border', isDark ? 'bg-primary-900/20 border-primary-800' : 'bg-primary-50/50 border-primary-100')}>
+            <h4 className={cn('font-bold mb-2 flex items-center gap-2', isDark ? 'text-primary-300' : 'text-primary-800')}>
+              <Command size={16} /> {t('helpGuide.aiFeatures.autoQuestion.title')}
+            </h4>
+            <p className={cn('text-sm leading-relaxed', isDark ? 'text-gray-400' : 'text-gray-600')}>
+              {t('helpGuide.aiFeatures.autoQuestion.description')}
+            </p>
+          </div>
         </div>
       </div>
 

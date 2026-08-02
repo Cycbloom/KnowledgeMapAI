@@ -15,7 +15,7 @@ interface MiniMapProps {
   viewCenterY?: number;
 }
 
-export const MiniMap: React.FC<MiniMapProps> = ({
+const MiniMapComponent: React.FC<MiniMapProps> = ({
   nodes,
   transform,
   containerWidth,
@@ -224,3 +224,22 @@ export const MiniMap: React.FC<MiniMapProps> = ({
     </div>
   );
 };
+
+const areEqual = (prev: MiniMapProps, next: MiniMapProps) => {
+  return (
+    prev.nodes.length === next.nodes.length &&
+    prev.transform.x === next.transform.x &&
+    prev.transform.y === next.transform.y &&
+    prev.transform.k === next.transform.k &&
+    prev.containerWidth === next.containerWidth &&
+    prev.containerHeight === next.containerHeight &&
+    prev.width === next.width &&
+    prev.height === next.height &&
+    prev.className === next.className &&
+    prev.viewCenterX === next.viewCenterX &&
+    prev.viewCenterY === next.viewCenterY &&
+    prev.onTransformChange === next.onTransformChange
+  );
+};
+
+export const MiniMap = React.memo(MiniMapComponent, areEqual);

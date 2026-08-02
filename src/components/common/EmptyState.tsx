@@ -54,7 +54,7 @@ const variantContainerClasses: Record<EmptyStateVariant, string> = {
   inline: 'min-h-[80px] py-4',
 };
 
-export function EmptyState({
+const EmptyStateComponent: React.FC<EmptyStateProps> = ({
   icon,
   title,
   description,
@@ -65,7 +65,7 @@ export function EmptyState({
   iconWrapper = false,
   secondaryAction,
   variant = 'page',
-}: EmptyStateProps) {
+}) => {
   const { Component, colorClass } = illustrationConfig[illustration];
   const displayIcon = icon ?? (
     <Component className={cn(sizeIconClasses[size], colorClass)} />
@@ -125,4 +125,6 @@ export function EmptyState({
       )}
     </div>
   );
-}
+};
+
+export const EmptyState = React.memo(EmptyStateComponent);

@@ -21,7 +21,7 @@ import {
   ChevronRight,
   Calendar,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface Stats {
   total: number;
@@ -599,11 +599,16 @@ export const CardReviewView = ({
           </div>
         </div>
 
-        <div
+        <motion.div
           className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"} gap-3 md:gap-4`}
         >
+          <AnimatePresence mode="popLayout">
           {paginatedCards.length === 0 ? (
-            <div
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className={`col-span-full py-12 text-center rounded-3xl border-2 border-dashed ${
                 isDark
                   ? "border-slate-800 text-slate-500"
@@ -644,10 +649,18 @@ export const CardReviewView = ({
                   </button>
                 )}
               </div>
-            </div>
+            </motion.div>
           ) : (
-            paginatedCards.map((card) => (
-              <div key={card.id} className="h-full">
+            paginatedCards.map((card, index) => (
+              <motion.div
+                key={card.id}
+                layout
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50, transition: { duration: 0.15 } }}
+                transition={{ delay: index * 0.03, duration: 0.25 }}
+                className="h-full"
+              >
                 <StudyCardPreview
                   card={card}
                   isDark={isDark}
@@ -655,10 +668,11 @@ export const CardReviewView = ({
                   onPractice={onPracticeCard}
                   showStatus={true}
                 />
-              </div>
+              </motion.div>
             ))
           )}
-        </div>
+          </AnimatePresence>
+        </motion.div>
 
         {/* Pagination Controls */}
         {totalPages > 1 && (

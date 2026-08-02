@@ -48,7 +48,7 @@ const variantContainerClasses: Record<ErrorStateVariant, string> = {
   inline: 'flex flex-row items-center gap-2',
 };
 
-export function ErrorState({
+const ErrorStateComponent: React.FC<ErrorStateProps> = ({
   title,
   message,
   onRetry,
@@ -57,7 +57,7 @@ export function ErrorState({
   variant = 'page',
   size = 'md',
   className,
-}: ErrorStateProps) {
+}: ErrorStateProps) => {
   const { t } = useTranslation();
   const Icon = iconConfig[icon];
   const displayTitle = title ?? t('form.error.title');
@@ -114,4 +114,6 @@ export function ErrorState({
       )}
     </div>
   );
-}
+};
+
+export const ErrorState = React.memo(ErrorStateComponent);

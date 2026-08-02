@@ -11,7 +11,9 @@ import { queryClient } from '../main';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { formatDate } from '@/utils/formatters';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Skeleton } from '@/components/common/Skeleton';
 import { message } from '@/utils/messageHelper';
+import { motion } from 'framer-motion';
 
 export const Profile = () => {
   const { t } = useTranslation();
@@ -221,7 +223,15 @@ export const Profile = () => {
           </div>
 
           {isLoading ? (
-            <div className="text-gray-600 dark:text-gray-400">{t('profile.accountInfo.loading')}</div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              <Skeleton variant="rectangular" height={80} className="rounded-lg" />
+              <Skeleton variant="rectangular" height={80} className="rounded-lg" />
+            </motion.div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-500">

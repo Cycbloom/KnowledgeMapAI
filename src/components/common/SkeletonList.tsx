@@ -8,7 +8,7 @@ interface SkeletonListProps {
   className?: string;
 }
 
-export const SkeletonList: React.FC<SkeletonListProps> = ({
+const SkeletonListComponent: React.FC<SkeletonListProps> = ({
   items = 6,
   hasAvatar = false,
   className,
@@ -29,5 +29,7 @@ export const SkeletonList: React.FC<SkeletonListProps> = ({
     </div>
   );
 };
+
+export const SkeletonList = React.memo(SkeletonListComponent);
 
 export type { SkeletonListProps };

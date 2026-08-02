@@ -242,7 +242,7 @@ export const QuizList: React.FC<QuizListProps> = ({
                 <option value="all">{t('study.quizList.allGraphs')}</option>
                 {graphOptions.map((id) => (
                   <option key={id} value={id}>
-                    {graphNameMap.get(id) ?? `${id} (已删除)`}
+                    {graphNameMap.get(id) ?? t('study.quizList.deleted')}
                   </option>
                 ))}
               </select>

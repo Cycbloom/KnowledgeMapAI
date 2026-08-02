@@ -80,7 +80,7 @@ import {
   CommandPalette,
   CommandItem,
 } from "../components/GraphEditor/shared/CommandPalette";
-import { ErrorBoundary, ShortcutHelpPanel, Skeleton } from "../components/common";
+import { ErrorBoundary, Skeleton } from "../components/common";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCommandPalette } from "./GraphEditor/useCommandPalette";
 import { useLearningPathHandlers } from "./GraphEditor/hooks/useLearningPathHandlers";
@@ -1696,11 +1696,6 @@ export const GraphEditor = () => {
         commands={commands}
         nodes={nodes}
         onNodeSelect={handleCommandPaletteNodeSelect}
-      />
-
-      <ShortcutHelpPanel
-        isOpen={panelState.isShortcutHelpOpen}
-        onClose={() => panelState.setIsShortcutHelpOpen(false)}
       />
 
       <Suspense fallback={<ViewLoader />}>

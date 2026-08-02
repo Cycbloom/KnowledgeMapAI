@@ -35,7 +35,7 @@ const statusConfig: Record<string, { color: string; bgColor: string; darkBg: str
   },
 };
 
-export const QuizCard: React.FC<QuizCardProps> = ({
+const QuizCardComponent: React.FC<QuizCardProps> = ({
   quiz,
   isDark,
   onStartPractice,
@@ -178,3 +178,16 @@ export const QuizCard: React.FC<QuizCardProps> = ({
     </motion.div>
   );
 };
+
+const areEqual = (prev: QuizCardProps, next: QuizCardProps) => {
+  return (
+    prev.quiz.id === next.quiz.id &&
+    prev.quiz.status === next.quiz.status &&
+    prev.quiz.card_count === next.quiz.card_count &&
+    prev.quiz.updated_at === next.quiz.updated_at &&
+    prev.isDark === next.isDark &&
+    prev.onClick === next.onClick
+  );
+};
+
+export const QuizCard = React.memo(QuizCardComponent, areEqual);

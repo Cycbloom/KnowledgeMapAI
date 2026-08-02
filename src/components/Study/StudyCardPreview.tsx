@@ -19,7 +19,7 @@ interface StudyCardPreviewProps {
   compact?: boolean; // For denser lists if needed
 }
 
-export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
+const StudyCardPreviewComponent: React.FC<StudyCardPreviewProps> = ({
   card,
   isDark,
   onPreview,
@@ -166,3 +166,17 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
     </motion.div>
   );
 };
+
+const areEqual = (prev: StudyCardPreviewProps, next: StudyCardPreviewProps) => {
+  return (
+    prev.card.id === next.card.id &&
+    prev.card.review_count === next.card.review_count &&
+    prev.card.next_review === next.card.next_review &&
+    prev.isDark === next.isDark &&
+    prev.selected === next.selected &&
+    prev.selectionMode === next.selectionMode &&
+    prev.showStatus === next.showStatus
+  );
+};
+
+export const StudyCardPreview = React.memo(StudyCardPreviewComponent, areEqual);

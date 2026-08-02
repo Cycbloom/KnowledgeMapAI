@@ -1,8 +1,9 @@
-import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
-import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, Skeleton, CelebrationOverlay } from "./components/common";
+import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, LazyLoadFallback, CelebrationOverlay } from "./components/common";
+import { PageLoadingProvider, usePageLoading } from "./hooks/common/usePageLoading";
 import { GlobalErrorBoundary } from "./components/common/GlobalErrorBoundary";
 import { RenderProfiler } from "./components/dev/RenderProfiler";
 import { QueryErrorResetBoundary } from "@tanstack/react-query";
@@ -28,17 +29,6 @@ const frontendKernel = initializeFrontendPlugins();
 frontendKernel.activateAll().catch((err: unknown) => {
   console.error("[Kernel] Failed to activate frontend plugins:", err);
 });
-
-const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-screen bg-gray-50">
-    <div className="w-full max-w-md p-6 space-y-4">
-      <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-5/6" />
-      <Skeleton className="h-4 w-2/3" />
-    </div>
-  </div>
-);
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { token } = useStore();
@@ -110,6 +100,16 @@ function App() {
   const { t } = useTranslation();
   const { online } = useNetworkStatus();
   const location = useLocation();
+  const { startLoading } = usePageLoading();
+  const prevPathnameRef = useRef(location.pathname);
+
+  // 检测路由切换，同步触发页面加载进度条
+  useLayoutEffect(() => {
+    if (location.pathname !== prevPathnameRef.current) {
+      prevPathnameRef.current = location.pathname;
+      startLoading();
+    }
+  }, [location.pathname, startLoading]);
 
   useEffect(() => {
     if (!online) {
@@ -240,7 +240,7 @@ function App() {
   // 会话恢复期间渲染 Loading 占位，不渲染受保护路由树，避免子组件
   // 在 token 写入 Zustand 前发出 API 请求（E2E 401 竞态根因）。
   if (isRestoringSession) {
-    return <LoadingFallback />;
+    return <LazyLoadFallback />;
   }
 
   const routesElement = (
@@ -303,46 +303,48 @@ function App() {
   );
 
   return (
-    <QueryErrorResetBoundary>
-      {({ reset }) => (
-        <GlobalErrorBoundary onReset={reset}>
-          <LoadingBar />
-          <ScrollToTop />
-          {/* Web 端 PWA 组件：Electron 不依赖 SW/IndexedDB，不渲染 */}
-          {!isElectron && (
-            <>
-              <OfflineBanner />
-              <SyncStatusBadge />
-              <ConflictResolutionDialog />
-              <UpdatePrompt />
-            </>
-          )}
-          <Suspense fallback={<LoadingFallback />}>
-            {isPublicRoute && (
-              <a
-                href="#public-main"
-                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-skip-link focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
-              >
-                {t('common.skipToContent')}
-              </a>
+    <PageLoadingProvider>
+      <QueryErrorResetBoundary>
+        {({ reset }) => (
+          <GlobalErrorBoundary onReset={reset}>
+            <LoadingBar />
+            <ScrollToTop />
+            {/* Web 端 PWA 组件：Electron 不依赖 SW/IndexedDB，不渲染 */}
+            {!isElectron && (
+              <>
+                <OfflineBanner />
+                <SyncStatusBadge />
+                <ConflictResolutionDialog />
+                <UpdatePrompt />
+              </>
             )}
-            {isPublicRoute ? (
-              <main
-                id="public-main"
-                tabIndex={-1}
-                ref={publicMainRef}
-                className="outline-none"
-              >
-                {routesElement}
-              </main>
-            ) : (
-              routesElement
-            )}
-          </Suspense>
-          <CelebrationOverlay />
-        </GlobalErrorBoundary>
-      )}
-    </QueryErrorResetBoundary>
+            <Suspense fallback={<LazyLoadFallback />}>
+              {isPublicRoute && (
+                <a
+                  href="#public-main"
+                  className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-skip-link focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
+                >
+                  {t('common.skipToContent')}
+                </a>
+              )}
+              {isPublicRoute ? (
+                <main
+                  id="public-main"
+                  tabIndex={-1}
+                  ref={publicMainRef}
+                  className="outline-none"
+                >
+                  {routesElement}
+                </main>
+              ) : (
+                routesElement
+              )}
+            </Suspense>
+            <CelebrationOverlay />
+          </GlobalErrorBoundary>
+        )}
+      </QueryErrorResetBoundary>
+    </PageLoadingProvider>
   );
 }
 

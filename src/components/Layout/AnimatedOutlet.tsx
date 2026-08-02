@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { useReducedMotionOrPreference } from "../../hooks/common/useReducedMotionOrPreference";
+import { PageLoadedMarker } from "../../hooks/common/usePageLoading";
 
 const mobileVariants = {
   initial: {
@@ -46,6 +47,7 @@ export const AnimatedOutlet: React.FC = () => {
       transition={transitionOverride}
       className="h-full gpu-accelerated"
     >
+      <PageLoadedMarker />
       <Outlet />
     </motion.div>
   );

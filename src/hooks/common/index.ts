@@ -35,3 +35,8 @@ export { useBlockSSE } from './useBlockSSE';
 export { usePwaInstall } from './usePwaInstall';
 export type { BeforeInstallPromptEvent, UsePwaInstallResult } from './usePwaInstall';
 export { useWhiteNoise } from './useWhiteNoise';
+export { PageLoadingProvider, PageLoadedMarker, usePageLoading } from './usePageLoading';
+export { useRenderCount } from './useRenderCount';
+export type { UseRenderCountResult } from './useRenderCount';
+export { useWebVitals } from './useWebVitals';
+export type { WebVitalMetric, UseWebVitalsResult } from './useWebVitals';

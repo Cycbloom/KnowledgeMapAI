@@ -25,7 +25,7 @@ import {
   OfflineIndicator,
   FocusTimer,
   MobileFocusTimer,
-  HelpModal,
+  ShortcutHelpPanel,
   SSEStatusIndicator,
   SyncStatusIndicator,
   GlobalCommandPalette,
@@ -578,7 +578,7 @@ export const Layout = () => {
           <MessageBar bottomOffset={isMobile && !isFullScreenPage ? 56 : 0} />
           <OfflineIndicator />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
-          <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+          <ShortcutHelpPanel isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
           {!isFullScreenPage && (
             <GlobalCommandPalette
               isOpen={isCommandPaletteOpen}

@@ -29,7 +29,7 @@ export const ShortcutSettings = React.memo(function ShortcutSettings() {
           </h2>
         </div>
 
-        <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
           <div>
             <span className="text-sm text-gray-700 dark:text-gray-300">
               {t("shortcuts.hintEnabled")}
@@ -62,7 +62,7 @@ export const ShortcutSettings = React.memo(function ShortcutSettings() {
               }`}
             />
           </div>
-        </label>
+        </div>
       </div>
 
       <ShortcutListContent className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 overflow-hidden max-h-[70vh]" />

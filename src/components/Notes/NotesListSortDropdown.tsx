@@ -139,6 +139,7 @@ export const NotesListSortDropdown: React.FC<Props> = ({
           }`}
           role="menu"
           aria-activedescendant={activeItemId}
+          tabIndex={-1}
         >
           {SORT_OPTIONS.map((opt, index) => {
             const selected = opt.value === value;
@@ -164,7 +165,7 @@ export const NotesListSortDropdown: React.FC<Props> = ({
                       : "text-gray-700 hover:bg-gray-50"
                 } ${isKeyboardActive ? "ring-2 ring-inset ring-primary-500" : ""}`}
                 role="menuitem"
-                aria-pressed={selected}
+                aria-current={selected ? "true" : undefined}
               >
                 <span>{t(opt.labelKey)}</span>
                 {selected && <Check size={14} aria-hidden="true" />}

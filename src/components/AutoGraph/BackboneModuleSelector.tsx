@@ -168,6 +168,7 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
 
             <button
               onClick={handleCancel}
+              aria-label={t('common.aria.close')}
               className={`
                 p-2 rounded-lg transition-colors
                 ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-100"}

@@ -217,7 +217,7 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
                 aria-label={t('common.aria.close')}
                 className="ml-2 hover:text-white/80 transition-colors flex-shrink-0"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             )}
           </motion.div>

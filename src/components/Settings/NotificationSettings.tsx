@@ -149,7 +149,7 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
           const Icon = meta.icon;
           const muted = isMuted(type);
           return (
-            <label
+            <div
               key={type}
               className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
             >
@@ -193,7 +193,7 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
                   />
                 </div>
               </div>
-            </label>
+            </div>
           );
         })}
       </div>

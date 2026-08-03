@@ -247,6 +247,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
               disabled={node.isLoading || isExpanding}
               className={`${isMobile ? "p-1" : "p-1.5"} bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50 transition-colors`}
               title={t("autoGraph.aiExpandNode")}
+              aria-label={t("autoGraph.aiExpandNode")}
             >
               {node.isLoading || isExpanding ? (
                 <Loader2 size={isMobile ? 12 : 14} className="animate-spin" />

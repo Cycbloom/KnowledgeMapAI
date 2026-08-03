@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useId } from "react";
+import React, { useState, useMemo, useEffect, useId, lazy, Suspense } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -18,8 +18,12 @@ import { message } from "../utils/messageHelper";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
 import { formatDate } from "@/utils/formatters";
-import { ConfirmationModal, SkeletonCard, ErrorBoundary, EmptyState } from "../components/common";
-import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
+import { ConfirmationModal, SkeletonCard, Skeleton, ErrorBoundary, EmptyState } from "../components/common";
+const AutoGraphGenerator = lazy(() =>
+  import("../components/AutoGraph/AutoGraphGenerator").then((module) => ({
+    default: module.AutoGraphGenerator,
+  })),
+);
 import { useTheme, useIsMobile } from "../hooks";
 import { useFocusTrap, useEscapeKey, useFirstRunHint } from "@/hooks/common";
 import { useUndoableAction } from "@/hooks/common/useUndoableAction";
@@ -480,17 +484,19 @@ export const Dashboard = () => {
                   </div>
                 )}
               >
-                <AutoGraphGenerator
-                  onClose={() => setIsAIGeneratorOpen(false)}
-                  onGraphGenerated={(nodes, _edges) => {
-                    setIsAIGeneratorOpen(false);
-                    queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-                    queryClient.invalidateQueries({
-                      queryKey: queryKeys.dashboardStats,
-                    });
-                    message.success(t("toast.dashboard.nodesGenerated", { count: nodes.length }));
-                  }}
-                />
+                <Suspense fallback={<Skeleton variant="text" className="h-64 w-full" />}>
+                  <AutoGraphGenerator
+                    onClose={() => setIsAIGeneratorOpen(false)}
+                    onGraphGenerated={(nodes, _edges) => {
+                      setIsAIGeneratorOpen(false);
+                      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+                      queryClient.invalidateQueries({
+                        queryKey: queryKeys.dashboardStats,
+                      });
+                      message.success(t("toast.dashboard.nodesGenerated", { count: nodes.length }));
+                    }}
+                  />
+                </Suspense>
               </ErrorBoundary>
             </div>
           </div>,

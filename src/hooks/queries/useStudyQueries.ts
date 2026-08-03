@@ -35,7 +35,7 @@ export const useStudyStats = (graphId?: string) => {
 
 export const useSemanticGroups = (graphId?: string, enabled: boolean = true) => {
   return useQuery({
-    queryKey: queryKeys.semanticGroups(graphId),
+    queryKey: queryKeys.semanticGroups(graphId ?? ''),
     queryFn: () => api.study.getSemanticGroups(graphId),
     enabled,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes

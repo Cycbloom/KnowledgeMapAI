@@ -63,8 +63,7 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
         aria-modal="true"
         aria-labelledby={titleId}
         className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
+        >
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-500">
           <div className="flex items-center gap-2">
             <GitMerge className="text-primary-500" size={20} />

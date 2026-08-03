@@ -464,7 +464,7 @@ export const TagInput: React.FC<{
               className="ml-1 hover:bg-white/20 rounded-full p-0.5 min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label={t('common.aria.removeTag')}
             >
-              <X size={16} />
+              <X size={16} aria-hidden="true" />
             </button>
           </span>
         ))}

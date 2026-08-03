@@ -109,7 +109,6 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
       <div
         role="region"
         aria-label={t('console.history.region')}
-        tabIndex={0}
         className="flex-1 overflow-y-auto custom-scrollbar"
       >
         {filteredHistory.length === 0 ? (

@@ -21,7 +21,7 @@ import {
   BookOpen,
   Clock,
 } from "lucide-react";
-import { useTheme, useFocusTrap } from "../../hooks";
+import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import { useCombobox } from "../../hooks/common/useCombobox";
 import { frontendKernel } from "../../App";
 import { iconMap } from "../../utils/iconMap";
@@ -99,6 +99,8 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     setQuery("");
     onClose();
   }, [onClose]);
+
+  useEscapeKey(handleClose, isOpen);
 
   // 聚合所有命令项：导航（来自 kernel）+ 最近项（图谱/节点/笔记）+ 快速操作
   const commands = useMemo<CommandItem[]>(() => {

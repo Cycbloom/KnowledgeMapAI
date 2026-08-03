@@ -23,6 +23,7 @@
   "aiOptimize": "AI Optimize",
   "referenceSources": "Reference Sources",
   "sourcePlaceholder": "Enter URL or text content",
+  "addSource": "Add Source",
   "initializing": "Initializing...",
   "startGenerate": "Start Generation",
   "generateResult": "Generation Result",

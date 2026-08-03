@@ -160,7 +160,7 @@ const DailyTrendChart = ({ data }: { data: { date: string; completed: number; du
                 borderRadius: '8px',
                 color: '#fff'
               }}
-              labelFormatter={(label) => formatDate(label, 'short-date')}
+              labelFormatter={(label) => formatDate(label as string, 'short-date')}
             />
             <Area
               type="monotone"
@@ -221,7 +221,7 @@ const DurationTrendChart = ({ data }: { data: { date: string; completed: number;
                 color: '#fff'
               }}
               formatter={(value) => value !== undefined ? [formatDuration(value as number), t('schedulerStats.durationTrend.duration')] : ['', t('schedulerStats.durationTrend.duration')]}
-              labelFormatter={(label) => formatDate(label, 'short-date')}
+              labelFormatter={(label) => formatDate(label as string, 'short-date')}
             />
             <Line
               type="monotone"
@@ -579,7 +579,7 @@ const EfficiencyChart = ({ data }: { data: { date: string; completed: number; du
                 color: '#fff'
               }}
               formatter={(value) => value !== undefined ? [t('schedulerStats.efficiency.value', { value }), t('schedulerStats.efficiency.label')] : ['', t('schedulerStats.efficiency.label')]}
-              labelFormatter={(label) => formatDate(label, 'short-date')}
+              labelFormatter={(label) => formatDate(label as string, 'short-date')}
             />
             <Bar
               dataKey="efficiency"

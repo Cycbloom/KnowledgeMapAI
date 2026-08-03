@@ -158,7 +158,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
 
         {/* Auto-layout on save */}
         <div className="pt-4 border-t border-gray-100 dark:border-slate-500">
-          <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
             <div>
               <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                 <Wand2 className="w-4 h-4 text-gray-400" />
@@ -171,6 +171,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
             <div
               role="switch"
               aria-checked={preferences.autoLayoutOnSave}
+              aria-label={t("settings.graphEditor.autoLayoutOnSave")}
               tabIndex={0}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                 preferences.autoLayoutOnSave ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
@@ -189,7 +190,7 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
                 }`}
               />
             </div>
-          </label>
+          </div>
         </div>
 
         {/* Search node navigate target */}

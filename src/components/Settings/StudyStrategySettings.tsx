@@ -436,7 +436,7 @@ export const StudyStrategySettings = React.memo(
                 {t("settings.semanticScheduling")}
               </h3>
 
-              <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
                 <div>
                   <span className="text-sm text-gray-700 dark:text-gray-300">
                     {t("settings.semanticScheduling")}
@@ -446,12 +446,23 @@ export const StudyStrategySettings = React.memo(
                   </p>
                 </div>
                 <div
+                  role="switch"
+                  aria-checked={semanticScheduling}
+                  aria-label={t("settings.semanticScheduling")}
+                  tabIndex={0}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                     semanticScheduling ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
                   }`}
                   onClick={() => {
                     setIsDirty(true);
                     setSemanticScheduling(!semanticScheduling);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setIsDirty(true);
+                      setSemanticScheduling(!semanticScheduling);
+                    }
                   }}
                 >
                   <span
@@ -460,7 +471,7 @@ export const StudyStrategySettings = React.memo(
                     }`}
                   />
                 </div>
-              </label>
+              </div>
             </div>
           </div>
         </div>

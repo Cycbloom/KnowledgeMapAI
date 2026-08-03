@@ -132,7 +132,7 @@ export const useUpdateGraphMutation = createOptimisticMutation({
     { id, data }: { id: string; data: UpdateGraphData },
   ) =>
     old?.map((graph) =>
-      graph.id === id ? { ...graph, ...data } : graph,
+      graph.id === id ? { ...graph, ...data } as Graph : graph,
     ),
   onSettled: (_data, _error, variables) => {
     frontendEventBus.publish("graph_list_changed", { graphId: variables.id, changeType: "graph_updated" });

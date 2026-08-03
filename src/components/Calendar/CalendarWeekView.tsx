@@ -453,8 +453,9 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
               {HOURS.map((hour) => (
                 <div
                   key={hour}
-                  role="region"
+                  role="button"
                   aria-label={`${hour.toString().padStart(2, "0")}:00`}
+                  tabIndex={0}
                   className={`absolute w-full border-t ${
                     isDark ? "border-slate-700/50" : "border-gray-100"
                   } ${(dragOverCell?.dayIndex === dayIndex && dragOverCell?.hour === hour) || (draggingEventId !== null && dropTargetDayIndex === dayIndex && dropTargetHour === hour) ? "bg-primary-100/50 dark:bg-primary-500/20" : ""}`}
@@ -463,6 +464,12 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, dayIndex, hour)}
                   onClick={() => !draggedEvent && onAddEvent(day.date, hour)}
+                  onKeyDown={(e) => {
+                    if ((e.key === "Enter" || e.key === " ") && !draggedEvent) {
+                      e.preventDefault();
+                      onAddEvent(day.date, hour);
+                    }
+                  }}
                 />
               ))}
 

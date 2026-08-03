@@ -210,7 +210,6 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                       ? 'border-amber-500 focus:ring-amber-500' 
                       : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500'
                   }`}
-                  autoFocus
                 />
                 {isChecking && (
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary-500" />

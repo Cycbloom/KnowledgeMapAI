@@ -23,6 +23,7 @@
   "aiOptimize": "AI 优化",
   "referenceSources": "参考来源",
   "sourcePlaceholder": "输入 URL 或文本内容",
+  "addSource": "添加来源",
   "initializing": "正在初始化...",
   "startGenerate": "开始生成",
   "generateResult": "生成结果",

@@ -390,7 +390,7 @@ export const LearningTimeTrend: React.FC<{ data: Array<{ date: string; minutes: 
               />
               <Tooltip
                 formatter={(value) => [`${value} ${t('learningStats.learningTimeTrend.hours')}`, t('learningStats.learningTimeTrend.learningTime')]}
-                labelFormatter={(label) => formatDate(label, 'short-date')}
+                labelFormatter={(label) => formatDate(label as string, 'short-date')}
                 contentStyle={{
                   borderRadius: '8px',
                   border: 'none',

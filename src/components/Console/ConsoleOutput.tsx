@@ -104,7 +104,6 @@ const renderAsciiTableHtml = (table: ParsedAsciiTable, isDark: boolean, t: TFunc
     <div
       role="region"
       aria-label={t('console.output.tableRegion')}
-      tabIndex={0}
       className={`overflow-x-auto rounded-lg my-2 ${isDark ? 'border-2 border-primary-500/40 shadow-lg shadow-primary-500/10' : 'border-2 border-primary-300 shadow-md'}`}
     >
       <table
@@ -198,7 +197,6 @@ const renderTable = (data: Record<string, unknown>[], isDark: boolean, t: TFunct
     <div
       role="region"
       aria-label={t('console.output.tableRegion')}
-      tabIndex={0}
       className={`overflow-x-auto rounded-lg border ${isDark ? 'border-slate-700' : 'border-gray-200'}`}
     >
       <table
@@ -441,6 +439,7 @@ export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
             }`}
             title={t('console.output.clear')}
+            aria-label={t('console.output.clear')}
           >
             <Trash2 size={14} aria-hidden="true" />
           </button>

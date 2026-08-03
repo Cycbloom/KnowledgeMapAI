@@ -311,7 +311,7 @@ export const GlobalSearch = () => {
             title={t('common.search.filterButton')}
             aria-label={t('common.search.filterButton')}
           >
-            <Filter size={14} />
+            <Filter size={14} aria-hidden="true" />
           </button>
 
           <button
@@ -324,7 +324,7 @@ export const GlobalSearch = () => {
             title={searchType === 'semantic' ? t('common.search.toggleToKeyword') : t('common.search.toggleToSemantic')}
             aria-label={searchType === 'semantic' ? t('common.search.toggleToKeyword') : t('common.search.toggleToSemantic')}
           >
-            <Sparkles size={14} fill={searchType === 'semantic' ? "currentColor" : "none"} />
+            <Sparkles size={14} fill={searchType === 'semantic' ? "currentColor" : "none"} aria-hidden="true" />
           </button>
 
           {query && (
@@ -332,6 +332,7 @@ export const GlobalSearch = () => {
               onClick={() => {
                 setQuery('');
               }}
+              aria-label={t('common.aria.close')}
               className={cn("p-1 rounded-md transition-colors",
                 isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
               )}
@@ -425,10 +426,10 @@ export const GlobalSearch = () => {
                   )}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <Clock size={14} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
+                    <Clock size={14} className={isDark ? 'text-slate-500' : 'text-gray-400'} aria-hidden="true" />
                     <span className={cn("truncate", isDark ? 'text-slate-300' : 'text-gray-700')}>{item.query}</span>
                     {item.type === 'semantic' && (
-                      <Sparkles size={12} className="text-primary-500" />
+                      <Sparkles size={12} className="text-primary-500" aria-hidden="true" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -443,8 +444,9 @@ export const GlobalSearch = () => {
                       className={cn("opacity-0 group-hover:opacity-100 p-1 rounded transition-all",
                         isDark ? 'hover:bg-slate-600 text-slate-400' : 'hover:bg-gray-200 text-gray-500'
                       )}
+                      aria-label={t('common.search.history.removeItem', { query: item.query })}
                     >
-                      <X size={12} />
+                      <X size={12} aria-hidden="true" />
                     </button>
                   </div>
                 </button>
@@ -493,7 +495,7 @@ export const GlobalSearch = () => {
                       <div className={cn("p-2 rounded-lg transition-colors",
                         isDark ? 'bg-primary-900/30 text-primary-400 group-hover:bg-primary-900/50' : 'bg-primary-50 text-primary-600 group-hover:bg-primary-100'
                       )}>
-                        <LayoutGrid size={18} />
+                        <LayoutGrid size={18} aria-hidden="true" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className={cn("font-medium truncate", isDark ? 'text-slate-200' : 'text-gray-800')}>{g.title}</div>
@@ -523,13 +525,13 @@ export const GlobalSearch = () => {
                       <div className={cn("p-2 rounded-lg transition-colors",
                         isDark ? 'bg-green-900/30 text-green-400 group-hover:bg-green-900/50' : 'bg-green-50 text-green-600 group-hover:bg-green-100'
                       )}>
-                        <FileText size={18} />
+                        <FileText size={18} aria-hidden="true" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className={cn("font-medium truncate flex items-center gap-2", isDark ? 'text-slate-200' : 'text-gray-800')}>
                           <span className="truncate">{n.title}</span>
-                          {n.status === 'mastered' && <CheckCircle size={12} className="text-green-500" />}
-                          {n.status === 'locked' && <Lock size={12} className="text-gray-400" />}
+                          {n.status === 'mastered' && <CheckCircle size={12} className="text-green-500" aria-hidden="true" />}
+                          {n.status === 'locked' && <Lock size={12} className="text-gray-400" aria-hidden="true" />}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className={cn("text-xs", isDark ? 'text-slate-500' : 'text-gray-500')}>

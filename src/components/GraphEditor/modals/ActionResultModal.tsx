@@ -86,7 +86,10 @@ export const ActionResultModal: React.FC<ActionResultModalProps> = ({
                       className="text-primary-600 underline"
                       target="_blank"
                       rel="noopener noreferrer"
-                    />
+                      aria-label={props.href}
+                    >
+                      {props.href}
+                    </a>
                   );
                 },
               }}

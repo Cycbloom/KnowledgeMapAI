@@ -62,9 +62,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     <div 
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200 backdrop-blur-sm" 
       onClick={handleBackdropClick}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="help-modal-title"
+      role="presentation"
     >
       <div 
         ref={modalRef}

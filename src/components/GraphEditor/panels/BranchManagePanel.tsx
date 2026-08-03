@@ -362,7 +362,7 @@ const MergeDialogOverlay: React.FC<MergeDialogOverlayProps> = ({
       onClick={onClose}
       role="presentation"
     >
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={(e) => e.stopPropagation()}>{children}</div>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId}>{children}</div>
     </div>
   );
 };

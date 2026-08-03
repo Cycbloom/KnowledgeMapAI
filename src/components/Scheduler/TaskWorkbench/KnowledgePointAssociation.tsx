@@ -187,7 +187,6 @@ export const KnowledgePointAssociation: React.FC<
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('scheduler.taskWorkbench.knowledgePointAssociation.searchPlaceholder')}
                   className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  autoFocus
                 />
                 {isSearching && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">

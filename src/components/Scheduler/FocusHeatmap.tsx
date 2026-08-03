@@ -51,6 +51,7 @@ const DayCell: React.FC<DayCellProps> = ({
       onFocus={() => setShowTooltip(true)}
       onBlur={() => setShowTooltip(false)}
       tabIndex={0}
+      role="button"
       aria-describedby={tooltipId}
       aria-haspopup={"tooltip" as "true"}
     >

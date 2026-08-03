@@ -124,7 +124,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
               )}
               aria-label={t('common.aria.close')}
             >
-              <X size={18} />
+              <X size={18} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -284,7 +284,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
                           title={t('shortcuts.helpPanel.resetToDefault')}
                           aria-label={t('shortcuts.helpPanel.resetToDefault')}
                         >
-                          <RotateCcw size={12} />
+                          <RotateCcw size={12} aria-hidden="true" />
                         </button>
                       )}
                     </div>

@@ -220,6 +220,8 @@ export const OfflineStatusBar: React.FC = () => {
           exit={reduceMotion ? { opacity: 0 } : { y: -100, opacity: 0 }}
           transition={transitionOverride ?? { type: 'spring', stiffness: 300, damping: 30 }}
           className={cn('fixed top-0 left-0 right-0 z-modal-overlay', getBackgroundClass(), getTextClass(), 'border-b backdrop-blur-sm shadow-lg')}
+          aria-live="polite"
+          aria-atomic="true"
         >
           <div className="h-10 px-4 flex items-center justify-center gap-2">
             {renderIcon()}

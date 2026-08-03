@@ -26,7 +26,8 @@
     },
     "history": {
       "title": "搜索历史",
-      "clear": "清空"
+      "clear": "清空",
+      "removeItem": "从历史记录中移除\"{{query}}\""
     },
     "loading": "搜索中...",
     "aiAnswer": "AI 回答",

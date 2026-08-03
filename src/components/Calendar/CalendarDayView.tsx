@@ -358,8 +358,9 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
           {HOURS.map((hour) => (
             <div
               key={hour}
-              role="region"
+              role="button"
               aria-label={`${hour.toString().padStart(2, "0")}:00`}
+              tabIndex={0}
               className={`flex min-h-[80px] border-b ${
                 isDark ? "border-slate-700/50" : "border-gray-100"
               } ${hoveredHour === hour ? "bg-primary-50/50 dark:bg-primary-500/5" : ""} ${
@@ -378,6 +379,12 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                 calendarMode === "plan" &&
                 onAddEvent(currentDate, hour)
               }
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && !draggedEvent && calendarMode === "plan") {
+                  e.preventDefault();
+                  onAddEvent(currentDate, hour);
+                }
+              }}
             >
               <div className="w-16 flex-shrink-0 flex items-start justify-end pr-3 pt-1">
                 <span

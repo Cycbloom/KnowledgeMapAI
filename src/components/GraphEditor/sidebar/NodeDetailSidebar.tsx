@@ -392,7 +392,10 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                     className="text-primary-600 dark:text-primary-400 underline"
                     target="_blank"
                     rel="noopener noreferrer"
-                  />
+                    aria-label={props.href}
+                  >
+                    {props.href}
+                  </a>
                 );
               },
             }}
@@ -665,6 +668,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             onClick={onDelete}
             className={`bg-white dark:bg-gray-800 text-red-500 border border-red-100 dark:border-red-900 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center transition-all ${isMobile ? "w-14 h-[52px] min-h-[52px]" : "w-12"}`}
             title={t("nodeDetail.deleteNode")}
+            aria-label={t("nodeDetail.deleteNode")}
           >
             <Trash2 size={isMobile ? 20 : 18} />
           </button>

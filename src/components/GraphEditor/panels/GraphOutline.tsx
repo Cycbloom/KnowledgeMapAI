@@ -718,6 +718,7 @@ export const GraphOutline = React.memo(function GraphOutline({
             role="treeitem"
             aria-level={1}
             aria-expanded={hasNodes ? isExpanded : undefined}
+            aria-selected={false}
             aria-setsize={moduleGroups.length}
             aria-posinset={groupIndex + 1}
             tabIndex={0}
@@ -885,6 +886,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                 role="treeitem"
                 aria-level={1}
                 aria-expanded={isExpanded}
+                aria-selected={false}
                 aria-setsize={literatureGroups.length}
                 aria-posinset={groupIndex + 1}
                 tabIndex={0}
@@ -1706,7 +1708,6 @@ export const GraphOutline = React.memo(function GraphOutline({
       <div
         role="region"
         aria-label={t('graphEditor.outline.region')}
-        tabIndex={0}
         className="flex-1 overflow-y-auto py-2"
       >
         {viewMode === "module" &&

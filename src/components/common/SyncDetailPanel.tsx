@@ -22,6 +22,8 @@ export function SyncDetailPanel({ status, onSync, onClose }: SyncDetailPanelProp
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       className="absolute bottom-full right-0 mb-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50"
+      aria-live="polite"
+      aria-atomic="true"
     >
       <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('common.syncDetail.title')}</h3>

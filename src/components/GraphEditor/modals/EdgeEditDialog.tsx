@@ -163,8 +163,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
         aria-modal="true"
         aria-labelledby="edge-edit-dialog-title"
         className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+        >
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-500">
           <h2 id="edge-edit-dialog-title" className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             {t('graphEditor.edgeEditDialog.title')}

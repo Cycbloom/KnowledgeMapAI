@@ -598,9 +598,8 @@ export const Layout = () => {
           )}
 
           <div
-            role="region"
+            role="main"
             aria-label={t('common.aria.mainContent')}
-            tabIndex={0}
             className={`flex-1 overflow-y-auto custom-scrollbar relative ${isMobile && !isFullScreenPage ? "pb-[calc(3.5rem+var(--safe-area-inset-bottom))]" : ""}`}
           >
             {schemaStatus && (

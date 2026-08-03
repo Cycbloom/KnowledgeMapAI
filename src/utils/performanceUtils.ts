@@ -126,13 +126,13 @@ export const throttle = <T extends (...args: unknown[]) => void>(
  * });
  * ```
  */
-export const rafThrottle = <T extends (...args: unknown[]) => void>(
-  fn: T
-): ((...args: Parameters<T>) => void) => {
+export const rafThrottle = <TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => TReturn
+): ((...args: TArgs) => void) => {
   let rafId: number | null = null;
-  let lastArgs: Parameters<T> | null = null;
+  let lastArgs: TArgs | null = null;
 
-  return (...args: Parameters<T>) => {
+  return (...args: TArgs) => {
     lastArgs = args;
 
     if (rafId !== null) {

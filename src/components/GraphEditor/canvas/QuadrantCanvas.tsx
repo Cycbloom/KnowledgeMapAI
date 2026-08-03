@@ -8,6 +8,7 @@ import React, {
   useImperativeHandle,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { debounce } from "@/utils/performanceUtils";
 import { motion, AnimatePresence } from "framer-motion";
 import type {
   Node,
@@ -391,6 +392,20 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
       }
     }, []);
 
+    // 使用 debounce 限制高频事件触发的 React 状态更新，视觉更新通过 updateTransformDOM 直接操作 DOM
+    const updateTransformState = useMemo(
+      () => debounce((newTransform: Transform) => {
+        setTransform(newTransform);
+      }, 100),
+      [],
+    );
+
+    useEffect(() => {
+      return () => {
+        updateTransformState.cancel();
+      };
+    }, [updateTransformState]);
+
     const handleRegionToggle = useCallback(
       (regionId: string) => {
         if (onRegionToggle) {
@@ -510,10 +525,10 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
         const newTransform = { x: newX, y: newY, k: newK };
         transformRef.current = newTransform;
         updateTransformDOM(newTransform);
-        setTransform(newTransform);
+        updateTransformState(newTransform);
         scheduleViewportUpdate();
       },
-      [updateTransformDOM, scheduleViewportUpdate],
+      [updateTransformDOM, updateTransformState, scheduleViewportUpdate],
     );
 
     useEffect(() => {
@@ -572,7 +587,7 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
           };
           transformRef.current = newTransform;
           updateTransformDOM(newTransform);
-          setTransform(newTransform);
+          updateTransformState(newTransform);
           scheduleViewportUpdate();
         }
       },
@@ -582,6 +597,7 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
         dragStart,
         onOriginMove,
         updateTransformDOM,
+        updateTransformState,
         scheduleViewportUpdate,
       ],
     );

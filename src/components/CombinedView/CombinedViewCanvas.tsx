@@ -1,5 +1,6 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { rafThrottle } from '@/utils/performanceUtils';
 import type { CombinedViewLayoutMode, KnowledgePoint, GraphNodeWithKnowledgePoint, Edge } from '../../types';
 
 interface MergedNode {
@@ -134,10 +135,21 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
+  const transformRef = useRef(transform);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const { t } = useTranslation();
+
+  // 保持 ref 与 state 同步，用于回调中获取最新值而不触发重新渲染
+  useEffect(() => {
+    transformRef.current = transform;
+  }, [transform]);
+
+  // 使用 rafThrottle 限制高频事件触发的 React 状态更新
+  const throttledSetTransform = useMemo(() => rafThrottle((t: Transform) => {
+    setTransform(t);
+  }), []);
   
   useEffect(() => {
     const updateDimensions = () => {
@@ -165,13 +177,12 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newK = Math.max(0.1, Math.min(5, transform.k * scaleFactor));
-    
-    setTransform(prev => ({
-      ...prev,
-      k: newK
-    }));
-  }, [transform.k]);
+    const prev = transformRef.current;
+    const newK = Math.max(0.1, Math.min(5, prev.k * scaleFactor));
+    const newTransform = { ...prev, k: newK };
+    transformRef.current = newTransform;
+    throttledSetTransform(newTransform);
+  }, [throttledSetTransform]);
   
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 0) {
@@ -182,13 +193,15 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
   
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isDragging) {
-      setTransform(prev => ({
-        ...prev,
+      const newTransform = {
+        ...transformRef.current,
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y
-      }));
+      };
+      transformRef.current = newTransform;
+      throttledSetTransform(newTransform);
     }
-  }, [isDragging, dragStart]);
+  }, [isDragging, dragStart, throttledSetTransform]);
   
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);

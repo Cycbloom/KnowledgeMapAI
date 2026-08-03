@@ -262,6 +262,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose} role="presentation">
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
         ref={containerRef}
         role="dialog"

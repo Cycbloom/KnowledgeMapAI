@@ -583,6 +583,7 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
         role="tree"
         aria-label={t("conceptAggregation.hierarchy.treeLabel")}
         className="flex-1 overflow-y-auto py-2"
+        tabIndex={0}
         onKeyDown={handleTreeKeyDown}
       >
         {hierarchyData.map((node, idx) => (

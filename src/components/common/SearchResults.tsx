@@ -226,7 +226,7 @@ const SearchResultsComponent: React.FC<SearchResultsProps> = ({
                       )}
                     </div>
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-500 flex-shrink-0" />
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-500 flex-shrink-0" aria-hidden="true" />
                 </button>
               ))}
             </div>
@@ -359,7 +359,7 @@ const SearchResultsComponent: React.FC<SearchResultsProps> = ({
                     </div>
                     <NoteTagChips tags={note.tags} />
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-amber-500 flex-shrink-0" />
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-amber-500 flex-shrink-0" aria-hidden="true" />
                 </button>
               ))}
             </div>
@@ -369,7 +369,7 @@ const SearchResultsComponent: React.FC<SearchResultsProps> = ({
         {results?.answer && (
           <div className="p-2 border-t border-gray-200 dark:border-slate-500 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20">
             <div className="flex items-center gap-1.5 mb-1">
-              <Sparkles className="w-3 h-3 text-primary-500" />
+              <Sparkles className="w-3 h-3 text-primary-500" aria-hidden="true" />
               <span className="text-xs font-medium text-primary-700 dark:text-primary-300">{t('common.searchResults.aiAnswer')}</span>
             </div>
             <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-3">{results.answer}</p>

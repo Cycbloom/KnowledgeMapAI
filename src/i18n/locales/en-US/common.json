@@ -26,7 +26,8 @@
     },
     "history": {
       "title": "Search History",
-      "clear": "Clear"
+      "clear": "Clear",
+      "removeItem": "Remove \"{{query}}\" from history"
     },
     "loading": "Searching...",
     "aiAnswer": "AI Answer",

@@ -119,6 +119,7 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
       ref={menuRef}
       role="menu"
       aria-label={t("dashboard.contextMenu.label", { title: graph.title })}
+      tabIndex={-1}
       onKeyDown={handleKeyDown}
       className="fixed bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-500 py-1 z-50 min-w-[180px]"
       style={{ left: position.x, top: position.y }}

@@ -980,6 +980,8 @@ export const Login = () => {
         {organizations.map((org) => (
           <label
             key={org.id}
+            htmlFor={`org-${org.id}`}
+            aria-label={org.name}
             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
               selectedOrg === org.id
                 ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
@@ -987,6 +989,7 @@ export const Login = () => {
             }`}
           >
             <input
+              id={`org-${org.id}`}
               type="radio"
               name="organization"
               value={org.id}

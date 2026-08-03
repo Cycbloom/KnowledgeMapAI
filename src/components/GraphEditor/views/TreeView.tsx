@@ -8,6 +8,7 @@ import { createTreeLayout } from '../../../utils/layouts/treeLayout';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
 import { useTheme } from "../../../hooks";
 import { calculateNodeImportance, calculateEdgeStrength } from '../../../utils/graph/graphUtils';
+import { rafThrottle } from '@/utils/performanceUtils';
 
 interface TreeViewProps {
   nodes: Node[];
@@ -68,6 +69,7 @@ const TreeViewComponent: React.FC<TreeViewProps> = ({
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
+  const transformRef = useRef(transform);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -76,6 +78,16 @@ const TreeViewComponent: React.FC<TreeViewProps> = ({
 
   const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
   const hasFocusMode = focusedNodeIds.size > 0;
+
+  // 保持 ref 与 state 同步，避免回调中 stale closure 问题
+  useEffect(() => {
+    transformRef.current = transform;
+  }, [transform]);
+
+  // 使用 rafThrottle 限制高频事件触发的 React 状态更新
+  const throttledSetTransform = useMemo(() => rafThrottle((t: Transform) => {
+    setTransform(t);
+  }), []);
 
   useEffect(() => {
     const updateContainerSize = () => {
@@ -167,38 +179,45 @@ const TreeViewComponent: React.FC<TreeViewProps> = ({
     e.preventDefault();
     const scaleFactor = 1.1;
     const delta = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
-    
-    setTransform(prev => {
-      const newK = Math.max(0.1, Math.min(5, prev.k * delta));
-      const rect = svgRef.current?.getBoundingClientRect();
-      if (!rect) return { ...prev, k: newK };
-      
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      const newX = mouseX - (mouseX - prev.x) * delta;
-      const newY = mouseY - (mouseY - prev.y) * delta;
-      
-      return { x: newX, y: newY, k: newK };
-    });
-  }, []);
+    const prev = transformRef.current;
+    const newK = Math.max(0.1, Math.min(5, prev.k * delta));
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) {
+      const newTransform = { ...prev, k: newK };
+      transformRef.current = newTransform;
+      throttledSetTransform(newTransform);
+      return;
+    }
+
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const newX = mouseX - (mouseX - prev.x) * delta;
+    const newY = mouseY - (mouseY - prev.y) * delta;
+
+    const newTransform = { x: newX, y: newY, k: newK };
+    transformRef.current = newTransform;
+    throttledSetTransform(newTransform);
+  }, [throttledSetTransform]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (e.target === svgRef.current) {
       setIsDragging(true);
-      setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
+      setDragStart({ x: e.clientX - transformRef.current.x, y: e.clientY - transformRef.current.y });
       mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
     }
-  }, [transform]);
+  }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (isDragging) {
-      setTransform({
-        ...transform,
+      const newTransform = {
+        ...transformRef.current,
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y
-      });
+      };
+      transformRef.current = newTransform;
+      throttledSetTransform(newTransform);
     }
-  }, [isDragging, dragStart, transform]);
+  }, [isDragging, dragStart, throttledSetTransform]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
     if (isDragging && mouseDownPosRef.current && onCanvasClick) {

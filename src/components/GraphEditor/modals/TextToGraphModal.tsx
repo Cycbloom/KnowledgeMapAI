@@ -559,6 +559,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 )}
 
                 {activeTab === 'file' && (
+                  // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
                   <div
                     role="tabpanel"
                     id={`${panelIdPrefix}-file`}
@@ -610,6 +611,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 )}
 
                 {activeTab === 'image' && (
+                  // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
                   <div
                     role="tabpanel"
                     id={`${panelIdPrefix}-image`}
@@ -624,7 +626,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        imageInputRef.current?.click();
+                        fileInputRef.current?.click();
                       }
                     }}
                     onDragEnter={handleDragEnter}

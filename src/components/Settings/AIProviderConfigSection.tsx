@@ -269,11 +269,12 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                     )}
 
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      <label htmlFor={`api-key-${providerKey}`} className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                         API Key
                       </label>
                       <div className="relative">
                         <input
+                          id={`api-key-${providerKey}`}
                           type={showApiKey ? "text" : "password"}
                           autoComplete="off"
                           value={isEnvSource ? "" : form.apiKey}
@@ -312,13 +313,11 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      <label htmlFor={`base-url-${providerKey}`} className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                         Base URL
                       </label>
                       <input
-                        type="text"
-                        autoComplete="off"
-                        value={form.baseURL}
+                        id={`base-url-${providerKey}`}
                         onChange={(e) =>
                           setProviderForms((prev) => ({
                             ...prev,

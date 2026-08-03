@@ -532,8 +532,9 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
             {scheduleData.slots.map((slot) => (
               <div
                 key={slot.hour}
-                role="region"
+                role="button"
                 aria-label={`${slot.hour.toString().padStart(2, "0")}:00`}
+                tabIndex={0}
                 className={`flex h-[80px] border-b ${
                   isDark ? "border-slate-700/50" : "border-gray-100"
                 } ${hoveredSlot?.hour === slot.hour ? "bg-primary-50/50 dark:bg-primary-500/5" : ""} ${
@@ -553,6 +554,12 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                 onClick={() =>
                   !draggedEvent && onAddEvent(currentDate, slot.hour)
                 }
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === " ") && !draggedEvent) {
+                    e.preventDefault();
+                    onAddEvent(currentDate, slot.hour);
+                  }
+                }}
               >
                 <div className="w-16 flex-shrink-0 flex items-start justify-end pr-3 pt-1">
                   <span

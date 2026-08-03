@@ -479,7 +479,7 @@ export const ListView: React.FC<ListViewProps> = ({
       <div className="flex-1 min-h-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-500/50 bg-white dark:bg-slate-900/60 backdrop-blur-sm">
         {/* Desktop: table view */}
         <div
-          role="region"
+          role="button"
           aria-label={t('scheduler.listView.tableRegion')}
           tabIndex={0}
           className="hidden md:block h-full overflow-x-auto custom-scrollbar"

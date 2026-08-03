@@ -294,8 +294,8 @@ export const MobileFocusTimer: React.FC = () => {
                   aria-label={t('common.aria.reset')}
                   className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
-                  <RotateCcw size={18} />
-                </button>
+                  <RotateCcw size={18} aria-hidden="true" />
+          </button>
 
                 <motion.button
                   onClick={handleStartPause}
@@ -305,13 +305,14 @@ export const MobileFocusTimer: React.FC = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   {isRunning ? (
-                    <Pause size={22} fill="white" color="white" />
+                    <Pause size={22} fill="white" color="white" aria-hidden="true" />
                   ) : (
                     <Play
                       size={22}
                       fill="white"
                       color="white"
                       className="ml-0.5"
+                      aria-hidden="true"
                     />
                   )}
                 </motion.button>

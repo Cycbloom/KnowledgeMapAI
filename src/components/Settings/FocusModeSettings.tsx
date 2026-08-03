@@ -195,7 +195,7 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
           </h3>
 
           <div className="space-y-2">
-            <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
               <div>
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   {t("settings.autoStartBreak")}
@@ -205,10 +205,20 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 </p>
               </div>
               <div
+                role="switch"
+                aria-checked={autoStartBreak}
+                aria-label={t("settings.autoStartBreak")}
+                tabIndex={0}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                   autoStartBreak ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
                 }`}
                 onClick={() => updateFocusSettings({ autoStartBreak: !autoStartBreak })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    updateFocusSettings({ autoStartBreak: !autoStartBreak });
+                  }
+                }}
               >
                 <span
                   className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
@@ -216,9 +226,9 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                   }`}
                 />
               </div>
-            </label>
+            </div>
 
-            <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
               <div>
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   {t("settings.autoStartPomodoro")}
@@ -228,10 +238,20 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 </p>
               </div>
               <div
+                role="switch"
+                aria-checked={autoStartPomodoro}
+                aria-label={t("settings.autoStartPomodoro")}
+                tabIndex={0}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                   autoStartPomodoro ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
                 }`}
                 onClick={() => updateFocusSettings({ autoStartPomodoro: !autoStartPomodoro })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    updateFocusSettings({ autoStartPomodoro: !autoStartPomodoro });
+                  }
+                }}
               >
                 <span
                   className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
@@ -239,9 +259,9 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                   }`}
                 />
               </div>
-            </label>
+            </div>
 
-            <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
               <div>
                 <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <Volume2 className="w-4 h-4 text-gray-400" />
@@ -252,10 +272,20 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 </p>
               </div>
               <div
+                role="switch"
+                aria-checked={soundEnabled}
+                aria-label={t("settings.soundEnabled")}
+                tabIndex={0}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                   soundEnabled ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
                 }`}
                 onClick={() => updateFocusSettings({ soundEnabled: !soundEnabled })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    updateFocusSettings({ soundEnabled: !soundEnabled });
+                  }
+                }}
               >
                 <span
                   className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
@@ -263,9 +293,9 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                   }`}
                 />
               </div>
-            </label>
+            </div>
 
-            <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
               <div>
                 <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <Bell className="w-4 h-4 text-gray-400" />
@@ -276,10 +306,20 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 </p>
               </div>
               <div
+                role="switch"
+                aria-checked={notificationEnabled}
+                aria-label={t("settings.notificationEnabled")}
+                tabIndex={0}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                   notificationEnabled ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
                 }`}
                 onClick={() => updateFocusSettings({ notificationEnabled: !notificationEnabled })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    updateFocusSettings({ notificationEnabled: !notificationEnabled });
+                  }
+                }}
               >
                 <span
                   className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
@@ -287,7 +327,7 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                   }`}
                 />
               </div>
-            </label>
+            </div>
           </div>
         </div>
       </div>

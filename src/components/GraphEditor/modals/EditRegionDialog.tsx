@@ -111,8 +111,7 @@ export const EditRegionDialog: React.FC<EditRegionDialogProps> = ({
         aria-modal="true"
         aria-labelledby="edit-region-dialog-title"
         className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+        >
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
           <h2 id="edit-region-dialog-title" className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
             <Palette className="text-primary-600" size={20} />
@@ -201,6 +200,7 @@ export const EditRegionDialog: React.FC<EditRegionDialogProps> = ({
                   onClick={handleAddAll}
                   className="p-1 text-slate-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded transition-colors"
                   title={t("common.selectAll")}
+                  aria-label={t("common.selectAll")}
                 >
                   <Plus size={14} />
                 </button>

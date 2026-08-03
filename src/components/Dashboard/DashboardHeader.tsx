@@ -537,6 +537,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   }`}
                   role="menu"
                   aria-activedescendant={`${moreMenuId}-item-${moreActiveIndex}`}
+                  tabIndex={-1}
                 >
                   {!isSelectMode && (
                     <button

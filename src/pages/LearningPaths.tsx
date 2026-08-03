@@ -499,8 +499,7 @@ export const LearningPaths = () => {
                       ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                       : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
-                  autoFocus
-                />
+                  />
               </div>
 
               <div className="space-y-2">

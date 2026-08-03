@@ -310,8 +310,9 @@ export const Profile = () => {
             <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('profile.backup.importMode')}</div>
             <fieldset className="flex gap-4">
               <legend className="sr-only">{t('profile.importMode.legend')}</legend>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label htmlFor="import-mode-replace" aria-label={t('profile.backup.snapshotRestore')} className="flex items-center gap-2 cursor-pointer">
                 <input
+                  id="import-mode-replace"
                   type="radio"
                   name="importMode"
                   autoComplete="off"
@@ -325,8 +326,9 @@ export const Profile = () => {
                   <span className="text-xs text-gray-500 dark:text-gray-500 ml-1">{t('profile.backup.snapshotRestoreHint')}</span>
                 </span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label htmlFor="import-mode-merge" aria-label={t('profile.backup.mergeImport')} className="flex items-center gap-2 cursor-pointer">
                 <input
+                  id="import-mode-merge"
                   type="radio"
                   name="importMode"
                   autoComplete="off"

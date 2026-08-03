@@ -245,7 +245,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                                     }}
                                     onBlur={() => setEditingDeadlineId(null)}
                                     onPointerDown={(e) => e.stopPropagation()}
-                                    autoFocus
                                     className="absolute top-7 right-0 text-xs px-1 py-0.5 rounded border border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60"
                                   />
                                 )}

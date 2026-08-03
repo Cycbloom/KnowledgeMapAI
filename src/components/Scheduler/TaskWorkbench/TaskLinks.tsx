@@ -208,8 +208,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                       : "https://api.example.com"
                 }
                 className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                autoFocus
-              />
+                />
               <input
                 type="text"
                 value={newLink.title}

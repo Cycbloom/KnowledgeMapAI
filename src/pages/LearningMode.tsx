@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
@@ -32,7 +32,11 @@ import {
 import { isCapacitorMobile } from "../config/mobileApiConfig";
 import { mobileAIService, AICardGenError } from "../services/mobile/aiService";
 import { getMobileSupabaseClient } from "../utils/supabase";
-import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
+const GenerateCardsModal = lazy(() =>
+  import("../components/Learning/GenerateCardsModal").then((module) => ({
+    default: module.GenerateCardsModal,
+  })),
+);
 import { GraphOverviewPanel } from "../components/Learning/GraphOverviewPanel";
 import { GraphOverviewEditModal } from "../components/Learning/GraphOverviewEditModal";
 import { LearningFocusPanel } from "../components/Learning/LearningFocusPanel";
@@ -587,11 +591,13 @@ export const LearningMode = () => {
         />
       </div>
 
+      <Suspense fallback={null}>
       <GenerateCardsModal
         isOpen={isGenModalOpen} onClose={() => setIsGenModalOpen(false)}
         onGenerate={handleManualGenerateCards} nodeTitle={nodeTitle}
         generateProgress={generateProgress}
       />
+      </Suspense>
 
       <CreateNodeModal
         isDark={isDark} isOpen={isCreateNodeModalOpen}

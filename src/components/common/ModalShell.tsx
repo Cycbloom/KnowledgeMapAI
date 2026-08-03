@@ -54,13 +54,12 @@ export const ModalShell: React.FC<ModalShellProps> = ({
       onClick={handleOverlayClick}
     >
       <div
-        ref={containerRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className={className}
-        onClick={(e) => e.stopPropagation()}
-      >
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      className={className}
+    >
         {children}
       </div>
     </div>

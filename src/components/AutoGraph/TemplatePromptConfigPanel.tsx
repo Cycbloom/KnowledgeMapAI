@@ -230,6 +230,7 @@ export const TemplatePromptConfigPanel: React.FC<
           </div>
           <button
             onClick={handleClose}
+            aria-label={t('common.aria.close')}
             className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
           >
             <X className="w-5 h-5" />

@@ -241,8 +241,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         aria-modal="true"
         aria-labelledby="share-modal-title"
         className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
+        >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
           <h2 id="share-modal-title" className="text-lg font-bold text-gray-800 dark:text-white">{t('graphEditor.share.title')}</h2>

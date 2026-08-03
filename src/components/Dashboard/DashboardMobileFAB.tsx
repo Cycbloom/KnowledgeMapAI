@@ -71,6 +71,7 @@ export const DashboardMobileFAB: React.FC<DashboardMobileFABProps> = ({
           className="absolute bottom-20 right-0 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200"
           role="menu"
           aria-activedescendant={`${menuId}-item-${activeIndex}`}
+          tabIndex={-1}
         >
           <button
             id={`${menuId}-item-0`}

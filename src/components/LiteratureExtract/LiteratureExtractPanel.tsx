@@ -793,7 +793,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
 
       {!fileState.file ? (
         <div
-          role="region"
+          role="button"
           aria-label={t('common.aria.dropzone')}
           tabIndex={0}
           onKeyDown={(e) => {

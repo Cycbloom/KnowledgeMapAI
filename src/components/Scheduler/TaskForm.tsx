@@ -757,25 +757,28 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                     </div>
                   ) : (
                     availableTasks
-                      .filter((t) => t.id !== task?.id)
-                      .map((t) => (
+                      .filter((availTask) => availTask.id !== task?.id)
+                      .map((availTask) => (
                         <label
-                          key={t.id}
+                          key={availTask.id}
+                          htmlFor={`dep-${availTask.id}`}
+                          aria-label={t('scheduler.taskForm.dependencyLabel', { title: availTask.title ?? availTask.id })}
                           className="flex items-center gap-2 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer border-b border-slate-100 dark:border-slate-500 last:border-b-0"
                         >
                           <input
+                            id={`dep-${availTask.id}`}
                             type="checkbox"
-                            checked={selectedDependencies.includes(t.id)}
+                            checked={selectedDependencies.includes(availTask.id)}
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setSelectedDependencies([
                                   ...selectedDependencies,
-                                  t.id,
+                                  availTask.id,
                                 ]);
                               } else {
                                 setSelectedDependencies(
                                   selectedDependencies.filter(
-                                    (id) => id !== t.id,
+                                    (id) => id !== availTask.id,
                                   ),
                                 );
                               }
@@ -784,10 +787,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                              {t.title}
+                              {availTask.title}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
-                              Q{t.queue_level} · P{t.priority}
+                              Q{availTask.queue_level} · P{availTask.priority}
                             </p>
                           </div>
                         </label>

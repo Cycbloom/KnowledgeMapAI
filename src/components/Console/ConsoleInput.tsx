@@ -175,7 +175,6 @@ export const ConsoleInput = forwardRef<ConsoleInputRef, ConsoleInputProps>(
                 className={`flex-1 bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:border-primary-500 text-sm ${
                   isDark ? 'text-slate-200 placeholder-slate-500' : 'text-gray-800 placeholder-gray-400'
                 }`}
-                autoFocus
               />
             </div>
           ) : (

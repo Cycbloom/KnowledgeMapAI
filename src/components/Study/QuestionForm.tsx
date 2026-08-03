@@ -326,15 +326,12 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                     return (
                       <label
                         key={val}
-                        role="radio"
-                        aria-checked={isChecked}
-                        tabIndex={isChecked ? 0 : -1}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                           <input
                               type="radio"
                               name="tf_answer"
-                              aria-required={true}
+                              required
                               value={val}
                               checked={isChecked}
                               onChange={e => setFormData({...formData, answer: e.target.value})}

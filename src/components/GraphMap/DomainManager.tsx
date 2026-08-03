@@ -116,6 +116,7 @@ function SortableDomainItem({
       role="treeitem"
       aria-level={depth + 1}
       aria-expanded={hasChildren ? isExpanded : undefined}
+      aria-selected={false}
       aria-setsize={setSize}
       aria-posinset={posInSet}
       aria-roledescription={t('graphMap.a11y.draggableNode')}
@@ -526,7 +527,6 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
           placeholder={t('graphMap.domainManager.descriptionPlaceholder')}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          autoFocus
         />
       </div>
 

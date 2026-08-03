@@ -165,7 +165,6 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
                   placeholder={t("promptEditor.optimizePlaceholder")}
                   className="flex-1 px-3 py-2 text-sm border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-primary-500"
                   onKeyDown={(e) => e.key === "Enter" && handleOptimize()}
-                  autoFocus
                 />
                 <button
                   onClick={handleOptimize}

@@ -117,6 +117,7 @@ export const CommandAutocomplete: React.FC<CommandAutocompleteProps> = ({
         role="listbox"
         aria-label={t('console.commandAutocomplete.placeholder')}
         aria-activedescendant={activeId}
+        tabIndex={0}
         onKeyDown={(e) => {
           // 焦点在选项按钮上时，Enter 由按钮 onClick 处理，避免重复触发 onSelect
           if (e.key === 'Enter' && e.target !== e.currentTarget) {

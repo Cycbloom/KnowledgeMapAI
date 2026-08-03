@@ -145,6 +145,7 @@
     "dependenciesSelected": "{{count}} dependencies selected",
     "selectDependencies": "Select dependencies",
     "noAvailableTasks": "No available tasks",
+    "dependencyLabel": "Select \"{{title}}\" as dependency",
     "context": "Task Context (Optional)",
     "contextPlaceholder": "Describe task background, goals, notes...",
     "estimatedDuration": "Estimated Duration",

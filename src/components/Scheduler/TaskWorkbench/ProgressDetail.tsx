@@ -501,9 +501,6 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                       return (
                       <label
                         key={option.value}
-                        role="radio"
-                        aria-checked={isChecked}
-                        tabIndex={isChecked ? 0 : -1}
                         className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                           isChecked
                             ? "border-primary-500 bg-primary-50 dark:bg-primary-500/10"

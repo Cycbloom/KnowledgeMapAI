@@ -54,6 +54,7 @@ export const TermTooltip: React.FC<TermTooltipProps> = ({ term, explanation }) =
         onFocus={handleMouseEnter}
         onBlur={handleMouseLeave}
         tabIndex={0}
+        role="button"
         aria-describedby={tooltipId}
         aria-haspopup={"tooltip" as "true"}
         aria-expanded={isVisible}

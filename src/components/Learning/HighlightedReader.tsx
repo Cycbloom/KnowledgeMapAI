@@ -635,7 +635,10 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
                   className="text-primary-600 underline"
                   target="_blank"
                   rel="noopener noreferrer"
-                />
+                  aria-label={props.href}
+                >
+                  {props.href}
+                </a>
               );
             },
           }}

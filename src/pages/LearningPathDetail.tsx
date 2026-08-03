@@ -79,7 +79,7 @@ const LearningPathDetailPage: React.FC = () => {
       description: r.description as string,
       graph_id: r.source_graph_id as string,
       graph_title: undefined,
-      status: (r.status as string) || "active",
+      status: (r.status as "completed" | "paused" | "active" | "archived") || "active",
       goal_type: "natural_language",
       goal_content: r.goal as string,
       target_knowledge_point_id: undefined,

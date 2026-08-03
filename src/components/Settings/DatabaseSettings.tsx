@@ -265,10 +265,11 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
         {dbExpanded && (
           <div className="p-4 pt-0 space-y-3 border-t border-gray-100 dark:border-slate-500">
             <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <label htmlFor="db-supabase-url" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                 Supabase URL
               </label>
               <input
+                id="db-supabase-url"
                 type="text"
                 autoComplete="off"
                 value={dbForm.url}
@@ -281,11 +282,12 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <label htmlFor="db-anon-key" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                 Anon Key
               </label>
               <div className="relative">
                 <input
+                  id="db-anon-key"
                   type={showDbAnonKey ? "text" : "password"}
                   autoComplete="off"
                   value={dbForm.anonKey}
@@ -309,11 +311,12 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <label htmlFor="db-service-role-key" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                 Service Role Key
               </label>
               <div className="relative">
                 <input
+                  id="db-service-role-key"
                   type={showDbServiceRoleKey ? "text" : "password"}
                   autoComplete="off"
                   value={dbForm.serviceRoleKey}

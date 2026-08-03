@@ -83,8 +83,7 @@ export const CreateRegionDialog: React.FC<CreateRegionDialogProps> = ({
         aria-modal="true"
         aria-labelledby="create-region-dialog-title"
         className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+        >
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
           <h2 id="create-region-dialog-title" className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
             <Palette className="text-primary-600" size={20} />

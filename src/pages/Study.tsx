@@ -1,4 +1,4 @@
-import { useLayoutEffect, useEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQueries } from "@tanstack/react-query";
@@ -8,7 +8,12 @@ import { queryKeys, realtimeQueryConfig } from "../hooks/queries/config";
 import { StudyCard } from "../types";
 import { QuestionBank } from "../components/Study/QuestionBank";
 import { FocusStats } from "../components/Study/FocusStats";
-import { QuizList, QuizGenerationModal } from "../components/Quiz";
+import { QuizList } from "../components/Quiz";
+const QuizGenerationModal = lazy(() =>
+  import("../components/Quiz/QuizGenerationModal").then((module) => ({
+    default: module.QuizGenerationModal,
+  })),
+);
 import { useTheme, useIsMobile } from "../hooks";
 import { api } from "../services/api";
 import { useCardReviewLogic } from "../hooks/study/useCardReviewLogic";
@@ -344,15 +349,17 @@ export const Study = () => {
         </div>
 
         {/* Quiz Generation Modal */}
-        <QuizGenerationModal
-          open={showQuizModal}
-          onClose={() => setShowQuizModal(false)}
-          graphId={graphId || undefined}
-          onComplete={(quizSetId) => {
-            setShowQuizModal(false);
-            navigate(`/quiz/${quizSetId}`);
-          }}
-        />
+        <Suspense fallback={null}>
+          <QuizGenerationModal
+            open={showQuizModal}
+            onClose={() => setShowQuizModal(false)}
+            graphId={graphId || undefined}
+            onComplete={(quizSetId) => {
+              setShowQuizModal(false);
+              navigate(`/quiz/${quizSetId}`);
+            }}
+          />
+        </Suspense>
       </div>
     );
   }

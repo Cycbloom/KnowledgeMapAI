@@ -353,7 +353,6 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
                 onChange={(e) => setSnapshotDescription(e.target.value)}
                 placeholder={t("graphEditor.versionHistory.snapshotDescPlaceholder")}
                 className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                autoFocus
               />
             </DialogContent>
           )}
@@ -419,7 +418,6 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
                   onChange={(e) => setBranchName(e.target.value)}
                   placeholder={t("graphEditor.versionHistory.branchNamePlaceholder")}
                   className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-500 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  autoFocus
                 />
               </div>
             </DialogContent>

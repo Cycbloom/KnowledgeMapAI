@@ -184,7 +184,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
           </h2>
         </div>
 
-        <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
           <div>
             <span className="text-sm text-gray-700 dark:text-gray-300">
               {t("appearance.celebrationEnabled")}
@@ -217,7 +217,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
               }`}
             />
           </div>
-        </label>
+        </div>
       </div>
 
       {/* 减少动态效果偏好（无障碍） */}
@@ -229,7 +229,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
           </h2>
         </div>
 
-        <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
           <div>
             <span className="text-sm text-gray-700 dark:text-gray-300">
               {t("common.preferences.reducedMotion")}
@@ -262,7 +262,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
               }`}
             />
           </div>
-        </label>
+        </div>
       </div>
     </>
   );

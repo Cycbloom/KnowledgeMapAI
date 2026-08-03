@@ -101,7 +101,7 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
   };
 
   return (
-    <fieldset className="space-y-3" onKeyDown={handleKeyDown}>
+    <fieldset className="space-y-3" onKeyDown={handleKeyDown} role="radiogroup">
       <legend className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
         {t('study.difficultySelector.legend')}
       </legend>

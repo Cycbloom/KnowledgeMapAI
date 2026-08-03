@@ -3,6 +3,8 @@ import {
   useEffect,
   useRef,
   useCallback,
+  lazy,
+  Suspense,
   type MouseEvent,
 } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -20,7 +22,11 @@ import {
   Globe,
   Monitor,
 } from "lucide-react";
-import { PluginMarketplace } from "../components/PluginMarketplace/PluginMarketplace";
+const PluginMarketplace = lazy(() =>
+  import("../components/PluginMarketplace/PluginMarketplace").then((module) => ({
+    default: module.PluginMarketplace,
+  })),
+);
 import { PromptSettingsPanel } from "../components/GraphEditor/panels/PromptSettingsPanel";
 import { AIActionSettingsPanel } from "../components/GraphEditor/panels/AIActionSettingsPanel";
 
@@ -458,7 +464,9 @@ export const Settings = () => {
                   插件市场
                 </h2>
               </div>
-              <PluginMarketplace />
+              <Suspense fallback={<div className="h-48 flex items-center justify-center text-gray-400">{t('common.loading')}</div>}>
+                <PluginMarketplace />
+              </Suspense>
             </section>
 
             {/* 仅 Web 端显示 PWA 区块 */}

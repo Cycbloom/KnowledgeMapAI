@@ -273,9 +273,9 @@ export const FocusTimer: React.FC = () => {
                     className={cn("p-2 rounded-lg", soundEnabled ? "bg-primary-100 text-primary-600" : "bg-gray-100 text-gray-400 dark:text-gray-500")}
                   >
                     {soundEnabled ? (
-                      <Volume2 size={18} />
+                      <Volume2 size={18} aria-hidden="true" />
                     ) : (
-                      <VolumeX size={18} />
+                      <VolumeX size={18} aria-hidden="true" />
                     )}
                   </button>
                 </div>
@@ -357,7 +357,7 @@ export const FocusTimer: React.FC = () => {
                     aria-label={t('common.focusTimer.reset')}
                     className="p-3 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                   >
-                    <RotateCcw size={20} />
+                    <RotateCcw size={20} aria-hidden="true" />
                   </button>
 
                   <button
@@ -382,7 +382,7 @@ export const FocusTimer: React.FC = () => {
                     aria-label={t('common.focusTimer.skip')}
                     className="p-3 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                   >
-                    <SkipForward size={20} />
+                    <SkipForward size={20} aria-hidden="true" />
                   </button>
                 </div>
 

@@ -41,8 +41,7 @@ export const KnowledgePointReuseDialog: React.FC<KnowledgePointReuseDialogProps>
         aria-modal="true"
         aria-labelledby="kp-reuse-dialog-title"
         className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+        >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h3 id="kp-reuse-dialog-title" className="text-lg font-semibold text-gray-900 dark:text-white">
             {t('study.knowledgePoint.similarityFound')}
@@ -157,7 +156,6 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
         aria-modal="true"
         aria-labelledby="kp-delete-confirm-dialog-title"
         className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h3 id="kp-delete-confirm-dialog-title" className="text-lg font-semibold text-gray-900 dark:text-white">

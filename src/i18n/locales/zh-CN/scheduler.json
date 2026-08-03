@@ -145,6 +145,7 @@
     "dependenciesSelected": "已选择 {{count}} 个前置任务",
     "selectDependencies": "选择前置任务",
     "noAvailableTasks": "暂无可选任务",
+    "dependencyLabel": "选择 \"{{title}}\" 作为前置任务",
     "context": "任务上下文（可选）",
     "contextPlaceholder": "描述任务的背景、目标、注意事项等...",
     "estimatedDuration": "预计时长",

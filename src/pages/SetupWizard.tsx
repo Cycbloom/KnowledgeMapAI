@@ -688,10 +688,11 @@ export const SetupWizard = () => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          <label htmlFor="setup-api-key" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
             API Key
           </label>
           <input
+            id="setup-api-key"
             type="password"
             autoComplete="off"
             value={aiApiKey}
@@ -701,10 +702,11 @@ export const SetupWizard = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          <label htmlFor="setup-base-url" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
             Base URL
           </label>
           <input
+            id="setup-base-url"
             type="text"
             autoComplete="off"
             value={aiBaseURL}

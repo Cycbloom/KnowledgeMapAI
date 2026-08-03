@@ -345,7 +345,6 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                     onChange={(e) => setCustomGoal(e.target.value)}
                     placeholder={t('learning.path.wizard.customGoalPlaceholder')}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-slate-800 dark:text-white mt-2"
-                    autoFocus
                   />
                 )}
               </button>

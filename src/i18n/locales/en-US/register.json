@@ -14,6 +14,13 @@
     "passwordTooShort": "Password must be at least 8 characters",
     "passwordMismatch": "Passwords do not match"
   },
+  "passwordRequirements": {
+    "minLength": "At least 8 characters",
+    "requireUpper": "Contains uppercase letter",
+    "requireLower": "Contains lowercase letter",
+    "requireDigit": "Contains a digit",
+    "requireSpecial": "Contains a special character"
+  },
   "passwordStrength": {
     "weak": "Weak",
     "medium": "Medium",

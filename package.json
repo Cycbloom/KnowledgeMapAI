@@ -97,6 +97,10 @@
     "mobile:build:debug": "npm run mobile:sync && node scripts/run-gradlew.mjs assembleDebug",
     "mobile:test": "npx playwright test --grep=\"移动端\"",
     "mobile:clean": "node scripts/run-gradlew.mjs clean",
+    "# Security Audit": "",
+    "audit": "npm audit",
+    "audit:fix": "npm audit fix",
+    "audit:production": "npm audit --production",
     "# Utility": "",
     "help": "node scripts/help.mjs"
   },
@@ -227,6 +231,7 @@
     "electron-icon-builder": "^2.0.1",
     "electron-rebuild": "^3.2.9",
     "eslint": "^9.39.3",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.26",
     "fake-indexeddb": "^6.2.5",
@@ -256,6 +261,9 @@
   "overrides": {
     "undici": "^6.23.0",
     "minimatch": "^10.0.0",
+    "eslint-plugin-jsx-a11y": {
+      "minimatch": "^3.1.2"
+    },
     "braces": "^3.0.3",
     "cross-spawn": "^7.0.0",
     "serialize-javascript": "^7.0.3",

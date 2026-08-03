@@ -76,8 +76,37 @@ export function createApp(kernel?: Kernel): express.Express {
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
   app.use(cookieParser());
 
-  // Security Headers
-  app.use(helmet());
+  // Security Headers with Content Security Policy
+  const isDev = process.env.NODE_ENV === "development";
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        reportOnly: false,
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            ...(isDev ? ["'unsafe-inline'"] : []),
+          ],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "blob:"],
+          connectSrc: [
+            "'self'",
+            ...(supabaseUrl ? [supabaseUrl] : []),
+            ...(isDev ? ["ws://localhost:5173", "http://localhost:5173"] : []),
+          ],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+          "report-uri": ["/api/v1/csp-violation"],
+        },
+      },
+    }),
+  );
 
   // Gzip Compression
   app.use(
@@ -155,6 +184,12 @@ export function createApp(kernel?: Kernel): express.Express {
   });
 
   app.get("/api/v1/csrf-token", getCsrfToken);
+
+  // CSP violation report endpoint
+  app.post("/api/v1/csp-violation", (req, res) => {
+    logger.warn("CSP violation reported", { report: req.body });
+    res.status(204).end();
+  });
 
   if (kernel) {
     /**

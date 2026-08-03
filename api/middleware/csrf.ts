@@ -54,7 +54,7 @@ const getCookieOptions = () => {
   const isProduction = process.env.NODE_ENV === "production";
 
   return {
-    httpOnly: false,
+    httpOnly: true,
     secure: isProduction || isVercel,
     sameSite: isVercel
       ? ("lax" as const)

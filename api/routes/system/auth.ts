@@ -3,14 +3,30 @@ import { getSupabaseAdmin } from '../../supabase';
 import { requireAuth, type AuthRequest } from '../../middleware/auth';
 import { authService, authRouteService } from '../../services/core';
 import { validate } from '../../middleware/validate';
+import { validate as validateInput } from '../../utils/validation';
+import * as v2Schemas from '../../utils/schemas';
 import { registerSchema, loginSchema, updateProfileSchema } from '../../schemas/index';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { validatePassword } from '../../../shared/utils/passwordPolicy';
 import { logger } from '../../utils/logger';
+import { logSecurityEvent, createSecurityEvent } from '../../services/audit/auditService';
 
 const router = Router();
 
-router.post('/register', validate(registerSchema), async (req: Request, res: Response): Promise<void> => {
+/** 密码复杂度校验中间件 */
+function validatePasswordMiddleware(req: Request, _res: Response, next: () => void): void {
+  const { password } = req.body;
+  if (password) {
+    const result = validatePassword(password);
+    if (!result.valid) {
+      throw new AppError('密码不符合复杂度要求', 400, ErrorCodes.PASSWORD_REQUIREMENTS);
+    }
+  }
+  next();
+}
+
+router.post('/register', validateInput(v2Schemas.registerUserSchema), validate(registerSchema), validatePasswordMiddleware, async (req: Request, res: Response): Promise<void> => {
   const requestId = req.requestId || 'unknown';
   const { email, password, name } = req.body;
 
@@ -74,24 +90,36 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response)
     hasPassword: !!password,
   });
 
-  // admin client: 登录流程无已认证会话，无 req.supabase 可用，需使用 admin client 验证凭据并补建档案
-  const admin = getSupabaseAdmin();
-  const result = await authRouteService.signInWithPassword(admin, email, password);
+  try {
+    // admin client: 登录流程无已认证会话，无 req.supabase 可用，需使用 admin client 验证凭据并补建档案
+    const admin = getSupabaseAdmin();
+    const result = await authRouteService.signInWithPassword(admin, email, password);
 
-  logger.info('Login successful', {
-    requestId,
-    userId: result.user.id,
-    email: `${result.user.email?.substring(0, 3)  }***`,
-  });
+    logger.info('Login successful', {
+      requestId,
+      userId: result.user.id,
+      email: `${result.user.email?.substring(0, 3)  }***`,
+    });
 
-  await authRouteService.ensureUserProfile(
-    admin,
-    result.user.id,
-    email,
-    result.user.user_metadata?.name as string || 'Restored User',
-  );
+    await logSecurityEvent(createSecurityEvent('LOGIN_SUCCESS', req, {
+      email: email?.substring(0, 3) ? `${email.substring(0, 3)}***` : undefined,
+    }));
 
-  res.json({ user: result.user, session: result.session });
+    await authRouteService.ensureUserProfile(
+      admin,
+      result.user.id,
+      email,
+      result.user.user_metadata?.name as string || 'Restored User',
+    );
+
+    res.json({ user: result.user, session: result.session });
+  } catch (error) {
+    await logSecurityEvent(createSecurityEvent('LOGIN_FAILURE', req, {
+      email: email?.substring(0, 3) ? `${email.substring(0, 3)}***` : undefined,
+      error: error instanceof AppError ? error.message : 'Unknown error',
+    }));
+    throw error;
+  }
 });
 
 router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
@@ -110,6 +138,8 @@ router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
 router.post('/logout', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   // admin client: 注销需撤销用户会话（session 管理），需 service role 权限，不能使用 user-scoped client
   await authRouteService.signOut(getSupabaseAdmin(), req.user.id);
+
+  await logSecurityEvent(createSecurityEvent('LOGOUT', req));
 
   res.json({ message: '退出登录成功' });
 });

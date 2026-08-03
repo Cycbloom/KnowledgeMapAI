@@ -97,7 +97,7 @@ describe('Register 页面', () => {
       fireEvent.blur(passwordInput);
 
       await waitFor(() => {
-        expect(screen.getByText('密码至少 8 位')).toBeVisible();
+        expect(screen.getByText('至少 8 个字符')).toBeVisible();
       });
       expect(authApi.register).not.toHaveBeenCalled();
     });

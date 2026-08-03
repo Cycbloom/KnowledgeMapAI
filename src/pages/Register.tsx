@@ -5,9 +5,10 @@ import { useRegisterMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
 import { useTheme, useFormDraft } from '../hooks';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
-import { Sun, Moon, Cloud } from 'lucide-react';
+import { Sun, Moon, Cloud, Check, X } from 'lucide-react';
 import { isValidationError } from '../utils/errors';
 import { getAuthModeDisplay } from '../config/authConfig';
+import { checkRequirement, getPasswordRequirements } from '@shared/utils/passwordPolicy';
 import type { User } from '@shared/types/user';
 
 export const Register = () => {
@@ -37,7 +38,6 @@ export const Register = () => {
   const registerMutation = useRegisterMutation();
   const { isDark, toggleTheme } = useTheme();
   const emailErrorId = useId();
-  const passwordErrorId = useId();
   const confirmPasswordErrorId = useId();
   // 公共路由 main 地标 ref，路由切换时 focus 便于键盘/SR 导航
   const mainRef = useRef<HTMLElement>(null);
@@ -71,25 +71,25 @@ export const Register = () => {
   const validateEmail = (value: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   };
-  const validatePassword = (value: string): boolean => {
-    return value.length >= 8;
-  };
   const validateConfirmPassword = (pw: string, confirm: string): boolean => {
     return pw === confirm;
   };
-  const getPasswordStrength = (pw: string): "weak" | "medium" | "strong" => {
-    if (!pw) return "weak";
-    if (pw.length < 8) return "weak";
-    const hasLetter = /[a-zA-Z]/.test(pw);
-    const hasDigit = /\d/.test(pw);
-    const hasSpecial = /[^a-zA-Z0-9]/.test(pw);
-    if (hasLetter && hasDigit && hasSpecial) return "strong";
-    if (hasLetter && hasDigit) return "medium";
-    return "weak";
-  };
+  const passwordRequirements = getPasswordRequirements();
+  const requirementKeys = Object.keys(passwordRequirements) as Array<keyof typeof passwordRequirements>;
   const isEmailInvalid = touched.email && !validateEmail(draft.email);
-  const isPasswordInvalid = touched.password && !validatePassword(password);
+  const isPasswordInvalid = touched.password && !checkRequirement(password, 'minLength');
   const isConfirmPasswordInvalid = touched.confirmPassword && !validateConfirmPassword(password, confirmPassword);
+
+  const getRequirementLabel = (key: keyof typeof passwordRequirements): string => {
+    const labels: Record<keyof typeof passwordRequirements, string> = {
+      minLength: t('register.passwordRequirements.minLength'),
+      requireUpper: t('register.passwordRequirements.requireUpper'),
+      requireLower: t('register.passwordRequirements.requireLower'),
+      requireDigit: t('register.passwordRequirements.requireDigit'),
+      requireSpecial: t('register.passwordRequirements.requireSpecial'),
+    };
+    return labels[key];
+  };
 
   return (
     <main
@@ -157,31 +157,21 @@ export const Register = () => {
               onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
               className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-500 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
               aria-invalid={isPasswordInvalid}
-              aria-describedby={isPasswordInvalid ? passwordErrorId : undefined}
+              aria-describedby={password ? 'password-requirements-checklist' : undefined}
               required
             />
-            {isPasswordInvalid && (
-              <p id={passwordErrorId} role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">{t('register.validation.passwordTooShort')}</p>
-            )}
             {password && (
-              <div className="mt-2">
-                <div className="flex gap-1">
-                  {[0, 1, 2].map((i) => {
-                    const strength = getPasswordStrength(password);
-                    const active = i <= (strength === "weak" ? 0 : strength === "medium" ? 1 : 2);
-                    const color = strength === "weak" ? "bg-red-500" : strength === "medium" ? "bg-yellow-500" : "bg-green-500";
-                    return (
-                      <div
-                        key={i}
-                        className={`h-1 flex-1 rounded-full transition-colors ${active ? color : "bg-gray-200 dark:bg-slate-700"}`}
-                      />
-                    );
-                  })}
-                </div>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {t(`register.passwordStrength.${getPasswordStrength(password)}`)}
-                </p>
-              </div>
+              <ul id="password-requirements-checklist" className="mt-2 space-y-1">
+                {requirementKeys.map((key) => {
+                  const met = checkRequirement(password, key);
+                  return (
+                    <li key={key as string} className={`flex items-center gap-1.5 text-xs transition-colors ${met ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {met ? <Check size={14} className="shrink-0" /> : <X size={14} className="shrink-0" />}
+                      <span>{getRequirementLabel(key)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
           <div>

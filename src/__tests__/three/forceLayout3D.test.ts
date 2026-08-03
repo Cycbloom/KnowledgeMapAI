@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { create3DForceLayout, type LayoutNode3D, type LayoutResult3D } from '../../three/layout/forceLayout3D';
 import type { Node, Edge, NodeLevel } from '../../types';
 

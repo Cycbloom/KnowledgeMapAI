@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Route } from "lucide-react";
 import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
 import { pathTasksApi } from "../services/api/modules/scheduler";
@@ -26,8 +27,6 @@ const LearningPathDetailPage: React.FC = () => {
   const { id: pathId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [pathDetail, setPathDetail] = useState<LearningPathDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["nodes", "progress", "plans"]),
@@ -38,88 +37,84 @@ const LearningPathDetailPage: React.FC = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [isBatchConverting, setIsBatchConverting] = useState(false);
 
+  const queryClient = useQueryClient();
   const { handleError } = useError();
 
-  const fetchPathDetail = async () => {
-    if (!pathId) return;
+  const mapPathDetail = (result: unknown): LearningPathDetail | null => {
+    if (!result) return null;
+    const r = result as Record<string, unknown>;
+    const nodes = (r.nodes as ApiLearningPathNode[] | undefined) ?? [];
+    const mappedNodes = nodes.map((node: ApiLearningPathNode) => ({
+      id: node.id,
+      node_id: node.knowledge_point_id || node.id,
+      title: node.title,
+      content: node.description,
+      order: node.order_index ?? 0,
+      estimated_minutes: node.estimated_time,
+      difficulty_level: 1,
+      status: node.status || "pending",
+      prerequisites: node.prerequisites || [],
+      mastery_level: 0,
+      started_at: node.started_at,
+      completed_at: node.completed_at,
+      time_spent: 0,
+      notes: "",
+      related_task_id: undefined,
+      related_task: undefined,
+    }));
 
-    setIsLoading(true);
-    try {
-      const result = await learningPathsApi.get(pathId);
-      if (result) {
-        const mappedNodes = (result.nodes || []).map((node: ApiLearningPathNode) => ({
-          id: node.id,
-          node_id: node.knowledge_point_id || node.id,
-          title: node.title,
-          content: node.description,
-          order: node.order_index ?? 0,
-          estimated_minutes: node.estimated_time,
-          difficulty_level: 1,
-          status: node.status || "pending",
-          prerequisites: node.prerequisites || [],
-          mastery_level: 0,
-          started_at: node.started_at,
-          completed_at: node.completed_at,
-          time_spent: 0,
-          notes: "",
-          related_task_id: undefined,
-          related_task: undefined,
-        }));
+    const progress = (r.progress as Record<string, number>) || {
+      total_nodes: 0,
+      completed_nodes: 0,
+      in_progress_nodes: 0,
+      pending_nodes: 0,
+      skipped_nodes: 0,
+      total_time_spent: 0,
+      progress_percentage: 0,
+    };
 
-        const progress = result.progress || {
-          total_nodes: 0,
-          completed_nodes: 0,
-          in_progress_nodes: 0,
-          pending_nodes: 0,
-          skipped_nodes: 0,
-          total_time_spent: 0,
-          progress_percentage: 0,
-        };
-
-        setPathDetail({
-          id: result.id,
-          title: result.title,
-          description: result.description,
-          graph_id: result.source_graph_id,
-          graph_title: undefined,
-          status: result.status || "active",
-          goal_type: "natural_language",
-          goal_content: result.goal,
-          target_knowledge_point_id: undefined,
-          daily_minutes_target: result.daily_minutes_target,
-          target_completion_date: result.target_date,
-          created_at: result.created_at,
-          updated_at: result.updated_at,
-          nodes: mappedNodes,
-          milestones: [],
-          plans: [],
-          suggestions: [],
-          progress: {
-            completed_nodes: progress.completed_nodes || 0,
-            total_nodes: progress.total_nodes || 0,
-            total_time_spent: progress.total_time_spent || 0,
-            estimated_total_time: result.total_estimated_time || 0,
-            completion_percentage: progress.progress_percentage || 0,
-            current_streak: 0,
-            longest_streak: 0,
-          },
-        });
-      } else {
-        setPathDetail(null);
-      }
-    } catch (error) {
-      handleError(error, {
-        context: "LearningPathDetail",
-        fallbackMessage: t("learningPaths.detail.fetchDetailFailed"),
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    return {
+      id: r.id as string,
+      title: r.title as string,
+      description: r.description as string,
+      graph_id: r.source_graph_id as string,
+      graph_title: undefined,
+      status: (r.status as string) || "active",
+      goal_type: "natural_language",
+      goal_content: r.goal as string,
+      target_knowledge_point_id: undefined,
+      daily_minutes_target: r.daily_minutes_target as number,
+      target_completion_date: r.target_date as string,
+      created_at: r.created_at as string,
+      updated_at: r.updated_at as string,
+      nodes: mappedNodes,
+      milestones: [],
+      plans: [],
+      suggestions: [],
+      progress: {
+        completed_nodes: progress.completed_nodes || 0,
+        total_nodes: progress.total_nodes || 0,
+        total_time_spent: progress.total_time_spent || 0,
+        estimated_total_time: (r.total_estimated_time as number) || 0,
+        completion_percentage: progress.progress_percentage || 0,
+        current_streak: 0,
+        longest_streak: 0,
+      },
+    };
   };
 
-  useEffect(() => {
-    fetchPathDetail();
-  }, [pathId]);
+  const {
+    data: pathDetail,
+    isLoading,
+  } = useQuery({
+    queryKey: ["learningPath", "detail", pathId],
+    queryFn: async () => {
+      if (!pathId) throw new Error("pathId is required");
+      const result = await learningPathsApi.get(pathId);
+      return mapPathDetail(result);
+    },
+    enabled: !!pathId,
+  });
 
   const handleUpdateNodeStatus = async (nodeId: string, status: NodeStatus) => {
     if (!pathId) return;
@@ -127,7 +122,7 @@ const LearningPathDetailPage: React.FC = () => {
     setIsUpdating(true);
     try {
       await learningPathsApi.updateNodeStatus(pathId, nodeId, status);
-      await fetchPathDetail();
+      await queryClient.invalidateQueries({ queryKey: ["learningPath", "detail", pathId] });
       message.success(t("learningPaths.detail.nodeStatusUpdated"));
     } catch (error) {
       handleError(error, {
@@ -153,7 +148,7 @@ const LearningPathDetailPage: React.FC = () => {
         priority: node.difficulty_level || 2,
       });
       message.success(t("learningPaths.detail.taskCreated", { title: node.title }));
-      await fetchPathDetail();
+      await queryClient.invalidateQueries({ queryKey: ["learningPath", "detail", pathId] });
     } catch (error) {
       handleError(error, {
         context: "ConvertToTask",
@@ -182,7 +177,7 @@ const LearningPathDetailPage: React.FC = () => {
 
       setSelectedNodeIds(new Set());
       setIsSelectionMode(false);
-      await fetchPathDetail();
+      await queryClient.invalidateQueries({ queryKey: ["learningPath", "detail", pathId] });
     } catch (error) {
       handleError(error, {
         context: "BatchConvertToTasks",
@@ -234,7 +229,7 @@ const LearningPathDetailPage: React.FC = () => {
 
       message.success(t("learningPaths.detail.autoScheduleSuccess", { total: result.total_tasks, days: result.estimated_days }));
 
-      await fetchPathDetail();
+      await queryClient.invalidateQueries({ queryKey: ["learningPath", "detail", pathId] });
     } catch (error) {
       handleError(error, {
         context: "AutoSchedule",
@@ -253,7 +248,7 @@ const LearningPathDetailPage: React.FC = () => {
     setIsUpdating(true);
     try {
       await learningPathsApi.update(pathId, { status });
-      await fetchPathDetail();
+      await queryClient.invalidateQueries({ queryKey: ["learningPath", "detail", pathId] });
       message.success(t("learningPaths.detail.pathStatusUpdated"));
     } catch (error) {
       handleError(error, {

@@ -14,7 +14,7 @@ interface GraphNodeMutations {
   updateNodeMutation: UseMutationResult<Node, Error, { id: string; data: UpdateNodeData; graphId: string }, unknown>;
   deleteNodeMutation: UseMutationResult<{ affected_graphs?: string[] }, Error, { id: string; graphId: string; hardDelete?: boolean }, unknown>;
   createEdgeMutation: UseMutationResult<Edge, Error, { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type: string; graphId?: string }, unknown>;
-  deleteEdgeMutation: UseMutationResult<unknown, Error, { id: string }, unknown>;
+  deleteEdgeMutation: UseMutationResult<unknown, Error, { id: string; graphId?: string }, unknown>;
   batchDeleteNodesMutation: UseMutationResult<unknown, Error, { nodeIds: string[]; graphId: string }, unknown>;
 }
 

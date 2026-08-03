@@ -20,9 +20,9 @@ export const useRollback = (graphId: string) =>
     errorMessage: "toast.graph.snapshotRestoreFailed",
     invalidateQueries: [
       queryKeys.graphSnapshots(graphId),
-      ["graphData", graphId],
-      ["graph", graphId],
-      ["graphs"],
+      queryKeys.graphData(graphId),
+      queryKeys.graph(graphId),
+      queryKeys.graphs,
     ],
     onSuccess: () => {
       frontendEventBus.publish("graph_data_changed", {
@@ -62,7 +62,7 @@ export const useMergeBranch = (graphId: string) =>
       ),
     successMessage: "toast.graph.branchMerged",
     errorMessage: "toast.graph.branchMergeFailed",
-    invalidateQueries: [["graphData", graphId]],
+    invalidateQueries: [queryKeys.graphData(graphId)],
     onSuccess: () => {
       frontendEventBus.publish("graph_data_changed", {
         graphId,

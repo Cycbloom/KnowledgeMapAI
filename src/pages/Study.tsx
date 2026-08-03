@@ -1,8 +1,10 @@
-import { useLayoutEffect, useEffect, useState, useMemo } from "react";
+import { useLayoutEffect, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQueries } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
-import { useStudyCards, useSemanticGroups, useReviewForecast } from "../hooks/queries";
+import { useSemanticGroups, useReviewForecast } from "../hooks/queries";
+import { queryKeys, realtimeQueryConfig } from "../hooks/queries/config";
 import { StudyCard } from "../types";
 import { QuestionBank } from "../components/Study/QuestionBank";
 import { FocusStats } from "../components/Study/FocusStats";
@@ -39,10 +41,39 @@ export const Study = () => {
     return undefined;
   }, [graphId, nodeId, nodeIds]);
 
-  const { data: allCardsData, isLoading } = useStudyCards(scopeParams);
-  const { data: dueCardsData } = useStudyCards(
-    scopeParams ? { ...scopeParams, due: true } : { due: true },
-  );
+  const studyCardResults = useQueries({
+    queries: [
+      {
+        queryKey: queryKeys.studyCards(scopeParams),
+        queryFn: async () => {
+          const result = await api.study.getCards(scopeParams);
+          if (result && typeof result === "object" && "cards" in result) {
+            return result.cards;
+          }
+          return result;
+        },
+        ...realtimeQueryConfig,
+      },
+      {
+        queryKey: queryKeys.studyCards(
+          scopeParams ? { ...scopeParams, due: true } : { due: true },
+        ),
+        queryFn: async () => {
+          const result = await api.study.getCards(
+            scopeParams ? { ...scopeParams, due: true } : { due: true },
+          );
+          if (result && typeof result === "object" && "cards" in result) {
+            return result.cards;
+          }
+          return result;
+        },
+        ...realtimeQueryConfig,
+      },
+    ],
+  });
+  const allCardsData = studyCardResults[0].data;
+  const dueCardsData = studyCardResults[1].data;
+  const isLoading = studyCardResults[0].isLoading;
   const { data: semanticGroupsData } = useSemanticGroups(graphId ?? undefined);
   const { data: forecastData } = useReviewForecast(scopeParams);
 
@@ -120,11 +151,33 @@ export const Study = () => {
     isMultiChoice,
   });
 
-  // Health data
-  const [weakPoints, setWeakPoints] = useState<WeakPoint[]>([]);
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
-  const [streakDays, setStreakDays] = useState(0);
-  const [weeklyStudyTime, setWeeklyStudyTime] = useState(0);
+  // Health data — 使用 useQueries 并行获取，替代 useEffect 手动管理
+  const healthResults = useQueries({
+    queries: [
+      {
+        queryKey: ["health", "overview"],
+        queryFn: () => api.health.getOverview() as Promise<{ streakDays?: number; weeklyStudyTime?: number }>,
+        staleTime: 60000,
+      },
+      {
+        queryKey: ["health", "weak-points"],
+        queryFn: () => api.health.getWeakPoints() as Promise<{ weakPoints?: WeakPoint[] }>,
+        staleTime: 60000,
+      },
+      {
+        queryKey: ["health", "predictions"],
+        queryFn: () => api.health.getPredictions() as Promise<{ predictions?: Prediction[] }>,
+        staleTime: 60000,
+      },
+    ],
+  });
+  const overviewData = healthResults[0].data;
+  const weakPointsData = healthResults[1].data;
+  const predictionsData = healthResults[2].data;
+  const streakDays = overviewData?.streakDays ?? 0;
+  const weeklyStudyTime = overviewData?.weeklyStudyTime ?? 0;
+  const weakPoints = weakPointsData?.weakPoints ?? [];
+  const predictions = predictionsData?.predictions ?? [];
 
   // Reset state when params change
   useLayoutEffect(() => {
@@ -142,28 +195,6 @@ export const Study = () => {
     // 用 quizCards.length（数字）替代数组引用避免重复触发；startCardReview 通过 allCards 入参获取最新数据
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, allCards, cardReview.quizCards.length]);
-
-  // Fetch health data
-  useEffect(() => {
-    const fetchHealthData = async () => {
-      try {
-        const [overviewRes, weakRes, predRes] = await Promise.all([
-          api.health.getOverview() as { streakDays?: number; weeklyStudyTime?: number },
-          api.health.getWeakPoints() as { weakPoints?: WeakPoint[] },
-          api.health.getPredictions() as { predictions?: Prediction[] },
-        ]);
-
-        setStreakDays(overviewRes?.streakDays || 0);
-        setWeeklyStudyTime(overviewRes?.weeklyStudyTime || 0);
-        setWeakPoints(weakRes?.weakPoints || []);
-        setPredictions(predRes?.predictions || []);
-      } catch (error) {
-        console.error("Failed to fetch health data:", error);
-      }
-    };
-
-    fetchHealthData();
-  }, []);
 
   // Stats
   const stats = useMemo(() => {

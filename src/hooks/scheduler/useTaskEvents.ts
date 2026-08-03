@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { useStore } from "../../store/useStore";
+import { queryKeys } from "../queries/config";
 import { Task, TaskRuntimeProgress } from "../../types";
 import {
   isElectronProduction,
@@ -219,7 +220,7 @@ export const useTaskEvents = () => {
                     };
                     return newTasks;
                   } else {
-                    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+                    queryClient.invalidateQueries({ queryKey: queryKeys.tasksPrefix });
                     return oldTasks;
                   }
                 },

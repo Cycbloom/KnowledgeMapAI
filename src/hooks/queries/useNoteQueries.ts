@@ -137,7 +137,7 @@ export const useNote = (noteId: string | undefined) => {
 export const useTrashNotes = (options?: { enabled?: boolean }) => {
   const enabled = options?.enabled ?? true;
   return useQuery({
-    queryKey: ["notes", "trash"],
+    queryKey: queryKeys.trashNotes,
     queryFn: async (): Promise<Note[]> => {
       const res = await api.notes.list({
         filters: { includeDeleted: true },

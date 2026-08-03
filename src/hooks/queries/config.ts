@@ -1,13 +1,13 @@
 import { Node, Edge, Task, NodeLevel } from "../../types";
 
-export const DEFAULT_STALE_TIME = 1000 * 60 * 5;
+export const DEFAULT_STALE_TIME = 30_000; // 30 秒
 export const LONG_STALE_TIME = 1000 * 60 * 30;
-export const GC_TIME = 1000 * 60 * 60;
+export const GC_TIME = 300_000; // 5 分钟
 
 export const defaultQueryConfig = {
   staleTime: DEFAULT_STALE_TIME,
   gcTime: GC_TIME,
-  retry: 2,
+  retry: 1,
   retryDelay: (attemptIndex: number) =>
     Math.min(1000 * 2 ** attemptIndex, 30000),
 };
@@ -200,6 +200,30 @@ export const queryKeys = {
   // === Graph relation 相关 ===
   intelligentSuggestions: (graphIds: string[]) =>
     ["intelligent-suggestions", graphIds] as const,
+
+  // === Trash 相关 ===
+  trashGraphs: ["graphs", "trash"] as const,
+  trashNotes: ["notes", "trash"] as const,
+
+  // 用于 invalidateQueries 前缀匹配的短键
+  notesPrefix: ["notes"] as const,
+  tasksPrefix: ["tasks"] as const,
+  studyCardsPrefix: ["studyCards"] as const,
+  graphNodeStatusPrefix: ["graphNodeStatus"] as const,
+  templatesPrefix: ["templates"] as const,
+
+  // === Activities 子查询 ===
+  activitiesDaily: (date: string) => ["activities", "daily", date] as const,
+  activitiesStats: (startDate: string, endDate: string) =>
+    ["activities", "stats", startDate, endDate] as const,
+
+  // === Backlinks 相关 ===
+  backlinks: (knowledgePointId: string) =>
+    ["backlinks", knowledgePointId] as const,
+
+  // === Calendar 相关 ===
+  calendarExecutions: (filters?: unknown) =>
+    ["calendar", "executions", filters] as const,
 
   // === Task 7-11 预留方法 ===
   // Task 8: GlobalSearch 查询键

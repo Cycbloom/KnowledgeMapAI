@@ -58,8 +58,8 @@ export const useClearAiPerformanceLogs = () => {
       return request(`/ai/performance/logs${params}`, { method: "DELETE" });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["aiPerformanceLogs"] });
-      queryClient.invalidateQueries({ queryKey: ["aiPerformanceStats"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiPerformanceLogs() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiPerformanceStats() });
     },
   });
 };

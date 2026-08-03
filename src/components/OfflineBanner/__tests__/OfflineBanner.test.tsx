@@ -1,6 +1,6 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, act, waitFor } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import type { ReactNode, ComponentPropsWithoutRef } from "react";
 import { OfflineBanner } from "../OfflineBanner";
 import type { QueuedMutation } from "@/utils/offlineMutations";

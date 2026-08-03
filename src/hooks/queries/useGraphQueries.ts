@@ -30,7 +30,7 @@ export const useGraphs = () => {
 
 export const useTrashGraphs = () => {
   return useQuery({
-    queryKey: ["graphs", "trash"],
+    queryKey: queryKeys.trashGraphs,
     queryFn: api.graphs.listTrash,
     ...defaultQueryConfig,
   });
@@ -102,7 +102,7 @@ export const useBatchGraphStatus = (
   enabled: boolean = true,
 ) => {
   const { data, isLoading, isPending } = useQuery({
-    queryKey: ["batchGraphNodeStatus", ...graphIds.sort()],
+    queryKey: queryKeys.batchGraphNodeStatus(graphIds),
     queryFn: () => api.graphs.batchGetNodeStatus(graphIds),
     enabled: enabled && graphIds.length > 0,
     staleTime: 60_000,

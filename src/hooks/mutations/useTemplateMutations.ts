@@ -7,7 +7,7 @@ import { createInvalidationMutation } from "./mutationFactory";
 
 export const useCreateTemplateMutation = createInvalidationMutation(
   api.templates.create,
-  [["templates"]],
+  [queryKeys.templatesPrefix],
 );
 
 export const useUpdateTemplateMutation = createInvalidationMutation(
@@ -18,7 +18,7 @@ export const useUpdateTemplateMutation = createInvalidationMutation(
 
 export const useDeleteTemplateMutation = createInvalidationMutation(
   api.templates.delete,
-  [["templates"]],
+  [queryKeys.templatesPrefix],
 );
 
 export const usePrefetchTemplates = () => {

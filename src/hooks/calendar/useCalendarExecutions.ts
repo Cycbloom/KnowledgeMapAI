@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
+import { queryKeys } from "../queries/config";
 import type { ExecutionEvent } from "../../types/calendar";
 import type { ExecutionFilters, TaskExecution } from "@shared/types";
 
@@ -16,7 +17,7 @@ const defaultQueryConfig = {
 
 export function useCalendarExecutions(filters?: ExecutionFilters) {
   return useQuery({
-    queryKey: ["calendar", "executions", filters] as const,
+    queryKey: queryKeys.calendarExecutions(filters),
     queryFn: async (): Promise<ExecutionEvent[]> => {
       const res = await api.scheduler.getExecutions(filters);
       const executions: TaskExecution[] = res ?? [];

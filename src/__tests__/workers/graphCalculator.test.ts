@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // Mock comlink so importing the worker doesn't try to set up a worker environment.
 // The mock captures the object passed to expose().

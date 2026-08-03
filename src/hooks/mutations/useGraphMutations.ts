@@ -120,19 +120,25 @@ export const useBatchDeleteGraphsMutation = createEventPublishMutation(
 );
 
 // ============================================================
-// useUpdateGraphMutation — publishes 2 events, kept as-is
+// Optimistic mutation — update graph metadata
 // ============================================================
 
-export const useUpdateGraphMutation = () => {
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateGraphData }) =>
-      api.graphs.update(id, data),
-    onSuccess: (_data, variables) => {
-      frontendEventBus.publish("graph_list_changed", { graphId: variables.id, changeType: "graph_updated" });
-      frontendEventBus.publish("graph_data_changed", { graphId: variables.id, changeType: "node_updated" });
-    },
-  });
-};
+export const useUpdateGraphMutation = createOptimisticMutation({
+  mutationFn: ({ id, data }: { id: string; data: UpdateGraphData }) =>
+    api.graphs.update(id, data),
+  queryKey: queryKeys.graphs,
+  optimisticUpdater: (
+    old: Graph[] | undefined,
+    { id, data }: { id: string; data: UpdateGraphData },
+  ) =>
+    old?.map((graph) =>
+      graph.id === id ? { ...graph, ...data } : graph,
+    ),
+  onSettled: (_data, _error, variables) => {
+    frontendEventBus.publish("graph_list_changed", { graphId: variables.id, changeType: "graph_updated" });
+    frontendEventBus.publish("graph_data_changed", { graphId: variables.id, changeType: "node_updated" });
+  },
+});
 
 // ============================================================
 // Optimistic mutation — toggle favorite
@@ -440,10 +446,36 @@ export const useUpdateNodeMutation = () => {
 };
 
 export const useDeleteEdgeMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: string }) => api.edges.delete(id),
-    onSuccess: () => {
-      frontendEventBus.publish("graph_data_changed", { changeType: "edge_deleted" });
+    mutationFn: ({ id }: { id: string; graphId?: string }) => api.edges.delete(id),
+    onMutate: async ({ id, graphId }) => {
+      if (!graphId) return {};
+
+      const queryKey = queryKeys.graphData(graphId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData<{ nodes: Node[]; edges: Edge[] }>(queryKey);
+
+      queryClient.setQueryData<{ nodes: Node[]; edges: Edge[] }>(queryKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          edges: old.edges.filter((edge) => edge.id !== id),
+        };
+      });
+
+      return { previousData, queryKey };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousData && context?.queryKey) {
+        queryClient.setQueryData(context.queryKey, context.previousData);
+      }
+    },
+    onSettled: (_data, _error, variables) => {
+      frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "edge_deleted" });
+      if (variables.graphId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graphId) });
+      }
     },
   });
 };

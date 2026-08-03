@@ -1,4 +1,6 @@
+import { useMutation, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { api } from "../../services/api";
+import { queryKeys } from "../queries/config";
 import {
   createInvalidationMutation,
   createSimpleMutation,
@@ -19,53 +21,229 @@ import type {
   WritingAssistRequest,
   RefreshDailyAggregationResponse,
 } from "@shared/types/note";
+import type { NoteListResult } from "../../services/api/contracts/INotesApi";
 
 /**
- * 创建普通笔记。成功后失效笔记列表缓存。
+ * 创建普通笔记。带乐观更新：
+ * - onMutate：立即将新笔记插入列表缓存首条
+ * - onError：回滚至 mutation 前的缓存状态
+ * - onSettled：失效笔记列表缓存以同步服务端真实数据
  */
-export const useCreateNoteMutation = createInvalidationMutation(
-  (data: CreateNoteInput) => api.notes.create(data),
-  [["notes"]],
-);
+export const useCreateNoteMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateNoteInput) => api.notes.create(data),
+    onMutate: async (newNote) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.notesPrefix });
+      const previousEntries = queryClient.getQueriesData({ queryKey: queryKeys.notesPrefix });
+
+      queryClient.setQueriesData<InfiniteData<NoteListResult>>(
+        { queryKey: queryKeys.notesPrefix },
+        (old) => {
+          if (!old) return old;
+          const optimisticNote: Note = {
+            id: `temp-${Date.now()}`,
+            userId: "",
+            title: newNote.title,
+            content: newNote.content ?? "",
+            type: newNote.type,
+            date: newNote.date ?? null,
+            templateId: newNote.templateId ?? null,
+            tags: newNote.tags ?? null,
+            isPinned: newNote.isPinned ?? false,
+            isArchived: newNote.isArchived ?? false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            deletedAt: null,
+          };
+          return {
+            ...old,
+            pages: old.pages.map((page, index) =>
+              index === 0
+                ? { ...page, items: [optimisticNote, ...page.items], total: page.total + 1 }
+                : page,
+            ),
+          };
+        },
+      );
+
+      return { previousEntries };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousEntries) {
+        for (const [key, data] of context.previousEntries) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notesPrefix });
+    },
+  });
+};
 
 /**
  * 获取或创建今日 Daily Note(不存在则后端按模板自动创建)。
  * 成功后失效笔记列表缓存。
  * 显式声明 TVariables=void,使 mutateAsync() 可无参调用。
  */
-export const useGetOrCreateTodayDailyMutation = createInvalidationMutation<Note, void>(
-  () => api.notes.getOrCreateTodayDaily(),
-  [["notes"]],
-);
+export const useGetOrCreateTodayDailyMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Note, Error, void>({
+    mutationFn: () => api.notes.getOrCreateTodayDaily(),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notesPrefix });
+    },
+  });
+};
 
 /**
- * 更新笔记(标题/正文/置顶/归档/标签等)。成功后失效笔记列表缓存。
+ * 更新笔记(标题/正文/置顶/归档/标签等)。带乐观更新：
+ * - onMutate：立即更新列表缓存中的笔记数据
+ * - onError：回滚至 mutation 前的缓存状态
+ * - onSettled：失效笔记列表缓存
  *
  * Bug 5: 标记为 silent,使 LoadingBar 的 useIsMutating 过滤掉自动保存触发的
  * mutation,避免每次自动保存都让顶部进度条闪现(saveStatus 文案已提供反馈)。
  */
-export const useUpdateNoteMutation = createInvalidationMutation(
-  ({ id, data }: { id: string; data: UpdateNoteInput }) =>
-    api.notes.update(id, data),
-  [["notes"]],
-  { silent: true },
-);
+export const useUpdateNoteMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateNoteInput }) =>
+      api.notes.update(id, data),
+    meta: { silent: true },
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.notesPrefix });
+      const previousEntries = queryClient.getQueriesData({ queryKey: queryKeys.notesPrefix });
+
+      // 乐观更新列表缓存中对应笔记
+      queryClient.setQueriesData<InfiniteData<NoteListResult>>(
+        { queryKey: queryKeys.notesPrefix },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((note) =>
+                note.id === id
+                  ? { ...note, ...data, updatedAt: new Date().toISOString() }
+                  : note,
+              ),
+            })),
+          };
+        },
+      );
+
+      // 乐观更新详情缓存
+      queryClient.setQueryData<Note>(queryKeys.note(id), (old: Note | undefined) => {
+        if (!old) return old;
+        return { ...old, ...data, updatedAt: new Date().toISOString() } as Note;
+      });
+
+      return { previousEntries };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousEntries) {
+        for (const [key, data] of context.previousEntries) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notesPrefix });
+    },
+  });
+};
 
 /**
- * 软删除笔记。成功后失效笔记列表缓存。
+ * 软删除笔记。带乐观更新：
+ * - onMutate：立即从列表缓存中移除该笔记
+ * - onError：回滚至 mutation 前的缓存状态
+ * - onSettled：失效笔记列表缓存
  */
-export const useDeleteNoteMutation = createInvalidationMutation(
-  (id: string) => api.notes.delete(id),
-  [["notes"]],
-);
+export const useDeleteNoteMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.notes.delete(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.notesPrefix });
+      const previousEntries = queryClient.getQueriesData({ queryKey: queryKeys.notesPrefix });
+
+      queryClient.setQueriesData<InfiniteData<NoteListResult>>(
+        { queryKey: queryKeys.notesPrefix },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.filter((note) => note.id !== id),
+              total: page.total - 1,
+            })),
+          };
+        },
+      );
+
+      return { previousEntries };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousEntries) {
+        for (const [key, data] of context.previousEntries) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notesPrefix });
+    },
+  });
+};
 
 /**
- * 恢复软删除的笔记(挂载关系不自动恢复)。成功后失效笔记列表缓存。
+ * 恢复软删除的笔记(挂载关系不自动恢复)。带乐观更新：
+ * - onMutate：立即从列表缓存中移除该笔记（回收站视图）
+ * - onError：回滚至 mutation 前的缓存状态
+ * - onSettled：失效笔记列表缓存
  */
-export const useRestoreNoteMutation = createInvalidationMutation(
-  (id: string) => api.notes.restore(id),
-  [["notes"]],
-);
+export const useRestoreNoteMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.notes.restore(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.notesPrefix });
+      const previousEntries = queryClient.getQueriesData({ queryKey: queryKeys.notesPrefix });
+
+      // 回收站列表中移除已恢复的笔记
+      queryClient.setQueriesData<InfiniteData<NoteListResult>>(
+        { queryKey: queryKeys.notesPrefix },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.filter((note) => note.id !== id),
+              total: page.total - 1,
+            })),
+          };
+        },
+      );
+
+      return { previousEntries };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousEntries) {
+        for (const [key, data] of context.previousEntries) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notesPrefix });
+    },
+  });
+};
 
 // ============================================================
 // P1: AI 辅助 mutations
@@ -103,7 +281,7 @@ export const useCreateNodesFromConceptsMutation = createInvalidationMutation<
   { noteId: string; data: CreateNodesFromConceptsRequest }
 >(
   ({ noteId, data }) => api.notes.createNodesFromConcepts(noteId, data),
-  [["graphs"], ["notes"]],
+  [queryKeys.graphs, queryKeys.notesPrefix],
 );
 
 // ============================================================
@@ -133,7 +311,7 @@ export const useUploadNoteImageMutation = createSimpleMutation<
 export const useCreateNoteTemplateMutation = createInvalidationMutation<
   NoteTemplate,
   CreateNoteTemplateInput
->((data) => api.notes.createTemplate(data), [["notes", "templates"], ["notes"]]);
+>((data) => api.notes.createTemplate(data), [queryKeys.noteTemplates(), queryKeys.notesPrefix]);
 
 /**
  * 更新笔记模板。成功后失效 ["notes", "templates"] 与 ["notes"] 前缀
@@ -153,7 +331,7 @@ export const useUpdateNoteTemplateMutation = createInvalidationMutation<
 export const useDeleteNoteTemplateMutation = createInvalidationMutation<
   void,
   string
->((id) => api.notes.deleteTemplate(id), [["notes", "templates"], ["notes"]]);
+>((id) => api.notes.deleteTemplate(id), [queryKeys.noteTemplates(), queryKeys.notesPrefix]);
 
 /**
  * 设为默认模板。成功后失效 ["notes", "templates"] 与 ["notes"] 前缀:

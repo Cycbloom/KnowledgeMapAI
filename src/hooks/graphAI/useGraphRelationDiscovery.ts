@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../queries/config';
 import { graphsApi } from '../../services/api/graphs';
 import { message } from '../../utils/messageHelper';
 import type {
@@ -55,7 +56,7 @@ export function useGraphRelationDiscovery(options: UseGraphRelationDiscoveryOpti
   });
 
   const suggestionsQuery = useQuery({
-    queryKey: ['intelligent-suggestions', graphIds],
+    queryKey: queryKeys.intelligentSuggestions(graphIds ?? []),
     queryFn: () => graphsApi.getIntelligentSuggestions(graphIds),
     enabled: autoFetch && !!discoveryResult,
     staleTime: 5 * 60 * 1000,

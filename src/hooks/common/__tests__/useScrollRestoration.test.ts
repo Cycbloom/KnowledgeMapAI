@@ -3,10 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { createElement, type MutableRefObject, type RefObject } from "react";
 import { renderToString } from "react-dom/server";
-import {
-  useScrollRestoration,
-  type UseScrollRestorationOptions,
-} from "../useScrollRestoration";
+import { useScrollRestoration } from "../useScrollRestoration";
 
 /**
  * 创建模拟的滚动容器：scrollTop 通过 getter/setter 持久化到闭包变量，
@@ -232,7 +229,7 @@ describe("useScrollRestoration", () => {
 
     const container = createMockContainer();
     const { rerender } = renderHook(
-      ({ label }: { label: string }) => {
+      ({ label: _label }: { label: string }) => {
         const ref = useScrollRestoration<HTMLDivElement>("test-key", {
           deps: [],
         });

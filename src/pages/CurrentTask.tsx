@@ -207,7 +207,7 @@ export const CurrentTask: React.FC = () => {
       await pauseMutation.mutateAsync(currentTask.id);
       pauseTimer();
       message.info(t("scheduler.currentTask.taskPaused"));
-    } catch (error) {
+    } catch (_error) {
       message.error(t("scheduler.currentTask.pauseFailed"));
     }
   };
@@ -218,7 +218,7 @@ export const CurrentTask: React.FC = () => {
       await startMutation.mutateAsync(currentTask.id);
       resumeTimer();
       message.success(t("scheduler.currentTask.taskResumed"));
-    } catch (error) {
+    } catch (_error) {
       message.error(t("scheduler.currentTask.resumeFailed"));
     }
   };
@@ -230,7 +230,7 @@ export const CurrentTask: React.FC = () => {
       await completeTimer();
       message.success(t("scheduler.currentTask.taskCompleted"));
       refetch();
-    } catch (error) {
+    } catch (_error) {
       message.error(t("scheduler.currentTask.completeFailed"));
     }
   };
@@ -242,7 +242,7 @@ export const CurrentTask: React.FC = () => {
       await completeTimer();
       message.info(t("scheduler.currentTask.taskDemoted"));
       refetch();
-    } catch (error) {
+    } catch (_error) {
       message.error(t("scheduler.currentTask.demoteFailed"));
     }
   };

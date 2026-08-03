@@ -51,4 +51,4 @@ export { useAILanguage } from "./ai";
 export { useNoteWordCount } from "./notes";
 export { useBacklinks } from "./graphAI";
 export { useTaskActions } from "./scheduler";
-export { useMenuNavigation } from "./common";
+export { useMenuNavigation, usePrefetch, useRoutePrefetch } from "./common";

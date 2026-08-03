@@ -40,3 +40,5 @@ export { useRenderCount } from './useRenderCount';
 export type { UseRenderCountResult } from './useRenderCount';
 export { useWebVitals } from './useWebVitals';
 export type { WebVitalMetric, UseWebVitalsResult } from './useWebVitals';
+export { usePrefetch } from './usePrefetch';
+export { useRoutePrefetch } from './useRoutePrefetch';

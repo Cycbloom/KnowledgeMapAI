@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
+import { queryKeys } from "./config";
 import type { GetActivitiesOptions } from "../../services/api/modules/scheduler/activities";
 
 export function useActivities(options?: GetActivitiesOptions) {
@@ -15,7 +16,7 @@ export function useActivities(options?: GetActivitiesOptions) {
 
 export function useDailyActivities(date: string) {
   return useQuery({
-    queryKey: ["activities", "daily", date],
+    queryKey: queryKeys.activitiesDaily(date),
     queryFn: async () => {
       const result = await api.scheduler.getDailyActivities(date);
       return result;

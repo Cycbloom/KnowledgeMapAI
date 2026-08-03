@@ -273,7 +273,7 @@ describe("calculateNodePosition", () => {
   });
 
   it("位置在指定角度范围内", () => {
-    const node = createMockNode("test-node");
+    const _node = createMockNode("test-node");
     const originPosition = { x: 0, y: 0 };
     const angleStart = Math.PI / 4;
     const angleEnd = Math.PI / 2;

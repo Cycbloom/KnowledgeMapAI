@@ -2,8 +2,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ShortcutHint } from "../ShortcutHint";
-import * as useShortcutLabelModule from "../../../hooks/common/useShortcutLabel";
-import * as usePreferencesStoreModule from "../../../store/usePreferencesStore";
 
 // 共享 mock 状态：通过 vi.hoisted 确保 vi.mock 工厂可访问
 const mockShortcutLabel = vi.hoisted(() => ({

@@ -560,7 +560,7 @@ export const GraphMap = () => {
         try {
           await graphDomainsApi.updateByGraphId(graphId, [{ domain_id: domainId }]);
           successCount++;
-        } catch (error) {
+        } catch (_) {
           failCount++;
         }
       }

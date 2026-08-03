@@ -27,7 +27,7 @@ vi.mock('@/utils/errors', () => {
 // --- Imports ---
 
 import { agentApi, type AgentSSEEvent } from '../agent';
-import { request, getApiUrl, getHeaders } from '../client';
+import { request, getApiUrl } from '../client';
 
 // --- Helpers ---
 

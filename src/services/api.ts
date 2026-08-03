@@ -2,7 +2,6 @@ export {
   initCsrf, 
   request, 
   getAIConfig, 
-  getCookie,
   getHeaders,
   handleResponse,
   type AIAction,

@@ -65,18 +65,17 @@ export const getCookie = (name: string): string | null => {
   return null;
 };
 
+// 内存级 CSRF token 存储 —— cookie 已设为 httpOnly，前端无法通过 document.cookie 读取
+let csrfTokenValue: string | null = null;
+
+export const getCsrfToken = (): string | null => csrfTokenValue;
+
 let csrfInitialized = false;
 
 const initCsrf = async (): Promise<void> => {
   if (csrfInitialized) return;
 
   if (isElectronProduction()) {
-    csrfInitialized = true;
-    return;
-  }
-
-  const existingToken = getCookie("csrf-token");
-  if (existingToken) {
     csrfInitialized = true;
     return;
   }
@@ -90,9 +89,14 @@ const initCsrf = async (): Promise<void> => {
       csrfUrl = "/api/v1/csrf-token";
     }
 
-    await fetch(csrfUrl, {
+    const response = await fetch(csrfUrl, {
       credentials: "include",
     });
+    // 解析响应体中的 token 并存入内存
+    const data = await response.json().catch(() => ({}));
+    if (data?.csrfToken) {
+      csrfTokenValue = data.csrfToken;
+    }
     csrfInitialized = true;
   } catch (error) {
     logger.warn("Failed to initialize CSRF token", error);
@@ -213,7 +217,7 @@ export const createApiClient = (): AxiosInstance => {
       }
 
       const token = useStore.getState().token;
-      const csrfToken = getCookie("csrf-token");
+      const csrfToken = csrfTokenValue;
 
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -354,7 +358,7 @@ export const createApiClient = (): AxiosInstance => {
       url,
     };
     if (mergedConfig._skipDedupe) {
-      return originalGet<T, R, D>(url, config);
+      return originalGet<T, R, D>(url, config) as unknown as Promise<R>;
     }
     const key = getInflightKey(mergedConfig);
     const existing = inflightRequests.get(key);
@@ -364,7 +368,7 @@ export const createApiClient = (): AxiosInstance => {
     const promise = originalGet<T, R, D>(url, config);
     inflightRequests.set(key, promise as Promise<unknown>);
     // Entry is removed by the response interceptor on success or error.
-    return promise;
+    return promise as unknown as Promise<R>;
   };
 
   client.get = dedupedGet as typeof client.get;

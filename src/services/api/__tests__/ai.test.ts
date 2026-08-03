@@ -13,7 +13,7 @@ vi.mock('../client', () => ({
   getAIConfig: vi.fn(() => ({ provider: 'p', model: 'm' })),
   getApiUrl: vi.fn(async () => 'http://api.test'),
   handleResponse: vi.fn(),
-  getCookie: vi.fn(() => null),
+  getCsrfToken: vi.fn(() => null),
 }));
 
 vi.mock('../../shared/streamHandler', () => ({

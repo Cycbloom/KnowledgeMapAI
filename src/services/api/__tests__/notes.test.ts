@@ -17,7 +17,7 @@ vi.mock('../client', () => ({
   request: vi.fn(),
   getApiUrl: vi.fn(),
   handleResponse: vi.fn(),
-  getCookie: vi.fn(),
+  getCsrfToken: vi.fn(),
 }));
 
 // Mock useStore(仅 uploadImage 使用)— 使用相对路径确保 vitest mock 解析正确
@@ -35,7 +35,7 @@ vi.mock('../../../config/electronConfig', () => ({
 // --- Imports (must be after vi.mock declarations) ---
 
 import { notesApi } from '../notes';
-import { request, getApiUrl, handleResponse, getCookie } from '../client';
+import { request, getApiUrl, handleResponse, getCsrfToken } from '../client';
 import { useStore } from '../../../store/useStore';
 import { isElectronProduction } from '../../../config/electronConfig';
 
@@ -416,7 +416,7 @@ describe('notesApi', () => {
 
     beforeEach(() => {
       vi.mocked(getApiUrl).mockResolvedValue('/api/v1');
-      vi.mocked(getCookie).mockReturnValue('csrf-abc');
+      vi.mocked(getCsrfToken).mockReturnValue('csrf-abc');
       vi.mocked(isElectronProduction).mockReturnValue(false);
       vi.mocked(handleResponse).mockResolvedValue({ url: 'http://img.png' });
       vi.mocked(useStore.getState).mockReturnValue({

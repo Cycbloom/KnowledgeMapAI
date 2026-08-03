@@ -1,4 +1,4 @@
-import { request, getApiUrl, handleResponse, getCookie } from './client';
+import { request, getApiUrl, handleResponse, getCsrfToken } from './client';
 import { useStore } from '@/store/useStore';
 import { isElectronProduction } from '@/config/electronConfig';
 import type {
@@ -137,7 +137,7 @@ export const notesApi: INotesApi = {
     file: File,
   ): Promise<UploadImageResponse> => {
     const token = useStore.getState().token;
-    const csrfToken = !isElectronProduction() ? getCookie('csrf-token') : null;
+    const csrfToken = !isElectronProduction() ? getCsrfToken() : null;
     const formData = new FormData();
     formData.append('file', file);
 

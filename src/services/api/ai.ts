@@ -4,7 +4,7 @@ import {
   getApiUrl,
   handleResponse,
   injectAIConfig,
-  getCookie,
+  getCsrfToken,
 } from "./client";
 import { useStore } from "@/store/useStore";
 import type { AIAction, TutorMode } from "@shared/types";
@@ -40,7 +40,7 @@ const createApiStreamHandler = async (
   onChunk: (content: string) => void,
 ) => {
   const token = useStore.getState().token;
-  const csrfToken = getCookie("csrf-token");
+  const csrfToken = getCsrfToken();
   const apiUrl = await getApiUrl();
   await createStreamHandler(url, payload, onChunk, {
     baseUrl: apiUrl,
@@ -242,7 +242,7 @@ export const aiApi: IAiApi = {
     language?: string;
   }) => {
     const token = useStore.getState().token;
-    const csrfToken = getCookie("csrf-token");
+    const csrfToken = getCsrfToken();
     const config = getAIConfig("text");
     const formData = new FormData();
     formData.append("graph_id", data.graph_id);

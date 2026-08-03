@@ -1,17 +1,17 @@
 import { useStore } from '@/store/useStore';
 import { createErrorFromResponse } from '@/utils/errors';
-import { apiClient, getCookie } from './createApiClient';
+import { apiClient, getCsrfToken } from './createApiClient';
 import { isElectronProduction, getElectronApiUrl } from '@/config/electronConfig';
 import type { Method } from 'axios';
 
 const API_URL = '/api/v1';
 
 export { initCsrf } from './createApiClient';
-export { getCookie };
+export { getCsrfToken };
 
 export const getHeaders = () => {
   const token = useStore.getState().token;
-  const csrfToken = !isElectronProduction() ? getCookie('csrf-token') : null;
+  const csrfToken = !isElectronProduction() ? getCsrfToken() : null;
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -66,7 +66,7 @@ export const request = async <T = any>(url: string, options: RequestInit = {}): 
     url,
     method,
     data,
-  });
+  }) as unknown as T;
 };
 
 /**

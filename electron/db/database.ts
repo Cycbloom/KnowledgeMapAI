@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import { TABLES, type TableDef, type ColumnDef } from './schema';
+import { TABLES, type TableDef } from './schema';
 import { getInitialMigration } from './migrations/001_initial';
 
 export class DatabaseManager {

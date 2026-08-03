@@ -21,6 +21,7 @@ interface NavItem {
 interface MobileBottomNavProps {
   isDark: boolean;
   currentPath: string;
+  onPrefetch?: (path: string) => () => void;
 }
 
 const navItemVariants = {
@@ -97,6 +98,7 @@ function useKernelNavItems() {
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   isDark,
   currentPath,
+  onPrefetch,
 }) => {
   const { t } = useTranslation();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -225,6 +227,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               className={getNavItemClass(item.to)}
               aria-label={t(item.labelKey)}
               aria-current={isActive(item.to) ? "page" : undefined}
+              onMouseEnter={onPrefetch?.(item.to)}
             >
               <motion.div
                 whileTap="tap"
@@ -322,6 +325,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                             id={menuItemId(index)}
                             aria-label={t(item.labelKey)}
                             aria-current={isActiveItem ? "page" : undefined}
+                            onMouseEnter={onPrefetch?.(item.to)}
                           >
                             <item.icon size={16} strokeWidth={isActiveItem ? 2.5 : 2} aria-hidden="true" />
                             <span className="text-sm">{t(item.labelKey)}</span>

@@ -380,7 +380,7 @@ export class AIActionService {
         // Simple cleanup for markdown code blocks
         const cleanJson = responseContent.replace(/```json\s*|\s*```/g, '').trim();
         parsed = JSON.parse(cleanJson);
-    } catch (e) {
+    } catch (_e) {
         return { success: false, message: 'Failed to parse AI response as JSON' };
     }
 

@@ -33,22 +33,19 @@ export type BlockTypeId =
   | "image"
   | "table";
 
-const BLOCK_LABEL_KEYS = [
-  "notes.editor.blockMenu.paragraph",
-  "notes.editor.blockMenu.heading1",
-  "notes.editor.blockMenu.heading2",
-  "notes.editor.blockMenu.heading3",
-  "notes.editor.blockMenu.bulletList",
-  "notes.editor.blockMenu.orderedList",
-  "notes.editor.blockMenu.taskList",
-  "notes.editor.blockMenu.blockquote",
-  "notes.editor.blockMenu.codeBlock",
-  "notes.editor.blockMenu.divider",
-  "notes.editor.blockMenu.image",
-  "notes.editor.blockMenu.table",
-] as const;
-
-export type BlockLabelKey = (typeof BLOCK_LABEL_KEYS)[number];
+export type BlockLabelKey =
+  | "notes.editor.blockMenu.paragraph"
+  | "notes.editor.blockMenu.heading1"
+  | "notes.editor.blockMenu.heading2"
+  | "notes.editor.blockMenu.heading3"
+  | "notes.editor.blockMenu.bulletList"
+  | "notes.editor.blockMenu.orderedList"
+  | "notes.editor.blockMenu.taskList"
+  | "notes.editor.blockMenu.blockquote"
+  | "notes.editor.blockMenu.codeBlock"
+  | "notes.editor.blockMenu.divider"
+  | "notes.editor.blockMenu.image"
+  | "notes.editor.blockMenu.table";
 
 export interface BlockType {
   id: BlockTypeId;

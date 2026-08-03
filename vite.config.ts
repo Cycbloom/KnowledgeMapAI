@@ -1,6 +1,5 @@
 import { defineConfig } from "vitest/config";
-import { loadEnv } from "vite";
-import { fileURLToPath } from "node:url";
+
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { getPwaPlugins } from "./vite.pwa";

@@ -80,7 +80,7 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : "用�
       let parsed;
       try {
         parsed = JSON.parse(content || '{"optimizedPrompt": ""}');
-      } catch (e) {
+      } catch (_e) {
         throw new AppError("优化结果解析失败", 422, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 

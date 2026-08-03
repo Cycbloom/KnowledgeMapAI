@@ -148,7 +148,7 @@ router.get('/env', async (_req, res) => {
             : '',
         };
       }
-    } catch (e) {
+    } catch (_e) {
       supabaseKeyCheck = { valid: false, type: 'parse_error', error: 'Invalid JWT format' };
     }
   }

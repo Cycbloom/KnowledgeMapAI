@@ -77,7 +77,7 @@ router.get(
         req.user.id,
       );
       res.json({ success: true, data: analytics });
-    } catch (error) {
+    } catch (_error) {
       throw new AppError("获取任务分析数据失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
@@ -98,7 +98,7 @@ router.post(
         req.user.id,
       );
       res.json({ success: true, data: insights });
-    } catch (error) {
+    } catch (_error) {
       throw new AppError("生成洞察失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },

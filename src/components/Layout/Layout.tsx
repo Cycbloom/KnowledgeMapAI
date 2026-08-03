@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo, useId } from "react";
 import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { useStore } from "../../store/useStore";
-import { useUser } from "../../hooks/queries";
+import { useUser, queryKeys } from "../../hooks/queries";
 import { useLogoutMutation, useImportGraphMutation } from "../../hooks/mutations";
 import { useTaskEvents, useConsole, useTheme } from "../../hooks";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
@@ -67,6 +68,7 @@ interface SidebarLinkProps {
   label: string;
   isCollapsed: boolean;
   isDark: boolean;
+  onPrefetch?: () => void;
 }
 
 const SidebarLink: React.FC<SidebarLinkProps & { isActive?: boolean }> = ({
@@ -75,6 +77,7 @@ const SidebarLink: React.FC<SidebarLinkProps & { isActive?: boolean }> = ({
   label,
   isCollapsed,
   isActive,
+  onPrefetch,
 }) => (
   <Link
     to={to}
@@ -82,6 +85,7 @@ const SidebarLink: React.FC<SidebarLinkProps & { isActive?: boolean }> = ({
     title={label}
     aria-label={label}
     aria-current={isActive ? "page" : undefined}
+    onMouseEnter={onPrefetch}
   >
     <Icon size={20} aria-hidden="true" />
     {!isCollapsed && <span>{label}</span>}
@@ -355,6 +359,66 @@ export const Layout = () => {
 
   const navItems = useMemo(() => frontendKernel.getNavItems(), [frontendKernel]);
 
+  const queryClient = useQueryClient();
+  const getPrefetchHandler = useCallback(
+    (path: string): (() => void) => {
+      switch (path) {
+        case "/":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.graphs, queryFn: api.graphs.list });
+            queryClient.prefetchQuery({ queryKey: queryKeys.dashboardStats, queryFn: api.dashboard.getStats });
+          };
+        case "/graph-map":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.graphMap(), queryFn: api.domains.getTree });
+          };
+        case "/study":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.studyCards({ due: true }), queryFn: () => api.study.getCards({ due: true }) });
+          };
+        case "/notes":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.notes(), queryFn: () => api.notes.list() });
+          };
+        case "/learning-paths":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.learningLoops(), queryFn: () => api.learningPaths.list() });
+          };
+        case "/statistics":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.statistics, queryFn: api.statistics.getStats });
+          };
+        case "/calendar":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.calendarExecutions(), queryFn: () => api.scheduler.list({}) });
+          };
+        case "/achievements":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.achievements(), queryFn: api.achievements.list });
+          };
+        case "/templates":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.templates(), queryFn: () => api.templates.list() });
+          };
+        case "/tasks":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.tasks(), queryFn: () => api.tasks.list() });
+          };
+        case "/scheduler":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.schedulerTasks(), queryFn: () => api.scheduler.list({}) });
+          };
+        case "/trash":
+          return () => {
+            queryClient.prefetchQuery({ queryKey: queryKeys.trashGraphs, queryFn: api.graphs.listTrash });
+          };
+        default:
+          return () => {};
+      }
+    },
+    [queryClient],
+  );
+
   if (!!token && !user && isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -431,6 +495,7 @@ export const Layout = () => {
                     isCollapsed={isCollapsed}
                     isDark={isDark}
                     isActive={isActive}
+                    onPrefetch={getPrefetchHandler(item.path)}
                   />
                 );
               })}
@@ -564,7 +629,7 @@ export const Layout = () => {
             </ErrorBoundary>
           </div>
           {isMobile && !isFullScreenPage && (
-            <MobileBottomNav isDark={isDark} currentPath={location.pathname} />
+            <MobileBottomNav isDark={isDark} currentPath={location.pathname} onPrefetch={getPrefetchHandler} />
           )}
           {isMobile && !isFullScreenPage && (
             <MobileSidebarDrawer
@@ -573,6 +638,7 @@ export const Layout = () => {
               navItems={navItems}
               isDark={isDark}
               currentPath={location.pathname}
+              onPrefetch={getPrefetchHandler}
             />
           )}
           <MessageBar bottomOffset={isMobile && !isFullScreenPage ? 56 : 0} />

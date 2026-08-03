@@ -92,7 +92,7 @@ export const getDefaultProvider = async (): Promise<AIProviderType> => {
     if (sysConfig?.default_provider) {
       return sysConfig.default_provider as AIProviderType;
     }
-  } catch (e) {
+  } catch (_e) {
     // ignore
   }
   return (process.env.AI_DEFAULT_PROVIDER as AIProviderType) || "deepseek";

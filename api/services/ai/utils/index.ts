@@ -27,7 +27,7 @@ export const parseAIResponse = <T>(content: string, context: string): T => {
   const cleaned = cleanJsonString(content);
   try {
     return JSON.parse(cleaned);
-  } catch (e) {
+  } catch (_e) {
     logger.warn(
       `[AI] JSON Parse Error (${context}). Attempting regex fallback.`,
     );
@@ -39,7 +39,7 @@ export const parseAIResponse = <T>(content: string, context: string): T => {
     if (match) {
       try {
         return JSON.parse(match[0]);
-      } catch (e2) {
+      } catch (_e2) {
         logger.error(`[AI] Regex fallback also failed for ${context}`);
         logger.debug(`[AI] Matched content: ${match[0].substring(0, 500)}`);
         throw new Error(`Failed to parse AI response for ${context}`);

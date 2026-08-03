@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { SubtaskStateMachine } from "../subtaskStateMachine";
 import type {
-  LearningState,
   StateHistoryEntry,
 } from "../../../../shared/types/scheduler";
 

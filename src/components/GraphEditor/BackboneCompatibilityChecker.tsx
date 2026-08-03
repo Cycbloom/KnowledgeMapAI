@@ -281,7 +281,7 @@ export const BackboneCompatibilityChecker: React.FC<
 
         await api.nodes.update(issue.nodeId, updateData);
         successCount++;
-      } catch (error) {
+      } catch (_) {
         errorCount++;
       }
     }

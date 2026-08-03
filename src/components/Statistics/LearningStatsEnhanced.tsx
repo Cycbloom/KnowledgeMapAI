@@ -37,8 +37,7 @@ interface NodeStatusInfo {
   locked?: boolean;
 }
 
-const CARD_TYPE_NAMES = ['new', 'learning', 'review', 'relearning'] as const;
-export type CardTypeName = (typeof CARD_TYPE_NAMES)[number];
+export type CardTypeName = 'new' | 'learning' | 'review' | 'relearning';
 
 export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData }) => {
   const { isDark } = useTheme();

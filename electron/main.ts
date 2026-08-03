@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, crashReporter, ipcMain, Menu, session, screen } from "electron";
+import { app, BrowserWindow, shell, crashReporter, ipcMain, Menu, session } from "electron";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import * as http from "http";
@@ -230,12 +230,7 @@ function getResourcePath(...paths: string[]): string {
   return path.join(__dirname, "..", ...paths);
 }
 
-function getDistPath(...paths: string[]): string {
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, ...paths);
-  }
-  return path.join(__dirname, "..", ...paths);
-}
+
 
 async function startApiServer(): Promise<number> {
   if (!apiApp) {

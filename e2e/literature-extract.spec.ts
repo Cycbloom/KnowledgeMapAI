@@ -58,8 +58,6 @@ const SAMPLE_TEXT_CONTENT = `
 为自然语言处理领域的发展提供了新的思路。
 `;
 
-const SAMPLE_URL = "https://arxiv.org/abs/2301.07041";
-
 // 骨干模块定义
 const BACKBONE_MODULES = [
   "research_background",
@@ -68,16 +66,6 @@ const BACKBONE_MODULES = [
   "core_concepts",
   "application_domains",
   "future_directions",
-] as const;
-
-// 概念类型定义
-const CONCEPT_TYPES = [
-  "method",
-  "mechanism",
-  "operation",
-  "concept",
-  "technology",
-  "tool",
 ] as const;
 
 /**
@@ -208,124 +196,8 @@ class LiteratureExtractPage {
   }
 }
 
-/**
- * 概念预览页面模型
- */
-class ConceptPreviewPage {
-  constructor(private page: Page) {}
-
-  private get modal() {
-    return this.page
-      .locator(".fixed.inset-0.bg-black\\/50")
-      .filter({ has: this.page.getByText(/已选择.*\d+.*\/.*\d+/) });
-  }
-
-  private get conceptCards() {
-    return this.modal.locator('[class*="rounded-lg"][class*="border"]');
-  }
-
-  private get selectAllButton() {
-    return this.modal.locator("button").filter({ hasText: /^全选$/ });
-  }
-
-  private get deselectAllButton() {
-    return this.modal.locator("button").filter({ hasText: "取消全选" });
-  }
-
-  private get confirmButton() {
-    return this.modal.locator("button").filter({ hasText: /确认添加/ });
-  }
-
-  private get cancelButton() {
-    return this.modal.locator("button").filter({ hasText: /^取消$/ });
-  }
-
-  async waitForOpen() {
-    await expect(this.modal).toBeVisible({ timeout: 10000 });
-  }
-
-  async getConceptCount() {
-    return await this.conceptCards.count();
-  }
-
-  async selectConcept(index: number) {
-    const card = this.conceptCards.nth(index);
-    const checkbox = card.locator("button").first();
-    await checkbox.click();
-  }
-
-  async editConcept(index: number) {
-    const card = this.conceptCards.nth(index);
-    const editButton = card.getByRole("button", { name: "编辑" });
-    await editButton.click();
-  }
-
-  async changeModule(index: number, module: string) {
-    const card = this.conceptCards.nth(index);
-    const moduleSelect = card.locator("select");
-    await moduleSelect.selectOption(module);
-  }
-
-  async confirmSelection() {
-    await this.confirmButton.click();
-  }
-
-  async cancelSelection() {
-    await this.cancelButton.click();
-  }
-
-  async selectAll() {
-    await this.selectAllButton.click();
-  }
-
-  async deselectAll() {
-    await this.deselectAllButton.click();
-  }
-
-  async close() {
-    const closeButton = this.modal
-      .locator("button")
-      .filter({ has: this.page.locator("svg.lucide-x") })
-      .first();
-    await closeButton.click();
-  }
-}
-
-/**
- * 骨干网络页面模型
- */
-class BackboneNetworkPage {
-  constructor(private page: Page) {}
-
-  private get moduleNodes() {
-    return this.page.locator(
-      "text=/研究背景|文献综述|研究方法|核心概念|应用领域|未来方向/",
-    );
-  }
-
-  async waitForBackboneVisible() {
-    await expect(this.moduleNodes.first()).toBeVisible({ timeout: 10000 });
-  }
-
-  async getModuleNode(module: string) {
-    return this.moduleNodes.filter({ hasText: new RegExp(module, "i") });
-  }
-
-  async clickModule(module: string) {
-    const node = await this.getModuleNode(module);
-    await node.click();
-  }
-
-  async getConceptsInModule(module: string) {
-    const node = await this.getModuleNode(module);
-    return node.locator("text=/概念|节点/");
-  }
-}
-
 test.describe("文献概念提取功能测试", () => {
   let extractPage: LiteratureExtractPage;
-  let previewPage: ConceptPreviewPage;
-  let backbonePage: BackboneNetworkPage;
 
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
@@ -334,8 +206,6 @@ test.describe("文献概念提取功能测试", () => {
     });
 
     extractPage = new LiteratureExtractPage(page);
-    previewPage = new ConceptPreviewPage(page);
-    backbonePage = new BackboneNetworkPage(page);
   });
 
   test.describe("骨干网络生成流程", () => {

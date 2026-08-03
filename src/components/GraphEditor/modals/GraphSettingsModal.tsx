@@ -97,7 +97,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
       });
       message.success(t('graphEditor.settings.saved'));
       onClose();
-    } catch (error) {
+    } catch (_) {
       message.error(t('graphEditor.settings.saveFailed'));
     }
   };

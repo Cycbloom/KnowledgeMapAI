@@ -145,13 +145,6 @@ const PYTHON_GRAPH: GraphData = {
   ],
 };
 
-const EMPTY_GRAPH: GraphData = {
-  title: '空测试图谱',
-  description: '用于测试空图谱边界条件',
-  nodes: [],
-  edges: [],
-};
-
 const SINGLE_NODE_GRAPH: GraphData = {
   title: '单节点测试图谱',
   description: '用于测试单节点图谱边界条件',
@@ -220,238 +213,17 @@ const PERFORMANCE_GRAPH: GraphData = {
   })(),
 };
 
-const CYCLIC_GRAPH: GraphData = {
-  title: '循环依赖测试图谱',
-  description: '包含循环依赖边的图谱，用于测试循环检测',
-  nodes: [
-    { title: '节点A', content: '循环依赖测试节点A', level: 'root' as const, x: 300, y: 150 },
-    { title: '节点B', content: '循环依赖测试节点B', level: 'core' as const, x: 500, y: 150 },
-    { title: '节点C', content: '循环依赖测试节点C', level: 'core' as const, x: 400, y: 280 },
-  ],
-  edges: [
-    { source: '节点A', target: '节点B' },
-    { source: '节点B', target: '节点C' },
-    { source: '节点C', target: '节点A' },
-  ],
-};
 
-const LONG_CONTENT_GRAPH: GraphData = {
-  title: '超长内容测试图谱',
-  description: '包含超长标题和内容的图谱',
-  nodes: [
-    { 
-      title: '这是一个非常长的知识点标题用于测试标题长度限制以及UI显示效果当标题超过一百个字符时应该如何处理是否需要截断或者换行显示', 
-      content: '这是一个非常长的知识点标题用于测试标题长度限制以及UI显示效果当标题超过一百个字符时应该如何处理是否需要截断或者换行显示这是一个非常长的知识点标题用于测试标题长度限制以及UI显示效果当标题超过一百个字符时应该如何处理是否需要截断或者换行显示', 
-      level: 'root' as const, 
-      x: 400, 
-      y: 150 
-    },
-    { 
-      title: '超长内容节点', 
-      content: `${'这是一个包含超长内容的知识点。'.repeat(60)}\n\n${'这是第二段超长内容，用于测试内容显示和存储。'.repeat(30)}\n\n${'这是第三段内容，包含了更多的文字来测试边界条件。'.repeat(20)}`,
-      level: 'core' as const, 
-      x: 400, 
-      y: 280 
-    },
-  ],
-  edges: [
-    { source: '这是一个非常长的知识点标题用于测试标题长度限制以及UI显示效果当标题超过一百个字符时应该如何处理是否需要截断或者换行显示', target: '超长内容节点' },
-  ],
-};
 
-const MACHINE_LEARNING_GRAPH: GraphData = {
-  title: '机器学习基础',
-  description: '机器学习的核心概念和方法，包括监督学习、无监督学习、深度学习等重要内容',
-  nodes: [
-    { title: '机器学习', content: '机器学习是人工智能的一个分支，它使计算机系统能够从数据中学习并改进，而无需进行明确的编程。主要包括监督学习、无监督学习和强化学习三大类。', level: 'root' as const, x: 500, y: 50 },
-    { title: '监督学习', content: '监督学习使用标记数据训练模型，每个训练样本都有对应的标签。常见算法包括线性回归、逻辑回归、决策树、支持向量机等。', level: 'core' as const, x: 200, y: 180 },
-    { title: '无监督学习', content: '无监督学习使用未标记数据发现数据中的模式。主要任务包括聚类、降维和关联规则学习。', level: 'core' as const, x: 500, y: 180 },
-    { title: '深度学习', content: '深度学习是机器学习的子领域，使用多层神经网络处理复杂模式。广泛应用于图像识别、自然语言处理等领域。', level: 'core' as const, x: 800, y: 180 },
-    { title: '线性回归', content: '线性回归是最基础的监督学习算法，用于预测连续值。通过拟合数据点找到最佳直线（或超平面）。', level: 'sub' as const, x: 50, y: 320 },
-    { title: '逻辑回归', content: '逻辑回归用于二分类问题，输出概率值。使用 sigmoid 函数将线性组合映射到 0-1 之间。', level: 'sub' as const, x: 150, y: 320 },
-    { title: '决策树', content: '决策树通过树状结构进行决策，每个内部节点表示一个特征判断，叶子节点表示预测结果。', level: 'sub' as const, x: 250, y: 320 },
-    { title: '支持向量机', content: 'SVM 寻找最优超平面来分隔不同类别的数据点，通过核函数可以处理非线性问题。', level: 'sub' as const, x: 350, y: 320 },
-    { title: 'K-Means聚类', content: 'K-Means 是最常用的聚类算法，将数据分成 K 个簇，每个簇的中心是该簇所有点的均值。', level: 'sub' as const, x: 450, y: 320 },
-    { title: '主成分分析', content: 'PCA 是常用的降维技术，通过正交变换将高维数据投影到低维空间，保留最大方差。', level: 'sub' as const, x: 550, y: 320 },
-    { title: '神经网络', content: '神经网络由输入层、隐藏层和输出层组成，通过反向传播算法调整权重进行学习。', level: 'sub' as const, x: 700, y: 320 },
-    { title: '卷积神经网络', content: 'CNN 专门用于处理网格状数据，如图像。核心组件包括卷积层、池化层和全连接层。', level: 'sub' as const, x: 800, y: 320 },
-    { title: '循环神经网络', content: 'RNN 适用于序列数据，具有记忆能力。LSTM 和 GRU 是解决长期依赖问题的变体。', level: 'sub' as const, x: 900, y: 320 },
-    { title: 'Transformer', content: 'Transformer 使用自注意力机制处理序列数据，是 BERT、GPT 等模型的基础架构。', level: 'leaf' as const, x: 800, y: 450 },
-    { title: '随机森林', content: '随机森林是集成学习方法，通过组合多个决策树提高预测准确性和稳定性。', level: 'leaf' as const, x: 250, y: 450 },
-  ],
-  edges: [
-    { source: '机器学习', target: '监督学习' },
-    { source: '机器学习', target: '无监督学习' },
-    { source: '机器学习', target: '深度学习' },
-    { source: '监督学习', target: '线性回归' },
-    { source: '监督学习', target: '逻辑回归' },
-    { source: '监督学习', target: '决策树' },
-    { source: '监督学习', target: '支持向量机' },
-    { source: '无监督学习', target: 'K-Means聚类' },
-    { source: '无监督学习', target: '主成分分析' },
-    { source: '深度学习', target: '神经网络' },
-    { source: '深度学习', target: '卷积神经网络' },
-    { source: '深度学习', target: '循环神经网络' },
-    { source: '神经网络', target: '卷积神经网络', type: 'related' },
-    { source: '神经网络', target: '循环神经网络', type: 'related' },
-    { source: '循环神经网络', target: 'Transformer' },
-    { source: '决策树', target: '随机森林' },
-  ],
-};
 
-const ENGLISH_LEARNING_GRAPH: GraphData = {
-  title: '英语学习',
-  description: '英语学习的完整知识体系，涵盖语法、词汇、听力、口语等核心技能',
-  nodes: [
-    { title: '英语学习', content: '英语学习是一个综合性的过程，包括听、说、读、写四个方面。需要系统学习语法、积累词汇、练习听说读写技能。', level: 'root' as const, x: 500, y: 50 },
-    { title: '语法', content: '英语语法是语言的规则体系，包括词法（单词变化）和句法（句子结构）。掌握语法是正确表达的基础。', level: 'core' as const, x: 200, y: 180 },
-    { title: '词汇', content: '词汇是语言的基本单位。英语词汇量庞大，需要通过词根词缀、语境记忆等方法系统积累。', level: 'core' as const, x: 500, y: 180 },
-    { title: '听力', content: '听力是语言输入的重要途径。通过精听和泛听相结合，逐步提高理解能力和语感。', level: 'core' as const, x: 800, y: 180 },
-    { title: '口语', content: '口语是语言输出的核心技能。需要大量练习发音、语调、流利度和表达能力。', level: 'core' as const, x: 1000, y: 180 },
-    { title: '时态', content: '英语有12种基本时态，包括现在、过去、将来及其进行、完成、完成进行形式。', level: 'sub' as const, x: 50, y: 320 },
-    { title: '从句', content: '从句包括名词性从句、定语从句和状语从句，是构建复杂句子的关键。', level: 'sub' as const, x: 150, y: 320 },
-    { title: '虚拟语气', content: '虚拟语气表达假设、愿望等非真实情况，有特定的动词形式规则。', level: 'sub' as const, x: 250, y: 320 },
-    { title: '词根词缀', content: '词根词缀是记忆单词的有效方法。常见前缀如 un-、re-，后缀如 -tion、-able。', level: 'sub' as const, x: 400, y: 320 },
-    { title: '高频词汇', content: '高频词汇是日常交流中最常用的单词，掌握3000个高频词可覆盖90%日常内容。', level: 'sub' as const, x: 500, y: 320 },
-    { title: '学术词汇', content: '学术词汇用于学术写作和讨论，如 analyze、hypothesis、methodology 等。', level: 'sub' as const, x: 600, y: 320 },
-    { title: '精听训练', content: '精听是逐字逐句听写，关注细节，适合提高听力准确度。', level: 'sub' as const, x: 750, y: 320 },
-    { title: '泛听训练', content: '泛听是大量接触听力材料，关注整体理解，适合培养语感。', level: 'sub' as const, x: 850, y: 320 },
-    { title: '发音技巧', content: '发音技巧包括连读、弱读、重音、语调等，是流利口语的关键。', level: 'sub' as const, x: 950, y: 320 },
-    { title: '口语表达', content: '口语表达需要积累常用句型、习语和会话策略，提高交流能力。', level: 'leaf' as const, x: 1050, y: 320 },
-    { title: '现在完成时', content: '现在完成时表示过去发生的动作对现在造成的影响，结构为 have/has + 过去分词。', level: 'leaf' as const, x: 50, y: 450 },
-  ],
-  edges: [
-    { source: '英语学习', target: '语法' },
-    { source: '英语学习', target: '词汇' },
-    { source: '英语学习', target: '听力' },
-    { source: '英语学习', target: '口语' },
-    { source: '语法', target: '时态' },
-    { source: '语法', target: '从句' },
-    { source: '语法', target: '虚拟语气' },
-    { source: '词汇', target: '词根词缀' },
-    { source: '词汇', target: '高频词汇' },
-    { source: '词汇', target: '学术词汇' },
-    { source: '听力', target: '精听训练' },
-    { source: '听力', target: '泛听训练' },
-    { source: '口语', target: '发音技巧' },
-    { source: '口语', target: '口语表达' },
-    { source: '时态', target: '现在完成时' },
-    { source: '精听训练', target: '泛听训练', type: 'related' },
-  ],
-};
 
-const MATH_FOUNDATION_GRAPH: GraphData = {
-  title: '数学基础',
-  description: '数学基础知识体系，包括代数、几何、微积分等核心数学领域',
-  nodes: [
-    { title: '数学基础', content: '数学是研究数量、结构、变化和空间的学科。数学基础包括代数、几何、分析等分支，是理工科学习的重要工具。', level: 'root' as const, x: 500, y: 50 },
-    { title: '代数', content: '代数研究数学符号和运算规则，包括方程、函数、矩阵等。是解决数学问题的基础工具。', level: 'core' as const, x: 200, y: 180 },
-    { title: '几何', content: '几何研究空间形状、大小和位置关系。包括平面几何、立体几何和解析几何。', level: 'core' as const, x: 500, y: 180 },
-    { title: '微积分', content: '微积分研究变化率和累积量，是现代数学的基础。包括微分学和积分学两大部分。', level: 'core' as const, x: 800, y: 180 },
-    { title: '方程', content: '方程是含有未知数的等式。包括一元方程、方程组、不等式等，是代数的核心内容。', level: 'sub' as const, x: 50, y: 320 },
-    { title: '函数', content: '函数描述变量之间的对应关系。常见函数类型有线性函数、二次函数、指数函数等。', level: 'sub' as const, x: 150, y: 320 },
-    { title: '矩阵', content: '矩阵是按行列排列的数表，广泛应用于线性代数、计算机图形学等领域。', level: 'sub' as const, x: 250, y: 320 },
-    { title: '平面几何', content: '平面几何研究二维平面上的图形，如三角形、圆、多边形等。', level: 'sub' as const, x: 400, y: 320 },
-    { title: '立体几何', content: '立体几何研究三维空间中的图形，如棱柱、圆锥、球体等。', level: 'sub' as const, x: 500, y: 320 },
-    { title: '解析几何', content: '解析几何用代数方法研究几何问题，将图形与方程对应起来。', level: 'sub' as const, x: 600, y: 320 },
-    { title: '导数', content: '导数描述函数在某点的变化率，是微分学的核心概念。', level: 'sub' as const, x: 750, y: 320 },
-    { title: '积分', content: '积分计算曲线下的面积，是积分学的核心概念。定积分和不定积分是两种基本形式。', level: 'sub' as const, x: 850, y: 320 },
-    { title: '微分方程', content: '微分方程是含有导数的方程，广泛应用于物理、工程等领域建模。', level: 'leaf' as const, x: 850, y: 450 },
-    { title: '三角函数', content: '三角函数描述角度与边长的关系，包括正弦、余弦、正切等函数。', level: 'leaf' as const, x: 350, y: 450 },
-  ],
-  edges: [
-    { source: '数学基础', target: '代数' },
-    { source: '数学基础', target: '几何' },
-    { source: '数学基础', target: '微积分' },
-    { source: '代数', target: '方程' },
-    { source: '代数', target: '函数' },
-    { source: '代数', target: '矩阵' },
-    { source: '几何', target: '平面几何' },
-    { source: '几何', target: '立体几何' },
-    { source: '几何', target: '解析几何' },
-    { source: '微积分', target: '导数' },
-    { source: '微积分', target: '积分' },
-    { source: '导数', target: '微分方程' },
-    { source: '函数', target: '三角函数' },
-    { source: '导数', target: '积分', type: 'related' },
-  ],
-};
 
-const LINEAR_CHAIN_GRAPH: GraphData = {
-  title: '线性链式图谱',
-  description: '节点按顺序连接形成链状结构，用于测试线性遍历和顺序依赖',
-  nodes: [
-    { title: '步骤1-需求分析', content: '需求分析是软件开发的第一步，明确用户需求和系统功能。', level: 'root' as const, x: 100, y: 200 },
-    { title: '步骤2-系统设计', content: '系统设计根据需求制定架构方案，包括技术选型和模块划分。', level: 'core' as const, x: 250, y: 200 },
-    { title: '步骤3-编码实现', content: '编码实现是将设计转化为可执行代码的过程。', level: 'core' as const, x: 400, y: 200 },
-    { title: '步骤4-单元测试', content: '单元测试验证每个模块的功能正确性。', level: 'core' as const, x: 550, y: 200 },
-    { title: '步骤5-集成测试', content: '集成测试验证模块之间的协作是否正常。', level: 'core' as const, x: 700, y: 200 },
-    { title: '步骤6-系统测试', content: '系统测试验证整个系统是否满足需求规格。', level: 'core' as const, x: 850, y: 200 },
-    { title: '步骤7-部署上线', content: '部署上线将系统发布到生产环境供用户使用。', level: 'core' as const, x: 1000, y: 200 },
-    { title: '步骤8-运维监控', content: '运维监控系统运行状态，及时发现和处理问题。', level: 'leaf' as const, x: 1150, y: 200 },
-  ],
-  edges: [
-    { source: '步骤1-需求分析', target: '步骤2-系统设计' },
-    { source: '步骤2-系统设计', target: '步骤3-编码实现' },
-    { source: '步骤3-编码实现', target: '步骤4-单元测试' },
-    { source: '步骤4-单元测试', target: '步骤5-集成测试' },
-    { source: '步骤5-集成测试', target: '步骤6-系统测试' },
-    { source: '步骤6-系统测试', target: '步骤7-部署上线' },
-    { source: '步骤7-部署上线', target: '步骤8-运维监控' },
-  ],
-};
 
-const DEEP_TREE_GRAPH: GraphData = {
-  title: '深层树形图谱',
-  description: '多层树形结构，深度至少4层，用于测试层级遍历和树形渲染',
-  nodes: [
-    { title: '根节点', content: '这是深层树形图谱的根节点，深度为第1层。', level: 'root' as const, x: 500, y: 30 },
-    { title: '一级节点A', content: '一级节点A，深度为第2层。', level: 'core' as const, x: 250, y: 120 },
-    { title: '一级节点B', content: '一级节点B，深度为第2层。', level: 'core' as const, x: 500, y: 120 },
-    { title: '一级节点C', content: '一级节点C，深度为第2层。', level: 'core' as const, x: 750, y: 120 },
-    { title: '二级节点A1', content: '二级节点A1，深度为第3层。', level: 'sub' as const, x: 150, y: 210 },
-    { title: '二级节点A2', content: '二级节点A2，深度为第3层。', level: 'sub' as const, x: 300, y: 210 },
-    { title: '二级节点B1', content: '二级节点B1，深度为第3层。', level: 'sub' as const, x: 450, y: 210 },
-    { title: '二级节点B2', content: '二级节点B2，深度为第3层。', level: 'sub' as const, x: 550, y: 210 },
-    { title: '二级节点C1', content: '二级节点C1，深度为第3层。', level: 'sub' as const, x: 700, y: 210 },
-    { title: '二级节点C2', content: '二级节点C2，深度为第3层。', level: 'sub' as const, x: 850, y: 210 },
-    { title: '三级节点A1a', content: '三级节点A1a，深度为第4层。', level: 'leaf' as const, x: 100, y: 300 },
-    { title: '三级节点A1b', content: '三级节点A1b，深度为第4层。', level: 'leaf' as const, x: 180, y: 300 },
-    { title: '三级节点A2a', content: '三级节点A2a，深度为第4层。', level: 'leaf' as const, x: 260, y: 300 },
-    { title: '三级节点B1a', content: '三级节点B1a，深度为第4层。', level: 'leaf' as const, x: 420, y: 300 },
-    { title: '三级节点B2a', content: '三级节点B2a，深度为第4层。', level: 'leaf' as const, x: 520, y: 300 },
-    { title: '三级节点C1a', content: '三级节点C1a，深度为第4层。', level: 'leaf' as const, x: 670, y: 300 },
-    { title: '三级节点C2a', content: '三级节点C2a，深度为第4层。', level: 'leaf' as const, x: 820, y: 300 },
-    { title: '三级节点C2b', content: '三级节点C2b，深度为第4层。', level: 'leaf' as const, x: 900, y: 300 },
-    { title: '四级节点A1a1', content: '四级节点A1a1，深度为第5层。', level: 'leaf' as const, x: 70, y: 390 },
-    { title: '四级节点A1a2', content: '四级节点A1a2，深度为第5层。', level: 'leaf' as const, x: 130, y: 390 },
-    { title: '四级节点C2b1', content: '四级节点C2b1，深度为第5层。', level: 'leaf' as const, x: 870, y: 390 },
-    { title: '四级节点C2b2', content: '四级节点C2b2，深度为第5层。', level: 'leaf' as const, x: 930, y: 390 },
-  ],
-  edges: [
-    { source: '根节点', target: '一级节点A' },
-    { source: '根节点', target: '一级节点B' },
-    { source: '根节点', target: '一级节点C' },
-    { source: '一级节点A', target: '二级节点A1' },
-    { source: '一级节点A', target: '二级节点A2' },
-    { source: '一级节点B', target: '二级节点B1' },
-    { source: '一级节点B', target: '二级节点B2' },
-    { source: '一级节点C', target: '二级节点C1' },
-    { source: '一级节点C', target: '二级节点C2' },
-    { source: '二级节点A1', target: '三级节点A1a' },
-    { source: '二级节点A1', target: '三级节点A1b' },
-    { source: '二级节点A2', target: '三级节点A2a' },
-    { source: '二级节点B1', target: '三级节点B1a' },
-    { source: '二级节点B2', target: '三级节点B2a' },
-    { source: '二级节点C1', target: '三级节点C1a' },
-    { source: '二级节点C2', target: '三级节点C2a' },
-    { source: '二级节点C2', target: '三级节点C2b' },
-    { source: '三级节点A1a', target: '四级节点A1a1' },
-    { source: '三级节点A1a', target: '四级节点A1a2' },
-    { source: '三级节点C2b', target: '四级节点C2b1' },
-    { source: '三级节点C2b', target: '四级节点C2b2' },
-  ],
-};
+
+
+
+
+
 
 const BOUNDARY_STUDY_CARDS = [
   { nodeTitle: '唯一的节点', question: '未学习卡片测试：这是未学习过的卡片问题？', answer: '这是未学习卡片的答案。', explanation: '此卡片 review_count = 0，用于测试未学习状态。', cardType: 'qa', difficulty: 2, reviewCount: 0, masteryLevel: 0 },
@@ -474,56 +246,12 @@ const STUDY_CARDS = [
   { nodeTitle: 'NumPy', question: 'NumPy 的广播机制是什么？', answer: '广播机制允许不同形状的数组进行算术运算，自动扩展较小的数组。', explanation: '广播规则：从右向左比较维度，维度相等或其中一个为1时可以广播。', cardType: 'qa', difficulty: 3 },
 ];
 
-const ML_STUDY_CARDS = [
-  { nodeTitle: '监督学习', question: '监督学习和无监督学习的主要区别是什么？', answer: '监督学习使用标记数据训练，无监督学习使用未标记数据发现模式。', explanation: '监督学习需要人工标注的标签，适合分类和回归任务；无监督学习适合聚类和降维。', cardType: 'qa', difficulty: 2 },
-  { nodeTitle: '线性回归', question: '线性回归的目标是什么？', answer: '找到最佳拟合直线（或超平面），使预测值与实际值的误差最小。', explanation: '通常使用最小二乘法求解，目标是最小化均方误差（MSE）。', cardType: 'qa', difficulty: 1 },
-  { nodeTitle: '决策树', question: '决策树选择分裂特征的标准有哪些？', answer: '信息增益、信息增益率、基尼系数。', explanation: 'ID3 使用信息增益，C4.5 使用信息增益率，CART 使用基尼系数。', cardType: 'choice', difficulty: 3 },
-  { nodeTitle: '神经网络', question: '神经网络的反向传播算法的作用是什么？', answer: '反向传播用于计算损失函数对各层权重的梯度，从而更新权重。', explanation: '通过链式法则从输出层向输入层逐层计算梯度，是训练神经网络的核心算法。', cardType: 'qa', difficulty: 3 },
-  { nodeTitle: '卷积神经网络', question: 'CNN 中的池化层有什么作用？', answer: '池化层用于降维、减少计算量、提取主要特征、增加平移不变性。', explanation: '常见的池化方式有最大池化和平均池化。', cardType: 'qa', difficulty: 2 },
-  { nodeTitle: 'K-Means聚类', question: 'K-Means 算法的 K 值如何确定？', answer: '可以使用肘部法则、轮廓系数、Gap Statistic 等方法确定。', explanation: '肘部法则通过观察误差平方和随 K 值变化的拐点来确定最佳 K 值。', cardType: 'qa', difficulty: 3 },
-  { nodeTitle: 'Transformer', question: 'Transformer 的自注意力机制计算公式是什么？', answer: 'Attention(Q,K,V) = softmax(QK^T/√d_k)V', explanation: 'Q、K、V 分别代表查询、键、值矩阵，d_k 是键的维度，用于缩放。', cardType: 'fill_in_the_blank', difficulty: 5 },
-  { nodeTitle: '随机森林', question: '随机森林比单一决策树更优的原因是什么？', answer: '随机森林通过集成多个决策树，减少过拟合，提高泛化能力。', explanation: '每棵树使用不同的数据子集和特征子集，增加了模型的多样性。', cardType: 'qa', difficulty: 2 },
-  { nodeTitle: '主成分分析', question: 'PCA 降维后保留了数据的什么信息？', answer: 'PCA 保留了数据中方差最大的方向，即数据变化最显著的特征。', explanation: '第一主成分保留最大方差，第二主成分保留次大方差，以此类推。', cardType: 'qa', difficulty: 3 },
-  { nodeTitle: '支持向量机', question: 'SVM 的核函数有什么作用？', answer: '核函数将低维非线性可分数据映射到高维空间，使其线性可分。', explanation: '常用核函数包括线性核、多项式核、RBF 核（高斯核）。', cardType: 'qa', difficulty: 4 },
-];
 
-const ENGLISH_STUDY_CARDS = [
-  { nodeTitle: '时态', question: '英语共有多少种基本时态？', answer: '12种基本时态。', explanation: '包括现在、过去、将来、过去将来四个时间，各有一般、进行、完成、完成进行四种形式。', cardType: 'qa', difficulty: 1 },
-  { nodeTitle: '现在完成时', question: '现在完成时的结构是什么？', answer: 'have/has + 过去分词', explanation: '主语是第三人称单数用 has，其他用 have。', cardType: 'fill_in_the_blank', difficulty: 1 },
-  { nodeTitle: '从句', question: '定语从句中，which 和 that 的主要区别是什么？', answer: 'which 用于非限制性定语从句，that 用于限制性定语从句。', explanation: '在非限制性定语从句中只能用 which，不能用 that。', cardType: 'qa', difficulty: 3 },
-  { nodeTitle: '虚拟语气', question: 'If I ___ (be) you, I would accept the offer. 填入正确形式。', answer: 'were', explanation: '虚拟语气中，be 动词在所有人称中都用 were。', cardType: 'fill_in_the_blank', difficulty: 2 },
-  { nodeTitle: '词根词缀', question: '前缀 un- 通常表示什么含义？', answer: '否定、相反、取消。', explanation: '如 unhappy（不快乐）、undo（撤销）、unfair（不公平）。', cardType: 'qa', difficulty: 1 },
-  { nodeTitle: '高频词汇', question: '掌握多少个高频词汇可以覆盖90%的日常英语内容？', answer: '约3000个', explanation: '这些词汇是日常交流中最常用的核心词汇。', cardType: 'choice', difficulty: 1 },
-  { nodeTitle: '精听训练', question: '精听训练的主要目的是什么？', answer: '提高听力准确度，关注语音细节。', explanation: '精听强调逐字逐句听写，适合提高对语音细节的敏感度。', cardType: 'qa', difficulty: 2 },
-  { nodeTitle: '发音技巧', question: '英语中的连读规则有哪些？', answer: '辅音+元音连读、元音+元音连读、r/re+元音连读。', explanation: '连读使口语更流利自然，是地道口语的重要特征。', cardType: 'qa', difficulty: 3 },
-];
-
-const MATH_STUDY_CARDS = [
-  { nodeTitle: '方程', question: '一元二次方程 ax² + bx + c = 0 的求根公式是什么？', answer: 'x = (-b ± √(b²-4ac)) / 2a', explanation: '判别式 Δ = b²-4ac 决定根的性质：Δ>0 两不等实根，Δ=0 两相等实根，Δ<0 两共轭复根。', cardType: 'qa', difficulty: 2 },
-  { nodeTitle: '函数', question: '函数的三要素是什么？', answer: '定义域、值域、对应法则。', explanation: '函数描述了定义域到值域的映射关系。', cardType: 'qa', difficulty: 1 },
-  { nodeTitle: '导数', question: '函数 f(x) = x² 的导数是什么？', answer: 'f\'(x) = 2x', explanation: '根据幂函数求导法则，(x^n)\' = nx^(n-1)。', cardType: 'qa', difficulty: 2 },
-  { nodeTitle: '积分', question: '∫2x dx 等于什么？', answer: 'x² + C（C为常数）', explanation: '不定积分的结果需要加上积分常数 C。', cardType: 'fill_in_the_blank', difficulty: 2 },
-  { nodeTitle: '矩阵', question: '矩阵乘法满足交换律吗？', answer: '不满足', explanation: '矩阵乘法一般不满足交换律，AB ≠ BA。', cardType: 'true_false', difficulty: 2 },
-  { nodeTitle: '三角函数', question: 'sin²θ + cos²θ 等于什么？', answer: '1', explanation: '这是最基本的三角恒等式。', cardType: 'qa', difficulty: 1 },
-  { nodeTitle: '微分方程', question: '一阶线性微分方程的标准形式是什么？', answer: 'dy/dx + P(x)y = Q(x)', explanation: '可以使用积分因子法求解，积分因子为 e^∫P(x)dx。', cardType: 'qa', difficulty: 4 },
-  { nodeTitle: '平面几何', question: '三角形的内角和是多少度？', answer: '180度', explanation: '这是平面几何的基本定理之一。', cardType: 'qa', difficulty: 1 },
-];
-
-const CHAIN_STUDY_CARDS = [
-  { nodeTitle: '步骤1-需求分析', question: '需求分析阶段的主要产出是什么？', answer: '需求规格说明书（SRS）', explanation: '需求规格说明书详细描述系统的功能需求和非功能需求。', cardType: 'qa', difficulty: 1 },
-  { nodeTitle: '步骤2-系统设计', question: '系统设计包括哪两个层次？', answer: '概要设计和详细设计', explanation: '概要设计确定系统架构，详细设计确定模块实现细节。', cardType: 'qa', difficulty: 2 },
-  { nodeTitle: '步骤3-编码实现', question: '编码阶段应该遵循什么原则？', answer: '代码规范、可读性、可维护性', explanation: '良好的编码习惯包括命名规范、注释、代码复用等。', cardType: 'qa', difficulty: 1 },
-  { nodeTitle: '步骤4-单元测试', question: '单元测试的目的是什么？', answer: '验证每个模块的功能正确性', explanation: '单元测试是最小粒度的测试，通常由开发人员编写。', cardType: 'qa', difficulty: 1 },
-  { nodeTitle: '步骤5-集成测试', question: '集成测试和单元测试的区别是什么？', answer: '单元测试测试单个模块，集成测试测试模块间的协作', explanation: '集成测试关注模块接口和数据传递是否正确。', cardType: 'qa', difficulty: 2 },
-  { nodeTitle: '步骤6-系统测试', question: '系统测试包括哪些类型？', answer: '功能测试、性能测试、安全测试、兼容性测试等', explanation: '系统测试是端到端的测试，验证整个系统是否满足需求。', cardType: 'choice', difficulty: 2 },
-  { nodeTitle: '步骤7-部署上线', question: '部署上线前需要进行什么检查？', answer: '代码审查、测试通过、文档完善、回滚方案准备', explanation: '确保系统稳定性和可恢复性是上线前的重要准备工作。', cardType: 'qa', difficulty: 2 },
-  { nodeTitle: '步骤8-运维监控', question: '运维监控的主要指标有哪些？', answer: 'CPU使用率、内存使用率、响应时间、错误率等', explanation: '监控指标帮助及时发现系统异常和性能瓶颈。', cardType: 'qa', difficulty: 2 },
-];
 
 async function createTestUser() {
   console.log('🔧 Creating test user...');
   
-  const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
+  const { data: existingUsers } = await supabase.auth.admin.listUsers();
   const existingUser = existingUsers?.users?.find((u: { email: string }) => u.email === TEST_USER.email);
   
   if (existingUser) {
@@ -714,7 +442,7 @@ async function createBoundaryStudyCards(userId: string, allNodeMaps: Record<stri
     let knowledgePointId: string | undefined;
     let graphId: string | undefined;
     
-    for (const [graphTitle, nodeMap] of Object.entries(allNodeMaps)) {
+    for (const [, nodeMap] of Object.entries(allNodeMaps)) {
       if (nodeMap[card.nodeTitle]) {
         knowledgePointId = nodeMap[card.nodeTitle];
         graphId = nodeMap.__graphId;
@@ -1146,11 +874,8 @@ async function main() {
     const reactResult = await createKnowledgeGraphWithData(user.id, REACT_GRAPH);
     const pythonResult = await createKnowledgeGraphWithData(user.id, PYTHON_GRAPH);
     
-    const emptyResult = await createKnowledgeGraphWithData(user.id, EMPTY_GRAPH);
     const singleNodeResult = await createKnowledgeGraphWithData(user.id, SINGLE_NODE_GRAPH);
     const performanceResult = await createKnowledgeGraphWithData(user.id, PERFORMANCE_GRAPH);
-    const cyclicResult = await createKnowledgeGraphWithData(user.id, CYCLIC_GRAPH);
-    const longContentResult = await createKnowledgeGraphWithData(user.id, LONG_CONTENT_GRAPH);
     
     if (jsResult) {
       await createStudyCardsForGraph(user.id, jsResult.graphId, jsResult.nodeMap, 'JavaScript 基础知识');

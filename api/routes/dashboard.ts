@@ -12,7 +12,7 @@ router.get('/stats', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const dashboardStats = await dashboardService.getDashboard(req.supabase, userId);
     res.json(dashboardStats);
-  } catch (error) {
+  } catch (_error) {
     throw new AppError('获取仪表盘数据失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });

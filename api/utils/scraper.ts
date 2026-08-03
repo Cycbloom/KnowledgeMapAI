@@ -47,7 +47,7 @@ function validateUrl(url: string): { valid: boolean; error?: string } {
     }
 
     return { valid: true };
-  } catch (error) {
+  } catch (_error) {
     return { valid: false, error: "无效的 URL 格式" };
   }
 }

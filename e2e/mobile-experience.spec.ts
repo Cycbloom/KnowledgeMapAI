@@ -5,7 +5,7 @@ const MOBILE_LANDSCAPE = { width: 844, height: 390 };
 const TABLET_PORTRAIT = { width: 768, height: 1024 };
 const TABLET_LANDSCAPE = { width: 1024, height: 768 };
 
-const MIN_TOUCH_SIZE = 44;
+
 
 test.describe('移动端体验测试', () => {
   test.use({ viewport: MOBILE_PORTRAIT });
@@ -39,10 +39,10 @@ test.describe('移动端体验测试', () => {
 test.describe('核心页面移动端测试', () => {
   test.use({ viewport: MOBILE_PORTRAIT });
 
-  const testMobilePage = async (page, url, name) => {
+  const testMobilePage = async (page, url, _name) => {
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-    } catch (e) {
+    } catch (_e) {
       await page.goto('/');
       await page.waitForLoadState('domcontentloaded');
     }
@@ -236,8 +236,6 @@ test.describe('响应式布局和触摸区域测试', () => {
     const interactiveElements = [...buttons, ...links];
     
     let checkedCount = 0;
-    let goodTouchCount = 0;
-    
     for (const element of interactiveElements) {
       if (checkedCount >= 10) break;
       
@@ -245,9 +243,6 @@ test.describe('响应式布局和触摸区域测试', () => {
         const box = await element.boundingBox();
         if (box && box.width > 0 && box.height > 0) {
           checkedCount++;
-          if (box.width >= MIN_TOUCH_SIZE && box.height >= MIN_TOUCH_SIZE) {
-            goodTouchCount++;
-          }
         }
       } catch {
         continue;

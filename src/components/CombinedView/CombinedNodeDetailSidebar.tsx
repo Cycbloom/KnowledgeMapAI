@@ -234,7 +234,7 @@ export const CombinedNodeDetailSidebar: React.FC<
                   />
                 );
               },
-              a: ({ node, ...props }) => {
+              a: ({ node: _node, ...props }) => {
                 const { href, children } = props;
                 const cleanHref = href ? decodeURIComponent(href).trim() : "";
 

@@ -1227,7 +1227,7 @@ export class AutoGraphService {
     let parsed;
     try {
       parsed = JSON.parse(content || '{"root": null, "coreNodes": []}');
-    } catch (e) {
+    } catch (_e) {
       logger.error("JSON Parse Error:", { content: content?.slice(-100) });
       throw new AppError(
         "AI 生成内容解析失败",
@@ -1362,7 +1362,7 @@ export class AutoGraphService {
     let parsed;
     try {
       parsed = JSON.parse(content || '{"children": []}');
-    } catch (e) {
+    } catch (_e) {
       logger.error("JSON Parse Error:", { content: content?.slice(-100) });
       throw new AppError(
         "AI 生成内容解析失败",
@@ -1538,7 +1538,7 @@ export class AutoGraphService {
     let parsed;
     try {
       parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
-    } catch (e) {
+    } catch (_e) {
       logger.error("JSON Parse Error in apply-template:", {
         content: content?.slice(-200),
       });

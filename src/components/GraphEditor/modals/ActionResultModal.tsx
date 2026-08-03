@@ -69,7 +69,7 @@ export const ActionResultModal: React.FC<ActionResultModalProps> = ({
                     {children}
                   </CodeBlock>
                 ),
-                a: ({ node, ...props }) => {
+                a: ({ node: _node, ...props }) => {
                   const { href, children } = props;
                   if (href && href.startsWith("term:")) {
                     const explanation = href.replace("term:", "");

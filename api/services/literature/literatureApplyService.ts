@@ -459,7 +459,7 @@ class LiteratureApplyService {
                 }
               }
             }
-          } catch (rpcException) {
+          } catch (_rpcException) {
             logger.warn(
               "pgvector RPC exception, falling back to in-memory similarity",
             );

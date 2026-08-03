@@ -195,7 +195,7 @@ async function waitForProjectReady(
         }
 
         setTimeout(check, pollInterval);
-      } catch (error) {
+      } catch (_error) {
         if (Date.now() - startTime >= timeoutMs) {
           reject(
             new Error(

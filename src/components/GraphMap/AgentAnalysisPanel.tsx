@@ -90,7 +90,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
     try {
       const { skills: loadedSkills } = await agentApi.getSkills();
       setSkills(loadedSkills);
-    } catch (err) {
+    } catch (_) {
       setError("Failed to load skills");
     }
   };

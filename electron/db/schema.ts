@@ -60,13 +60,7 @@ const idColumn = (name = 'id'): ColumnDef => ({
   defaultValue: null,
 });
 
-const userIdColumn = (name = 'user_id'): ColumnDef => ({
-  name,
-  type: 'TEXT',
-  pgType: 'UUID',
-  nullable: false,
-  defaultValue: null,
-});
+
 
 const userIdNullableColumn = (name = 'user_id'): ColumnDef => ({
   name,
@@ -217,14 +211,7 @@ const pgArrayColumn = (name: string, pgElementType: string, defaultValue = "'[]'
   isArray: true,
 });
 
-const pgArrayNullableColumn = (name: string, pgElementType: string): ColumnDef => ({
-  name,
-  type: 'TEXT',
-  pgType: `${pgElementType}[]`,
-  nullable: true,
-  defaultValue: null,
-  isArray: true,
-});
+
 
 // Sync tracking columns added to every user-facing table
 const syncStatusColumn = (): ColumnDef => ({

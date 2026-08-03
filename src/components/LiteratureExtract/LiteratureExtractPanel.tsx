@@ -700,7 +700,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         }));
         message.success(t("literatureExtract.success.pasted"));
       }
-    } catch (error) {
+    } catch (_) {
       message.error(t("literatureExtract.errors.pasteFailed"));
     }
   }, [t, setDraft]);

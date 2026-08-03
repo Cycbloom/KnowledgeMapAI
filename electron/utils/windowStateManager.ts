@@ -12,8 +12,6 @@ export interface WindowState {
 }
 
 const STATE_FILENAME = "window-state.json";
-const DEFAULT_WIDTH = 1400;
-const DEFAULT_HEIGHT = 900;
 const MIN_WIDTH = 800;
 const MIN_HEIGHT = 600;
 

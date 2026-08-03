@@ -1,4 +1,4 @@
-import { TABLES, type TableDef, type ColumnDef } from "../schema";
+import { TABLES, type TableDef } from "../schema";
 
 /**
  * Generate the CREATE TABLE SQL statement for a given table definition.

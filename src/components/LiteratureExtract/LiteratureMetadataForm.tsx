@@ -61,24 +61,18 @@ const LITERATURE_TYPES = [
   { value: "document", labelKey: "literatureExtract.metadata.types.document" },
 ] as const satisfies readonly { value: LiteratureType; labelKey: string }[];
 
-const METADATA_FIELD_LABEL_KEYS = [
-  "literatureExtract.metadata.fields.title",
-  "literatureExtract.metadata.fields.authors",
-  "literatureExtract.metadata.fields.year",
-  "literatureExtract.metadata.fields.type",
-  "literatureExtract.metadata.fields.journal",
-  "literatureExtract.metadata.fields.doi",
-  "literatureExtract.metadata.fields.keywords",
-  "literatureExtract.metadata.fields.notes",
-] as const;
-
-const METADATA_FIELD_HINT_KEYS = [
-  "literatureExtract.metadata.hints.authors",
-  "literatureExtract.metadata.hints.keywords",
-] as const;
-
-type MetadataFieldLabelKey = (typeof METADATA_FIELD_LABEL_KEYS)[number];
-type MetadataFieldHintKey = (typeof METADATA_FIELD_HINT_KEYS)[number];
+type MetadataFieldLabelKey =
+  | "literatureExtract.metadata.fields.title"
+  | "literatureExtract.metadata.fields.authors"
+  | "literatureExtract.metadata.fields.year"
+  | "literatureExtract.metadata.fields.type"
+  | "literatureExtract.metadata.fields.journal"
+  | "literatureExtract.metadata.fields.doi"
+  | "literatureExtract.metadata.fields.keywords"
+  | "literatureExtract.metadata.fields.notes";
+type MetadataFieldHintKey =
+  | "literatureExtract.metadata.hints.authors"
+  | "literatureExtract.metadata.hints.keywords";
 
 const LITERATURE_TYPE_CONFIG: Record<
   LiteratureType,

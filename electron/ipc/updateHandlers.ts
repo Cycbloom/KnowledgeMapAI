@@ -18,7 +18,7 @@ export interface UpdateHandlerDeps {
  * - update:confirm-download — user accepted the update-available prompt; start downloading
  * - update:install-confirmed — user accepted the update-downloaded prompt; quit and install
  */
-export function registerUpdateHandlers(deps: UpdateHandlerDeps): void {
+export function registerUpdateHandlers(_deps: UpdateHandlerDeps): void {
   ipcMain.handle('update:check', () => {
     if (app.isPackaged) {
       autoUpdater.checkForUpdates();

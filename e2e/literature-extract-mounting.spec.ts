@@ -627,7 +627,7 @@ test.describe("文献提取节点挂载功能测试", () => {
           moduleLabels.push(label);
         }
 
-        const labelCounts = moduleLabels.reduce(
+        moduleLabels.reduce(
           (acc, label) => {
             if (label) {
               acc[label] = (acc[label] || 0) + 1;
@@ -636,8 +636,6 @@ test.describe("文献提取节点挂载功能测试", () => {
           },
           {} as Record<string, number>
         );
-
-        const hasMultipleToSameModule = Object.values(labelCounts).some((count) => count > 1);
 
         await extractPage.confirmConcepts();
 

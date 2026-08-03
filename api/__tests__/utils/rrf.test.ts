@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   reciprocalRankFusion,
   type RankedItem,
-  type ReciprocalRankFusionOptions,
 } from '../../utils/rrf';
 
 /** 辅助函数：快速创建 RankedItem */

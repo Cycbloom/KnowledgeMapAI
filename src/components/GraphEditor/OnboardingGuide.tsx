@@ -19,17 +19,7 @@ interface TourCallbacks {
   onOpenRAGChat?: () => void;
 }
 
-const ONBOARDING_STEP_KEYS = [
-  "step1",
-  "step2",
-  "step3",
-  "step3b",
-  "step4",
-  "step4b",
-  "step5",
-] as const;
-
-type OnboardingStepKey = (typeof ONBOARDING_STEP_KEYS)[number];
+type OnboardingStepKey = "step1" | "step2" | "step3" | "step3b" | "step4" | "step4b" | "step5";
 
 interface StepDefinition {
   tourId?: string;

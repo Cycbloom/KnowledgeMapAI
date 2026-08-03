@@ -18,6 +18,7 @@ interface MobileSidebarDrawerProps {
   navItems: Array<NavItem>;
   isDark: boolean;
   currentPath: string;
+  onPrefetch?: (path: string) => () => void;
 }
 
 const overlayVariants = {
@@ -43,6 +44,7 @@ export const MobileSidebarDrawer: React.FC<MobileSidebarDrawerProps> = ({
   navItems,
   isDark,
   currentPath,
+  onPrefetch,
 }) => {
   const { t } = useTranslation();
 
@@ -116,6 +118,7 @@ export const MobileSidebarDrawer: React.FC<MobileSidebarDrawerProps> = ({
                     key={item.path}
                     to={item.path}
                     onClick={handleNavClick}
+                    onMouseEnter={onPrefetch?.(item.path)}
                     className={`flex items-center space-x-2 p-2.5 min-w-[44px] min-h-[44px] rounded transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset ${
                       active
                         ? "bg-slate-700"

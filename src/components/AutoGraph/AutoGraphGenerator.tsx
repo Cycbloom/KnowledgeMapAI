@@ -207,7 +207,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
       } else {
         onNodeUpdate(node.id, { isLoading: false });
       }
-    } catch (error) {
+    } catch (_) {
       onNodeUpdate(node.id, { isLoading: false });
     } finally {
       setIsExpanding(false);

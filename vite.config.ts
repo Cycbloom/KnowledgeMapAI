@@ -37,11 +37,25 @@ function getChunkStrategy(id: string): string | undefined {
   ) {
     return "vendor-d3";
   }
+  // R16 Task 14: 拆分 vendor-mermaid（2,321.89 kB）中的大型子依赖为独立 chunk。
+  // 顺序敏感：这些规则必须在 vendor-mermaid 之前，否则会被 mermaid 通用规则先匹配。
+  // dompurify 被 src/utils/sanitize.ts 直接使用，独立 chunk 可避免在 sanitize 时加载整个 mermaid。
+  if (id.includes("dompurify")) return "vendor-dompurify";
+  // @mermaid-js/parser 是 mermaid 的解析器子包，独立拆分可减少 vendor-mermaid 体积。
+  if (id.includes("@mermaid-js/parser")) return "vendor-mermaid-parser";
+  if (id.includes("es-toolkit")) return "vendor-mermaid-utils";
+  if (id.includes("dayjs")) return "vendor-mermaid-date";
+  if (id.includes("marked")) return "vendor-mermaid-marked";
+  if (id.includes("@iconify/utils")) return "vendor-mermaid-icons";
+  if (id.includes("roughjs")) return "vendor-mermaid-rough";
+  if (id.includes("@upsetjs")) return "vendor-mermaid-venn";
+  if (id.includes("@braintree/sanitize-url")) return "vendor-mermaid-url";
+  if (id.includes("ts-dedent")) return "vendor-mermaid-dedent";
+
   if (
     id.includes("mermaid") ||
     id.includes("elkjs") ||
     id.includes("khroma") ||
-    id.includes("dompurify") ||
     id.includes("non-layered-tidy-tree-layout") ||
     id.includes("uuid") ||
     id.includes("web-worker")
@@ -142,6 +156,7 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
+      cache: true,
       // R16 Task 16: 抑制 Circular chunk 警告。
       // 已验证（2026-07-18）：放开抑制后 `vite build` 仅产生 2 条 Circular chunk 警告，
       // 均为 node_modules 第三方库 chunk 间循环，无 src/ 内部循环依赖：

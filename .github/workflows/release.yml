@@ -19,6 +19,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Security Audit (non-blocking)
+        continue-on-error: true
+        run: npm audit
+
       - name: Type Check (Web)
         run: npm run check
 

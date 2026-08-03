@@ -11,6 +11,7 @@ import {
 } from "../../services/graph";
 import { requireKnowledgePointOwnership } from "../../middleware/ownership";
 import { logger } from "../../utils/logger";
+import { logSecurityEvent, createSecurityEvent } from "../../services/audit/auditService";
 import { z } from "zod";
 import {
   createKnowledgePointSchema,
@@ -159,6 +160,11 @@ router.delete(
       id,
       req.user.id,
     );
+    await logSecurityEvent(createSecurityEvent('ACCOUNT_DELETE', req, {
+      targetType: 'knowledgePoint',
+      targetId: id,
+      action: 'hard_delete',
+    }));
     res.json(data);
   },
 );

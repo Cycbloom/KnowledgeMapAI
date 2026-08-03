@@ -6,6 +6,8 @@ import {
   type OptionalAuthRequest,
 } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
+import { validate as validateInput } from "../../utils/validation";
+import * as v2Schemas from "../../utils/schemas";
 import {
   createGraphSchema,
   updateGraphSchema,
@@ -26,6 +28,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { requireGraphOwnership } from "../../middleware/ownership";
 import { cacheService } from "../../services/common";
 import { logger } from "../../utils/logger";
+import { logSecurityEvent, createSecurityEvent } from "../../services/audit/auditService";
 import { z } from "zod";
 
 const router = Router();
@@ -117,6 +120,7 @@ router.post(
 router.post(
   "/",
   requireAuth,
+  validateInput(v2Schemas.createGraphSchema),
   validate({ body: createGraphSchema }),
   async (req: AuthedRequest, res: Response) => {
     const { title, description, domains, template_type, preset_id } = req.body;
@@ -255,6 +259,7 @@ router.get(
 router.put(
   "/:id",
   requireAuth,
+  validateInput(v2Schemas.updateGraphSchema),
   validate({ params: uuidParamsSchema, body: updateGraphSchema }),
   requireGraphOwnership,
   async (req: AuthedRequest, res: Response) => {
@@ -410,6 +415,12 @@ router.delete(
       ids,
       req.user.id,
     );
+    await logSecurityEvent(createSecurityEvent('ACCOUNT_DELETE', req, {
+      targetType: 'graph',
+      targetIds: ids,
+      count: result.count,
+      action: 'batch_permanent_delete',
+    }));
     res.json({
       message: `已永久删除 ${result.count} 个图谱`,
       count: result.count,
@@ -438,6 +449,11 @@ router.delete(
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     await graphService.permanentDeleteGraph(req.supabase, id, req.user.id);
+    await logSecurityEvent(createSecurityEvent('ACCOUNT_DELETE', req, {
+      targetType: 'graph',
+      targetId: id,
+      action: 'permanent_delete',
+    }));
     res.json({ message: "图谱已永久删除" });
   },
 );

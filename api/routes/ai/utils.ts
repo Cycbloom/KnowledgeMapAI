@@ -1,35 +1,11 @@
-import multer from 'multer';
 import type { Response } from 'express';
+import { upload as sharedUpload } from '../../utils/fileValidation';
 
-export const ALLOWED_MIME_TYPES = [
-  'application/pdf',
-  'text/plain',
-  'text/markdown',
-  'text/csv',
-  'image/png',
-  'image/jpeg',
-  'image/jpg',
-  'image/webp',
-  'image/gif',
-];
-
-export const ALLOWED_EXTENSIONS = ['.pdf', '.txt', '.md', '.csv', '.png', '.jpg', '.jpeg', '.webp', '.gif'];
-
-const fileFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const ext = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
-  
-  if (!ALLOWED_MIME_TYPES.includes(file.mimetype) && !ALLOWED_EXTENSIONS.includes(ext)) {
-    return cb(new Error(`Invalid file type: ${file.mimetype}. Allowed types: PDF, TXT, MD, CSV, PNG, JPG, WEBP, GIF`));
-  }
-  
-  cb(null, true);
-};
-
-export const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter
-});
+/**
+ * 复用共享文件验证工具中的 multer 上传中间件
+ * 限制：10MB、通用文件类型（图片/文档/JSON）
+ */
+export const upload = sharedUpload;
 
 export const sendStreamChunk = (res: Response, content: string) => {
   res.write(`data: ${JSON.stringify({ content })}\n\n`);

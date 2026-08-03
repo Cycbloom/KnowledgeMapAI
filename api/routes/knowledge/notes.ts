@@ -40,6 +40,7 @@ const ALLOWED_IMAGE_MIME_TYPES = [
   "image/gif",
   "image/webp",
 ];
+const ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const imageFileFilter = (
@@ -54,6 +55,14 @@ const imageFileFilter = (
       ),
     );
   }
+
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
+    return cb(
+      new Error(`不支持的文件扩展名: ${ext}. 仅支持 jpg/jpeg/png/gif/webp`),
+    );
+  }
+
   cb(null, true);
 };
 
@@ -617,6 +626,20 @@ router.post(
         fs.unlinkSync(file.path);
       } catch (err) {
         logger.warn("upload-image: cleanup invalid type file failed", {
+          path: file.path,
+          error: err,
+        });
+      }
+      throw new AppError(ErrorCodes.FILE_INVALID_TYPE);
+    }
+
+    // 二次校验文件扩展名(防御性)
+    const fileExt = path.extname(file.originalname).toLowerCase();
+    if (!ALLOWED_IMAGE_EXTENSIONS.includes(fileExt)) {
+      try {
+        fs.unlinkSync(file.path);
+      } catch (err) {
+        logger.warn("upload-image: cleanup invalid extension file failed", {
           path: file.path,
           error: err,
         });

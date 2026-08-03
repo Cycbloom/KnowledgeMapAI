@@ -1,5 +1,6 @@
 import { Router, type Response } from 'express';
 import multer from 'multer';
+import path from 'node:path';
 import { requireAuth, type AuthRequest } from '../../middleware/auth';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { AppError } from '../../middleware/errorHandler';
@@ -22,11 +23,35 @@ const ALLOWED_AUDIO_TYPES = [
   'audio/ogg',
 ];
 
+const ALLOWED_AUDIO_EXTENSIONS = ['.mp3', '.wav', '.webm', '.m4a', '.mp4', '.ogg'];
+
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+
+const audioFileFilter = (
+  _req: Express.Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback,
+) => {
+  if (!ALLOWED_AUDIO_TYPES.includes(file.mimetype)) {
+    return cb(
+      new Error(`不支持的音频格式: ${file.mimetype}。仅支持 mp3/wav/webm/m4a/ogg`),
+    );
+  }
+
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (!ALLOWED_AUDIO_EXTENSIONS.includes(ext)) {
+    return cb(
+      new Error(`不支持的文件扩展名: ${ext}。仅支持 .mp3/.wav/.webm/.m4a/.mp4/.ogg`),
+    );
+  }
+
+  cb(null, true);
+};
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE },
+  fileFilter: audioFileFilter,
 });
 
 router.post('/stt', requireAuth, upload.single('audio'), async (req: AuthRequest, res: Response) => {

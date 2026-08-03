@@ -1,6 +1,8 @@
 import { Router, type Response } from "express";
 import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
+import { validate as validateInput } from "../utils/validation";
+import * as v2Schemas from "../utils/schemas";
 import {
   createNodeSchema,
   updateNodeSchema,
@@ -11,12 +13,14 @@ import {
   batchUpdateNodesSchema,
 } from "../schemas/index";
 import { nodesService, knowledgePointService } from "../services/graph";
+import { logSecurityEvent, createSecurityEvent } from "../services/audit/auditService";
 
 const router = Router();
 
 router.post(
   "/nodes",
   requireAuth,
+  validateInput(v2Schemas.createNodeSchema),
   validate(createNodeSchema),
   async (req: AuthedRequest, res: Response) => {
     const result = await nodesService.createNode(
@@ -41,6 +45,7 @@ router.get(
 router.put(
   "/nodes/:id",
   requireAuth,
+  validateInput(v2Schemas.updateNodeSchema),
   validate(updateNodeSchema),
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
@@ -84,6 +89,13 @@ router.delete(
       id,
       hardDelete,
     );
+    if (hardDelete) {
+      await logSecurityEvent(createSecurityEvent('ACCOUNT_DELETE', req, {
+        targetType: 'node',
+        targetId: id,
+        action: 'hard_delete',
+      }));
+    }
     res.json(result);
   },
 );

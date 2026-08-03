@@ -98,7 +98,8 @@ export class ConceptSimilarityService {
 
       if (graphNodes && graphNodes.length > 0) {
         const excludeIds = graphNodes.map((gn) => gn.knowledge_point_id);
-        query = query.not("id", "in", `(${excludeIds.join(",")})`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        query = (query as any).not("id", "in", `(${excludeIds.join(",")})`);
       }
     }
 

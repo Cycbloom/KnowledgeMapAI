@@ -1,6 +1,7 @@
 import type { AIProviderType, AIProviderConfig } from "@shared/types";
 import { appSettingsService } from "../core/appSettingsService";
 import { logger } from "../../utils/logger";
+import { decrypt, getEncryptionKey } from "../../../shared/utils/encryption";
 
 // Providers that support embedding functionality
 const EMBEDDING_CAPABLE_PROVIDERS: AIProviderType[] = [
@@ -70,8 +71,20 @@ export const getProviderConfig = async (
 
     if (allConfigs && allConfigs[provider]) {
       const dbConfig = allConfigs[provider];
+
+      // 解密数据库中存储的 apiKey（加密格式为 iv:authTag:ciphertext，恰含 2 个冒号）
+      let apiKey = dbConfig.apiKey || "";
+      if (apiKey && apiKey.split(":").length === 3) {
+        try {
+          apiKey = decrypt(apiKey, getEncryptionKey());
+        } catch {
+          logger.warn(`[Config] Failed to decrypt stored apiKey for ${provider}, falling back to env`);
+          apiKey = "";
+        }
+      }
+
       return {
-        apiKey: dbConfig.apiKey || envConfig.apiKey,
+        apiKey: apiKey || envConfig.apiKey,
         baseURL: dbConfig.baseURL || envConfig.baseURL,
         model: dbConfig.model || envConfig.model,
         embeddingModel: dbConfig.embeddingModel || envConfig.embeddingModel,

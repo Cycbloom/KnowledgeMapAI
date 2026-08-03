@@ -9,6 +9,7 @@ import { logger } from "../../../utils/logger";
 import { AppError } from "../../../middleware/errorHandler";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
 import { PROVIDER_DEFAULTS, maskApiKey, hasEnvFallback } from "./shared";
+import { encrypt, decrypt, getEncryptionKey } from "../../../../shared/utils/encryption";
 
 const router = Router();
 
@@ -105,14 +106,22 @@ router.put(
         >("ai_provider_config")) || {};
 
       const merged = { ...existingConfigs };
+      const encryptionKey = getEncryptionKey();
 
       for (const [provider, config] of Object.entries(providers)) {
-        merged[provider] = {
+        const mergedEntry = {
           ...(merged[provider] || {}),
           ...Object.fromEntries(
             Object.entries(config).filter(([, v]) => v !== undefined),
           ),
         };
+
+        // 加密 apiKey 后再存储到数据库
+        if (mergedEntry.apiKey) {
+          mergedEntry.apiKey = encrypt(mergedEntry.apiKey, encryptionKey);
+        }
+
+        merged[provider] = mergedEntry;
       }
 
       await appSettingsService.updateSetting("ai_provider_config", merged);
@@ -159,7 +168,18 @@ router.post(
         const defaults = PROVIDER_DEFAULTS[provider];
         const envConfig = getEnvConfig(provider as AIProviderType);
 
-        testApiKey = testApiKey || dbConfig?.apiKey || envConfig.apiKey || "";
+        // 解密数据库中存储的 apiKey（加密格式为 iv:authTag:ciphertext，恰含 2 个冒号）
+        let dbApiKey = dbConfig?.apiKey || "";
+        if (dbApiKey && dbApiKey.split(":").length === 3) {
+          try {
+            dbApiKey = decrypt(dbApiKey, getEncryptionKey());
+          } catch {
+            logger.warn(`[Provider Test] Failed to decrypt stored apiKey for ${provider}, falling back to env`);
+            dbApiKey = "";
+          }
+        }
+
+        testApiKey = testApiKey || dbApiKey || envConfig.apiKey || "";
         testBaseURL =
           testBaseURL ||
           dbConfig?.baseURL ||

@@ -21,6 +21,7 @@ import {
   Puzzle,
   Globe,
   Monitor,
+  Power,
 } from "lucide-react";
 const PluginMarketplace = lazy(() =>
   import("../components/PluginMarketplace/PluginMarketplace").then((module) => ({
@@ -77,6 +78,23 @@ export const Settings = () => {
   const { aiLanguage, setAILanguage } = useLearningSettingsStore();
   const dbSectionRef = useRef<HTMLDivElement>(null);
 
+  const [autoLaunchEnabled, setAutoLaunchEnabled] = useState(false);
+  const [autoLaunchLoaded, setAutoLaunchLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!isElectron()) return;
+    window.electronAPI?.app.getAutoLaunch().then((enabled: boolean) => {
+      setAutoLaunchEnabled(enabled);
+      setAutoLaunchLoaded(true);
+    });
+  }, []);
+
+  const handleAutoLaunchToggle = useCallback(() => {
+    const newValue = !autoLaunchEnabled;
+    setAutoLaunchEnabled(newValue);
+    window.electronAPI?.app.setAutoLaunch(newValue);
+  }, [autoLaunchEnabled]);
+
   const sections = [
     { id: "appearance", label: t("settings.sections.appearance") },
     { id: "focusMode", label: t("settings.sections.focusMode") },
@@ -91,6 +109,7 @@ export const Settings = () => {
     { id: "graphEditor", label: t("settings.sections.graphEditor") },
     { id: "shortcuts", label: t("settings.sections.shortcuts") },
     { id: "notifications", label: t("settings.sections.notifications") },
+    { id: "system", label: t("settings.sections.system") },
     { id: "plugins", label: t("settings.sections.plugins") },
   ];
 
@@ -450,6 +469,60 @@ export const Settings = () => {
             >
               <NotificationSettings />
             </section>
+
+            {/* 仅 Electron 端显示系统设置 */}
+            {isElectron() && (
+              <section
+                id="system"
+                ref={(el) => {
+                  if (el) sectionRefs.current.system = el;
+                }}
+                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Power className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {t("settings.sections.system")}
+                  </h2>
+                </div>
+                <div className="space-y-4">
+                  {autoLaunchLoaded && (
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50">
+                      <div>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          {t("settings.autoLaunch")}
+                        </span>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                          {t("settings.autoLaunchDesc")}
+                        </p>
+                      </div>
+                      <div
+                        role="switch"
+                        aria-checked={autoLaunchEnabled}
+                        aria-label={t("settings.autoLaunch")}
+                        tabIndex={0}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                          autoLaunchEnabled ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
+                        }`}
+                        onClick={handleAutoLaunchToggle}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleAutoLaunchToggle();
+                          }
+                        }}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                            autoLaunchEnabled ? "translate-x-5" : "translate-x-0.5"
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
 
             <section
               id="plugins"

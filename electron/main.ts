@@ -24,6 +24,8 @@ import { loadWindowState, trackWindowState } from "./utils/windowStateManager";
 import { emitDeepLink, emitFileOpen, parseArgv } from "./ipc/deepLinkHandlers";
 import { registerPowerHandlers } from "./ipc/powerHandlers";
 import { registerDialogHandlers } from "./ipc/dialogHandlers";
+import { registerBadgeHandlers } from "./ipc/badgeHandlers";
+import { registerNotificationHandlers } from "./ipc/notificationHandlers";
 import { resetAllBlockers } from "./utils/powerManager";
 
 /** Minimal contract for the loaded API Express application. */
@@ -47,6 +49,11 @@ const IPC_HANDLE_CHANNELS = new Set([
   "app:getVersion",
   "app:getPlatform",
   "app:quit",
+  "app:getAutoLaunch",
+  "app:setAutoLaunch",
+  "app:setupJumpList",
+  "app:addRecentDocument",
+  "app:clearRecentDocuments",
   "api:getPort",
   // window domain
   "window:minimize",
@@ -82,6 +89,10 @@ const IPC_HANDLE_CHANNELS = new Set([
   "dialog:showOpenDialog",
   "dialog:showMessageBox",
   "dialog:showErrorBox",
+  // notification domain
+  "notification:show",
+  // badge domain
+  "badge:set",
 ]);
 
 // Wrap ipcMain.handle to validate channels against whitelist
@@ -587,8 +598,29 @@ if (!gotLock) {
     registerSyncHandlers({ getSyncEngine: () => syncEngine });
     registerPowerHandlers();
     registerDialogHandlers({ getMainWindow: () => mainWindow });
+    registerBadgeHandlers();
+    registerNotificationHandlers({ getMainWindow: () => mainWindow });
 
     await createWindow();
+
+    // Task 6: 设置 Windows JumpList（其他平台静默失败）
+    app.setJumpList([
+      {
+        type: 'tasks',
+        name: 'Tasks',
+        items: [
+          {
+            type: 'task',
+            title: '新建图谱',
+            program: process.execPath,
+            args: '--new-graph',
+            iconPath: process.execPath,
+            iconIndex: 0,
+            description: '创建一个新的知识图谱',
+          },
+        ],
+      },
+    ]);
 
     // Task 6.3: enable system tray. Wrapped in try/catch because the tray icon
     // (public/favicon.svg) may be missing or in a format Tray cannot load —

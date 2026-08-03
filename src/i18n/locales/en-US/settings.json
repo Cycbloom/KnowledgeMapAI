@@ -19,6 +19,7 @@
     "graphEditor": "Graph Editor",
     "shortcuts": "Shortcuts",
     "notifications": "Notifications",
+    "system": "System",
     "plugins": "Plugin Marketplace"
   },
   "appearance": "Appearance",
@@ -365,6 +366,8 @@
     "optimizeFailed": "Optimization failed, please try again later",
     "basedOnReviews": "Optimized based on {{count}} review records"
   },
+  "autoLaunch": "Auto Start on Boot",
+  "autoLaunchDesc": "Application will automatically start after system login",
   "studyMode": {
     "drill": {
       "label": "Drill Mode",

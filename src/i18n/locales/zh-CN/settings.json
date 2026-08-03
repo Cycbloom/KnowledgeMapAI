@@ -19,6 +19,7 @@
     "graphEditor": "图谱编辑器",
     "shortcuts": "快捷键",
     "notifications": "通知",
+    "system": "系统",
     "plugins": "插件市场"
   },
   "appearance": "外观设置",
@@ -365,6 +366,8 @@
     "optimizeFailed": "优化失败，请稍后重试",
     "basedOnReviews": "基于 {{count}} 条复习记录优化"
   },
+  "autoLaunch": "开机自启动",
+  "autoLaunchDesc": "应用将在系统登录后自动启动",
   "studyMode": {
     "drill": {
       "label": "刷题模式",

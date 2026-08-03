@@ -14,6 +14,11 @@ const electronAPI = {
     getVersion: () => ipcRenderer.invoke("app:getVersion"),
     getPlatform: () => ipcRenderer.invoke("app:getPlatform"),
     quit: () => ipcRenderer.invoke("app:quit"),
+    getAutoLaunch: () => ipcRenderer.invoke("app:getAutoLaunch"),
+    setAutoLaunch: (enabled: boolean) => ipcRenderer.invoke("app:setAutoLaunch", { enabled }),
+    setupJumpList: () => ipcRenderer.invoke("app:setupJumpList"),
+    addRecentDocument: (path: string) => ipcRenderer.invoke("app:addRecentDocument", { path }),
+    clearRecentDocuments: () => ipcRenderer.invoke("app:clearRecentDocuments"),
   },
   window: {
     minimize: () => ipcRenderer.invoke("window:minimize"),
@@ -162,6 +167,9 @@ const electronAPI = {
       ipcRenderer.on("menu:action", subscription);
       return () => ipcRenderer.removeListener("menu:action", subscription);
     },
+  },
+  badge: {
+    set: (count: number) => ipcRenderer.invoke('badge:set', { count }),
   },
 };
 

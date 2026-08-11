@@ -47,6 +47,8 @@ vi.mock("../../../utils/errors", () => ({
     err.statusCode = 500;
     return err;
   }),
+  isNetworkError: vi.fn(() => false),
+  isRetryableError: vi.fn(() => false),
   TokenExpiredError: class TokenExpiredError extends Error {
     constructor(msg?: string) { super(msg || "Token expired"); this.name = "TokenExpiredError"; }
   },

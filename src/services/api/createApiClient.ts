@@ -6,7 +6,13 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { useStore } from "@/store/useStore";
-import { createErrorFromResponse } from "@/utils/errors";
+import {
+  createErrorFromResponse,
+  isRetryableError,
+  isNetworkError,
+} from "@/utils/errors";
+
+import type { AppErrorBase } from "@shared/types/appError";
 import { TokenRefreshManager } from "./TokenRefreshManager";
 import { isCapacitorMobile, getMobileApiBaseUrl } from "@/config/mobileApiConfig";
 import {
@@ -36,6 +42,7 @@ declare module "axios" {
   interface InternalAxiosRequestConfig {
     _inflightKey?: string;
     _requestId?: string;
+    _retryCount?: number;
   }
 }
 
@@ -334,8 +341,52 @@ export const createApiClient = (): AxiosInstance => {
         }
       }
 
-      if (appError.statusCode >= 500 || !appError.statusCode) {
-        captureException(appError, { url: error.config?.url });
+      // 通用重试逻辑：仅对可重试错误生效（与 useRetry 策略一致）
+      const retryCount = originalRequest._retryCount ?? 0;
+      const isNetworkErr = isNetworkError(appError);
+      const isRetryable = isRetryableError(appError) || isNetworkErr;
+
+      if (isRetryable) {
+        const method = (originalRequest.method || "get").toUpperCase();
+        const isIdempotentMethod = ["GET", "HEAD", "OPTIONS", "PUT", "DELETE"].includes(method);
+        // 非幂等方法（POST、PATCH）仅对网络错误、5xx 和 429 重试
+        const appErrorStatus = (appError as AppErrorBase).statusCode;
+        const isSafeError = isNetworkErr || appErrorStatus >= 500 || appErrorStatus === 429;
+
+        if (isIdempotentMethod || isSafeError) {
+          // 429 限流最多重试 2 次，其他可重试错误最多 3 次（与 useRetry 策略一致）
+          const maxApiRetries = appErrorStatus === 429 ? 2 : 3;
+
+          if (retryCount < maxApiRetries) {
+            originalRequest._retryCount = retryCount + 1;
+
+            let delayMs: number;
+
+            if (isNetworkErr && !navigator.onLine) {
+              // 网络错误且离线：每秒轮询
+              delayMs = 1000;
+            } else if (appErrorStatus === 429) {
+              // 429 限流：优先使用 Retry-After 响应头
+              const retryAfter = error.response?.headers?.["retry-after"];
+              if (retryAfter !== undefined) {
+                delayMs = parseInt(String(retryAfter), 10) * 1000;
+              } else {
+                delayMs = 5000;
+              }
+            } else {
+              // 指数退避：1s → 2s → 4s
+              delayMs = Math.min(1000 * Math.pow(2, retryCount), 30000);
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            return client(originalRequest);
+          }
+        }
+      }
+
+      const appErrorStatus = (appError as AppErrorBase).statusCode;
+      if (appErrorStatus >= 500 || !appErrorStatus) {
+        captureException(appError as unknown as Error, { url: error.config?.url });
       }
       return Promise.reject(appError);
     },

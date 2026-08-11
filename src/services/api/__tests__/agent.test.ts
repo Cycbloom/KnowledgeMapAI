@@ -205,4 +205,170 @@ describe('agentApi', () => {
       expect(onError).toHaveBeenCalledWith(expect.any(Error));
     });
   });
+
+  // ========== 补充的 request-based methods ==========
+
+  describe('applyRecommendations', () => {
+    it('should call POST /agent/recommendations/apply', () => {
+      const recommendations = [{
+        id: 'r1',
+        source_graph_idx: 0,
+        source_graph_title: 'Graph1',
+        target_graph_idx: 1,
+        target_graph_title: 'Graph2',
+        relation_type: 'related' as const,
+        reason: 'similar',
+        confidence: 0.9,
+      }];
+      agentApi.applyRecommendations(recommendations);
+
+      expect(request).toHaveBeenCalledWith('/agent/recommendations/apply', {
+        method: 'POST',
+        body: JSON.stringify({ recommendations, graphIndex: undefined }),
+      });
+    });
+  });
+
+  describe('mergeGraphs', () => {
+    it('should call POST /graphs/merge', () => {
+      agentApi.mergeGraphs(['g1', 'g2'], 'Merged Graph');
+
+      expect(request).toHaveBeenCalledWith('/graphs/merge', {
+        method: 'POST',
+        body: JSON.stringify({ graph_ids: ['g1', 'g2'], target_title: 'Merged Graph' }),
+      });
+    });
+  });
+
+  describe('linkGraphs', () => {
+    it('should call POST /graphs/batch-link', () => {
+      agentApi.linkGraphs(['g1', 'g2'], 'prerequisite');
+
+      expect(request).toHaveBeenCalledWith('/graphs/batch-link', {
+        method: 'POST',
+        body: JSON.stringify({ graph_ids: ['g1', 'g2'], relation_type: 'prerequisite' }),
+      });
+    });
+
+    it('should default relation_type to "related"', () => {
+      agentApi.linkGraphs(['g1', 'g2']);
+
+      expect(request).toHaveBeenCalledWith('/graphs/batch-link', {
+        method: 'POST',
+        body: JSON.stringify({ graph_ids: ['g1', 'g2'], relation_type: 'related' }),
+      });
+    });
+  });
+
+  describe('dismissMergeSuggestion', () => {
+    it('should call POST /agent/merge-suggestions/dismiss', () => {
+      agentApi.dismissMergeSuggestion(['g1', 'g2']);
+
+      expect(request).toHaveBeenCalledWith('/agent/merge-suggestions/dismiss', {
+        method: 'POST',
+        body: JSON.stringify({ graph_ids: ['g1', 'g2'] }),
+      });
+    });
+  });
+
+  describe('executeAutonomous', () => {
+    it('should call POST /agent/sessions/:id/autonomous', () => {
+      const goal = { type: 'analyze', description: 'test' };
+      agentApi.executeAutonomous('session-1', goal);
+
+      expect(request).toHaveBeenCalledWith('/agent/sessions/session-1/autonomous', {
+        method: 'POST',
+        body: JSON.stringify({ goal }),
+      });
+    });
+  });
+
+  describe('getPendingActions', () => {
+    it('should call GET /agent/sessions/:id/pending-actions', () => {
+      agentApi.getPendingActions('session-1');
+
+      expect(request).toHaveBeenCalledWith('/agent/sessions/session-1/pending-actions');
+    });
+  });
+
+  describe('confirmAction', () => {
+    it('should call POST /agent/sessions/:id/actions/:actionId/confirm', () => {
+      agentApi.confirmAction('session-1', 'action-1');
+
+      expect(request).toHaveBeenCalledWith('/agent/sessions/session-1/actions/action-1/confirm', {
+        method: 'POST',
+      });
+    });
+  });
+
+  describe('rejectAction', () => {
+    it('should call POST /agent/sessions/:id/actions/:actionId/reject', () => {
+      agentApi.rejectAction('session-1', 'action-1');
+
+      expect(request).toHaveBeenCalledWith('/agent/sessions/session-1/actions/action-1/reject', {
+        method: 'POST',
+      });
+    });
+  });
+
+  describe('batchConfirmActions', () => {
+    it('should call POST /agent/sessions/:id/actions/batch-confirm', () => {
+      agentApi.batchConfirmActions('session-1', ['a1', 'a2']);
+
+      expect(request).toHaveBeenCalledWith('/agent/sessions/session-1/actions/batch-confirm', {
+        method: 'POST',
+        body: JSON.stringify({ action_ids: ['a1', 'a2'] }),
+      });
+    });
+  });
+
+  describe('batchRejectActions', () => {
+    it('should call POST /agent/sessions/:id/actions/batch-reject', () => {
+      agentApi.batchRejectActions('session-1', ['a1', 'a2']);
+
+      expect(request).toHaveBeenCalledWith('/agent/sessions/session-1/actions/batch-reject', {
+        method: 'POST',
+        body: JSON.stringify({ action_ids: ['a1', 'a2'] }),
+      });
+    });
+  });
+
+  // ========== resumeSessionStream ==========
+
+  describe('resumeSessionStream', () => {
+    it('should parse SSE events and call onEvent callback', async () => {
+      const sseEvents: AgentSSEEvent[] = [
+        { type: 'agent_message', data: { content: 'resumed' } },
+        { type: 'session_completed', data: { session: { id: 's1' } } },
+      ];
+      globalThis.fetch = vi.fn().mockResolvedValue(createSSEMockResponse(sseEvents));
+
+      const onEvent = vi.fn();
+      const onComplete = vi.fn();
+
+      await agentApi.resumeSessionStream('session-1', onEvent, undefined, onComplete);
+
+      await vi.waitFor(() => {
+        expect(onEvent).toHaveBeenCalledTimes(2);
+      });
+
+      expect(onEvent).toHaveBeenNthCalledWith(1, sseEvents[0]);
+      expect(onEvent).toHaveBeenNthCalledWith(2, sseEvents[1]);
+      expect(onComplete).toHaveBeenCalledOnce();
+    });
+
+    it('should call onError on HTTP error', async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+
+      const onError = vi.fn();
+
+      await agentApi.resumeSessionStream('session-1', vi.fn(), onError);
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledOnce();
+      });
+
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    });
+  });
 });

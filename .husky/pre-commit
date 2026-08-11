@@ -11,6 +11,14 @@ fi
 
 echo "✅ 增量检查通过"
 
+echo "🔍 检查 i18n key 一致性..."
+npm run check:i18n
+if [ $? -ne 0 ]; then
+  echo "❌ i18n key 检查失败，请修复后再提交"
+  exit 1
+fi
+echo "✅ i18n key 检查通过"
+
 # Optional: run full TypeScript type check before commit (opt-in via CHECK_FULL=1)
 # Set CHECK_FULL=1 to enable, e.g.: CHECK_FULL=1 git commit -m "..."
 # Use SKIP_CHECK=1 to explicitly skip even if CHECK_FULL is set in your shell.

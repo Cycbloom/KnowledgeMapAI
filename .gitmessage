@@ -1,0 +1,10 @@
+# 提交信息格式: <type>(<scope>): <description>
+#
+# Type: feat | fix | refactor | style | test | docs | chore | perf
+# Scope: component/module name (optional)
+# Description: 简要描述变更内容（中文）
+#
+# 示例:
+# feat(graph-editor): 添加节点拖拽排序功能
+# fix(auth): 修复登录超时重定向问题
+# refactor(api): 重构查询参数验证逻辑

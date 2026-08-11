@@ -1,0 +1,59 @@
+# KnowledgeMap Docker Compose 精简版
+# 说明:
+# - 仅将 Supabase 服务（PostgreSQL 数据库 + Studio 管理界面）运行在 Docker 中
+# - 应用代码（前端 / 后端）在宿主机本地运行（npm run dev）
+# - 启动: docker-compose up -d
+# - 停止: docker-compose down
+# - 查看日志: docker-compose logs -f
+
+name: knowledgemap-supabase
+
+services:
+  # ===========================================
+  # Supabase PostgreSQL 数据库
+  # 端口 54322 映射到宿主机，供本地应用连接
+  # ===========================================
+  supabase-db:
+    image: supabase/postgres
+    ports:
+      - "${POSTGRES_PORT:-54322}:5432"
+    environment:
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+      # 若存在数据库初始化脚本则挂载（当前 docker/dev/init.sh 不存在，故未启用）
+    networks:
+      - km-supabase
+
+  # ===========================================
+  # Supabase Studio 管理界面
+  # 端口 54323 映射到宿主机，可在浏览器中管理数据库
+  # ===========================================
+  supabase-api:
+    image: supabase/studio
+    ports:
+      - "${STUDIO_PORT:-54323}:3000"
+    environment:
+      SUPABASE_URL: "${SUPABASE_URL:-http://localhost:54321}"
+      SUPABASE_ANON_KEY: "${SUPABASE_ANON_KEY:-your_supabase_anon_key}"
+      SUPABASE_SERVICE_ROLE_KEY: "${SUPABASE_SERVICE_ROLE_KEY:-your_supabase_service_role_key}"
+      SUPABASE_JWT_SECRET: "${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}"
+    depends_on:
+      - supabase-db
+    networks:
+      - km-supabase
+
+# ===========================================
+# 命名卷 (数据库数据持久化)
+# ===========================================
+volumes:
+  supabase-db-data:
+    name: km-supabase-db-data
+
+# ===========================================
+# 内部网络 (连接 supabase-db 与 supabase-api)
+# ===========================================
+networks:
+  km-supabase:
+    name: km-supabase
+    driver: bridge

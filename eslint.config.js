@@ -6,7 +6,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'dist-electron', 'dev-dist', 'release', 'node_modules', 'android/**', 'public/workbox-*.js', 'workbox-*.js'] },
+  { ignores: ['dist', 'dist-electron', 'dev-dist', 'release', 'node_modules', 'android/**', 'public/workbox-*.js', 'workbox-*.js', 'supabase/.temp/**', '.toolcache/**'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],

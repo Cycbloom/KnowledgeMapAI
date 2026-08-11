@@ -131,10 +131,39 @@ function getChunkStrategy(id: string): string | undefined {
   if (id.includes("ts-fsrs")) return "vendor-fsrs";
   if (id.includes("cheerio")) return "vendor-parser";
 
+  // P6: 主入口瘦身——将静态打入主入口的启动依赖独立成 vendor chunk，
+  // 减小主入口原始体积并改善缓存复用（vendor chunk 变更频率低，可独立缓存）。
+  // 三者均为启动必需依赖，拆分不改变功能与加载时序。
+  if (id.includes("localforage")) return "vendor-storage";
+  if (id.includes("event-source-polyfill")) return "vendor-eventsource";
+  if (id.includes("@capacitor")) return "vendor-capacitor";
+
   return undefined;
 }
 
 const isElectronBuild = process.env.ELECTRON_BUILD === "true";
+
+/** Vite plugin: check required env vars on dev server start */
+function checkEnvPlugin(): import("vite").Plugin {
+  return {
+    name: "check-env",
+    configureServer(server) {
+      server.httpServer?.once("listening", () => {
+        const requiredVars = ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"];
+        let hasWarning = false;
+        for (const name of requiredVars) {
+          if (!process.env[name]) {
+            console.warn(`  ⚠️  环境变量 ${name} 未设置 — 某些功能可能受限`);
+            hasWarning = true;
+          }
+        }
+        if (hasWarning) {
+          console.warn("\n  ⚠️  部分环境变量缺失，但启动将继续\n");
+        }
+      });
+    },
+  };
+}
 
 export default defineConfig({
   base: "./",
@@ -142,16 +171,24 @@ export default defineConfig({
     legalComments: "none",
   },
   plugins: [
+    checkEnvPlugin(),
     react(),
     tsconfigPaths(),
     ...getPwaPlugins(isElectronBuild),
-    visualizer({
-      filename: "dist/stats.html",
-      open: false,
-      gzipSize: true,
-      brotliSize: true,
-      emitFile: false,
-    }),
+    // 视觉分析插件仅在显式开启时挂载（BUILD_ANALYZE=1 npm run build）。
+    // 默认关闭：visualizer 的 gzipSize/brotliSize 会对每个 chunk 做压缩计算，
+    // 是构建耗时的主要非必要开销之一，关闭可显著缩短常规构建时间。
+    ...(process.env.BUILD_ANALYZE === "1"
+      ? [
+          visualizer({
+            filename: "dist/stats.html",
+            open: false,
+            gzipSize: true,
+            brotliSize: true,
+            emitFile: false,
+          }),
+        ]
+      : []),
   ],
   build: {
     chunkSizeWarningLimit: 1500,
@@ -178,7 +215,11 @@ export default defineConfig({
       output: {
         manualChunks: getChunkStrategy,
         compact: true,
-        experimentalMinChunkSize: 20000,
+        // P7: 20000 会把 React.lazy 的小型 web-only 壳层组件（SyncStatusBadge、
+        // ConflictResolutionDialog、UpdatePrompt、OfflineSyncProgress、CelebrationOverlay）
+        // 并回主入口 chunk，使懒加载失效。调低阈值让这些按需组件真正拆分为独立 chunk，
+        // 从首屏主入口移除其代码。仍会合并更小的碎片 chunk，避免产生过多请求。
+        experimentalMinChunkSize: 5000,
         chunkFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash][extname]",
       },
@@ -187,17 +228,24 @@ export default defineConfig({
     minify: "esbuild",
     sourcemap: false,
     cssCodeSplit: true,
-    reportCompressedSize: true,
+    // 常规构建关闭压缩体积报告：reportCompressedSize 会对每个 chunk 计算 gzip 体积，
+    // 是构建耗时的主要非必要开销之一。需要查看 gzip/brotli 体积时用
+    // `BUILD_ANALYZE=1 npm run build`（visualizer 会一并输出压缩体积）。
+    reportCompressedSize: process.env.BUILD_ANALYZE === "1",
     modulePreload: {
       polyfill: true,
     },
   },
   server: {
     host: true,
+    watch: {
+      usePolling: true,
+    },
     proxy: {
       "/api": {
-        // 允许通过 API_PORT 环境变量覆盖 API 服务器端口（Windows Hyper-V 可能保留 3001）。
-        target: `http://localhost:${process.env.API_PORT || '3001'}`,
+        // 允许通过 API_PROXY_TARGET 环境变量覆盖代理目标（Docker 容器内使用 http://backend:3001）。
+        // 本地开发默认使用 localhost:3001。
+        target: process.env.API_PROXY_TARGET || `http://localhost:${process.env.API_PORT || '3001'}`,
         changeOrigin: true,
         ws: true,
         secure: false,

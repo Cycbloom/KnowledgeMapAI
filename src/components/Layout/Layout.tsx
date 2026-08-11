@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo, useId } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo, useId, Suspense } from "react";
 import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,20 +26,16 @@ import {
   OfflineIndicator,
   FocusTimer,
   MobileFocusTimer,
-  ShortcutHelpPanel,
   SSEStatusIndicator,
   SyncStatusIndicator,
-  GlobalCommandPalette,
 } from "../common";
 import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
 import { NotificationCenter } from "../Notifications/NotificationCenter";
-import { MobileBottomNav } from "./MobileBottomNav";
-import { MobileSidebarDrawer } from "./MobileSidebarDrawer";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
+import { useSwipeBack } from "../../hooks/gesture/useSwipeBack";
 import { api } from "../../services/api";
-import { Console } from "../Console/Console";
 import { useGlobalShortcuts } from "../../hooks/common/useGlobalShortcuts";
 import { useNetworkStatus } from "../../hooks/common/useNetworkStatus";
 import { useSkipToContent } from "../../hooks/common/useSkipToContent";
@@ -49,6 +45,28 @@ import { iconMap } from "../../utils/iconMap";
 import { parseMarkdownToGraph } from "../../utils/markdownParser";
 import { parseOpmlToGraph } from "../../utils/opmlParser";
 import { message } from "../../utils/messageHelper";
+
+// 移动端组件延迟加载，减少桌面端非必要加载
+const MobileBottomNav = React.lazy(() => import("./MobileBottomNav").then(m => ({ default: m.MobileBottomNav })));
+const MobileSidebarDrawer = React.lazy(() => import("./MobileSidebarDrawer").then(m => ({ default: m.MobileSidebarDrawer })));
+
+// P6: 主入口瘦身——用户动作触发的壳层弹层改为懒加载，仅在打开时挂载加载，
+// 减少首屏 index chunk 体积与解析开销。打开/关闭及快捷键逻辑均在 Layout 常驻层处理，
+// 组件为纯展示弹层，条件挂载不改变行为。
+const LazyShortcutHelpPanel = React.lazy(() =>
+  import("../common/ShortcutHelpPanel").then((m) => ({ default: m.ShortcutHelpPanel })),
+);
+const LazyGlobalCommandPalette = React.lazy(() =>
+  import("../common/GlobalCommandPalette").then((m) => ({ default: m.GlobalCommandPalette })),
+);
+const LazyConsole = React.lazy(() =>
+  import("../Console/Console").then((m) => ({ default: m.Console })),
+);
+// P7: 主入口常驻壳层瘦身（第二轮）——UpdateOverlay 仅在更新可用时渲染（平时返回 null），
+// 改为懒加载，从主入口剥离其按需触发的代码。
+const LazyUpdateOverlay = React.lazy(() =>
+  import("../common/UpdateOverlay").then((m) => ({ default: m.UpdateOverlay })),
+);
 
 /**
  * Shape of the user_metadata stored on the Supabase User object.
@@ -99,6 +117,7 @@ export const Layout = () => {
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
+  useSwipeBack({ enabled: isMobile });
   const { mainRef, handleSkip } = useSkipToContent();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const sidebarId = useId();
@@ -628,36 +647,51 @@ export const Layout = () => {
             </ErrorBoundary>
           </div>
           {isMobile && !isFullScreenPage && (
-            <MobileBottomNav isDark={isDark} currentPath={location.pathname} onPrefetch={getPrefetchHandler} />
+            <Suspense fallback={null}>
+              <MobileBottomNav isDark={isDark} currentPath={location.pathname} onPrefetch={getPrefetchHandler} />
+            </Suspense>
           )}
           {isMobile && !isFullScreenPage && (
-            <MobileSidebarDrawer
-              isOpen={isMobileDrawerOpen}
-              onClose={() => setIsMobileDrawerOpen(false)}
-              navItems={navItems}
-              isDark={isDark}
-              currentPath={location.pathname}
-              onPrefetch={getPrefetchHandler}
-            />
+            <Suspense fallback={null}>
+              <MobileSidebarDrawer
+                isOpen={isMobileDrawerOpen}
+                onClose={() => setIsMobileDrawerOpen(false)}
+                navItems={navItems}
+                isDark={isDark}
+                currentPath={location.pathname}
+                onPrefetch={getPrefetchHandler}
+              />
+            </Suspense>
           )}
+          <Suspense fallback={null}>
+            <LazyUpdateOverlay />
+          </Suspense>
           <MessageBar bottomOffset={isMobile && !isFullScreenPage ? 56 : 0} />
           <OfflineIndicator />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
-          <ShortcutHelpPanel isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
-          {!isFullScreenPage && (
-            <GlobalCommandPalette
-              isOpen={isCommandPaletteOpen}
-              onClose={() => setIsCommandPaletteOpen(false)}
-            />
+          {isHelpOpen && (
+            <Suspense fallback={null}>
+              <LazyShortcutHelpPanel isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+            </Suspense>
           )}
-          {user?.id && (
-            <Console
-              isOpen={isConsoleOpen}
-              onClose={closeConsole}
-              context={consoleContext}
-              onToggleMinimize={toggleConsoleMinimize}
-              isMinimized={isConsoleMinimized}
-            />
+          {!isFullScreenPage && isCommandPaletteOpen && (
+            <Suspense fallback={null}>
+              <LazyGlobalCommandPalette
+                isOpen={isCommandPaletteOpen}
+                onClose={() => setIsCommandPaletteOpen(false)}
+              />
+            </Suspense>
+          )}
+          {user?.id && isConsoleOpen && (
+            <Suspense fallback={null}>
+              <LazyConsole
+                isOpen={isConsoleOpen}
+                onClose={closeConsole}
+                context={consoleContext}
+                onToggleMinimize={toggleConsoleMinimize}
+                isMinimized={isConsoleMinimized}
+              />
+            </Suspense>
           )}
         </main>
         <footer className="sr-only" role="contentinfo">

@@ -18,9 +18,10 @@ import { migrateLegacyKeys } from './store/createPersistedStore'
 import { useThemeStore } from './store/useThemeStore'
 import { useNotificationsStore } from './store/useNotificationsStore'
 import { useGraphEditorPreferencesStore } from './store/useGraphEditorPreferencesStore'
-import { offlineMutationQueue, OfflineError, migrateLegacyQueue } from './utils/offlineMutations'
+import { offlineMutationQueue, OfflineError, migrateLegacyQueue, type ReplayProgress } from './utils/offlineMutations'
 import { queryPersister } from './utils/queryPersister'
 import { message } from './utils/messageHelper'
+import { frontendEventBus } from './services/timer/FrontendEventBus'
 import './store/storeIntegrations'
 import './index.css'
 import 'katex/dist/katex.min.css'
@@ -70,7 +71,11 @@ onlineManager.setEventListener((setOnline) => {
   return subscribeNetworkStatus((status) => {
     setOnline(status.isOnline);
     if (status.isOnline) {
-      void offlineMutationQueue.replay(queryClient).catch((err) => {
+      void offlineMutationQueue.replay(queryClient, {
+        onProgress: (progress: ReplayProgress) => {
+          frontendEventBus.publish('sync_progress', progress);
+        },
+      }).catch((err) => {
         console.error('Failed to replay offline mutations', err);
       });
     }

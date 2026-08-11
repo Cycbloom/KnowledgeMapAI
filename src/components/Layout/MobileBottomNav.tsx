@@ -41,9 +41,8 @@ const moreMenuVariants = {
     y: 0,
     scale: 1,
     transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 25,
+      type: "tween",
+      duration: 0.2,
       staggerChildren: 0.03,
     },
   },
@@ -62,7 +61,7 @@ const moreMenuItemVariants = {
   visible: {
     opacity: 1,
     x: 0,
-    transition: { type: "spring", stiffness: 400, damping: 25 },
+    transition: { type: "tween", duration: 0.15 },
   },
 };
 
@@ -205,7 +204,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     <motion.nav
       initial={{ y: 100 }}
       animate={{ y: 0 }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      transition={{ type: "tween", duration: 0.3 }}
       className={`fixed bottom-0 left-0 right-0 z-50 md:hidden ${
         isDark
           ? "bg-slate-950/95 border-slate-800"

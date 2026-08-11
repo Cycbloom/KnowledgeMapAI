@@ -2,6 +2,7 @@ import { Component, ErrorInfo, ReactNode } from 'react';
 import i18next from 'i18next';
 import { RefreshCcw, AlertTriangle, Home, Bug } from 'lucide-react';
 import { CopyButton } from './CopyButton';
+import { ErrorState } from './ErrorState';
 import { captureException } from '@/utils/errorReporter';
 
 interface Props {
@@ -9,7 +10,9 @@ interface Props {
   fallback?: ReactNode;
   fallbackRender?: (error: Error, resetErrorBoundary: () => void) => ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  onReset?: () => void;
   resetKeys?: unknown[];
+  variant?: 'fullscreen' | 'panel' | 'inline';
 }
 
 interface State {
@@ -80,6 +83,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   reset = () => {
     this.setState({ hasError: false, error: null, errorInfo: null });
+    this.props.onReset?.();
   };
 
   handleRetry = () => {
@@ -102,6 +106,21 @@ export class ErrorBoundary extends Component<Props, State> {
 
       if (this.props.fallback) {
         return this.props.fallback;
+      }
+
+      const variant = this.props.variant ?? 'fullscreen';
+
+      if (variant === 'panel' || variant === 'inline') {
+        return (
+          <ErrorState
+            variant={variant}
+            icon="error"
+            title={i18next.t('errors.boundary.title')}
+            message={this.state.error?.message ?? i18next.t('errors.boundary.description')}
+            onRetry={this.handleRetry}
+            size={variant === 'inline' ? 'sm' : 'md'}
+          />
+        );
       }
 
       const errorDetails = [

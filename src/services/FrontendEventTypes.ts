@@ -54,6 +54,13 @@ export interface SyncConflictDetectedPayload {
   timestamp: number;
 }
 
+export interface SyncProgressPayload {
+  current: number;
+  total: number;
+  itemId: string;
+  status: 'pending' | 'success' | 'error' | 'conflict';
+}
+
 export interface NotificationNewPayload {
   type: string;
   data?: Record<string, unknown>;
@@ -156,6 +163,7 @@ export interface FrontendEventMap extends Record<string, unknown> {
   sync_queue_updated: SyncQueueUpdatedPayload;
   sync_error: SyncErrorPayload;
   sync_conflict_detected: SyncConflictDetectedPayload;
+  sync_progress: SyncProgressPayload;
   notification_new: NotificationNewPayload;
   scheduler_task_status_changed: SchedulerTaskStatusChangedPayload;
   graph_data_changed: GraphDataChangedPayload;

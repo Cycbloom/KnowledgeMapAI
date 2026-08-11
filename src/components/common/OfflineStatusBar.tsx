@@ -47,16 +47,23 @@ export const OfflineStatusBar: React.FC = () => {
     const before = pendingCount;
     setSyncState('syncing');
     setSyncProgress({ current: 0, total: before });
+    let successCount = 0;
 
     try {
-      await offlineMutationQueue.replay(queryClient);
+      await offlineMutationQueue.replay(queryClient, {
+        onProgress: (progress) => {
+          setSyncProgress({ current: progress.current, total: progress.total });
+          if (progress.status === 'success') {
+            successCount++;
+          }
+        },
+      });
       const pending = await offlineMutationQueue.getPending();
       const after = pending.length;
-      setSyncProgress({ current: before - after, total: before });
       setPendingCount(after);
 
-      if (after < before) {
-        // 队列减少：至少部分 mutation 已处理
+      if (after < before || successCount > 0) {
+        // 队列减少或至少有一个成功：至少部分 mutation 已处理
         setSyncState('success');
         setShowSuccess(true);
         setTimeout(() => {

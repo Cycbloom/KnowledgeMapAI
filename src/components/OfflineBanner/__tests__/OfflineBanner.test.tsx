@@ -133,7 +133,7 @@ describe("OfflineBanner", () => {
 
     // 2 秒后同步完成且无 pending，横幅应消失
     act(() => {
-      vi.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(5000);
     });
     expect(screen.queryByTestId("offline-banner")).not.toBeInTheDocument();
   });

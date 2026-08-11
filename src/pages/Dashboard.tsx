@@ -25,6 +25,7 @@ const AutoGraphGenerator = lazy(() =>
   })),
 );
 import { useTheme, useIsMobile } from "../hooks";
+import { usePullToRefresh } from "../hooks/gesture/usePullToRefresh";
 import { useFocusTrap, useEscapeKey, useFirstRunHint } from "@/hooks/common";
 import { useUndoableAction } from "@/hooks/common/useUndoableAction";
 import { useDashboardFilters } from "../hooks/dashboard/useDashboardFilters";
@@ -48,6 +49,10 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: graphsData, isLoading, isFetching, error, refetch } = useGraphs();
+  const { indicator } = usePullToRefresh({
+    onRefresh: async () => { await refetch(); },
+    containerSelector: "[data-pull-refresh]",
+  });
   const { data: statsData } = useDashboardStats();
   const importGraphMutation = useImportGraphMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
@@ -363,9 +368,12 @@ export const Dashboard = () => {
     );}
 
   return (
-    <div
-      className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
-    >
+    <div className="relative h-full">
+      {indicator}
+      <div
+        className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
+        data-pull-refresh
+      >
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 space-y-4 lg:space-y-6">
         <h1 className="sr-only">{t('dashboard.title')}</h1>
         {/* Header Section */}
@@ -777,6 +785,7 @@ export const Dashboard = () => {
           onDelete={handleContextMenuDelete}
         />
       )}
+    </div>
     </div>
   );
 };

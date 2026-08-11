@@ -10,6 +10,7 @@ import {
 import { getSupabaseClient, resetSupabaseClient } from "../utils/supabase";
 import { useStore } from "../store/useStore";
 import { useTheme, useFormDraft } from "../hooks";
+import { useKeyboardHandler } from "../hooks/gesture/useKeyboardHandler";
 import { ConfirmationModal } from "../components/common/ConfirmationModal";
 import { isElectron } from "../config/electronConfig";
 import { logger } from "../utils/logger";
@@ -109,6 +110,7 @@ const openExternal = (url: string) => {
 };
 
 export const Login = () => {
+  useKeyboardHandler();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const setUser = useStore((state) => state.setUser);

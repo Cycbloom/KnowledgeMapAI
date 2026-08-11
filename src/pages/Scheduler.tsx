@@ -13,6 +13,7 @@ import { useFocusStore } from "../store/useFocusStore";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
+import { QueryErrorResetBoundary } from "@tanstack/react-query";
 import {
   Plus,
   RefreshCw,
@@ -673,20 +674,26 @@ export const Scheduler: React.FC = () => {
               {!activeTask && (
                 <div className="flex-shrink-0">
                   <Suspense fallback={<LazyLoadFallback variant="card" count={6} />}>
-                    <SmartRecommendationBar
-                      onStartTask={(taskId) => {
-                        const task = findTaskById(taskId);
-                        if (task) handleStartTask(task);
-                      }}
-                      onViewTask={(taskId) => {
-                        navigate(`/scheduler/task/${taskId}`);
-                      }}
-                      currentTaskId={null}
-                      isCollapsed={recommendationCollapsed}
-                      onToggleCollapse={() =>
-                        setRecommendationCollapsed(!recommendationCollapsed)
-                      }
-                    />
+                    <QueryErrorResetBoundary>
+                      {({ reset }) => (
+                        <ErrorBoundary onReset={reset} variant="panel">
+                          <SmartRecommendationBar
+                            onStartTask={(taskId) => {
+                              const task = findTaskById(taskId);
+                              if (task) handleStartTask(task);
+                            }}
+                            onViewTask={(taskId) => {
+                              navigate(`/scheduler/task/${taskId}`);
+                            }}
+                            currentTaskId={null}
+                            isCollapsed={recommendationCollapsed}
+                            onToggleCollapse={() =>
+                              setRecommendationCollapsed(!recommendationCollapsed)
+                            }
+                          />
+                        </ErrorBoundary>
+                      )}
+                    </QueryErrorResetBoundary>
                   </Suspense>
                 </div>
               )}
@@ -694,16 +701,22 @@ export const Scheduler: React.FC = () => {
               {activeTask && (
                 <div className="flex-shrink-0">
                   <Suspense fallback={<LazyLoadFallback variant="card" count={6} />}>
-                    <ActiveTaskPanel
-                      task={activeTask}
-                      timeSlice={activeTaskTimeSlice}
-                      activeSubtaskId={activeSubtaskId}
-                      setActiveSubtaskId={setActiveSubtaskId}
-                      onViewDetail={() =>
-                        navigate(`/scheduler/task/${activeTask.id}`)
-                      }
-                      onStop={() => handlePauseTask(activeTask)}
-                    />
+                    <QueryErrorResetBoundary>
+                      {({ reset }) => (
+                        <ErrorBoundary onReset={reset} variant="panel">
+                          <ActiveTaskPanel
+                            task={activeTask}
+                            timeSlice={activeTaskTimeSlice}
+                            activeSubtaskId={activeSubtaskId}
+                            setActiveSubtaskId={setActiveSubtaskId}
+                            onViewDetail={() =>
+                              navigate(`/scheduler/task/${activeTask.id}`)
+                            }
+                            onStop={() => handlePauseTask(activeTask)}
+                          />
+                        </ErrorBoundary>
+                      )}
+                    </QueryErrorResetBoundary>
                   </Suspense>
                 </div>
               )}

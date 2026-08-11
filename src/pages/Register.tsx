@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useRegisterMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
 import { useTheme, useFormDraft } from '../hooks';
+import { useKeyboardHandler } from '../hooks/gesture/useKeyboardHandler';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { Sun, Moon, Cloud, Check, X } from 'lucide-react';
 import { isValidationError } from '../utils/errors';
@@ -12,6 +13,7 @@ import { checkRequirement, getPasswordRequirements } from '@shared/utils/passwor
 import type { User } from '@shared/types/user';
 
 export const Register = () => {
+  useKeyboardHandler();
   const { t } = useTranslation();
   const {
     value: draft,

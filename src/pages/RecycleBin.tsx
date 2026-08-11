@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { ConfirmationModal, SkeletonCard, EmptyState, ErrorState } from "../components/common";
 import { useTheme } from "../hooks";
+import { usePullToRefresh } from "../hooks/gesture/usePullToRefresh";
 import { useNavigate } from "react-router-dom";
 import { useDebouncedSearch } from "../hooks/common/useDebouncedSearch";
 import { formatDate } from "../utils/formatters";
@@ -68,6 +69,13 @@ export const RecycleBin = () => {
     refetch: refetchNotes,
   } = useTrashNotes({
     enabled: category === "notes",
+  });
+  const { indicator } = usePullToRefresh({
+    onRefresh: async () => {
+      if (category === "graphs") await refetch();
+      else await refetchNotes();
+    },
+    containerSelector: "[data-pull-refresh]",
   });
   const restoreNoteMutation = useRestoreNoteMutation();
 
@@ -323,16 +331,19 @@ export const RecycleBin = () => {
   }
 
   return (
-    <div
-      className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
-    >
+    <div className="relative h-full">
+      {indicator}
+      <div
+        className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
+        data-pull-refresh
+      >
       <div className="max-w-7xl mx-auto p-6 lg:p-10 space-y-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate(-1)}
-                className={`p-1 rounded-full hover:bg-opacity-10 transition-colors ${isDark ? "hover:bg-white" : "hover:bg-black"}`}
+                className={`p-1 rounded-full hover:bg-opacity-10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${isDark ? "hover:bg-white" : "hover:bg-black"}`}
               >
                 <ArrowLeft
                   size={24}
@@ -828,6 +839,7 @@ export const RecycleBin = () => {
           confirmText={t("recycleBin.confirmDelete.confirm")}
         />
       </div>
+    </div>
     </div>
   );
 };

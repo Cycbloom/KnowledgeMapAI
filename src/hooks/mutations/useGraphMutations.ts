@@ -16,6 +16,7 @@ import {
   createEventPublishMutation,
   createOptimisticMutation,
 } from "./mutationFactory";
+import { useOptimisticMutation } from "./useOptimisticMutation";
 
 // ============================================================
 // Event publish mutations — graph list
@@ -442,35 +443,26 @@ export const useUpdateNodeMutation = () => {
     onSuccess: (_data, variables) => {
       frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "node_updated" });
     },
+    onError: (error) => {
+      console.error("[useUpdateNodeMutation] Failed to update node:", error);
+    },
   });
 };
 
 export const useDeleteEdgeMutation = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useOptimisticMutation({
     mutationFn: ({ id }: { id: string; graphId?: string }) => api.edges.delete(id),
-    onMutate: async ({ id, graphId }) => {
-      if (!graphId) return {};
-
-      const queryKey = queryKeys.graphData(graphId);
-      await queryClient.cancelQueries({ queryKey });
-      const previousData = queryClient.getQueryData<{ nodes: Node[]; edges: Edge[] }>(queryKey);
-
-      queryClient.setQueryData<{ nodes: Node[]; edges: Edge[] }>(queryKey, (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          edges: old.edges.filter((edge) => edge.id !== id),
-        };
-      });
-
-      return { previousData, queryKey };
+    queryKey: (variables) => queryKeys.graphData(variables.graphId || ""),
+    queryKeyFilter: (old, { id, graphId }) => {
+      if (!graphId || !old) return old;
+      const data = old as { nodes: Node[]; edges: Edge[] };
+      return {
+        ...data,
+        edges: data.edges.filter((edge) => edge.id !== id),
+      };
     },
-    onError: (_err, _vars, context) => {
-      if (context?.previousData && context?.queryKey) {
-        queryClient.setQueryData(context.queryKey, context.previousData);
-      }
-    },
+    errorMessage: "删除关联失败",
     onSettled: (_data, _error, variables) => {
       frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "edge_deleted" });
       if (variables.graphId) {
@@ -487,6 +479,9 @@ export const useTextToGraphMutation = () => {
       if (variables.action === "save") {
         frontendEventBus.publish("graph_data_changed", { graphId: variables.graph_id, changeType: "ai_action_executed" });
       }
+    },
+    onError: (error) => {
+      console.error("[useTextToGraphMutation] Failed to generate graph:", error);
     },
   });
 };

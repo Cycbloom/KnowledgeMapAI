@@ -324,14 +324,14 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
           <div className="flex items-center gap-2">
             <button
               onClick={() => onYearChange(currentYear - 1)}
-              className="p-1 rounded hover:bg-slate-700 transition-colors"
+              className="p-1 rounded hover:bg-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <ChevronLeft size={18} className="text-slate-400" />
             </button>
             <span className="text-white font-medium min-w-[60px] text-center">{currentYear}</span>
             <button
               onClick={() => onYearChange(currentYear + 1)}
-              className="p-1 rounded hover:bg-slate-700 transition-colors"
+              className="p-1 rounded hover:bg-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <ChevronRight size={18} className="text-slate-400" />
             </button>

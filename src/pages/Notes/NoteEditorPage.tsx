@@ -373,7 +373,9 @@ const NoteEditorPage: React.FC = () => {
               {t("notes.blockRefsPanel.inboundTitle")}
             </h3>
             <div className="flex-1 min-h-0">
-              <InboundBlockRefsPanel noteId={note.id} />
+              <ErrorBoundary variant="panel">
+                <InboundBlockRefsPanel noteId={note.id} />
+              </ErrorBoundary>
             </div>
           </aside>
         </div>

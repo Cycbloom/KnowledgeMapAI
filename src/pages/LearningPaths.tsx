@@ -28,6 +28,7 @@ import {
 import { useTheme } from "../hooks";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/formatters";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
+import { usePullToRefresh } from "../hooks/gesture/usePullToRefresh";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { EmptyState, ErrorState, SkeletonCard } from "@/components/common";
 import { useDebouncedSearch } from "../hooks/common/useDebouncedSearch";
@@ -93,6 +94,10 @@ export const LearningPaths = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const { data: paths, isLoading, isError, error, refetch, isFetching } = useLearningPaths();
+  const { indicator } = usePullToRefresh({
+    onRefresh: async () => { await refetch(); },
+    containerSelector: "[data-pull-refresh]",
+  });
   const createMutation = useCreateLearningPathMutation();
   const updateMutation = useUpdateLearningPathMutation();
   const deleteMutation = useDeleteLearningPathMutation();
@@ -200,9 +205,12 @@ export const LearningPaths = () => {
   };
 
   return (
-    <div
-      className={`h-full overflow-y-auto ${isDark ? "bg-slate-900" : "bg-gray-50"}`}
-    >
+    <div className="relative h-full">
+      {indicator}
+      <div
+        className={`h-full overflow-y-auto ${isDark ? "bg-slate-900" : "bg-gray-50"}`}
+        data-pull-refresh
+      >
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -609,6 +617,7 @@ export const LearningPaths = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

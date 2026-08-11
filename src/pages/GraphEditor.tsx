@@ -81,7 +81,7 @@ import {
   CommandItem,
 } from "../components/GraphEditor/shared/CommandPalette";
 import { ErrorBoundary, Skeleton } from "../components/common";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, QueryErrorResetBoundary } from "@tanstack/react-query";
 import { useCommandPalette } from "./GraphEditor/useCommandPalette";
 import { useLearningPathHandlers } from "./GraphEditor/hooks/useLearningPathHandlers";
 import { useRegionHandlers } from "./GraphEditor/hooks/useRegionHandlers";
@@ -1219,7 +1219,13 @@ export const GraphEditor = () => {
     if (!id) return null;
     return (
       <Suspense fallback={<ViewLoader />}>
-        <StoryEditor graphId={id} graphMeta={graphMeta} />
+        <QueryErrorResetBoundary>
+          {({ reset }) => (
+            <ErrorBoundary onReset={reset}>
+              <StoryEditor graphId={id} graphMeta={graphMeta} />
+            </ErrorBoundary>
+          )}
+        </QueryErrorResetBoundary>
       </Suspense>
     );
   }
@@ -1377,86 +1383,110 @@ export const GraphEditor = () => {
           )}
           {viewMode === "timeline" && (
             <Suspense fallback={<ViewLoader />}>
-              <TimelineView
-                nodes={nodes}
-                edges={edges}
-                nodeStatus={nodeStatus}
-                selectedNodeId={selectedNode?.id || null}
-                onNodeClick={handleNodeClick}
-                onCanvasClick={handleCanvasClick}
-                colorScheme={colorScheme}
-                linkStyle={linkStyle}
-                linkAnimation={linkAnimation}
-                nodeSizeMode={nodeSizeMode}
-                edgeWidthMode={edgeWidthMode}
-                coloringMode={coloringMode}
-                isRightPanelOpen={sidebarMode !== "none"}
-                rightPanelWidth={
-                  sidebarMode !== "none" ? sidebarWidth : 0
-                }
-              />
+              <QueryErrorResetBoundary>
+                {({ reset }) => (
+                  <ErrorBoundary onReset={reset}>
+                    <TimelineView
+                      nodes={nodes}
+                      edges={edges}
+                      nodeStatus={nodeStatus}
+                      selectedNodeId={selectedNode?.id || null}
+                      onNodeClick={handleNodeClick}
+                      onCanvasClick={handleCanvasClick}
+                      colorScheme={colorScheme}
+                      linkStyle={linkStyle}
+                      linkAnimation={linkAnimation}
+                      nodeSizeMode={nodeSizeMode}
+                      edgeWidthMode={edgeWidthMode}
+                      coloringMode={coloringMode}
+                      isRightPanelOpen={sidebarMode !== "none"}
+                      rightPanelWidth={
+                        sidebarMode !== "none" ? sidebarWidth : 0
+                      }
+                    />
+                  </ErrorBoundary>
+                )}
+              </QueryErrorResetBoundary>
             </Suspense>
           )}
           {viewMode === "tree" && (
             <Suspense fallback={<ViewLoader />}>
-              <TreeView
-                nodes={nodes}
-                edges={edges}
-                nodeStatus={nodeStatus}
-                selectedNodeId={selectedNode?.id || null}
-                onNodeClick={handleNodeClick}
-                onCanvasClick={handleCanvasClick}
-                colorScheme={colorScheme}
-                linkStyle={linkStyle}
-                linkAnimation={linkAnimation}
-                nodeSizeMode={nodeSizeMode}
-                edgeWidthMode={edgeWidthMode}
-                coloringMode={coloringMode}
-                focusedNodeIds={focusedNodeIds}
-                focusedLinkIds={focusedLinkIds}
-                isExplorationMode={isExplorationMode}
-                branchSuggestions={branchSuggestions}
-                selectedNodeForBranch={selectedNode}
-                onSelectBranch={selectBranch}
-                onSwitchBranch={handleTimelineSwitchBranch}
-                historicalAlternativeBranches={historicalAlternativeBranches}
-              />
+              <QueryErrorResetBoundary>
+                {({ reset }) => (
+                  <ErrorBoundary onReset={reset}>
+                    <TreeView
+                      nodes={nodes}
+                      edges={edges}
+                      nodeStatus={nodeStatus}
+                      selectedNodeId={selectedNode?.id || null}
+                      onNodeClick={handleNodeClick}
+                      onCanvasClick={handleCanvasClick}
+                      colorScheme={colorScheme}
+                      linkStyle={linkStyle}
+                      linkAnimation={linkAnimation}
+                      nodeSizeMode={nodeSizeMode}
+                      edgeWidthMode={edgeWidthMode}
+                      coloringMode={coloringMode}
+                      focusedNodeIds={focusedNodeIds}
+                      focusedLinkIds={focusedLinkIds}
+                      isExplorationMode={isExplorationMode}
+                      branchSuggestions={branchSuggestions}
+                      selectedNodeForBranch={selectedNode}
+                      onSelectBranch={selectBranch}
+                      onSwitchBranch={handleTimelineSwitchBranch}
+                      historicalAlternativeBranches={historicalAlternativeBranches}
+                    />
+                  </ErrorBoundary>
+                )}
+              </QueryErrorResetBoundary>
             </Suspense>
           )}
           {viewMode === "planet" && (
             <Suspense fallback={<ViewLoader />}>
-              <PlanetView
-                nodes={nodes}
-                edges={edges}
-                selectedNodeId={selectedNode?.id || null}
-                onNodeClick={handleNodeClick}
-                colorScheme={colorScheme}
-                coloringMode={coloringMode}
-                nodeStatus={nodeStatus}
-                focusedNodeId={focusedNodeId}
-              />
+              <QueryErrorResetBoundary>
+                {({ reset }) => (
+                  <ErrorBoundary onReset={reset}>
+                    <PlanetView
+                      nodes={nodes}
+                      edges={edges}
+                      selectedNodeId={selectedNode?.id || null}
+                      onNodeClick={handleNodeClick}
+                      colorScheme={colorScheme}
+                      coloringMode={coloringMode}
+                      nodeStatus={nodeStatus}
+                      focusedNodeId={focusedNodeId}
+                    />
+                  </ErrorBoundary>
+                )}
+              </QueryErrorResetBoundary>
             </Suspense>
           )}
           {viewMode === "quadrant" && (
-            <QuadrantCanvas
-              ref={graphRef}
-              nodes={nodes}
-              edges={edges}
-              regions={regions}
-              originPosition={originPosition}
-              collapsedRegions={collapsedRegions}
-              onOriginMove={handleOriginMove}
-              onRegionToggle={handleRegionToggle}
-              onNodeClick={handleNodeClick}
-              selectedNodeId={selectedNode?.id ?? null}
-              nodeStatus={nodeStatus}
-              colorScheme={colorScheme}
-              coloringMode={coloringMode}
-              focusedNodeIds={focusedNodeIds}
-              focusedNodeId={focusedNodeId}
-              focusedLinkIds={focusedLinkIds}
-              onCanvasClick={handleCanvasClick}
-            />
+            <QueryErrorResetBoundary>
+              {({ reset }) => (
+                <ErrorBoundary onReset={reset}>
+                  <QuadrantCanvas
+                    ref={graphRef}
+                    nodes={nodes}
+                    edges={edges}
+                    regions={regions}
+                    originPosition={originPosition}
+                    collapsedRegions={collapsedRegions}
+                    onOriginMove={handleOriginMove}
+                    onRegionToggle={handleRegionToggle}
+                    onNodeClick={handleNodeClick}
+                    selectedNodeId={selectedNode?.id ?? null}
+                    nodeStatus={nodeStatus}
+                    colorScheme={colorScheme}
+                    coloringMode={coloringMode}
+                    focusedNodeIds={focusedNodeIds}
+                    focusedNodeId={focusedNodeId}
+                    focusedLinkIds={focusedLinkIds}
+                    onCanvasClick={handleCanvasClick}
+                  />
+                </ErrorBoundary>
+              )}
+            </QueryErrorResetBoundary>
           )}
         </div>
       </div>
@@ -1672,22 +1702,34 @@ export const GraphEditor = () => {
       </Suspense>
 
       <Suspense fallback={<ViewLoader />}>
-        <GraphAnalysisPanel
-          graphId={id || ""}
-          isOpen={isAnalysisPanelOpen}
-          onClose={() => setIsAnalysisPanelOpen(false)}
-          nodes={nodes}
-          onNodeClick={handleAnalysisNodeClick}
-          onCreateConnection={handleConnectNodes}
-        />
+        <QueryErrorResetBoundary>
+          {({ reset }) => (
+            <ErrorBoundary onReset={reset} variant="panel">
+              <GraphAnalysisPanel
+                graphId={id || ""}
+                isOpen={isAnalysisPanelOpen}
+                onClose={() => setIsAnalysisPanelOpen(false)}
+                nodes={nodes}
+                onNodeClick={handleAnalysisNodeClick}
+                onCreateConnection={handleConnectNodes}
+              />
+            </ErrorBoundary>
+          )}
+        </QueryErrorResetBoundary>
       </Suspense>
 
       <Suspense fallback={<ViewLoader />}>
-        <ConceptAggregationPanel
-          graphId={id || ""}
-          isOpen={panelState.isConceptAggregationOpen}
-          onClose={() => panelState.setIsConceptAggregationOpen(false)}
-        />
+        <QueryErrorResetBoundary>
+          {({ reset }) => (
+            <ErrorBoundary onReset={reset} variant="panel">
+              <ConceptAggregationPanel
+                graphId={id || ""}
+                isOpen={panelState.isConceptAggregationOpen}
+                onClose={() => panelState.setIsConceptAggregationOpen(false)}
+              />
+            </ErrorBoundary>
+          )}
+        </QueryErrorResetBoundary>
       </Suspense>
 
       <CommandPalette
@@ -1824,12 +1866,18 @@ export const GraphEditor = () => {
               <h2 id={literatureExtractTitleId} className="sr-only">
                 {t("graphEditor.toolbar.literatureExtract")}
               </h2>
-              <LiteratureExtractPanel
-                graphId={id}
-                onExtractComplete={handleLiteratureExtractComplete}
-                onConceptsSaved={handleConceptsSaved}
-                onClose={() => panelState.setIsLiteratureExtractOpen(false)}
-              />
+              <QueryErrorResetBoundary>
+                {({ reset }) => (
+                  <ErrorBoundary onReset={reset} variant="panel">
+                    <LiteratureExtractPanel
+                      graphId={id}
+                      onExtractComplete={handleLiteratureExtractComplete}
+                      onConceptsSaved={handleConceptsSaved}
+                      onClose={() => panelState.setIsLiteratureExtractOpen(false)}
+                    />
+                  </ErrorBoundary>
+                )}
+              </QueryErrorResetBoundary>
             </div>
           </div>
         </Suspense>
@@ -1837,30 +1885,48 @@ export const GraphEditor = () => {
 
       {panelState.isResearchProgressOpen && id && (
         <Suspense fallback={<ViewLoader />}>
-          <ResearchProgressPanel
-            graphId={id}
-            onClose={() => panelState.setIsResearchProgressOpen(false)}
-          />
+          <QueryErrorResetBoundary>
+            {({ reset }) => (
+              <ErrorBoundary onReset={reset} variant="panel">
+                <ResearchProgressPanel
+                  graphId={id}
+                  onClose={() => panelState.setIsResearchProgressOpen(false)}
+                />
+              </ErrorBoundary>
+            )}
+          </QueryErrorResetBoundary>
         </Suspense>
       )}
 
       {panelState.isLiteratureLibraryOpen && id && (
         <Suspense fallback={<ViewLoader />}>
-          <LiteratureLibraryPanel
-            graphId={id}
-            onClose={() => panelState.setIsLiteratureLibraryOpen(false)}
-          />
+          <QueryErrorResetBoundary>
+            {({ reset }) => (
+              <ErrorBoundary onReset={reset} variant="panel">
+                <LiteratureLibraryPanel
+                  graphId={id}
+                  onClose={() => panelState.setIsLiteratureLibraryOpen(false)}
+                />
+              </ErrorBoundary>
+            )}
+          </QueryErrorResetBoundary>
         </Suspense>
       )}
 
       {panelState.isVersionHistoryOpen && id && (
         <Suspense fallback={<ViewLoader />}>
           <div className="fixed right-0 top-0 bottom-0 z-40 w-80 shadow-xl border-l border-slate-200 dark:border-slate-500">
-            <VersionHistoryPanel
-              graphId={id}
-              onClose={() => panelState.setIsVersionHistoryOpen(false)}
-              onDiffSelect={handleDiffSelect}
-            />
+            <QueryErrorResetBoundary>
+              {({ reset }) => (
+                <ErrorBoundary onReset={reset} variant="panel">
+                  <VersionHistoryPanel
+                    graphId={id}
+                    onClose={() => panelState.setIsVersionHistoryOpen(false)}
+                    onDiffSelect={handleDiffSelect}
+                  />
+                </ErrorBoundary>
+              )}
+            </QueryErrorResetBoundary>
           </div>
         </Suspense>
       )}
@@ -1868,24 +1934,38 @@ export const GraphEditor = () => {
       {panelState.selectedDiff && id && (
         <Suspense fallback={<ViewLoader />}>
           <div className="fixed right-80 top-0 bottom-0 z-40 w-80 shadow-xl border-l border-slate-200 dark:border-slate-500">
-            <DiffDetailPanel
-              graphId={id}
-              sourceSnapshotId={panelState.selectedDiff.sourceSnapshotId}
-              targetSnapshotId={panelState.selectedDiff.targetSnapshotId}
-              onClose={() => panelState.setSelectedDiff(null)}
-            />
+            <QueryErrorResetBoundary>
+              {({ reset }) => (
+                <ErrorBoundary onReset={reset} variant="panel">
+                  {panelState.selectedDiff && (
+                    <DiffDetailPanel
+                      graphId={id}
+                      sourceSnapshotId={panelState.selectedDiff.sourceSnapshotId}
+                      targetSnapshotId={panelState.selectedDiff.targetSnapshotId}
+                      onClose={() => panelState.setSelectedDiff(null)}
+                    />
+                  )}
+                </ErrorBoundary>
+              )}
+            </QueryErrorResetBoundary>
           </div>
         </Suspense>
       )}
 
       {panelState.isConceptPreviewOpen && panelState.extractedConcepts.length > 0 && (
         <Suspense fallback={<ViewLoader />}>
-          <ConceptPreviewList
-            concepts={panelState.extractedConcepts}
-            isOpen={panelState.isConceptPreviewOpen}
-            onClose={handleConceptPreviewClose}
-            onConfirm={handleConfirmConcepts}
-          />
+          <QueryErrorResetBoundary>
+            {({ reset }) => (
+              <ErrorBoundary onReset={reset} variant="panel">
+                <ConceptPreviewList
+                  concepts={panelState.extractedConcepts}
+                  isOpen={panelState.isConceptPreviewOpen}
+                  onClose={handleConceptPreviewClose}
+                  onConfirm={handleConfirmConcepts}
+                />
+              </ErrorBoundary>
+            )}
+          </QueryErrorResetBoundary>
         </Suspense>
       )}
 

@@ -48,8 +48,10 @@ import {
 import { DEFAULT_AVAILABLE_MODES, type DatabaseConfig } from "../components/Settings/settingsConstants";
 import { PwaInstallButton } from "../components/PwaInstallButton";
 import { PwaDiagnostics } from "../components/PwaDiagnostics";
+import { useKeyboardHandler } from "../hooks/gesture/useKeyboardHandler";
 
 export const Settings = () => {
+  useKeyboardHandler();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { token } = useStore();
@@ -245,7 +247,7 @@ export const Settings = () => {
             <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </button>
           <div className="flex-1">
-            <h1 className="text-xl md:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
               {t("settings.title")}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm md:text-base">

@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, use
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
-import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, LazyLoadFallback, CelebrationOverlay } from "./components/common";
+import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, LazyLoadFallback } from "./components/common";
 import { PageLoadingProvider, usePageLoading } from "./hooks/common/usePageLoading";
 import { GlobalErrorBoundary } from "./components/common/GlobalErrorBoundary";
 import { RenderProfiler } from "./components/dev/RenderProfiler";
@@ -19,11 +19,29 @@ import { isElectron } from "./config/electronConfig";
 import { toUser } from "@shared/types/database";
 import { initializeFrontendPlugins } from "./services/kernel/plugins";
 import type { RouteRegistration } from "./services/kernel/types";
-import { OfflineBanner } from "@/components/OfflineBanner";
-import { SyncStatusBadge } from "@/components/SyncStatusBadge";
-import { ConflictResolutionDialog } from "@/components/ConflictResolutionDialog";
-import { UpdatePrompt } from "@/components/UpdatePrompt";
 import "./i18n";
+
+// P7: 主入口常驻壳层瘦身（第二轮）——仅在 Web 端渲染、且触发时才显示的壳层组件改为
+// React.lazy 条件挂载。这些组件在 Electron 端永不渲染，懒加载后其代码不再进入主入口，
+// 减小首屏 index chunk 体积与解析开销。渲染条件与行为不变，Suspense fallback={null} 避免布局抖动。
+const LazyOfflineBanner = React.lazy(() =>
+  import("@/components/OfflineBanner").then((m) => ({ default: m.OfflineBanner })),
+);
+const LazySyncStatusBadge = React.lazy(() =>
+  import("@/components/SyncStatusBadge").then((m) => ({ default: m.SyncStatusBadge })),
+);
+const LazyConflictResolutionDialog = React.lazy(() =>
+  import("@/components/ConflictResolutionDialog").then((m) => ({ default: m.ConflictResolutionDialog })),
+);
+const LazyUpdatePrompt = React.lazy(() =>
+  import("@/components/UpdatePrompt").then((m) => ({ default: m.UpdatePrompt })),
+);
+const LazyOfflineSyncProgress = React.lazy(() =>
+  import("./components/common/OfflineSyncProgress").then((m) => ({ default: m.OfflineSyncProgress })),
+);
+const LazyCelebrationOverlay = React.lazy(() =>
+  import("./components/common/CelebrationOverlay").then((m) => ({ default: m.CelebrationOverlay })),
+);
 
 const frontendKernel = initializeFrontendPlugins();
 frontendKernel.activateAll().catch((err: unknown) => {
@@ -312,10 +330,11 @@ function App() {
             {/* Web 端 PWA 组件：Electron 不依赖 SW/IndexedDB，不渲染 */}
             {!isElectron && (
               <>
-                <OfflineBanner />
-                <SyncStatusBadge />
-                <ConflictResolutionDialog />
-                <UpdatePrompt />
+                <LazyOfflineBanner />
+                <LazySyncStatusBadge />
+                <LazyOfflineSyncProgress />
+                <LazyConflictResolutionDialog />
+                <LazyUpdatePrompt />
               </>
             )}
             <Suspense fallback={<LazyLoadFallback />}>
@@ -340,7 +359,7 @@ function App() {
                 routesElement
               )}
             </Suspense>
-            <CelebrationOverlay />
+            <LazyCelebrationOverlay />
           </GlobalErrorBoundary>
         )}
       </QueryErrorResetBoundary>

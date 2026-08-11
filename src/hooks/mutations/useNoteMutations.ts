@@ -5,6 +5,7 @@ import {
   createInvalidationMutation,
   createSimpleMutation,
 } from "./mutationFactory";
+import { useOptimisticMutation } from "./useOptimisticMutation";
 import type {
   Note,
   NoteTemplate,
@@ -31,8 +32,9 @@ import type { NoteListResult } from "../../services/api/contracts/INotesApi";
  */
 export const useCreateNoteMutation = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useOptimisticMutation({
     mutationFn: (data: CreateNoteInput) => api.notes.create(data),
+    queryKey: queryKeys.notesPrefix,
     onMutate: async (newNote) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.notesPrefix });
       const previousEntries = queryClient.getQueriesData({ queryKey: queryKeys.notesPrefix });
@@ -69,7 +71,7 @@ export const useCreateNoteMutation = () => {
 
       return { previousEntries };
     },
-    onError: (_err, _vars, context) => {
+    onError: (_error, _vars, context) => {
       if (context?.previousEntries) {
         for (const [key, data] of context.previousEntries) {
           queryClient.setQueryData(key, data);
@@ -108,10 +110,11 @@ export const useGetOrCreateTodayDailyMutation = () => {
  */
 export const useUpdateNoteMutation = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useOptimisticMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateNoteInput }) =>
       api.notes.update(id, data),
     meta: { silent: true },
+    queryKey: queryKeys.notesPrefix,
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.notesPrefix });
       const previousEntries = queryClient.getQueriesData({ queryKey: queryKeys.notesPrefix });
@@ -143,7 +146,7 @@ export const useUpdateNoteMutation = () => {
 
       return { previousEntries };
     },
-    onError: (_err, _vars, context) => {
+    onError: (_error, _vars, context) => {
       if (context?.previousEntries) {
         for (const [key, data] of context.previousEntries) {
           queryClient.setQueryData(key, data);
@@ -164,8 +167,9 @@ export const useUpdateNoteMutation = () => {
  */
 export const useDeleteNoteMutation = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useOptimisticMutation({
     mutationFn: (id: string) => api.notes.delete(id),
+    queryKey: queryKeys.notesPrefix,
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.notesPrefix });
       const previousEntries = queryClient.getQueriesData({ queryKey: queryKeys.notesPrefix });
@@ -187,7 +191,7 @@ export const useDeleteNoteMutation = () => {
 
       return { previousEntries };
     },
-    onError: (_err, _vars, context) => {
+    onError: (_error, _vars, context) => {
       if (context?.previousEntries) {
         for (const [key, data] of context.previousEntries) {
           queryClient.setQueryData(key, data);
@@ -208,8 +212,9 @@ export const useDeleteNoteMutation = () => {
  */
 export const useRestoreNoteMutation = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useOptimisticMutation({
     mutationFn: (id: string) => api.notes.restore(id),
+    queryKey: queryKeys.notesPrefix,
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.notesPrefix });
       const previousEntries = queryClient.getQueriesData({ queryKey: queryKeys.notesPrefix });
@@ -232,7 +237,7 @@ export const useRestoreNoteMutation = () => {
 
       return { previousEntries };
     },
-    onError: (_err, _vars, context) => {
+    onError: (_error, _vars, context) => {
       if (context?.previousEntries) {
         for (const [key, data] of context.previousEntries) {
           queryClient.setQueryData(key, data);

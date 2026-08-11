@@ -2,6 +2,7 @@ import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-quer
 import { useTranslation } from "react-i18next";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { message } from "../../utils/messageHelper";
+import { useOptimisticMutation } from "./useOptimisticMutation";
 
 /**
  * 查询键，可以是静态值或基于 mutation 变量的函数
@@ -147,27 +148,23 @@ export function createOptimisticMutation<TData, TVariables, TCache>(
 ) {
   return () => {
     const queryClient = useQueryClient();
-    return useMutation({
+    return useOptimisticMutation<TData, TVariables, { previousEntries: [QueryKey, TCache | undefined][] }>({
       mutationFn: config.mutationFn,
-      onMutate: async (variables: TVariables) => {
-        const queryKey = typeof config.queryKey === "function"
+      queryKey: config.queryKey,
+      // 使用自定义 onMutate 保留前缀匹配的 plural 行为
+      onMutate: (variables) => {
+        const qk = typeof config.queryKey === "function"
           ? config.queryKey(variables)
           : (config.queryKey as QueryKey);
 
-        await queryClient.cancelQueries({ queryKey });
-        // 使用 getQueriesData/setQueriesData 支持前缀匹配:
-        // 当 queryKey 为前缀(如 ["scheduler", "tasks"])时,
-        // 乐观更新会同步应用到所有匹配变体(如不同 filters 的列表缓存),
-        // 并为每个变体保留 previousData 用于失败回滚。
-        const previousEntries = queryClient.getQueriesData<TCache>({ queryKey });
-
-        queryClient.setQueriesData<TCache>({ queryKey }, (old) =>
+        const previousEntries = queryClient.getQueriesData<TCache>({ queryKey: qk });
+        queryClient.setQueriesData<TCache>({ queryKey: qk }, (old) =>
           config.optimisticUpdater(old, variables),
         );
 
         return { previousEntries };
       },
-      onError: (_err, _variables, context) => {
+      onError: (_error, _variables, context) => {
         if (context?.previousEntries) {
           for (const [key, previousData] of context.previousEntries) {
             queryClient.setQueryData(key, previousData);
@@ -177,16 +174,16 @@ export function createOptimisticMutation<TData, TVariables, TCache>(
       onSuccess: (data, variables) => {
         const successUpdater = config.onSuccessUpdater;
         if (successUpdater) {
-          const queryKey = typeof config.queryKey === "function"
+          const qk = typeof config.queryKey === "function"
             ? config.queryKey(variables)
             : (config.queryKey as QueryKey);
-          queryClient.setQueriesData<TCache>({ queryKey }, (old) =>
+          queryClient.setQueriesData<TCache>({ queryKey: qk }, (old) =>
             successUpdater(old, data, variables),
           );
         }
       },
-      onSettled: (data, error, variables) => {
-        config.onSettled?.(data, error, variables);
+      onSettled: (_data, _error, variables) => {
+        config.onSettled?.(_data, _error, variables);
       },
     });
   };

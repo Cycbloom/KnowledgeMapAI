@@ -46,6 +46,37 @@ export const queryKeys = {
         : "none",
       params?.due ? "due" : "all",
     ] as const,
+  studyCardsInfinite: (params?: {
+    graph_id?: string;
+    knowledge_point_id?: string;
+    knowledge_point_ids?: string[];
+    due?: boolean;
+    search?: string;
+    card_type?: string;
+    fsrs_state?: string;
+    review_count_min?: number;
+    review_count_max?: number;
+    next_review_start?: string;
+    next_review_end?: string;
+    pageSize?: number;
+  }) =>
+    [
+      "studyCardsInfinite",
+      params?.graph_id || "all",
+      params?.knowledge_point_id || "all",
+      params?.knowledge_point_ids
+        ? params.knowledge_point_ids.join(",")
+        : "none",
+      params?.due ? "due" : "all",
+      params?.search || "",
+      params?.card_type || "all",
+      params?.fsrs_state || "all",
+      params?.review_count_min ?? "",
+      params?.review_count_max ?? "",
+      params?.next_review_start || "",
+      params?.next_review_end || "",
+      params?.pageSize || 20,
+    ] as const,
   reviewForecast: (params?: {
     graph_id?: string;
     knowledge_point_id?: string;
@@ -209,6 +240,7 @@ export const queryKeys = {
   notesPrefix: ["notes"] as const,
   tasksPrefix: ["tasks"] as const,
   studyCardsPrefix: ["studyCards"] as const,
+  studyCardsInfinitePrefix: ["studyCardsInfinite"] as const,
   graphNodeStatusPrefix: ["graphNodeStatus"] as const,
   templatesPrefix: ["templates"] as const,
 

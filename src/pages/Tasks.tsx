@@ -11,6 +11,7 @@ import {
 import { usePersistedListState } from "../hooks/common/usePersistedListState";
 import { useScrollRestoration } from "../hooks/common/useScrollRestoration";
 import { useStore } from "../store/useStore";
+import { usePullToRefresh } from "../hooks/gesture/usePullToRefresh";
 import { ConfirmationModal, Skeleton } from "../components/common";
 import { VirtualList } from "../components/common/VirtualList";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -155,6 +156,11 @@ export const Tasks = () => {
     hasNextPage,
     isFetchingNextPage,
   } = useTasks(!!token, filter, limit);
+
+  const { indicator } = usePullToRefresh({
+    onRefresh: async () => { await refetch(); },
+    containerSelector: "[data-pull-refresh]",
+  });
 
   const { data: allData } = useTasks(!!token, "all", 1, 0);
   const { data: pendingData } = useTasks(!!token, "pending", 1, 0);
@@ -359,10 +365,13 @@ export const Tasks = () => {
   };
 
   return (
-    <div
-      ref={scrollRef}
-      className="h-full overflow-y-auto p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300"
-    >
+    <div className="relative h-full">
+      {indicator}
+      <div
+        ref={scrollRef}
+        className="h-full overflow-y-auto p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300"
+        data-pull-refresh
+      >
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
@@ -806,6 +815,7 @@ export const Tasks = () => {
         cancelText={t("common.cancel")}
         isDangerous={true}
       />
+    </div>
     </div>
   );
 };

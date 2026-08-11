@@ -34,6 +34,8 @@ import { useStore } from "../../store/useStore";
 import { useTheme, useIsMobile } from "../../hooks";
 import { usePersistedListState } from "../../hooks/common/usePersistedListState";
 import { useScrollRestoration } from "../../hooks/common/useScrollRestoration";
+import { useKeyboardHandler } from "../../hooks/gesture/useKeyboardHandler";
+import { usePullToRefresh } from "../../hooks/gesture/usePullToRefresh";
 import { useNotesList, type NoteView } from "../../hooks/queries";
 import {
   useCreateNoteMutation,
@@ -268,7 +270,7 @@ const NoteCard = memo(({
           <button
             type="button"
             onClick={handleCheckboxClick}
-            className="mt-1 flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+            className="mt-1 flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label={note.title || t("notes.fields.untitled")}
             aria-pressed={isSelected}
           >
@@ -405,9 +407,15 @@ const NoteListSkeleton = () => (
 );
 
 export const NotesListPage = () => {
+  useKeyboardHandler();
+  const { indicator } = usePullToRefresh({
+    onRefresh: async () => { await refetch(); },
+    containerSelector: "[data-pull-refresh]",
+  });
   const { t } = useTranslation();
   const { token } = useStore();
   const { isDark } = useTheme();
+  const { isMobile } = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [view, setView] = usePersistedListState<NoteView>("notes-view", "all");
@@ -856,10 +864,13 @@ export const NotesListPage = () => {
   }, [view, t]);
 
   return (
-    <div
-      ref={scrollRef}
-      className="h-full overflow-y-auto p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300"
-    >
+    <div className="relative h-full">
+      {indicator}
+      <div
+        ref={scrollRef}
+        className="h-full overflow-y-auto p-4 md:p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300 max-w-full"
+        data-pull-refresh
+      >
       {/* 顶部:标题 + 操作区 */}
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div className="min-w-0">
@@ -1154,18 +1165,10 @@ export const NotesListPage = () => {
                   estimateSize={() => 140}
                   style={{ height: listContainerHeight }}
                   role="list"
+                  animate={!isMobile}
                   className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-500"
-                  renderItem={(note, index) => (
-                    <motion.div
-                      key={note.id}
-                      role="listitem"
-                      layout
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
-                      transition={{ delay: (index % 20) * 0.02, duration: 0.25 }}
-                      className="border-b border-gray-100 dark:border-slate-500"
-                    >
+                  renderItem={(note, index) => {
+                    const card = (
                       <NoteCard
                         note={note}
                         onPin={handlePin}
@@ -1177,8 +1180,30 @@ export const NotesListPage = () => {
                         isSelected={selectedIds.has(note.id)}
                         onToggleSelect={toggleSelect}
                       />
-                    </motion.div>
-                  )}
+                    );
+                    // 移动端：移除 motion.div layout 动画，减少重渲染开销
+                    if (isMobile) {
+                      return (
+                        <div key={note.id} role="listitem" className="border-b border-gray-100 dark:border-slate-500">
+                          {card}
+                        </div>
+                      );
+                    }
+                    return (
+                      <motion.div
+                        key={note.id}
+                        role="listitem"
+                        layout
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+                        transition={{ delay: (index % 20) * 0.02, duration: 0.25 }}
+                        className="border-b border-gray-100 dark:border-slate-500"
+                      >
+                        {card}
+                      </motion.div>
+                    );
+                  }}
                 />
               </ErrorBoundary>
 
@@ -1219,6 +1244,7 @@ export const NotesListPage = () => {
         cancelText={t("common.cancel")}
         isDangerous
       />
+    </div>
     </div>
   );
 };

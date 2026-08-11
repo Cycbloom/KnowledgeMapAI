@@ -70,6 +70,118 @@ export const mobileStudyApi: IStudyApi = {
     return (data as StudyCard[]) || [];
   },
 
+  getCardsPaged: async (params?: GetCardsParams) => {
+    const client = getMobileSupabaseClient();
+    if (!client) {
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
+    }
+
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+
+    const page = params?.page ?? 1;
+    const pageSize = params?.pageSize ?? 20;
+
+    if (!user) {
+      return { items: [], total: 0, page, pageSize };
+    }
+
+    let query = client.from("study_cards").select("*").eq("user_id", user.id);
+
+    if (params?.graph_id) {
+      query = query.eq("graph_id", params.graph_id);
+    } else if (params?.knowledge_point_id) {
+      query = query.eq("knowledge_point_id", params.knowledge_point_id);
+    } else if (params?.knowledge_point_ids && params.knowledge_point_ids.length > 0) {
+      query = query.in("knowledge_point_id", params.knowledge_point_ids);
+    }
+
+    if (params?.due) {
+      query = query.lte("next_review", new Date().toISOString());
+    }
+    if (params?.card_type) {
+      query = query.eq("card_type", params.card_type);
+    }
+    if (params?.fsrs_state) {
+      query = query.eq("fsrs_state", params.fsrs_state);
+    }
+    if (params?.review_count_min !== undefined) {
+      query = query.gte("review_count", params.review_count_min);
+    }
+    if (params?.review_count_max !== undefined) {
+      query = query.lte("review_count", params.review_count_max);
+    }
+    if (params?.next_review_start) {
+      query = query.gte("next_review", params.next_review_start);
+    }
+    if (params?.next_review_end) {
+      query = query.lte("next_review", params.next_review_end);
+    }
+    if (params?.search && params.search.trim() !== "") {
+      const term = `%${params.search.trim()}%`;
+      query = query.or(`question.ilike.${term},answer.ilike.${term}`);
+    }
+
+    const countQuery = client
+      .from("study_cards")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if (params?.graph_id) {
+      countQuery.eq("graph_id", params.graph_id);
+    } else if (params?.knowledge_point_id) {
+      countQuery.eq("knowledge_point_id", params.knowledge_point_id);
+    } else if (params?.knowledge_point_ids && params.knowledge_point_ids.length > 0) {
+      countQuery.in("knowledge_point_id", params.knowledge_point_ids);
+    }
+    if (params?.due) {
+      countQuery.lte("next_review", new Date().toISOString());
+    }
+    if (params?.card_type) {
+      countQuery.eq("card_type", params.card_type);
+    }
+    if (params?.fsrs_state) {
+      countQuery.eq("fsrs_state", params.fsrs_state);
+    }
+    if (params?.review_count_min !== undefined) {
+      countQuery.gte("review_count", params.review_count_min);
+    }
+    if (params?.review_count_max !== undefined) {
+      countQuery.lte("review_count", params.review_count_max);
+    }
+    if (params?.next_review_start) {
+      countQuery.gte("next_review", params.next_review_start);
+    }
+    if (params?.next_review_end) {
+      countQuery.lte("next_review", params.next_review_end);
+    }
+    if (params?.search && params.search.trim() !== "") {
+      const term = `%${params.search.trim()}%`;
+      countQuery.or(`question.ilike.${term},answer.ilike.${term}`);
+    }
+
+    const { count: total, error: countError } = await countQuery;
+    if (countError) {
+      throw new AppError(countError.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
+    }
+
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    const { data, error } = await query.range(from, to);
+
+    if (error) {
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
+    }
+
+    return {
+      items: (data as StudyCard[]) || [],
+      total: total ?? 0,
+      page,
+      pageSize,
+    };
+  },
+
   getCardsByKnowledgePoint: async (knowledgePointId: string, _params?: Record<string, unknown>) => {
     const client = getMobileSupabaseClient();
     if (!client) {

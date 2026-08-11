@@ -1,6 +1,9 @@
 import { DefaultError, type QueryClient } from '@tanstack/react-query';
 import { createLogger } from './logger';
 import { type OfflineOperation, getOfflineQueue, clearOfflineQueue } from './offlineStorage';
+import { frontendEventBus } from '@/services/timer/FrontendEventBus';
+import { type SyncConflictDetectedPayload } from '@/services/FrontendEventTypes';
+import { isAppError, isApiError } from '@/utils/errors';
 
 const logger = createLogger('OfflineMutations');
 
@@ -48,6 +51,23 @@ export interface QueuedMutation {
    * 跳过 retry/drop 逻辑，避免静默数据丢失（被丢弃的用户操作不会再次尝试）。
    */
   unplayable?: boolean;
+}
+
+/**
+ * 重放进度回调参数
+ */
+export interface ReplayProgress {
+  current: number;
+  total: number;
+  itemId: string;
+  status: 'pending' | 'success' | 'error' | 'conflict';
+}
+
+/**
+ * 重放选项
+ */
+export interface ReplayOptions {
+  onProgress?: (progress: ReplayProgress) => void;
 }
 
 /**
@@ -188,6 +208,24 @@ function isNoMutationFnError(error: unknown): boolean {
   return error instanceof Error && /no mutationfn found/i.test(error.message);
 }
 
+/**
+ * 判断错误是否为 409 冲突错误
+ */
+function isConflictError(error: unknown): boolean {
+  // 使用 'in' 操作符避免对 AppError 类型属性的直接访问（由于共享类型输出文件未构建的问题）
+  if (isAppError(error) && 'statusCode' in error) {
+    return (error as { statusCode: number }).statusCode === 409;
+  }
+  if (isApiError(error) && error.status === 409) {
+    return true;
+  }
+  if (error instanceof Error && 'status' in error) {
+    const err = error as Error & { status: number };
+    if (err.status === 409) return true;
+  }
+  return false;
+}
+
 function notifyListeners(): void {
   void getAllItems()
     .then((items) => {
@@ -270,8 +308,12 @@ export const offlineMutationQueue = {
    * - 成功：dequeue
    * - 网络错误：保留在队列，retryCount++，停止后续重放（避免顺序错乱）
    * - 非网络错误：retryCount++，达到 MAX_RETRY_COUNT 则 dequeue（避免无限重试）
+   * - 409 冲突：dequeue 并发出 sync_conflict_detected 事件
    */
-  async replay(queryClient: QueryClient): Promise<void> {
+  async replay(
+    queryClient: QueryClient,
+    options?: ReplayOptions,
+  ): Promise<void> {
     const pending = await getAllItems();
     if (pending.length === 0) {
       return;
@@ -279,12 +321,17 @@ export const offlineMutationQueue = {
 
     logger.debug(`Replaying ${pending.length} offline mutations`);
 
-    for (const item of pending) {
+    for (let i = 0; i < pending.length; i++) {
+      const item = pending[i];
       // 跳过已标记为 unplayable 的项：mutationFn 未注册，重试永远不会成功，
       // 再次执行只会重复抛错并写 IndexedDB。仍保留在队列中供用户/工具显式清理。
       if (item.unplayable) {
         continue;
       }
+
+      // 重放前回调
+      options?.onProgress?.({ current: i, total: pending.length, itemId: item.id, status: 'pending' });
+
       try {
         // 通过 mutationCache.build 重建 mutation 并执行。
         // 注意：此版本的 @tanstack/query-core 无 QueryClient.executeMutation 方法。
@@ -301,9 +348,38 @@ export const offlineMutationQueue = {
         await mutation.execute(item.variables);
         await deleteItem(item.id);
         logger.debug(`Mutation replayed successfully: ${item.id}`);
+        options?.onProgress?.({ current: i + 1, total: pending.length, itemId: item.id, status: 'success' });
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
+
+        // 409 冲突：发出冲突事件，dequeue 后继续处理下一项
+        if (isConflictError(error)) {
+          // 从 AppError 的 context 中提取 remoteData（如果存在）
+          let remoteData: Record<string, unknown> = {};
+          if (isAppError(error) && 'context' in error) {
+            const ctx = (error as { context?: { remoteData?: unknown } }).context;
+            if (ctx?.remoteData) {
+              remoteData = ctx.remoteData as Record<string, unknown>;
+            }
+          }
+
+          const conflictPayload: SyncConflictDetectedPayload = {
+            id: item.id,
+            entity: String(item.mutationKey[0] ?? 'unknown'),
+            localData: item.variables as Record<string, unknown>,
+            remoteData,
+            timestamp: Date.now(),
+          };
+
+          frontendEventBus.publish('sync_conflict_detected', conflictPayload);
+          await deleteItem(item.id);
+          logger.warn(
+            `Mutation ${item.id} has conflict (409), removed from queue`,
+          );
+          options?.onProgress?.({ current: i + 1, total: pending.length, itemId: item.id, status: 'conflict' });
+          continue;
+        }
 
         if (isNetworkError(error)) {
           // 网络错误：保留在队列，等待下次 replay
@@ -316,6 +392,7 @@ export const offlineMutationQueue = {
             `Replay stopped due to network error on ${item.id} (retry ${item.retryCount + 1})`,
             error,
           );
+          options?.onProgress?.({ current: i + 1, total: pending.length, itemId: item.id, status: 'error' });
           break;
         }
 
@@ -334,6 +411,7 @@ export const offlineMutationQueue = {
               'The mutation is kept in the queue to prevent silent data loss.',
             error,
           );
+          options?.onProgress?.({ current: i + 1, total: pending.length, itemId: item.id, status: 'error' });
           continue;
         }
 
@@ -356,6 +434,7 @@ export const offlineMutationQueue = {
             error,
           );
         }
+        options?.onProgress?.({ current: i + 1, total: pending.length, itemId: item.id, status: 'error' });
       }
     }
 

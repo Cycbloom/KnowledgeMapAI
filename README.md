@@ -51,6 +51,8 @@ Knowledge Map 是一个功能丰富的知识管理工具，将知识图谱、AI 
 
 ## 快速开始
 
+### 方式一：本地开发（推荐 Electron）
+
 ```bash
 # 1. 克隆项目
 git clone https://github.com/knowledgemap/knowledgemap-app.git
@@ -72,11 +74,46 @@ npm run electron:dev      # 启动 Electron 桌面应用开发模式
 
 访问 http://localhost:5173 即可使用（Web 模式可用 `npm run dev`）。
 
+### 方式二：Docker 开发（Web 模式）
+
+前端和后端运行在 Docker 容器中（支持热重载），宿主机运行 `supabase start` 提供本地 Supabase 服务。
+
+```bash
+# 1. 前置条件：宿主机安装 Supabase CLI 并启动
+supabase start
+
+# 2. 配置环境
+cp .env.example .env
+# 编辑 .env 填写 Supabase 和其他必要配置
+# 开发模式：VITE_SUPABASE_URL=http://host.docker.internal:54321
+
+# 3. 首次构建（后续无需 --no-cache）
+docker-compose build --no-cache
+
+# 4. 启动服务
+docker-compose up -d
+
+# 5. 查看日志
+docker-compose logs -f
+```
+
+- 前端：http://localhost:5173
+- 后端 API：http://localhost:3001
+- Supabase Studio：http://localhost:54321（宿主机直接访问）
+- 前端 API 代理：通过 Vite proxy 自动转发 `/api` 请求到后端
+
+**生产环境部署：**
+Docker 容器连接远程 Supabase 实例：
+
+```bash
+# 修改 .env 中的 VITE_SUPABASE_URL 为远程地址
+VITE_SUPABASE_URL=https://你的项目.supabase.co
+```
+
 ### 环境要求
 
-- Node.js >= 20
-- npm 或 pnpm
-- Supabase CLI（本地开发）
+- **本地开发**：Node.js >= 20、npm、Supabase CLI
+- **Docker 开发**：Docker Desktop
 
 ## 文档导航
 

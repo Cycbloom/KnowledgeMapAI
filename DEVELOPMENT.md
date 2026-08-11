@@ -99,6 +99,60 @@ npm run dev
 
 访问 http://localhost:5173 即可使用。完成上述全部步骤通常在 30 分钟内。
 
+### 1.7 方式二：Docker 开发（Web 模式）
+
+前端和后端运行在 Docker 容器中（支持热重载），宿主机运行 `supabase start` 提供本地 Supabase 服务。
+
+#### 前置条件
+
+- Docker Desktop（最新稳定版）
+- Supabase CLI（最新版，宿主机安装）
+
+#### 启动步骤
+
+```bash
+# 1. 宿主机启动本地 Supabase
+supabase start
+
+# 2. 配置环境
+cp .env.example .env
+# 编辑 .env 填写 Supabase 和其他必要配置
+# 开发模式：VITE_SUPABASE_URL=http://host.docker.internal:54321
+
+# 3. 首次构建（后续无需 --no-cache）
+docker-compose build --no-cache
+
+# 4. 启动服务
+docker-compose up -d
+
+# 5. 查看日志
+docker-compose logs -f
+```
+
+#### 服务访问地址
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 前端 | http://localhost:5173 | Vite 开发服务器（HMR 热重载） |
+| 后端 API | http://localhost:3001 | Express API（nodemon 热重载） |
+| Supabase Studio | http://localhost:54321 | 宿主机直接访问（Docker 外） |
+
+前端 API 代理：通过 Vite proxy 自动转发 `/api` 请求到后端。
+
+#### 生产环境部署
+
+修改 `.env` 中的 `VITE_SUPABASE_URL` 为远程 Supabase 实例地址：
+
+```bash
+VITE_SUPABASE_URL=https://你的项目.supabase.co
+```
+
+然后重启容器：
+
+```bash
+docker-compose restart backend
+```
+
 ---
 
 ## 2. 开发命令
@@ -107,7 +161,7 @@ npm run dev
 
 | 命令 | 说明 |
 |------|------|
-| `npm run dev` | 同时启动前端（Vite）和后端（API）开发服务器（Web 模式） |
+| `npm run dev` | 同时启动前端（Vite）和后端（API）开发服务器（Web 模式）。Docker 开发模式见 [1.7 方式二：Docker 开发](#17-方式二docker-开发)。 |
 | `npm run client:dev` | 仅启动前端 Vite 开发服务器（端口 5173） |
 | `npm run server:dev` | 仅启动后端 API 开发服务器（nodemon + tsx，端口 3001） |
 | `npm run electron:dev` | 启动 Electron 桌面应用开发模式（同时拉起前后端 + Electron 主进程） |
@@ -464,6 +518,8 @@ KnowledgeMap Web 端通过 VitePWA + Workbox 提供 PWA 能力，支持离线访
 | `npm run db:local:status` | 查看服务状态与端口 |
 | `npm run db:local:logs` | 查看数据库日志 |
 
+> Docker 开发模式下，数据库由宿主机 Supabase CLI 管理，`npm run db:local:*` 命令同样适用。在宿主机终端执行这些命令即可。
+
 ### 6.2 迁移文件组织
 
 迁移文件位于 `supabase/migrations/`，按业务域模块化组织，命名格式为 `{两位序号}_{业务域}.sql`：
@@ -727,6 +783,16 @@ npm run lint:full
 ```
 
 若遇到"修改后仍报错"的情况，删除 `node_modules/.cache/eslint` 后重试。
+
+### 8.8 Docker 相关故障
+
+| 问题 | 原因 | 解决方法 |
+|------|------|---------|
+| `host.docker.internal` 无法访问 | Linux 容器默认不支持 | 确保 Docker Desktop 已启用 `host.docker.internal` 支持，Windows/macOS 默认支持 |
+| 端口 5173/3001 被占用 | 本地已有进程占用 | `netstat -ano \| findstr :端口号` 查看占用进程，`taskkill /PID <PID> /F` 终止 |
+| 容器内无法连接 Supabase | 宿主机未运行 `supabase start` | 在宿主机执行 `supabase start` 后重启容器：`docker-compose restart backend` |
+| 构建失败 / 依赖安装慢 | 网络问题 | 确认 Docker 已配置国内镜像源（如 `https://registry.npmmirror.com`） |
+| 热重载不生效 | 文件监听机制问题 | 确认 `vite.config.ts` 中已配置 `server.watch.usePolling: true`，确认 nodemon.json 配置正确 |
 
 ---
 

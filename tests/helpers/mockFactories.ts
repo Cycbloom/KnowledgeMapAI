@@ -121,6 +121,8 @@ export interface MockSupabaseOptions {
   error?: unknown;
   /** If true, terminal methods reject with an Error instead of resolving. Default: false */
   reject?: boolean;
+  /** Optional count injected into the resolved result (for pagination count queries). Default: undefined */
+  count?: number;
 }
 
 /**
@@ -140,9 +142,9 @@ export interface MockSupabaseOptions {
 export function createMockSupabase(
   options: MockSupabaseOptions = {},
 ): SupabaseClient {
-  const { data = null, error = null, reject = false } = options;
+  const { data = null, error = null, reject = false, count } = options;
 
-  const result = { data, error };
+  const result = { data, error, ...(count !== undefined ? { count } : {}) };
   const rejectError = new Error("Mock supabase error");
 
   const chain = createChainedMock({

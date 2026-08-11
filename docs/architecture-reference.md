@@ -299,4 +299,85 @@ src/store/
 - **单向数据流**：数据从 Service 流向 Hook，再流向组件
 - **全局状态**：通过 Zustand Store 管理跨组件共享的状态（用户认证、主题等）
 - **服务端状态**：通过 React Query（`hooks/queries/`）管理缓存和同步
-- **本地状态**：使用 React 内置的 `useState` / `useReducer` 管理组件局部状态
+---
+
+## 7. 开发者体验改进建议
+
+以下优化建议供后续参考，不纳入当前实施范围：
+
+### 7.1 死代码检测
+
+- **`ts-prune` 集成**：接入 `ts-prune` 作为 CI 步骤，自动检测未导出类型和函数，防止死代码回归
+- **`depcheck` 定期审计**：每季度运行 `npx depcheck` 审计依赖健康状况
+
+### 7.2 代码复用
+
+- **移动端 API 层共享**：`src/services/mobile/` 和 `src/services/api/modules/scheduler/` 存在大量重复的模式代码，未来可考虑提取共享基类
+
+### 7.3 根目录卫生
+
+- 保持根目录文件数 < 20，避免配置文件和临时产物堆积
+- 定期检查 `npm ls --extraneous` 清理残留依赖
+
+---
+
+## 8. Docker 开发架构
+
+### 8.1 架构总览
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Docker 容器                                                     │
+│  ┌─────────────────────┐    ┌───────────────────────────────┐  │
+│  │  frontend (Vite)    │    │  backend (Express + nodemon)  │  │
+│  │  :5173              │◄──►│  :3001                        │  │
+│  │  HMR 热重载          │    │  API 服务 + 热重载             │  │
+│  └─────────────────────┘    └──────────┬────────────────────┘  │
+│                                        │ host.docker.internal  │
+└────────────────────────────────────────┼────────────────────────┘
+                                         │ :54321
+                              ┌──────────▼───────────────────────┐
+                              │ 宿主机: supabase start            │
+                              │  - PostgreSQL + Kong API Gateway │
+                              │  - GoTrue Auth + Studio UI       │
+                              │  http://localhost:54321          │
+                              └──────────────────────────────────┘
+```
+
+### 8.2 关键设计决策
+
+| 决策 | 方案 | 理由 |
+|------|------|------|
+| 后端连接方式 | 通过 `@supabase/supabase-js` 连接 Supabase REST API | 后端不直连 PostgreSQL，统一通过 Supabase 客户端访问，与前端保持一致 |
+| 数据库位置 | 宿主机 `supabase start` 管理 | 宿主机 Supabase CLI 提供完整的服务栈（PostgreSQL + Kong + GoTrue + Studio），无需在 Docker 中重复部署 |
+| 容器间通信 | `host.docker.internal` 访问宿主机 | 通过 `extra_hosts: host.docker.internal:host-gateway` 配置，后端容器内可访问宿主机端口 |
+| 热重载方案 | 前端 Vite HMR + 后端 nodemon | 源码目录通过 volume 挂载到容器内，文件变更实时生效 |
+| 依赖管理 | 命名 volume 持久化 node_modules | 避免每次重启容器重新安装依赖，使用国内镜像源加速首次构建 |
+
+### 8.3 两种开发模式对比
+
+| 维度 | 本地开发（方式一） | Docker 开发（方式二） |
+|------|-------------------|---------------------|
+| 依赖安装 | 本地 `npm install` | 容器内自动安装 |
+| 数据库 | 宿主机 `supabase start` | 宿主机 `supabase start`（相同） |
+| Node.js 版本 | 本地安装（`.nvmrc` 指定） | 容器内固定（Node 22 Alpine） |
+| 启动命令 | `npm run dev` | `docker-compose up -d` |
+| 热重载 | Vite HMR + nodemon | Vite HMR + nodemon（相同） |
+| 环境隔离 | 依赖本地环境 | 容器隔离，减少环境差异 |
+| 适用场景 | Electron 桌面应用开发 | Web 模式快速开发 / 新开发者上手 |
+| 调试方式 | VSCode 调试配置 | 同上，但容器内需额外配置 |
+| 构建产物 | 本地输出 | 容器内构建（需额外配置） |
+
+### 8.4 Docker Compose 配置参考
+
+Docker Compose 配置位于项目根目录 `docker-compose.yml`，定义了两个服务：
+
+- **backend**：基于 `docker/dev/backend.Dockerfile`，使用 Node 22 Alpine 镜像，通过 nodemon 实现热重载
+- **frontend**：基于 `docker/dev/frontend.Dockerfile`，使用 Node 22 Alpine 镜像，通过 Vite HMR 实现热重载
+
+关键配置项：
+
+- `extra_hosts`：`host.docker.internal:host-gateway`（容器访问宿主机）
+- `env_file`：从 `.env` 加载环境变量
+- `volumes`：源码目录挂载实现热重载，node_modules 使用命名卷持久化
+- `networks`：`km-dev-network` 桥接网络，服务间通过 service name 通信

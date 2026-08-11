@@ -14,6 +14,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 移除 `api/app.ts` 中 CORS 允许列表的 Vercel 预览域名正则
 - 更新 `.env.example` 注释，移除 Vercel 相关示例
 
+## [1.1.0] - 2026-08-06
+
+### Added
+
+- Docker 开发环境：`docker-compose.yml` 编排前端（Vite）和后端（Express）服务，支持热重载开发
+- Docker 开发镜像：`docker/dev/backend.Dockerfile`（nodemon 热重载）和 `docker/dev/frontend.Dockerfile`（Vite HMR）
+- `.dockerignore` 文件，排除 node_modules、dist 等不必要文件
+
+### Changed
+
+- 开发环境架构：支持 Docker 容器化开发模式（前端 + 后端在容器中运行，宿主机提供 Supabase 服务）
+- 更新 `.env.example` 和 `README.md`，添加 Docker 开发环境配置说明
+
+### Removed
+
+- 移除独立的 `supabase-db` 容器（PostgreSQL），由宿主机 Supabase CLI 管理数据库
+- 移除 `docker/dev/init.sh` 数据库初始化脚本（不再需要）
+- 移除 `docker/dev/.env.example` 过时配置
+
 ## [1.0.0] - 2025-03-15
 
 ### Added

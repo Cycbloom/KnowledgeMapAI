@@ -61,7 +61,6 @@ shared/
 │   ├── scheduler-achievement.ts  # 成就类型
 │   ├── scheduler-core.ts   # 调度核心类型
 │   ├── scheduler-focus.ts  # 专注模式类型
-│   ├── scheduler-legacy.ts # 调度遗留类型
 │   ├── scheduler-study.ts  # 调度学习类型
 │   └── scheduler-task.ts   # 调度任务类型
 │

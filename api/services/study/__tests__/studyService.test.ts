@@ -180,6 +180,166 @@ describe("StudyService", () => {
     });
   });
 
+  describe("getCards (pagination & filtering)", () => {
+    it("应该返回分页结构 items/total/page/pageSize 并对结果应用 range", async () => {
+      const cardItems = [
+        { id: "c1", user_id: "user1", question: "q1", answer: "a1" },
+        { id: "c2", user_id: "user1", question: "q2", answer: "a2" },
+      ];
+      const supabase = createMockSupabase({
+        data: cardItems,
+        error: null,
+        count: 25,
+      });
+      const inner = supabase as unknown as MockSupabaseClient;
+
+      const result = await studyService.getCards(supabase, {
+        userId: "user1",
+        page: 1,
+        pageSize: 20,
+      });
+
+      expect(Array.isArray(result)).toBe(false);
+      if (Array.isArray(result)) return;
+      expect(result.items).toEqual(cardItems);
+      expect(result.total).toBe(25);
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(20);
+      expect(inner._queryChain.range).toHaveBeenCalledWith(0, 19);
+    });
+
+    it("应该对非法 page=0 回退到第一页", async () => {
+      const cardItems = [{ id: "c1", user_id: "user1", question: "q1", answer: "a1" }];
+      const supabase = createMockSupabase({
+        data: cardItems,
+        error: null,
+        count: 25,
+      });
+      const inner = supabase as unknown as MockSupabaseClient;
+
+      const result = await studyService.getCards(supabase, {
+        userId: "user1",
+        page: 0,
+        pageSize: 20,
+      });
+
+      if (Array.isArray(result)) return;
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(20);
+      expect(inner._queryChain.range).toHaveBeenCalledWith(0, 19);
+    });
+
+    it("应该对非法 pageSize=0 回退到 pageSize=1", async () => {
+      const cardItems = [{ id: "c1", user_id: "user1", question: "q1", answer: "a1" }];
+      const supabase = createMockSupabase({
+        data: cardItems,
+        error: null,
+        count: 25,
+      });
+
+      const result = await studyService.getCards(supabase, {
+        userId: "user1",
+        page: 1,
+        pageSize: 0,
+      });
+
+      if (Array.isArray(result)) return;
+      expect(result.pageSize).toBe(1);
+    });
+
+    it("应该在不传分页参数时返回全量 StudyCard 数组", async () => {
+      const cardItems = [
+        { id: "c1", user_id: "user1", knowledge_point_id: "kp1", question: "q1", answer: "a1" },
+        { id: "c2", user_id: "user1", knowledge_point_id: "kp1", question: "q2", answer: "a2" },
+      ];
+      const supabase = createMockSupabase({ data: cardItems, error: null });
+      const inner = supabase as unknown as MockSupabaseClient;
+
+      const result = await studyService.getCards(supabase, {
+        userId: "user1",
+        knowledgePointId: "kp1",
+      });
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(2);
+      expect(inner._queryChain.range).not.toHaveBeenCalled();
+    });
+
+    it("应该通过 or 应用 search 过滤（question/answer ilike）", async () => {
+      const supabase = createMockSupabase({ data: [], error: null });
+      const inner = supabase as unknown as MockSupabaseClient;
+
+      await studyService.getCards(supabase, {
+        userId: "user1",
+        knowledgePointId: "kp1",
+        search: "abc",
+      });
+
+      expect(inner._queryChain.or).toHaveBeenCalledWith(
+        "question.ilike.%abc%,answer.ilike.%abc%",
+      );
+    });
+
+    it("应该叠加 card_type/review_count/next_review 过滤", async () => {
+      const supabase = createMockSupabase({ data: [], error: null });
+      const inner = supabase as unknown as MockSupabaseClient;
+
+      await studyService.getCards(supabase, {
+        userId: "user1",
+        knowledgePointId: "kp1",
+        cardType: "choice",
+        reviewCountMin: 3,
+        reviewCountMax: 10,
+        nextReviewStart: "2026-01-01",
+        nextReviewEnd: "2026-12-31",
+      });
+
+      expect(inner._queryChain.eq).toHaveBeenCalledWith("card_type", "choice");
+      expect(inner._queryChain.gte).toHaveBeenCalledWith("review_count", 3);
+      expect(inner._queryChain.lte).toHaveBeenCalledWith("review_count", 10);
+      expect(inner._queryChain.gte).toHaveBeenCalledWith("next_review", "2026-01-01");
+      expect(inner._queryChain.lte).toHaveBeenCalledWith("next_review", "2026-12-31");
+    });
+
+    it("应该在 fsrs_state 为单值时使用 eq 过滤", async () => {
+      const supabase = createMockSupabase({ data: [], error: null });
+      const inner = supabase as unknown as MockSupabaseClient;
+
+      await studyService.getCards(supabase, {
+        userId: "user1",
+        knowledgePointId: "kp1",
+        fsrsState: "Review",
+      });
+
+      expect(inner._queryChain.eq).toHaveBeenCalledWith("fsrs_state", "Review");
+    });
+
+    it("应该在 fsrs_state 为多值逗号分隔时使用 in 过滤", async () => {
+      const supabase = createMockSupabase({ data: [], error: null });
+      const inner = supabase as unknown as MockSupabaseClient;
+
+      await studyService.getCards(supabase, {
+        userId: "user1",
+        knowledgePointId: "kp1",
+        fsrsState: "New,Learning",
+      });
+
+      expect(inner._queryChain.in).toHaveBeenCalledWith("fsrs_state", ["New", "Learning"]);
+    });
+
+    it("应该在传入 knowledge_point_ids 时使用 in 过滤", async () => {
+      const supabase = createMockSupabase({ data: [], error: null });
+      const inner = supabase as unknown as MockSupabaseClient;
+
+      await studyService.getCards(supabase, {
+        userId: "user1",
+        knowledgePointIds: ["kp1", "kp2"],
+      });
+
+      expect(inner._queryChain.in).toHaveBeenCalledWith("knowledge_point_id", ["kp1", "kp2"]);
+    });
+  });
+
   describe("createCard", () => {
     it("应该成功创建卡片并返回结果", async () => {
       const supabase = createMockSupabase();

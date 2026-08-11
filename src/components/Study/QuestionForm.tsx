@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { StudyCard } from '../../types';
 import { CheckSquare, Plus, X, Loader2 } from 'lucide-react';
 import { useTheme, useFormDraft, useBeforeUnload } from "../../hooks";
+import { useKeyboardHandler } from "../../hooks/gesture/useKeyboardHandler";
 import { ConfirmationModal } from '../common/ConfirmationModal';
 
 export interface QuestionFormData {
@@ -49,6 +50,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   onCancel,
   isSubmitting = false
 }) => {
+  useKeyboardHandler();
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const {
@@ -266,7 +268,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                                         setFormData({...formData, answer: JSON.stringify(currentAnswers)});
                                     }
                                 }}
-                                className={`w-8 h-8 flex items-center justify-center rounded-full border transition-colors touch-target ${
+                                className={`w-8 h-8 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full border transition-colors touch-target ${
                                     isChecked
                                     ? 'bg-green-500 border-green-500 text-white' 
                                     : 'border-gray-300 hover:border-green-400'

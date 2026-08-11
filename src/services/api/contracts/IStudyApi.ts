@@ -1,5 +1,6 @@
 import type {
   GetCardsParams,
+  PaginatedStudyCards,
   CardGroup,
   StudyStats,
   FsrsParameters,
@@ -11,6 +12,8 @@ import type { StudyCard } from "@shared/types/common";
 
 export interface IStudyApi {
   getCards(params?: GetCardsParams): Promise<StudyCard[]>;
+
+  getCardsPaged(params?: GetCardsParams): Promise<PaginatedStudyCards>;
 
   getCardsByKnowledgePoint(
     knowledgePointId: string,

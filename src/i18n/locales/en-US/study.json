@@ -220,7 +220,8 @@
     "again": "Again",
     "hard": "Hard",
     "good": "Good",
-    "easy": "Easy"
+    "easy": "Easy",
+    "submitting": "Submitting…"
   },
   "messages": {
     "noCardsToReview": "No cards to review",

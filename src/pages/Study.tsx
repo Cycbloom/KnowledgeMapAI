@@ -312,7 +312,7 @@ export const Study = () => {
           />
 
           {viewState === "bank" ? (
-            <QuestionBank cards={allCards} />
+            <QuestionBank {...scopeParams} />
           ) : viewState === "focus" ? (
             <FocusStats />
           ) : viewState === "quizzes" ? (
@@ -433,8 +433,6 @@ export const Study = () => {
         selectedOption={cardReview.selectedOption}
         cardKey={cardReview.cardKey}
         swipeDirection={cardReview.swipeDirection}
-        dragDirection={cardReview.dragDirection}
-        cardRotation={cardReview.cardRotation}
         quizCards={cardReview.quizCards}
         similarityWithPrev={cardReview.similarityWithPrev}
         updateProgressMutation={cardReview.updateProgressMutation}
@@ -444,8 +442,6 @@ export const Study = () => {
         onMultiOptionClick={quizLogic.handleMultiOptionClick}
         onDragEnd={cardReview.handleDragEnd}
         onSetShowAnswer={cardReview.setShowAnswer}
-        onSetDragDirection={cardReview.setDragDirection}
-        onSetCardRotation={cardReview.setCardRotation}
       />
     </ErrorBoundary>
   );

@@ -17,6 +17,7 @@ interface StudyCardPreviewProps {
   selectionMode?: boolean;
   showStatus?: boolean; // Whether to show New/Review status (useful for Dashboard, maybe less for Bank)
   compact?: boolean; // For denser lists if needed
+  deletePending?: boolean; // Whether the delete action is in-flight (disable + spinner)
 }
 
 const StudyCardPreviewComponent: React.FC<StudyCardPreviewProps> = ({
@@ -30,6 +31,7 @@ const StudyCardPreviewComponent: React.FC<StudyCardPreviewProps> = ({
   selected = false,
   selectionMode = false,
   showStatus = true,
+  deletePending = false,
 }) => {
   const { t } = useTranslation();
   return (
@@ -134,14 +136,23 @@ const StudyCardPreviewComponent: React.FC<StudyCardPreviewProps> = ({
                 e.stopPropagation();
                 onDelete(card);
               }}
-              className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all ${
+              disabled={deletePending}
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
                 isDark 
                   ? 'text-slate-400 hover:text-red-400 hover:bg-slate-700' 
                   : 'text-gray-400 hover:text-red-600 hover:bg-gray-100'
               }`}
               title={t('study.cardPreview.button.delete')}
+              aria-busy={deletePending}
             >
-              <Trash2 size={16} />
+              {deletePending ? (
+                <span
+                  className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Trash2 size={16} />
+              )}
             </button>
           )}
 
@@ -175,7 +186,8 @@ const areEqual = (prev: StudyCardPreviewProps, next: StudyCardPreviewProps) => {
     prev.isDark === next.isDark &&
     prev.selected === next.selected &&
     prev.selectionMode === next.selectionMode &&
-    prev.showStatus === next.showStatus
+    prev.showStatus === next.showStatus &&
+    prev.deletePending === next.deletePending
   );
 };
 

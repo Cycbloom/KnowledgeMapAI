@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
 import { queryKeys, realtimeQueryConfig } from "./config";
 import { getSupabaseClient } from "@/utils/supabase";
@@ -20,6 +20,56 @@ export const useStudyCards = (
         return result.cards;
       }
       return result;
+    },
+    enabled,
+    ...realtimeQueryConfig,
+  });
+};
+
+export interface UseStudyCardsInfiniteArgs {
+  graph_id?: string;
+  knowledge_point_id?: string;
+  knowledge_point_ids?: string[];
+  due?: boolean;
+  search?: string;
+  card_type?: string;
+  fsrs_state?: string;
+  review_count_min?: number;
+  review_count_max?: number;
+  next_review_start?: string;
+  next_review_end?: string;
+  pageSize?: number;
+  enabled?: boolean;
+}
+
+/**
+ * 学习卡片无限加载查询。
+ *
+ * 通过服务端分页 + 过滤（search/card_type/fsrs_state 等）加载卡片。
+ * queryKey 仅含过滤维度（不含 page），所有页共享同一 key；
+ * getNextPageParam 依据 seen < total 判断是否还有下一页。
+ */
+export const useStudyCardsInfinite = (args: UseStudyCardsInfiniteArgs) => {
+  const {
+    enabled = true,
+    pageSize = 20,
+    ...filters
+  } = args;
+
+  return useInfiniteQuery({
+    queryKey: queryKeys.studyCardsInfinite({ ...filters, pageSize }),
+    queryFn: async ({ pageParam }) => {
+      const result = await api.study.getCardsPaged({
+        ...filters,
+        page: pageParam,
+        pageSize,
+      });
+      return result;
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const seen = lastPage.page * lastPage.pageSize;
+      return seen < lastPage.total ? lastPage.page + 1 : undefined;
     },
     enabled,
     ...realtimeQueryConfig,

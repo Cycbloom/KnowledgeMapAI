@@ -59,9 +59,7 @@ describe("useCardReviewLogic", () => {
     expect(result.current.finished).toBe(false);
     expect(result.current.selectedOption).toBeNull();
     expect(result.current.swipeDirection).toBeNull();
-    expect(result.current.dragDirection).toBeNull();
     expect(result.current.cardKey).toBe(0);
-    expect(result.current.cardRotation).toBe(0);
     expect(result.current.currentCard).toBeUndefined();
     expect(result.current.similarityWithPrev).toBeNull();
     expect(result.current.sessionStartTime).toBeNull();

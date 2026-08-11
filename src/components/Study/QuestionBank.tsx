@@ -1,8 +1,9 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StudyCard } from '../../types';
 import { useUpdateCardMutation, useDeleteCardMutation, useDeleteCardsBatchMutation, useCreateCardsBatchMutation } from '../../hooks/mutations';
-import { Search, Trash2, Filter, CheckSquare, Square, PlusCircle, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
+import { useStudyCardsInfinite } from '../../hooks/queries';
+import { Search, Trash2, Filter, CheckSquare, Square, PlusCircle, XCircle } from 'lucide-react';
 import { useTheme } from "../../hooks";
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { QuestionForm, QuestionFormData } from './QuestionForm';
@@ -13,10 +14,15 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { message } from '@/utils/messageHelper';
 
 interface QuestionBankProps {
-  cards: StudyCard[];
+  graph_id?: string;
+  knowledge_point_id?: string;
+  knowledge_point_ids?: string[];
+  due?: boolean;
 }
 
-export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
+const ALL_FSRS_STATES = ["New", "Learning", "Review", "Relearning"];
+
+export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_point_id, knowledge_point_ids, due }) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -24,9 +30,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  // Filter State
   const [reviewCountRange, setReviewCountRange] = useState<{min: string, max: string}>({ min: '', max: '' });
   const [selectedFsrsStates, setSelectedFsrsStates] = useState<Set<string>>(new Set(["New", "Learning", "Review", "Relearning"]));
   const [nextReviewRange, setNextReviewRange] = useState<{start: string, end: string}>({ start: '', end: '' });
@@ -38,11 +42,50 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   const [isCreating, setIsCreating] = useState(false);
   
   const formRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const deleteCardMutation = useDeleteCardMutation();
   const deleteBatchMutation = useDeleteCardsBatchMutation();
   const updateCardMutation = useUpdateCardMutation();
   const createCardsMutation = useCreateCardsBatchMutation();
+
+  const filterArgs = useMemo(() => {
+    const selected = Array.from(selectedFsrsStates);
+    const allSelected = ALL_FSRS_STATES.every((s) => selected.includes(s));
+    return {
+      graph_id,
+      knowledge_point_id,
+      knowledge_point_ids,
+      due,
+      search: debouncedSearchTerm.trim() ? debouncedSearchTerm.trim() : undefined,
+      card_type: selectedType === "all" ? undefined : selectedType,
+      fsrs_state: allSelected ? undefined : selected.join(","),
+      review_count_min: reviewCountRange.min.trim() !== "" ? parseInt(reviewCountRange.min, 10) : undefined,
+      review_count_max: reviewCountRange.max.trim() !== "" ? parseInt(reviewCountRange.max, 10) : undefined,
+      next_review_start: nextReviewRange.start || undefined,
+      next_review_end: nextReviewRange.end || undefined,
+      pageSize: 20,
+    };
+  }, [graph_id, knowledge_point_id, knowledge_point_ids, due, debouncedSearchTerm, selectedType, selectedFsrsStates, reviewCountRange, nextReviewRange]);
+
+  const { data, hasNextPage, fetchNextPage, isFetchingNextPage, isLoading } = useStudyCardsInfinite(filterArgs);
+  const paginatedCards = useMemo(() => data?.pages.flatMap((p) => p.items ?? []) ?? [], [data]);
+  const total = data?.pages[0]?.total ?? 0;
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const fsrsStateLabels: Record<string, string> = {
     "New": t('study.questionBank.fsrsStates.new'),
@@ -50,55 +93,6 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
     "Review": t('study.questionBank.fsrsStates.review'),
     "Relearning": t('study.questionBank.fsrsStates.relearning')
   };
-
-  // Filter Logic
-  const filteredCards = useMemo(() => {
-    return cards.filter(card => {
-      // Basic Search
-      const matchesSearch = card.question.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-                            card.answer.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-      const matchesType = selectedType === 'all' || card.card_type === selectedType;
-
-      if (!matchesSearch || !matchesType) return false;
-
-      // Advanced Filters
-      if (showAdvancedFilters) {
-        // Review Count
-        const count = card.review_count || 0;
-        if (reviewCountRange.min !== '' && count < parseInt(reviewCountRange.min)) return false;
-        if (reviewCountRange.max !== '' && count > parseInt(reviewCountRange.max)) return false;
-
-        // FSRS State
-        const state = card.fsrs_state || "New";
-        if (!selectedFsrsStates.has(state)) return false;
-
-        // Next Review Date
-        if (nextReviewRange.start || nextReviewRange.end) {
-          const reviewDate = new Date(card.next_review).getTime();
-          if (nextReviewRange.start && reviewDate < new Date(nextReviewRange.start).getTime()) return false;
-          if (nextReviewRange.end) {
-            const endDate = new Date(nextReviewRange.end);
-            endDate.setHours(23, 59, 59, 999);
-            if (reviewDate > endDate.getTime()) return false;
-          }
-        }
-      }
-
-      return true;
-    });
-  }, [cards, debouncedSearchTerm, selectedType, showAdvancedFilters, reviewCountRange, selectedFsrsStates, nextReviewRange]);
-
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredCards.length / pageSize);
-  const paginatedCards = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredCards.slice(start, start + pageSize);
-  }, [filteredCards, currentPage, pageSize]);
-
-  // Reset page when filters change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedType, showAdvancedFilters, reviewCountRange, selectedFsrsStates, nextReviewRange]);
 
   // Handlers
   const toggleFsrsState = (state: string) => {
@@ -109,10 +103,10 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   };
 
   const handleSelectAll = () => {
-    if (selectedIds.size === filteredCards.length) {
+    if (selectedIds.size === paginatedCards.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredCards.map(c => c.id)));
+      setSelectedIds(new Set(paginatedCards.map(c => c.id)));
     }
   };
 
@@ -185,8 +179,8 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
     }, 100);
   };
 
-  const isAllSelected = selectedIds.size === filteredCards.length && filteredCards.length > 0;
-  const isPartialSelected = selectedIds.size > 0 && selectedIds.size < filteredCards.length;
+  const isAllSelected = selectedIds.size === paginatedCards.length && paginatedCards.length > 0;
+  const isPartialSelected = selectedIds.size > 0 && selectedIds.size < paginatedCards.length;
 
   return (
     <div className={`rounded-xl border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'} overflow-hidden`}>
@@ -270,9 +264,18 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
           {selectedIds.size > 0 && (
             <button 
               onClick={handleBatchDelete}
-              className="flex items-center gap-1 px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+              disabled={deleteBatchMutation.isPending}
+              className="flex items-center gap-1 px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              aria-busy={deleteBatchMutation.isPending}
             >
-              <Trash2 size={18} />
+              {deleteBatchMutation.isPending ? (
+                <span
+                  className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Trash2 size={18} />
+              )}
               <span>{t('study.questionBank.batchDelete')} ({selectedIds.size})</span>
             </button>
           )}
@@ -382,7 +385,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
 
       {/* Card Grid */}
       <div className="p-4">
-        {filteredCards.length === 0 ? (
+        {paginatedCards.length === 0 && !isLoading ? (
           <EmptyState
             icon={<Search size={32} className="opacity-50" />}
             title={t('study.questionBank.noQuestionsFound')}
@@ -407,6 +410,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                   selected={selectedIds.has(card.id)}
                   selectionMode={true}
                   showStatus={true}
+                  deletePending={deleteCardMutation.isPending}
                 />
               </div>
             ))}
@@ -414,8 +418,8 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
         )}
       </div>
 
-      {/* Pagination Footer */}
-      {filteredCards.length > 0 && (
+      {/* Infinite Scroll Footer */}
+      {paginatedCards.length > 0 && (
         <div className={`p-4 border-t flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
           <div
             className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}
@@ -423,70 +427,26 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
             aria-atomic="true"
           >
             {t('study.questionBank.pagination', {
-              start: ((currentPage - 1) * pageSize) + 1,
-              end: Math.min(currentPage * pageSize, filteredCards.length),
-              total: filteredCards.length
+              start: 1,
+              end: paginatedCards.length,
+              total,
             })}
           </div>
-          
-          <nav aria-label={t("common.aria.pagination")} className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              aria-label={t("common.aria.previousPage")}
-              aria-disabled={currentPage === 1 ? "true" : undefined}
-              className={`p-2 rounded-lg border transition-colors ${
-                currentPage === 1
-                  ? (isDark ? 'border-slate-800 text-slate-600 cursor-not-allowed' : 'border-gray-100 text-gray-300 cursor-not-allowed')
-                  : (isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50')
-              }`}
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-            </button>
-            
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum = i + 1;
-                if (totalPages > 5) {
-                  if (currentPage <= 3) pageNum = i + 1;
-                  else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                  else pageNum = currentPage - 2 + i;
-                }
-                
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    aria-current={currentPage === pageNum ? "page" : undefined}
-                    aria-label={t("common.aria.page", { number: pageNum })}
-                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === pageNum
-                        ? 'bg-primary-600 text-white'
-                        : (isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-gray-600 hover:bg-gray-100')
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
+          {hasNextPage && (
+            <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+              {isFetchingNextPage && (
+                <span
+                  className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+                  aria-hidden="true"
+                />
+              )}
             </div>
-
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              aria-label={t("common.aria.nextPage")}
-              aria-disabled={currentPage === totalPages ? "true" : undefined}
-              className={`p-2 rounded-lg border transition-colors ${
-                currentPage === totalPages
-                  ? (isDark ? 'border-slate-800 text-slate-600 cursor-not-allowed' : 'border-gray-100 text-gray-300 cursor-not-allowed')
-                  : (isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50')
-              }`}
-            >
-              <ChevronRight size={16} aria-hidden="true" />
-            </button>
-          </nav>
+          )}
         </div>
       )}
+
+      {/* Sentinel for infinite scroll */}
+      <div ref={sentinelRef} aria-hidden="true" />
 
       {/* Card Detail Modal */}
       <StudyCardDetailModal

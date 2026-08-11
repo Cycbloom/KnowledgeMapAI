@@ -75,6 +75,77 @@ describe('studyApi', () => {
     });
   });
 
+  describe('getCardsPaged', () => {
+    it('应该在无参数时调用 /study/cards', () => {
+      studyApi.getCardsPaged();
+      expect(request).toHaveBeenCalledWith('/study/cards');
+    });
+
+    it('应该将 page/page_size 拼接到查询参数', () => {
+      studyApi.getCardsPaged({ page: 2, pageSize: 20 });
+      expect(request).toHaveBeenCalledWith(
+        '/study/cards?page=2&page_size=20',
+      );
+    });
+
+    it('应该将 search 拼接到查询参数', () => {
+      studyApi.getCardsPaged({ search: 'abc' });
+      expect(request).toHaveBeenCalledWith('/study/cards?search=abc');
+    });
+
+    it('应该将 card_type 拼接到查询参数', () => {
+      studyApi.getCardsPaged({ card_type: 'choice' });
+      expect(request).toHaveBeenCalledWith(
+        '/study/cards?card_type=choice',
+      );
+    });
+
+    it('应该将 fsrs_state 编码逗号后拼接到查询参数', () => {
+      studyApi.getCardsPaged({ fsrs_state: 'New,Learning' });
+      expect(request).toHaveBeenCalledWith(
+        '/study/cards?fsrs_state=New%2CLearning',
+      );
+    });
+
+    it('应该将 review_count_min/max 拼接到查询参数', () => {
+      studyApi.getCardsPaged({ review_count_min: 3, review_count_max: 10 });
+      expect(request).toHaveBeenCalledWith(
+        '/study/cards?review_count_min=3&review_count_max=10',
+      );
+    });
+
+    it('应该将 next_review_start/end 拼接到查询参数', () => {
+      studyApi.getCardsPaged({
+        next_review_start: '2026-01-01',
+        next_review_end: '2026-12-31',
+      });
+      expect(request).toHaveBeenCalledWith(
+        '/study/cards?next_review_start=2026-01-01&next_review_end=2026-12-31',
+      );
+    });
+
+    it('应该将全部参数按顺序拼接到查询参数', () => {
+      studyApi.getCardsPaged({
+        graph_id: 'g1',
+        knowledge_point_id: 'kp1',
+        knowledge_point_ids: ['kp1', 'kp2'],
+        due: true,
+        page: 2,
+        pageSize: 20,
+        search: 'abc',
+        card_type: 'choice',
+        fsrs_state: 'New,Learning',
+        review_count_min: 3,
+        review_count_max: 10,
+        next_review_start: '2026-01-01',
+        next_review_end: '2026-12-31',
+      });
+      expect(request).toHaveBeenCalledWith(
+        '/study/cards?graph_id=g1&knowledge_point_id=kp1&knowledge_point_ids=kp1%2Ckp2&due=true&page=2&page_size=20&search=abc&card_type=choice&fsrs_state=New%2CLearning&review_count_min=3&review_count_max=10&next_review_start=2026-01-01&next_review_end=2026-12-31',
+      );
+    });
+  });
+
   describe('getCardsByKnowledgePoint', () => {
     it('应该使用 knowledge_point_id 调用 /study/cards', () => {
       studyApi.getCardsByKnowledgePoint('kp1');

@@ -26,6 +26,23 @@ interface GetCardsOptions {
   knowledgePointId?: string;
   knowledgePointIds?: string[];
   dueOnly?: boolean;
+  /** Server-side pagination. When provided, returns a paginated result. */
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  cardType?: string;
+  fsrsState?: string;
+  reviewCountMin?: number;
+  reviewCountMax?: number;
+  nextReviewStart?: string;
+  nextReviewEnd?: string;
+}
+
+export interface PaginatedCardsResult {
+  items: StudyCard[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 interface CreateCardData {
@@ -165,11 +182,28 @@ export class StudyService {
   async getCards(
     supabase: SupabaseClient,
     options: GetCardsOptions,
-  ): Promise<StudyCard[]> {
-    const { userId, graphId, knowledgePointId, knowledgePointIds, dueOnly } =
-      options;
+  ): Promise<StudyCard[] | PaginatedCardsResult> {
+    const {
+      userId,
+      graphId,
+      knowledgePointId,
+      knowledgePointIds,
+      dueOnly,
+      page,
+      pageSize,
+      search,
+      cardType,
+      fsrsState,
+      reviewCountMin,
+      reviewCountMax,
+      nextReviewStart,
+      nextReviewEnd,
+    } = options;
 
-    if (graphId && !knowledgePointId && !knowledgePointIds) {
+    const paged = page !== undefined && pageSize !== undefined;
+
+    // Fast path: graph-only, no pagination/filtering → cached full array.
+    if (graphId && !knowledgePointId && !knowledgePointIds && !paged) {
       const cacheKey = CacheKeys.STUDY_CARDS(graphId);
 
       const cards = await cacheService.getOrSet(cacheKey, async () => {
@@ -208,14 +242,115 @@ export class StudyService {
       query = query.lte("next_review", new Date().toISOString());
     }
 
-    const { data, error } = await query;
+    // Server-side structured filtering.
+    if (cardType) {
+      query = query.eq("card_type", cardType);
+    }
+    if (fsrsState) {
+      const states = fsrsState.split(",").map((s) => s.trim()).filter(Boolean);
+      if (states.length === 1) {
+        query = query.eq("fsrs_state", states[0]);
+      } else if (states.length > 1) {
+        query = query.in("fsrs_state", states);
+      }
+    }
+    if (reviewCountMin !== undefined) {
+      query = query.gte("review_count", reviewCountMin);
+    }
+    if (reviewCountMax !== undefined) {
+      query = query.lte("review_count", reviewCountMax);
+    }
+    if (nextReviewStart) {
+      query = query.gte("next_review", nextReviewStart);
+    }
+    if (nextReviewEnd) {
+      query = query.lte("next_review", nextReviewEnd);
+    }
+    if (search && search.trim() !== "") {
+      const term = `%${search.trim()}%`;
+      query = query.or(`question.ilike.${term},answer.ilike.${term}`);
+    }
+
+    if (!paged) {
+      const { data, error } = await query;
+
+      if (error) {
+        logger.error("Supabase error fetching cards:", error);
+        throw error;
+      }
+
+      return (data as StudyCard[]) || [];
+    }
+
+    // Paginated path: count + ranged select.
+    const currentPage = Math.max(1, page ?? 1);
+    const currentPageSize = Math.max(1, pageSize ?? 20);
+
+    const countQuery = supabase
+      .from("study_cards")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (knowledgePointId) {
+      countQuery.eq("knowledge_point_id", knowledgePointId);
+    } else if (knowledgePointIds && knowledgePointIds.length > 0) {
+      countQuery.in("knowledge_point_id", knowledgePointIds);
+    } else if (graphId) {
+      countQuery.eq("graph_id", graphId);
+    }
+
+    if (dueOnly) {
+      countQuery.lte("next_review", new Date().toISOString());
+    }
+    if (cardType) {
+      countQuery.eq("card_type", cardType);
+    }
+    if (fsrsState) {
+      const states = fsrsState.split(",").map((s) => s.trim()).filter(Boolean);
+      if (states.length === 1) {
+        countQuery.eq("fsrs_state", states[0]);
+      } else if (states.length > 1) {
+        countQuery.in("fsrs_state", states);
+      }
+    }
+    if (reviewCountMin !== undefined) {
+      countQuery.gte("review_count", reviewCountMin);
+    }
+    if (reviewCountMax !== undefined) {
+      countQuery.lte("review_count", reviewCountMax);
+    }
+    if (nextReviewStart) {
+      countQuery.gte("next_review", nextReviewStart);
+    }
+    if (nextReviewEnd) {
+      countQuery.lte("next_review", nextReviewEnd);
+    }
+    if (search && search.trim() !== "") {
+      const term = `%${search.trim()}%`;
+      countQuery.or(`question.ilike.${term},answer.ilike.${term}`);
+    }
+
+    const { count: total, error: countError } = await countQuery;
+    if (countError) {
+      logger.error("Supabase error counting cards:", countError);
+      throw countError;
+    }
+
+    const from = (currentPage - 1) * currentPageSize;
+    const to = from + currentPageSize - 1;
+    const { data, error } = await query.range(from, to);
 
     if (error) {
-      logger.error("Supabase error fetching cards:", error);
+      logger.error("Supabase error fetching cards page:", error);
       throw error;
     }
 
-    return (data as StudyCard[]) || [];
+    return {
+      items: (data as StudyCard[]) || [],
+      total: total ?? 0,
+      page: currentPage,
+      pageSize: currentPageSize,
+    };
   }
 
   async createCard(

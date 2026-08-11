@@ -220,7 +220,8 @@
     "again": "忘记",
     "hard": "困难",
     "good": "良好",
-    "easy": "简单"
+    "easy": "简单",
+    "submitting": "提交中…"
   },
   "messages": {
     "noCardsToReview": "没有需要复习的卡片",

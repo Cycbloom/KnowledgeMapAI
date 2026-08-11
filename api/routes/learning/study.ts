@@ -87,8 +87,22 @@ router.get("/stats", requireAuth, async (req: AuthedRequest, res: Response) => {
  *         description: List of study cards
  */
 router.get("/cards", requireAuth, async (req: AuthedRequest, res: Response) => {
-  const { graphId, knowledgePointId, knowledgePointIds, dueOnly, refresh } =
-    StudyRouteService.parseCardQueryParams(req.query as Record<string, unknown>);
+  const {
+    graphId,
+    knowledgePointId,
+    knowledgePointIds,
+    dueOnly,
+    refresh,
+    page,
+    pageSize,
+    search,
+    cardType,
+    fsrsState,
+    reviewCountMin,
+    reviewCountMax,
+    nextReviewStart,
+    nextReviewEnd,
+  } = StudyRouteService.parseCardQueryParams(req.query as Record<string, unknown>);
 
   if (graphId && refresh) {
     await cacheService.del(CacheKeys.STUDY_CARDS(graphId));
@@ -101,6 +115,15 @@ router.get("/cards", requireAuth, async (req: AuthedRequest, res: Response) => {
       knowledgePointId,
       knowledgePointIds,
       dueOnly,
+      page,
+      pageSize,
+      search,
+      cardType,
+      fsrsState,
+      reviewCountMin,
+      reviewCountMax,
+      nextReviewStart,
+      nextReviewEnd,
     });
 
     res.json(cards);

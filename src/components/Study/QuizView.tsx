@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { useTranslation } from "react-i18next";
 import { StudyCard } from "@shared/types";
 import {
@@ -15,7 +15,7 @@ import {
   Target,
   Layers,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 import { useUpdateCardProgressMutation } from "../../hooks/mutations";
 import { formatTimeFromSeconds } from "../../utils/formatters";
 
@@ -34,7 +34,7 @@ interface QuizViewFinishedProps {
   onRestart: () => void;
 }
 
-export const QuizViewFinished = ({
+export const QuizViewFinished = memo(function QuizViewFinished({
   isDark,
   isMobile,
   nodeId,
@@ -45,7 +45,7 @@ export const QuizViewFinished = ({
   sessionDuration,
   onBackToDashboard,
   onRestart,
-}: QuizViewFinishedProps) => {
+}: QuizViewFinishedProps) {
   const { t } = useTranslation();
   const accuracy =
     reviewedCount > 0 ? Math.round((correctCount / reviewedCount) * 100) : 0;
@@ -171,7 +171,7 @@ export const QuizViewFinished = ({
       </div>
     </div>
   );
-};
+});
 
 interface QuizViewActiveProps {
   isDark: boolean;
@@ -183,8 +183,6 @@ interface QuizViewActiveProps {
   selectedOption: string | null;
   cardKey: number;
   swipeDirection: "left" | "right" | null;
-  dragDirection: "left" | "right" | null;
-  cardRotation: number;
   quizCards: StudyCard[];
   similarityWithPrev: number | null;
   updateProgressMutation: UpdateProgressMutation;
@@ -194,11 +192,9 @@ interface QuizViewActiveProps {
   onMultiOptionClick: (option: string) => void;
   onDragEnd: (_: unknown, info: { velocity: { x: number }; offset: { x: number } }) => void;
   onSetShowAnswer: (show: boolean) => void;
-  onSetDragDirection: (dir: "left" | "right" | null) => void;
-  onSetCardRotation: (rotation: number) => void;
 }
 
-export const QuizViewActive = ({
+export const QuizViewActive = memo(function QuizViewActive({
   isDark,
   isMobile,
   currentCard,
@@ -208,8 +204,6 @@ export const QuizViewActive = ({
   selectedOption,
   cardKey,
   swipeDirection,
-  dragDirection,
-  cardRotation,
   quizCards,
   similarityWithPrev,
   updateProgressMutation,
@@ -219,10 +213,23 @@ export const QuizViewActive = ({
   onMultiOptionClick,
   onDragEnd,
   onSetShowAnswer,
-  onSetDragDirection,
-  onSetCardRotation,
-}: QuizViewActiveProps) => {
+}: QuizViewActiveProps) {
   const { t } = useTranslation();
+
+  // Motion values for drag-driven feedback (layout thread, no re-render)
+  const rotation = useMotionValue(0);
+  const rightOpacity = useMotionValue(0);
+  const rightScale = useMotionValue(0.8);
+  const leftOpacity = useMotionValue(0);
+  const leftScale = useMotionValue(0.8);
+
+  const resetMotionValues = () => {
+    rotation.set(0);
+    rightOpacity.set(0);
+    rightScale.set(0.8);
+    leftOpacity.set(0);
+    leftScale.set(0.8);
+  };
 
   const isQA = !currentCard.card_type || currentCard.card_type === "qa";
   const isChoice = currentCard.card_type === "choice";
@@ -481,17 +488,28 @@ export const QuizViewActive = ({
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.15}
               onDrag={(_, info) => {
-                const rotation = info.offset.x * 0.12;
-                onSetCardRotation(rotation);
+                rotation.set(info.offset.x * 0.12);
                 if (info.offset.x > 30) {
-                  onSetDragDirection("right");
+                  rightOpacity.set(1);
+                  rightScale.set(1);
+                  leftOpacity.set(0);
+                  leftScale.set(0.8);
                 } else if (info.offset.x < -30) {
-                  onSetDragDirection("left");
+                  leftOpacity.set(1);
+                  leftScale.set(1);
+                  rightOpacity.set(0);
+                  rightScale.set(0.8);
                 } else {
-                  onSetDragDirection(null);
+                  rightOpacity.set(0);
+                  rightScale.set(0.8);
+                  leftOpacity.set(0);
+                  leftScale.set(0.8);
                 }
               }}
-              onDragEnd={onDragEnd}
+              onDragEnd={(_, info) => {
+                resetMotionValues();
+                onDragEnd(_, info);
+              }}
               initial={{ rotate: -20, y: 40, scale: 0.92, opacity: 0 }}
               animate={{ rotate: 0, y: 0, scale: 1, opacity: 1 }}
               exit={{
@@ -508,17 +526,14 @@ export const QuizViewActive = ({
               }`}
               style={{
                 transformOrigin: "bottom center",
-                rotate: cardRotation,
+                rotate: rotation,
                 zIndex: 10,
               }}
             >
               {/* Swipe Feedback Icons */}
               <motion.div
                 className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-                animate={{
-                  opacity: dragDirection === "right" ? 1 : 0,
-                  scale: dragDirection === "right" ? 1 : 0.8,
-                }}
+                style={{ opacity: rightOpacity, scale: rightScale }}
                 transition={{ duration: 0.15 }}
               >
                 <div
@@ -529,10 +544,7 @@ export const QuizViewActive = ({
               </motion.div>
               <motion.div
                 className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-                animate={{
-                  opacity: dragDirection === "left" ? 1 : 0,
-                  scale: dragDirection === "left" ? 1 : 0.8,
-                }}
+                style={{ opacity: leftOpacity, scale: leftScale }}
                 transition={{ duration: 0.15 }}
               >
                 <div
@@ -923,6 +935,19 @@ export const QuizViewActive = ({
                         <h4 className="font-bold tracking-wider text-[10px] uppercase">
                           {t("study.quiz.rateMemory")}
                         </h4>
+                        {updateProgressMutation.isPending && (
+                          <span
+                            className="ml-1 inline-flex items-center gap-1.5 text-xs font-medium text-primary-500"
+                            role="status"
+                            aria-live="polite"
+                          >
+                            <span
+                              className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin"
+                              aria-hidden="true"
+                            />
+                            {t("study.rating.submitting")}
+                          </span>
+                        )}
                       </div>
                       <div
                         className={`grid ${isMobile ? "grid-cols-4 gap-2" : "grid-cols-2 md:grid-cols-4 gap-3"}`}
@@ -1029,4 +1054,4 @@ export const QuizViewActive = ({
       </div>
     </div>
   );
-};
+});

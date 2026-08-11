@@ -29,11 +29,7 @@ export const useCardReviewLogic = ({
   const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(
     null,
   );
-  const [dragDirection, setDragDirection] = useState<"left" | "right" | null>(
-    null,
-  );
   const [cardKey, setCardKey] = useState(0);
-  const [cardRotation, setCardRotation] = useState(0);
 
   // Session tracking (UX2-09)
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
@@ -178,9 +174,6 @@ export const useCardReviewLogic = ({
       const velocity = info.velocity.x;
       const offset = info.offset.x;
 
-      setDragDirection(null);
-      setCardRotation(0);
-
       const shouldSwipeRight =
         offset > threshold || (offset > 30 && velocity > 300);
       const shouldSwipeLeft =
@@ -311,9 +304,7 @@ export const useCardReviewLogic = ({
     finished,
     selectedOption,
     swipeDirection,
-    dragDirection,
     cardKey,
-    cardRotation,
     currentCard,
     similarityWithPrev,
     updateProgressMutation,
@@ -327,8 +318,6 @@ export const useCardReviewLogic = ({
     // State setters
     setShowAnswer,
     setSelectedOption,
-    setDragDirection,
-    setCardRotation,
     setQuizCards,
     setCurrentCardIndex,
     setFinished,

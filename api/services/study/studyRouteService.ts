@@ -63,6 +63,15 @@ export class StudyRouteService {
     knowledgePointIds: string[] | undefined;
     dueOnly: boolean;
     refresh: boolean;
+    page: number | undefined;
+    pageSize: number | undefined;
+    search: string | undefined;
+    cardType: string | undefined;
+    fsrsState: string | undefined;
+    reviewCountMin: number | undefined;
+    reviewCountMax: number | undefined;
+    nextReviewStart: string | undefined;
+    nextReviewEnd: string | undefined;
   } {
     const graphId = query.graph_id as string | undefined;
     const knowledgePointId = query.knowledge_point_id as string | undefined;
@@ -74,7 +83,37 @@ export class StudyRouteService {
       knowledgePointIds = (query.knowledge_point_ids as string).split(",");
     }
 
-    return { graphId, knowledgePointId, knowledgePointIds, dueOnly, refresh };
+    const toPositiveInt = (v: unknown): number | undefined => {
+      if (v === undefined || v === null || v === "") return undefined;
+      const n = Number(v);
+      return Number.isInteger(n) && n > 0 ? n : undefined;
+    };
+
+    const page = toPositiveInt(query.page);
+    const pageSize = toPositiveInt(query.page_size) ?? toPositiveInt(query.pageSize);
+
+    const toFloat = (v: unknown): number | undefined => {
+      if (v === undefined || v === null || v === "") return undefined;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : undefined;
+    };
+
+    return {
+      graphId,
+      knowledgePointId,
+      knowledgePointIds,
+      dueOnly,
+      refresh,
+      page,
+      pageSize,
+      search: query.search as string | undefined,
+      cardType: query.card_type as string | undefined,
+      fsrsState: query.fsrs_state as string | undefined,
+      reviewCountMin: toFloat(query.review_count_min),
+      reviewCountMax: toFloat(query.review_count_max),
+      nextReviewStart: query.next_review_start as string | undefined,
+      nextReviewEnd: query.next_review_end as string | undefined,
+    };
   }
 
   async createCardWithGraphNode(

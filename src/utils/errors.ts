@@ -183,7 +183,10 @@ export function isAppError(error: unknown): error is AppError {
 }
 
 export function isNetworkError(error: unknown): error is NetworkError {
-  return error instanceof NetworkError;
+  if (error instanceof NetworkError) {
+    return true;
+  }
+  return isAppError(error) && error.code === FrontendErrorCodes.NETWORK_ERROR;
 }
 
 export function isAuthError(

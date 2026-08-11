@@ -1,3 +1,5 @@
+import type { StudyCard } from "./common";
+
 export interface AuthSession {
   access_token: string;
   refresh_token: string;
@@ -103,6 +105,25 @@ export interface GetCardsParams {
   knowledge_point_ids?: string[];
   source_graph_id?: string;
   due?: boolean;
+  /** Pagination (server-side). When omitted, returns the full array. */
+  page?: number;
+  pageSize?: number;
+  /** Keyword search against question/answer (fuzzy match). */
+  search?: string;
+  card_type?: string;
+  fsrs_state?: string;
+  review_count_min?: number;
+  review_count_max?: number;
+  next_review_start?: string;
+  next_review_end?: string;
+}
+
+/** Paginated study cards response, mirroring the notes list contract. */
+export interface PaginatedStudyCards {
+  items: StudyCard[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface CardGroup {

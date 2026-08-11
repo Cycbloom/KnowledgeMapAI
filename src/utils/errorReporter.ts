@@ -1,3 +1,4 @@
+import { isAxiosError } from "axios";
 import { request } from "../services/api/client";
 
 interface ErrorReport {
@@ -34,9 +35,25 @@ const flushErrors = async (): Promise<void> => {
       method: "POST",
       body: JSON.stringify({ errors }),
     });
-  } catch {
-    console.warn("[ErrorReporter] Failed to flush errors");
+  } catch (error) {
+    console.warn("[ErrorReporter] Failed to flush errors", error);
+    // 瞬时失败（网络错误 / 5xx）：重新入队，避免错误静默丢失；仍受队列上限约束
+    if (isTransientFlushError(error)) {
+      errorQueue.unshift(...errors);
+      errorQueue.splice(MAX_QUEUE_SIZE);
+    }
+    // 4xx 校验类失败：丢弃，避免无限重试
   }
+};
+
+/**
+ * 判断上报失败是否属于瞬时类（可重试）：axios 网络错误（无响应）或 5xx 服务端错误。
+ * 4xx（如 400 校验失败）非瞬时，重试只会重复失败，应丢弃。
+ */
+const isTransientFlushError = (error: unknown): boolean => {
+  if (!isAxiosError(error)) return false;
+  if (!error.response) return true; // 网络层失败（无 HTTP 响应）
+  return error.response.status >= 500;
 };
 
 const getUserId = (): string | undefined => {

@@ -97,3 +97,20 @@ export function getEncryptionKey(): Buffer {
   }
   return crypto.createHash('sha256').update(envKey, 'utf8').digest();
 }
+
+/**
+ * 判断一个存储在数据库中的 apiKey 是否为加密后的密文。
+ *
+ * AES-256-GCM 加密格式为 `iv:authTag:ciphertext`（均为 base64），其中 iv 为 12 字节、
+ * authTag 为 16 字节。仅以「恰好 3 段」判定会误伤形如 `ak:sk` 的明文密钥
+ * （例如部分服务商使用冒号分隔的凭据），故这里同时校验 base64 解码后的长度。
+ */
+export function isEncryptedApiKey(value: string): boolean {
+  if (!value) return false;
+  const parts = value.split(':');
+  if (parts.length !== 3) return false;
+  const [ivPart, authTagPart] = parts;
+  const iv = Buffer.from(ivPart, 'base64');
+  const authTag = Buffer.from(authTagPart, 'base64');
+  return iv.length === 12 && authTag.length === 16;
+}

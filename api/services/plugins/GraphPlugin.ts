@@ -29,7 +29,7 @@ export const graphPlugin: Plugin = {
     kernel.registerRoutes("/api/v1/auto-graph", autoGraphRoutes, { rateLimiter: "aiHeavy" });
     kernel.registerRoutes("/api/v1/relationship-types", relationshipTypesRoutes);
     kernel.registerRoutes("/api/v1/collaborations", collaboratorsRoutes);
-    kernel.registerRoutes("/api/v1/graph-nodes", graphNodesRoutes);
+    kernel.registerRoutes("/api/v1", graphNodesRoutes);
     kernel.registerRoutes("/api/v1/combined-view", combinedViewRoutes);
     kernel.registerRoutes("/api/v1/graphs", conceptAggregationRoutes);
     kernel.registerRoutes("/api/v1/graphs/:graphId/regions", regionRoutes);

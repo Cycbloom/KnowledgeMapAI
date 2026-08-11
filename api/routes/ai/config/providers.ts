@@ -9,7 +9,7 @@ import { logger } from "../../../utils/logger";
 import { AppError } from "../../../middleware/errorHandler";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
 import { PROVIDER_DEFAULTS, maskApiKey, hasEnvFallback } from "./shared";
-import { encrypt, decrypt, getEncryptionKey } from "../../../../shared/utils/encryption";
+import { encrypt, decrypt, getEncryptionKey, isEncryptedApiKey } from "../../../../shared/utils/encryption";
 
 const router = Router();
 
@@ -170,7 +170,7 @@ router.post(
 
         // 解密数据库中存储的 apiKey（加密格式为 iv:authTag:ciphertext，恰含 2 个冒号）
         let dbApiKey = dbConfig?.apiKey || "";
-        if (dbApiKey && dbApiKey.split(":").length === 3) {
+        if (isEncryptedApiKey(dbApiKey)) {
           try {
             dbApiKey = decrypt(dbApiKey, getEncryptionKey());
           } catch {

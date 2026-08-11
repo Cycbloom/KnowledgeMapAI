@@ -14,17 +14,15 @@ import { z } from "zod";
 const router = Router();
 
 const createGraphNodeSchema = z.object({
-  body: z.object({
-    graph_id: z.string().uuid(),
-    knowledge_point_id: z.string().uuid(),
-    x_position: z.number().optional().default(0),
-    y_position: z.number().optional().default(0),
-    level: z
-      .enum(["root", "core", "sub", "normal", "leaf"])
-      .optional()
-      .default("normal"),
-    is_accepted: z.boolean().optional().default(true),
-  }),
+  graph_id: z.string().uuid(),
+  knowledge_point_id: z.string().uuid(),
+  x_position: z.number().optional().default(0),
+  y_position: z.number().optional().default(0),
+  level: z
+    .enum(["root", "core", "sub", "normal", "leaf"])
+    .optional()
+    .default("normal"),
+  is_accepted: z.boolean().optional().default(true),
 });
 
 router.post(

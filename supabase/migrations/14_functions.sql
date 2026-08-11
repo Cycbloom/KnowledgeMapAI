@@ -875,12 +875,11 @@ DECLARE
   v_deleted_cards int;
   v_graph_ids uuid[];
 BEGIN
-  -- Verify ownership
-  SELECT id INTO v_deleted_graphs
-  FROM knowledge_graphs
-  WHERE id = p_graph_id AND user_id = p_user_id;
-
-  IF NOT FOUND THEN
+  -- Verify ownership（用 EXISTS 而非 SELECT id INTO int 变量，避免 UUID→int 类型错误）
+  IF NOT EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE id = p_graph_id AND user_id = p_user_id
+  ) THEN
     RAISE EXCEPTION 'Graph not found or user does not own it';
   END IF;
 

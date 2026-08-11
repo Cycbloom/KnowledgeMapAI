@@ -44,6 +44,35 @@ GRANT ALL PRIVILEGES ON backup_snapshots TO authenticated;
 GRANT ALL PRIVILEGES ON graph_collaborators TO authenticated;
 GRANT SELECT ON graph_collaborators TO authenticated;
 
+-- Tables created in later migrations (graph_snapshots, notes, audit_logs, etc.)
+-- must be granted here defensively. Since some of these tables are created AFTER
+-- this grants migration, use an existence-checked DO block so the reset applies
+-- cleanly regardless of ordering.
+DO $$
+DECLARE
+  t text;
+  tables text[] := ARRAY[
+    'graph_snapshots', 'graph_events',
+    'notes', 'note_node_links', 'note_templates',
+    'notifications', 'notification_settings',
+    'audit_logs'
+  ];
+BEGIN
+  FOREACH t IN ARRAY tables LOOP
+    IF EXISTS (
+      SELECT 1 FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relname = t AND n.nspname = 'public'
+    ) THEN
+      EXECUTE format('GRANT ALL PRIVILEGES ON %I TO authenticated', t);
+      EXECUTE format('GRANT SELECT ON %I TO authenticated', t);
+    END IF;
+  END LOOP;
+END $$;
+
+-- audit_logs is written by the service_role (already covered by the blanket
+-- service_role grant above), authenticated read is granted via the DO block.
+
 -- Scheduler
 GRANT ALL PRIVILEGES ON user_tasks TO authenticated;
 GRANT SELECT ON user_tasks TO authenticated;

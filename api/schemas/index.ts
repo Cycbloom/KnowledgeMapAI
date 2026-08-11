@@ -120,31 +120,24 @@ export const updateEdgeSchema = z.object({
 
 // --- Knowledge Point Schemas ---
 export const createKnowledgePointSchema = z.object({
-  body: z.object({
-    title: z.string().min(1).max(255),
-    content: z.string().optional(),
-    summary: z.string().max(200).optional(),
-    learning_material: z.string().optional(),
-    properties: z.record(z.unknown()).optional(),
-    visibility: z
-      .enum(["private", "public", "pending"])
-      .optional()
-      .default("private"),
-  }),
+  title: z.string().min(1).max(255),
+  content: z.string().optional(),
+  summary: z.string().max(200).optional(),
+  learning_material: z.string().optional(),
+  properties: z.record(z.unknown()).optional(),
+  visibility: z
+    .enum(["private", "public", "pending"])
+    .optional()
+    .default("private"),
 });
 
 export const updateKnowledgePointSchema = z.object({
-  body: z.object({
-    title: z.string().min(1).max(255).optional(),
-    content: z.string().optional(),
-    summary: z.string().max(200).optional(),
-    learning_material: z.string().optional(),
-    properties: z.record(z.unknown()).optional(),
-    visibility: z.enum(["private", "public", "pending"]).optional(),
-  }),
-  params: z.object({
-    id: z.string().uuid(),
-  }),
+  title: z.string().min(1).max(255).optional(),
+  content: z.string().optional(),
+  summary: z.string().max(200).optional(),
+  learning_material: z.string().optional(),
+  properties: z.record(z.unknown()).optional(),
+  visibility: z.enum(["private", "public", "pending"]).optional(),
 });
 
 export const searchSimilarSchema = z.object({

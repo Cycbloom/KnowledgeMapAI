@@ -1,7 +1,7 @@
 import type { AIProviderType, AIProviderConfig } from "@shared/types";
 import { appSettingsService } from "../core/appSettingsService";
 import { logger } from "../../utils/logger";
-import { decrypt, getEncryptionKey } from "../../../shared/utils/encryption";
+import { decrypt, getEncryptionKey, isEncryptedApiKey } from "../../../shared/utils/encryption";
 
 // Providers that support embedding functionality
 const EMBEDDING_CAPABLE_PROVIDERS: AIProviderType[] = [
@@ -74,7 +74,7 @@ export const getProviderConfig = async (
 
       // 解密数据库中存储的 apiKey（加密格式为 iv:authTag:ciphertext，恰含 2 个冒号）
       let apiKey = dbConfig.apiKey || "";
-      if (apiKey && apiKey.split(":").length === 3) {
+      if (isEncryptedApiKey(apiKey)) {
         try {
           apiKey = decrypt(apiKey, getEncryptionKey());
         } catch {

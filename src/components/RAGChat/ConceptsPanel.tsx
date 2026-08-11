@@ -72,7 +72,7 @@ export const ConceptsPanel: React.FC<ConceptsPanelProps> = ({
               </div>
               <button
                 onClick={() => onAddConcept(concept)}
-                className="ml-2 p-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                className="ml-2 p-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                 title={t("aiChat.addToGraph")}
               >
                 <Plus size={14} />

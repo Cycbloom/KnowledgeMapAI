@@ -108,7 +108,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {task.status === "pending" && (
             <button
               onClick={() => onStartTask(task)}
-              className={`p-1.5 rounded-md transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
+              className={`p-1.5 rounded-md transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center ${queueStyle.bg} ${queueStyle.text}`}
               aria-label={t("common.aria.startTask")}
             >
               <Zap size={14} />
@@ -118,7 +118,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {task.status === "in_progress" && (
             <button
               onClick={() => onPauseTask(task)}
-              className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
+              className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label={t("common.aria.pauseTask")}
             >
               <Clock size={14} />
@@ -128,7 +128,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {(task.status === "pending" || task.status === "in_progress" || task.status === "paused") && (
             <button
               onClick={() => onCompleteTask(task)}
-              className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
+              className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label={t("common.aria.completeTask")}
             >
               <CheckCircle2 size={14} />
@@ -137,7 +137,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           <button
             onClick={() => onEditTask(task)}
-            className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
+            className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label={t("common.aria.editTask")}
           >
             <Target size={14} />
@@ -145,7 +145,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           <button
             onClick={() => onLinkKnowledgePoint(task.id)}
-            className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
+            className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label={t("common.aria.linkKnowledgePoint")}
           >
             <Link2 size={14} />
@@ -153,7 +153,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           <button
             onClick={() => onDeleteTask(task)}
-            className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
+            className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label={t("common.aria.deleteTask")}
           >
             <AlertCircle size={14} />

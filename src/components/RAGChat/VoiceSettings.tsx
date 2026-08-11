@@ -224,7 +224,7 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
       {isCurrentMessage && isSpeaking && (
         <button
           onClick={onStop}
-          className={`p-1.5 rounded-lg transition-colors ${
+          className={`p-1.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
             isDark 
               ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' 
               : 'bg-red-100 text-red-600 hover:bg-red-200'

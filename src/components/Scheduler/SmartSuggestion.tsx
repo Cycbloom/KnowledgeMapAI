@@ -212,7 +212,7 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
               e.stopPropagation();
               loadSuggestions();
             }}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             title={t('scheduler.smartSuggestion.refresh')}
             aria-label={t('scheduler.smartSuggestion.refresh')}
           >

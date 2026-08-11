@@ -64,7 +64,7 @@ export const CollaboratorList: React.FC<CollaboratorListProps> = ({
             {isOwner && collaborator.role !== "owner" && (
               <button
                 onClick={() => onRemove?.(collaborator.user_id)}
-                className="p-1 text-red-500 hover:text-red-700"
+                className="p-1 text-red-500 hover:text-red-700 min-h-[44px] min-w-[44px] touch-target flex items-center justify-center"
                 aria-label={t("common.aria.removeCollaborator")}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

@@ -5,6 +5,7 @@ import { formatDate } from "../../../utils/formatters";
 import { Skeleton } from "../../common/Skeleton";
 import { EmptyState } from "../../common/EmptyState";
 import { VirtualList } from "../../common/VirtualList";
+import { withFallback } from "../../common/withFallback";
 import type { BacklinkItem } from "@shared/types";
 
 export interface BacklinksPanelProps {
@@ -119,3 +120,6 @@ export const BacklinksPanel: React.FC<BacklinksPanelProps> = ({
     />
   );
 };
+
+/** 使用 ErrorBoundary 包裹的 BacklinksPanel，支持面板级优雅降级 */
+export const SafeBacklinksPanel = withFallback(BacklinksPanel, { variant: 'panel' });

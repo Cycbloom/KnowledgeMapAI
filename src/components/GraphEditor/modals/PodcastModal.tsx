@@ -160,7 +160,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
             <button
               onClick={onClose}
               aria-label={t("common.aria.close")}
-              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
+              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center"
             >
               <X size={20} className="text-slate-500" aria-hidden="true" />
             </button>

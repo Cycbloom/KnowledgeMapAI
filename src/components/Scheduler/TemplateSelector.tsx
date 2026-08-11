@@ -189,7 +189,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
           </h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
           >
             <X size={20} />
           </button>

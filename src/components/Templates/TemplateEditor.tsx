@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useTheme, useIsMobile, useFormDraft } from "../../hooks";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
+import { useKeyboardHandler } from "../../hooks/gesture/useKeyboardHandler";
 import { ConfirmationModal } from "../common/ConfirmationModal";
 
 interface TemplateEditorProps {
@@ -301,6 +302,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   onSave,
   onCancel,
 }) => {
+  useKeyboardHandler();
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();

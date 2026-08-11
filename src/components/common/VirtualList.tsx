@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
 import { cn } from '@/utils/utils';
 import { useReducedMotionOrPreference } from '@/hooks/common/useReducedMotionOrPreference';
+import { useIsMobile } from '@/hooks/common/useIsMobile';
 import { EmptyState } from './EmptyState';
 import { Loading } from './Loading';
 
@@ -60,8 +61,10 @@ interface AnimatedItemProps {
 
 function AnimatedItem({ children, index, animate, className }: AnimatedItemProps) {
   const { transitionOverride } = useReducedMotionOrPreference();
+  const { isMobile } = useIsMobile();
 
-  if (!animate) {
+  // 移动端禁用入场动画，避免不必要的重渲染
+  if (!animate || isMobile) {
     return <div className={className}>{children}</div>;
   }
 

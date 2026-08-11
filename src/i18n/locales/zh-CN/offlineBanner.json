@@ -7,6 +7,8 @@
   "message": {
     "offlineHint": "当前离线，编辑将暂存到本地",
     "syncingHint": "同步中...",
-    "pendingCount": "{{count}} 项待同步"
+    "pendingCount": "{{count}} 项待同步",
+    "syncComplete": "同步完成",
+    "syncFailed": "同步失败"
   }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Play, Pause, Check, Coffee } from 'lucide-react';
@@ -24,28 +24,11 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
   onComplete,
 }) => {
   const [displayTime, setDisplayTime] = useState(elapsed);
-  const [glowOffset, setGlowOffset] = useState(0);
-  const animationRef = useRef<number | null>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
     setDisplayTime(elapsed);
   }, [elapsed]);
-
-  useEffect(() => {
-    if (isRunning) {
-      const animate = () => {
-        setGlowOffset(Math.sin(Date.now() / 500) * 10);
-        animationRef.current = requestAnimationFrame(animate);
-      };
-      animationRef.current = requestAnimationFrame(animate);
-      return () => {
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
-      };
-    }
-  }, [isRunning]);
 
   const remaining = Math.max(0, duration - displayTime);
   const progress = duration > 0 ? Math.min(1, displayTime / duration) : 0;
@@ -157,10 +140,12 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
         {isRunning && (
           <motion.div
             className="absolute inset-0 rounded-full pointer-events-none"
-            style={{
-              boxShadow: `0 0 ${20 + glowOffset}px ${progressColor}40`,
-            }}
             animate={{
+              boxShadow: [
+                `0 0 20px ${progressColor}40`,
+                `0 0 35px ${progressColor}40`,
+                `0 0 20px ${progressColor}40`,
+              ],
               opacity: [0.5, 0.8, 0.5],
             }}
             transition={{

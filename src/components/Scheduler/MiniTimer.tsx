@@ -122,14 +122,14 @@ export const MiniTimer: React.FC<MiniTimerProps> = ({
             <button
               onClick={onExpand}
               aria-label={t('common.aria.expand')}
-              className="p-1 rounded hover:bg-white/20 transition-colors text-white/80 hover:text-white"
+              className="p-1 rounded hover:bg-white/20 transition-colors text-white/80 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <Maximize2 size={14} aria-hidden="true" />
             </button>
             <button
               onClick={onClose}
               aria-label={t('common.aria.close')}
-              className="p-1 rounded hover:bg-white/20 transition-colors text-white/80 hover:text-white"
+              className="p-1 rounded hover:bg-white/20 transition-colors text-white/80 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <X size={14} aria-hidden="true" />
             </button>

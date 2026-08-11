@@ -844,7 +844,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
               onClick={handleRemoveFile}
               disabled={isProcessing}
               aria-label={t("literatureExtract.toolbar.removeFile")}
-              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
+              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <X size={16} className="text-gray-400" aria-hidden="true" />
             </button>
@@ -1539,7 +1539,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
           <button
             onClick={onClose}
             aria-label={t("common.aria.close")}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center"
           >
             <X size={isMobile ? 18 : 20} aria-hidden="true" />
           </button>

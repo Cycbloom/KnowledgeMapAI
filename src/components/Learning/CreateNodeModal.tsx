@@ -125,7 +125,7 @@ export const CreateNodeModal = ({
             <button
               onClick={onClose}
               aria-label={t("common.aria.close")}
-              className={`p-1.5 rounded-lg transition-colors ${isDark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
+              className={`p-1.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center ${isDark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
             >
               <X size={20} aria-hidden="true" />
             </button>

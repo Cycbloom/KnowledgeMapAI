@@ -48,6 +48,7 @@ import { WritingAssistPopover } from "./WritingAssistPopover";
 import { BlockRefPopover } from "./BlockRefPopover";
 import { extractBlockId, generateBlockId } from "@shared/utils/blockRef";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { useKeyboardHandler } from "../../hooks/gesture/useKeyboardHandler";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -96,6 +97,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
   onWikiLinkNavigate,
   autoSave = true,
 }) => {
+  useKeyboardHandler();
   const { t } = useTranslation();
   const updateMutation = useUpdateNoteMutation();
   const uploadImageMutation = useUploadNoteImageMutation();

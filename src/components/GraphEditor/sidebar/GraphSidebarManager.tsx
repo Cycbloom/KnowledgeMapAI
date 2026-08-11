@@ -402,19 +402,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
 
   return (
     <>
-      <ErrorBoundary
-        fallback={
-          <div className="w-80 bg-white dark:bg-gray-900 shadow-lg border-l border-gray-200 dark:border-gray-700 absolute right-0 top-0 bottom-0 z-20 flex flex-col p-4 items-center justify-center">
-            <div className="text-red-500 font-bold mb-2">{t('graphEditor.sidebar.error.componentError')}</div>
-            <button
-              onClick={handleCloseSidebar}
-              className="text-primary-600 underline"
-            >
-              {t('graphEditor.sidebar.error.closeSidebar')}
-            </button>
-          </div>
-        }
-      >
+      <ErrorBoundary variant="panel">
         <div
           ref={sidebarRef}
           data-tour="sidebar-panel"

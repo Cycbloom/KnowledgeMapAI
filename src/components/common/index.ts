@@ -1,6 +1,8 @@
 export { Button } from "./Button";
 export type { ButtonProps, ButtonVariant, ButtonSize } from "./Button";
 export { ErrorBoundary, withErrorBoundary } from "./ErrorBoundary";
+export { withFallback } from "./withFallback";
+export type { WithFallbackOptions } from "./withFallback";
 export { RouteErrorFallback } from "./RouteErrorFallback";
 export type { RouteFallbackProps } from "./RouteErrorFallback";
 export {
@@ -20,6 +22,8 @@ export type { SkeletonListProps } from "./SkeletonList";
 export { EmptyState } from "./EmptyState";
 export { EmptyStateCard } from "./EmptyStateCard";
 export type { EmptyStateCardProps } from "./EmptyStateCard";
+export { ErrorBanner } from "./ErrorBanner";
+export type { ErrorBannerProps, ErrorBannerLevel } from "./ErrorBanner";
 export { ErrorState } from "./ErrorState";
 export type { ErrorStateProps } from "./ErrorState";
 export { RetryButton } from "./RetryButton";
@@ -30,6 +34,7 @@ export type { LazyLoadFallbackProps, LazyLoadFallbackVariant } from "./LazyLoadF
 export { MessageBar } from "./MessageBar";
 export { OfflineIndicator } from "./OfflineIndicator";
 export { OfflineStatusBar } from "./OfflineStatusBar";
+export { OfflineSyncProgress } from "./OfflineSyncProgress";
 export { ConfirmationModal } from "./ConfirmationModal";
 export { ModalShell } from "./ModalShell";
 export { FocusTimer } from "./FocusTimer";
@@ -66,3 +71,4 @@ export { StaggerChildren } from "./StaggerChildren";
 export type { StaggerChildrenProps } from "./StaggerChildren";
 export { VirtualList, VirtualGrid } from "./VirtualList";
 export type { VirtualListProps, VirtualGridProps } from "./VirtualList";
+export { UpdateOverlay } from "./UpdateOverlay";

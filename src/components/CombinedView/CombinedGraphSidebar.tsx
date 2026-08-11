@@ -422,9 +422,9 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
             <button
               onClick={onClose}
               aria-label={t('common.aria.close')}
-              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors text-slate-400"
+              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors text-slate-400 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center"
             >
-              <X size={16} aria-hidden="true" />
+              <X size={20} aria-hidden="true" />
             </button>
           </div>
           

@@ -73,7 +73,7 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
           </div>
           <button
             onClick={onCancel}
-            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
             aria-label={t("conceptAggregation.mergeAlias.close")}
           >
             <X size={18} className="text-slate-500" />

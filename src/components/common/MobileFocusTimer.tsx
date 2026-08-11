@@ -209,7 +209,7 @@ export const MobileFocusTimer: React.FC = () => {
               <div className="flex items-center gap-1">
                 <button
                   onClick={handleCollapse}
-                  className="p-1.5 rounded-full hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors"
+                  className="p-1.5 rounded-full hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                   aria-label={t("common.aria.minimize")}
                 >
                   {isOnRight ? (
@@ -220,7 +220,7 @@ export const MobileFocusTimer: React.FC = () => {
                 </button>
                 <button
                   onClick={closePanel}
-                  className="p-1.5 rounded-full hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors"
+                  className="p-1.5 rounded-full hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                   aria-label={t("common.aria.close")}
                 >
                   <X size={16} className="text-gray-500" />

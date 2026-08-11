@@ -9,7 +9,12 @@ import { ConsoleInput, type ConsoleInputRef } from './ConsoleInput';
 import { ConsoleOutput, type ConsoleOutputRef } from './ConsoleOutput';
 import { ConsoleHistory } from './ConsoleHistory';
 import { ConfirmationModal } from '@/components/common/ConfirmationModal';
-import { PerformanceTab } from './PerformanceTab';
+
+// PerformanceTab（约 109KB，主入口最大 src 模块）仅在 Console 的 performance tab
+// 激活时才渲染，改用 React.lazy 懒加载，避免其进入首屏 index chunk。
+const PerformanceTab = React.lazy(() =>
+  import('./PerformanceTab').then((m) => ({ default: m.PerformanceTab })),
+);
 
 type TabType = 'console' | 'performance';
 
@@ -367,7 +372,9 @@ export const Console: React.FC<ConsoleProps> = ({
                   aria-labelledby={performanceTabId}
                   className="flex flex-1 min-h-0"
                 >
-                  <PerformanceTab isDark={isDark} />
+                  <React.Suspense fallback={null}>
+                    <PerformanceTab isDark={isDark} />
+                  </React.Suspense>
                 </div>
               )}
             </div>

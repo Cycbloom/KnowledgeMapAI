@@ -91,7 +91,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
               <button
                 onClick={onClose}
                 aria-label={t('common.aria.close')}
-                className={`p-1 rounded-lg ${isDark ? "hover:bg-slate-700" : "hover:bg-gray-100"}`}
+                className={`p-1 rounded-lg min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center ${isDark ? "hover:bg-slate-700" : "hover:bg-gray-100"}`}
               >
                 <X
                   size={20}

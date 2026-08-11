@@ -24,7 +24,7 @@ export function CopyButton({ text }: CopyButtonProps) {
   return (
     <button
       onClick={handleCopy}
-      className="absolute top-2 right-2 p-1.5 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:hover:bg-slate-500 transition-colors"
+      className="absolute top-2 right-2 p-1.5 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:hover:bg-slate-500 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
       title={t("common.copyError")}
       aria-label={t("common.copyError")}
     >

@@ -194,7 +194,7 @@ const SortableNode: React.FC<SortableNodeProps> = ({
       <div className="flex items-center gap-1">
         <button
           onClick={() => onStatusChange(node.id, node.status === 'completed' ? 'pending' : 'completed')}
-          className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
+          className={`p-1.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
           title={node.status === 'completed' ? t('learning.pathEditor.markIncomplete') : t('learning.pathEditor.markComplete')}
         >
           {statusIcons[node.status]}

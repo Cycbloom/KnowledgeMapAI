@@ -226,7 +226,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                                     e.stopPropagation();
                                     setEditingDeadlineId(editingDeadlineId === task.id ? null : task.id);
                                   }}
-                                  className="p-1 rounded bg-white/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors shadow-sm backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60"
+                                  className="p-1 rounded bg-white/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors shadow-sm backdrop-blur-sm min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60"
                                   aria-label={t('scheduler.timeline.changeDeadline')}
                                   title={t('scheduler.timeline.changeDeadline')}
                                 >

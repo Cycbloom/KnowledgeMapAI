@@ -50,7 +50,7 @@ const SingleNotification: React.FC<{
       <div className="relative p-4">
         <button
           onClick={() => onDismiss(notification.id)}
-          className="absolute top-2 right-2 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+          className="absolute top-2 right-2 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
         >
           <X size={16} />
         </button>

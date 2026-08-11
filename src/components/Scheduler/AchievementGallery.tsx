@@ -430,7 +430,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
                 </div>
                 <button
                   onClick={() => setSelectedAchievement(null)}
-                  className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400"
+                  className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 >
                   <X size={20} />
                 </button>

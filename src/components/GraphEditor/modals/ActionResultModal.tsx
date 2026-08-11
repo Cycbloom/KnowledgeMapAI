@@ -49,7 +49,7 @@ export const ActionResultModal: React.FC<ActionResultModalProps> = ({
           </h2>
           <button
             onClick={onClose}
-            className={`p-1 rounded-full transition-colors ${
+            className={`p-1 rounded-full transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center ${
               isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"
             }`}
           >

@@ -7,6 +7,7 @@ import {
   useInboundBlockRefs,
   useBlockContent,
 } from "../../hooks/queries";
+import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { SkeletonList } from "../common/SkeletonList";
 import { Skeleton } from "../common/Skeleton";
 import { EmptyState } from "../common/EmptyState";
@@ -129,10 +130,19 @@ export const InboundBlockRefsPanel: React.FC<InboundBlockRefsPanelProps> = ({
   noteId,
 }) => {
   const { t } = useTranslation();
+  const { isMobile } = useIsMobile();
   const { data: refs, isLoading, error } = useInboundBlockRefs(noteId);
 
   // 加载态
   if (isLoading) {
+    // 移动端直接渲染骨架屏，跳过 motion.div 动画
+    if (isMobile) {
+      return (
+        <div>
+          <SkeletonList items={2} />
+        </div>
+      );
+    }
     return (
       <motion.div
         initial={{ opacity: 0 }}

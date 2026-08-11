@@ -359,7 +359,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   e.stopPropagation();
                   onRejectRelation(suggestion.id);
                 }}
-                className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors"
+                className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                 title={t("conceptAggregation.hierarchy.rejectRelation")}
                 aria-label={t("conceptAggregation.hierarchy.rejectRelation")}
               >

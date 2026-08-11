@@ -200,7 +200,7 @@ export const PassProgress: React.FC<PassProgressProps> = ({
           <button
             onClick={() => scroll("left")}
             aria-label={t('common.aria.scrollLeft')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border border-slate-200 dark:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 min-w-[44px] min-h-[44px] w-auto h-auto bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border border-slate-200 dark:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700"
           >
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </button>
@@ -210,7 +210,7 @@ export const PassProgress: React.FC<PassProgressProps> = ({
           <button
             onClick={() => scroll("right")}
             aria-label={t('common.aria.scrollRight')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border border-slate-200 dark:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 min-w-[44px] min-h-[44px] w-auto h-auto bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border border-slate-200 dark:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700"
           >
             <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </button>

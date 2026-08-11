@@ -34,7 +34,7 @@ import { NodeLinkSelector } from "./NodeLinkSelector";
 import { BacklinksPanel } from "./BacklinksPanel";
 import { NotesPanel } from "../../Notes/NotesPanel";
 import { NodeBlockRefsPanel } from "../../Notes/NodeBlockRefsPanel";
-import { EmptyState } from "../../common/EmptyState";
+import { EmptyState, ErrorBoundary } from "../../common";
 import { SaveButton } from "../../common/SaveButton";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 
@@ -600,20 +600,26 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
         className={`flex-1 overflow-y-auto ${isMobile ? "space-y-5 px-1 pb-32" : "space-y-4 pr-1"}`}
       >
         {mode === "edit" && contentTab === "backlinks" ? (
-          <BacklinksPanel
-            knowledgePointId={currentNodeId}
-            currentGraphId={graphId}
-            onNavigateToNode={onNavigateToNode}
-          />
+          <ErrorBoundary variant="panel">
+            <BacklinksPanel
+              knowledgePointId={currentNodeId}
+              currentGraphId={graphId}
+              onNavigateToNode={onNavigateToNode}
+            />
+          </ErrorBoundary>
         ) : mode === "edit" && contentTab === "notes" ? (
           <div className="space-y-4">
-            <NotesPanel nodeId={currentNodeId} graphId={graphId} />
+            <ErrorBoundary variant="panel">
+              <NotesPanel nodeId={currentNodeId} graphId={graphId} />
+            </ErrorBoundary>
             {/* P3 Task 10.1: 引用此节点的块(块级反向链接) */}
             <div>
               <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                 {t("notes.blockRefsPanel.nodeTitle")}
               </h4>
-              <NodeBlockRefsPanel nodeId={currentNodeId} />
+              <ErrorBoundary variant="panel">
+                <NodeBlockRefsPanel nodeId={currentNodeId} />
+              </ErrorBoundary>
             </div>
           </div>
         ) : (
@@ -980,7 +986,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 <button
                   type="button"
                   onClick={handleItalic}
-                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                   title={t("graphEditor.nodeEditSidebar.toolbar.italic")}
                   aria-label={t("common.aria.italic")}
                 >
@@ -1007,7 +1013,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 <button
                   type="button"
                   onClick={handleCodeBlock}
-                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                   title={t("graphEditor.nodeEditSidebar.toolbar.codeBlock")}
                   aria-label={t("graphEditor.nodeEditSidebar.toolbar.codeBlock")}
                 >

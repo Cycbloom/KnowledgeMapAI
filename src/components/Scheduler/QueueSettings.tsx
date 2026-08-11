@@ -220,7 +220,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
             <div className="flex gap-1">
               <button
                 onClick={handleCancelEdit}
-                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 <X size={14} />
               </button>
@@ -373,7 +373,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <X size={20} />
           </button>

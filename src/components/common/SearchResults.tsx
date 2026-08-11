@@ -296,7 +296,7 @@ const SearchResultsComponent: React.FC<SearchResultsProps> = ({
                         e.stopPropagation();
                         navigateToNode(node.graph_id, getNodeId(node), 'learning');
                       }}
-                      className="p-1.5 rounded-md hover:bg-green-50 dark:hover:bg-green-900/30 text-gray-400 hover:text-green-500 transition-colors"
+                      className="p-1.5 rounded-md hover:bg-green-50 dark:hover:bg-green-900/30 text-gray-400 hover:text-green-500 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                       title={t('dashboard.search.navigateToLearning')}
                       aria-label={t('dashboard.search.navigateToLearning')}
                     >

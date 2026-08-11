@@ -58,7 +58,7 @@ export const KnowledgePointLinkModal: React.FC<KnowledgePointLinkModalProps> = (
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
                   aria-label={t("common.aria.close")}
                 >
                   <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

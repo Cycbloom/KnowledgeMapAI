@@ -754,7 +754,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                 <button
                                   onClick={() => removeNoise(noise.type)}
                                   aria-label={t('common.aria.close')}
-                                  className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-red-500 transition-colors"
+                                  className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-red-500 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                                 >
                                   <X size={14} />
                                 </button>

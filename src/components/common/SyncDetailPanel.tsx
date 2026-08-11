@@ -27,7 +27,7 @@ export function SyncDetailPanel({ status, onSync, onClose }: SyncDetailPanelProp
     >
       <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('common.syncDetail.title')}</h3>
-        <button onClick={onClose} aria-label={t('common.aria.close')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+        <button onClick={onClose} aria-label={t('common.aria.close')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center">
           <X aria-hidden="true" className="w-4 h-4" />
         </button>
       </div>

@@ -4,9 +4,11 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { FileText, Quote } from "lucide-react";
 import { useBlockRefBacklinks } from "../../hooks/queries";
+import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { SkeletonList } from "../common/SkeletonList";
 import { EmptyState } from "../common/EmptyState";
 import { VirtualList } from "../common/VirtualList";
+import { withFallback } from "../common/withFallback";
 import type { NodeBlockRefBacklink } from "@shared/types/backlink";
 
 export interface NodeBlockRefsPanelProps {
@@ -33,6 +35,7 @@ export const NodeBlockRefsPanel: React.FC<NodeBlockRefsPanelProps> = ({
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { isMobile } = useIsMobile();
   const { data: items, isLoading, error } = useBlockRefBacklinks(nodeId);
 
   // 无节点 ID 时显示空状态
@@ -48,6 +51,14 @@ export const NodeBlockRefsPanel: React.FC<NodeBlockRefsPanelProps> = ({
 
   // 加载态:渲染 SkeletonList 骨架屏
   if (isLoading) {
+    // 移动端直接渲染骨架屏，跳过 motion.div 动画
+    if (isMobile) {
+      return (
+        <div>
+          <SkeletonList items={2} />
+        </div>
+      );
+    }
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -124,3 +135,6 @@ export const NodeBlockRefsPanel: React.FC<NodeBlockRefsPanelProps> = ({
     />
   );
 };
+
+/** 使用 ErrorBoundary 包裹的 NodeBlockRefsPanel，支持面板级优雅降级 */
+export const SafeNodeBlockRefsPanel = withFallback(NodeBlockRefsPanel, { variant: 'panel' });

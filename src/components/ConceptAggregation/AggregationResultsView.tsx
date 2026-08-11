@@ -123,7 +123,7 @@ const ConceptMemberCard: React.FC<ConceptMemberCardProps> = ({
         {!isTarget && (
           <button
             onClick={() => onSplit(groupId, member.knowledgePointId)}
-            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
             title={t('conceptAggregation.results.removeFromGroup')}
             aria-label={t('conceptAggregation.results.removeFromGroup')}
           >

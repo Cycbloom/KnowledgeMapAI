@@ -57,7 +57,7 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
           <button
             onClick={onClose}
             aria-label={t('common.aria.close')}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center"
           >
             ✕
           </button>

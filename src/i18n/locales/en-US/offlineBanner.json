@@ -7,6 +7,8 @@
   "message": {
     "offlineHint": "Currently offline. Edits will be saved locally.",
     "syncingHint": "Syncing...",
-    "pendingCount": "{{count}} pending"
+    "pendingCount": "{{count}} pending",
+    "syncComplete": "Sync complete",
+    "syncFailed": "Sync failed"
   }
 }

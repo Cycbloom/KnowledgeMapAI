@@ -81,7 +81,7 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
     onClick={onClick}
     disabled={disabled || loading}
     className={cn(
-      "inline-flex items-center justify-center w-8 h-8 rounded-md transition-colors",
+      "inline-flex items-center justify-center min-w-[44px] min-h-[44px] w-auto h-auto rounded-md transition-colors",
       "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800",
       isActive
         ? "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-300"

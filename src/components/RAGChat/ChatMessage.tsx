@@ -318,7 +318,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               <>
                 <button
                   onClick={handleQuoteMessage}
-                  className={`p-1.5 rounded-md transition-colors ${
+                  className={`p-1.5 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                     isDark
                       ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
                       : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
@@ -330,7 +330,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 </button>
                 <button
                   onClick={handleCopyMessage}
-                  className={`p-1.5 rounded-md transition-colors ${
+                  className={`p-1.5 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                     isDark
                       ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
                       : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
@@ -344,7 +344,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                   <button
                     onClick={onRegenerate}
                     disabled={isLoading}
-                    className={`p-1.5 rounded-md transition-colors ${
+                    className={`p-1.5 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                       isLoading
                         ? isDark
                           ? "text-slate-600 cursor-not-allowed"
@@ -412,7 +412,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             <button
               onClick={startEditing}
               disabled={isLoading}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1.5 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                 isLoading
                   ? isDark
                     ? "text-slate-600 cursor-not-allowed"

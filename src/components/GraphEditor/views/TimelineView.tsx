@@ -543,7 +543,7 @@ const TimelineViewComponent: React.FC<TimelineViewProps> = ({
 
             <button
               onClick={handleStepForward}
-              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
+              className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] touch-target flex items-center justify-center ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
               title={t('common.aria.nextStep')}
               aria-label={t('common.aria.nextStep')}
             >

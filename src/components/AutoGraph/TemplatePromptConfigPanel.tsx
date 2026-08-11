@@ -231,7 +231,7 @@ export const TemplatePromptConfigPanel: React.FC<
           <button
             onClick={handleClose}
             aria-label={t('common.aria.close')}
-            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
+            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </button>

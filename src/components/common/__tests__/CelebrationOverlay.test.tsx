@@ -67,12 +67,15 @@ describe("CelebrationOverlay", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("应该收到 celebration_burst 事件且 celebrationEnabled=true 且非 reduced-motion 时调用 confetti()", () => {
+  it("应该收到 celebration_burst 事件且 celebrationEnabled=true 且非 reduced-motion 时调用 confetti()", async () => {
     render(<CelebrationOverlay />);
 
     act(() => {
       frontendEventBus.publish("celebration_burst", buildPayload());
     });
+
+    // 处理器为 async 且动态 import canvas-confetti，需等待微任务完成后再断言
+    await act(async () => {});
 
     expect(vi.mocked(confetti)).toHaveBeenCalledTimes(1);
     const options = vi.mocked(confetti).mock.calls[0]?.[0];

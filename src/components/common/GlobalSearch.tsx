@@ -303,7 +303,7 @@ export const GlobalSearch = () => {
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
           <button
             onClick={() => setShowFilters(prev => !prev)}
-            className={cn("p-1 rounded-md transition-colors",
+            className={cn("p-1 rounded-md transition-colors touch-target flex items-center justify-center",
               showFilters
                 ? 'bg-primary-500 text-white'
                 : isDark ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
@@ -333,7 +333,7 @@ export const GlobalSearch = () => {
                 setQuery('');
               }}
               aria-label={t('common.aria.close')}
-              className={cn("p-1 rounded-md transition-colors",
+              className={cn("p-1 rounded-md transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center",
                 isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
               )}
             >
@@ -441,7 +441,7 @@ export const GlobalSearch = () => {
                         e.stopPropagation();
                         removeFromHistory(item.query);
                       }}
-                      className={cn("opacity-0 group-hover:opacity-100 p-1 rounded transition-all",
+                      className={cn("opacity-0 group-hover:opacity-100 p-1 rounded transition-all touch-target flex items-center justify-center",
                         isDark ? 'hover:bg-slate-600 text-slate-400' : 'hover:bg-gray-200 text-gray-500'
                       )}
                       aria-label={t('common.search.history.removeItem', { query: item.query })}

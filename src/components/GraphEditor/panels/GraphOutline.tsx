@@ -1418,7 +1418,7 @@ export const GraphOutline = React.memo(function GraphOutline({
             {!isReadOnly && (
               <button
                 onClick={handleSelectIsolated}
-                className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-orange-500"
+                className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-orange-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 title={t("graphEditor.outline.selectIsolatedNodes")}
                 aria-label={t("graphEditor.outline.selectIsolatedNodes")}
               >
@@ -1449,7 +1449,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                     onSelectionChange(new Set());
                   }
                 }}
-                className={`p-1.5 rounded transition-colors ${isMultiSelectMode ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                className={`p-1.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${isMultiSelectMode ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                 title={
                   isMultiSelectMode
                     ? t("graphEditor.outline.exitMultiSelect")
@@ -1489,7 +1489,7 @@ export const GraphOutline = React.memo(function GraphOutline({
             {templateType === "topic_research" && (
               <button
                 onClick={() => setViewMode("module")}
-                className={`p-1.5 rounded ${viewMode === "module" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
+                className={`p-1.5 rounded min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === "module" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
                 title={t('common.aria.moduleView')}
                 aria-label={t('common.aria.moduleView')}
               >
@@ -1499,7 +1499,7 @@ export const GraphOutline = React.memo(function GraphOutline({
             {templateType === "topic_research" && (
               <button
                 onClick={() => setViewMode("literature")}
-                className={`p-1.5 rounded ${viewMode === "literature" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
+                className={`p-1.5 rounded min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === "literature" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
                 title={t('common.aria.literatureView')}
                 aria-label={t('common.aria.literatureView')}
               >
@@ -1508,7 +1508,7 @@ export const GraphOutline = React.memo(function GraphOutline({
             )}
             <button
               onClick={() => setViewMode("tree")}
-              className={`p-1.5 rounded ${viewMode === "tree" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
+              className={`p-1.5 rounded min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === "tree" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
               title={t("graphEditor.outline.treeView")}
               aria-label={t("graphEditor.outline.treeView")}
             >
@@ -1516,7 +1516,7 @@ export const GraphOutline = React.memo(function GraphOutline({
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-1.5 rounded ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
+              className={`p-1.5 rounded min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
               title={t("graphEditor.outline.listView")}
               aria-label={t("graphEditor.outline.listView")}
             >
@@ -1549,7 +1549,7 @@ export const GraphOutline = React.memo(function GraphOutline({
               onClick={() =>
                 setSortMode((prev) => (prev === "title" ? "level" : "title"))
               }
-              className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded text-slate-500 hover:text-primary-600"
+              className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded text-slate-500 hover:text-primary-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title={
                 sortMode === "title"
                   ? t("graphEditor.outline.sortByTitle")

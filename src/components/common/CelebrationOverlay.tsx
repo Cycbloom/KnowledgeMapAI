@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import confetti from "canvas-confetti";
 import { frontendEventBus } from "@/services/timer/FrontendEventBus";
 import type { CelebrationBurstPayload } from "@/services/FrontendEventTypes";
 import { usePreferencesStore } from "@/store/usePreferencesStore";
@@ -23,7 +22,7 @@ export function CelebrationOverlay() {
 
     const unsubscribe = frontendEventBus.subscribe(
       "celebration_burst",
-      (payload: CelebrationBurstPayload) => {
+      async (payload: CelebrationBurstPayload) => {
         // 用户偏好：关闭庆祝效果则忽略
         if (!usePreferencesStore.getState().celebrationEnabled) {
           return;
@@ -36,6 +35,8 @@ export function CelebrationOverlay() {
           return;
         }
 
+        // 按需加载 canvas-confetti（庆典特效非首屏关键依赖，动态 import 缩小主入口）
+        const { default: confetti } = await import("canvas-confetti");
         // 渲染粒子：CelebrationConfig 字段与 canvas-confetti Options 结构兼容
         confetti(payload.config);
       },

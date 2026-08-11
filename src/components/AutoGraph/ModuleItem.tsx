@@ -112,7 +112,7 @@ const ModuleItemComponent: React.FC<ModuleItemProps> = ({
           onClick={onDelete}
           disabled={!canDelete || disabled}
           className={`
-            flex-shrink-0 p-1.5 rounded-md transition-colors
+            flex-shrink-0 p-1.5 rounded-md transition-colors min-h-[44px] min-w-[44px] touch-target flex items-center justify-center
             ${
               canDelete && !disabled
                 ? "text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"

@@ -757,7 +757,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                           </button>
                           <button
                             onClick={() => handleDeletePath(path.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 dark:hover:bg-red-900/20 min-h-[44px] min-w-[44px] flex items-center justify-center"
                             title={t("learning.learningPath.delete")}
                           >
                             <Trash2 className="w-4 h-4" />

@@ -178,7 +178,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 e.stopPropagation();
                 onStartTask(task);
               }}
-              className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
+              className={`p-1 rounded transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center ${queueStyle.bg} ${queueStyle.text}`}
               title={t('common.aria.start')}
               aria-label={t('common.aria.start')}
             >
@@ -192,7 +192,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 e.stopPropagation();
                 onStartTask(task);
               }}
-              className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
+              className={`p-1 rounded transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center ${queueStyle.bg} ${queueStyle.text}`}
               title={t('common.aria.continue')}
               aria-label={t('common.aria.continue')}
             >
@@ -223,7 +223,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                   e.stopPropagation();
                   onCompleteTask(task);
                 }}
-                className="p-1 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
+                className="p-1 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 title={t('common.aria.complete')}
                 aria-label={t('common.aria.complete')}
               >
@@ -237,7 +237,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 e.stopPropagation();
                 onViewTaskDetail(task);
               }}
-              className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
+              className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title={t('common.aria.details')}
               aria-label={t('common.aria.details')}
             >
@@ -251,7 +251,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 e.stopPropagation();
                 onEditTask(task);
               }}
-              className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
+              className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title={t('common.aria.edit')}
               aria-label={t('common.aria.edit')}
             >
@@ -265,7 +265,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
                 e.stopPropagation();
                 onDeleteTask(task);
               }}
-              className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
+              className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title={t('common.aria.delete')}
               aria-label={t('common.aria.delete')}
             >

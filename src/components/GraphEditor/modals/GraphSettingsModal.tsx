@@ -120,7 +120,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
             </div>
             <h2 id="graph-settings-modal-title" className="text-xl font-bold text-gray-800 dark:text-gray-100">{t('graphEditor.settings.title')}</h2>
           </div>
-          <button onClick={onClose} aria-label={t('common.aria.close')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 touch-target">
+          <button onClick={onClose} aria-label={t('common.aria.close')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center">
             <X size={24} />
           </button>
         </div>

@@ -161,7 +161,7 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
               )}
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center"
               >
                 <X size={18} className="text-slate-500" />
               </button>

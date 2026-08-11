@@ -414,19 +414,19 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
       <div className="absolute bottom-4 right-4 flex flex-col gap-2">
         <button
           onClick={() => setTransform(prev => ({ ...prev, k: Math.min(5, prev.k * 1.2) }))}
-          className="w-8 h-8 bg-gray-700 hover:bg-gray-600 rounded text-white flex items-center justify-center"
+          className="min-w-[44px] min-h-[44px] w-auto h-auto bg-gray-700 hover:bg-gray-600 rounded text-white flex items-center justify-center"
         >
           +
         </button>
         <button
           onClick={() => setTransform(prev => ({ ...prev, k: Math.max(0.1, prev.k * 0.8) }))}
-          className="w-8 h-8 bg-gray-700 hover:bg-gray-600 rounded text-white flex items-center justify-center"
+          className="min-w-[44px] min-h-[44px] w-auto h-auto bg-gray-700 hover:bg-gray-600 rounded text-white flex items-center justify-center"
         >
           -
         </button>
         <button
           onClick={() => setTransform({ x: 0, y: 0, k: 1 })}
-          className="w-8 h-8 bg-gray-700 hover:bg-gray-600 rounded text-white flex items-center justify-center text-xs"
+          className="min-w-[44px] min-h-[44px] w-auto h-auto bg-gray-700 hover:bg-gray-600 rounded text-white flex items-center justify-center text-xs"
         >
           ⟲
         </button>

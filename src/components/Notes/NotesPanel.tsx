@@ -5,6 +5,7 @@ import { useNotesByNode } from "../../hooks/queries";
 import { SkeletonList } from "../common/SkeletonList";
 import { EmptyState } from "../common/EmptyState";
 import { VirtualList } from "../common/VirtualList";
+import { withFallback } from "../common/withFallback";
 import { formatDate } from "../../utils/formatters";
 import type { NoteType } from "@shared/types/note";
 
@@ -156,3 +157,6 @@ const areEqual = (prev: NotesPanelProps, next: NotesPanelProps) => {
 };
 
 export const NotesPanel = React.memo(NotesPanelComponent, areEqual);
+
+/** 使用 ErrorBoundary 包裹的 NotesPanel，支持面板级优雅降级 */
+export const SafeNotesPanel = withFallback(NotesPanel, { variant: 'panel' });

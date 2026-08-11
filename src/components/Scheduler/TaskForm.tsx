@@ -40,6 +40,7 @@ import {
 } from "../../services/api/taskRecommendation";
 import { TemplateSelector } from "./TemplateSelector";
 import { useFormDraft, useBeforeUnload } from "../../hooks";
+import { useKeyboardHandler } from "../../hooks/gesture/useKeyboardHandler";
 import { ConfirmationModal } from "../common/ConfirmationModal";
 import { SaveButton } from "../common/SaveButton";
 
@@ -77,6 +78,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   availableTasks = [],
   timeSliceSettings = null,
 }) => {
+  useKeyboardHandler();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isEditing = !!task;
@@ -468,7 +470,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           </h2>
           <button
             onClick={handleClose}
-            className="p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors touch-target"
+            className="p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center"
           >
             <X size={20} />
           </button>

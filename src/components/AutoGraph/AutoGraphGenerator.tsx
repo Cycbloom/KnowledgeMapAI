@@ -245,7 +245,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
             <button
               onClick={handleExpand}
               disabled={node.isLoading || isExpanding}
-              className={`${isMobile ? "p-1" : "p-1.5"} bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50 transition-colors`}
+              className={`${isMobile ? "p-1.5" : "p-1.5"} bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50 transition-colors min-h-[44px] min-w-[44px] touch-target flex items-center justify-center`}
               title={t("autoGraph.aiExpandNode")}
               aria-label={t("autoGraph.aiExpandNode")}
             >
@@ -813,7 +813,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 e.stopPropagation();
                 setShowTemplatePromptConfig(true);
               }}
-              className={`p-1 rounded-md hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors cursor-pointer`}
+              className={`p-1 rounded-md hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center`}
               aria-label={t("autoGraph.editPrompt")}
               title={t("autoGraph.editPrompt")}
             >
@@ -1477,7 +1477,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           <button
             onClick={onClose}
             aria-label={t('common.aria.close')}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center"
           >
             <X size={isMobile ? 18 : 20} />
           </button>

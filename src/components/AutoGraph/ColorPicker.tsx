@@ -59,7 +59,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={colorListId}
-        className={`flex items-center justify-center w-8 h-8 border rounded-md transition-colors ${
+        className={`flex items-center justify-center min-w-[44px] min-h-[44px] w-auto h-auto border rounded-md transition-colors ${
           disabled
             ? "bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-50"
             : "bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600"

@@ -398,7 +398,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
           <button
             onClick={onClose}
             aria-label={t("conceptAggregation.panel.close")}
-            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-target flex items-center justify-center"
           >
             <X size={20} className="text-slate-500" />
           </button>

@@ -273,7 +273,7 @@ export const NotificationCenter: React.FC = () => {
                 {unreadCount > 0 && (
                   <button
                     onClick={handleMarkAllAsRead}
-                    className={`p-1.5 rounded-lg transition-colors ${
+                    className={`p-1.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] touch-target flex items-center justify-center ${
                       isDark
                         ? 'hover:bg-slate-700 text-slate-400 hover:text-white'
                         : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
@@ -287,7 +287,7 @@ export const NotificationCenter: React.FC = () => {
                 {readNotifications.length > 0 && (
                   <button
                     onClick={handleDeleteReadNotifications}
-                    className={`p-1.5 rounded-lg transition-colors ${
+                    className={`p-1.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] touch-target flex items-center justify-center ${
                       isDark
                         ? 'hover:bg-red-900/30 text-slate-400 hover:text-red-400'
                         : 'hover:bg-red-50 text-gray-500 hover:text-red-500'
@@ -373,7 +373,7 @@ export const NotificationCenter: React.FC = () => {
                               <button
                                 onClick={(e) => handleDelete(notification.id, e)}
                                 aria-label={t('common.aria.close')}
-                                className={`p-1 rounded transition-colors ${
+                                className={`p-1 rounded transition-colors min-h-[44px] min-w-[44px] touch-target flex items-center justify-center ${
                                   isDark
                                     ? 'hover:bg-slate-600 text-slate-500 hover:text-slate-300'
                                     : 'hover:bg-gray-200 text-gray-400 hover:text-gray-600'
@@ -440,7 +440,7 @@ export const NotificationCenter: React.FC = () => {
                               <button
                                 onClick={(e) => handleDelete(notification.id, e)}
                                 aria-label={t('common.aria.close')}
-                                className={`p-1 rounded transition-colors ${
+                                className={`p-1 rounded transition-colors min-h-[44px] min-w-[44px] touch-target flex items-center justify-center ${
                                   isDark
                                     ? 'hover:bg-slate-600 text-slate-600 hover:text-slate-400'
                                     : 'hover:bg-gray-200 text-gray-300 hover:text-gray-500'

@@ -154,7 +154,7 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
                 e.stopPropagation();
                 handleCopy();
               }}
-              className={`p-1 rounded transition-colors ${
+              className={`p-1 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                 copied
                   ? isDark
                     ? "bg-green-900/30 text-green-400"
@@ -173,7 +173,7 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
                   e.stopPropagation();
                   onEdit();
                 }}
-                className={`p-1 rounded transition-colors ${
+                className={`p-1 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                   isDark
                     ? "hover:bg-slate-600 text-slate-400 hover:text-slate-300"
                     : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
@@ -189,7 +189,7 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
                   e.stopPropagation();
                   onDelete();
                 }}
-                className={`p-1 rounded transition-colors ${
+                className={`p-1 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                   isDark
                     ? "hover:bg-red-900/30 text-slate-400 hover:text-red-400"
                     : "hover:bg-red-50 text-gray-400 hover:text-red-500"

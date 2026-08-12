@@ -48,7 +48,7 @@
     "# Build": "",
     "build": "tsc -b && vite build",
     "build:analyze": "vite build --mode analyze",
-    "build:electron": "cross-env ELECTRON_BUILD=true NODE_ENV=production tsc -p tsconfig.electron.json && vite build",
+    "build:electron": "npm run electron:compile && cross-env ELECTRON_BUILD=true NODE_ENV=production vite build",
     "clean": "rimraf dist dist-electron release coverage dev-dist",
     "# Code Quality": "",
     "check": "tsc --build",
@@ -84,7 +84,8 @@
     "db:backfill": "tsx scripts/backfill_embeddings.ts",
     "db:export": "tsx scripts/exportFromSupabase.ts",
     "# Electron": "",
-    "electron:dev": "concurrently \"npm run client:dev\" \"npm run server:dev\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "electron:compile": "node scripts/build-electron.mjs",
+    "electron:dev": "concurrently \"npm run client:dev\" \"npm run server:dev\" \"wait-on http://localhost:5173 && npm run electron:compile && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
     "electron:build": "npm run build:electron && electron-builder",
     "electron:build:win": "npm run build:electron && electron-builder --win",
     "electron:build:mac": "npm run build:electron && electron-builder --mac",
@@ -233,6 +234,7 @@
     "electron-builder": "^26.15.3",
     "electron-icon-builder": "^2.0.1",
     "electron-rebuild": "^3.2.9",
+    "esbuild": "^0.28.2",
     "eslint": "^9.39.3",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -310,13 +312,6 @@
       {
         "from": "dist-electron/api",
         "to": "api",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "dist-electron/shared",
-        "to": "shared",
         "filter": [
           "**/*"
         ]

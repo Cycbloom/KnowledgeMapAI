@@ -12,7 +12,8 @@
     "sourceMap": true,
     "types": ["node"],
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "allowImportingTsExtensions": false
   },
   "include": ["electron/**/*", "api/**/*", "shared/**/*"],
   "exclude": ["node_modules", "dist-electron", "src", "api/__tests__", "**/*.test.ts"]

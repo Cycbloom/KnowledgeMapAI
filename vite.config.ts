@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import { loadEnv } from "vite";
 
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -149,10 +150,17 @@ function checkEnvPlugin(): import("vite").Plugin {
     name: "check-env",
     configureServer(server) {
       server.httpServer?.once("listening", () => {
+        // 用 loadEnv 读取 Vite 实际加载的 .env.* 文件（含优先级），而非 process.env。
+        // process.env 不含 Vite 加载的变量，会导致误报。
+        const env = loadEnv(
+          server.config.mode ?? "development",
+          server.config.envDir || process.cwd(),
+          "",
+        );
         const requiredVars = ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"];
         let hasWarning = false;
         for (const name of requiredVars) {
-          if (!process.env[name]) {
+          if (!env[name]) {
             console.warn(`  ⚠️  环境变量 ${name} 未设置 — 某些功能可能受限`);
             hasWarning = true;
           }

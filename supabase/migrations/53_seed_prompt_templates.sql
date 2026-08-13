@@ -8,6 +8,11 @@ INSERT INTO prompt_templates ("code", "scope", "user_id", "graph_id", "template_
 Goal: Prioritize generating NEW, specific concepts to broaden the graph''s coverage.
 Quantity: Generate up to 8 nodes. Focus on representativeness and hierarchy.
 
+{{#if isCustom}}
+## Custom Instructions
+{{customPrompt}}
+{{/if}}
+
 Each suggestion must include a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
 
 Linking Strategy:
@@ -48,6 +53,9 @@ Requirements:
 1. Generate exactly {{count}} cards.
 2. Allowed Types: {{allowedTypes}}.
 3. Mix the types if multiple are selected.
+{{#if difficulty}}
+4. Difficulty: {{difficulty}}.
+{{/if}}
 
 {{#if includesQA}}
 For ''qa'' type: Create thought-provoking open-ended questions that test deep understanding. Provide a detailed ''explanation'' analyzing the answer.
@@ -221,7 +229,11 @@ Existing Nodes:
 {{existing_nodes_json}}
 
 Important: Return node titles (not IDs) in your recommendations. Use exact titles from the existing nodes list.', NOW(), NOW()),
-('term_annotation', 'system', null, null, '你是一个专业的学术助手。请分析以下文本，提取其中的关键专业术语。', NOW(), NOW()),
+('term_annotation', 'system', null, null, '你是一个专业的学术助手。请分析以下文本，提取其中的关键专业术语。对于每个术语，提供一个简短的解释（不超过20字）。
+请仅返回 JSON 格式的数据，不要包含 markdown 代码块标记。
+
+文本内容：
+{{nodeContent}}', NOW(), NOW()),
 ('generate_cards_choice', 'system', null, null, 'For ''choice'' type: Create multiple-choice questions with 4 plausible options.
 Provide the correct answer and a detailed ''explanation'' of why it is correct and others are wrong.
 Distractors should be common misconceptions if possible.', NOW(), NOW()),
@@ -687,7 +699,8 @@ Formatting:
 
 Topic: {{topic}}
 Context/Background: {{context}}
-{{#if level}}Knowledge Level: {{level}}{{/if}}', NOW(), NOW()),
+{{#if level}}Knowledge Level: {{level}}{{/if}}
+Please write the learning material and keywords in {{outputLanguage}}.', NOW(), NOW()),
 ('podcast_script', 'system', null, null, 'You are a professional podcast host. 
 Your task is to create an engaging, educational podcast script based on the provided knowledge graph content.
 The script should be:

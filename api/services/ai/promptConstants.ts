@@ -1,3 +1,12 @@
+// =====================================================
+// AI Prompt 降级安全网（DEFAULT_PROMPTS / OUTPUT_SCHEMAS）
+// -----------------------------------------------------
+// DB（prompt_templates 表）是 prompt 的唯一权威来源，所有 prompt 必须通过
+// supabase/migrations/53_seed_prompt_templates.sql 写入 DB。
+// 本文件的 DEFAULT_PROMPTS 和 OUTPUT_SCHEMAS 仅作 DB 不可用时的降级安全网
+// （如 Electron 桌面应用 DB 离线场景），不应被视为主要 prompt 来源。
+// 新增 prompt 请优先写入 DB seed，而非本文件。
+// =====================================================
 export type PromptScope = "system" | "user" | "graph";
 
 const LANGUAGE_INSTRUCTIONS: Record<string, string> = {

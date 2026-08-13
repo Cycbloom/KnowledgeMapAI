@@ -33,21 +33,13 @@ router.post(
     }
 
     try {
-      const systemPrompt = await promptService.getRenderedPrompt(
+      const prompt = await promptService.getRenderedPrompt(
         req.supabase,
-        "annotate_terms",
+        "term_annotation",
         { nodeContent: content },
         req.user.id,
         graph_id,
       );
-
-      const prompt =
-        systemPrompt ||
-        `请分析以下内容，识别其中的专业术语。对于每个术语，提供一个简短的解释（不超过20字）。
-请返回一个 JSON 格式的数组，包含对象 { "term": "术语", "explanation": "解释" }。
-
-内容：
-${content}`;
 
       const enrichedMetadata = await enrichMetadata(req.supabase, {
         graphId: graph_id,
@@ -57,14 +49,7 @@ ${content}`;
 
       const startTime = Date.now();
       const completion = await provider.client.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content:
-              "你是一个专业的学术编辑。请仅返回 JSON 格式的数据。不要包含 markdown 代码块标记。",
-          },
-          { role: "user", content: prompt },
-        ],
+        messages: [{ role: "user", content: prompt }],
         model: provider.model,
         response_format: { type: "json_object" },
       });

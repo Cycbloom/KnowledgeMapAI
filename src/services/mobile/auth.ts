@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { getMobileSupabaseClient } from '@/utils/supabase';
 import type {
   AuthResponse,
@@ -87,7 +88,7 @@ export const mobileAuthApi: IAuthApi = {
     if (client) {
       await client.auth.signOut();
     }
-    return { message: '登出成功' };
+    return { message: i18next.t('profile.messages.logoutSuccess') };
   },
 
   getUser: async (): Promise<{ user: User | null }> => {

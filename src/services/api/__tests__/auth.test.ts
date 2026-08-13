@@ -151,7 +151,7 @@ describe('authApi', () => {
     });
 
     it('应该通过 POST /auth/logout 登出用户', async () => {
-      const mockResponse = { message: '登出成功' };
+      const mockResponse = { message: '已退出登录' };
       vi.mocked(request).mockResolvedValue(mockResponse);
 
       const result = await authApi.logout();
@@ -298,7 +298,7 @@ describe('authApi', () => {
       const result = await authApi.logout();
 
       expect(client.auth.signOut).toHaveBeenCalledTimes(1);
-      expect(result).toEqual({ message: '登出成功' });
+      expect(result).toEqual({ message: '已退出登录' });
     });
 
     it('应该调用 supabase.auth.getUser 获取用户信息', async () => {
@@ -410,7 +410,7 @@ describe('authApi', () => {
 
     it('应该在 logout 时不抛出异常并返回成功消息', async () => {
       const result = await authApi.logout();
-      expect(result).toEqual({ message: '登出成功' });
+      expect(result).toEqual({ message: '已退出登录' });
     });
   });
 

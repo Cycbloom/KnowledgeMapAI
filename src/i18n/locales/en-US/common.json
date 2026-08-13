@@ -379,7 +379,9 @@
     "batchLevelUpdateSuccess": "Updated {{count}} node(s) level to {{level}}",
     "batchLevelUpdateFailed": "Batch update level failed",
     "updateSuccess": "Node status updated",
-    "updateFailed": "Failed to update node"
+    "updateFailed": "Failed to update node",
+    "permanentDelete": "Node permanently deleted",
+    "toRecycleBin": "Node moved to recycle bin"
   },
   "aiOperations": {
     "fetchRelatedNodesFailed": "Failed to fetch related nodes",

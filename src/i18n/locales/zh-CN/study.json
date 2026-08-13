@@ -484,6 +484,8 @@
       "insufficientReviews": "复习数据不足（{{current}}/{{required}}），继续使用默认参数",
       "validationFailed": "优化后参数验证失败，保留当前参数",
       "optimizationComplete": "参数优化完成，预测误差降低 {{improvement}}%"
-    }
+    },
+    "resetSuccess": "FSRS 参数已重置为默认值",
+    "optimizeNotSupported": "移动端暂不支持参数优化，请在桌面端使用"
   }
 }

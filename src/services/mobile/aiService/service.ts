@@ -341,8 +341,37 @@ ${options.level ? `知识水平：${options.level}` : ""}
 
 请根据上述要求生成学习资料。`;
 
+    const supabase = getMobileSupabaseClient();
+    let systemPrompt = getLearningMaterialSystemPrompt(options.language);
+
+    if (supabase) {
+      try {
+        const renderedPrompt = await mobilePromptService.getRenderedPrompt(
+          supabase,
+          "learning_material",
+          {
+            topic,
+            context: context || "General knowledge",
+            level: options.level,
+          },
+          undefined,
+          undefined,
+          options.language,
+        );
+
+        if (renderedPrompt && renderedPrompt.trim()) {
+          systemPrompt = renderedPrompt;
+        }
+      } catch (error) {
+        logger.warn(
+          "[MobileAIService.generateLearningMaterial] 获取 Prompt 模板失败，使用默认模板:",
+          error,
+        );
+      }
+    }
+
     const messages = [
-      { role: "system" as const, content: getLearningMaterialSystemPrompt(options.language) },
+      { role: "system" as const, content: systemPrompt },
       { role: "user" as const, content: userPrompt },
     ];
 
@@ -402,8 +431,11 @@ ${options.level ? `知识水平：${options.level}` : ""}
         : "";
 
     const contextLevel = options.contextLevel || "normal";
+    const isRootOrCore = contextLevel === "root" || contextLevel === "core";
+    const isLeaf = contextLevel === "leaf";
+    const isCustom = !!options.expandPrompt;
 
-    const systemPrompt = `You are an expert knowledge architect. Your task is to suggest child nodes for a given knowledge node.
+    const defaultSystemPrompt = `You are an expert knowledge architect. Your task is to suggest child nodes for a given knowledge node.
 
 ${options.expandPrompt ? `Custom Instructions: ${options.expandPrompt}` : ""}
 
@@ -419,6 +451,33 @@ Guidelines:
 Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.
 Example format: { "suggestions": [{ "title": "Example Title", "content": "Example content" }] }
 Please respond in Chinese.`;
+
+    const supabase = getMobileSupabaseClient();
+    let systemPrompt = defaultSystemPrompt;
+
+    if (supabase) {
+      try {
+        const renderedPrompt = await mobilePromptService.getRenderedPrompt(
+          supabase,
+          "expand_knowledge",
+          {
+            isRootOrCore,
+            isLeaf,
+            isCustom,
+            customPrompt: options.expandPrompt,
+          },
+        );
+
+        if (renderedPrompt && renderedPrompt.trim()) {
+          systemPrompt = renderedPrompt;
+        }
+      } catch (error) {
+        logger.warn(
+          "[MobileAIService.expandKnowledge] 获取 Prompt 模板失败，使用默认模板:",
+          error,
+        );
+      }
+    }
 
     const messages = [
       { role: "system" as const, content: systemPrompt },

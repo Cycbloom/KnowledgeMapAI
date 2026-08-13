@@ -79,7 +79,19 @@
     "isolatedNodes": "Isolated nodes: {{count}}",
     "nodesWithoutContent": "Nodes without content: {{count}}",
     "createConnection": "Create Connection",
-    "loadFailedMessage": "Unable to load analysis data"
+    "loadFailedMessage": "Unable to load analysis data",
+    "health": {
+      "isolatedNodes": "{{count}} isolated nodes",
+      "disconnectedComponents": "{{count}} disconnected components",
+      "nodesWithoutContent": "{{count}} nodes missing content",
+      "missingRoot": "Missing root node",
+      "lowAvgDegree": "Low average connectivity",
+      "healthy": "Graph structure is healthy"
+    },
+    "connections": {
+      "sameParent": "Child of \"{{parentTitle}}\"",
+      "unknownParent": "unknown"
+    }
   },
   "aiActionSettings": {
     "loadFailed": "Failed to load AI action settings"

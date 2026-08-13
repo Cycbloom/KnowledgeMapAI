@@ -10,33 +10,6 @@ export interface GenerateLearningMaterialResult {
   keywords: Keyword[];
 }
 
-export const TYPE_PROMPTS: Record<string, string> = {
-  qa: "For 'qa' type: Create thought-provoking open-ended questions that test deep understanding.",
-  choice:
-    "For 'choice' type: Create multiple-choice questions with 4 plausible options. Mark the correct answer index.",
-  true_false:
-    "For 'true_false' type: Create statements focusing on common misconceptions.",
-  multi_choice:
-    "For 'multi_choice' type: Create multiple-choice questions where ONE OR MORE options can be correct. Return correct_indices array.",
-  fill_in_the_blank:
-    "For 'fill_in_the_blank' type: Create a sentence with '___' as blanks.",
-};
-
-export const DIFFICULTY_PROMPTS: Record<string, string> = {
-  easy: `Difficulty Level: EASY
-- Focus on basic concept recognition and memory recall
-- Questions should directly test knowledge point definitions and basic facts
-- Use straightforward language without complex scenarios`,
-  medium: `Difficulty Level: MEDIUM
-- Focus on understanding and application of concepts
-- Questions should require comprehension, not just memorization
-- Include simple scenarios or examples to test understanding`,
-  hard: `Difficulty Level: HARD
-- Focus on analysis, synthesis, and complex problem-solving
-- Questions should require deep understanding and connecting multiple concepts
-- Include complex scenarios, edge cases, or require multi-step reasoning`,
-};
-
 export const getLearningMaterialSystemPrompt = (language?: string): string => {
   const isEnglish = language === "en-US" || language === "en";
 

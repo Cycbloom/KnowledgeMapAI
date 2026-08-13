@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { request } from './client';
 import { authConfig } from '@/config/authConfig';
 import { getSupabaseClient } from '@/utils/supabase';
@@ -103,7 +104,7 @@ const supabaseAuthApi = {
     if (client) {
       await client.auth.signOut();
     }
-    return { message: '登出成功' };
+    return { message: i18next.t('profile.messages.logoutSuccess') };
   },
 
   getUser: async (): Promise<{ user: User | null }> => {

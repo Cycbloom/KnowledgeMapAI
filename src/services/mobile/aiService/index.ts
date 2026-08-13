@@ -22,8 +22,6 @@ export { classifyError } from "./errors";
 export type { Keyword, GenerateLearningMaterialResult } from "./prompts";
 
 export {
-  TYPE_PROMPTS,
-  DIFFICULTY_PROMPTS,
   getLearningMaterialSystemPrompt,
 } from "./prompts";
 

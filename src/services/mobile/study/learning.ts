@@ -1,5 +1,6 @@
 import { getMobileSupabaseClient } from "@/utils/supabase";
 import { Rating, State, type Card } from "ts-fsrs";
+import i18next from "i18next";
 import type { StudyCard } from "@shared/types/common";
 import type { GetCardsParams, CardGroup, StudyStats } from "@shared/types/api";
 import type { IStudyApi } from "../../api/contracts/IStudyApi";
@@ -657,7 +658,7 @@ export const mobileStudyApi: IStudyApi = {
       throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
     }
 
-    return { success: true, message: "FSRS 参数已重置为默认值" };
+    return { success: true, message: i18next.t("study.fsrsParameter.resetSuccess") };
   },
 
   optimizeFsrsParameters: async () => {
@@ -667,7 +668,7 @@ export const mobileStudyApi: IStudyApi = {
       newW: [],
       improvement: 0,
       reviewCount: 0,
-      message: "移动端暂不支持参数优化，请在桌面端使用",
+      message: i18next.t("study.fsrsParameter.optimizeNotSupported"),
     };
   },
 

@@ -484,6 +484,8 @@
       "insufficientReviews": "Insufficient review data ({{current}}/{{required}}), continuing with default parameters",
       "validationFailed": "Optimized parameter validation failed, keeping current parameters",
       "optimizationComplete": "Parameter optimization complete, prediction error reduced by {{improvement}}%"
-    }
+    },
+    "resetSuccess": "FSRS parameters have been reset to defaults",
+    "optimizeNotSupported": "Parameter optimization is not supported on mobile, please use the desktop app"
   }
 }

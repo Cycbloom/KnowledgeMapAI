@@ -284,10 +284,11 @@ describe('TEMPLATE_CATEGORIES', () => {
     ]);
   });
 
-  it('每个分类应包含 value/label/icon/color/count 字段', () => {
+  it('每个分类应包含 value/labelKey/icon/color/count 字段', () => {
     for (const category of TEMPLATE_CATEGORIES) {
       expect(category).toHaveProperty('value');
-      expect(category).toHaveProperty('label');
+      expect(category).toHaveProperty('labelKey');
+      expect(category.labelKey).toMatch(/^templates\.categoryShort\./);
       expect(category).toHaveProperty('icon');
       expect(category).toHaveProperty('color');
       expect(category).toHaveProperty('count');

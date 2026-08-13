@@ -11,6 +11,22 @@ import { DEFAULT_PROMPTS } from './templates';
 import { OUTPUT_SCHEMAS } from './schemas';
 import { logger } from '@/utils/logger';
 
+const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
+  "zh-CN": "Please respond in Chinese.",
+  "en-US": "Please respond in English.",
+};
+
+function isEnglishLanguage(language?: string): boolean {
+  if (!language) return false;
+  return language === "en-US" || language === "en" || language.startsWith("en");
+}
+
+function getLanguageInstruction(language?: string): string {
+  return isEnglishLanguage(language)
+    ? LANGUAGE_INSTRUCTIONS["en-US"]
+    : LANGUAGE_INSTRUCTIONS["zh-CN"];
+}
+
 export class MobilePromptService {
   private templateCache: Map<string, { template: PromptTemplate; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 60000;
@@ -160,6 +176,7 @@ export class MobilePromptService {
     context: Record<string, unknown>,
     userId?: string,
     graphId?: string,
+    language?: string,
   ): Promise<string> {
     const template = await this.getTemplate(supabase, code, userId, graphId);
 
@@ -190,6 +207,19 @@ export class MobilePromptService {
     if (OUTPUT_SCHEMAS[code]) {
       content += `\n\n${OUTPUT_SCHEMAS[code]}`;
     }
+
+    // Replace output language placeholder in schemas
+    const outputLanguage = isEnglishLanguage(language) ? "English" : "Chinese";
+    content = content.replace(/\{\{outputLanguage\}\}/g, outputLanguage);
+
+    // Replace category options based on language
+    const categoryOptions = isEnglishLanguage(language)
+      ? "'Definition', 'Concept', 'Method', 'Conclusion', 'Principle', 'Application', 'Terminology'"
+      : "'定义', '概念', '方法', '结论', '原理', '应用', '术语'";
+    content = content.replace(/\{\{categoryOptions\}\}/g, categoryOptions);
+
+    // Append language instruction based on the language parameter
+    content += `\n\n${getLanguageInstruction(language)}`;
 
     return content;
   }

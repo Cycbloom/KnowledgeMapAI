@@ -79,7 +79,19 @@
     "isolatedNodes": "孤立节点: {{count}} 个",
     "nodesWithoutContent": "缺少内容的节点: {{count}} 个",
     "createConnection": "创建连接",
-    "loadFailedMessage": "无法加载分析数据"
+    "loadFailedMessage": "无法加载分析数据",
+    "health": {
+      "isolatedNodes": "{{count}} 个孤立节点",
+      "disconnectedComponents": "{{count}} 个不连通的组件",
+      "nodesWithoutContent": "{{count}} 个节点缺少内容",
+      "missingRoot": "缺少根节点",
+      "lowAvgDegree": "平均连接度较低",
+      "healthy": "图谱结构健康"
+    },
+    "connections": {
+      "sameParent": "同属于 \"{{parentTitle}}\" 的子节点",
+      "unknownParent": "未知"
+    }
   },
   "aiActionSettings": {
     "loadFailed": "加载 AI 动作设置失败"

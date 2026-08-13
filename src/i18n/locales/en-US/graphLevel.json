@@ -1,0 +1,7 @@
+{
+  "root": "Root Node",
+  "core": "Core Node",
+  "sub": "Sub Node",
+  "normal": "Normal Node",
+  "leaf": "Leaf Node"
+}

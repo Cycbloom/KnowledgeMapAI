@@ -20,6 +20,14 @@
     "topicResearch": "Topic Research",
     "creative": "Creative"
   },
+  "categoryShort": {
+    "knowledge": "Knowledge",
+    "project": "Project",
+    "analysis": "Analysis",
+    "architecture": "Architecture",
+    "topicResearch": "Topic Research",
+    "creative": "Creative"
+  },
   "categoryDescription": {
     "knowledge": "Systematically learn knowledge, build complete systems",
     "project": "Plan project workflows, break down task objectives",

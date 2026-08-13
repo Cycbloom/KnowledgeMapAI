@@ -20,6 +20,14 @@
     "topicResearch": "专题研究",
     "creative": "创意类"
   },
+  "categoryShort": {
+    "knowledge": "知识",
+    "project": "项目",
+    "analysis": "分析",
+    "architecture": "架构",
+    "topicResearch": "专题研究",
+    "creative": "创意"
+  },
   "categoryDescription": {
     "knowledge": "系统学习知识，构建完整体系",
     "project": "规划项目流程，分解任务目标",

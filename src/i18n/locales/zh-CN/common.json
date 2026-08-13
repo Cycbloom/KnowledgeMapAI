@@ -379,7 +379,9 @@
     "batchLevelUpdateSuccess": "已将 {{count}} 个节点等级修改为 {{level}}",
     "batchLevelUpdateFailed": "批量修改等级失败",
     "updateSuccess": "节点状态已更新",
-    "updateFailed": "更新节点失败"
+    "updateFailed": "更新节点失败",
+    "permanentDelete": "节点已永久删除",
+    "toRecycleBin": "节点已移至回收站"
   },
   "aiOperations": {
     "fetchRelatedNodesFailed": "获取相关节点失败",

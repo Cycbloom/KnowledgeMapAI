@@ -56,19 +56,19 @@ export interface ApplyTemplateData {
 
 export interface TemplateCategory {
   value: string;
-  label: string;
+  labelKey: string;
   icon: string;
   color: string;
   count: number;
 }
 
 export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
-  { value: 'knowledge', label: '知识', icon: '📚', color: 'blue', count: 0 },
-  { value: 'project', label: '项目', icon: '💼', color: 'purple', count: 0 },
-  { value: 'analysis', label: '分析', icon: '🔍', color: 'amber', count: 0 },
-  { value: 'architecture', label: '架构', icon: '🏗️', color: 'indigo', count: 0 },
-  { value: 'topicResearch', label: '专题研究', icon: '🔬', color: 'purple', count: 0 },
-  { value: 'creative', label: '创意', icon: '✨', color: 'pink', count: 0 },
+  { value: 'knowledge', labelKey: 'templates.categoryShort.knowledge', icon: '📚', color: 'blue', count: 0 },
+  { value: 'project', labelKey: 'templates.categoryShort.project', icon: '💼', color: 'purple', count: 0 },
+  { value: 'analysis', labelKey: 'templates.categoryShort.analysis', icon: '🔍', color: 'amber', count: 0 },
+  { value: 'architecture', labelKey: 'templates.categoryShort.architecture', icon: '🏗️', color: 'indigo', count: 0 },
+  { value: 'topicResearch', labelKey: 'templates.categoryShort.topicResearch', icon: '🔬', color: 'purple', count: 0 },
+  { value: 'creative', labelKey: 'templates.categoryShort.creative', icon: '✨', color: 'pink', count: 0 },
 ];
 
 /**

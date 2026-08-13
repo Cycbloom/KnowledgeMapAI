@@ -12,6 +12,7 @@ import setup from './setup.json';
 import layout from './layout.json';
 import console from './console.json';
 import graphMap from './graphMap.json';
+import graphLevel from './graphLevel.json';
 import learningPaths from './learningPaths.json';
 import learningPath from './learningPath.json';
 import ai from './ai.json';
@@ -85,6 +86,7 @@ const zhCN = {
   layout,
   console,
   graphMap,
+  graphLevel,
   learningPaths,
   learningPath,
   ai,

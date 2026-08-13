@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { getMobileSupabaseClient } from "@/utils/supabase";
 import type { Node, Keyword } from "@shared/types/graph";
 import type {
@@ -160,7 +161,7 @@ export const mobileNodesApi: INodesApi & {
         throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
-      return { message: "节点已永久删除" };
+      return { message: i18next.t("common.nodeOperations.permanentDelete") };
     } else {
       const { error } = await client
         .from("graph_nodes")
@@ -171,7 +172,7 @@ export const mobileNodesApi: INodesApi & {
         throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
       }
 
-      return { message: "节点已移至回收站" };
+      return { message: i18next.t("common.nodeOperations.toRecycleBin") };
     }
   },
 

@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import type { Node, Edge, NodeLevel, NodeImportance, EdgeStrength } from '../../types';
 import { getLevel } from './index';
 import { LEVEL_WEIGHTS } from './levelUtils';
@@ -193,35 +194,35 @@ export const analyzeGraph = (nodes: Node[], edges: Edge[]): GraphAnalysis => {
   if (isolatedNodes.length > 0) {
     const penalty = Math.min(20, isolatedNodes.length * 2);
     healthScore -= penalty;
-    healthIssues.push(`${isolatedNodes.length} 个孤立节点`);
+    healthIssues.push(i18next.t('graphEditor.graphAnalysis.health.isolatedNodes', { count: isolatedNodes.length }));
   }
   
   if (componentCount > 1) {
     const penalty = Math.min(15, (componentCount - 1) * 5);
     healthScore -= penalty;
-    healthIssues.push(`${componentCount} 个不连通的组件`);
+    healthIssues.push(i18next.t('graphEditor.graphAnalysis.health.disconnectedComponents', { count: componentCount }));
   }
   
   if (nodesWithoutContent.length > nodes.length * 0.3) {
     const penalty = Math.min(15, Math.floor(nodesWithoutContent.length / nodes.length * 30));
     healthScore -= penalty;
-    healthIssues.push(`${nodesWithoutContent.length} 个节点缺少内容`);
+    healthIssues.push(i18next.t('graphEditor.graphAnalysis.health.nodesWithoutContent', { count: nodesWithoutContent.length }));
   }
   
   if (rootNodes.length === 0) {
     healthScore -= 10;
-    healthIssues.push('缺少根节点');
+    healthIssues.push(i18next.t('graphEditor.graphAnalysis.health.missingRoot'));
   }
   
   if (avgDegree < 1) {
     healthScore -= 10;
-    healthIssues.push('平均连接度较低');
+    healthIssues.push(i18next.t('graphEditor.graphAnalysis.health.lowAvgDegree'));
   }
   
   healthScore = Math.max(0, healthScore);
   
   if (healthScore === 100) {
-    healthIssues.push('图谱结构健康');
+    healthIssues.push(i18next.t('graphEditor.graphAnalysis.health.healthy'));
   }
   
   return {
@@ -294,10 +295,12 @@ export const findMissingConnections = (
           const targetNode = nodes.find(n => normalizeId(n.id) === tgt);
           
           if (sourceNode && targetNode) {
+            const parentNode = nodes.find(n => normalizeId(n.id) === parentId);
+            const parentTitle = parentNode?.title || i18next.t('graphEditor.graphAnalysis.connections.unknownParent');
             suggestions.push({
               sourceId: sourceNode.id,
               targetId: targetNode.id,
-              reason: `同属于 "${nodes.find(n => normalizeId(n.id) === parentId)?.title || '未知'}" 的子节点`
+              reason: i18next.t('graphEditor.graphAnalysis.connections.sameParent', { parentTitle })
             });
           }
         }

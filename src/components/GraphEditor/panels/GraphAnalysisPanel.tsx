@@ -262,7 +262,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                         <div className="mt-2 space-y-1">
                           {analysis.healthIssues.map((issue, idx) => (
                             <div key={idx} className="text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                              {issue.includes('健康') ? (
+                              {analysis.healthScore === 100 ? (
                                 <CheckCircle2 className="text-green-500" size={14} />
                               ) : (
                                 <AlertTriangle className="text-orange-500" size={14} />

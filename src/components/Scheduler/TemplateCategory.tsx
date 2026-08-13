@@ -47,7 +47,7 @@ export const TemplateCategory: React.FC<TemplateCategoryProps> = ({
             }`}
           >
             <span>{category.icon}</span>
-            <span>{category.label}</span>
+            <span>{t(category.labelKey, { defaultValue: '' })}</span>
             {count > 0 && (
               <span className={`px-1.5 py-0.5 rounded-full text-xs ${
                 isSelected
@@ -116,7 +116,7 @@ export const TemplateCategoryCard: React.FC<TemplateCategoryCardProps> = ({
 interface TemplateCategoryGridProps {
   categories: Array<{
     value: string;
-    label: string;
+    labelKey: string;
     icon: string;
     count: number;
   }>;
@@ -165,7 +165,7 @@ export const TemplateCategoryGrid: React.FC<TemplateCategoryGridProps> = ({
         <TemplateCategoryCard
           key={category.value}
           category={category.value}
-          label={category.label}
+          label={t(category.labelKey, { defaultValue: '' })}
           icon={category.icon}
           count={category.count}
           isSelected={selectedCategory === category.value}

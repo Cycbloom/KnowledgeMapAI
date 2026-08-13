@@ -249,7 +249,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
                       : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
                   }`}
                 >
-                  {cat.icon} {cat.label}
+                  {cat.icon} {t(cat.labelKey, { defaultValue: '' })}
                 </button>
               ))}
             </div>

@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import type { NodeLevel } from '../../types';
 
 export const LEVEL_ORDER: NodeLevel[] = ['root', 'core', 'sub', 'normal', 'leaf'];
@@ -53,12 +54,5 @@ export const getLevelColorHex = (level: NodeLevel): string => {
 };
 
 export const getLevelLabel = (level: NodeLevel): string => {
-  const labels: Record<NodeLevel, string> = {
-    root: '根节点',
-    core: '核心节点',
-    sub: '次级节点',
-    normal: '普通节点',
-    leaf: '叶子节点'
-  };
-  return labels[level] || labels.normal;
+  return i18next.t(`graphLevel.${level}`, { defaultValue: i18next.t('graphLevel.normal') });
 };

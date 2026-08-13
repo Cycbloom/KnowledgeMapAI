@@ -255,7 +255,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                       }`}
                     >
-                      {cat.icon} {cat.label}
+                      {cat.icon} {t(cat.labelKey, { defaultValue: '' })}
                     </button>
                   ))
                 ) : (

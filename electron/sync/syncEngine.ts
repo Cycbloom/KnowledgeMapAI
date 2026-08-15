@@ -242,6 +242,15 @@ export class SyncEngine {
       // Use shared merge logic
       const mergedSharedOps = sharedMergeOperations(sharedOps);
 
+      // 预构建 mergedSharedOps 的 table+recordId 索引，替代每个批次内 find 的 O(batch*totalOps) 扫描
+      const mergedOpIndex = new Map<string, (typeof mergedSharedOps)[number]>();
+      for (const m of mergedSharedOps) {
+        const key = `${m.table}:${m.recordId}`;
+        if (!mergedOpIndex.has(key)) {
+          mergedOpIndex.set(key, m);
+        }
+      }
+
       // Convert back to push format
       const operations: Array<{
         table: string;
@@ -263,8 +272,15 @@ export class SyncEngine {
 
       for (let i = 0; i < operations.length; i += this.config.batchSize) {
         const batch = operations.slice(i, i + this.config.batchSize);
+        // 预构建批次 id 索引，替代 results 循环内 batch.find/batch.indexOf 的 O(batch²) 扫描
+        const opById = new Map<string, (typeof batch)[number]>();
+        const opIndexById = new Map<string, number>();
+        batch.forEach((op, idx) => {
+          opById.set(op.id, op);
+          opIndexById.set(op.id, idx);
+        });
         const batchOpIds = batch.map(op => {
-          const mergedOp = mergedSharedOps.find(m => m.table === op.table && m.recordId === op.id);
+          const mergedOp = mergedOpIndex.get(`${op.table}:${op.id}`);
           return mergedOp?.id ?? op.id;
         });
 
@@ -312,11 +328,11 @@ export class SyncEngine {
         const syncedRecordIds: Array<{ table: string; id: string }> = [];
 
         for (const pushResult of results) {
-          const op = batch.find(o => o.id === pushResult.id);
+          const op = opById.get(pushResult.id);
           if (!op) continue;
 
           if (pushResult.success) {
-            syncedOpIds.push(batchOpIds[batch.indexOf(op)] ?? op.id);
+            syncedOpIds.push(batchOpIds[opIndexById.get(op.id) ?? -1] ?? op.id);
             syncedRecordIds.push({ table: op.table, id: op.id });
           } else if (pushResult.conflict) {
             // Conflict: cloud wins, update local with server data
@@ -332,7 +348,7 @@ export class SyncEngine {
               });
             }
             // Mark operation as synced since we've resolved it (cloud wins)
-            syncedOpIds.push(batchOpIds[batch.indexOf(op)] ?? op.id);
+            syncedOpIds.push(batchOpIds[opIndexById.get(op.id) ?? -1] ?? op.id);
             syncedRecordIds.push({ table: op.table, id: op.id });
           }
         }

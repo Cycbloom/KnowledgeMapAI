@@ -2,13 +2,15 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import { TABLES, type TableDef } from './schema';
+import { TABLES, type ColumnDef, type TableDef } from './schema';
 import { getInitialMigration } from './migrations/001_initial';
 
 export class DatabaseManager {
   private db: Database.Database | null = null;
   private dbPath: string;
   private isInitialized = false;
+  // 预构建列名索引缓存，替代 serializeValue/deserializeRow 中 columns.find 的 O(列数) 线性扫描
+  private columnIndexCache = new WeakMap<TableDef, Map<string, ColumnDef>>();
 
   constructor(dbPath: string) {
     this.dbPath = dbPath;
@@ -444,10 +446,19 @@ export class DatabaseManager {
 
   // ============ Serialization Helpers ============
 
+  private getColumnIndex(tableDef: TableDef): Map<string, ColumnDef> {
+    let index = this.columnIndexCache.get(tableDef);
+    if (!index) {
+      index = new Map(tableDef.columns.map(c => [c.name, c]));
+      this.columnIndexCache.set(tableDef, index);
+    }
+    return index;
+  }
+
   private serializeValue(columnName: string, value: unknown, tableDef: TableDef): unknown {
     if (value === null || value === undefined) return null;
 
-    const colDef = tableDef.columns.find(c => c.name === columnName);
+    const colDef = this.getColumnIndex(tableDef).get(columnName);
     if (!colDef) return value;
 
     // JSONB / vector -> JSON.stringify
@@ -471,7 +482,7 @@ export class DatabaseManager {
   private deserializeRow(row: Record<string, unknown>, tableDef: TableDef): Record<string, unknown> {
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(row)) {
-      const colDef = tableDef.columns.find(c => c.name === key);
+      const colDef = this.getColumnIndex(tableDef).get(key);
       if (!colDef) {
         result[key] = value;
         continue;

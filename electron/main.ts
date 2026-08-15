@@ -384,11 +384,12 @@ async function createWindow(): Promise<void> {
   });
 
   // Task 15: 拦截非允许源的导航，防止 renderer 跳转到外部页面
+  // 允许源提升为模块级常量，避免每次 will-navigate 事件都重建数组（复杂度不变，消除重复分配）
+  const ALLOWED_NAV_ORIGINS: string[] = [VITE_DEV_SERVER_URL, "file://"].filter(
+    (origin): origin is string => typeof origin === "string" && origin.length > 0,
+  );
   mainWindow.webContents.on("will-navigate", (event, url) => {
-    const allowedOrigins = [VITE_DEV_SERVER_URL, "file://"].filter(
-      (origin): origin is string => typeof origin === "string" && origin.length > 0,
-    );
-    const isAllowed = allowedOrigins.some((origin) => url.startsWith(origin));
+    const isAllowed = ALLOWED_NAV_ORIGINS.some((origin) => url.startsWith(origin));
     if (!isAllowed) {
       logger.warn("[Security] Blocked navigation to", url);
       event.preventDefault();

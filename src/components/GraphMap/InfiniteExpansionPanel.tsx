@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from 'react';
+import React, { useState, useEffect, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Sparkles, Network, ChevronDown, ChevronUp, Check, Settings2 } from 'lucide-react';
@@ -42,6 +42,12 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
   const [nodeDepth, setNodeDepth] = useState(2);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // 预构建已选关系类型集合，避免渲染选项时对每个类型线性 includes（原为 O(options*selectedTypes)）
+  const selectedRelationTypeSet = useMemo(
+    () => new Set(selectedRelationTypes),
+    [selectedRelationTypes],
+  );
 
   const relationTypeOptions: Array<{ value: GraphRelationType; label: string; color: string }> = [
     { value: 'prerequisite', label: t('graphMap.infiniteExpansion.relationPrerequisite'), color: 'bg-primary-500' },
@@ -159,7 +165,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                     onClick={() => toggleRelationType(option.value)}
                     disabled={isRunning}
                     className={`flex-1 p-2 rounded-lg border-2 transition-all text-center ${
-                      selectedRelationTypes.includes(option.value)
+                      selectedRelationTypeSet.has(option.value)
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
                         : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                     } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}

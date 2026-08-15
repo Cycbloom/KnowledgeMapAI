@@ -66,6 +66,9 @@ export const TagCloud: React.FC<TagCloudProps> = ({
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
+  // 预构建已选标签集合，避免渲染云图时对每个标签线性 includes（原为 O(tags*selectedTags)）
+  const selectedTagSet = useMemo(() => new Set(selectedTags), [selectedTags]);
+
   const tagData = useMemo(() => {
     const tagMap = new Map<string, TagData>();
     
@@ -122,7 +125,7 @@ export const TagCloud: React.FC<TagCloudProps> = ({
       
       <div className="flex flex-wrap gap-2">
         {tagData.map(tag => {
-          const isSelected = selectedTags.includes(tag.name);
+          const isSelected = selectedTagSet.has(tag.name);
           const size = 0.8 + (tag.count / maxCount) * 0.4;
           
           return (
@@ -165,6 +168,9 @@ export const TagFilter: React.FC<TagFilterProps> = ({
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   useEscapeKey(() => setIsOpen(false), isOpen);
+
+  // 预构建已选标签集合，避免渲染列表时对每个标签线性 includes（原为 O(tags*selectedTags)）
+  const selectedTagSet = useMemo(() => new Set(selectedTags), [selectedTags]);
 
   const baseId = useId();
   const triggerId = `${baseId}-trigger`;
@@ -262,7 +268,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
 
           <div className="max-h-64 overflow-y-auto p-2">
             {allTags.map((tag, index) => {
-              const isSelected = selectedTags.includes(tag);
+              const isSelected = selectedTagSet.has(tag);
               return (
                 <button
                   key={tag}

@@ -981,6 +981,9 @@ export const MindMapCanvas = React.memo(
 
     const nodeMap = useMemo(() => new Map((layout?.nodes ?? []).map((n) => [n.id, n])), [layout?.nodes]);
 
+    // 预构建 selectedParentIds 集合，将渲染路径的节点选中判断由 O(nodes*selectedParentIds) 降为 O(1)
+    const selectedParentIdSet = useMemo(() => new Set(selectedParentIds), [selectedParentIds]);
+
     const focusedNodeTitle = useMemo(() => {
       if (!focusedNodeId) return null;
       const focusedNode = nodes.find((n) => n.id === focusedNodeId);
@@ -1105,7 +1108,7 @@ export const MindMapCanvas = React.memo(
             {narrativeFilteredNodes.map((node) => {
               const isSelectableAsParent =
                 isSelectingParent && node.id !== currentNodeId;
-              const isSelectedAsParent = selectedParentIds.includes(node.id);
+              const isSelectedAsParent = selectedParentIdSet.has(node.id);
               const isInLearningPath = learningPathNodeIds.has(node.id);
               const learningOrder = learningPathOrderMap.get(node.id);
               const hasLearningPathHighlight =

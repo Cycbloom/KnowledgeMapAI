@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Sparkles, Loader2, BrainCircuit, Settings, AlertCircle, Cloud, CloudUpload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +33,9 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
   const [count, setCount] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // 预构建已选题型集合，避免渲染题型列表时对每个选项线性 includes（原为 O(cardTypes*types)）
+  const typeSet = useMemo(() => new Set(types), [types]);
   const [isMobileAIConfigured, setIsMobileAIConfigured] = useState(true);
 
   useEffect(() => {
@@ -125,12 +128,12 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                   key={type.id}
                   onClick={() => handleToggleType(type.id)}
                   className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-all text-center flex items-center justify-center gap-2
-                    ${types.includes(type.id) 
+                    ${typeSet.has(type.id) 
                       ? 'border-primary-500 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:border-primary-400 dark:text-primary-300 shadow-sm' 
                       : 'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {type.label}
-                  {types.includes(type.id) && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
+                  {typeSet.has(type.id) && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
                 </button>
               ))}
             </div>

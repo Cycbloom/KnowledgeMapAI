@@ -66,13 +66,13 @@ const levelLabels: Record<string, string> = {
 
 const TreeNode: React.FC<{
   node: TemplateNode;
-  allNodes: TemplateNode[];
+  childrenByParent: Map<string, TemplateNode[]>;
   depth: number;
   isDark: boolean;
-}> = memo(({ node, allNodes, depth, isDark }) => {
+}> = memo(({ node, childrenByParent, depth, isDark }) => {
   const children = useMemo(
-    () => allNodes.filter(n => n.parentId === node.id),
-    [allNodes, node.id]
+    () => childrenByParent.get(node.id) ?? [],
+    [childrenByParent, node.id]
   );
 
   return (
@@ -132,7 +132,7 @@ const TreeNode: React.FC<{
         <TreeNode
           key={child.id}
           node={child}
-          allNodes={allNodes}
+          childrenByParent={childrenByParent}
           depth={depth + 1}
           isDark={isDark}
         />
@@ -160,6 +160,22 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
   const layoutSuggestion = template.layout_suggestion;
 
   const rootNode = useMemo(() => nodes.find(n => !n.parentId), [nodes]);
+
+  // 预构建 parentId -> 子节点 映射，避免递归渲染时每个节点过滤全部 nodes（原为 O(nodes*nodes)）
+  const childrenByParent = useMemo(() => {
+    const m = new Map<string, TemplateNode[]>();
+    nodes.forEach(n => {
+      if (n.parentId) {
+        const list = m.get(n.parentId);
+        if (list) {
+          list.push(n);
+        } else {
+          m.set(n.parentId, [n]);
+        }
+      }
+    });
+    return m;
+  }, [nodes]);
 
   const nodeCountByLevel = useMemo(() => {
     const counts: Record<string, number> = {
@@ -295,7 +311,12 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
 
         <div className="max-h-64 overflow-y-auto">
           {rootNode ? (
-            <TreeNode node={rootNode} allNodes={nodes} depth={0} isDark={isDark} />
+            <TreeNode
+              node={rootNode}
+              childrenByParent={childrenByParent}
+              depth={0}
+              isDark={isDark}
+            />
           ) : (
             <div className={isDark ? 'text-slate-500' : 'text-gray-500'}>
               {t("templates.preview.rootNodeNotFound")}

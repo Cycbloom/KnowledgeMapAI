@@ -58,8 +58,9 @@ const NodePreviewCardComponent: React.FC<NodePreviewCardProps> = ({
   
   const childNodes = useMemo(() => {
     const childEdges = edges.filter(e => e.source_knowledge_point_id === node.id);
-    const childIds = childEdges.map(e => e.target_knowledge_point_id);
-    return nodes.filter(n => childIds.includes(n.id));
+    // 用 Set 替代 childIds.includes 的线性扫描（原为 O(nodes*childEdges)）
+    const childIdSet = new Set(childEdges.map(e => e.target_knowledge_point_id));
+    return nodes.filter(n => childIdSet.has(n.id));
   }, [node, edges, nodes]);
   
   const contentPreview = useMemo(() => {

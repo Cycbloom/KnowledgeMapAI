@@ -69,6 +69,9 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
   const selectedTypes = config.cardTypes || [];
   const cardsPerType: Partial<Record<CardType, number>> = config.cardsPerType || {};
 
+  // 预构建已选题型集合，避免渲染选项时对每个类型线性 includes（原为 O(types*selectedTypes)）
+  const selectedTypeSet = useMemo(() => new Set(selectedTypes), [selectedTypes]);
+
   const totalCount = useMemo(() => {
     return selectedTypes.reduce((sum, type) => sum + (cardsPerType[type] || 0), 0);
   }, [selectedTypes, cardsPerType]);
@@ -123,7 +126,7 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
 
       <div className="grid grid-cols-2 gap-3">
         {quizTypes.map((type) => {
-          const isSelected = selectedTypes.includes(type.id);
+          const isSelected = selectedTypeSet.has(type.id);
           const count = cardsPerType[type.id] || type.defaultCount;
 
           return (

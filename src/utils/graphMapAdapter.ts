@@ -1,14 +1,8 @@
 import i18next from 'i18next';
 import { Node, Edge, NodeLevel, Graph, GraphRelation, GraphRelationType } from '../types';
 
-export const calculateGraphLevel = (
-  graphId: string,
-  relations: GraphRelation[]
-): NodeLevel => {
-  const connections = relations.filter(
-    r => r.source_graph_id === graphId || r.target_graph_id === graphId
-  ).length;
-
+// 根据连接数推导层级，供批量预计算与单点查询复用
+export const graphLevelFromConnections = (connections: number): NodeLevel => {
   if (connections >= 5) return 'root';
   if (connections >= 3) return 'core';
   if (connections >= 2) return 'sub';
@@ -16,17 +10,39 @@ export const calculateGraphLevel = (
   return 'leaf';
 };
 
+export const calculateGraphLevel = (
+  graphId: string,
+  relations: GraphRelation[]
+): NodeLevel => {
+  const connections = relations.filter(
+    r => r.source_graph_id === graphId || r.target_graph_id === graphId
+  ).length;
+  return graphLevelFromConnections(connections);
+};
+
 export const convertGraphsToNodes = (
   graphs: Array<Graph & { node_count?: number; x_position?: number; y_position?: number; updated_at?: string }>,
   relations: GraphRelation[]
 ): Node[] => {
+  // 预计算每个 graph 的连接数，避免在循环内对 relations 全量 filter（原为 O(n*m)）
+  const connectionCounts = new Map<string, number>();
+  for (const r of relations) {
+    // source 与 target 相同（自环）时原 filter 只计一次，需去重以保持一致
+    if (r.source_graph_id === r.target_graph_id) {
+      connectionCounts.set(r.source_graph_id, (connectionCounts.get(r.source_graph_id) ?? 0) + 1);
+    } else {
+      connectionCounts.set(r.source_graph_id, (connectionCounts.get(r.source_graph_id) ?? 0) + 1);
+      connectionCounts.set(r.target_graph_id, (connectionCounts.get(r.target_graph_id) ?? 0) + 1);
+    }
+  }
+
   return graphs.map(graph => ({
     id: graph.id,
     graph_id: 'graph-map',
     knowledge_point_id: graph.id,
     x_position: graph.x_position || 0,
     y_position: graph.y_position || 0,
-    level: calculateGraphLevel(graph.id, relations),
+    level: graphLevelFromConnections(connectionCounts.get(graph.id) ?? 0),
     is_accepted: true,
     created_at: graph.created_at,
     updated_at: graph.updated_at || graph.created_at,

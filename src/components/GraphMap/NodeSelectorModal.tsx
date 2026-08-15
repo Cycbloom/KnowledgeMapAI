@@ -43,6 +43,9 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
+  // 预构建已选 id 集合，避免渲染树/列表时对每个节点线性 includes（原为 O(nodes*selectedIds)）
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
   const { data: graphData, isLoading: nodesLoading } = useGraphData(graphId);
 
   const treeData = useMemo(() => {
@@ -157,7 +160,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
 
   const renderTreeNode = (node: TreeNode, depth: number = 0, setSize?: number, posInSet?: number) => {
     const isExpanded = expandedIds.has(node.id);
-    const isSelected = selectedIds.includes(node.id);
+    const isSelected = selectedIdSet.has(node.id);
     const hasChildren = node.children.length > 0;
     const childrenId = `node-selector-children-${node.id}`;
     const childCount = hasChildren ? node.children.length : 0;
@@ -285,7 +288,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
     return (
       <div className="space-y-1">
         {filteredNodes.map((node: Node) => {
-          const isSelected = selectedIds.includes(node.knowledge_point_id);
+          const isSelected = selectedIdSet.has(node.knowledge_point_id);
           return (
             <div
               key={node.knowledge_point_id}

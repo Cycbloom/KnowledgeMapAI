@@ -29,6 +29,25 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    // 预构建 deadline(天级) -> tasks 映射，避免每天线性扫描全部 tasks（原为 O(days*tasks)）
+    const noDeadlineTasks: UserTask[] = [];
+    const tasksByDayKey = new Map<number, UserTask[]>();
+    tasks.forEach((task) => {
+      if (!task.deadline) {
+        noDeadlineTasks.push(task);
+        return;
+      }
+      const d = new Date(task.deadline);
+      d.setHours(0, 0, 0, 0);
+      const key = d.getTime();
+      const list = tasksByDayKey.get(key);
+      if (list) {
+        list.push(task);
+      } else {
+        tasksByDayKey.set(key, [task]);
+      }
+    });
+
     const days: { date: Date; label: string; tasks: UserTask[]; isToday: boolean; isPast: boolean }[] = [];
     
     for (let i = -3; i <= 10; i++) {
@@ -36,12 +55,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       date.setDate(date.getDate() + i);
       date.setHours(0, 0, 0, 0);
       
-      const dayTasks = tasks.filter((task) => {
-        if (!task.deadline) return i === 0;
-        const taskDate = new Date(task.deadline);
-        taskDate.setHours(0, 0, 0, 0);
-        return taskDate.getTime() === date.getTime();
-      });
+      const dayTasks = tasksByDayKey.get(date.getTime()) ?? [];
+      // 无 deadline 的任务仅在今天（i === 0）展示，需合并
+      const dayList = i === 0 ? [...dayTasks, ...noDeadlineTasks] : dayTasks;
 
       const isToday = date.getTime() === today.getTime();
       const isPast = date < today;
@@ -54,11 +70,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             ? t('scheduler.timeline.tomorrow') 
             : `${date.getMonth() + 1}/${date.getDate()}`;
       
-      days.push({ date, label, tasks: dayTasks, isToday, isPast });
+      days.push({ date, label, tasks: dayList, isToday, isPast });
     }
     
     return days;
-  }, [tasks, currentDate]);
+  }, [tasks, currentDate, t]);
 
   const overdueTasks = useMemo(() => {
     const today = new Date();

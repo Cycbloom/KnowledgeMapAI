@@ -28,22 +28,18 @@ export function calculateRegionAngles(
   return regions;
 }
 
-export function calculateNodeImportance(node: Node, edges: Edge[]): number {
+export function calculateNodeImportance(
+  node: Node,
+  degreeMap: Map<unknown, number>,
+  edgeCount: number,
+): number {
   const level = node.level ?? "normal";
   const levelScore = LEVEL_WEIGHTS[level] ?? 0.4;
 
   const nodeId = node.knowledge_point_id ?? node.id;
-  let connectionCount = 0;
-  for (const edge of edges) {
-    if (
-      edge.source_knowledge_point_id === nodeId ||
-      edge.target_knowledge_point_id === nodeId
-    ) {
-      connectionCount++;
-    }
-  }
+  const connectionCount = degreeMap.get(nodeId) ?? 0;
 
-  const maxConnections = Math.max(edges.length, 1);
+  const maxConnections = Math.max(edgeCount, 1);
   const connectionScore = Math.min(connectionCount / maxConnections, 1);
 
   const sources = node.properties?.sources ?? [];
@@ -99,9 +95,22 @@ export function layoutNodes(
   const positions = new Map<string, { x: number; y: number }>();
   const processedNodeIds = new Set<string>();
 
+  const degreeMap = new Map<unknown, number>();
+  edges.forEach(edge => {
+    const s = edge.source_knowledge_point_id;
+    const t = edge.target_knowledge_point_id;
+    if (s === t) {
+      // self-loop: counts once
+      degreeMap.set(s, (degreeMap.get(s) ?? 0) + 1);
+    } else {
+      degreeMap.set(s, (degreeMap.get(s) ?? 0) + 1);
+      degreeMap.set(t, (degreeMap.get(t) ?? 0) + 1);
+    }
+  });
+
   for (const region of regions) {
     for (const node of region.nodes) {
-      const importance = calculateNodeImportance(node, edges);
+      const importance = calculateNodeImportance(node, degreeMap, edges.length);
       const position = calculateNodePosition(
         node,
         region.angleStart,
@@ -121,7 +130,7 @@ export function layoutNodes(
   for (const node of nodes) {
     const nodeId = node.knowledge_point_id ?? node.id;
     if (!processedNodeIds.has(nodeId)) {
-      const importance = calculateNodeImportance(node, edges);
+      const importance = calculateNodeImportance(node, degreeMap, edges.length);
       const regionIndex = Math.abs(hashCode(nodeId)) % regionAngles.length;
       const angleInfo = regionAngles[regionIndex];
       const position = calculateNodePosition(

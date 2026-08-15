@@ -1624,19 +1624,18 @@ BEGIN
   FROM graph_nodes n1
   JOIN graph_nodes n2 ON n1.graph_id = n2.graph_id
     AND n1.knowledge_point_id < n2.knowledge_point_id
+  LEFT JOIN edges e
+    ON e.graph_id = p_graph_id
+    AND e.deleted_at IS NULL
+    AND (
+      (e.source_knowledge_point_id = n1.knowledge_point_id AND e.target_knowledge_point_id = n2.knowledge_point_id)
+      OR
+      (e.source_knowledge_point_id = n2.knowledge_point_id AND e.target_knowledge_point_id = n1.knowledge_point_id)
+    )
   WHERE n1.graph_id = p_graph_id
     AND n1.deleted_at IS NULL
     AND n2.deleted_at IS NULL
-    AND NOT EXISTS (
-      SELECT 1 FROM edges e
-      WHERE e.graph_id = p_graph_id
-        AND e.deleted_at IS NULL
-        AND (
-          (e.source_knowledge_point_id = n1.knowledge_point_id AND e.target_knowledge_point_id = n2.knowledge_point_id)
-          OR
-          (e.source_knowledge_point_id = n2.knowledge_point_id AND e.target_knowledge_point_id = n1.knowledge_point_id)
-        )
-    )
+    AND e.id IS NULL
   ORDER BY score ASC
   LIMIT p_max_suggestions;
 END;

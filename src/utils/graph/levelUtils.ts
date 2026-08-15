@@ -1,7 +1,47 @@
 import i18next from 'i18next';
-import type { NodeLevel } from '../../types';
+import type { Node, Edge, NodeLevel } from '../../types';
 
 export const LEVEL_ORDER: NodeLevel[] = ['root', 'core', 'sub', 'normal', 'leaf'];
+
+export const buildLevelMap = (nodes: Node[], edges: Edge[]): Map<string, NodeLevel> => {
+  const outDegree = new Map<string, number>();
+  const inDegree = new Map<string, number>();
+
+  for (const node of nodes) {
+    const id = String(node.id).trim();
+    outDegree.set(id, 0);
+    inDegree.set(id, 0);
+  }
+
+  for (const edge of edges) {
+    const sourceId = String(edge.source_knowledge_point_id).trim();
+    const targetId = String(edge.target_knowledge_point_id).trim();
+    outDegree.set(sourceId, (outDegree.get(sourceId) ?? 0) + 1);
+    inDegree.set(targetId, (inDegree.get(targetId) ?? 0) + 1);
+  }
+
+  const levelMap = new Map<string, NodeLevel>();
+  for (const node of nodes) {
+    const id = String(node.id).trim();
+    if (node.level) {
+      levelMap.set(id, node.level);
+      continue;
+    }
+    const out = outDegree.get(id) ?? 0;
+    const inCount = inDegree.get(id) ?? 0;
+    if (inCount === 0 && out > 0) {
+      levelMap.set(id, 'root');
+    } else if (out === 0 && inCount > 0) {
+      levelMap.set(id, 'leaf');
+    } else if (out > 0 && inCount > 0) {
+      levelMap.set(id, 'core');
+    } else {
+      levelMap.set(id, 'normal');
+    }
+  }
+
+  return levelMap;
+};
 
 export function getNextLevel(currentLevel: string): NodeLevel {
   const index = LEVEL_ORDER.indexOf(currentLevel as NodeLevel);

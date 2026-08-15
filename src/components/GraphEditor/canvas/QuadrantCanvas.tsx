@@ -270,9 +270,11 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
 
     // Build LayoutNode array for virtualization hooks
     const layoutNodes = useMemo(() => {
+      const nodeById = new Map<string, Node>();
+      _nodes.forEach((n) => nodeById.set(normalizeId(n.id), n));
       return Object.entries(adjustedNodePositions).map(([id, pos]) => {
         // Find the original node to get its data
-        const node = _nodes.find(n => normalizeId(n.id) === id);
+        const node = nodeById.get(id);
         if (!node) return null;
         return {
           ...node,

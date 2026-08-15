@@ -37,9 +37,13 @@ function getLevelNumber(level?: NodeLevel): number {
   return LEVEL_PRIORITY[level] ?? 3;
 }
 
-function calculateNodeImportance(node: Node, _nodes: Node[], edges: Edge[]): number {
-  const connections = edges.filter(e => e.source_knowledge_point_id === node.id || e.target_knowledge_point_id === node.id).length;
-  const childCount = edges.filter(e => e.source_knowledge_point_id === node.id).length;
+function calculateNodeImportance(
+  node: Node,
+  degreeMap: Map<unknown, number>,
+  childMap: Map<unknown, number>
+): number {
+  const connections = degreeMap.get(node.id) ?? 0;
+  const childCount = childMap.get(node.id) ?? 0;
   const levelFactor = Math.max(1, 5 - getLevelNumber(node.level));
   return connections * 0.3 + childCount * 0.5 + levelFactor * 0.5;
 }
@@ -56,6 +60,14 @@ export function create3DForceLayout(
 ): LayoutResult3D {
   const { width: _width = 800, height: _height = 600, depth = 600, iterations = 300 } = options;
 
+  const degreeMap = new Map<unknown, number>();
+  const childMap = new Map<unknown, number>();
+  edges.forEach(edge => {
+    degreeMap.set(edge.source_knowledge_point_id, (degreeMap.get(edge.source_knowledge_point_id) ?? 0) + 1);
+    degreeMap.set(edge.target_knowledge_point_id, (degreeMap.get(edge.target_knowledge_point_id) ?? 0) + 1);
+    childMap.set(edge.source_knowledge_point_id, (childMap.get(edge.source_knowledge_point_id) ?? 0) + 1);
+  });
+
   const layoutNodes: LayoutNode3D[] = nodes.map((node, index) => {
     const angle = (index / nodes.length) * Math.PI * 2;
     const radius = 100 + Math.random() * 100;
@@ -68,7 +80,7 @@ export function create3DForceLayout(
       vy: 0,
       vz: 0,
       level: getLevelNumber(node.level),
-      importance: calculateNodeImportance(node, nodes, edges),
+      importance: calculateNodeImportance(node, degreeMap, childMap),
       data: node
     };
   });

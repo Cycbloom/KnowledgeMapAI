@@ -36,6 +36,19 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
     if (backboneModules && backboneModules.length > 0) {
       const angleStep = (2 * Math.PI) / backboneModules.length;
 
+      const moduleGroups = new Map<string, Node[]>();
+      nodes.forEach((n) => {
+        const module = n.properties?.backboneModule;
+        if (module) {
+          const group = moduleGroups.get(module);
+          if (group) {
+            group.push(n);
+          } else {
+            moduleGroups.set(module, [n]);
+          }
+        }
+      });
+
       return backboneModules
         .sort(
           (a: GraphBackboneModule, b: GraphBackboneModule) =>
@@ -45,9 +58,7 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
           const angleStart = index * angleStep;
           const angleEnd = (index + 1) * angleStep;
 
-          const regionNodes = nodes.filter(
-            (n) => n.properties?.backboneModule === module.module_type,
-          );
+          const regionNodes = moduleGroups.get(module.module_type) || [];
 
           return {
             id: `region-${module.module_type}`,
@@ -79,13 +90,24 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
 
     const angleStep = (2 * Math.PI) / 6;
 
+    const moduleGroups = new Map<string, Node[]>();
+    nodes.forEach((n) => {
+      const module = n.properties?.backboneModule;
+      if (module) {
+        const group = moduleGroups.get(module);
+        if (group) {
+          group.push(n);
+        } else {
+          moduleGroups.set(module, [n]);
+        }
+      }
+    });
+
     return orderedBackboneModules.map((module, index) => {
       const angleStart = index * angleStep;
       const angleEnd = (index + 1) * angleStep;
 
-      const regionNodes = nodes.filter(
-        (n) => n.properties?.backboneModule === module,
-      );
+      const regionNodes = moduleGroups.get(module) || [];
 
       return {
         id: `region-${module}`,
@@ -136,11 +158,17 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
 
     const angleStep = (2 * Math.PI) / customRegions.length;
 
+    const regionNodeSets = customRegions.map(
+      (region) => new Set(region.nodeIds),
+    );
+
     return customRegions.map((region, index) => {
       const angleStart = index * angleStep;
       const angleEnd = (index + 1) * angleStep;
 
-      const regionNodes = nodes.filter((n) => region.nodeIds.includes(n.id));
+      const regionNodes = nodes.filter((n) =>
+        regionNodeSets[index].has(n.id),
+      );
 
       return {
         id: region.id,

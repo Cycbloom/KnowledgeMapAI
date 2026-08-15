@@ -1,7 +1,7 @@
 import { Node, Edge, LayoutNode, LayoutLink, NodeLevel } from '../types';
 import * as d3 from 'd3-force';
 import type { SimulationNodeDatum } from 'd3-force';
-import { getLevel } from '../utils/graph/graphUtils';
+import { buildLevelMap, getLevel } from '../utils/graph/graphUtils';
 import { UMAP } from 'umap-js';
 
 export interface LayoutResult {
@@ -61,6 +61,8 @@ export const createMindMapLayout = (
 
   const nodeIds = new Set(nodes.map(n => n.id));
 
+  const levelMap = buildLevelMap(nodes, edges);
+
   const layoutNodes: LayoutNode[] = nodes.map(node => {
     const domain = node.properties?.domain as string | undefined;
     let initialX = width / 2 + (Math.random() - 0.5) * 100;
@@ -103,7 +105,7 @@ export const createMindMapLayout = (
     .force('charge', d3.forceManyBody()
       .strength((d: SimulationNodeDatum) => {
         const layoutNode = d as LayoutNode;
-        const level = getLevel(layoutNode, edges);
+        const level = getLevel(layoutNode, edges, levelMap);
         return dynamicChargeStrength * (1 + (LEVEL_CHARGE_STRENGTH[level] / -100));
       })
     )
@@ -113,7 +115,7 @@ export const createMindMapLayout = (
     .force('collide', d3.forceCollide()
       .radius((d: SimulationNodeDatum) => {
         const layoutNode = d as LayoutNode;
-        const level = getLevel(layoutNode, edges);
+        const level = getLevel(layoutNode, edges, levelMap);
         const baseRadius = getLevelRadius(level);
         return nodeCount > 50 ? baseRadius * 1.2 : baseRadius;
       })
@@ -259,6 +261,7 @@ export const createSemanticLayout = (
   }
 
   const nodeIds = new Set(nodes.map(n => n.id));
+
   const layoutNodes: LayoutNode[] = nodes.map(node => {
     const pos = semanticPositions.get(node.id) || fallbackPositions.get(node.id) || {
       x: width / 2 + (Math.random() - 0.5) * 100,

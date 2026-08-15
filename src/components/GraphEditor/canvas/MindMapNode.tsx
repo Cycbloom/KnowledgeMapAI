@@ -71,6 +71,7 @@ interface MindMapNodeProps {
   showReviewCount?: boolean;
   maxTitleLength?: number;
   childCount?: number;
+  levelMap?: Map<string, NodeLevel>;
 }
 
 // 提取到函数外部，避免每次调用都创建新对象
@@ -152,10 +153,11 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   showReviewCount = false,
   maxTitleLength,
   childCount = 0,
+  levelMap,
 }) => {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
-  const level = getLevel(node, edges);
+  const level = getLevel(node, edges, levelMap);
   const tags = useMemo(
     () => node.tags || node.properties?.tags || [],
     [node.tags, node.properties],

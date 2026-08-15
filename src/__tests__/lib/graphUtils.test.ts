@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { 
-  getLevel, 
+  getLevel,
+  buildLevelMap,
   getNextLevel, 
   findShortestPath,
   getDescendantNodes,
@@ -59,6 +60,85 @@ describe('Graph Utils', () => {
         { id: 'e1', source_knowledge_point_id: '1', target_knowledge_point_id: '2' },
       ] as any;
       expect(getLevel(node, edges)).toBe('root');
+    });
+  });
+
+  describe('buildLevelMap', () => {
+    it('should use explicit node level if exists', () => {
+      const node: Node = {
+        id: '1', title: 'test', x: 0, y: 0, z: 0,
+        level: 'sub'
+      } as any;
+      const edges: Edge[] = [
+        { id: 'e1', source_knowledge_point_id: '1', target_knowledge_point_id: '2' },
+        { id: 'e2', source_knowledge_point_id: '3', target_knowledge_point_id: '1' },
+      ] as any;
+
+      const levelMap = buildLevelMap([node], edges);
+      expect(levelMap.get('1')).toBe('sub');
+    });
+
+    it('should return empty map for empty graph', () => {
+      const levelMap = buildLevelMap([], []);
+      expect(levelMap.size).toBe(0);
+    });
+
+    it('should map root / leaf / core / normal nodes correctly', () => {
+      const nodes: Node[] = [
+        { id: '1', title: 'root', x: 0, y: 0, z: 0 },
+        { id: '2', title: 'leaf', x: 0, y: 0, z: 0 },
+        { id: '3', title: 'core', x: 0, y: 0, z: 0 },
+        { id: '4', title: 'normal', x: 0, y: 0, z: 0 },
+      ] as any;
+      const edges: Edge[] = [
+        { id: 'e1', source_knowledge_point_id: '1', target_knowledge_point_id: '3' },
+        { id: 'e2', source_knowledge_point_id: '3', target_knowledge_point_id: '2' },
+      ] as any;
+
+      const levelMap = buildLevelMap(nodes, edges);
+      expect(levelMap.get('1')).toBe('root');
+      expect(levelMap.get('2')).toBe('leaf');
+      expect(levelMap.get('3')).toBe('core');
+      expect(levelMap.get('4')).toBe('normal');
+    });
+
+    it('should match getLevel described by degree for shared fixtures', () => {
+      const node: Node = { id: '1', title: 'test', x: 0, y: 0, z: 0 } as any;
+      const edges: Edge[] = [
+        { id: 'e1', source_knowledge_point_id: '1', target_knowledge_point_id: '2' },
+        { id: 'e2', source_knowledge_point_id: '3', target_knowledge_point_id: '1' },
+      ] as any;
+
+      const levelMap = buildLevelMap([node], edges);
+      expect(levelMap.get('1')).toBe('core');
+
+      const leafEdges: Edge[] = [
+        { id: 'e3', source_knowledge_point_id: '2', target_knowledge_point_id: '1' },
+      ] as any;
+      expect(buildLevelMap([node], leafEdges).get('1')).toBe('leaf');
+
+      const rootEdges: Edge[] = [
+        { id: 'e4', source_knowledge_point_id: '1', target_knowledge_point_id: '2' },
+      ] as any;
+      expect(buildLevelMap([node], rootEdges).get('1')).toBe('root');
+    });
+
+    it('should be consistent with getLevel using levelMap', () => {
+      const nodes: Node[] = [
+        { id: '1', title: 'root', x: 0, y: 0, z: 0 },
+        { id: '2', title: 'leaf', x: 0, y: 0, z: 0 },
+        { id: '3', title: 'core', x: 0, y: 0, z: 0 },
+        { id: '4', title: 'normal', x: 0, y: 0, z: 0 },
+      ] as any;
+      const edges: Edge[] = [
+        { id: 'e1', source_knowledge_point_id: '1', target_knowledge_point_id: '3' },
+        { id: 'e2', source_knowledge_point_id: '3', target_knowledge_point_id: '2' },
+      ] as any;
+
+      const levelMap = buildLevelMap(nodes, edges);
+      for (const n of nodes) {
+        expect(getLevel(n, edges, levelMap)).toBe(getLevel(n, edges));
+      }
     });
   });
 

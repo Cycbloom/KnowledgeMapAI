@@ -746,6 +746,14 @@ export class GraphQueryService {
       (n): n is NonNullable<typeof n> => n !== null,
     );
 
+    const levelIndexByNodeId = new Map<string, number>();
+    validNodes.forEach((node) => {
+      levelIndexByNodeId.set(
+        node.id as string,
+        getLevelIndex(node.level as string) || 0,
+      );
+    });
+
     for (
       let i = 0;
       i < validNodes.length && suggestions.length < maxSuggestions;
@@ -761,8 +769,8 @@ export class GraphQueryService {
         const key = `${sourceId}-${targetId}`;
 
         if (!connectedPairs.has(key)) {
-          const sourceLevel = getLevelIndex(validNodes[i].level as string) || 0;
-          const targetLevel = getLevelIndex(validNodes[j].level as string) || 0;
+          const sourceLevel = levelIndexByNodeId.get(sourceId) ?? 0;
+          const targetLevel = levelIndexByNodeId.get(targetId) ?? 0;
           const score = Math.abs(sourceLevel - targetLevel);
 
           suggestions.push({

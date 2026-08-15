@@ -53,6 +53,9 @@ import {
   calculateEdgeStrength,
   calculateGlobalMaxDegree,
   calculateGlobalMaxChildren,
+  buildGraphEdgeMaps,
+  buildLevelMap,
+  buildNodeImportanceMaps,
 } from "../../../utils/graph/graphUtils";
 import {
   useCanvasTransform,
@@ -512,6 +515,8 @@ export const MindMapCanvas = React.memo(
     }, [nodes, edges, nodeSizeMode]);
 
     // 第二步：计算重要性分数（4 项依赖）
+    const importanceMaps = useMemo(() => buildNodeImportanceMaps(nodes, edges), [nodes, edges]);
+
     const nodeImportanceMap = useMemo(() => {
       if (!nodesForImportance) return new Map<string, number>();
       const map = new Map<string, number>();
@@ -523,11 +528,12 @@ export const MindMapCanvas = React.memo(
           nodeStatus,
           globalMaxDegree,
           globalMaxChildren,
+          importanceMaps,
         );
         map.set(node.id, importance.score);
       });
       return map;
-    }, [nodesForImportance, nodes, edges, nodeStatus, globalMaxDegree, globalMaxChildren]);
+    }, [nodesForImportance, nodes, edges, nodeStatus, globalMaxDegree, globalMaxChildren, importanceMaps]);
 
     // 第一步：决定处理哪些边（3 项依赖）
     const linksForStrength = useMemo(() => {
@@ -541,18 +547,22 @@ export const MindMapCanvas = React.memo(
     }, [edges]);
 
     // 第三步：计算边强度（3 项依赖）
+    const graphEdgeMaps = useMemo(() => buildGraphEdgeMaps(nodes, edges), [nodes, edges]);
+
+    const levelMap = useMemo(() => buildLevelMap(nodes, edges), [nodes, edges]);
+
     const edgeStrengthMap = useMemo(() => {
       if (!linksForStrength) return new Map<string, number>();
       const map = new Map<string, number>();
       linksForStrength.forEach((link) => {
         const edge = edgeLookupMap.get(link.id);
         if (edge) {
-          const strength = calculateEdgeStrength(edge, nodes, edges);
+          const strength = calculateEdgeStrength(edge, nodes, edges, graphEdgeMaps);
           map.set(link.id, strength.score);
         }
       });
       return map;
-    }, [linksForStrength, edgeLookupMap, nodes]);
+    }, [linksForStrength, edgeLookupMap, nodes, graphEdgeMaps]);
 
     const decayStats = useMemo(() => {
       if (coloringMode !== "decay" || !nodeStatus) return null;
@@ -1086,6 +1096,7 @@ export const MindMapCanvas = React.memo(
                 edgeStrength={edgeStrengthMap.get(link.id)}
                 allNodes={nodes}
                 allEdges={edges}
+                graphEdgeMaps={graphEdgeMaps}
                 onContextMenu={edgeMgmt.handleEdgeContextMenu}
                 edgeDisplayMode={edgeDisplayMode}
               />
@@ -1142,6 +1153,7 @@ export const MindMapCanvas = React.memo(
                   showReviewCount={semanticStrategy?.showReviewCount ?? false}
                   maxTitleLength={semanticStrategy?.maxTitleLength}
                   childCount={semanticStrategy?.childCount ?? 0}
+                  levelMap={levelMap}
                 />
               );
             })}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import React, { useState, useEffect, useId, useRef, useMemo, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTranslation } from "react-i18next";
 import { BarChart3, AlertTriangle, CheckCircle2, Network, Layers, Lightbulb, TrendingUp, Activity, X } from 'lucide-react';
 import { api } from '../../../services/api';
@@ -55,6 +55,8 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'overview' | 'structure' | 'connections'>('overview');
+
+  const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
 
   const tablistId = useId();
   const tabIdPrefix = `${tablistId}-tab`;
@@ -413,14 +415,14 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                                   onClick={() => onNodeClick?.(conn.sourceId)}
                                   className="text-sm font-medium text-primary-600 dark:text-primary-400 underline"
                                 >
-                                  {nodes.find(n => n.id === conn.sourceId)?.title || t('graphEditor.diffDetail.unknownNode')}
+                                  {nodeById.get(conn.sourceId)?.title || t('graphEditor.diffDetail.unknownNode')}
                                 </button>
                                 <span className="text-slate-400">→</span>
                                 <button
                                   onClick={() => onNodeClick?.(conn.targetId)}
                                   className="text-sm font-medium text-primary-600 dark:text-primary-400 underline"
                                 >
-                                  {nodes.find(n => n.id === conn.targetId)?.title || t('graphEditor.diffDetail.unknownNode')}
+                                  {nodeById.get(conn.targetId)?.title || t('graphEditor.diffDetail.unknownNode')}
                                 </button>
                               </div>
                               <button

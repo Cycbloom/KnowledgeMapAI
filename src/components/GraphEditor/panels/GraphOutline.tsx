@@ -437,22 +437,22 @@ export const GraphOutline = React.memo(function GraphOutline({
       score: number;
     }[] = [];
 
+    // Precompute connected ids per node (O(n+m)) instead of filtering edges per node
+    const connectedIdsMap = new Map<string, Set<string>>();
+    nodes.forEach((node) => connectedIdsMap.set(node.id, new Set()));
+    edges.forEach((edge) => {
+      connectedIdsMap
+        .get(edge.source_knowledge_point_id)
+        ?.add(edge.target_knowledge_point_id);
+      connectedIdsMap
+        .get(edge.target_knowledge_point_id)
+        ?.add(edge.source_knowledge_point_id);
+    });
+
     nodes.forEach((node) => {
       const nodeTags = new Set(node.tags || node.properties?.tags || []);
       const nodeContent = (node.summary || node.content || "").toLowerCase();
-      const connectedIds = new Set(
-        edges
-          .filter(
-            (e) =>
-              e.source_knowledge_point_id === node.id ||
-              e.target_knowledge_point_id === node.id,
-          )
-          .map((e) =>
-            e.source_knowledge_point_id === node.id
-              ? e.target_knowledge_point_id
-              : e.source_knowledge_point_id,
-          ),
-      );
+      const connectedIds = connectedIdsMap.get(node.id) ?? new Set<string>();
 
       nodes.forEach((otherNode) => {
         if (node.id === otherNode.id) return;
@@ -493,20 +493,18 @@ export const GraphOutline = React.memo(function GraphOutline({
       });
     });
 
-    const uniqueSuggestions = suggestions
-      .filter(
-        (s, i, arr) =>
-          arr.findIndex(
-            (other) =>
-              (other.sourceId === s.sourceId &&
-                other.targetId === s.targetId) ||
-              (other.sourceId === s.targetId && other.targetId === s.sourceId),
-          ) === i,
-      )
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10);
+    // Dedup undirected pairs keeping first occurrence (O(k) instead of O(k²))
+    const seenPairs = new Set<string>();
+    const uniqueSuggestions: typeof suggestions = [];
+    suggestions.forEach((s) => {
+      const key = [s.sourceId, s.targetId].sort().join("\u0001");
+      if (seenPairs.has(key)) return;
+      seenPairs.add(key);
+      uniqueSuggestions.push(s);
+    });
+    uniqueSuggestions.sort((a, b) => b.score - a.score);
 
-    return uniqueSuggestions;
+    return uniqueSuggestions.slice(0, 10);
   }, [nodes, edges, existingConnections, t]);
 
   const [dismissedConnections, setDismissedConnections] = useState<Set<string>>(

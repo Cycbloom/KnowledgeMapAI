@@ -319,28 +319,47 @@ const LEVEL_CHARGE_STRENGTH: Record<MindMapNodeLevel, number> = {
   leaf: -120,
 };
 
-function getMindMapLevel(
-  node: MindMapLayoutNode,
+const buildMindMapLevelMap = (
+  layoutNodes: MindMapLayoutNode[],
   edges: MindMapLayoutEdge[]
-): MindMapNodeLevel {
+): Map<string, MindMapNodeLevel> => {
+  const outDeg = new Map<string, number>();
+  const inDeg = new Map<string, number>();
+  layoutNodes.forEach((n) => {
+    const id = String(n.id).trim();
+    outDeg.set(id, 0);
+    inDeg.set(id, 0);
+  });
+  edges.forEach((e) => {
+    const s = String(e.source_knowledge_point_id).trim();
+    const t = String(e.target_knowledge_point_id).trim();
+    outDeg.set(s, (outDeg.get(s) ?? 0) + 1);
+    inDeg.set(t, (inDeg.get(t) ?? 0) + 1);
+  });
+  const levelMap = new Map<string, MindMapNodeLevel>();
+  layoutNodes.forEach((n) => {
+    const id = String(n.id).trim();
+    if (n.level) {
+      levelMap.set(id, n.level as MindMapNodeLevel);
+      return;
+    }
+    const out = outDeg.get(id) ?? 0;
+    const inCount = inDeg.get(id) ?? 0;
+    if (inCount === 0 && out > 0) levelMap.set(id, 'root');
+    else if (out === 0 && inCount > 0) levelMap.set(id, 'leaf');
+    else if (out > 0 && inCount > 0) levelMap.set(id, 'core');
+    else levelMap.set(id, 'normal');
+  });
+  return levelMap;
+};
+
+const getMindMapLevel = (
+  node: MindMapLayoutNode,
+  levelMap: Map<string, MindMapNodeLevel>
+): MindMapNodeLevel => {
   if (node.level) return node.level;
-
-  const nodeId = String(node.id).trim();
-
-  const outDegree = edges.filter(
-    (e) => String(e.source_knowledge_point_id).trim() === nodeId
-  ).length;
-
-  const inDegree = edges.filter(
-    (e) => String(e.target_knowledge_point_id).trim() === nodeId
-  ).length;
-
-  if (inDegree === 0 && outDegree > 0) return 'root';
-  if (outDegree === 0 && inDegree > 0) return 'leaf';
-  if (outDegree > 0 && inDegree > 0) return 'core';
-
-  return 'normal';
-}
+  return levelMap.get(String(node.id).trim()) ?? 'normal';
+};
 
 function getLevelRadius(level: MindMapNodeLevel): number {
   const radii: Record<MindMapNodeLevel, number> = {
@@ -397,6 +416,8 @@ const calculateMindMapLayout = (
     };
   });
 
+  const levelMap = buildMindMapLevelMap(layoutNodes, edges);
+
   // Build layout links
   const layoutLinks: MindMapLayoutResult['links'] = edges
     .filter(
@@ -425,7 +446,7 @@ const calculateMindMapLayout = (
       'charge',
       d3.forceManyBody().strength((d: SimulationNodeDatum) => {
         const layoutNode = d as MindMapLayoutNode;
-        const level = getMindMapLevel(layoutNode, edges);
+        const level = getMindMapLevel(layoutNode, levelMap);
         return (
           dynamicChargeStrength *
           (1 + LEVEL_CHARGE_STRENGTH[level] / -100)
@@ -442,7 +463,7 @@ const calculateMindMapLayout = (
         .forceCollide()
         .radius((d: SimulationNodeDatum) => {
           const layoutNode = d as MindMapLayoutNode;
-          const level = getMindMapLevel(layoutNode, edges);
+          const level = getMindMapLevel(layoutNode, levelMap);
           const baseRadius = getLevelRadius(level);
           return nodeCount > 50 ? baseRadius * 1.2 : baseRadius;
         })
@@ -645,11 +666,13 @@ function get3DLevelNumber(level?: NodeLevel): number {
   return LEVEL_PRIORITY_3D[level] ?? 3;
 }
 
-function compute3DNodeImportance(node: GraphNode, edges: GraphEdge[]): number {
-  const connections = edges.filter(
-    e => e.source_knowledge_point_id === node.id || e.target_knowledge_point_id === node.id
-  ).length;
-  const childCount = edges.filter(e => e.source_knowledge_point_id === node.id).length;
+function compute3DNodeImportance(
+  node: GraphNode,
+  degreeMap: Map<unknown, number>,
+  childMap: Map<unknown, number>
+): number {
+  const connections = degreeMap.get(node.id) ?? 0;
+  const childCount = childMap.get(node.id) ?? 0;
   const levelFactor = Math.max(1, 5 - get3DLevelNumber(node.level));
   return connections * 0.3 + childCount * 0.5 + levelFactor * 0.5;
 }
@@ -668,6 +691,14 @@ const calculate3DForceLayout = (
 ): LayoutResult3D => {
   const { width: _width = 800, height: _height = 600, depth = 600, iterations = 300 } = options;
 
+  const degreeMap = new Map<unknown, number>();
+  const childMap = new Map<unknown, number>();
+  edges.forEach(edge => {
+    degreeMap.set(edge.source_knowledge_point_id, (degreeMap.get(edge.source_knowledge_point_id) ?? 0) + 1);
+    degreeMap.set(edge.target_knowledge_point_id, (degreeMap.get(edge.target_knowledge_point_id) ?? 0) + 1);
+    childMap.set(edge.source_knowledge_point_id, (childMap.get(edge.source_knowledge_point_id) ?? 0) + 1);
+  });
+
   const layoutNodes: LayoutNode3D[] = nodes.map((node, index) => {
     const angle = (index / Math.max(1, nodes.length)) * Math.PI * 2;
     const radius = 100 + Math.random() * 100;
@@ -680,7 +711,7 @@ const calculate3DForceLayout = (
       vy: 0,
       vz: 0,
       level: get3DLevelNumber(node.level),
-      importance: compute3DNodeImportance(node, edges),
+      importance: compute3DNodeImportance(node, degreeMap, childMap),
       data: node,
     };
   });

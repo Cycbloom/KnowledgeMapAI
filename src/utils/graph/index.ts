@@ -5,10 +5,13 @@ export * from './regions';
 
 import type { Node, Edge, NodeLevel } from '../../types';
 
-export const getLevel = (node: Node, edges: Edge[]): NodeLevel => {
+export const getLevel = (node: Node, edges: Edge[], levelMap?: Map<string, NodeLevel>): NodeLevel => {
   if (node.level) return node.level as NodeLevel;
   
   const nodeId = String(node.id).trim();
+  if (levelMap) {
+    return levelMap.get(nodeId) ?? 'normal';
+  }
   
   const outDegree = edges.filter(e => 
     String(e.source_knowledge_point_id).trim() === nodeId

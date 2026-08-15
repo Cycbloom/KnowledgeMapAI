@@ -50,12 +50,17 @@ export const createTreeLayout = (
   nodes.forEach(node => {
     childrenMap.set(normalizeId(node.id), []);
   });
-  
+
+  const nodeById = new Map<string, Node>();
+  nodes.forEach(node => {
+    nodeById.set(normalizeId(node.id), node);
+  });
+
   hierarchicalEdges.forEach(edge => {
     const src = normalizeId(edge.source_knowledge_point_id);
     const tgt = normalizeId(edge.target_knowledge_point_id);
     if (childrenMap.has(src)) {
-      const targetNode = nodes.find(n => normalizeId(n.id) === tgt);
+      const targetNode = nodeById.get(tgt);
       if (targetNode) {
         childrenMap.get(src)?.push(targetNode);
       }

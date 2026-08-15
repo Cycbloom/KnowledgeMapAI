@@ -7,7 +7,7 @@ import { createMindMapLayout, LayoutResult } from '../../../utils/mindmapLayout'
 import { THEME_COLORS } from '../../../config/learningStatusColors';
 import { useTheme } from "../../../hooks";
 import { useGraphWorker } from "../../../hooks/common/useWorker";
-import { calculateNodeImportance, calculateEdgeStrength } from '../../../utils/graph/graphUtils';
+import { calculateNodeImportance, calculateEdgeStrength, calculateGlobalMaxDegree, calculateGlobalMaxChildren, buildGraphEdgeMaps, buildLevelMap, buildNodeImportanceMaps } from '../../../utils/graph/graphUtils';
 import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 import { rafThrottle } from '@/utils/performanceUtils';
 
@@ -177,25 +177,42 @@ const TimelineViewComponent: React.FC<TimelineViewProps> = ({
     return () => clearTimeout(timer);
   }, [allNodes, edges, containerSize, calculateMindMapLayout]);
 
+  // 预计算全局 maxDegree 和 maxChildren，避免每个节点重复计算
+  const globalMaxDegree = useMemo(() => {
+    if (nodeSizeMode === 'fixed') return 1;
+    return calculateGlobalMaxDegree(nodes, edges);
+  }, [nodes, edges, nodeSizeMode]);
+
+  const globalMaxChildren = useMemo(() => {
+    if (nodeSizeMode === 'fixed') return 1;
+    return calculateGlobalMaxChildren(nodes, edges);
+  }, [nodes, edges, nodeSizeMode]);
+
+  const importanceMaps = useMemo(() => buildNodeImportanceMaps(nodes, edges), [nodes, edges]);
+
   const nodeImportanceMap = useMemo(() => {
     if (nodeSizeMode === 'fixed') return new Map<string, number>();
     const map = new Map<string, number>();
     allNodes.forEach(node => {
-      const importance = calculateNodeImportance(node as Node, nodes, edges, nodeStatus);
+      const importance = calculateNodeImportance(node as Node, nodes, edges, nodeStatus, globalMaxDegree, globalMaxChildren, importanceMaps);
       map.set(node.id, importance.score);
     });
     return map;
-  }, [allNodes, nodes, edges, nodeStatus, nodeSizeMode]);
+  }, [allNodes, nodes, edges, nodeStatus, nodeSizeMode, globalMaxDegree, globalMaxChildren, importanceMaps]);
+
+  const graphEdgeMaps = useMemo(() => buildGraphEdgeMaps(nodes, edges), [nodes, edges]);
+
+  const levelMap = useMemo(() => buildLevelMap(nodes, edges), [nodes, edges]);
 
   const edgeStrengthMap = useMemo(() => {
     if (edgeWidthMode === 'fixed') return new Map<string, number>();
     const map = new Map<string, number>();
     edges.forEach(edge => {
-      const strength = calculateEdgeStrength(edge, nodes, edges);
+      const strength = calculateEdgeStrength(edge, nodes, edges, graphEdgeMaps);
       map.set(edge.id, strength.score);
     });
     return map;
-  }, [edges, nodes, edgeWidthMode]);
+  }, [edges, nodes, edgeWidthMode, graphEdgeMaps]);
 
   const isNodeVisible = useCallback((nodeId: string) => {
     const nodeProgress = nodeTimeMap.get(nodeId) || 0;
@@ -480,6 +497,7 @@ const TimelineViewComponent: React.FC<TimelineViewProps> = ({
                   nodeImportance={nodeImportanceMap.get(node.id)}
                   allNodes={nodes}
                   coloringMode={coloringMode}
+                  levelMap={levelMap}
                 />
               </g>
             );

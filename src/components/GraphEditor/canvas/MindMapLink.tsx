@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { LayoutNode, LayoutLink, LinkStyle, LinkAnimation, EdgeWidthMode, Edge, Node, RelationshipTypeConfig, RelationshipCategory } from '../../../types';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
-import { calculateEdgeStrength } from '../../../utils/graph/graphUtils';
+import { calculateEdgeStrength, type GraphEdgeMaps } from '../../../utils/graph/graphUtils';
 import { getRelationshipTypeConfig, getDefaultRelationshipType } from '../../../config/relationshipTypes';
 
 interface MindMapLinkProps {
@@ -17,6 +17,7 @@ interface MindMapLinkProps {
   edgeStrength?: number;
   allNodes?: Node[];
   allEdges?: Edge[];
+  graphEdgeMaps?: GraphEdgeMaps;
   customColor?: string;
   showLabels?: boolean;
   showArrows?: boolean;
@@ -52,6 +53,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   edgeStrength,
   allNodes = [],
   allEdges = [],
+  graphEdgeMaps,
   customColor,
   showLabels = false,
   showArrows = true,
@@ -77,12 +79,12 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
     }
     
     if (allNodes.length > 0 && allEdges.length > 0) {
-      const strength = calculateEdgeStrength(link as Edge, allNodes, allEdges);
+      const strength = calculateEdgeStrength(link as Edge, allNodes, allEdges, graphEdgeMaps);
       return 1 + strength.score * 4;
     }
     
     return 2;
-  }, [edgeWidthMode, edgeStrength, allNodes, allEdges, link]);
+  }, [edgeWidthMode, edgeStrength, allNodes, allEdges, graphEdgeMaps, link]);
 
   const relationshipConfig = useMemo(() => {
     if (relationshipTypeConfig) {
@@ -366,6 +368,7 @@ export const MindMapLink = React.memo(MindMapLinkComponent, (prevProps, nextProp
     prevProps.link.custom_color === nextProps.link.custom_color &&
     prevProps.link.custom_line_style === nextProps.link.custom_line_style &&
     prevProps.link.relationship_type === nextProps.link.relationship_type &&
+    prevProps.graphEdgeMaps === nextProps.graphEdgeMaps &&
     prevProps.nodes.get(prevSourceId)?.x === nextProps.nodes.get(nextSourceId)?.x &&
     prevProps.nodes.get(prevSourceId)?.y === nextProps.nodes.get(nextSourceId)?.y &&
     prevProps.nodes.get(prevTargetId)?.x === nextProps.nodes.get(nextTargetId)?.x &&

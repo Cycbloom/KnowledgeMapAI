@@ -39,6 +39,21 @@ function createMockEdge(id: string, sourceId: string, targetId: string): Edge {
   };
 }
 
+function buildDegreeMap(edges: Edge[]): Map<unknown, number> {
+  const degreeMap = new Map<unknown, number>();
+  edges.forEach((edge) => {
+    const s = edge.source_knowledge_point_id;
+    const t = edge.target_knowledge_point_id;
+    if (s === t) {
+      degreeMap.set(s, (degreeMap.get(s) ?? 0) + 1);
+    } else {
+      degreeMap.set(s, (degreeMap.get(s) ?? 0) + 1);
+      degreeMap.set(t, (degreeMap.get(t) ?? 0) + 1);
+    }
+  });
+  return degreeMap;
+}
+
 function createMockRegion(
   id: string,
   name: string,
@@ -116,7 +131,11 @@ describe("calculateNodeImportance", () => {
   it("root 级别节点具有最高重要性", () => {
     const node = createMockNode("1", "root");
     const edges: Edge[] = [];
-    const importance = calculateNodeImportance(node, edges);
+    const importance = calculateNodeImportance(
+      node,
+      buildDegreeMap(edges),
+      edges.length,
+    );
     expect(importance).toBeGreaterThan(0.4);
     expect(importance).toBeLessThanOrEqual(1);
   });
@@ -124,7 +143,11 @@ describe("calculateNodeImportance", () => {
   it("leaf 级别节点具有较低重要性", () => {
     const node = createMockNode("1", "leaf");
     const edges: Edge[] = [];
-    const importance = calculateNodeImportance(node, edges);
+    const importance = calculateNodeImportance(
+      node,
+      buildDegreeMap(edges),
+      edges.length,
+    );
     expect(importance).toBeLessThan(0.3);
   });
 
@@ -132,23 +155,28 @@ describe("calculateNodeImportance", () => {
     const edges: Edge[] = [];
     const rootImportance = calculateNodeImportance(
       createMockNode("1", "root"),
-      edges,
+      buildDegreeMap(edges),
+      edges.length,
     );
     const coreImportance = calculateNodeImportance(
       createMockNode("2", "core"),
-      edges,
+      buildDegreeMap(edges),
+      edges.length,
     );
     const subImportance = calculateNodeImportance(
       createMockNode("3", "sub"),
-      edges,
+      buildDegreeMap(edges),
+      edges.length,
     );
     const normalImportance = calculateNodeImportance(
       createMockNode("4", "normal"),
-      edges,
+      buildDegreeMap(edges),
+      edges.length,
     );
     const leafImportance = calculateNodeImportance(
       createMockNode("5", "leaf"),
-      edges,
+      buildDegreeMap(edges),
+      edges.length,
     );
 
     expect(rootImportance).toBeGreaterThan(coreImportance);
@@ -166,8 +194,16 @@ describe("calculateNodeImportance", () => {
       createMockEdge("e3", "1", "3"),
     ];
 
-    const importanceNoEdges = calculateNodeImportance(node, noEdges);
-    const importanceWithEdges = calculateNodeImportance(node, withEdges);
+    const importanceNoEdges = calculateNodeImportance(
+      node,
+      buildDegreeMap(noEdges),
+      noEdges.length,
+    );
+    const importanceWithEdges = calculateNodeImportance(
+      node,
+      buildDegreeMap(withEdges),
+      withEdges.length,
+    );
 
     expect(importanceWithEdges).toBeGreaterThan(importanceNoEdges);
   });
@@ -181,10 +217,15 @@ describe("calculateNodeImportance", () => {
     ]);
 
     const edges: Edge[] = [];
-    const importanceNoSources = calculateNodeImportance(nodeNoSources, edges);
+    const importanceNoSources = calculateNodeImportance(
+      nodeNoSources,
+      buildDegreeMap(edges),
+      edges.length,
+    );
     const importanceWithSources = calculateNodeImportance(
       nodeWithSources,
-      edges,
+      buildDegreeMap(edges),
+      edges.length,
     );
 
     expect(importanceWithSources).toBeGreaterThan(importanceNoSources);
@@ -203,7 +244,11 @@ describe("calculateNodeImportance", () => {
       createMockEdge("e2", "2", "1"),
     ];
 
-    const importance = calculateNodeImportance(node, edges);
+    const importance = calculateNodeImportance(
+      node,
+      buildDegreeMap(edges),
+      edges.length,
+    );
     expect(importance).toBeGreaterThanOrEqual(0);
     expect(importance).toBeLessThanOrEqual(1);
   });
@@ -214,7 +259,11 @@ describe("calculateNodeImportance", () => {
       level: undefined,
     };
     const edges: Edge[] = [];
-    const importance = calculateNodeImportance(node as Node, edges);
+    const importance = calculateNodeImportance(
+      node as Node,
+      buildDegreeMap(edges),
+      edges.length,
+    );
     expect(importance).toBeGreaterThanOrEqual(0);
     expect(importance).toBeLessThanOrEqual(1);
   });

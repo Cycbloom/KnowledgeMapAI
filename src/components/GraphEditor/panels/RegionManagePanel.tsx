@@ -66,9 +66,8 @@ export const RegionManagePanel = React.memo(function RegionManagePanel({
 
   const customRegionsWithNodes = useMemo(() => {
     return customRegions.map((region) => {
-      const regionNodes = nodes.filter((node) =>
-        region.nodeIds.includes(node.id),
-      );
+      const regionNodeIds = new Set(region.nodeIds);
+      const regionNodes = nodes.filter((node) => regionNodeIds.has(node.id));
       return {
         ...region,
         nodes: regionNodes,

@@ -1,6 +1,7 @@
 import { useMemo, useRef, useCallback, useEffect, memo } from 'react';
-import type { LayoutNode, Edge, ColorScheme, GraphColorMode, NodeSizeMode, Node, NodeStatus } from '../../../types';
+import type { LayoutNode, Edge, ColorScheme, GraphColorMode, NodeSizeMode, Node, NodeStatus, NodeLevel } from '../../../types';
 import { MindMapNode } from '../canvas/MindMapNode';
+import { buildLevelMap } from '../../../utils/graph/graphUtils';
 
 interface ViewportBounds {
   minX: number;
@@ -125,6 +126,7 @@ interface NodeRendererProps {
   isSelectableAsParent: boolean;
   isExcludedAsParent: boolean;
   isSelectedAsParent: boolean;
+  levelMap: Map<string, NodeLevel>;
 }
 
 const NodeRenderer = memo<NodeRendererProps>(function NodeRenderer({
@@ -149,6 +151,7 @@ const NodeRenderer = memo<NodeRendererProps>(function NodeRenderer({
   isSelectableAsParent,
   isExcludedAsParent,
   isSelectedAsParent,
+  levelMap,
 }) {
   return (
     <MindMapNode
@@ -174,6 +177,7 @@ const NodeRenderer = memo<NodeRendererProps>(function NodeRenderer({
       isSelectableAsParent={isSelectableAsParent}
       isExcludedAsParent={isExcludedAsParent}
       isSelectedAsParent={isSelectedAsParent}
+      levelMap={levelMap}
     />
   );
 });
@@ -214,6 +218,8 @@ function VirtualizedNodeListComponent(props: VirtualizedNodeListProps) {
     if (isExplorationMode) return nodes;
     return nodes.filter(node => node.is_accepted !== false);
   }, [nodes, isExplorationMode]);
+  
+  const levelMap = useMemo(() => buildLevelMap(nodes, edges), [nodes, edges]);
   
   const spatialGrid = useMemo(() => {
     if (acceptedNodes.length <= 100) return null;
@@ -329,6 +335,7 @@ function VirtualizedNodeListComponent(props: VirtualizedNodeListProps) {
           isSelectableAsParent={isSelectableAsParent}
           isExcludedAsParent={isExcludedAsParent}
           isSelectedAsParent={isSelectedAsParent}
+          levelMap={levelMap}
         />
       );
     });
@@ -354,6 +361,7 @@ function VirtualizedNodeListComponent(props: VirtualizedNodeListProps) {
     handleNodeClick,
     handleNodeMouseEnter,
     handleNodeMouseLeave,
+    levelMap,
   ]);
   
   return <>{nodeRenderers}</>;

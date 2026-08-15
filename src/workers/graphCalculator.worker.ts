@@ -216,8 +216,13 @@ const calculateNodeImportance = (
   edges: Edge[],
   pageRanks?: Map<string, number>
 ): number => {
-  const outDegree = edges.filter(e => e.source === nodeId).length;
-  const inDegree = edges.filter(e => e.target === nodeId).length;
+  // 单趟同时统计 in/out 度，替代两次 edges.filter 的 O(2*edges) 扫描
+  let outDegree = 0;
+  let inDegree = 0;
+  for (const e of edges) {
+    if (e.source === nodeId) outDegree++;
+    if (e.target === nodeId) inDegree++;
+  }
   const totalDegree = outDegree + inDegree;
 
   // Reuse a precomputed PageRank vector when provided so batch callers pay
@@ -361,15 +366,17 @@ const getMindMapLevel = (
   return levelMap.get(String(node.id).trim()) ?? 'normal';
 };
 
+// 提取为模块级常量，避免 d3 碰撞半径回调（每节点每次 tick）重复构建查找表
+const LEVEL_RADIUS: Record<MindMapNodeLevel, number> = {
+  root: 70,
+  core: 60,
+  sub: 50,
+  normal: 40,
+  leaf: 35,
+};
+
 function getLevelRadius(level: MindMapNodeLevel): number {
-  const radii: Record<MindMapNodeLevel, number> = {
-    root: 70,
-    core: 60,
-    sub: 50,
-    normal: 40,
-    leaf: 35,
-  };
-  return radii[level] || 40;
+  return LEVEL_RADIUS[level] || 40;
 }
 
 const calculateMindMapLayout = (
@@ -427,17 +434,20 @@ const calculateMindMapLayout = (
   const levelMap = buildMindMapLevelMap(layoutNodes, edges);
 
   // Build layout links
-  const layoutLinks: MindMapLayoutResult['links'] = edges
-    .filter(
-      (edge) =>
-        nodeIds.has(edge.source_knowledge_point_id) &&
-        nodeIds.has(edge.target_knowledge_point_id)
-    )
-    .map((edge) => ({
-      ...edge,
-      source: edge.source_knowledge_point_id,
-      target: edge.target_knowledge_point_id,
-    }));
+  // 合并 filter+map 双趟扫描为单趟遍历，O(2×edges) → O(edges)
+  const layoutLinks: MindMapLayoutResult['links'] = [];
+  for (const edge of edges) {
+    if (
+      nodeIds.has(edge.source_knowledge_point_id) &&
+      nodeIds.has(edge.target_knowledge_point_id)
+    ) {
+      layoutLinks.push({
+        ...edge,
+        source: edge.source_knowledge_point_id,
+        target: edge.target_knowledge_point_id,
+      });
+    }
+  }
 
   // Build d3-force simulation
   const simulation = d3
@@ -556,12 +566,13 @@ const calculateSemanticLayout = (
 ): SemanticLayoutResult => {
   const { width, height, nNeighbors, minDist = 0.1, nEpochs = 200 } = options;
 
-  const nodesWithEmbedding = nodes.filter(
-    n => embeddings[n.id] && embeddings[n.id].length > 0,
-  );
-  const nodesWithoutEmbedding = nodes.filter(
-    n => !embeddings[n.id] || embeddings[n.id].length === 0,
-  );
+  // 单趟分桶有/无 embedding 节点，替代两次 filter 的 O(2*nodes) 扫描
+  const nodesWithEmbedding: SemanticLayoutNode[] = [];
+  const nodesWithoutEmbedding: SemanticLayoutNode[] = [];
+  for (const n of nodes) {
+    if (embeddings[n.id] && embeddings[n.id].length > 0) nodesWithEmbedding.push(n);
+    else nodesWithoutEmbedding.push(n);
+  }
 
   const semanticPositions = new Map<string, { x: number; y: number }>();
 
@@ -638,17 +649,20 @@ const calculateSemanticLayout = (
     };
   });
 
-  const layoutLinks: SemanticLayoutResult['links'] = edges
-    .filter(
-      edge =>
-        nodeIds.has(edge.source_knowledge_point_id) &&
-        nodeIds.has(edge.target_knowledge_point_id),
-    )
-    .map(edge => ({
-      ...edge,
-      source: edge.source_knowledge_point_id,
-      target: edge.target_knowledge_point_id,
-    }));
+  // 合并 filter+map 双趟扫描为单趟遍历，O(2×edges) → O(edges)
+  const layoutLinks: SemanticLayoutResult['links'] = [];
+  for (const edge of edges) {
+    if (
+      nodeIds.has(edge.source_knowledge_point_id) &&
+      nodeIds.has(edge.target_knowledge_point_id)
+    ) {
+      layoutLinks.push({
+        ...edge,
+        source: edge.source_knowledge_point_id,
+        target: edge.target_knowledge_point_id,
+      });
+    }
+  }
 
   return {
     nodes: layoutNodes,

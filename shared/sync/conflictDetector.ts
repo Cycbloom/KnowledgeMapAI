@@ -34,8 +34,12 @@ function recordsConflict(
   const localKeys = Object.keys(localRecord);
   const remoteKeys = Object.keys(remoteRecord);
 
+  // 预构建 key Set，将两层循环内的 includes O(n) 线性查找降为 O(1)
+  const remoteKeySet = new Set(remoteKeys);
+  const localKeySet = new Set(localKeys);
+
   for (const key of localKeys) {
-    if (remoteKeys.includes(key) && localRecord[key] !== remoteRecord[key]) {
+    if (remoteKeySet.has(key) && localRecord[key] !== remoteRecord[key]) {
       if (!SKIP_FIELDS.has(key)) {
         return true;
       }
@@ -43,7 +47,7 @@ function recordsConflict(
   }
 
   for (const key of remoteKeys) {
-    if (localKeys.includes(key) && localRecord[key] !== remoteRecord[key]) {
+    if (localKeySet.has(key) && localRecord[key] !== remoteRecord[key]) {
       if (!SKIP_FIELDS.has(key)) {
         return true;
       }

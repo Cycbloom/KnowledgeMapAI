@@ -1,6 +1,22 @@
 export const DEFAULT_TIMEOUT = 60000;
 export const LONG_TIMEOUT = 180000; // 3分钟
 
+// 提取为模块级常量，避免 isRetryableError 每次调用重建数组
+const RETRYABLE_MESSAGES = [
+  "timeout",
+  "ECONNRESET",
+  "ENOTFOUND",
+  "ECONNREFUSED",
+  "ETIMEDOUT",
+  "rate limit",
+  "429",
+  "503",
+  "502",
+  "500",
+  "network",
+  "EAI_AGAIN",
+] as const;
+
 export class TimeoutError extends Error {
   constructor(ms: number) {
     super(`AI request timeout after ${ms}ms`);
@@ -21,23 +37,8 @@ export class RetryError extends Error {
 }
 
 export function isRetryableError(error: Error): boolean {
-  const retryableMessages = [
-    "timeout",
-    "ECONNRESET",
-    "ENOTFOUND",
-    "ECONNREFUSED",
-    "ETIMEDOUT",
-    "rate limit",
-    "429",
-    "503",
-    "502",
-    "500",
-    "network",
-    "EAI_AGAIN",
-  ];
-
   const message = error.message.toLowerCase();
-  return retryableMessages.some((msg) => message.includes(msg.toLowerCase()));
+  return RETRYABLE_MESSAGES.some((msg) => message.includes(msg.toLowerCase()));
 }
 
 export function withTimeout<T>(

@@ -17,11 +17,21 @@ export const useNotificationsStore = createPersistedStore<NotificationsState>(
       set({ mutedNotificationTypes: types }),
 
     toggleMutedType: (type) =>
-      set((state) => ({
-        mutedNotificationTypes: state.mutedNotificationTypes.includes(type)
-          ? state.mutedNotificationTypes.filter((t) => t !== type)
-          : [...state.mutedNotificationTypes, type],
-      })),
+      set((state) => {
+        // 合并 includes+filter 两次扫描为单趟遍历，O(2×n) → O(n)
+        let found = false;
+        const next: NotificationType[] = [];
+        for (const t of state.mutedNotificationTypes) {
+          if (t === type) {
+            found = true;
+          } else {
+            next.push(t);
+          }
+        }
+        return {
+          mutedNotificationTypes: found ? next : [...next, type],
+        };
+      }),
 
     isMuted: (type) => get().mutedNotificationTypes.includes(type),
 

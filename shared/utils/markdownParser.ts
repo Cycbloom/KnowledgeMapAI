@@ -139,16 +139,25 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
   }
 
   // Resolve collected links
+  // 预构建小写标题→节点索引与边查重集合，将解析从 O(links×(nodes+edges)) 降为 O(nodes+edges+links)
+  const titleIndex = new Map<string, ParsedNode>();
+  for (const node of nodes) {
+    const lower = node.title.toLowerCase();
+    if (!titleIndex.has(lower)) titleIndex.set(lower, node);
+  }
+  const edgeKeys = new Set<string>();
+  for (const edge of edges) {
+    edgeKeys.add(`${edge.source}|${edge.target}`);
+    edgeKeys.add(`${edge.target}|${edge.source}`);
+  }
   potentialLinks.forEach(link => {
-    const targetNode = nodes.find(n => n.title.toLowerCase() === link.targetTitle.toLowerCase());
+    const targetNode = titleIndex.get(link.targetTitle.toLowerCase());
 
     if (targetNode && targetNode.id !== link.sourceId) {
-      const exists = edges.some(e =>
-        (e.source === link.sourceId && e.target === targetNode.id) ||
-        (e.source === targetNode.id && e.target === link.sourceId)
-      );
+      const key = `${link.sourceId}|${targetNode.id}`;
 
-      if (!exists) {
+      if (!edgeKeys.has(key)) {
+        edgeKeys.add(key);
         edges.push({
           source: link.sourceId,
           target: targetNode.id,

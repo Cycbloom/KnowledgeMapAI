@@ -100,7 +100,11 @@ export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
 
 export function buildNodesFromGraphNodes(graphNodes: GraphNodeRaw[]): Node[] {
   if (!graphNodes || graphNodes.length === 0) return [];
-  return graphNodes
-    .map((gn) => buildNodeFromGraphNode(gn))
-    .filter((n): n is Node => n !== null);
+  // 合并 map+filter 双趟扫描为单趟遍历，O(2×n) → O(n)
+  const result: Node[] = [];
+  for (const gn of graphNodes) {
+    const node = buildNodeFromGraphNode(gn);
+    if (node) result.push(node);
+  }
+  return result;
 }

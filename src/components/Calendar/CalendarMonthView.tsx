@@ -40,6 +40,15 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   const { isDark } = useTheme();
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
 
+  // 预构建 date -> activityStats 映射，避免历史模式下每天线性扫描全部 stats（原为 O(days*stats)）
+  const activityStatsByDate = useMemo(() => {
+    const m = new Map<string, DailyActivityStats>();
+    (activityStats ?? []).forEach((s) => {
+      m.set(s.date, s);
+    });
+    return m;
+  }, [activityStats]);
+
   const weekdays = useMemo(
     () => [
       t("calendar.weekdays.sun"),
@@ -280,7 +289,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
               activityStats &&
               (() => {
                 const dateStr = day.date.toISOString().split("T")[0];
-                const stats = activityStats.find((s) => s.date === dateStr);
+                const stats = activityStatsByDate.get(dateStr);
                 if (!stats || stats.activity_count === 0) return null;
                 const intensity = Math.min(stats.activity_count / 5, 1);
                 return (

@@ -141,7 +141,7 @@ interface TreeNodeProps {
   depth: number;
   expandedIds: Set<string>;
   selectedNodeId?: string;
-  suggestions: HierarchySuggestion[];
+  suggestionsByParentId: Map<string, HierarchySuggestion[]>;
   onToggle: (id: string) => void;
   onNodeClick: (nodeId: string) => void;
   onConfirmRelation: (suggestionId: string) => void;
@@ -156,7 +156,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   depth,
   expandedIds,
   selectedNodeId,
-  suggestions,
+  suggestionsByParentId,
   onToggle,
   onNodeClick,
   onConfirmRelation,
@@ -183,8 +183,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   }, [isFocused]);
 
   const nodeSuggestions = useMemo(
-    () => suggestions.filter((s) => s.parentId === node.id),
-    [suggestions, node.id],
+    () => suggestionsByParentId.get(node.id) ?? [],
+    [suggestionsByParentId, node.id],
   );
 
   return (
@@ -388,7 +388,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   depth={depth + 1}
                   expandedIds={expandedIds}
                   selectedNodeId={selectedNodeId}
-                  suggestions={suggestions}
+                  suggestionsByParentId={suggestionsByParentId}
                   onToggle={onToggle}
                   onNodeClick={onNodeClick}
                   onConfirmRelation={onConfirmRelation}
@@ -434,6 +434,20 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
     () => flattenVisibleNodes(hierarchyData, expandedIds),
     [hierarchyData, expandedIds],
   );
+
+  // 预构建 parentId -> suggestions 映射，避免每个树节点递归时线性扫描全部 suggestions（原为 O(nodes*suggestions)）
+  const suggestionsByParentId = useMemo(() => {
+    const m = new Map<string, HierarchySuggestion[]>();
+    suggestions.forEach((s) => {
+      const list = m.get(s.parentId);
+      if (list) {
+        list.push(s);
+      } else {
+        m.set(s.parentId, [s]);
+      }
+    });
+    return m;
+  }, [suggestions]);
 
   const effectiveFocusedNodeId = focusedNodeId ?? flatNodes[0]?.node.id;
 
@@ -593,7 +607,7 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
             depth={0}
             expandedIds={expandedIds}
             selectedNodeId={selectedNodeId}
-            suggestions={suggestions}
+            suggestionsByParentId={suggestionsByParentId}
             onToggle={handleToggle}
             onNodeClick={onNodeClick}
             onConfirmRelation={onConfirmRelation}

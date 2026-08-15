@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useId } from "react";
+import React, { useState, useEffect, useCallback, useId, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -218,6 +218,16 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   );
   const [showDependencySelector, setShowDependencySelector] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+
+  // 预计算依赖查找结构，避免渲染时对 availableTasks/selectedDependencies 线性扫描
+  const { taskById, depIdSet } = useMemo(() => {
+    const idMap = new Map<string, UserTask>();
+    availableTasks.forEach((at) => {
+      idMap.set(at.id, at);
+    });
+    const idSet = new Set(selectedDependencies);
+    return { taskById: idMap, depIdSet: idSet };
+  }, [availableTasks, selectedDependencies]);
 
   // Warn user before leaving when there are unsaved changes
   const isDirty =
@@ -770,7 +780,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                           <input
                             id={`dep-${availTask.id}`}
                             type="checkbox"
-                            checked={selectedDependencies.includes(availTask.id)}
+                            checked={depIdSet.has(availTask.id)}
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setSelectedDependencies([
@@ -804,7 +814,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             {selectedDependencies.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {selectedDependencies.map((depId) => {
-                  const t = availableTasks.find((item) => item.id === depId);
+                  const t = taskById.get(depId);
                   return t ? (
                     <span
                       key={depId}

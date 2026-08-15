@@ -306,9 +306,11 @@ function VirtualizedNodeListComponent(props: VirtualizedNodeListProps) {
   }, []);
   
   const nodeRenderers = useMemo(() => {
+    // 预构建 Set，避免每个可见节点线性扫描 selectedParentIds（原为 O(visibleNodes*selectedParentIds)）
+    const selectedParentIdSet = new Set(selectedParentIds);
     return sortedVisibleNodes.map(node => {
       const isSelectableAsParent = isSelectingParent && node.id !== currentNodeId;
-      const isSelectedAsParent = selectedParentIds.includes(node.id);
+      const isSelectedAsParent = selectedParentIdSet.has(node.id);
       const isExcludedAsParent = isSelectingParent && node.id === currentNodeId;
       
       return (

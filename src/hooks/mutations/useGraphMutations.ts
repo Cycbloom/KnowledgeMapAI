@@ -331,13 +331,15 @@ export const useBatchDeleteNodesMutation = createOptimisticMutation({
     { nodeIds }: { nodeIds: string[]; graphId: string },
   ) => {
     if (!old) return old;
+    // 将 nodeIds 转为 Set 做 O(1) 查找，避免每次 filter 线性扫描（原为 O(nodes*ids)+O(edges*ids)）
+    const nodeIdsSet = new Set<string>(nodeIds);
     return {
       ...old,
-      nodes: old.nodes.filter((node) => !nodeIds.includes(node.id)),
+      nodes: old.nodes.filter((node) => !nodeIdsSet.has(node.id)),
       edges: old.edges.filter(
         (edge) =>
-          !nodeIds.includes(edge.source_knowledge_point_id) &&
-          !nodeIds.includes(edge.target_knowledge_point_id),
+          !nodeIdsSet.has(edge.source_knowledge_point_id) &&
+          !nodeIdsSet.has(edge.target_knowledge_point_id),
       ),
     };
   },

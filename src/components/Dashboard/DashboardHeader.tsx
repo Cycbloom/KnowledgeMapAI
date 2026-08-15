@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from "react";
+import React, { useState, useEffect, useId, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -125,6 +125,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const moreMenuId = useId();
   const filterPanelId = useId();
 
+  // 预计算节点总数，避免渲染时重复 reduce 遍历 graphs
+  const totalNodeCount = useMemo(
+    () => graphs.reduce((acc, g) => acc + (g.nodes_count || 0), 0),
+    [graphs]
+  );
+
   const handleMoreMenuSelect = (index: number) => {
     const item = document.getElementById(`${moreMenuId}-item-${index}`);
     item?.click();
@@ -200,7 +206,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     <span className="font-semibold">{graphs.length}</span>{" "}
                     {t("dashboard.stats.graphs")} ·{" "}
                     <span className="font-semibold">
-                      {graphs.reduce((acc, g) => acc + (g.nodes_count || 0), 0)}
+                      {totalNodeCount}
                     </span>{" "}
                     {t("dashboard.stats.nodes")}
                   </>
@@ -211,7 +217,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     {t("dashboard.stats.graphsUnit")}，
                     {t("dashboard.stats.contains")}{" "}
                     <span className="font-semibold">
-                      {graphs.reduce((acc, g) => acc + (g.nodes_count || 0), 0)}
+                      {totalNodeCount}
                     </span>{" "}
                     {t("dashboard.stats.nodesUnit")}
                     {t("dashboard.stats.keepGoing")}

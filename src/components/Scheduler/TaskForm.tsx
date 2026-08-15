@@ -204,6 +204,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     context,
   } = formData;
 
+  // 预构建标签集合，将建议标签过滤由 O(COMMON_TAGS*tags) 降为 O(COMMON_TAGS)
+  const tagSet = useMemo(() => new Set(tags), [tags]);
+
   const [status, setStatus] = useState<UserTaskStatus>(
     task?.status || "pending",
   );
@@ -1294,7 +1297,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               ))}
             </div>
             <div className="flex flex-wrap gap-1.5 mb-2">
-              {COMMON_TAGS.filter((t) => !tags.includes(t))
+              {COMMON_TAGS.filter((t) => !tagSet.has(t))
                 .slice(0, 6)
                 .map((tag) => (
                   <button

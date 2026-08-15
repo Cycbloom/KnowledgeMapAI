@@ -51,7 +51,9 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
 
   const filterArgs = useMemo(() => {
     const selected = Array.from(selectedFsrsStates);
-    const allSelected = ALL_FSRS_STATES.every((s) => selected.includes(s));
+    // 预构建选中集合，将 allSelected 判断由 O(ALL_FSRS_STATES*selected) 降为 O(ALL_FSRS_STATES)
+    const selectedSet = new Set(selected);
+    const allSelected = ALL_FSRS_STATES.every((s) => selectedSet.has(s));
     return {
       graph_id,
       knowledge_point_id,

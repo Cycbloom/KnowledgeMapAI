@@ -72,9 +72,15 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
 
   const taskStats = React.useMemo(() => {
     const total = relatedTasks.length;
-    const completed = relatedTasks.filter((t: UserTask) => t.status === "completed").length;
-    const inProgress = relatedTasks.filter((t: UserTask) => t.status === "in_progress").length;
-    const pending = relatedTasks.filter((t: UserTask) => t.status === "pending").length;
+    // 单次遍历统计，替代三次 filter 的 O(3*tasks) 扫描
+    let completed = 0;
+    let inProgress = 0;
+    let pending = 0;
+    for (const t of relatedTasks) {
+      if (t.status === "completed") completed++;
+      else if (t.status === "in_progress") inProgress++;
+      else if (t.status === "pending") pending++;
+    }
     return { total, completed, inProgress, pending };
   }, [relatedTasks]);
 

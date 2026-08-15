@@ -43,9 +43,16 @@ export const PeriodicTaskList: React.FC<PeriodicTaskListProps> = ({ tasks }) => 
   }, [tasks]);
 
   const getPeriodStats = (periodTasks: typeof tasks) => {
-    const completed = periodTasks.filter(t => t.status === 'completed').length;
     const total = periodTasks.length;
-    const totalXp = periodTasks.reduce((acc, t) => acc + (t.status === 'completed' ? t.xp_reward : 0), 0);
+    // 单次遍历统计，替代 filter + reduce 的两趟扫描
+    let completed = 0;
+    let totalXp = 0;
+    for (const t of periodTasks) {
+      if (t.status === 'completed') {
+        completed++;
+        totalXp += t.xp_reward;
+      }
+    }
     return { completed, total, totalXp };
   };
 

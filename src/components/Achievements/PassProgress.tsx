@@ -73,11 +73,14 @@ export const PassProgress: React.FC<PassProgressProps> = ({
   const [canScrollRight, setCanScrollRight] = React.useState(true);
 
   const config = pass ? periodTypeConfig[pass.period_type] : null;
-  const passRewards = pass
-    ? rewards.filter((r) => r.period_type === pass.period_type)
-    : [];
-  const progressMap = new Map(
-    userProgress.map((p) => [`${p.pass_id}-${p.level}`, p]),
+  // 预计算奖励列表与进度索引，避免每次渲染重复 filter / 构建 Map
+  const passRewards = React.useMemo(
+    () => (pass ? rewards.filter((r) => r.period_type === pass.period_type) : []),
+    [pass, rewards],
+  );
+  const progressMap = React.useMemo(
+    () => new Map(userProgress.map((p) => [`${p.pass_id}-${p.level}`, p])),
+    [userProgress],
   );
 
   const maxPoints = pass

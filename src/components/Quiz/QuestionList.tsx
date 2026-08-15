@@ -121,6 +121,16 @@ export const QuestionList: React.FC<QuestionListProps> = ({
 
   const renderAnswer = (card: StudyCard) => {
     if (card.card_type === 'choice' || card.card_type === 'multi_choice') {
+      // 多选题答案只解析一次并预构建集合，替代逐选项 JSON.parse + includes 的 O(options*answers)
+      let multiAnswerSet: Set<string> | null = null;
+      if (card.card_type === 'multi_choice') {
+        try {
+          const answers: string[] = JSON.parse(card.answer || '[]');
+          if (Array.isArray(answers)) multiAnswerSet = new Set(answers);
+        } catch {
+          multiAnswerSet = null;
+        }
+      }
       return (
         <div className="space-y-1">
           {card.options?.map((option, idx) => {
@@ -128,12 +138,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
             if (card.card_type === 'choice') {
               isCorrect = card.answer === option;
             } else {
-              try {
-                const answers: string[] = JSON.parse(card.answer || '[]');
-                isCorrect = Array.isArray(answers) && answers.includes(option);
-              } catch {
-                isCorrect = false;
-              }
+              isCorrect = multiAnswerSet?.has(option) ?? false;
             }
 
             return (

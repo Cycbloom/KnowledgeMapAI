@@ -193,9 +193,12 @@ export const NotificationCenter: React.FC = () => {
     setIsOpen(false);
   };
 
-  const visibleNotifications = mutedTypes.length > 0
-    ? notifications.filter(n => !mutedTypes.includes(n.type))
-    : notifications;
+  const visibleNotifications = useMemo(() => {
+    if (mutedTypes.length === 0) return notifications;
+    // 预构建静音类型集合，将过滤由 O(notifications*mutedTypes) 降为 O(notifications)
+    const mutedTypeSet = new Set(mutedTypes);
+    return notifications.filter(n => !mutedTypeSet.has(n.type));
+  }, [notifications, mutedTypes]);
   const unreadNotifications = visibleNotifications.filter(n => !n.read_at);
   const readNotifications = visibleNotifications.filter(n => n.read_at);
 

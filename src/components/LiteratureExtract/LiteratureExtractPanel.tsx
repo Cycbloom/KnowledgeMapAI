@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
@@ -202,6 +202,12 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
 
   const { inputMode, textContent, urlInput, metadata, selectedConceptTypes } =
     draft;
+
+  // 预构建选中概念类型集合，将渲染路径的选中判断由 O(types*selectedTypes) 降为 O(1)
+  const selectedConceptTypeSet = useMemo(
+    () => new Set(selectedConceptTypes),
+    [selectedConceptTypes]
+  );
 
   const [fileState, setFileState] = useState<FileUploadState>({
     file: null,
@@ -901,7 +907,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
               onClick={() => handleToggleConceptType(value)}
               disabled={isProcessing}
               className={`px-2 py-1 text-[11px] rounded-full border transition-all ${
-                selectedConceptTypes.includes(value)
+                selectedConceptTypeSet.has(value)
                   ? "border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
                   : "border-gray-200 dark:border-slate-500 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-500"
               }`}

@@ -67,6 +67,9 @@ export const TagCloudSection: React.FC<TagCloudSectionProps> = ({
     return showAll ? allTags : allTags.slice(0, defaultDisplayCount);
   }, [allTags, showAll, defaultDisplayCount]);
 
+  // 预构建选中标签集合，将渲染路径的选中判断由 O(tags*selectedTags) 降为 O(1)
+  const selectedTagSet = useMemo(() => new Set(selectedTags), [selectedTags]);
+
   const handleTagClick = (tag: string) => {
     if (selectedTags.includes(tag)) {
       onTagsChange(selectedTags.filter((t) => t !== tag));
@@ -129,7 +132,7 @@ export const TagCloudSection: React.FC<TagCloudSectionProps> = ({
 
       <div className="flex flex-wrap gap-1.5 sm:gap-2">
         {displayedTags.map((tag: { name: string; count: number }) => {
-          const isSelected = selectedTags.includes(tag.name);
+          const isSelected = selectedTagSet.has(tag.name);
           const size = isMobile ? 0.75 : 0.75 + (tag.count / maxCount) * 0.5;
 
           return (

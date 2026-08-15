@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useId } from "react";
+import React, { useState, useEffect, useRef, useCallback, useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -388,6 +388,11 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
   const { t } = useTranslation();
+  // 预构建折叠区域集合，将渲染路径的折叠判断由 O(regions*collapsedRegions) 降为 O(1)
+  const collapsedRegionSet = useMemo(
+    () => new Set(collapsedRegions ?? []),
+    [collapsedRegions]
+  );
   const [openDropdown, setOpenDropdown] = useState<
     "edit" | "ai" | "system" | "view" | null
   >(null);
@@ -1733,7 +1738,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               onSubMenuToggle={() => setIsSubMenuOpen(!isSubMenuOpen)}
             >
               {regions.map((region) => {
-                const isCollapsed = collapsedRegions?.includes(region.id);
+                const isCollapsed = collapsedRegionSet.has(region.id);
                 const nodeCount = region.nodes.length;
                 return (
                   <button

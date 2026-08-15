@@ -175,10 +175,11 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
     setFormData(prev => ({ ...prev, titleTemplate: `${prev.titleTemplate  }{{${placeholder}}}` }));
   };
 
-  const availableCommonTags = useMemo(
-    () => COMMON_TAGS.filter(t => !formData.tags.includes(t)).slice(0, 6),
-    [formData.tags]
-  );
+  const availableCommonTags = useMemo(() => {
+    // 预构建标签集合，将过滤由 O(COMMON_TAGS*tags) 降为 O(COMMON_TAGS)
+    const tagSet = new Set(formData.tags);
+    return COMMON_TAGS.filter(t => !tagSet.has(t)).slice(0, 6);
+  }, [formData.tags]);
 
   return (
     <motion.div

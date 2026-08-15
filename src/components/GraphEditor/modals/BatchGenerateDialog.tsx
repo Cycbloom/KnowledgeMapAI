@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Sparkles, Loader2 } from 'lucide-react';
 import { ModalShell } from '../../common';
@@ -26,6 +26,8 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
 }) => {
   const { t } = useTranslation();
   const [types, setTypes] = useState<string[]>(['qa', 'choice']);
+  // 预构建题型集合，将渲染路径的选中判断由 O(types²) 降为 O(types)
+  const typeSet = useMemo(() => new Set(types), [types]);
   const [count, setCount] = useState(3);
   const [isLoading] = useState(false);
   const [packTemplate, setPackTemplate] = useState<string | null>(null);
@@ -184,7 +186,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                       key={type.id}
                       onClick={() => handleToggleType(type.id)}
                       className={`cursor-pointer px-2 py-2 rounded-md border text-xs font-medium transition-all text-center
-                        ${types.includes(type.id) 
+                        ${typeSet.has(type.id) 
                           ? 'border-primary-500 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:border-primary-400 dark:text-primary-300' 
                           : 'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-500 dark:text-slate-400'}`}
                     >

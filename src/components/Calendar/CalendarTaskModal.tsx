@@ -1,4 +1,4 @@
-import React, { useState, useId } from "react";
+import React, { useState, useId, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, Calendar, Clock, Tag } from "lucide-react";
@@ -84,6 +84,9 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
   });
   const [newTag, setNewTag] = useState("");
   const [titleError, setTitleError] = useState<string | undefined>(undefined);
+
+  // 预构建标签集合，将快捷标签渲染的选中判断由 O(QUICK_TAG_KEYS*tags) 降为 O(1)
+  const tagSet = useMemo(() => new Set(taskForm.tags), [taskForm.tags]);
 
   const handleCreate = async () => {
     if (!taskForm.title.trim()) {
@@ -333,7 +336,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
               >
                 {QUICK_TAG_KEYS.map((key) => {
                   const tagValue = t(key);
-                  const isSelected = taskForm.tags.includes(tagValue);
+                  const isSelected = tagSet.has(tagValue);
                   return (
                     <button
                       key={tagValue}

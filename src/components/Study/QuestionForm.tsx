@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef, useId } from 'react';
+import React, { useState, useLayoutEffect, useRef, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StudyCard } from '../../types';
 import { CheckSquare, Plus, X, Loader2 } from 'lucide-react';
@@ -67,6 +67,17 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const prevInitialDataRef = useRef(initialData);
+
+  // 预构建多选题已选答案集合，替代逐选项 JSON.parse + includes 的 O(options*answers)
+  const multiAnswerSet = useMemo(() => {
+    if (formData.card_type !== 'multi_choice') return null;
+    try {
+      const ans = JSON.parse(formData.answer || '[]');
+      return Array.isArray(ans) ? new Set(ans as string[]) : null;
+    } catch {
+      return null;
+    }
+  }, [formData.card_type, formData.answer]);
 
   // 可访问性：为各字段及错误消息生成唯一 id
   const questionId = useId();
@@ -241,12 +252,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                     {formData.options.map((option, idx) => {
                         const isChecked = formData.card_type === 'choice' 
                             ? formData.answer === option
-                            : (() => {
-                                try {
-                                    const ans = JSON.parse(formData.answer || '[]');
-                                    return Array.isArray(ans) && ans.includes(option);
-                                } catch { return false; }
-                            })();
+                            : (multiAnswerSet?.has(option) ?? false);
 
                         return (
                         <div key={idx} className="flex items-center gap-2">

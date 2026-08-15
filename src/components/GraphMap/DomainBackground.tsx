@@ -103,8 +103,11 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
   const domainGroups = useMemo(() => {
     const groups: Map<string, DomainGroup> = new Map();
 
+    // 预构建 graph 索引，将按 id 查找由 O(layoutNodes*graphs) 降为 O(1)
+    const graphById = new Map(graphs.map(g => [g.id, g]));
+
     layoutNodes.forEach(node => {
-      const graph = graphs.find(g => g.id === node.id);
+      const graph = graphById.get(node.id);
 
       const domainIds = graph?.domainIds || [];
       const legacyDomain = graph?.domain;

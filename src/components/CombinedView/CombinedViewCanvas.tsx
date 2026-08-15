@@ -166,12 +166,15 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
   
-  const nodePositions = calculateLayout(
-    nodes,
-    edges,
-    layoutMode,
-    dimensions.width,
-    dimensions.height
+  const nodePositions = useMemo(
+    () => calculateLayout(
+      nodes,
+      edges,
+      layoutMode,
+      dimensions.width,
+      dimensions.height
+    ),
+    [nodes, edges, layoutMode, dimensions.width, dimensions.height]
   );
   
   const handleWheel = useCallback((e: React.WheelEvent) => {

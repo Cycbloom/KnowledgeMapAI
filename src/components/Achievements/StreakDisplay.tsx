@@ -47,6 +47,12 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
     { key: 'quarterly', value: quarterlyStreak },
   ];
 
+  // 预构建 streak 索引，将渲染路径的按 key 查找由 O(streakConfig*streaks) 降为 O(1)
+  const streakByKey = useMemo(
+    () => new Map(streaks.map((s) => [s.key, s])),
+    [streaks]
+  );
+
   const getNextMilestone = (current: number, milestones: number[]) => {
     return milestones.find(m => m > current) || milestones[milestones.length - 1];
   };
@@ -60,7 +66,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {streakConfig.map((config, index) => {
-          const streak = streaks.find(s => s.key === config.key);
+          const streak = streakByKey.get(config.key);
           const value = streak?.value || 0;
           const nextMilestone = getNextMilestone(value, config.milestones);
           const Icon = config.icon;

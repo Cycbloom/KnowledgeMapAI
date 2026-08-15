@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -148,6 +148,12 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
     loadPreset,
     saveCurrentAsPreset,
   } = useWhiteNoise();
+
+  // 预构建已选噪声类型集合，将渲染路径的选中判断由 O(NOISE_OPTIONS*mixedNoises) 降为 O(1)
+  const mixedNoiseTypeSet = useMemo(
+    () => new Set(mixedNoises.map((n) => n.type)),
+    [mixedNoises]
+  );
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -690,9 +696,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                   key={option.id}
                                   onClick={() => addNoise(option.id)}
                                   className={`p-2 rounded-lg flex flex-col items-center gap-1 transition-all ${
-                                    mixedNoises.some(
-                                      (n) => n.type === option.id,
-                                    )
+                                    mixedNoiseTypeSet.has(option.id)
                                       ? "bg-primary-100 text-primary-600 border border-primary-300 dark:bg-primary-500/30 dark:text-primary-300 dark:border-primary-500/50"
                                       : "bg-slate-100 text-slate-500 hover:bg-slate-200 border border-transparent dark:bg-white/10 dark:text-slate-400 dark:hover:bg-white/20"
                                   }`}

@@ -65,18 +65,18 @@ const getNodeLevelColor = (level: NodeLevel, isDark: boolean) => {
 
 const TreeNodeItem: React.FC<{
   node: TemplateNode;
-  allNodes: TemplateNode[];
+  childrenByParent: Map<string, TemplateNode[]>;
   depth: number;
   isDark: boolean;
   t: TFunction;
   onUpdate: (id: string, updates: Partial<TemplateNode>) => void;
   onDelete: (id: string) => void;
   onAddChild: (parentId: string) => void;
-}> = ({ node, allNodes, depth, isDark, t, onUpdate, onDelete, onAddChild }) => {
+}> = ({ node, childrenByParent, depth, isDark, t, onUpdate, onDelete, onAddChild }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const children = useMemo(
-    () => allNodes.filter((n) => n.parentId === node.id),
-    [allNodes, node.id],
+    () => childrenByParent.get(node.id) ?? [],
+    [childrenByParent, node.id],
   );
   const hasChildren = children.length > 0;
 
@@ -201,7 +201,7 @@ const TreeNodeItem: React.FC<{
             <TreeNodeItem
               key={child.id}
               node={child}
-              allNodes={allNodes}
+              childrenByParent={childrenByParent}
               depth={depth + 1}
               isDark={isDark}
               t={t}
@@ -338,6 +338,22 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const titleId = useId();
 
   const rootNodes = useMemo(() => nodes.filter((n) => !n.parentId), [nodes]);
+
+  // 预构建 parentId -> 子节点 映射，避免递归渲染时每个节点过滤全部 nodes（原为 O(nodes*nodes)）
+  const childrenByParent = useMemo(() => {
+    const m = new Map<string, TemplateNode[]>();
+    nodes.forEach((n) => {
+      if (n.parentId) {
+        const list = m.get(n.parentId);
+        if (list) {
+          list.push(n);
+        } else {
+          m.set(n.parentId, [n]);
+        }
+      }
+    });
+    return m;
+  }, [nodes]);
 
   const handleUpdateNode = useCallback(
     (id: string, updates: Partial<TemplateNode>) => {
@@ -641,7 +657,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     <TreeNodeItem
                       key={node.id}
                       node={node}
-                      allNodes={nodes}
+                      childrenByParent={childrenByParent}
                       depth={0}
                       isDark={isDark}
                       t={t}

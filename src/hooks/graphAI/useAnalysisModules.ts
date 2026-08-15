@@ -199,36 +199,36 @@ export function useAnalysisModules(): UseAnalysisModulesReturn {
 
       const results = await Promise.allSettled(promises);
 
-      results.forEach((settledResult) => {
+      // Accumulate all status updates in a single pass, then apply them with
+      // one map instead of calling setModules (full array scan) per result.
+      const statusUpdates = new Map<
+        string,
+        Partial<Pick<AnalysisModuleState, 'status' | 'result' | 'error'>>
+      >();
+      results.forEach((settledResult, index) => {
         if (settledResult.status === 'fulfilled') {
           const { id, result, error } = settledResult.value;
-          setModules((prev) =>
-            prev.map((m) =>
-              m.id === id
-                ? {
-                    ...m,
-                    status: error ? ('error' as const) : ('completed' as const),
-                    result,
-                    error,
-                  }
-                : m
-            )
-          );
+          statusUpdates.set(id, {
+            status: error ? ('error' as const) : ('completed' as const),
+            result,
+            error,
+          });
         } else {
-          const moduleId = selectedIds[results.indexOf(settledResult)];
-          setModules((prev) =>
-            prev.map((m) =>
-              m.id === moduleId
-                ? {
-                    ...m,
-                    status: 'error' as const,
-                    error: settledResult.reason?.message || 'Execution failed',
-                  }
-                : m
-            )
-          );
+          const moduleId = selectedIds[index];
+          statusUpdates.set(moduleId, {
+            status: 'error' as const,
+            error:
+              settledResult.reason?.message || 'Execution failed',
+          });
         }
       });
+
+      setModules((prev) =>
+        prev.map((m) => {
+          const update = statusUpdates.get(m.id);
+          return update ? { ...m, ...update } : m;
+        })
+      );
     },
     []
   );

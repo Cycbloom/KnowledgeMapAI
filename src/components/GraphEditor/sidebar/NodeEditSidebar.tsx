@@ -257,7 +257,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   const isBackboneNode = !!backboneModule;
 
   const selectedParents = useMemo(() => {
-    return nodes.filter((n) => nodeForm.parentNodeIds.includes(n.id));
+    const parentIdSet = new Set(nodeForm.parentNodeIds);
+    return nodes.filter((n) => parentIdSet.has(n.id));
   }, [nodes, nodeForm.parentNodeIds]);
 
   const filteredNodes = useMemo(() => {
@@ -275,6 +276,12 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
         return levelA - levelB;
       });
   }, [nodes, parentSearch, currentNodeId]);
+
+  // 预构建父节点 id 集合，避免渲染列表时对每个节点线性 includes（原为 O(filteredNodes*parentNodeIds)）
+  const parentNodeIdSet = useMemo(
+    () => new Set(nodeForm.parentNodeIds),
+    [nodeForm.parentNodeIds],
+  );
 
   const toggleParent = (nodeId: string) => {
     const currentIds = nodeForm.parentNodeIds;
@@ -770,9 +777,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                     </div>
                   ) : (
                     filteredNodes.map((node) => {
-                      const isSelected = nodeForm.parentNodeIds.includes(
-                        node.id,
-                      );
+                      const isSelected = parentNodeIdSet.has(node.id);
                       return (
                         <button
                           key={node.id}

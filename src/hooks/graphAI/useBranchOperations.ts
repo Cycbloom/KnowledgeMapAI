@@ -130,6 +130,10 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
       const branches = pathItem.alternativeBranches || [];
       const createdNodes: Array<{ node: Node; suggestion: BranchSuggestion; isAccepted: boolean }> = [];
 
+      // getLevel scans all edges; hoist it out of the branch loop since the
+      // parent node is identical for every branch.
+      const parentLevel = getLevel(parentNode, edges);
+
       for (const branch of branches) {
         const isAccepted = branch.id === suggestion.id;
         const newNode = await mutations.createNodeMutation.mutateAsync({
@@ -138,8 +142,8 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
           content: branch.description,
           x_position: parentNode.x_position + (Math.random() - 0.5) * 8,
           y_position: parentNode.y_position + (Math.random() - 0.5) * 8,
-          color: getLevelColorHex(getLevel(parentNode, edges)),
-          level: getLevel(parentNode, edges),
+          color: getLevelColorHex(parentLevel),
+          level: parentLevel,
           is_accepted: isAccepted,
           properties: {
             branchSuggestionId: branch.id,

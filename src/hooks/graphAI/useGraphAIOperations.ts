@@ -479,12 +479,15 @@ export const useGraphAIOperations = ({
         const branches = pathItem.alternativeBranches || [];
         const createdNodes: Array<{ node: Node; suggestion: BranchSuggestion; isAccepted: boolean }> = [];
 
+        // getLevel scans all edges; hoist it out of the branch loop since the
+        // parent node is identical for every branch.
+        const parentLevel = getLevel(parentNode, edges);
+        const newLevel = getNextLevel(parentLevel);
+
         for (const branch of branches) {
           const isAccepted = branch.id === suggestion.id;
-      const parentLevel = getLevel(parentNode, edges);
-      const newLevel = getNextLevel(parentLevel);
 
-      const newNode = await createNodeMutation.mutateAsync({
+        const newNode = await createNodeMutation.mutateAsync({
         graph_id: id,
         title: branch.title,
         content: branch.description,

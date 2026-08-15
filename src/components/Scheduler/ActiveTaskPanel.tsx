@@ -154,11 +154,27 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     };
   }, [task.id, activeSubtaskId]);  
 
-  const currentActiveSubtask = subtasks.find((s) => s.id === activeSubtaskId);
+  // 预构建子任务 id -> 下标 映射，避免渲染时线性 find/findIndex（原为 O(n)）
+  const subtaskIndexMap = useMemo(() => {
+    const m = new Map<string, number>();
+    subtasks.forEach((s, i) => {
+      m.set(s.id, i);
+    });
+    return m;
+  }, [subtasks]);
+
   const currentSubtaskIndex = activeSubtaskId
-    ? subtasks.findIndex((s) => s.id === activeSubtaskId)
+    ? subtaskIndexMap.get(activeSubtaskId) ?? -1
     : -1;
+  const currentActiveSubtask =
+    currentSubtaskIndex >= 0 ? subtasks[currentSubtaskIndex] : undefined;
   const totalSubtasks = subtasks.length;
+
+  // 预计算已完成子任务数，避免每次渲染 filter 全部 subtasks（原为 O(n)）
+  const completedSubtaskCount = useMemo(
+    () => subtasks.filter((s) => s.status === "completed").length,
+    [subtasks],
+  );
 
   const handlePauseResume = () => {
     if (isActive && !isPaused) {
@@ -544,8 +560,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
             >
               <span>
                 {t("scheduler.activeTaskPanel.allSubtasks", {
-                  completed: subtasks.filter((s) => s.status === "completed")
-                    .length,
+                  completed: completedSubtaskCount,
                   total: subtasks.length,
                 })}
               </span>

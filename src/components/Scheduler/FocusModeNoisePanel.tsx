@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWhiteNoise } from "../../hooks/common/useWhiteNoise";
@@ -62,11 +62,14 @@ const getIcon = (
   );
 };
 
+// 预构建 id -> 选项 映射，避免逐个选项线性 find（原为 O(options)）
+const NOISE_OPTION_BY_ID = new Map(
+  NOISE_OPTIONS.map((option) => [option.id, option]),
+);
+
 const getNoiseOption = (type: WhiteNoiseType) => {
   if (type === "none") return undefined;
-  return NOISE_OPTIONS.find(
-    (option) => option.id === (type as AudioWhiteNoiseType),
-  );
+  return NOISE_OPTION_BY_ID.get(type as AudioWhiteNoiseType);
 };
 
 interface FocusModeNoisePanelProps {
@@ -89,8 +92,17 @@ export const FocusModeNoisePanel: React.FC<FocusModeNoisePanelProps> = ({
     loadPreset,
   } = useWhiteNoise();
 
+  // 预构建 type -> 噪声项 映射，避免渲染/切换时对每个选项线性 find（原为 O(options*mixedNoises)）
+  const mixedNoiseByType = useMemo(() => {
+    const m = new Map<WhiteNoiseType, (typeof mixedNoises)[number]>();
+    mixedNoises.forEach((n) => {
+      m.set(n.type, n);
+    });
+    return m;
+  }, [mixedNoises]);
+
   const handleNoiseToggle = (type: AudioWhiteNoiseType) => {
-    if (mixedNoises.find((n) => n.type === (type as WhiteNoiseType))) {
+    if (mixedNoiseByType.has(type as WhiteNoiseType)) {
       removeNoise(type as WhiteNoiseType);
     } else {
       addNoise(type as WhiteNoiseType);
@@ -169,9 +181,7 @@ export const FocusModeNoisePanel: React.FC<FocusModeNoisePanelProps> = ({
           >
             <div className="grid grid-cols-6 gap-2 p-4 bg-black/30 rounded-lg mb-4">
               {NOISE_OPTIONS.map((option) => {
-                const isActive = mixedNoises.find(
-                  (n) => n.type === option.id,
-                );
+                const isActive = mixedNoiseByType.has(option.id);
                 return (
                   <motion.button
                     key={option.id}

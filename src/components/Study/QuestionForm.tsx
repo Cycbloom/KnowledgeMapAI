@@ -113,8 +113,12 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   }, [initialData]);
 
   // Warn user before leaving when there are unsaved changes
-  const isDirty =
-    JSON.stringify(formData) !== JSON.stringify(getInitialFormData(initialData));
+  // 用 useMemo 缓存 isDirty，避免每次渲染重复两次 JSON.stringify（序列化计算降为依赖变化时才执行）
+  const isDirty = useMemo(
+    () =>
+      JSON.stringify(formData) !== JSON.stringify(getInitialFormData(initialData)),
+    [formData, initialData],
+  );
   useBeforeUnload(isDirty, t("common.unsavedChanges"));
 
   const validate = () => {

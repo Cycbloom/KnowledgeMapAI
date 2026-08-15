@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Node, Edge, GraphColorMode, NodeStatus } from "../../../types";
@@ -121,6 +121,9 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
   const touchCurrentY = useRef<number>(0);
   const [isDragging, setIsDragging] = useState(false);
 
+  // 预构建 nodeById 索引，将渲染路径的节点查找由 O(nodes) 降为 O(1)
+  const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
+
   const startResizing = useCallback(
     (e: React.MouseEvent) => {
       if (isMobile) return;
@@ -233,7 +236,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
         </div>
       ) : sidebarMode === "detail" && selectedNode ? (
         <NodeDetailSidebar
-          node={nodes.find((n) => n.id === selectedNode.id) || selectedNode}
+          node={nodeById.get(selectedNode.id) ?? selectedNode}
           nodes={nodes}
           edges={edges}
           prevSidebarMode={prevSidebarMode}

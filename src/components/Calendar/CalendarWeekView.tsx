@@ -123,6 +123,13 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
     return days;
   }, [currentDate, events, executions]);
 
+  // 预构建 eventId -> event 索引，键盘拖动指示器由 O(7*events) 的 flatMap+find 降为 O(1) 的 get
+  const eventById = useMemo(() => {
+    const m = new Map<string, CalendarEvent>();
+    weekData.forEach((d) => d.events.forEach((e) => m.set(e.id, e)));
+    return m;
+  }, [weekData]);
+
   const getEventPosition = (event: CalendarEvent) => {
     const start = new Date(event.start);
     const end = event.end
@@ -629,9 +636,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                 dropTargetDayIndex === dayIndex &&
                 dropTargetHour !== null &&
                 (() => {
-                  const draggedKeyEvent = weekData
-                    .flatMap((d) => d.events)
-                    .find((e) => e.id === draggingEventId);
+                  const draggedKeyEvent = eventById.get(draggingEventId);
                   const indicatorHeight = draggedKeyEvent
                     ? getEventPosition(draggedKeyEvent).height
                     : "60px";

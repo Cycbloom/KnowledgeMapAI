@@ -173,10 +173,17 @@ const SessionGroup: React.FC<SessionGroupProps> = ({
   const { t } = useTranslation();
 
   const sessionStats = useMemo(() => {
-    const totalTokens = logs.reduce((sum, l) => sum + l.totalTokens, 0);
-    const totalCost = logs.reduce((sum, l) => sum + l.estimatedCost, 0);
-    const totalDuration = logs.reduce((sum, l) => sum + l.duration, 0);
-    const successCount = logs.filter((l) => l.success).length;
+    let totalTokens = 0;
+    let totalCost = 0;
+    let totalDuration = 0;
+    let successCount = 0;
+    // 单趟统计汇总指标，替代 3 次 reduce + 1 次 filter 的 O(4*logs) 扫描
+    for (const l of logs) {
+      totalTokens += l.totalTokens;
+      totalCost += l.estimatedCost;
+      totalDuration += l.duration;
+      if (l.success) successCount++;
+    }
     return {
       totalTokens,
       totalCost,
@@ -948,19 +955,25 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
     : uniqueOperations.filter((op) => !isEmbeddingOperation(op));
 
   const displayStats = useMemo(() => {
+    let successCount = 0;
+    let totalTokens = 0;
+    let totalCost = 0;
+    let nonEmbeddingDurationSum = 0;
+    let nonEmbeddingCount = 0;
+    // 单趟统计过滤后日志的所有指标，替代 3 次 reduce + 2 次 filter 的 O(5*filteredLogs) 扫描
+    for (const l of filteredLogs) {
+      if (l.success) successCount++;
+      totalTokens += l.totalTokens;
+      totalCost += l.estimatedCost;
+      if (!isEmbeddingOperation(l.operation)) {
+        nonEmbeddingDurationSum += l.duration;
+        nonEmbeddingCount++;
+      }
+    }
     const total = filteredLogs.length;
-    const successCount = filteredLogs.filter((l) => l.success).length;
     const failedCount = total - successCount;
-    const totalTokens = filteredLogs.reduce((sum, l) => sum + l.totalTokens, 0);
-    const totalCost = filteredLogs.reduce((sum, l) => sum + l.estimatedCost, 0);
-    const nonEmbeddingFiltered = filteredLogs.filter(
-      (l) => !isEmbeddingOperation(l.operation),
-    );
     const avgDuration =
-      nonEmbeddingFiltered.length > 0
-        ? nonEmbeddingFiltered.reduce((sum, l) => sum + l.duration, 0) /
-          nonEmbeddingFiltered.length
-        : 0;
+      nonEmbeddingCount > 0 ? nonEmbeddingDurationSum / nonEmbeddingCount : 0;
 
     return {
       total,

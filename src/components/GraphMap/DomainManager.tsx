@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useId } from 'react';
+import React, { useState, useEffect, useCallback, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -230,6 +230,12 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
   useEscapeKey(onClose, isOpen);
 
   const [domains, setDomains] = useState<DomainTreeNode[]>([]);
+  // 预构建 domain 位置索引，将渲染循环中 O(n²) 的 findIndex 降为 O(1) 查找
+  const domainPosById = useMemo(() => {
+    const index = new Map<string, number>();
+    domains.forEach((d, i) => index.set(d.id, i));
+    return index;
+  }, [domains]);
   const [loading, setLoading] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -702,7 +708,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                           hasChildrenFn={hasChildren}
                           onToggleExpand={toggleExpand}
                           setSize={domains.length}
-                          posInSet={domains.findIndex(d => d.id === domain.id) + 1}
+                          posInSet={(domainPosById.get(domain.id) ?? 0) + 1}
                         />
 
                         {deleteConfirmId === domain.id && (

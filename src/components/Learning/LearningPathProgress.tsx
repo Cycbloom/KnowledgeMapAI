@@ -56,17 +56,36 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
     if (!learningPath) return null;
     
     const nodes = learningPath.nodes || [];
-    const completed = nodes.filter(n => n.status === 'completed').length;
-    const inProgress = nodes.filter(n => n.status === 'in_progress').length;
-    const pending = nodes.filter(n => n.status === 'pending').length;
-    const totalMinutes = nodes.reduce((sum, n) => sum + n.estimated_minutes, 0);
-    const completedMinutes = nodes
-      .filter(n => n.status === 'completed')
-      .reduce((sum, n) => sum + n.estimated_minutes, 0);
-    
-    const currentNodeIndex = nodes.findIndex(n => n.node_id === currentNodeId);
+    // 单趟统计各状态数量、时长与难度，替代多次 filter/reduce 的 O(k*nodes) 扫描
+    let completed = 0;
+    let inProgress = 0;
+    let pending = 0;
+    let totalMinutes = 0;
+    let completedMinutes = 0;
+    let difficultySum = 0;
+    let currentNodeIndex = -1;
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      switch (n.status) {
+        case 'completed':
+          completed++;
+          completedMinutes += n.estimated_minutes;
+          break;
+        case 'in_progress':
+          inProgress++;
+          break;
+        case 'pending':
+          pending++;
+          break;
+      }
+      totalMinutes += n.estimated_minutes;
+      difficultySum += n.difficulty_level;
+      if (currentNodeIndex === -1 && n.node_id === currentNodeId) {
+        currentNodeIndex = i;
+      }
+    }
     const currentNode = currentNodeIndex >= 0 ? nodes[currentNodeIndex] : null;
-    
+
     return {
       completed,
       inProgress,
@@ -76,8 +95,8 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
       currentNodeIndex,
       currentNode,
       remainingNodes: nodes.length - completed,
-      averageDifficulty: nodes.length > 0 
-        ? nodes.reduce((sum, n) => sum + n.difficulty_level, 0) / nodes.length 
+      averageDifficulty: nodes.length > 0
+        ? difficultySum / nodes.length
         : 0
     };
   }, [learningPath, currentNodeId]);

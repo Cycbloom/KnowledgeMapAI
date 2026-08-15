@@ -1,4 +1,4 @@
-import React, { useState, useId } from 'react';
+import React, { useState, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
@@ -46,17 +46,19 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
   const getRelationKey = (rel: DiscoveredRelation) =>
     `${rel.source_graph_id}-${rel.target_graph_id}-${rel.relation_type}`;
 
-  const filteredRelations = result.discovered_relations.filter((rel) => {
-    if (filterType === 'all') return true;
-    return rel.relation_type === filterType;
-  });
-
-  const sortedRelations = [...filteredRelations].sort((a, b) => {
-    if (sortBy === 'confidence') {
-      return b.confidence - a.confidence;
-    }
-    return a.relation_type.localeCompare(b.relation_type);
-  });
+  // useMemo 合并过滤+排序为单次计算，避免每次渲染重复扫描数组
+  const sortedRelations = useMemo(() => {
+    const filtered = result.discovered_relations.filter((rel) => {
+      if (filterType === 'all') return true;
+      return rel.relation_type === filterType;
+    });
+    return [...filtered].sort((a, b) => {
+      if (sortBy === 'confidence') {
+        return b.confidence - a.confidence;
+      }
+      return a.relation_type.localeCompare(b.relation_type);
+    });
+  }, [result.discovered_relations, filterType, sortBy]);
 
   const handleCreateRelation = async (rel: DiscoveredRelation) => {
     const key = getRelationKey(rel);

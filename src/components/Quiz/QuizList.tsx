@@ -96,12 +96,16 @@ export const QuizList: React.FC<QuizListProps> = ({
 
   const statusCounts = useMemo(() => {
     if (!quizSets) return { all: 0, draft: 0, generating: 0, ready: 0 };
-    return {
-      all: quizSets.length,
-      draft: quizSets.filter((q) => q.status === 'draft').length,
-      generating: quizSets.filter((q) => q.status === 'generating').length,
-      ready: quizSets.filter((q) => q.status === 'ready').length,
-    };
+    // 单趟统计各状态数量，替代三次 filter 的 O(3*quizSets) 扫描
+    let draft = 0;
+    let generating = 0;
+    let ready = 0;
+    for (const q of quizSets) {
+      if (q.status === 'draft') draft++;
+      else if (q.status === 'generating') generating++;
+      else if (q.status === 'ready') ready++;
+    }
+    return { all: quizSets.length, draft, generating, ready };
   }, [quizSets]);
 
   if (isLoading) {

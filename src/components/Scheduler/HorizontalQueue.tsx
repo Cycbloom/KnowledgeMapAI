@@ -90,13 +90,17 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
     data: { queueLevel: level, type: "queue" },
   });
 
-  const totalEstimatedTime = tasks.reduce(
-    (sum, t) => sum + (t.estimated_duration || 0),
-    0,
-  );
-  const pendingTasks = tasks.filter((t) => t.status === "pending");
-  const inProgressTasks = tasks.filter((t) => t.status === "in_progress");
-  const pausedTasks = tasks.filter((t) => t.status === "paused");
+  // 单趟统计总时长并按状态分桶，替代 reduce + 三次 filter 的 O(4*tasks) 扫描
+  let totalEstimatedTime = 0;
+  const pendingTasks: UserTask[] = [];
+  const inProgressTasks: UserTask[] = [];
+  const pausedTasks: UserTask[] = [];
+  for (const t of tasks) {
+    totalEstimatedTime += t.estimated_duration || 0;
+    if (t.status === "pending") pendingTasks.push(t);
+    else if (t.status === "in_progress") inProgressTasks.push(t);
+    else if (t.status === "paused") pausedTasks.push(t);
+  }
   const visibleTasks = [...inProgressTasks, ...pausedTasks, ...pendingTasks];
   const taskIds = visibleTasks.map((t) => t.id);
 
@@ -241,7 +245,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
               items={taskIds}
               strategy={horizontalListSortingStrategy}
             >
-              {visibleTasks.map((task) => (
+              {visibleTasks.map((task, taskIndex) => (
                 <React.Fragment key={task.id}>
                   <DraggableTaskCard
                     task={task}
@@ -252,7 +256,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                     onCompleteTask={onCompleteTask}
                     onViewTaskDetail={onViewTaskDetail}
                   />
-                  {visibleTasks.indexOf(task) < visibleTasks.length - 1 && (
+                  {taskIndex < visibleTasks.length - 1 && (
                     <svg
                       width="24"
                       height="24"

@@ -47,10 +47,19 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
 
   const heatmapData = useMemo(() => {
     return graphData.map(graph => {
-      const total = graph.nodes?.length || graph.nodes_count || 0;
-      const mastered = graph.nodes?.filter(n => n.status === 'mastered').length || 0;
-      const learning = graph.nodes?.filter(n => n.status === 'learning').length || 0;
-      const newNodes = graph.nodes?.filter(n => n.status === 'new').length || 0;
+      const nodes = graph.nodes;
+      const total = nodes?.length || graph.nodes_count || 0;
+      let mastered = 0;
+      let learning = 0;
+      let newNodes = 0;
+      // 单趟统计各状态节点数，替代三次 filter 的 O(3*nodes) 扫描
+      if (nodes) {
+        for (const n of nodes) {
+          if (n.status === 'mastered') mastered++;
+          else if (n.status === 'learning') learning++;
+          else if (n.status === 'new') newNodes++;
+        }
+      }
       
       return {
         name: graph.title,

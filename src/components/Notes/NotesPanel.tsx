@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useNotesByNode } from "../../hooks/queries";
@@ -44,6 +44,19 @@ const NotesPanelComponent: React.FC<NotesPanelProps> = ({ nodeId }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: notes, isLoading, error } = useNotesByNode(nodeId);
+
+  // 用 useMemo 缓存 noteItems 派生数组，避免每次渲染重复 map 扫描
+  const noteItems: NoteItem[] = useMemo(
+    () =>
+      (notes ?? []).map((note) => ({
+        id: note.id,
+        title: note.title,
+        type: note.type,
+        updatedAt: note.updatedAt,
+        isPinned: note.isPinned,
+      })),
+    [notes],
+  );
 
   // 无节点 ID 时显示空状态
   if (!nodeId) {
@@ -92,14 +105,6 @@ const NotesPanelComponent: React.FC<NotesPanelProps> = ({ nodeId }) => {
       />
     );
   }
-
-  const noteItems: NoteItem[] = notes.map((note) => ({
-    id: note.id,
-    title: note.title,
-    type: note.type,
-    updatedAt: note.updatedAt,
-    isPinned: note.isPinned,
-  }));
 
   return (
     <VirtualList

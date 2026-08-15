@@ -87,8 +87,13 @@ function calculateLayout(
     const centerY = height / 2;
     const radius = Math.min(width, height) * 0.35;
     
-    const sharedNodes = nodes.filter(n => n.isShared);
-    const regularNodes = nodes.filter(n => !n.isShared);
+    // 单趟分桶共享/普通节点，替代两次 filter 的 O(2*nodes) 扫描
+    const sharedNodes: MergedNode[] = [];
+    const regularNodes: MergedNode[] = [];
+    for (const n of nodes) {
+      if (n.isShared) sharedNodes.push(n);
+      else regularNodes.push(n);
+    }
     
     sharedNodes.forEach((node, index) => {
       const angle = (2 * Math.PI * index) / sharedNodes.length - Math.PI / 2;

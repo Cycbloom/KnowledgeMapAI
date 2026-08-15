@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, AlertTriangle, Loader2, Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -67,8 +67,13 @@ export const ActionConfirmationPanel: React.FC<
     Map<string, ActionResult>
   >(new Map());
 
-  const pendingOnly = pendingActions.filter(
-    (a) => a.status === "pending" && !actionResults.has(a.id),
+  // useMemo 缓存 pendingOnly 过滤结果，避免每次渲染重复扫描 pendingActions
+  const pendingOnly = useMemo(
+    () =>
+      pendingActions.filter(
+        (a) => a.status === "pending" && !actionResults.has(a.id),
+      ),
+    [pendingActions, actionResults],
   );
   const allResolved =
     pendingActions.length > 0 && pendingOnly.length === 0;

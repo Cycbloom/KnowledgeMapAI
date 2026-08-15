@@ -52,9 +52,14 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
         limit: 10,
       });
       const results = response || [];
-      const filtered = results.filter(
-        (r) => !selectedKnowledgePoints.some((kp) => kp.knowledge_point_id === r.id)
+      // 用 Set 排除已选知识点，替代 filter 内嵌 some 的 O(results*selected) 扫描
+      const selectedIds = new Set(
+        selectedKnowledgePoints.map((kp) => kp.knowledge_point_id),
       );
+      const filtered: Array<typeof results[number]> = [];
+      for (const r of results) {
+        if (!selectedIds.has(r.id)) filtered.push(r);
+      }
       setSearchResults(
         filtered.map((r) => ({
           id: r.id,

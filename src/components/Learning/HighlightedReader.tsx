@@ -506,10 +506,13 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
         setIsAnalyzing(false);
         setNeedsHighlight(false);
 
-        const keywordHits = ranges.filter((r) => r.category).length;
-        const localHits = ranges.filter((r) => !r.category).length;
+        // 单趟统计关键词命中与本地命中，替代两次 filter 的 O(2*ranges) 扫描
+        let keywordHits = 0;
+        let localHits = 0;
         const importanceBreakdown: Record<number, number> = {};
         ranges.forEach((r) => {
+          if (r.category) keywordHits++;
+          else localHits++;
           const imp = r.importance || 0;
           importanceBreakdown[imp] = (importanceBreakdown[imp] || 0) + 1;
         });

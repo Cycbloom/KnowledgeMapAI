@@ -33,16 +33,18 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
   }, [startDate, endDate]);
 
   // 预构建 日期 -> plan 映射（首个匹配优先，与 find 语义一致），
-  // 避免 days.map 中每天对 progressPlans 线性扫描（原为 O(days*plans)）
-  const planByDayKey = useMemo(() => {
+  // 并单趟统计已完成天数，避免 days.map 中每天线性扫描及额外 filter（原为 O(days*plans)+O(plans)）
+  const { planByDayKey, completedDays } = useMemo(() => {
     const m = new Map<string, TaskProgressPlan>();
+    let completed = 0;
     progressPlans.forEach((p) => {
       const key = format(new Date(p.plan_date), 'yyyy-MM-dd');
       if (!m.has(key)) {
         m.set(key, p);
       }
+      if (p.status === 'completed') completed++;
     });
-    return m;
+    return { planByDayKey: m, completedDays: completed };
   }, [progressPlans]);
 
   const getPlanForDate = (date: Date): TaskProgressPlan | undefined => {
@@ -51,7 +53,6 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
 
   const today = new Date();
   const totalDays = days.length;
-  const completedDays = progressPlans.filter((p) => p.status === 'completed').length;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-4">

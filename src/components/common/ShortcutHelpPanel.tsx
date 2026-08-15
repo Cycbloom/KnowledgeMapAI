@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useId } from 'react';
+import React, { useState, useRef, useEffect, useId, useMemo } from 'react';
 import { X, RotateCcw, Search, Keyboard, MousePointer2, Sparkles, Command } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
@@ -54,19 +54,36 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
     }
   }, [editingId]);
 
-  const filteredShortcuts = DEFAULT_SHORTCUTS.filter(shortcut =>
-    t(shortcut.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t(shortcut.description).toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t(`shortcuts.helpPanel.categories.${shortcut.category}`, { defaultValue: '' }).toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // 缓存过滤结果，仅在查询词或文案变化时重算（原为每次渲染全量过滤 DEFAULT_SHORTCUTS）
+  const filteredShortcuts = useMemo(() => {
+    const lowerQuery = searchQuery.toLowerCase();
+    return DEFAULT_SHORTCUTS.filter(shortcut =>
+      t(shortcut.name).toLowerCase().includes(lowerQuery) ||
+      t(shortcut.description).toLowerCase().includes(lowerQuery) ||
+      t(`shortcuts.helpPanel.categories.${shortcut.category}`, { defaultValue: '' }).toLowerCase().includes(lowerQuery)
+    );
+  }, [searchQuery, t]);
 
-  const groupedShortcuts = CATEGORY_ORDER.reduce((acc, category) => {
-    const items = filteredShortcuts.filter(s => s.category === category);
-    if (items.length > 0) {
-      acc[category] = items;
+  // 单趟遍历将过滤结果按分类分组，替代原 reduce+filter 的 O(categories*shortcuts) 嵌套循环
+  const groupedShortcuts = useMemo(() => {
+    const byCategory = new Map<string, ShortcutDefinition[]>();
+    for (const shortcut of filteredShortcuts) {
+      const list = byCategory.get(shortcut.category);
+      if (list) {
+        list.push(shortcut);
+      } else {
+        byCategory.set(shortcut.category, [shortcut]);
+      }
+    }
+    const acc: Record<string, ShortcutDefinition[]> = {};
+    for (const category of CATEGORY_ORDER) {
+      const items = byCategory.get(category);
+      if (items && items.length > 0) {
+        acc[category] = items;
+      }
     }
     return acc;
-  }, {} as Record<string, ShortcutDefinition[]>);
+  }, [filteredShortcuts]);
 
   const handleKeyCapture = (e: React.KeyboardEvent, shortcutId: string) => {
     e.preventDefault();

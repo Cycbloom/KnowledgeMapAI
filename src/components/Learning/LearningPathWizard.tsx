@@ -116,9 +116,14 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     }
   };
 
-  const unknownPrerequisites = Object.entries(knowledgeAnswers)
-    .filter(([_, level]) => level === '不了解')
-    .map(([topic]) => topic);
+  // 单趟遍历统计不了解的先修主题，替代渲染时每次重建 entries 再 filter 的重复扫描
+  const unknownPrerequisites = useMemo(
+    () =>
+      Object.entries(knowledgeAnswers)
+        .filter(([_, level]) => level === '不了解')
+        .map(([topic]) => topic),
+    [knowledgeAnswers],
+  );
 
   // 预聚合 prerequisiteQuestions 到 topic 映射，避免每个 topic 线性扫描（原为 O(prereqs*questions)）
   const questionByTopic = useMemo(() => {
@@ -191,8 +196,13 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
 
       setCreatedGraphs(typedResult.created);
 
-      const newCount = typedResult.created.filter((g) => g.isNew).length;
-      const linkedCount = typedResult.created.filter((g) => !g.isNew).length;
+      // 单趟统计新建/关联数量，替代两次 filter 的 O(2*created) 扫描
+      let newCount = 0;
+      let linkedCount = 0;
+      for (const g of typedResult.created) {
+        if (g.isNew) newCount++;
+        else linkedCount++;
+      }
 
       let resultMessage = '';
       if (newCount > 0 && linkedCount > 0) {

@@ -1,4 +1,4 @@
-import React, { useState, useId } from 'react';
+import React, { useState, useId, useMemo } from 'react';
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -145,6 +145,12 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   const [showFailedDetails, setShowFailedDetails] = useState(false);
   const [sourceGraphs, setSourceGraphs] = useState<SourceGraph[]>([]);
   const [isLoadingSourceGraphs, setIsLoadingSourceGraphs] = useState(false);
+
+  // 单趟统计新建图数量，替代渲染中每次 filter 的扫描
+  const newGraphCount = useMemo(
+    () => createdGraphs.reduce((acc, g) => (g.isNew ? acc + 1 : acc), 0),
+    [createdGraphs],
+  );
 
   const loadSourceGraphs = async () => {
     if (!onLoadSourceGraphs) return;
@@ -304,7 +310,11 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   };
 
   const handleInitialize = async () => {
-    const newGraphIds = createdGraphs.filter(g => g.isNew).map(g => g.graphId);
+    // 单趟收集新建图 ID，替代 filter+map 两次扫描
+    const newGraphIds: string[] = [];
+    for (const g of createdGraphs) {
+      if (g.isNew) newGraphIds.push(g.graphId);
+    }
     if (newGraphIds.length === 0 || !onInitializeGraphs) return;
 
     setIsInitializing(true);
@@ -801,7 +811,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                   <p className="text-sm text-green-600 dark:text-green-400">
                     {t('graphMap.domainGenerator.createSuccessDesc', {
                       count: createdGraphs.length,
-                      newCount: createdGraphs.filter(g => g.isNew).length,
+                      newCount: newGraphCount,
                     })}
                   </p>
                 </div>

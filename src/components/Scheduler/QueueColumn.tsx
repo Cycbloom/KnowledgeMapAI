@@ -114,12 +114,15 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
     data: { queueLevel: level, type: "queue" },
   });
 
-  const totalEstimatedTime = tasks.reduce(
-    (sum, t) => sum + (t.estimated_duration || 0),
-    0,
-  );
-  const pendingTasks = tasks.filter((t) => t.status === "pending");
-  const inProgressTasks = tasks.filter((t) => t.status === "in_progress");
+  // 单趟统计总时长并按状态分桶，替代 reduce + 两次 filter 的 O(3*tasks) 扫描
+  let totalEstimatedTime = 0;
+  const pendingTasks: UserTask[] = [];
+  const inProgressTasks: UserTask[] = [];
+  for (const t of tasks) {
+    totalEstimatedTime += t.estimated_duration || 0;
+    if (t.status === "pending") pendingTasks.push(t);
+    else if (t.status === "in_progress") inProgressTasks.push(t);
+  }
 
   const visibleTasks = [...inProgressTasks, ...pendingTasks];
   const taskIds = visibleTasks.map((t) => t.id);

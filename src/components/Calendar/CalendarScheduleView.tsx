@@ -125,10 +125,17 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
       return acc + (e.duration || 0);
     }, 0);
 
+    // 利用 hour 分桶缩小候选集：exec 命中目标必在前后 1 小时桶内，替代对全量 dayEvents 的 O(m) 扫描
     const matchedExecutions = dayExecutions.filter((exec) => {
-      return dayEvents.some((event) => {
+      const execStart = new Date(exec.started_at);
+      const execHour = execStart.getHours();
+      const candidates = [
+        ...(eventsByHour.get((execHour - 1 + 24) % 24) || []),
+        ...(eventsByHour.get(execHour) || []),
+        ...(eventsByHour.get((execHour + 1) % 24) || []),
+      ];
+      return candidates.some((event) => {
         const eventStart = new Date(event.start);
-        const execStart = new Date(exec.started_at);
         const timeDiff = Math.abs(eventStart.getTime() - execStart.getTime());
         return (
           timeDiff < 30 * 60 * 1000 &&

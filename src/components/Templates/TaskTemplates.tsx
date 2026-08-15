@@ -1,4 +1,4 @@
-import React, { useId } from "react";
+import React, { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -99,6 +99,12 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
   } = useTemplateModals();
 
   const { isCreating, isEditing, isApplying, editingTemplate, applyingTemplate } = modalState;
+
+  // 前置计算 applyingTemplate 的占位符，避免渲染路径中重复执行正则扫描
+  const applyingTemplatePlaceholders = useMemo(
+    () => (applyingTemplate ? extractPlaceholders(applyingTemplate) : []),
+    [applyingTemplate],
+  );
 
   const handleCreateTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -708,7 +714,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                 </button>
               </div>
 
-              {extractPlaceholders(applyingTemplate).length > 0 && (
+              {applyingTemplatePlaceholders.length > 0 && (
                 <div className="mb-6">
                   <h4
                     className={`text-sm font-medium mb-3 ${isDark ? "text-slate-300" : "text-gray-700"}`}
@@ -716,7 +722,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     {t("templates.fillVariables")}
                   </h4>
                   <div className="space-y-3">
-                    {extractPlaceholders(applyingTemplate).map(
+                    {applyingTemplatePlaceholders.map(
                       (placeholder: string) => (
                         <div key={placeholder}>
                           <label

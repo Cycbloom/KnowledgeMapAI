@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Check, Clock, Flag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatTimeFromSeconds } from '../../utils/formatters';
@@ -21,7 +21,13 @@ const QuizProgressBarComponent: React.FC<QuizProgressBarProps> = ({
   flaggedCount = 0,
 }) => {
   const { t } = useTranslation();
-  const progress = total > 0 ? (answered.filter(Boolean).length / total) * 100 : 0;
+  // 单趟统计已答题数，替代三处 answered.filter(Boolean).length 的 O(3*answered) 扫描
+  const answeredCount = useMemo(() => {
+    let c = 0;
+    for (const a of answered) if (a) c++;
+    return c;
+  }, [answered]);
+  const progress = total > 0 ? (answeredCount / total) * 100 : 0;
 
   // Session timer (UX2-04)
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -65,7 +71,7 @@ const QuizProgressBarComponent: React.FC<QuizProgressBarProps> = ({
             aria-live="polite"
             aria-atomic="true"
           >
-            {t('study.quizProgressBar.answeredCount', { count: answered.filter(Boolean).length })}
+            {t('study.quizProgressBar.answeredCount', { count: answeredCount })}
           </span>
         </div>
       </div>
@@ -73,7 +79,7 @@ const QuizProgressBarComponent: React.FC<QuizProgressBarProps> = ({
       <div
         className="relative h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden"
         role="progressbar"
-        aria-valuenow={answered.filter(Boolean).length}
+        aria-valuenow={answeredCount}
         aria-valuemin={0}
         aria-valuemax={total}
         aria-label={t('quiz.progressBar.ariaLabel')}

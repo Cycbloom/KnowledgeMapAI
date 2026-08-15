@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
@@ -51,6 +51,13 @@ export const QuizResult: React.FC<QuizResultProps> = ({
   const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
   const accuracy = results.total > 0 ? Math.round((results.correct / results.total) * 100) : 0;
   const hasWrongCards = results.wrongCards.length > 0;
+
+  // 预构建 cardId -> question 索引，最快/最慢题的 find 线性扫描降为 O(1) 的 get
+  const questionById = useMemo(() => {
+    const m = new Map<string, string>();
+    results.cards?.forEach((c) => m.set(c.id, c.question));
+    return m;
+  }, [results.cards]);
 
   const getCardTypeLabel = (cardType: string) =>
     t(`study.quizResult.cardType.${cardType}`, { defaultValue: cardType });
@@ -199,7 +206,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="text-xs text-emerald-600/70 dark:text-emerald-400/70">{t('study.quizResult.timeStats.fastest')} · {formatTimeFromSeconds(results.fastest.duration)}</div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
-                      {results.cards?.find((c) => c.id === results.fastest?.cardId)?.question ?? '—'}
+                      {questionById.get(results.fastest.cardId) ?? '—'}
                     </p>
                   </div>
                 </div>
@@ -210,7 +217,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="text-xs text-amber-600/70 dark:text-amber-400/70">{t('study.quizResult.timeStats.slowest')} · {formatTimeFromSeconds(results.slowest.duration)}</div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
-                      {results.cards?.find((c) => c.id === results.slowest?.cardId)?.question ?? '—'}
+                      {questionById.get(results.slowest.cardId) ?? '—'}
                     </p>
                   </div>
                 </div>

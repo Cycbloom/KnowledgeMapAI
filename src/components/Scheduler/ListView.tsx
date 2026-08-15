@@ -695,24 +695,23 @@ export const ListView: React.FC<ListViewProps> = ({
   );
 
   const filteredAndSortedTasks = useMemo(() => {
-    let result = [...tasks];
-
-    if (debouncedSearchQuery) {
-      const query = debouncedSearchQuery.toLowerCase();
-      result = result.filter(
-        (task) =>
-          task.title.toLowerCase().includes(query) ||
-          task.description?.toLowerCase().includes(query) ||
-          task.tags?.some((tag) => tag.toLowerCase().includes(query)),
-      );
-    }
-
-    if (filterStatus) {
-      result = result.filter((task) => task.status === filterStatus);
-    }
-
-    if (filterQueue !== null) {
-      result = result.filter((task) => task.queue_level === filterQueue);
+    // 单趟过滤所有条件，替代链式 filter 的多次中间数组分配（原为 O(k*tasks) 扫描）
+    const query = debouncedSearchQuery ? debouncedSearchQuery.toLowerCase() : '';
+    const result: UserTask[] = [];
+    for (const task of tasks) {
+      if (query) {
+        const titleMatch = task.title.toLowerCase().includes(query);
+        const descMatch = task.description
+          ? task.description.toLowerCase().includes(query)
+          : false;
+        const tagsMatch = task.tags
+          ? task.tags.some((tag) => tag.toLowerCase().includes(query))
+          : false;
+        if (!titleMatch && !descMatch && !tagsMatch) continue;
+      }
+      if (filterStatus && task.status !== filterStatus) continue;
+      if (filterQueue !== null && task.queue_level !== filterQueue) continue;
+      result.push(task);
     }
 
     result.sort((a, b) => {

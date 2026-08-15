@@ -67,14 +67,14 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
     });
   };
 
-  const selectedConcepts = useMemo(
-    () =>
-      concepts
-        .map((c, idx) => ({ concept: c, idx }))
-        .filter(({ idx }) => selectedIndices.has(idx))
-        .map(({ concept }) => concept),
-    [concepts, selectedIndices],
-  );
+  // 合并 map+filter+map 为单趟 for 循环，将多次扫描 O(3n) 降为 O(n)
+  const selectedConcepts = useMemo(() => {
+    const result: NoteExtractedConcept[] = [];
+    for (let idx = 0; idx < concepts.length; idx++) {
+      if (selectedIndices.has(idx)) result.push(concepts[idx]);
+    }
+    return result;
+  }, [concepts, selectedIndices]);
 
   const canConfirm =
     selectedConcepts.length > 0 && !!graphId && !createNodesMutation.isPending;

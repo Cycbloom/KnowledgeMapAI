@@ -115,6 +115,12 @@ export const CardReviewView = ({
     return filteredCards.slice(start, start + pageSize);
   }, [filteredCards, currentPage, pageSize]);
 
+  // 前置计算每日最大复习数，避免在 forecast.daily.map 内对每个元素重复 Math.max（原为 O(n²)）
+  const forecastMaxCount = useMemo(
+    () => Math.max(...(forecast?.daily ?? []), 1),
+    [forecast?.daily],
+  );
+
   return (
     <>
       {/* Stats Cards & Chart */}
@@ -467,7 +473,7 @@ export const CardReviewView = ({
               {forecast.thisWeek > 0 && (
                 <div className="flex items-end gap-1 mt-3 h-12">
                   {forecast.daily.map((count, idx) => {
-                    const maxCount = Math.max(...forecast.daily, 1);
+                    const maxCount = forecastMaxCount;
                     const heightPct = Math.max(
                       (count / maxCount) * 100,
                       count > 0 ? 8 : 2,

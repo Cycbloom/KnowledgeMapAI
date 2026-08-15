@@ -563,9 +563,20 @@ export const GraphOutline = React.memo(function GraphOutline({
   const moduleGroups = useMemo(() => {
     if (templateType !== "topic_research") return [];
 
-    const rootNodes = nodes.filter(
-      (n) => n.level === "root" && !n.properties?.backboneModule,
-    );
+    // 单趟遍历 nodes 按 backboneModule 分组，替代为每个 module 单独 filter 的 O(modules*nodes) 扫描
+    const byModule = new Map<string | undefined, Node[]>();
+    const rootNodes: Node[] = [];
+    for (const n of nodes) {
+      if (n.level === "root" && !n.properties?.backboneModule) {
+        rootNodes.push(n);
+      } else {
+        const key = n.properties?.backboneModule;
+        const list = byModule.get(key);
+        if (list) list.push(n);
+        else byModule.set(key, [n]);
+      }
+    }
+
     const groups: {
       key: string;
       label: string;
@@ -586,15 +597,12 @@ export const GraphOutline = React.memo(function GraphOutline({
 
     const allModules = Object.values(BackboneModule);
     for (const mod of allModules) {
-      const moduleNodes = nodes.filter(
-        (n) => n.properties?.backboneModule === mod,
-      );
       groups.push({
         key: mod,
         label: t(BACKBONE_MODULE_LABEL_I18N_KEYS[mod]),
         icon: BACKBONE_MODULE_ICONS[mod],
         color: BACKBONE_MODULE_COLORS[mod],
-        nodes: moduleNodes,
+        nodes: byModule.get(mod) || [],
       });
     }
 

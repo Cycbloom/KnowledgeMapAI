@@ -252,28 +252,30 @@ export const QuizViewActive = memo(function QuizViewActive({
   }, [currentCard]);
 
   // 预解析多选的已选项/正确答案为 Set，避免每个选项重复 JSON.parse + includes（原为 O(options*len)）
-  let selectedSet = new Set<string>();
-  if (isMultiChoice && selectedOption) {
-    try {
-      const parsed = JSON.parse(selectedOption);
-      if (Array.isArray(parsed)) {
-        selectedSet = new Set(parsed as string[]);
+  // 用 useMemo 缓存 Set 构建，仅依赖变化时重建，避免每次渲染重复 JSON.parse
+  const selectedSet = useMemo(() => {
+    if (isMultiChoice && selectedOption) {
+      try {
+        const parsed = JSON.parse(selectedOption);
+        if (Array.isArray(parsed)) return new Set(parsed as string[]);
+      } catch {
+        return new Set<string>();
       }
-    } catch {
-      selectedSet = new Set();
     }
-  }
-  let correctSet = new Set<string>();
-  if (isMultiChoice) {
-    try {
-      const parsed = JSON.parse(currentCard.answer);
-      if (Array.isArray(parsed)) {
-        correctSet = new Set(parsed as string[]);
+    return new Set<string>();
+  }, [isMultiChoice, selectedOption]);
+
+  const correctSet = useMemo(() => {
+    if (isMultiChoice) {
+      try {
+        const parsed = JSON.parse(currentCard.answer);
+        if (Array.isArray(parsed)) return new Set(parsed as string[]);
+      } catch {
+        return new Set<string>();
       }
-    } catch {
-      correctSet = new Set();
     }
-  }
+    return new Set<string>();
+  }, [isMultiChoice, currentCard.answer]);
 
   return (
     <div
@@ -919,10 +921,7 @@ export const QuizViewActive = memo(function QuizViewActive({
                       ) : isMultiChoice ? (
                         <button
                           onClick={() => onSetShowAnswer(true)}
-                          disabled={
-                            !selectedOption ||
-                            JSON.parse(selectedOption).length === 0
-                          }
+                          disabled={!selectedOption || selectedSet.size === 0}
                           className={`w-full ${isMobile ? "py-4" : "py-4"} bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 disabled:opacity-50 disabled:shadow-none ${isMobile ? "text-lg" : ""}`}
                         >
                           {t("study.quiz.submitAnswer")}

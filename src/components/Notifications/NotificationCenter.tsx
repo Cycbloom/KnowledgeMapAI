@@ -161,7 +161,11 @@ export const NotificationCenter: React.FC = () => {
   };
 
   const handleDeleteReadNotifications = async () => {
-    const readIds = notifications.filter(n => n.read_at).map(n => n.id);
+    // 单趟收集已读 ID，替代 filter+map 两次扫描
+    const readIds: string[] = [];
+    for (const n of notifications) {
+      if (n.read_at) readIds.push(n.id);
+    }
     if (readIds.length === 0) return;
 
     const confirmed = await asyncConfirm({
@@ -199,8 +203,16 @@ export const NotificationCenter: React.FC = () => {
     const mutedTypeSet = new Set(mutedTypes);
     return notifications.filter(n => !mutedTypeSet.has(n.type));
   }, [notifications, mutedTypes]);
-  const unreadNotifications = visibleNotifications.filter(n => !n.read_at);
-  const readNotifications = visibleNotifications.filter(n => n.read_at);
+  // 单趟统计已读/未读，替代渲染中两次 filter 的 O(2*visibleNotifications) 扫描
+  const { unreadNotifications, readNotifications } = useMemo(() => {
+    const unread: Notification[] = [];
+    const read: Notification[] = [];
+    for (const n of visibleNotifications) {
+      if (n.read_at) read.push(n);
+      else unread.push(n);
+    }
+    return { unreadNotifications: unread, readNotifications: read };
+  }, [visibleNotifications]);
 
   const notificationIndexMap = useMemo(() => {
     const map = new Map<string, number>();

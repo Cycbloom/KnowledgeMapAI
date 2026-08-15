@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -449,6 +449,12 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
 
   const isEmbedded = variant === "embedded";
   const nodeClickHandler = onNavigateToNode || onNodeClick;
+
+  // 预缓存是否存在 assistant 消息，避免每次渲染对消息数组重复 O(n) 扫描
+  const hasAssistantMessages = useMemo(
+    () => chatState.messages.some((m) => m.role === "assistant"),
+    [chatState.messages],
+  );
 
   if (!isOpen) return null;
 
@@ -904,9 +910,7 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
                 }
               : undefined
           }
-          hasAssistantMessages={chatState.messages.some(
-            (m) => m.role === "assistant",
-          )}
+          hasAssistantMessages={hasAssistantMessages}
           quotes={quotes}
           onRemoveQuote={removeQuote}
           onClearQuotes={clearQuotes}

@@ -81,8 +81,13 @@ export const DevToolsPanel: React.FC = () => {
 
   // Query cache data
   const cachedQueries = queryClient.getQueryCache().getAll();
-  const staleQueries = cachedQueries.filter((q) => q.isStale());
-  const activeQueries = cachedQueries.filter((q) => q.state.fetchStatus === 'fetching');
+  // 单趟分桶 stale/active 查询，替代两次 filter 的 O(2*cachedQueries) 扫描
+  const staleQueries: typeof cachedQueries = [];
+  const activeQueries: typeof cachedQueries = [];
+  for (const q of cachedQueries) {
+    if (q.isStale()) staleQueries.push(q);
+    if (q.state.fetchStatus === 'fetching') activeQueries.push(q);
+  }
 
   if (!isVisible) return null;
 

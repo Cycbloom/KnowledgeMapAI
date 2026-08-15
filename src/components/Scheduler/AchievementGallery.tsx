@@ -119,49 +119,54 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
     userAchievements.map((ua) => [ua.achievement_id, ua]),
   );
 
-  const filteredAchievements = allAchievements.filter((achievement) => {
-    if (categoryFilter !== "all" && achievement.category !== categoryFilter) {
-      return false;
+  const filteredAchievements = useMemo(() => {
+    return allAchievements.filter((achievement) => {
+      if (categoryFilter !== "all" && achievement.category !== categoryFilter) {
+        return false;
+      }
+
+      const isUnlocked = userAchievementMap.has(achievement.id);
+      if (statusFilter === "unlocked" && !isUnlocked) return false;
+      if (statusFilter === "locked" && isUnlocked) return false;
+
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          achievement.name.toLowerCase().includes(query) ||
+          achievement.description.toLowerCase().includes(query)
+        );
+      }
+
+      return true;
+    });
+  }, [allAchievements, categoryFilter, statusFilter, searchQuery, userAchievementMap]);
+
+  const stats = useMemo(() => {
+    const result = {
+      total: allAchievements.length,
+      unlocked: userAchievements.length,
+      totalXp: 0,
+      byCategory: {
+        focus: { total: 0, unlocked: 0 },
+        tasks: { total: 0, unlocked: 0 },
+        streak: { total: 0, unlocked: 0 },
+        special: { total: 0, unlocked: 0 },
+        study: { total: 0, unlocked: 0 },
+        creation: { total: 0, unlocked: 0 },
+      },
+    };
+    // 单趟同时统计 totalXp 与分类计数，替代 reduce + forEach 两次扫描
+    for (const ua of userAchievements) {
+      result.totalXp += ua.achievement?.xp_reward || 0;
     }
-
-    const isUnlocked = userAchievementMap.has(achievement.id);
-    if (statusFilter === "unlocked" && !isUnlocked) return false;
-    if (statusFilter === "locked" && isUnlocked) return false;
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        achievement.name.toLowerCase().includes(query) ||
-        achievement.description.toLowerCase().includes(query)
-      );
+    for (const a of allAchievements) {
+      result.byCategory[a.category].total++;
+      if (userAchievementMap.has(a.id)) {
+        result.byCategory[a.category].unlocked++;
+      }
     }
-
-    return true;
-  });
-
-  const stats = {
-    total: allAchievements.length,
-    unlocked: userAchievements.length,
-    totalXp: userAchievements.reduce(
-      (sum, ua) => sum + (ua.achievement?.xp_reward || 0),
-      0,
-    ),
-    byCategory: {
-      focus: { total: 0, unlocked: 0 },
-      tasks: { total: 0, unlocked: 0 },
-      streak: { total: 0, unlocked: 0 },
-      special: { total: 0, unlocked: 0 },
-      study: { total: 0, unlocked: 0 },
-      creation: { total: 0, unlocked: 0 },
-    },
-  };
-
-  allAchievements.forEach((a) => {
-    stats.byCategory[a.category].total++;
-    if (userAchievementMap.has(a.id)) {
-      stats.byCategory[a.category].unlocked++;
-    }
-  });
+    return result;
+  }, [allAchievements, userAchievements, userAchievementMap]);
 
   const completionPercentage =
     stats.total > 0 ? Math.round((stats.unlocked / stats.total) * 100) : 0;

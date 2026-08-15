@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
@@ -88,10 +88,13 @@ export const KnowledgeGapsSection: React.FC<KnowledgeGapsSectionProps> = ({
     }
   };
 
-  const sortedGaps = [...result.knowledge_gaps].sort((a, b) => {
+  // useMemo 缓存排序结果，避免每次渲染重复拷贝+排序 knowledge_gaps
+  const sortedGaps = useMemo(() => {
     const order = { high: 0, medium: 1, low: 2 };
-    return order[a.importance] - order[b.importance];
-  });
+    return [...result.knowledge_gaps].sort((a, b) => {
+      return order[a.importance] - order[b.importance];
+    });
+  }, [result.knowledge_gaps]);
 
   return (
     <div className="space-y-4">

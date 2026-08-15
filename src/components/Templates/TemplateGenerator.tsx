@@ -195,11 +195,23 @@ const TemplatePreviewModal: React.FC<{
     return template.nodes.filter((n) => !n.parentId);
   }, [template.nodes]);
 
+  // 单趟按 parentId 分组子节点，替代 renderNode 中每个节点全量 filter 的 O(nodes²) 扫描
+  const childrenById = useMemo(() => {
+    const map = new Map<string, GeneratedTemplate["nodes"][number][]>();
+    template.nodes.forEach((n) => {
+      if (!n.parentId) return;
+      const list = map.get(n.parentId);
+      if (list) list.push(n);
+      else map.set(n.parentId, [n]);
+    });
+    return map;
+  }, [template.nodes]);
+
   const renderNode = (
     node: GeneratedTemplate["nodes"][number],
     depth: number,
   ) => {
-    const children = template.nodes.filter((n) => n.parentId === node.id);
+    const children = childrenById.get(node.id) || [];
     const indent = depth * (isMobile ? 12 : 16);
 
     return (

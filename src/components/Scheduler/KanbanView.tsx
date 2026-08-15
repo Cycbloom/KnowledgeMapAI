@@ -90,9 +90,16 @@ export const KanbanView: React.FC<{
   const [dragAnnouncement, setDragAnnouncement] = useState<string>("");
 
   const columnsData = useMemo(() => {
+    // 单趟按状态分桶到各列，替代每列一次 filter 的 O(columns*tasks) 扫描
+    const byStatus = new Map<string, UserTask[]>();
+    KANBAN_COLUMNS.forEach((c) => byStatus.set(c.id, []));
+    for (const task of tasks) {
+      const list = byStatus.get(task.status);
+      if (list) list.push(task);
+    }
     return KANBAN_COLUMNS.map((column) => ({
       ...column,
-      tasks: tasks.filter((task) => task.status === column.id),
+      tasks: byStatus.get(column.id) || [],
     }));
   }, [tasks, KANBAN_COLUMNS]);
 

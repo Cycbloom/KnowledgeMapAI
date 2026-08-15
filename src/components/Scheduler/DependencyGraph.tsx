@@ -33,11 +33,16 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
 
     const nodesWithPositions: TaskNode[] = tasks.map((task, index) => {
       const dependsOn = task.dependencies?.map((d) => d.depends_on_task_id) || [];
-      const blockingTasks = dependsOn
-        .map((id) => taskMap.get(id))
-        .filter(Boolean) as UserTask[];
-
-      const isBlocked = blockingTasks.some((t) => t.status !== "completed");
+      // 单趟查找并分桶前置任务（顺便得出 isBlocked），替代 map.filter.some 的三次扫描
+      const blockingTasks: UserTask[] = [];
+      let isBlocked = false;
+      for (const id of dependsOn) {
+        const t = taskMap.get(id);
+        if (t) {
+          blockingTasks.push(t);
+          if (t.status !== "completed") isBlocked = true;
+        }
+      }
 
       const row = Math.floor(index / 3);
       const col = index % 3;
@@ -245,8 +250,12 @@ export const DependencyIndicator: React.FC<DependencyIndicatorProps> = ({
   className = "",
 }) => {
   const { t } = useTranslation();
-  const isBlocked = blockingTasks.some((t) => t.status !== "completed");
-  const pendingBlockers = blockingTasks.filter((t) => t.status !== "completed");
+  // 单趟过滤未完成的前置任务，同时计算 isBlocked，替代 some + filter 两次扫描
+  const pendingBlockers: UserTask[] = [];
+  for (const t of blockingTasks) {
+    if (t.status !== "completed") pendingBlockers.push(t);
+  }
+  const isBlocked = pendingBlockers.length > 0;
 
   if (blockingTasks.length === 0) return null;
 

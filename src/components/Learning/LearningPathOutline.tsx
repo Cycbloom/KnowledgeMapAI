@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -98,6 +98,20 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
     }
   }, [currentNodeId]);
 
+  // 单趟统计各状态节点数（先于 early return，遵守 Hooks 顺序），替代渲染中三次 filter 的 O(3*nodes) 扫描
+  const nodes = pathDetail?.nodes || [];
+  const statusCounts = useMemo(() => {
+    let completed = 0;
+    let inProgress = 0;
+    let pending = 0;
+    for (const n of nodes) {
+      if (n.status === "completed") completed++;
+      else if (n.status === "in_progress") inProgress++;
+      else if (n.status === "pending" || !n.status) pending++;
+    }
+    return { completed, inProgress, pending };
+  }, [nodes]);
+
   if (isLoading) {
     return (
       <div
@@ -130,7 +144,6 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
     );
   }
 
-  const nodes = pathDetail.nodes || [];
   const progress = pathDetail.progress || {
     completed_nodes: 0,
     total_nodes: nodes.length,
@@ -366,7 +379,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="text-lg font-bold text-green-500">
-              {nodes.filter((n: LearningPathNodeItem) => n.status === "completed").length}
+              {statusCounts.completed}
             </div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">
               {t("learning.pathOutline.completed")}
@@ -374,7 +387,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
           </div>
           <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="text-lg font-bold text-primary-500">
-              {nodes.filter((n) => n.status === "in_progress").length}
+              {statusCounts.inProgress}
             </div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">
               {t("learning.pathOutline.inProgress")}
@@ -382,10 +395,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
           </div>
           <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="text-lg font-bold text-gray-500">
-              {
-                nodes.filter((n: LearningPathNodeItem) => n.status === "pending" || !n.status)
-                  .length
-              }
+              {statusCounts.pending}
             </div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">
               {t("learning.pathOutline.pending")}

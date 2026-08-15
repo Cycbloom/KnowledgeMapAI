@@ -53,15 +53,18 @@ interface ParsedAsciiTable {
 }
 
 const TABLE_BORDER_CHARS = '│─┌┐└┘├┤┬┴┼';
+// 模块级预构建正则，替代逐行解析时每次展开字符数组 / new RegExp 的开销（渲染输出逐行扫描的调用点）
+const TABLE_BORDER_REGEX = new RegExp(`[${TABLE_BORDER_CHARS}]`);
+const TABLE_BORDER_OR_WHITESPACE_REGEX = new RegExp(`[${TABLE_BORDER_CHARS}\\s]`, 'g');
 
 const isAsciiTableLine = (line: string): boolean => {
-  return [...TABLE_BORDER_CHARS].some((char) => line.includes(char));
+  return TABLE_BORDER_REGEX.test(line);
 };
 
 const isTableBorderOnly = (line: string): boolean => {
   const trimmed = line.trim();
   if (!trimmed) return false;
-  const nonBorderChars = trimmed.replace(new RegExp(`[${TABLE_BORDER_CHARS}\\s]`, 'g'), '');
+  const nonBorderChars = trimmed.replace(TABLE_BORDER_OR_WHITESPACE_REGEX, '');
   return nonBorderChars.length === 0;
 };
 

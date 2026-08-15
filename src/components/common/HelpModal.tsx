@@ -46,14 +46,25 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     [onClose]
   );
 
+  // 单趟遍历将快捷键按分类分组，替代原 reduce+filter 的 O(categories*shortcuts) 嵌套循环
   const groupedShortcuts = useMemo(() => {
-    return CATEGORY_ORDER.reduce((acc, category) => {
-      const items = DEFAULT_SHORTCUTS.filter(s => s.category === category);
-      if (items.length > 0) {
+    const byCategory = new Map<ShortcutCategory, ShortcutDefinition[]>();
+    for (const shortcut of DEFAULT_SHORTCUTS) {
+      const list = byCategory.get(shortcut.category);
+      if (list) {
+        list.push(shortcut);
+      } else {
+        byCategory.set(shortcut.category, [shortcut]);
+      }
+    }
+    const acc = {} as Record<ShortcutCategory, ShortcutDefinition[]>;
+    for (const category of CATEGORY_ORDER) {
+      const items = byCategory.get(category);
+      if (items && items.length > 0) {
         acc[category] = items;
       }
-      return acc;
-    }, {} as Record<ShortcutCategory, ShortcutDefinition[]>);
+    }
+    return acc;
   }, []);
 
   if (!isOpen) return null;

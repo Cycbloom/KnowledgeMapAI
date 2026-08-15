@@ -1154,6 +1154,7 @@ export const MindMapCanvas = React.memo(
                   maxTitleLength={semanticStrategy?.maxTitleLength}
                   childCount={semanticStrategy?.childCount ?? 0}
                   levelMap={levelMap}
+                  importanceMaps={importanceMaps}
                 />
               );
             })}

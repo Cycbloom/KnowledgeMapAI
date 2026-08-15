@@ -339,6 +339,7 @@ const TreeViewComponent: React.FC<TreeViewProps> = ({
                   allNodes={nodes}
                   coloringMode={coloringMode}
                   levelMap={levelMap}
+                  importanceMaps={importanceMaps}
                 />
               );
             })}

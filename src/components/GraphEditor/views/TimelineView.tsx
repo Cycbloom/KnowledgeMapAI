@@ -498,6 +498,7 @@ const TimelineViewComponent: React.FC<TimelineViewProps> = ({
                   allNodes={nodes}
                   coloringMode={coloringMode}
                   levelMap={levelMap}
+                  importanceMaps={importanceMaps}
                 />
               </g>
             );

@@ -32,6 +32,7 @@ import {
 } from "../../../config/learningStatusColors";
 import { HEATMAP_CONFIG, DECAY_CONFIG, type SemanticZoomLevel } from "../../../config/graphConfig";
 import { getLevel, calculateNodeImportance } from "../../../utils/graph/graphUtils";
+import type { NodeImportanceMaps } from "../../../utils/graph/analysis";
 import { truncateText } from "../../../utils/textUtils";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
 
@@ -72,6 +73,7 @@ interface MindMapNodeProps {
   maxTitleLength?: number;
   childCount?: number;
   levelMap?: Map<string, NodeLevel>;
+  importanceMaps?: NodeImportanceMaps;
 }
 
 // 提取到函数外部，避免每次调用都创建新对象
@@ -154,6 +156,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   maxTitleLength,
   childCount = 0,
   levelMap,
+  importanceMaps,
 }) => {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
@@ -200,12 +203,15 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
         allNodes,
         edges,
         nodeStatus,
+        undefined,
+        undefined,
+        importanceMaps,
       );
       return 0.8 + importance.score * 0.7;
     }
 
     return 1.0;
-  }, [nodeSizeMode, nodeImportance, allNodes, node, edges, nodeStatus]);
+  }, [nodeSizeMode, nodeImportance, allNodes, node, edges, nodeStatus, importanceMaps]);
 
   const styleConfig = useMemo(() => {
     const baseConfig = NODE_STYLE_CONFIG[level];

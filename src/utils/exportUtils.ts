@@ -10,11 +10,23 @@ export const generateMarkdown = (graph: Graph, nodes: Node[], edges: Edge[]): st
     md += `${graph.description}\n\n`;
   }
 
+  // Precompute node lookup and outgoing-edge grouping once so getChildren
+  // below uses O(1) lookups instead of scanning edges/nodes per call.
+  const nodeById = new Map<string, Node>(nodes.map(n => [n.id, n]));
+  const childrenByParent = new Map<string, Edge[]>();
+  edges.forEach(e => {
+    const list = childrenByParent.get(e.source_knowledge_point_id);
+    if (list) {
+      list.push(e);
+    } else {
+      childrenByParent.set(e.source_knowledge_point_id, [e]);
+    }
+  });
+
   // Helper to find children
   const getChildren = (parentId: string): Node[] => {
-    return edges
-      .filter(e => e.source_knowledge_point_id === parentId)
-      .map(e => nodes.find(n => n.id === e.target_knowledge_point_id))
+    return (childrenByParent.get(parentId) ?? [])
+      .map(e => nodeById.get(e.target_knowledge_point_id))
       .filter((n): n is Node => !!n);
   };
 

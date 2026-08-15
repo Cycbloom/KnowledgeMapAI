@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Node, Edge, NodeLevel } from '../../types';
 import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
 import { HistoryAction } from '../common/useHistory';
@@ -54,6 +54,40 @@ export const useGraphNodeOperations = ({
   } = mutations;
 
   const [batchDeleteProgress, setBatchDeleteProgress] = useState<{ completed: number; total: number } | null>(null);
+
+  // Precompute lookup maps so batch operations use O(1) lookups instead of
+  // scanning the full node/edge arrays per selected id.
+  const nodeById = useMemo(
+    () => new Map<string, Node>(nodes.map(n => [n.id, n])),
+    [nodes],
+  );
+  const edgeTargetLookup = useMemo(() => {
+    const map = new Map<string, Edge[]>();
+    edges.forEach(e => {
+      const list = map.get(e.target_knowledge_point_id);
+      if (list) {
+        list.push(e);
+      } else {
+        map.set(e.target_knowledge_point_id, [e]);
+      }
+    });
+    return map;
+  }, [edges]);
+
+  const edgesByNode = useMemo(() => {
+    const map = new Map<string, Edge[]>();
+    edges.forEach(e => {
+      [e.source_knowledge_point_id, e.target_knowledge_point_id].forEach(nodeId => {
+        const list = map.get(nodeId);
+        if (list) {
+          list.push(e);
+        } else {
+          map.set(nodeId, [e]);
+        }
+      });
+    });
+    return map;
+  }, [edges]);
 
   const handleSaveNode = async (options?: { exitToDetail?: boolean }) => {
     if (!id) return;
@@ -128,12 +162,14 @@ export const useGraphNodeOperations = ({
             }
           });
 
-          const currentParentEdges = edges.filter(e => e.target_knowledge_point_id === selectedNode.id);
+          const currentParentEdges = edgeTargetLookup.get(selectedNode.id) ?? [];
           const currentParentIds = currentParentEdges.map(e => e.source_knowledge_point_id);
           const newParentIds = nodeForm.parentNodeIds.filter(id => id !== selectedNode.id);
           
-          const parentIdsToRemove = currentParentIds.filter(id => !newParentIds.includes(id));
-          const parentIdsToAdd = newParentIds.filter(id => !currentParentIds.includes(id));
+          const currentParentIdSet = new Set(currentParentIds);
+          const newParentIdSet = new Set(newParentIds);
+          const parentIdsToRemove = currentParentIds.filter(id => !newParentIdSet.has(id));
+          const parentIdsToAdd = newParentIds.filter(id => !currentParentIdSet.has(id));
           
           for (const parentId of parentIdsToRemove) {
             const edgeToDelete = currentParentEdges.find(e => e.source_knowledge_point_id === parentId);
@@ -253,9 +289,9 @@ export const useGraphNodeOperations = ({
     };
 
     Array.from(selectedNodeIds).forEach(nodeId => {
-      const node = nodes.find(n => n.id === nodeId);
+      const node = nodeById.get(nodeId);
       if (node) {
-        const connectedEdges = edges.filter(e => e.source_knowledge_point_id === nodeId || e.target_knowledge_point_id === nodeId);
+        const connectedEdges = edgesByNode.get(nodeId) ?? [];
         batchAction.payload.push({
           type: 'DELETE_NODE',
           payload: { node, edges: connectedEdges }
@@ -317,7 +353,7 @@ export const useGraphNodeOperations = ({
     };
     
     nodeIds.forEach(nodeId => {
-      const node = nodes.find(n => n.id === nodeId);
+      const node = nodeById.get(nodeId);
       if (node) {
         batchAction.payload.push({
           type: 'UPDATE_NODE',

@@ -303,8 +303,12 @@ export const QuizPractice: React.FC = () => {
   };
 
   const handleRetryWrong = () => {
+    const recordByCardId = new Map<string, AnswerRecord>();
+    answerRecords.forEach((r) => {
+      recordByCardId.set(r.cardId, r);
+    });
     const wrongCards = cards.filter((card) => {
-      const record = answerRecords.find((r) => r.cardId === card.id);
+      const record = recordByCardId.get(card.id);
       return record && !record.isCorrect;
     });
     if (wrongCards.length === 0) return;
@@ -324,6 +328,12 @@ export const QuizPractice: React.FC = () => {
   };
 
   const results = useMemo(() => {
+    // 预构建 cardId -> record 映射，避免对每个卡片线性扫描 answerRecords（原为 O(cards*records)）
+    const recordByCardId = new Map<string, AnswerRecord>();
+    answerRecords.forEach((r) => {
+      recordByCardId.set(r.cardId, r);
+    });
+
     const correct = answerRecords.filter((r) => r.isCorrect).length;
     const byType: Record<string, { correct: number; total: number }> = {};
 
@@ -333,14 +343,14 @@ export const QuizPractice: React.FC = () => {
         byType[type] = { correct: 0, total: 0 };
       }
       byType[type].total++;
-      const record = answerRecords.find((r) => r.cardId === card.id);
+      const record = recordByCardId.get(card.id);
       if (record?.isCorrect) {
         byType[type].correct++;
       }
     });
 
     const wrongCards = cards.filter((card) => {
-      const record = answerRecords.find((r) => r.cardId === card.id);
+      const record = recordByCardId.get(card.id);
       return record && !record.isCorrect;
     });
 

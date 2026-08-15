@@ -79,22 +79,38 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
       return execDate === dateStr;
     });
 
+    // 预按小时分桶，避免为每个小时 filter 全量 dayEvents/dayExecutions（原为 O(24*(n+m))）
+    const eventsByHour = new Map<number, CalendarEvent[]>();
+    dayEvents.forEach((e) => {
+      const hour = new Date(e.start).getHours();
+      const list = eventsByHour.get(hour);
+      if (list) {
+        list.push(e);
+      } else {
+        eventsByHour.set(hour, [e]);
+      }
+    });
+    const execByHour = new Map<number, ExecutionEvent[]>();
+    dayExecutions.forEach((e) => {
+      const hour = new Date(e.started_at).getHours();
+      const list = execByHour.get(hour);
+      if (list) {
+        list.push(e);
+      } else {
+        execByHour.set(hour, [e]);
+      }
+    });
+
     const slots: {
       hour: number;
       planned: CalendarEvent[];
       executed: ExecutionEvent[];
     }[] = HOURS.map((hour) => {
-      const planned = dayEvents.filter((e) => {
-        const eventHour = new Date(e.start).getHours();
-        return eventHour === hour;
-      });
-
-      const executed = dayExecutions.filter((e) => {
-        const execHour = new Date(e.started_at).getHours();
-        return execHour === hour;
-      });
-
-      return { hour, planned, executed };
+      return {
+        hour,
+        planned: eventsByHour.get(hour) || [],
+        executed: execByHour.get(hour) || [],
+      };
     });
 
     const totalPlannedMinutes = dayEvents.reduce((acc, e) => {

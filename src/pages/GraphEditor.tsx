@@ -543,7 +543,23 @@ export const GraphEditor = () => {
   const presentationPath = useMemo(() => {
     if (!nodes || nodes.length === 0) return [];
 
-    // Simple DFS
+    // Simple DFS. 预计算映射，避免每个节点线性扫描 nodes/edges（原为 O(n^2 + n*e)）
+    const nodeById = new Map<string, (typeof nodes)[number]>();
+    nodes.forEach((n) => {
+      nodeById.set(n.id, n);
+    });
+    const childrenBySource = new Map<string, string[]>();
+    edges.forEach((e) => {
+      const list = childrenBySource.get(e.source_knowledge_point_id);
+      if (list) {
+        list.push(e.target_knowledge_point_id);
+      } else {
+        childrenBySource.set(e.source_knowledge_point_id, [
+          e.target_knowledge_point_id,
+        ]);
+      }
+    });
+
     const root = nodes.find((n) => n.level === "root") || nodes[0];
     const path: string[] = [];
     const visited = new Set<string>();
@@ -551,7 +567,7 @@ export const GraphEditor = () => {
     const dfs = (nodeId: string) => {
       if (visited.has(nodeId)) return;
 
-      const node = nodes.find((n) => n.id === nodeId);
+      const node = nodeById.get(nodeId);
       // Visibility check based on mode
       if (!node) return;
       if (!isExplorationMode && node.is_accepted === false) return;
@@ -559,9 +575,7 @@ export const GraphEditor = () => {
       visited.add(nodeId);
       path.push(nodeId);
 
-      const children = edges
-        .filter((e) => e.source_knowledge_point_id === nodeId)
-        .map((e) => e.target_knowledge_point_id);
+      const children = childrenBySource.get(nodeId) ?? [];
 
       children.forEach((childId) => dfs(childId));
     };

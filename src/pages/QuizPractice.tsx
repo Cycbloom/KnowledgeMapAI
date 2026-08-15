@@ -84,8 +84,13 @@ export const QuizPractice: React.FC = () => {
 
   const answered = useMemo(() => {
     const result = new Array(cards.length).fill(false);
+    // 预构建 cardId -> index 映射，避免每个 answerRecord 线性扫描 cards（原为 O(records*cards)）
+    const cardIndexMap = new Map<string, number>();
+    cards.forEach((c, i) => {
+      cardIndexMap.set(c.id, i);
+    });
     answerRecords.forEach((record) => {
-      const index = cards.findIndex((c) => c.id === record.cardId);
+      const index = cardIndexMap.get(record.cardId) ?? -1;
       if (index >= 0) result[index] = true;
     });
     return result;

@@ -384,6 +384,14 @@ export const GraphMap = () => {
   }, [domainTree]);
 
   const graphs = useMemo(() => mapData?.graphs || [], [mapData?.graphs]);
+  // 预构建 graph.id -> graph 映射，避免渲染时对每个选中 id 线性扫描 graphs（原为 O(selectedIds*graphs)）
+  const graphById = useMemo(() => {
+    const m = new Map<string, Graph>();
+    graphs.forEach((g) => {
+      m.set(g.id, g);
+    });
+    return m;
+  }, [graphs]);
   const relations = useMemo(
     () => mapData?.relations || [],
     [mapData?.relations],
@@ -1166,7 +1174,7 @@ export const GraphMap = () => {
             </div>
             <div className="space-y-2 mb-4">
               {Array.from(multiSelectedGraphIds).map((id, index) => {
-                const graph = graphs.find((g: Graph) => g.id === id);
+                const graph = graphById.get(id);
                 return graph ? (
                   <div
                     key={id}
@@ -2013,7 +2021,7 @@ export const GraphMap = () => {
           onClose={() => setIsAgentAnalysisOpen(false)}
           selectedGraphIds={Array.from(multiSelectedGraphIds)}
           graphTitles={Array.from(multiSelectedGraphIds).map(
-            (id) => graphs.find((g: Graph) => g.id === id)?.title || ""
+            (id) => graphById.get(id)?.title || ""
           )}
           analysisMode={analysisMode}
           onGraphsMerged={() => {

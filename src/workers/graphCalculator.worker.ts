@@ -390,6 +390,14 @@ const calculateMindMapLayout = (
 
   const nodeIds = new Set(nodes.map((n) => n.id));
 
+  // Precompute domain -> index once so the initial-position loop below uses
+  // O(1) lookups instead of Array.indexOf (O(d)) per node.
+  const domainIndexByKey = domainGroups
+    ? new Map(
+        Array.from(domainGroups.keys()).map((key, idx) => [key, idx] as const),
+      )
+    : undefined;
+
   // Initialize layout nodes with domain-grouped initial positions
   const layoutNodes: MindMapLayoutNode[] = nodes.map((node) => {
     const domain = node.properties?.domain as string | undefined;
@@ -399,7 +407,7 @@ const calculateMindMapLayout = (
     if (domain && domainGroups) {
       const domainNodeIds = domainGroups.get(domain);
       if (domainNodeIds) {
-        const domainIndex = Array.from(domainGroups.keys()).indexOf(domain);
+        const domainIndex = domainIndexByKey?.get(domain) ?? 0;
         const angle = (domainIndex / domainGroups.size) * Math.PI * 2;
         const radius = Math.min(width, height) * 0.3;
         initialX = width / 2 + Math.cos(angle) * radius + (Math.random() - 0.5) * 50;

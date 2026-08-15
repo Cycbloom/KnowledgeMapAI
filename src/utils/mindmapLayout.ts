@@ -201,21 +201,24 @@ export const createSemanticLayout = (
 ): LayoutResult => {
   const { width, height, nNeighbors, minDist = 0.1, nEpochs = 200 } = options;
 
-  const nodesWithEmbedding = nodes.filter(n => {
+  // 单趟分桶有/无 embedding 节点，替代两次 filter 的 O(2*nodes) 扫描
+  const nodesWithEmbedding: typeof nodes = [];
+  const nodesWithoutEmbedding: typeof nodes = [];
+  for (const n of nodes) {
     const emb = embeddings.get(n.id);
-    return emb !== undefined && emb.length > 0;
-  });
-  const nodesWithoutEmbedding = nodes.filter(n => {
-    const emb = embeddings.get(n.id);
-    return emb === undefined || emb.length === 0;
-  });
+    if (emb !== undefined && emb.length > 0) nodesWithEmbedding.push(n);
+    else nodesWithoutEmbedding.push(n);
+  }
 
   const semanticPositions: Map<string, { x: number; y: number }> = new Map();
 
   if (nodesWithEmbedding.length >= 3) {
-    const embeddingMatrix: number[][] = nodesWithEmbedding
-      .map(n => embeddings.get(n.id))
-      .filter((emb): emb is number[] => emb !== undefined && emb.length > 0);
+    // 单趟收集有效 embedding，替代 map+filter 两次扫描
+    const embeddingMatrix: number[][] = [];
+    for (const n of nodesWithEmbedding) {
+      const emb = embeddings.get(n.id);
+      if (emb !== undefined && emb.length > 0) embeddingMatrix.push(emb);
+    }
     const effectiveNNeighbors = nNeighbors || Math.min(15, nodesWithEmbedding.length - 1);
 
     const umap = new UMAP({

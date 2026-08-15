@@ -6,8 +6,10 @@ import type { CalendarEvent } from "../types/calendar";
  * 包含"study"→study，包含"review"→review，否则→task
  */
 function mapTaskType(tags: string[]): CalendarEvent["type"] {
-  if (tags?.includes("study")) return "study";
-  if (tags?.includes("review")) return "review";
+  // 预构建 Set 索引，替代对同一数组的两次 includes 线性扫描（O(n)→O(1) 查询）
+  const tagSet = new Set(tags ?? []);
+  if (tagSet.has("study")) return "study";
+  if (tagSet.has("review")) return "review";
   return "task";
 }
 

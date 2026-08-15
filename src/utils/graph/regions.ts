@@ -158,17 +158,19 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
 
     const angleStep = (2 * Math.PI) / customRegions.length;
 
-    const regionNodeSets = customRegions.map(
-      (region) => new Set(region.nodeIds),
-    );
+    // 预构建 nodeId -> Node 映射，按区域 nodeIds 直接取值，替代每区域一次 nodes.filter 的 O(regions*nodes) 扫描
+    const nodeById = new Map<string, Node>();
+    nodes.forEach((n) => nodeById.set(n.id, n));
 
     return customRegions.map((region, index) => {
       const angleStart = index * angleStep;
       const angleEnd = (index + 1) * angleStep;
 
-      const regionNodes = nodes.filter((n) =>
-        regionNodeSets[index].has(n.id),
-      );
+      const regionNodes: Node[] = [];
+      for (const nodeId of region.nodeIds) {
+        const node = nodeById.get(nodeId);
+        if (node) regionNodes.push(node);
+      }
 
       return {
         id: region.id,

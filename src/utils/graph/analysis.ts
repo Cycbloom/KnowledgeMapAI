@@ -226,13 +226,13 @@ export const analyzeGraph = (nodes: Node[], edges: Edge[]): GraphAnalysis => {
     .sort((a, b) => b.degree - a.degree)
     .slice(0, 5);
   
-  const leafNodes = nodes
-    .filter(node => (outDegree.get(normalizeId(node.id)) || 0) === 0)
-    .map(node => node.id);
-  
-  const nodesWithoutContent = nodes
-    .filter(node => !node.content || node.content.trim().length === 0)
-    .map(node => node.id);
+  // 单趟统计 leaf 与无内容节点，替代两次 filter+map 的 O(2*nodes) 扫描
+  const leafNodes: string[] = [];
+  const nodesWithoutContent: string[] = [];
+  for (const node of nodes) {
+    if ((outDegree.get(normalizeId(node.id)) || 0) === 0) leafNodes.push(node.id);
+    if (!node.content || node.content.trim().length === 0) nodesWithoutContent.push(node.id);
+  }
   
   const nodesWithManyChildren = [...nodes]
     .map(node => ({
@@ -488,8 +488,10 @@ export const calculateEdgeStrength = (
   } else {
     const sourceParents = parentMap.get(sourceId) || [];
     const targetParents = parentMap.get(targetId) || [];
-    
-    const commonParent = sourceParents.find(p => targetParents.includes(p));
+
+    // 将 targetParents 预构建为 Set，替代 find 内层 includes 的 O(lenS*lenT) 扫描
+    const targetParentsSet = new Set(targetParents);
+    const commonParent = sourceParents.find((p) => targetParentsSet.has(p));
     if (commonParent) {
       hierarchyWeight = 0.8;
     }

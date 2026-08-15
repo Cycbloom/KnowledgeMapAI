@@ -210,25 +210,27 @@ export function isAuthError(
   return false;
 }
 
+// 预构建 Set 消除按 code 的线性查找（isValidationError 内不再每次构建数组扫描）
+const VALIDATION_CODES_SET = new Set<SharedErrorCode>([
+  SharedErrorCodes.VALIDATION_ERROR,
+  SharedErrorCodes.VALIDATION_INVALID_JSON,
+  SharedErrorCodes.VALIDATION_INVALID_PARAMS,
+  SharedErrorCodes.VALIDATION_MISSING_FIELD,
+  SharedErrorCodes.VALIDATION_INVALID_FORMAT,
+]);
+
 export function isValidationError(error: unknown): error is ValidationError {
   if (error instanceof ValidationError) {
     return true;
   }
   if (isAppError(error)) {
-    const validationCodes: readonly SharedErrorCode[] = [
-      SharedErrorCodes.VALIDATION_ERROR,
-      SharedErrorCodes.VALIDATION_INVALID_JSON,
-      SharedErrorCodes.VALIDATION_INVALID_PARAMS,
-      SharedErrorCodes.VALIDATION_MISSING_FIELD,
-      SharedErrorCodes.VALIDATION_INVALID_FORMAT,
-    ];
-    return validationCodes.includes(error.code as SharedErrorCode);
+    return VALIDATION_CODES_SET.has(error.code as SharedErrorCode);
   }
   return false;
 }
 
 /** 可重试的 HTTP 状态码 */
-const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504] as const;
+const RETRYABLE_STATUS_CODES: ReadonlySet<number> = new Set([408, 429, 500, 502, 503, 504]);
 
 export class ApiError extends Error {
   public readonly status: number;
@@ -269,11 +271,11 @@ export function getErrorMessage(error: unknown): string {
 export function isRetryableError(error: unknown): boolean {
   // 1. AppError：根据 statusCode 判断
   if (isAppError(error)) {
-    return (RETRYABLE_STATUS_CODES as readonly number[]).includes(error.statusCode);
+    return RETRYABLE_STATUS_CODES.has(error.statusCode);
   }
   // 2. ApiError：根据 status 判断
   if (isApiError(error)) {
-    return (RETRYABLE_STATUS_CODES as readonly number[]).includes(error.status);
+    return RETRYABLE_STATUS_CODES.has(error.status);
   }
   // 3. 普通 Error：根据消息关键词和网络特征判断
   if (error instanceof Error) {
@@ -312,7 +314,7 @@ export function isRetryableError(error: unknown): boolean {
     // 带有 status 属性的 fetch 错误
     const fetchError = error as Error & { status?: number };
     if (fetchError.status !== undefined) {
-      return (RETRYABLE_STATUS_CODES as readonly number[]).includes(fetchError.status);
+      return RETRYABLE_STATUS_CODES.has(fetchError.status);
     }
   }
   return false;

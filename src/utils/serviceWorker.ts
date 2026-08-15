@@ -30,11 +30,14 @@ export const clearApiCache = async (): Promise<void> => {
 
   try {
     const names = await caches.keys();
-    await Promise.all(
-      names
-        .filter((name) => name.includes('api') || name.includes('supabase'))
-        .map((name) => caches.delete(name)),
-    );
+    // 单趟过滤 + 删除，避免 filter/map 两次扫描同一数组
+    const deletions: Promise<boolean>[] = [];
+    for (const name of names) {
+      if (name.includes('api') || name.includes('supabase')) {
+        deletions.push(caches.delete(name));
+      }
+    }
+    await Promise.all(deletions);
   } catch (error) {
     console.error('[SW] clearApiCache failed:', error);
   }

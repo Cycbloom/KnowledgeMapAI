@@ -13,13 +13,13 @@ export const getLevel = (node: Node, edges: Edge[], levelMap?: Map<string, NodeL
     return levelMap.get(nodeId) ?? 'normal';
   }
   
-  const outDegree = edges.filter(e => 
-    String(e.source_knowledge_point_id).trim() === nodeId
-  ).length;
-  
-  const inDegree = edges.filter(e => 
-    String(e.target_knowledge_point_id).trim() === nodeId
-  ).length;
+  // 单趟同时统计 in/out 度，替代两次 edges.filter 的 O(2*edges) 扫描
+  let outDegree = 0;
+  let inDegree = 0;
+  for (const e of edges) {
+    if (String(e.source_knowledge_point_id).trim() === nodeId) outDegree++;
+    if (String(e.target_knowledge_point_id).trim() === nodeId) inDegree++;
+  }
   
   if (inDegree === 0 && outDegree > 0) return 'root';
   if (outDegree === 0 && inDegree > 0) return 'leaf';

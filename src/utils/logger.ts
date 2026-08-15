@@ -12,6 +12,9 @@ const LEVEL_STYLES: Record<LogLevel, { color: string; icon: string; label: strin
   [LogLevel.DEBUG]: { color: 'color: #9e9e9e', icon: '○', label: 'DEBUG' },
 };
 
+// 模块级常量日志级别顺序，替代 shouldLog 每次调用重建数组
+const LEVEL_ORDER = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR];
+
 const SENSITIVE_KEYS = [
   'apiKey', 'apikey', 'api_key',
   'token', 'accesstoken', 'refreshtoken', 'authtoken',
@@ -108,8 +111,7 @@ export class Logger {
   }
 
   private shouldLog(level: LogLevel): boolean {
-    const levels = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR];
-    return levels.indexOf(level) >= levels.indexOf(this.level);
+    return LEVEL_ORDER.indexOf(level) >= LEVEL_ORDER.indexOf(this.level);
   }
 }
 

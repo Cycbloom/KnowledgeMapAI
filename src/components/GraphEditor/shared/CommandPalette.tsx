@@ -137,6 +137,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     node: t('graphEditor.commandPalette.categories.node')
   }), [t]);
 
+  // 预构建 cmd -> 全局下标 映射，避免每个 item 线性 indexOf（原为 O(items^2)）
+  const filteredIndexByCommand = useMemo(() => {
+    const m = new Map<CommandItem, number>();
+    filteredCommands.forEach((cmd, index) => {
+      m.set(cmd, index);
+    });
+    return m;
+  }, [filteredCommands]);
+
   if (!isOpen) return null;
 
   // Group commands by category
@@ -214,7 +223,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 </div>
                 {items.map((cmd, _index) => {
                   // Find the global index for this item to match activeIndex
-                  const globalIndex = filteredCommands.indexOf(cmd);
+                  const globalIndex = filteredIndexByCommand.get(cmd) ?? 0;
                   const isSelected = globalIndex === activeIndex;
 
                   return (

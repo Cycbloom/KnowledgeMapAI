@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Target,
@@ -119,6 +119,15 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
   const unknownPrerequisites = Object.entries(knowledgeAnswers)
     .filter(([_, level]) => level === '不了解')
     .map(([topic]) => topic);
+
+  // 预聚合 prerequisiteQuestions 到 topic 映射，避免每个 topic 线性扫描（原为 O(prereqs*questions)）
+  const questionByTopic = useMemo(() => {
+    const m = new Map<string, PrerequisiteQuestion>();
+    questionsData?.prerequisiteQuestions.forEach((q) => {
+      m.set(q.topic, q);
+    });
+    return m;
+  }, [questionsData]);
 
   const handleNext = () => {
     if (step < 4) {
@@ -446,7 +455,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
 
             <div className="space-y-2">
               {unknownPrerequisites.map((topic) => {
-                const questionData = questionsData?.prerequisiteQuestions.find(q => q.topic === topic);
+                const questionData = questionByTopic.get(topic);
                 const existingGraph = questionData?.existingGraph;
                 return (
                   <button

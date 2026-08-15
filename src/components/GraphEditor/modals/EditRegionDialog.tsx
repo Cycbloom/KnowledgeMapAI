@@ -47,12 +47,18 @@ export const EditRegionDialog: React.FC<EditRegionDialogProps> = ({
     }
   }, [region]);
 
-  const regionNodes = useMemo(() => {
-    return nodes.filter((node) => nodeIds.has(node.id));
-  }, [nodes, nodeIds]);
-
-  const availableNodes = useMemo(() => {
-    return nodes.filter((node) => !nodeIds.has(node.id));
+  const { regionNodes, availableNodes } = useMemo(() => {
+    // 单趟遍历 nodes 一次完成区域/可用节点分组（原为两次 filter，O(2n) → O(n)）
+    const inRegion: Node[] = [];
+    const available: Node[] = [];
+    for (const node of nodes) {
+      if (nodeIds.has(node.id)) {
+        inRegion.push(node);
+      } else {
+        available.push(node);
+      }
+    }
+    return { regionNodes: inRegion, availableNodes: available };
   }, [nodes, nodeIds]);
 
   const handleToggleNode = (nodeId: string) => {

@@ -232,6 +232,17 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     return { taskById: idMap, depIdSet: idSet };
   }, [availableTasks, selectedDependencies]);
 
+  // 单趟构建依赖候选（过滤+映射合并为一次遍历），替代渲染时 filter+map 双趟扫描 availableTasks（原为 O(2n) → O(n)）
+  const dependencyOptions = useMemo(() => {
+    const options: UserTask[] = [];
+    for (const at of availableTasks) {
+      if (at.id !== task?.id) {
+        options.push(at);
+      }
+    }
+    return options;
+  }, [availableTasks, task?.id]);
+
   // Warn user before leaving when there are unsaved changes
   const isDirty =
     JSON.stringify(formData) !== JSON.stringify(getInitialDraft());
@@ -771,9 +782,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       {t("scheduler.taskForm.noAvailableTasks")}
                     </div>
                   ) : (
-                    availableTasks
-                      .filter((availTask) => availTask.id !== task?.id)
-                      .map((availTask) => (
+                    dependencyOptions.map((availTask) => (
                         <label
                           key={availTask.id}
                           htmlFor={`dep-${availTask.id}`}

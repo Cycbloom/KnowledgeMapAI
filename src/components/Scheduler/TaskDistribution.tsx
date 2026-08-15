@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { PieChart, BarChart3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -57,7 +57,8 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
     }
   };
 
-  const getDistribution = (): TagDistribution[] => {
+  // 缓存分布计算，避免选中/悬停交互引起的重渲染重复聚合扫描 tasks（原为每次渲染 O(tasks + k*log k) → 仅数据/语言变化时计算）
+  const distribution = useMemo<TagDistribution[]>(() => {
     const tagMap = new Map<string, { count: number; duration: number }>();
 
     tasks.forEach((task) => {
@@ -94,9 +95,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 8);
-  };
-
-  const distribution = getDistribution();
+  }, [tasks, t]);
 
   const totalTasks = distribution.reduce((sum, item) => sum + item.count, 0);
 

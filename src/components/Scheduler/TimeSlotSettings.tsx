@@ -90,8 +90,23 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
     }
   };
 
+  // 预构建按 day_of_week 分组的索引，替代渲染时对每个 day 全量线性扫描 timeSlots（原为 O(days*slots) → O(slots)）
+  const slotsByDay = useMemo(() => {
+    const map = new Map<number | null, UserTimeSlot[]>();
+    for (const slot of timeSlots) {
+      const key = slot.day_of_week;
+      const list = map.get(key);
+      if (list) {
+        list.push(slot);
+      } else {
+        map.set(key, [slot]);
+      }
+    }
+    return map;
+  }, [timeSlots]);
+
   const getSlotsByDay = (day: number | null) => {
-    return timeSlots.filter((slot) => slot.day_of_week === day);
+    return slotsByDay.get(day) ?? [];
   };
 
   const formatTime = (time: string) => {

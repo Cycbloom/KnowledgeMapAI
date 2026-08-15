@@ -223,6 +223,36 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
     );
   }, [commands, query]);
 
+  // 预聚合 filteredCommands 到 category / recentSubGroup 分组，避免渲染时对每条命令重复 filter（原为 O(categories*commands + subgroups*items)）
+  const commandsByCategory = useMemo(() => {
+    const m = new Map<CommandCategory, CommandItem[]>();
+    filteredCommands.forEach((cmd) => {
+      const list = m.get(cmd.category);
+      if (list) {
+        list.push(cmd);
+      } else {
+        m.set(cmd.category, [cmd]);
+      }
+    });
+    return m;
+  }, [filteredCommands]);
+
+  const commandsByRecentSubGroup = useMemo(() => {
+    const m = new Map<RecentSubGroup, CommandItem[]>();
+    filteredCommands.forEach((cmd) => {
+      if (cmd.category !== "recent" || cmd.recentSubGroup === undefined) {
+        return;
+      }
+      const list = m.get(cmd.recentSubGroup);
+      if (list) {
+        list.push(cmd);
+      } else {
+        m.set(cmd.recentSubGroup, [cmd]);
+      }
+    });
+    return m;
+  }, [filteredCommands]);
+
   // 接入 useCombobox hook：管理活动项索引与键盘导航
   const {
     activeIndex,
@@ -394,9 +424,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
             </div>
           ) : (
             ORDERED_CATEGORIES.map((category) => {
-              const categoryItems = filteredCommands.filter(
-                (c) => c.category === category,
-              );
+              const categoryItems = commandsByCategory.get(category) ?? [];
               if (categoryItems.length === 0) return null;
 
               return (
@@ -411,9 +439,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
 
                   {category === "recent" ? (
                     ORDERED_RECENT_SUBGROUPS.map((subGroup) => {
-                      const subItems = categoryItems.filter(
-                        (c) => c.recentSubGroup === subGroup,
-                      );
+                      const subItems = commandsByRecentSubGroup.get(subGroup) ?? [];
                       if (subItems.length === 0) return null;
                       return (
                         <div key={`recent-${subGroup}`} className="mb-1">

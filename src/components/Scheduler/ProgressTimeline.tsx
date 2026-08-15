@@ -32,8 +32,21 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
     return Array.from({ length: diff }, (_, i) => addDays(start, i));
   }, [startDate, endDate]);
 
+  // 预构建 日期 -> plan 映射（首个匹配优先，与 find 语义一致），
+  // 避免 days.map 中每天对 progressPlans 线性扫描（原为 O(days*plans)）
+  const planByDayKey = useMemo(() => {
+    const m = new Map<string, TaskProgressPlan>();
+    progressPlans.forEach((p) => {
+      const key = format(new Date(p.plan_date), 'yyyy-MM-dd');
+      if (!m.has(key)) {
+        m.set(key, p);
+      }
+    });
+    return m;
+  }, [progressPlans]);
+
   const getPlanForDate = (date: Date): TaskProgressPlan | undefined => {
-    return progressPlans.find((p) => isSameDay(new Date(p.plan_date), date));
+    return planByDayKey.get(format(date, 'yyyy-MM-dd'));
   };
 
   const today = new Date();

@@ -65,15 +65,34 @@ export const RegionManagePanel = React.memo(function RegionManagePanel({
   }, [nodes, t]);
 
   const customRegionsWithNodes = useMemo(() => {
-    return customRegions.map((region) => {
-      const regionNodeIds = new Set(region.nodeIds);
-      const regionNodes = nodes.filter((node) => regionNodeIds.has(node.id));
-      return {
-        ...region,
-        nodes: regionNodes,
-        nodeCount: regionNodes.length,
-      };
+    // 反向索引：nodeId -> 所属 region 下标，避免每个 region 全量扫描 nodes（原为 O(regions*nodes)）
+    const nodeToRegions = new Map<string, number[]>();
+    customRegions.forEach((region, regionIndex) => {
+      region.nodeIds.forEach((id) => {
+        const list = nodeToRegions.get(id);
+        if (list) {
+          list.push(regionIndex);
+        } else {
+          nodeToRegions.set(id, [regionIndex]);
+        }
+      });
     });
+
+    const regionNodes: Node[][] = customRegions.map(() => []);
+    nodes.forEach((node) => {
+      const regionIndexes = nodeToRegions.get(node.id);
+      if (regionIndexes) {
+        regionIndexes.forEach((ri) => {
+          regionNodes[ri].push(node);
+        });
+      }
+    });
+
+    return customRegions.map((region, index) => ({
+      ...region,
+      nodes: regionNodes[index],
+      nodeCount: regionNodes[index].length,
+    }));
   }, [customRegions, nodes]);
 
   return (

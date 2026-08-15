@@ -150,8 +150,12 @@ export class AgentService {
     const allToolsDefinitions =
       this.toolRegistry.getToolDefinitions(skillAllowWrite);
 
+    // 预构建 Set，替代 filter 内 skill.tools.includes(t.name) 的 O(tools*skillTools) 扫描
     const filteredTools = skill?.tools
-      ? allToolsDefinitions.filter((t) => skill.tools.includes(t.name))
+      ? (() => {
+          const skillToolSet = new Set(skill.tools);
+          return allToolsDefinitions.filter((t) => skillToolSet.has(t.name));
+        })()
       : allToolsDefinitions;
 
     const maxIterations = skill?.maxIterations || 20;
@@ -235,8 +239,12 @@ export class AgentService {
     const skillAllowWrite = skill?.allowWrite ?? false;
     const allToolsDefinitions =
       this.toolRegistry.getToolDefinitions(skillAllowWrite);
+    // 预构建 Set，替代 filter 内 skill.tools.includes(t.name) 的 O(tools*skillTools) 扫描
     const filteredTools = skill?.tools
-      ? allToolsDefinitions.filter((t) => skill.tools.includes(t.name))
+      ? (() => {
+          const skillToolSet = new Set(skill.tools);
+          return allToolsDefinitions.filter((t) => skillToolSet.has(t.name));
+        })()
       : allToolsDefinitions;
 
     const maxIterations = skill?.maxIterations || 20;

@@ -677,14 +677,12 @@ ${contextInfo}
     const provider = await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
-      const titleWords = concept.title.toLowerCase().split(/\s+/);
+      // 将标题词构建为 Set，内层 filter+includes 嵌套扫描由 O(词数×词数) 降为单次 Set.has
+      const titleWordSet = new Set(concept.title.toLowerCase().split(/\s+/));
       return existingConcepts
         .filter((c) => {
           const existingWords = c.title.toLowerCase().split(/\s+/);
-          const commonWords = titleWords.filter((w) =>
-            existingWords.includes(w),
-          );
-          return commonWords.length > 0;
+          return existingWords.some((w) => titleWordSet.has(w));
         })
         .slice(0, 3)
         .map((c) => ({

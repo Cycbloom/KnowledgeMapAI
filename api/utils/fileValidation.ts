@@ -41,6 +41,10 @@ export const ALLOWED_EXTENSIONS = [
 
 export type AllowedExtension = (typeof ALLOWED_EXTENSIONS)[number];
 
+// 预构建模块级 Set，替代 validateFile 内 ALLOWED_* 数组 includes 的 O(n) 线性扫描
+const ALLOWED_MIME_TYPE_SET = new Set<string>(ALLOWED_MIME_TYPES);
+const ALLOWED_EXTENSION_SET = new Set<string>(ALLOWED_EXTENSIONS);
+
 /**
  * 最大文件大小：10MB
  */
@@ -76,7 +80,7 @@ export function validateFile(
     };
   }
 
-  if (!(ALLOWED_MIME_TYPES as readonly string[]).includes(mimetype)) {
+  if (!ALLOWED_MIME_TYPE_SET.has(mimetype)) {
     return {
       valid: false,
       error: `不支持的文件类型: ${mimetype}。仅支持图片（jpeg/png/gif/webp/svg）、文档（pdf/md/txt/csv）和 JSON 文件`,
@@ -85,7 +89,7 @@ export function validateFile(
 
   if (filename) {
     const ext = path.extname(filename).toLowerCase();
-    if (!(ALLOWED_EXTENSIONS as readonly string[]).includes(ext)) {
+    if (!ALLOWED_EXTENSION_SET.has(ext)) {
       return {
         valid: false,
         error: `不支持的文件扩展名: ${ext}`,

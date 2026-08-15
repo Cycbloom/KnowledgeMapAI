@@ -301,12 +301,14 @@ export class RAGSearchService {
       }
 
       // 计算匹配评分：title 匹配权重 0.9，content 匹配权重 0.6，两者都匹配取最大值
+      // 提前小写化查询串，避免在每个知识点的 map 回调内重复 toLowerCase
+      const lowerQuery = query.toLowerCase();
       const scoredResults = knowledgePoints.map((kp) => {
         const titleMatch = kp.title
           .toLowerCase()
-          .includes(query.toLowerCase());
+          .includes(lowerQuery);
         const contentMatch = kp.content
-          ? kp.content.toLowerCase().includes(query.toLowerCase())
+          ? kp.content.toLowerCase().includes(lowerQuery)
           : false;
 
         let similarity = 0;
@@ -347,9 +349,15 @@ export class RAGSearchService {
           ),
         );
 
-        return scoredResults
-          .filter((r) => validKpIds.has(r.id))
-          .map((r) => ({ ...r, graphId }))
+        // 合并 filter+map 为单趟 for 过滤并补充 graphId，减少一次数组扫描
+        const graphFilteredResults: RAGSearchResult[] = [];
+        for (const r of scoredResults) {
+          if (validKpIds.has(r.id)) {
+            graphFilteredResults.push({ ...r, graphId });
+          }
+        }
+
+        return graphFilteredResults
           .sort((a, b) => b.similarity - a.similarity)
           .slice(0, matchCount);
       }

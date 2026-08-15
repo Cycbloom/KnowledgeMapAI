@@ -369,19 +369,18 @@ export class TaskRecommendationService {
     const config = TIME_SLOT_CONFIG[timeSlot.type];
     if (!config) return tasks;
 
-    return tasks.sort((a, b) => {
-      const aTags = a.tags || [];
-      const bTags = b.tags || [];
+    // 预构建 Set 并用 Map 缓存每个 task 的匹配结果，避免 sort 比较器内重复 some×includes 的 O(n·log n) 扫描
+    const recommendedTypeSet = new Set(config.recommendedTypes);
+    const matchCache = new Map<UserTask, boolean>();
+    const hasRecommendedType = (task: UserTask): boolean => {
+      const cached = matchCache.get(task);
+      if (cached !== undefined) return cached;
+      const matched = (task.tags || []).some((tag) => recommendedTypeSet.has(tag));
+      matchCache.set(task, matched);
+      return matched;
+    };
 
-      const aMatch = aTags.some((tag) => config.recommendedTypes.includes(tag))
-        ? 1
-        : 0;
-      const bMatch = bTags.some((tag) => config.recommendedTypes.includes(tag))
-        ? 1
-        : 0;
-
-      return bMatch - aMatch;
-    });
+    return tasks.sort((a, b) => (hasRecommendedType(b) ? 1 : 0) - (hasRecommendedType(a) ? 1 : 0));
   }
 
   async getTaskRecommendations(
@@ -433,6 +432,13 @@ export class TaskRecommendationService {
     const efficiencyData = await this.calculateEfficiencyData(client, userId);
     const currentTimeSlot = this.getCurrentTimeSlot(now);
 
+    // 预构建 Set 与小时值，替代 map 内层对 recommendedTypes/peakHours 的 O(n) includes 扫描
+    const recommendedTypeSet = new Set(
+      TIME_SLOT_CONFIG[currentTimeSlot.type].recommendedTypes,
+    );
+    const peakHourSet = new Set(efficiencyData.peakHours);
+    const currentHour = now.getHours();
+
     const recommendations: TaskRecommendation[] = validTasks.map((task) => {
       const urgencyScore = this.calculateUrgencyScore(task, now);
       const urgencyLevel = this.getUrgencyLevel(urgencyScore);
@@ -462,7 +468,7 @@ export class TaskRecommendationService {
 
       if (task.tags && task.tags.length > 0) {
         const matchingTags = task.tags.filter((tag: string) =>
-          TIME_SLOT_CONFIG[currentTimeSlot.type].recommendedTypes.includes(tag),
+          recommendedTypeSet.has(tag),
         );
         if (matchingTags.length > 0) {
           reasons.push(
@@ -488,8 +494,7 @@ export class TaskRecommendationService {
       }
 
       let adjustedScore = urgencyScore;
-      const currentHour = now.getHours();
-      if (efficiencyData.peakHours.includes(currentHour)) {
+      if (peakHourSet.has(currentHour)) {
         adjustedScore *= 1.1;
       }
 
@@ -637,6 +642,11 @@ export class TaskRecommendationService {
     efficiencyData: EfficiencyData,
     now: Date = new Date(),
   ): UserTask[] {
+    // 预构建 Set 与小时值，替代 map 内层对 peakHours/lowHours 的 O(n) includes 扫描
+    const peakHourSet = new Set(efficiencyData.peakHours);
+    const lowHourSet = new Set(efficiencyData.lowHours);
+    const currentHour = now.getHours();
+
     const scoredTasks = tasks.map((task) => {
       let score = 0;
 
@@ -658,14 +668,13 @@ export class TaskRecommendationService {
         score += queueEfficiency.completionRate * 10;
       }
 
-      const currentHour = now.getHours();
       if (
-        efficiencyData.peakHours.includes(currentHour) &&
+        peakHourSet.has(currentHour) &&
         task.priority >= 3
       ) {
         score += 15;
       } else if (
-        efficiencyData.lowHours.includes(currentHour) &&
+        lowHourSet.has(currentHour) &&
         task.priority < 3
       ) {
         score += 10;

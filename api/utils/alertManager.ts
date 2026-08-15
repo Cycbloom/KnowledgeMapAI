@@ -270,13 +270,16 @@ class AlertManager {
       critical: 0,
     };
 
+    // 在单趟遍历中同时累计未确认数，替代额外的 this.alerts.filter 扫描
+    let unacknowledged = 0;
     this.alerts.forEach(alert => {
       bySeverity[alert.severity]++;
+      if (!alert.acknowledged) unacknowledged++;
     });
 
     return {
       totalAlerts: this.alerts.length,
-      unacknowledged: this.alerts.filter(a => !a.acknowledged).length,
+      unacknowledged,
       bySeverity,
     };
   }

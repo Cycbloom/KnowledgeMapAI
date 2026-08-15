@@ -159,13 +159,17 @@ export class PDFService {
     doc.fontSize(16).fillColor('#111827').text('图谱统计', { underline: true });
     doc.moveDown(1);
 
+    // 单趟统计各层级数量，替代 5 次 nodes.filter 的 O(5*nodes) 扫描
     const levelCounts: Record<string, number> = {
-      'root': nodes.filter(n => n.level === 'root').length,
-      'core': nodes.filter(n => n.level === 'core').length,
-      'sub': nodes.filter(n => n.level === 'sub').length,
-      'normal': nodes.filter(n => n.level === 'normal').length,
-      'leaf': nodes.filter(n => n.level === 'leaf').length
+      'root': 0,
+      'core': 0,
+      'sub': 0,
+      'normal': 0,
+      'leaf': 0,
     };
+    for (const n of nodes) {
+      if (levelCounts[n.level] !== undefined) levelCounts[n.level]++;
+    }
 
     const stats = [
       `总节点数: ${nodes.length}`,

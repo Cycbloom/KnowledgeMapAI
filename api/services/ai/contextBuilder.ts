@@ -53,8 +53,10 @@ export function buildGraphContext(
   let contextText = "";
 
   if (contextNodeIds && contextNodeIds.length > 0) {
+    // 预构建 Set，替代 selectedNodes/relatedEdges 过滤中 contextNodeIds.includes 的 O(n*m) 扫描
+    const contextNodeIdSet = new Set(contextNodeIds);
     const selectedNodes = validNodes.filter((n) =>
-      contextNodeIds.includes(n.id),
+      contextNodeIdSet.has(n.id),
     );
     const nodesText = selectedNodes
       .map((n) => `[Node] ${n.title}: ${n.content || "(No content)"}`)
@@ -62,8 +64,8 @@ export function buildGraphContext(
 
     const relatedEdges = edges.filter(
       (e) =>
-        contextNodeIds.includes(e.source_knowledge_point_id) &&
-        contextNodeIds.includes(e.target_knowledge_point_id),
+        contextNodeIdSet.has(e.source_knowledge_point_id) &&
+        contextNodeIdSet.has(e.target_knowledge_point_id),
     );
 
     const nodeTitleMap = new Map(validNodes.map((n) => [n.id, n.title]));

@@ -20,6 +20,15 @@ const resolveGraphId = (
   return resolveId(idOrIdx, context.graphIndexMap);
 };
 
+// 模块级层级深度查找表，替代 map 内每次迭代重复构建对象
+const LEVEL_DEPTH: Record<string, number> = {
+  root: 0,
+  core: 1,
+  sub: 2,
+  normal: 3,
+  leaf: 4,
+};
+
 export const getDomainDistributionTool: AgentTool = {
   name: "get_domain_distribution",
   description: "获取知识领域分布统计，返回各领域的图谱数量分布",
@@ -166,14 +175,8 @@ export const analyzeGraphStructureTool: AgentTool = {
           depth:
             Math.max(
               ...Object.keys(levelDistribution).map((l) => {
-                const depthMap: Record<string, number> = {
-                  root: 0,
-                  core: 1,
-                  sub: 2,
-                  normal: 3,
-                  leaf: 4,
-                };
-                return depthMap[l] ?? 3;
+                // 使用模块级常量 LEVEL_DEPTH，避免每次迭代重复构建查找表
+                return LEVEL_DEPTH[l] ?? 3;
               }),
               0,
             ) + 1,
@@ -689,12 +692,14 @@ export const getKnowledgeCoverageTool: AgentTool = {
       throw new Error(`Failed to get relations: ${relationsError.message}`);
     }
 
+    // 预构建 Set，替代 forEach 内 graphIds.includes 的 O(relations*graphIds) 扫描
+    const graphIdSet = new Set(graphIds);
     const connectedGraphIds = new Set<string>();
     (relations || []).forEach((r) => {
-      if (graphIds.includes(r.source_graph_id)) {
+      if (graphIdSet.has(r.source_graph_id)) {
         connectedGraphIds.add(r.source_graph_id);
       }
-      if (graphIds.includes(r.target_graph_id)) {
+      if (graphIdSet.has(r.target_graph_id)) {
         connectedGraphIds.add(r.target_graph_id);
       }
     });

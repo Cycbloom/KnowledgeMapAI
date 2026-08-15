@@ -33,14 +33,16 @@ function getUserAgent(req: { headers?: Record<string, string | string[] | undefi
   return typeof ua === 'string' ? ua : undefined;
 }
 
+// 敏感字段关键字（子串匹配，无法 Set 化；提取为模块级常量避免每次调用重建数组）
+const SENSITIVE_KEYS = ['password', 'token', 'accessToken', 'refreshToken', 'secret', 'authorization'];
+
 function redactSensitiveData(details: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
   if (!details) return undefined;
 
-  const sensitiveKeys = ['password', 'token', 'accessToken', 'refreshToken', 'secret', 'authorization'];
   const redacted: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(details)) {
-    if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
+    if (SENSITIVE_KEYS.some(sk => key.toLowerCase().includes(sk))) {
       redacted[key] = '[REDACTED]';
     } else {
       redacted[key] = value;

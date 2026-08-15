@@ -203,10 +203,12 @@ export const getGraphRelationsTool: AgentTool = {
       throw new Error(`Failed to get graph relations: ${error.message}`);
     }
 
+    // 预构建 Set，替代 filter 内 userGraphIds.includes 的 O(relations*userGraphIds) 扫描
+    const userGraphIdSet = new Set(userGraphIds);
     const filteredRelations = (relations || []).filter(
       (r) =>
-        userGraphIds.includes(r.source_graph_id) &&
-        userGraphIds.includes(r.target_graph_id),
+        userGraphIdSet.has(r.source_graph_id) &&
+        userGraphIdSet.has(r.target_graph_id),
     );
 
     if (summarize) {
@@ -667,6 +669,9 @@ export const searchGraphsTool: AgentTool = {
       }
 
       const graphIdToIdx: Record<string, number> = {};
+      const graphIdToTitle: Record<string, string> = {};
+      let graphKeyCount = 0;
+      // 单趟构建 graphId->idx/title 索引，替代原 find 嵌套扫描（O(ids*nodes)）与 Object.keys 重复遍历（O(n²)）
       (nodes || []).forEach((n) => {
         const graphData = n.knowledge_graphs as unknown as {
           id: string;
@@ -674,25 +679,20 @@ export const searchGraphsTool: AgentTool = {
           user_id: string;
         };
         if (!graphIdToIdx[graphData.id]) {
-          graphIdToIdx[graphData.id] = Object.keys(graphIdToIdx).length;
+          // 保持原赋值语义：值为当前已收录 key 数，仅首次收录新 key 时计数 +1
+          const isNewKey = !(graphData.id in graphIdToIdx);
+          graphIdToIdx[graphData.id] = graphKeyCount;
+          if (isNewKey) graphKeyCount++;
+        }
+        if (graphData?.id && !(graphData.id in graphIdToTitle)) {
+          graphIdToTitle[graphData.id] = graphData.title;
         }
       });
 
       const graphIdxToTitle: Record<string, string> = {};
       Object.entries(graphIdToIdx).forEach(([id, idx]) => {
-        const node = (nodes || []).find((n) => {
-          const graphData = n.knowledge_graphs as unknown as {
-            id: string;
-            title: string;
-          };
-          return graphData?.id === id;
-        });
-        if (node) {
-          const graphData = node.knowledge_graphs as unknown as {
-            id: string;
-            title: string;
-          };
-          graphIdxToTitle[idx] = graphData?.title;
+        if (id in graphIdToTitle) {
+          graphIdxToTitle[idx] = graphIdToTitle[id];
         }
       });
 

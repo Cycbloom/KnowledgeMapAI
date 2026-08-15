@@ -254,8 +254,11 @@ export class BacklinkService {
 
     // 3. 构建 kpId → graphs 映射
     const kpGraphsMap = new Map<string, { id: string; title: string }[]>();
+    // 预构建含目标 graphId 的 kp 集合，替代 hits 组装时 graphs.some 的 O(graphs) 内层扫描
+    const kpIdsInGraph = new Set<string>();
     for (const gn of (graphNodes || []) as unknown as GraphNodeRow[]) {
       if (!gn.graph || gn.graph.deleted_at !== null) continue;
+      if (graphId && gn.graph_id === graphId) kpIdsInGraph.add(gn.knowledge_point_id);
       const list = kpGraphsMap.get(gn.knowledge_point_id) ?? [];
       list.push({ id: gn.graph_id, title: gn.graph.title });
       kpGraphsMap.set(gn.knowledge_point_id, list);
@@ -270,7 +273,7 @@ export class BacklinkService {
         summary: kp.summary ?? undefined,
         graphIds: graphs.map(g => g.id),
         graphTitles: graphs.map(g => g.title),
-        inCurrentGraph: graphId ? graphs.some(g => g.id === graphId) : false,
+        inCurrentGraph: graphId ? kpIdsInGraph.has(kp.id) : false,
         updatedAt: kp.updated_at,
       };
     });
@@ -332,10 +335,16 @@ export class BacklinkService {
           return;
         }
 
+        // 预构建 title → 知识点列表 映射，替代 titles 循环内对 kps 的 O(titles×kps) filter 扫描
+        const kpsByTitle = new Map<string, Array<{ title: string; id: string; updated_at: string }>>();
+        for (const k of (kps || []) as unknown as Array<{ title: string; id: string; updated_at: string }>) {
+          const list = kpsByTitle.get(k.title) ?? [];
+          list.push(k);
+          kpsByTitle.set(k.title, list);
+        }
+
         for (const title of titles) {
-          const matches = (kps || []).filter(
-            (k: { title: string; id: string; updated_at: string }) => k.title === title
-          );
+          const matches = kpsByTitle.get(title) ?? [];
           if (matches.length === 0) continue;
 
           const sameGraphMatches = matches.filter(

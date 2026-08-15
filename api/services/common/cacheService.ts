@@ -134,9 +134,19 @@ export const cacheService = {
       })
     );
 
-    const warmed = results.filter(r => r.status === 'fulfilled' && (r.value as { status: string }).status === 'warmed').length;
-    const skipped = results.filter(r => r.status === 'fulfilled' && (r.value as { status: string }).status === 'already_cached').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    // 合并三次 filter 为单趟扫描，避免对 results 重复遍历
+    let warmed = 0;
+    let skipped = 0;
+    let failed = 0;
+    for (const r of results) {
+      if (r.status === 'rejected') {
+        failed++;
+      } else if ((r.value as { status: string }).status === 'warmed') {
+        warmed++;
+      } else if ((r.value as { status: string }).status === 'already_cached') {
+        skipped++;
+      }
+    }
 
     logger.info(`Cache warmup complete: ${warmed} warmed, ${skipped} skipped, ${failed} failed`);
   },

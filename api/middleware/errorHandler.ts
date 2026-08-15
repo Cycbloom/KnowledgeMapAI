@@ -26,6 +26,9 @@ const SENSITIVE_FIELDS = [
   'private_key',
 ];
 
+// 预转小写，避免 sanitizeValue 对象循环内对每个 key 重复 field.toLowerCase() 调用
+const SENSITIVE_FIELDS_LOWER = SENSITIVE_FIELDS.map(field => field.toLowerCase());
+
 const sanitizeValue = (value: unknown, depth: number = 0): unknown => {
   if (depth > 5) return '[MAX_DEPTH]';
   
@@ -52,8 +55,9 @@ const sanitizeValue = (value: unknown, depth: number = 0): unknown => {
     const sanitized: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
       const lowerKey = key.toLowerCase();
-      const isSensitive = SENSITIVE_FIELDS.some(field => 
-        lowerKey.includes(field.toLowerCase())
+      // 子串匹配无法 Set 化，改用预转小写常量避免内层重复 toLowerCase
+      const isSensitive = SENSITIVE_FIELDS_LOWER.some(field =>
+        lowerKey.includes(field)
       );
 
       if (isSensitive) {

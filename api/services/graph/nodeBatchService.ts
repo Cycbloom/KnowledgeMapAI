@@ -9,6 +9,9 @@ import { withThreeLevelFallback } from '../../utils/rpcFallback';
 import { notDeleted } from '../common/softDeleteHelper';
 import i18next from 'i18next';
 
+// 预构建 BackboneModule 值集合，替代节点循环内 Object.values(...).includes 的 O(n) 扫描
+const BACKBONE_MODULE_VALUES = new Set(Object.values(BackboneModule));
+
 interface PositionUpdate {
   id: string;
   x_position: number;
@@ -226,7 +229,7 @@ export class NodeBatchService {
       const kp = Array.isArray(kpRaw) ? kpRaw[0] : kpRaw;
       const isBackboneNode =
         kp?.properties?.backboneModule &&
-        Object.values(BackboneModule).includes(kp.properties.backboneModule as BackboneModule);
+        BACKBONE_MODULE_VALUES.has(kp.properties.backboneModule as BackboneModule);
 
       const kpUpdates: {
         title?: string;
@@ -350,8 +353,13 @@ export class NodeBatchService {
       await cacheService.invalidateGraphCache(userId, gid);
     }
 
-    const successCount = updateResults.filter((r) => r.updated).length;
-    const failedCount = updateResults.filter((r) => !r.updated).length;
+    // 合并两次 filter 为单趟扫描，避免对 updateResults 重复遍历
+    let successCount = 0;
+    let failedCount = 0;
+    for (const r of updateResults) {
+      if (r.updated) successCount++;
+      else failedCount++;
+    }
 
     return {
       message: skippedCount > 0
@@ -382,6 +390,8 @@ export class NodeBatchService {
   ): Promise<void> {
     const kpUpdates = pendingUpdates.filter(item => Object.keys(item.kpUpdates).length > 0);
     const gnUpdates = pendingUpdates.filter(item => Object.keys(item.gnUpdates).length > 0);
+    // 预构建 Set，替代 gn 更新循环内 kpUpdates.some 的 O(kpUpdates*gnUpdates) 扫描
+    const kpUpdateIds = new Set(kpUpdates.map(item => item.nodeUpdateId));
 
     // 批量更新 knowledge_points
     for (const item of kpUpdates) {
@@ -413,7 +423,7 @@ export class NodeBatchService {
           .eq('id', item.graphNodeId);
 
         // 避免重复添加（如果 kp 更新已添加）
-        if (!kpUpdates.some(kp => kp.nodeUpdateId === item.nodeUpdateId)) {
+        if (!kpUpdateIds.has(item.nodeUpdateId)) {
           updateResults.push({ id: item.nodeUpdateId, updated: true });
         }
       } catch (error: unknown) {

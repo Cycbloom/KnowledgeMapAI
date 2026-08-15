@@ -10,6 +10,12 @@ import { cacheService, CacheTTL } from "../common/cacheService";
 
 const MAX_LOGS = 1000;
 
+// 预构建 Set，避免 getStats 中每次对数组 includes 线性扫描（O(1) 查找）
+const EMBEDDING_OPERATIONS = new Set([
+  "generate_embedding",
+  "generate_embedding_batch",
+]);
+
 interface DatabaseLogRow {
   id: string;
   created_at: string;
@@ -252,105 +258,91 @@ class PerformanceMonitor {
   async getStats(query: GetPerformanceLogsQuery = {}): Promise<AIPerformanceStats> {
     const { logs } = await this.getLogs({ ...query, limit: MAX_LOGS });
 
-    const totalCachedInputTokens = logs.reduce(
-      (sum: number, l: AIPerformanceLog) => sum + (l.cachedInputTokens || 0),
-      0,
-    );
-    const totalUncachedInputTokens = logs.reduce(
-      (sum: number, l: AIPerformanceLog) => sum + (l.uncachedInputTokens || 0),
-      0,
-    );
-    const totalSavedByCache = logs.reduce(
-      (sum: number, l: AIPerformanceLog) =>
-        sum + (l.costBreakdown?.savedByCache || 0),
-      0,
-    );
+    const byOperation: AIPerformanceStats["byOperation"] = {};
+    const byModel: AIPerformanceStats["byModel"] = {};
 
-    const embeddingOperations = [
-      "generate_embedding",
-      "generate_embedding_batch",
-    ];
-    const nonEmbeddingLogs = logs.filter(
-      (l) => !embeddingOperations.includes(l.operation),
-    );
+    let successCount = 0;
+    let failedCount = 0;
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+    let totalCachedInputTokens = 0;
+    let totalUncachedInputTokens = 0;
+    let totalTokens = 0;
+    let totalCost = 0;
+    let totalSavedByCache = 0;
+    let nonEmbeddingCount = 0;
+    let nonEmbeddingDuration = 0;
+    let totalCacheHitRate = 0;
 
-    const stats: AIPerformanceStats = {
-      totalRequests: logs.length,
-      successRequests: logs.filter((l) => l.success).length,
-      failedRequests: logs.filter((l) => !l.success).length,
-      totalInputTokens: logs.reduce(
-        (sum: number, l: AIPerformanceLog) => sum + l.inputTokens,
-        0,
-      ),
-      totalOutputTokens: logs.reduce(
-        (sum: number, l: AIPerformanceLog) => sum + l.outputTokens,
-        0,
-      ),
-      totalCachedInputTokens,
-      totalUncachedInputTokens,
-      totalTokens: logs.reduce(
-        (sum: number, l: AIPerformanceLog) => sum + l.totalTokens,
-        0,
-      ),
-      totalCost: logs.reduce(
-        (sum: number, l: AIPerformanceLog) => sum + l.estimatedCost,
-        0,
-      ),
-      totalSavedByCache,
-      avgDuration:
-        nonEmbeddingLogs.length > 0
-          ? nonEmbeddingLogs.reduce(
-              (sum: number, l: AIPerformanceLog) => sum + l.duration,
-              0,
-            ) / nonEmbeddingLogs.length
-          : 0,
-      avgCacheHitRate:
-        logs.length > 0
-          ? logs.reduce(
-              (sum: number, l: AIPerformanceLog) => sum + (l.cacheHitRate || 0),
-              0,
-            ) / logs.length
-          : 0,
-      byOperation: {},
-      byModel: {},
-    };
-
+    // 单趟 for 汇总全部统计量，替代原先 12 次独立的 reduce/filter 数组扫描（O(n)→O(n) 单趟）
     for (const log of logs) {
-      if (!stats.byOperation[log.operation]) {
-        stats.byOperation[log.operation] = {
-          count: 0,
-          tokens: 0,
-          cost: 0,
-          cachedTokens: 0,
-          savedCost: 0,
-        };
+      if (log.success) {
+        successCount += 1;
+      } else {
+        failedCount += 1;
       }
-      stats.byOperation[log.operation].count++;
-      stats.byOperation[log.operation].tokens += log.totalTokens;
-      stats.byOperation[log.operation].cost += log.estimatedCost;
-      stats.byOperation[log.operation].cachedTokens +=
-        log.cachedInputTokens || 0;
-      stats.byOperation[log.operation].savedCost +=
-        log.costBreakdown?.savedByCache || 0;
+      totalInputTokens += log.inputTokens;
+      totalOutputTokens += log.outputTokens;
+      totalCachedInputTokens += log.cachedInputTokens || 0;
+      totalUncachedInputTokens += log.uncachedInputTokens || 0;
+      totalTokens += log.totalTokens;
+      totalCost += log.estimatedCost;
+      totalSavedByCache += log.costBreakdown?.savedByCache || 0;
+      totalCacheHitRate += log.cacheHitRate || 0;
+
+      if (!EMBEDDING_OPERATIONS.has(log.operation)) {
+        nonEmbeddingCount += 1;
+        nonEmbeddingDuration += log.duration;
+      }
+
+      const opStats = byOperation[log.operation] || {
+        count: 0,
+        tokens: 0,
+        cost: 0,
+        cachedTokens: 0,
+        savedCost: 0,
+      };
+      opStats.count += 1;
+      opStats.tokens += log.totalTokens;
+      opStats.cost += log.estimatedCost;
+      opStats.cachedTokens += log.cachedInputTokens || 0;
+      opStats.savedCost += log.costBreakdown?.savedByCache || 0;
+      byOperation[log.operation] = opStats;
 
       const modelKey = `${log.provider}/${log.model}`;
-      if (!stats.byModel[modelKey]) {
-        stats.byModel[modelKey] = {
-          count: 0,
-          tokens: 0,
-          cost: 0,
-          cachedTokens: 0,
-          savedCost: 0,
-        };
-      }
-      stats.byModel[modelKey].count++;
-      stats.byModel[modelKey].tokens += log.totalTokens;
-      stats.byModel[modelKey].cost += log.estimatedCost;
-      stats.byModel[modelKey].cachedTokens += log.cachedInputTokens || 0;
-      stats.byModel[modelKey].savedCost += log.costBreakdown?.savedByCache || 0;
+      const modelStats = byModel[modelKey] || {
+        count: 0,
+        tokens: 0,
+        cost: 0,
+        cachedTokens: 0,
+        savedCost: 0,
+      };
+      modelStats.count += 1;
+      modelStats.tokens += log.totalTokens;
+      modelStats.cost += log.estimatedCost;
+      modelStats.cachedTokens += log.cachedInputTokens || 0;
+      modelStats.savedCost += log.costBreakdown?.savedByCache || 0;
+      byModel[modelKey] = modelStats;
     }
 
-    return stats;
+    return {
+      totalRequests: logs.length,
+      successRequests: successCount,
+      failedRequests: failedCount,
+      totalInputTokens,
+      totalOutputTokens,
+      totalCachedInputTokens,
+      totalUncachedInputTokens,
+      totalTokens,
+      totalCost,
+      totalSavedByCache,
+      avgDuration:
+        nonEmbeddingCount > 0 ? nonEmbeddingDuration / nonEmbeddingCount : 0,
+      avgCacheHitRate:
+        logs.length > 0 ? totalCacheHitRate / logs.length : 0,
+      byOperation,
+      byModel,
+    };
   }
 
   /**
@@ -386,14 +378,32 @@ class PerformanceMonitor {
   }> {
     const { logs } = await this.getHistoricalLogs({ sessionId, limit: 100 });
 
+    let totalTokens = 0;
+    let totalCost = 0;
+    let totalDuration = 0;
+    let successCount = 0;
+    let failedCount = 0;
+
+    // 单趟 for 汇总会话统计，替代原先 5 次独立的 reduce/filter 数组扫描
+    for (const log of logs) {
+      totalTokens += log.totalTokens;
+      totalCost += log.estimatedCost;
+      totalDuration += log.duration;
+      if (log.success) {
+        successCount += 1;
+      } else {
+        failedCount += 1;
+      }
+    }
+
     return {
       logs,
       totalRequests: logs.length,
-      totalTokens: logs.reduce((sum, l) => sum + l.totalTokens, 0),
-      totalCost: logs.reduce((sum, l) => sum + l.estimatedCost, 0),
-      totalDuration: logs.reduce((sum, l) => sum + l.duration, 0),
-      successCount: logs.filter((l) => l.success).length,
-      failedCount: logs.filter((l) => !l.success).length,
+      totalTokens,
+      totalCost,
+      totalDuration,
+      successCount,
+      failedCount,
     };
   }
 
@@ -464,16 +474,14 @@ class PerformanceMonitor {
       .from("ai_performance_logs")
       .select("total_tokens, estimated_cost");
 
-    const totalTokens = (aggData || []).reduce(
-      (sum: number, row: { total_tokens?: number; estimated_cost?: number }) =>
-        sum + (row.total_tokens || 0),
-      0,
-    );
-    const totalCost = (aggData || []).reduce(
-      (sum: number, row: { total_tokens?: number; estimated_cost?: number }) =>
-        sum + parseFloat(String(row.estimated_cost || 0)),
-      0,
-    );
+    const aggRows = aggData || [];
+    let totalTokens = 0;
+    let totalCost = 0;
+    // 单趟 for 汇总 tokens/cost，替代原先两次 reduce 数组扫描
+    for (const row of aggRows) {
+      totalTokens += row.total_tokens || 0;
+      totalCost += parseFloat(String(row.estimated_cost || 0));
+    }
 
     return {
       totalRecords: totalRecords || 0,

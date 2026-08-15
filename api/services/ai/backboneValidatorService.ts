@@ -116,6 +116,26 @@ const MODULE_KEYWORDS: Record<BackboneModule, string[]> = {
   ],
 };
 
+// 模块级预计算小写关键词表，避免在按节点高频调用的热路径里对静态关键词重复 toLowerCase
+const MODULE_KEYWORDS_LOWER: Record<BackboneModule, string[]> = (() => {
+  const lower = {} as Record<BackboneModule, string[]>;
+  for (const [module, keywords] of Object.entries(MODULE_KEYWORDS)) {
+    lower[module as BackboneModule] = keywords.map((k) => k.toLowerCase());
+  }
+  return lower;
+})();
+
+// 模块级预计算：小写标准标题 → 模块 的 Map，精确匹配由线性扫描降为 O(1)
+const BACKBONE_MODULE_TITLES_LOWER = new Map<string, BackboneModule>(
+  Object.entries(BACKBONE_MODULE_TITLES).map(([module, title]) => [
+    title.toLowerCase(),
+    module as BackboneModule,
+  ]),
+);
+
+// 模块级 Set，isValidModule 用 has O(1) 替代原先每次构建对象后 includes 线性扫描
+const VALID_BACKBONE_MODULES = new Set<string>(Object.keys(MODULE_KEYWORDS));
+
 function inferModuleFromTitle(title: string): {
   module: BackboneModule;
   confidence: number;
@@ -123,10 +143,11 @@ function inferModuleFromTitle(title: string): {
   const titleLower = title.toLowerCase();
   const scores: Array<{ module: BackboneModule; score: number }> = [];
 
-  for (const [module, keywords] of Object.entries(MODULE_KEYWORDS)) {
+  // 遍历预计算小写关键词表，避免每次调用对静态关键词重复 toLowerCase
+  for (const [module, keywords] of Object.entries(MODULE_KEYWORDS_LOWER)) {
     let score = 0;
     for (const keyword of keywords) {
-      if (titleLower.includes(keyword.toLowerCase())) {
+      if (titleLower.includes(keyword)) {
         score += 1;
       }
     }
@@ -154,17 +175,8 @@ function inferModuleFromTitle(title: string): {
 }
 
 function isValidModule(module: unknown): module is BackboneModule {
-  return (
-    typeof module === "string" &&
-    Object.values({
-      research_background: "research_background",
-      literature_review: "literature_review",
-      research_methods: "research_methods",
-      core_concepts: "core_concepts",
-      application_domains: "application_domains",
-      future_directions: "future_directions",
-    }).includes(module)
-  );
+  // Set.has O(1) 判定，替代原先每次构建对象后 includes 线性扫描
+  return typeof module === "string" && VALID_BACKBONE_MODULES.has(module);
 }
 
 export class BackboneValidatorService {
@@ -194,42 +206,39 @@ export class BackboneValidatorService {
   } {
     const normalizedTitle = title.trim().toLowerCase();
 
-    for (const [module, standardTitle] of Object.entries(
-      BACKBONE_MODULE_TITLES,
-    )) {
-      if (normalizedTitle === standardTitle.toLowerCase()) {
+    // 精确匹配改用预计算 Map，O(1) 定位（原先第一趟 Object.entries 线性扫描）
+    const exactModule = BACKBONE_MODULE_TITLES_LOWER.get(normalizedTitle);
+    if (exactModule) {
+      return {
+        correctedTitle: BACKBONE_MODULE_TITLES[exactModule],
+        module: exactModule,
+      };
+    }
+
+    // 标题包含标准标题（遍历预计算小写 Map，避免每次 toLowerCase）
+    for (const [lowerTitle, module] of BACKBONE_MODULE_TITLES_LOWER) {
+      if (normalizedTitle.includes(lowerTitle)) {
         return {
-          correctedTitle: standardTitle,
-          module: module as BackboneModule,
+          correctedTitle: BACKBONE_MODULE_TITLES[module],
+          module,
         };
       }
     }
 
-    for (const [module, standardTitle] of Object.entries(
-      BACKBONE_MODULE_TITLES,
-    )) {
-      if (normalizedTitle.includes(standardTitle.toLowerCase())) {
+    // 标准标题包含标题
+    for (const [lowerTitle, module] of BACKBONE_MODULE_TITLES_LOWER) {
+      if (lowerTitle.includes(normalizedTitle)) {
         return {
-          correctedTitle: standardTitle,
-          module: module as BackboneModule,
+          correctedTitle: BACKBONE_MODULE_TITLES[module],
+          module,
         };
       }
     }
 
-    for (const [module, standardTitle] of Object.entries(
-      BACKBONE_MODULE_TITLES,
-    )) {
-      if (standardTitle.toLowerCase().includes(normalizedTitle)) {
-        return {
-          correctedTitle: standardTitle,
-          module: module as BackboneModule,
-        };
-      }
-    }
-
-    for (const [module, moduleKeywords] of Object.entries(MODULE_KEYWORDS)) {
+    // 关键词匹配（遍历预计算小写关键词表，避免每次 toLowerCase）
+    for (const [module, moduleKeywords] of Object.entries(MODULE_KEYWORDS_LOWER)) {
       for (const keyword of moduleKeywords) {
-        if (normalizedTitle.includes(keyword.toLowerCase())) {
+        if (normalizedTitle.includes(keyword)) {
           return {
             correctedTitle: BACKBONE_MODULE_TITLES[module as BackboneModule],
             module: module as BackboneModule,
@@ -391,11 +400,11 @@ export class BackboneValidatorService {
     confidence: number;
     reason: string;
   } {
-    const keywords = MODULE_KEYWORDS[module];
+    const keywords = MODULE_KEYWORDS_LOWER[module];
     const titleLower = title.toLowerCase();
 
     const hasKeyword = keywords.some((keyword) =>
-      titleLower.includes(keyword.toLowerCase()),
+      titleLower.includes(keyword),
     );
 
     if (hasKeyword) {
@@ -426,11 +435,11 @@ export class BackboneValidatorService {
       return originalTitle;
     }
 
-    const keywords = MODULE_KEYWORDS[module];
+    const keywords = MODULE_KEYWORDS_LOWER[module];
     const titleLower = originalTitle.toLowerCase();
 
     for (const keyword of keywords.slice(0, 3)) {
-      if (titleLower.includes(keyword.toLowerCase())) {
+      if (titleLower.includes(keyword)) {
         return originalTitle;
       }
     }
@@ -517,9 +526,12 @@ export class BackboneValidatorService {
       const corrections: ValidationResult["corrections"] = [];
       const errors: ValidationResult["errors"] = [];
 
+      // 预构建节点 id 索引，避免循环内 find 线性扫描（O(results×nodes)→O(results)）
+      const nodeById = new Map(nodes.map((n) => [n.id, n]));
+
       for (const result of parsed.results || []) {
         if (!result.isValid) {
-          const originalNode = nodes.find((n) => n.id === result.nodeId);
+          const originalNode = nodeById.get(result.nodeId);
           if (originalNode && result.correctedTitle && result.suggestedModule) {
             corrections.push({
               nodeId: result.nodeId,

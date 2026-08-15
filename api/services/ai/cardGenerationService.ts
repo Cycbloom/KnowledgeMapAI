@@ -226,9 +226,11 @@ Please respond with a valid JSON object.`;
             const originalCount = cards.length;
 
             if (originalCount > 0) {
+              // 预构建 Set，避免 filter 内层对 types 数组 includes 线性扫描（O(cards×types)→O(cards)）
+              const typeSet = new Set(types);
               cards = cards.filter((card) => {
                 const cardType = card.type;
-                return types.includes(cardType);
+                return typeSet.has(cardType);
               });
 
               const filteredCount = cards.length;

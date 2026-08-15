@@ -439,12 +439,14 @@ export const getPrerequisiteChainTool: AgentTool = {
     });
 
     let order = 1;
+    // 预构建 Set，替代链详情遍历中 orderedIds.includes 的 O(orderedIds*relations) 扫描
+    const orderedIdsSet = new Set(orderedIds);
     const chainWithDetails = orderedIds.map(id => {
       const graphData = graphMap.get(id);
       let reason = '前置知识';
 
       for (const r of relations || []) {
-        if (r.source_graph_id === id && orderedIds.includes(r.target_graph_id)) {
+        if (r.source_graph_id === id && orderedIdsSet.has(r.target_graph_id)) {
           reason = r.context || `是「${graphMap.get(r.target_graph_id)?.title || '未知图谱'}」的前置知识`;
           break;
         }

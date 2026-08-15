@@ -45,6 +45,13 @@ const TEMPLATE_VALIDATION_RULES = {
 
 export { TEMPLATE_VALIDATION_RULES };
 
+// 预构建模块级 Set，替代 validLevels/validDifficulties/validLayouts 数组 includes 的 O(n) 线性扫描
+const VALID_LEVELS = new Set<string>(TEMPLATE_VALIDATION_RULES.validLevels);
+const VALID_DIFFICULTIES = new Set<string>(
+  TEMPLATE_VALIDATION_RULES.validDifficulties,
+);
+const VALID_LAYOUTS = new Set<string>(TEMPLATE_VALIDATION_RULES.validLayouts);
+
 export function validateNode(
   node: unknown,
   index: number,
@@ -73,7 +80,7 @@ export function validateNode(
   }
 
   const level = n.level as NodeLevel;
-  if (!TEMPLATE_VALIDATION_RULES.validLevels.includes(level)) {
+  if (!VALID_LEVELS.has(level)) {
     logger.warn(
       `[Template Generator] Invalid node at index ${index}: invalid level "${level}"`,
     );
@@ -189,16 +196,12 @@ export function validateTemplate(
   }
 
   const layoutSuggestion = t.layoutSuggestion as LayoutSuggestion;
-  const validLayout = TEMPLATE_VALIDATION_RULES.validLayouts.includes(
-    layoutSuggestion,
-  )
+  const validLayout = VALID_LAYOUTS.has(layoutSuggestion)
     ? layoutSuggestion
     : "radial";
 
   const difficulty = t.difficulty as TemplateDifficulty;
-  const validDifficulty = TEMPLATE_VALIDATION_RULES.validDifficulties.includes(
-    difficulty,
-  )
+  const validDifficulty = VALID_DIFFICULTIES.has(difficulty)
     ? difficulty
     : "medium";
 

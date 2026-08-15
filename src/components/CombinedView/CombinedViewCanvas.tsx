@@ -211,10 +211,13 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
     !node.graphIds.every(gid => hiddenGraphIds.has(gid))
   );
   
+  // 预构建可见节点 id 集合，避免每条边在线性扫描 visibleNodes（原为 O(edges*visibleNodes)）
+  const visibleNodeIdSet = new Set(visibleNodes.map(n => n.id));
+  
   const visibleEdges = edges.filter(edge => 
     !hiddenGraphIds.has(edge.graphId) && 
-    visibleNodes.some(n => n.id === edge.source_knowledge_point_id) &&
-    visibleNodes.some(n => n.id === edge.target_knowledge_point_id)
+    visibleNodeIdSet.has(edge.source_knowledge_point_id) &&
+    visibleNodeIdSet.has(edge.target_knowledge_point_id)
   );
   
   const getNodeOpacity = (node: MergedNode): number => {

@@ -1,4 +1,4 @@
-import React, { useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import React, { useMemo, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { queryKeys } from '../hooks/queries/config';
@@ -115,19 +115,36 @@ export const Achievements = () => {
     },
   });
 
+  // 单趟分组统计 achievements，缓存避免每次渲染重新扫描（原每次渲染 O(achievements) 扫描）
+  const groupedAchievements = useMemo(() => {
+    if (!achievements) return undefined;
+    const acc: Record<string, Achievement[]> = {};
+    for (const curr of achievements) {
+      (acc[curr.category] ??= []).push(curr);
+    }
+    return acc;
+  }, [achievements]);
+
   const isLoading = loadingAchievements || loadingTasks;
   const hasError = achievementsError || dailyTasksError || periodicTasksError || passDataError;
 
-  const unlockedCount = achievements?.filter((a: Achievement) => a.unlocked_at).length || 0;
+  // 单趟统计解锁数与终身 XP，替代 filter + reduce 两次扫描
+  let unlockedCount = 0;
+  let totalLifetimeXp = 0;
   const totalCount = achievements?.length || 0;
+  if (achievements) {
+    for (const a of achievements) {
+      if (a.unlocked_at) {
+        unlockedCount++;
+        totalLifetimeXp += a.xp_reward;
+      }
+    }
+  }
   
   const level = user?.profile?.level || 1;
   const currentXp = user?.profile?.xp || 0;
   const xpNeeded = level * 500;
   const levelProgress = Math.min(100, (currentXp / xpNeeded) * 100);
-
-  const totalLifetimeXp = achievements?.reduce((acc: number, curr: Achievement) => 
-    curr.unlocked_at ? acc + curr.xp_reward : acc, 0) || 0;
 
   const categories = {
     study: t('achievements.categories.study'),
@@ -186,12 +203,6 @@ export const Achievements = () => {
       />
     );
   }
-
-  const groupedAchievements = achievements?.reduce((acc: Record<string, Achievement[]>, curr: Achievement) => {
-    if (!acc[curr.category]) acc[curr.category] = [];
-    acc[curr.category].push(curr);
-    return acc;
-  }, {});
 
   const getDailyTaskDescription = (task: DailyTask) => {
     switch(task.task_type) {

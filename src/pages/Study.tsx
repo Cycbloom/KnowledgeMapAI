@@ -204,15 +204,27 @@ export const Study = () => {
   // Stats
   const stats = useMemo(() => {
     const total = allCards.length;
-    const mastered = allCards.filter((c) => (c.review_count || 0) > 0).length;
+    const distribution = { new: 0, learning: 0, review: 0, relearning: 0 };
+    let mastered = 0;
+    // 单趟统计掌握数与各状态分布，替代五次 filter 的 O(5*allCards) 扫描
+    for (const c of allCards) {
+      if ((c.review_count || 0) > 0) mastered++;
+      switch (c.fsrs_state || "New") {
+        case "New":
+          distribution.new++;
+          break;
+        case "Learning":
+          distribution.learning++;
+          break;
+        case "Review":
+          distribution.review++;
+          break;
+        case "Relearning":
+          distribution.relearning++;
+          break;
+      }
+    }
     const due = dueCards.length;
-
-    const distribution = {
-      new: allCards.filter((c) => (c.fsrs_state || "New") === "New").length,
-      learning: allCards.filter((c) => (c.fsrs_state || "New") === "Learning").length,
-      review: allCards.filter((c) => (c.fsrs_state || "New") === "Review").length,
-      relearning: allCards.filter((c) => (c.fsrs_state || "New") === "Relearning").length,
-    };
 
     return { total, mastered, due, distribution };
   }, [allCards, dueCards]);

@@ -330,11 +330,11 @@ export const QuizPractice: React.FC = () => {
   const results = useMemo(() => {
     // 预构建 cardId -> record 映射，避免对每个卡片线性扫描 answerRecords（原为 O(cards*records)）
     const recordByCardId = new Map<string, AnswerRecord>();
+    let correct = 0;
     answerRecords.forEach((r) => {
       recordByCardId.set(r.cardId, r);
+      if (r.isCorrect) correct++;
     });
-
-    const correct = answerRecords.filter((r) => r.isCorrect).length;
     const byType: Record<string, { correct: number; total: number }> = {};
 
     cards.forEach((card) => {

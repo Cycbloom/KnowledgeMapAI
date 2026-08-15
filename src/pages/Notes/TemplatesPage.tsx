@@ -88,14 +88,16 @@ const TemplatesPage = () => {
     }
   }, [dialogOpen, editingTemplate]);
 
-  const systemTemplates = useMemo(
-    () => (templates ?? []).filter((tpl) => tpl.isSystem),
-    [templates],
-  );
-  const customTemplates = useMemo(
-    () => (templates ?? []).filter((tpl) => !tpl.isSystem),
-    [templates],
-  );
+  const { systemTemplates, customTemplates } = useMemo(() => {
+    const system: NoteTemplate[] = [];
+    const custom: NoteTemplate[] = [];
+    // 单趟分桶系统/自定义模板，替代两次 filter 的 O(2*templates) 扫描
+    for (const tpl of templates ?? []) {
+      if (tpl.isSystem) system.push(tpl);
+      else custom.push(tpl);
+    }
+    return { systemTemplates: system, customTemplates: custom };
+  }, [templates]);
 
   const showMessage = (
     type: "success" | "error",

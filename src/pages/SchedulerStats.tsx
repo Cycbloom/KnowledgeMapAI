@@ -271,7 +271,8 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
     return result;
   }, [currentYear, currentMonth]);
 
-  const activityMap = new Map(data.map(d => [d.date, d]));
+  // 预构建 date 索引，避免每次渲染重建 Map 并在 days 渲染循环中线性扫描（原每次渲染 O(data) 重建）
+  const activityMap = useMemo(() => new Map(data.map(d => [d.date, d])), [data]);
 
   const getColor = (count: number) => {
     if (count === 0) return 'bg-slate-700/50';

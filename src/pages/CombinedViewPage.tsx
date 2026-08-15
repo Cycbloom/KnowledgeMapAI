@@ -17,6 +17,8 @@ interface GraphSelectorProps {
 
 const GraphSelector: React.FC<GraphSelectorProps> = ({ selectedIds, onToggle, onConfirm }) => {
   const { t } = useTranslation();
+  // 预构建 Set，避免渲染循环内 selectedIds.includes 的 O(graphs*selectedIds) 线性扫描
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const { data: graphs, isLoading } = useQuery<Graph[]>({
     queryKey: queryKeys.graphs,
     queryFn: () => api.graphs.list(),
@@ -38,7 +40,7 @@ const GraphSelector: React.FC<GraphSelectorProps> = ({ selectedIds, onToggle, on
           >
             <input
               type="checkbox"
-              checked={selectedIds.includes(graph.id)}
+              checked={selectedIdSet.has(graph.id)}
               onChange={() => onToggle(graph.id)}
               className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
             />
@@ -173,10 +175,15 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
 
   const stats = useMemo(() => {
     const totalNodes = mergedNodes.length;
-    const sharedNodes = mergedNodes.filter(n => n.isShared).length;
     const totalEdges = mergedEdges.length;
-    const visibleNodes = mergedNodes.filter(n => !n.graphIds.every(gid => hiddenGraphIds.has(gid))).length;
-    
+    // 单趟统计共享节点与可见节点，替代两次 filter 的 O(2*mergedNodes) 扫描
+    let sharedNodes = 0;
+    let visibleNodes = 0;
+    for (const n of mergedNodes) {
+      if (n.isShared) sharedNodes++;
+      if (!n.graphIds.every(gid => hiddenGraphIds.has(gid))) visibleNodes++;
+    }
+
     return { totalNodes, sharedNodes, totalEdges, visibleNodes };
   }, [mergedNodes, mergedEdges, hiddenGraphIds]);
 

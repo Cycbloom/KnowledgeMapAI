@@ -256,17 +256,17 @@ export const Scheduler: React.FC = () => {
   }, [activeTask, timeSlices]);
 
   const stats = useMemo(() => {
-    const pending = filteredTasks.filter((t) => t.status === "pending").length;
-    const inProgress = filteredTasks.filter(
-      (t) => t.status === "in_progress",
-    ).length;
-    const completed = filteredTasks.filter(
-      (t) => t.status === "completed",
-    ).length;
-    const totalEstimated = filteredTasks.reduce(
-      (sum, t) => sum + (t.estimated_duration || 0),
-      0,
-    );
+    // 单趟统计状态数量与总时长，替代三次 filter + 一次 reduce 的 O(4*filteredTasks) 扫描
+    let pending = 0;
+    let inProgress = 0;
+    let completed = 0;
+    let totalEstimated = 0;
+    for (const t of filteredTasks) {
+      if (t.status === "pending") pending++;
+      else if (t.status === "in_progress") inProgress++;
+      else if (t.status === "completed") completed++;
+      totalEstimated += t.estimated_duration || 0;
+    }
     return {
       total: filteredTasks.length,
       pending,

@@ -819,11 +819,20 @@ export const NotesListPage = () => {
   }, []);
 
   // Task 5: 全选/取消全选(基于当前排序+过滤后的可见项)。
+  // 单趟遍历统计选中情况，替代每次渲染调用 every/some/every 的 O(3*notes) 扫描
+  const selectionState = useMemo(() => {
+    let selectedCount = 0;
+    const total = sortedFilteredNotes.length;
+    for (const n of sortedFilteredNotes) {
+      if (selectedIds.has(n.id)) selectedCount++;
+    }
+    const isAllSelected = total > 0 && selectedCount === total;
+    const isPartialSelected = !isAllSelected && selectedCount > 0;
+    return { selectedCount, isAllSelected, isPartialSelected };
+  }, [sortedFilteredNotes, selectedIds]);
+
   const toggleSelectAll = () => {
-    if (
-      sortedFilteredNotes.length > 0 &&
-      sortedFilteredNotes.every((n) => selectedIds.has(n.id))
-    ) {
+    if (selectionState.isAllSelected) {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(
@@ -1117,18 +1126,9 @@ export const NotesListPage = () => {
               {isSelectMode && (
                 <NotesBatchActions
                   isDark={isDark}
-                  isAllSelected={
-                    sortedFilteredNotes.length > 0 &&
-                    sortedFilteredNotes.every((n) => selectedIds.has(n.id))
-                  }
-                  isPartialSelected={
-                    !(
-                      sortedFilteredNotes.length > 0 &&
-                      sortedFilteredNotes.every((n) => selectedIds.has(n.id))
-                    ) &&
-                    sortedFilteredNotes.some((n) => selectedIds.has(n.id))
-                  }
-                  selectedCount={selectedIds.size}
+                  isAllSelected={selectionState.isAllSelected}
+                  isPartialSelected={selectionState.isPartialSelected}
+                  selectedCount={selectionState.selectedCount}
                   isBatchDeleting={isBatchDeleting}
                   onToggleSelectAll={toggleSelectAll}
                   onBatchDelete={() =>

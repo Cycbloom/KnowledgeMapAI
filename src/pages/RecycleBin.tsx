@@ -121,18 +121,31 @@ export const RecycleBin = () => {
     [trashNotes, debouncedSearchQuery],
   );
 
-  const isAllSelected =
-    filteredGraphs.length > 0 &&
-    filteredGraphs.every((g) => selectedIds.has(g.id));
-  const isPartialSelected =
-    filteredGraphs.some((g) => selectedIds.has(g.id)) && !isAllSelected;
-  const selectedCount = selectedIds.size;
+  // 单趟统计回收站图/笔记选择状态，替代 every/some 分别扫描的 O(2*filteredGraphs + 2*filteredNotes) 扫描
+  const graphSelection = useMemo(() => {
+    let selectedCount = 0;
+    const total = filteredGraphs.length;
+    for (const g of filteredGraphs) {
+      if (selectedIds.has(g.id)) selectedCount++;
+    }
+    return {
+      selectedCount,
+      isAllSelected: total > 0 && selectedCount === total,
+      isPartialSelected: selectedCount > 0 && selectedCount < total,
+    };
+  }, [filteredGraphs, selectedIds]);
+  const { isAllSelected, isPartialSelected } = graphSelection;
 
   // 笔记批量选择状态
-  const isAllNotesSelected =
-    filteredNotes.length > 0 && selectedNoteIds.size === filteredNotes.length;
-  const isPartialNotesSelected =
-    selectedNoteIds.size > 0 && selectedNoteIds.size < filteredNotes.length;
+  const noteSelection = useMemo(() => {
+    const total = filteredNotes.length;
+    const selectedCount = filteredNotes.reduce((acc, n) => (selectedNoteIds.has(n.id) ? acc + 1 : acc), 0);
+    return {
+      isAllNotesSelected: total > 0 && selectedCount === total,
+      isPartialNotesSelected: selectedCount > 0 && selectedCount < total,
+    };
+  }, [filteredNotes, selectedNoteIds]);
+  const { isAllNotesSelected, isPartialNotesSelected } = noteSelection;
 
   const toggleSelect = (id: string) => {
     const newSet = new Set(selectedIds);
@@ -446,12 +459,12 @@ export const RecycleBin = () => {
               </span>
             </button>
 
-            {selectedCount > 0 && (
-              <>
-                <span
-                  className={`text-sm ${themeClasses.textSecondary(isDark)}`}
-                >
-                  {t("recycleBin.selected", { count: selectedCount })}
+            {graphSelection.selectedCount > 0 && (
+                <>
+                  <span
+                    className={`text-sm ${themeClasses.textSecondary(isDark)}`}
+                  >
+                    {t("recycleBin.selected", { count: graphSelection.selectedCount })}
                 </span>
                 <div className="flex-1" />
                 <button

@@ -115,16 +115,19 @@ export const LearningPaths = () => {
   useEscapeKey(() => setIsCreating(false), isCreating);
   const createPathTitleId = useId();
 
-  const filteredPaths = (paths as LearningPathItem[] | undefined)?.filter((path) => {
-    const matchesSearch =
-      path.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      (path.description &&
-        path.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase())) ||
-      (path.goal && path.goal.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
-    const matchesStatus =
-      selectedStatus === "all" || path.status === selectedStatus;
-    return matchesSearch && matchesStatus;
-  }) ?? [];
+  // 搜索+状态过滤前置计算并缓存，避免每次渲染重复扫描 paths（原每次渲染 O(paths) 全量过滤）
+  const filteredPaths = useMemo(() => {
+    const query = debouncedSearchQuery.toLowerCase();
+    return (paths as LearningPathItem[] | undefined)?.filter((path) => {
+      const matchesSearch =
+        path.title.toLowerCase().includes(query) ||
+        (path.description && path.description.toLowerCase().includes(query)) ||
+        (path.goal && path.goal.toLowerCase().includes(query));
+      const matchesStatus =
+        selectedStatus === "all" || path.status === selectedStatus;
+      return matchesSearch && matchesStatus;
+    }) ?? [];
+  }, [paths, debouncedSearchQuery, selectedStatus]);
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};

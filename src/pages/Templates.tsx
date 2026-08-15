@@ -116,15 +116,19 @@ export const Templates = () => {
     setEditingTemplate(null);
   }, isEditing);
 
-  const filteredTemplates = (templates ?? []).filter((t) => {
-    const matchesSearch =
-      t.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      (t.description &&
-        t.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
-    const matchesCategory =
-      selectedCategory === "all" || t.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredTemplates = useMemo(() => {
+    const query = debouncedSearchQuery.toLowerCase();
+    const result: Template[] = [];
+    for (const t of templates ?? []) {
+      const matchesSearch =
+        t.name.toLowerCase().includes(query) ||
+        (t.description && t.description.toLowerCase().includes(query));
+      const matchesCategory =
+        selectedCategory === "all" || t.category === selectedCategory;
+      if (matchesSearch && matchesCategory) result.push(t);
+    }
+    return result;
+  }, [templates, debouncedSearchQuery, selectedCategory]);
 
   const categoryCounts = useMemo(() => {
     if (!templates) return {} as Record<string, number>;

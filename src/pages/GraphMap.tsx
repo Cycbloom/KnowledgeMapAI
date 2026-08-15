@@ -396,6 +396,18 @@ export const GraphMap = () => {
     () => mapData?.relations || [],
     [mapData?.relations],
   );
+  // 预计算选中图的关系，替代渲染中两处重复 filter 全量 relations 的扫描
+  const selectedGraphRelations = useMemo(
+    () =>
+      selectedGraphId
+        ? relations.filter(
+            (r: GraphRelation) =>
+              r.source_graph_id === selectedGraphId ||
+              r.target_graph_id === selectedGraphId,
+          )
+        : [],
+    [relations, selectedGraphId],
+  );
 
   // 构建领域 ID -> 颜色 映射
   const domainColorMap = useMemo(() => {
@@ -469,7 +481,8 @@ export const GraphMap = () => {
     setSelectedDomainIds(ids);
   }, []);
 
-  const fromGraph = graphs.find((g: Graph) => g.id === fromGraphId);
+  // 通过预构建 graphById 映射取图，替代每次渲染对 graphs 的线性 find（原每次渲染 O(graphs) 扫描）
+  const fromGraph = fromGraphId ? graphById.get(fromGraphId) : undefined;
 
   const handleGraphClick = useCallback((graph: Graph) => {
     setSelectedGraphId(graph.id);
@@ -756,7 +769,7 @@ export const GraphMap = () => {
       if (!selectedGraphId) return null;
 
       try {
-        const graph = graphs.find((g: Graph) => g.id === selectedGraphId);
+        const graph = graphById.get(selectedGraphId);
         if (!graph) return null;
 
         const result = await api.autoGraph.init({
@@ -1253,14 +1266,10 @@ export const GraphMap = () => {
                   <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
                 </div>
                 {(() => {
-                  const graph = graphs.find((g: Graph) => g.id === selectedGraphId);
+                  const graph = graphById.get(selectedGraphId);
                   if (!graph) return null;
 
-                  const graphRelations = relations.filter(
-                    (r: GraphRelation) =>
-                      r.source_graph_id === selectedGraphId ||
-                      r.target_graph_id === selectedGraphId,
-                  );
+                  const graphRelations = selectedGraphRelations;
 
                   return (
                     <div className="px-4 pb-4 overflow-y-auto" style={{ maxHeight: isMobilePanelExpanded ? "calc(80vh - 40px)" : "140px" }}>
@@ -1270,7 +1279,7 @@ export const GraphMap = () => {
                             {graph.title}
                           </h2>
                           <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {t('graphMap.graph.nodeCount', { count: graph.node_count || 0 })} · {t('graphMap.graph.relationCount', { count: graphRelations.length })}
+                            {t('graphMap.graph.nodeCount', { count: graph.nodes_count || 0 })} · {t('graphMap.graph.relationCount', { count: graphRelations.length })}
                           </div>
                         </div>
                         <button
@@ -1412,7 +1421,7 @@ export const GraphMap = () => {
                                   const otherGraphId = isSource
                                     ? relation.target_graph_id
                                     : relation.source_graph_id;
-                                  const otherGraph = graphs.find((g: Graph) => g.id === otherGraphId);
+                                  const otherGraph = graphById.get(otherGraphId);
 
                                   if (!otherGraph) return null;
 
@@ -1472,14 +1481,10 @@ export const GraphMap = () => {
             ) : (
               <div className="absolute top-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4 max-w-xs">
                 {(() => {
-                  const graph = graphs.find((g: Graph) => g.id === selectedGraphId);
+                  const graph = graphById.get(selectedGraphId);
                   if (!graph) return null;
 
-                  const graphRelations = relations.filter(
-                    (r: GraphRelation) =>
-                      r.source_graph_id === selectedGraphId ||
-                      r.target_graph_id === selectedGraphId,
-                  );
+                  const graphRelations = selectedGraphRelations;
 
                   return (
                     <>
@@ -1492,7 +1497,7 @@ export const GraphMap = () => {
                         </p>
                       )}
                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                        {t('graphMap.graph.nodeCount', { count: graph.node_count || 0 })} ·{" "}
+                        {t('graphMap.graph.nodeCount', { count: graph.nodes_count || 0 })} ·{" "}
                         {t('graphMap.graph.relationCount', { count: graphRelations.length })}
                       </div>
 
@@ -1634,9 +1639,7 @@ export const GraphMap = () => {
                                 const otherGraphId = isSource
                                   ? relation.target_graph_id
                                   : relation.source_graph_id;
-                                const otherGraph = graphs.find(
-                                  (g: Graph) => g.id === otherGraphId,
-                                );
+                                const otherGraph = graphById.get(otherGraphId);
 
                                 if (!otherGraph) return null;
 
@@ -1751,7 +1754,7 @@ export const GraphMap = () => {
         onSubmit={handleQuickCreateGraph}
         relatedGraphId={selectedGraphId || undefined}
         relatedGraphTitle={
-          graphs.find((g: Graph) => g.id === selectedGraphId)?.title
+          graphById.get(selectedGraphId ?? '')?.title || undefined
         }
         defaultRelationType={createGraphRelationType}
         domains={domainTree}
@@ -1763,10 +1766,10 @@ export const GraphMap = () => {
           onClose={() => setIsAIExpansionOpen(false)}
           sourceGraphId={selectedGraphId || ""}
           sourceGraphTitle={
-            graphs.find((g: Graph) => g.id === selectedGraphId)?.title || ""
+            graphById.get(selectedGraphId ?? '')?.title || ""
           }
           sourceGraphDescription={
-            graphs.find((g: Graph) => g.id === selectedGraphId)?.description
+            graphById.get(selectedGraphId ?? '')?.description || ""
           }
           onDepthExpand={handleDepthExpand}
           onDepthExpandNode={handleDepthExpandNode}
@@ -1775,7 +1778,7 @@ export const GraphMap = () => {
           isRunning={isExpansionRunning}
           onEditPrompt={handleOpenPromptEditor}
           hasNodes={
-            (graphs.find((g: Graph) => g.id === selectedGraphId)?.node_count ?? 0) > 0
+            (graphById.get(selectedGraphId ?? '')?.nodes_count ?? 0) > 0
           }
         />
       </Suspense>
@@ -1926,7 +1929,7 @@ export const GraphMap = () => {
           onConfirm={handleNodeSelectorConfirm}
           graphId={selectedGraphId || ""}
           graphTitle={
-            graphs.find((g: Graph) => g.id === selectedGraphId)?.title || ""
+            graphById.get(selectedGraphId ?? '')?.title || ""
           }
         />
       </Suspense>
@@ -2090,7 +2093,7 @@ export const GraphMap = () => {
         <SingleGraphDomainPicker
           graphId={singleGraphDomainPicker.graphId}
           domainTree={domainTree}
-          currentDomains={graphs.find((g: Graph) => g.id === singleGraphDomainPicker.graphId)?.domains || []}
+          currentDomains={graphById.get(singleGraphDomainPicker.graphId)?.domains || []}
           isSetting={isSettingSingleGraphDomain}
           onConfirm={handleSetSingleGraphDomains}
           onClose={() => setSingleGraphDomainPicker({ graphId: '', open: false })}

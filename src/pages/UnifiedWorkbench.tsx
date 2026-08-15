@@ -131,10 +131,17 @@ export const UnifiedWorkbench: React.FC = () => {
   const allTasks = useMemo(() => [...queues.q0, ...queues.q1, ...queues.q2], [queues]);
 
   const taskStats = useMemo(() => {
-    const pending = allTasks.filter((t) => t.status === "pending").length;
-    const inProgress = allTasks.filter((t) => t.status === "in_progress").length;
-    const completed = allTasks.filter((t) => t.status === "completed").length;
-    const totalEstimated = allTasks.reduce((sum, t) => sum + (t.estimated_duration || 0), 0);
+    // 单趟统计状态数量与总时长，替代三次 filter + 一次 reduce 的 O(4*allTasks) 扫描
+    let pending = 0;
+    let inProgress = 0;
+    let completed = 0;
+    let totalEstimated = 0;
+    for (const t of allTasks) {
+      if (t.status === "pending") pending++;
+      else if (t.status === "in_progress") inProgress++;
+      else if (t.status === "completed") completed++;
+      totalEstimated += t.estimated_duration || 0;
+    }
     return { total: allTasks.length, pending, inProgress, completed, totalEstimated };
   }, [allTasks]);
 

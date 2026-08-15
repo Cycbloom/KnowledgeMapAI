@@ -315,6 +315,15 @@ export const GraphEditor = () => {
   const nodes = useMemo(() => graphData?.nodes || [], [graphData?.nodes]);
   const edges = useMemo(() => graphData?.edges || [], [graphData?.edges]);
 
+  // 预构建 node.id -> node 映射，供渲染与事件路径复用，避免多次线性 find（原各处 O(nodes) 扫描）
+  const nodeById = useMemo(() => {
+    const m = new Map<string, (typeof nodes)[number]>();
+    nodes.forEach((n) => {
+      m.set(n.id, n);
+    });
+    return m;
+  }, [nodes]);
+
   // State Hook
   const state = useGraphEditorState();
   const {
@@ -1290,7 +1299,7 @@ export const GraphEditor = () => {
             nodeId={contextMenu.nodeId}
             graphId={id}
             nodeContent={
-              nodes.find((n) => n.id === contextMenu.nodeId)?.content || ""
+              nodeById.get(contextMenu.nodeId)?.content || ""
             }
             onClose={() => setContextMenu(null)}
             onExecuteAction={aiOps.handleExecuteAction}
@@ -1813,7 +1822,7 @@ export const GraphEditor = () => {
           isOpen={mobileActionMenuOpen}
           onClose={handleMobileActionClose}
           nodeId={mobileActionNodeId}
-          nodeTitle={nodes.find((n) => n.id === mobileActionNodeId)?.title}
+          nodeTitle={mobileActionNodeId ? nodeById.get(mobileActionNodeId)?.title : undefined}
           onEdit={handleMobileEdit}
           onAIExpand={handleMobileAIExpand}
           onGenerateContent={handleMobileGenerateContent}

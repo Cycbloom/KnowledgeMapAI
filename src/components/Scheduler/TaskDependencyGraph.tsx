@@ -37,7 +37,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
   onTaskClick,
 }) => {
   const { t } = useTranslation();
-  const { nodes, edges } = useMemo(() => {
+  const { nodes, edges, nodeById } = useMemo(() => {
     const nodeMap = new Map<string, GraphNode>();
     const edgeList: GraphEdge[] = [];
 
@@ -108,7 +108,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
       }
     });
 
-    return { nodes: Array.from(nodeMap.values()), edges: edgeList };
+    return { nodes: Array.from(nodeMap.values()), edges: edgeList, nodeById: nodeMap };
   }, [taskId, dependencies, dependents, allTasks, t]);
 
   const getStatusIcon = (status: string) => {
@@ -149,8 +149,9 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
         aria-hidden="true"
       >
         {edges.map((edge, index) => {
-          const fromNode = nodes.find((n) => n.id === edge.from);
-          const toNode = nodes.find((n) => n.id === edge.to);
+          // 预构建 nodeById，避免每条边线性扫描 nodes（原为 O(edges*nodes)）
+          const fromNode = nodeById.get(edge.from);
+          const toNode = nodeById.get(edge.to);
           if (!fromNode || !toNode) return null;
 
           const isStrict = edge.type === 'strict';

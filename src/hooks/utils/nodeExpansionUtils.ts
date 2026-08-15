@@ -127,7 +127,12 @@ export async function processExpandSuggestions({
 }
 
 export function getExistingTitles(nodes: Node[]): string[] {
-  return nodes.map(n => n.title).filter(Boolean) as string[];
+  // 单趟收集非空标题，替代 map+filter 两次扫描
+  const titles: string[] = [];
+  for (const n of nodes) {
+    if (n.title) titles.push(n.title);
+  }
+  return titles;
 }
 
 export function getCurrentChildrenTitles(
@@ -135,14 +140,20 @@ export function getCurrentChildrenTitles(
   nodes: Node[],
   edges: Edge[]
 ): string[] {
-  const childrenIds = edges
-    .filter(e => e.source_knowledge_point_id === selectedNodeId)
-    .map(e => e.target_knowledge_point_id);
-  
-  return nodes
-    .filter(n => childrenIds.includes(n.id))
-    .map(n => n.title)
-    .filter(Boolean) as string[];
+  // 单趟收集子节点 ID 集合，替代 filter+map 的两次扫描
+  const childrenIds = new Set<string>();
+  for (const e of edges) {
+    if (e.source_knowledge_point_id === selectedNodeId) {
+      childrenIds.add(e.target_knowledge_point_id);
+    }
+  }
+
+  // 用 Set 查找替代 childrenIds.includes 的线性扫描，并合并 map+filter
+  const titles: string[] = [];
+  for (const n of nodes) {
+    if (childrenIds.has(n.id) && n.title) titles.push(n.title);
+  }
+  return titles;
 }
 
 export function buildDefaultExpandPrompt(nodeTitle: string): string {

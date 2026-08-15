@@ -42,18 +42,30 @@ export const useContentGeneration = (options: UseContentGenerationOptions) => {
         if (nodeAiPrompt && typeof nodeAiPrompt === 'string') {
           prompt = nodeAiPrompt.replace(/{主题}/g, selectedNode.title || '');
           
-          const parentNode = nodes.find(n => n.id === edges.find(e => e.target_knowledge_point_id === selectedNode.id)?.source_knowledge_point_id);
+          // 预构建节点索引与「目标节点→边」索引，将嵌套 find 的 O(n*m) 扫描降为 O(1) 查找
+          const nodeById = new Map(nodes.map((n) => [n.id, n]));
+          const edgeByTarget = new Map<string, Edge>();
+          for (const e of edges) {
+            if (!edgeByTarget.has(e.target_knowledge_point_id)) {
+              edgeByTarget.set(e.target_knowledge_point_id, e);
+            }
+          }
+          const parentEdge = edgeByTarget.get(selectedNode.id);
+          const parentNode = parentEdge ? nodeById.get(parentEdge.source_knowledge_point_id) : undefined;
           if (parentNode) {
             prompt = prompt.replace(/{父节点内容}/g, parentNode.content || parentNode.title || '');
           }
           
-          const siblingNodes = nodes.filter(n => 
-            n.id !== selectedNode.id && 
-            edges.some(e => 
-              e.source_knowledge_point_id === parentNode?.id && 
-              e.target_knowledge_point_id === n.id
-            )
-          );
+          // 单趟构建父节点的子节点 id Set，将 filter+some 的 O(n*m) 降为 O(n+m)
+          const childIdSet = new Set<string>();
+          if (parentNode) {
+            for (const e of edges) {
+              if (e.source_knowledge_point_id === parentNode.id) {
+                childIdSet.add(e.target_knowledge_point_id);
+              }
+            }
+          }
+          const siblingNodes = nodes.filter((n) => n.id !== selectedNode.id && childIdSet.has(n.id));
           if (siblingNodes.length > 0) {
             const siblingContent = siblingNodes.map(n => `- ${n.title}: ${n.content || ''}`).join('\n');
             prompt = prompt.replace(/{兄弟节点内容}/g, siblingContent);

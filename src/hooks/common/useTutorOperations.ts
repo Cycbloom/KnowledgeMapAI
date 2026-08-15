@@ -5,7 +5,7 @@ import { HistoryAction } from "./useHistory";
 import { GraphEditorState } from "../graphEditor";
 import { message } from "../../utils/messageHelper";
 import { api } from "../../services/api";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { UseMutationResult } from "@tanstack/react-query";
 
@@ -55,6 +55,12 @@ export const useTutorOperations = ({
   const { t } = useTranslation();
 
   const chatSessionIdRef = useRef<string>(crypto.randomUUID());
+
+  // 预计算根节点，避免多处每次调用都线性扫描 nodes（O(n) 降为一次构建）
+  const rootNode = useMemo(
+    () => nodes.find((n) => n.level === "root"),
+    [nodes],
+  );
 
   const getChatSessionId = useCallback(() => {
     if (!chatSessionIdRef.current) {
@@ -137,7 +143,7 @@ export const useTutorOperations = ({
     setLoading(true);
 
     try {
-      const parentNode = selectedNode || nodes.find((n) => n.level === "root");
+      const parentNode = selectedNode || rootNode;
 
       if (!parentNode) {
         message.error(t("tutor.messages.selectParentNodeFirst"));
@@ -200,7 +206,7 @@ export const useTutorOperations = ({
     const addedNodes: Node[] = [];
 
     try {
-      const parentNode = selectedNode || nodes.find((n) => n.level === "root");
+      const parentNode = selectedNode || rootNode;
 
       if (!parentNode) {
         message.error(t("tutor.messages.selectParentNodeFirst"));

@@ -310,11 +310,19 @@ export function useDashboardFilters({
     return filteredGraphs.slice(start, start + graphsPerPage);
   }, [filteredGraphs, currentPage, graphsPerPage]);
 
-  const isAllSelected =
-    paginatedGraphs.length > 0 &&
-    paginatedGraphs.every((g) => selectedIds.has(g.id));
-  const isPartialSelected =
-    paginatedGraphs.some((g) => selectedIds.has(g.id)) && !isAllSelected;
+  // 单趟统计分页选中情况，替代 every/some 分别扫描的 O(2*paginatedGraphs) 扫描
+  const pageSelection = useMemo(() => {
+    let selectedCount = 0;
+    const total = paginatedGraphs.length;
+    for (const g of paginatedGraphs) {
+      if (selectedIds.has(g.id)) selectedCount++;
+    }
+    return {
+      isAllSelected: total > 0 && selectedCount === total,
+      isPartialSelected: selectedCount > 0 && selectedCount < total,
+    };
+  }, [paginatedGraphs, selectedIds]);
+  const { isAllSelected, isPartialSelected } = pageSelection;
   const selectedCount = selectedIds.size;
 
   const toggleSelect = (id: string) => {

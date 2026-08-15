@@ -16,21 +16,23 @@ import {
 
 export type StudyModeIconType = LucideIcon;
 
+// 模块级常量查找表，替代函数内每次调用重复构建（O(1) 直接索引）
+const STUDY_MODE_ICON_MAP: Record<StudyMode, StudyModeIconType> = {
+  drill: Zap,
+  deep: BookOpen,
+  preview: Eye,
+  review: RefreshCw,
+  quiz: FileCheck,
+  mixed: Layers,
+};
+
 export function useStudyModeLogic() {
   const { t } = useTranslation();
   const [studyMode, setStudyMode] = useState<StudyMode>("mixed");
   const [isStudyModeDropdownOpen, setIsStudyModeDropdownOpen] = useState(false);
 
   const getStudyModeIcon = (mode: StudyMode): StudyModeIconType => {
-    const iconMap: Record<StudyMode, StudyModeIconType> = {
-      drill: Zap,
-      deep: BookOpen,
-      preview: Eye,
-      review: RefreshCw,
-      quiz: FileCheck,
-      mixed: Layers,
-    };
-    return iconMap[mode];
+    return STUDY_MODE_ICON_MAP[mode];
   };
 
   const shouldShowArticle = (): boolean => {

@@ -158,7 +158,13 @@ export const useCombinedView = (props?: UseCombinedViewProps) => {
   }, [graphColors]);
 
   const getNodeColors = useCallback((graphIds: string[]) => {
-    return graphIds.map(id => graphColors[id]).filter(Boolean);
+    // 单趟收集存在的颜色，替代 map+filter 两次扫描
+    const colors: string[] = [];
+    for (const id of graphIds) {
+      const c = graphColors[id];
+      if (c) colors.push(c);
+    }
+    return colors;
   }, [graphColors]);
 
   return {

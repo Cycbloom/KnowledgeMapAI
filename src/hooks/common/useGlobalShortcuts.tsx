@@ -56,21 +56,23 @@ export function useGlobalShortcuts({
   }, [handlers, bindings, enabled, globalEnabled, context]);
 }
 
+// 模块级常量：将 isGlobalShortcut 内每次调用的数组 includes 扫描提取为预构建 Set（O(1) 查找）
+const INPUT_BLOCKED_ACTIONS = new Set([
+  'navigateBack',
+  'navigateForward',
+  'goHome',
+  'openSettings',
+  'openCommandPalette',
+  'openSearch',
+]);
+const GLOBAL_ACTIONS = new Set(['undo', 'redo', 'save', 'openConsole']);
+
 function isGlobalShortcut(shortcut: ShortcutDefinition): boolean {
   // 输入框内不触发的 action：
   // - 导航类（navigateBack / navigateForward / goHome / openSettings）：避免在输入时误触跳转
   // - openCommandPalette / openSearch：输入框内按 Ctrl+K 不弹出全局命令面板（符合 spec，避免与浏览器原生行为冲突）
-  const inputBlockedActions = [
-    'navigateBack',
-    'navigateForward',
-    'goHome',
-    'openSettings',
-    'openCommandPalette',
-    'openSearch',
-  ];
-  if (inputBlockedActions.includes(shortcut.action)) return false;
-  const globalActions = ['undo', 'redo', 'save', 'openConsole'];
-  return globalActions.includes(shortcut.action) ||
+  if (INPUT_BLOCKED_ACTIONS.has(shortcut.action)) return false;
+  return GLOBAL_ACTIONS.has(shortcut.action) ||
          !!(shortcut.defaultKeys.ctrl || shortcut.defaultKeys.meta);
 }
 

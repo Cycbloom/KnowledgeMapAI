@@ -62,8 +62,11 @@ export function useAnalysisModules(): UseAnalysisModulesReturn {
       const result = await api.prompts.list() as { user?: Array<{ code: string; template_content: string; id: string }>; [key: string]: unknown };
       const templates: Record<string, string> = {};
       const analysisScenarios: AnalysisPromptScenarioId[] = ['relation_discovery', 'cross_domain_insights', 'learning_path_suggestions', 'knowledge_gaps'];
+      // 预构建 code -> 模板 Map，替代循环内每轮一次 find 的 O(scenarios*user) 线性扫描
+      const userTemplateByCode = new Map<string, { template_content: string }>();
+      result.user?.forEach((t) => userTemplateByCode.set(t.code, t));
       for (const scenarioId of analysisScenarios) {
-        const userTemplate = result.user?.find((t: { code: string }) => t.code === scenarioId);
+        const userTemplate = userTemplateByCode.get(scenarioId);
         if (userTemplate) {
           templates[scenarioId] = userTemplate.template_content;
         } else {

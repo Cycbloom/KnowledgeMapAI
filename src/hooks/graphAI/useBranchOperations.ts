@@ -46,13 +46,19 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
       const parentLevel = getLevel(selectedNode, edges);
       
       const existingTitles = nodes.map(n => n.title);
-      
-      const currentChildrenIds = edges
-        .filter(e => e.source_knowledge_point_id === selectedNode.id)
-        .map(e => e.target_knowledge_point_id);
-      const currentChildrenTitles = nodes
-        .filter(n => currentChildrenIds.includes(n.id))
-        .map(n => n.title);
+
+      // 单趟收集子节点 ID 集合，替代 filter+map 两次扫描
+      const currentChildrenIds = new Set<string>();
+      for (const e of edges) {
+        if (e.source_knowledge_point_id === selectedNode.id) {
+          currentChildrenIds.add(e.target_knowledge_point_id);
+        }
+      }
+      // 用 Set 查找替代 currentChildrenIds.includes 的线性扫描
+      const currentChildrenTitles: string[] = [];
+      for (const n of nodes) {
+        if (currentChildrenIds.has(n.id)) currentChildrenTitles.push(n.title);
+      }
 
       const res = await api.ai.getBranchSuggestions({
         node_title: selectedNode.title,

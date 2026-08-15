@@ -6,6 +6,9 @@ import { SplashScreen } from "@capacitor/splash-screen";
 import { useNavigate, useLocation } from "react-router-dom";
 import { mobileSyncService } from "../../services/sync/mobileSyncService";
 
+// 前置常量：公共路由 Set，避免每次返回事件重建数组与线性查找，includes O(n) → has O(1)
+const PUBLIC_ROUTES = new Set(["/login", "/register"]);
+
 export function useMobileInit() {
   const [isMobile, setIsMobile] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
@@ -51,8 +54,7 @@ export function useMobileInit() {
     initMobile();
 
     const backButtonListener = App.addListener("backButton", () => {
-      const publicRoutes = ["/login", "/register"];
-      const isPublicRoute = publicRoutes.includes(location.pathname);
+      const isPublicRoute = PUBLIC_ROUTES.has(location.pathname);
       const isGraphRoute = location.pathname.startsWith("/graph/");
 
       if (isPublicRoute || isGraphRoute) {

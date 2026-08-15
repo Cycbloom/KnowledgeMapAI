@@ -51,7 +51,8 @@ export const useSemanticZoom = ({
 
   const nodeStrategies = useMemo(() => {
     const strategies = new Map<string, NodeDisplayStrategy>();
-    const visibleLevels = config.visibleLevels[semanticLevel];
+    const visibleLevelsArr = config.visibleLevels[semanticLevel];
+    const visibleLevelSet = new Set<string>(visibleLevelsArr);
     const textRules = config.textRules[semanticLevel];
 
     const coreNodes = nodes.filter((n) => n.level === 'core');
@@ -105,7 +106,7 @@ export const useSemanticZoom = ({
 
     nodes.forEach((node) => {
       const nodeLevel = (node.level || 'normal') as NodeLevel;
-      const visible = (visibleLevels as readonly string[]).includes(nodeLevel);
+      const visible = visibleLevelSet.has(nodeLevel);
 
       // In overview mode, sub/normal/leaf nodes are aggregated into their parent
       const isAggregated =

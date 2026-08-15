@@ -42,11 +42,13 @@ export function useTemplateList() {
   };
 
   const filteredTemplates = useMemo(() => {
+    // 预计算查询词小写，避免循环内对每个模板重复 toLowerCase（降低每趟常量开销）
+    const lowerSearchQuery = searchQuery.toLowerCase();
     return templates.filter((t) => {
       const matchesSearch =
-        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.name.toLowerCase().includes(lowerSearchQuery) ||
         (t.description &&
-          t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+          t.description.toLowerCase().includes(lowerSearchQuery));
       const matchesCategory =
         selectedCategory === "all" || t.category === selectedCategory;
       return matchesSearch && matchesCategory;

@@ -222,10 +222,11 @@ export function useWhiteNoise(): UseWhiteNoiseReturn {
 
     const currentTracks = mixerRef.current.getActiveTracks();
     const storeNoises = mixedNoises.filter(n => n.type !== 'none');
+    // 预构建 type Set，将每个元素对 storeNoises 的 O(n*m) 扫描降为 O(1) 查找
+    const storeTypeSet = new Set(storeNoises.map(n => n.type));
 
     currentTracks.forEach((trackType) => {
-      const existsInStore = storeNoises.some(n => n.type === trackType);
-      if (!existsInStore) {
+      if (!storeTypeSet.has(trackType)) {
         mixerRef.current?.removeTrack(trackType);
       }
     });

@@ -69,6 +69,12 @@ export const useSemanticZoom = ({
       }
     });
 
+    // 预构建节点 id -> level 映射，避免 BFS 中每次循环线性扫描 nodes
+    const nodeLevelMap = new Map<string, string>();
+    nodes.forEach((node) => {
+      nodeLevelMap.set(node.id, node.level || 'normal');
+    });
+
     // Count actual hidden descendants for each core node using BFS
     const coreDescendantCounts = new Map<string, number>();
     if (semanticLevel === 'overview') {
@@ -84,8 +90,7 @@ export const useSemanticZoom = ({
           if (!currentId) break;
           if (visited.has(currentId)) continue;
           visited.add(currentId);
-          const currentNode = nodes.find((n) => n.id === currentId);
-          const currentLevel = (currentNode?.level || 'normal') as NodeLevel;
+          const currentLevel = nodeLevelMap.get(currentId) || 'normal';
           if (hiddenLevelSet.has(currentLevel)) {
             count++;
           }

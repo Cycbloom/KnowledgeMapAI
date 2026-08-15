@@ -45,22 +45,25 @@ export const useCardReviewLogic = ({
         return;
       }
 
-      const used = new Set<number>();
+      const unused: number[] = cards.map((_, i) => i);
       const result: StudyCard[] = [];
 
       const startIdx = Math.floor(Math.random() * cards.length);
       result.push(cards[startIdx]);
-      used.add(startIdx);
+      unused.splice(startIdx, 1);
 
       while (result.length < cards.length) {
         const lastKpId = result[result.length - 1].knowledge_point_id;
         const simMap = semanticSimilarityMap.get(lastKpId);
 
+        let bestPos = -1;
         let bestIdx = -1;
         let bestSimilarity = Infinity;
 
-        for (let i = 0; i < cards.length; i++) {
-          if (used.has(i)) continue;
+        // Only scan the remaining unused candidates instead of the full array,
+        // avoiding the repeated `used.has` check on every position.
+        for (let p = 0; p < unused.length; p++) {
+          const i = unused[p];
           const candidateKpId = cards[i].knowledge_point_id;
           const sim = simMap?.get(candidateKpId) ?? 0;
 
@@ -70,16 +73,17 @@ export const useCardReviewLogic = ({
           ) {
             bestSimilarity = sim;
             bestIdx = i;
+            bestPos = p;
           }
         }
 
         if (bestIdx === -1) break;
         result.push(cards[bestIdx]);
-        used.add(bestIdx);
+        unused.splice(bestPos, 1);
       }
 
-      for (let i = 0; i < cards.length; i++) {
-        if (!used.has(i)) result.push(cards[i]);
+      for (let p = 0; p < unused.length; p++) {
+        result.push(cards[unused[p]]);
       }
 
       cards.length = 0;

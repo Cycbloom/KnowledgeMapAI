@@ -86,8 +86,11 @@ export const CombinedNodeDetailSidebar: React.FC<
     const childEdges = edges.filter(
       (e) => e.source_knowledge_point_id === node.id,
     );
-    const childIds = childEdges.map((e) => e.target_knowledge_point_id);
-    return nodes.filter((n) => childIds.includes(n.id));
+    // 预建 childIdSet，避免对每个节点线性 includes（原为 O(nodes*childIds)）
+    const childIdSet = new Set(
+      childEdges.map((e) => e.target_knowledge_point_id),
+    );
+    return nodes.filter((n) => childIdSet.has(n.id));
   }, [node, edges, nodes]);
 
   return (

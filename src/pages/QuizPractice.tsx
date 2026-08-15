@@ -463,6 +463,30 @@ export const QuizPractice: React.FC = () => {
     );
   }
 
+  // 预解析多选的已选项/正确答案为 Set，避免每个选项重复 JSON.parse + includes
+  let selectedSet = new Set<string>();
+  if (isMultiChoice && selectedOption) {
+    try {
+      const parsed = JSON.parse(selectedOption);
+      if (Array.isArray(parsed)) {
+        selectedSet = new Set(parsed as string[]);
+      }
+    } catch {
+      selectedSet = new Set();
+    }
+  }
+  let correctSet = new Set<string>();
+  if (isMultiChoice) {
+    try {
+      const parsed = JSON.parse(currentCard.answer);
+      if (Array.isArray(parsed)) {
+        correctSet = new Set(parsed as string[]);
+      }
+    } catch {
+      correctSet = new Set();
+    }
+  }
+
   return (
     <div
       className={`min-h-full flex flex-col ${
@@ -626,15 +650,8 @@ export const QuizPractice: React.FC = () => {
                 {isMultiChoice && currentOptions.length > 0 && (
                   <div className="space-y-3">
                     {currentOptions.map((option, idx) => {
-                      const selectedList = selectedOption ? JSON.parse(selectedOption) : [];
-                      const isSelected = selectedList.includes(option);
-                      let correctList: string[] = [];
-                      try {
-                        correctList = JSON.parse(currentCard.answer);
-                      } catch {
-                        correctList = [];
-                      }
-                      const isCorrect = correctList.includes(option);
+                      const isSelected = selectedSet.has(option);
+                      const isCorrect = correctSet.has(option);
 
                       let btnClass =
                         'w-full p-4 rounded-xl border transition-all text-left flex items-start gap-3 ';

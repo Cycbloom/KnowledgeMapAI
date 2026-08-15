@@ -55,14 +55,27 @@ export async function processExpandSuggestions({
   let newNodesCount = 0;
   let newEdgesCount = 0;
 
+  // 预处理：将 title->首节点、无向边偶对分别索引为 O(1) 查找，
+  // 避免在 suggestions 循环内对 nodes/edges 做线性扫描（原为 O(suggestions*(n+m))）
+  const nodesByTitle = new Map<string, Node>();
+  for (const n of nodes) {
+    if (!nodesByTitle.has(n.title)) {
+      nodesByTitle.set(n.title, n);
+    }
+  }
+  const connectedEdgePairs = new Set<string>();
+  for (const e of edges) {
+    const a = e.source_knowledge_point_id;
+    const b = e.target_knowledge_point_id;
+    connectedEdgePairs.add(`${a}|${b}`);
+    connectedEdgePairs.add(`${b}|${a}`);
+  }
+
   for (const s of suggestions) {
-    const existingNode = nodes.find(n => n.title === s.title);
+    const existingNode = nodesByTitle.get(s.title);
     
     if (existingNode) {
-      const edgeExists = edges.some(e =>
-        (e.source_knowledge_point_id === selectedNode.id && e.target_knowledge_point_id === existingNode.id) ||
-        (e.source_knowledge_point_id === existingNode.id && e.target_knowledge_point_id === selectedNode.id)
-      );
+      const edgeExists = connectedEdgePairs.has(`${selectedNode.id}|${existingNode.id}`);
       
       if (!edgeExists && existingNode.id !== selectedNode.id) {
         const newEdge = await createEdge({

@@ -261,11 +261,17 @@ export const BackboneCompatibilityChecker: React.FC<
     let successCount = 0;
     let errorCount = 0;
 
+    // 预构建 id -> node 映射，避免每次 issue 线性扫描 nodes（原为 O(issues*nodes)）
+    const nodeMap = new Map<string, Node>();
+    nodes.forEach((n) => {
+      nodeMap.set(n.id, n);
+    });
+
     for (const issue of issues) {
       if (!selectedIssues.has(issue.nodeId)) continue;
 
       try {
-        const node = nodes.find((n) => n.id === issue.nodeId);
+        const node = nodeMap.get(issue.nodeId);
         if (!node) continue;
 
         const updateData: Record<string, unknown> = {

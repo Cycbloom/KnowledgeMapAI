@@ -251,6 +251,30 @@ export const QuizViewActive = memo(function QuizViewActive({
     return [];
   }, [currentCard]);
 
+  // 预解析多选的已选项/正确答案为 Set，避免每个选项重复 JSON.parse + includes（原为 O(options*len)）
+  let selectedSet = new Set<string>();
+  if (isMultiChoice && selectedOption) {
+    try {
+      const parsed = JSON.parse(selectedOption);
+      if (Array.isArray(parsed)) {
+        selectedSet = new Set(parsed as string[]);
+      }
+    } catch {
+      selectedSet = new Set();
+    }
+  }
+  let correctSet = new Set<string>();
+  if (isMultiChoice) {
+    try {
+      const parsed = JSON.parse(currentCard.answer);
+      if (Array.isArray(parsed)) {
+        correctSet = new Set(parsed as string[]);
+      }
+    } catch {
+      correctSet = new Set();
+    }
+  }
+
   return (
     <div
       className={`min-h-full flex flex-col items-center justify-center ${isMobile ? "p-2" : "p-4 md:p-8"} transition-colors ${isDark ? "bg-slate-900" : "bg-gray-100"}`}
@@ -733,17 +757,8 @@ export const QuizViewActive = memo(function QuizViewActive({
                   {isMultiChoice && currentOptions.length > 0 && (
                     <div className="flex flex-col gap-2 md:gap-2 mt-3 md:mt-4">
                       {currentOptions.map((option: string, idx: number) => {
-                        const selectedList = selectedOption
-                          ? JSON.parse(selectedOption)
-                          : [];
-                        const isSelected = selectedList.includes(option);
-                        let correctList: string[] = [];
-                        try {
-                          correctList = JSON.parse(currentCard.answer);
-                        } catch {
-                          correctList = [];
-                        }
-                        const isCorrect = correctList.includes(option);
+                        const isSelected = selectedSet.has(option);
+                        const isCorrect = correctSet.has(option);
 
                         let btnClass = `group ${isMobile ? "p-3.5" : "p-3"} rounded-xl border transition-all duration-200 relative flex items-start gap-3 shadow-sm `;
                         if (showAnswer) {

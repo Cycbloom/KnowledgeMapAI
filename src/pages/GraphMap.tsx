@@ -431,15 +431,22 @@ export const GraphMap = () => {
   const graphDomainMap = useMemo(() => {
     const map = new Map<string, Set<string>>();
 
+    // 预构建 领域名称 -> 首个领域ID 映射（与 find 的首个匹配语义一致），
+    // 避免在回退分支对每张 graph 线性扫描 domainIdToInfo（原为 O(graphs*domains)）
+    const domainNameToId = new Map<string, string>();
+    domainIdToInfo.forEach((info, id) => {
+      if (!domainNameToId.has(info.name)) {
+        domainNameToId.set(info.name, id);
+      }
+    });
+
     graphs.forEach((graph: Graph) => {
       const domainIds = graph.domainIds || [];
       if (domainIds.length > 0) {
         map.set(graph.id, new Set(domainIds));
       } else if (graph.domain) {
         // 回退：通过名称匹配（兼容旧数据）
-        const matchedId = Array.from(domainIdToInfo.entries()).find(
-          ([, info]) => info.name === graph.domain
-        )?.[0];
+        const matchedId = domainNameToId.get(graph.domain);
         if (matchedId) {
           map.set(graph.id, new Set([matchedId]));
         }

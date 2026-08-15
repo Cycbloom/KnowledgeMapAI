@@ -148,8 +148,16 @@ const handleTaskStatus = async (args: ParsedArgs, _context: CommandContext): Pro
       }
     }
 
-    const successCount = results.filter((r) => r.success).length;
-    const failCount = results.filter((r) => !r.success).length;
+    // 合并两次 filter 扫描为单趟遍历，O(2×n) → O(n)
+    let successCount = 0;
+    let failCount = 0;
+    for (const r of results) {
+      if (r.success) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    }
 
     return {
       success: true,

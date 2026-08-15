@@ -354,10 +354,16 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
         }
       }
 
-      const successCount = results.filter((r) => r.success).length;
+      // 单趟统计 success 并收集 taskIds，替代 filter + map 的 O(2*results) 重复扫描
+      let successCount = 0;
+      const taskIds: string[] = [];
+      for (const r of results) {
+        taskIds.push(r.nodeId);
+        if (r.success) successCount++;
+      }
       return {
         success: true,
-        taskIds: results.map((r) => r.nodeId),
+        taskIds,
         message: `Successfully generated cards for ${successCount}/${results.length} nodes`,
         results,
       };

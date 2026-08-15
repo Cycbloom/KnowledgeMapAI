@@ -33,6 +33,8 @@ export interface PairedDevice {
 
 class SyncAuthService {
   private pairedDevices: PairedDevice[] = [];
+  // 预构建 deviceId 索引，将多次 find/some 的 O(n) 线性扫描降为 O(1)
+  private deviceIndex: Map<string, PairedDevice> = new Map();
   private pairingCodes: Map<string, { code: string; expiresAt: number }> = new Map();
 
   constructor() {
@@ -43,9 +45,11 @@ class SyncAuthService {
     try {
       const devices = getPairedDevicesFromStorage();
       this.pairedDevices = devices || [];
+      this.rebuildDeviceIndex();
     } catch (error) {
       logger.warn('Failed to load paired devices:', error);
       this.pairedDevices = [];
+      this.rebuildDeviceIndex();
     }
   }
 
@@ -90,6 +94,7 @@ class SyncAuthService {
     };
     
     this.pairedDevices.push(pairedDevice);
+    this.deviceIndex.set(pairedDevice.deviceId, pairedDevice);
     await this.savePairedDevices();
     
     // Remove used pairing code
@@ -101,6 +106,7 @@ class SyncAuthService {
   unpairDevice(deviceId: string): boolean {
     const initialLength = this.pairedDevices.length;
     this.pairedDevices = this.pairedDevices.filter(device => device.deviceId !== deviceId);
+    this.deviceIndex.delete(deviceId);
     
     if (this.pairedDevices.length !== initialLength) {
       this.savePairedDevices();
@@ -115,11 +121,11 @@ class SyncAuthService {
   }
 
   isDevicePaired(deviceId: string): boolean {
-    return this.pairedDevices.some(device => device.deviceId === deviceId);
+    return this.deviceIndex.has(deviceId);
   }
 
   async generateSyncToken(deviceId: string): Promise<string | null> {
-    const device = this.pairedDevices.find(d => d.deviceId === deviceId);
+    const device = this.deviceIndex.get(deviceId);
     if (!device) {
       return null;
     }
@@ -153,7 +159,7 @@ class SyncAuthService {
       }
       
       // 使用 HMAC-SHA256 验证签名
-      const device = this.pairedDevices.find(d => d.deviceId === deviceId);
+      const device = this.deviceIndex.get(deviceId);
       if (!device) {
         return false;
       }
@@ -170,10 +176,18 @@ class SyncAuthService {
   }
 
   updateLastSync(deviceId: string): void {
-    const device = this.pairedDevices.find(d => d.deviceId === deviceId);
+    const device = this.deviceIndex.get(deviceId);
     if (device) {
       device.lastSync = new Date().toISOString();
       this.savePairedDevices();
+    }
+  }
+
+  // 预构建 deviceId 索引，将 find/some 的 O(n) 线性扫描降为 O(1)
+  private rebuildDeviceIndex(): void {
+    this.deviceIndex.clear();
+    for (const device of this.pairedDevices) {
+      this.deviceIndex.set(device.deviceId, device);
     }
   }
 

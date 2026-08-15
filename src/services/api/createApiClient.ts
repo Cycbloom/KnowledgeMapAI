@@ -23,6 +23,15 @@ import { localQuery, isCloudOnlyResource } from "./localClient";
 import { captureException } from "@/utils/errorReporter";
 import { logger } from "@/utils/logger";
 
+// 模块级常量幂等 HTTP 方法集合，替代重试判断中每次重建数组的 O(n) 扫描
+const IDEMPOTENT_METHODS: ReadonlySet<string> = new Set([
+  "GET",
+  "HEAD",
+  "OPTIONS",
+  "PUT",
+  "DELETE",
+]);
+
 /**
  * Shape of the error response body returned by the backend.
  * Matches the `data` field expected by `createErrorFromResponse`.
@@ -348,7 +357,7 @@ export const createApiClient = (): AxiosInstance => {
 
       if (isRetryable) {
         const method = (originalRequest.method || "get").toUpperCase();
-        const isIdempotentMethod = ["GET", "HEAD", "OPTIONS", "PUT", "DELETE"].includes(method);
+        const isIdempotentMethod = IDEMPOTENT_METHODS.has(method);
         // 非幂等方法（POST、PATCH）仅对网络错误、5xx 和 429 重试
         const appErrorStatus = (appError as AppErrorBase).statusCode;
         const isSafeError = isNetworkErr || appErrorStatus >= 500 || appErrorStatus === 429;

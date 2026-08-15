@@ -80,39 +80,25 @@ class ConsoleLogger {
   }
 
   query(query: ConsoleLogQuery): ConsoleLogEntry[] {
-    let filtered = [...this.logs];
-
-    if (query.command) {
-      const searchCmd = query.command.toLowerCase();
-      filtered = filtered.filter((log) =>
-        log.command.toLowerCase().includes(searchCmd)
-      );
-    }
-
-    if (query.userId) {
-      filtered = filtered.filter((log) => log.userId === query.userId);
-    }
-
-    if (query.success !== undefined) {
-      filtered = filtered.filter((log) => log.result.success === query.success);
-    }
-
-    if (query.permission) {
-      filtered = filtered.filter((log) => log.permission === query.permission);
-    }
-
-    if (query.startDate) {
-      const startDate = query.startDate;
-      filtered = filtered.filter((log) => log.timestamp >= startDate);
-    }
-
-    if (query.endDate) {
-      const endDate = query.endDate;
-      filtered = filtered.filter((log) => log.timestamp <= endDate);
-    }
-
     const offset = query.offset ?? 0;
     const limit = query.limit ?? 50;
+
+    const searchCmd = query.command ? query.command.toLowerCase() : undefined;
+    const hasSuccess = query.success !== undefined;
+    const startDate = query.startDate;
+    const endDate = query.endDate;
+
+    // 合并多个 filter 链为单趟遍历，消除多次整数组扫描与中间数组分配
+    const filtered: ConsoleLogEntry[] = [];
+    for (const log of this.logs) {
+      if (searchCmd !== undefined && !log.command.toLowerCase().includes(searchCmd)) continue;
+      if (query.userId && log.userId !== query.userId) continue;
+      if (hasSuccess && log.result.success !== query.success) continue;
+      if (query.permission && log.permission !== query.permission) continue;
+      if (startDate && log.timestamp < startDate) continue;
+      if (endDate && log.timestamp > endDate) continue;
+      filtered.push(log);
+    }
 
     return filtered.slice(offset, offset + limit);
   }

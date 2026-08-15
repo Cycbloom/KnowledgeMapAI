@@ -141,8 +141,15 @@ const handleBackupCreate = async (args: ParsedArgs, _context: CommandContext): P
       }
     }
 
-    const successCount = backupResults.filter((r) => r.status === 'success').length;
-    const totalCount = backupResults.reduce((sum, r) => sum + r.count, 0);
+    // 合并 filter+reduce 为单趟遍历，O(2×n) → O(n)
+    let successCount = 0;
+    let totalCount = 0;
+    for (const r of backupResults) {
+      if (r.status === 'success') {
+        successCount++;
+      }
+      totalCount += r.count;
+    }
 
     return {
       success: true,

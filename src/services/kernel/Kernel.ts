@@ -61,8 +61,10 @@ export class Kernel
     }
     entry.registeredRoutes = [];
 
+    // 预构建 Set 消除 filter 内部的 includes 线性扫描（O(n×m) → O(n+m)）
+    const navPaths = new Set(entry.registeredNavItems);
     this.navRegistry = this.navRegistry.filter(
-      (item) => !entry.registeredNavItems.includes(item.path),
+      (item) => !navPaths.has(item.path),
     );
     entry.registeredNavItems = [];
 

@@ -66,7 +66,9 @@ export class DependencyResolver {
     }
 
     if (sorted.length !== allNames.size) {
-      const remaining = [...allNames].filter((name) => !sorted.includes(name));
+      // 预构建 Set 消除 filter 内部的 includes 线性扫描（O(n²) → O(n)）
+      const sortedSet = new Set(sorted);
+      const remaining = [...allNames].filter((name) => !sortedSet.has(name));
       const error = new Error(
         `Circular dependency detected among plugins: ${remaining.join(", ")}`,
       );

@@ -30,19 +30,23 @@ export const getStats = async (): Promise<UserTaskStats> => {
 
     const taskRows = (tasks as TaskStatsRow[] | null) ?? [];
     const totalTasks = taskRows.length;
-    const completedTasks = taskRows.filter((t) => t.status === "completed").length;
-    const totalDuration = taskRows.reduce((sum, t) => sum + (t.actual_duration ?? 0), 0);
 
+    // 单趟统计 completed/duration/queue/status，替代 filter + reduce + forEach 的 O(3*taskRows) 扫描
+    let completedTasks = 0;
+    let totalDuration = 0;
     const tasksByQueue = { q0: 0, q1: 0, q2: 0 };
     const tasksByStatus: Record<string, number> = {};
 
-    taskRows.forEach((t) => {
+    for (const t of taskRows) {
+      if (t.status === "completed") completedTasks++;
+      totalDuration += t.actual_duration ?? 0;
+
       if (t.queue_level === 0) tasksByQueue.q0++;
       else if (t.queue_level === 1) tasksByQueue.q1++;
       else if (t.queue_level === 2) tasksByQueue.q2++;
 
       tasksByStatus[t.status] = (tasksByStatus[t.status] || 0) + 1;
-    });
+    }
 
     return {
       total_tasks: totalTasks,

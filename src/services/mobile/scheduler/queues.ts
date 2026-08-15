@@ -95,10 +95,15 @@ export const getQueueData = async (): Promise<QueueData> => {
     }
 
     const tasks = (data as UserTask[] | null) ?? [];
-    return {
-      q0: tasks.filter((t) => t.queue_level === 0),
-      q1: tasks.filter((t) => t.queue_level === 1),
-      q2: tasks.filter((t) => t.queue_level === 2),
-    };
+    // 单趟 for 分组，避免三次 filter 重复扫描同一数组（原为 O(3n)，现 O(n)）
+    const q0: UserTask[] = [];
+    const q1: UserTask[] = [];
+    const q2: UserTask[] = [];
+    for (const t of tasks) {
+      if (t.queue_level === 0) q0.push(t);
+      else if (t.queue_level === 1) q1.push(t);
+      else if (t.queue_level === 2) q2.push(t);
+    }
+    return { q0, q1, q2 };
   });
 };

@@ -74,14 +74,41 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // 预按当日零点时间戳分桶，避免为每月每天各自 filter 全量 events/executions（原为 O(31*(n+m))）
+    const dayKey = (ts: Date): number => {
+      const d = new Date(ts);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    };
+    const eventsByDay = new Map<number, CalendarEvent[]>();
+    events.forEach((e) => {
+      const key = dayKey(new Date(e.start));
+      const list = eventsByDay.get(key);
+      if (list) {
+        list.push(e);
+      } else {
+        eventsByDay.set(key, [e]);
+      }
+    });
+    const executionsByDay = new Map<number, ExecutionEvent[]>();
+    executions.forEach((e) => {
+      const key = dayKey(new Date(e.started_at));
+      const list = executionsByDay.get(key);
+      if (list) {
+        list.push(e);
+      } else {
+        executionsByDay.set(key, [e]);
+      }
+    });
+
     for (let i = 0; i < startPadding; i++) {
       const date = new Date(year, month, -startPadding + i + 1);
       days.push({
         date,
         isCurrentMonth: false,
         isToday: false,
-        events: [],
-        executions: [],
+        events: eventsByDay.get(date.getTime()) || [],
+        executions: executionsByDay.get(date.getTime()) || [],
       });
     }
 
@@ -89,17 +116,8 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
       const date = new Date(year, month, i);
       date.setHours(0, 0, 0, 0);
 
-      const dayEvents = events.filter((e) => {
-        const eventDate = new Date(e.start);
-        eventDate.setHours(0, 0, 0, 0);
-        return eventDate.getTime() === date.getTime();
-      });
-
-      const dayExecutions = executions.filter((e) => {
-        const execDate = new Date(e.started_at);
-        execDate.setHours(0, 0, 0, 0);
-        return execDate.getTime() === date.getTime();
-      });
+      const dayEvents = eventsByDay.get(date.getTime()) || [];
+      const dayExecutions = executionsByDay.get(date.getTime()) || [];
 
       days.push({
         date,

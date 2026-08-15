@@ -68,9 +68,15 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
   const renderConnections = () => {
     const connections: JSX.Element[] = [];
 
+    // 预构建 task.id -> node 映射，避免每条依赖边线性扫描 nodes（原为 O(edges*nodes)）
+    const nodeByTaskId = new Map<string, TaskNode>();
+    nodes.forEach((n) => {
+      nodeByTaskId.set(n.task.id, n);
+    });
+
     nodes.forEach((node) => {
       node.blockingTasks.forEach((blockingTask) => {
-        const blockingNode = nodes.find((n) => n.task.id === blockingTask.id);
+        const blockingNode = nodeByTaskId.get(blockingTask.id);
         if (blockingNode) {
           connections.push(
             <line

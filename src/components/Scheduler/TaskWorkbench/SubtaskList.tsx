@@ -160,9 +160,15 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     }
   };
 
-  const completedCount = subtasks.filter(
-    (st) => st.status === "completed",
-  ).length;
+  // 单趟同时统计完成数与掌握度总和，替代 filter + reduce 两次扫描
+  const { completedCount, totalMastery } = subtasks.reduce(
+    (acc, st) => {
+      if (st.status === "completed") acc.completedCount++;
+      acc.totalMastery += st.mastery_level || 0;
+      return acc;
+    },
+    { completedCount: 0, totalMastery: 0 },
+  );
   const progress =
     subtasks.length > 0
       ? Math.round((completedCount / subtasks.length) * 100)
@@ -170,8 +176,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
 
   const avgMastery =
     subtasks.length > 0
-      ? subtasks.reduce((sum, st) => sum + (st.mastery_level || 0), 0) /
-        subtasks.length
+      ? totalMastery / subtasks.length
       : 0;
 
   if (loading) {

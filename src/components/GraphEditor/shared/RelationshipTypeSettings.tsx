@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from 'react';
+import React, { useState, useEffect, useId, useMemo } from 'react';
 import {
   RelationshipTypeConfig,
   RelationshipCategory,
@@ -225,18 +225,21 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
     setExpandedCategories(newExpanded);
   };
 
-  const filteredTypes = selectedCategory === 'all'
-    ? relationshipTypes
-    : relationshipTypes.filter(t => t.category === selectedCategory);
+  const filteredTypes = useMemo(
+    () => selectedCategory === 'all'
+      ? relationshipTypes
+      : relationshipTypes.filter(t => t.category === selectedCategory),
+    [selectedCategory, relationshipTypes],
+  );
 
-  const groupedTypes = filteredTypes.reduce((acc, type) => {
+  const groupedTypes = useMemo(() => filteredTypes.reduce((acc, type) => {
     const category = type.category;
     if (!acc[category]) {
       acc[category] = [];
     }
     acc[category].push(type);
     return acc;
-  }, {} as Record<RelationshipCategory, RelationshipTypeConfig[]>);
+  }, {} as Record<RelationshipCategory, RelationshipTypeConfig[]>), [filteredTypes]);
 
   const renderLineStylePreview = (style: EdgeLineStyle) => {
     switch (style) {

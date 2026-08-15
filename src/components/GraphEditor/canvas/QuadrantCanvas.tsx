@@ -707,54 +707,55 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
             })}
 
             {visibleRegions.map((region) => {
+              // 预计算本 region 的展示节点与节点数，替代内层循环中重复 filter 的 O(nodes²) 扫描
+              const regionDisplayNodes = region.nodes.filter(
+                (node) => node.level !== "core" && visibleNodeIds.has(normalizeId(node.id))
+              );
+              const regionNodeCount = region.nodes.filter(
+                (n) => n.level !== "core"
+              ).length;
               return (
                 <g key={`nodes-${region.id}`}>
                   <AnimatePresence mode="popLayout">
-                    {region.nodes
-                      .filter((node) => node.level !== "core" && visibleNodeIds.has(normalizeId(node.id)))
-                      .map((node, index) => (
-                        <motion.g
-                          key={node.id}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.8 }}
-                          transition={{ duration: 0.2, delay: index * 0.02 }}
-                        >
-                          <QuadrantNode
-                            node={node}
-                            edges={edges}
-                            nodeStatus={nodeStatus}
-                            selected={node.id === selectedNodeId}
-                            isDark={isDark}
-                            zoomLevel={transform.k}
-                            onClick={() => handleNodeClick(node)}
-                            colorScheme={_colorScheme}
-                            originX={originPosition.x}
-                            originY={originPosition.y}
-                            regionRadius={regionRadius}
-                            angle={getNodeAngle(
-                              node,
-                              region,
-                              index,
-                              region.nodes.filter((n) => n.level !== "core")
-                                .length,
-                            )}
-                            focused={
-                              visibleFocusedNodeIds.has(normalizeId(node.id)) ||
-                              normalizeId(node.id) ===
-                                normalizeId(focusedNodeId)
-                            }
-                            hasFocusMode={hasFocusMode}
-                            regionNodeCount={
-                              region.nodes.filter((n) => n.level !== "core")
-                                .length
-                            }
-                            positionX={
-                              adjustedNodePositions[normalizeId(node.id)]?.x
-                            }
-                            positionY={
-                              adjustedNodePositions[normalizeId(node.id)]?.y
-                            }
+                    {regionDisplayNodes.map((node, index) => (
+                      <motion.g
+                        key={node.id}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.2, delay: index * 0.02 }}
+                      >
+                        <QuadrantNode
+                          node={node}
+                          edges={edges}
+                          nodeStatus={nodeStatus}
+                          selected={node.id === selectedNodeId}
+                          isDark={isDark}
+                          zoomLevel={transform.k}
+                          onClick={() => handleNodeClick(node)}
+                          colorScheme={_colorScheme}
+                          originX={originPosition.x}
+                          originY={originPosition.y}
+                          regionRadius={regionRadius}
+                          angle={getNodeAngle(
+                            node,
+                            region,
+                            index,
+                            regionNodeCount,
+                          )}
+                          focused={
+                            visibleFocusedNodeIds.has(normalizeId(node.id)) ||
+                            normalizeId(node.id) ===
+                              normalizeId(focusedNodeId)
+                          }
+                          hasFocusMode={hasFocusMode}
+                          regionNodeCount={regionNodeCount}
+                          positionX={
+                            adjustedNodePositions[normalizeId(node.id)]?.x
+                          }
+                          positionY={
+                            adjustedNodePositions[normalizeId(node.id)]?.y
+                          }
                           />
                         </motion.g>
                       ))}

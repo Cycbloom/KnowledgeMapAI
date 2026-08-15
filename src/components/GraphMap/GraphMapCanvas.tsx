@@ -243,9 +243,16 @@ export const GraphMapCanvas = forwardRef<
 
       layout.nodes.forEach((node) => {
         const nodeDomains = graphDomainMap.get(node.id);
-        const isHighlighted = nodeDomains
-          ? [...nodeDomains].some((dId) => selectedDomainIds.has(dId))
-          : false;
+        // 直接遍历 Set，避免展开数组后 some 的额外分配；命中即短路
+        let isHighlighted = false;
+        if (nodeDomains) {
+          for (const dId of nodeDomains) {
+            if (selectedDomainIds.has(dId)) {
+              isHighlighted = true;
+              break;
+            }
+          }
+        }
         state.set(node.id, isHighlighted);
       });
 

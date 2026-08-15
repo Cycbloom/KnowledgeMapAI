@@ -111,6 +111,16 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
   const [statusAnnouncement, setStatusAnnouncement] = useState("");
   const subtasksPanelId = useId();
 
+  // 单趟统计待办依赖数，替代渲染路径中重复两次的 filter 扫描
+  const pendingDependencyCount = React.useMemo(
+    () =>
+      task.dependencies
+        ? task.dependencies.filter((d) => d.depends_on_task?.status !== "completed")
+            .length
+        : 0,
+    [task.dependencies],
+  );
+
   const queueStyle =
     QUEUE_COLORS[task.queue_level as QueueLevel] ||
     QUEUE_COLORS[0];
@@ -445,10 +455,8 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
           <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
             <AlertCircle className="w-3 h-3" />
             <span>
-              {task.dependencies.filter(
-                (d) => d.depends_on_task?.status !== "completed",
-              ).length > 0
-                ? t("scheduler.taskCard.pendingDependencies", { count: task.dependencies.filter((d) => d.depends_on_task?.status !== "completed").length })
+              {pendingDependencyCount > 0
+                ? t("scheduler.taskCard.pendingDependencies", { count: pendingDependencyCount })
                 : t("scheduler.taskCard.allDependenciesCompleted")}
             </span>
           </div>

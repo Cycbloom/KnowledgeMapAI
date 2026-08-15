@@ -139,16 +139,16 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
   const contentRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(onClose, isOpen);
 
-  if (!isOpen || !edge) return null;
-
-  const groupedRelationshipTypes = relationshipTypes.reduce((acc, type) => {
+  const groupedRelationshipTypes = useMemo(() => relationshipTypes.reduce((acc, type) => {
     const category = type.category;
     if (!acc[category]) {
       acc[category] = [];
     }
     acc[category].push(type);
     return acc;
-  }, {} as Record<string, PresetRelationshipTypeConfig[]>);
+  }, {} as Record<string, PresetRelationshipTypeConfig[]>), [relationshipTypes]);
+
+  if (!isOpen || !edge) return null;
 
   return (
     <div

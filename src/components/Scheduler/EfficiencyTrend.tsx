@@ -57,15 +57,16 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
   };
 
   const chartData = getChartData();
-  const maxDuration = Math.max(
-    ...chartData.map((d: { duration: number }) => d.duration),
-    1,
+  // 单趟同时统计最大时长与总时长，替代 Math.max(...map) + reduce 两次扫描
+  const { maxDuration, totalDuration } = chartData.reduce(
+    (acc, d: { duration: number }) => {
+      if (d.duration > acc.maxDuration) acc.maxDuration = d.duration;
+      acc.totalDuration += d.duration;
+      return acc;
+    },
+    { maxDuration: 1, totalDuration: 0 },
   );
-  const avgDuration =
-    chartData.reduce(
-      (sum: number, d: { duration: number }) => sum + d.duration,
-      0,
-    ) / chartData.length;
+  const avgDuration = totalDuration / chartData.length;
 
   return (
     <div

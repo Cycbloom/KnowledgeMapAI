@@ -88,13 +88,16 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
   );
   const clearMuted = useNotificationsStore((s) => s.clearMuted);
 
+  // 预构建静音类型集合，将渲染/全选判断由 O(NOTIFICATION_TYPES*mutedTypes) 降为 O(NOTIFICATION_TYPES)
+  const mutedTypeSet = useMemo(() => new Set(mutedTypes), [mutedTypes]);
+
   const allMuted = useMemo(
-    () => NOTIFICATION_TYPES.every((type) => mutedTypes.includes(type)),
-    [mutedTypes],
+    () => NOTIFICATION_TYPES.every((type) => mutedTypeSet.has(type)),
+    [mutedTypeSet],
   );
   const allEnabled = useMemo(() => mutedTypes.length === 0, [mutedTypes]);
 
-  const isMuted = (type: NotificationType): boolean => mutedTypes.includes(type);
+  const isMuted = (type: NotificationType): boolean => mutedTypeSet.has(type);
 
   const toggleType = (type: NotificationType): void => {
     toggleMutedType(type);

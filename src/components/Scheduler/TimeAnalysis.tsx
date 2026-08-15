@@ -80,9 +80,16 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
 
     return timePeriods.map(period => {
       const periodData = period.hours.map(h => hourlyData[h]);
-      const totalDuration = periodData.reduce((sum, d) => sum + d.duration, 0);
-      const totalCount = periodData.reduce((sum, d) => sum + d.count, 0);
-      const peakHour = periodData.reduce((max, d) => d.duration > max.duration ? d : max, periodData[0]);
+      // 单趟同时统计总时长、总次数与峰值时段，替代三次 reduce 的 O(3*periodData) 扫描
+      const { totalDuration, totalCount, peakHour } = periodData.reduce(
+        (acc, d) => {
+          acc.totalDuration += d.duration;
+          acc.totalCount += d.count;
+          if (d.duration > acc.peakHour.duration) acc.peakHour = d;
+          return acc;
+        },
+        { totalDuration: 0, totalCount: 0, peakHour: periodData[0] },
+      );
 
       return {
         name: period.name,

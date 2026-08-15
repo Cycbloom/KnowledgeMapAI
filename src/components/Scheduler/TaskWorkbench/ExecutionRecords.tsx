@@ -117,13 +117,15 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
   };
 
   const groupedExecutions = groupByDate(executions);
-  const totalDuration = executions.reduce(
-    (sum, e) => sum + (e.duration || 0),
-    0,
+  // 单趟同时统计总时长与完成数，替代 reduce + filter 两次扫描
+  const { totalDuration, completedCount } = executions.reduce(
+    (acc, e) => {
+      acc.totalDuration += e.duration || 0;
+      if (e.status === "completed") acc.completedCount++;
+      return acc;
+    },
+    { totalDuration: 0, completedCount: 0 },
   );
-  const completedCount = executions.filter(
-    (e) => e.status === "completed",
-  ).length;
 
   if (loading) {
     return (

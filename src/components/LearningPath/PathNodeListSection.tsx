@@ -58,6 +58,15 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  // 预计算待处理且未关联任务的节点数，避免渲染中重复 filter 扫描
+  const pendingUnlinkedCount = React.useMemo(
+    () =>
+      pathDetail.nodes.filter(
+        (n) => n.status === "pending" && !n.related_task_id,
+      ).length,
+    [pathDetail.nodes],
+  );
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
       <button
@@ -95,7 +104,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
                         onClick={onToggleSelectAll}
                         className="text-sm text-primary-600 dark:text-primary-400 underline"
                       >
-                        {selectedNodeIds.size === pathDetail.nodes.filter((n) => n.status === "pending" && !n.related_task_id).length
+                        {selectedNodeIds.size === pendingUnlinkedCount
                           ? t('learningPath.pathNodeList.deselectAll')
                           : t('learningPath.pathNodeList.selectAllPending')}
                       </button>

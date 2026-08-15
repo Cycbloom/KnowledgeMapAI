@@ -98,11 +98,15 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
       ...displayQueues.q1,
       ...displayQueues.q2,
     ];
-    const pending = allTasks.filter((t) => t.status === "pending").length;
-    const inProgress = allTasks.filter(
-      (t) => t.status === "in_progress",
-    ).length;
-    const completed = allTasks.filter((t) => t.status === "completed").length;
+    // 单趟统计状态数量，替代三次 filter 的 O(3*tasks) 扫描
+    let pending = 0;
+    let inProgress = 0;
+    let completed = 0;
+    for (const t of allTasks) {
+      if (t.status === "pending") pending++;
+      else if (t.status === "in_progress") inProgress++;
+      else if (t.status === "completed") completed++;
+    }
     return { total: allTasks.length, pending, inProgress, completed };
   }, [displayQueues]);
 

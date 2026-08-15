@@ -10,6 +10,14 @@ import type {
 import { MindMapLink } from "../../GraphEditor/canvas/MindMapLink";
 import { getRelationColor } from "../../../utils/graphMapAdapter";
 
+// 预构建合法关系类型集合，避免渲染中每次对边做数组 includes 判断
+const VALID_RELATION_TYPE_SET = new Set<string>([
+  'prerequisite',
+  'extension',
+  'related',
+  'cross_domain',
+]);
+
 interface GraphEdgesProps {
   links: LayoutLink[];
   edges: Edge[];
@@ -38,9 +46,10 @@ const GraphEdgesComponent: React.FC<GraphEdgesProps> = ({
   const edgeColorMap = useMemo(() => {
     const map = new Map<string, string>();
     edges.forEach((edge) => {
-      const VALID_RELATION_TYPES: readonly string[] = ['prerequisite', 'extension', 'related', 'cross_domain'];
-      const relationType: GraphRelationType = VALID_RELATION_TYPES.includes(edge.relationship_type ?? '')
-        ? edge.relationship_type as GraphRelationType
+      const relationType: GraphRelationType = VALID_RELATION_TYPE_SET.has(
+        edge.relationship_type ?? '',
+      )
+        ? (edge.relationship_type as GraphRelationType)
         : 'related';
       map.set(edge.id, getRelationColor(relationType));
     });

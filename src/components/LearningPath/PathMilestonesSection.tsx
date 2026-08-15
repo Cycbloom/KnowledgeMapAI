@@ -17,6 +17,11 @@ const PathMilestonesSection: React.FC<PathMilestonesSectionProps> = ({
   onToggleSection,
 }) => {
   const { t } = useTranslation();
+  // 提前到早期返回之前，预计算已完成里程碑数，避免渲染中重复 filter 扫描
+  const completedCount = React.useMemo(
+    () => milestones.filter((m) => m.is_completed).length,
+    [milestones],
+  );
   if (milestones.length === 0) return null;
 
   const formatDate = (dateStr: string) => formatDateUtil(dateStr);
@@ -34,7 +39,7 @@ const PathMilestonesSection: React.FC<PathMilestonesSectionProps> = ({
           </span>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             (
-            {milestones.filter((m) => m.is_completed).length}
+            {completedCount}
             /{milestones.length})
           </span>
         </div>

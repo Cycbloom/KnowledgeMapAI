@@ -346,7 +346,7 @@ const TreeViewComponent: React.FC<TreeViewProps> = ({
           </g>
 
           {isExplorationMode && selectedNodeForBranch && branchSuggestions.length > 0 && (() => {
-            const layoutNode = visibleNodes.find(n => String(n.id).trim() === String(selectedNodeForBranch.id).trim());
+            const layoutNode = nodesMap.get(String(selectedNodeForBranch.id).trim());
             if (!layoutNode) return null;
             return (
               <AlternativeBranches
@@ -358,7 +358,7 @@ const TreeViewComponent: React.FC<TreeViewProps> = ({
             );
           })()}
           {isExplorationMode && historicalAlternativeBranches.map((item, index) => {
-            const node = visibleNodes.find(n => String(n.id).trim() === String(item.nodeId).trim());
+            const node = nodesMap.get(String(item.nodeId).trim());
             if (!node) return null;
             return (
               <AlternativeBranches

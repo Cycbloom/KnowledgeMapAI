@@ -49,20 +49,18 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
     [selectedModules]
   );
 
-  const isAnyLoading = useMemo(
-    () => modules.some(m => m.status === 'loading'),
-    [modules]
-  );
-
-  const completedCount = useMemo(
-    () => modules.filter(m => m.status === 'completed').length,
-    [modules]
-  );
-
-  const errorCount = useMemo(
-    () => modules.filter(m => m.status === 'error').length,
-    [modules]
-  );
+  // 单趟统计状态，替代三次 filter/some 的 O(3*modules) 扫描
+  const { isAnyLoading, completedCount, errorCount } = useMemo(() => {
+    let loading = false;
+    let completed = 0;
+    let error = 0;
+    for (const m of modules) {
+      if (m.status === 'loading') loading = true;
+      else if (m.status === 'completed') completed++;
+      else if (m.status === 'error') error++;
+    }
+    return { isAnyLoading: loading, completedCount: completed, errorCount: error };
+  }, [modules]);
 
   const handleExecute = () => {
     if (selectedIds.length > 0 && !isAnyLoading) {

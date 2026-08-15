@@ -201,6 +201,16 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     }));
   }, [t]);
 
+  // 预构建各作用域模板的 code 索引，避免渲染循环中对每个 code 做线性 find
+  const templateMaps = useMemo(
+    () => ({
+      graph: new Map(templates.graph.map((t) => [t.code, t])),
+      user: new Map(templates.user.map((t) => [t.code, t])),
+      system: new Map(templates.system.map((t) => [t.code, t])),
+    }),
+    [templates],
+  );
+
   const fetchTemplates = useCallback(async () => {
     setLoading(true);
     try {
@@ -220,15 +230,15 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
   const getEffectiveTemplate = (code: string): PromptTemplateEntry & { source: string } => {
     // If scope is graph, check graph -> user -> system
     if (scope === "graph") {
-      const graphTemp = templates.graph.find((t) => t.code === code);
+      const graphTemp = templateMaps.graph.get(code);
       if (graphTemp) return { ...graphTemp, source: "Graph" };
     }
 
     // If scope is user (or fallback for graph), check user -> system
-    const userTemp = templates.user.find((t) => t.code === code);
+    const userTemp = templateMaps.user.get(code);
     if (userTemp) return { ...userTemp, source: "User" };
 
-    const sysTemp = templates.system.find((t) => t.code === code);
+    const sysTemp = templateMaps.system.get(code);
     if (sysTemp) {
       return { ...sysTemp, source: "System" };
     }

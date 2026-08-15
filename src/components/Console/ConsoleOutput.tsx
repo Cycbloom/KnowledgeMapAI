@@ -479,7 +479,7 @@ export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
               <div className="space-y-1">
                 {visibleOutput.map((item, index) => (
                   <OutputItemComponent
-                    key={output.indexOf(item)}
+                    key={hiddenCount + index}
                     item={item}
                     isDark={isDark}
                     index={index}

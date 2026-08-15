@@ -11,9 +11,15 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ data }) => {
   const { isDark } = useTheme();
 
   const { totalDays, totalReviews, bestDay } = useMemo(() => {
-    const reviews = data.reduce((sum, d) => sum + d.count, 0);
-    const days = data.filter(d => d.count > 0).length;
-    const best = data.reduce((max, d) => Math.max(max, d.count), 0);
+    // 单趟同时统计总数、活跃天数与峰值，替代 reduce + filter + reduce 三次扫描
+    let reviews = 0;
+    let days = 0;
+    let best = 0;
+    for (const d of data) {
+      reviews += d.count;
+      if (d.count > 0) days++;
+      if (d.count > best) best = d.count;
+    }
     return { totalDays: days, totalReviews: reviews, bestDay: best };
   }, [data]);
 

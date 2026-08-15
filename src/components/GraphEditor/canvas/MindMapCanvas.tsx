@@ -458,6 +458,15 @@ export const MindMapCanvas = React.memo(
       isExplorationMode,
     );
 
+    // 预构建可见节点索引，将分支渲染循环中的线性 find 降为 O(1) 查找
+    const visibleNodesMap = useMemo(
+      () =>
+        new Map(
+          visibleNodes.map((n) => [String(n.id).trim(), n]),
+        ),
+      [visibleNodes],
+    );
+
     // Apply semantic zoom filtering on top of virtualization
     const semanticallyFilteredNodes = useMemo(() => {
       return visibleNodes.filter((node) => {
@@ -1165,10 +1174,8 @@ export const MindMapCanvas = React.memo(
               selectedNodeForBranch &&
               branchSuggestions.length > 0 &&
               (() => {
-                const layoutNode = visibleNodes.find(
-                  (n) =>
-                    String(n.id).trim() ===
-                    String(selectedNodeForBranch.id).trim(),
+                const layoutNode = visibleNodesMap.get(
+                  String(selectedNodeForBranch.id).trim(),
                 );
                 if (!layoutNode) return null;
                 return (
@@ -1182,8 +1189,8 @@ export const MindMapCanvas = React.memo(
               })()}
             {isExplorationMode &&
               historicalAlternativeBranches.map((item, index) => {
-                const node = visibleNodes.find(
-                  (n) => String(n.id).trim() === String(item.nodeId).trim(),
+                const node = visibleNodesMap.get(
+                  String(item.nodeId).trim(),
                 );
                 if (!node) return null;
                 return (

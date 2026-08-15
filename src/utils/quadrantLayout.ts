@@ -162,8 +162,26 @@ export function avoidCollisions(
 
   const iterations = 50;
   const dampingFactor = 0.1;
+  const cellSize = minDistance;
 
   for (let iter = 0; iter < iterations; iter++) {
+    // 空间网格快照：仅用于筛选候选邻居，位置仍实时读取
+    const grid = new Map<string, string[]>();
+    const cellKey = (x: number, y: number) =>
+      `${Math.floor(x / cellSize)},${Math.floor(y / cellSize)}`;
+
+    for (const id of adjustedPositions.keys()) {
+      const pos = adjustedPositions.get(id);
+      if (!pos) continue;
+      const key = cellKey(pos.x, pos.y);
+      const bucket = grid.get(key);
+      if (bucket) {
+        bucket.push(id);
+      } else {
+        grid.set(key, [id]);
+      }
+    }
+
     for (let i = 0; i < entries.length; i++) {
       const idA = entries[i][0];
       const currentA = adjustedPositions.get(idA);
@@ -172,21 +190,30 @@ export function avoidCollisions(
       let forceX = 0;
       let forceY = 0;
 
-      for (let j = 0; j < entries.length; j++) {
-        if (i === j) continue;
+      const cx = Math.floor(currentA.x / cellSize);
+      const cy = Math.floor(currentA.y / cellSize);
 
-        const idB = entries[j][0];
-        const currentB = adjustedPositions.get(idB);
-        if (!currentB) continue;
+      for (let dcx = -1; dcx <= 1; dcx++) {
+        for (let dcy = -1; dcy <= 1; dcy++) {
+          const bucket = grid.get(`${cx + dcx},${cy + dcy}`);
+          if (!bucket) continue;
 
-        const dx = currentA.x - currentB.x;
-        const dy = currentA.y - currentB.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+          for (const idB of bucket) {
+            if (idB === idA) continue;
 
-        if (distance < minDistance && distance > 0) {
-          const force = (minDistance - distance) / distance;
-          forceX += dx * force * dampingFactor;
-          forceY += dy * force * dampingFactor;
+            const currentB = adjustedPositions.get(idB);
+            if (!currentB) continue;
+
+            const dx = currentA.x - currentB.x;
+            const dy = currentA.y - currentB.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < minDistance && distance > 0) {
+              const force = (minDistance - distance) / distance;
+              forceX += dx * force * dampingFactor;
+              forceY += dy * force * dampingFactor;
+            }
+          }
         }
       }
 

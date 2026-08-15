@@ -63,15 +63,21 @@ export const createMindMapLayout = (
 
   const levelMap = buildLevelMap(nodes, edges);
 
+  const domainIndexByKey = domainGroups
+    ? new Map(
+        Array.from(domainGroups.keys()).map((key, idx) => [key, idx] as const),
+      )
+    : undefined;
+
   const layoutNodes: LayoutNode[] = nodes.map(node => {
     const domain = node.properties?.domain as string | undefined;
     let initialX = width / 2 + (Math.random() - 0.5) * 100;
     let initialY = height / 2 + (Math.random() - 0.5) * 100;
     
-    if (domain && domainGroups) {
+    if (domain && domainGroups && domainIndexByKey) {
       const domainNodeIds = domainGroups.get(domain);
       if (domainNodeIds) {
-        const domainIndex = Array.from(domainGroups.keys()).indexOf(domain);
+        const domainIndex = domainIndexByKey.get(domain) ?? 0;
         const angle = (domainIndex / domainGroups.size) * Math.PI * 2;
         const radius = Math.min(width, height) * 0.3;
         initialX = width / 2 + Math.cos(angle) * radius + (Math.random() - 0.5) * 50;

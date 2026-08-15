@@ -295,6 +295,12 @@ const applyHighlightsToDom = (
   const textNodes: { node: Text; start: number; end: number }[] = [];
   let currentOffset = 0;
 
+  // 预构建 range -> 下标 映射，避免给每个高亮片段重复线性 range.indexOf（原为 O(relevantRanges*ranges)）
+  const rangeIndexMap = new Map<HighlightRange, number>();
+  ranges.forEach((r, i) => {
+    rangeIndexMap.set(r, i);
+  });
+
   let node: Text | null;
   while ((node = walker.nextNode() as Text)) {
     const length = node.textContent?.length || 0;
@@ -343,7 +349,7 @@ const applyHighlightsToDom = (
           text: highlighted,
           highlight: true,
           range,
-          rangeIndex: ranges.indexOf(range),
+          rangeIndex: rangeIndexMap.get(range) ?? -1,
         });
       } else {
         parts.push({ text: highlighted, highlight: false });

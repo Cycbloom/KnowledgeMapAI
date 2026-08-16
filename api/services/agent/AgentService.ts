@@ -930,14 +930,20 @@ export class AgentService {
     const affectedSessionIds = [
       ...new Set(expiredActions.map((a) => a.session_id as string)),
     ];
-    for (const sessionId of affectedSessionIds) {
-      const { data: remainingData } = await this.supabase
-        .from("agent_pending_actions")
-        .select("id")
-        .eq("session_id", sessionId)
-        .eq("status", "pending");
 
-      if ((remainingData?.length ?? 0) === 0) {
+    // 单次批量查询剩余 pending 动作，替代逐 session 查询（O(n) 次 → 1 次）
+    const { data: remainingRows } = await this.supabase
+      .from("agent_pending_actions")
+      .select("session_id")
+      .eq("status", "pending")
+      .in("session_id", affectedSessionIds);
+
+    const sessionsWithRemaining = new Set(
+      (remainingRows ?? []).map((r) => r.session_id as string),
+    );
+
+    for (const sessionId of affectedSessionIds) {
+      if (!sessionsWithRemaining.has(sessionId)) {
         const session = await this.sessionManager.get(sessionId);
         if (session?.status === "awaiting_confirmation") {
           await this.sessionManager.update(sessionId, {

@@ -210,6 +210,8 @@ export const getNodeRelationsTool: AgentTool = {
 
       const newNodeIds = new Set<string>();
 
+      // 预收集本层全部新节点，避免逐条查询 knowledge_points（N+1 → 1 次批量查询）
+      const newRelativeNodes: Array<{ id: string; relationType: string }> = [];
       for (const edge of edges) {
         const relatedNodeId = direction === 'upstream'
           ? edge.source_knowledge_point_id
@@ -221,35 +223,46 @@ export const getNodeRelationsTool: AgentTool = {
 
         visitedNodes.add(relatedNodeId);
         newNodeIds.add(relatedNodeId);
+        newRelativeNodes.push({
+          id: relatedNodeId,
+          relationType: edge.relationship_type,
+        });
+      }
 
-        const { data: relatedKp } = await supabase
+      if (newRelativeNodes.length > 0) {
+        const { data: relatedKps } = await supabase
           .from('knowledge_points')
           .select('id, title')
-          .eq('id', relatedNodeId)
-          .single();
+          .in('id', newRelativeNodes.map((n) => n.id));
 
-        if (!relatedKp) {
-          continue;
-        }
+        const titleMap = new Map<string, string>();
+        (relatedKps || []).forEach((kp) => {
+          titleMap.set(kp.id, kp.title);
+        });
 
-        assignIdx(relatedNodeId, relatedKp.title);
+        for (const { id, relationType } of newRelativeNodes) {
+          const title = titleMap.get(id);
+          if (!title) continue;
 
-        const relation = summarize
-          ? {
-              idx: nodeIdToIdx[relatedNodeId],
-              title: relatedKp.title,
-              relationType: edge.relationship_type,
-            }
-          : {
-              id: relatedNodeId,
-              title: relatedKp.title,
-              relationType: edge.relationship_type,
-            };
+          assignIdx(id, title);
 
-        if (direction === 'upstream') {
-          upstreamNodes.push(relation);
-        } else {
-          downstreamNodes.push(relation);
+          const relation = summarize
+            ? {
+                idx: nodeIdToIdx[id],
+                title,
+                relationType,
+              }
+            : {
+                id,
+                title,
+                relationType,
+              };
+
+          if (direction === 'upstream') {
+            upstreamNodes.push(relation);
+          } else {
+            downstreamNodes.push(relation);
+          }
         }
       }
 

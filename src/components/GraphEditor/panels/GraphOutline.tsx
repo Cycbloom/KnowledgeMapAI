@@ -45,6 +45,40 @@ import { asyncConfirm } from "../../../utils/asyncConfirm";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
 import { LiteratureHoverCard } from "../LiteratureHoverCard";
 import { HIERARCHICAL_EDGE_TYPES } from '../../../config/relationshipTypes';
+import { VirtualList } from "../../common/VirtualList";
+
+// ─── Outline 视图扁平化行类型（用于虚拟化）────────────────────────────────────
+
+interface ModuleGroup {
+  key: string;
+  label: string;
+  icon: string;
+  color: string;
+  nodes: Node[];
+}
+
+interface LiteratureGroup {
+  key: string;
+  title: string;
+  authors?: string[];
+  year?: number;
+  url?: string;
+  fileName?: string;
+  type?: string;
+  journal?: string;
+  doi?: string;
+  keywords?: string[];
+  abstract?: string;
+  nodes: Node[];
+}
+
+type ModuleRow =
+  | { type: "group"; group: ModuleGroup }
+  | { type: "node"; group: ModuleGroup; node: Node };
+
+type LiteratureRow =
+  | { type: "group"; group: LiteratureGroup }
+  | { type: "node"; group: LiteratureGroup; node: Node };
 
 interface GraphOutlineProps {
   nodes: Node[];
@@ -703,6 +737,189 @@ export const GraphOutline = React.memo(function GraphOutline({
     });
   }, []);
 
+  // ── 分组视图扁平化行数组（供 VirtualList 使用）────────────────────────────
+  const moduleRows = useMemo<ModuleRow[]>(() => {
+    const rows: ModuleRow[] = [];
+    for (const group of moduleGroups) {
+      rows.push({ type: "group", group });
+      if (expandedModules.has(group.key)) {
+        for (const node of group.nodes) {
+          rows.push({ type: "node", group, node });
+        }
+      }
+    }
+    return rows;
+  }, [moduleGroups, expandedModules]);
+
+  const literatureRows = useMemo<LiteratureRow[]>(() => {
+    const rows: LiteratureRow[] = [];
+    for (const group of literatureGroups) {
+      rows.push({ type: "group", group });
+      if (expandedLiteratures.has(group.key)) {
+        for (const node of group.nodes) {
+          rows.push({ type: "node", group, node });
+        }
+      }
+    }
+    return rows;
+  }, [literatureGroups, expandedLiteratures]);
+
+  // ── 模块分组行渲染 ─────────────────────────────────────────────────────────
+  const renderModuleGroupRow = (group: ModuleGroup, groupIndex: number) => {
+    const isExpanded = expandedModules.has(group.key);
+    const hasNodes = group.nodes.length > 0;
+    const allRefined =
+      hasNodes && group.nodes.every((n) => !n.properties?.needsRefinement);
+
+    return (
+      <div
+        role="treeitem"
+        aria-level={1}
+        aria-expanded={hasNodes ? isExpanded : undefined}
+        aria-selected={false}
+        aria-setsize={moduleGroups.length}
+        aria-posinset={groupIndex + 1}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowRight') {
+            if (hasNodes && !isExpanded) {
+              e.preventDefault();
+              toggleModuleExpand(group.key);
+            }
+          } else if (e.key === 'ArrowLeft') {
+            if (hasNodes && isExpanded) {
+              e.preventDefault();
+              toggleModuleExpand(group.key);
+            }
+          }
+        }}
+        className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400"
+        style={{ borderLeft: `3px solid ${group.color}` }}
+        onClick={() => toggleModuleExpand(group.key)}
+      >
+        <span className="text-sm" aria-hidden="true">{group.icon}</span>
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex-1">
+          {group.label}
+        </span>
+        {hasNodes && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium" aria-hidden="true">
+            {group.nodes.length}
+          </span>
+        )}
+        {hasNodes &&
+          (allRefined ? (
+            <CheckCircle2
+              size={14}
+              className="text-green-500 dark:text-green-400"
+              aria-hidden="true"
+            />
+          ) : (
+            <Circle
+              size={14}
+              className="text-gray-400 dark:text-gray-500"
+              aria-hidden="true"
+            />
+          ))}
+        {isExpanded ? (
+          <ChevronDown size={14} className="text-slate-400" aria-hidden="true" />
+        ) : (
+          <ChevronRight size={14} className="text-slate-400" aria-hidden="true" />
+        )}
+      </div>
+    );
+  };
+
+  const renderModuleNodeRow = (
+    group: ModuleGroup,
+    node: Node,
+    nodeIndex: number,
+  ) => {
+    const level = node.level || "leaf";
+    const isSelected = selectedNodeIds.has(node.id);
+    const backboneModule = node.properties?.backboneModule as
+      | BackboneModule
+      | undefined;
+
+    return (
+      <div
+        role="treeitem"
+        aria-level={2}
+        aria-setsize={group.nodes.length}
+        aria-posinset={nodeIndex + 1}
+        aria-selected={selectedNodeId === node.id && !isMultiSelectMode}
+        tabIndex={selectedNodeId === node.id && !isMultiSelectMode ? 0 : -1}
+        className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-left group focus:outline-none focus:ring-2 focus:ring-primary-400
+          ${
+            selectedNodeId === node.id && !isMultiSelectMode
+              ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
+              : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+        onClick={() => {
+          if (isMultiSelectMode) {
+            handleToggleSelection(node.id);
+          } else {
+            onNodeClick(node);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (isMultiSelectMode) {
+              handleToggleSelection(node.id);
+            } else {
+              onNodeClick(node);
+            }
+          }
+        }}
+      >
+        {isMultiSelectMode && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleSelection(node.id);
+            }}
+            className="cursor-pointer text-slate-400 hover:text-primary-500"
+            aria-hidden="true"
+          >
+            {isSelected ? (
+              <CheckSquare size={16} className="text-primary-500" aria-hidden="true" />
+            ) : (
+              <Square size={16} aria-hidden="true" />
+            )}
+          </div>
+        )}
+        <div
+          className="w-2 h-2 rounded-full shrink-0"
+          style={{
+            backgroundColor: getLevelColors(node.level || "leaf")
+              .primary,
+          }}
+          aria-hidden="true"
+        />
+        <span className="truncate flex-1 font-medium flex items-center gap-1.5">
+          {backboneModule && (
+            <BackboneNodeIcon
+              module={backboneModule}
+              size="small"
+              showTooltip={true}
+            />
+          )}
+          {node.title || t("graphEditor.outline.unnamedNode")}
+        </span>
+        <span
+          className="text-[10px] px-1 py-0.5 rounded uppercase"
+          style={{
+            backgroundColor: getLevelColors(level).background,
+            color: getLevelColors(level).text,
+          }}
+          aria-hidden="true"
+        >
+          {level}
+        </span>
+      </div>
+    );
+  };
+
   const renderModuleView = () => {
     if (moduleGroups.length === 0) {
       return (
@@ -712,163 +929,214 @@ export const GraphOutline = React.memo(function GraphOutline({
       );
     }
 
-    return moduleGroups.map((group, groupIndex) => {
-      const isExpanded = expandedModules.has(group.key);
-      const hasNodes = group.nodes.length > 0;
-      const allRefined =
-        hasNodes && group.nodes.every((n) => !n.properties?.needsRefinement);
-      const groupChildrenId = `outline-module-children-${group.key}`;
+    return (
+      <VirtualList
+        items={moduleRows}
+        getItemKey={(index) => {
+          const row = moduleRows[index];
+          return row?.type === "group"
+            ? `module-group-${row.group.key}`
+            : `module-node-${row.node.id}`;
+        }}
+        estimateSize={() => 36}
+        renderItem={(row) =>
+          row.type === "group"
+            ? renderModuleGroupRow(
+                row.group,
+                moduleGroups.indexOf(row.group),
+              )
+            : renderModuleNodeRow(
+                row.group,
+                row.node,
+                row.group.nodes.indexOf(row.node),
+              )
+        }
+        animate={false}
+        className="h-full"
+      />
+    );
+  };
 
-      return (
-        <div key={group.key} className="mb-1">
-          <div
-            role="treeitem"
-            aria-level={1}
-            aria-expanded={hasNodes ? isExpanded : undefined}
-            aria-selected={false}
-            aria-setsize={moduleGroups.length}
-            aria-posinset={groupIndex + 1}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowRight') {
-                if (hasNodes && !isExpanded) {
-                  e.preventDefault();
-                  toggleModuleExpand(group.key);
-                }
-              } else if (e.key === 'ArrowLeft') {
-                if (hasNodes && isExpanded) {
-                  e.preventDefault();
-                  toggleModuleExpand(group.key);
-                }
-              }
-            }}
-            className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400"
-            style={{ borderLeft: `3px solid ${group.color}` }}
-            onClick={() => toggleModuleExpand(group.key)}
+  const renderLiteratureGroupRow = (
+    group: LiteratureGroup,
+    groupIndex: number,
+  ) => {
+    const isExpanded = expandedLiteratures.has(group.key);
+    const isUncategorized = group.key === "__uncategorized__";
+
+    return (
+      <div
+        role="treeitem"
+        aria-level={1}
+        aria-expanded={isExpanded}
+        aria-selected={false}
+        aria-setsize={literatureGroups.length}
+        aria-posinset={groupIndex + 1}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowRight') {
+            if (!isExpanded) {
+              e.preventDefault();
+              toggleLiteratureExpand(group.key);
+            }
+          } else if (e.key === 'ArrowLeft') {
+            if (isExpanded) {
+              e.preventDefault();
+              toggleLiteratureExpand(group.key);
+            }
+          }
+        }}
+        className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-md transition-colors relative group/literature focus:outline-none focus:ring-2 focus:ring-primary-400 ${
+          isUncategorized
+            ? "hover:bg-slate-50 dark:hover:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-500"
+            : "hover:bg-slate-50 dark:hover:bg-slate-800"
+        }`}
+        style={{
+          borderLeft: isUncategorized
+            ? "3px solid var(--slate-400)"
+            : "3px solid var(--tertiary-500)",
+        }}
+        onClick={() => toggleLiteratureExpand(group.key)}
+        onMouseEnter={(e) => {
+          if (!isUncategorized) {
+            if (literatureHideTimerRef.current) {
+              clearTimeout(literatureHideTimerRef.current);
+              literatureHideTimerRef.current = null;
+            }
+            const rect = e.currentTarget.getBoundingClientRect();
+            setHoveredLiterature({
+              key: group.key,
+              title: group.title,
+              authors: group.authors,
+              year: group.year,
+              url: group.url,
+              fileName: group.fileName,
+              type: group.type,
+              journal: group.journal,
+              doi: group.doi,
+              keywords: group.keywords,
+              abstract: group.abstract,
+              nodes: group.nodes,
+            });
+            setHoverPosition({ x: rect.right, y: rect.top });
+          }
+        }}
+        onMouseLeave={() => {
+          literatureHideTimerRef.current = setTimeout(() => {
+            setHoveredLiterature(null);
+            setHoverPosition(null);
+          }, 200);
+        }}
+      >
+        {isUncategorized ? (
+          <FolderOpen size={14} className="text-slate-400" aria-hidden="true" />
+        ) : (
+          <FileText size={14} className="text-purple-500" aria-hidden="true" />
+        )}
+        <div className="flex-1 min-w-0">
+          <span
+            className={`text-sm truncate block ${
+              isUncategorized
+                ? "font-normal text-slate-500 dark:text-slate-400"
+                : "font-medium text-slate-700 dark:text-slate-300"
+            }`}
           >
-            <span className="text-sm" aria-hidden="true">{group.icon}</span>
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex-1">
-              {group.label}
+            {group.title}
+          </span>
+          {isUncategorized ? (
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 italic block">
+              {t('graphEditor.outline.noSourceConcept')}
             </span>
-            {hasNodes && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium" aria-hidden="true">
-                {group.nodes.length}
+          ) : (
+            group.authors &&
+            group.authors.length > 0 && (
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate block">
+                {group.authors.join(", ")}
+                {group.year ? ` (${group.year})` : ""}
               </span>
-            )}
-            {hasNodes &&
-              (allRefined ? (
-                <CheckCircle2
-                  size={14}
-                  className="text-green-500 dark:text-green-400"
-                  aria-hidden="true"
-                />
-              ) : (
-                <Circle
-                  size={14}
-                  className="text-gray-400 dark:text-gray-500"
-                  aria-hidden="true"
-                />
-              ))}
-            {isExpanded ? (
-              <ChevronDown size={14} className="text-slate-400" aria-hidden="true" />
-            ) : (
-              <ChevronRight size={14} className="text-slate-400" aria-hidden="true" />
-            )}
-          </div>
-          {isExpanded && hasNodes && (
-            <div className="ml-2" role="group" id={groupChildrenId}>
-              {group.nodes.map((node, nodeIndex) => {
-                const level = node.level || "leaf";
-                const isSelected = selectedNodeIds.has(node.id);
-                const backboneModule = node.properties?.backboneModule as
-                  | BackboneModule
-                  | undefined;
-
-                return (
-                  <div
-                    key={node.id}
-                    role="treeitem"
-                    aria-level={2}
-                    aria-setsize={group.nodes.length}
-                    aria-posinset={nodeIndex + 1}
-                    aria-selected={selectedNodeId === node.id && !isMultiSelectMode}
-                    tabIndex={selectedNodeId === node.id && !isMultiSelectMode ? 0 : -1}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-left group focus:outline-none focus:ring-2 focus:ring-primary-400
-                      ${
-                        selectedNodeId === node.id && !isMultiSelectMode
-                          ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
-                          : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                      }`}
-                    onClick={() => {
-                      if (isMultiSelectMode) {
-                        handleToggleSelection(node.id);
-                      } else {
-                        onNodeClick(node);
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        if (isMultiSelectMode) {
-                          handleToggleSelection(node.id);
-                        } else {
-                          onNodeClick(node);
-                        }
-                      }
-                    }}
-                  >
-                    {isMultiSelectMode && (
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleSelection(node.id);
-                        }}
-                        className="cursor-pointer text-slate-400 hover:text-primary-500"
-                        aria-hidden="true"
-                      >
-                        {isSelected ? (
-                          <CheckSquare size={16} className="text-primary-500" aria-hidden="true" />
-                        ) : (
-                          <Square size={16} aria-hidden="true" />
-                        )}
-                      </div>
-                    )}
-                    <div
-                      className="w-2 h-2 rounded-full shrink-0"
-                      style={{
-                        backgroundColor: getLevelColors(node.level || "leaf")
-                          .primary,
-                      }}
-                      aria-hidden="true"
-                    />
-                    <span className="truncate flex-1 font-medium flex items-center gap-1.5">
-                      {backboneModule && (
-                        <BackboneNodeIcon
-                          module={backboneModule}
-                          size="small"
-                          showTooltip={true}
-                        />
-                      )}
-                      {node.title || t("graphEditor.outline.unnamedNode")}
-                    </span>
-                    <span
-                      className="text-[10px] px-1 py-0.5 rounded uppercase"
-                      style={{
-                        backgroundColor: getLevelColors(level).background,
-                        color: getLevelColors(level).text,
-                      }}
-                      aria-hidden="true"
-                    >
-                      {level}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            )
           )}
         </div>
-      );
-    });
+        <span
+          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${
+            isUncategorized
+              ? "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
+              : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+          }`}
+          aria-hidden="true"
+        >
+          {group.nodes.length}
+        </span>
+        {isExpanded ? (
+          <ChevronDown
+            size={14}
+            className="text-slate-400 flex-shrink-0"
+            aria-hidden="true"
+          />
+        ) : (
+          <ChevronRight
+            size={14}
+            className="text-slate-400 flex-shrink-0"
+            aria-hidden="true"
+          />
+        )}
+      </div>
+    );
+  };
+
+  const renderLiteratureNodeRow = (
+    group: LiteratureGroup,
+    node: Node,
+    nodeIndex: number,
+  ) => {
+    const backboneModule = node.properties?.backboneModule as
+      | BackboneModule
+      | undefined;
+
+    return (
+      <div
+        role="treeitem"
+        aria-level={2}
+        aria-setsize={group.nodes.length}
+        aria-posinset={nodeIndex + 1}
+        aria-selected={selectedNodeId === node.id}
+        tabIndex={selectedNodeId === node.id ? 0 : -1}
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 ${
+          selectedNodeId === node.id
+            ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
+            : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+        }`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onNodeClick(node);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onNodeClick(node);
+          }
+        }}
+      >
+        <div
+          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+          style={{
+            backgroundColor: getLevelColors(
+              node.level || "leaf",
+            ).primary,
+          }}
+          aria-hidden="true"
+        />
+        {backboneModule && (
+          <BackboneNodeIcon
+            module={backboneModule}
+            size="small"
+          />
+        )}
+        <span className="text-sm truncate flex-1">
+          {node.title}
+        </span>
+      </div>
+    );
   };
 
   const renderLiteratureView = () => {
@@ -881,189 +1149,34 @@ export const GraphOutline = React.memo(function GraphOutline({
     }
 
     return (
-      <div className="relative">
-        {literatureGroups.map((group, groupIndex) => {
-          const isExpanded = expandedLiteratures.has(group.key);
-          const isUncategorized = group.key === "__uncategorized__";
-          const groupChildrenId = `outline-literature-children-${group.key}`;
-
-          return (
-            <div key={group.key} className="mb-1">
-              <div
-                role="treeitem"
-                aria-level={1}
-                aria-expanded={isExpanded}
-                aria-selected={false}
-                aria-setsize={literatureGroups.length}
-                aria-posinset={groupIndex + 1}
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'ArrowRight') {
-                    if (!isExpanded) {
-                      e.preventDefault();
-                      toggleLiteratureExpand(group.key);
-                    }
-                  } else if (e.key === 'ArrowLeft') {
-                    if (isExpanded) {
-                      e.preventDefault();
-                      toggleLiteratureExpand(group.key);
-                    }
-                  }
-                }}
-                className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-md transition-colors relative group/literature focus:outline-none focus:ring-2 focus:ring-primary-400 ${
-                  isUncategorized
-                    ? "hover:bg-slate-50 dark:hover:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-500"
-                    : "hover:bg-slate-50 dark:hover:bg-slate-800"
-                }`}
-                style={{
-                  borderLeft: isUncategorized
-                    ? "3px solid var(--slate-400)"
-                    : "3px solid var(--tertiary-500)",
-                }}
-                onClick={() => toggleLiteratureExpand(group.key)}
-                onMouseEnter={(e) => {
-                  if (!isUncategorized) {
-                    if (literatureHideTimerRef.current) {
-                      clearTimeout(literatureHideTimerRef.current);
-                      literatureHideTimerRef.current = null;
-                    }
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setHoveredLiterature({
-                      key: group.key,
-                      title: group.title,
-                      authors: group.authors,
-                      year: group.year,
-                      url: group.url,
-                      fileName: group.fileName,
-                      type: group.type,
-                      journal: group.journal,
-                      doi: group.doi,
-                      keywords: group.keywords,
-                      abstract: group.abstract,
-                      nodes: group.nodes,
-                    });
-                    setHoverPosition({ x: rect.right, y: rect.top });
-                  }
-                }}
-                onMouseLeave={() => {
-                  literatureHideTimerRef.current = setTimeout(() => {
-                    setHoveredLiterature(null);
-                    setHoverPosition(null);
-                  }, 200);
-                }}
-              >
-                {isUncategorized ? (
-                  <FolderOpen size={14} className="text-slate-400" aria-hidden="true" />
-                ) : (
-                  <FileText size={14} className="text-purple-500" aria-hidden="true" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <span
-                    className={`text-sm truncate block ${
-                      isUncategorized
-                        ? "font-normal text-slate-500 dark:text-slate-400"
-                        : "font-medium text-slate-700 dark:text-slate-300"
-                    }`}
-                  >
-                    {group.title}
-                  </span>
-                  {isUncategorized ? (
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 italic block">
-                      {t('graphEditor.outline.noSourceConcept')}
-                    </span>
-                  ) : (
-                    group.authors &&
-                    group.authors.length > 0 && (
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate block">
-                        {group.authors.join(", ")}
-                        {group.year ? ` (${group.year})` : ""}
-                      </span>
-                    )
-                  )}
-                </div>
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${
-                    isUncategorized
-                      ? "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
-                      : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
-                  }`}
-                  aria-hidden="true"
-                >
-                  {group.nodes.length}
-                </span>
-                {isExpanded ? (
-                  <ChevronDown
-                    size={14}
-                    className="text-slate-400 flex-shrink-0"
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <ChevronRight
-                    size={14}
-                    className="text-slate-400 flex-shrink-0"
-                    aria-hidden="true"
-                  />
-                )}
-              </div>
-              {isExpanded && (
-                <div className="ml-2 mt-0.5 space-y-0.5" role="group" id={groupChildrenId}>
-                  {group.nodes.map((node, nodeIndex) => {
-                    const backboneModule = node.properties?.backboneModule as
-                      | BackboneModule
-                      | undefined;
-
-                    return (
-                      <div
-                        key={node.id}
-                        role="treeitem"
-                        aria-level={2}
-                        aria-setsize={group.nodes.length}
-                        aria-posinset={nodeIndex + 1}
-                        aria-selected={selectedNodeId === node.id}
-                        tabIndex={selectedNodeId === node.id ? 0 : -1}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 ${
-                          selectedNodeId === node.id
-                            ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
-                            : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onNodeClick(node);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            onNodeClick(node);
-                          }
-                        }}
-                      >
-                        <div
-                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          style={{
-                            backgroundColor: getLevelColors(
-                              node.level || "leaf",
-                            ).primary,
-                          }}
-                          aria-hidden="true"
-                        />
-                        {backboneModule && (
-                          <BackboneNodeIcon
-                            module={backboneModule}
-                            size="small"
-                          />
-                        )}
-                        <span className="text-sm truncate flex-1">
-                          {node.title}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
+      <>
+        <VirtualList
+          items={literatureRows}
+          getItemKey={(index) => {
+            const row = literatureRows[index];
+            return row?.type === "group"
+              ? `literature-group-${row.group.key}`
+              : `literature-node-${row.node.id}`;
+          }}
+          estimateSize={(index) => {
+            const row = literatureRows[index];
+            return row?.type === "group" ? 44 : 32;
+          }}
+          renderItem={(row) =>
+            row.type === "group"
+              ? renderLiteratureGroupRow(
+                  row.group,
+                  literatureGroups.indexOf(row.group),
+                )
+              : renderLiteratureNodeRow(
+                  row.group,
+                  row.node,
+                  row.group.nodes.indexOf(row.node),
+                )
+          }
+          animate={false}
+          className="h-full"
+        />
         {hoveredLiterature && hoverPosition && (
           <LiteratureHoverCard
             literature={hoveredLiterature}
@@ -1083,7 +1196,7 @@ export const GraphOutline = React.memo(function GraphOutline({
             }}
           />
         )}
-      </div>
+      </>
     );
   };
 
@@ -1097,74 +1210,83 @@ export const GraphOutline = React.memo(function GraphOutline({
       );
     }
 
-    return processedNodes.map((node) => {
-      const level = node.level || "leaf";
-      const isSelected = selectedNodeIds.has(node.id);
-      const backboneModule = node.properties?.backboneModule as
-        | BackboneModule
-        | undefined;
+    return (
+      <VirtualList
+        items={processedNodes}
+        getItemKey={(index) => processedNodes[index]?.id ?? index}
+        estimateSize={() => 36}
+        renderItem={(node) => {
+          const level = node.level || "leaf";
+          const isSelected = selectedNodeIds.has(node.id);
+          const backboneModule = node.properties?.backboneModule as
+            | BackboneModule
+            | undefined;
 
-      return (
-        <div
-          key={node.id}
-          className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-left group
-            ${
-              selectedNodeId === node.id && !isMultiSelectMode
-                ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
-                : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-            }`}
-          onClick={() => {
-            if (isMultiSelectMode) {
-              handleToggleSelection(node.id);
-            } else {
-              onNodeClick(node);
-            }
-          }}
-        >
-          {isMultiSelectMode && (
+          return (
             <div
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleSelection(node.id);
+              className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-left group
+                ${
+                  selectedNodeId === node.id && !isMultiSelectMode
+                    ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
+                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              onClick={() => {
+                if (isMultiSelectMode) {
+                  handleToggleSelection(node.id);
+                } else {
+                  onNodeClick(node);
+                }
               }}
-              className="cursor-pointer text-slate-400 hover:text-primary-500"
             >
-              {isSelected ? (
-                <CheckSquare size={16} className="text-primary-500" aria-hidden="true" />
-              ) : (
-                <Square size={16} aria-hidden="true" />
+              {isMultiSelectMode && (
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleSelection(node.id);
+                  }}
+                  className="cursor-pointer text-slate-400 hover:text-primary-500"
+                >
+                  {isSelected ? (
+                    <CheckSquare size={16} className="text-primary-500" aria-hidden="true" />
+                  ) : (
+                    <Square size={16} aria-hidden="true" />
+                  )}
+                </div>
               )}
-            </div>
-          )}
 
-          <div
-            className="w-2 h-2 rounded-full shrink-0"
-            style={{
-              backgroundColor: getLevelColors(node.level || "leaf").primary,
-            }}
-          />
-          <span className="truncate flex-1 font-medium flex items-center gap-1.5">
-            {backboneModule && (
-              <BackboneNodeIcon
-                module={backboneModule}
-                size="small"
-                showTooltip={true}
+              <div
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{
+                  backgroundColor: getLevelColors(node.level || "leaf").primary,
+                }}
               />
-            )}
-            {node.title || t("graphEditor.outline.unnamedNode")}
-          </span>
-          <span
-            className="text-[10px] px-1 py-0.5 rounded uppercase"
-            style={{
-              backgroundColor: getLevelColors(level).background,
-              color: getLevelColors(level).text,
-            }}
-          >
-            {level}
-          </span>
-        </div>
-      );
-    });
+              <span className="truncate flex-1 font-medium flex items-center gap-1.5">
+                {backboneModule && (
+                  <BackboneNodeIcon
+                    module={backboneModule}
+                    size="small"
+                    showTooltip={true}
+                  />
+                )}
+                {node.title || t("graphEditor.outline.unnamedNode")}
+              </span>
+              <span
+                className="text-[10px] px-1 py-0.5 rounded uppercase"
+                style={{
+                  backgroundColor: getLevelColors(level).background,
+                  color: getLevelColors(level).text,
+                }}
+              >
+                {level}
+              </span>
+            </div>
+          );
+        }}
+        animate={false}
+        role="tree"
+        className="h-full"
+      />
+    );
   };
 
   // Helper to select all direct children of a node
@@ -1721,7 +1843,7 @@ export const GraphOutline = React.memo(function GraphOutline({
         !searchQuery.trim() &&
         filterLevel === "all" ? (
           <div
-            className="space-y-0.5 px-2"
+            className="h-full px-2"
             role="tree"
             aria-label={t('graphEditor.outline.treeLabel')}
           >
@@ -1731,7 +1853,7 @@ export const GraphOutline = React.memo(function GraphOutline({
           !searchQuery.trim() &&
           filterLevel === "all" ? (
           <div
-            className="space-y-0.5 px-2"
+            className="h-full px-2"
             role="tree"
             aria-label={t('graphEditor.outline.treeLabel')}
           >
@@ -1740,7 +1862,7 @@ export const GraphOutline = React.memo(function GraphOutline({
         ) : viewMode === "list" ||
           searchQuery.trim() ||
           filterLevel !== "all" ? (
-          <div className="space-y-0.5 px-2">{renderList()}</div>
+          <div className="h-full px-2">{renderList()}</div>
         ) : (
           <div
             className="space-y-0.5"

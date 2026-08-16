@@ -333,45 +333,61 @@ export class AutoGraphService {
     }
 
     const edgesToCreate: CreateEdgeData[] = [];
+
+    // 预构建缺失父节点索引：一次性批量查询所有不在 nodeMap 中的 parentId，替代循环内逐条查询（N 次 → 1 次）
+    const missingParentIds = Array.from(
+      new Set(
+        validNodes
+          .filter(
+            (n) =>
+              n.parentId &&
+              !nodeMap.has(n.parentId) &&
+              nodeMap.has(n.tempId),
+          )
+          .map((n) => n.parentId as string),
+      ),
+    );
+    const parentKpByGraphNodeId = new Map<string, string>();
+    if (missingParentIds.length > 0) {
+      try {
+        const { data: existingParents } = await supabase
+          .from("graph_nodes")
+          .select("id, knowledge_point_id")
+          .in("id", missingParentIds)
+          .eq("graph_id", graphId);
+
+        for (const p of existingParents ?? []) {
+          parentKpByGraphNodeId.set(p.id, p.knowledge_point_id);
+        }
+      } catch (e) {
+        logger.warn(`Could not query parent nodes in batch`, {
+          error: (e as Error).message,
+        });
+      }
+    }
+
     for (const nodeData of validNodes) {
       if (nodeData.parentId) {
         let parentInfo = nodeMap.get(nodeData.parentId);
         const childInfo = nodeMap.get(nodeData.tempId);
 
         if (!parentInfo && childInfo) {
-          try {
-            const { data: existingNode, error } = await supabase
-              .from("graph_nodes")
-              .select("knowledge_point_id")
-              .eq("id", nodeData.parentId)
-              .eq("graph_id", graphId)
-              .single();
-
-            if (!error && existingNode) {
-              parentInfo = {
-                graphNodeId: nodeData.parentId,
-                knowledgePointId: existingNode.knowledge_point_id,
-              };
-              logger.info(`Found parent node in database`, {
-                parentId: nodeData.parentId,
-                knowledgePointId: existingNode.knowledge_point_id,
-                childTempId: nodeData.tempId,
-              });
-            } else {
-              logger.warn(`Parent node not found in database`, {
-                parentId: nodeData.parentId,
-                error: error?.message,
-                childTempId: nodeData.tempId,
-              });
-            }
-          } catch (e) {
-            logger.warn(
-              `Could not find parent node ${nodeData.parentId} in database`,
-              {
-                error: (e as Error).message,
-                childTempId: nodeData.tempId,
-              },
-            );
+          const foundKpId = parentKpByGraphNodeId.get(nodeData.parentId);
+          if (foundKpId) {
+            parentInfo = {
+              graphNodeId: nodeData.parentId,
+              knowledgePointId: foundKpId,
+            };
+            logger.info(`Found parent node in database`, {
+              parentId: nodeData.parentId,
+              knowledgePointId: foundKpId,
+              childTempId: nodeData.tempId,
+            });
+          } else {
+            logger.warn(`Parent node not found in database`, {
+              parentId: nodeData.parentId,
+              childTempId: nodeData.tempId,
+            });
           }
         } else if (parentInfo) {
           logger.info(`Parent found in nodeMap`, {

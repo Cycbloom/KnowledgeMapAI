@@ -416,8 +416,10 @@ export class GraphNodeService {
     });
 
     const batchId = crypto.randomUUID();
+    // 预构建 id→knowledge_point_id 索引，将循环内 find 的 O(n) 线性扫描降为 Map 查询 O(1)
+    const nodeIndex = new Map(graphNodes?.map((gn) => [gn.id, gn.knowledge_point_id]));
     for (const gnId of graphNodeIds) {
-      const kpId = graphNodes?.find(gn => gn.id === gnId)?.knowledge_point_id;
+      const kpId = nodeIndex.get(gnId);
       await graphVersionService.recordEvent(
         supabase,
         graphId,

@@ -44,6 +44,9 @@ export class AnalysisRouteService {
         g.title.toLowerCase(),
       );
 
+      // 预构建 Set，将循环内 existingTitles.includes 的 O(n) 线性扫描降为 has 的 O(1) 查询
+      const existingTitlesSet = new Set(existingTitles);
+
       let domainContext = '';
       let domainName = '';
 
@@ -141,7 +144,7 @@ ${domainContext ? `5. 基于上述已有内容，推荐新的、不重复的知�
                 const [title, description, priority] = parts.map((s) =>
                   s.trim(),
                 );
-                if (title && !existingTitles.includes(title.toLowerCase())) {
+                if (title && !existingTitlesSet.has(title.toLowerCase())) {
                   recommendations.push({
                     title,
                     description: description || '',
@@ -152,7 +155,7 @@ ${domainContext ? `5. 基于上述已有内容，推荐新的、不重复的知�
                 }
               }
             } else if (typeof item === 'object' && item.title) {
-              if (!existingTitles.includes(item.title.toLowerCase())) {
+              if (!existingTitlesSet.has(item.title.toLowerCase())) {
                 recommendations.push({
                   title: item.title,
                   description: item.description || '',
@@ -180,7 +183,8 @@ ${domainContext ? `5. 基于上述已有内容，推荐新的、不重复的知�
 
       if (domainContext && existingTitles.length > 0) {
         const beforeCount = recommendations.length;
-        const existingSet = new Set(existingTitles.map((t) => t.toLowerCase()));
+        // 复用已预构建的 Set，避免重复扫描并重建查找表
+        const existingSet = existingTitlesSet;
         recommendations = recommendations.filter((rec) => {
           const titleLower = rec.title.toLowerCase();
           const isTooSimilar = Array.from(existingSet).some(
@@ -201,7 +205,6 @@ ${domainContext ? `5. 基于上述已有内容，推荐新的、不重复的知�
       const validTitles = new Set(
         recommendations.map((r) => r.title.toLowerCase()),
       );
-      const existingTitlesSet = new Set(existingTitles);
 
       graphRelations = graphRelations.filter((rel) => {
         const fromLower = rel.from_title.toLowerCase();

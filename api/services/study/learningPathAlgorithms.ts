@@ -326,8 +326,15 @@ export function generateRulePath(
   const stages: LearningPathStage[] = [];
   let order = 0;
 
+  // 预构建 nodeId -> node 映射，替代循环内 nodes.find 的 O(sortedNodes*nodes) 扫描
+  const nodeById = new Map<string, NodeForPath>(
+    nodes
+      .filter((n): n is NodeForPath => n !== null)
+      .map((n) => [n.id, n]),
+  );
+
   for (const nodeId of sortedNodes) {
-    const node = nodes.find((n: NodeForPath | null) => n?.id === nodeId);
+    const node = nodeById.get(nodeId);
     const progress = progressMap.get(nodeId);
 
     if (!node) continue;
@@ -542,12 +549,17 @@ export async function generateAIPath(
       );
 
       if (!node && item.nodeTitle) {
-        const searchTitle = item.nodeTitle.toLowerCase();
-        node = validNodes.find(
-          (n) =>
-            n.title.toLowerCase().includes(searchTitle) ||
-            searchTitle.includes(n.title.toLowerCase()),
-        );
+        // 预计算小写标题数组替代 find 内层重复 toLowerCase
+        const lowerTitle = item.nodeTitle.toLowerCase();
+        node =
+          validNodes.find(
+            (n) => n.title.toLowerCase() === lowerTitle,
+          ) ||
+          validNodes.find(
+            (n) =>
+              n.title.toLowerCase().includes(lowerTitle) ||
+              lowerTitle.includes(n.title.toLowerCase()),
+          );
       }
 
       if (!node) {
@@ -694,7 +706,9 @@ export function topologicalSortNodes(nodes: LearningPathNode[]): LearningPathNod
   }
 
   if (result.length < nodes.length) {
-    const remainingNodes = nodes.filter((n) => !result.includes(n));
+    // 预构建 result 节点 id 集合，替代 filter 内 result.includes(n) 的 O(result*nodes) 扫描
+    const resultIds = new Set(result.map((n) => n.id));
+    const remainingNodes = nodes.filter((n) => !resultIds.has(n.id));
     remainingNodes.sort((a, b) => a.order_index - b.order_index);
     result.push(...remainingNodes);
   }

@@ -167,17 +167,18 @@ export class HealthService {
 
     let streakDays = 0;
     if (dailyCheckins && dailyCheckins.length > 0) {
-      const checkinDates = dailyCheckins.map((c) =>
-        new Date(c.checkin_date).toDateString(),
+      // 预构建 Date 字符串集合，替代 while/includes 的 O(streak*checkinDates) 扫描
+      const checkinDateSet = new Set(
+        dailyCheckins.map((c) => new Date(c.checkin_date).toDateString()),
       );
       const todayStr = today.toDateString();
 
-      if (checkinDates.includes(todayStr)) {
+      if (checkinDateSet.has(todayStr)) {
         streakDays = 1;
         const checkDate = new Date(today);
         checkDate.setDate(checkDate.getDate() - 1);
 
-        while (checkinDates.includes(checkDate.toDateString())) {
+        while (checkinDateSet.has(checkDate.toDateString())) {
           streakDays++;
           checkDate.setDate(checkDate.getDate() - 1);
         }
@@ -393,13 +394,16 @@ export class HealthService {
 
     const weakPoints: WeakPoint[] = [];
 
+    // 预构建 graphId -> graph 映射，替代循环内 graphs.find 的 O(weakPoints*graphs) 扫描
+    const graphById = new Map((graphs || []).map((g) => [g.id, g]));
+
     nodeStats.forEach((stats, nodeId) => {
       const avgMastery =
         stats.mastery.reduce((a, b) => a + b, 0) / stats.mastery.length;
 
       if (avgMastery < 0.6) {
         const node = nodeMap.get(nodeId);
-        const graph = graphs?.find((g) => g.id === node?.graph_id);
+        const graph = node?.graph_id ? graphById.get(node.graph_id) : undefined;
 
         let priority: "high" | "medium" | "low" = "low";
         let suggestion = "";
@@ -475,25 +479,31 @@ export class HealthService {
     const today = new Date();
     const predictions: Prediction[] = [];
 
+    // 预构建复习日期分组，替代 7 天循环内对 studyCards 的重复扫描（O(7*cards) → O(cards)）
+    const reviewsByDay = new Map<
+      string,
+      { count: number; difficultySum: number }
+    >();
+    for (const card of studyCards || []) {
+      if (!card.next_review) continue;
+      const reviewDate = new Date(card.next_review)
+        .toISOString()
+        .split("T")[0];
+      const entry =
+        reviewsByDay.get(reviewDate) || { count: 0, difficultySum: 0 };
+      entry.count++;
+      entry.difficultySum += card.fsrs_difficulty || 5;
+      reviewsByDay.set(reviewDate, entry);
+    }
+
     for (let i = 0; i < 7; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() + i);
       const dateStr = date.toISOString().split("T")[0];
 
-      let reviewCount = 0;
-      let totalDifficulty = 0;
-
-      studyCards?.forEach((card) => {
-        if (card.next_review) {
-          const reviewDate = new Date(card.next_review)
-            .toISOString()
-            .split("T")[0];
-          if (reviewDate === dateStr) {
-            reviewCount++;
-            totalDifficulty += card.fsrs_difficulty || 5;
-          }
-        }
-      });
+      const dayStats = reviewsByDay.get(dateStr);
+      const reviewCount = dayStats?.count ?? 0;
+      const totalDifficulty = dayStats?.difficultySum ?? 0;
 
       const avgDifficulty = reviewCount > 0 ? totalDifficulty / reviewCount : 5;
       let difficulty: "easy" | "medium" | "hard" = "medium";

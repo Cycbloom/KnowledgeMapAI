@@ -420,10 +420,11 @@ export class GraphService {
     // 分离内容性字段（写入 knowledge_graph_contents）和元数据字段（写入 knowledge_graphs）
     const contentFields: Record<string, unknown> = {};
     const metadataUpdates: Record<string, unknown> = {};
-    const contentFieldKeys = ['reference_books', 'external_links', 'learning_guide', 'podcast_script'];
+    // 预构建 Set，将循环内 includes 的 O(n) 线性扫描降为 has 的 O(1) 查询
+    const contentFieldKeys = new Set(['reference_books', 'external_links', 'learning_guide', 'podcast_script']);
 
     for (const [key, value] of Object.entries(updates)) {
-      if (contentFieldKeys.includes(key)) {
+      if (contentFieldKeys.has(key)) {
         contentFields[key] = value;
       } else {
         metadataUpdates[key] = value;

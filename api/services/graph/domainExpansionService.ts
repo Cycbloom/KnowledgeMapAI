@@ -128,6 +128,9 @@ class DomainExpansionService {
         g.title.toLowerCase(),
       );
 
+      // 预构建 Set，将循环内 existingTitles.includes 的 O(n) 线性扫描降为 has 的 O(1) 查询
+      const existingTitlesSet = new Set(existingTitles);
+
       let domainContext = '';
 
       if (targetDomainId) {
@@ -224,7 +227,7 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
                 const [title, description, priority] = parts.map((s) =>
                   s.trim(),
                 );
-                if (title && !existingTitles.includes(title.toLowerCase())) {
+                if (title && !existingTitlesSet.has(title.toLowerCase())) {
                   recommendations.push({
                     title,
                     description: description || '',
@@ -235,7 +238,7 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
                 }
               }
             } else if (typeof item === 'object' && item.title) {
-              if (!existingTitles.includes(item.title.toLowerCase())) {
+              if (!existingTitlesSet.has(item.title.toLowerCase())) {
                 recommendations.push({
                   title: item.title,
                   description: item.description || '',
@@ -264,7 +267,6 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
       const validTitles = new Set(
         recommendations.map((r) => r.title.toLowerCase()),
       );
-      const existingTitlesSet = new Set(existingTitles);
 
       graphRelations = graphRelations.filter((rel) => {
         const fromLower = rel.from_title.toLowerCase();

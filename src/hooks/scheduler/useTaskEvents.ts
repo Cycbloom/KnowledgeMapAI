@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { useStore } from "../../store/useStore";
 import { queryKeys } from "../queries/config";
-import { Task } from "../../types";
+import { Task, TaskRuntimeProgress } from "../../types";
 import {
   isElectronProduction,
   getElectronApiUrl,
@@ -14,6 +14,69 @@ import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 const SSE_HEARTBEAT_TIMEOUT = 300000;
 const SSE_RECONNECT_DELAY_BASE = 1000;
 const SSE_RECONNECT_MAX_ATTEMPTS = 10;
+
+/**
+ * 与 useTaskQueries.useTasks 的 queryFn 返回结构保持一致。
+ * 跨边界共享类型放在 shared 中更合适，但 useTaskQueries.ts 仍以 inline
+ * interface 形式定义，这里为 SSE handler 独立维护一份以避免循环依赖。
+ */
+interface TasksPage {
+  tasks: Task[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+/**
+ * 将后端 SSE 推送的 progress payload（字段名：stage/progress/current_node/processed/total）
+ * 映射为前端 TaskRuntimeProgress（字段名：stage/percent/current/completed/total）。
+ *
+ * 后端 TaskProgress 接口带 [key: string]: unknown 索引签名，processor 可能传任意字段组合。
+ * 同时兼容前端字段名（percent/current/completed），便于未来后端统一命名后无需改动此处。
+ * 返回 undefined 表示无可识别的进度字段（前端降级为原 spinner，不抛错）。
+ */
+const mapToRuntimeProgress = (
+  raw: unknown,
+): TaskRuntimeProgress | undefined => {
+  if (!raw || typeof raw !== "object") {
+    return undefined;
+  }
+
+  const p = raw as Record<string, unknown>;
+
+  const stage = typeof p.stage === "string" ? p.stage : undefined;
+  const stageLabel =
+    typeof p.stageLabel === "string" ? p.stageLabel : undefined;
+  const percent =
+    typeof p.progress === "number"
+      ? p.progress
+      : typeof p.percent === "number"
+        ? p.percent
+        : undefined;
+  const current =
+    typeof p.current_node === "string"
+      ? p.current_node
+      : typeof p.current === "string"
+        ? p.current
+        : undefined;
+  const completed =
+    typeof p.processed === "number"
+      ? p.processed
+      : typeof p.completed === "number"
+        ? p.completed
+        : undefined;
+  const total = typeof p.total === "number" ? p.total : undefined;
+
+  const runtime: TaskRuntimeProgress = {};
+  if (stage !== undefined) runtime.stage = stage;
+  if (stageLabel !== undefined) runtime.stageLabel = stageLabel;
+  if (percent !== undefined) runtime.percent = percent;
+  if (current !== undefined) runtime.current = current;
+  if (completed !== undefined) runtime.completed = completed;
+  if (total !== undefined) runtime.total = total;
+
+  return Object.keys(runtime).length > 0 ? runtime : undefined;
+};
 
 export const useTaskEvents = () => {
   const queryClient = useQueryClient();
@@ -133,30 +196,55 @@ export const useTaskEvents = () => {
 
             if (data.type === "task_update") {
               const { taskId, status } = data;
+              const runtimeProgress = mapToRuntimeProgress(data.progress);
 
-              // 旧状态检测：从调度器单任务缓存读取（["scheduler","task",id]），
-              // 避免依赖从未被填充的 ["tasks"] 死缓存键。
-              const cachedTask = queryClient.getQueryData<Task>(
-                queryKeys.schedulerTask(taskId),
-              );
-              const oldStatus = cachedTask?.status;
+              // 旧状态检测：从已缓存的 system_tasks 列表分页中查找匹配任务
+              // （按 ["tasks", ...] 前缀遍历所有 status/limit/offset 变体），
+              // 避免依赖从未被精确填充的死缓存键。
+              const tasksQueries = queryClient.getQueriesData<TasksPage>({
+                queryKey: queryKeys.tasksPrefix,
+              });
+              let oldStatus: Task["status"] | undefined;
+              for (const [, cached] of tasksQueries) {
+                const found = cached?.tasks.find((t) => t.id === taskId);
+                if (found) {
+                  oldStatus = found.status;
+                  break;
+                }
+              }
 
               if (oldStatus && oldStatus !== status) {
                 frontendEventBus.publish("scheduler_task_status_changed", {
                   taskId,
                   oldStatus,
                   newStatus: status,
-                  taskType: cachedTask?.task_type,
+                  taskType: undefined,
                 });
               }
 
-              // 调度器任务列表为多过滤器变体，无法精确 setQueryData，统一按
-              // ["scheduler","tasks"] 前缀失效以刷新所有变体。
-              queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-              // 单任务详情失效（注意键为 ["scheduler","task",id]，非 ["task",id]）。
-              queryClient.invalidateQueries({
-                queryKey: queryKeys.schedulerTask(taskId),
-              });
+              // 将 runtime_progress 写入所有匹配的任务列表分页缓存（精确
+              // setQueryData 只能命中单分页，setQueriesData + 前缀匹配覆盖
+              // 所有 status/limit/offset 变体），使 TaskProgressBar 即时更新。
+              if (runtimeProgress !== undefined) {
+                queryClient.setQueriesData<TasksPage | undefined>(
+                  { queryKey: queryKeys.tasksPrefix },
+                  (oldPage) => {
+                    if (!oldPage) return oldPage;
+                    return {
+                      ...oldPage,
+                      tasks: oldPage.tasks.map((t) =>
+                        t.id === taskId
+                          ? { ...t, runtime_progress: runtimeProgress }
+                          : t,
+                      ),
+                    };
+                  },
+                );
+              }
+
+              // 刷新 status 等后端权威字段：按 ["tasks", ...] 前缀失效，命中
+              // useTasks 列表与任何其他 tasks 派生查询。
+              queryClient.invalidateQueries({ queryKey: queryKeys.tasksPrefix });
             }
           } catch (err) {
             console.error("[SSE] Error parsing message:", err);

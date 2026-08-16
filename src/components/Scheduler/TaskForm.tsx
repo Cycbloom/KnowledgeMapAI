@@ -39,10 +39,11 @@ import {
   PrioritySuggestion,
 } from "../../services/api/taskRecommendation";
 import { TemplateSelector } from "./TemplateSelector";
-import { useFormDraft, useBeforeUnload } from "../../hooks";
+import { useFormDraft, useBeforeUnload, useAutofocus } from "../../hooks";
 import { useKeyboardHandler } from "../../hooks/gesture/useKeyboardHandler";
 import { ConfirmationModal } from "../common/ConfirmationModal";
 import { SaveButton } from "../common/SaveButton";
+import { CharCounter } from "../common/CharCounter";
 
 interface TaskFormProps {
   task?: UserTask;
@@ -84,6 +85,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const isEditing = !!task;
 
   const fieldIdBase = useId();
+  const titleInputRef = useAutofocus<HTMLInputElement>();
   const titleFieldId = `${fieldIdBase}-title`;
   const titleErrorId = `${fieldIdBase}-title-error`;
   const descriptionFieldId = `${fieldIdBase}-description`;
@@ -212,6 +214,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   );
   const [customTag, setCustomTag] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [titleTouched, setTitleTouched] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [prioritySuggestion, setPrioritySuggestion] =
     useState<PrioritySuggestion | null>(null);
@@ -307,12 +310,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     }
   };
 
-  const validate = () => {
+  const validate = (nextTitle?: string) => {
+    const currentTitle = nextTitle ?? title;
     const newErrors: Record<string, string> = {};
-    if (!title.trim()) {
+    if (!currentTitle.trim()) {
       newErrors.title = t("scheduler.taskForm.errorTitleRequired");
     }
-    if (title.length > 100) {
+    if (currentTitle.length > 100) {
       newErrors.title = t("scheduler.taskForm.errorTitleTooLong");
     }
     setErrors(newErrors);
@@ -523,14 +527,20 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <div className="flex gap-2">
               <input
                 id={titleFieldId}
+                ref={titleInputRef}
                 aria-invalid={!!errors.title}
                 aria-describedby={errors.title ? titleErrorId : undefined}
                 type="text"
                 autoComplete="off"
                 value={title}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, title: e.target.value }))
-                }
+                onChange={(e) => {
+                  setFormData((prev) => ({ ...prev, title: e.target.value }));
+                  if (titleTouched) validate(e.target.value);
+                }}
+                onBlur={() => {
+                  setTitleTouched(true);
+                  validate();
+                }}
                 placeholder={t("scheduler.taskForm.titlePlaceholder")}
                 className={`
                   flex-1 input-mobile rounded-xl
@@ -563,12 +573,19 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 <span className="text-sm font-medium">AI</span>
               </button>
             </div>
-            {errors.title && (
-              <p role="alert" id={titleErrorId} className="mt-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
-                <AlertCircle size={12} />
-                {errors.title}
-              </p>
-            )}
+            <div className="mt-1 flex items-center justify-between gap-2">
+              {errors.title && (
+                <p role="alert" id={titleErrorId} className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  {errors.title}
+                </p>
+              )}
+              <CharCounter
+                value={title.length}
+                max={100}
+                className="ml-auto"
+              />
+            </div>
           </div>
 
           <div>
@@ -578,6 +595,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <textarea
               id={descriptionFieldId}
               autoComplete="off"
+              maxLength={2000}
               value={description}
               onChange={(e) =>
                 setFormData((prev) => ({
@@ -595,6 +613,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 resize-none transition-all
               "
             />
+            <div className="mt-1 flex justify-end">
+              <CharCounter value={description.length} max={2000} />
+            </div>
           </div>
 
           <div>
@@ -1091,9 +1112,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 />
               );
             })()}
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 text-right">
-              {context.length}/2000
-            </p>
+            <div className="mt-1 flex justify-end">
+              <CharCounter value={context.length} max={2000} />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

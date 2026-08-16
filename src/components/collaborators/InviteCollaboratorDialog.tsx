@@ -2,8 +2,9 @@ import React, { useState, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { CollaboratorRole, COLLABORATOR_ROLE_LABELS } from "@shared/types";
-import { useFocusTrap, useEscapeKey, useFormDraft } from "@/hooks/common";
+import { useFocusTrap, useEscapeKey, useFormDraft, useAutofocus } from "@/hooks/common";
 import { ConfirmationModal } from "../common/ConfirmationModal";
+import { Button } from "../common/Button";
 
 interface InviteCollaboratorDialogProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
   const [submitting, setSubmitting] = useState(false);
 
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  const emailInputRef = useAutofocus<HTMLInputElement>();
   useEscapeKey(() => onClose(), isOpen);
 
   if (!isOpen) return null;
@@ -82,6 +84,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
                 id="invite-email"
                 type="email"
                 autoComplete="email"
+                ref={emailInputRef}
                 value={draft.email}
                 onChange={(e) => setDraft(prev => ({ ...prev, email: e.target.value }))}
                 onBlur={() => setTouched(true)}
@@ -118,15 +121,17 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
             >
               {t('collaborators.invite.dialog.cancel')}
             </button>
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
+              loading={submitting}
               disabled={submitting}
-              className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting
                 ? t("collaborators.invite.inviting")
                 : t("collaborators.invite.invite")}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

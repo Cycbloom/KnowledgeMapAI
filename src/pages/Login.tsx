@@ -9,9 +9,10 @@ import {
 } from "../config/authConfig";
 import { getSupabaseClient, resetSupabaseClient } from "../utils/supabase";
 import { useStore } from "../store/useStore";
-import { useTheme, useFormDraft } from "../hooks";
+import { useTheme, useFormDraft, useAutofocus } from "../hooks";
 import { useKeyboardHandler } from "../hooks/gesture/useKeyboardHandler";
 import { ConfirmationModal } from "../components/common/ConfirmationModal";
+import { Button } from "../components/common/Button";
 import { isElectron } from "../config/electronConfig";
 import { logger } from "../utils/logger";
 import type { AIProviderType } from "@shared/types/ai";
@@ -115,6 +116,7 @@ export const Login = () => {
   const navigate = useNavigate();
   const setUser = useStore((state) => state.setUser);
   const { isDark, toggleTheme } = useTheme();
+  const quickEmailRef = useAutofocus<HTMLInputElement>();
 
   const {
     value: draft,
@@ -1278,6 +1280,7 @@ export const Login = () => {
               id={quickEmailInputId}
               type="email"
               autoComplete="email"
+              ref={quickEmailRef}
               value={draft.email}
               onChange={(e) =>
                 setDraft((prev) => ({ ...prev, email: e.target.value }))
@@ -1329,20 +1332,17 @@ export const Login = () => {
                 {authError}
               </p>
             )}
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
+              loading={authenticating}
               disabled={authenticating}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {authenticating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {t("configPage.signingIn")}
-                </>
-              ) : (
-                t("configPage.signIn")
-              )}
-            </button>
+              {authenticating
+                ? t("configPage.signingIn")
+                : t("configPage.signIn")}
+            </Button>
           </form>
         </div>
       )}
@@ -1639,20 +1639,17 @@ export const Login = () => {
                 {authError}
               </p>
             )}
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
+              loading={authenticating}
               disabled={authenticating}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {authenticating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {t("configPage.signingIn")}
-                </>
-              ) : (
-                t("configPage.signIn")
-              )}
-            </button>
+              {authenticating
+                ? t("configPage.signingIn")
+                : t("configPage.signIn")}
+            </Button>
           </form>
         </div>
       )}

@@ -18,12 +18,7 @@ import { ArrowLeft, Lock, LogIn, AlertTriangle } from "lucide-react";
 import { GraphToolbar } from "../components/GraphEditor/toolbar/GraphToolbar";
 import { MindMapCanvas } from "../components/GraphEditor/canvas/MindMapCanvas";
 import { QuadrantCanvas } from "../components/GraphEditor/canvas/QuadrantCanvas";
-import { ExplorationTimeline } from "../components/GraphEditor/shared/ExplorationTimeline";
-import { GraphStyleSettings } from "../components/GraphEditor/shared/GraphStyleSettings";
-import { RelationshipTypeSettings } from "../components/GraphEditor/shared/RelationshipTypeSettings";
 import { NodeBreadcrumb, type NodeBreadcrumbItem } from "../components/GraphEditor/shared/NodeBreadcrumb";
-
-import { GraphModalManager } from "../components/GraphEditor/modals/GraphModalManager";
 import {
   useGraphEffects,
   useGraphEditorState,
@@ -57,7 +52,6 @@ import {
   useAIStatus,
 } from "../hooks/queries";
 import { useGraphMutations } from "../hooks/mutations";
-import { MobileNodeActionMenu } from "../components/GraphEditor/mobile/MobileNodeActionMenu";
 import type {
   Node as GraphNode,
   ColorScheme,
@@ -195,6 +189,36 @@ const StoryEditor = lazy(() =>
 const Console = lazy(() =>
   import("../components/Console/Console").then((module) => ({
     default: module.Console,
+  })),
+);
+
+const GraphModalManager = lazy(() =>
+  import("../components/GraphEditor/modals/GraphModalManager").then((module) => ({
+    default: module.GraphModalManager,
+  })),
+);
+
+const GraphStyleSettings = lazy(() =>
+  import("../components/GraphEditor/shared/GraphStyleSettings").then((module) => ({
+    default: module.GraphStyleSettings,
+  })),
+);
+
+const RelationshipTypeSettings = lazy(() =>
+  import("../components/GraphEditor/shared/RelationshipTypeSettings").then((module) => ({
+    default: module.RelationshipTypeSettings,
+  })),
+);
+
+const ExplorationTimeline = lazy(() =>
+  import("../components/GraphEditor/shared/ExplorationTimeline").then((module) => ({
+    default: module.ExplorationTimeline,
+  })),
+);
+
+const MobileNodeActionMenu = lazy(() =>
+  import("../components/GraphEditor/mobile/MobileNodeActionMenu").then((module) => ({
+    default: module.MobileNodeActionMenu,
   })),
 );
 
@@ -1634,20 +1658,22 @@ export const GraphEditor = () => {
       )}
 
       {isTimelineVisible && isExplorationMode && (
-        <ExplorationTimeline
-          explorationPath={explorationPathOps.explorationPath}
-          currentPathIndex={explorationPathOps.currentPathIndex}
-          sidebarMode={sidebarMode}
-          onGoToIndex={handleTimelineGoToIndex}
-          onGoBack={handleTimelineGoBack}
-          onGoForward={handleTimelineGoForward}
-          onSwitchBranch={handleTimelineSwitchBranch}
-          canGoBack={explorationPathOps.canGoBack()}
-          canGoForward={explorationPathOps.canGoForward()}
-          isDark={isDark}
-          isCollapsed={!isTimelineVisible}
-          onToggleCollapse={handleTimelineToggleCollapse}
-        />
+        <Suspense fallback={<ViewLoader />}>
+          <ExplorationTimeline
+            explorationPath={explorationPathOps.explorationPath}
+            currentPathIndex={explorationPathOps.currentPathIndex}
+            sidebarMode={sidebarMode}
+            onGoToIndex={handleTimelineGoToIndex}
+            onGoBack={handleTimelineGoBack}
+            onGoForward={handleTimelineGoForward}
+            onSwitchBranch={handleTimelineSwitchBranch}
+            canGoBack={explorationPathOps.canGoBack()}
+            canGoForward={explorationPathOps.canGoForward()}
+            isDark={isDark}
+            isCollapsed={!isTimelineVisible}
+            onToggleCollapse={handleTimelineToggleCollapse}
+          />
+        </Suspense>
       )}
 
       {sidebarMode === "none" && !isMobile && (
@@ -1667,36 +1693,42 @@ export const GraphEditor = () => {
         content={panelState.actionResult?.content || ""}
       />
 
-      <GraphModalManager
-        id={id || ""}
-        state={state}
-        graphMeta={graphMeta}
-        aiEnabled={aiEnabled}
-        tutorOps={tutorOps}
-        nodes={nodes}
-      />
+      <Suspense fallback={<ViewLoader />}>
+        <GraphModalManager
+          id={id || ""}
+          state={state}
+          graphMeta={graphMeta}
+          aiEnabled={aiEnabled}
+          tutorOps={tutorOps}
+          nodes={nodes}
+        />
+      </Suspense>
 
-      <GraphStyleSettings
-        isOpen={panelState.isStyleSettingsOpen}
-        onClose={() => panelState.setIsStyleSettingsOpen(false)}
-        currentColorScheme={colorScheme}
-        currentLinkStyle={linkStyle}
-        currentLinkAnimation={linkAnimation}
-        onColorSchemeChange={setColorScheme}
-        onLinkStyleChange={setLinkStyle}
-        onLinkAnimationChange={setLinkAnimation}
-        nodeSizeMode={nodeSizeMode}
-        onNodeSizeModeChange={setNodeSizeMode}
-        edgeWidthMode={edgeWidthMode}
-        onEdgeWidthModeChange={setEdgeWidthMode}
-        coloringMode={coloringMode}
-        onOpenRelationshipTypeSettings={handleOpenRelationshipTypeSettings}
-      />
+      <Suspense fallback={<ViewLoader />}>
+        <GraphStyleSettings
+          isOpen={panelState.isStyleSettingsOpen}
+          onClose={() => panelState.setIsStyleSettingsOpen(false)}
+          currentColorScheme={colorScheme}
+          currentLinkStyle={linkStyle}
+          currentLinkAnimation={linkAnimation}
+          onColorSchemeChange={setColorScheme}
+          onLinkStyleChange={setLinkStyle}
+          onLinkAnimationChange={setLinkAnimation}
+          nodeSizeMode={nodeSizeMode}
+          onNodeSizeModeChange={setNodeSizeMode}
+          edgeWidthMode={edgeWidthMode}
+          onEdgeWidthModeChange={setEdgeWidthMode}
+          coloringMode={coloringMode}
+          onOpenRelationshipTypeSettings={handleOpenRelationshipTypeSettings}
+        />
+      </Suspense>
 
-      <RelationshipTypeSettings
-        isOpen={panelState.isRelationshipTypeSettingsOpen}
-        onClose={() => panelState.setIsRelationshipTypeSettingsOpen(false)}
-      />
+      <Suspense fallback={<ViewLoader />}>
+        <RelationshipTypeSettings
+          isOpen={panelState.isRelationshipTypeSettingsOpen}
+          onClose={() => panelState.setIsRelationshipTypeSettingsOpen(false)}
+        />
+      </Suspense>
 
       <Suspense fallback={<ViewLoader />}>
         <ErrorBoundary>
@@ -1818,18 +1850,20 @@ export const GraphEditor = () => {
       </Suspense>
 
       {isMobile && (
-        <MobileNodeActionMenu
-          isOpen={mobileActionMenuOpen}
-          onClose={handleMobileActionClose}
-          nodeId={mobileActionNodeId}
-          nodeTitle={mobileActionNodeId ? nodeById.get(mobileActionNodeId)?.title : undefined}
-          onEdit={handleMobileEdit}
-          onAIExpand={handleMobileAIExpand}
-          onGenerateContent={handleMobileGenerateContent}
-          onGenerateCards={handleMobileGenerateCards}
-          onStartLearning={handleMobileStartLearning}
-          onDelete={handleMobileDelete}
-        />
+        <Suspense fallback={<ViewLoader />}>
+          <MobileNodeActionMenu
+            isOpen={mobileActionMenuOpen}
+            onClose={handleMobileActionClose}
+            nodeId={mobileActionNodeId}
+            nodeTitle={mobileActionNodeId ? nodeById.get(mobileActionNodeId)?.title : undefined}
+            onEdit={handleMobileEdit}
+            onAIExpand={handleMobileAIExpand}
+            onGenerateContent={handleMobileGenerateContent}
+            onGenerateCards={handleMobileGenerateCards}
+            onStartLearning={handleMobileStartLearning}
+            onDelete={handleMobileDelete}
+          />
+        </Suspense>
       )}
       {user?.id && (
         <Suspense fallback={<ViewLoader />}>

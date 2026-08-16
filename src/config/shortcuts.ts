@@ -468,6 +468,60 @@ const SHORTCUTS_DATA = [
     defaultKeys: { key: ',', ctrl: true },
     action: 'openSettings',
     icon: 'Settings'
+  },
+  {
+    id: 'nav-dashboard',
+    name: 'shortcuts.actions.nav-dashboard.name',
+    description: 'shortcuts.actions.nav-dashboard.description',
+    category: 'navigation',
+    defaultKeys: { key: '1', alt: true },
+    action: 'navDashboard',
+    icon: 'BarChart3'
+  },
+  {
+    id: 'nav-graph-map',
+    name: 'shortcuts.actions.nav-graph-map.name',
+    description: 'shortcuts.actions.nav-graph-map.description',
+    category: 'navigation',
+    defaultKeys: { key: '2', alt: true },
+    action: 'navGraphMap',
+    icon: 'Network'
+  },
+  {
+    id: 'nav-tasks',
+    name: 'shortcuts.actions.nav-tasks.name',
+    description: 'shortcuts.actions.nav-tasks.description',
+    category: 'navigation',
+    defaultKeys: { key: '3', alt: true },
+    action: 'navTasks',
+    icon: 'ListChecks'
+  },
+  {
+    id: 'nav-study',
+    name: 'shortcuts.actions.nav-study.name',
+    description: 'shortcuts.actions.nav-study.description',
+    category: 'navigation',
+    defaultKeys: { key: '4', alt: true },
+    action: 'navStudy',
+    icon: 'GraduationCap'
+  },
+  {
+    id: 'nav-notes',
+    name: 'shortcuts.actions.nav-notes.name',
+    description: 'shortcuts.actions.nav-notes.description',
+    category: 'navigation',
+    defaultKeys: { key: '5', alt: true },
+    action: 'navNotes',
+    icon: 'NotebookPen'
+  },
+  {
+    id: 'nav-scheduler',
+    name: 'shortcuts.actions.nav-scheduler.name',
+    description: 'shortcuts.actions.nav-scheduler.description',
+    category: 'navigation',
+    defaultKeys: { key: '6', alt: true },
+    action: 'navScheduler',
+    icon: 'Calendar'
   }
 ] as const;
 

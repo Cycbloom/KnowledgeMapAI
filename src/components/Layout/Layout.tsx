@@ -195,6 +195,13 @@ export const Layout = () => {
       openSettings: () => {
         navigate("/settings");
       },
+      // 页面直达快捷键：通过 Alt+数字 快速跳转到对应页面
+      navDashboard: () => navigate("/"),
+      navGraphMap: () => navigate("/graph-map"),
+      navTasks: () => navigate("/tasks"),
+      navStudy: () => navigate("/study"),
+      navNotes: () => navigate("/notes"),
+      navScheduler: () => navigate("/scheduler"),
     },
     enabled: true,
   });

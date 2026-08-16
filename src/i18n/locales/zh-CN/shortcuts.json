@@ -49,7 +49,13 @@
     "presentation-prev": { "name": "演示上一页", "description": "在演示模式下显示上一页" },
     "toggle-theme": { "name": "切换主题", "description": "切换亮色/暗色主题" },
     "export": { "name": "导出", "description": "打开导出对话框" },
-    "settings": { "name": "设置", "description": "打开设置面板" }
+    "settings": { "name": "设置", "description": "打开设置面板" },
+    "nav-dashboard": { "name": "我的图谱", "description": "跳到我的图谱首页" },
+    "nav-graph-map": { "name": "图谱地图", "description": "跳到知识图谱地图" },
+    "nav-tasks": { "name": "任务", "description": "跳到任务页面" },
+    "nav-study": { "name": "学习中心", "description": "跳到学习中心" },
+    "nav-notes": { "name": "笔记", "description": "跳到笔记页面" },
+    "nav-scheduler": { "name": "日程", "description": "跳到日程页面" }
   },
   "categories": {
     "navigation": "导航",

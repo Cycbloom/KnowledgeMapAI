@@ -120,13 +120,15 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
         });
       });
       
+      // 预构建已见过的无向连接 key 集合，替代 filter+arr.findIndex 去重的 O(n²) 扫描（降为 O(n)）
+      const seenConnKeys = new Set<string>();
       const uniqueSuggestions = suggestions
-        .filter((s, i, arr) => 
-          arr.findIndex(other => 
-            (other.sourceId === s.sourceId && other.targetId === s.targetId) ||
-            (other.sourceId === s.targetId && other.targetId === s.sourceId)
-          ) === i
-        )
+        .filter((s) => {
+          const key = [s.sourceId, s.targetId].sort().join('|');
+          if (seenConnKeys.has(key)) return false;
+          seenConnKeys.add(key);
+          return true;
+        })
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
       

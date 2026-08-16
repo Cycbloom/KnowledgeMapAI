@@ -387,7 +387,8 @@ export const useGraphNodeOperations = ({
   const handleUpdateNode = async (nodeId: string, updates: Partial<Node>) => {
     if (!id) return;
     
-    const node = nodes.find(n => n.id === nodeId);
+    // 用已预构建的 nodeById Map 替代 nodes.find 的 O(n) 线性扫描
+    const node = nodeById.get(nodeId);
     if (!node) return;
     
     await asyncHandler(

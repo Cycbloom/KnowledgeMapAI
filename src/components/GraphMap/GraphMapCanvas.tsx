@@ -286,11 +286,17 @@ export const GraphMapCanvas = forwardRef<
       [layout],
     );
 
+    // 预构建 graphs 索引，避免每次聚焦取标题时对数组线性 find（O(n)→O(1) get）
+    const graphMap = useMemo(
+      () => new Map(graphs.map((g) => [g.id, g])),
+      [graphs],
+    );
+
     const focusedNodeTitle = useMemo(() => {
       if (!focusedGraphId) return null;
-      const focusedGraph = graphs.find((g) => g.id === focusedGraphId);
+      const focusedGraph = graphMap.get(focusedGraphId);
       return focusedGraph?.title ?? null;
-    }, [focusedGraphId, graphs]);
+    }, [focusedGraphId, graphMap]);
 
     const canvasAriaLabel = t("graphMap.canvas.ariaLabel", {
       count: nodes.length,

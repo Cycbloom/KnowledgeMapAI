@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../hooks';
 import { useQuizSet } from '../hooks/queries';
+import { useDocumentTitle } from '../hooks/common/useDocumentTitle';
 import { QuizProgressBar } from '../components/Quiz/QuizProgressBar';
 import { QuizResult } from '../components/Quiz/QuizResult';
 import { Skeleton } from '../components/common';
@@ -45,6 +46,8 @@ export const QuizPractice: React.FC = () => {
   }), [t]);
 
   const { data: quizSetData, isLoading, error } = useQuizSet(quizSetId || '');
+
+  useDocumentTitle(quizSetData?.title, t("documentTitle.suffix"));
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);

@@ -21,6 +21,7 @@ import {
 } from "@/hooks/mutations";
 import { useError } from "@/hooks";
 import { useUndoableAction } from "@/hooks/common/useUndoableAction";
+import { useDocumentTitle } from "@/hooks/common/useDocumentTitle";
 import { addRecentNote } from "@/hooks/queries/useRecentNotes";
 import { BlockEditor } from "@/components/Notes/BlockEditor";
 import { InboundBlockRefsPanel } from "@/components/Notes/InboundBlockRefsPanel";
@@ -49,6 +50,8 @@ const NoteEditorPage: React.FC = () => {
   const { handleError } = useError();
 
   const { data: note, isLoading, isError } = useNote(noteId);
+
+  useDocumentTitle(note?.title || t("notes.editorPage.untitled"), t("documentTitle.suffix"));
 
   const updateMutation = useUpdateNoteMutation();
   const deleteMutation = useDeleteNoteMutation();

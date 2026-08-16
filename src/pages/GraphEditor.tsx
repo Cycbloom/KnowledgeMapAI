@@ -45,6 +45,7 @@ import { useRecentGraphs } from "../hooks/queries/useRecentGraphs";
 import { addRecentNode } from "../hooks/queries/useRecentNodes";
 import { isAppError } from "../utils/errors";
 import { computeRegions } from "../utils/graph";
+import { useDocumentTitle } from "../hooks/common/useDocumentTitle";
 import {
   useGraph,
   useGraphData,
@@ -311,6 +312,8 @@ export const GraphEditor = () => {
   const { addRecentGraph, removeRecentGraph } = useRecentGraphs();
   const { data: graphMeta, isError: isGraphError, error: graphError } = useGraph(id || "");
   const { data: graphData, isLoading: isGraphLoading } = useGraphData(id || "");
+
+  useDocumentTitle(graphMeta?.title, t("documentTitle.suffix"));
 
   // Record graph access for recent graphs quick access
   useEffect(() => {

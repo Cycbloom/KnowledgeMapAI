@@ -6,6 +6,7 @@ import { Route } from "lucide-react";
 import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
 import { pathTasksApi } from "../services/api/modules/scheduler";
 import { useError } from "../hooks";
+import { useDocumentTitle } from "../hooks/common/useDocumentTitle";
 import PathHeaderSection from "../components/LearningPath/PathHeaderSection";
 import PathNodeListSection from "../components/LearningPath/PathNodeListSection";
 import PathMilestonesSection from "../components/LearningPath/PathMilestonesSection";
@@ -115,6 +116,8 @@ const LearningPathDetailPage: React.FC = () => {
     },
     enabled: !!pathId,
   });
+
+  useDocumentTitle(pathDetail?.title, t("documentTitle.suffix"));
 
   const handleUpdateNodeStatus = async (nodeId: string, status: NodeStatus) => {
     if (!pathId) return;

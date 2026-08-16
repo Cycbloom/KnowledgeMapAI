@@ -938,21 +938,27 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
 
   const errorMessage = error instanceof Error ? error.message : error ? t("console.performance.fetchLogsFailed") : null;
 
-  const uniqueOperations = Array.from(
-    new Set(logs.map((log) => log.operation)),
-  );
-
   const isEmbeddingOperation = (operation: string): boolean => {
     return operation.toLowerCase().includes("embedding");
   };
 
-  const filteredLogs = showEmbeddingOps
-    ? logs
-    : logs.filter((log) => !isEmbeddingOperation(log.operation));
-
-  const filteredUniqueOperations = showEmbeddingOps
-    ? uniqueOperations
-    : uniqueOperations.filter((op) => !isEmbeddingOperation(op));
+  // 预缓存按 showEmbeddingOps 过滤后的日志与操作集合，避免每次渲染重建数组，
+  // 从而让依赖 filteredLogs 的 displayStats / sessionGroups 在 logs 未变时不失效
+  const { filteredLogs, filteredUniqueOperations } = useMemo(() => {
+      const allUnique = Array.from(
+        new Set(logs.map((log) => log.operation)),
+      );
+      const filtered = showEmbeddingOps
+        ? logs
+        : logs.filter((log) => !isEmbeddingOperation(log.operation));
+      return {
+        uniqueOperations: allUnique,
+        filteredLogs: filtered,
+        filteredUniqueOperations: showEmbeddingOps
+          ? allUnique
+          : allUnique.filter((op) => !isEmbeddingOperation(op)),
+      };
+    }, [logs, showEmbeddingOps]);
 
   const displayStats = useMemo(() => {
     let successCount = 0;

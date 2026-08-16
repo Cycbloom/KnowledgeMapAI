@@ -79,11 +79,20 @@ class GraphExpansionService {
     return {
       success: true,
       results,
-      summary: {
-        total: graphIds.length,
-        pending: results.filter((r) => r.status === 'pending').length,
-        skipped: results.filter((r) => r.status === 'skipped').length,
-      },
+      summary: (() => {
+        // 单趟统计，替代两次 filter 扫描
+        let pending = 0;
+        let skipped = 0;
+        for (const r of results) {
+          if (r.status === 'pending') pending++;
+          else if (r.status === 'skipped') skipped++;
+        }
+        return {
+          total: graphIds.length,
+          pending,
+          skipped,
+        };
+      })(),
     };
   }
 

@@ -216,6 +216,11 @@ class LiteratureApplyService {
       const remainingConcepts: (ExtractedConcept & {
         originalIndex: number;
       })[] = [];
+      // 复杂度降低：用 Map 按归一化标题索引，替代循环内对 remainingConcepts 的 O(n) find 扫描（O(n²)→O(n)）
+      const remainingConceptsByNormTitle = new Map<
+        string,
+        ExtractedConcept & { originalIndex: number }
+      >();
 
       for (let i = 0; i < conceptsToProcess.length; i++) {
         const concept = conceptsToProcess[i];
@@ -251,9 +256,7 @@ class LiteratureApplyService {
           }
         }
 
-        const batchDuplicate = remainingConcepts.find(
-          (rc) => normalizeTitle(rc.title) === normTitle,
-        );
+        const batchDuplicate = remainingConceptsByNormTitle.get(normTitle);
         if (batchDuplicate) {
           if (concept.description.length > batchDuplicate.description.length) {
             batchDuplicate.description = concept.description;
@@ -264,7 +267,9 @@ class LiteratureApplyService {
           continue;
         }
 
-        remainingConcepts.push({ ...concept, originalIndex: i });
+        const newConcept = { ...concept, originalIndex: i };
+        remainingConcepts.push(newConcept);
+        remainingConceptsByNormTitle.set(normTitle, newConcept);
       }
 
       logger.info("Title dedup completed", {
@@ -604,6 +609,14 @@ class LiteratureApplyService {
           }
         }
 
+        // 复杂度降低：预构建 tempId/title 索引，替代下方循环内对 nodesToCreate/aiNodesData/conceptsToProcess 的多次 O(n) 线性扫描
+        const nodesToCreateByTempId = new Map(
+          nodesToCreate.map((n) => [n.tempId, n]),
+        );
+        const conceptsToProcessByTitle = new Map(
+          conceptsToProcess.map((c) => [c.title, c]),
+        );
+
         const aiNodesData = nodesToCreate.map((node) => {
           const backboneNodeId = node.targetModule
             ? backboneModuleMap.get(node.targetModule)
@@ -628,6 +641,10 @@ class LiteratureApplyService {
           };
         });
 
+        const aiNodesDataByTempId = new Map(
+          aiNodesData.map((n) => [n.tempId, n]),
+        );
+
         logger.info("Nodes to create with parentId", {
           nodeCount: aiNodesData.length,
           nodesWithParent: aiNodesData.filter((n) => n.parentId).length,
@@ -635,7 +652,7 @@ class LiteratureApplyService {
           nodeDetails: aiNodesData.map((n) => ({
             title: n.title,
             parentId: n.parentId,
-            targetModule: nodesToCreate.find((nd) => nd.tempId === n.tempId)
+            targetModule: nodesToCreateByTempId.get(n.tempId)
               ?.targetModule,
           })),
         });
@@ -670,7 +687,7 @@ class LiteratureApplyService {
               ...currentProperties,
               sources: [nodeData.source],
               sourceCount: 1,
-              conceptType: conceptsToProcess.find((c) => c.title === tempId)
+              conceptType: conceptsToProcessByTitle.get(tempId)
                 ?.type,
               backboneModule: nodeData.targetModule,
             };
@@ -697,10 +714,8 @@ class LiteratureApplyService {
           }
 
           // Track mounting status
-          const nodeDataForMounting = nodesToCreate.find(
-            (n) => n.tempId === tempId,
-          );
-          const aiNodeData = aiNodesData.find((n) => n.tempId === tempId);
+          const nodeDataForMounting = nodesToCreateByTempId.get(tempId);
+          const aiNodeData = aiNodesDataByTempId.get(tempId);
 
           mountingDetails.push({
             conceptTitle: tempId,

@@ -596,9 +596,13 @@ export async function getUserAccessibleGraphs(
     });
 
   const allGraphs = [...ownedResults, ...collabResults];
-  const uniqueGraphs = allGraphs.filter(
-    (graph, index, self) => index === self.findIndex((g) => g.id === graph.id),
-  );
+  // 复杂度降低：用 Set 去重，替代 filter 内 findIndex 的 O(n²) 扫描
+  const seenIds = new Set<string>();
+  const uniqueGraphs = allGraphs.filter((graph) => {
+    if (seenIds.has(graph.id)) return false;
+    seenIds.add(graph.id);
+    return true;
+  });
 
   return uniqueGraphs as unknown as GraphWithCollaborators[];
 }

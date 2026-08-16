@@ -238,11 +238,11 @@ class StructureService {
       if (insertError) throw insertError;
 
       // Step 2: Build actMap from created structures (matching by template_beat_id)
+      // 复杂度降低：预构建 beat id->beat Map，替代 filter/map 内对每条 structure 重复 O(n) 的 sortedBeats.find()
+      const beatById = new Map(sortedBeats.map((beat) => [beat.id, beat]));
       const actMap = new Map<string, string>();
       (createdStructures || []).forEach((structure: StoryStructure) => {
-        const matchingBeat = sortedBeats.find(
-          (beat) => beat.id === structure.template_beat_id,
-        );
+        const matchingBeat = structure.template_beat_id ? beatById.get(structure.template_beat_id) : undefined;
         if (matchingBeat?.level === "act") {
           actMap.set(matchingBeat.id, structure.id);
         }
@@ -251,15 +251,11 @@ class StructureService {
       // Step 3: Update parent_structure_id for sequence-level structures
       const updatePromises = (createdStructures || [])
         .filter((structure: StoryStructure) => {
-          const matchingBeat = sortedBeats.find(
-            (beat) => beat.id === structure.template_beat_id,
-          );
+          const matchingBeat = structure.template_beat_id ? beatById.get(structure.template_beat_id) : undefined;
           return matchingBeat?.level === "sequence" && matchingBeat.parent_act;
         })
         .map((structure: StoryStructure) => {
-          const matchingBeat = sortedBeats.find(
-            (beat) => beat.id === structure.template_beat_id,
-          );
+          const matchingBeat = structure.template_beat_id ? beatById.get(structure.template_beat_id) : undefined;
           const parentId = actMap.get(matchingBeat?.parent_act ?? "");
           if (!parentId) return null;
           return supabase

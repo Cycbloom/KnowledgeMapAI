@@ -993,7 +993,8 @@ export class LearningPathService {
       });
 
       reviewNeededPoints.forEach((reviewDate, kpId) => {
-        const node = nodes.find((n) => n.knowledge_point_id === kpId);
+        // 复杂度降低：用预构建的 nodeByKpId 取节点，替代循环内 O(n) 的 nodes.find()
+        const node = nodeByKpId.get(kpId);
         if (node) {
           const daysOverdue = Math.floor(
             (now.getTime() - reviewDate.getTime()) / (1000 * 60 * 60 * 24),
@@ -1015,14 +1016,15 @@ export class LearningPathService {
 
     const inProgressNodes = nodes.filter((n) => n.status === "in_progress");
     for (const node of inProgressNodes) {
+      // 复杂度降低：用预构建的 nodeById 取前置节点，替代循环内 O(n) 的 nodes.find()
       const incompletePrereqs = node.prerequisites.filter((prereqId) => {
-        const prereqNode = nodes.find((n) => n.id === prereqId);
+        const prereqNode = nodeById.get(prereqId);
         return prereqNode && prereqNode.status !== "completed";
       });
 
       if (incompletePrereqs.length > 0) {
         const prereqTitles = incompletePrereqs
-          .map((id) => nodes.find((n) => n.id === id)?.title)
+          .map((id) => nodeById.get(id)?.title)
           .filter(Boolean)
           .join("、");
 

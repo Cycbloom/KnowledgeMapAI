@@ -61,6 +61,8 @@ class TemplateRouteService {
     const nodeTitleToId = new Map(
       knowledgePoints.map((kp) => [kp.title, kp.id]),
     );
+    // 复杂度降低：预构建 title->模板节点 Map，避免循环内对每条边 O(n) 的 templateNodes.find()
+    const nodeByTitle = new Map(templateNodes.map((n) => [n.title, n]));
 
     const graphNodesData = templateNodes
       .map((node) => {
@@ -107,8 +109,8 @@ class TemplateRouteService {
     }> = [];
 
     for (const edge of templateEdges) {
-      const sourceNode = templateNodes.find((n) => n.title === edge.source);
-      const targetNode = templateNodes.find((n) => n.title === edge.target);
+      const sourceNode = nodeByTitle.get(edge.source);
+      const targetNode = nodeByTitle.get(edge.target);
 
       if (sourceNode && targetNode) {
         const sourceKpId = nodeTitleToId.get(sourceNode.title);

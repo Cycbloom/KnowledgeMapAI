@@ -990,15 +990,18 @@ export class GraphVersionService {
       const branchModifiedNodeIds = new Set(
         branchToSourceDiff.nodes.modified.map(n => n.knowledgePointId),
       );
+      // 复杂度降低：预构建 modified 节点/边索引，替代下方循环内对 same 数组的 O(n) 线性扫描
+      const mainModifiedNodesById = new Map(
+        mainToSourceDiff.nodes.modified.map(n => [n.knowledgePointId, n]),
+      );
+      const branchModifiedNodesById = new Map(
+        branchToSourceDiff.nodes.modified.map(n => [n.knowledgePointId, n]),
+      );
 
       for (const knowledgePointId of mainModifiedNodeIds) {
         if (branchModifiedNodeIds.has(knowledgePointId)) {
-          const mainChange = mainToSourceDiff.nodes.modified.find(
-            n => n.knowledgePointId === knowledgePointId,
-          );
-          const branchChange = branchToSourceDiff.nodes.modified.find(
-            n => n.knowledgePointId === knowledgePointId,
-          );
+          const mainChange = mainModifiedNodesById.get(knowledgePointId);
+          const branchChange = branchModifiedNodesById.get(knowledgePointId);
           if (mainChange && branchChange) {
             conflicts.push({
               entityType: 'node',
@@ -1023,21 +1026,22 @@ export class GraphVersionService {
           .filter((e): e is SnapshotEdgeData => e !== null)
           .map(e => this.getEdgeKey(e)),
       );
+      // 复杂度降低：预构建 edge key->变更对象索引，替代下方循环内对 same 数组的 O(n) 线性扫描
+      const mainModifiedEdgesByKey = new Map(
+        mainToSourceDiff.edges.modified
+          .filter((e) => (e.after ?? e.before) !== null)
+          .map((e) => [this.getEdgeKey((e.after ?? e.before) as SnapshotEdgeData), e]),
+      );
+      const branchModifiedEdgesByKey = new Map(
+        branchToSourceDiff.edges.modified
+          .filter((e) => (e.after ?? e.before) !== null)
+          .map((e) => [this.getEdgeKey((e.after ?? e.before) as SnapshotEdgeData), e]),
+      );
 
       for (const edgeKey of mainModifiedEdgeKeys) {
         if (branchModifiedEdgeKeys.has(edgeKey)) {
-          const mainChange = mainToSourceDiff.edges.modified.find(
-            e => {
-              const edge = e.after ?? e.before;
-              return edge !== null && this.getEdgeKey(edge) === edgeKey;
-            },
-          );
-          const branchChange = branchToSourceDiff.edges.modified.find(
-            e => {
-              const edge = e.after ?? e.before;
-              return edge !== null && this.getEdgeKey(edge) === edgeKey;
-            },
-          );
+          const mainChange = mainModifiedEdgesByKey.get(edgeKey);
+          const branchChange = branchModifiedEdgesByKey.get(edgeKey);
           if (mainChange && branchChange) {
             conflicts.push({
               entityType: 'edge',
@@ -1064,6 +1068,10 @@ export class GraphVersionService {
     // 先计算合并结果（supabase 查询）
     const mergeResult = await this.mergeBranch(supabase, mainGraphId, branchGraphId);
     const branchData = await this.buildCurrentSnapshotData(supabase, branchGraphId);
+    // 复杂度降低：预构建分支节点 id 索引，替代下方循环内对 branchData.nodes 的 O(n) 线性扫描
+    const branchNodeByKpId = new Map(
+      branchData.nodes.map((n) => [n.knowledgePointId, n]),
+    );
 
     // 构建分支 kp id -> 主图 kp id 的映射，用于合并时定位主图中的对应实体
     const branchKpToSourceKp = await this.buildBranchKpMapping(supabase, branchGraphId);
@@ -1148,9 +1156,7 @@ export class GraphVersionService {
           if (selectedNodeIds.has(nodeDiff.knowledgePointId)) {
             // mergeResult 中的 knowledgePointId 是主图的 id，需要映射到分支的 id 来查找 branchData
             const branchKpId = sourceKpToBranchKp.get(nodeDiff.knowledgePointId) ?? nodeDiff.knowledgePointId;
-            const branchNode = branchData.nodes.find(
-              n => n.knowledgePointId === branchKpId,
-            );
+            const branchNode = branchNodeByKpId.get(branchKpId);
             if (branchNode) {
               await client.query(
                 'UPDATE graph_nodes SET x_position = $1, y_position = $2, level = $3, is_accepted = $4 WHERE graph_id = $5 AND knowledge_point_id = $6 AND deleted_at IS NULL',
@@ -1330,9 +1336,7 @@ export class GraphVersionService {
       for (const nodeDiff of mergeResult.diff.nodes.modified) {
         if (selectedNodeIds.has(nodeDiff.knowledgePointId)) {
           const branchKpId = sourceKpToBranchKp.get(nodeDiff.knowledgePointId) ?? nodeDiff.knowledgePointId;
-          const branchNode = branchData.nodes.find(
-            n => n.knowledgePointId === branchKpId,
-          );
+          const branchNode = branchNodeByKpId.get(branchKpId);
           if (branchNode) {
             await notDeleted(supabase
               .from('graph_nodes')

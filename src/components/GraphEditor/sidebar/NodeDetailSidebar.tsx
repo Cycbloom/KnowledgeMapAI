@@ -14,7 +14,13 @@ import {
   WikiLinkRenderer,
 } from "../../../utils/wikiLinkRemarkPlugin";
 import { backlinksApi } from "../../../services/api/backlinks";
-import { TermTooltip, LazyImage, Skeleton } from "../../common";
+import {
+  TermTooltip,
+  LazyImage,
+  Skeleton,
+  EmptyState,
+  CollapsibleSection,
+} from "../../common";
 import { CodeBlock } from "../../common/CodeBlock";
 import { Mermaid } from "../../common/Mermaid";
 import ReactMarkdown from "react-markdown";
@@ -302,7 +308,12 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           )}
         </section>
 
-        <section className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+        <CollapsibleSection
+          id="content"
+          title={t("common.aria.details")}
+          storagePrefix="node-detail"
+          className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700"
+        >
           <ReactMarkdown
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeKatex]}
@@ -405,7 +416,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           >
             {preprocessWikiLinks(preprocessMarkdown(node.content || `*${t("nodeDetail.noContent")}*`))}
           </ReactMarkdown>
-        </section>
+        </CollapsibleSection>
 
         {/* Quick AI Generate Content Action */}
         {!isReadOnly && (
@@ -533,10 +544,15 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
 
           {/* Children */}
           {childNodes.length > 0 && (
-            <div>
-              <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 flex items-center">
-                <LinkIcon size={10} className="mr-1" /> {t("nodeDetail.children")} (Children)
-              </div>
+            <CollapsibleSection
+              id="children"
+              storagePrefix="node-detail"
+              title={
+                <div className="text-[10px] text-gray-400 font-bold uppercase flex items-center">
+                  <LinkIcon size={10} className="mr-1" /> {t("nodeDetail.children")} (Children)
+                </div>
+              }
+            >
               <div className="flex flex-col gap-1.5">
                 {childNodes.map((child) => (
                   <button
@@ -553,25 +569,31 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                   </button>
                 ))}
               </div>
-            </div>
+            </CollapsibleSection>
           )}
         </div>
 
         {/* Related Nodes Section */}
-        <div className="mt-4 pt-4 border-t border-primary-200 dark:border-primary-800">
-          <div className="flex justify-between items-center mb-2">
+        <CollapsibleSection
+          id="related"
+          storagePrefix="node-detail"
+          className="mt-4 pt-4 border-t border-primary-200 dark:border-primary-800"
+          title={
             <h5 className="text-xs font-bold text-primary-700 dark:text-primary-400">
               🔗 {t("nodeDetail.semanticRelatedNodes")}
             </h5>
-            {!showRelatedSection && (
+          }
+        >
+          {!showRelatedSection && (
+            <div className="mb-2">
               <button
                 onClick={onFetchRelatedNodes}
                 className="text-[10px] bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 px-2 py-1 rounded hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors"
               >
                 {t("nodeDetail.loadRelated")}
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {showRelatedSection && (
             <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-2 min-h-[60px]">
@@ -598,23 +620,28 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400 text-center py-2">
-                  {t("nodeDetail.noRelatedNodes")}
-                </p>
+                <EmptyState
+                  variant="inline"
+                  title={t("nodeDetail.noRelatedNodes")}
+                />
               )}
             </div>
           )}
-        </div>
+        </CollapsibleSection>
 
         {/* Branch Status Section */}
         {isExplorationMode && (
-          <div className="mt-4 pt-4 border-t border-primary-200 dark:border-primary-800">
-            <div className="flex justify-between items-center mb-2">
+          <CollapsibleSection
+            id="branch"
+            storagePrefix="node-detail"
+            className="mt-4 pt-4 border-t border-primary-200 dark:border-primary-800"
+            title={
               <h5 className="text-xs font-bold text-primary-700 dark:text-primary-400 flex items-center">
                 <GitBranch size={14} className="mr-1" />
                 {t("nodeDetail.branchStatus")}
               </h5>
-            </div>
+            }
+          >
             <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1">
@@ -643,7 +670,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                 )}
               </div>
             </div>
-          </div>
+          </CollapsibleSection>
         )}
       </div>
 

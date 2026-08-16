@@ -1,3 +1,7 @@
+export { CollapsibleSection } from "./CollapsibleSection";
+export type { CollapsibleSectionProps } from "./CollapsibleSection";
+export { BatchActionsToolbar } from "./BatchActionsToolbar";
+export type { BatchActionsToolbarProps } from "./BatchActionsToolbar";
 export { Button } from "./Button";
 export type { ButtonProps, ButtonVariant, ButtonSize } from "./Button";
 export { ErrorBoundary, withErrorBoundary } from "./ErrorBoundary";
@@ -53,6 +57,8 @@ export { ShortcutHelpPanel, ShortcutListContent } from "./ShortcutHelpPanel";
 export { SearchResults } from "./SearchResults";
 export { FormError } from "./FormError";
 export type { FormErrorProps } from "./FormError";
+export { CharCounter } from "./CharCounter";
+export type { CharCounterProps } from "./CharCounter";
 export { FormField } from "./FormField";
 export type { FormFieldProps } from "./FormField";
 export { FormInput } from "./FormInput";

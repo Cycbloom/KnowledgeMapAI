@@ -119,7 +119,7 @@ export const Layout = () => {
   const { isMobile } = useIsMobile();
   useSwipeBack({ enabled: isMobile });
   const { mainRef, handleSkip } = useSkipToContent();
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(readInitialCollapsed());
   const sidebarId = useId();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -382,6 +382,16 @@ export const Layout = () => {
   useEffect(() => {
     setIsMobileDrawerOpen(false);
   }, [location.pathname]);
+
+  // 左侧导航折叠状态变化时写入 localStorage，实现持久化；失败时忽略
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
+    } catch (err) {
+      console.error(err);
+    }
+  }, [isCollapsed]);
 
   const navItems = useMemo(() => frontendKernel.getNavItems(), [frontendKernel]);
 
@@ -708,3 +718,16 @@ export const Layout = () => {
     </div>
   );
 };
+
+// P6: 左侧导航折叠状态持久化——初始化时读取 localStorage，变化时写回，
+// 记忆用户选择；key 不存在时回退折叠（保持原默认行为）。
+const SIDEBAR_COLLAPSED_KEY = "layout.sidebarCollapsed";
+function readInitialCollapsed(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const stored = window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    return stored !== null ? stored === "true" : true;
+  } catch {
+    return true;
+  }
+}

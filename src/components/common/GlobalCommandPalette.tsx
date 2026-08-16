@@ -20,6 +20,10 @@ import {
   Plus,
   BookOpen,
   Clock,
+  ListTodo,
+  GraduationCap,
+  Route,
+  CalendarClock,
 } from "lucide-react";
 import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import { useCombobox } from "../../hooks/common/useCombobox";
@@ -198,6 +202,42 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
       icon: <Trash2 size={16} />,
       keywords: t("common.globalCommandPalette.actionTrashKeywords"),
       action: () => navigate("/trash"),
+    });
+    // action - 新建任务：跳转到任务页
+    items.push({
+      id: "action-new-task",
+      label: t("common.globalCommandPalette.actionNewTask"),
+      category: "action",
+      icon: <ListTodo size={16} />,
+      keywords: t("common.globalCommandPalette.actionNewTaskKeywords"),
+      action: () => navigate("/tasks"),
+    });
+    // action - 开始/继续复习：跳转到学习页
+    items.push({
+      id: "action-start-review",
+      label: t("common.globalCommandPalette.actionStartReview"),
+      category: "action",
+      icon: <GraduationCap size={16} />,
+      keywords: t("common.globalCommandPalette.actionStartReviewKeywords"),
+      action: () => navigate("/study"),
+    });
+    // action - 打开学习路径：跳转到学习路径页
+    items.push({
+      id: "action-learning-paths",
+      label: t("common.globalCommandPalette.actionLearningPaths"),
+      category: "action",
+      icon: <Route size={16} />,
+      keywords: t("common.globalCommandPalette.actionLearningPathsKeywords"),
+      action: () => navigate("/learning-paths"),
+    });
+    // action - 打开日程：跳转到日程页
+    items.push({
+      id: "action-open-scheduler",
+      label: t("common.globalCommandPalette.actionOpenScheduler"),
+      category: "action",
+      icon: <CalendarClock size={16} />,
+      keywords: t("common.globalCommandPalette.actionOpenSchedulerKeywords"),
+      action: () => navigate("/scheduler"),
     });
 
     return items;

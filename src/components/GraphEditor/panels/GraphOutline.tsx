@@ -141,26 +141,27 @@ export const GraphOutline = React.memo(function GraphOutline({
   const [filterLevel, setFilterLevel] = useState<string>("all");
 
   const processedNodes = useMemo(() => {
-    let result = nodes.filter((node) => node && node.id);
-
-    // 1. Search
-    if (debouncedSearchQuery.trim()) {
-      const query = debouncedSearchQuery.toLowerCase();
-      result = result.filter(
-        (node) =>
+    const query = debouncedSearchQuery.trim().toLowerCase();
+    const hasSearch = !!debouncedSearchQuery.trim();
+    // 单趟遍历完成基础过滤+搜索+层级过滤（原为链式 filter 多次扫描 O(m*n) → O(n)）
+    const result: Node[] = [];
+    for (const node of nodes) {
+      if (!node || !node.id) continue;
+      if (hasSearch) {
+        const matches =
           (node.title && node.title.toLowerCase().includes(query)) ||
-          (node.content && node.content.toLowerCase().includes(query)),
-      );
-    }
-
-    // 2. Filter Level
-    if (filterLevel !== "all") {
-      result = result.filter((node) => (node.level || "leaf") === filterLevel);
+          (node.content && node.content.toLowerCase().includes(query));
+        if (!matches) continue;
+      }
+      if (filterLevel !== "all" && (node.level || "leaf") !== filterLevel) {
+        continue;
+      }
+      result.push(node);
     }
 
     // 3. Sort (Applies to List Mode mainly, but we prepare it anyway)
-    if (viewMode === "list" || debouncedSearchQuery.trim() || filterLevel !== "all") {
-      result = [...result].sort((a, b) => {
+    if (viewMode === "list" || hasSearch || filterLevel !== "all") {
+      result.sort((a, b) => {
         const safeTitleA = a.title || "";
         const safeTitleB = b.title || "";
 

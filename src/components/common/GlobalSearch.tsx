@@ -146,29 +146,32 @@ export const GlobalSearch = () => {
   const filteredResults = useMemo<SearchResult | null>(() => {
     if (!data) return null;
 
-    let filteredNodes = data.nodes || [];
+    const statusActive = filters.status !== 'all';
+    const timeActive = filters.timeRange !== 'all';
+    if (!statusActive && !timeActive) return data;
 
-    if (filters.status !== 'all') {
-      filteredNodes = filteredNodes.filter((node: SearchResultNode) => {
-        const status = node.status || 'new';
-        return status === filters.status;
-      });
-    }
+    const now = new Date();
+    const ranges: Record<string, number> = {
+      today: 1,
+      week: 7,
+      month: 30
+    };
+    const daysAgo = ranges[filters.timeRange];
+    const cutoff =
+      daysAgo !== undefined
+        ? new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000)
+        : null;
 
-    if (filters.timeRange !== 'all') {
-      const now = new Date();
-      const ranges: Record<string, number> = {
-        today: 1,
-        week: 7,
-        month: 30
-      };
-      const daysAgo = ranges[filters.timeRange];
-      const cutoff = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-
-      filteredNodes = filteredNodes.filter((node: SearchResultNode) => {
+    // 单趟遍历节点同时应用状态与时间过滤（原为链式 filter 多次扫描 → O(n)）
+    const filteredNodes: SearchResultNode[] = [];
+    for (const node of data.nodes || []) {
+      const status = node.status || 'new';
+      if (statusActive && status !== filters.status) continue;
+      if (timeActive && cutoff) {
         const updatedAt = node.updated_at || node.created_at;
-        return updatedAt && new Date(updatedAt) >= cutoff;
-      });
+        if (!updatedAt || new Date(updatedAt) < cutoff) continue;
+      }
+      filteredNodes.push(node);
     }
 
     return {

@@ -34,6 +34,11 @@ interface TokenError {
   code: ErrorCode;
 }
 
+// 预构建管理员邮箱 Set，替代 requireAdmin 每请求 split+map+includes 的重复构建与 O(n) 线性扫描
+const ADMIN_EMAILS = new Set(
+  (process.env.ADMIN_EMAILS?.split(',').map(e => e.trim())) ?? [],
+);
+
 const parseTokenError = (error: { message?: string }): TokenError => {
   const message = error.message?.toLowerCase() || '';
 
@@ -233,8 +238,7 @@ export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFu
       return next();
     }
 
-    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || [];
-    if (req.user.email && adminEmails.includes(req.user.email)) {
+    if (req.user.email && ADMIN_EMAILS.has(req.user.email)) {
       return next();
     }
 

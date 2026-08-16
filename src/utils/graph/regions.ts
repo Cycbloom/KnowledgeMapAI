@@ -32,6 +32,9 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
 
   const isTopicResearch = templateType === "topic_research";
 
+  // 复杂度降低：预构建折叠区域 Set，替代多个 map 循环内 collapsedRegions.includes 的 O(regions*collapsed) 线性扫描
+  const collapsedSet = new Set(collapsedRegions);
+
   if (isTopicResearch) {
     if (backboneModules && backboneModules.length > 0) {
       const angleStep = (2 * Math.PI) / backboneModules.length;
@@ -72,7 +75,7 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
             angleStart,
             angleEnd,
             nodes: regionNodes,
-            isCollapsed: collapsedRegions.includes(
+            isCollapsed: collapsedSet.has(
               `region-${module.module_type}`,
             ),
           };
@@ -117,7 +120,7 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
         angleStart,
         angleEnd,
         nodes: regionNodes,
-        isCollapsed: collapsedRegions.includes(`region-${module}`),
+        isCollapsed: collapsedSet.has(`region-${module}`),
       };
     });
   } else {
@@ -151,7 +154,7 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
           angleStart,
           angleEnd,
           nodes: levelGroups.get(level) || [],
-          isCollapsed: collapsedRegions.includes(`region-${level}`),
+          isCollapsed: collapsedSet.has(`region-${level}`),
         };
       });
     }
@@ -179,7 +182,7 @@ export function computeRegions(params: ComputeRegionsParams): RegionInfo[] {
         angleStart,
         angleEnd,
         nodes: regionNodes,
-        isCollapsed: collapsedRegions.includes(region.id),
+        isCollapsed: collapsedSet.has(region.id),
       };
     });
   }

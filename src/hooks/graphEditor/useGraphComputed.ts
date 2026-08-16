@@ -9,21 +9,23 @@ interface UseGraphComputedProps {
 
 export const useGraphComputed = ({ nodes, edges, nodeStatus }: UseGraphComputedProps) => {
   const lockedNodeIds = useMemo(() => {
-    if (!nodeStatus) return new Set<string>();
-    return new Set(
-      Object.entries(nodeStatus)
-        .filter(([, status]: [string, NodeStatus]) => status.locked)
-        .map(([id]) => id)
-    );
+    // 单趟遍历构建 Set，替代 filter+map 的两次扫描与中间数组分配（O(2×n) → O(n)）
+    const set = new Set<string>();
+    if (!nodeStatus) return set;
+    for (const [id, status] of Object.entries(nodeStatus)) {
+      if (status.locked) set.add(id);
+    }
+    return set;
   }, [nodeStatus]);
 
   const masteredNodeIds = useMemo(() => {
-    if (!nodeStatus) return new Set<string>();
-    return new Set(
-      Object.entries(nodeStatus)
-        .filter(([, status]: [string, NodeStatus]) => status.mastered)
-        .map(([id]) => id)
-    );
+    // 单趟遍历构建 Set，替代 filter+map 的两次扫描与中间数组分配（O(2×n) → O(n)）
+    const set = new Set<string>();
+    if (!nodeStatus) return set;
+    for (const [id, status] of Object.entries(nodeStatus)) {
+      if (status.mastered) set.add(id);
+    }
+    return set;
   }, [nodeStatus]);
 
   const graphStats = useMemo(() => {

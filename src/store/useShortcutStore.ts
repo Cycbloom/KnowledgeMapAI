@@ -30,6 +30,21 @@ DEFAULT_SHORTCUTS.forEach(shortcut => {
   };
 });
 
+// 预构建 id→定义 与 action→定义组 索引，将 getShortcut/getKeyForAction 的
+// 线性扫描（O(n)）降为 O(1) 查找 / 单次遍历
+const SHORTCUTS_BY_ID = new Map<string, ShortcutDefinition>(
+  DEFAULT_SHORTCUTS.map(shortcut => [shortcut.id, shortcut]),
+);
+const SHORTCUTS_BY_ACTION = new Map<string, ShortcutDefinition[]>();
+DEFAULT_SHORTCUTS.forEach(shortcut => {
+  const list = SHORTCUTS_BY_ACTION.get(shortcut.action);
+  if (list) {
+    list.push(shortcut);
+  } else {
+    SHORTCUTS_BY_ACTION.set(shortcut.action, [shortcut]);
+  }
+});
+
 export const useShortcutStore = createPersistedStore<ShortcutState>(
   'shortcut',
   (set, get) => ({
@@ -37,7 +52,8 @@ export const useShortcutStore = createPersistedStore<ShortcutState>(
     enabled: true,
 
     getShortcut: (id: string) => {
-      return DEFAULT_SHORTCUTS.find(s => s.id === id);
+      // O(1) Map 查找替代 find 的线性扫描
+      return SHORTCUTS_BY_ID.get(id);
     },
 
     getBinding: (id: string) => {
@@ -45,7 +61,8 @@ export const useShortcutStore = createPersistedStore<ShortcutState>(
     },
 
     getKeyForAction: (action: string) => {
-      const shortcuts = DEFAULT_SHORTCUTS.filter(s => s.action === action);
+      // 预构建 action 索引替代 filter 的线性扫描，O(1) 取组
+      const shortcuts = SHORTCUTS_BY_ACTION.get(action) ?? [];
       for (const shortcut of shortcuts) {
         const binding = get().bindings[shortcut.id];
         if (binding && binding.enabled) {

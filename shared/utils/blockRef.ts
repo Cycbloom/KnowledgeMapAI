@@ -103,6 +103,31 @@ export const extractAllBlockIds = (content: string): BlockId[] => {
 };
 
 /**
+ * 判断 [start,end] 是否完全落在某个 embed 范围内。
+ * embedRanges 按 start 升序且互不重叠，故只需二分查找 start 前最后一个
+ * embed，命中即包含。
+ */
+const isInsideEmbedRange = (
+  embedRanges: Array<[number, number]>,
+  start: number,
+  end: number,
+): boolean => {
+  let lo = 0;
+  let hi = embedRanges.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (embedRanges[mid][0] > start) {
+      hi = mid - 1;
+    } else {
+      lo = mid + 1;
+    }
+  }
+  if (hi < 0) return false;
+  const range = embedRanges[hi];
+  return start >= range[0] && end <= range[1];
+};
+
+/**
  * 解析笔记全文中的所有引用（包括 ref 与 embed）
  * - embed 优先匹配，避免 `!((id))` 被 `((id))` 误匹配
  * - 跳过代码块/行内代码内的引用
@@ -138,7 +163,9 @@ export const extractBlockRefs = (
     while ((match = BLOCK_REF_REGEX.exec(nonCode)) !== null) {
       const start = match.index;
       const end = match.index + match[0].length;
-      const isEmbed = embedRanges.some(([es, ee]) => start >= es && end <= ee);
+      // embedRanges 已按 start 升序且互不重叠，用二分查找替代 some 线性扫描，
+      // 内层判定从 O(embeds) 降为 O(log embeds)
+      const isEmbed = isInsideEmbedRange(embedRanges, start, end);
       if (isEmbed) continue;
       partResults.push({ blockId: match[1], type: 'ref', index: start });
     }

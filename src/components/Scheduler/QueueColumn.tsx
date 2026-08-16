@@ -72,7 +72,7 @@ const QUEUE_CONFIG = {
   },
 };
 
-export const QueueColumn: React.FC<QueueColumnProps> = ({
+const QueueColumnComponent: React.FC<QueueColumnProps> = ({
   level,
   title,
   timeSlice,
@@ -291,3 +291,5 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
     </div>
   );
 };
+
+export const QueueColumn = React.memo(QueueColumnComponent);

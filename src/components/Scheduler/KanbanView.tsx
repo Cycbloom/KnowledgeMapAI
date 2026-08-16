@@ -103,42 +103,44 @@ export const KanbanView: React.FC<{
     }));
   }, [tasks, KANBAN_COLUMNS]);
 
-  const handleDragStart = (
-    e: React.DragEvent,
-    taskId: string,
-    currentStatus: string,
-  ) => {
-    e.dataTransfer.setData("taskId", taskId);
-    e.dataTransfer.setData("currentStatus", currentStatus);
-    setDraggedTask(taskId);
-  };
+  const handleDragStart = useCallback(
+    (e: React.DragEvent, taskId: string, currentStatus: string) => {
+      e.dataTransfer.setData("taskId", taskId);
+      e.dataTransfer.setData("currentStatus", currentStatus);
+      setDraggedTask(taskId);
+    },
+    [],
+  );
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setDraggedTask(null);
     setDraggedOverColumn(null);
-  };
+  }, []);
 
-  const handleDragOver = (e: React.DragEvent, columnId: string) => {
+  const handleDragOver = useCallback((e: React.DragEvent, columnId: string) => {
     e.preventDefault();
     setDraggedOverColumn(columnId);
-  };
+  }, []);
 
-  const handleDragLeave = () => {
+  const handleDragLeave = useCallback(() => {
     setDraggedOverColumn(null);
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent, targetStatus: string) => {
-    e.preventDefault();
-    const taskId = e.dataTransfer.getData("taskId");
-    const currentStatus = e.dataTransfer.getData("currentStatus");
+  const handleDrop = useCallback(
+    (e: React.DragEvent, targetStatus: string) => {
+      e.preventDefault();
+      const taskId = e.dataTransfer.getData("taskId");
+      const currentStatus = e.dataTransfer.getData("currentStatus");
 
-    if (taskId && currentStatus !== targetStatus && onTaskMove) {
-      onTaskMove(taskId, targetStatus);
-    }
+      if (taskId && currentStatus !== targetStatus && onTaskMove) {
+        onTaskMove(taskId, targetStatus);
+      }
 
-    setDraggedTask(null);
-    setDraggedOverColumn(null);
-  };
+      setDraggedTask(null);
+      setDraggedOverColumn(null);
+    },
+    [onTaskMove],
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent, task: UserTask) => {

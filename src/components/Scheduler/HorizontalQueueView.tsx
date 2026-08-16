@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -60,6 +60,12 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
     new Set(),
   );
   const [activeTask, setActiveTask] = useState<UserTask | null>(null);
+
+  // 稳定化按队列层级触发的"添加任务"回调，避免每次渲染重建内联箭头
+  const handleAddTask = useCallback(
+    (level: number) => onAddTask?.(level),
+    [onAddTask],
+  );
 
   const VIEW_CONFIG = {
     queue: {
@@ -317,7 +323,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
                   onStartTask={onStartTask}
                   onPauseTask={onPauseTask}
                   onCompleteTask={onCompleteTask}
-                  onAddTask={onAddTask ? () => onAddTask(level) : undefined}
+                  onAddTask={onAddTask ? handleAddTask : undefined}
                   onViewTaskDetail={onViewTaskDetail}
                 />
               )}

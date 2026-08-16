@@ -21,7 +21,7 @@ interface HorizontalQueueProps {
   onStartTask?: (task: UserTask) => void;
   onPauseTask?: (task: UserTask) => void;
   onCompleteTask?: (task: UserTask) => void;
-  onAddTask?: () => void;
+  onAddTask?: (level: number) => void;
   onViewTaskDetail?: (task: UserTask) => void;
 }
 
@@ -231,7 +231,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                 )}
                 {onAddTask && (
                   <button
-                    onClick={onAddTask}
+                    onClick={() => onAddTask(level)}
                     className={`mt-3 text-sm ${config.accentColor} hover:underline`}
                   >
                     + {t("scheduler.queue.addTask")}
@@ -280,7 +280,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                 <motion.button
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  onClick={onAddTask}
+                  onClick={() => onAddTask(level)}
                   className={`
                       flex-shrink-0 w-[140px] sm:w-[180px] h-[90px] sm:h-[100px] rounded-xl border-2 border-dashed
                       ${config.border} ${config.accentColor}

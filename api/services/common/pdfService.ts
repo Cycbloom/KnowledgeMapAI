@@ -191,8 +191,13 @@ export class PDFService {
     doc.fontSize(16).fillColor('#111827').text('目录', { underline: true });
     doc.moveDown(1);
 
-    const roots = nodes.filter(n => n.level === 'root');
-    const cores = nodes.filter(n => n.level === 'core');
+    // 复杂度降低：单趟遍历同时收集 root/core，替代两次 filter 对 nodes 的重复扫描
+    const roots: PDFNode[] = [];
+    const cores: PDFNode[] = [];
+    for (const n of nodes) {
+      if (n.level === 'root') roots.push(n);
+      else if (n.level === 'core') cores.push(n);
+    }
 
     roots.forEach(r => {
       doc.fontSize(12).fillColor('#2563EB').text(r.title);

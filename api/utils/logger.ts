@@ -5,6 +5,12 @@ export enum LogLevel {
   DEBUG = 'debug',
 }
 
+// 模块级日志级别权重表，替代 shouldLog 每次调用重建与两次 indexOf
+const LEVEL_ORDER = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR] as const;
+const LEVEL_INDEX = new Map<LogLevel, number>(
+  LEVEL_ORDER.map((l, i) => [l, i]),
+);
+
 export interface StructuredLogData {
   timestamp?: string;
   level: LogLevel;
@@ -131,8 +137,7 @@ export class Logger {
   }
 
   private shouldLog(level: LogLevel): boolean {
-    const levels = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR];
-    return levels.indexOf(level) >= levels.indexOf(this.level);
+    return (LEVEL_INDEX.get(level) ?? 0) >= (LEVEL_INDEX.get(this.level) ?? 0);
   }
 
   separator(char: string = '─', length: number = 60) {

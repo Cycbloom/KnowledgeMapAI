@@ -48,11 +48,27 @@ export const MobileNodePreviewCard = React.memo(({
     return node.tags || node.properties?.tags || [];
   }, [node]);
   
+  // 预构建节点/边的 id 索引，将 parentNode 的两次 .find() 线性扫描降为 O(1) 的 Map 查询
+  const nodeById = React.useMemo(() => {
+    const m = new Map<string, Node>();
+    for (const n of nodes) {
+      if (!m.has(n.id)) m.set(n.id, n);
+    }
+    return m;
+  }, [nodes]);
+  const edgeByTarget = React.useMemo(() => {
+    const m = new Map<string, Edge>();
+    for (const e of edges) {
+      if (!m.has(e.target_knowledge_point_id)) m.set(e.target_knowledge_point_id, e);
+    }
+    return m;
+  }, [edges]);
+
   const parentNode = React.useMemo(() => {
-    const parentEdge = edges.find(e => e.target_knowledge_point_id === node.id);
+    const parentEdge = edgeByTarget.get(node.id);
     if (!parentEdge) return null;
-    return nodes.find(n => n.id === parentEdge.source_knowledge_point_id);
-  }, [node, edges, nodes]);
+    return nodeById.get(parentEdge.source_knowledge_point_id) ?? null;
+  }, [node, edgeByTarget, nodeById]);
   
   const childNodes = React.useMemo(() => {
     const childEdges = edges.filter(e => e.source_knowledge_point_id === node.id);

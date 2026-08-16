@@ -185,7 +185,9 @@ const calculatePageRank = (
     outgoingEdges.get(edge.source)?.push(edge.target);
   });
 
-  const ranks = new Map<string, number>();
+  // ranks 与 newRanks 均由同一 nodes 构建（键集相同），每次迭代直接指针交换即可，
+  // 替代逐 key 拷贝回 ranks 的 O(n) 操作，使每轮迭代复杂度降为 O(1)。
+  let ranks = new Map<string, number>();
   nodes.forEach(n => ranks.set(n.id, 1 / nodes.length));
 
   for (let i = 0; i < iterations; i++) {
@@ -204,7 +206,7 @@ const calculatePageRank = (
       newRanks.set(node.id, rank);
     });
 
-    ranks.forEach((_, id) => ranks.set(id, newRanks.get(id) || 0));
+    ranks = newRanks;
   }
 
   return ranks;
@@ -688,6 +690,20 @@ function get3DLevelNumber(level?: NodeLevel): number {
   return LEVEL_PRIORITY_3D[level] ?? 3;
 }
 
+// 模块级常量：3D 碰撞检测的 27 个相邻格子偏移（含自身）。
+// 预展开为扁平数组，替代热路径三重嵌套循环的重复循环结构开销。
+const NEIGHBOR_OFFSETS_3D: ReadonlyArray<readonly [number, number, number]> = [
+  [-1, -1, -1], [-1, -1, 0], [-1, -1, 1],
+  [-1, 0, -1], [-1, 0, 0], [-1, 0, 1],
+  [-1, 1, -1], [-1, 1, 0], [-1, 1, 1],
+  [0, -1, -1], [0, -1, 0], [0, -1, 1],
+  [0, 0, -1], [0, 0, 0], [0, 0, 1],
+  [0, 1, -1], [0, 1, 0], [0, 1, 1],
+  [1, -1, -1], [1, -1, 0], [1, -1, 1],
+  [1, 0, -1], [1, 0, 0], [1, 0, 1],
+  [1, 1, -1], [1, 1, 0], [1, 1, 1],
+];
+
 function compute3DNodeImportance(
   node: GraphNode,
   degreeMap: Map<unknown, number>,
@@ -803,28 +819,24 @@ const calculate3DForceLayout = (
       const cx = Math.floor(node.x / cellSize);
       const cy = Math.floor(node.y / cellSize);
       const cz = Math.floor(node.z / cellSize);
-      for (let dz = -1; dz <= 1; dz++) {
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            const bucket = grid.get(`${cx + dx},${cy + dy},${cz + dz}`);
-            if (!bucket) continue;
-            for (let bi = 0; bi < bucket.length; bi++) {
-              const other = bucket[bi];
-              if (other === node) continue;
-              const ddx = other.x - node.x;
-              const ddy = other.y - node.y;
-              const ddz = other.z - node.z;
-              const dist = Math.sqrt(ddx * ddx + ddy * ddy + ddz * ddz) || 1;
-              if (dist < collisionDistance) {
-                const force = (collisionDistance - dist) * 0.05;
-                const fx = (ddx / dist) * force;
-                const fy = (ddy / dist) * force;
-                const fz = (ddz / dist) * force;
-                node.vx -= fx;
-                node.vy -= fy;
-                node.vz -= fz;
-              }
-            }
+      for (const [dx, dy, dz] of NEIGHBOR_OFFSETS_3D) {
+        const bucket = grid.get(`${cx + dx},${cy + dy},${cz + dz}`);
+        if (!bucket) continue;
+        for (let bi = 0; bi < bucket.length; bi++) {
+          const other = bucket[bi];
+          if (other === node) continue;
+          const ddx = other.x - node.x;
+          const ddy = other.y - node.y;
+          const ddz = other.z - node.z;
+          const dist = Math.sqrt(ddx * ddx + ddy * ddy + ddz * ddz) || 1;
+          if (dist < collisionDistance) {
+            const force = (collisionDistance - dist) * 0.05;
+            const fx = (ddx / dist) * force;
+            const fy = (ddy / dist) * force;
+            const fz = (ddz / dist) * force;
+            node.vx -= fx;
+            node.vy -= fy;
+            node.vz -= fz;
           }
         }
       }

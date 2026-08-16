@@ -130,6 +130,34 @@ export class GraphVersionService {
     return this.mapEvent(data);
   }
 
+  async recordEvents(
+    supabase: SupabaseClient,
+    graphId: string,
+    events: Array<{
+      eventType: VersionGraphEventType;
+      eventData: Record<string, unknown>;
+      operatorId: string | null;
+    }>,
+    batchId?: string,
+  ): Promise<void> {
+    if (events.length === 0) return;
+
+    const { error } = await supabase
+      .from('graph_events')
+      .insert(events.map((e) => ({
+        graph_id: graphId,
+        event_type: e.eventType,
+        event_data: e.eventData,
+        operator_id: e.operatorId,
+        batch_id: batchId ?? null,
+      })));
+
+    if (error) {
+      logger.error('Record graph events error:', error);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+    }
+  }
+
   async createSnapshot(
     supabase: SupabaseClient,
     graphId: string,

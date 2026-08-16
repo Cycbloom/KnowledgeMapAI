@@ -418,20 +418,18 @@ export class GraphNodeService {
     const batchId = crypto.randomUUID();
     // 预构建 id→knowledge_point_id 索引，将循环内 find 的 O(n) 线性扫描降为 Map 查询 O(1)
     const nodeIndex = new Map(graphNodes?.map((gn) => [gn.id, gn.knowledge_point_id]));
-    for (const gnId of graphNodeIds) {
-      const kpId = nodeIndex.get(gnId);
-      await graphVersionService.recordEvent(
-        supabase,
-        graphId,
-        'node_deleted',
-        {
-          graphNodeId: gnId,
-          knowledgePointId: kpId,
-        },
-        null,
-        batchId,
-      ).catch(err => logger.error('Record node_deleted event error:', err));
-    }
+    // 批量记录 node_deleted 事件，替代循环内逐条 insert（N 次 → 1 次）
+    const deleteEvents = graphNodeIds.map((gnId) => ({
+      eventType: 'node_deleted' as const,
+      eventData: {
+        graphNodeId: gnId,
+        knowledgePointId: nodeIndex.get(gnId),
+      },
+      operatorId: null,
+    }));
+    await graphVersionService
+      .recordEvents(supabase, graphId, deleteEvents, batchId)
+      .catch((err) => logger.error('Record node_deleted events error:', err));
 
     return graphNodeIds.length;
   }

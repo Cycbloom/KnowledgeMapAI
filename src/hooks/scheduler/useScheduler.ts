@@ -33,11 +33,8 @@ const realtimeQueryConfig = {
 };
 
 export const schedulerKeys = {
-  tasks: (filters?: UserTaskFilters) => ["scheduler", "tasks", filters] as const,
   task: (id: string) => ["scheduler", "task", id] as const,
   queues: () => ["scheduler", "queues"] as const,
-  executions: (filters?: ExecutionFilters) =>
-    ["scheduler", "executions", filters] as const,
   settings: () => ["scheduler", "settings"] as const,
   stats: (period: string) => ["scheduler", "stats", period] as const,
   heatmap: (year?: number, month?: number) =>
@@ -64,10 +61,14 @@ function invalidateTaskCompletion(queryClient: ReturnType<typeof useQueryClient>
   }
 }
 
-export function useSchedulerTasks(filters?: UserTaskFilters) {
+export function useSchedulerTasks(
+  filters?: UserTaskFilters,
+  enabled: boolean = true,
+) {
   return useQuery({
-    queryKey: schedulerKeys.tasks(filters),
+    queryKey: queryKeys.schedulerTasks(filters),
     queryFn: () => api.scheduler.list(filters),
+    enabled,
     ...realtimeQueryConfig,
     placeholderData: keepPreviousData,
   });
@@ -95,7 +96,7 @@ export function useSchedulerQueues(options?: {
 
 export function useExecutions(filters?: ExecutionFilters) {
   return useQuery({
-    queryKey: schedulerKeys.executions(filters),
+    queryKey: queryKeys.calendarExecutions(filters),
     queryFn: () => api.scheduler.getExecutions(filters),
     ...defaultQueryConfig,
   });

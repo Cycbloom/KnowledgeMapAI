@@ -5,7 +5,7 @@ import type { GetActivitiesOptions } from "../../services/api/modules/scheduler/
 
 export function useActivities(options?: GetActivitiesOptions) {
   return useQuery({
-    queryKey: ["activities", options],
+    queryKey: queryKeys.activities(options),
     queryFn: async () => {
       const result = await api.scheduler.getActivities(options);
       return result;
@@ -28,7 +28,7 @@ export function useDailyActivities(date: string) {
 
 export function useActivityStats(startDate: string, endDate: string) {
   return useQuery({
-    queryKey: ["activities", "stats", startDate, endDate],
+    queryKey: queryKeys.activitiesStats(startDate, endDate),
     queryFn: async () => {
       const result = await api.scheduler.getActivityStats(startDate, endDate);
       return result;

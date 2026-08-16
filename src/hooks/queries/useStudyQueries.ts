@@ -78,7 +78,7 @@ export const useStudyCardsInfinite = (args: UseStudyCardsInfiniteArgs) => {
 
 export const useStudyStats = (graphId?: string) => {
   return useQuery({
-    queryKey: ["studyStats", graphId],
+    queryKey: queryKeys.studyStats(graphId ?? ""),
     queryFn: () => api.study.getStats(graphId),
   });
 };

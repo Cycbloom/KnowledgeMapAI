@@ -316,7 +316,7 @@ export const useUploadNoteImageMutation = createSimpleMutation<
 export const useCreateNoteTemplateMutation = createInvalidationMutation<
   NoteTemplate,
   CreateNoteTemplateInput
->((data) => api.notes.createTemplate(data), [queryKeys.noteTemplates(), queryKeys.notesPrefix]);
+>((data) => api.notes.createTemplate(data), [queryKeys.notesPrefix]);
 
 /**
  * 更新笔记模板。成功后失效 ["notes", "templates"] 与 ["notes"] 前缀
@@ -326,8 +326,7 @@ export const useUpdateNoteTemplateMutation = createInvalidationMutation<
   NoteTemplate,
   { id: string; data: UpdateNoteTemplateInput }
 >(({ id, data }) => api.notes.updateTemplate(id, data), [
-  ["notes", "templates"],
-  ["notes"],
+  queryKeys.notesPrefix,
 ]);
 
 /**
@@ -336,7 +335,7 @@ export const useUpdateNoteTemplateMutation = createInvalidationMutation<
 export const useDeleteNoteTemplateMutation = createInvalidationMutation<
   void,
   string
->((id) => api.notes.deleteTemplate(id), [queryKeys.noteTemplates(), queryKeys.notesPrefix]);
+>((id) => api.notes.deleteTemplate(id), [queryKeys.notesPrefix]);
 
 /**
  * 设为默认模板。成功后失效 ["notes", "templates"] 与 ["notes"] 前缀:
@@ -345,10 +344,7 @@ export const useDeleteNoteTemplateMutation = createInvalidationMutation<
 export const useSetDefaultNoteTemplateMutation = createInvalidationMutation<
   NoteTemplate,
   string
->((id) => api.notes.setDefaultTemplate(id), [
-  ["notes", "templates"],
-  ["notes"],
-]);
+>((id) => api.notes.setDefaultTemplate(id), [queryKeys.notesPrefix]);
 
 // ============================================================
 // P2 Task 7: 写作辅助与 Daily 聚合刷新

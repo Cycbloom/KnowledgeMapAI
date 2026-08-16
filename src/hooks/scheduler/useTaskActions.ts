@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   useCreateUserTaskMutation,
@@ -51,6 +51,9 @@ export const useTaskActions = (refetchQueues: () => void): TaskActions => {
   const [linkingTaskId, setLinkingTaskId] = useState<string | null>(null);
   const [knowledgePointSearch, setKnowledgePointSearch] = useState("");
   const [searchResults, setSearchResults] = useState<KnowledgePoint[]>([]);
+  // 竞态防护：记录最新一次搜索请求序号，仅当响应为最新请求时才写入结果，
+  // 避免快速输入时旧请求晚到覆盖新结果。
+  const searchSeqRef = useRef(0);
 
   const createTaskMutation = useCreateUserTaskMutation();
   const updateTaskMutation = useUpdateUserTaskMutation();
@@ -158,15 +161,21 @@ export const useTaskActions = (refetchQueues: () => void): TaskActions => {
 
   const searchKnowledgePoints = useCallback(async (query: string) => {
     if (!query.trim()) {
+      searchSeqRef.current += 1;
       setSearchResults([]);
       return;
     }
+    const seq = searchSeqRef.current + 1;
+    searchSeqRef.current = seq;
     try {
       const result = await api.knowledgePoints.searchSimilar({ query, limit: 5 });
+      // 仅当此响应仍是最新请求时才写入，丢弃过期响应
+      if (searchSeqRef.current !== seq) return;
       if (result && Array.isArray(result)) {
         setSearchResults(result as unknown as KnowledgePoint[]);
       }
     } catch (err) {
+      if (searchSeqRef.current !== seq) return;
       console.error("Failed to search knowledge points:", err);
     }
   }, []);

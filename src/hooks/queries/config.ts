@@ -108,6 +108,7 @@ export const queryKeys = {
     ["graphBranches", graphId] as const,
   graphMergePreview: (graphId: string, branchGraphId: string) =>
     ["graphMergePreview", graphId, branchGraphId] as const,
+  // 将 query 序列化为原始值数组，避免调用方每次渲染传入新对象引用导致缓存键抖动、反复 refetch
   aiPerformanceLogs: (query?: {
     limit?: number;
     offset?: number;
@@ -116,11 +117,26 @@ export const queryKeys = {
     success?: boolean;
     startTime?: number;
     endTime?: number;
-  }) => ["aiPerformanceLogs", query] as const,
+  }) =>
+    [
+      "aiPerformanceLogs",
+      query?.limit ?? 0,
+      query?.offset ?? 0,
+      query?.operation ?? "",
+      query?.provider ?? "",
+      query?.success ?? "",
+      query?.startTime ?? "",
+      query?.endTime ?? "",
+    ] as const,
   aiPerformanceStats: (query?: {
     startTime?: number;
     endTime?: number;
-  }) => ["aiPerformanceStats", query] as const,
+  }) =>
+    [
+      "aiPerformanceStats",
+      query?.startTime ?? "",
+      query?.endTime ?? "",
+    ] as const,
   notes: (params?: {
     type?: string;
     isArchived?: boolean;
@@ -169,10 +185,25 @@ export const queryKeys = {
   // 无参返回短前缀用于 invalidateQueries 前缀匹配;
   // 有参返回完整键用于 useQuery 精确匹配。
   scheduler: () => ["scheduler"] as const,
-  schedulerTasks: (filters?: unknown) =>
+  // 序列化 UserTaskFilters 为原始值数组，避免调用方每次渲染传入新对象引用导致缓存键抖动
+  schedulerTasks: (filters?: {
+    status?: string;
+    queue_level?: number;
+    tags?: string[];
+    from_date?: string;
+    to_date?: string;
+  }) =>
     filters === undefined
       ? (["scheduler", "tasks"] as const)
-      : (["scheduler", "tasks", filters] as const),
+      : ([
+          "scheduler",
+          "tasks",
+          filters?.status ?? "",
+          filters?.queue_level ?? 0,
+          filters?.tags?.slice().sort().join(",") ?? "",
+          filters?.from_date ?? "",
+          filters?.to_date ?? "",
+        ] as const),
   schedulerTask: (id: string) => ["scheduler", "task", id] as const,
   queues: () => ["scheduler", "queues"] as const,
   stats: (period?: string) =>
@@ -218,10 +249,28 @@ export const queryKeys = {
     ["batchGraphNodeStatus", ids.slice().sort().join(",")] as const,
 
   // === Activities 相关 ===
-  activities: (filters?: unknown) =>
+  // 序列化 GetActivitiesOptions 为原始值数组，避免调用方每次渲染传入新对象引用导致缓存键抖动
+  activities: (filters?: {
+    from_date?: string;
+    to_date?: string;
+    activity_type?: string;
+    knowledge_point_id?: string;
+    graph_id?: string;
+    limit?: number;
+    offset?: number;
+  }) =>
     filters === undefined
       ? (["activities"] as const)
-      : (["activities", filters] as const),
+      : ([
+          "activities",
+          filters?.from_date ?? "",
+          filters?.to_date ?? "",
+          filters?.activity_type ?? "",
+          filters?.knowledge_point_id ?? "",
+          filters?.graph_id ?? "",
+          filters?.limit ?? 0,
+          filters?.offset ?? 0,
+        ] as const),
 
   // === Study 相关 ===
   studyStats: (graphId: string) => ["studyStats", graphId] as const,
@@ -229,8 +278,9 @@ export const queryKeys = {
     ["semanticGroups", graphId] as const,
 
   // === Graph relation 相关 ===
+  // 序列化并排序 graphIds 数组，避免调用方每次渲染传入新数组引用导致缓存键抖动
   intelligentSuggestions: (graphIds: string[]) =>
-    ["intelligent-suggestions", graphIds] as const,
+    ["intelligent-suggestions", graphIds.slice().sort().join(",")] as const,
 
   // === Trash 相关 ===
   trashGraphs: ["graphs", "trash"] as const,
@@ -254,8 +304,21 @@ export const queryKeys = {
     ["backlinks", knowledgePointId] as const,
 
   // === Calendar 相关 ===
-  calendarExecutions: (filters?: unknown) =>
-    ["calendar", "executions", filters] as const,
+  // 序列化 ExecutionFilters 为原始值数组，避免调用方每次渲染传入新对象引用导致缓存键抖动
+  calendarExecutions: (filters?: {
+    task_id?: string;
+    from_date?: string;
+    to_date?: string;
+    status?: string;
+  }) =>
+    [
+      "calendar",
+      "executions",
+      filters?.task_id ?? "",
+      filters?.from_date ?? "",
+      filters?.to_date ?? "",
+      filters?.status ?? "",
+    ] as const,
 
   // === Task 7-11 预留方法 ===
   // Task 8: GlobalSearch 查询键

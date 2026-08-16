@@ -1,43 +1,26 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../../services/api";
+import { useMemo } from "react";
 import { userTaskToCalendarEvent } from "../../utils/calendarEventMapper";
+import { useSchedulerTasks } from "../scheduler/useScheduler";
 import type { CalendarEvent, CalendarMode } from "../../types/calendar";
-import type { UserTask, UserTaskFilters } from "@shared/types";
+import type { UserTaskFilters } from "@shared/types";
 
-const GC_TIME = 1000 * 60 * 60;
-
-const realtimeQueryConfig = {
-  staleTime: 5 * 60 * 1000,
-  gcTime: GC_TIME,
-  retry: 1,
-};
-
-export const calendarKeys = {
-  events: (calendarMode: CalendarMode, filters?: UserTaskFilters) =>
-    ["calendar", "events", calendarMode, filters] as const,
-  executions: (filters?: { task_id?: string; from_date?: string; to_date?: string; status?: string }) =>
-    ["calendar", "executions", filters] as const,
-  activityStats: (startDate: string, endDate: string) =>
-    ["calendar", "activityStats", startDate, endDate] as const,
-  dailyActivities: (date: string) =>
-    ["calendar", "dailyActivities", date] as const,
-};
-
+/**
+ * 日历"计划"视图的事件列表。
+ *
+ * 复用 useSchedulerTasks（相同 queryKeys.schedulerTasks 缓存键），
+ * 避免与调度页各自拉取同一 GET /tasks 造成重复请求。
+ */
 export function useCalendarEvents(
   calendarMode: CalendarMode,
   filters?: UserTaskFilters,
-) {
-  return useQuery({
-    queryKey: calendarKeys.events(calendarMode, filters),
-    queryFn: async (): Promise<CalendarEvent[]> => {
-      if (calendarMode === "history") {
-        return [];
-      }
-      const res = await api.scheduler.list(filters);
-      const tasks: UserTask[] = res ?? [];
-      return tasks.map((task) => userTaskToCalendarEvent(task));
-    },
-    enabled: calendarMode === "plan",
-    ...realtimeQueryConfig,
-  });
+): { data: CalendarEvent[]; isLoading: boolean } {
+  const { data: tasks, isLoading } = useSchedulerTasks(
+    filters,
+    calendarMode === "plan",
+  );
+  const events = useMemo(
+    () => (tasks ?? []).map((task) => userTaskToCalendarEvent(task)),
+    [tasks],
+  );
+  return { data: calendarMode === "history" ? [] : events, isLoading };
 }

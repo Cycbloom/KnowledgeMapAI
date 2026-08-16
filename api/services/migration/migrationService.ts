@@ -335,8 +335,10 @@ class MigrationService extends EventEmitter {
     );
     const allMigrations = this.getMigrationFiles();
     const allVersions = allMigrations.map((m) => m.version);
+    // 预构建 Set 使 includes 查找从 O(n) 降为 O(1)
+    const executedVersionsSet = new Set(executedVersions);
     const missingVersions = allVersions.filter(
-      (v) => !executedVersions.includes(v),
+      (v) => !executedVersionsSet.has(v),
     );
 
     return {

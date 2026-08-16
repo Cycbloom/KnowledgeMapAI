@@ -135,9 +135,13 @@ export class AchievementEngine {
         })
 
         // Build unlocked list from IDs
+        // 预构建 achievements 索引 Map，替代循环内 find 的 O(unlockedIds*achievements) 扫描
+        const achievementById = new Map<string, Achievement>(
+          achievements.map((a) => [a.id, a]),
+        );
         for (const id of unlockedIds) {
-          const ach = achievements.find(a => a.id === id)
-          if (ach) unlocked.push(ach as Achievement)
+          const ach = achievementById.get(id);
+          if (ach) unlocked.push(ach)
         }
 
         evaluationSucceeded = true

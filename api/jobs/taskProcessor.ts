@@ -414,15 +414,25 @@ class TaskProcessor {
     const newLevel = getNextLevel(currentGraphNode.level);
 
     if (Array.isArray(suggestions) && suggestions.length > 0) {
+      // 预构建本图全部节点标题索引，替代循环内逐 suggestion 查询标题匹配（N 次 → 1 次）
+      const { data: allExistingNodes } = await getSupabaseAdmin()
+        .from("graph_nodes")
+        .select("id, knowledge_point_id, knowledge_points (id, title)")
+        .eq("graph_id", graph_id)
+        .is("deleted_at", null);
+
+      const existingNodeByTitle = new Map<string, GraphNodeWithKnowledgePoint>();
+      for (const gn of allExistingNodes ?? []) {
+        const kpData = gn as GraphNodeWithKnowledgePoint;
+        const title = Array.isArray(kpData.knowledge_points)
+          ? kpData.knowledge_points[0]?.title
+          : kpData.knowledge_points?.title;
+        if (title) existingNodeByTitle.set(title, gn);
+      }
+
       for (const item of suggestions) {
         const suggestion = item as { title: string; content?: string };
-        const { data: existingGraphNode } = await getSupabaseAdmin()
-          .from("graph_nodes")
-          .select("id, knowledge_point_id, knowledge_points (id, title)")
-          .eq("graph_id", graph_id)
-          .eq("knowledge_points.title", suggestion.title)
-          .is("deleted_at", null)
-          .single();
+        const existingGraphNode = existingNodeByTitle.get(suggestion.title);
 
         if (existingGraphNode) {
           const kpData = existingGraphNode as GraphNodeWithKnowledgePoint;

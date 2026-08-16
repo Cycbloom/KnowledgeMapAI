@@ -346,12 +346,46 @@ export class LearningPathNodeService {
       throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
+    if (nodeOrders.length === 0) return;
+
+    const now = new Date().toISOString();
+
+    // 单事务 + 单条 CASE 批量更新，将 N 次逐条 update 降为 1 次查询
+    if (transactionExecutor.isAvailable()) {
+      try {
+        await transactionExecutor.executeInTransaction(async (client) => {
+          const params: unknown[] = [];
+          const whenClauses: string[] = [];
+
+          for (const item of nodeOrders) {
+            params.push(item.id, item.order_index);
+            whenClauses.push(`WHEN $${params.length - 1} THEN $${params.length}`);
+          }
+
+          params.push(now);
+          const nowParam = params.length;
+
+          await client.query(
+            `UPDATE learning_path_nodes
+             SET order_index = CASE id ${whenClauses.join(' ')} END,
+                 updated_at = $${nowParam}
+             WHERE id IN (${nodeOrders.map((_, i) => `$${i * 2 + 1}`).join(', ')})`,
+            params,
+          );
+        });
+        return;
+      } catch (txError) {
+        logger.warn('Transaction failed in reorderNodes, falling back to per-row updates', { error: txError });
+      }
+    }
+
+    // 非事务回退：逐条并行更新
     const updates = nodeOrders.map((item) =>
       supabase
         .from("learning_path_nodes")
         .update({
           order_index: item.order_index,
-          updated_at: new Date().toISOString(),
+          updated_at: now,
         })
         .eq("id", item.id)
         .eq("path_id", pathId),

@@ -100,34 +100,30 @@ export class StatsService {
     const daily: UserTaskSchedulerStats["daily"] = [];
     const daysCount = period === "day" ? 1 : period === "week" ? 7 : 30;
 
+    // 预建按天索引，避免内层按天 filter 重复扫描（O(days×(tasks+exec)) → O(n)）
+    const completedByDate = new Map<string, number>();
+    for (const t of tasks) {
+      if (t.completed_at) {
+        const key = t.completed_at.split("T")[0];
+        completedByDate.set(key, (completedByDate.get(key) || 0) + 1);
+      }
+    }
+    const durationByDate = new Map<string, number>();
+    for (const e of executions) {
+      const key = e.started_at.split("T")[0];
+      durationByDate.set(key, (durationByDate.get(key) || 0) + (e.duration || 0));
+    }
+
     for (let i = daysCount - 1; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       date.setHours(0, 0, 0, 0);
       const dateStr = date.toISOString().split("T")[0];
-      const nextDate = new Date(date);
-      nextDate.setDate(nextDate.getDate() + 1);
-
-      const dayTasks = tasks.filter((t) => {
-        const completedAt = t.completed_at;
-        return (
-          completedAt &&
-          completedAt >= date.toISOString() &&
-          completedAt < nextDate.toISOString()
-        );
-      });
-
-      const dayExecutions = executions.filter((e) => {
-        return (
-          e.started_at >= date.toISOString() &&
-          e.started_at < nextDate.toISOString()
-        );
-      });
 
       daily.push({
         date: dateStr,
-        completed: dayTasks.length,
-        duration: dayExecutions.reduce((sum, e) => sum + (e.duration || 0), 0),
+        completed: completedByDate.get(dateStr) || 0,
+        duration: durationByDate.get(dateStr) || 0,
       });
     }
 

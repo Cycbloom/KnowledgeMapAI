@@ -162,11 +162,15 @@ export class FocusService {
     if (tasksError)
       {throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: tasksError.message } });}
 
-    const totalDuration =
-      sessions?.reduce((sum, s) => sum + (s.duration || 0), 0) || 0;
-    const sessionCount = sessions?.length || 0;
-    const pomodoroCount =
-      sessions?.reduce((sum, s) => sum + (s.pomodoro_count || 0), 0) || 0;
+    // 单趟累加，合并三次 reduce 扫描
+    let totalDuration = 0;
+    let sessionCount = 0;
+    let pomodoroCount = 0;
+    for (const s of sessions ?? []) {
+      totalDuration += s.duration || 0;
+      sessionCount++;
+      pomodoroCount += s.pomodoro_count || 0;
+    }
 
     return {
       date: targetDate,
@@ -224,15 +228,19 @@ export class FocusService {
       dailyStats[d.toISOString().split("T")[0]] = 0;
     }
 
+    // 单趟累加 dailyStats/总时长/番茄数，合并多次 reduce 扫描
+    let totalDuration = 0;
+    let totalPomodoros = 0;
     sessions?.forEach((s) => {
+      const dur = s.duration || 0;
+      totalDuration += dur;
+      totalPomodoros += s.pomodoro_count || 0;
       const dateStr = new Date(s.started_at).toISOString().split("T")[0];
       if (dailyStats[dateStr] !== undefined) {
-        dailyStats[dateStr] += s.duration || 0;
+        dailyStats[dateStr] += dur;
       }
     });
 
-    const totalDuration =
-      sessions?.reduce((sum, s) => sum + (s.duration || 0), 0) || 0;
     const bestDay = Object.entries(dailyStats).reduce(
       (best, [date, duration]) =>
         duration > best.duration ? { date, duration } : best,
@@ -244,8 +252,7 @@ export class FocusService {
       week_end: new Date(end.getTime() - 1).toISOString().split("T")[0],
       total_duration: totalDuration,
       total_sessions: sessions?.length || 0,
-      total_pomodoros:
-        sessions?.reduce((sum, s) => sum + (s.pomodoro_count || 0), 0) || 0,
+      total_pomodoros: totalPomodoros,
       tasks_completed: tasks?.length || 0,
       daily_average: Math.round(totalDuration / 7),
       best_day: bestDay,
@@ -293,15 +300,19 @@ export class FocusService {
     const dailyStats: Record<string, number> = {};
     const activeDays = new Set<string>();
 
+    // 单趟累加 dailyStats/总时长/番茄数，合并多次 reduce 扫描
+    let totalDuration = 0;
+    let totalPomodoros = 0;
     sessions?.forEach((s) => {
+      const dur = s.duration || 0;
+      totalDuration += dur;
+      totalPomodoros += s.pomodoro_count || 0;
       const dateStr = new Date(s.started_at).toISOString().split("T")[0];
       if (!dailyStats[dateStr]) dailyStats[dateStr] = 0;
-      dailyStats[dateStr] += s.duration || 0;
+      dailyStats[dateStr] += dur;
       activeDays.add(dateStr);
     });
 
-    const totalDuration =
-      sessions?.reduce((sum, s) => sum + (s.duration || 0), 0) || 0;
     const bestDay = Object.entries(dailyStats).reduce(
       (best, [date, duration]) =>
         duration > best.duration ? { date, duration } : best,
@@ -309,25 +320,39 @@ export class FocusService {
     );
 
     const weeksInMonth = Math.ceil(endDate.getDate() / 7);
-    const weeklyBreakdown = [];
+
+    // 预建周界并用相邻周界校正 DST 偏移，单趟分桶替换 O(weeks×sessions) 嵌套 filter
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const weekStarts: number[] = [];
     for (let w = 0; w < weeksInMonth; w++) {
-      const weekStart = new Date(startDate);
-      weekStart.setDate(weekStart.getDate() + w * 7);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 7);
-
-      const weekSessions =
-        sessions?.filter((s) => {
-          const d = new Date(s.started_at);
-          return d >= weekStart && d < weekEnd;
-        }) || [];
-
-      weeklyBreakdown.push({
-        week: w + 1,
-        duration: weekSessions.reduce((sum, s) => sum + (s.duration || 0), 0),
-        sessions: weekSessions.length,
-      });
+      const ws = new Date(startDate);
+      ws.setDate(ws.getDate() + w * 7);
+      weekStarts.push(ws.getTime());
     }
+    const weekBuckets: Array<{ duration: number; sessions: number }> =
+      Array.from({ length: weeksInMonth }, () => ({ duration: 0, sessions: 0 }));
+
+    sessions?.forEach((s) => {
+      const t = new Date(s.started_at).getTime();
+      let idx = Math.floor((t - weekStarts[0]) / weekMs);
+      if (idx >= 0 && idx < weeksInMonth) {
+        const start = weekStarts[idx];
+        const end =
+          idx + 1 < weeksInMonth ? weekStarts[idx + 1] : weekStarts[idx] + weekMs;
+        if (t < start) idx--;
+        else if (t >= end) idx++;
+      }
+      if (idx >= 0 && idx < weeksInMonth) {
+        weekBuckets[idx].duration += s.duration || 0;
+        weekBuckets[idx].sessions++;
+      }
+    });
+
+    const weeklyBreakdown = weekBuckets.map((b, i) => ({
+      week: i + 1,
+      duration: b.duration,
+      sessions: b.sessions,
+    }));
 
     const daysInMonth = endDate.getDate();
 
@@ -335,8 +360,7 @@ export class FocusService {
       month: `${targetYear}-${targetMonth.toString().padStart(2, "0")}`,
       total_duration: totalDuration,
       total_sessions: sessions?.length || 0,
-      total_pomodoros:
-        sessions?.reduce((sum, s) => sum + (s.pomodoro_count || 0), 0) || 0,
+      total_pomodoros: totalPomodoros,
       tasks_completed: tasks?.length || 0,
       daily_average: Math.round(totalDuration / daysInMonth),
       active_days: activeDays.size,

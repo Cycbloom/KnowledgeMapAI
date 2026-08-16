@@ -837,11 +837,17 @@ export class TaskService {
       }
     }
 
-    return {
-      q0: (tasks?.filter((t) => t.queue_level === 0) ?? []) as Array<Record<string, unknown>>,
-      q1: (tasks?.filter((t) => t.queue_level === 1) ?? []) as Array<Record<string, unknown>>,
-      q2: (tasks?.filter((t) => t.queue_level === 2) ?? []) as Array<Record<string, unknown>>,
-    };
+    // 单趟遍历分组，避免 3 次 O(n) filter 扫描同一数组
+    const q0: Array<Record<string, unknown>> = [];
+    const q1: Array<Record<string, unknown>> = [];
+    const q2: Array<Record<string, unknown>> = [];
+    for (const t of tasks ?? []) {
+      if (t.queue_level === 0) q0.push(t as Record<string, unknown>);
+      else if (t.queue_level === 1) q1.push(t as Record<string, unknown>);
+      else if (t.queue_level === 2) q2.push(t as Record<string, unknown>);
+    }
+
+    return { q0, q1, q2 };
   }
 }
 

@@ -106,15 +106,17 @@ export class TaskAnalyticsService {
     const allExecutions = executions || [];
 
     const completedTasks = allTasks.filter((t) => t.status === "completed");
-    const todayCompleted = completedTasks.filter(
-      (t) => new Date(t.completed_at) >= today,
-    ).length;
-    const weekCompleted = completedTasks.filter(
-      (t) => new Date(t.completed_at) >= weekAgo,
-    ).length;
-    const monthCompleted = completedTasks.filter(
-      (t) => new Date(t.completed_at) >= monthAgo,
-    ).length;
+
+    // 单趟遍历同时统计三档，避免 3 次 O(n) filter
+    let todayCompleted = 0;
+    let weekCompleted = 0;
+    let monthCompleted = 0;
+    for (const t of completedTasks) {
+      const completedAt = new Date(t.completed_at);
+      if (completedAt >= today) todayCompleted++;
+      if (completedAt >= weekAgo) weekCompleted++;
+      if (completedAt >= monthAgo) monthCompleted++;
+    }
 
     const durations = allExecutions
       .filter((e) => e.duration)
@@ -176,30 +178,35 @@ export class TaskAnalyticsService {
     const now = new Date();
     let cumulative = 0;
 
+    // 预建日期索引，将内层 O(days) 的按天 filter 降为 O(1) 查询
+    const createdByDate = new Map<string, number>();
+    const completedByDate = new Map<string, number>();
+    for (const t of tasks) {
+      const createdDate = new Date(t.created_at).toISOString().split("T")[0];
+      createdByDate.set(createdDate, (createdByDate.get(createdDate) || 0) + 1);
+      if (t.status === "completed" && t.completed_at) {
+        const completedDate = new Date(t.completed_at)
+          .toISOString()
+          .split("T")[0];
+        completedByDate.set(
+          completedDate,
+          (completedByDate.get(completedDate) || 0) + 1,
+        );
+      }
+    }
+
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split("T")[0];
 
-      const dayTasks = tasks.filter((t) => {
-        const createdDate = new Date(t.created_at).toISOString().split("T")[0];
-        return createdDate === dateStr;
-      });
-
-      const dayCompleted = tasks.filter((t) => {
-        if (t.status !== "completed" || !t.completed_at) return false;
-        const completedDate = new Date(t.completed_at)
-          .toISOString()
-          .split("T")[0];
-        return completedDate === dateStr;
-      });
-
-      cumulative += dayCompleted.length;
+      const dayCompleted = completedByDate.get(dateStr) || 0;
+      cumulative += dayCompleted;
 
       trend.push({
         date: dateStr,
-        completed: dayCompleted.length,
-        total: dayTasks.length,
+        completed: dayCompleted,
+        total: createdByDate.get(dateStr) || 0,
         cumulative,
       });
     }
@@ -244,18 +251,27 @@ export class TaskAnalyticsService {
       avgDuration: number;
     }> = [];
 
-    for (let level = 0; level <= 2; level++) {
-      const queueTasks = tasks.filter((t) => t.queue_level === level);
-      const completed = queueTasks.filter((t) => t.status === "completed");
+    // 单趟分组统计，避免每个队列各 filter 一次（O(3×n) → O(n)）
+    const counts: Array<{ total: number; completed: number }> = [
+      { total: 0, completed: 0 },
+      { total: 0, completed: 0 },
+      { total: 0, completed: 0 },
+    ];
+    for (const t of tasks) {
+      if (t.queue_level >= 0 && t.queue_level <= 2) {
+        counts[t.queue_level].total++;
+        if (t.status === "completed") counts[t.queue_level].completed++;
+      }
+    }
 
+    for (let level = 0; level <= 2; level++) {
+      const c = counts[level];
       stats.push({
         queueLevel: level,
-        totalTasks: queueTasks.length,
-        completedTasks: completed.length,
+        totalTasks: c.total,
+        completedTasks: c.completed,
         completionRate:
-          queueTasks.length > 0
-            ? Math.round((completed.length / queueTasks.length) * 100)
-            : 0,
+          c.total > 0 ? Math.round((c.completed / c.total) * 100) : 0,
         avgDuration: 0,
       });
     }
@@ -306,35 +322,52 @@ export class TaskAnalyticsService {
       avgDelay: number;
     }> = [];
 
-    for (let p = 1; p <= 4; p++) {
-      const priorityTasks = tasks.filter((t) => t.priority === p);
-      const completed = priorityTasks.filter((t) => t.status === "completed");
+    // 单趟分组统计，避免每个优先级各 filter 两次（O(4×n) → O(n)）
+    const buckets: Array<{
+      count: number;
+      completed: number;
+      totalDelay: number;
+      delayCount: number;
+    }> = [
+      { count: 0, completed: 0, totalDelay: 0, delayCount: 0 },
+      { count: 0, completed: 0, totalDelay: 0, delayCount: 0 },
+      { count: 0, completed: 0, totalDelay: 0, delayCount: 0 },
+      { count: 0, completed: 0, totalDelay: 0, delayCount: 0 },
+    ];
 
-      let totalDelay = 0;
-      let delayCount = 0;
-      completed.forEach((task) => {
-        if (task.deadline && task.completed_at) {
-          const deadline = new Date(task.deadline);
-          const completedAt = new Date(task.completed_at);
-          const delay =
-            (completedAt.getTime() - deadline.getTime()) / (1000 * 60 * 60);
-          if (delay > 0) {
-            totalDelay += delay;
-            delayCount++;
-          }
+    for (const task of tasks) {
+      if (task.priority < 1 || task.priority > 4) continue;
+      const bucket = buckets[task.priority - 1];
+      bucket.count++;
+      if (task.status !== "completed") continue;
+      bucket.completed++;
+      if (task.deadline && task.completed_at) {
+        const deadline = new Date(task.deadline);
+        const completedAt = new Date(task.completed_at);
+        const delay =
+          (completedAt.getTime() - deadline.getTime()) / (1000 * 60 * 60);
+        if (delay > 0) {
+          bucket.totalDelay += delay;
+          bucket.delayCount++;
         }
-      });
+      }
+    }
 
+    for (let p = 1; p <= 4; p++) {
+      const bucket = buckets[p - 1];
       stats.push({
         priority: p,
         label: priorityLabels[p - 1],
-        count: priorityTasks.length,
-        completedCount: completed.length,
+        count: bucket.count,
+        completedCount: bucket.completed,
         completionRate:
-          priorityTasks.length > 0
-            ? Math.round((completed.length / priorityTasks.length) * 100)
+          bucket.count > 0
+            ? Math.round((bucket.completed / bucket.count) * 100)
             : 0,
-        avgDelay: delayCount > 0 ? Math.round(totalDelay / delayCount) : 0,
+        avgDelay:
+          bucket.delayCount > 0
+            ? Math.round(bucket.totalDelay / bucket.delayCount)
+            : 0,
       });
     }
 

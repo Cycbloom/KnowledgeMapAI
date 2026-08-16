@@ -1,0 +1,91 @@
+flowchart TB
+    %% ================= 客户端形态 =================
+    subgraph CLIENTS["🎯 客户端形态（Deployment Targets）"]
+        direction LR
+        E["🖥️ Electron 桌面应用<br/>Windows / macOS / Linux"]
+        W["🌐 Web 应用<br/>浏览器访问 + PWA 离线"]
+        M["📱 Android 移动端<br/>Capacitor 打包"]
+    end
+
+    %% ================= 前端渲染层 =================
+    subgraph RENDERER["🧩 前端渲染层 src/（React 18 + TypeScript + Vite 6）"]
+        direction TB
+        PAGES["pages/ 页面层<br/>GraphEditor · Dashboard · Scheduler · Study<br/>Notes · Quiz · RAGChat · Statistics · Settings"]
+        COMP["components/ 组件层<br/>Graph · GraphEditor · Scheduler · Learning<br/>Study · Notes · Quiz · common · Layout"]
+        HOOKS["hooks/ 逻辑层<br/>graphEditor · graphAI · scheduler<br/>study · quiz · mutations · queries"]
+        STORE["store/ 状态层（Zustand）<br/>useStore · useThemeStore · useTimerStore<br/>usePreferencesStore · useNotificationsStore"]
+        SERVICES["services/ 服务层<br/>api/ API 客户端 · kernel/ 插件内核<br/>sync/ 同步 · console · timer · mobile"]
+        SPECIAL["three/ 3D 知识星球 · workers/ Web Worker<br/>i18n/ 国际化 · lib/graph<br/>utils/ · config/ · constants/ · data/ · types/"]
+    end
+
+    %% ================= 共享层 =================
+    subgraph SHARED["🔗 共享层 shared/（跨端复用，前后端 + Electron 共用）"]
+        direction TB
+        STYPES["types/ 40+ 共享类型定义<br/>graph-* · scheduler-* · ipc · events · database.generated"]
+        KERNEL["kernel/ 插件内核基类<br/>PluginLifecycleBase · types"]
+        SYNC["sync/ 离线同步算法<br/>conflictDetector · conflictResolver · operationMerger"]
+        SCONST["constants/ 业务常量<br/>masteryThresholds · taskDefaults · studyModePresets"]
+    end
+
+    %% ================= Electron 主进程 =================
+    subgraph ELECTRON["🖥️ Electron 主进程 electron/"]
+        direction TB
+        MAIN["main.ts + preload.ts<br/>窗口 · 菜单 · 托盘 · 生命周期"]
+        IPC["ipc/ IPC 通道<br/>db · sync · update · window · dialog<br/>power · shell · notification · deepLink · badge"]
+        EDB["db/ 本地数据库（better-sqlite3）<br/>schema.ts + migrations/001_initial.ts"]
+        ESYNC["sync/ syncEngine.ts<br/>本地 ↔ 云端同步引擎"]
+        EUTILS["utils/ windowManager · trayManager<br/>powerManager · appMenu · logger"]
+    end
+
+    %% ================= 后端 API 层 =================
+    subgraph API["⚙️ 后端 API 层 api/（Node.js + Express + Kernel 插件系统）"]
+        direction TB
+        APP["app.ts · server.ts · supabase.ts<br/>bootstrapKernel → 路由动态挂载"]
+        ROUTES["routes/ 路由层（按领域）<br/>graphs · knowledge · learning · scheduler<br/>study · ai · system · auth · story · agents"]
+        ASERVICES["services/ 业务服务层<br/>graph · ai · scheduler · study · quiz · kernel<br/>auth · sync · achievements · notes · plugins"]
+        MIDDLEWARE["middleware/ 中间件<br/>auth · csrf · rateLimiter · errorHandler<br/>validate · ownership · requestId · requestLogger"]
+        JOBS["jobs/ 后台任务<br/>autoBackupScheduler · taskProcessor"]
+        ADB["database/ transactionExecutor"]
+    end
+
+    %% ================= 数据层 =================
+    subgraph DATA["🗄️ 数据层"]
+        SUPABASE["Supabase（PostgreSQL）<br/>47 个 migrations · pgvector 向量检索<br/>pg_trgm 全文搜索 · RLS 行级安全 · Auth"]
+        SQLITE["better-sqlite3<br/>Electron 本地离线缓存库"]
+    end
+
+    %% ================= 外部服务 =================
+    subgraph EXT["🌍 外部服务"]
+        AI["AI 提供商（OpenAI SDK）<br/>Deepseek · 火山引擎 · 阿里云<br/>文本生成 · 向量嵌入 · 图片理解"]
+    end
+
+    %% ================= 工程化 =================
+    subgraph INFRA["🛠️ 工程化 & 基础设施"]
+        direction TB
+        BUILD["构建链<br/>Vite 6 + electron-builder + Capacitor + PWA"]
+        CI["CI/CD GitHub Actions<br/>ci.yml · release.yml"]
+        TEST["测试体系<br/>Vitest 单元 · Playwright e2e · MSW · faker"]
+        DEVOPS["Docker Compose · Supabase CLI<br/>scripts/ 工具链 · nodemon 热重载"]
+    end
+
+    %% ================= 连接关系 =================
+    W -->|"HTTP /api (Vite proxy)"| RENDERER
+    M -->|"Capacitor WebView"| RENDERER
+    E -->|"BrowserWindow 加载"| RENDERER
+    E ==>|"contextBridge (preload)"| ELECTRON
+
+    RENDERER -->|"import 复用"| SHARED
+    ELECTRON -->|"import 复用"| SHARED
+    API -->|"import 复用"| SHARED
+
+    RENDERER -->|"REST /api 请求（axios）"| API
+    RENDERER -->|"Supabase Client（移动端直连/离线）"| SUPABASE
+
+    ELECTRON -->|"better-sqlite3 本地读写"| SQLITE
+    ELECTRON -->|"HTTPS 同步/自动更新"| API
+
+    API -->|"pg + RLS + 向量检索"| SUPABASE
+    API -->|"OpenAI SDK 调用"| AI
+
+    INFRA -.->|"构建 · 测试 · 部署"| CLIENTS
+    INFRA -.->|"构建 · 打包"| API

@@ -288,7 +288,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
                         <button
                           onClick={() => setEditingId(shortcut.id)}
                           className={cn(
-                            'flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border transition-colors',
+                            'flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                             isDark
                               ? 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500'
                               : 'bg-gray-100 border-gray-200 text-gray-600 hover:border-gray-300'
@@ -301,7 +301,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
                       {binding && JSON.stringify(binding.keys) !== JSON.stringify(shortcut.defaultKeys) && (
                         <button
                           onClick={() => resetBinding(shortcut.id)}
-                          className={cn('p-1 rounded transition-colors',
+                          className={cn('p-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                             isDark
                               ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
                               : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'

@@ -1,11 +1,12 @@
 import React, { useRef, useCallback, useEffect, useState, memo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/utils/utils';
 import { useReducedMotionOrPreference } from '@/hooks/common/useReducedMotionOrPreference';
 import { useIsMobile } from '@/hooks/common/useIsMobile';
 import { EmptyState } from './EmptyState';
-import { Loading } from './Loading';
+import { Skeleton } from './Skeleton';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -100,6 +101,7 @@ function VirtualListComponent<T>({
   scrollContainerRef: externalContainerRef,
   itemClassName,
 }: VirtualListProps<T>) {
+  const { t } = useTranslation();
   const internalContainerRef = useRef<HTMLDivElement | null>(null);
   const [internalContainer, setInternalContainer] = useState<HTMLDivElement | null>(null);
   const endReachedSentinelRef = useRef(false);
@@ -156,8 +158,29 @@ function VirtualListComponent<T>({
 
   if (isLoading) {
     return (
-      <div className={cn('flex items-center justify-center py-12', className)} style={style}>
-        {loadingState ?? <Loading size="md" />}
+      <div
+        className={cn('p-2', className)}
+        style={style}
+        role="status"
+        aria-busy="true"
+      >
+        {loadingState ?? (
+          <div className="space-y-2">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 rounded-lg px-3 py-3"
+              >
+                <Skeleton variant="circular" width={32} height={32} />
+                <div className="flex-1 space-y-2">
+                  <Skeleton variant="text" className="h-4 w-3/4" />
+                  <Skeleton variant="text" className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))}
+            <span className="sr-only">{t('common.aria.loading')}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -260,6 +283,7 @@ function VirtualGridComponent<T>({
   emptyState,
   loadingState,
 }: VirtualGridProps<T>) {
+  const { t } = useTranslation();
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
 
   const columns = Math.max(1, Math.floor((containerWidth + gap) / (itemWidth + gap)));
@@ -274,9 +298,33 @@ function VirtualGridComponent<T>({
   });
 
   if (isLoading) {
+    const cols = Math.max(1, Math.floor((containerWidth + gap) / (itemWidth + gap)));
     return (
-      <div className={cn('flex items-center justify-center', className)} style={{ height: containerHeight }}>
-        {loadingState ?? <Loading size="md" />}
+      <div
+        className={cn('p-2', className)}
+        style={{ height: containerHeight }}
+        role="status"
+        aria-busy="true"
+      >
+        {loadingState ?? (
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: `repeat(${cols}, ${itemWidth}px)`,
+              gap: `${gap}px`,
+            }}
+          >
+            {Array.from({ length: cols * 3 }).map((_, index) => (
+              <Skeleton
+                key={index}
+                variant="rectangular"
+                width={itemWidth}
+                height={itemHeight}
+              />
+            ))}
+          </div>
+        )}
+        <span className="sr-only">{t('common.aria.loading')}</span>
       </div>
     );
   }

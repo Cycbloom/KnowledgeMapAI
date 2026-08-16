@@ -80,6 +80,11 @@
   "batchDeletePartial": "Deletion complete: {{success}} succeeded, {{fail}} failed",
   "cancelSelection": "Cancel Selection",
   "emptyDesc": "Tasks will appear here once created",
+  "firstRun": {
+    "title": "Create your first task",
+    "description": "Enter a goal or upload material — AI will break it down and plan your learning.",
+    "dismiss": "Got it"
+  },
   "taskIdNotExist": "Task ID does not exist",
   "copy": {
     "idCopied": "Task ID copied"

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import type { SVGProps } from "react";
 import { EmptyState } from "../EmptyState";
 
@@ -17,6 +17,12 @@ vi.mock("lucide-react", () => ({
   ),
   Database: (props: SVGProps<SVGSVGElement>) => (
     <svg data-testid="illustration-no-data" {...props} />
+  ),
+  Compass: (props: SVGProps<SVGSVGElement>) => (
+    <svg data-testid="illustration-guide" {...props} />
+  ),
+  X: (props: SVGProps<SVGSVGElement>) => (
+    <svg data-testid="icon-close" {...props} />
   ),
 }));
 
@@ -131,5 +137,35 @@ describe("EmptyState", () => {
     expect(html).toMatch(/dark:bg-slate-800/);
     expect(html).toMatch(/dark:text-gray-100/);
     expect(html).toMatch(/dark:text-gray-500/);
+  });
+
+  it("illustration='guide' 应该渲染 guide 图标", () => {
+    render(<EmptyState title="test" illustration="guide" />);
+    expect(screen.getByTestId("illustration-guide")).toBeInTheDocument();
+  });
+
+  it("dismissible 时渲染关闭按钮且点击触发 onDismiss", () => {
+    const onDismiss = vi.fn();
+    render(<EmptyState title="test" dismissible onDismiss={onDismiss} />);
+    const closeButton = screen.getByRole("button", { name: "关闭提示" });
+    expect(closeButton).toBeInTheDocument();
+    fireEvent.click(closeButton);
+    expect(onDismiss).toHaveBeenCalled();
+  });
+
+  it("dismissible=false（默认）时不渲染关闭按钮", () => {
+    render(<EmptyState title="test" />);
+    expect(screen.queryByRole("button", { name: "关闭提示" })).toBeNull();
+  });
+
+  it("acknowledge 渲染按钮且点击触发回调", () => {
+    const onClick = vi.fn();
+    render(
+      <EmptyState title="test" acknowledge={{ label: "开始上手", onClick }} />,
+    );
+    const button = screen.getByRole("button", { name: "开始上手" });
+    expect(button).toBeInTheDocument();
+    fireEvent.click(button);
+    expect(onClick).toHaveBeenCalled();
   });
 });

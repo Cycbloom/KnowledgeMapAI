@@ -20,6 +20,8 @@ export type { SkeletonCardProps } from "./SkeletonCard";
 export { SkeletonList } from "./SkeletonList";
 export type { SkeletonListProps } from "./SkeletonList";
 export { EmptyState } from "./EmptyState";
+export { FirstRunHint } from "./FirstRunHint";
+export type { FirstRunHintProps } from "./FirstRunHint";
 export { EmptyStateCard } from "./EmptyStateCard";
 export type { EmptyStateCardProps } from "./EmptyStateCard";
 export { ErrorBanner } from "./ErrorBanner";

@@ -1,9 +1,10 @@
 import React from 'react';
-import { FileX, SearchX, AlertCircle, Database } from 'lucide-react';
+import { FileX, SearchX, AlertCircle, Database, Compass, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/utils/utils';
 import { Button } from './Button';
 
-type IllustrationType = 'empty' | 'search' | 'error' | 'no-data';
+type IllustrationType = 'empty' | 'search' | 'error' | 'no-data' | 'guide';
 type EmptyStateSize = 'sm' | 'md' | 'lg';
 type EmptyStateVariant = 'page' | 'panel' | 'inline';
 
@@ -24,6 +25,12 @@ export interface EmptyStateProps {
     onClick: () => void;
   };
   variant?: EmptyStateVariant;
+  dismissible?: boolean;
+  onDismiss?: () => void;
+  acknowledge?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 const illustrationConfig: Record<
@@ -34,6 +41,7 @@ const illustrationConfig: Record<
   search: { Component: SearchX, colorClass: 'text-gray-400 dark:text-gray-500' },
   error: { Component: AlertCircle, colorClass: 'text-red-400 dark:text-red-500' },
   'no-data': { Component: Database, colorClass: 'text-gray-400 dark:text-gray-500' },
+  guide: { Component: Compass, colorClass: 'text-primary-500 dark:text-primary-400' },
 };
 
 const sizeIconClasses: Record<EmptyStateSize, string> = {
@@ -65,7 +73,11 @@ const EmptyStateComponent: React.FC<EmptyStateProps> = ({
   iconWrapper = false,
   secondaryAction,
   variant = 'page',
+  dismissible = false,
+  onDismiss,
+  acknowledge,
 }) => {
+  const { t } = useTranslation();
   const { Component, colorClass } = illustrationConfig[illustration];
   const displayIcon = icon ?? (
     <Component className={cn(sizeIconClasses[size], colorClass)} />
@@ -76,10 +88,22 @@ const EmptyStateComponent: React.FC<EmptyStateProps> = ({
       role="status"
       className={cn(
         'flex flex-col items-center justify-center px-4 text-center',
+        dismissible && 'relative',
         variantContainerClasses[variant],
         className
       )}
     >
+      {dismissible && (
+        <button
+          type="button"
+          aria-label={t('common.aria.dismiss')}
+          onClick={onDismiss}
+          className="absolute top-3 right-3 p-1 rounded-md text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
+
       <div className="mb-4">
         {iconWrapper ? (
           <div
@@ -106,7 +130,7 @@ const EmptyStateComponent: React.FC<EmptyStateProps> = ({
         </p>
       )}
 
-      {(action || secondaryAction) && (
+      {(action || secondaryAction || acknowledge) && (
         <div
           data-testid="empty-state-actions"
           className="flex items-center justify-center gap-3 flex-wrap mt-2"
@@ -114,6 +138,11 @@ const EmptyStateComponent: React.FC<EmptyStateProps> = ({
           {action && (
             <Button variant="primary" size="md" onClick={action.onClick}>
               {action.label}
+            </Button>
+          )}
+          {acknowledge && (
+            <Button variant="primary" size="md" onClick={acknowledge.onClick}>
+              {acknowledge.label}
             </Button>
           )}
           {secondaryAction && (

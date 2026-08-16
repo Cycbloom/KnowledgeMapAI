@@ -12,7 +12,7 @@ import { usePersistedListState } from "../hooks/common/usePersistedListState";
 import { useScrollRestoration } from "../hooks/common/useScrollRestoration";
 import { useStore } from "../store/useStore";
 import { usePullToRefresh } from "../hooks/gesture/usePullToRefresh";
-import { ConfirmationModal, Skeleton } from "../components/common";
+import { ConfirmationModal, Skeleton, FirstRunHint } from "../components/common";
 import { VirtualList } from "../components/common/VirtualList";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TaskProgressBar } from "@/components/common/TaskProgressBar";
@@ -542,6 +542,15 @@ export const Tasks = () => {
 
           {!isLoading && filteredTasks.length === 0 && (
             <div className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-500">
+              {!debouncedSearchQuery.trim() && (
+                <FirstRunHint
+                  storageKey="tasks-first-run-hint-dismissed"
+                  title={t("tasks.firstRun.title")}
+                  description={t("tasks.firstRun.description")}
+                  dismissLabel={t("tasks.firstRun.dismiss")}
+                  className="max-w-sm mx-auto"
+                />
+              )}
               <EmptyState
                 icon={<Inbox className="w-12 h-12 text-gray-300 dark:text-slate-600" />}
                 title={debouncedSearchQuery.trim() ? t("tasks.noSearchResults") : t("tasks.noTasks")}

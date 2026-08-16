@@ -18,7 +18,7 @@ import { message } from "../utils/messageHelper";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
 import { formatDate } from "@/utils/formatters";
-import { ConfirmationModal, SkeletonCard, Skeleton, ErrorBoundary, EmptyState } from "../components/common";
+import { ConfirmationModal, SkeletonCard, Skeleton, ErrorBoundary, EmptyState, FirstRunHint } from "../components/common";
 const AutoGraphGenerator = lazy(() =>
   import("../components/AutoGraph/AutoGraphGenerator").then((module) => ({
     default: module.AutoGraphGenerator,
@@ -560,31 +560,16 @@ export const Dashboard = () => {
                   />
                   {firstRunHint.isVisible && (
                     <div
-                      data-testid="dashboard-first-run-hint"
                       className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 w-full max-w-xs px-4 pointer-events-auto"
                     >
-                      <div className="relative bg-primary-600 text-white rounded-lg shadow-lg p-3">
-                        <p className="font-semibold text-sm mb-1">
-                          {t("dashboard.firstRunHint.title")}
-                        </p>
-                        <p className="text-xs text-primary-50 mb-2">
-                          {t("dashboard.firstRunHint.description")}
-                        </p>
-                        <div className="flex justify-end">
-                          <button
-                            type="button"
-                            onClick={firstRunHint.dismiss}
-                            className="text-xs font-medium px-2 py-1 rounded bg-white/20 hover:bg-white/30 transition-colors"
-                          >
-                            {t("dashboard.firstRunHint.dismiss")}
-                          </button>
-                        </div>
-                        {/* 小箭头指向下方 CTA 按钮 */}
-                        <div
-                          aria-hidden="true"
-                          className="absolute left-1/2 -translate-x-1/2 -bottom-2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-primary-600"
-                        />
-                      </div>
+                      <FirstRunHint
+                        visible={firstRunHint.isVisible}
+                        storageKey="dashboard-first-run-hint-dismissed"
+                        title={t("dashboard.firstRunHint.title")}
+                        description={t("dashboard.firstRunHint.description")}
+                        dismissLabel={t("dashboard.firstRunHint.dismiss")}
+                        onDismiss={() => firstRunHint.dismiss()}
+                      />
                     </div>
                   )}
                 </div>

@@ -200,7 +200,8 @@
     "imageLoadFailed": "Image load failed",
     "start": "Start",
     "clear": "Clear",
-    "toggleSubtaskStatus": "Toggle subtask status"
+    "toggleSubtaskStatus": "Toggle subtask status",
+    "dismiss": "Dismiss"
   },
   "clipboard": {
     "unavailable": "Clipboard unavailable",
@@ -284,6 +285,14 @@
     "actionToggleThemeKeywords": "theme dark light",
     "actionSettingsKeywords": "settings config",
     "actionTrashKeywords": "trash recycle bin",
+    "actionNewTask": "New task",
+    "actionStartReview": "Start/continue review",
+    "actionLearningPaths": "Open learning paths",
+    "actionOpenScheduler": "Open scheduler",
+    "actionNewTaskKeywords": "task new todo",
+    "actionStartReviewKeywords": "study review",
+    "actionLearningPathsKeywords": "learning path route",
+    "actionOpenSchedulerKeywords": "scheduler calendar plan",
     "ariaLabel": "Global Command Palette",
     "searchPlaceholder": "Search commands, recent items, or actions...",
     "noMatch": "No matching commands",

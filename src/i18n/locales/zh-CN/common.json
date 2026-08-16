@@ -200,7 +200,8 @@
     "imageLoadFailed": "图片加载失败",
     "start": "开始",
     "clear": "清除",
-    "toggleSubtaskStatus": "切换子任务状态"
+    "toggleSubtaskStatus": "切换子任务状态",
+    "dismiss": "关闭提示"
   },
   "clipboard": {
     "unavailable": "剪贴板不可用",
@@ -284,6 +285,14 @@
     "actionToggleThemeKeywords": "theme dark light 主题 暗黑 明亮",
     "actionSettingsKeywords": "settings 配置 设置",
     "actionTrashKeywords": "trash recycle bin 回收站",
+    "actionNewTask": "新建任务",
+    "actionStartReview": "开始/继续复习",
+    "actionLearningPaths": "打开学习路径",
+    "actionOpenScheduler": "打开日程",
+    "actionNewTaskKeywords": "task 任务 新建 todo",
+    "actionStartReviewKeywords": "study review 复习 学习",
+    "actionLearningPathsKeywords": "learning path 学习路径 路线",
+    "actionOpenSchedulerKeywords": "scheduler calendar 日程 计划",
     "ariaLabel": "全局命令面板",
     "searchPlaceholder": "搜索命令、最近项或操作...",
     "noMatch": "无匹配命令",

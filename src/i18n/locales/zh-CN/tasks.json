@@ -80,6 +80,11 @@
   "batchDeletePartial": "删除完成：成功 {{success}} 个，失败 {{fail}} 个",
   "cancelSelection": "取消选择",
   "emptyDesc": "任务创建后将显示在这里",
+  "firstRun": {
+    "title": "创建你的第一个任务",
+    "description": "输入目标或上传材料，AI 会自动拆解任务并制定学习计划。",
+    "dismiss": "知道了"
+  },
   "taskIdNotExist": "任务ID不存在",
   "copy": {
     "idCopied": "已复制任务 ID"

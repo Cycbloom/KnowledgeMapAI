@@ -171,8 +171,12 @@ export const useGraphNodeOperations = ({
           const parentIdsToRemove = currentParentIds.filter(id => !newParentIdSet.has(id));
           const parentIdsToAdd = newParentIds.filter(id => !currentParentIdSet.has(id));
           
+          // 预构建父边按源节点索引，替代循环内 find 的 O(n×m) 扫描
+          const currentParentEdgesBySource = new Map(
+            currentParentEdges.map(e => [e.source_knowledge_point_id, e]),
+          );
           for (const parentId of parentIdsToRemove) {
-            const edgeToDelete = currentParentEdges.find(e => e.source_knowledge_point_id === parentId);
+            const edgeToDelete = currentParentEdgesBySource.get(parentId);
             if (edgeToDelete) {
               await deleteEdgeMutation.mutateAsync({ id: edgeToDelete.id });
               actions.push({ type: 'DELETE_EDGE', payload: edgeToDelete });

@@ -84,14 +84,20 @@ export async function applyTopologyPriority(
     if (demotedIds.size === 0) return items;
 
     // 5. Per-urgency group: demote flagged items to the end of the group.
+    // 单趟分组，避免对 items 多次 filter 线性扫描（O(4×n)→O(n)）
     const urgencyOrder = ["overdue", "today", "upcoming", "future"] as const;
+    const groups = new Map<string, { kept: UnifiedReviewItem[]; demoted: UnifiedReviewItem[] }>();
+    for (const item of items) {
+      const entry = groups.get(item.urgency) ?? { kept: [], demoted: [] };
+      if (demotedIds.has(item.id)) entry.demoted.push(item);
+      else entry.kept.push(item);
+      groups.set(item.urgency, entry);
+    }
     const result: UnifiedReviewItem[] = [];
     for (const urgency of urgencyOrder) {
-      const group = items.filter((i) => i.urgency === urgency);
-      if (group.length === 0) continue;
-      const nonDemoted = group.filter((i) => !demotedIds.has(i.id));
-      const demoted = group.filter((i) => demotedIds.has(i.id));
-      result.push(...nonDemoted, ...demoted);
+      const entry = groups.get(urgency);
+      if (!entry) continue;
+      result.push(...entry.kept, ...entry.demoted);
     }
 
     return result;

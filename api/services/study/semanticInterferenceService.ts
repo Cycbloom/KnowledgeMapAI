@@ -133,6 +133,14 @@ class SemanticInterferenceService {
       }
     }
 
+    // 预构建无序对 -> similarity 的 Map，避免内层循环对 pairs 做 find 线性扫描（O(len)→O(1)）
+    const pairSimMap = new Map<string, number>();
+    for (const p of pairs) {
+      const a = p.kpId1 < p.kpId2 ? p.kpId1 : p.kpId2;
+      const b = p.kpId1 < p.kpId2 ? p.kpId2 : p.kpId1;
+      pairSimMap.set(`${a}|${b}`, p.similarity);
+    }
+
     // Filter to groups with 2+ members, compute avg similarity
     const groups: SemanticGroup[] = [];
     let groupIndex = 0;
@@ -144,13 +152,11 @@ class SemanticInterferenceService {
       let simCount = 0;
       for (let i = 0; i < members.length; i++) {
         for (let j = i + 1; j < members.length; j++) {
-          const pair = pairs.find(
-            (p) =>
-              (p.kpId1 === members[i] && p.kpId2 === members[j]) ||
-              (p.kpId1 === members[j] && p.kpId2 === members[i]),
-          );
-          if (pair) {
-            totalSim += pair.similarity;
+          const a = members[i] < members[j] ? members[i] : members[j];
+          const b = members[i] < members[j] ? members[j] : members[i];
+          const similarity = pairSimMap.get(`${a}|${b}`);
+          if (similarity !== undefined) {
+            totalSim += similarity;
             simCount++;
           }
         }

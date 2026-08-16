@@ -902,6 +902,17 @@ export class LearningPathService {
     }
 
     const nodes = path.nodes || [];
+
+    // 预构建节点索引，避免多处循环内 find 线性扫描（O(n)→O(1)）
+    const nodeById = new Map<string, LearningPathNode>();
+    const nodeByKpId = new Map<string, LearningPathNode | undefined>();
+    for (const n of nodes) {
+      nodeById.set(n.id, n);
+      if (n.knowledge_point_id && !nodeByKpId.has(n.knowledge_point_id)) {
+        nodeByKpId.set(n.knowledge_point_id, n);
+      }
+    }
+
     const recommendations: {
       type: "weak_point" | "review_needed" | "prerequisite_gap" | "milestone";
       priority: "high" | "medium" | "low";
@@ -968,7 +979,7 @@ export class LearningPathService {
       });
 
       weakKnowledgePoints.forEach((data, kpId) => {
-        const node = nodes.find((n) => n.knowledge_point_id === kpId);
+        const node = nodeByKpId.get(kpId);
         if (node && node.status !== "completed") {
           recommendations.push({
             type: "weak_point",
@@ -1029,9 +1040,9 @@ export class LearningPathService {
     const milestoneNodes = nodes.filter((n) => n.is_milestone);
     for (const milestone of milestoneNodes) {
       if (milestone.status === "pending") {
-        const prereqNodes = nodes.filter((n) =>
-          milestone.prerequisites.includes(n.id),
-        );
+        const prereqNodes = milestone.prerequisites
+          .map((id) => nodeById.get(id))
+          .filter((n): n is LearningPathNode => n !== undefined);
         const completedPrereqs = prereqNodes.filter(
           (n) => n.status === "completed",
         ).length;

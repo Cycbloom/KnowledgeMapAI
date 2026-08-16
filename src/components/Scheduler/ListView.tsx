@@ -32,6 +32,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { EmptyState } from "../../components/common";
 import { UserTask, TaskSubtask, LearningState } from "@shared/types";
 import { QUEUE_COLORS, STATUS_CONFIG, type QueueLevel } from "@/constants/scheduler";
 import { api } from "../../services/api";
@@ -1123,11 +1124,8 @@ export const ListView: React.FC<ListViewProps> = ({
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/30">
               {filteredAndSortedTasks.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={COLUMNS.length}
-                    className="px-4 py-12 text-center text-slate-400 dark:text-slate-500"
-                  >
-                    {t("scheduler.listView.noTasks")}
+                  <td colSpan={COLUMNS.length} className="px-4 py-8">
+                    <EmptyState variant="inline" title={t("scheduler.listView.noTasks")} />
                   </td>
                 </tr>
               ) : (
@@ -1202,9 +1200,7 @@ export const ListView: React.FC<ListViewProps> = ({
           className="md:hidden h-full overflow-y-auto custom-scrollbar p-3"
         >
           {filteredAndSortedTasks.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 dark:text-slate-500">
-              {t("scheduler.listView.noTasks")}
-            </div>
+            <EmptyState variant="inline" title={t("scheduler.listView.noTasks")} />
           ) : (
             <>
               {mobileStartOffset > 0 && (

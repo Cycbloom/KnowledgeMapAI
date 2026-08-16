@@ -9,8 +9,6 @@ import {
   Play,
   Pause,
   ExternalLink,
-  Loader2,
-  AlertCircle,
   ListTodo,
   ClipboardList,
 } from "lucide-react";
@@ -20,7 +18,7 @@ import { useSchedulerTasks } from "../../hooks";
 import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import type { UserTask, UserTaskStatus } from "@shared/types";
 import { QUEUE_COLORS, STATUS_CONFIG, type QueueLevel } from "@/constants/scheduler";
-import { EmptyState } from "../common/EmptyState";
+import { EmptyState, Skeleton, ErrorBanner } from "../common";
 
 interface RelatedTasksProps {
   knowledgePointId: string;
@@ -86,25 +84,32 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 size={24} className="animate-spin text-primary-500" />
-        <span className="ml-2 text-slate-500 dark:text-slate-400">{t("tasks.related.loadingTasks")}</span>
+      <div className="space-y-3 py-2" role="status" aria-live="polite">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900/60 p-3"
+          >
+            <Skeleton variant="circular" className="h-5 w-5" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-3 w-1/3" />
+            </div>
+            <Skeleton className="h-6 w-12" />
+          </div>
+        ))}
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-slate-500 dark:text-slate-400">
-        <AlertCircle size={24} className="text-red-500 mb-2" />
-        <span>{t("toast.tasks.loadTasksFailed")}</span>
-        <button
-          onClick={() => refetch()}
-          className="mt-2 text-sm text-primary-500 hover:text-primary-600"
-        >
-          {t("tasks.retry")}
-        </button>
-      </div>
+      <ErrorBanner
+        level="banner"
+        title={t("toast.tasks.loadTasksFailed")}
+        message={error?.message ?? t("toast.tasks.loadTasksFailed")}
+        onRetry={() => refetch()}
+      />
     );
   }
 

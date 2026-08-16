@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { api } from "../../services/api";
 import { createOptimisticMutation } from "../mutations/mutationFactory";
+import { useOptimisticMutation } from "../mutations/useOptimisticMutation";
 import { queryKeys } from "../queries/config";
 import type {
   UserTask,
@@ -222,10 +223,17 @@ export function useDemoteUserTaskMutation() {
 
 export function useMoveUserTaskMutation() {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useOptimisticMutation<UserTask, { id: string; targetQueue: number }>({
     mutationFn: ({ id, targetQueue }: { id: string; targetQueue: number }) =>
       api.scheduler.move(id, targetQueue) as Promise<UserTask>,
-    onSuccess: (_data, variables) => {
+    queryKey: queryKeys.schedulerTasks(),
+    queryKeyFilter: (old, { id, targetQueue }) =>
+      Array.isArray(old)
+        ? old.map((t: UserTask) =>
+            t.id === id ? { ...t, queue_level: targetQueue } : t,
+          )
+        : old,
+    onSettled: (_data, _error, variables) => {
       invalidateTaskChange(queryClient, variables.id);
     },
   });
@@ -233,7 +241,10 @@ export function useMoveUserTaskMutation() {
 
 export function useReorderUserTasksMutation() {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useOptimisticMutation<
+    void,
+    { queueLevel: number; taskIds: string[] }
+  >({
     mutationFn: ({
       queueLevel,
       taskIds,
@@ -241,7 +252,23 @@ export function useReorderUserTasksMutation() {
       queueLevel: number;
       taskIds: string[];
     }) => api.scheduler.reorder(queueLevel, taskIds),
-    onSuccess: () => {
+    queryKey: queryKeys.queues(),
+    queryKeyFilter: (old, { queueLevel, taskIds }) => {
+      if (!old || typeof old !== "object") return old;
+      const queues = old as QueueData;
+      const key = `q${queueLevel}` as keyof QueueData;
+      const current = queues[key] ?? [];
+      const currentById = new Map(current.map((t) => [t.id, t]));
+      const reordered = taskIds
+        .map((id) => currentById.get(id))
+        .filter((t): t is UserTask => !!t);
+      const remaining = current.filter((t) => !taskIds.includes(t.id));
+      return {
+        ...queues,
+        [key]: [...reordered, ...remaining],
+      };
+    },
+    onSettled: () => {
       invalidateTaskChange(queryClient);
     },
   });

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
@@ -6,7 +6,7 @@ import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, LazyLoadFal
 import { PageLoadingProvider, usePageLoading } from "./hooks/common/usePageLoading";
 import { GlobalErrorBoundary } from "./components/common/GlobalErrorBoundary";
 import { RenderProfiler } from "./components/dev/RenderProfiler";
-import { QueryErrorResetBoundary } from "@tanstack/react-query";
+import { QueryErrorResetBoundary, useQueryClient } from "@tanstack/react-query";
 import { useDeepLink } from "./hooks/common/useDeepLink";
 import { useMobileInit } from "./hooks/mobile/useMobileInit";
 import { useNetworkStatus } from "./hooks/common/useNetworkStatus";
@@ -116,7 +116,26 @@ function App() {
   useMobileInit();
   useDeepLink();
   const { t } = useTranslation();
-  const { online } = useNetworkStatus();
+  const queryClient = useQueryClient();
+
+  // 记录上一次在线状态，仅"离线→在线"的真实切换触发"已恢复在线"提示与数据刷新，
+  // 避免应用启动时或已在线状态下误触发。
+  const prevOnlineRef = useRef<boolean>(true);
+
+  const handleOnline = useCallback(() => {
+    if (prevOnlineRef.current) {
+      // 上一状态即在网，非由离线恢复，忽略
+      return;
+    }
+    message.success(t("toast.common.backOnline"));
+    void queryClient.refetchQueries({ type: "active" });
+  }, [queryClient, t]);
+
+  const { online } = useNetworkStatus({
+    enableSlowDetection: true,
+    onOnline: handleOnline,
+  });
+
   const location = useLocation();
   const { startLoading } = usePageLoading();
   const prevPathnameRef = useRef(location.pathname);
@@ -130,10 +149,11 @@ function App() {
   }, [location.pathname, startLoading]);
 
   useEffect(() => {
+    prevOnlineRef.current = online;
     if (!online) {
       message.error(t('toast.network.offline'), { id: 'network-status', duration: Infinity });
     } else {
-      message.success(t('toast.network.restored'), { id: 'network-status', duration: 2000 });
+      message.dismiss('network-status');
     }
   }, [online, t]);
 

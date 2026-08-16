@@ -4,6 +4,7 @@ import { Link2, Sparkles, Loader2, X, RefreshCw, Network, Lightbulb } from 'luci
 import { useTheme } from "../../hooks";
 import { Node, Edge } from '../../types';
 import { EmptyState } from '../common/EmptyState';
+import { Skeleton } from '../common/Skeleton';
 
 interface SuggestedConnection {
   sourceId: string;
@@ -211,9 +212,20 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
       </p>
 
       {loading ? (
-        <div className={`flex items-center justify-center py-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-          <Loader2 size={24} className="animate-spin mr-2" />
-          {t('graphMap.connectionDiscovery.analyzing')}
+        <div className="space-y-3 py-2" role="status" aria-live="polite">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className={`p-4 rounded-xl border ${isDark ? 'border-slate-700 bg-slate-700/30' : 'border-gray-100 bg-gray-50'}`}
+            >
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-10" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <Skeleton className="mt-3 h-3 w-1/3" />
+            </div>
+          ))}
         </div>
       ) : filteredSuggestions.length > 0 ? (
         <div className="space-y-3">

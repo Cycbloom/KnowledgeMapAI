@@ -58,11 +58,13 @@ export function useUndoableAction<TPayload, TResource>(
       const msg = options.getDeletedMessage
         ? options.getDeletedMessage(payload)
         : options.deletedMessage;
-      message.success(msg, {
+      const toastId = message.success(msg, {
         duration: options.toastDuration ?? 6000,
         action: {
           label: options.undoLabel ?? t("common.undo"),
           onClick: () => {
+            // 撤销后自动关闭当前 toast,不再等到 duration 自然消失
+            message.dismiss(toastId);
             void handleRestore(resource);
           },
         },

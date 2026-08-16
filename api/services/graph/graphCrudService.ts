@@ -214,13 +214,18 @@ export class GraphCrudService {
       );
     });
 
+    // 预构建 prerequisite 目标图谱集合，替代内层 (relations||[]).filter 的 O(graphs×relations) 扫描
+    const prerequisiteTargetIds = new Set(
+      (relations || [])
+        .filter((r) => r.relation_type === "prerequisite")
+        .map((r) => r.target_graph_id),
+    );
     const missingPrerequisites = (graphs || [])
       .filter((g) => {
-        const asTarget = (relations || []).filter(
-          (r) =>
-            r.target_graph_id === g.id && r.relation_type === "prerequisite",
+        return (
+          !prerequisiteTargetIds.has(g.id) &&
+          (graphRelationCount.get(g.id) || 0) > 0
         );
-        return asTarget.length === 0 && (graphRelationCount.get(g.id) || 0) > 0;
       })
       .slice(0, 5)
       .map((g) => ({

@@ -233,8 +233,16 @@ export class RAGService {
           });
         }
 
-        const seedResults = graphResults.filter((r) => r.hopDistance === 0);
-        const expandedResults = graphResults.filter((r) => r.hopDistance > 0);
+        // 单趟遍历切分 seed/expanded，替代两次 filter（O(2n) → O(n)）
+        const seedResults: GraphRAGSearchResult[] = [];
+        const expandedResults: GraphRAGSearchResult[] = [];
+        for (const r of graphResults) {
+          if (r.hopDistance === 0) {
+            seedResults.push(r);
+          } else if (r.hopDistance > 0) {
+            expandedResults.push(r);
+          }
+        }
 
         searchResults = seedResults;
         graphSources = expandedResults.map((r) => ({
@@ -277,8 +285,16 @@ export class RAGService {
           });
         }
 
-        const seedResults = hybridResults.filter((r) => r.hopDistance === 0);
-        const expandedResults = hybridResults.filter((r) => r.hopDistance > 0);
+        // 单趟遍历切分 seed/expanded，替代两次 filter（O(2n) → O(n)）
+        const seedResults: GraphRAGSearchResult[] = [];
+        const expandedResults: GraphRAGSearchResult[] = [];
+        for (const r of hybridResults) {
+          if (r.hopDistance === 0) {
+            seedResults.push(r);
+          } else if (r.hopDistance > 0) {
+            expandedResults.push(r);
+          }
+        }
 
         searchResults = seedResults;
         graphSources = expandedResults.map((r) => ({

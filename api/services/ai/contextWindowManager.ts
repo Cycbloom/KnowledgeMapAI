@@ -101,6 +101,17 @@ export class ContextWindowManager {
       ? remainingBudget - seedBudget - graphBudget
       : 0;
 
+    // 预构建 knowledgePointId -> 最佳 chunk 的索引，避免循环内重复 filter（O(n×m) → O(n+m)）
+    const bestChunkByKp = new Map<string, ContextChunk>();
+    if (chunks) {
+      for (const chunk of chunks) {
+        const existing = bestChunkByKp.get(chunk.knowledgePointId);
+        if (!existing || chunk.similarity > existing.similarity) {
+          bestChunkByKp.set(chunk.knowledgePointId, chunk);
+        }
+      }
+    }
+
     const usedSources: ContextSource[] = [];
     const sourceEntries: string[] = [];
 
@@ -109,16 +120,9 @@ export class ContextWindowManager {
     for (const source of sortedSources) {
       let effectiveContent = source.content;
 
-      if (chunks && chunks.length > 0) {
-        const matchingChunks = chunks.filter(
-          (chunk) => chunk.knowledgePointId === source.id,
-        );
-        if (matchingChunks.length > 0) {
-          const bestChunk = matchingChunks.reduce((best, current) =>
-            current.similarity > best.similarity ? current : best,
-          );
-          effectiveContent = bestChunk.content;
-        }
+      const bestChunk = bestChunkByKp.get(source.id);
+      if (bestChunk) {
+        effectiveContent = bestChunk.content;
       }
 
       const nodeData: NodeData = {

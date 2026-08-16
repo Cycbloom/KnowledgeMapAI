@@ -534,8 +534,10 @@ export class TemplateGeneratorService {
             },
           );
 
+          // 预构建 id -> node 索引，避免循环内 find 线性扫描（O(n×m) → O(n+m)）
+          const nodesById = new Map(nodes.map((n) => [n.id, n]));
           for (const correction of validationResult.corrections) {
-            const node = nodes.find((n) => n.id === correction.nodeId);
+            const node = nodesById.get(correction.nodeId);
             if (node) {
               node.title = correction.correctedTitle;
               node.backboneModule = correction.backboneModule;

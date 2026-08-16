@@ -3,10 +3,17 @@ import {
   DndContext,
   DragOverlay,
   closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
   type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
+import {
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import { motion } from "framer-motion";
 import { LayoutGrid, Calendar, Columns, List, ChevronDown } from "lucide-react";
 import { useTranslation } from 'react-i18next';
@@ -95,6 +102,11 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
     1: t('scheduler.queue.important'),
     2: t('scheduler.queue.todo'),
   };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const displayQueues = localQueues || queues;
 
@@ -243,6 +255,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
 
   const renderQueueView = () => (
     <DndContext
+      sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}

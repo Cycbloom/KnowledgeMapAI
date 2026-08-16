@@ -448,53 +448,48 @@ export class ConceptAggregationService {
           continue;
         }
 
-        for (const duplicate of group.duplicates) {
-          const { data: duplicateGraphNodes } = await notDeleted(supabase
-            .from("graph_nodes")
-            .select("id")
-            .eq("knowledge_point_id", duplicate.id)
-            .eq("graph_id", graphId)
-            );
+        const duplicateIds = group.duplicates.map((d) => d.id);
 
-          if (duplicateGraphNodes && duplicateGraphNodes.length > 0) {
-            const { error: edgeUpdateError } = await supabase
-              .from("edges")
-              .update({ target_knowledge_point_id: group.primary.id })
-              .eq("target_knowledge_point_id", duplicate.id)
-              .eq("graph_id", graphId);
+        // 批量重定向入边（替代逐 duplicate 查询 + 更新，O(D) 次 → 1 次）
+        const { error: edgeUpdateError } = await supabase
+          .from("edges")
+          .update({ target_knowledge_point_id: group.primary.id })
+          .in("target_knowledge_point_id", duplicateIds)
+          .eq("graph_id", graphId);
 
-            if (edgeUpdateError) {
-              logger.error(
-                `Failed to update edges for duplicate ${duplicate.id}:`,
-                edgeUpdateError,
-              );
-            }
+        if (edgeUpdateError) {
+          logger.error(
+            `Failed to update edges for duplicates ${duplicateIds.join(",")}:`,
+            edgeUpdateError,
+          );
+        }
 
-            const { error: sourceEdgeUpdateError } = await supabase
-              .from("edges")
-              .update({ source_knowledge_point_id: group.primary.id })
-              .eq("source_knowledge_point_id", duplicate.id)
-              .eq("graph_id", graphId);
+        // 批量重定向出边
+        const { error: sourceEdgeUpdateError } = await supabase
+          .from("edges")
+          .update({ source_knowledge_point_id: group.primary.id })
+          .in("source_knowledge_point_id", duplicateIds)
+          .eq("graph_id", graphId);
 
-            if (sourceEdgeUpdateError) {
-              logger.error(
-                `Failed to update source edges for duplicate ${duplicate.id}:`,
-                sourceEdgeUpdateError,
-              );
-            }
+        if (sourceEdgeUpdateError) {
+          logger.error(
+            `Failed to update source edges for duplicates ${duplicateIds.join(",")}:`,
+            sourceEdgeUpdateError,
+          );
+        }
 
-            const { error: deleteNodeError } = await supabase
-              .from("graph_nodes")
-              .update({ deleted_at: new Date().toISOString() })
-              .eq("id", duplicateGraphNodes[0].id);
+        // 批量软删除本图中的重复节点（原逻辑只删首个匹配，这里删除该知识点在本图的所有重复节点）
+        const { error: deleteNodeError } = await supabase
+          .from("graph_nodes")
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("graph_id", graphId)
+          .in("knowledge_point_id", duplicateIds);
 
-            if (deleteNodeError) {
-              logger.error(
-                `Failed to soft delete duplicate graph node ${duplicateGraphNodes[0].id}:`,
-                deleteNodeError,
-              );
-            }
-          }
+        if (deleteNodeError) {
+          logger.error(
+            `Failed to soft delete duplicate graph nodes ${duplicateIds.join(",")}:`,
+            deleteNodeError,
+          );
         }
       }
 

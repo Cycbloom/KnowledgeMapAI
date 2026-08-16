@@ -191,6 +191,8 @@ export class RecursiveGraphProcessor implements TaskProcessor {
       );
 
       const coreNodes: CoreNodeRef[] = initParsed.coreNodes || [];
+      // 复杂度降低：预构建核心节点标题 Set，替代下方 filter 内对每条 nodeMap 项 O(n) 的 coreNodes.some() 扫描
+      const coreNodeTitleSet = new Set(coreNodes.map((c) => c.title));
       const rootData = initParsed.root || {
         title: topic,
         content: `${topic}的核心概念`,
@@ -404,7 +406,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           ([title]) => {
             return (
               title !== rootData.title &&
-              !coreNodes.some((c) => c.title === title)
+              !coreNodeTitleSet.has(title)
             );
           },
         );

@@ -328,55 +328,6 @@ export class EfficiencyService {
     return hourlyEfficiency;
   }
 
-  async calculateTagEfficiency(
-    client: SupabaseClient,
-    userId: string,
-    tag: string,
-  ): Promise<TagEfficiencyData> {
-    const { data: tasks, error } = await notDeleted(client
-      .from("user_tasks")
-      .select("id, status, tags")
-      .eq("user_id", userId)
-      .contains("tags", [tag])
-      );
-
-    if (error) {
-      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, {
-        details: { originalError: error.message },
-      });
-    }
-
-    const totalTasks = tasks.length;
-    const completedTasks = tasks.filter((t) => t.status === "completed").length;
-    const completionRate = totalTasks > 0 ? completedTasks / totalTasks : 0;
-
-    const taskIds = tasks.map((t) => t.id);
-    let avgDuration = 0;
-
-    if (taskIds.length > 0) {
-      const { data: executions } = await client
-        .from("task_executions")
-        .select("duration")
-        .in("task_id", taskIds)
-        .not("duration", "is", null);
-
-      if (executions && executions.length > 0) {
-        const totalDuration = executions.reduce(
-          (sum, e) => sum + (e.duration || 0),
-          0,
-        );
-        avgDuration = totalDuration / executions.length;
-      }
-    }
-
-    return {
-      avgDuration,
-      completionRate,
-      totalTasks,
-      completedTasks,
-    };
-  }
-
   async calculateQueueEfficiency(
     client: SupabaseClient,
     userId: string,
@@ -451,26 +402,63 @@ export class EfficiencyService {
   ): Promise<UserEfficiencyProfile> {
     const hourlyEfficiency = await this.calculateHourlyEfficiency(client, userId);
 
-    const { data: allTags } = await notDeleted(client
+    const { data: allTasks } = await notDeleted(client
       .from("user_tasks")
-      .select("tags")
+      .select("id, status, tags")
       .eq("user_id", userId)
       );
 
     const uniqueTags = new Set<string>();
-    if (allTags) {
-      for (const task of allTags) {
-        if (task.tags && Array.isArray(task.tags)) {
-          for (const tag of task.tags) {
-            uniqueTags.add(tag);
-          }
+    const tasksByTag = new Map<string, Array<{ id: string; status: string }>>();
+    const allTaskIds: string[] = [];
+
+    for (const task of allTasks ?? []) {
+      allTaskIds.push(task.id);
+      if (task.tags && Array.isArray(task.tags)) {
+        for (const tag of task.tags) {
+          uniqueTags.add(tag);
+          const list = tasksByTag.get(tag) ?? [];
+          list.push({ id: task.id, status: task.status });
+          tasksByTag.set(tag, list);
         }
+      }
+    }
+
+    // 单次批量查询所有任务执行时长，替代逐 tag 查询（O(T) 次 → 1 次），再内存分组计算
+    const durationByTaskId = new Map<string, number[]>();
+    if (allTaskIds.length > 0) {
+      const { data: executions } = await client
+        .from("task_executions")
+        .select("task_id, duration")
+        .in("task_id", allTaskIds)
+        .not("duration", "is", null);
+
+      for (const exec of executions ?? []) {
+        const list = durationByTaskId.get(exec.task_id) ?? [];
+        list.push(exec.duration ?? 0);
+        durationByTaskId.set(exec.task_id, list);
       }
     }
 
     const tagEfficiency: Record<string, TagEfficiencyData> = {};
     for (const tag of uniqueTags) {
-      tagEfficiency[tag] = await this.calculateTagEfficiency(client, userId, tag);
+      const tasks = tasksByTag.get(tag) ?? [];
+      const totalTasks = tasks.length;
+      const completedTasks = tasks.filter((t) => t.status === "completed").length;
+      const completionRate = totalTasks > 0 ? completedTasks / totalTasks : 0;
+
+      const durations = tasks.flatMap((t) => durationByTaskId.get(t.id) ?? []);
+      const avgDuration =
+        durations.length > 0
+          ? durations.reduce((sum, d) => sum + d, 0) / durations.length
+          : 0;
+
+      tagEfficiency[tag] = {
+        avgDuration,
+        completionRate,
+        totalTasks,
+        completedTasks,
+      };
     }
 
     const queueEfficiency: Record<string, QueueEfficiencyData> = {};

@@ -123,7 +123,13 @@ export const LearningMode = () => {
       setHighlightEnabled: s.setHighlightEnabled,
     })),
   );
-  const { fontSize, readingMode, contentWidthMode } = useLearningSettingsStore();
+  const { fontSize, readingMode, contentWidthMode } = useLearningSettingsStore(
+    useShallow((s) => ({
+      fontSize: s.fontSize,
+      readingMode: s.readingMode,
+      contentWidthMode: s.contentWidthMode,
+    })),
+  );
   const queryClient = useQueryClient();
 
   useQuoteShortcut({

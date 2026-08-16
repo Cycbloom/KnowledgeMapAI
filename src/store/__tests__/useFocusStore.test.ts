@@ -1,18 +1,19 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useFocusStore, DEFAULT_SETTINGS } from '../useFocusStore';
+import { useFocusStore } from '../useFocusStore';
+import { DEFAULT_FOCUS_SETTINGS } from '../../constants/focusSettings';
 
 describe('useFocusStore', () => {
   beforeEach(() => {
     useFocusStore.setState({
-      focusDuration: DEFAULT_SETTINGS.focusDuration,
-      shortBreakDuration: DEFAULT_SETTINGS.shortBreakDuration,
-      longBreakDuration: DEFAULT_SETTINGS.longBreakDuration,
-      longBreakInterval: DEFAULT_SETTINGS.longBreakInterval,
-      autoStartBreak: DEFAULT_SETTINGS.autoStartBreak,
-      autoStartPomodoro: DEFAULT_SETTINGS.autoStartPomodoro,
-      soundEnabled: DEFAULT_SETTINGS.soundEnabled,
-      notificationEnabled: DEFAULT_SETTINGS.notificationEnabled,
+      focusDuration: DEFAULT_FOCUS_SETTINGS.focusDuration,
+      shortBreakDuration: DEFAULT_FOCUS_SETTINGS.shortBreakDuration,
+      longBreakDuration: DEFAULT_FOCUS_SETTINGS.longBreakDuration,
+      longBreakInterval: DEFAULT_FOCUS_SETTINGS.longBreakInterval,
+      autoStartBreak: DEFAULT_FOCUS_SETTINGS.autoStartBreak,
+      autoStartPomodoro: DEFAULT_FOCUS_SETTINGS.autoStartPomodoro,
+      soundEnabled: DEFAULT_FOCUS_SETTINGS.soundEnabled,
+      notificationEnabled: DEFAULT_FOCUS_SETTINGS.notificationEnabled,
       isInFocusMode: false,
       highlightEnabled: false,
       highlightIntensity: 0.5,

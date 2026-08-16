@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Terminal, Clock, ChevronDown, ChevronUp, Activity } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from '@/hooks';
 import { commandRegistry, type CommandResult, type CommandContext } from '@/services/console';
 import { useConsoleStore } from '@/store/useConsoleStore';
@@ -38,9 +39,11 @@ export const Console: React.FC<ConsoleProps> = ({
   const { t } = useTranslation();
   const { isDark } = useTheme();
   
+  // 将高频变化的 input（每次按键）与低频字段/action 分离订阅，避免 input 变化时
+  // 无关字段变化触发整组件重渲染。
+  const input = useConsoleStore((s) => s.input);
+  const setInput = useConsoleStore((s) => s.setInput);
   const {
-    input,
-    setInput,
     history,
     output,
     isLoading,
@@ -55,7 +58,24 @@ export const Console: React.FC<ConsoleProps> = ({
     cancelConfirm,
     setPendingConfirm,
     clearPendingConfirm,
-  } = useConsoleStore();
+  } = useConsoleStore(
+    useShallow((s) => ({
+      history: s.history,
+      output: s.output,
+      isLoading: s.isLoading,
+      confirmState: s.confirmState,
+      pendingConfirm: s.pendingConfirm,
+      setIsOpen: s.setIsOpen,
+      addToHistory: s.addToHistory,
+      clearHistory: s.clearHistory,
+      addOutput: s.addOutput,
+      clearOutput: s.clearOutput,
+      setIsLoading: s.setIsLoading,
+      cancelConfirm: s.cancelConfirm,
+      setPendingConfirm: s.setPendingConfirm,
+      clearPendingConfirm: s.clearPendingConfirm,
+    })),
+  );
   
   const [showHistoryPanel, setShowHistoryPanel] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<TabType>('console');

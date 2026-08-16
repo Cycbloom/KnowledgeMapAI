@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import { commandRegistry, consoleLogger, allCommands, type CommandResult, type CommandHistoryItem, type CommandContext, type CommandPermission } from '@/services/console';
 import { useConsoleStore, type ConfirmDialogType } from '@/store/useConsoleStore';
@@ -52,7 +53,30 @@ export function useConsole(options: UseConsoleOptions): UseConsoleReturn {
     consoleId: crypto.randomUUID(),
   };
 
-  const store = useConsoleStore();
+  // 精确订阅实际使用的字段，避免全量订阅导致无关字段变化触发 hook 消费者重渲染
+  const store = useConsoleStore(
+    useShallow((s) => ({
+      isOpen: s.isOpen,
+      isMinimized: s.isMinimized,
+      input: s.input,
+      history: s.history,
+      output: s.output,
+      isLoading: s.isLoading,
+      confirmState: s.confirmState,
+      setInput: s.setInput,
+      addOutput: s.addOutput,
+      setIsLoading: s.setIsLoading,
+      addToHistory: s.addToHistory,
+      setConfirmState: s.setConfirmState,
+      cancelConfirm: s.cancelConfirm,
+      open: s.open,
+      close: s.close,
+      toggle: s.toggle,
+      toggleMinimize: s.toggleMinimize,
+      clearHistory: s.clearHistory,
+      clearOutput: s.clearOutput,
+    })),
+  );
 
   useEffect(() => {
     if (autoRegisterCommands && !commandsRegistered.current) {

@@ -6,6 +6,9 @@ interface CreatePersistedStoreOptions<T> {
   version?: number;
   storage?: Storage;
   migrate?: (persistedState: unknown, version: number) => T | Promise<T>;
+  onRehydrateStorage?: (
+    state: T,
+  ) => ((state?: T, error?: unknown) => void) | void;
 }
 
 export function createPersistedStore<T>(
@@ -29,6 +32,7 @@ export function createPersistedStore<T>(
           }
           return persistedState as T;
         },
+        onRehydrateStorage: options?.onRehydrateStorage,
       }),
       { name: persistKey },
     ),

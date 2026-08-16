@@ -20,7 +20,8 @@ export function useGlobalShortcuts({
   enabled = true,
   context = {}
 }: UseGlobalShortcutsProps) {
-  const { bindings, enabled: globalEnabled } = useShortcutStore();
+  const bindings = useShortcutStore((s) => s.bindings);
+  const globalEnabled = useShortcutStore((s) => s.enabled);
   
   useEffect(() => {
     if (!enabled || !globalEnabled) return;
@@ -81,7 +82,7 @@ export function useShortcutAction(actionId: string): {
   formattedKey: string;
   execute: () => void;
 } {
-  const { bindings } = useShortcutStore();
+  const bindings = useShortcutStore((s) => s.bindings);
   const binding = bindings[actionId];
   
   const formattedKey = binding?.enabled 
@@ -128,7 +129,7 @@ function formatKey(shortcut: ShortcutKey): string {
 }
 
 export function useKeyboardHint(actionId: string): string {
-  const { bindings } = useShortcutStore();
+  const bindings = useShortcutStore((s) => s.bindings);
   const shortcut = bindings[actionId];
   const binding = bindings[actionId];
   

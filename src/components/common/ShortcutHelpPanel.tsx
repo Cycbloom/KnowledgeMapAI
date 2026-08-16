@@ -3,6 +3,7 @@ import { X, RotateCcw, Search, Keyboard, MousePointer2, Sparkles, Command } from
 import { useTranslation } from 'react-i18next';
 import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import { useShortcutStore } from '../../store/useShortcutStore';
+import { useShallow } from 'zustand/react/shallow';
 import {
   DEFAULT_SHORTCUTS,
   CATEGORY_ORDER,
@@ -42,7 +43,14 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
 }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const { bindings, setBinding, resetBinding, resetAllBindings } = useShortcutStore();
+  const { bindings, setBinding, resetBinding, resetAllBindings } = useShortcutStore(
+    useShallow((s) => ({
+      bindings: s.bindings,
+      setBinding: s.setBinding,
+      resetBinding: s.resetBinding,
+      resetAllBindings: s.resetAllBindings,
+    })),
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [_pressedKeys, setPressedKeys] = useState<Partial<ShortcutKey>>({});

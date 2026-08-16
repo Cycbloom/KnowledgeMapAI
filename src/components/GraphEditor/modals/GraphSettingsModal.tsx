@@ -19,7 +19,10 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
   const { t } = useTranslation();
   const { data: graph } = useGraph(graphId);
   const updateGraphMutation = useUpdateGraphMutation();
-  const { quality, setQuality, showStats, toggleStats } = usePerformanceStore();
+  const quality = usePerformanceStore((s) => s.quality);
+  const showStats = usePerformanceStore((s) => s.showStats);
+  const setQuality = usePerformanceStore((s) => s.setQuality);
+  const toggleStats = usePerformanceStore((s) => s.toggleStats);
 
   const [activeTab, setActiveTab] = useState<'general' | 'prompts' | 'actions'>('general');
   const [gamificationEnabled, setGamificationEnabled] = useState(true);

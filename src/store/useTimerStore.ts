@@ -2,8 +2,9 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
 import type { TimerMode } from "@shared/types";
-import { DEFAULT_SETTINGS, useFocusStore } from "./useFocusStore";
+import { DEFAULT_FOCUS_SETTINGS } from "../constants/focusSettings";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
+import type { FocusSettingsChangedPayload } from "../services/FrontendEventTypes";
 
 // ---------------------------------------------------------------------------
 // State & Actions
@@ -83,6 +84,17 @@ function clearTimerInterval(): void {
 // Mode transition logic
 // ---------------------------------------------------------------------------
 
+// 缓存 focus 设置，通过 frontendEventBus 事件与 useFocusStore 同步，
+// 避免直接 import 对方 store。初始值为默认设置。
+let cachedFocusSettings = { ...DEFAULT_FOCUS_SETTINGS };
+
+frontendEventBus.subscribe(
+  "focus_settings_changed",
+  (payload: FocusSettingsChangedPayload) => {
+    cachedFocusSettings = { ...cachedFocusSettings, ...payload.settings };
+  },
+);
+
 function transitionToNextMode(
   completedMode: TimerMode,
   completedSessions: number,
@@ -94,7 +106,7 @@ function transitionToNextMode(
     longBreakInterval,
     autoStartBreak,
     autoStartPomodoro,
-  } = useFocusStore.getState();
+  } = cachedFocusSettings;
 
   if (completedMode === "focus") {
     const isLongBreak =
@@ -130,7 +142,7 @@ function transitionToNextMode(
 // Initial state
 // ---------------------------------------------------------------------------
 
-const focusDuration = DEFAULT_SETTINGS.focusDuration;
+const focusDuration = DEFAULT_FOCUS_SETTINGS.focusDuration;
 
 const initialState: TimerState = {
   taskId: null,
@@ -306,7 +318,7 @@ const useTimerStore = create<TimerState & TimerActions>()(
 
         const { mode } = get();
         const { focusDuration, shortBreakDuration, longBreakDuration } =
-          useFocusStore.getState();
+          cachedFocusSettings;
         let duration = focusDuration;
         if (mode === "shortBreak") duration = shortBreakDuration;
         if (mode === "longBreak") duration = longBreakDuration;

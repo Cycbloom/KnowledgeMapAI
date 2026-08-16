@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useNoiseStore, WhiteNoiseType, MixedNoise, NoisePreset } from '../../store/useNoiseStore';
 import { NoiseMixer, BUILT_IN_PRESETS, NoisePreset as AudioNoisePreset, stopAllAudioSynthesis } from '../../utils/audioSynthesis';
 
@@ -34,6 +35,8 @@ function convertPreset(preset: AudioNoisePreset): NoisePreset {
 }
 
 export function useWhiteNoise(): UseWhiteNoiseReturn {
+  // 用 useShallow 精确订阅，分离高频变化字段（mixedNoises）与低频字段/action，
+  // 音量滑块拖动时不影响 customPresets/activePresetId 消费方重渲染
   const {
     mixedNoises,
     customPresets,
@@ -45,7 +48,20 @@ export function useWhiteNoise(): UseWhiteNoiseReturn {
     saveCustomPreset,
     deleteCustomPreset,
     loadPreset: storeLoadPreset,
-  } = useNoiseStore();
+  } = useNoiseStore(
+    useShallow((s) => ({
+      mixedNoises: s.mixedNoises,
+      customPresets: s.customPresets,
+      activePresetId: s.activePresetId,
+      addMixedNoise: s.addMixedNoise,
+      removeMixedNoise: s.removeMixedNoise,
+      updateMixedNoiseVolume: s.updateMixedNoiseVolume,
+      clearMixedNoises: s.clearMixedNoises,
+      saveCustomPreset: s.saveCustomPreset,
+      deleteCustomPreset: s.deleteCustomPreset,
+      loadPreset: s.loadPreset,
+    })),
+  );
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [analyserData, setAnalyserData] = useState<Uint8Array | null>(null);

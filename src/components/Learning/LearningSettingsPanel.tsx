@@ -18,6 +18,7 @@ import {
   Minimize2,
 } from "lucide-react";
 import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
+import { useShallow } from "zustand/react/shallow";
 import { useIsMobile, useFocusTrap, useEscapeKey } from "../../hooks";
 
 interface LearningSettingsPanelProps {
@@ -39,7 +40,19 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
     setPaginationMode,
     setContentWidthMode,
     resetSettings,
-  } = useLearningSettingsStore();
+  } = useLearningSettingsStore(
+    useShallow((s) => ({
+      fontSize: s.fontSize,
+      readingMode: s.readingMode,
+      paginationMode: s.paginationMode,
+      contentWidthMode: s.contentWidthMode,
+      setFontSize: s.setFontSize,
+      setReadingMode: s.setReadingMode,
+      setPaginationMode: s.setPaginationMode,
+      setContentWidthMode: s.setContentWidthMode,
+      resetSettings: s.resetSettings,
+    })),
+  );
 
   const { t } = useTranslation();
   const { isMobile } = useIsMobile();

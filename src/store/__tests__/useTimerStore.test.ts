@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useTimerStore } from '../useTimerStore';
-import { useFocusStore, DEFAULT_SETTINGS } from '../useFocusStore';
+import { useFocusStore } from '../useFocusStore';
+import { DEFAULT_FOCUS_SETTINGS } from '../../constants/focusSettings';
 
 describe('useTimerStore', () => {
   beforeEach(() => {
     vi.useFakeTimers();
 
     // 重置 timer store 到初始状态
-    const focusDuration = DEFAULT_SETTINGS.focusDuration;
+    const focusDuration = DEFAULT_FOCUS_SETTINGS.focusDuration;
     useTimerStore.setState({
       taskId: null,
       subtaskId: null,
@@ -26,14 +27,14 @@ describe('useTimerStore', () => {
 
     // 重置 focus store 到默认设置（transitionToNextMode 依赖此 store）
     useFocusStore.setState({
-      focusDuration: DEFAULT_SETTINGS.focusDuration,
-      shortBreakDuration: DEFAULT_SETTINGS.shortBreakDuration,
-      longBreakDuration: DEFAULT_SETTINGS.longBreakDuration,
-      longBreakInterval: DEFAULT_SETTINGS.longBreakInterval,
-      autoStartBreak: DEFAULT_SETTINGS.autoStartBreak,
-      autoStartPomodoro: DEFAULT_SETTINGS.autoStartPomodoro,
-      soundEnabled: DEFAULT_SETTINGS.soundEnabled,
-      notificationEnabled: DEFAULT_SETTINGS.notificationEnabled,
+      focusDuration: DEFAULT_FOCUS_SETTINGS.focusDuration,
+      shortBreakDuration: DEFAULT_FOCUS_SETTINGS.shortBreakDuration,
+      longBreakDuration: DEFAULT_FOCUS_SETTINGS.longBreakDuration,
+      longBreakInterval: DEFAULT_FOCUS_SETTINGS.longBreakInterval,
+      autoStartBreak: DEFAULT_FOCUS_SETTINGS.autoStartBreak,
+      autoStartPomodoro: DEFAULT_FOCUS_SETTINGS.autoStartPomodoro,
+      soundEnabled: DEFAULT_FOCUS_SETTINGS.soundEnabled,
+      notificationEnabled: DEFAULT_FOCUS_SETTINGS.notificationEnabled,
       isInFocusMode: false,
       highlightEnabled: false,
       highlightIntensity: 0.5,
@@ -55,8 +56,8 @@ describe('useTimerStore', () => {
     expect(state.isActive).toBe(false);
     expect(state.isPaused).toBe(false);
     expect(state.completedSessions).toBe(0);
-    expect(state.timeLeft).toBe(DEFAULT_SETTINGS.focusDuration * 60);
-    expect(state.totalTime).toBe(DEFAULT_SETTINGS.focusDuration * 60);
+    expect(state.timeLeft).toBe(DEFAULT_FOCUS_SETTINGS.focusDuration * 60);
+    expect(state.totalTime).toBe(DEFAULT_FOCUS_SETTINGS.focusDuration * 60);
     expect(state.progress).toBe(0);
     expect(state.startTimeRef).toBe(null);
   });
@@ -129,7 +130,7 @@ describe('useTimerStore', () => {
     const state = useTimerStore.getState();
     expect(state.isActive).toBe(false);
     expect(state.isPaused).toBe(false);
-    expect(state.timeLeft).toBe(DEFAULT_SETTINGS.focusDuration * 60);
+    expect(state.timeLeft).toBe(DEFAULT_FOCUS_SETTINGS.focusDuration * 60);
     expect(state.progress).toBe(0);
     expect(state.startTimeRef).toBe(null);
   });
@@ -140,8 +141,8 @@ describe('useTimerStore', () => {
     const state = useTimerStore.getState();
     expect(state.completedSessions).toBe(1);
     expect(state.mode).toBe('shortBreak');
-    expect(state.timeLeft).toBe(DEFAULT_SETTINGS.shortBreakDuration * 60);
-    expect(state.totalTime).toBe(DEFAULT_SETTINGS.shortBreakDuration * 60);
+    expect(state.timeLeft).toBe(DEFAULT_FOCUS_SETTINGS.shortBreakDuration * 60);
+    expect(state.totalTime).toBe(DEFAULT_FOCUS_SETTINGS.shortBreakDuration * 60);
   });
 
   it('应该能通过 setOnFocusSessionComplete 注册回调并在完成时触发', async () => {

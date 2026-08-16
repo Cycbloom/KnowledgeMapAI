@@ -1,4 +1,5 @@
 import type { TaskStartedPayload } from "../../shared/types/events";
+import type { UserSettingsFocus } from "../../shared/types/settings";
 import type {
   CelebrationConfig,
   CelebrationPreset,
@@ -143,6 +144,10 @@ export interface FocusSessionCompletedPayload {
   mode: string;
 }
 
+export interface FocusSettingsChangedPayload {
+  settings: UserSettingsFocus;
+}
+
 export interface CelebrationBurstPayload {
   preset: CelebrationPreset;
   config: CelebrationConfig;
@@ -176,5 +181,6 @@ export interface FrontendEventMap extends Record<string, unknown> {
   message_dismiss_all: MessageDismissAllPayload;
   achievement_unlocked: AchievementUnlockedPayload;
   focus_session_completed: FocusSessionCompletedPayload;
+  focus_settings_changed: FocusSettingsChangedPayload;
   celebration_burst: CelebrationBurstPayload;
 }

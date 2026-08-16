@@ -77,7 +77,8 @@ export const Settings = () => {
   });
   const [dbLoaded, setDbLoaded] = useState(false);
 
-  const { aiLanguage, setAILanguage } = useLearningSettingsStore();
+  const aiLanguage = useLearningSettingsStore((s) => s.aiLanguage);
+  const setAILanguage = useLearningSettingsStore((s) => s.setAILanguage);
   const dbSectionRef = useRef<HTMLDivElement>(null);
 
   const [autoLaunchEnabled, setAutoLaunchEnabled] = useState(false);

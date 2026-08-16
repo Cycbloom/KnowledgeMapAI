@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useFocusStore, DEFAULT_SETTINGS } from "../../store/useFocusStore";
+import { useFocusStore } from "../../store/useFocusStore";
+import { DEFAULT_FOCUS_SETTINGS } from "../../constants/focusSettings";
 import { useShallow } from "zustand/react/shallow";
 import {
   Timer,
@@ -40,14 +41,14 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
 
   const handleResetFocusDefaults = () => {
     updateFocusSettings({
-      focusDuration: DEFAULT_SETTINGS.focusDuration,
-      shortBreakDuration: DEFAULT_SETTINGS.shortBreakDuration,
-      longBreakDuration: DEFAULT_SETTINGS.longBreakDuration,
-      longBreakInterval: DEFAULT_SETTINGS.longBreakInterval,
-      autoStartBreak: DEFAULT_SETTINGS.autoStartBreak,
-      autoStartPomodoro: DEFAULT_SETTINGS.autoStartPomodoro,
-      soundEnabled: DEFAULT_SETTINGS.soundEnabled,
-      notificationEnabled: DEFAULT_SETTINGS.notificationEnabled,
+      focusDuration: DEFAULT_FOCUS_SETTINGS.focusDuration,
+      shortBreakDuration: DEFAULT_FOCUS_SETTINGS.shortBreakDuration,
+      longBreakDuration: DEFAULT_FOCUS_SETTINGS.longBreakDuration,
+      longBreakInterval: DEFAULT_FOCUS_SETTINGS.longBreakInterval,
+      autoStartBreak: DEFAULT_FOCUS_SETTINGS.autoStartBreak,
+      autoStartPomodoro: DEFAULT_FOCUS_SETTINGS.autoStartPomodoro,
+      soundEnabled: DEFAULT_FOCUS_SETTINGS.soundEnabled,
+      notificationEnabled: DEFAULT_FOCUS_SETTINGS.notificationEnabled,
     });
   };
 

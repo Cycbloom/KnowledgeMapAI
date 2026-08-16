@@ -49,14 +49,23 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
     try {
       const suggestions: SuggestedConnection[] = [];
       
+      // 预构建邻接索引,将每个节点的 connectedIds 从重复 O(edges) 扫描降为一次性 O(edges) 构建
+      const adjacencyMap = new Map<string, Set<string>>();
+      for (const e of edges) {
+        const s = e.source_knowledge_point_id;
+        const tgt = e.target_knowledge_point_id;
+        let set = adjacencyMap.get(s);
+        if (!set) { set = new Set(); adjacencyMap.set(s, set); }
+        set.add(tgt);
+        set = adjacencyMap.get(tgt);
+        if (!set) { set = new Set(); adjacencyMap.set(tgt, set); }
+        set.add(s);
+      }
+
       nodes.forEach(node => {
         const nodeTags = new Set(node.tags || node.properties?.tags || []);
         const nodeContent = (node.content || '').toLowerCase();
-        const connectedIds = new Set(
-          edges
-            .filter(e => e.source_knowledge_point_id === node.id || e.target_knowledge_point_id === node.id)
-            .map(e => e.source_knowledge_point_id === node.id ? e.target_knowledge_point_id : e.source_knowledge_point_id)
-        );
+        const connectedIds = adjacencyMap.get(node.id) ?? new Set<string>();
         
         nodes.forEach(otherNode => {
           if (node.id === otherNode.id) return;

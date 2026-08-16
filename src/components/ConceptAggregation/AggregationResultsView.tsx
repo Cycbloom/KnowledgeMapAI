@@ -149,12 +149,16 @@ const GroupCard: React.FC<GroupCardProps> = ({
   onSplit,
 }) => {
   const { t } = useTranslation();
-  const targetMember = group.members.find(
-    (m) => m.knowledgePointId === group.suggestedTargetId
-  );
-  const otherMembers = group.members.filter(
-    (m) => m.knowledgePointId !== group.suggestedTargetId
-  );
+  // 单趟遍历同时抽取 target 与其余成员,替代 find + filter 的两次扫描
+  let targetMember: SimilarConceptMember | undefined;
+  const otherMembers: SimilarConceptMember[] = [];
+  for (const m of group.members) {
+    if (m.knowledgePointId === group.suggestedTargetId) {
+      targetMember = m;
+    } else {
+      otherMembers.push(m);
+    }
+  }
 
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 overflow-hidden shadow-sm hover:shadow-md transition-shadow">

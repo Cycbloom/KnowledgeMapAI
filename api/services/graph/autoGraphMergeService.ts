@@ -139,18 +139,19 @@ export class AutoGraphMergeService {
       }
     }
 
+    // 复杂度降低：用归一化标题索引把嵌套 O(n²) 去重改为单趟 O(n) 遍历
+    const titleIndex = new Map<string, number>();
     for (let i = 0; i < nodes.length; i++) {
       if (mergedIndices.has(i)) continue;
       const normI = normalizeTitle(nodes[i].title);
-      for (let j = i + 1; j < nodes.length; j++) {
-        if (mergedIndices.has(j)) continue;
-        const normJ = normalizeTitle(nodes[j].title);
-        if (normI === normJ) {
-          mergedIndices.add(j);
-          logger.info(
-            `Dedup (batch title): "${nodes[j].title}" merged into "${nodes[i].title}"`,
-          );
-        }
+      const firstIndex = titleIndex.get(normI);
+      if (firstIndex === undefined) {
+        titleIndex.set(normI, i);
+      } else {
+        mergedIndices.add(i);
+        logger.info(
+          `Dedup (batch title): "${nodes[i].title}" merged into "${nodes[firstIndex].title}"`,
+        );
       }
     }
 

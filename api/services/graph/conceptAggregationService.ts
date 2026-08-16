@@ -927,13 +927,18 @@ ${conceptList}
           continue;
         }
 
+        // 复杂度降低：预构建规范化别名 Set，避免循环内重复 O(n) 的 some() 线性扫描
+        const normalizedAliasSet = new Set(
+          existingAliases.map((a) => normalizeTitle(a)),
+        );
+        const normalizedTargetTitle = normalizeTitle(targetKp.title);
+
         for (const sourceKp of sourceKps) {
           const normalizedTitle = normalizeTitle(sourceKp.title);
-          const aliasExists = existingAliases.some(
-            (a) => normalizeTitle(a) === normalizedTitle,
-          );
-
-          if (!aliasExists && normalizedTitle !== normalizeTitle(targetKp.title)) {
+          if (
+            !normalizedAliasSet.has(normalizedTitle) &&
+            normalizedTitle !== normalizedTargetTitle
+          ) {
             newAliases.push(sourceKp.title);
           }
         }
@@ -1077,11 +1082,14 @@ ${conceptList}
     const existingAliases: string[] = properties.aliases || [];
     const normalizedTitle = normalizeTitle(kp.title);
 
+    // 复杂度降低：预构建规范化别名 Set，避免 filter 内层重复 O(n) 的 some() 线性扫描
+    const normalizedAliasSet = new Set(
+      existingAliases.map((a) => normalizeTitle(a)),
+    );
+
     const uniqueNewAliases = aliases.filter((alias) => {
       const normalizedAlias = normalizeTitle(alias);
-      const isDuplicate = existingAliases.some(
-        (a) => normalizeTitle(a) === normalizedAlias,
-      );
+      const isDuplicate = normalizedAliasSet.has(normalizedAlias);
       const isSameAsTitle = normalizedAlias === normalizedTitle;
       return !isDuplicate && !isSameAsTitle && alias.trim().length > 0;
     });

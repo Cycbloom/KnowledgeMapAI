@@ -182,17 +182,32 @@ export class CrossDomainAnalysisService {
     }
 
     const crossDomainInsights: CrossDomainInsight[] = [];
+
+    // 复杂度降低：预构建标题/领域索引，避免每个 insight 内层重复 O(n) 的 filter+some/includes
+    const titleToGraph = new Map<string, GraphInfo>();
+    const domainGraphs = new Map<string, GraphInfo[]>();
+    for (const g of graphs) {
+      titleToGraph.set(g.title.toLowerCase(), g);
+      const domain = g.domain || "";
+      const list = domainGraphs.get(domain);
+      if (list) list.push(g);
+      else domainGraphs.set(domain, [g]);
+    }
+
     for (const insight of parsed.cross_domain_insights || []) {
       if (
         insight.intersection_topics &&
         insight.intersection_topics.length >= minIntersection
       ) {
-        const relatedGraphs = graphs.filter(
-          (g) =>
-            insight.related_graph_titles?.some(
-              (t) => t === g.title || t.toLowerCase() === g.title.toLowerCase(),
-            ) || insight.domains?.includes(g.domain || ""),
-        );
+        const matched = new Set<GraphInfo>();
+        for (const t of insight.related_graph_titles || []) {
+          const g = titleToGraph.get(t.toLowerCase());
+          if (g) matched.add(g);
+        }
+        for (const d of insight.domains || []) {
+          for (const g of domainGraphs.get(d) || []) matched.add(g);
+        }
+        const relatedGraphs = graphs.filter((g) => matched.has(g));
         crossDomainInsights.push({
           domains: insight.domains || [],
           intersection_topics: insight.intersection_topics,
@@ -338,9 +353,12 @@ export class CrossDomainAnalysisService {
       core_concepts: g.core_concepts.slice(0, 5),
     }));
 
+    // 复杂度降低：预构建 id->graph Map，避免对每条关系重复 O(n) 的 graphs.find()
+    const idToGraph = new Map(graphs.map((g) => [g.id, g] as const));
+
     const relationSummaries = existingRelations.map((r) => {
-      const sourceGraph = graphs.find((g) => g.id === r.source_graph_id);
-      const targetGraph = graphs.find((g) => g.id === r.target_graph_id);
+      const sourceGraph = idToGraph.get(r.source_graph_id);
+      const targetGraph = idToGraph.get(r.target_graph_id);
       return {
         from: sourceGraph?.title || r.source_graph_id,
         to: targetGraph?.title || r.target_graph_id,
@@ -422,6 +440,9 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
       difficulty: "beginner" | "intermediate" | "advanced";
     }> = [];
 
+    // 复杂度降低：预构建标题索引，避免内层对每个标题重复 O(n) 的 graphs.find()
+    const titleToGraph = new Map(graphs.map((g) => [g.title.toLowerCase(), g] as const));
+
     for (const suggestion of parsed.learning_path_suggestions || []) {
       if (suggestion.path_titles && suggestion.path_titles.length >= 2) {
         if (targetDifficulty && suggestion.difficulty !== targetDifficulty) {
@@ -432,11 +453,7 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
         const validTitles: string[] = [];
 
         for (const title of suggestion.path_titles) {
-          const graph = graphs.find(
-            (g) =>
-              g.title === title ||
-              g.title.toLowerCase() === title.toLowerCase(),
-          );
+          const graph = titleToGraph.get(title.toLowerCase());
           if (graph) {
             pathIds.push(graph.id);
             validTitles.push(graph.title);
@@ -655,6 +672,9 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
       reason: string;
     }> = [];
 
+    // 复杂度降低：预构建标题索引，避免内层对每个标题重复 O(n) 的 graphs.find()
+    const titleToGraph = new Map(graphs.map((g) => [g.title.toLowerCase(), g] as const));
+
     for (const gap of parsed.knowledge_gaps || []) {
       if (importanceOrder[gap.importance] < minImportanceLevel) {
         continue;
@@ -664,10 +684,7 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
       const relatedGraphTitles: string[] = [];
 
       for (const title of gap.related_graph_titles || []) {
-        const graph = graphs.find(
-          (g) =>
-            g.title === title || g.title.toLowerCase() === title.toLowerCase(),
-        );
+        const graph = titleToGraph.get(title.toLowerCase());
         if (graph) {
           relatedGraphIds.push(graph.id);
           relatedGraphTitles.push(graph.title);

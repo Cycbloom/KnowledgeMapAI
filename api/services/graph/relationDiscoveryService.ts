@@ -179,14 +179,17 @@ export class RelationDiscoveryService {
       node_count: g.node_count,
     }));
 
+    // 复杂度降低：预构建 id->graph Map，避免对每条现有关系重复 O(n) 的 graphs.find()
+    const idToGraph = new Map(graphs.map((g) => [g.id, g] as const));
+
     const systemPrompt = await promptService.getRenderedPrompt(
       supabase,
       "discover_graph_relations",
       {
         graphs: graphSummaries,
         existing_relations: existingRelations.map((r) => {
-          const sourceGraph = graphs.find((g) => g.id === r.source_graph_id);
-          const targetGraph = graphs.find((g) => g.id === r.target_graph_id);
+          const sourceGraph = idToGraph.get(r.source_graph_id);
+          const targetGraph = idToGraph.get(r.target_graph_id);
           return {
             from_title: sourceGraph?.title || r.source_graph_id,
             to_title: targetGraph?.title || r.target_graph_id,
@@ -265,16 +268,18 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       parsed.relations ||
       parsed.suggestions ||
       [];
+
+    // 复杂度降低：预构建标题索引，避免对每条关系重复 O(n) 的 graphs.find()
+    const titleToGraph = new Map(
+      graphs.map((g) => [g.title.toLowerCase(), g] as const),
+    );
+
     for (const rel of relations) {
-      const sourceGraph = graphs.find(
-        (g) =>
-          g.title === rel.source_graph_title ||
-          g.title.toLowerCase() === rel.source_graph_title?.toLowerCase(),
+      const sourceGraph = titleToGraph.get(
+        rel.source_graph_title?.toLowerCase() ?? "",
       );
-      const targetGraph = graphs.find(
-        (g) =>
-          g.title === rel.target_graph_title ||
-          g.title.toLowerCase() === rel.target_graph_title?.toLowerCase(),
+      const targetGraph = titleToGraph.get(
+        rel.target_graph_title?.toLowerCase() ?? "",
       );
 
       if (sourceGraph && targetGraph && sourceGraph.id !== targetGraph.id) {
@@ -303,15 +308,30 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
     }
 
     const crossDomainInsights: CrossDomainInsight[] = [];
+
+    // 复杂度降低：预构建标题/领域索引，避免每个 insight 内层重复 O(n) 的 filter+some/includes
+    const insightTitleToGraph = new Map(
+      graphs.map((g) => [g.title.toLowerCase(), g] as const),
+    );
+    const domainGraphs = new Map<string, GraphInfo[]>();
+    for (const g of graphs) {
+      const domain = g.domain || "";
+      const list = domainGraphs.get(domain);
+      if (list) list.push(g);
+      else domainGraphs.set(domain, [g]);
+    }
+
     if (includeCrossDomain && parsed.cross_domain_insights) {
       for (const insight of parsed.cross_domain_insights) {
-        const relatedGraphs = graphs.filter(
-          (g) =>
-            insight.related_graph_titles?.some(
-              (t: string) =>
-                t === g.title || t.toLowerCase() === g.title.toLowerCase(),
-            ) || insight.domains?.includes(g.domain || ""),
-        );
+        const matched = new Set<GraphInfo>();
+        for (const t of insight.related_graph_titles || []) {
+          const g = insightTitleToGraph.get(t.toLowerCase());
+          if (g) matched.add(g);
+        }
+        for (const d of insight.domains || []) {
+          for (const g of domainGraphs.get(d) || []) matched.add(g);
+        }
+        const relatedGraphs = graphs.filter((g) => matched.has(g));
         if (relatedGraphs.length >= 2) {
           crossDomainInsights.push({
             domains: insight.domains || [],

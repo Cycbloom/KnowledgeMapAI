@@ -486,6 +486,9 @@ export class ConceptAnalysisService {
     const visited = new Set<string>();
     const groups: SimilarConceptGroup[] = [];
 
+    // 复杂度降低：预构建 id->concept Map，避免对每个成员做 O(n) 的 allConcepts.find()
+    const conceptById = new Map(allConcepts.map((c) => [c.id, c] as const));
+
     for (const [nodeId, neighbors] of adjacencyList) {
       if (visited.has(nodeId)) continue;
 
@@ -513,7 +516,7 @@ export class ConceptAnalysisService {
       if (groupMembers.size < 2) continue;
 
       const memberDetails = Array.from(groupMembers).map((id) => {
-        const concept = allConcepts.find((c) => c.id === id);
+        const concept = conceptById.get(id);
         const neighbors = adjacencyList.get(id) || [];
         const maxSimilarity = neighbors.length > 0
           ? Math.max(...neighbors.map((n) => n.similarity))
@@ -590,15 +593,19 @@ export class ConceptAnalysisService {
     const aliases: string[] = [];
     const normalizedTargetTitle = target.title.toLowerCase().trim();
 
+    // 复杂度降低：用 Set 记录已用别名，避免循环内重复 O(n) 的 aliases.some() 扫描
+    const seenAliases = new Set<string>();
+
     for (const member of members) {
       if (member.knowledgePointId === target.knowledgePointId) continue;
 
       const normalizedMemberTitle = member.title.toLowerCase().trim();
       if (
         normalizedMemberTitle !== normalizedTargetTitle &&
-        !aliases.some((a) => a.toLowerCase() === normalizedMemberTitle)
+        !seenAliases.has(normalizedMemberTitle)
       ) {
         aliases.push(member.title);
+        seenAliases.add(normalizedMemberTitle);
       }
     }
 
@@ -672,12 +679,15 @@ export class ConceptAnalysisService {
     const suggestions: AliasSuggestion[] = [];
 
     for (const group of groups) {
+      // 复杂度降低：每组的 target 标题只查找一次，避免内层按别名重复 find()
+      const targetTitle =
+        group.members.find((m) => m.knowledgePointId === group.suggestedTargetId)
+          ?.title || "";
+
       for (const alias of group.suggestedAliases) {
         suggestions.push({
           knowledgePointId: group.suggestedTargetId,
-          title: group.members.find(
-            (m) => m.knowledgePointId === group.suggestedTargetId,
-          )?.title || "",
+          title: targetTitle,
           suggestedAlias: alias,
           confidence: group.autoMergeConfidence,
           sourceGroupId: group.id,

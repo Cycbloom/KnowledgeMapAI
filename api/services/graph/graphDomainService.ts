@@ -83,9 +83,10 @@ export const graphDomainService = {
   ) {
     if (!supabase || !domains) return;
     const hasPrimary = domains.some((d) => d.is_primary);
-    const normalized = domains.map((d) => ({
+    // 复杂度降低：用 map 的索引参数替代 indexOf，避免每项 O(n) 的线性查找（O(n²) → O(n)）
+    const normalized = domains.map((d, index) => ({
       ...d,
-      is_primary: hasPrimary ? d.is_primary : domains.indexOf(d) === 0,
+      is_primary: hasPrimary ? d.is_primary : index === 0,
     }));
     await supabase.from("graph_domains").delete().eq("graph_id", graphId);
     if (normalized.length > 0) {

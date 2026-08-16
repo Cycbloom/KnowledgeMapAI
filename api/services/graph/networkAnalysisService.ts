@@ -265,13 +265,22 @@ export class NetworkAnalysisService {
 
     for (const node of nodes) {
       const distances = this.computeDistances(node.graphNodeId, adjacency);
-      const reachable = Array.from(distances.values()).filter((d) => d > 0);
-      if (reachable.length === 0) {
+
+      // 复杂度降低：单趟遍历，合并 filter+reduce 的两次扫描
+      let reachableCount = 0;
+      let sumDist = 0;
+      for (const d of distances.values()) {
+        if (d > 0) {
+          reachableCount++;
+          sumDist += d;
+        }
+      }
+
+      if (reachableCount === 0) {
         result[node.title] = 0;
       } else {
-        const sumDist = reachable.reduce((a, b) => a + b, 0);
         const closeness =
-          (reachable.length / (n - 1)) * (reachable.length / sumDist);
+          (reachableCount / (n - 1)) * (reachableCount / sumDist);
         result[node.title] = Math.round(closeness * 10000) / 10000;
       }
     }

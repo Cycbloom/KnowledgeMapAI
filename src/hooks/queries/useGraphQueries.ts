@@ -47,7 +47,7 @@ export const useGraph = (id: string) => {
 
 export const useGraphLearningPath = (id: string) => {
   return useQuery({
-    queryKey: ["graphLearningPath", id],
+    queryKey: queryKeys.graphLearningPath(id),
     queryFn: () => api.graphs.getLearningPath(id),
     enabled: !!id,
     ...staticQueryConfig,

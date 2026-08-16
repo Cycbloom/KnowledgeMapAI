@@ -461,6 +461,10 @@ export async function generateAIPath(
   const titleToNodeId = new Map(
     validNodes.map((n) => [n.title.toLowerCase(), n.id]),
   );
+  // 复杂度降低：预构建小写标题->节点 Map，替代下方循环内多次 validNodes.find + toLowerCase 的 O(paths×nodes) 扫描
+  const nodeByLowerTitle = new Map(
+    validNodes.map((n) => [n.title.toLowerCase(), n]),
+  );
   const edgesInfo = edges.map((e) => ({
     source:
       nodeIdToTitle.get(e.source_knowledge_point_id) ||
@@ -542,24 +546,21 @@ export async function generateAIPath(
 
     for (let index = 0; index < (parsed.path || []).length; index++) {
       const item = parsed.path[index];
-      let node = validNodes.find(
-        (n) =>
-          n.title === item.nodeTitle ||
-          n.title.toLowerCase() === item.nodeTitle?.toLowerCase(),
-      );
+      let node: NodeForPath | undefined;
+      if (item.nodeTitle) {
+        node =
+          nodeByLowerTitle.get(item.nodeTitle) ??
+          nodeByLowerTitle.get(item.nodeTitle.toLowerCase());
+      }
 
       if (!node && item.nodeTitle) {
-        // 预计算小写标题数组替代 find 内层重复 toLowerCase
+        // 精确匹配失败后，仅对未命中的项做模糊子串扫描
         const lowerTitle = item.nodeTitle.toLowerCase();
-        node =
-          validNodes.find(
-            (n) => n.title.toLowerCase() === lowerTitle,
-          ) ||
-          validNodes.find(
-            (n) =>
-              n.title.toLowerCase().includes(lowerTitle) ||
-              lowerTitle.includes(n.title.toLowerCase()),
-          );
+        node = validNodes.find(
+          (n) =>
+            n.title.toLowerCase().includes(lowerTitle) ||
+            lowerTitle.includes(n.title.toLowerCase()),
+        );
       }
 
       if (!node) {

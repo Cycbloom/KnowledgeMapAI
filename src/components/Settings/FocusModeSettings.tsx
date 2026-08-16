@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFocusStore } from "../../store/useFocusStore";
 import { DEFAULT_FOCUS_SETTINGS } from "../../constants/focusSettings";
+import { useSaveFeedback } from "../../hooks/common";
 import { useShallow } from "zustand/react/shallow";
 import {
   Timer,
@@ -39,6 +40,8 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
     })),
   );
 
+  const { saved, notify } = useSaveFeedback();
+
   const handleResetFocusDefaults = () => {
     updateFocusSettings({
       focusDuration: DEFAULT_FOCUS_SETTINGS.focusDuration,
@@ -50,6 +53,7 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
       soundEnabled: DEFAULT_FOCUS_SETTINGS.soundEnabled,
       notificationEnabled: DEFAULT_FOCUS_SETTINGS.notificationEnabled,
     });
+    notify();
   };
 
   return (
@@ -61,12 +65,23 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
             {t("settings.focusMode")}
           </h2>
         </div>
-        <button
-          onClick={handleResetFocusDefaults}
-          className="px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-        >
-          {t("settings.resetFocusDefaults")}
-        </button>
+        <div className="flex items-center gap-2">
+          {saved && (
+            <span
+              role="status"
+              aria-live="polite"
+              className="flex items-center gap-1.5 rounded-full bg-green-100 dark:bg-green-900/60 px-2.5 py-1 text-xs font-medium text-green-700 dark:text-green-300 shadow-sm"
+            >
+              {t("settings.saved")}
+            </span>
+          )}
+          <button
+            onClick={handleResetFocusDefaults}
+            className="flex items-center px-3 min-h-[44px] text-xs rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+          >
+            {t("settings.resetFocusDefaults")}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -92,7 +107,10 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 max={60}
                 step={5}
                 value={focusDuration}
-                onChange={(e) => updateFocusSettings({ focusDuration: Number(e.target.value) })}
+                onChange={(e) => {
+                  updateFocusSettings({ focusDuration: Number(e.target.value) });
+                  notify();
+                }}
                 aria-label={t("settings.focusDuration")}
                 aria-valuetext={`${focusDuration} ${t("settings.minutes")}`}
                 className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
@@ -120,7 +138,10 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 max={15}
                 step={1}
                 value={shortBreakDuration}
-                onChange={(e) => updateFocusSettings({ shortBreakDuration: Number(e.target.value) })}
+                onChange={(e) => {
+                  updateFocusSettings({ shortBreakDuration: Number(e.target.value) });
+                  notify();
+                }}
                 aria-label={t("settings.shortBreakDuration")}
                 aria-valuetext={`${shortBreakDuration} ${t("settings.minutes")}`}
                 className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
@@ -148,7 +169,10 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 max={30}
                 step={5}
                 value={longBreakDuration}
-                onChange={(e) => updateFocusSettings({ longBreakDuration: Number(e.target.value) })}
+                onChange={(e) => {
+                  updateFocusSettings({ longBreakDuration: Number(e.target.value) });
+                  notify();
+                }}
                 aria-label={t("settings.longBreakDuration")}
                 aria-valuetext={`${longBreakDuration} ${t("settings.minutes")}`}
                 className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
@@ -176,7 +200,10 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 max={6}
                 step={1}
                 value={longBreakInterval}
-                onChange={(e) => updateFocusSettings({ longBreakInterval: Number(e.target.value) })}
+                onChange={(e) => {
+                  updateFocusSettings({ longBreakInterval: Number(e.target.value) });
+                  notify();
+                }}
                 aria-label={t("settings.longBreakInterval")}
                 aria-valuetext={`${longBreakInterval} ${t("settings.pomodoros")}`}
                 className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-600"
@@ -213,11 +240,15 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                   autoStartBreak ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
                 }`}
-                onClick={() => updateFocusSettings({ autoStartBreak: !autoStartBreak })}
+                onClick={() => {
+                  updateFocusSettings({ autoStartBreak: !autoStartBreak });
+                  notify();
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     updateFocusSettings({ autoStartBreak: !autoStartBreak });
+                    notify();
                   }
                 }}
               >
@@ -246,11 +277,15 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                   autoStartPomodoro ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
                 }`}
-                onClick={() => updateFocusSettings({ autoStartPomodoro: !autoStartPomodoro })}
+                onClick={() => {
+                  updateFocusSettings({ autoStartPomodoro: !autoStartPomodoro });
+                  notify();
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     updateFocusSettings({ autoStartPomodoro: !autoStartPomodoro });
+                    notify();
                   }
                 }}
               >
@@ -280,11 +315,15 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                   soundEnabled ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
                 }`}
-                onClick={() => updateFocusSettings({ soundEnabled: !soundEnabled })}
+                onClick={() => {
+                  updateFocusSettings({ soundEnabled: !soundEnabled });
+                  notify();
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     updateFocusSettings({ soundEnabled: !soundEnabled });
+                    notify();
                   }
                 }}
               >
@@ -314,11 +353,15 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                   notificationEnabled ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
                 }`}
-                onClick={() => updateFocusSettings({ notificationEnabled: !notificationEnabled })}
+                onClick={() => {
+                  updateFocusSettings({ notificationEnabled: !notificationEnabled });
+                  notify();
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     updateFocusSettings({ notificationEnabled: !notificationEnabled });
+                    notify();
                   }
                 }}
               >

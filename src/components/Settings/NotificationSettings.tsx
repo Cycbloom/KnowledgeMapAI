@@ -126,7 +126,7 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
           <button
             onClick={handleSelectAll}
             disabled={allEnabled}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 min-h-[44px] text-xs rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <CheckSquare className="w-3 h-3" />
             {t("settings.notifications.selectAll")}
@@ -134,7 +134,7 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
           <button
             onClick={handleDeselectAll}
             disabled={allMuted}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 min-h-[44px] text-xs rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Square className="w-3 h-3" />
             {t("settings.notifications.deselectAll")}

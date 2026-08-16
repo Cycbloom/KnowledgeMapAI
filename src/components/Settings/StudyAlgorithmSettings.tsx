@@ -120,7 +120,7 @@ export const StudyAlgorithmSettings = React.memo(function StudyAlgorithmSettings
 
           <button
             onClick={handleResetFsrs}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 min-h-[44px] rounded-lg border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             {t("settings.studyAlgorithm.resetToDefault")}

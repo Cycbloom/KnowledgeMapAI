@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
 import type { TTSVoice } from "@shared/types";
@@ -30,16 +30,36 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
   const [sttTesting, setSttTesting] = useState(false);
   const [sttTestResult, setSttTestResult] = useState<{ success: boolean; text?: string; message: string } | null>(null);
 
+  const mountedRef = useRef(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    // 挂载后自动检测一次，用真实结果初始化健康状态
+    void checkTtsHealth();
+    void checkSttHealth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const checkTtsHealth = async () => {
+    if (!mountedRef.current) return;
     setTtsHealth('checking');
     try {
       const result = await api.tts.health() as { status: string; model_loaded: boolean };
+      if (!mountedRef.current) return;
       setTtsHealth(result.status === 'healthy' ? 'healthy' : 'unhealthy');
       if (result.status === 'healthy') {
         const voices = await api.tts.voices();
+        if (!mountedRef.current) return;
         setTtsVoices(voices);
       }
     } catch {
+      if (!mountedRef.current) return;
       setTtsHealth('unhealthy');
     }
   };
@@ -66,11 +86,14 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
   };
 
   const checkSttHealth = async () => {
+    if (!mountedRef.current) return;
     setSttHealth('checking');
     try {
       const result = await api.stt.health() as { status: string; model_loaded: boolean };
+      if (!mountedRef.current) return;
       setSttHealth(result.status === 'healthy' ? 'healthy' : 'unhealthy');
     } catch {
+      if (!mountedRef.current) return;
       setSttHealth('unhealthy');
     }
   };
@@ -117,23 +140,35 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
               {t("settings.ttsTest")}
             </h3>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" aria-live="polite">
             {ttsHealth === 'healthy' && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+              <span role="status" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 {t("settings.ttsHealthy")}
               </span>
             )}
-            {(ttsHealth === 'unhealthy' || ttsHealth === 'idle') && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+            {ttsHealth === 'unhealthy' && (
+              <span role="status" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
                 <XCircle className="w-3.5 h-3.5" />
                 {t("settings.ttsUnhealthy")}
+              </span>
+            )}
+            {ttsHealth === 'checking' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                {t("settings.checkHealth")}
+              </span>
+            )}
+            {ttsHealth === 'idle' && (
+              <span role="status" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400">
+                <Info className="w-3.5 h-3.5" />
+                {t("settings.ttsIdle")}
               </span>
             )}
             <button
               onClick={checkTtsHealth}
               disabled={ttsHealth === 'checking'}
-              className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 min-h-[36px] disabled:opacity-50"
+              className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
             >
               {ttsHealth === 'checking' ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -163,7 +198,9 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
                   </option>
                 ))
               ) : (
-                <option value="Cherry">Cherry (Female, Chinese)</option>
+                <option value="" disabled>
+                  {t("settings.noVoiceLoaded")}
+                </option>
               )}
             </select>
           </div>
@@ -184,7 +221,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
 
           <button
             onClick={handleTestTts}
-            disabled={ttsTesting || !ttsTestText.trim() || ttsHealth !== 'healthy'}
+            disabled={ttsTesting || !ttsTestText.trim() || ttsHealth !== 'healthy' || !ttsTestVoice}
             className="px-4 py-2.5 rounded-lg bg-primary-600 text-white text-sm hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2 transition-colors min-h-[44px]"
           >
             {ttsTesting ? (
@@ -205,7 +242,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
               ttsTestResult.success
                 ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
                 : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
-            }`}>
+            }`} aria-live="polite">
               {ttsTestResult.success ? (
                 <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
               ) : (
@@ -226,23 +263,35 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
               {t("settings.sttTest")}
             </h3>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" aria-live="polite">
             {sttHealth === 'healthy' && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+              <span role="status" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 {t("settings.sttHealthy")}
               </span>
             )}
-            {(sttHealth === 'unhealthy' || sttHealth === 'idle') && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+            {sttHealth === 'unhealthy' && (
+              <span role="status" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
                 <XCircle className="w-3.5 h-3.5" />
                 {t("settings.sttUnhealthy")}
+              </span>
+            )}
+            {sttHealth === 'checking' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                {t("settings.checkHealth")}
+              </span>
+            )}
+            {sttHealth === 'idle' && (
+              <span role="status" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400">
+                <Info className="w-3.5 h-3.5" />
+                {t("settings.sttIdle")}
               </span>
             )}
             <button
               onClick={checkSttHealth}
               disabled={sttHealth === 'checking'}
-              className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 min-h-[36px] disabled:opacity-50"
+              className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
             >
               {sttHealth === 'checking' ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -314,7 +363,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
               sttTestResult.success
                 ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
                 : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
-            }`}>
+            }`} aria-live="polite">
               <div className="flex items-start gap-2">
                 {sttTestResult.success ? (
                   <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />

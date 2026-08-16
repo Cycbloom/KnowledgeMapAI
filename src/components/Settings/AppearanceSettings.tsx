@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../hooks";
+import { useSaveFeedback } from "../../hooks/common";
 import { usePreferencesStore } from "../../store/usePreferencesStore";
 import {
   Palette,
@@ -23,9 +24,19 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
   );
   const reducedMotion = usePreferencesStore((s) => s.reducedMotion);
   const setReducedMotion = usePreferencesStore((s) => s.setReducedMotion);
+  const { saved, notify } = useSaveFeedback();
 
   return (
-    <>
+    <div className="relative">
+      {saved && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-full bg-green-100 dark:bg-green-900/60 px-2.5 py-1 text-xs font-medium text-green-700 dark:text-green-300 shadow-sm"
+        >
+          {t("settings.saved")}
+        </div>
+      )}
       {/* 外观设置 */}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
         <div className="flex items-center gap-2 mb-4">
@@ -37,7 +48,10 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
-            onClick={() => setTheme("light")}
+            onClick={() => {
+              setTheme("light");
+              notify();
+            }}
             className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
               themeMode === "light"
                 ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
@@ -51,7 +65,10 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
           </button>
 
           <button
-            onClick={() => setTheme("dark")}
+            onClick={() => {
+              setTheme("dark");
+              notify();
+            }}
             className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
               themeMode === "dark"
                 ? "bg-slate-800 border-slate-700 text-white ring-1 ring-slate-600 dark:bg-primary-600 dark:border-primary-500"
@@ -65,7 +82,10 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
           </button>
 
           <button
-            onClick={() => setTheme("system")}
+            onClick={() => {
+              setTheme("system");
+              notify();
+            }}
             className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
               themeMode === "system"
                 ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
@@ -93,7 +113,10 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
           {availablePresets.map((preset) => (
             <button
               key={preset.key}
-              onClick={() => setThemePreset(preset.key)}
+              onClick={() => {
+                setThemePreset(preset.key);
+                notify();
+              }}
               className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[80px] ${
                 themePreset === preset.key
                   ? "border-2 bg-primary-50 dark:bg-primary-900/30"
@@ -144,7 +167,10 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
-                onClick={() => i18n.changeLanguage("zh-CN")}
+                onClick={() => {
+                  i18n.changeLanguage("zh-CN");
+                  notify();
+                }}
                 className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                   i18n.language === "zh-CN" || i18n.language.startsWith("zh")
                     ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
@@ -158,7 +184,10 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
               </button>
 
               <button
-                onClick={() => i18n.changeLanguage("en-US")}
+                onClick={() => {
+                  i18n.changeLanguage("en-US");
+                  notify();
+                }}
                 className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                   i18n.language === "en-US" || i18n.language.startsWith("en")
                     ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
@@ -203,11 +232,15 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
                 ? "bg-primary-600"
                 : "bg-gray-200 dark:bg-gray-700"
             }`}
-            onClick={() => setCelebrationEnabled(!celebrationEnabled)}
+            onClick={() => {
+              setCelebrationEnabled(!celebrationEnabled);
+              notify();
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 setCelebrationEnabled(!celebrationEnabled);
+                notify();
               }
             }}
           >
@@ -248,11 +281,15 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
                 ? "bg-primary-600"
                 : "bg-gray-200 dark:bg-gray-700"
             }`}
-            onClick={() => setReducedMotion(!reducedMotion)}
+            onClick={() => {
+              setReducedMotion(!reducedMotion);
+              notify();
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 setReducedMotion(!reducedMotion);
+                notify();
               }
             }}
           >
@@ -264,6 +301,6 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 });

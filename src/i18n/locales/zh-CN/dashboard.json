@@ -59,6 +59,7 @@
     "deselectAll": "取消全选",
     "selected": "已选择 {{count}} 项",
     "deleting": "删除中...",
+    "deletingProgress": "删除中 {{completed}}/{{total}}",
     "batchDelete": "批量删除",
     "toolbar": "批量操作工具栏",
     "clearSelection": "清除选择"

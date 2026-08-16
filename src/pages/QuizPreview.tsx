@@ -23,6 +23,7 @@ import { quizQueryKeys } from '../hooks/queries/useQuizQueries';
 import type { StudyCard } from '@shared/types/common';
 import { formatDate as formatDateUtil } from '../utils/formatters';
 import { useFocusTrap, useEscapeKey } from '@/hooks/common';
+import { useDocumentTitle } from '@/hooks/common/useDocumentTitle';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { message } from '@/utils/messageHelper';
 
@@ -73,6 +74,9 @@ export const QuizPreview: React.FC = () => {
   useEscapeKey(() => setRegeneratingCardId(null), !!regeneratingCardId);
 
   const { data: quizSet, isLoading, error, refetch } = useQuizSet(quizSetId ?? "", !!quizSetId);
+
+  useDocumentTitle(quizSet?.title, t("documentTitle.suffix"));
+
   const deleteMutation = useDeleteQuizSetMutation();
   const regenerateMutation = useRegenerateCardMutation();
 
@@ -141,6 +145,28 @@ export const QuizPreview: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: quizQueryKeys.quizSet(quizSetId) });
     } catch (error) {
       console.error('Failed to delete card:', error);
+      message.error(t('study.quizPreview.deleteCardFailed'));
+    }
+  }, [quizSetId, queryClient, t]);
+
+  const handleBatchDeleteCard = useCallback(async (cardIds: string[]) => {
+    if (!quizSetId || cardIds.length === 0) return;
+    const confirmed = await asyncConfirm({
+      title: t('quiz.questionList.batch.confirmTitle'),
+      message: t('quiz.questionList.batch.confirmMessage', { count: cardIds.length }),
+      isDangerous: true,
+    });
+    if (!confirmed) return;
+    try {
+      await Promise.all(
+        cardIds.map(async (cardId) => {
+          await api.quiz.removeCard(quizSetId, cardId);
+          await api.study.delete(cardId);
+        })
+      );
+      queryClient.invalidateQueries({ queryKey: quizQueryKeys.quizSet(quizSetId) });
+    } catch (error) {
+      console.error('Failed to delete cards:', error);
       message.error(t('study.quizPreview.deleteCardFailed'));
     }
   }, [quizSetId, queryClient, t]);
@@ -392,6 +418,7 @@ export const QuizPreview: React.FC = () => {
           onEdit={handleEditCard}
           onDelete={handleDeleteCard}
           onRegenerate={handleRegenerateCard}
+          onBatchDelete={handleBatchDeleteCard}
           readOnly={isGenerating}
         />
       </div>

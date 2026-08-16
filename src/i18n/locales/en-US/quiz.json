@@ -135,6 +135,20 @@
     "label": {
       "answer": "Answer",
       "explanation": "Explanation"
+    },
+    "batch": {
+      "toolbar": "Batch actions toolbar",
+      "selectAll": "Select all",
+      "deselectAll": "Deselect all",
+      "selected": "{{count}} questions selected",
+      "deleting": "Deleting…",
+      "deletingProgress": "Deleting {{completed}}/{{total}}",
+      "batchDelete": "Batch delete",
+      "clearSelection": "Clear selection",
+      "manage": "Batch manage",
+      "exit": "Exit batch manage",
+      "confirmTitle": "Delete questions",
+      "confirmMessage": "Delete the selected {{count}} question(s)?"
     }
   }
 }

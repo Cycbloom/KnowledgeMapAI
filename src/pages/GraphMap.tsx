@@ -20,6 +20,7 @@ import type { CrossDomainAnalysisResult, AnalysisModuleState } from "../componen
 import { useAnalysisModules } from "../hooks/graphAI/useAnalysisModules";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { message } from "../utils/messageHelper";
+import { getErrorMessage } from "../utils/errors";
 import type {
   Graph,
   GraphRelation,
@@ -550,6 +551,22 @@ export const GraphMap = () => {
     setIsModularAnalysisOpen(true);
   }, []);
 
+  const handleUndoBatchDelete = useCallback(async (ids: string[]) => {
+    try {
+      for (const id of ids) {
+        await api.graphs.restore(id);
+      }
+      message.success(t('common.restored'));
+    } catch (error: unknown) {
+      const errMsg = getErrorMessage(error) || t('common.restoreFailed');
+      message.error(errMsg);
+    } finally {
+      setMultiSelectedGraphIds(new Set());
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+    }
+  }, [queryClient, t]);
+
   const handleBatchDelete = useCallback(async () => {
     const ids = Array.from(multiSelectedGraphIds);
     if (ids.length === 0) return;
@@ -565,7 +582,15 @@ export const GraphMap = () => {
       for (const id of ids) {
         await api.graphs.delete(id);
       }
-      message.success(t('graphMap.batch.deleteSuccess', { count: ids.length }));
+      const toastId = message.success(t('graphMap.batch.deleteSuccess', { count: ids.length }), {
+        action: {
+          label: t('common.undo'),
+          onClick: () => {
+            message.dismiss(toastId);
+            void handleUndoBatchDelete(ids);
+          },
+        },
+      });
       setMultiSelectedGraphIds(new Set());
       queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
@@ -573,7 +598,7 @@ export const GraphMap = () => {
       const errMsg = error instanceof Error ? error.message : t('graphMap.batch.deleteFailed');
       message.error(errMsg);
     }
-  }, [multiSelectedGraphIds, queryClient, t]);
+  }, [multiSelectedGraphIds, queryClient, t, handleUndoBatchDelete]);
 
   const handleBatchSetDomain = useCallback(async (domainId: string) => {
     const ids = Array.from(multiSelectedGraphIds);

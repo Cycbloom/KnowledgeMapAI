@@ -9,6 +9,7 @@ import {
   EyeOff,
   FileQuestion,
   CheckSquare,
+  Square,
   ToggleLeft,
   FileText,
   MessageSquare,
@@ -18,6 +19,8 @@ import { useTranslation } from 'react-i18next';
 import type { StudyCard } from '@shared/types/common';
 import { useTheme } from "../../hooks";
 import { EmptyState } from '../common/EmptyState';
+import { BatchActionsToolbar } from '../common/BatchActionsToolbar';
+import { useListSelection } from '@/hooks/common/useListSelection';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 
 interface QuestionListProps {
@@ -26,6 +29,7 @@ interface QuestionListProps {
   onEdit: (card: StudyCard) => void;
   onDelete: (cardId: string) => void;
   onRegenerate: (cardId: string) => void;
+  onBatchDelete?: (cardIds: string[]) => void;
   readOnly?: boolean;
 }
 
@@ -54,6 +58,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
   onEdit,
   onDelete,
   onRegenerate,
+  onBatchDelete,
   readOnly = false,
 }) => {
   const { theme } = useTheme();
@@ -64,6 +69,12 @@ export const QuestionList: React.FC<QuestionListProps> = ({
     new Set(['qa', 'choice', 'multi_choice', 'true_false', 'fill_in_the_blank', 'essay'])
   );
   const [showAllAnswers, setShowAllAnswers] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+
+  const batchEnabled = !readOnly && !!onBatchDelete;
+
+  const selectableIds = useMemo(() => cards.map((c) => c.id), [cards]);
+  const listSelection = useListSelection(selectableIds);
 
   const groupedCards = useMemo(() => {
     const groups: Partial<Record<CardType, StudyCard[]>> = {};
@@ -230,18 +241,57 @@ export const QuestionList: React.FC<QuestionListProps> = ({
         <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
           {t('quiz.questionList.questionCount', { count: cards.length })}
         </div>
-        <button
-          onClick={toggleAllAnswers}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            isDark
-              ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          {showAllAnswers ? <EyeOff size={16} /> : <Eye size={16} />}
-          {showAllAnswers ? t('quiz.questionList.button.hideAnswer') : t('quiz.questionList.button.showAnswer')}
-        </button>
+        <div className="flex items-center gap-2">
+          {batchEnabled && (
+            <button
+              onClick={() => {
+                listSelection.clear();
+                setSelectMode((prev) => !prev);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                selectMode
+                  ? isDark
+                    ? 'bg-primary-900/30 text-primary-300 hover:bg-primary-900/50'
+                    : 'bg-primary-100 text-primary-600 hover:bg-primary-200'
+                  : isDark
+                    ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {selectMode
+                ? t('quiz.questionList.batch.exit')
+                : t('quiz.questionList.batch.manage')}
+            </button>
+          )}
+          <button
+            onClick={toggleAllAnswers}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              isDark
+                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {showAllAnswers ? <EyeOff size={16} /> : <Eye size={16} />}
+            {showAllAnswers ? t('quiz.questionList.button.hideAnswer') : t('quiz.questionList.button.showAnswer')}
+          </button>
+        </div>
       </div>
+
+      {selectMode && batchEnabled && (
+        <BatchActionsToolbar
+          isDark={isDark}
+          i18nPrefix="quiz.questionList.batch"
+          isAllSelected={listSelection.selectionState.isAllSelected}
+          isPartialSelected={listSelection.selectionState.isPartialSelected}
+          selectedCount={listSelection.selectionState.selectedCount}
+          isBatchDeleting={false}
+          onToggleSelectAll={listSelection.toggleSelectAll}
+          onBatchAction={() => {
+            if (onBatchDelete) onBatchDelete(Array.from(listSelection.selectedIds));
+          }}
+          onClearSelection={listSelection.clear}
+        />
+      )}
 
       {cardTypes.map((type) => {
         const typeCards = groupedCards[type];
@@ -303,6 +353,25 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                           }`}
                         >
                           <div className="flex items-start gap-3">
+                            {selectMode && (
+                              <button
+                                onClick={() => listSelection.toggleId(card.id)}
+                                role="checkbox"
+                                aria-checked={listSelection.isSelected(card.id) ? 'true' : 'false'}
+                                aria-label={t('quiz.questionList.batch.selectAll')}
+                                className={`flex-shrink-0 mt-0.5 p-1 rounded-lg transition-colors ${
+                                  isDark
+                                    ? 'text-slate-400 hover:text-primary-400 hover:bg-slate-700'
+                                    : 'text-gray-400 hover:text-primary-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                {listSelection.isSelected(card.id) ? (
+                                  <CheckSquare size={18} aria-hidden="true" className="text-primary-500" />
+                                ) : (
+                                  <Square size={18} aria-hidden="true" />
+                                )}
+                              </button>
+                            )}
                             <div
                               className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
                                 isDark

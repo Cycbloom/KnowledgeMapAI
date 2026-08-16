@@ -1,4 +1,8 @@
 export { useError } from './useError';
+export { useListSelection } from './useListSelection';
+export type { ListSelectionState, UseListSelectionResult } from './useListSelection';
+export { useSaveFeedback } from './useSaveFeedback';
+export type { UseSaveFeedbackResult } from './useSaveFeedback';
 export { useErrorBanner } from './useErrorBanner';
 export type { ShowErrorProps, UseErrorBannerOptions, UseErrorBannerReturn } from './useErrorBanner';
 export { useNetworkStatus } from './useNetworkStatus';
@@ -12,6 +16,7 @@ export { useTutorOperations } from './useTutorOperations';
 export { useCombinedView } from './useCombinedView';
 export { useCollaborators } from './useCollaborators';
 export { useFocusTrap } from './useFocusTrap';
+export { useAutofocus } from './useAutofocus';
 export { useQuoteShortcut } from './useQuoteShortcut';
 export { useAutoSave } from './useAutoSave';
 export { useFormDraft } from './useFormDraft';

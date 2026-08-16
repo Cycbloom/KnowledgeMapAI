@@ -33,6 +33,7 @@ import {
 import { useStore } from "../../store/useStore";
 import { useTheme, useIsMobile } from "../../hooks";
 import { usePersistedListState } from "../../hooks/common/usePersistedListState";
+import { useListSelection } from "../../hooks/common/useListSelection";
 import { useScrollRestoration } from "../../hooks/common/useScrollRestoration";
 import { useKeyboardHandler } from "../../hooks/gesture/useKeyboardHandler";
 import { usePullToRefresh } from "../../hooks/gesture/usePullToRefresh";
@@ -50,10 +51,10 @@ import {
   EmptyState,
   ConfirmationModal,
   ErrorBoundary,
+  BatchActionsToolbar,
 } from "../../components/common";
 import { VirtualList } from "../../components/common/VirtualList";
 import { NotesListSortDropdown, type SortBy } from "../../components/Notes/NotesListSortDropdown";
-import { NotesBatchActions } from "../../components/Notes/NotesBatchActions";
 import { asyncConfirm } from "../../utils/asyncConfirm";
 import { formatDate } from "../../utils/formatters";
 import { message } from "../../utils/messageHelper";
@@ -460,7 +461,6 @@ export const NotesListPage = () => {
 
   // Task 5: 批量选择模式
   const [isSelectMode, setIsSelectMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState<{
     isOpen: boolean;
     count: number;
@@ -582,6 +582,19 @@ export const NotesListPage = () => {
     return sorted;
   }, [filteredNotes, sortBy]);
 
+  // Task 5: 批量选择状态(通用 hook,基于当前排序+过滤后的可见项推导三态)。
+  const selectableIds = useMemo(
+    () => sortedFilteredNotes.map((note) => note.id),
+    [sortedFilteredNotes],
+  );
+  const {
+    selectedIds,
+    setSelectedIds,
+    selectionState,
+    toggleId: toggleSelect,
+    toggleSelectAll,
+  } = useListSelection(selectableIds);
+
   // SubTask 9.1: 进入 /notes 时静默确保今日 daily 存在。
   // 仅当本日首次进入且后端刚创建(createdAt 在最近 60 秒内)时跳转到编辑器,
   // 已存在则留在列表(避免每次进入都跳走打扰用户查看列表)。
@@ -698,13 +711,15 @@ export const NotesListPage = () => {
     setPendingAction(note.id);
     try {
       await deleteNoteMutation.mutateAsync(note.id);
-      message.success(t("notes.undo.deletedOne", {
+      const deleteToastId = message.success(t("notes.undo.deletedOne", {
         title: note.title || t("notes.fields.untitled"),
       }), {
         duration: 5000,
         action: {
           label: t("common.undo"),
           onClick: () => {
+            // 撤销后自动关闭当前 toast,不再等到 duration 自然消失
+            message.dismiss(deleteToastId);
             void handleUndoDeleteNote(deletedNoteId);
           },
         },
@@ -752,11 +767,13 @@ export const NotesListPage = () => {
       setSelectedIds(new Set());
       setIsSelectMode(false);
       if (failedCount === 0) {
-        message.success(t("notes.undo.deletedMany", { count: ids.length }), {
+        const batchDeleteToastId = message.success(t("notes.undo.deletedMany", { count: ids.length }), {
           duration: 5000,
           action: {
             label: t("common.undo"),
             onClick: () => {
+              // 撤销后自动关闭当前 toast,不再等到 duration 自然消失
+              message.dismiss(batchDeleteToastId);
               void handleUndoBatchDeleteNotes(ids);
             },
           },
@@ -803,42 +820,6 @@ export const NotesListPage = () => {
   const exitSelectMode = () => {
     setSelectedIds(new Set());
     setIsSelectMode(false);
-  };
-
-  // Task 5: 切换单条选中态。
-  const toggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
-
-  // Task 5: 全选/取消全选(基于当前排序+过滤后的可见项)。
-  // 单趟遍历统计选中情况，替代每次渲染调用 every/some/every 的 O(3*notes) 扫描
-  const selectionState = useMemo(() => {
-    let selectedCount = 0;
-    const total = sortedFilteredNotes.length;
-    for (const n of sortedFilteredNotes) {
-      if (selectedIds.has(n.id)) selectedCount++;
-    }
-    const isAllSelected = total > 0 && selectedCount === total;
-    const isPartialSelected = !isAllSelected && selectedCount > 0;
-    return { selectedCount, isAllSelected, isPartialSelected };
-  }, [sortedFilteredNotes, selectedIds]);
-
-  const toggleSelectAll = () => {
-    if (selectionState.isAllSelected) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(
-        new Set(sortedFilteredNotes.map((n) => n.id)),
-      );
-    }
   };
 
   const emptyConfig = useMemo(() => {
@@ -1124,14 +1105,15 @@ export const NotesListPage = () => {
             <>
               {/* Task 5: 批量选择模式下的批量操作工具栏 */}
               {isSelectMode && (
-                <NotesBatchActions
+                <BatchActionsToolbar
                   isDark={isDark}
+                  i18nPrefix="notes.batch"
                   isAllSelected={selectionState.isAllSelected}
                   isPartialSelected={selectionState.isPartialSelected}
                   selectedCount={selectionState.selectedCount}
                   isBatchDeleting={isBatchDeleting}
                   onToggleSelectAll={toggleSelectAll}
-                  onBatchDelete={() =>
+                  onBatchAction={() =>
                     setBatchDeleteConfirm({
                       isOpen: true,
                       count: selectedIds.size,

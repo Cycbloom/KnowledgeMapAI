@@ -1,4 +1,18 @@
 {
+  "batch": {
+    "toolbar": "批量操作工具栏",
+    "selectAll": "全选",
+    "deselectAll": "取消全选",
+    "selected": "已选 {{count}} 人",
+    "deleting": "移除中…",
+    "deletingProgress": "移除中 {{completed}}/{{total}}",
+    "batchDelete": "移除选中",
+    "clearSelection": "清除选择",
+    "manage": "批量管理",
+    "exit": "退出批量管理",
+    "confirmTitle": "批量移除协作者",
+    "confirmMessage": "确定要移除选中的 {{count}} 位协作者吗？"
+  },
   "shareDialog": {
     "title": "分享与协作",
     "inviteCollaborator": "邀请协作者",

@@ -7,6 +7,7 @@ import {
   ShareLink,
 } from "@/components/collaborators";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import { message } from "@/utils/messageHelper";
 import { ModalShell } from '../common';
 import { useCollaborators } from "../../hooks";
 import type { CollaboratorRole } from "@shared/types";
@@ -59,6 +60,24 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     }
   };
 
+  const handleBatchRemove = async (userIds: string[]) => {
+    if (userIds.length === 0) return;
+    if (
+      await asyncConfirm({
+        title: t('collaborators.batch.confirmTitle'),
+        message: t('collaborators.batch.confirmMessage', { count: userIds.length }),
+        isDangerous: true,
+      })
+    ) {
+      const results = await Promise.all(
+        userIds.map((userId) => removeCollaborator(graphId, userId)),
+      );
+      if (results.some((ok) => !ok)) {
+        message.error(t('collaborators.errors.removeFailed'));
+      }
+    }
+  };
+
   const handleGenerateShareLink = async () => {
     const result = await generateShareLink(graphId);
     if (result) {
@@ -104,6 +123,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 isOwner={isOwner}
                 onUpdateRole={handleUpdateRole}
                 onRemove={handleRemove}
+                onBatchRemove={handleBatchRemove}
               />
             )}
 

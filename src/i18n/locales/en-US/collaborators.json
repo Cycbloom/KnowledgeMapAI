@@ -1,4 +1,18 @@
 {
+  "batch": {
+    "toolbar": "Batch actions toolbar",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "selected": "{{count}} collaborators selected",
+    "deleting": "Removing…",
+    "deletingProgress": "Removing {{completed}}/{{total}}",
+    "batchDelete": "Remove selected",
+    "clearSelection": "Clear selection",
+    "manage": "Batch manage",
+    "exit": "Exit batch manage",
+    "confirmTitle": "Remove collaborators",
+    "confirmMessage": "Remove the selected {{count}} collaborator(s)?"
+  },
   "shareDialog": {
     "title": "Share & Collaborate",
     "inviteCollaborator": "Invite Collaborator",

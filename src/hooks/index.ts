@@ -19,6 +19,7 @@ export {
   useQuoteShortcut,
   useTopicCheck,
   useCelebration,
+  useAutofocus,
 } from "./common";
 
 // Re-exports from scheduler barrel: only hooks actually called through the main barrel

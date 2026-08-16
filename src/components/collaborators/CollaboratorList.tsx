@@ -1,11 +1,15 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CheckSquare, Square } from "lucide-react";
 import {
   CollaboratorRole,
   CollaboratorWithUser,
   COLLABORATOR_ROLE_LABELS,
   COLLABORATOR_ROLE_COLORS,
 } from "@shared/types";
+import { BatchActionsToolbar } from "../common";
+import { useListSelection } from "../../hooks/common";
+import { useTheme } from "../../hooks";
 
 interface CollaboratorListProps {
   collaborators: CollaboratorWithUser[];
@@ -13,6 +17,7 @@ interface CollaboratorListProps {
   isOwner: boolean;
   onUpdateRole?: (userId: string, role: CollaboratorRole) => void;
   onRemove?: (userId: string) => void;
+  onBatchRemove?: (userIds: string[]) => void;
 }
 
 export const CollaboratorList: React.FC<CollaboratorListProps> = ({
@@ -21,16 +26,76 @@ export const CollaboratorList: React.FC<CollaboratorListProps> = ({
   isOwner,
   onUpdateRole,
   onRemove,
+  onBatchRemove,
 }) => {
+  const { theme } = useTheme();
   const { t } = useTranslation();
+  const isDark = theme === "dark";
+  const [selectMode, setSelectMode] = useState(false);
+
+  const selectableIds = useMemo(
+    () =>
+      isOwner
+        ? collaborators.filter((c) => c.role !== "owner").map((c) => c.user_id)
+        : [],
+    [collaborators, isOwner],
+  );
+  const { selectedIds, selectionState, toggleId, toggleSelectAll, clear, isSelected } =
+    useListSelection(selectableIds);
+
+  const canBatch = isOwner && onBatchRemove != null;
+
+  const toggleSelectMode = () => {
+    clear();
+    setSelectMode((prev) => !prev);
+  };
+
   return (
     <div className="space-y-2">
+      {canBatch && (
+        <button
+          onClick={toggleSelectMode}
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium border dark:border-slate-500 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300"
+        >
+          {selectMode ? t("collaborators.batch.exit") : t("collaborators.batch.manage")}
+        </button>
+      )}
+      {selectMode && (
+        <BatchActionsToolbar
+          isDark={isDark}
+          i18nPrefix="collaborators.batch"
+          isAllSelected={selectionState.isAllSelected}
+          isPartialSelected={selectionState.isPartialSelected}
+          selectedCount={selectionState.selectedCount}
+          isBatchDeleting={false}
+          onToggleSelectAll={toggleSelectAll}
+          onBatchAction={() => {
+            if (onBatchRemove) onBatchRemove(Array.from(selectedIds));
+          }}
+          onClearSelection={clear}
+        />
+      )}
       {collaborators.map((collaborator) => (
         <div
           key={collaborator.id}
           className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
         >
           <div className="flex items-center gap-3">
+            {isOwner && selectMode && collaborator.role !== "owner" && (
+              <button
+                role="checkbox"
+                aria-checked={isSelected(collaborator.user_id) ? "true" : "false"}
+                onClick={() => toggleId(collaborator.user_id)}
+                className="p-1 min-h-[44px] min-w-[44px] touch-target flex items-center justify-center"
+                aria-label={t("collaborators.batch.selectAll")}
+              >
+                {isSelected(collaborator.user_id) ? (
+                  <CheckSquare className="w-5 h-5 text-primary-500" aria-hidden="true" />
+                ) : (
+                  <Square className="w-5 h-5" aria-hidden="true" />
+                )}
+              </button>
+            )}
             <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-medium">
               {collaborator.user?.name?.[0] || collaborator.user?.email?.[0] || "?"}
             </div>

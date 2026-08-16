@@ -59,6 +59,7 @@
     "deselectAll": "Deselect All",
     "selected": "{{count}} items selected",
     "deleting": "Deleting...",
+    "deletingProgress": "Deleting {{completed}}/{{total}}",
     "batchDelete": "Batch Delete",
     "toolbar": "Batch Actions Toolbar",
     "clearSelection": "Clear Selection"

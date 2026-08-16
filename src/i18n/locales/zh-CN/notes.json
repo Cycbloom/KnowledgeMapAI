@@ -297,6 +297,7 @@
     "selected": "已选 {{count}} 条",
     "batchDelete": "批量删除",
     "deleting": "删除中…",
+    "deletingProgress": "删除中 {{completed}}/{{total}}",
     "clearSelection": "清除选择",
     "exit": "退出批量管理",
     "enterSelectMode": "批量管理",

@@ -18,7 +18,7 @@ import { message } from "../utils/messageHelper";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
 import { formatDate } from "@/utils/formatters";
-import { ConfirmationModal, SkeletonCard, Skeleton, ErrorBoundary, EmptyState, FirstRunHint } from "../components/common";
+import { ConfirmationModal, SkeletonCard, Skeleton, ErrorBoundary, EmptyState, FirstRunHint, BatchActionsToolbar } from "../components/common";
 const AutoGraphGenerator = lazy(() =>
   import("../components/AutoGraph/AutoGraphGenerator").then((module) => ({
     default: module.AutoGraphGenerator,
@@ -35,7 +35,6 @@ import {
   TagCloudSection,
   DashboardGraphCard,
   DashboardGraphListItem,
-  DashboardBatchActions,
   DashboardPagination,
   DashboardMobileFAB,
   DashboardCardContextMenu,
@@ -513,15 +512,16 @@ export const Dashboard = () => {
 
         {/* Batch Operations Toolbar */}
         {filters.isSelectMode && filters.filteredGraphs.length > 0 && (
-          <DashboardBatchActions
+          <BatchActionsToolbar
             isDark={isDark}
+            i18nPrefix="dashboard.batch"
             isAllSelected={filters.isAllSelected}
             isPartialSelected={filters.isPartialSelected}
             selectedCount={filters.selectedCount}
             isBatchDeleting={batchDeleteProgress !== null}
             batchDeleteProgress={batchDeleteProgress}
             onToggleSelectAll={filters.toggleSelectAll}
-            onBatchDelete={handleBatchDelete}
+            onBatchAction={handleBatchDelete}
             onClearSelection={filters.clearSelection}
           />
         )}

@@ -297,6 +297,7 @@
     "selected": "{{count}} selected",
     "batchDelete": "Delete selected",
     "deleting": "Deleting…",
+    "deletingProgress": "Deleting {{completed}}/{{total}}",
     "clearSelection": "Clear selection",
     "exit": "Exit batch mode",
     "enterSelectMode": "Batch manage",

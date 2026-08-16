@@ -135,6 +135,20 @@
     "label": {
       "answer": "答案",
       "explanation": "解析"
+    },
+    "batch": {
+      "toolbar": "批量操作工具栏",
+      "selectAll": "全选",
+      "deselectAll": "取消全选",
+      "selected": "已选 {{count}} 题",
+      "deleting": "删除中…",
+      "deletingProgress": "删除中 {{completed}}/{{total}}",
+      "batchDelete": "批量删除",
+      "clearSelection": "清除选择",
+      "manage": "批量管理",
+      "exit": "退出批量管理",
+      "confirmTitle": "批量删除题目",
+      "confirmMessage": "确定要删除选中的 {{count}} 道题目吗？"
     }
   }
 }

@@ -123,12 +123,41 @@ class SchedulerDecisionEngine {
 
     if (error || !tasks) return [];
 
+    const taskIds = tasks.map((t) => t.id as string);
+
+    // 单次批量查询全部任务依赖，替代逐任务查询 isTaskBlocked（N 次 → 1 次）
+    const depsByTaskId = new Map<
+      string,
+      Array<{
+        dependency_type: string;
+        depends_on_task: { status?: string } | null;
+      }>
+    >();
+    if (taskIds.length > 0) {
+      const { data: allDeps } = await supabase
+        .from("task_dependencies")
+        .select(
+          "task_id, dependency_type, depends_on_task:user_tasks!task_dependencies_depends_on_task_id_fkey(status)",
+        )
+        .in("task_id", taskIds);
+
+      for (const dep of allDeps ?? []) {
+        const list = depsByTaskId.get(dep.task_id) ?? [];
+        list.push({
+          dependency_type: dep.dependency_type,
+          depends_on_task: dep.depends_on_task as { status?: string } | null,
+        });
+        depsByTaskId.set(dep.task_id, list);
+      }
+    }
+
     const eligibleTasks: Array<Record<string, unknown>> = [];
     for (const task of tasks) {
-      const blocked = await this.isTaskBlocked(
-        supabase,
-        task.id as string,
-        userId,
+      const deps = depsByTaskId.get(task.id as string) ?? [];
+      const blocked = deps.some(
+        (dep) =>
+          dep.depends_on_task?.status !== "completed" &&
+          dep.dependency_type === "strict",
       );
       if (!blocked) {
         eligibleTasks.push(task as Record<string, unknown>);
@@ -136,31 +165,6 @@ class SchedulerDecisionEngine {
     }
 
     return eligibleTasks;
-  }
-
-  private async isTaskBlocked(
-    supabase: SupabaseClient,
-    taskId: string,
-    _userId: string,
-  ): Promise<boolean> {
-    const { data: deps } = await supabase
-      .from("task_dependencies")
-      .select(
-        "dependency_type, depends_on_task:user_tasks!task_dependencies_depends_on_task_id_fkey(status)",
-      )
-      .eq("task_id", taskId);
-
-    if (!deps || deps.length === 0) return false;
-
-    for (const dep of deps) {
-      const depTask = dep.depends_on_task as { status?: string } | null;
-      const depStatus = depTask?.status;
-      if (depStatus !== "completed") {
-        if (dep.dependency_type === "strict") return true;
-      }
-    }
-
-    return false;
   }
 
   private scoreTask(

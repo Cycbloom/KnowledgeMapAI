@@ -203,6 +203,15 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     }
   }, [loading]);
 
+  // 清理父级选择器 blur 延迟定时器，避免卸载后 setState
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleAutoSave = useCallback((): Promise<void> => {
     return new Promise<void>((resolve) => {
       if (!loadingRef.current) {

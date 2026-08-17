@@ -308,4 +308,58 @@ describe("GraphEditor Integration", () => {
     const deleteConfirm = await findByText("删除");
     expect(deleteConfirm).toBeInTheDocument();
   });
+
+  it("saves a new node via the sidebar form and renders it in the canvas", async () => {
+    // 仅覆盖 POST /nodes：GET 复用 beforeEach 的标准 handler。
+    // （覆盖 /graphs/:id/nodes 通配路由会干扰侧栏挂载期的其它图谱数据请求）
+    server.use(
+      http.post("/api/v1/nodes", async ({ request }) => {
+        const body = (await request.json()) as { title?: string };
+        return HttpResponse.json({
+          id: "node-new",
+          graph_id: TEST_GRAPH_ID,
+          knowledge_point_id: "kp-new",
+          title: body.title ?? "",
+          content: "",
+          level: "normal",
+          is_accepted: true,
+          x_position: 0,
+          y_position: 0,
+          visibility: "private",
+          owner_id: TEST_USER_ID,
+          created_at: "2026-01-02T00:00:00.000Z",
+          updated_at: "2026-01-02T00:00:00.000Z",
+        });
+      }),
+    );
+
+    const { findByText, getByText, findByPlaceholderText, findByTestId } =
+      renderGraphEditor();
+
+    // Wait for data to load
+    await findByText("测试节点一");
+
+    // Open the create-node sidebar: 编辑 → 添加节点
+    fireEvent.click(getByText("编辑"));
+    fireEvent.click(await findByText("添加节点", undefined, { timeout: 5000 }));
+
+    // Fill the title (required — save button is disabled without it)
+    const titleInput = await findByPlaceholderText(
+      "输入节点标题",
+      undefined,
+      { timeout: 5000 },
+    );
+    fireEvent.change(titleInput, { target: { value: "新建的知识点" } });
+
+    // Manual save (create mode disables auto-save, so this is deterministic)
+    fireEvent.click(getByText("保存节点"));
+
+    // The server node (not the optimistic temp- node) appears in the canvas
+    const newNodeButton = await findByTestId(
+      "node-node-new",
+      undefined,
+      { timeout: 5000 },
+    );
+    expect(newNodeButton).toHaveTextContent("新建的知识点");
+  });
 });

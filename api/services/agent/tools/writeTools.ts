@@ -48,11 +48,11 @@ const createNodeTool: AgentTool = {
       .single();
 
     if (graphError) {
-      throw new Error(`Failed to verify graph ownership: ${graphError.message}`);
+      throw new AppError(`Failed to verify graph ownership: ${graphError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!graph) {
-      throw new Error("Graph not found or access denied");
+      throw new AppError("Graph not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const result = await createKnowledgePointWithGraphNode(supabase, userId, {
@@ -118,11 +118,11 @@ const createEdgeTool: AgentTool = {
       .single();
 
     if (graphError) {
-      throw new Error(`Failed to verify graph ownership: ${graphError.message}`);
+      throw new AppError(`Failed to verify graph ownership: ${graphError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!graph) {
-      throw new Error("Graph not found or access denied");
+      throw new AppError("Graph not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: nodes, error: nodesError } = await supabase
@@ -132,15 +132,15 @@ const createEdgeTool: AgentTool = {
       .in("knowledge_point_id", [sourceKnowledgePointId, targetKnowledgePointId]);
 
     if (nodesError) {
-      throw new Error(`Failed to verify knowledge points: ${nodesError.message}`);
+      throw new AppError(`Failed to verify knowledge points: ${nodesError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const foundIds = new Set((nodes || []).map((n) => n.knowledge_point_id));
     if (!foundIds.has(sourceKnowledgePointId)) {
-      throw new Error("Source knowledge point not found in this graph");
+      throw new AppError("Source knowledge point not found in this graph", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
     if (!foundIds.has(targetKnowledgePointId)) {
-      throw new Error("Target knowledge point not found in this graph");
+      throw new AppError("Target knowledge point not found in this graph", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: edge, error: edgeError } = await supabase
@@ -155,7 +155,7 @@ const createEdgeTool: AgentTool = {
       .single();
 
     if (edgeError) {
-      throw new Error(`Failed to create edge: ${edgeError.message}`);
+      throw new AppError(`Failed to create edge: ${edgeError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return {
@@ -209,15 +209,15 @@ const createGraphRelationTool: AgentTool = {
       .in("id", [sourceGraphId, targetGraphId]);
 
     if (graphsError) {
-      throw new Error(`Failed to verify graph ownership: ${graphsError.message}`);
+      throw new AppError(`Failed to verify graph ownership: ${graphsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const foundIds = new Set((graphs || []).map((g) => g.id));
     if (!foundIds.has(sourceGraphId)) {
-      throw new Error("Source graph not found or access denied");
+      throw new AppError("Source graph not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
     if (!foundIds.has(targetGraphId)) {
-      throw new Error("Target graph not found or access denied");
+      throw new AppError("Target graph not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: relation, error: relationError } = await supabase
@@ -233,7 +233,7 @@ const createGraphRelationTool: AgentTool = {
       .single();
 
     if (relationError) {
-      throw new Error(`Failed to create graph relation: ${relationError.message}`);
+      throw new AppError(`Failed to create graph relation: ${relationError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return {
@@ -285,16 +285,16 @@ const createStudyCardTool: AgentTool = {
       .single();
 
     if (gnError) {
-      throw new Error(`Failed to verify knowledge point access: ${gnError.message}`);
+      throw new AppError(`Failed to verify knowledge point access: ${gnError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!graphNode) {
-      throw new Error("Knowledge point not found or access denied");
+      throw new AppError("Knowledge point not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const graphData = graphNode.knowledge_graphs as unknown as { user_id: string };
     if (graphData.user_id !== userId) {
-      throw new Error("Knowledge point not found or access denied");
+      throw new AppError("Knowledge point not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: card, error: cardError } = await supabase
@@ -310,7 +310,7 @@ const createStudyCardTool: AgentTool = {
       .single();
 
     if (cardError) {
-      throw new Error(`Failed to create study card: ${cardError.message}`);
+      throw new AppError(`Failed to create study card: ${cardError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return { success: true, card: { id: card.id, question, card_type: cardType } };
@@ -354,16 +354,16 @@ const updateNodeTool: AgentTool = {
       .single();
 
     if (gnError) {
-      throw new Error(`Failed to verify knowledge point access: ${gnError.message}`);
+      throw new AppError(`Failed to verify knowledge point access: ${gnError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!graphNode) {
-      throw new Error("Knowledge point not found or access denied");
+      throw new AppError("Knowledge point not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const graphData = graphNode.knowledge_graphs as unknown as { user_id: string };
     if (graphData.user_id !== userId) {
-      throw new Error("Knowledge point not found or access denied");
+      throw new AppError("Knowledge point not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const updateData: Record<string, string> = {};
@@ -379,7 +379,7 @@ const updateNodeTool: AgentTool = {
     }
 
     if (updatedFields.length === 0) {
-      throw new Error("No fields to update. Provide at least one of: title, content");
+      throw new AppError("No fields to update. Provide at least one of: title, content", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const { data: updated, error: updateError } = await supabase
@@ -390,7 +390,7 @@ const updateNodeTool: AgentTool = {
       .single();
 
     if (updateError) {
-      throw new Error(`Failed to update knowledge point: ${updateError.message}`);
+      throw new AppError(`Failed to update knowledge point: ${updateError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return { success: true, node: { id: updated.id, title: updated.title, content: updated.content }, updated_fields: updatedFields };

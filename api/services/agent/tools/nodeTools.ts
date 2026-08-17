@@ -1,5 +1,7 @@
 import type { AgentTool, ToolContext } from '../types';
 import { notDeleted } from '../../common/softDeleteHelper';
+import { AppError } from '../../../middleware/errorHandler';
+import { ErrorCodes } from '../../../../shared/types/errorCodes';
 
 interface TagInfo {
   name: string;
@@ -36,7 +38,7 @@ export const getGraphTagsTool: AgentTool = {
       .single();
 
     if (graphError || !graphCheck) {
-      throw new Error('Graph not found or access denied');
+      throw new AppError('Graph not found or access denied', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: nodes, error: nodesError } = await notDeleted(supabase
@@ -51,7 +53,7 @@ export const getGraphTagsTool: AgentTool = {
       );
 
     if (nodesError) {
-      throw new Error(`Failed to get nodes: ${nodesError.message}`);
+      throw new AppError(`Failed to get nodes: ${nodesError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const tagCountMap = new Map<string, number>();
@@ -111,7 +113,7 @@ export const getNodeRelationsTool: AgentTool = {
     const summarize = params.summarize !== false;
 
     if (depth < 1 || depth > 5) {
-      throw new Error('Depth must be between 1 and 5');
+      throw new AppError('Depth must be between 1 and 5', 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const { data: kpCheck, error: kpError } = await supabase
@@ -121,7 +123,7 @@ export const getNodeRelationsTool: AgentTool = {
       .single();
 
     if (kpError || !kpCheck) {
-      throw new Error('Knowledge point not found');
+      throw new AppError('Knowledge point not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: graphNodes, error: gnError } = await notDeleted(supabase
@@ -137,7 +139,7 @@ export const getNodeRelationsTool: AgentTool = {
       );
 
     if (gnError) {
-      throw new Error(`Failed to get graph nodes: ${gnError.message}`);
+      throw new AppError(`Failed to get graph nodes: ${gnError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const userGraphIds = (graphNodes || [])
@@ -148,7 +150,7 @@ export const getNodeRelationsTool: AgentTool = {
       .map(gn => gn.graph_id);
 
     if (userGraphIds.length === 0) {
-      throw new Error('Access denied: node not found in your graphs');
+      throw new AppError('Access denied: node not found in your graphs', 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const visitedNodes = new Set<string>([nodeId]);
@@ -200,11 +202,11 @@ export const getNodeRelationsTool: AgentTool = {
 
       if (direction === 'upstream') {
         const { data, error } = await query.in('target_knowledge_point_id', currentNodes);
-        if (error) throw new Error(`Failed to get upstream edges: ${error.message}`);
+        if (error) throw new AppError(`Failed to get upstream edges: ${error.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
         edges = data || [];
       } else {
         const { data, error } = await query.in('source_knowledge_point_id', currentNodes);
-        if (error) throw new Error(`Failed to get downstream edges: ${error.message}`);
+        if (error) throw new AppError(`Failed to get downstream edges: ${error.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
         edges = data || [];
       }
 

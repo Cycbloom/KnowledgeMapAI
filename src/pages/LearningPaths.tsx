@@ -11,9 +11,7 @@ import { LearningPathStatus } from "../services/api/learningPaths";
 import {
   Plus,
   Trash2,
-  Search,
   X,
-  XCircle,
   Route,
   Clock,
   Target,
@@ -30,7 +28,7 @@ import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/fo
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { usePullToRefresh } from "../hooks/gesture/usePullToRefresh";
 import { asyncConfirm } from "@/utils/asyncConfirm";
-import { EmptyState, ErrorState, SkeletonCard } from "@/components/common";
+import { EmptyState, ErrorState, SkeletonCard, SearchInput } from "@/components/common";
 import { useDebouncedSearch } from "../hooks/common/useDebouncedSearch";
 import { message } from "../utils/messageHelper";
 
@@ -247,32 +245,7 @@ export const LearningPaths = () => {
 
         <div className="flex gap-4 mb-6">
           <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder={t("learningPaths.search.placeholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-10 pr-10 py-2.5 rounded-xl border outline-none transition-all ${
-                isDark
-                  ? "bg-slate-800 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                  : "bg-white border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-              }`}
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                aria-label={t('common.aria.clear')}
-                title={t('common.aria.clear')}
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
-            )}
+            <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder={t("learningPaths.search.placeholder")} />
           </div>
 
           <div className="flex gap-2">

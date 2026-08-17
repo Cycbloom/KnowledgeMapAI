@@ -12,7 +12,7 @@ import { usePersistedListState } from "../hooks/common/usePersistedListState";
 import { useScrollRestoration } from "../hooks/common/useScrollRestoration";
 import { useStore } from "../store/useStore";
 import { usePullToRefresh } from "../hooks/gesture/usePullToRefresh";
-import { ConfirmationModal, Skeleton, FirstRunHint } from "../components/common";
+import { ConfirmationModal, Skeleton, FirstRunHint, FilterTabs, SearchInput } from "../components/common";
 import { VirtualList } from "../components/common/VirtualList";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TaskProgressBar } from "@/components/common/TaskProgressBar";
@@ -31,7 +31,6 @@ import {
   Trash2,
   RotateCw,
   Download,
-  Search,
   CheckSquare,
   Square,
   X,
@@ -88,36 +87,6 @@ const getTypeLabel = (type: string, t: TFunction) => {
       return type;
   }
 };
-
-const FilterTab = ({
-  label,
-  value,
-  current,
-  onClick,
-  count,
-}: {
-  label: string;
-  value: string;
-  current: string;
-  onClick: (v: string) => void;
-  count?: number;
-}) => (
-  <button
-    onClick={() => onClick(value)}
-    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-      current === value
-        ? "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
-        : "text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
-    }`}
-  >
-    {label}
-    {count !== undefined && (
-      <span className="text-xs bg-white/50 px-1.5 py-0.5 rounded-full">
-        {count}
-      </span>
-    )}
-  </button>
-);
 
 export const Tasks = () => {
   const { t } = useTranslation();
@@ -218,6 +187,33 @@ export const Tasks = () => {
   const handleFilterChange = (v: string) => {
     setFilter(v);
   };
+
+  const statusTabs = useMemo(
+    () => [
+      { value: "all", label: t("tasks.allTasks"), count: statusCounts.all },
+      {
+        value: "in_progress",
+        label: t("tasks.inProgress"),
+        count: statusCounts.in_progress,
+      },
+      {
+        value: "completed",
+        label: t("tasks.completed"),
+        count: statusCounts.completed,
+      },
+      {
+        value: "cancelled",
+        label: t("tasks.failed"),
+        count: statusCounts.cancelled,
+      },
+      {
+        value: "pending",
+        label: t("tasks.pending"),
+        count: statusCounts.pending,
+      },
+    ] as const,
+    [t, statusCounts],
+  );
 
   const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -424,64 +420,18 @@ export const Tasks = () => {
       </div>
 
       <div className="flex items-center gap-2 mb-6 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 overflow-x-auto">
-        <FilterTab
-          label={t("tasks.allTasks")}
-          value="all"
-          current={filter}
-          onClick={handleFilterChange}
-          count={statusCounts.all}
-        />
-        <FilterTab
-          label={t("tasks.inProgress")}
-          value="in_progress"
-          current={filter}
-          onClick={handleFilterChange}
-          count={statusCounts.in_progress}
-        />
-        <FilterTab
-          label={t("tasks.completed")}
-          value="completed"
-          current={filter}
-          onClick={handleFilterChange}
-          count={statusCounts.completed}
-        />
-        <FilterTab
-          label={t("tasks.failed")}
-          value="cancelled"
-          current={filter}
-          onClick={handleFilterChange}
-          count={statusCounts.cancelled}
-        />
-        <FilterTab
-          label={t("tasks.pending")}
-          value="pending"
-          current={filter}
-          onClick={handleFilterChange}
-          count={statusCounts.pending}
+        <FilterTabs
+          items={statusTabs}
+          value={filter}
+          onChange={handleFilterChange}
         />
         <div className="relative ml-auto flex-shrink-0">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
-            size={16}
-          />
-          <input
-            type="text"
-            placeholder={t("tasks.searchPlaceholder")}
+          <SearchInput
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-10 py-2 rounded-lg text-sm border focus:ring-2 focus:ring-primary-500 outline-none transition-all w-48 bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-500 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
+            onChange={setSearchQuery}
+            placeholder={t("tasks.searchPlaceholder")}
+            className="w-48"
           />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-              aria-label={t("tasks.clear")}
-              title={t("tasks.clear")}
-            >
-              <XCircle className="w-4 h-4" />
-            </button>
-          )}
         </div>
       </div>
 

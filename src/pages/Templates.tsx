@@ -14,7 +14,6 @@ import {
   Trash2,
   Search,
   X,
-  XCircle,
   GraduationCap,
   Briefcase,
   Layers,
@@ -29,7 +28,7 @@ import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { useDebouncedSearch } from "../hooks/common/useDebouncedSearch";
 import { EmptyState } from "@/components/common/EmptyState";
-import { SkeletonCard, FormError, ErrorState } from "@/components/common";
+import { SkeletonCard, FormError, ErrorState, SearchInput } from "@/components/common";
 
 const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
   knowledge: <GraduationCap size={20} />,
@@ -328,32 +327,7 @@ export const Templates = () => {
                 aria-label={t('common.aria.searchWithTarget', { target: t('templates.title') })}
                 className="relative flex-1"
               >
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type="text"
-                  placeholder={t("templates.searchPlaceholder")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-10 pr-10 py-2.5 rounded-xl border outline-none transition-all ${
-                    isDark
-                      ? "bg-slate-800 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                      : "bg-white border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                  }`}
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                    aria-label={t('common.aria.clear')}
-                    title={t('common.aria.clear')}
-                  >
-                    <XCircle className="w-4 h-4" />
-                  </button>
-                )}
+                <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder={t("templates.searchPlaceholder")} />
               </div>
 
               <div className="flex gap-2">

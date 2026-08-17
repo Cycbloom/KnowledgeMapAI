@@ -52,6 +52,8 @@ import {
   ConfirmationModal,
   ErrorBoundary,
   BatchActionsToolbar,
+  SearchInput,
+  FilterTabs,
 } from "../../components/common";
 import { VirtualList } from "../../components/common/VirtualList";
 import { NotesListSortDropdown, type SortBy } from "../../components/Notes/NotesListSortDropdown";
@@ -117,30 +119,6 @@ const isJustCreated = (note: Note, now: Date = new Date()): boolean => {
   const createdMs = new Date(note.createdAt).getTime();
   return Number.isFinite(createdMs) && now.getTime() - createdMs < JUST_CREATED_THRESHOLD_MS;
 };
-
-const FilterTab = ({
-  label,
-  value,
-  current,
-  onClick,
-}: {
-  label: string;
-  value: NoteView;
-  current: NoteView;
-  onClick: (v: NoteView) => void;
-}) => (
-  <button
-    type="button"
-    onClick={() => onClick(value)}
-    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
-      current === value
-        ? "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
-        : "text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
-    }`}
-  >
-    {label}
-  </button>
-);
 
 /** 只读标签芯片组(用于列表项展示 note.tags)。 */
 const TagChips = ({
@@ -957,15 +935,15 @@ export const NotesListPage = () => {
       {/* 视图切换 + Task 4 排序下拉 */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 overflow-x-auto flex-1 min-w-0">
-          {VIEW_TABS.map((tab) => (
-            <FilterTab
-              key={tab.value}
-              label={t(tab.labelKey)}
-              value={tab.value}
-              current={view}
-              onClick={handleViewChange}
-            />
-          ))}
+          <FilterTabs
+            items={VIEW_TABS.map((tab) => ({
+              value: tab.value,
+              label: t(tab.labelKey),
+            }))}
+            value={view}
+            onChange={handleViewChange}
+            className="flex-1 min-w-0"
+          />
         </div>
         <NotesListSortDropdown
           value={sortBy}
@@ -980,35 +958,19 @@ export const NotesListPage = () => {
         aria-label={t('common.aria.searchWithTarget', { target: t('notes.title') })}
         className="relative mb-4"
       >
-        <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500 pointer-events-none"
-          aria-hidden="true"
-        />
-        <input
-          type="text"
-          aria-label={t("common.aria.search")}
+        <SearchInput
           value={searchInput}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          onChange={handleSearchChange}
+          onClear={handleSearchClear}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
+            if (e.key === 'Enter') {
               debouncedSetSearchKeyword.cancel();
               setSearchKeyword(searchInput);
             }
           }}
           placeholder={t("notes.search.placeholder")}
-          className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-500 rounded-lg pl-10 pr-10 py-2 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+          className="py-2 rounded-lg border-gray-300 dark:border-slate-500"
         />
-        {searchInput && (
-          <button
-            type="button"
-            onClick={handleSearchClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-            aria-label={t("notes.filter.clear")}
-            title={t("notes.filter.clear")}
-          >
-            <XCircle className="w-4 h-4" />
-          </button>
-        )}
       </div>
 
       {/* SubTask 10.2: 当前标签筛选条(点击列表项 tag chip 设置,可清除) */}

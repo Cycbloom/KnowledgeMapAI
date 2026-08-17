@@ -11,7 +11,6 @@ import {
 import {
   Trash2,
   RefreshCw,
-  Search,
   AlertTriangle,
   ArrowLeft,
   CheckSquare,
@@ -22,7 +21,7 @@ import {
   NotebookPen,
   CalendarDays,
 } from "lucide-react";
-import { ConfirmationModal, SkeletonCard, EmptyState, ErrorState } from "../components/common";
+import { ConfirmationModal, SkeletonCard, EmptyState, ErrorState, SearchInput } from "../components/common";
 import { useTheme } from "../hooks";
 import { usePullToRefresh } from "../hooks/gesture/usePullToRefresh";
 import { useNavigate } from "react-router-dom";
@@ -380,21 +379,11 @@ export const RecycleBin = () => {
 
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Search
-                className={`absolute left-3 top-1/2 -translate-y-1/2 ${themeClasses.textMuted(isDark)}`}
-                size={18}
-              />
-              <input
-                type="text"
-                aria-label={t("common.aria.search")}
-                placeholder={t("recycleBin.searchPlaceholder")}
+              <SearchInput
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all w-full md:w-64 ${
-                  isDark
-                    ? "bg-slate-800 border-slate-700 focus:border-red-500 focus:ring-1 focus:ring-red-500 text-white"
-                    : "bg-white border-gray-200 focus:border-red-500 focus:ring-1 focus:ring-red-500 shadow-sm"
-                }`}
+                onChange={setSearchQuery}
+                placeholder={t("recycleBin.searchPlaceholder")}
+                className="md:w-64 focus:border-red-500 focus:ring-red-500"
               />
             </div>
           </div>

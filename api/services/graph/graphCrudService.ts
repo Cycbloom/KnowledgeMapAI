@@ -307,47 +307,55 @@ export class GraphCrudService {
       return { modules: [], totalNodes: 0, totalLiterature: 0 };
     }
 
-    // 按模块分别查询，使用 SQL JSONB 条件在数据库层过滤
-    const moduleStats = await Promise.all(
-      modules.map(async (mod: { module_type: string; title: string; icon: string; color: string }) => {
-        const { data: moduleNodes, error: gnError } = await notDeleted(supabase
-          .from("graph_nodes")
-          .select(
-            `
-            id,
-            knowledge_points (
-              id,
-              properties
-            )
-          `,
-          )
-          .eq("graph_id", graphId)
-          )
-          .eq("knowledge_points.properties->>backboneModule", mod.module_type);
+    // 单次拉取图谱全部节点，内存按 backboneModule 分组（模块数次查询 → 1 次往返）
+    const { data: allNodes, error: gnError } = await notDeleted(supabase
+      .from("graph_nodes")
+      .select(
+        `
+        id,
+        knowledge_points (
+          id,
+          properties
+        )
+      `,
+      )
+      .eq("graph_id", graphId)
+    );
 
-        if (gnError) {
-          logger.error("Get module nodes error:", gnError);
-        }
+    if (gnError) {
+      logger.error("Get module nodes error:", gnError);
+    }
 
-        const sources = new Set<string>();
-        (moduleNodes || []).forEach((gn) => {
-          const kp = gn.knowledge_points as Array<{ properties?: { sources?: Array<{ title?: string }> } }> | { properties?: { sources?: Array<{ title?: string }> } } | null;
-          const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
-          const nodeSources = props?.sources || [];
-          nodeSources.forEach((s: { title?: string }) => {
-            if (s.title) sources.add(s.title);
-          });
-        });
+    const nodesByModule = new Map<string, { nodeCount: number; sources: Set<string> }>();
+    (allNodes || []).forEach((gn) => {
+      const kp = gn.knowledge_points as Array<{ properties?: { sources?: Array<{ title?: string }>; backboneModule?: string } }> | { properties?: { sources?: Array<{ title?: string }>; backboneModule?: string } } | null;
+      const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
+      const moduleType = props?.backboneModule;
+      if (!moduleType) return;
 
+      let entry = nodesByModule.get(moduleType);
+      if (!entry) {
+        entry = { nodeCount: 0, sources: new Set<string>() };
+        nodesByModule.set(moduleType, entry);
+      }
+      entry.nodeCount += 1;
+      (props?.sources || []).forEach((s: { title?: string }) => {
+        if (s.title) entry.sources.add(s.title);
+      });
+    });
+
+    const moduleStats = modules.map(
+      (mod: { module_type: string; title: string; icon: string; color: string }) => {
+        const entry = nodesByModule.get(mod.module_type);
         return {
           module_type: mod.module_type,
           title: mod.title,
           icon: mod.icon,
           color: mod.color,
-          nodeCount: (moduleNodes || []).length,
-          literatureCount: sources.size,
+          nodeCount: entry?.nodeCount ?? 0,
+          literatureCount: entry?.sources.size ?? 0,
         };
-      }),
+      },
     );
 
     const totalNodes = moduleStats.reduce((sum, m) => sum + m.nodeCount, 0);

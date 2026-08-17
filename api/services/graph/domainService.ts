@@ -460,33 +460,32 @@ export const domainService = {
       );
     }
 
-    let updatedCount = 0;
-    const errors: Array<{ id: string; error: string }> = [];
-
-    for (const item of items) {
-      const { error: updateError } = await supabase
-        .from("domains")
-        .update({
+    // 单次 upsert 完成整批排序更新（行已预检存在，onConflict 走 UPDATE 路径，替代逐条 N 次往返）
+    const { error: upsertError } = await supabase
+      .from("domains")
+      .upsert(
+        items.map((item) => ({
+          id: item.id,
           parent_id: item.parent_id ?? null,
           sort_order: item.sort_order,
-        })
-        .eq("id", item.id);
+        })),
+        { onConflict: "id" },
+      );
 
-      if (updateError) {
-        errors.push({ id: item.id, error: updateError.message });
-        logger.error("更新领域排序失败", {
-          domainId: item.id,
-          error: updateError.message,
-          userId,
-        });
-      } else {
-        updatedCount++;
-      }
+    if (upsertError) {
+      logger.error("更新领域排序失败", {
+        error: upsertError.message,
+        userId,
+        itemCount: items.length,
+      });
+      throw new AppError(
+        i18next.t("graphMap.domains.errors.updateFailed"),
+        500,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      );
     }
 
-    if (errors.length > 0) {
-      logger.warn("部分领域更新失败", { errors, successCount: updatedCount, userId });
-    }
+    const updatedCount = items.length;
 
     logger.info("领域重排序完成", { userId, totalCount: items.length, updatedCount });
 

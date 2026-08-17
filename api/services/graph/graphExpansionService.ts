@@ -38,14 +38,17 @@ class GraphExpansionService {
 
     const batchSessionId = sessionId || crypto.randomUUID();
 
-    for (const graph of graphs) {
-      const { data: existingNodes } = await supabase
-        .from('knowledge_points')
-        .select('id')
-        .eq('graph_id', graph.id)
-        .limit(1);
+    // 单次批量查询各图谱是否已有节点（替代逐图谱存在性检查的 N 次往返）
+    const { data: existingNodeRows } = await supabase
+      .from('knowledge_points')
+      .select('graph_id')
+      .in('graph_id', graphs.map((g) => g.id));
+    const graphsWithNodes = new Set(
+      (existingNodeRows ?? []).map((row) => row.graph_id),
+    );
 
-      if (existingNodes && existingNodes.length > 0) {
+    for (const graph of graphs) {
+      if (graphsWithNodes.has(graph.id)) {
         results.push({
           graphId: graph.id,
           title: graph.title,
@@ -265,6 +268,15 @@ class GraphExpansionService {
     }> = [];
     let fixedCount = 0;
 
+    // 待修复计划：记录 details 占位索引，更新完成后按原节点顺序回填结果
+    const fixPlans: Array<{
+      detailIndex: number;
+      kpId: string;
+      title: string;
+      properties: Record<string, unknown>;
+      module: BackboneModule;
+    }> = [];
+
     for (const graphNode of coreNodes || []) {
       const kp = Array.isArray(graphNode.knowledge_points)
         ? graphNode.knowledge_points[0]
@@ -297,35 +309,51 @@ class GraphExpansionService {
         continue;
       }
 
-      const updatedProperties = {
-        ...properties,
-        backboneModule: matchedModule,
-      };
-
-      const { error: updateError } = await supabase
-        .from('knowledge_points')
-        .update({ properties: updatedProperties })
-        .eq('id', kp.id);
-
-      if (updateError) {
-        logger.error('更新节点属性失败', {
-          nodeId: kp.id,
-          error: updateError.message,
-        });
-        details.push({
-          nodeId: kp.id,
-          title: kp.title,
-          fixed: false,
-        });
-        continue;
-      }
-
-      fixedCount++;
+      fixPlans.push({
+        detailIndex: details.length,
+        kpId: kp.id,
+        title: kp.title,
+        properties: {
+          ...properties,
+          backboneModule: matchedModule,
+        },
+        module: matchedModule,
+      });
+      // 占位：保持 details 与原节点顺序一致，结果回填时覆盖
       details.push({
         nodeId: kp.id,
         title: kp.title,
-        fixed: true,
-        assignedModule: matchedModule,
+        fixed: false,
+      });
+    }
+
+    // 并行下发互不依赖的单行更新（替代逐条顺序 await 的 N 次串行往返）
+    if (fixPlans.length > 0) {
+      const updateResults = await Promise.all(
+        fixPlans.map((plan) =>
+          supabase
+            .from('knowledge_points')
+            .update({ properties: plan.properties })
+            .eq('id', plan.kpId),
+        ),
+      );
+
+      updateResults.forEach((res, i) => {
+        const plan = fixPlans[i];
+        if (res.error) {
+          logger.error('更新节点属性失败', {
+            nodeId: plan.kpId,
+            error: res.error.message,
+          });
+          return;
+        }
+        fixedCount++;
+        details[plan.detailIndex] = {
+          nodeId: plan.kpId,
+          title: plan.title,
+          fixed: true,
+          assignedModule: plan.module,
+        };
       });
     }
 

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/utils/utils";
+import { useReducedMotionOrPreference } from "@/hooks/common/useReducedMotionOrPreference";
 
 export interface CollapsibleSectionProps {
   /** 区块唯一标识，作为 localStorage 持久化键的一部分 */
@@ -60,6 +62,8 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
     }
   }, [open, id, storagePrefix]);
 
+  const { reduceMotion, transitionOverride } = useReducedMotionOrPreference();
+
   const contentId = `${id}-content`;
 
   return (
@@ -81,9 +85,26 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           )}
         />
       </button>
-      <div id={contentId} hidden={!open}>
+      <motion.div
+        id={contentId}
+        initial={false}
+        animate={{ height: open ? "auto" : 0, opacity: open ? 1 : 0 }}
+        transition={
+          transitionOverride ?? {
+            height: { duration: 0.25, ease: "easeInOut" },
+            opacity: { duration: 0.2, ease: "easeOut" },
+          }
+        }
+        className="overflow-hidden"
+        aria-hidden={!open}
+        style={
+          reduceMotion
+            ? { height: open ? "auto" : 0, opacity: open ? 1 : 0 }
+            : undefined
+        }
+      >
         {children}
-      </div>
+      </motion.div>
     </div>
   );
 };

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotionOrPreference } from '@/hooks/common/useReducedMotionOrPreference';
 
 interface TermTooltipProps {
   term: string;
@@ -11,6 +13,7 @@ export const TermTooltip: React.FC<TermTooltipProps> = ({ term, explanation }) =
   const [coords, setCoords] = useState({ top: 0, left: 0, arrowOffset: 0 });
   const triggerRef = useRef<HTMLSpanElement>(null);
   const tooltipId = useId();
+  const { transitionOverride } = useReducedMotionOrPreference();
 
   const handleMouseEnter = () => {
     if (triggerRef.current) {
@@ -61,34 +64,42 @@ export const TermTooltip: React.FC<TermTooltipProps> = ({ term, explanation }) =
       >
         {term}
       </span>
-      {isVisible && createPortal(
-        <div
-            className="fixed z-tooltip pointer-events-none"
-            role="tooltip"
-            id={tooltipId}
-            style={{
+      {createPortal(
+        <AnimatePresence>
+          {isVisible && (
+            <motion.div
+              className="fixed z-tooltip pointer-events-none"
+              role="tooltip"
+              id={tooltipId}
+              style={{
                 top: coords.top - 8, // 8px gap above the term
                 left: coords.left,
                 transform: 'translate(-50%, -100%)', // Center horizontally, move above
                 width: 'max-content',
                 maxWidth: '240px'
-            }}
-        >
-            <div className="p-3 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 text-xs leading-relaxed rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 whitespace-normal text-left">
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={transitionOverride ?? { duration: 0.15 }}
+            >
+              <div className="p-3 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 text-xs leading-relaxed rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 whitespace-normal text-left">
                 {explanation}
-            </div>
-            
-            {/* Arrow */}
-            <div 
+              </div>
+
+              {/* Arrow */}
+              <div 
                 className="absolute top-full"
                 style={{ 
-                    left: `calc(50% + ${coords.arrowOffset}px)`, 
-                    transform: 'translateX(-50%)' 
+                  left: `calc(50% + ${coords.arrowOffset}px)`, 
+                  transform: 'translateX(-50%)' 
                 }}
-            >
+              >
                 <div className="border-4 border-transparent border-t-white dark:border-t-gray-900"></div>
-            </div>
-        </div>,
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
         document.body
       )}
     </>

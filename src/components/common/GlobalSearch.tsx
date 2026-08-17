@@ -7,6 +7,7 @@ import { cn } from '@/utils/utils';
 import { api } from '../../services/api';
 import { useTheme } from "../../hooks";
 import { useCombobox } from '../../hooks/common/useCombobox';
+import { useDebouncedSearch } from '../../hooks/common/useDebouncedSearch';
 import { queryKeys, defaultQueryConfig } from '@/hooks/queries/config';
 import { formatDate as formatDateUtil } from '../../utils/formatters';
 
@@ -55,15 +56,6 @@ type SearchOption =
   | { kind: 'graph'; graph: SearchResultGraph }
   | { kind: 'node'; node: SearchResultNode };
 
-function useDebounceValue<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-  return debouncedValue;
-}
-
 function loadSearchHistory(): SearchHistoryItem[] {
   try {
     const stored = localStorage.getItem(SEARCH_HISTORY_KEY);
@@ -85,7 +77,6 @@ export const GlobalSearch = () => {
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [searchType, setSearchType] = useState<'keyword' | 'semantic'>('keyword');
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
@@ -97,7 +88,7 @@ export const GlobalSearch = () => {
   });
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debouncedQuery = useDebounceValue(query, 300);
+  const { query, setQuery, debouncedQuery } = useDebouncedSearch('');
 
   useEffect(() => {
     setSearchHistory(loadSearchHistory());
@@ -563,7 +554,7 @@ export const GlobalSearch = () => {
               )}
             </div>
           ) : query.trim() ? null : (
-            <div className={cn("p-8 text-center text-sm", isDark ? 'text-slate-500' : 'text-gray-500')}>
+            <div role="status" className={cn("p-8 text-center text-sm", isDark ? 'text-slate-500' : 'text-gray-500')}>
               {t('common.search.inputToStart')}
             </div>
           )}

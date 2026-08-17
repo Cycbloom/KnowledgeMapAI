@@ -2,6 +2,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
 import { aiService } from '../ai/aiService';
 import { logger } from '../../utils/logger';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 import type { AIProviderType } from '@shared/types';
 import { notDeleted } from '../common/softDeleteHelper';
@@ -84,7 +86,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
         );
 
       if (gnError || !graphNodes || graphNodes.length === 0) {
-        throw new Error('Failed to fetch nodes');
+        throw new AppError('Failed to fetch nodes', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       const nodes = graphNodes.map((gn: GraphNodeWithKnowledgePoint) => {

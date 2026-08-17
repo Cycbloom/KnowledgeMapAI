@@ -3,6 +3,8 @@ import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './in
 import { aiService } from '../ai/aiService';
 import { logger } from '../../utils/logger';
 import { cacheService, CacheKeys } from '../common/cacheService';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 import type { AIProviderType } from '@shared/types';
 import { notDeleted } from '../common/softDeleteHelper';
@@ -161,7 +163,7 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
       }
 
       if (totalCount === 0 && errors.length > 0) {
-        throw new Error(`Failed to generate cards: ${errors.join('; ')}`);
+        throw new AppError(`Failed to generate cards: ${errors.join('; ')}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       if (graph_id) {

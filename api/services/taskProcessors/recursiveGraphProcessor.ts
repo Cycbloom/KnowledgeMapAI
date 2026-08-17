@@ -7,6 +7,8 @@ import {
 import { getAIProviderForTask } from "../ai/factory";
 import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getAutoGraphPrompt } from "./utils";
 import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
 import { pricingService } from "../ai/pricingService";
@@ -80,8 +82,10 @@ export class RecursiveGraphProcessor implements TaskProcessor {
       }
 
       if (!lockAcquired) {
-        throw new Error(
+        throw new AppError(
           `Failed to acquire lock for graph ${graph_id} after ${maxRetries} attempts`,
+          500,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
         );
       }
 
@@ -92,12 +96,12 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         .single();
 
       if (!graph) {
-        throw new Error("Graph not found");
+        throw new AppError("Graph not found", 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       const provider = await getAIProviderForTask("text");
       if (!provider.hasKey) {
-        throw new Error("AI provider not configured");
+        throw new AppError("AI provider not configured", 503, ErrorCodes.AI_SERVICE_UNAVAILABLE);
       }
 
       let totalNodes = 0;

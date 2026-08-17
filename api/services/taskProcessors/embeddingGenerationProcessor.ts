@@ -4,6 +4,8 @@ import { aiService } from '../ai/aiService';
 import { chunkingService } from '../ai/chunkingService';
 import { logger } from '../../utils/logger';
 import { notDeleted } from '../common/softDeleteHelper';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 const BATCH_SIZE = 20;
 const EMBEDDING_DELAY_MS = 100;
@@ -34,7 +36,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
           .is('embedding', null);
 
         if (error) {
-          throw new Error(`Failed to fetch knowledge points: ${error.message}`);
+          throw new AppError(`Failed to fetch knowledge points: ${error.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
         }
         knowledgePoints = data || [];
       } else if (graphId) {
@@ -53,7 +55,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
           );
 
         if (gnError) {
-          throw new Error(`Failed to fetch graph nodes: ${gnError.message}`);
+          throw new AppError(`Failed to fetch graph nodes: ${gnError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
         }
 
         knowledgePoints = (graphNodes || [])
@@ -76,7 +78,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
           })
           .filter((kp): kp is { id: string; title: string; content: string | null } => kp !== null);
       } else {
-        throw new Error('Either graphId or knowledgePointIds must be provided');
+        throw new AppError('Either graphId or knowledgePointIds must be provided', 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       if (knowledgePoints.length === 0) {

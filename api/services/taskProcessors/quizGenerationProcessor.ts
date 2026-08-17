@@ -2,6 +2,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
 import { aiService, type CardDifficulty } from '../ai/index';
 import { logger } from '../../utils/logger';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 import type { AIProviderType } from '@shared/types';
 import { notDeleted } from '../common/softDeleteHelper';
 
@@ -83,7 +85,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
         .single();
 
       if (quizSetError || !quizSet) {
-        throw new Error('Quiz set not found');
+        throw new AppError('Quiz set not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       await supabase
@@ -108,7 +110,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
         );
 
       if (gnError || !graphNodes || graphNodes.length === 0) {
-        throw new Error('Failed to fetch knowledge points');
+        throw new AppError('Failed to fetch knowledge points', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       const nodes = graphNodes.map((gn: GraphNodeWithKnowledgePoint) => {

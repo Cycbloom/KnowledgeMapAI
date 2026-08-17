@@ -8,6 +8,8 @@ import { getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
 import { domainContextService } from "../ai/domainContextService";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { generateNodesForGraph } from "./utils";
 import { checkDuplicateGraphTopic } from "../../utils/similaritySearch";
 import { aiService } from "../ai/index";
@@ -129,7 +131,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
 
       const provider = await getAIProviderForTask("text");
       if (!provider.hasKey) {
-        throw new Error("AI provider not configured");
+        throw new AppError("AI provider not configured", 503, ErrorCodes.AI_SERVICE_UNAVAILABLE);
       }
 
       let totalGraphsCreated = 0;

@@ -1,5 +1,7 @@
 import { getSupabaseAdmin } from '../supabase';
 import { logger } from '../utils/logger';
+import { AppError } from '../middleware/errorHandler';
+import { ErrorCodes } from '@shared/types/errorCodes';
 import { focusService } from './scheduler/focusService';
 import { transactionExecutor } from '../database/transactionExecutor';
 import type {
@@ -291,7 +293,7 @@ export class AchievementService {
       .order('category')
       .order('condition_value');
 
-    if (error) throw new Error(`Failed to fetch achievements: ${error.message}`);
+    if (error) throw new AppError(`Failed to fetch achievements: ${error.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     return data as Achievement[];
   }
 
@@ -302,7 +304,7 @@ export class AchievementService {
       .eq('user_id', userId)
       .order('unlocked_at', { ascending: false });
 
-    if (error) throw new Error(`Failed to fetch user achievements: ${error.message}`);
+    if (error) throw new AppError(`Failed to fetch user achievements: ${error.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     return data as (UserAchievement & { achievement: Achievement })[];
   }
 

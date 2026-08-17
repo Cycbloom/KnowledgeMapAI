@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AIProviderClient } from "@shared/types/ai";
 import type { Response } from "express";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "@shared/types/errorCodes";
 import { ToolRegistry } from "./ToolRegistry";
 import { SessionManager } from "./SessionManager";
 import type {
@@ -507,12 +509,12 @@ export class AgentService {
   ): Promise<ExecuteResult> {
     const strategy = getStrategyForGoal(goal);
     if (!strategy) {
-      throw new Error(`No strategy found for goal: ${goal}`);
+      throw new AppError(`No strategy found for goal: ${goal}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const session = await this.sessionManager.get(sessionId);
     if (!session) {
-      throw new Error("Session not found");
+      throw new AppError("Session not found", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     await this.sessionManager.update(sessionId, { status: "running" });
@@ -562,7 +564,7 @@ export class AgentService {
       const err = error as Error;
       logger.error("Autonomous execution error:", error);
       await this.sessionManager.update(sessionId, { status: "failed" });
-      throw new Error(`Autonomous execution failed: ${err.message}`);
+      throw new AppError(`Autonomous execution failed: ${err.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -576,7 +578,7 @@ export class AgentService {
     const session = await this.sessionManager.get(sessionId);
 
     if (!session) {
-      throw new Error("Session not found");
+      throw new AppError("Session not found", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     for (const toolName of toolNames) {
@@ -622,7 +624,7 @@ export class AgentService {
   ): Promise<void> {
     const session = await this.sessionManager.get(sessionId);
     if (!session) {
-      throw new Error("Session not found");
+      throw new AppError("Session not found", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     for (const toolName of tools) {
@@ -663,7 +665,7 @@ export class AgentService {
   private async finalizeSession(sessionId: string): Promise<ExecuteResult> {
     const session = await this.sessionManager.get(sessionId);
     if (!session) {
-      throw new Error("Session not found");
+      throw new AppError("Session not found", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const toolMessages = session.messages.filter((m) => m.role === "tool");
@@ -676,7 +678,7 @@ export class AgentService {
 
     const finalSession = await this.sessionManager.get(sessionId);
     if (!finalSession) {
-      throw new Error("Session not found after update");
+      throw new AppError("Session not found after update", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
     return { session: finalSession };
   }

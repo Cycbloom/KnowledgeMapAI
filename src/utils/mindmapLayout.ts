@@ -16,6 +16,8 @@ export interface LayoutOptions {
   linkDistance?: number;
   centerForce?: number;
   domainGroups?: Map<string, string[]>;
+  /** 主线程 fallback 模式：>50 节点时降级采样/减少迭代，避免同步计算卡 UI */
+  fast?: boolean;
 }
 
 const LEVEL_CHARGE_STRENGTH: Record<NodeLevel, number> = {
@@ -31,9 +33,12 @@ export const createMindMapLayout = (
   edges: Edge[],
   options: LayoutOptions
 ): LayoutResult => {
-  const { width, height, chargeStrength, linkDistance, centerForce, domainGroups } = options;
+  const { width, height, chargeStrength, linkDistance, centerForce, domainGroups, fast } = options;
 
   const nodeCount = nodes.length;
+
+  /** fast 模式下 >50 节点仍跑全量迭代会卡 UI 数百 ms，降采样迭代次数 */
+  const FAST_MAX_ITERATIONS = 150;
 
   const dynamicLinkDistance = linkDistance || (() => {
     if (nodeCount > 100) return 150;
@@ -54,6 +59,7 @@ export const createMindMapLayout = (
   })();
 
   const dynamicIterations = (() => {
+    if (fast && nodeCount > 50) return FAST_MAX_ITERATIONS;
     if (nodeCount > 100) return 700;
     if (nodeCount > 50) return 600;
     return 500;
@@ -191,6 +197,8 @@ export interface SemanticLayoutOptions {
   nNeighbors?: number;
   minDist?: number;
   nEpochs?: number;
+  /** 主线程 fallback 模式：embedding >50 时抽样跑 UMAP，其余节点就近锚定 */
+  fast?: boolean;
 }
 
 export const createSemanticLayout = (
@@ -199,7 +207,7 @@ export const createSemanticLayout = (
   embeddings: Map<string, number[]>,
   options: SemanticLayoutOptions,
 ): LayoutResult => {
-  const { width, height, nNeighbors, minDist = 0.1, nEpochs = 200 } = options;
+  const { width, height, nNeighbors, minDist = 0.1, nEpochs = 200, fast } = options;
 
   // 单趟分桶有/无 embedding 节点，替代两次 filter 的 O(2*nodes) 扫描
   const nodesWithEmbedding: typeof nodes = [];
@@ -213,22 +221,40 @@ export const createSemanticLayout = (
   const semanticPositions: Map<string, { x: number; y: number }> = new Map();
 
   if (nodesWithEmbedding.length >= 3) {
+    /** fast 模式下 >50 个 embedding 时抽样跑 UMAP，其余节点就近锚定 */
+    const FAST_SAMPLE_SIZE = 50;
+
     // 单趟收集有效 embedding，替代 map+filter 两次扫描
     const embeddingMatrix: number[][] = [];
     for (const n of nodesWithEmbedding) {
       const emb = embeddings.get(n.id);
       if (emb !== undefined && emb.length > 0) embeddingMatrix.push(emb);
     }
-    const effectiveNNeighbors = nNeighbors || Math.min(15, nodesWithEmbedding.length - 1);
+
+    const needSampling = fast && embeddingMatrix.length > FAST_SAMPLE_SIZE;
+    const sampledIndices: number[] = [];
+    if (needSampling) {
+      // 均匀抽样：保留首尾并在中间等距取样，保持 embedding 空间覆盖
+      const total = embeddingMatrix.length;
+      for (let i = 0; i < FAST_SAMPLE_SIZE; i++) {
+        sampledIndices.push(Math.round((i * (total - 1)) / (FAST_SAMPLE_SIZE - 1)));
+      }
+    }
+
+    const fitMatrix = needSampling
+      ? sampledIndices.map((idx) => embeddingMatrix[idx])
+      : embeddingMatrix;
+
+    const effectiveNNeighbors = nNeighbors || Math.min(15, fitMatrix.length - 1);
 
     const umap = new UMAP({
       nComponents: 2,
       nNeighbors: effectiveNNeighbors,
       minDist,
-      nEpochs,
+      nEpochs: needSampling ? Math.min(nEpochs, 100) : nEpochs,
     });
 
-    const embedding2d: number[][] = umap.fit(embeddingMatrix);
+    const embedding2d: number[][] = umap.fit(fitMatrix);
 
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const point of embedding2d) {
@@ -246,16 +272,49 @@ export const createSemanticLayout = (
 
     const scale = Math.min(availableWidth / rangeX, availableHeight / rangeY);
 
-    nodesWithEmbedding.forEach((node, i) => {
-      const scaledX = (embedding2d[i][0] - minX) * scale;
-      const scaledY = (embedding2d[i][1] - minY) * scale;
+    const scaledPoint = (point: [number, number] | number[]): { x: number; y: number } => {
+      const scaledX = (point[0] - minX) * scale;
+      const scaledY = (point[1] - minY) * scale;
       const offsetX = (availableWidth - rangeX * scale) / 2;
       const offsetY = (availableHeight - rangeY * scale) / 2;
-      semanticPositions.set(node.id, {
-        x: padding + offsetX + scaledX,
-        y: padding + offsetY + scaledY,
+      return { x: padding + offsetX + scaledX, y: padding + offsetY + scaledY };
+    };
+
+    if (needSampling) {
+      // 抽样节点直接采用 UMAP 结果
+      sampledIndices.forEach((originalIdx, sampleRank) => {
+        semanticPositions.set(nodesWithEmbedding[originalIdx].id, scaledPoint(embedding2d[sampleRank]));
       });
-    });
+      // 非抽样节点：在 embedding 空间找最近抽样节点，锚定在其附近并加抖动
+      const sampledEmbeddings = sampledIndices.map((idx) => embeddingMatrix[idx]);
+      nodesWithEmbedding.forEach((node, i) => {
+        if (semanticPositions.has(node.id)) return;
+        const emb = embeddingMatrix[i];
+        let nearestRank = 0;
+        let nearestDist = Infinity;
+        for (let s = 0; s < sampledEmbeddings.length; s++) {
+          let dist = 0;
+          const target = sampledEmbeddings[s];
+          for (let d = 0; d < emb.length; d++) {
+            const diff = emb[d] - (target[d] ?? 0);
+            dist += diff * diff;
+          }
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestRank = s;
+          }
+        }
+        const anchor = scaledPoint(embedding2d[nearestRank]);
+        semanticPositions.set(node.id, {
+          x: anchor.x + (Math.random() - 0.5) * 40,
+          y: anchor.y + (Math.random() - 0.5) * 40,
+        });
+      });
+    } else {
+      nodesWithEmbedding.forEach((node, i) => {
+        semanticPositions.set(node.id, scaledPoint(embedding2d[i]));
+      });
+    }
   }
 
   const fallbackPositions: Map<string, { x: number; y: number }> = new Map();
@@ -263,6 +322,7 @@ export const createSemanticLayout = (
     const fallbackLayout = createMindMapLayout(nodesWithoutEmbedding, edges, {
       width,
       height,
+      fast,
     });
     fallbackLayout.nodes.forEach(n => {
       fallbackPositions.set(n.id, { x: n.x, y: n.y });

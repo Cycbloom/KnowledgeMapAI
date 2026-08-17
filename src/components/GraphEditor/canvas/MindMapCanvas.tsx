@@ -358,6 +358,7 @@ export const MindMapCanvas = React.memo(
               const fallbackResult = createSemanticLayout(nodes, edges, embeddings, {
                 width: containerSize.width,
                 height: containerSize.height,
+                fast: true,
               });
               setLayout(fallbackResult);
             }
@@ -379,6 +380,7 @@ export const MindMapCanvas = React.memo(
               const fallbackResult = createMindMapLayout(nodes, edges, {
                 width: containerSize.width,
                 height: containerSize.height,
+                fast: true,
               });
               setLayout(fallbackResult);
             }
@@ -393,12 +395,14 @@ export const MindMapCanvas = React.memo(
             const fallbackResult = createSemanticLayout(nodes, edges, embeddings, {
               width: containerSize.width,
               height: containerSize.height,
+              fast: true,
             });
             setLayout(fallbackResult);
           } else {
             const fallbackResult = createMindMapLayout(nodes, edges, {
               width: containerSize.width,
               height: containerSize.height,
+              fast: true,
             });
             setLayout(fallbackResult);
           }

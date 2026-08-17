@@ -3,8 +3,14 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { notDeleted } from '../common/softDeleteHelper';
+import { cacheService, CacheKeys, CacheTTL } from '../common/cacheService';
 
 class TemplateService {
+  // 模板列表为按用户隔离的半静态数据：读走缓存，任一写操作按 tag 整体失效
+  private async invalidateTemplatesCache(userId: string): Promise<void> {
+    await cacheService.delByTags([`task_templates:${userId}`]);
+  }
+
   async listTemplates(
     supabase: SupabaseClient,
     userId: string,
@@ -17,34 +23,45 @@ class TemplateService {
   ): Promise<{ templates: Array<Record<string, unknown>>; total: number }> {
     const { category, search, limit = 50, offset = 0 } = filters;
 
-    let query = supabase
-      .from("task_templates")
-      .select("*", { count: "exact" })
-      .or(`user_id.eq.${userId},is_system.eq.true`)
-      .order("is_system", { ascending: true })
-      .order("category", { ascending: true })
-      .order("name", { ascending: true })
-      .range(offset, offset + limit - 1);
+    // 过滤条件序列化为稳定原始值，避免引用变化导致缓存键不稳定
+    const filtersKey = JSON.stringify([category ?? "", search ?? "", limit, offset]);
+    const cacheKey = CacheKeys.TASK_TEMPLATES(userId, filtersKey);
 
-    if (category) {
-      query = query.eq("category", category);
-    }
-    if (search) {
-      query = query.or(
-        `name.ilike.%${search}%,title_template.ilike.%${search}%`,
-      );
-    }
+    return cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        let query = supabase
+          .from("task_templates")
+          .select("*", { count: "exact" })
+          .or(`user_id.eq.${userId},is_system.eq.true`)
+          .order("is_system", { ascending: true })
+          .order("category", { ascending: true })
+          .order("name", { ascending: true })
+          .range(offset, offset + limit - 1);
 
-    const { data: templates, error, count } = await query;
+        if (category) {
+          query = query.eq("category", category);
+        }
+        if (search) {
+          query = query.or(
+            `name.ilike.%${search}%,title_template.ilike.%${search}%`,
+          );
+        }
 
-    if (error) {
-      logger.error("Get templates error:", error);
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-        context: { userId, operation: "listTemplates" },
-      });
-    }
+        const { data: templates, error, count } = await query;
 
-    return { templates: templates ?? [], total: count ?? 0 };
+        if (error) {
+          logger.error("Get templates error:", error);
+          throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
+            context: { userId, operation: "listTemplates" },
+          });
+        }
+
+        return { templates: templates ?? [], total: count ?? 0 };
+      },
+      CacheTTL.TEMPLATES,
+      [`task_templates:${userId}`],
+    );
   }
 
   async getTemplateCategories(
@@ -59,36 +76,41 @@ class TemplateService {
       count: number;
     }>
   > {
-    const { data: templates, error } = await supabase
-      .from("task_templates")
-      .select("category")
-      .or(`user_id.eq.${userId},is_system.eq.true`);
+    return cacheService.getOrSet(
+      CacheKeys.TASK_TEMPLATE_CATEGORIES(userId),
+      async () => {
+        const { data: templates, error } = await supabase
+          .from("task_templates")
+          .select("category")
+          .or(`user_id.eq.${userId},is_system.eq.true`);
 
-    if (error) {
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-        context: { userId, operation: "getTemplateCategories" },
-      });
-    }
+        if (error) {
+          throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
+            context: { userId, operation: "getTemplateCategories" },
+          });
+        }
 
-    const categories = [
-      { value: "study", label: "学习", icon: "📚", color: "blue" },
-      { value: "work", label: "工作", icon: "💼", color: "purple" },
-      { value: "life", label: "生活", icon: "🏠", color: "green" },
-      { value: "health", label: "健康", icon: "💪", color: "red" },
-      { value: "custom", label: "自定义", icon: "⭐", color: "amber" },
-    ];
+        const categories = [
+          { value: "study", label: "学习", icon: "📚", color: "blue" },
+          { value: "work", label: "工作", icon: "💼", color: "purple" },
+          { value: "life", label: "生活", icon: "🏠", color: "green" },
+          { value: "health", label: "健康", icon: "💪", color: "red" },
+          { value: "custom", label: "自定义", icon: "⭐", color: "amber" },
+        ];
 
-    const categoryCounts: Record<string, number> = {};
-    for (const t of templates || []) {
-      categoryCounts[t.category] = (categoryCounts[t.category] || 0) + 1;
-    }
+        const categoryCounts: Record<string, number> = {};
+        for (const t of templates || []) {
+          categoryCounts[t.category] = (categoryCounts[t.category] || 0) + 1;
+        }
 
-    const result = categories.map((cat) => ({
-      ...cat,
-      count: categoryCounts[cat.value] || 0,
-    }));
-
-    return result;
+        return categories.map((cat) => ({
+          ...cat,
+          count: categoryCounts[cat.value] || 0,
+        }));
+      },
+      CacheTTL.TEMPLATES,
+      [`task_templates:${userId}`],
+    );
   }
 
   async getTemplate(
@@ -164,6 +186,7 @@ class TemplateService {
       });
     }
 
+    await this.invalidateTemplatesCache(userId);
     return template;
   }
 
@@ -191,6 +214,7 @@ class TemplateService {
       });
     }
 
+    await this.invalidateTemplatesCache(userId);
     return template;
   }
 
@@ -211,6 +235,8 @@ class TemplateService {
         context: { userId, templateId, operation: "deleteTemplate" },
       });
     }
+
+    await this.invalidateTemplatesCache(userId);
   }
 
   async applyTemplate(
@@ -303,6 +329,8 @@ class TemplateService {
       .update({ usage_count: template.usage_count + 1 })
       .eq("id", templateId);
 
+    // usage_count 变化会影响列表数据，同步失效
+    await this.invalidateTemplatesCache(userId);
     return task;
   }
 
@@ -350,6 +378,7 @@ class TemplateService {
       });
     }
 
+    await this.invalidateTemplatesCache(userId);
     return template;
   }
 
@@ -391,6 +420,7 @@ class TemplateService {
       });
     }
 
+    await this.invalidateTemplatesCache(userId);
     return updated;
   }
 }

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { PROVIDER_DEFAULTS, getProviderDisplayName, type ProviderConfig, type ProviderFormData } from "./settingsConstants";
 import { useStore } from "../../store/useStore";
+import { SaveButton } from "../common/SaveButton";
 
 export const AIProviderConfigSection = React.memo(function AIProviderConfigSection() {
   const { t } = useTranslation();
@@ -90,25 +91,24 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
     const form = providerForms[provider];
     if (!form) return;
 
+    const updateData: Record<
+      string,
+      { apiKey?: string; baseURL?: string; model?: string }
+    > = {};
+    updateData[provider] = {
+      apiKey: form.apiKey,
+      baseURL: form.baseURL,
+      model: form.model,
+    };
     try {
-      const updateData: Record<
-        string,
-        { apiKey?: string; baseURL?: string; model?: string }
-      > = {};
-      updateData[provider] = {
-        apiKey: form.apiKey,
-        baseURL: form.baseURL,
-        model: form.model,
-      };
       await apiClient.put("/ai/config/providers", { providers: updateData });
-      message.success(t("settings.providerConfigSaved", {
-        provider: getProviderDisplayName(provider, t),
-      }));
-      await fetchProviderConfigs();
-    } catch (error) {
-      console.error("Failed to save provider config:", error);
-      message.error(t("settings.providerConfigSaveFailed"));
+    } catch {
+      throw new Error(t("settings.providerConfigSaveFailed"));
     }
+    message.success(t("settings.providerConfigSaved", {
+      provider: getProviderDisplayName(provider, t),
+    }));
+    await fetchProviderConfigs();
   };
 
   const handleTestProviderConnection = async (provider: string) => {
@@ -371,16 +371,14 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
                         )}
                         {t("settings.testConnection")}
                       </button>
-                      <button
-                        onClick={() =>
-                          handleSaveProviderConfig(providerKey)
-                        }
+                      <SaveButton
+                        onSave={() => handleSaveProviderConfig(providerKey)}
+                        variant="primary"
+                        size="sm"
                         disabled={isEnvSource}
-                        className="px-3 py-2 rounded-md bg-primary-600 text-white text-sm hover:bg-primary-700 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
-                      >
-                        <Save className="w-4 h-4" />
-                        {t("settings.saveConfig")}
-                      </button>
+                        leftIcon={<Save className="w-4 h-4" aria-hidden="true" />}
+                        idleLabel={t("settings.saveConfig")}
+                      />
                       {config?.configured && config.source === "user" && (
                         <button
                           onClick={() =>

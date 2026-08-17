@@ -6,7 +6,7 @@ import { useFocusTrap, useEscapeKey, useFormDraft, useAutofocus } from "@/hooks/
 import { focusFirstError } from "@/utils/form/focusFirstError";
 import { FormErrorSummary, type FormErrorSummaryItem } from "../common/FormErrorSummary";
 import { ConfirmationModal } from "../common/ConfirmationModal";
-import { Button } from "../common/Button";
+import { SaveButton } from "../common/SaveButton";
 
 interface InviteCollaboratorDialogProps {
   isOpen: boolean;
@@ -34,7 +34,6 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
     storage: "sessionStorage",
   });
   const [touched, setTouched] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -54,23 +53,22 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performInvite = async () => {
     setTouched(true);
     if (!validateEmail(draft.email)) {
       setSubmitAttempted(true);
-      return;
+      throw new Error(t("collaborators.invite.validation.emailInvalid"));
     }
-    setSubmitting(true);
-    try {
-      await onInvite(draft.email, draft.role);
-      clearDraft();
-      setTouched(false);
-      setSubmitAttempted(false);
-      onClose();
-    } finally {
-      setSubmitting(false);
-    }
+    await onInvite(draft.email, draft.role);
+    clearDraft();
+    setTouched(false);
+    setSubmitAttempted(false);
+    onClose();
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void performInvite();
   };
 
   const emailInvalid = touched && !validateEmail(draft.email);
@@ -151,17 +149,15 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
             >
               {t('collaborators.invite.dialog.cancel')}
             </button>
-            <Button
-              type="submit"
+            <SaveButton
+              type="button"
               variant="primary"
               size="md"
-              loading={submitting}
-              disabled={submitting}
-            >
-              {submitting
-                ? t("collaborators.invite.inviting")
-                : t("collaborators.invite.invite")}
-            </Button>
+              onSave={performInvite}
+              idleLabel={t("collaborators.invite.invite")}
+              savingLabel={t("collaborators.invite.inviting")}
+              savedLabel={t("collaborators.invite.invite")}
+            />
           </div>
         </form>
       </div>

@@ -19,6 +19,7 @@ import {
   Info,
 } from "lucide-react";
 import type { DatabaseConfig } from "./settingsConstants";
+import { SaveButton } from "../common/SaveButton";
 
 interface DatabaseSettingsProps {
   onConfigChange: (config: DatabaseConfig) => void;
@@ -47,7 +48,6 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
   const [dbExpanded, setDbExpanded] = useState(false);
   const [showDbAnonKey, setShowDbAnonKey] = useState(false);
   const [showDbServiceRoleKey, setShowDbServiceRoleKey] = useState(false);
-  const [dbSaving, setDbSaving] = useState(false);
   const [dbTesting, setDbTesting] = useState(false);
   const [dbLoading, setDbLoading] = useState(false);
   const [schemaStatus, setSchemaStatus] = useState<{
@@ -104,23 +104,21 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
 
   const handleSaveDatabaseConfig = async () => {
     if (!dbForm.url.trim() || !dbForm.anonKey.trim()) {
-      message.warning(t("settings.dbUrlAndAnonKeyRequired"));
-      return;
+      throw new Error(t("settings.dbUrlAndAnonKeyRequired"));
     }
 
-    setDbSaving(true);
-    try {
-      if (isElectron() && window.electronAPI?.config) {
-        await window.electronAPI.config.write({
-          database: {
-            url: dbForm.url,
-            anonKey: dbForm.anonKey,
-            serviceRoleKey: dbForm.serviceRoleKey,
-            databaseUrl: dbForm.databaseUrl,
-          },
-        });
-      }
+    if (isElectron() && window.electronAPI?.config) {
+      await window.electronAPI.config.write({
+        database: {
+          url: dbForm.url,
+          anonKey: dbForm.anonKey,
+          serviceRoleKey: dbForm.serviceRoleKey,
+          databaseUrl: dbForm.databaseUrl,
+        },
+      });
+    }
 
+    try {
       await apiClient.put("/ai/config/database", {
         url: dbForm.url,
         anonKey: dbForm.anonKey,
@@ -134,9 +132,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
       message.success(t("settings.dbConfigSaved"));
       await fetchDatabaseConfig();
     } catch {
-      message.error(t("settings.dbConfigSaveFailed"));
-    } finally {
-      setDbSaving(false);
+      throw new Error(t("settings.dbConfigSaveFailed"));
     }
   };
 
@@ -372,18 +368,13 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
             </div>
 
             <div className="flex flex-wrap gap-2 pt-1">
-              <button
-                onClick={handleSaveDatabaseConfig}
-                disabled={dbSaving}
-                className="px-3 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
-              >
-                {dbSaving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                {t("settings.saveAndReconnect")}
-              </button>
+              <SaveButton
+                onSave={handleSaveDatabaseConfig}
+                variant="primary"
+                size="sm"
+                leftIcon={<Save className="w-4 h-4" aria-hidden="true" />}
+                idleLabel={t("settings.saveAndReconnect")}
+              />
               <button
                 onClick={handleTestDatabaseConnection}
                 disabled={dbTesting}

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { X, Clock, Tag, Star, AlertCircle, HelpCircle, Loader2 } from 'lucide-react';
+import { X, Clock, Tag, Star, AlertCircle, HelpCircle } from 'lucide-react';
 import {
   TaskTemplate,
   CreateTemplateData,
@@ -10,6 +10,7 @@ import {
 } from '../../services/api/taskTemplates';
 import { useFormDraft } from '../../hooks';
 import { ConfirmationModal } from '../common/ConfirmationModal';
+import { SaveButton } from '../common/SaveButton';
 
 interface TemplateFormProps {
   template?: TaskTemplate;
@@ -25,7 +26,6 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
   const { t } = useTranslation();
   const [customTag, setCustomTag] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
   const isEditing = !!template;
@@ -57,7 +57,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
     { value: 4, label: t('scheduler.templateForm.priorityUrgent'), color: 'text-red-600 dark:text-red-400' },
   ];
 
-  const COMMON_TAGS = [
+  const COMMON_TAGS = useMemo(() => [
     t('scheduler.templateForm.tagStudy'),
     t('scheduler.templateForm.tagWork'),
     t('scheduler.templateForm.tagReading'),
@@ -68,7 +68,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
     t('scheduler.templateForm.tagMeeting'),
     t('scheduler.templateForm.tagExercise'),
     t('scheduler.templateForm.tagRest'),
-  ];
+  ], [t]);
 
   interface TemplateFormDraft {
     name: string;
@@ -106,7 +106,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
     initialValue: initialDraft,
   });
 
-  const validate = () => {
+  const validate = (): Record<string, string> => {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) {
       newErrors.name = t('scheduler.templateForm.errorNameRequired');
@@ -124,33 +124,35 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
       newErrors.descriptionTemplate = t('scheduler.templateForm.errorDescriptionTemplateTooLong');
     }
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-    if (isSubmitting) return;
-
-    setIsSubmitting(true);
-    try {
-      const data: CreateTemplateData | UpdateTemplateData = {
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        category: formData.category as 'knowledge' | 'project' | 'analysis' | 'architecture' | 'topicResearch' | 'creative',
-        title_template: formData.titleTemplate.trim(),
-        description_template: formData.descriptionTemplate.trim() || undefined,
-        estimated_duration: formData.estimatedDuration,
-        tags: formData.tags.length > 0 ? formData.tags : undefined,
-        priority: formData.priority,
-        is_default: formData.isDefault,
-      };
-
-      onSubmit(data);
-      clearDraft();
-    } finally {
-      setIsSubmitting(false);
+  const performSubmit = async () => {
+    const newErrors = validate();
+    const firstError = Object.values(newErrors)[0];
+    if (firstError) {
+      throw new Error(firstError);
     }
+
+    const data: CreateTemplateData | UpdateTemplateData = {
+      name: formData.name.trim(),
+      description: formData.description.trim() || undefined,
+      category: formData.category as 'knowledge' | 'project' | 'analysis' | 'architecture' | 'topicResearch' | 'creative',
+      title_template: formData.titleTemplate.trim(),
+      description_template: formData.descriptionTemplate.trim() || undefined,
+      estimated_duration: formData.estimatedDuration,
+      tags: formData.tags.length > 0 ? formData.tags : undefined,
+      priority: formData.priority,
+      is_default: formData.isDefault,
+    };
+
+    onSubmit(data);
+    clearDraft();
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void performSubmit();
   };
 
   const addTag = (tag: string) => {
@@ -178,8 +180,8 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
   const availableCommonTags = useMemo(() => {
     // 预构建标签集合，将过滤由 O(COMMON_TAGS*tags) 降为 O(COMMON_TAGS)
     const tagSet = new Set(formData.tags);
-    return COMMON_TAGS.filter(t => !tagSet.has(t)).slice(0, 6);
-  }, [formData.tags]);
+    return COMMON_TAGS.filter(tag => !tagSet.has(tag)).slice(0, 6);
+  }, [COMMON_TAGS, formData.tags]);
 
   return (
     <motion.div
@@ -436,15 +438,13 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
           >
             {t('scheduler.templateForm.buttonCancel')}
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-400 hover:to-primary-400 transition-all shadow-lg shadow-primary-500/20 min-h-[44px] touch-target disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <><Loader2 size={16} className="animate-spin" />{t('common.saveButton.saving')}</>
-            ) : (isEditing ? t('scheduler.templateForm.buttonSaveChanges') : t('scheduler.templateForm.buttonCreateTemplate'))}
-          </button>
+          <SaveButton
+            onSave={performSubmit}
+            variant="primary"
+            size="md"
+            className="flex-1 sm:flex-none touch-target"
+            idleLabel={isEditing ? t('scheduler.templateForm.buttonSaveChanges') : t('scheduler.templateForm.buttonCreateTemplate')}
+          />
         </div>
       </motion.div>
       {!isEditing && showRestorePrompt && (

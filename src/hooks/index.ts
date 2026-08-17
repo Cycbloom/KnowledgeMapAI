@@ -39,7 +39,6 @@ export {
   usePauseUserTaskMutation,
   useCompleteUserTaskMutation,
   useDemoteUserTaskMutation,
-  HOTKEY_LIST,
   useTaskEvents,
 } from "./scheduler";
 

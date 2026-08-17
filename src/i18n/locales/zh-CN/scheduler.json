@@ -1145,11 +1145,6 @@
       "saturday": "周六"
     }
   },
-  "hotkeyHelp": {
-    "title": "快捷键",
-    "pressHint": "按 ",
-    "showAnytimeHint": " 随时显示此帮助"
-  },
   "focusStreak": {
     "focusing": "专注中",
     "breaking": "休息中",
@@ -1333,21 +1328,6 @@
     "legendPending": "待处理",
     "waitingTasks": "等待 {{count}} 个任务",
     "unlocked": "已解锁"
-  },
-  "hotkeys": {
-    "newTask": "新建任务",
-    "startPauseTask": "开始/暂停任务",
-    "completeTask": "完成任务",
-    "closePopup": "关闭弹窗",
-    "closePopupExitFocus": "关闭弹窗/退出专注模式",
-    "switchQ0": "切换到Q0队列",
-    "switchQ0View": "切换到Q0队列视图",
-    "switchQ1": "切换到Q1队列",
-    "switchQ1View": "切换到Q1队列视图",
-    "switchQ2": "切换到Q2队列",
-    "switchQ2View": "切换到Q2队列视图",
-    "toggleFocusMode": "切换专注模式",
-    "toggleMiniMode": "切换迷你模式"
   },
   "taskDependencyGraph": {
     "currentTaskTitle": "当前任务",

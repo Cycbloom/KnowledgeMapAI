@@ -1145,11 +1145,6 @@
       "saturday": "Sat"
     }
   },
-  "hotkeyHelp": {
-    "title": "Shortcuts",
-    "pressHint": "Press ",
-    "showAnytimeHint": " anytime to show this help"
-  },
   "focusStreak": {
     "focusing": "Focusing",
     "breaking": "On break",
@@ -1333,21 +1328,6 @@
     "softDependency": "Soft Dependency",
     "strictDependencyOnTask": "Strictly depends on this task",
     "softDependencyOnTask": "Softly depends on this task"
-  },
-  "hotkeys": {
-    "newTask": "New Task",
-    "startPauseTask": "Start/Pause Task",
-    "completeTask": "Complete Task",
-    "closePopup": "Close Popup",
-    "closePopupExitFocus": "Close Popup/Exit Focus Mode",
-    "switchQ0": "Switch to Q0 Queue",
-    "switchQ0View": "Switch to Q0 Queue View",
-    "switchQ1": "Switch to Q1 Queue",
-    "switchQ1View": "Switch to Q1 Queue View",
-    "switchQ2": "Switch to Q2 Queue",
-    "switchQ2View": "Switch to Q2 Queue View",
-    "toggleFocusMode": "Toggle Focus Mode",
-    "toggleMiniMode": "Toggle Mini Mode"
   },
   "taskDependencyGraph": {
     "currentTaskTitle": "Current Task",

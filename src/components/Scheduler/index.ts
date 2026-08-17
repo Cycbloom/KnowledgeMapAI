@@ -40,7 +40,6 @@ export { DailyReview } from "./DailyReview";
 export { TaskRetrospect } from "./TaskRetrospect";
 export { WeeklyReflection } from "./WeeklyReflection";
 
-export { HotkeyHelp } from "./HotkeyHelp";
 export { MiniTimer } from "./MiniTimer";
 
 export { EfficiencyTrend } from "./EfficiencyTrend";

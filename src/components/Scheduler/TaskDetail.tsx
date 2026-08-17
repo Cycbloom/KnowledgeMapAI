@@ -22,6 +22,8 @@ import { UserTask, TaskExecution } from "@shared/types";
 import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import { asyncConfirm } from "../../utils/asyncConfirm";
 import { EmptyState } from "../common/EmptyState";
+import { DetailCard } from "../common/DetailCard";
+import { DetailStatCard } from "../common/DetailStatCard";
 import { TASK_DETAIL_QUEUE_CONFIG, TASK_DETAIL_STATUS_CONFIG } from "@/constants/scheduler";
 
 interface TaskDetailProps {
@@ -150,61 +152,55 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {task.description && (
-              <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
+              <DetailCard className="bg-slate-800/50 border-slate-700">
                 <p className="text-slate-300 whitespace-pre-wrap">
                   {task.description}
                 </p>
-              </div>
+              </DetailCard>
             )}
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                <div className="flex items-center gap-2 text-slate-400 mb-2">
-                  <Clock size={16} />
-                  <span className="text-sm">{t("scheduler.taskDetail.estimatedDuration")}</span>
-                </div>
-                <p className="text-lg font-semibold text-white">
-                  {formatDurationMinutes(task.estimated_duration, { format: 'zh-spaced' })}
-                </p>
-              </div>
+              <DetailStatCard
+                icon={<Clock size={16} />}
+                label={t("scheduler.taskDetail.estimatedDuration")}
+                value={formatDurationMinutes(task.estimated_duration, { format: 'zh-spaced' })}
+                className="bg-slate-800/50 border-slate-700"
+                valueClassName="text-white"
+              />
 
-              <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                <div className="flex items-center gap-2 text-slate-400 mb-2">
-                  <Timer size={16} />
-                  <span className="text-sm">{t("scheduler.taskDetail.actualDuration")}</span>
-                </div>
-                <p className="text-lg font-semibold text-white">
-                  {formatDurationMinutes(task.actual_duration, { format: 'zh-spaced' })}
-                </p>
-              </div>
+              <DetailStatCard
+                icon={<Timer size={16} />}
+                label={t("scheduler.taskDetail.actualDuration")}
+                value={formatDurationMinutes(task.actual_duration, { format: 'zh-spaced' })}
+                className="bg-slate-800/50 border-slate-700"
+                valueClassName="text-white"
+              />
 
-              <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                <div className="flex items-center gap-2 text-slate-400 mb-2">
-                  <Calendar size={16} />
-                  <span className="text-sm">{t("scheduler.taskDetail.deadline")}</span>
-                </div>
-                <p className="text-lg font-semibold text-white">
-                  {task.deadline ? formatDateTime(task.deadline) : t("scheduler.taskDetail.notSet")}
-                </p>
-              </div>
+              <DetailStatCard
+                icon={<Calendar size={16} />}
+                label={t("scheduler.taskDetail.deadline")}
+                value={
+                  task.deadline ? formatDateTime(task.deadline) : t("scheduler.taskDetail.notSet")
+                }
+                className="bg-slate-800/50 border-slate-700"
+                valueClassName="text-white"
+              />
 
-              <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                <div className="flex items-center gap-2 text-slate-400 mb-2">
-                  <TrendingUp size={16} />
-                  <span className="text-sm">{t("scheduler.taskDetail.totalExecutionTime")}</span>
-                </div>
-                <p className="text-lg font-semibold text-white">
-                  {formatExecutionDuration(totalExecutionTime)}
-                </p>
-              </div>
+              <DetailStatCard
+                icon={<TrendingUp size={16} />}
+                label={t("scheduler.taskDetail.totalExecutionTime")}
+                value={formatExecutionDuration(totalExecutionTime)}
+                className="bg-slate-800/50 border-slate-700"
+                valueClassName="text-white"
+              />
             </div>
 
             {task.tags && task.tags.length > 0 && (
-              <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                <div className="flex items-center gap-2 text-slate-400 mb-2">
-                  <Tag size={16} />
-                  <span className="text-sm">{t("scheduler.taskDetail.tags")}</span>
-                </div>
+              <DetailCard
+                icon={<Tag size={16} />}
+                title={t("scheduler.taskDetail.tags")}
+                className="bg-slate-800/50 border-slate-700"
+              >
                 <div className="flex flex-wrap gap-2">
                   {task.tags.map((tag) => (
                     <span
@@ -215,28 +211,31 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                     </span>
                   ))}
                 </div>
-              </div>
+              </DetailCard>
             )}
 
             {task.knowledge_point_id && (
-              <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                <div className="flex items-center gap-2 text-slate-400 mb-2">
-                  <Link size={16} />
-                  <span className="text-sm">{t("scheduler.taskDetail.relatedKnowledgePoints")}</span>
-                </div>
+              <DetailCard
+                icon={<Link size={16} />}
+                title={t("scheduler.taskDetail.relatedKnowledgePoints")}
+                className="bg-slate-800/50 border-slate-700"
+              >
                 <p className="text-white">{task.knowledge_point_id}</p>
-              </div>
+              </DetailCard>
             )}
 
-            <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-              <div className="flex items-center gap-2 text-slate-400 mb-3">
+            <DetailCard
+              className="bg-slate-800/50 border-slate-700"
+              title={
+                <span className="flex items-center gap-2">
                   <History size={16} />
-                  <span className="text-sm">{t("scheduler.taskDetail.executionHistory")}</span>
+                  {t("scheduler.taskDetail.executionHistory")}
                   <span className="text-xs text-slate-500">
                     {t("scheduler.taskDetail.executionCountFormat", { count: executions.length })}
                   </span>
-                </div>
-
+                </span>
+              }
+            >
               {executions.length === 0 ? (
                 <EmptyState icon={<ListChecks size={32} />} title={t('scheduler.empty.executionRecords')} />
               ) : (
@@ -271,7 +270,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                   })}
                 </div>
               )}
-            </div>
+            </DetailCard>
 
             <div className="text-xs text-slate-500 flex items-center gap-4">
               <span>{t("scheduler.taskDetail.createdAt")} {formatDateTime(task.created_at)}</span>

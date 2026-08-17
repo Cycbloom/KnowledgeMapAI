@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { LearningStateBadge } from "./LearningStateBadge";
 import { MasteryProgressBar } from "./MasteryProgressBar";
+import { DetailCard } from "../common/DetailCard";
 import { subtasksApi, type ValidTransitionsResult } from "../../services/api/modules/scheduler/subtasks";
 import { knowledgePointsApi, type TaskKnowledgePoint } from "../../services/api/modules/scheduler/knowledgePoints";
 import { message } from "../../utils/messageHelper";
@@ -204,10 +205,10 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
             </div>
 
             <div className="p-4 space-y-4 overflow-y-auto max-h-[calc(90vh-140px)]">
-              <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
-                <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
-                  {t("scheduler.subtaskDetail.basicInfo")}
-                </h4>
+              <DetailCard
+                title={t("scheduler.subtaskDetail.basicInfo")}
+                className={isDark ? "bg-slate-900 border-0" : "bg-slate-50 border-0"}
+              >
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
                   {subtask.title}
                 </h3>
@@ -232,14 +233,14 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                     </div>
                   )}
                 </div>
-              </section>
+              </DetailCard>
 
               {knowledgePoint?.knowledge_point && (
-                <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
-                  <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
-                    <BookOpen size={14} />
-                    {t("scheduler.subtaskDetail.knowledgePointInfo")}
-                  </h4>
+                <DetailCard
+                  title={t("scheduler.subtaskDetail.knowledgePointInfo")}
+                  icon={<BookOpen size={14} />}
+                  className={isDark ? "bg-slate-900 border-0" : "bg-slate-50 border-0"}
+                >
                   <div className="space-y-2">
                     <div>
                       <span className="text-xs text-slate-400">{t('scheduler.taskWorkbench.subtaskDetail.name')}</span>
@@ -264,14 +265,14 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                       </div>
                     )}
                   </div>
-                </section>
+                </DetailCard>
               )}
 
-              <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
-                <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
-                  <AlertCircle size={14} />
-                  {t("scheduler.subtaskDetail.learningState")}
-                </h4>
+              <DetailCard
+                title={t("scheduler.subtaskDetail.learningState")}
+                icon={<AlertCircle size={14} />}
+                className={isDark ? "bg-slate-900 border-0" : "bg-slate-50 border-0"}
+              >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600 dark:text-slate-300">{t('scheduler.taskWorkbench.subtaskDetail.currentState')}</span>
@@ -290,14 +291,14 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                     {STATE_DESCRIPTIONS[subtask.learning_state]}
                   </p>
                 </div>
-              </section>
+              </DetailCard>
 
               {!loading && validTransitions && validTransitions.valid_transitions.length > 0 && (
-                <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
-                  <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
-                    <ArrowRight size={14} />
-                    {t("scheduler.subtaskDetail.stateTransition")}
-                  </h4>
+                <DetailCard
+                  title={t("scheduler.subtaskDetail.stateTransition")}
+                  icon={<ArrowRight size={14} />}
+                  className={isDark ? "bg-slate-900 border-0" : "bg-slate-50 border-0"}
+                >
                   <div className="space-y-3">
                     {validTransitions.recommended_next && (
                       <div className={`p-3 rounded-lg border-2 border-primary-500/50 bg-primary-50 dark:bg-primary-500/10`}>
@@ -361,14 +362,14 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                       </div>
                     </div>
                   </div>
-                </section>
+                </DetailCard>
               )}
 
-              <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
-                <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
-                  <Save size={14} />
-                  {t("scheduler.subtaskDetail.masteryAdjustment")}
-                </h4>
+              <DetailCard
+                title={t("scheduler.subtaskDetail.masteryAdjustment")}
+                icon={<Save size={14} />}
+                className={isDark ? "bg-slate-900 border-0" : "bg-slate-50 border-0"}
+              >
                 <div className="space-y-3">
                   <div className="flex items-center gap-4">
                     <input
@@ -406,14 +407,14 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                     </button>
                   </div>
                 </div>
-              </section>
+              </DetailCard>
 
               {subtask.state_history && subtask.state_history.length > 0 && (
-                <section className={`p-4 rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
-                  <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
-                    <History size={14} />
-                    {t("scheduler.subtaskDetail.stateHistory")}
-                  </h4>
+                <DetailCard
+                  title={t("scheduler.subtaskDetail.stateHistory")}
+                  icon={<History size={14} />}
+                  className={isDark ? "bg-slate-900 border-0" : "bg-slate-50 border-0"}
+                >
                   <div className="space-y-2">
                     {subtask.state_history
                       .slice()
@@ -436,7 +437,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                         </div>
                       ))}
                   </div>
-                </section>
+                </DetailCard>
               )}
             </div>
 

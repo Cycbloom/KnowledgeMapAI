@@ -6,6 +6,7 @@ import {
   GripVertical, Check, Loader2
 } from 'lucide-react';
 import { QUEUE_NAME_COLORS, type QueueColorName } from '@/constants/scheduler';
+import { message } from '@/utils/messageHelper';
 
 export interface Queue {
   id: string;
@@ -90,8 +91,8 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
     const queueIds = newOrder.map(q => q.id);
     try {
       await onReorder(queueIds);
-    } catch (error) {
-      console.error('Failed to reorder queues:', error);
+    } catch {
+      message.error(t('scheduler.queueSettings.reorderFailed'));
       setLocalQueues([...queues].sort((a, b) => a.order - b.order));
     }
   };
@@ -120,8 +121,8 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
       );
       setEditingId(null);
       setEditData({});
-    } catch (error) {
-      console.error('Failed to update queue:', error);
+    } catch {
+      message.error(t('scheduler.queueSettings.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -142,8 +143,8 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
         timeSlice: 25,
       };
       await onCreate(newQueueData);
-    } catch (error) {
-      console.error('Failed to create queue:', error);
+    } catch {
+      message.error(t('scheduler.queueSettings.createFailed'));
     } finally {
       setLoading(false);
     }
@@ -166,8 +167,8 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
       await onDelete(deleteConfirm.queueId, deleteConfirm.targetQueueId);
       setLocalQueues(prev => prev.filter(q => q.id !== deleteConfirm.queueId));
       setDeleteConfirm({ isOpen: false, queueId: '', queueName: '' });
-    } catch (error) {
-      console.error('Failed to delete queue:', error);
+    } catch {
+      message.error(t('scheduler.queueSettings.deleteFailed'));
     } finally {
       setLoading(false);
     }

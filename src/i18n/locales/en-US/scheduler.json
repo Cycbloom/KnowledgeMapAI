@@ -1262,7 +1262,11 @@
     "manageHint": "Manage queue priorities and settings ({{current}}/{{max}})",
     "dragHint": "Drag to reorder queue priorities (top = higher priority)",
     "maxQueuesReached": "Maximum queue limit reached ({{max}})",
-    "minQueuesRequired": "At least {{count}} queues are required"
+    "minQueuesRequired": "At least {{count}} queues are required",
+    "reorderFailed": "Failed to reorder queues, order restored",
+    "updateFailed": "Failed to update queue",
+    "createFailed": "Failed to add queue",
+    "deleteFailed": "Failed to delete queue"
   },
   "executionRecords": {
     "title": "Execution Records",

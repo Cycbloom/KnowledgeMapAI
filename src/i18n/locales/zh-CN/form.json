@@ -17,7 +17,8 @@
     "selectCardTypes": "请选择至少一种题型",
     "titleRequired": "请输入标题",
     "titleTooShort": "标题至少需要 {{count}} 个字符",
-    "patternMismatch": "格式不正确"
+    "patternMismatch": "格式不正确",
+    "errorSummaryCount": "{{count}}个字段有错误，请修正后提交"
   },
   "error": {
     "title": "加载失败",

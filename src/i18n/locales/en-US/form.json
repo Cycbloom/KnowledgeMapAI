@@ -17,7 +17,8 @@
     "selectCardTypes": "Please select at least one card type",
     "titleRequired": "Please enter a title",
     "titleTooShort": "Title must be at least {{count}} characters",
-    "patternMismatch": "Format is invalid"
+    "patternMismatch": "Format is invalid",
+    "errorSummaryCount": "{{count}} fields have errors, please fix them"
   },
   "error": {
     "title": "Loading failed",

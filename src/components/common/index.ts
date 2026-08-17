@@ -57,6 +57,8 @@ export { ShortcutHelpPanel, ShortcutListContent } from "./ShortcutHelpPanel";
 export { SearchResults } from "./SearchResults";
 export { FormError } from "./FormError";
 export type { FormErrorProps } from "./FormError";
+export { FormErrorSummary } from "./FormErrorSummary";
+export type { FormErrorSummaryItem, FormErrorSummaryProps } from "./FormErrorSummary";
 export { CharCounter } from "./CharCounter";
 export type { CharCounterProps } from "./CharCounter";
 export { FormField } from "./FormField";

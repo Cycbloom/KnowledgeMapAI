@@ -153,13 +153,17 @@ router.post(
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to execute agent session", error);
-      // If headers not sent, send error as JSON; otherwise try SSE
-      if (!res.headersSent) {
-        res.status(500).json({ error: err.message || "Failed to execute session" });
-      } else {
+      // SSE 流已开启时只能通过事件下发错误；否则交给 errorHandler 统一处理
+      if (res.headersSent) {
         res.write(`data: ${JSON.stringify({ type: "session_failed", data: { error: err.message } })}\n\n`);
         res.end();
+        return;
       }
+      throw new AppError(
+        err.message || "Failed to execute session",
+        500,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      );
     }
   },
 );
@@ -189,12 +193,17 @@ router.post(
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to resume agent session", error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: err.message || "Failed to resume session" });
-      } else {
+      // SSE 流已开启时只能通过事件下发错误；否则交给 errorHandler 统一处理
+      if (res.headersSent) {
         res.write(`data: ${JSON.stringify({ type: "session_failed", data: { error: err.message } })}\n\n`);
         res.end();
+        return;
       }
+      throw new AppError(
+        err.message || "Failed to resume session",
+        500,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      );
     }
   },
 );

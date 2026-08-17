@@ -1,6 +1,6 @@
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
-import { queryKeys, realtimeQueryConfig } from "./config";
+import { queryKeys, realtimeQueryConfig, defaultQueryConfig } from "./config";
 import { getSupabaseClient } from "@/utils/supabase";
 
 export const useStudyCards = (
@@ -80,6 +80,8 @@ export const useStudyStats = (graphId?: string) => {
   return useQuery({
     queryKey: queryKeys.studyStats(graphId ?? ""),
     queryFn: () => api.study.getStats(graphId),
+    enabled: !!graphId,
+    ...defaultQueryConfig,
   });
 };
 

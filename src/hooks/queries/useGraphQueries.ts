@@ -1,7 +1,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { api } from "../../services/api/adapter";
 import { Node, Edge, NodeStatus } from "../../types";
-import { queryKeys, defaultQueryConfig, staticQueryConfig, GC_TIME } from "./config";
+import { queryKeys, defaultQueryConfig, staticQueryConfig } from "./config";
 
 export const useDashboardStats = () => {
   return useQuery({
@@ -82,6 +82,7 @@ export const useGraphDataWithEmbedding = (graphId: string) => {
       };
     },
     enabled: !!graphId,
+    ...defaultQueryConfig,
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -91,9 +92,8 @@ export const useGraphNodeStatus = (id: string) => {
     queryKey: queryKeys.graphNodeStatus(id),
     queryFn: () => api.graphs.getNodeStatus(id),
     enabled: !!id,
+    ...defaultQueryConfig,
     staleTime: 60_000,
-    gcTime: GC_TIME,
-    retry: 1,
   });
 };
 
@@ -105,9 +105,8 @@ export const useBatchGraphStatus = (
     queryKey: queryKeys.batchGraphNodeStatus(graphIds),
     queryFn: () => api.graphs.batchGetNodeStatus(graphIds),
     enabled: enabled && graphIds.length > 0,
+    ...defaultQueryConfig,
     staleTime: 60_000,
-    gcTime: GC_TIME,
-    retry: 1,
   });
 
   return {

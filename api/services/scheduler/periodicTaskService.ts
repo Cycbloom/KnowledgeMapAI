@@ -641,7 +641,8 @@ export class PeriodicTaskService {
     for (const user of users) {
       try {
         for (const periodType of periodTypes) {
-          const { start } = getPeriodDates(periodType);
+          const start = periodStarts.get(periodType);
+          if (!start) continue;
 
           const tasks = tasksByUserAndPeriod.get(user.id)?.get(periodType);
 

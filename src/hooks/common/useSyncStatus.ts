@@ -26,8 +26,9 @@ export function useSyncStatus() {
       if (mounted) setStatus(newStatus as SyncStatus);
     });
 
-    // Poll status every 30 seconds as fallback
+    // Poll status every 30 seconds as fallback（页面隐藏时暂停，恢复可见后下一轮自动续跑）
     const interval = setInterval(() => {
+      if (document.hidden) return;
       if (isLocalAvailable) {
         getSyncStatus().then(s => {
           if (mounted && s) setStatus(s as SyncStatus);

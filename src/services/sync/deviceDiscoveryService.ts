@@ -16,6 +16,7 @@ class DeviceDiscoveryService {
   private deviceTimeoutIntervals: Map<string, NodeJS.Timeout> = new Map();
   private deviceId: string = '';
   private deviceName: string = '';
+  private visibilityHandler: (() => void) | null = null;
 
   async start(deviceId: string, _deviceName: string): Promise<void> {
     this.deviceId = deviceId;
@@ -25,9 +26,11 @@ class DeviceDiscoveryService {
   }
 
   async stop(): Promise<void> {
-    if (this.broadcastInterval) {
-      clearInterval(this.broadcastInterval);
-      this.broadcastInterval = null;
+    this.stopPolling();
+
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
     }
 
     this.deviceTimeoutIntervals.forEach(interval => clearTimeout(interval));
@@ -36,9 +39,36 @@ class DeviceDiscoveryService {
   }
 
   private startPolling(): void {
-    this.broadcastInterval = setInterval(() => {
-      this.pollForDevices();
-    }, BROADCAST_INTERVAL);
+    this.resumePolling();
+
+    // 页面隐藏时暂停广播轮询，恢复可见时立即拉取并继续
+    if (this.visibilityHandler) {
+      return;
+    }
+    this.visibilityHandler = () => {
+      if (document.visibilityState === 'visible') {
+        this.resumePolling();
+      } else {
+        this.stopPolling();
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
+  }
+
+  private stopPolling(): void {
+    if (this.broadcastInterval) {
+      clearInterval(this.broadcastInterval);
+      this.broadcastInterval = null;
+    }
+  }
+
+  private resumePolling(): void {
+    if (!this.broadcastInterval) {
+      this.broadcastInterval = setInterval(() => {
+        this.pollForDevices();
+      }, BROADCAST_INTERVAL);
+      void this.pollForDevices();
+    }
   }
 
   private async pollForDevices(): Promise<void> {

@@ -81,27 +81,62 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
   }, [isOpen, graphId]);
 
   useEffect(() => {
-    if (currentJobId && isAnalyzing) {
-      const pollInterval = setInterval(async () => {
-        try {
-          const result = await api.conceptAggregation.getResults(
-            graphId,
-            currentJobId,
-          );
-          setAnalysisResult(result);
-          setProgress(result.progress ?? 0);
-
-          if (result.status === "completed" || result.status === "failed") {
-            setIsAnalyzing(false);
-            clearInterval(pollInterval);
-          }
-        } catch {
-          clearInterval(pollInterval);
-        }
-      }, 2000);
-
-      return () => clearInterval(pollInterval);
+    if (!currentJobId || !isAnalyzing) {
+      return;
     }
+
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+    const stopPolling = () => {
+      if (pollInterval !== null) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    };
+
+    const poll = async () => {
+      try {
+        const result = await api.conceptAggregation.getResults(
+          graphId,
+          currentJobId,
+        );
+        setAnalysisResult(result);
+        setProgress(result.progress ?? 0);
+
+        if (result.status === "completed" || result.status === "failed") {
+          setIsAnalyzing(false);
+          stopPolling();
+        }
+      } catch {
+        stopPolling();
+      }
+    };
+
+    const startPolling = () => {
+      if (pollInterval === null) {
+        pollInterval = setInterval(() => {
+          void poll();
+        }, 2000);
+      }
+    };
+
+    // 页面隐藏时暂停轮询，恢复可见时立即拉取并继续
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        startPolling();
+        void poll();
+      } else {
+        stopPolling();
+      }
+    };
+
+    startPolling();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [currentJobId, isAnalyzing, graphId]);
 
   const handleAnalyze = useCallback(async () => {

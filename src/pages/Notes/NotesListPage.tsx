@@ -7,6 +7,7 @@ import {
   memo,
 } from "react";
 import { motion } from "framer-motion";
+import { toLocalDateString } from "@shared/utils/dateFormat";
 import { debounce } from "@/utils/performanceUtils";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -106,12 +107,8 @@ const getTypeBadgeClass = (type: NoteType): string => {
  * 本地时区当日 YYYY-MM-DD 字符串。
  * 与后端 notesService.getLocalDateString 保持一致,用于 localStorage 跳转标记键。
  */
-const getLocalDateString = (date: Date = new Date()): string => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
+const getLocalDateString = (date: Date = new Date()): string =>
+  toLocalDateString(date);
 
 /** 判定 note 是否为"刚刚创建"(用于自动跳转启发式),默认阈值 60 秒。 */
 const JUST_CREATED_THRESHOLD_MS = 60_000;

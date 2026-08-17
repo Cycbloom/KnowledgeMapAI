@@ -20,6 +20,7 @@ import type {
   RefreshDailyAggregationResponse,
 } from '@shared/types/note';
 import { extractWikiLinks } from '@shared/utils/wikiLink';
+import { toLocalDateString } from '@shared/utils/dateFormat';
 import {
   extractAllBlockIds,
   findBlockContent,
@@ -162,14 +163,10 @@ const mapRowToTemplate = (row: NoteTemplateRow): NoteTemplate => ({
 
 /**
  * 获取本时区当日的 YYYY-MM-DD 字符串。
- * 使用服务器本地日期(项目部署在用户时区 Asia/Shanghai)。
+ * 委托 shared/utils/dateFormat 的 toLocalDateString（与前端 NotesListPage 共用）。
  */
-const getLocalDateString = (date: Date = new Date()): string => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
+const getLocalDateString = (date: Date = new Date()): string =>
+  toLocalDateString(date);
 
 /**
  * 将 Date 转为本地时区的当日 00:00:00 ISO 字符串(用于范围查询起点)。

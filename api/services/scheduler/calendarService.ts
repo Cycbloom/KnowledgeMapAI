@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import i18next from "i18next";
+import { toIcsUtcTimestamp } from "@shared/utils/dateFormat";
 import { logger } from "../../utils/logger";
 import { notDeleted } from '../common/softDeleteHelper';
 
@@ -150,7 +151,7 @@ class CalendarService {
 
   private generateICSContent(tasks: CalendarTask[], executions: CalendarExecution[]): string {
     const now = new Date();
-    const timestamp = `${now.toISOString().replace(/[-:]/g, "").split(".")[0]  }Z`;
+    const timestamp = toIcsUtcTimestamp(now);
 
     let ics = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -173,10 +174,6 @@ X-WR-CALDESC:${i18next.t("scheduler.calendarService.calDesc")}
         ? new Date(task.scheduled_end)
         : new Date(startDate.getTime() + (task.estimated_duration || 30) * 60000);
 
-      const formatDate = (date: Date): string => {
-        return `${date.toISOString().replace(/[-:]/g, "").split(".")[0]  }Z`;
-      };
-
       const status = task.status === "completed" ? "COMPLETED" : "CONFIRMED";
       const priorityNum = task.priority ? parseInt(task.priority) : 0;
       const priority = priorityNum >= 4 ? "1" : priorityNum >= 3 ? "5" : "9";
@@ -189,8 +186,8 @@ X-WR-CALDESC:${i18next.t("scheduler.calendarService.calDesc")}
       ics += `BEGIN:VEVENT
 UID:${task.id}@knowledgemap
 DTSTAMP:${timestamp}
-DTSTART:${formatDate(startDate)}
-DTEND:${formatDate(endDate)}
+DTSTART:${toIcsUtcTimestamp(startDate)}
+DTEND:${toIcsUtcTimestamp(endDate)}
 SUMMARY:${task.title}
 DESCRIPTION:${task.description || ""}
 STATUS:${status}
@@ -204,7 +201,7 @@ CATEGORIES:${category}
       }
 
       if (task.deadline) {
-        ics += `X-DEADLINE:${formatDate(new Date(task.deadline))}
+        ics += `X-DEADLINE:${toIcsUtcTimestamp(new Date(task.deadline))}
 `;
       }
 
@@ -220,15 +217,11 @@ CATEGORIES:${category}
         ? new Date(exec.ended_at)
         : new Date(startDate.getTime() + (exec.duration || 30) * 60000);
 
-      const formatDate = (date: Date): string => {
-        return `${date.toISOString().replace(/[-:]/g, "").split(".")[0]  }Z`;
-      };
-
       ics += `BEGIN:VEVENT
 UID:exec-${exec.id}@knowledgemap
 DTSTAMP:${timestamp}
-DTSTART:${formatDate(startDate)}
-DTEND:${formatDate(endDate)}
+DTSTART:${toIcsUtcTimestamp(startDate)}
+DTEND:${toIcsUtcTimestamp(endDate)}
 SUMMARY:${i18next.t("scheduler.calendarService.executionSummary", { title: exec.task_title || i18next.t("scheduler.calendarService.categories.execution") })}
 DESCRIPTION:${i18next.t("scheduler.calendarService.executionDescription", { minutes: Math.round((exec.duration || 0) / 60) })}
 STATUS:CONFIRMED

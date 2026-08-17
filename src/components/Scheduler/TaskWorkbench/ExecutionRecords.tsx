@@ -53,7 +53,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
   const groupByDate = (execs: TaskExecution[]): GroupedExecutions => {
     const grouped: GroupedExecutions = {};
     execs.forEach((exec) => {
-      const date = new Date(exec.started_at).toLocaleDateString("zh-CN");
+      const date = formatDate(exec.started_at, 'short-date');
       if (!grouped[date]) {
         grouped[date] = [];
       }

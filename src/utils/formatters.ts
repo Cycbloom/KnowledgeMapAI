@@ -163,6 +163,7 @@ export type DateFormat =
   | 'month-year'
   | 'time'
   | 'long-date'
+  | 'full-date'
   | 'month-day-weekday';
 
 /** formatDate 可接受的输入类型 */
@@ -191,6 +192,7 @@ export type DateInput = string | number | Date | null | undefined;
  *   formatDate('2024-03-15T14:30:00Z', 'weekday-long')       // "星期五" / "Friday"
  *   formatDate('2024-03-15T14:30:00Z', 'month-year')         // "2024年3月" / "March 2024"
  *   formatDate('2024-03-15T14:30:00Z', 'long-date')          // "2024年3月15日星期五" / "Friday, March 15, 2024"
+ *   formatDate('2024-03-15T14:30:00Z', 'full-date')          // "2024年3月15日" / "March 15, 2024"
  *   formatDate('2024-03-15T14:30:00Z', 'month-day-weekday')  // "3月15日星期五" / "Friday, March 15"
  */
 export function formatDate(dateStr: DateInput, format: DateFormat = 'full'): string {
@@ -255,6 +257,12 @@ export function formatDate(dateStr: DateInput, format: DateFormat = 'full'): str
         month: 'long',
         day: 'numeric',
         weekday: 'long',
+      }).format(date);
+    case 'full-date':
+      return new Intl.DateTimeFormat(locale, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
       }).format(date);
     case 'month-day-weekday':
       return new Intl.DateTimeFormat(locale, {

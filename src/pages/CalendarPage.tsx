@@ -17,6 +17,7 @@ import { CalendarExportModal } from "../components/Calendar/CalendarExportModal"
 import { Skeleton } from "../components/common";
 import { api } from "../services/api";
 import { message } from "../utils/messageHelper";
+import { formatDate } from "../utils/formatters";
 import type { CalendarEvent, EventDropInfo, CalendarMode } from "../types/calendar";
 
 interface QuickTaskFormData {
@@ -26,7 +27,7 @@ interface QuickTaskFormData {
 
 export const CalendarPage: React.FC = () => {
   const { isDark } = useTheme();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const routerNavigate = useNavigate();
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("plan");
   const [showSubtasks, setShowSubtasks] = useState(false);
@@ -64,22 +65,11 @@ export const CalendarPage: React.FC = () => {
     calendarMode === "plan" ? eventsLoading : activityStats === undefined;
 
   const getTitle = useCallback(() => {
-    const locale = i18n.language?.startsWith("zh") ? "zh-CN" : "en-US";
-    if (viewType === "month") {
-      if (locale === "zh-CN") {
-        return `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月`;
-      }
-      return currentDate.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-      });
+    if (viewType === "month" || viewType === "week") {
+      return formatDate(currentDate, "month-year");
     }
-    return currentDate.toLocaleDateString(locale, {
-      year: "numeric",
-      month: "long",
-      day: viewType === "week" ? undefined : "numeric",
-    });
-  }, [currentDate, viewType, i18n.language]);
+    return formatDate(currentDate, "full-date");
+  }, [currentDate, viewType]);
 
   const handleDateSelect = useCallback(
     (date: Date) => {

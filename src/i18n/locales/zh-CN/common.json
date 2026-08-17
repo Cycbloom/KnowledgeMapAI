@@ -369,6 +369,11 @@
     "offline": "离线",
     "error": "同步错误"
   },
+  "dataFreshness": {
+    "updated": "数据更新于 {{time}}",
+    "never": "数据尚未更新",
+    "refreshAria": "刷新数据"
+  },
   "mobileFocusTimer": {
     "pauseAriaLabel": "暂停",
     "startAriaLabel": "开始"

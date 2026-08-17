@@ -50,3 +50,5 @@ export { useWebVitals } from './useWebVitals';
 export type { WebVitalMetric, UseWebVitalsResult } from './useWebVitals';
 export { usePrefetch } from './usePrefetch';
 export { useRoutePrefetch } from './useRoutePrefetch';
+export { useDataFreshness } from './useDataFreshness';
+export type { DataFreshnessResult, DataFreshnessSnapshot } from './useDataFreshness';

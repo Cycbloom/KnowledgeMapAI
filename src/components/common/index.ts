@@ -51,6 +51,8 @@ export { FocusTimer } from "./FocusTimer";
 export { MobileFocusTimer } from "./MobileFocusTimer";
 export { HelpModal } from "./HelpModal";
 export { SSEStatusIndicator } from "./SSEStatusIndicator";
+export { DataFreshnessIndicator } from "./DataFreshnessIndicator";
+export type { DataFreshnessIndicatorProps } from "./DataFreshnessIndicator";
 export { SyncStatusIndicator } from "./SyncStatusIndicator";
 export { SyncDetailPanel } from "./SyncDetailPanel";
 export { SyncConflictPanel } from "./SyncConflictPanel";

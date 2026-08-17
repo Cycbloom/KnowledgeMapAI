@@ -369,6 +369,11 @@
     "offline": "Offline",
     "error": "Sync error"
   },
+  "dataFreshness": {
+    "updated": "Updated {{time}}",
+    "never": "No data yet",
+    "refreshAria": "Refresh data"
+  },
   "mobileFocusTimer": {
     "pauseAriaLabel": "Pause",
     "startAriaLabel": "Start"

@@ -1,7 +1,9 @@
 import { Router, type Response } from "express";
 import OpenAI from "openai";
+import { z } from "zod";
 import type { AIProviderType } from "@shared/types";
 import { requireAuth, type AuthRequest } from "../../../middleware/auth";
+import { validate } from "../../../middleware/validate";
 import { appSettingsService } from "../../../services/core";
 import { getEnvConfig, clearProviderCache } from "../../../services/ai";
 import { providerRegistry } from "../../../services/ai/providerRegistry";
@@ -12,6 +14,18 @@ import { PROVIDER_DEFAULTS, maskApiKey, hasEnvFallback } from "./shared";
 import { encrypt, decrypt, getEncryptionKey, isEncryptedApiKey } from "../../../../shared/utils/encryption";
 
 const router = Router();
+
+// PUT /providers 请求体校验：apiKey 非空、baseURL 必须是合法 URL
+const updateProvidersSchema = z.object({
+  providers: z.record(
+    z.object({
+      apiKey: z.string().min(1).optional(),
+      baseURL: z.string().url().optional(),
+      model: z.string().optional(),
+      embeddingModel: z.string().optional(),
+    }),
+  ),
+});
 
 router.get(
   "/providers",
@@ -69,6 +83,7 @@ router.get(
 router.put(
   "/providers",
   requireAuth,
+  validate({ body: updateProvidersSchema }),
   async (req: AuthRequest, res: Response) => {
     try {
       const { providers } = req.body as {
@@ -82,23 +97,6 @@ router.put(
           }
         >;
       };
-
-      if (!providers || typeof providers !== "object") {
-        throw new AppError("providers object is required", 400, ErrorCodes.VALIDATION_ERROR);
-      }
-
-      for (const [provider, config] of Object.entries(providers)) {
-        if (config.apiKey !== undefined && config.apiKey === "") {
-          throw new AppError(`apiKey for ${provider} must be non-empty if provided`, 400, ErrorCodes.VALIDATION_ERROR);
-        }
-        if (config.baseURL !== undefined) {
-          try {
-            new URL(config.baseURL);
-          } catch {
-            throw new AppError(`baseURL for ${provider} is not a valid URL`, 400, ErrorCodes.VALIDATION_ERROR);
-          }
-        }
-      }
 
       const existingConfigs =
         (await appSettingsService.getSetting<
@@ -133,6 +131,8 @@ router.put(
 
       res.json({ success: true });
     } catch (error) {
+      // 透传业务错误（如后续逻辑抛出的 AppError），仅兜底未知异常
+      if (error instanceof AppError) throw error;
       logger.error("Failed to update provider configs:", error);
       throw new AppError("Failed to update provider configs", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }

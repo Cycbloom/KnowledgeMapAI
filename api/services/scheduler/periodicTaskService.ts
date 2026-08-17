@@ -593,6 +593,9 @@ export class PeriodicTaskService {
 
   async aggregateAllProgress(supabase: SupabaseClient): Promise<void> {
     const periodTypes: ('weekly' | 'monthly' | 'quarterly')[] = ['weekly', 'monthly', 'quarterly'];
+    const periodStarts = new Map<string, string>(
+      periodTypes.map((pt) => [pt, getPeriodDates(pt).start]),
+    );
 
     const { data: users, error } = await supabase
       .from('users')
@@ -603,24 +606,51 @@ export class PeriodicTaskService {
       return;
     }
 
+    // 单次批量拉取全部用户当期任务，替代 用户数×周期数 次逐条查询（N+1 → 1 次往返）
+    const { data: allTasks, error: tasksError } = await supabase
+      .from('periodic_tasks')
+      .select('id, user_id, period_type, period_start, task_type, target, progress, status, pass_points')
+      .in('user_id', users.map((u: { id: string }) => u.id))
+      .in('period_type', periodTypes)
+      .in('period_start', Array.from(new Set(periodStarts.values())));
+
+    if (tasksError) {
+      logger.error('[PeriodicTaskService] Failed to fetch periodic tasks for aggregation:', tasksError);
+      return;
+    }
+
+    // 按 (user_id, period_type) 分组，并校验 period_start 与周期类型匹配
+    const tasksByUserAndPeriod = new Map<string, Map<string, PeriodicTaskRow[]>>();
+    for (const task of (allTasks ?? []) as PeriodicTaskRow[]) {
+      const start = periodStarts.get(task.period_type);
+      if (!start || task.period_start !== start) continue;
+
+      let byPeriod = tasksByUserAndPeriod.get(task.user_id);
+      if (!byPeriod) {
+        byPeriod = new Map();
+        tasksByUserAndPeriod.set(task.user_id, byPeriod);
+      }
+      const list = byPeriod.get(task.period_type);
+      if (list) {
+        list.push(task);
+      } else {
+        byPeriod.set(task.period_type, [task]);
+      }
+    }
+
     for (const user of users) {
       try {
         for (const periodType of periodTypes) {
           const { start } = getPeriodDates(periodType);
 
-          const { data: tasks } = await supabase
-            .from('periodic_tasks')
-            .select('id, task_type, target, progress, status, pass_points')
-            .eq('user_id', user.id)
-            .eq('period_type', periodType)
-            .eq('period_start', start);
+          const tasks = tasksByUserAndPeriod.get(user.id)?.get(periodType);
 
           if (!tasks) continue;
 
           for (const task of tasks) {
             if (task.status === 'completed') continue;
 
-            let currentValue = task.progress;
+            let currentValue = task.progress ?? 0;
 
             switch (task.task_type) {
               case 'focus': {
@@ -669,11 +699,13 @@ export class PeriodicTaskService {
               }
             }
 
+            const target = task.target ?? 0;
+
             if (currentValue !== task.progress) {
-              const newProgress = Math.min(currentValue, task.target);
+              const newProgress = Math.min(currentValue, target);
               const updates: Record<string, unknown> = { progress: newProgress };
 
-              if (newProgress >= task.target) {
+              if (newProgress >= target) {
                 updates.status = 'completed';
 
                 const { data: currentPass } = await supabase
@@ -687,7 +719,7 @@ export class PeriodicTaskService {
                 if (currentPass) {
                   await supabase
                     .from('periodic_passes')
-                    .update({ total_points: currentPass.total_points + task.pass_points })
+                    .update({ total_points: currentPass.total_points + (task.pass_points ?? 0) })
                     .eq('user_id', user.id)
                     .eq('period_type', periodType)
                     .eq('period_start', start);

@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 interface PageLoadingContextValue {
   isPageLoading: boolean;
@@ -18,8 +18,13 @@ export function PageLoadingProvider({ children }: { children: React.ReactNode })
   const startLoading = useCallback(() => setIsPageLoading(true), []);
   const stopLoading = useCallback(() => setIsPageLoading(false), []);
 
+  const value = useMemo(
+    () => ({ isPageLoading, startLoading, stopLoading }),
+    [isPageLoading, startLoading, stopLoading],
+  );
+
   return (
-    <PageLoadingContext.Provider value={{ isPageLoading, startLoading, stopLoading }}>
+    <PageLoadingContext.Provider value={value}>
       {children}
     </PageLoadingContext.Provider>
   );

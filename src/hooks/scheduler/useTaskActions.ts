@@ -11,6 +11,7 @@ import {
 import { message } from "../../utils/messageHelper";
 import { api } from "../../services/api";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import { canTransition } from "@shared/utils/taskStatusTransitions";
 import type { UserTask, CreateUserTaskData, KnowledgePoint } from "@shared/types";
 
 export interface TaskActionsState {
@@ -103,6 +104,11 @@ export const useTaskActions = (refetchQueues: () => void): TaskActions => {
   };
 
   const handleStartTask = async (task: UserTask) => {
+    // 状态机守卫：终态/未开始状态不允许 start，避免无效请求与乐观更新闪变
+    if (!canTransition(task.status, "in_progress")) {
+      message.error(t("toast.workbench.taskInvalidTransition"));
+      return;
+    }
     try {
       await startTaskMutation.mutateAsync(task.id);
       message.success(t("toast.workbench.taskStarted"));
@@ -113,6 +119,10 @@ export const useTaskActions = (refetchQueues: () => void): TaskActions => {
   };
 
   const handlePauseTask = async (task: UserTask) => {
+    if (!canTransition(task.status, "paused")) {
+      message.error(t("toast.workbench.taskInvalidTransition"));
+      return;
+    }
     try {
       await pauseTaskMutation.mutateAsync(task.id);
       message.success(t("toast.workbench.taskPaused"));
@@ -123,6 +133,10 @@ export const useTaskActions = (refetchQueues: () => void): TaskActions => {
   };
 
   const handleCompleteTask = async (task: UserTask) => {
+    if (!canTransition(task.status, "completed")) {
+      message.error(t("toast.workbench.taskInvalidTransition"));
+      return;
+    }
     try {
       await completeTaskMutation.mutateAsync(task.id);
       message.success(t("toast.workbench.taskCompleted"));

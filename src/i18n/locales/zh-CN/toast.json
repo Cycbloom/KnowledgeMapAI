@@ -127,6 +127,7 @@
     "taskPauseFailed": "暂停任务失败",
     "taskCompleted": "任务已完成",
     "taskCompleteFailed": "完成任务失败",
+    "taskInvalidTransition": "当前任务状态不支持此操作",
     "knowledgePointLinked": "知识点关联成功",
     "knowledgePointLinkFailed": "关联知识点失败",
     "loadFailed": "加载失败: {{message}}",

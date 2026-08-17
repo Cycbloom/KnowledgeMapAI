@@ -183,16 +183,30 @@ describe("useTaskActions", () => {
 
   it("handlePauseTask 应该调用 pause mutation", async () => {
     const { result } = renderHook(() => useTaskActions(refetchQueues));
-    await act(async () => { await result.current.handlePauseTask(makeTask({ id: "t-pause" })); });
+    await act(async () => { await result.current.handlePauseTask(makeTask({ id: "t-pause", status: "in_progress" })); });
     expect(mocks.pauseMutate).toHaveBeenCalledWith("t-pause");
     expect(message.success).toHaveBeenCalledWith("toast.workbench.taskPaused");
   });
 
+  it("handlePauseTask 对 pending 任务应被状态机守卫拦截", async () => {
+    const { result } = renderHook(() => useTaskActions(refetchQueues));
+    await act(async () => { await result.current.handlePauseTask(makeTask({ id: "t-pending" })); });
+    expect(mocks.pauseMutate).not.toHaveBeenCalled();
+    expect(message.error).toHaveBeenCalledWith("toast.workbench.taskInvalidTransition");
+  });
+
   it("handleCompleteTask 应该调用 complete mutation", async () => {
     const { result } = renderHook(() => useTaskActions(refetchQueues));
-    await act(async () => { await result.current.handleCompleteTask(makeTask({ id: "t-done" })); });
+    await act(async () => { await result.current.handleCompleteTask(makeTask({ id: "t-done", status: "in_progress" })); });
     expect(mocks.completeMutate).toHaveBeenCalledWith("t-done");
     expect(message.success).toHaveBeenCalledWith("toast.workbench.taskCompleted");
+  });
+
+  it("handleCompleteTask 对终态任务应被状态机守卫拦截", async () => {
+    const { result } = renderHook(() => useTaskActions(refetchQueues));
+    await act(async () => { await result.current.handleCompleteTask(makeTask({ id: "t-finished", status: "completed" })); });
+    expect(mocks.completeMutate).not.toHaveBeenCalled();
+    expect(message.error).toHaveBeenCalledWith("toast.workbench.taskInvalidTransition");
   });
 
   it("handleStartTask 失败时应发布错误消息", async () => {

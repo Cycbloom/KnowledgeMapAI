@@ -127,6 +127,7 @@
     "taskPauseFailed": "Failed to pause task",
     "taskCompleted": "Task completed",
     "taskCompleteFailed": "Failed to complete task",
+    "taskInvalidTransition": "This action is not allowed for the current task status",
     "knowledgePointLinked": "Knowledge point linked successfully",
     "knowledgePointLinkFailed": "Failed to link knowledge point",
     "loadFailed": "Load failed: {{message}}",

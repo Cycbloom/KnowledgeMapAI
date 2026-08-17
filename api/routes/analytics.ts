@@ -1,6 +1,8 @@
 import { Router, type Request, type Response } from 'express';
+import { z } from 'zod';
 import { logger } from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
+import { validate } from '../middleware/validate';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { getSupabaseAdmin } from '../supabase';
 
@@ -14,6 +16,35 @@ const MAX_URL_LENGTH = 500;
 const MAX_UA_LENGTH = 500;
 const DEFAULT_RECENT_LIMIT = 20;
 const MAX_RECENT_LIMIT = 100;
+
+// POST /performance 请求体校验：metrics 值必须为数值，url/userAgent/timestamp 为字符串
+const performanceReportSchema = z.object({
+  metrics: z.record(z.number()),
+  url: z.string(),
+  userAgent: z.string(),
+  timestamp: z.string(),
+});
+
+// POST /errors 单条形状校验：timestamp 需可解析为日期（防 new Date().toISOString() 抛 RangeError）
+const errorReportSchema = z.object({
+  message: z.string(),
+  stack: z.string().optional(),
+  componentStack: z.string().optional(),
+  url: z.string(),
+  lineNumber: z.number().optional(),
+  columnNumber: z.number().optional(),
+  timestamp: z.string().refine(
+    (value) => !Number.isNaN(new Date(value).getTime()),
+    { message: 'timestamp must be a parseable date string' },
+  ),
+  userAgent: z.string(),
+  userId: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+const postErrorsSchema = z.object({
+  errors: z.array(errorReportSchema).min(1),
+});
 
 interface PerformanceReport {
   metrics: Record<string, number>;
@@ -35,15 +66,10 @@ interface ErrorReport {
   metadata?: Record<string, unknown>;
 }
 
-router.post('/performance', async (req, res): Promise<void> => {
+router.post('/performance', validate({ body: performanceReportSchema }), async (req, res): Promise<void> => {
   try {
     const report: PerformanceReport = req.body;
     const { metrics, url } = report;
-
-    if (!metrics || typeof metrics !== 'object') {
-      throw new AppError('Invalid metrics data', 400, ErrorCodes.VALIDATION_ERROR);
-      return;
-    }
 
     logger.info('Performance report received', {
       metrics,
@@ -113,7 +139,7 @@ export const postErrorsHandler = async (req: Request, res: Response): Promise<vo
 
   res.json({ success: true, count: errors.length });
 };
-router.post('/errors', postErrorsHandler);
+router.post('/errors', validate({ body: postErrorsSchema }), postErrorsHandler);
 
 export const getStatsHandler = async (_req: Request, res: Response): Promise<void> => {
   try {

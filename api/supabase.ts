@@ -30,7 +30,7 @@ function resolveServiceKey(): string {
   }
 
   if (isDevelopment()) {
-    console.warn(
+    logger.warn(
       "SUPABASE_SERVICE_ROLE_KEY is missing; falling back to public Supabase demo service_role key for development.",
     );
     return DEMO_SERVICE_KEY;

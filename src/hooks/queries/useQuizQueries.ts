@@ -46,9 +46,15 @@ export const useQuizGenerationProgress = (taskId: string | null, enabled: boolea
     ...realtimeQueryConfig,
     refetchInterval: (query) => {
       const data = query.state.data as QuizGenerationProgress | undefined;
-      if (!data) return 1000;
-      if (data.status === "completed" || data.status === "failed") return false;
-      return 1000;
+      if (data && (data.status === "completed" || data.status === "failed")) {
+        return false;
+      }
+      // 指数退避：1s → 2s → 3s（封顶），生成任务通常持续 10s+，
+      // 避免固定 1s 轮询对进度接口造成的请求压力
+      const fetchCount = query.state.dataUpdateCount;
+      if (fetchCount <= 1) return 1000;
+      if (fetchCount === 2) return 2000;
+      return 3000;
     },
   });
 };

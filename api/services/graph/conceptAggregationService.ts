@@ -885,15 +885,45 @@ ${conceptList}
       `Starting batch merge for graph ${graphId} with ${mergeGroups.length} groups`,
     );
 
+    // 单次批量预取全部目标与源知识点（替代逐组 2 次读取的 2N 次往返）
+    const allTargetIds = mergeGroups.map((g) => g.targetId);
+    const allSourceIds = [
+      ...new Set(mergeGroups.flatMap((g) => g.sourceIds)),
+    ];
+
+    const [
+      { data: targetRows, error: targetsError },
+      { data: sourceRows, error: sourcesError },
+    ] = await Promise.all([
+      supabase
+        .from("knowledge_points")
+        .select("id, title, properties")
+        .in("id", allTargetIds),
+      supabase.from("knowledge_points").select("id, title").in("id", allSourceIds),
+    ]);
+
+    if (sourcesError) {
+      // 批量源查询整体失败：与原逐组 abort 语义对齐，所有组记错误后返回
+      for (const group of mergeGroups) {
+        result.errors.push({
+          targetId: group.targetId,
+          sourceIds: group.sourceIds,
+          error: `Failed to fetch source knowledge points: ${sourcesError.message}`,
+        });
+      }
+      return result;
+    }
+
+    const targetKpMap = new Map(
+      (targetRows ?? []).map((row) => [row.id, row]),
+    );
+    const sourceKpMap = new Map((sourceRows ?? []).map((row) => [row.id, row]));
+
     for (const group of mergeGroups) {
       try {
-        const { data: targetKp, error: targetError } = await supabase
-          .from("knowledge_points")
-          .select("id, title, properties")
-          .eq("id", group.targetId)
-          .single();
+        const targetKp = targetKpMap.get(group.targetId);
 
-        if (targetError || !targetKp) {
+        if (targetsError || !targetKp) {
           result.errors.push({
             targetId: group.targetId,
             sourceIds: group.sourceIds,
@@ -908,19 +938,9 @@ ${conceptList}
 
         const newAliases: string[] = [];
 
-        const { data: sourceKps, error: sourcesError } = await supabase
-          .from("knowledge_points")
-          .select("id, title")
-          .in("id", group.sourceIds);
-
-        if (sourcesError || !sourceKps) {
-          result.errors.push({
-            targetId: group.targetId,
-            sourceIds: group.sourceIds,
-            error: `Failed to fetch source knowledge points`,
-          });
-          continue;
-        }
+        const sourceKps = group.sourceIds
+          .map((id) => sourceKpMap.get(id))
+          .filter((kp): kp is { id: string; title: string } => Boolean(kp));
 
         // 复杂度降低：预构建规范化别名 Set，避免循环内重复 O(n) 的 some() 线性扫描
         const normalizedAliasSet = new Set(
@@ -968,53 +988,55 @@ ${conceptList}
 
         let edgesUpdatedInGroup = 0;
 
-        for (const sourceId of group.sourceIds) {
+        // 组级 .in() 批量重定向边（替代逐 source 4 次往返：2 次边更新 + 1 次节点查询 + 1 次软删）
+        if (group.sourceIds.length > 0) {
           const { error: targetEdgeError } = await supabase
             .from("edges")
             .update({ target_knowledge_point_id: group.targetId })
-            .eq("target_knowledge_point_id", sourceId)
+            .in("target_knowledge_point_id", group.sourceIds)
             .eq("graph_id", graphId);
 
           if (targetEdgeError) {
             logger.error(
-              `Failed to update target edges for ${sourceId}:`,
+              `Failed to update target edges for sources of ${group.targetId}:`,
               targetEdgeError,
             );
           } else {
-            edgesUpdatedInGroup++;
+            edgesUpdatedInGroup += group.sourceIds.length;
           }
 
           const { error: sourceEdgeError } = await supabase
             .from("edges")
             .update({ source_knowledge_point_id: group.targetId })
-            .eq("source_knowledge_point_id", sourceId)
+            .in("source_knowledge_point_id", group.sourceIds)
             .eq("graph_id", graphId);
 
           if (sourceEdgeError) {
             logger.error(
-              `Failed to update source edges for ${sourceId}:`,
+              `Failed to update source edges for sources of ${group.targetId}:`,
               sourceEdgeError,
             );
           } else {
-            edgesUpdatedInGroup++;
+            edgesUpdatedInGroup += group.sourceIds.length;
           }
 
-          const { data: sourceGraphNodes } = await notDeleted(supabase
-            .from("graph_nodes")
-            .select("id")
-            .eq("knowledge_point_id", sourceId)
-            .eq("graph_id", graphId)
-            );
+          const { data: sourceGraphNodes } = await notDeleted(
+            supabase
+              .from("graph_nodes")
+              .select("id")
+              .in("knowledge_point_id", group.sourceIds)
+              .eq("graph_id", graphId),
+          );
 
           if (sourceGraphNodes && sourceGraphNodes.length > 0) {
             const { error: deleteNodeError } = await supabase
               .from("graph_nodes")
               .update({ deleted_at: new Date().toISOString() })
-              .eq("id", sourceGraphNodes[0].id);
+              .in("id", sourceGraphNodes.map((n) => n.id));
 
             if (deleteNodeError) {
               logger.error(
-                `Failed to soft delete graph node ${sourceGraphNodes[0].id}:`,
+                `Failed to soft delete graph nodes for sources of ${group.targetId}:`,
                 deleteNodeError,
               );
             }

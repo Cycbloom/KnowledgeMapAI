@@ -6,19 +6,13 @@ import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { AppError } from '../../middleware/errorHandler';
 import { getAIProviderForTask, performanceMonitor } from '../../services/ai';
 import { logger } from '../../utils/logger';
+import { TTS_VOICES } from '../../../shared/constants/ttsVoices';
 
 const router = Router();
 
 router.get('/tts/voices', requireAuth, validate(ttsVoicesSchema), async (_req: AuthRequest, res: Response) => {
   try {
-    const voices = [
-      { id: 'sambert-zhide-v1', name: '知德 (Male, Chinese)', lang: 'zh' },
-      { id: 'sambert-zhichu-v1', name: '知厨 (Male, Chinese)', lang: 'zh' },
-      { id: 'sambert-zhiyan-v1', name: '知言 (Female, Chinese)', lang: 'zh' },
-      { id: 'sambert-zhixiao-v1', name: '知笑 (Female, Chinese)', lang: 'zh' },
-      { id: 'sambert-zhilan-v1', name: '知岚 (Female, Chinese)', lang: 'zh' }
-    ];
-    res.json(voices);
+    res.json(TTS_VOICES);
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('TTS Voices Error:', error);

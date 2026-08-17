@@ -249,27 +249,38 @@ export class ConceptSimilarityService {
         return [];
       }
 
+      const candidateIds = data
+        .map((row: { id: string }) => row.id)
+        .filter((id: string) => id !== knowledgePointId);
+
       const results: SimilarityResult[] = [];
 
-      for (const row of data) {
-        if (row.id === knowledgePointId) continue;
-
-        const { data: kpData } = await supabase
+      if (candidateIds.length > 0) {
+        // 单次批量查询候选点的 properties，替代循环内逐条查询（N+1 → 2 次往返）
+        const { data: kpRows } = await supabase
           .from("knowledge_points")
-          .select("properties")
-          .eq("id", row.id)
-          .single();
+          .select("id, properties")
+          .in("id", candidateIds);
 
-        const properties = kpData?.properties as {
-          sources?: ConceptSource[];
-        } | null;
+        const propertiesById = new Map(
+          (kpRows ?? []).map((row) => [
+            row.id as string,
+            row.properties as { sources?: ConceptSource[] } | null,
+          ]),
+        );
 
-        results.push({
-          knowledgePointId: row.id,
-          title: row.title,
-          similarity: row.similarity,
-          sources: properties?.sources || [],
-        });
+        for (const row of data) {
+          if (row.id === knowledgePointId) continue;
+
+          const properties = propertiesById.get(row.id);
+
+          results.push({
+            knowledgePointId: row.id,
+            title: row.title,
+            similarity: row.similarity,
+            sources: properties?.sources || [],
+          });
+        }
       }
 
       return results.slice(0, limit);

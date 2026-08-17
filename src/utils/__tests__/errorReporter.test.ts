@@ -18,9 +18,20 @@ const drainQueue = async () => {
 };
 
 describe('errorReporter flushErrors reliability', () => {
+  let documentHidden = false;
+
   beforeEach(async () => {
+    documentHidden = false;
     vi.stubGlobal('window', { location: { href: 'http://localhost' } });
     vi.stubGlobal('navigator', { userAgent: 'vitest' });
+    // node 环境无 DOM：以可控 stub 提供 visibility 语义（flushErrors 按其暂停/恢复）
+    vi.stubGlobal('document', {
+      get hidden() {
+        return documentHidden;
+      },
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    });
     vi.clearAllMocks();
     await drainQueue();
   });
@@ -86,5 +97,26 @@ describe('errorReporter flushErrors reliability', () => {
     await flushErrorsNow();
 
     expect(getErrorQueue().length).toBeLessThanOrEqual(10);
+  });
+
+  it('skips flushing while the page is hidden and drains after becoming visible', async () => {
+    mockedRequest.mockResolvedValue({ success: true });
+    captureMessage('hidden-err');
+
+    // 页面隐藏：flush 跳过，错误保留在队列（beforeEach 的 drainQueue 可能已有历史调用，按增量断言）
+    const callsBefore = mockedRequest.mock.calls.length;
+    documentHidden = true;
+    await flushErrorsNow();
+    expect(getErrorQueue()).toHaveLength(1);
+    expect(mockedRequest.mock.calls.length).toBe(callsBefore);
+
+    // 恢复可见：队列可正常排空
+    documentHidden = false;
+    await flushErrorsNow();
+    expect(getErrorQueue()).toHaveLength(0);
+    expect(mockedRequest).toHaveBeenCalledWith(
+      '/analytics/errors',
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 });

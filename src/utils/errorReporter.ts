@@ -20,11 +20,14 @@ const MAX_QUEUE_SIZE = 10;
 const FLUSH_INTERVAL = 5000;
 
 let flushIntervalId: ReturnType<typeof setInterval> | null = null;
+let visibilityHandler: (() => void) | null = null;
 let originalConsoleError: typeof console.error | null = null;
 let currentUserId: string | undefined;
 let currentEmail: string | undefined;
 
 const flushErrors = async (): Promise<void> => {
+  // 页面隐藏时暂停上报（后台标签不发请求），恢复可见时由 visibilitychange 触发补发
+  if (document.hidden) return;
   if (errorQueue.length === 0) return;
 
   const errors = [...errorQueue];
@@ -101,6 +104,16 @@ export const initErrorReporter = (): void => {
     flushIntervalId = setInterval(flushErrors, FLUSH_INTERVAL);
   }
 
+  // 页面隐藏时 flushErrors 跳过上报；恢复可见时补发隐藏期间积压的错误
+  if (visibilityHandler === null) {
+    visibilityHandler = () => {
+      if (!document.hidden) {
+        void flushErrors();
+      }
+    };
+    document.addEventListener("visibilitychange", visibilityHandler);
+  }
+
   window.onerror = (message, source, lineno, colno, error) => {
     reportError({
       message: String(message),
@@ -165,6 +178,10 @@ export const destroyErrorReporter = (): void => {
   if (flushIntervalId !== null) {
     clearInterval(flushIntervalId);
     flushIntervalId = null;
+  }
+  if (visibilityHandler !== null) {
+    document.removeEventListener("visibilitychange", visibilityHandler);
+    visibilityHandler = null;
   }
   if (originalConsoleError !== null) {
     console.error = originalConsoleError;

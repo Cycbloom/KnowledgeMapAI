@@ -375,10 +375,14 @@ export async function cleanupOldSnapshots(
 
   if (snapshots && snapshots.length >= maxSnapshots) {
     const toDelete = snapshots.slice(maxSnapshots - 1);
+    // 文件删除保留串行（IO 顺序性），DB 删除合并为单次批量（N 次 → 1 次）
     for (const snapshot of toDelete) {
       await deleteBackupFile(snapshot.file_path);
-      await supabase.from('backup_snapshots').delete().eq('id', snapshot.id);
     }
+    await supabase
+      .from('backup_snapshots')
+      .delete()
+      .in('id', toDelete.map((s) => s.id));
   }
 }
 

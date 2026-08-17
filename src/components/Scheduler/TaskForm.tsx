@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useCallback, useId, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useId,
+  useMemo,
+  useRef,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -44,6 +51,11 @@ import { useKeyboardHandler } from "../../hooks/gesture/useKeyboardHandler";
 import { ConfirmationModal } from "../common/ConfirmationModal";
 import { SaveButton } from "../common/SaveButton";
 import { CharCounter } from "../common/CharCounter";
+import {
+  FormErrorSummary,
+  type FormErrorSummaryItem,
+} from "../common/FormErrorSummary";
+import { focusFirstError } from "../../utils/form/focusFirstError";
 
 interface TaskFormProps {
   task?: UserTask;
@@ -83,6 +95,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isEditing = !!task;
+
+  const formRef = useRef<HTMLFormElement>(null);
 
   const fieldIdBase = useId();
   const titleInputRef = useAutofocus<HTMLInputElement>();
@@ -224,6 +238,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   );
   const [showDependencySelector, setShowDependencySelector] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   // 预计算依赖查找结构，避免渲染时对 availableTasks/selectedDependencies 线性扫描
   const { taskById, depIdSet } = useMemo(() => {
@@ -378,7 +393,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   };
 
   const handleSave = async (): Promise<void> => {
-    if (!validate()) return;
+    if (!validate()) {
+      setSubmitAttempted(true);
+      return;
+    }
 
     if (!isEditing) {
       clearDraft();
@@ -444,6 +462,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         context: "",
       });
       setErrors({});
+      setSubmitAttempted(false);
       setPrioritySuggestion(null);
       setShowPrioritySuggestion(false);
       setSelectedDependencies([]);
@@ -475,6 +494,16 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (submitAttempted) {
+      focusFirstError(formRef.current);
+    }
+  }, [submitAttempted, errors]);
+
+  const errorItems: FormErrorSummaryItem[] = Object.entries(errors).map(
+    ([field, message]) => ({ field, message }),
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -505,9 +534,24 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         </div>
 
         <form
+          ref={formRef}
           onSubmit={handleSubmit}
           className="p-4 space-y-4 sm:space-y-4 max-h-[calc(95dvh-140px)] sm:max-h-[calc(90dvh-140px)] overflow-y-auto"
         >
+          {submitAttempted && errorItems.length > 0 && (
+            <FormErrorSummary
+              errors={errorItems}
+              onFocusField={(field) => {
+                if (field === "title") {
+                  titleInputRef.current?.focus();
+                  titleInputRef.current?.scrollIntoView({
+                    block: "center",
+                    behavior: "smooth",
+                  });
+                }
+              }}
+            />
+          )}
           {!isEditing && (
             <button
               type="button"

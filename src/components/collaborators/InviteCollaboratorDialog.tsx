@@ -1,8 +1,10 @@
-import React, { useState, useId } from "react";
+import React, { useState, useId, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { CollaboratorRole, COLLABORATOR_ROLE_LABELS } from "@shared/types";
 import { useFocusTrap, useEscapeKey, useFormDraft, useAutofocus } from "@/hooks/common";
+import { focusFirstError } from "@/utils/form/focusFirstError";
+import { FormErrorSummary, type FormErrorSummaryItem } from "../common/FormErrorSummary";
 import { ConfirmationModal } from "../common/ConfirmationModal";
 import { Button } from "../common/Button";
 
@@ -33,10 +35,18 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
   });
   const [touched, setTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   const emailInputRef = useAutofocus<HTMLInputElement>();
   useEscapeKey(() => onClose(), isOpen);
+
+  useEffect(() => {
+    if (submitAttempted) {
+      focusFirstError(formRef.current);
+    }
+  }, [submitAttempted, draft.email]);
 
   if (!isOpen) return null;
 
@@ -47,17 +57,27 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    if (!validateEmail(draft.email)) return;
+    if (!validateEmail(draft.email)) {
+      setSubmitAttempted(true);
+      return;
+    }
     setSubmitting(true);
     try {
       await onInvite(draft.email, draft.role);
       clearDraft();
       setTouched(false);
+      setSubmitAttempted(false);
       onClose();
     } finally {
       setSubmitting(false);
     }
   };
+
+  const emailInvalid = touched && !validateEmail(draft.email);
+  const errorItems: FormErrorSummaryItem[] =
+    submitAttempted && emailInvalid
+      ? [{ field: "email", message: t("collaborators.invite.validation.emailInvalid") }]
+      : [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -74,7 +94,16 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
             <X size={20} className="text-gray-500 dark:text-gray-400" />
           </button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} ref={formRef}>
+          <FormErrorSummary
+            errors={errorItems}
+            onFocusField={(field) => {
+              if (field === "email") {
+                emailInputRef.current?.focus();
+                emailInputRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+              }
+            }}
+          />
           <div className="p-6 space-y-4">
             <div>
               <label htmlFor="invite-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -91,6 +120,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
                 className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="user@example.com"
                 required
+                aria-invalid={touched && !validateEmail(draft.email) ? true : undefined}
               />
               {touched && !validateEmail(draft.email) && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">

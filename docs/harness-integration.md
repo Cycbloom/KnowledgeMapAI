@@ -101,6 +101,32 @@ flowchart TB
 
 ## 4. 路线图
 
+### UI 改造（✅ 已交付 — durable web-profile 包）
+目标：把 KnowledgeMap UI 从「run card 内嵌仪表盘」升级为「产品级 Slot 常驻融合」。
+
+> **实现方式（重要）**：v2 不再用动态插件（Client half 需要用户批准，本会话 approval=never 时无法激活），
+> 改为 **durable web-profile 真实包 `@knowledgemap/dsh-km-ui`**：
+> - 源码：`.deepseek-harness/knowledgemap/km-ui/`（package.json `dsh.client` + `dsh.bundle.patch`）
+> - 安装：`~/.dsh/profiles/web/node_modules/@knowledgemap/dsh-km-ui/`（hoisted node-linker，真实目录即可解析）
+> - 注册：web profile `package.json` 的 `dsh.profile.bundles` 加入包名（重启后 bundle 层生效）
+>   + `cordis.patch.yml` insert 行（`id: km-ui`，patch watcher **热生效**，无需重启）
+> - Host 半区：`lib/index.js` 注册 `/km-ui-overview`、`/km-ui-queue [limit]` 两个命令（`commands` remote，`recordInput: false`），
+>   从调用方会话 `invocation.agent.session.header.cwd` 读六域 JSON，结果以 JSON 字符串放 `text`
+> - Client 半区：`lib/client.js` 走 `window.__ModuleLoader__.load`，`ctx.remote.commands.execute` 调 RPC，
+>   React 用 `require("react")`，CSS 手动注入 `<style data-plugin>`
+
+| Slot | 形态 | 作用 |
+| --- | --- | --- |
+| `conversation.composer.dock` | 常驻环境状态带 | 复习待办 / 图谱 / 任务 / 等级·连击 一行可见；点击展开复习队列 |
+| `conversation.input.right` | 输入栏 🧠 按钮 | 快速展开/收起复习队列 |
+| `conversation.session.header.utilities` | 会话头部 📊 按钮 | 打开六域总览浮层（session 作用域，负责捕获 sessionId） |
+| `shell.overlay` | 总览面板 | 六域聚合（root 作用域无 sessionId，由 📊 按钮 toggle 时捕获传入） |
+| `tool.view.cordis` | run card 卡片（保留） | 旧版仪表盘（kmapui-6）继续可用，与新融合 UI 互补 |
+
+数据源：Host 命令（`commands` remote）读六域 JSON；Client 用 React.createElement + 模块级共享状态 + 主题 CSS 变量。
+已验证：loader entry 有 fiber、两命令注册且端到端执行（六域数值与 JSON 数据一致）、client bundle 200、
+boot manifest 含 `@knowledgemap/dsh-km-ui` 条目。**页面刷新后**四 Slot 生效。
+
 ### Phase 1 — FSRS 间隔重复闪卡（当前 ✅）
 - [x] 调研：KnowledgeMap 模块、ts-fsrs 算法、DSH 工具/存储契约
 - [x] 设计文档（本文件）
@@ -195,7 +221,16 @@ flowchart TB
 - [x] 同步加入持久化包 `@knowledgemap/dsh-km`（37 工具 + /km，smoke 通过；重启后生效）
 - [x] 源码落盘：`.deepseek-harness/knowledgemap/plugin-hub2-host.js`
 
-> **现状**：9 动态插件 · 37 工具运行中 + 持久化 preset（重启后自动加载 37 工具）+ Client UI 已激活 + 使用指南（docs/harness-usage.md）；六域数据（cards/graphs/tasks/progress/paths/notes）全部可检索、可导出、可总览。
+### Phase 12 — Client UI 内联复习（✅ 源码就绪）
+- [x] 插件 `kmapui-7`（取代 kmapui-6）：Host RPC `km-review-start` / `km-review-rate`（`km-dashboard-data` 原样保留）
+- [x] 复习闭环内联：出题 → 显示答案 → 四档评分 → FSRS-6 重排 → 自动下一张 → 结束总结（张数/分布/XP/升级/成就）
+- [x] 评分同步结算 progress（+5 XP/张、连击、counters.reviews、level×500、12 成就解锁补发），与 km_progress_earn 语义一致
+- [x] 空队列显示下一张到期时间；RPC 失败内联报错不白屏；评分防重复提交
+- [x] FSRS-6 / 成就块从 plugin-host.js / plugin-progress-host.js 逐字符移植（diff 零漂移）
+- [x] 源码落盘：`.deepseek-harness/knowledgemap/plugin-review-ui.js`
+- [ ] 待用户操作：DSH 会话内 `cordis_stop` kmapui-6 后 `cordis_define` + `cordis_run` kmapui-7（Client half 需手动审批），面板内真实复习一轮做端到端验证
+
+> **现状**：10 动态插件 · 37 工具运行中（kmapui-7 取代 kmapui-6 计入）+ 持久化 preset（重启后自动加载 37 工具）+ Client UI 已激活 + 使用指南（docs/harness-usage.md）；六域数据（cards/graphs/tasks/progress/paths/notes）全部可检索、可导出、可总览。
 
 ---
 

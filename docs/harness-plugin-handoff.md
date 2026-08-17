@@ -10,7 +10,7 @@
 
 用户想把自己开发的 **KnowledgeMap**（AI 驱动的知识管理/学习平台：知识图谱、FSRS 间隔重复、任务调度、成就系统、笔记、学习路径）整合进 **DeepSeek Harness（DSH）** 作为 Cordis 插件，让这些能力能在 harness 对话会话里直接使用。这是"大工程"，目前已按 12 个阶段完成并端到端验证。
 
-**当前状态**：9 个动态插件 × 37 个 `km_*` 工具全部开发完毕；另有一个**持久化 preset**（`knowledgemap`）+ 真实 npm 包（`@knowledgemap/dsh-km`），重启后自动加载，不依赖动态插件。
+**当前状态**：10 个动态插件 × 37 个 `km_*` 工具全部开发完毕（kmapui-7 取代 kmapui-6，新增面板内联复习交互）；另有一个**持久化 preset**（`knowledgemap`）+ 真实 npm 包（`@knowledgemap/dsh-km`），重启后自动加载，不依赖动态插件。
 
 ---
 
@@ -41,7 +41,7 @@ DSH 会话（Agent/模型循环）
          + export-YYYY-MM-DD.json（km_export 备份）
 ```
 
-**平台分工**：工具注册全部在 **Host**（`harness.defineTool` + `harness.registerTool`）；Client 仅 kmapui-6（`tool.view.cordis` slot + `host.call` RPC）。
+**平台分工**：工具注册全部在 **Host**（`harness.defineTool` + `harness.registerTool`）；Client 仅 kmapui-7（`tool.view.cordis` slot + `host.call` RPC）。
 
 ---
 
@@ -75,6 +75,7 @@ DSH 会话（Agent/模型循环）
 | `.deepseek-harness/knowledgemap/plugin-path-host.js` | 学习路径 |
 | `.deepseek-harness/knowledgemap/plugin-note-host.js` | 笔记/wiki/反链 |
 | `.deepseek-harness/knowledgemap/plugin-dashboard.js` | Client UI（Host RPC + Client slot 双半） |
+| `.deepseek-harness/knowledgemap/plugin-review-ui.js` | Client UI 内联复习（Host RPC ×3 + Client 复习视图，取代 plugin-dashboard.js） |
 | `docs/harness-integration.md` | 设计文档（12 阶段路线图 + 关键坑） |
 | `docs/harness-usage.md` | 用户使用指南 |
 
@@ -118,6 +119,7 @@ DSH 会话（Agent/模型循环）
 - wiki 链接自动挂载图谱节点 + 笔记间反链
 - RAG：中英文问答均从知识库命中并给出带依据答案（used_llm=true, deepseek-v4-flash）
 - 持久化 preset `standingKeyFor` → "mounted OK"；npm 包 smoke 测试 37 工具 + /km
+- plugin-review-ui.js：FSRS-6/成就块逐字符 diff 零漂移；node ESM import 冒烟通过（端到端面板复习待 DSH 会话内执行）
 
 ---
 
@@ -127,8 +129,9 @@ DSH 会话（Agent/模型循环）
 | --- | --- | --- |
 | **better-sqlite3 桥** | 读 Electron 本地库 `knowledgemap.db`（`app.getPath('userData')`），把真实桌面数据导入 harness 六域 | 当前本机无该文件（数据在 Supabase 云端），等桌面端同步产生本地库 |
 | **llm 语义嵌入 RAG** | 当前 `km_ask` 是关键词/bigram 检索；可升级为向量检索（复用 harness `llm` 或 KnowledgeMap pgvector） | 需评估 embedding 路由 |
-| Client UI 增强 | 仪表盘已有；可加复习交互（出题/评分内联） | 无 |
 | 更多域移植 | 测验/题库、文献、模板、周期任务等（shared/types 里都有对应类型） | 无 |
+
+> Client UI 复习交互已于 Phase 12 完成（plugin-review-ui.js），待 DSH 会话内激活验证。
 
 ---
 

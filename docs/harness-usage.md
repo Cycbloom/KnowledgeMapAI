@@ -1,6 +1,6 @@
 # KnowledgeMap × DSH Harness — 使用指南
 
-> 在 DeepSeek Harness 会话里直接使用 KnowledgeMap 的能力。当前 **9 插件 · 37 工具**运行中；持久化 preset `knowledgemap` 重启后自动加载同一套工具。
+> 在 DeepSeek Harness 会话里直接使用 KnowledgeMap 的能力。当前 **10 插件 · 37 工具**运行中；持久化 preset `knowledgemap` 重启后自动加载同一套工具。
 >
 > 数据全部落在当前工作区 `<cwd>/.deepseek-harness/knowledgemap/*.json`，可人工编辑、可导出备份。
 
@@ -18,7 +18,7 @@
 | 📝 笔记 | `km_note_add` / `km_note_list` / `km_note_get` / `km_note_link` / `km_note_backlinks` / `km_note_stats` | Markdown + `[[wiki 链接]]` 挂载图谱 + 反链 |
 | 🔍 跨域检索 | `km_retrieve` / `km_ask` / `km_ask_sources` | RAG：检索六域知识，或直接语义问答 |
 | 📦 导出总览 | `km_export` / `km_dashboard` | 全量备份（六域）/ 六域聚合一屏总览 |
-| 🖥️ 界面 | `/km` 命令 + run card 仪表盘 | 进度速览 / 可视化面板 |
+| 🖥️ 界面 | `/km` 命令 + run card 仪表盘 + **面板内直接复习（出题/评分内联）** | 进度速览 / 可视化面板 |
 
 ---
 
@@ -88,6 +88,15 @@ km_review_rate(card_id=…, rating="good")  → FSRS-6 自动排下次复习
 「打卡」→ km_progress_earn(activity="login")
 ```
 
+### 2.8 面板内直接复习
+
+```
+打开 run card 仪表盘 → 点「开始复习 (N)」
+→ 逐张：看正面 → 点「显示答案」→ 看背面 → 点 重来/困难/良好/轻松
+→ FSRS-6 自动排下次复习，+5 XP/张，连击/成就实时结算
+→ 队列清空后显示总结（张数/四档分布/XP/升级/解锁），返回自动刷新统计
+```
+
 ---
 
 ## 3. 数据文件（人工可编辑）
@@ -108,7 +117,7 @@ km_review_rate(card_id=…, rating="good")  → FSRS-6 自动排下次复习
 
 ## 4. 持久化（重启后仍可用）
 
-- **动态插件**（本会话）：`kmap-1`(FSRS) `kmapg-2`(图谱) `kmapt-3`(任务) `kmapp-4`(成就) `kmhub-13`(Hub 六域) `kmapui-6`(UI) `kmrag-14`(RAG) `kmpath-11`(路径) `kmnote-12`(笔记)
+- **动态插件**（本会话）：`kmap-1`(FSRS) `kmapg-2`(图谱) `kmapt-3`(任务) `kmapp-4`(成就) `kmhub-13`(Hub 六域) `kmapui-7`(UI+内联复习) `kmrag-14`(RAG) `kmpath-11`(路径) `kmnote-12`(笔记)
 - **持久化 preset**：新建会话时选择 **knowledgemap**，即自动加载同套 **37 工具**（真实 npm 包 `@knowledgemap/dsh-km`），数据文件共用。
 
 ---

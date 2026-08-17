@@ -1,6 +1,8 @@
 import type { AgentTool, ToolContext } from "../types";
 import { isIndexValue, resolveId } from "../../../../shared/utils/indexMapping";
 import { notDeleted } from '../../common/softDeleteHelper';
+import { AppError } from "../../../middleware/errorHandler";
+import { ErrorCodes } from "../../../../shared/types/errorCodes";
 
 const extractDomain = (title: string): string => {
   const keywords = title.split(/[\s\-_/]/).filter((k) => k.length > 1);
@@ -15,7 +17,7 @@ const resolveGraphId = (
     if (typeof idOrIdx === "string" && !isIndexValue(idOrIdx)) {
       return idOrIdx;
     }
-    throw new Error("Graph index map not available");
+    throw new AppError("Graph index map not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
   return resolveId(idOrIdx, context.graphIndexMap);
 };
@@ -53,7 +55,7 @@ export const getDomainDistributionTool: AgentTool = {
       );
 
     if (error) {
-      throw new Error(`Failed to get domain distribution: ${error.message}`);
+      throw new AppError(`Failed to get domain distribution: ${error.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const domainDistribution: Record<string, number> = {};
@@ -108,7 +110,7 @@ export const analyzeGraphStructureTool: AgentTool = {
       .single();
 
     if (graphError || !graph) {
-      throw new Error("Graph not found or access denied");
+      throw new AppError("Graph not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: nodes, error: nodesError } = await supabase
@@ -117,7 +119,7 @@ export const analyzeGraphStructureTool: AgentTool = {
       .eq("graph_id", graphId);
 
     if (nodesError) {
-      throw new Error(`Failed to get nodes: ${nodesError.message}`);
+      throw new AppError(`Failed to get nodes: ${nodesError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { data: edges, error: edgesError } = await supabase
@@ -126,7 +128,7 @@ export const analyzeGraphStructureTool: AgentTool = {
       .eq("graph_id", graphId);
 
     if (edgesError) {
-      throw new Error(`Failed to get edges: ${edgesError.message}`);
+      throw new AppError(`Failed to get edges: ${edgesError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const levelDistribution: Record<string, number> = {};
@@ -238,7 +240,7 @@ export const getLearningPathsTool: AgentTool = {
       );
 
     if (graphsError) {
-      throw new Error(`Failed to get graphs: ${graphsError.message}`);
+      throw new AppError(`Failed to get graphs: ${graphsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!graphs || graphs.length === 0) {
@@ -261,7 +263,7 @@ export const getLearningPathsTool: AgentTool = {
       );
 
     if (relationsError) {
-      throw new Error(`Failed to get relations: ${relationsError.message}`);
+      throw new AppError(`Failed to get relations: ${relationsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const graphMap = new Map(graphs.map((g) => [g.id, g]));
@@ -462,7 +464,7 @@ export const getSimilarGraphsTool: AgentTool = {
       .single();
 
     if (targetError || !targetGraph) {
-      throw new Error("Graph not found or access denied");
+      throw new AppError("Graph not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: targetNodes, error: targetNodesError } = await supabase
@@ -478,8 +480,10 @@ export const getSimilarGraphsTool: AgentTool = {
       .eq("graph_id", graphId);
 
     if (targetNodesError) {
-      throw new Error(
+      throw new AppError(
         `Failed to get target nodes: ${targetNodesError.message}`,
+        500,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 
@@ -503,7 +507,7 @@ export const getSimilarGraphsTool: AgentTool = {
       );
 
     if (otherError) {
-      throw new Error(`Failed to get other graphs: ${otherError.message}`);
+      throw new AppError(`Failed to get other graphs: ${otherError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!otherGraphs || otherGraphs.length === 0) {
@@ -531,7 +535,7 @@ export const getSimilarGraphsTool: AgentTool = {
       .in("graph_id", otherGraphIds);
 
     if (otherNodesError) {
-      throw new Error(`Failed to get other nodes: ${otherNodesError.message}`);
+      throw new AppError(`Failed to get other nodes: ${otherNodesError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const graphKeywords = new Map<string, Set<string>>();
@@ -656,7 +660,7 @@ export const getKnowledgeCoverageTool: AgentTool = {
     const { data: graphs, error: graphsError } = await graphsQuery;
 
     if (graphsError) {
-      throw new Error(`Failed to get graphs: ${graphsError.message}`);
+      throw new AppError(`Failed to get graphs: ${graphsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!graphs || graphs.length === 0) {
@@ -678,7 +682,7 @@ export const getKnowledgeCoverageTool: AgentTool = {
       .in("graph_id", graphIds);
 
     if (nodeError) {
-      throw new Error(`Failed to get node count: ${nodeError.message}`);
+      throw new AppError(`Failed to get node count: ${nodeError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { data: relations, error: relationsError } = await supabase
@@ -689,7 +693,7 @@ export const getKnowledgeCoverageTool: AgentTool = {
       );
 
     if (relationsError) {
-      throw new Error(`Failed to get relations: ${relationsError.message}`);
+      throw new AppError(`Failed to get relations: ${relationsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     // 预构建 Set，替代 forEach 内 graphIds.includes 的 O(relations*graphIds) 扫描
@@ -756,7 +760,7 @@ export const analyzeMergeCandidatesTool: AgentTool = {
       );
 
     if (graphsError) {
-      throw new Error(`Failed to get graphs: ${graphsError.message}`);
+      throw new AppError(`Failed to get graphs: ${graphsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!graphs || graphs.length < 2) {
@@ -784,7 +788,7 @@ export const analyzeMergeCandidatesTool: AgentTool = {
       .in("graph_id", graphIds);
 
     if (nodesError) {
-      throw new Error(`Failed to get nodes: ${nodesError.message}`);
+      throw new AppError(`Failed to get nodes: ${nodesError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const graphKeywords = new Map<string, Set<string>>();

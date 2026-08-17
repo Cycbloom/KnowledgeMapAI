@@ -1,4 +1,6 @@
 import type { AgentTool, ToolCategory, ToolContext } from './types';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 export class ToolRegistry {
   private tools: Map<string, AgentTool> = new Map();
@@ -49,7 +51,7 @@ export class ToolRegistry {
   ): Promise<unknown> {
     const tool = this.get(name);
     if (!tool) {
-      throw new Error(`Tool not found: ${name}`);
+      throw new AppError(`Tool not found: ${name}`, 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
     return tool.execute(args, context);
   }

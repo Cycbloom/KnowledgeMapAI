@@ -1,6 +1,8 @@
 import type { AgentTool, ToolContext } from '../types';
 import { isIndexValue, resolveId } from '../../../../shared/utils/indexMapping';
 import { notDeleted } from '../../common/softDeleteHelper';
+import { AppError } from '../../../middleware/errorHandler';
+import { ErrorCodes } from '../../../../shared/types/errorCodes';
 
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return '';
@@ -12,7 +14,7 @@ const resolveGraphId = (idOrIdx: string | number, context: ToolContext): string 
     if (typeof idOrIdx === 'string' && !isIndexValue(idOrIdx)) {
       return idOrIdx;
     }
-    throw new Error('Graph index map not available');
+    throw new AppError('Graph index map not available', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
   return resolveId(idOrIdx, context.graphIndexMap);
 };
@@ -52,7 +54,7 @@ export const getStudyProgressTool: AgentTool = {
     const { data: graphs, error: graphsError } = await query;
 
     if (graphsError) {
-      throw new Error(`Failed to get graphs: ${graphsError.message}`);
+      throw new AppError(`Failed to get graphs: ${graphsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const allGraphIds = (graphs || []).map(g => g.id);
@@ -81,7 +83,7 @@ export const getStudyProgressTool: AgentTool = {
       .in('graph_id', allGraphIds);
 
     if (progressError) {
-      throw new Error(`Failed to get study progress: ${progressError.message}`);
+      throw new AppError(`Failed to get study progress: ${progressError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const progressMap = new Map<string, typeof progressData extends (infer T)[] ? T : never>();
@@ -187,11 +189,11 @@ export const analyzeDifficultyTool: AgentTool = {
       .single();
 
     if (graphError) {
-      throw new Error(`Failed to get graph: ${graphError.message}`);
+      throw new AppError(`Failed to get graph: ${graphError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!graph) {
-      throw new Error('Graph not found');
+      throw new AppError('Graph not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: nodes, error: nodesError } = await supabase
@@ -200,7 +202,7 @@ export const analyzeDifficultyTool: AgentTool = {
       .eq('graph_id', graphId);
 
     if (nodesError) {
-      throw new Error(`Failed to get nodes: ${nodesError.message}`);
+      throw new AppError(`Failed to get nodes: ${nodesError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { count: edgeCount, error: edgesError } = await supabase
@@ -209,7 +211,7 @@ export const analyzeDifficultyTool: AgentTool = {
       .eq('graph_id', graphId);
 
     if (edgesError) {
-      throw new Error(`Failed to get edges: ${edgesError.message}`);
+      throw new AppError(`Failed to get edges: ${edgesError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const nodeCount = nodes?.length || 0;
@@ -359,11 +361,11 @@ export const getPrerequisiteChainTool: AgentTool = {
       .single();
 
     if (graphError) {
-      throw new Error(`Failed to get graph: ${graphError.message}`);
+      throw new AppError(`Failed to get graph: ${graphError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!targetGraph) {
-      throw new Error('Graph not found');
+      throw new AppError('Graph not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: userGraphs, error: userGraphsError } = await notDeleted(supabase
@@ -373,7 +375,7 @@ export const getPrerequisiteChainTool: AgentTool = {
       );
 
     if (userGraphsError) {
-      throw new Error(`Failed to get user graphs: ${userGraphsError.message}`);
+      throw new AppError(`Failed to get user graphs: ${userGraphsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const userGraphIds = (userGraphs || []).map(g => g.id);
@@ -392,7 +394,7 @@ export const getPrerequisiteChainTool: AgentTool = {
       .in('target_graph_id', userGraphIds);
 
     if (relationsError) {
-      throw new Error(`Failed to get relations: ${relationsError.message}`);
+      throw new AppError(`Failed to get relations: ${relationsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const prerequisiteMap = new Map<string, Array<{ id: string; context: string }>>();
@@ -540,11 +542,11 @@ export const getExtensionSuggestionsTool: AgentTool = {
       .single();
 
     if (graphError) {
-      throw new Error(`Failed to get graph: ${graphError.message}`);
+      throw new AppError(`Failed to get graph: ${graphError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!sourceGraph) {
-      throw new Error('Graph not found');
+      throw new AppError('Graph not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: allRelations, error: relationsError } = await supabase
@@ -564,7 +566,7 @@ export const getExtensionSuggestionsTool: AgentTool = {
       .in('relation_type', ['extension', 'related', 'cross_domain']);
 
     if (relationsError) {
-      throw new Error(`Failed to get relations: ${relationsError.message}`);
+      throw new AppError(`Failed to get relations: ${relationsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const targetIds = (allRelations || []).map(r => r.target_graph_id);

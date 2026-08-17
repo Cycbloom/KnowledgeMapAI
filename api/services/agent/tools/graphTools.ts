@@ -1,6 +1,8 @@
 import type { AgentTool, ToolContext } from "../types";
 import { isIndexValue, resolveId } from "../../../../shared/utils/indexMapping";
 import { notDeleted } from '../../common/softDeleteHelper';
+import { AppError } from "../../../middleware/errorHandler";
+import { ErrorCodes } from "../../../../shared/types/errorCodes";
 
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return "";
@@ -20,7 +22,7 @@ const resolveGraphId = (
     if (typeof idOrIdx === "string" && !isIndexValue(idOrIdx)) {
       return idOrIdx;
     }
-    throw new Error("Graph index map not available");
+    throw new AppError("Graph index map not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
   return resolveId(idOrIdx, context.graphIndexMap);
 };
@@ -67,7 +69,7 @@ export const getGraphOverviewTool: AgentTool = {
     const { data: graphs, error, count } = await query;
 
     if (error) {
-      throw new Error(`Failed to get graph overview: ${error.message}`);
+      throw new AppError(`Failed to get graph overview: ${error.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const graphIdList = graphs?.map((g) => g.id) || [];
@@ -78,7 +80,7 @@ export const getGraphOverviewTool: AgentTool = {
       .in("graph_id", graphIdList);
 
     if (nodeError) {
-      throw new Error(`Failed to get node count: ${nodeError.message}`);
+      throw new AppError(`Failed to get node count: ${nodeError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { count: edgeCount, error: edgeError } = await supabase
@@ -87,7 +89,7 @@ export const getGraphOverviewTool: AgentTool = {
       .in("graph_id", graphIdList);
 
     if (edgeError) {
-      throw new Error(`Failed to get edge count: ${edgeError.message}`);
+      throw new AppError(`Failed to get edge count: ${edgeError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const nodeCountByGraph: Record<string, number> = {};
@@ -166,7 +168,7 @@ export const getGraphRelationsTool: AgentTool = {
     const { data: userGraphs, error: graphsError } = await query;
 
     if (graphsError) {
-      throw new Error(`Failed to get user graphs: ${graphsError.message}`);
+      throw new AppError(`Failed to get user graphs: ${graphsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const userGraphIds = (userGraphs || []).map((g) => g.id);
@@ -200,7 +202,7 @@ export const getGraphRelationsTool: AgentTool = {
       );
 
     if (error) {
-      throw new Error(`Failed to get graph relations: ${error.message}`);
+      throw new AppError(`Failed to get graph relations: ${error.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     // 预构建 Set，替代 filter 内 userGraphIds.includes 的 O(relations*userGraphIds) 扫描
@@ -262,7 +264,7 @@ export const getIsolatedGraphsTool: AgentTool = {
     const { data: graphs, error: graphsError } = await query;
 
     if (graphsError) {
-      throw new Error(`Failed to get graphs: ${graphsError.message}`);
+      throw new AppError(`Failed to get graphs: ${graphsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const graphIds = (graphs || []).map((g) => g.id);
@@ -283,7 +285,7 @@ export const getIsolatedGraphsTool: AgentTool = {
       );
 
     if (relationsError) {
-      throw new Error(`Failed to get relations: ${relationsError.message}`);
+      throw new AppError(`Failed to get relations: ${relationsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const connectedGraphIds = new Set<string>();
@@ -361,11 +363,11 @@ export const getGraphDetailsTool: AgentTool = {
       .single();
 
     if (graphError) {
-      throw new Error(`Failed to get graph: ${graphError.message}`);
+      throw new AppError(`Failed to get graph: ${graphError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!graph) {
-      throw new Error("Graph not found");
+      throw new AppError("Graph not found", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: nodes, error: nodesError } = await supabase
@@ -384,7 +386,7 @@ export const getGraphDetailsTool: AgentTool = {
       .eq("graph_id", graphId);
 
     if (nodesError) {
-      throw new Error(`Failed to get nodes: ${nodesError.message}`);
+      throw new AppError(`Failed to get nodes: ${nodesError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { data: edges, error: edgesError } = await supabase
@@ -395,7 +397,7 @@ export const getGraphDetailsTool: AgentTool = {
       .eq("graph_id", graphId);
 
     if (edgesError) {
-      throw new Error(`Failed to get edges: ${edgesError.message}`);
+      throw new AppError(`Failed to get edges: ${edgesError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const formattedNodes = (nodes || []).map((n) => {
@@ -499,7 +501,7 @@ export const getGraphNodesTool: AgentTool = {
       .single();
 
     if (!graphCheck) {
-      throw new Error("Graph not found or access denied");
+      throw new AppError("Graph not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     let query = supabase
@@ -528,7 +530,7 @@ export const getGraphNodesTool: AgentTool = {
     const { data: nodes, error } = await query;
 
     if (error) {
-      throw new Error(`Failed to get nodes: ${error.message}`);
+      throw new AppError(`Failed to get nodes: ${error.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const formattedNodes = (nodes || []).map((n) => {
@@ -625,7 +627,7 @@ export const searchGraphsTool: AgentTool = {
         .or(`title.ilike.%${query}%,description.ilike.%${query}%`);
 
       if (graphsError) {
-        throw new Error(`Failed to search graphs: ${graphsError.message}`);
+        throw new AppError(`Failed to search graphs: ${graphsError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       if (summarize) {
@@ -665,7 +667,7 @@ export const searchGraphsTool: AgentTool = {
         .eq("knowledge_graphs.user_id", userId);
 
       if (nodesError) {
-        throw new Error(`Failed to search nodes: ${nodesError.message}`);
+        throw new AppError(`Failed to search nodes: ${nodesError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       const graphIdToIdx: Record<string, number> = {};

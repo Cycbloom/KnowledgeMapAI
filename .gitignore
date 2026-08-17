@@ -99,3 +99,7 @@ coverage/
 
 # Package manager leftovers
 --fix/
+# KnowledgeMap × DSH harness 集成：运行时数据不入库（源码保留）
+.deepseek-harness/memory/
+.deepseek-harness/knowledgemap/*.json
+.deepseek-harness/knowledgemap/export-*.json

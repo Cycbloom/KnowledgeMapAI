@@ -2,6 +2,8 @@ import { getAIProviderForTask } from "./factory";
 import { getProviderForTask } from "./config";
 import { withEmbeddingMonitoring } from "./aiMonitor";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { cacheService, CacheKeys, CacheTTL, computeTextHash } from "../common/cacheService";
 
 export class EmbeddingOps {
@@ -55,7 +57,7 @@ export class EmbeddingOps {
                 input: text,
               });
               if (!response) {
-                throw new Error('Embeddings not supported by this provider');
+                throw new AppError(ErrorCodes.AI_EMBEDDING_ERROR, { message: 'Embeddings not supported by this provider' });
               }
               return {
                 result: response.data[0].embedding as number[],
@@ -145,7 +147,7 @@ export class EmbeddingOps {
             input: texts,
           });
           if (!response) {
-            throw new Error('Embeddings not supported by this provider');
+            throw new AppError(ErrorCodes.AI_EMBEDDING_ERROR, { message: 'Embeddings not supported by this provider' });
           }
 
           const results: (number[] | null)[] = new Array(texts.length).fill(

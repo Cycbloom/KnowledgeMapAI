@@ -2,6 +2,8 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { TemplateEngine } from "../../utils/templateEngine";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getAIProviderForTask } from "./factory";
 import { getSupabaseAdmin } from "../../supabase";
 import {
@@ -441,7 +443,7 @@ export class PromptService {
     const provider = await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
-      throw new Error("AI服务未配置");
+      throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, { message: "AI服务未配置" });
     }
 
     const systemPrompt = await this.getRenderedPrompt(

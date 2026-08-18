@@ -628,7 +628,7 @@ ${domains.map((d, i) => `${i + 1}. ${d.name}${d.description ? ` (${d.description
       try {
         const jsonMatch = response.match(/\[[\s\S]*\]/);
         if (!jsonMatch) {
-          throw new Error(i18next.t("graphMap.domains.errors.extractJsonFailed"));
+          throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, { message: i18next.t("graphMap.domains.errors.extractJsonFailed") });
         }
         parsed = JSON.parse(jsonMatch[0]);
       } catch (parseError) {

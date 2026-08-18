@@ -3,6 +3,8 @@ import { aiService } from "../ai/aiService";
 import { logger } from "../../utils/logger";
 import i18next from "i18next";
 import { cacheService, CacheKeys } from "../common/cacheService";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { notDeleted } from '../common/softDeleteHelper';
 import {
   conceptSimilarityService,
@@ -1091,7 +1093,7 @@ ${conceptList}
 
     if (fetchError || !kp) {
       logger.error(`Knowledge point not found: ${knowledgePointId}`);
-      throw new Error(`Knowledge point not found: ${knowledgePointId}`);
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { message: `Knowledge point not found: ${knowledgePointId}` });
     }
 
     const properties =
@@ -1133,7 +1135,7 @@ ${conceptList}
         `Failed to add aliases for ${knowledgePointId}:`,
         updateError,
       );
-      throw new Error(`Failed to add aliases: ${updateError.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to add aliases: ${updateError.message}` });
     }
 
     logger.info(
@@ -1173,7 +1175,7 @@ ${conceptList}
 
     if (fetchError || !kp) {
       logger.error(`Knowledge point not found: ${knowledgePointId}`);
-      throw new Error(`Knowledge point not found: ${knowledgePointId}`);
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { message: `Knowledge point not found: ${knowledgePointId}` });
     }
 
     const properties =
@@ -1205,7 +1207,7 @@ ${conceptList}
         `Failed to remove alias from ${knowledgePointId}:`,
         updateError,
       );
-      throw new Error(`Failed to remove alias: ${updateError.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to remove alias: ${updateError.message}` });
     }
 
     logger.info(`Removed alias "${alias}" from ${knowledgePointId}`);

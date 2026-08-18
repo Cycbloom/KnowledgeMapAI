@@ -134,9 +134,9 @@ export class KnowledgeExpansionService {
               const content = completion.choices[0].message.content || "";
 
               if (!content || content.trim() === "") {
-                throw new Error(
-                  "[AI] Empty response from AI provider for expandKnowledge",
-                );
+                throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, {
+                  message: "[AI] Empty response from AI provider for expandKnowledge",
+                });
               }
 
               const parsed = parseAIResponse<{ suggestions: unknown[] }>(

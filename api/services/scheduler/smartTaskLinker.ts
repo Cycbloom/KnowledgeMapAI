@@ -4,6 +4,8 @@ import { graphTaskService } from "./graphTaskService";
 import { notDeleted } from '../common/softDeleteHelper';
 import { appEventBus } from "../core/eventBus";
 import { getSupabaseAdmin } from "../../supabase";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { AppEvent, GraphCreatedPayload } from "../../../shared/types/events";
 
 export interface LinkedTaskResult {
@@ -52,12 +54,12 @@ class SmartTaskLinker {
 
     if (graphError) {
       logger.error("[SmartTaskLinker] Error fetching graph:", graphError);
-      throw new Error(`Failed to fetch graph: ${graphError.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch graph: ${graphError.message}` });
     }
 
     if (!graph) {
       logger.error("[SmartTaskLinker] Graph not found:", graphId);
-      throw new Error("Graph not found");
+      throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND, { message: "Graph not found" });
     }
 
     let mainTaskId: string;

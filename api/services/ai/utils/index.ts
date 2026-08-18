@@ -1,4 +1,6 @@
 import { logger } from "../../../utils/logger";
+import { AppError } from "../../../middleware/errorHandler";
+import { ErrorCodes } from "../../../../shared/types/errorCodes";
 
 export { extractTokenUsage } from "./tokenUtils";
 
@@ -21,7 +23,7 @@ export const cleanJsonString = (str: string): string => {
 export const parseAIResponse = <T>(content: string, context: string): T => {
   if (!content || content.trim() === "") {
     logger.error(`[AI] Empty response for ${context}`);
-    throw new Error(`Empty AI response for ${context}`);
+    throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, { message: `Empty AI response for ${context}` });
   }
 
   const cleaned = cleanJsonString(content);
@@ -42,11 +44,11 @@ export const parseAIResponse = <T>(content: string, context: string): T => {
       } catch (_e2) {
         logger.error(`[AI] Regex fallback also failed for ${context}`);
         logger.debug(`[AI] Matched content: ${match[0].substring(0, 500)}`);
-        throw new Error(`Failed to parse AI response for ${context}`);
+        throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, { message: `Failed to parse AI response for ${context}` });
       }
     }
     logger.error(`[AI] No JSON found in response for ${context}`);
-    throw new Error(`Failed to parse AI response for ${context}`);
+    throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, { message: `Failed to parse AI response for ${context}` });
   }
 };
 

@@ -409,9 +409,9 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
       for (const graphData of graphs) {
         try {
           if (!graphData.title || typeof graphData.title !== 'string') {
-            throw new Error(
-              `Invalid data: title is required and must be a string`,
-            );
+            throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+              message: `Invalid data: title is required and must be a string`,
+            });
           }
 
           const duplicateCheck = await checkDuplicateGraphTopic(
@@ -446,9 +446,9 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
               .single();
 
             if (createError || !newGraph) {
-              throw new Error(
-                `Database error: ${createError?.message || 'Failed to create graph'}`,
-              );
+              throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
+                message: `Database error: ${createError?.message || 'Failed to create graph'}`,
+              });
             }
 
             if (resolvedDomainId) {
@@ -565,9 +565,9 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
                   .maybeSingle();
 
               if (queryRelError) {
-                throw new Error(
-                  `Query relation error: ${queryRelError.message}`,
-                );
+                throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
+                  message: `Query relation error: ${queryRelError.message}`,
+                });
               }
 
               if (!existingRelation) {

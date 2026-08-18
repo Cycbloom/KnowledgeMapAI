@@ -81,7 +81,7 @@ function generateProgressAllocations(
   if (mode === "custom" && customAllocations && customAllocations.length > 0) {
     const total = customAllocations.reduce((sum, a) => sum + a.percentage, 0);
     if (Math.abs(total - 100) > 0.01) {
-      throw new Error(i18next.t("scheduler.progressPlan.customAllocationMustSumTo100"));
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, { message: i18next.t("scheduler.progressPlan.customAllocationMustSumTo100") });
     }
     return customAllocations.sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),

@@ -4,6 +4,8 @@ import { logger } from "../../utils/logger";
 import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
 import { pricingService } from "../ai/pricingService";
 import { notDeleted } from '../common/softDeleteHelper';
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { CrossDomainInsight, GraphInfo } from "./relationDiscoveryService";
 
 export class CrossDomainAnalysisService {
@@ -92,7 +94,7 @@ export class CrossDomainAnalysisService {
 
     const provider = await getAIProviderForTask("text");
     if (!provider.hasKey) {
-      throw new Error("AI provider not configured");
+      throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, { message: "AI provider not configured" });
     }
 
     const systemPrompt = `你是一个跨学科知识分析专家。分析不同领域的知识图谱，发现跨学科的联系和洞察。
@@ -321,7 +323,7 @@ export class CrossDomainAnalysisService {
 
     const provider = await getAIProviderForTask("text");
     if (!provider.hasKey) {
-      throw new Error("AI provider not configured");
+      throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, { message: "AI provider not configured" });
     }
 
     const systemPrompt = `你是一个学习路径规划专家。根据知识图谱之间的关系，为用户推荐最优的学习路径。
@@ -560,7 +562,7 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
 
     const provider = await getAIProviderForTask("text");
     if (!provider.hasKey) {
-      throw new Error("AI provider not configured");
+      throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, { message: "AI provider not configured" });
     }
 
     const systemPrompt = `你是一个知识管理专家。分析用户的知识图谱，发现可能存在的知识缺口。

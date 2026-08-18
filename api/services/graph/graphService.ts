@@ -571,7 +571,7 @@ export async function getUserAccessibleGraphs(
     .order("last_used_at", { ascending: false });
 
   if (ownedError) {
-    throw new Error(ownedError.message);
+    throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: ownedError.message });
   }
 
   const { data: collaboratedGraphs, error: collabError } =
@@ -587,7 +587,7 @@ export async function getUserAccessibleGraphs(
       .not("accepted_at", "is", null);
 
   if (collabError) {
-    throw new Error(collabError.message);
+    throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: collabError.message });
   }
 
   const ownedResults = (ownedGraphs || []).map((g: KnowledgeGraphRow) => ({

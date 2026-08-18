@@ -29,7 +29,7 @@ export class DocumentParsingService {
             info: result.info,
           };
         } else {
-          throw new Error("Unsupported pdf-parse version/structure");
+          throw new AppError(ErrorCodes.UNSUPPORTED_FORMAT, { message: "Unsupported pdf-parse version/structure" });
         }
 
         text = data.text;

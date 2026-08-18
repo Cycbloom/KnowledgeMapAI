@@ -1,5 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { TaskSettings } from "@shared/types/scheduler";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const DEFAULT_SETTINGS: Omit<TaskSettings, "id" | "user_id"> = {
   q0_time_slice: 25,
@@ -21,7 +23,7 @@ export class TaskSettingsService {
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (error) throw new Error(`Failed to fetch settings: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch settings: ${error.message}` });
 
     if (!data) {
       const { data: newSettings, error: createError } = await client
@@ -34,7 +36,7 @@ export class TaskSettingsService {
         .single();
 
       if (createError)
-        {throw new Error(`Failed to create settings: ${createError.message}`);}
+        {throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to create settings: ${createError.message}` });}
       return newSettings as TaskSettings;
     }
 
@@ -55,7 +57,7 @@ export class TaskSettingsService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to update settings: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to update settings: ${error.message}` });
     return data as TaskSettings;
   }
 }

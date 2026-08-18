@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notDeleted } from '../common/softDeleteHelper';
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import {
   isIndexValue,
   resolveId,
@@ -54,7 +56,7 @@ export class IndexMappingService {
       );
 
     if (error) {
-      throw new Error(`Failed to build graph index map: ${error.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to build graph index map: ${error.message}` });
     }
 
     const indexMap = buildIndexMap(graphs || []);
@@ -88,7 +90,7 @@ export class IndexMappingService {
       );
 
     if (error) {
-      throw new Error(`Failed to build node index map: ${error.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to build node index map: ${error.message}` });
     }
 
     const indexMap = new Map<number, string>();
@@ -127,7 +129,7 @@ export class IndexMappingService {
       );
 
     if (error) {
-      throw new Error(`Failed to build task index map: ${error.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to build task index map: ${error.message}` });
     }
 
     const indexMap = buildEntityIndexMap(tasks || []);
@@ -155,7 +157,7 @@ export class IndexMappingService {
       .eq("user_id", userId);
 
     if (error) {
-      throw new Error(`Failed to build learning path index map: ${error.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to build learning path index map: ${error.message}` });
     }
 
     const indexMap = buildEntityIndexMap(learningPaths || []);

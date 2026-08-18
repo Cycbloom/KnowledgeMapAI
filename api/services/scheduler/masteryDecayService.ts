@@ -1,6 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { forgetting_curve, computeDecayFactor, default_w } from "ts-fsrs";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { DEFAULT_DECAY_CONFIG as SHARED_DECAY_CONFIG } from "../../../shared/constants/masteryThresholds";
 
 const DEFAULT_EASE_FACTOR = 2.5;
@@ -118,7 +120,7 @@ export class MasteryDecayService {
         logger.error("Failed to fetch subtasks for decay calculation", {
           error: error.message,
         });
-        throw new Error(`Failed to fetch subtasks: ${error.message}`);
+        throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch subtasks: ${error.message}` });
       }
 
       if (!subtasks || subtasks.length === 0) {
@@ -234,7 +236,7 @@ export class MasteryDecayService {
         logger.error("Failed to fetch subtasks for review check", {
           error: error.message,
         });
-        throw new Error(`Failed to fetch subtasks: ${error.message}`);
+        throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch subtasks: ${error.message}` });
       }
 
       if (!subtasks || subtasks.length === 0) {
@@ -332,7 +334,7 @@ export class MasteryDecayService {
           knowledgePointId,
           error: error.message,
         });
-        throw new Error(`Failed to apply decay: ${error.message}`);
+        throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to apply decay: ${error.message}` });
       }
 
       logger.info("Decay applied successfully", {

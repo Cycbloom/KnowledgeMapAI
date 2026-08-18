@@ -2,6 +2,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { TemplateEngine } from '../../utils/templateEngine';
 import { getAIProviderForTask } from './factory';
 import { logger } from '../../utils/logger';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { getSupabaseAdmin } from '../../supabase';
 import { GRAPH_NODES_SELECT } from '../../utils/nodeHelpers';
 import { performanceMonitor, enrichMetadata } from './performanceMonitor';
@@ -154,7 +156,7 @@ export class AIActionService {
 
     // 1. Fetch Action
     const action = await this.getAction(getSupabaseAdmin(), actionId); // Use admin to ensure we can read system actions
-    if (!action) throw new Error('Action not found');
+    if (!action) throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { message: 'Action not found' });
 
     // 2. Fetch Node Context
     const { data: graphNode, error: nodeError } = await notDeleted(getSupabaseAdmin()
@@ -164,7 +166,7 @@ export class AIActionService {
       )
       .maybeSingle();
     
-    if (nodeError || !graphNode) throw new Error('Node not found');
+    if (nodeError || !graphNode) throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND, { message: 'Node not found' });
 
     const kp = Array.isArray(graphNode.knowledge_points) 
       ? graphNode.knowledge_points[0] 

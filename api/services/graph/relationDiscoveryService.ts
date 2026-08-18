@@ -5,6 +5,8 @@ import { logger } from "../../utils/logger";
 import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
 import { pricingService } from "../ai/pricingService";
 import { notDeleted } from '../common/softDeleteHelper';
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { crossDomainAnalysisService } from "./crossDomainAnalysisService";
 
 export interface DiscoveredRelation {
@@ -168,7 +170,7 @@ export class RelationDiscoveryService {
 
     const provider = await getAIProviderForTask("text");
     if (!provider.hasKey) {
-      throw new Error("AI provider not configured");
+      throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, { message: "AI provider not configured" });
     }
 
     const graphSummaries = graphs.map((g) => ({
@@ -380,7 +382,7 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       .single();
 
     if (graphError || !existingGraph) {
-      throw new Error("Source graph not found or access denied");
+      throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND, { message: "Source graph not found or access denied" });
     }
 
     const { data: targetGraph, error: targetError } = await supabase
@@ -391,7 +393,7 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       .single();
 
     if (targetError || !targetGraph) {
-      throw new Error("Target graph not found or access denied");
+      throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND, { message: "Target graph not found or access denied" });
     }
 
     const { data: relation, error } = await supabase
@@ -434,7 +436,7 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
 
     const provider = await getAIProviderForTask("text");
     if (!provider.hasKey) {
-      throw new Error("AI provider not configured");
+      throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, { message: "AI provider not configured" });
     }
 
     const systemPrompt = `你是一个学习路径规划专家。根据图谱关系分析结果，为用户推荐学习路径和知识缺口填补建议。

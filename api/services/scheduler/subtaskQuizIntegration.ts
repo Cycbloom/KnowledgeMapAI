@@ -661,7 +661,7 @@ export class SubtaskQuizIntegrationService {
 
     try {
       if (!this.aiProviderService) {
-        throw new Error("AI provider service not configured");
+        throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, { message: "AI provider service not configured" });
       }
       const aiResult = await this.aiProviderService.generateCards(
         knowledgePoint.title,
@@ -789,7 +789,7 @@ export class SubtaskQuizIntegrationService {
 
     try {
       if (!this.aiProviderService) {
-        throw new Error("AI provider service not configured");
+        throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, { message: "AI provider service not configured" });
       }
       const difficultyMap: Record<string, CardDifficulty> = {
         easy: "easy",

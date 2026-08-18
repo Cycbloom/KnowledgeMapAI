@@ -1,5 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../../utils/logger';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 import type { KnowledgePoint, KnowledgePointVersion, KnowledgePointVersionDiff, KnowledgePointVersionWithDiff } from '../../../shared/types/index';
 
 export interface ListVersionsOptions {
@@ -90,7 +92,7 @@ export class KnowledgePointVersionService {
     ]);
 
     if (!v1 || !v2) {
-      throw new Error('One or both versions not found');
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { message: 'One or both versions not found' });
     }
 
     const [older, newer] = v1.version_number < v2.version_number ? [v1, v2] : [v2, v1];
@@ -134,7 +136,7 @@ export class KnowledgePointVersionService {
     const version = await this.getVersion(supabase, knowledgePointId, versionNumber);
 
     if (!version) {
-      throw new Error('Version not found');
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { message: 'Version not found' });
     }
 
     const kp = await supabase
@@ -144,7 +146,7 @@ export class KnowledgePointVersionService {
       .maybeSingle();
 
     if (!kp.data) {
-      throw new Error('Knowledge point not found');
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { message: 'Knowledge point not found' });
     }
 
     const { data: updatedKp, error } = await supabase
@@ -219,7 +221,7 @@ export class KnowledgePointVersionService {
       .maybeSingle();
 
     if (!kp.data) {
-      throw new Error('Knowledge point not found');
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { message: 'Knowledge point not found' });
     }
 
     const { data: maxVersion } = await supabase

@@ -1,6 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getPaginationParams, PaginationOptions } from '../../utils/pagination';
 import { logger } from '../../utils/logger';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 export interface TaskTemplate {
   id: string;
@@ -89,7 +91,7 @@ export class TemplateService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to create template: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to create template: ${error.message}` });
     return data as TaskTemplate;
   }
 
@@ -111,8 +113,8 @@ export class TemplateService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to update template: ${error.message}`);
-    if (!data) throw new Error('Template not found or is system template');
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to update template: ${error.message}` });
+    if (!data) throw new AppError(ErrorCodes.RESOURCE_TEMPLATE_NOT_FOUND, { message: 'Template not found or is system template' });
     return data as TaskTemplate;
   }
 
@@ -128,7 +130,7 @@ export class TemplateService {
       .eq('user_id', userId)
       .eq('is_system', false);
 
-    if (error) throw new Error(`Failed to delete template: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to delete template: ${error.message}` });
   }
 
   async getTemplate(
@@ -142,7 +144,7 @@ export class TemplateService {
       .single();
 
     if (error && error.code !== 'PGRST116') {
-      throw new Error(`Failed to fetch template: ${error.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch template: ${error.message}` });
     }
     return data as TaskTemplate | null;
   }
@@ -171,7 +173,7 @@ export class TemplateService {
     }
 
     const { data, error, count } = await query;
-    if (error) throw new Error(`Failed to fetch templates: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch templates: ${error.message}` });
     return { templates: data as TaskTemplate[], total: count || 0 };
   }
 
@@ -188,7 +190,7 @@ export class TemplateService {
       .order('is_default', { ascending: false })
       .order('name', { ascending: true });
 
-    if (error) throw new Error(`Failed to fetch templates by category: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch templates by category: ${error.message}` });
     return data as TaskTemplate[];
   }
 
@@ -200,7 +202,7 @@ export class TemplateService {
       .order('category', { ascending: true })
       .order('name', { ascending: true });
 
-    if (error) throw new Error(`Failed to fetch system templates: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch system templates: ${error.message}` });
     return data as TaskTemplate[];
   }
 
@@ -213,7 +215,7 @@ export class TemplateService {
       .order('category', { ascending: true })
       .order('name', { ascending: true });
 
-    if (error) throw new Error(`Failed to fetch user templates: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch user templates: ${error.message}` });
     return data as TaskTemplate[];
   }
 
@@ -308,7 +310,7 @@ export class TemplateService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to set default template: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to set default template: ${error.message}` });
     return data as TaskTemplate;
   }
 
@@ -325,7 +327,7 @@ export class TemplateService {
       .eq('is_default', true)
       .maybeSingle();
 
-    if (error) throw new Error(`Failed to fetch default template: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch default template: ${error.message}` });
     return data as TaskTemplate | null;
   }
 
@@ -336,7 +338,7 @@ export class TemplateService {
     newName?: string
   ): Promise<TaskTemplate> {
     const original = await this.getTemplate(client, templateId);
-    if (!original) throw new Error('Template not found');
+    if (!original) throw new AppError(ErrorCodes.RESOURCE_TEMPLATE_NOT_FOUND, { message: 'Template not found' });
 
     const { data, error } = await client
       .from('task_templates')
@@ -356,7 +358,7 @@ export class TemplateService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to duplicate template: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to duplicate template: ${error.message}` });
     return data as TaskTemplate;
   }
 }

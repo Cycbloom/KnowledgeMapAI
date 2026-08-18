@@ -2,6 +2,8 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import i18next from "i18next";
 import { toIcsUtcTimestamp } from "@shared/utils/dateFormat";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { notDeleted } from '../common/softDeleteHelper';
 
 interface CalendarTask {
@@ -42,7 +44,7 @@ class CalendarService {
 
     if (tasksError) {
       logger.error("Failed to fetch tasks for ICS export:", tasksError);
-      throw new Error("Failed to fetch tasks");
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: "Failed to fetch tasks" });
     }
 
     const { data: executions, error: execError } = await supabase
@@ -72,7 +74,7 @@ class CalendarService {
       .single();
 
     if (userError || !user) {
-      throw new Error("User not found");
+      throw new AppError(ErrorCodes.RESOURCE_USER_NOT_FOUND, { message: "User not found" });
     }
 
     const { data: tasks, error: tasksError } = await notDeleted(supabase
@@ -84,7 +86,7 @@ class CalendarService {
 
     if (tasksError) {
       logger.error("Failed to fetch tasks for WebCal:", tasksError);
-      throw new Error("Failed to fetch tasks");
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: "Failed to fetch tasks" });
     }
 
     const { data: executions, error: execError } = await supabase
@@ -128,7 +130,7 @@ class CalendarService {
 
     if (tasksError) {
       logger.error("Failed to fetch calendar events:", tasksError);
-      throw new Error("Failed to fetch events");
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: "Failed to fetch events" });
     }
 
     const events = (tasks || []).map((task) => ({

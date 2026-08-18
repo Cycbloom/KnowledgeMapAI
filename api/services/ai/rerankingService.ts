@@ -2,6 +2,8 @@ import type { AIProviderType } from "@shared/types";
 import { logger } from "../../utils/logger";
 import { appSettingsService } from "../core/appSettingsService";
 import { withAIMonitoring } from "./aiMonitor";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../../shared/utils/retry";
 
 type RerankingProvider = "jina" | "cohere";
@@ -96,9 +98,9 @@ export class RerankingService {
 
         if (!res.ok) {
           const errorBody = await res.text().catch(() => "unknown error");
-          throw new Error(
-            `Reranking API returned ${res.status}: ${errorBody}`,
-          );
+          throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+            message: `Reranking API returned ${res.status}: ${errorBody}`,
+          });
         }
 
         return (await res.json()) as RerankApiResponse;

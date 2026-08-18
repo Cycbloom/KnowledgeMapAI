@@ -1,6 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import i18next from "i18next";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { smartTaskLinker } from "./smartTaskLinker";
 import { notDeleted } from '../common/softDeleteHelper';
 
@@ -53,7 +55,7 @@ export class GraphTaskService {
         "[GraphTaskService] Error fetching graph nodes:",
         nodesError,
       );
-      throw new Error(`Failed to fetch graph nodes: ${nodesError.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch graph nodes: ${nodesError.message}` });
     }
 
     const { data: graph } = await supabase
@@ -84,7 +86,7 @@ export class GraphTaskService {
 
     if (updateError) {
       logger.error("[GraphTaskService] Error updating task:", updateError);
-      throw new Error(`Failed to update task: ${updateError.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to update task: ${updateError.message}` });
     }
 
     logger.info("[GraphTaskService] Task updated successfully:", {
@@ -113,9 +115,9 @@ export class GraphTaskService {
 
     if (graphError || !graph) {
       logger.error("[GraphTaskService] Error fetching graph:", graphError);
-      throw new Error(
-        `Graph not found: ${graphError?.message || "Unknown error"}`,
-      );
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
+        message: `Graph not found: ${graphError?.message || "Unknown error"}`,
+      });
     }
 
     if (graph.task_id) {
@@ -141,7 +143,7 @@ export class GraphTaskService {
         "[GraphTaskService] Error fetching graph nodes:",
         nodesError,
       );
-      throw new Error(`Failed to fetch graph nodes: ${nodesError.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch graph nodes: ${nodesError.message}` });
     }
 
     const knowledgePointCount = graphNodes?.length || 0;
@@ -182,7 +184,7 @@ export class GraphTaskService {
 
     if (taskError) {
       logger.error("[GraphTaskService] Error creating task:", taskError);
-      throw new Error(`Failed to create task: ${taskError.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to create task: ${taskError.message}` });
     }
 
     await supabase
@@ -256,7 +258,7 @@ export class GraphTaskService {
         "[GraphTaskService] Error fetching graph tasks:",
         fetchError,
       );
-      throw new Error(`Failed to fetch graph tasks: ${fetchError.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch graph tasks: ${fetchError.message}` });
     }
 
     if (!graphTasks || graphTasks.length === 0) {

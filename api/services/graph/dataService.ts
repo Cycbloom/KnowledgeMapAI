@@ -420,7 +420,7 @@ export class DataService {
         .select()
         .single();
 
-      if (graphError) throw new Error(graphError.message);
+      if (graphError) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: graphError.message });
       createdGraphId = graph.id;
 
       const nodeMap = new Map<string, string>();
@@ -477,7 +477,7 @@ export class DataService {
               .from('edges')
               .insert(edgesToInsert);
 
-            if (edgesError) throw new Error(edgesError.message);
+            if (edgesError) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: edgesError.message });
           }
         }
       }
@@ -617,7 +617,7 @@ export class DataService {
         .select()
         .single();
 
-      if (graphError) throw new Error(graphError.message);
+      if (graphError) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: graphError.message });
       createdGraphId = graph.id;
 
       const nodeMap = new Map<string, string>();
@@ -676,7 +676,7 @@ export class DataService {
               .from('edges')
               .insert(edgesToInsert);
 
-            if (edgesError) throw new Error(edgesError.message);
+            if (edgesError) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: edgesError.message });
           }
         }
       }

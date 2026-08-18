@@ -2,6 +2,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../../utils/logger';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { cacheService, CacheKeys } from './cacheService';
 import type { KnowledgeGraphRow, StudyCardRow, FocusSessionRow, UserAchievementRow } from '@shared/types/database';
 import type { Edge } from '@shared/types/graph';
@@ -483,7 +485,7 @@ export class BackupService {
   async deleteSnapshot(supabase: SupabaseClient, snapshotId: string, userId: string): Promise<void> {
     const snapshot = await this.getSnapshot(supabase, snapshotId, userId);
     if (!snapshot) {
-      throw new Error('Snapshot not found');
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { message: 'Snapshot not found' });
     }
 
     await deleteBackupFile(snapshot.file_path);
@@ -564,7 +566,7 @@ export class BackupService {
         .insert(graphsToInsert)
         .select();
 
-      if (graphsError) throw new Error(`导入图谱失败: ${graphsError.message}`);
+      if (graphsError) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `导入图谱失败: ${graphsError.message}` });
 
       insertedGraphs?.forEach((g, i) => {
         oldToNewGraphIds.set(graphs[i].id, g.id);

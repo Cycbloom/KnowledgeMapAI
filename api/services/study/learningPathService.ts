@@ -253,7 +253,7 @@ export class LearningPathService {
         });
 
         const result = await this.getLearningPath(supabase, pathId, userId);
-        if (!result) throw new Error("Learning path not found after creation");
+        if (!result) throw new AppError(ErrorCodes.RESOURCE_PATH_NOT_FOUND, { message: "Learning path not found after creation" });
         return result;
       } catch (txError) {
         logger.warn('Transaction failed in createLearningPath, falling back to non-transactional operations', { error: txError });
@@ -324,7 +324,7 @@ export class LearningPathService {
     }
 
     const result = await this.getLearningPath(supabase, path.id, userId);
-    if (!result) throw new Error("Learning path not found after creation");
+    if (!result) throw new AppError(ErrorCodes.RESOURCE_PATH_NOT_FOUND, { message: "Learning path not found after creation" });
     return result;
   }
 
@@ -730,7 +730,7 @@ export class LearningPathService {
     }
 
     const result = await this.getLearningPath(supabase, pathId, userId);
-    if (!result) throw new Error("Learning path not found");
+    if (!result) throw new AppError(ErrorCodes.RESOURCE_PATH_NOT_FOUND, { message: "Learning path not found" });
     return {
       ...result,
       total_estimated_time: totalEstimatedTime,

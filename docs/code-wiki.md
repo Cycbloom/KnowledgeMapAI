@@ -542,7 +542,6 @@ server.ts bootstrap()
 | `graph-discovery.ts` | 图谱发现类型 |
 | `graph-analysis.ts` | 图谱分析类型 |
 | `graph-literature.ts` | 文献类型 |
-| `graph-story.ts` | 故事线类型 |
 | `graph-template.ts` | 模板类型 |
 | `graphVersion.ts` | 版本控制类型 |
 | `scheduler.ts` | 调度器主类型 |
@@ -696,7 +695,6 @@ graph_snapshot_type    -- auto | manual | pre_rollback | pre_ai_expand | pre_bat
 | 20_graph_backbone | `graph_backbone_modules` | 知识图谱骨架 |
 | 21_pgvector_search | 向量搜索函数 | 语义搜索 |
 | 22_concept_aliases | `concept_aliases` | 概念别名 |
-| 25_story_creation | `story_structures`, `scenes`, `characters`, `appearances`, `relationships` | 故事线 |
 | 26_document_chunks | `document_chunks` | 文档分块 |
 | 27_graph_version | `graph_versions`, `graph_branches`, `graph_snapshots` | 版本控制 |
 | 28_agent_sessions | `agent_executions`, `agent_sessions` | AI Agent |

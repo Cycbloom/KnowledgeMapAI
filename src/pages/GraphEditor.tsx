@@ -1311,7 +1311,7 @@ export const GraphEditor = () => {
             onExecuteAction={aiOps.handleExecuteAction}
             onRefresh={() => {
               queryClient.invalidateQueries({ queryKey: queryKeys.graph(id || "") });
-              queryClient.invalidateQueries({ queryKey: ["graphNodes", id] });
+              queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id || "") });
             }}
           />
         )}

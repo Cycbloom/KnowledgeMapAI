@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
+import { queryKeys } from "../queries/config";
 import type { DailyActivityStats, ActivityEvent } from "../../types/calendar";
 
 const DEFAULT_STALE_TIME = 1000 * 60 * 5;
@@ -15,7 +16,7 @@ const defaultQueryConfig = {
 
 export function useCalendarActivityStats(startDate: string, endDate: string) {
   return useQuery({
-    queryKey: ["calendar", "activityStats", startDate, endDate],
+    queryKey: queryKeys.activitiesStats(startDate, endDate),
     queryFn: async (): Promise<DailyActivityStats[]> => {
       return api.scheduler.getActivityStats(startDate, endDate);
     },
@@ -26,7 +27,7 @@ export function useCalendarActivityStats(startDate: string, endDate: string) {
 
 export function useCalendarDailyActivities(date: string) {
   return useQuery({
-    queryKey: ["calendar", "dailyActivities", date],
+    queryKey: queryKeys.activitiesDaily(date),
     queryFn: async (): Promise<ActivityEvent[]> => {
       return api.scheduler.getDailyActivities(date);
     },

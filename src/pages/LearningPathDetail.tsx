@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Route } from "lucide-react";
 import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
 import { pathTasksApi } from "../services/api/modules/scheduler";
+import { learningPathKeys } from "../hooks/queries/useLearningPathQueries";
 import { useError } from "../hooks";
 import { useDocumentTitle } from "../hooks/common/useDocumentTitle";
 import PathHeaderSection from "../components/LearningPath/PathHeaderSection";
@@ -108,7 +109,7 @@ const LearningPathDetailPage: React.FC = () => {
     data: pathDetail,
     isLoading,
   } = useQuery({
-    queryKey: ["learningPath", "detail", pathId],
+    queryKey: learningPathKeys.detail(pathId ?? ""),
     queryFn: async () => {
       if (!pathId) throw new Error("pathId is required");
       const result = await learningPathsApi.get(pathId);
@@ -125,7 +126,7 @@ const LearningPathDetailPage: React.FC = () => {
     setIsUpdating(true);
     try {
       await learningPathsApi.updateNodeStatus(pathId, nodeId, status);
-      await queryClient.invalidateQueries({ queryKey: ["learningPath", "detail", pathId] });
+      await queryClient.invalidateQueries({ queryKey: learningPathKeys.detail(pathId ?? "") });
       message.success(t("learningPaths.detail.nodeStatusUpdated"));
     } catch (error) {
       handleError(error, {
@@ -151,7 +152,7 @@ const LearningPathDetailPage: React.FC = () => {
         priority: node.difficulty_level || 2,
       });
       message.success(t("learningPaths.detail.taskCreated", { title: node.title }));
-      await queryClient.invalidateQueries({ queryKey: ["learningPath", "detail", pathId] });
+      await queryClient.invalidateQueries({ queryKey: learningPathKeys.detail(pathId ?? "") });
     } catch (error) {
       handleError(error, {
         context: "ConvertToTask",
@@ -180,7 +181,7 @@ const LearningPathDetailPage: React.FC = () => {
 
       setSelectedNodeIds(new Set());
       setIsSelectionMode(false);
-      await queryClient.invalidateQueries({ queryKey: ["learningPath", "detail", pathId] });
+      await queryClient.invalidateQueries({ queryKey: learningPathKeys.detail(pathId ?? "") });
     } catch (error) {
       handleError(error, {
         context: "BatchConvertToTasks",
@@ -232,7 +233,7 @@ const LearningPathDetailPage: React.FC = () => {
 
       message.success(t("learningPaths.detail.autoScheduleSuccess", { total: result.total_tasks, days: result.estimated_days }));
 
-      await queryClient.invalidateQueries({ queryKey: ["learningPath", "detail", pathId] });
+      await queryClient.invalidateQueries({ queryKey: learningPathKeys.detail(pathId ?? "") });
     } catch (error) {
       handleError(error, {
         context: "AutoSchedule",
@@ -251,7 +252,7 @@ const LearningPathDetailPage: React.FC = () => {
     setIsUpdating(true);
     try {
       await learningPathsApi.update(pathId, { status });
-      await queryClient.invalidateQueries({ queryKey: ["learningPath", "detail", pathId] });
+      await queryClient.invalidateQueries({ queryKey: learningPathKeys.detail(pathId ?? "") });
       message.success(t("learningPaths.detail.pathStatusUpdated"));
     } catch (error) {
       handleError(error, {

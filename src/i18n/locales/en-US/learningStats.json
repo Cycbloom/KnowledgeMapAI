@@ -1,6 +1,4 @@
 {
-  "title": "Learning Statistics Center",
-  "subtitle": "Comprehensive overview of your learning progress and knowledge base status",
   "loading": "Loading statistics...",
   "error": "Unable to load statistics",
   "chartNoData": "No data",

@@ -551,30 +551,22 @@ export const LearningStatsCenter = () => {
 
   if (isLoading)
     {return (
-      <div
-        className={`h-full overflow-y-auto p-4 md:p-8 ${isDark ? "bg-slate-900" : "bg-slate-50"}`}
-      >
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6 md:mb-8">
-            <Skeleton className={`h-8 w-64 mb-2 ${isDark ? "bg-slate-700" : ""}`} />
-            <Skeleton className={`h-4 w-96 ${isDark ? "bg-slate-700" : ""}`} />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className={`p-6 rounded-lg shadow-sm border space-y-3 ${
-                  isDark
-                    ? "bg-slate-800 border-slate-700"
-                    : "bg-white border-gray-100"
-                }`}
-              >
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-8 w-16" />
-                <Skeleton className="h-3 w-24" />
-              </div>
-            ))}
-          </div>
+      <div className="space-y-6 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className={`p-6 rounded-lg shadow-sm border space-y-3 ${
+                isDark
+                  ? "bg-slate-800 border-slate-700"
+                  : "bg-white border-gray-100"
+              }`}
+            >
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          ))}
         </div>
       </div>
     );}
@@ -588,90 +580,71 @@ export const LearningStatsCenter = () => {
   if (!stats) return null;
 
   return (
-    <div
-      className={`h-full overflow-y-auto p-4 md:p-8 ${isDark ? "bg-slate-900" : "bg-slate-50"}`}
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6 md:mb-8">
-          <h1
-            className={`text-2xl md:text-3xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
-          >
-            {t("learningStats.title")}
-          </h1>
-          <p
-            className={`mt-1 text-sm md:text-base ${isDark ? "text-slate-400" : "text-gray-500"}`}
-          >
-            {t("learningStats.subtitle")}
-          </p>
-        </div>
+    <div className="space-y-6">
+      <QuickStatsCards
+        totalNodes={totalNodesCount}
+        masteredNodes={stats.metrics.learning}
+        dueToday={stats.metrics.dueToday}
+        streak={userData?.user?.profile?.study_streak || 0}
+      />
 
-        <div className="space-y-6">
-          <QuickStatsCards
-            totalNodes={totalNodesCount}
-            masteredNodes={stats.metrics.learning}
-            dueToday={stats.metrics.dueToday}
-            streak={userData?.user?.profile?.study_streak || 0}
-          />
+      {focusStats && (
+        <FocusStatsCard stats={focusStats} isDark={isDark} t={t} />
+      )}
 
-          {focusStats && (
-            <FocusStatsCard stats={focusStats} isDark={isDark} t={t} />
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            <MetricCard
-              title={t("learningStats.cards.totalCards")}
-              value={stats.metrics.totalCards}
-              subtext={t("learningStats.cards.totalCardsDesc")}
-              icon={BookOpen}
-              color="bg-primary-500"
-              isDark={isDark}
-            />
-            <MetricCard
-              title={t("learningStats.cards.dueToday")}
-              value={stats.metrics.dueToday}
-              subtext={t("learningStats.cards.dueTodayDesc")}
-              icon={Clock}
-              color="bg-amber-500"
-              isDark={isDark}
-            />
-            <MetricCard
-              title={t("learningStats.cards.learning")}
-              value={stats.metrics.learning}
-              subtext={t("learningStats.cards.learningDesc")}
-              icon={Brain}
-              color="bg-green-500"
-              isDark={isDark}
-            />
-            <MetricCard
-              title={t("learningStats.cards.avgStability")}
-              value={stats.metrics.avgStability}
-              subtext={`${t("learningStats.cards.days")} (FSRS)`}
-              icon={TrendingUp}
-              color="bg-primary-500"
-              isDark={isDark}
-            />
-          </div>
-
-          <ActivityHeatmap data={stats.heatmap || []} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            <KnowledgeHeatmap graphData={graphHeatmapData} />
-            <MasteryDistributionChart distribution={distributionData} />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            <ForecastChart data={stats.forecast || []} isDark={isDark} t={t} />
-            <ForgettingCurveChart
-              retentionThreshold={retention}
-              avgStability={stats.metrics.avgStability}
-              isDark={isDark}
-              t={t}
-            />
-          </div>
-
-          <GrowthChart data={stats.growth || []} isDark={isDark} t={t} />
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <MetricCard
+          title={t("learningStats.cards.totalCards")}
+          value={stats.metrics.totalCards}
+          subtext={t("learningStats.cards.totalCardsDesc")}
+          icon={BookOpen}
+          color="bg-primary-500"
+          isDark={isDark}
+        />
+        <MetricCard
+          title={t("learningStats.cards.dueToday")}
+          value={stats.metrics.dueToday}
+          subtext={t("learningStats.cards.dueTodayDesc")}
+          icon={Clock}
+          color="bg-amber-500"
+          isDark={isDark}
+        />
+        <MetricCard
+          title={t("learningStats.cards.learning")}
+          value={stats.metrics.learning}
+          subtext={t("learningStats.cards.learningDesc")}
+          icon={Brain}
+          color="bg-green-500"
+          isDark={isDark}
+        />
+        <MetricCard
+          title={t("learningStats.cards.avgStability")}
+          value={stats.metrics.avgStability}
+          subtext={`${t("learningStats.cards.days")} (FSRS)`}
+          icon={TrendingUp}
+          color="bg-primary-500"
+          isDark={isDark}
+        />
       </div>
+
+      <ActivityHeatmap data={stats.heatmap || []} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <KnowledgeHeatmap graphData={graphHeatmapData} />
+        <MasteryDistributionChart distribution={distributionData} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <ForecastChart data={stats.forecast || []} isDark={isDark} t={t} />
+        <ForgettingCurveChart
+          retentionThreshold={retention}
+          avgStability={stats.metrics.avgStability}
+          isDark={isDark}
+          t={t}
+        />
+      </div>
+
+      <GrowthChart data={stats.growth || []} isDark={isDark} t={t} />
     </div>
   );
 };

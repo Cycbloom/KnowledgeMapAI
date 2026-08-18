@@ -13,11 +13,6 @@ export interface IAutoGraphApi {
     session_id?: string;
     template_type?: string;
     customModules?: BackboneModuleCustomConfig[];
-    storyConfig?: {
-      genre?: string;
-      coreConflict?: string;
-      characterHints?: string;
-    };
   }): Promise<{
     sessionId: string;
     root: { title: string; content: string; summary?: string };

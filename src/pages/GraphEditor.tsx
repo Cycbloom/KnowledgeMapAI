@@ -181,12 +181,6 @@ const ConceptAggregationPanel = lazy(() =>
   })),
 );
 
-const StoryEditor = lazy(() =>
-  import("../components/StoryEditor/StoryEditor").then((module) => ({
-    default: module.StoryEditor,
-  })),
-);
-
 const Console = lazy(() =>
   import("../components/Console/Console").then((module) => ({
     default: module.Console,
@@ -1264,21 +1258,6 @@ export const GraphEditor = () => {
       }
     },
   });
-
-  if (graphMeta?.template_type === "story_creation") {
-    if (!id) return null;
-    return (
-      <Suspense fallback={<ViewLoader />}>
-        <QueryErrorResetBoundary>
-          {({ reset }) => (
-            <ErrorBoundary onReset={reset}>
-              <StoryEditor graphId={id} graphMeta={graphMeta} />
-            </ErrorBoundary>
-          )}
-        </QueryErrorResetBoundary>
-      </Suspense>
-    );
-  }
 
   return (
     <div

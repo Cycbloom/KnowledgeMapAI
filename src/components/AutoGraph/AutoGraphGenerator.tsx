@@ -76,7 +76,6 @@ const CATEGORIES: TemplateCategory[] = [
   "project",
   "analysis",
   "architecture",
-  "creative",
 ];
 
 const getCategoryIcon = (cat: TemplateCategory, isMobile: boolean) => {
@@ -90,8 +89,6 @@ const getCategoryIcon = (cat: TemplateCategory, isMobile: boolean) => {
       return <Search size={size} />;
     case "architecture":
       return <Layers size={size} />;
-    case "creative":
-      return <Sparkles size={size} />;
   }
 };
 
@@ -122,12 +119,6 @@ const categoryColorMap: Record<
     bg: "bg-primary-50 dark:bg-primary-900/20",
     text: "text-primary-600 dark:text-primary-400",
     iconBg: "bg-primary-100 dark:bg-primary-800/40",
-  },
-  creative: {
-    border: "border-pink-500",
-    bg: "bg-pink-50 dark:bg-pink-900/20",
-    text: "text-pink-600 dark:text-pink-400",
-    iconBg: "bg-pink-100 dark:bg-pink-800/40",
   },
 };
 
@@ -337,14 +328,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   const [newSource, setNewSource] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const advancedPanelId = useId();
-  const storyGenreId = useId();
-  const coreConflictId = useId();
-  const characterHintsId = useId();
   const topicInputId = useId();
-
-  const [storyGenre, setStoryGenre] = useState<string>("");
-  const [coreConflict, setCoreConflict] = useState<string>("");
-  const [characterHints, setCharacterHints] = useState<string>("");
 
   const [isInitializing, setIsInitializing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -397,11 +381,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       return;
     }
 
-    if (
-      style === "custom" &&
-      !customPrompt.trim() &&
-      selectedTemplateType !== "story_creation"
-    ) {
+    if (style === "custom" && !customPrompt.trim()) {
       message.warning(t("autoGraph.enterCustomRules"));
       return;
     }
@@ -423,14 +403,6 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           selectedTemplateType === "topic_research" &&
           moduleConfig?.customModules
             ? moduleConfig.customModules
-            : undefined,
-        storyConfig:
-          selectedTemplateType === "story_creation"
-            ? {
-                genre: storyGenre || undefined,
-                coreConflict: coreConflict || undefined,
-                characterHints: characterHints || undefined,
-              }
             : undefined,
       });
 
@@ -475,9 +447,6 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     t,
     selectedTemplateType,
     moduleConfig,
-    storyGenre,
-    coreConflict,
-    characterHints,
   ]);
 
   const handleExpandNode = useCallback(
@@ -710,18 +679,6 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       setIsTemplateSelectorOpen(false);
       setExpandedCategory(null);
       setShowTopicResearchCustomEditor(false);
-    } else if (type === "story_creation") {
-      setSelectedTemplateType(type);
-      setIsTemplateSelectorOpen(false);
-      setExpandedCategory(null);
-      setShowTopicResearchCustomEditor(false);
-      setModuleConfig(null);
-      setSelectedPresetId(null);
-      // Clear general config
-      setStyle("academic");
-      setCustomPrompt("");
-      setSources([]);
-      setShowAdvanced(false);
     } else {
       setSelectedTemplateType(type);
       setIsTemplateSelectorOpen(false);
@@ -729,10 +686,6 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       setShowTopicResearchCustomEditor(false);
       setModuleConfig(null);
       setSelectedPresetId(null);
-      // Clear story config when switching away from story_creation
-      setStoryGenre("");
-      setCoreConflict("");
-      setCharacterHints("");
     }
   };
 
@@ -1098,72 +1051,6 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     </div>
   );
 
-  const renderStoryCreationConfig = () => (
-    <div className="space-y-3">
-      <div>
-        <label
-          htmlFor={storyGenreId}
-          className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
-        >
-          {t("autoGraph.storyGenre")}
-        </label>
-        <select
-          id={storyGenreId}
-          value={storyGenre}
-          onChange={(e) => setStoryGenre(e.target.value)}
-          className={`w-full ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white`}
-          disabled={isInitializing}
-        >
-          <option value="">{t("autoGraph.storyGenrePlaceholder")}</option>
-          <option value="fantasy">{t("autoGraph.storyGenres.fantasy")}</option>
-          <option value="scifi">{t("autoGraph.storyGenres.scifi")}</option>
-          <option value="mystery">{t("autoGraph.storyGenres.mystery")}</option>
-          <option value="romance">{t("autoGraph.storyGenres.romance")}</option>
-          <option value="historical">
-            {t("autoGraph.storyGenres.historical")}
-          </option>
-          <option value="urban">{t("autoGraph.storyGenres.urban")}</option>
-          <option value="wuxia">{t("autoGraph.storyGenres.wuxia")}</option>
-          <option value="other">{t("autoGraph.storyGenres.other")}</option>
-        </select>
-      </div>
-
-      <div>
-        <label
-          htmlFor={coreConflictId}
-          className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
-        >
-          {t("autoGraph.coreConflict")}
-        </label>
-        <textarea
-          id={coreConflictId}
-          value={coreConflict}
-          onChange={(e) => setCoreConflict(e.target.value)}
-          placeholder={t("autoGraph.coreConflictPlaceholder")}
-          className={`w-full ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${isMobile ? "min-h-[60px]" : "min-h-[80px]"} resize-y`}
-          disabled={isInitializing}
-        />
-      </div>
-
-      <div>
-        <label
-          htmlFor={characterHintsId}
-          className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
-        >
-          {t("autoGraph.characterHints")}
-        </label>
-        <textarea
-          id={characterHintsId}
-          value={characterHints}
-          onChange={(e) => setCharacterHints(e.target.value)}
-          placeholder={t("autoGraph.characterHintsPlaceholder")}
-          className={`w-full ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${isMobile ? "min-h-[80px]" : "min-h-[100px]"} resize-y`}
-          disabled={isInitializing}
-        />
-      </div>
-    </div>
-  );
-
   const renderForm = () => (
     <div className="space-y-3 md:space-y-4">
       {renderTemplateSelector()}
@@ -1173,9 +1060,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           htmlFor={topicInputId}
           className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
         >
-          {selectedTemplateType === "story_creation"
-            ? t("autoGraph.storyTitle")
-            : t("autoGraph.topic")}{" "}
+          {t("autoGraph.topic")}{" "}
           <span aria-hidden="true" className="text-red-500">*</span>
         </label>
         <div className="relative">
@@ -1185,11 +1070,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
             aria-required={true}
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder={
-              selectedTemplateType === "story_creation"
-                ? t("autoGraph.storyTitlePlaceholder")
-                : t("autoGraph.topicPlaceholder")
-            }
+            placeholder={t("autoGraph.topicPlaceholder")}
             className={`w-full ${isMobile ? "px-3 py-2 text-sm" : "px-4 py-3"} border rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white ${
               isDuplicate
                 ? "border-amber-500 focus:ring-amber-500"
@@ -1225,33 +1106,24 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         <label
           className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
         >
-          {selectedTemplateType === "story_creation"
-            ? t("autoGraph.storySynopsis")
-            : t("templates.generator.backgroundInfo")}
+          {t("templates.generator.backgroundInfo")}
         </label>
         <textarea
           value={backgroundInfo}
           onChange={(e) => setBackgroundInfo(e.target.value)}
-          placeholder={
-            selectedTemplateType === "story_creation"
-              ? t("autoGraph.storySynopsisPlaceholder")
-              : t("templates.generator.backgroundPlaceholder")
-          }
+          placeholder={t("templates.generator.backgroundPlaceholder")}
           className={`w-full ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${isMobile ? "min-h-[60px]" : "min-h-[80px]"} resize-y`}
           disabled={isInitializing}
         />
       </div>
 
-      {selectedTemplateType === "story_creation" ? (
-        renderStoryCreationConfig()
-      ) : (
-        <>
-          <div>
-            <label
-              className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
-            >
-              {t("autoGraph.generationStyle")}
-            </label>
+      <>
+        <div>
+          <label
+            className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
+          >
+            {t("autoGraph.generationStyle")}
+          </label>
             <div
               className={`grid ${isMobile ? "grid-cols-2 gap-1.5" : "grid-cols-4 gap-2"}`}
             >
@@ -1419,7 +1291,6 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
             )}
           </AnimatePresence>
         </>
-      )}
 
       <button
         onClick={handleInitialize}

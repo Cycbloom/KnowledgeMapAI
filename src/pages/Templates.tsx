@@ -19,7 +19,6 @@ import {
   Layers,
   Network,
   CheckSquare,
-  Sparkles,
 } from "lucide-react";
 import { useTheme } from "../hooks";
 import { message } from "../utils/messageHelper";
@@ -35,7 +34,6 @@ const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
   project: <Briefcase size={20} />,
   analysis: <Search size={20} />,
   architecture: <Layers size={20} />,
-  creative: <Sparkles size={20} />,
 };
 
 type TemplateTab = "knowledge" | "task";

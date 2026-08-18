@@ -29,7 +29,6 @@ import type { IDomainsApi, IGraphDomainsApi } from "../api/contracts/IDomainsApi
 import type { IPluginsApi } from "../api/contracts/IPluginsApi";
 import type { ILiteratureApi } from "../api/contracts/ILiteratureApi";
 import type { IRegionsApi } from "../api/contracts/IRegionsApi";
-import type { IStoryCreationApi } from "../api/contracts/IStoryCreationApi";
 import type { IConceptAggregationApi } from "../api/contracts/IConceptAggregationApi";
 import type { IGraphVersionsApi } from "../api/contracts/IGraphVersionsApi";
 import type { INotesApi } from "../api/contracts/INotesApi";
@@ -116,7 +115,6 @@ export const mobileApi: IApi = {
   plugins: createNotSupportedModule<IPluginsApi>("plugins"),
   literature: createNotSupportedModule<ILiteratureApi>("literature"),
   regions: createNotSupportedModule<IRegionsApi>("regions"),
-  storyCreation: createNotSupportedModule<IStoryCreationApi>("storyCreation"),
   conceptAggregation: createNotSupportedModule<IConceptAggregationApi>("conceptAggregation"),
   graphVersions: createNotSupportedModule<IGraphVersionsApi>("graphVersions"),
   notes: createNotSupportedModule<INotesApi>("notes"),

@@ -51,11 +51,6 @@ const TEMPLATE_TYPE_CONFIG: Record<
     color: "text-cyan-600 dark:text-cyan-400",
     bgColor: "bg-cyan-100 dark:bg-cyan-900/30",
   },
-  story_creation: {
-    icon: () => null,
-    color: "text-pink-600 dark:text-pink-400",
-    bgColor: "bg-pink-100 dark:bg-pink-900/30",
-  },
 };
 
 const getTemplateTypeConfig = (templateType?: string) => {
@@ -107,7 +102,6 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
       concept_network: t("dashboard.graphTypeLabels.conceptNetwork"),
       skill_map: t("dashboard.graphTypeLabels.skillMap"),
       project_lifecycle: t("dashboard.graphTypeLabels.projectLifecycle"),
-      story_creation: t("dashboard.graphTypeLabels.storyCreation"),
     }),
     [t],
   );

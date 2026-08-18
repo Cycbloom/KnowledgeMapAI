@@ -49,7 +49,6 @@ export { pluginsApi } from "./plugins";
 export type { RegistryPlugin, InstalledPlugin, PluginUpdate } from "./plugins";
 export { literatureApi } from "./literature";
 export { regionsApi } from "./regions";
-export { storyCreationHttpApi as storyCreationApi } from "./storyCreation";
 export { conceptAggregationApi } from "./conceptAggregation";
 export type {
   ConceptGroup,
@@ -99,7 +98,6 @@ import { domainsApi, graphDomainsApi } from "./domains";
 import { pluginsApi } from "./plugins";
 import { literatureApi } from "./literature";
 import { regionsApi } from "./regions";
-import { storyCreationHttpApi } from "./storyCreation";
 import { conceptAggregationApi } from "./conceptAggregation";
 import { graphVersionsApi } from "./graphVersions";
 import { notesApi } from "./notes";
@@ -146,7 +144,6 @@ export const api: IApi = {
   plugins: pluginsApi,
   literature: literatureApi,
   regions: regionsApi,
-  storyCreation: storyCreationHttpApi,
   conceptAggregation: conceptAggregationApi,
   graphVersions: graphVersionsApi,
   notes: notesApi,

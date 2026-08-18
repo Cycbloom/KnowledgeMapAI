@@ -27,7 +27,6 @@ import type { IDomainsApi, IGraphDomainsApi } from './IDomainsApi';
 import type { IPluginsApi } from './IPluginsApi';
 import type { ILiteratureApi } from './ILiteratureApi';
 import type { IRegionsApi } from './IRegionsApi';
-import type { IStoryCreationApi } from './IStoryCreationApi';
 import type { IConceptAggregationApi } from './IConceptAggregationApi';
 import type { IGraphVersionsApi } from './IGraphVersionsApi';
 import type { INotesApi } from './INotesApi';
@@ -73,7 +72,6 @@ export interface IApi {
   plugins: IPluginsApi;
   literature: ILiteratureApi;
   regions: IRegionsApi;
-  storyCreation: IStoryCreationApi;
   conceptAggregation: IConceptAggregationApi;
   graphVersions: IGraphVersionsApi;
   notes: INotesApi;

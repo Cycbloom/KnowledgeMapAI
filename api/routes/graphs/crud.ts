@@ -123,7 +123,7 @@ router.post(
   validateInput(v2Schemas.createGraphSchema),
   validate({ body: createGraphSchema }),
   async (req: AuthedRequest, res: Response) => {
-    const { title, description, domains, template_type, preset_id } = req.body;
+    const { title, description, domains, template_type, preset_id, tags } = req.body;
     const data = await graphService.createGraph(
       req.supabase,
       req.user.id,
@@ -132,6 +132,7 @@ router.post(
       {
         templateType: template_type,
         presetId: preset_id,
+        tags,
         domains:
           domains && Array.isArray(domains) && domains.length > 0
             ? domains

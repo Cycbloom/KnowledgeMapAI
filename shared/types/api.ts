@@ -87,6 +87,7 @@ export interface CreateGraphData {
   domain?: string;
   template_type?: string;
   preset_id?: string;
+  tags?: string[];
 }
 
 export interface UpdateGraphData {
@@ -97,6 +98,7 @@ export interface UpdateGraphData {
   reference_books?: unknown;
   external_links?: unknown;
   learning_guide?: string;
+  tags?: string[];
 }
 
 export interface GetCardsParams {

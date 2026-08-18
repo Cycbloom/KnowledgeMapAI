@@ -213,6 +213,7 @@ export class GraphService {
       templateType?: string;
       presetId?: string;
       domains?: Array<{ domain_id: string; is_primary?: boolean }>;
+      tags?: string[];
     },
   ) {
     if (!options?.skipDuplicateCheck && process.env.SKIP_DUPLICATE_TOPIC_CHECK !== 'true') {
@@ -253,8 +254,8 @@ export class GraphService {
     if (useTransaction && domainsList) {
       data = await transactionExecutor.executeInTransaction(async (client) => {
         const graphResult = await client.query(
-          `INSERT INTO knowledge_graphs (user_id, title, description, embedding, template_type)
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO knowledge_graphs (user_id, title, description, embedding, template_type, tags)
+           VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING *`,
           [
             userId,
@@ -262,6 +263,7 @@ export class GraphService {
             description || null,
             embedding ? JSON.stringify(embedding) : null,
             options?.templateType || null,
+            options?.tags ?? [],
           ],
         );
         const graph = graphResult.rows[0] as { id: string; [key: string]: unknown };
@@ -299,6 +301,7 @@ export class GraphService {
           description: description || null,
           embedding: embedding ?? undefined,
           template_type: options?.templateType || null,
+          tags: options?.tags ?? [],
         })
         .select()
         .single();
@@ -394,6 +397,7 @@ export class GraphService {
       external_links?: unknown;
       learning_guide?: string;
       podcast_script?: string;
+      tags?: string[];
     },
   ) {
     if (updates.title && process.env.SKIP_DUPLICATE_TOPIC_CHECK !== 'true') {

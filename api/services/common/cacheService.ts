@@ -27,6 +27,7 @@ export const CacheKeys = {
   GRAPH_NODE_STATUS: (userId: string, graphId: string) => `graph_node_status_${userId}_${graphId}`,
   GRAPH_MAP: (userId: string) => `graph_map_${userId}`,
   GRAPH_TAGS: (userId: string) => `graph_tags_${userId}`,
+  USER_TAGS: (userId: string) => `user_tags_${userId}`,
   GRAPH_DOMAINS: (userId: string) => `graph_domains_${userId}`,
   GRAPH_LITERATURE: (graphId: string, moduleFilter?: string) => `graph_literature_${graphId}${moduleFilter ? `_${moduleFilter}` : ''}`,
   SEARCH_SIMILAR: (textHash: string, userId: string) => `search_similar_${textHash}_${userId}`,

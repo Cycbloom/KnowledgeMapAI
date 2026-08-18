@@ -12,6 +12,7 @@ import pluginsRoutes from "../../routes/plugins";
 import databaseRoutes from "../../routes/system/database";
 import supabaseRoutes from "../../routes/system/supabase";
 import syncRoutes from "../../routes/system/sync";
+import tagsRoutes from "../../routes/tags";
 
 export const corePlugin: Plugin = {
   name: "core",
@@ -30,6 +31,7 @@ export const corePlugin: Plugin = {
     kernel.registerRoutes("/api/v1/database", databaseRoutes);
     kernel.registerRoutes("/api/v1/supabase", supabaseRoutes);
     kernel.registerRoutes("/api/v1/sync", syncRoutes);
+    kernel.registerRoutes("/api/v1/tags", tagsRoutes);
   },
 
   async onActivate(): Promise<void> {

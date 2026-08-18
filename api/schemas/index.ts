@@ -27,12 +27,19 @@ export const uuidParamsSchema = z.object({
   id: z.string().uuid("无效的ID格式"),
 });
 
+/** 标签数组校验：trim、非空、≤30 字符、≤20 个、去重 */
+export const tagsArraySchema = z
+  .array(z.string().trim().min(1, "标签不能为空").max(30, "标签最多 30 个字符"))
+  .max(20, "标签最多 20 个")
+  .transform((tags) => Array.from(new Set(tags)));
+
 // --- Graph Schemas ---
 export const createGraphSchema = z.object({
   title: z.string().min(1, "标题不能为空"),
   description: z.string().optional(),
   template_type: z.string().optional(),
   preset_id: z.string().optional(),
+  tags: tagsArraySchema.optional(),
   domains: z
     .array(
       z.object({
@@ -51,6 +58,7 @@ export const updateGraphSchema = z.object({
   external_links: z.any().optional(),
   learning_guide: z.string().nullable().optional(),
   podcast_script: z.string().nullable().optional(),
+  tags: tagsArraySchema.optional(),
 });
 
 export const shareGraphSchema = z.object({

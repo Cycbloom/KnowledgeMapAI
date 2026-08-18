@@ -62,4 +62,6 @@ export interface Graph {
   reference_books?: ReferenceBook[];
   external_links?: ExternalLink[];
   learning_guide?: string;
+  /** 图谱级标签，用于 Dashboard 筛选 */
+  tags?: string[];
 }

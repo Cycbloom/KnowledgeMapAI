@@ -56,7 +56,6 @@ shared/
 │   ├── graph-knowledge-point.ts # 知识点类型
 │   ├── graph-literature.ts # 文献类型
 │   ├── graph-node.ts       # 节点类型
-│   ├── graph-story.ts      # 故事类型
 │   ├── graph-template.ts   # 模板类型
 │   ├── scheduler-achievement.ts  # 成就类型
 │   ├── scheduler-core.ts   # 调度核心类型

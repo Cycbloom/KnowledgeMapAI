@@ -13,4 +13,3 @@ export * from "./graph-literature";
 export * from "./graph-discovery";
 export * from "./graph-combined-view";
 export * from "./graph-analysis";
-export * from "./graph-story";

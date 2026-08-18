@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -409,6 +409,39 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          event_type: string
+          id: string
+          ip: string | null
+          timestamp: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip?: string | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip?: string | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       backup_snapshots: {
         Row: {
           created_at: string | null
@@ -602,6 +635,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      error_reports: {
+        Row: {
+          column_number: number | null
+          component_stack: string | null
+          created_at: string
+          id: string
+          line_number: number | null
+          message: string
+          metadata: Json | null
+          stack: string | null
+          timestamp: string
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          column_number?: number | null
+          component_stack?: string | null
+          created_at?: string
+          id?: string
+          line_number?: number | null
+          message: string
+          metadata?: Json | null
+          stack?: string | null
+          timestamp?: string
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          column_number?: number | null
+          component_stack?: string | null
+          created_at?: string
+          id?: string
+          line_number?: number | null
+          message?: string
+          metadata?: Json | null
+          stack?: string | null
+          timestamp?: string
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       focus_sessions: {
         Row: {
@@ -1076,8 +1154,8 @@ export type Database = {
           last_used_at: string | null
           parent_graph_id: string | null
           settings: Json | null
-          task_id: string | null
           tags: string[] | null
+          task_id: string | null
           template_type: string | null
           title: string
           updated_at: string | null
@@ -1098,8 +1176,8 @@ export type Database = {
           last_used_at?: string | null
           parent_graph_id?: string | null
           settings?: Json | null
-          task_id?: string | null
           tags?: string[] | null
+          task_id?: string | null
           template_type?: string | null
           title: string
           updated_at?: string | null
@@ -1120,8 +1198,8 @@ export type Database = {
           last_used_at?: string | null
           parent_graph_id?: string | null
           settings?: Json | null
-          task_id?: string | null
           tags?: string[] | null
+          task_id?: string | null
           template_type?: string | null
           title?: string
           updated_at?: string | null
@@ -1337,6 +1415,53 @@ export type Database = {
             columns: ["knowledge_point_id"]
             isOneToOne: false
             referencedRelation: "knowledge_points"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_material_schemas: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          graph_id: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          scope: Database["public"]["Enums"]["prompt_scope"]
+          sections: Json
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          graph_id?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          scope: Database["public"]["Enums"]["prompt_scope"]
+          sections?: Json
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          graph_id?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          scope?: Database["public"]["Enums"]["prompt_scope"]
+          sections?: Json
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_material_schemas_graph_id_fkey"
+            columns: ["graph_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_graphs"
             referencedColumns: ["id"]
           },
         ]
@@ -2561,347 +2686,6 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           weights?: Json
-        }
-        Relationships: []
-      }
-      story_appearances: {
-        Row: {
-          character_id: string
-          created_at: string | null
-          graph_id: string
-          id: string
-          notes: string | null
-          role_in_scene: string | null
-          scene_detail_id: string
-        }
-        Insert: {
-          character_id: string
-          created_at?: string | null
-          graph_id: string
-          id?: string
-          notes?: string | null
-          role_in_scene?: string | null
-          scene_detail_id: string
-        }
-        Update: {
-          character_id?: string
-          created_at?: string | null
-          graph_id?: string
-          id?: string
-          notes?: string | null
-          role_in_scene?: string | null
-          scene_detail_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "story_appearances_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "story_characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "story_appearances_graph_id_fkey"
-            columns: ["graph_id"]
-            isOneToOne: false
-            referencedRelation: "knowledge_graphs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "story_appearances_scene_detail_id_fkey"
-            columns: ["scene_detail_id"]
-            isOneToOne: false
-            referencedRelation: "story_scene_details"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      story_character_relationships: {
-        Row: {
-          created_at: string | null
-          graph_id: string
-          id: string
-          notes: string | null
-          relationship_type: string
-          source_character_id: string
-          status: string | null
-          strength: number
-          target_character_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          graph_id: string
-          id?: string
-          notes?: string | null
-          relationship_type: string
-          source_character_id: string
-          status?: string | null
-          strength?: number
-          target_character_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          graph_id?: string
-          id?: string
-          notes?: string | null
-          relationship_type?: string
-          source_character_id?: string
-          status?: string | null
-          strength?: number
-          target_character_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "story_character_relationships_graph_id_fkey"
-            columns: ["graph_id"]
-            isOneToOne: false
-            referencedRelation: "knowledge_graphs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "story_character_relationships_source_character_id_fkey"
-            columns: ["source_character_id"]
-            isOneToOne: false
-            referencedRelation: "story_characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "story_character_relationships_target_character_id_fkey"
-            columns: ["target_character_id"]
-            isOneToOne: false
-            referencedRelation: "story_characters"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      story_characters: {
-        Row: {
-          age: string | null
-          appearance: string | null
-          arc_end: string | null
-          arc_start: string | null
-          archetype: string | null
-          backstory: string | null
-          created_at: string | null
-          desire: string | null
-          fear: string | null
-          flaw: string | null
-          gender: string | null
-          graph_id: string
-          id: string
-          motivation: string | null
-          name: string
-          role_type: string
-          updated_at: string | null
-        }
-        Insert: {
-          age?: string | null
-          appearance?: string | null
-          arc_end?: string | null
-          arc_start?: string | null
-          archetype?: string | null
-          backstory?: string | null
-          created_at?: string | null
-          desire?: string | null
-          fear?: string | null
-          flaw?: string | null
-          gender?: string | null
-          graph_id: string
-          id?: string
-          motivation?: string | null
-          name: string
-          role_type: string
-          updated_at?: string | null
-        }
-        Update: {
-          age?: string | null
-          appearance?: string | null
-          arc_end?: string | null
-          arc_start?: string | null
-          archetype?: string | null
-          backstory?: string | null
-          created_at?: string | null
-          desire?: string | null
-          fear?: string | null
-          flaw?: string | null
-          gender?: string | null
-          graph_id?: string
-          id?: string
-          motivation?: string | null
-          name?: string
-          role_type?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "story_characters_graph_id_fkey"
-            columns: ["graph_id"]
-            isOneToOne: false
-            referencedRelation: "knowledge_graphs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      story_scene_details: {
-        Row: {
-          content: string | null
-          created_at: string | null
-          graph_id: string
-          id: string
-          location_name: string | null
-          pov_character_id: string | null
-          structure_id: string
-          synopsis: string | null
-          time_setting: string | null
-          updated_at: string | null
-          word_count: number | null
-          writing_status: string | null
-        }
-        Insert: {
-          content?: string | null
-          created_at?: string | null
-          graph_id: string
-          id?: string
-          location_name?: string | null
-          pov_character_id?: string | null
-          structure_id: string
-          synopsis?: string | null
-          time_setting?: string | null
-          updated_at?: string | null
-          word_count?: number | null
-          writing_status?: string | null
-        }
-        Update: {
-          content?: string | null
-          created_at?: string | null
-          graph_id?: string
-          id?: string
-          location_name?: string | null
-          pov_character_id?: string | null
-          structure_id?: string
-          synopsis?: string | null
-          time_setting?: string | null
-          updated_at?: string | null
-          word_count?: number | null
-          writing_status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "story_scene_details_graph_id_fkey"
-            columns: ["graph_id"]
-            isOneToOne: false
-            referencedRelation: "knowledge_graphs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "story_scene_details_pov_character_id_fkey"
-            columns: ["pov_character_id"]
-            isOneToOne: false
-            referencedRelation: "story_characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "story_scene_details_structure_id_fkey"
-            columns: ["structure_id"]
-            isOneToOne: false
-            referencedRelation: "story_structures"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      story_structures: {
-        Row: {
-          created_at: string | null
-          display_order: number
-          graph_id: string
-          id: string
-          metadata: Json | null
-          parent_structure_id: string | null
-          structure_level: string
-          synopsis: string | null
-          template_beat_id: string | null
-          title: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          display_order?: number
-          graph_id: string
-          id?: string
-          metadata?: Json | null
-          parent_structure_id?: string | null
-          structure_level: string
-          synopsis?: string | null
-          template_beat_id?: string | null
-          title: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          display_order?: number
-          graph_id?: string
-          id?: string
-          metadata?: Json | null
-          parent_structure_id?: string | null
-          structure_level?: string
-          synopsis?: string | null
-          template_beat_id?: string | null
-          title?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "story_structures_graph_id_fkey"
-            columns: ["graph_id"]
-            isOneToOne: false
-            referencedRelation: "knowledge_graphs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "story_structures_parent_structure_id_fkey"
-            columns: ["parent_structure_id"]
-            isOneToOne: false
-            referencedRelation: "story_structures"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      story_templates: {
-        Row: {
-          beats: Json
-          category: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          is_system: boolean | null
-          name: string
-          name_zh: string
-          template_code: string
-        }
-        Insert: {
-          beats?: Json
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_system?: boolean | null
-          name: string
-          name_zh: string
-          template_code: string
-        }
-        Update: {
-          beats?: Json
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_system?: boolean | null
-          name?: string
-          name_zh?: string
-          template_code?: string
         }
         Relationships: []
       }
@@ -4402,6 +4186,7 @@ export type Database = {
           is_public: boolean
           last_used_at: string
           nodes_count: number
+          tags: string[]
           template_type: string
           title: string
           updated_at: string
@@ -4513,6 +4298,10 @@ export type Database = {
           title: string
         }[]
       }
+      merge_user_tags: {
+        Args: { p_sources: string[]; p_target: string; p_user_id: string }
+        Returns: Json
+      }
       no_plan: { Args: never; Returns: boolean[] }
       num_failed: { Args: never; Returns: number }
       os_name: { Args: never; Returns: string }
@@ -4528,6 +4317,14 @@ export type Database = {
       pgtap_version: { Args: never; Returns: number }
       remove_node_with_edges: {
         Args: { p_graph_id: string; p_graph_node_id: string }
+        Returns: Json
+      }
+      remove_user_tag: {
+        Args: { p_name: string; p_user_id: string }
+        Returns: Json
+      }
+      rename_user_tag: {
+        Args: { p_from: string; p_to: string; p_user_id: string }
         Returns: Json
       }
       reorder_tasks: {

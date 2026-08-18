@@ -43,8 +43,7 @@ export type TemplateCategory =
   | "knowledge"
   | "project"
   | "analysis"
-  | "architecture"
-  | "creative";
+  | "architecture";
 
 export type TemplateType =
   | "knowledge_tree"
@@ -64,7 +63,6 @@ export type TemplateType =
   | "org_structure"
   | "system_architecture"
   | "knowledge_system"
-  | "story_creation"
   | "blank";
 
 export enum BackboneModule {
@@ -74,12 +72,6 @@ export enum BackboneModule {
   CORE_CONCEPTS = "core_concepts",
   APPLICATION_DOMAINS = "application_domains",
   FUTURE_DIRECTIONS = "future_directions",
-}
-
-export interface StoryCreationConfig {
-  genre?: string;
-  coreConflict?: string;
-  characterHints?: string;
 }
 
 export type TemplateLayoutType =

@@ -5,7 +5,6 @@ import {
   BackboneModule,
   type LayoutSuggestion,
   type NodeLevel,
-  type StoryCreationConfig,
   type TemplateCategory,
   type TemplateDifficulty,
   type TemplateLayoutType,
@@ -21,7 +20,6 @@ export interface TemplateTypeInfo {
   backboneModules?: BackboneModule[];
   backbonePresetId?: string;
   initLevelOnly?: boolean;
-  storyConfig?: StoryCreationConfig;
 }
 
 export const TEMPLATE_TYPE_MAP: Record<TemplateType, TemplateTypeInfo> = {
@@ -160,13 +158,6 @@ export const TEMPLATE_TYPE_MAP: Record<TemplateType, TemplateTypeInfo> = {
     primaryRelationType: "related",
     structureHint: "free",
   },
-  story_creation: {
-    type: "story_creation",
-    category: "creative",
-    layoutSuggestion: "hierarchical",
-    primaryRelationType: "causal",
-    structureHint: "narrative_hierarchy",
-  },
 };
 
 export const TEMPLATE_CATEGORY_TYPES: Record<TemplateCategory, TemplateType[]> =
@@ -190,7 +181,6 @@ export const TEMPLATE_CATEGORY_TYPES: Record<TemplateCategory, TemplateType[]> =
       "system_architecture",
       "knowledge_system",
     ],
-    creative: ["story_creation"],
   };
 
 export const TOPIC_RESEARCH_PRESET_IDS = [

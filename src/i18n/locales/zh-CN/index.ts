@@ -70,6 +70,7 @@ import conflictResolution from './conflictResolution.json';
 import offlineBanner from './offlineBanner.json';
 import tutor from './tutor.json';
 import pwaInstall from './pwaInstall.json';
+import tags from './tags.json';
 
 const zhCN = {
   dashboard,
@@ -144,6 +145,7 @@ const zhCN = {
   offlineBanner,
   tutor,
   pwaInstall,
+  tags,
 };
 
 export default zhCN;

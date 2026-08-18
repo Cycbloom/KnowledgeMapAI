@@ -1,0 +1,31 @@
+{
+  "manager": {
+    "title": "标签管理",
+    "description": "统一管理图谱、笔记、任务的标签：重命名、合并或删除。",
+    "open": "打开标签管理",
+    "dialogTitle": "标签管理",
+    "empty": "暂无标签",
+    "countGraphs": "图谱 {{count}}",
+    "countNotes": "笔记 {{count}}",
+    "countTasks": "任务 {{count}}",
+    "rename": "重命名",
+    "renameTo": "重命名为",
+    "delete": "删除",
+    "deleteConfirmTitle": "删除标签",
+    "deleteConfirmMessage": "确定要删除标签 \"{{name}}\" 吗？它将从 {{count}} 处引用中移除。",
+    "selectToMerge": "勾选两个及以上标签进行合并",
+    "mergeSelected": "合并选中",
+    "mergeTitle": "合并标签",
+    "mergeDescription": "将选中的 {{count}} 个标签合并到一个目标标签：",
+    "mergeTargetPlaceholder": "输入目标标签名",
+    "mergeExisting": "或选择已有标签作为目标：",
+    "cancel": "取消",
+    "confirm": "确认",
+    "renameSuccess": "已重命名，更新 {{count}} 处引用",
+    "mergeSuccess": "已合并，更新 {{count}} 处引用",
+    "deleteSuccess": "已删除，移除 {{count}} 处引用",
+    "operationFailed": "操作失败，请重试",
+    "nameRequired": "标签名不能为空",
+    "nameTooLong": "标签名不能超过 {{count}} 个字符"
+  }
+}

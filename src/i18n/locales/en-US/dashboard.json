@@ -101,6 +101,7 @@
     "copyFailed": "Copy failed",
     "openInNewWindow": "Open in New Window",
     "toggleFavorite": "Toggle Favorite",
+    "editTags": "Edit Tags",
     "moveToTrash": "Move to Trash",
     "label": "Graph actions menu: {{title}}"
   },
@@ -163,5 +164,15 @@
     "clearShort": "Clear",
     "collapse": "Collapse",
     "viewAll": "View all {{count}} tags"
+  },
+  "tagsEditor": {
+    "title": "Edit Tags",
+    "inputPlaceholder": "Type a tag, press Enter or comma to add",
+    "save": "Save",
+    "saving": "Saving...",
+    "saveSuccess": "Tags updated",
+    "saveError": "Failed to save tags",
+    "removeTag": "Remove tag {{tag}}",
+    "limitReached": "You can add up to {{count}} tags"
   }
 }

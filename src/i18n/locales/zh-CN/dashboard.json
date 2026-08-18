@@ -101,6 +101,7 @@
     "copyFailed": "复制失败",
     "openInNewWindow": "在新窗口打开",
     "toggleFavorite": "切换收藏",
+    "editTags": "编辑标签",
     "moveToTrash": "移至回收站",
     "label": "图谱操作菜单：{{title}}"
   },
@@ -163,5 +164,15 @@
     "clearShort": "清除",
     "collapse": "收起",
     "viewAll": "查看全部 {{count}} 个标签"
+  },
+  "tagsEditor": {
+    "title": "编辑标签",
+    "inputPlaceholder": "输入标签，回车或逗号添加",
+    "save": "保存",
+    "saving": "保存中...",
+    "saveSuccess": "标签已更新",
+    "saveError": "标签保存失败",
+    "removeTag": "移除标签 {{tag}}",
+    "limitReached": "最多添加 {{count}} 个标签"
   }
 }

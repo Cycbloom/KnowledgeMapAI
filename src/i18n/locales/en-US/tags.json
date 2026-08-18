@@ -1,0 +1,31 @@
+{
+  "manager": {
+    "title": "Tag Management",
+    "description": "Manage tags across graphs, notes and tasks: rename, merge or delete.",
+    "open": "Open Tag Manager",
+    "dialogTitle": "Tag Management",
+    "empty": "No tags yet",
+    "countGraphs": "{{count}} graphs",
+    "countNotes": "{{count}} notes",
+    "countTasks": "{{count}} tasks",
+    "rename": "Rename",
+    "renameTo": "Rename to",
+    "delete": "Delete",
+    "deleteConfirmTitle": "Delete Tag",
+    "deleteConfirmMessage": "Delete tag \"{{name}}\"? It will be removed from {{count}} references.",
+    "selectToMerge": "Select two or more tags to merge",
+    "mergeSelected": "Merge Selected",
+    "mergeTitle": "Merge Tags",
+    "mergeDescription": "Merge {{count}} selected tags into a target tag:",
+    "mergeTargetPlaceholder": "Enter target tag name",
+    "mergeExisting": "Or pick an existing tag as target:",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "renameSuccess": "Renamed, {{count}} references updated",
+    "mergeSuccess": "Merged, {{count}} references updated",
+    "deleteSuccess": "Deleted, {{count}} references removed",
+    "operationFailed": "Operation failed, please retry",
+    "nameRequired": "Tag name is required",
+    "nameTooLong": "Tag name must be at most {{count}} characters"
+  }
+}

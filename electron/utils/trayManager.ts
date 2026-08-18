@@ -1,4 +1,4 @@
-import { Tray, Menu, nativeImage, app, BrowserWindow } from 'electron';
+import { Tray, Menu, nativeImage, app, BrowserWindow, screen } from 'electron';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -11,10 +11,19 @@ class TrayManager {
   initialize(mainWindow: BrowserWindow): void {
     this.mainWindow = mainWindow;
     
-    const iconPath = path.join(__dirname, '../../public/favicon.svg');
-    const icon = nativeImage.createFromPath(iconPath);
-    
-    this.tray = new Tray(icon.resize({ width: 16, height: 16 }));
+    // nativeImage 不支持 SVG，托盘必须使用 PNG。
+    // 按屏幕缩放比例直接加载预渲染位图（Lanczos 高质量降采样产物），
+    // 避免运行时 resize + DPI 拉伸的双重缩放损失导致图标发糊。
+    // 注意：esbuild 打包后本文件并入 dist-electron/electron/main.js，
+    // 开发模式 __dirname 即 dist-electron/electron，只需回退两级到项目根目录
+    const iconsDir = app.isPackaged
+      ? path.join(process.resourcesPath, 'public', 'icons')
+      : path.join(__dirname, '..', '..', 'public', 'icons');
+    const factor = screen.getPrimaryDisplay().scaleFactor;
+    const traySize = factor >= 1.75 ? 32 : factor >= 1.25 ? 24 : 16;
+    const icon = nativeImage.createFromPath(path.join(iconsDir, `${traySize}x${traySize}.png`));
+
+    this.tray = new Tray(icon);
     
     this.updateMenu();
     

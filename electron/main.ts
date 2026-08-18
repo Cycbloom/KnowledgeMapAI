@@ -238,7 +238,8 @@ function getResourcePath(...paths: string[]): string {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, ...paths);
   }
-  return path.join(__dirname, "..", ...paths);
+  // 开发模式下编译产物位于 dist-electron/electron/，需回退两级到项目根目录
+  return path.join(__dirname, "..", "..", ...paths);
 }
 
 
@@ -358,7 +359,7 @@ async function createWindow(): Promise<void> {
       title: "KnowledgeMap",
       show: false,
       backgroundColor: "#1a1a2e",
-      icon: getResourcePath("public", "favicon.svg"),
+      icon: getResourcePath("public", "icons", "256x256.png"),
     },
   });
 
@@ -536,6 +537,12 @@ if (!gotLock) {
   });
 
   app.whenReady().then(async () => {
+    // Windows 任务栏分组与通知归属依赖 AppUserModelID；
+    // 未设置时开发模式会回退到 electron.exe 的 Electron 默认图标
+    if (process.platform === "win32") {
+      app.setAppUserModelId("com.knowledgemap.app");
+    }
+
     // Task 2: 注册深度链接协议
     app.setAsDefaultProtocolClient("knowledgemap");
 
@@ -549,7 +556,7 @@ if (!gotLock) {
       credits: "Built with Electron, React, TypeScript",
       authors: ["KnowledgeMap Team"],
       website: "https://github.com/knowledgemap/knowledgemap-app",
-      iconPath: getResourcePath("public", "favicon.svg"),
+      iconPath: getResourcePath("public", "icons", "256x256.png"),
     });
 
     // Task 16: permission request handler — 仅允许剪贴板，其余拒绝

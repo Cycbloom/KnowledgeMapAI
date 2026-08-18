@@ -15,3 +15,4 @@ export * from "./ipc";
 export * from "./appError";
 export * from "./settings";
 export * from "./note";
+export * from "./learningMaterial";

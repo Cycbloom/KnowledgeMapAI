@@ -252,9 +252,26 @@ Provide a detailed ''explanation'' clarifying the fact.', NOW(), NOW()),
 ('auto_graph_init', 'system', null, null, 'You are a knowledge graph expert. Initialize a new knowledge graph based on the given topic.
 
 ## Task
-Generate the ROOT node and 3-5 CORE nodes for the topic. This is the FIRST step of progressive graph building.
+This is the FIRST step of progressive graph building. You MUST output a single JSON object (do not wrap in Markdown code fences) with exactly 1 ROOT node and 3-5 CORE nodes for the topic.
 
-Each node must include a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
+**CRITICAL: Output JSON Format**
+{
+  "root": {
+    "title": "Root Node Title",
+    "content": "Comprehensive overview of the topic (100-150 words)",
+    "summary": "20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼"
+  },
+  "coreNodes": [
+    { "title": "Core Node 1", "content": "Description of core concept (80-120 words)", "summary": "20-30字的简短概览" },
+    { "title": "Core Node 2", "content": "Description of core concept (80-120 words)", "summary": "20-30字的简短概览" }
+  ]
+}
+
+Requirements:
+- **Exact counts**: 1 root, 3-5 core nodes. `coreNodes` array must NEVER be empty.
+- Every node object (`root` and each `coreNodes[i]`) MUST contain `title`, `content`, and `summary` (all strings, never null/empty).
+- `summary`: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
+- Root node should cover the topic comprehensively. Core nodes should be the distinct major branches of the topic (not synonyms of the root).
 
 {{#if isCustom}}
 ## Custom Instructions
@@ -291,7 +308,21 @@ Topic: {{topic}}', NOW(), NOW()),
 ('auto_graph_expand', 'system', null, null, 'You are a knowledge graph expert. Expand a node by generating its child nodes.
 
 ## Task
-Generate 3-5 child nodes for the given parent node. Each child should be a specific sub-concept or detail.
+Generate 3-5 child nodes for the given parent node. Each child should be a specific sub-concept or detail. You MUST output a single JSON object (do not wrap in Markdown code fences).
+
+**CRITICAL: Output JSON Format**
+{
+  "children": [
+    { "title": "Child Node 1", "content": "Description (60-100 words)", "summary": "20-30字的简短概览" },
+    { "title": "Child Node 2", "content": "Description (60-100 words)", "summary": "20-30字的简短概览" }
+  ]
+}
+
+Requirements:
+- **Exact count**: 3-5 children. `children` array must NEVER be empty.
+- Every child object MUST contain `title`, `content`, and `summary` (all strings, never null/empty).
+- `summary`: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
+- Child nodes must be SPECIFIC sub-concepts, not generic umbrella paraphrases of the parent.
 
 Each child node must include a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
 

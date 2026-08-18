@@ -1,4 +1,6 @@
 {
+  "aiNotConfiguredWarning": "AI is not configured: text analysis/chat will use mock results; document parsing and smart recommendations are unavailable",
+  "aiConfigAction": "Configuration",
   "export": {
     "title": "Export PDF Report",
     "noPreview": "No screenshot preview",

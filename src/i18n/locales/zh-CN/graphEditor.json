@@ -1,4 +1,6 @@
 {
+  "aiNotConfiguredWarning": "AI 未配置：文本分析/对话将使用模拟结果，文档解析与智能推荐不可用",
+  "aiConfigAction": "配置说明",
   "export": {
     "title": "导出 PDF 报告",
     "noPreview": "无截图预览",

@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { message } from '../../utils/messageHelper';
 import { GraphEditorState } from './index';
 
@@ -13,6 +14,7 @@ export const useGraphEffects = ({
   aiEnabled,
 }: UseGraphEffectsProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const {
     setSelectedNode,
     setSelectedNodeIds,
@@ -23,11 +25,11 @@ export const useGraphEffects = ({
     if (aiEnabled) return;
     if (hasShownAIWarningRef.current) return;
     hasShownAIWarningRef.current = true;
-    message.warning('AI 未配置：文本分析/对话将使用模拟结果，文档解析与智能推荐不可用', {
+    message.warning(t('graphEditor.aiNotConfiguredWarning'), {
       duration: 12000,
-      action: { label: '配置说明', onClick: () => navigate('/profile') }
+      action: { label: t('graphEditor.aiConfigAction'), onClick: () => navigate('/profile') }
     });
-  }, [aiEnabled, navigate]);
+  }, [aiEnabled, navigate, t]);
 
   const clearSelection = useCallback(() => {
     setSelectedNode(null);

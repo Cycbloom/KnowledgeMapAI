@@ -216,10 +216,10 @@ CREATE POLICY "Users can delete own study progress" ON study_progress FOR DELETE
 
 -- Templates
 ALTER TABLE templates ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can view templates" ON templates FOR SELECT USING (true);
+CREATE POLICY "Anyone can view templates" ON templates FOR SELECT USING (auth.uid() = user_id OR is_system = true);
 CREATE POLICY "Authenticated users can create custom templates" ON templates FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own templates" ON templates FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own templates" ON templates FOR DELETE USING (auth.uid() = user_id OR is_system = false);
+CREATE POLICY "Users can delete own templates" ON templates FOR DELETE USING (auth.uid() = user_id AND is_system = false);
 
 -- Prompt Templates
 ALTER TABLE prompt_templates ENABLE ROW LEVEL SECURITY;

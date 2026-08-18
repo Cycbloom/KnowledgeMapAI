@@ -177,6 +177,11 @@ AS $$
 DECLARE
     result JSONB;
 BEGIN
+    -- 仅允许读取当前登录用户自己的学习统计（service_role / superuser 不受限，由 API 层兜底）
+    IF auth.uid() IS NOT NULL AND p_user_id <> auth.uid() THEN
+        RAISE EXCEPTION 'Not authorized to read study stats for this user';
+    END IF;
+
     SELECT jsonb_build_object(
         'metrics', (
             SELECT jsonb_build_object(
@@ -1369,6 +1374,15 @@ DECLARE
   v_new_edge_id UUID;
   v_result JSONB;
 BEGIN
+  -- 校验当前登录用户对该图谱的编辑权（service_role / superuser 不受限，由 API 层兜底）
+  IF auth.uid() IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE id = p_graph_id
+      AND (user_id = auth.uid() OR public.is_graph_collaborator(id, auth.uid()))
+  ) THEN
+    RETURN jsonb_build_object('status', 'error', 'code', 'FORBIDDEN');
+  END IF;
+
   -- 1. 验证源节点存在于当前图谱
   SELECT id INTO v_source_gn_id
   FROM graph_nodes

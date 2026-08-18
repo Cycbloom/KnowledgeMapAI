@@ -9,6 +9,7 @@ import {
 } from "../../config/electronConfig";
 import { message } from "../../utils/messageHelper";
 import { copyToClipboard } from "@/utils/clipboard";
+import { useStore } from "@/store/useStore";
 
 interface CalendarExportModalProps {
   isOpen: boolean;
@@ -27,6 +28,8 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
 
   const handleExportICS = async () => {
     try {
+      const token = useStore.getState().token;
+
       let exportUrl: string;
       if (isElectronProduction()) {
         const electronApiUrl = await getElectronApiUrl();
@@ -36,9 +39,9 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       }
 
       const response = await fetch(exportUrl, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: token
+          ? { Authorization: `Bearer ${token}` }
+          : undefined,
       });
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -54,7 +57,12 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
   };
 
   const handleCopyWebCalLink = () => {
-    const webcalUrl = `webcal://${window.location.host}/api/calendar/subscribe/${localStorage.getItem("userId")}`;
+    const userId = useStore.getState().user?.id;
+    if (!userId) {
+      message.error(t("toast.calendar.exportFailed"));
+      return;
+    }
+    const webcalUrl = `webcal://${window.location.host}/api/calendar/subscribe/${userId}`;
     void copyToClipboard(webcalUrl, t("toast.calendar.webcalCopied"));
   };
 

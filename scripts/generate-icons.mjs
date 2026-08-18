@@ -1,64 +1,38 @@
-import { promises as fs } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import pngToIco from 'png-to-ico';
-import sharp from 'sharp';
+// Regenerates all app icons from build/icon.svg (single source of truth).
+// Usage: npm run icons:generate
+import sharp from "sharp";
+import pngToIco from "png-to-ico";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const buildDir = join(__dirname, '..', 'build');
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const svgBuffer = await readFile(resolve(root, "build/icon.svg"));
 
-const sizes = [16, 24, 32, 48, 64, 128, 256, 512];
+const PNG_SIZES = [16, 24, 32, 48, 64, 96, 128, 180, 192, 256, 512];
+const ICO_SIZES = [16, 24, 32, 48, 64, 128, 256];
 
-async function createPngFromSvg() {
-  console.log('Creating PNG files from SVG...');
-  
-  const svgPath = join(buildDir, 'icon.svg');
-  const iconsDir = join(buildDir, 'icons');
-  await fs.mkdir(iconsDir, { recursive: true });
-  
-  for (const size of sizes) {
-    const outputPath = join(iconsDir, `${size}x${size}.png`);
-    await sharp(svgPath)
-      .resize(size, size)
-      .png()
-      .toFile(outputPath);
-    console.log(`  Created: ${size}x${size}.png`);
-  }
+// Render a high-res master (1024px) once, then Lanczos-downscale per size —
+// much crisper at 16/24/32 than direct low-res rasterization.
+async function render(size) {
+  return sharp(svgBuffer, { density: 144 })
+    .resize(size, size, { kernel: "lanczos3" })
+    .png()
+    .toBuffer();
 }
 
-async function createIco() {
-  console.log('Creating ICO file...');
-  
-  const pngBuffers = [];
-  for (const size of [16, 24, 32, 48, 64, 128, 256]) {
-    const pngPath = join(buildDir, 'icons', `${size}x${size}.png`);
-    try {
-      const buffer = await fs.readFile(pngPath);
-      pngBuffers.push(buffer);
-    } catch {
-      console.warn(`  Warning: ${pngPath} not found`);
-    }
-  }
-  
-  if (pngBuffers.length === 0) {
-    throw new Error('No PNG files found to create ICO');
-  }
-  
-  const icoBuffer = await pngToIco(pngBuffers);
-  const icoPath = join(buildDir, 'icon.ico');
-  await fs.writeFile(icoPath, icoBuffer);
-  console.log(`  Created: icon.ico`);
+await mkdir(resolve(root, "build/icons"), { recursive: true });
+await mkdir(resolve(root, "public/icons"), { recursive: true });
+
+for (const size of PNG_SIZES) {
+  const buffer = await render(size);
+  const name = `${size}x${size}.png`;
+  await writeFile(resolve(root, "build/icons", name), buffer);
+  await writeFile(resolve(root, "public/icons", name), buffer);
+  console.log(`[icons] ${name} -> build/icons + public/icons`);
 }
 
-async function main() {
-  try {
-    await createPngFromSvg();
-    await createIco();
-    console.log('Icon generation complete!');
-  } catch (error) {
-    console.error('Error generating icons:', error);
-    process.exit(1);
-  }
-}
-
-main();
+const icoBuffers = await Promise.all(ICO_SIZES.map(render));
+await writeFile(resolve(root, "build/icon.ico"), await pngToIco(icoBuffers));
+console.log(`[icons] icon.ico (multi-size: ${ICO_SIZES.join(", ")}) -> build`);
+console.log("[icons] done");

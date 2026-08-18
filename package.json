@@ -105,6 +105,8 @@
     "audit": "npm audit",
     "audit:fix": "npm audit fix",
     "audit:production": "npm audit --production",
+    "# Icons": "",
+    "icons:generate": "node scripts/generate-icons.mjs",
     "# Utility": "",
     "doctor": "tsx scripts/doctor.ts",
     "help": "node scripts/help.mjs"

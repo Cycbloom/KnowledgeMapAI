@@ -40,7 +40,6 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           taskId,
           useFocusStore.getState().focusDuration,
         );}
-      frontendEventBus.publish("focus_enter", { taskId });
     } else {
       stopMixer();
       frontendEventBus.publish("focus_exit", {});

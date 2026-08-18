@@ -87,10 +87,6 @@ export const NotificationCenter: React.FC = () => {
     loadNotifications();
     loadUnreadCount();
 
-    const unsubNotificationNew = frontendEventBus.subscribe("notification_new", () => {
-      loadUnreadCount();
-      loadNotifications();
-    });
     const unsubSseNotificationNeeded = frontendEventBus.subscribe("sse_notification_needed", () => {
       loadUnreadCount();
       loadNotifications();
@@ -103,7 +99,6 @@ export const NotificationCenter: React.FC = () => {
     });
 
     return () => {
-      unsubNotificationNew();
       unsubSseNotificationNeeded();
       unsubSseTaskCompleted();
       unsubSseFocusSessionEnded();

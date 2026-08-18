@@ -33,6 +33,7 @@ import {
 import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
 import { NotificationCenter } from "../Notifications/NotificationCenter";
+import { AchievementNotification } from "../Scheduler/AchievementNotification";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { useSwipeBack } from "../../hooks/gesture/useSwipeBack";
@@ -687,6 +688,7 @@ export const Layout = () => {
           </Suspense>
           <MessageBar bottomOffset={isMobile && !isFullScreenPage ? 56 : 0} />
           <OfflineIndicator />
+          <AchievementNotification />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
           {isHelpOpen && (
             <Suspense fallback={null}>

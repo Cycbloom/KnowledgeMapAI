@@ -170,9 +170,6 @@ export const useTaskEvents = () => {
 
             frontendEventBus.publish("sse_message", data);
 
-            if (data.type === "task_update") {
-              frontendEventBus.publish("sse_task_update", { taskId: data.taskId, status: data.status, ...data });
-            }
             if (data.type === "task_completed") {
               frontendEventBus.publish("sse_task_completed", data);
             }
@@ -184,6 +181,9 @@ export const useTaskEvents = () => {
             }
             if (data.type === "notification_needed") {
               frontendEventBus.publish("sse_notification_needed", data);
+            }
+            if (data.type === "achievement_unlocked") {
+              frontendEventBus.publish("achievement_unlocked", data.data);
             }
 
             if (data.cacheKeys && Array.isArray(data.cacheKeys)) {

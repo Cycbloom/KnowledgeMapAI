@@ -58,12 +58,17 @@ export function initializeEventSubscribers(qc: QueryClient): void {
     }
   });
 
+  const unsub6 = frontendEventBus.subscribe("achievement_unlocked", () => {
+    queryClient?.invalidateQueries({ queryKey: queryKeys.achievements() });
+  });
+
   unsubscribers = [
     unsub1,
     unsub2,
     unsub3,
     unsub4,
     unsub5,
+    unsub6,
   ];
 }
 

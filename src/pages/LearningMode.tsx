@@ -5,7 +5,6 @@ import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, schedulerApi } from "../services/api";
 import type { BatchGenerateConfig } from "../components/GraphEditor/modals/BatchGenerateDialog";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { message as msgHelper } from "../utils/messageHelper";
 import { asyncConfirm } from "../utils/asyncConfirm";
 import {
@@ -82,7 +81,7 @@ export const LearningMode = () => {
 
   const { linkedTask } = useLinkedTask({ graphId, nodeId });
 
-  const { completeFocusTimer, focusTaskId } = useLearningModeTimer({
+  const { completeFocusTimer } = useLearningModeTimer({
     nodeId,
     nodeTitle: "",
     linkedTaskMainTaskId: linkedTask?.mainTaskId,
@@ -542,7 +541,6 @@ export const LearningMode = () => {
         onEnterFocusMode={() => {
           if (nodeId && articleContent) {
             enterFocusMode(nodeId);
-            frontendEventBus.publish("focus_enter", { nodeId, taskId: focusTaskId ?? undefined });
             setIsFocusModeOpen(true);
           }
         }}

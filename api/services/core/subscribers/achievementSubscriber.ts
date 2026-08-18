@@ -37,7 +37,22 @@ class AchievementSubscriber {
     return async (event: AppEvent) => {
       try {
         const { achievementEngine } = await import("../../achievements/achievementEngine");
-        await achievementEngine.evaluateAchievements(event.userId, eventType, event);
+        const unlocked = await achievementEngine.evaluateAchievements(event.userId, eventType, event);
+
+        // 解锁事件发布：通知前端弹成就通知 + 触发缓存失效
+        for (const ach of unlocked) {
+          appEventBus.publish(
+            "achievement_unlocked",
+            {
+              id: ach.id,
+              title: ach.name,
+              description: ach.description,
+              icon: ach.icon,
+            },
+            event.userId,
+            "achievementSubscriber",
+          );
+        }
       } catch (error) {
         logger.error(`[AchievementSubscriber] Failed to handle ${eventType}:`, error);
       }

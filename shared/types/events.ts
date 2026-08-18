@@ -34,7 +34,8 @@ export type StudyEventType =
 
 export type SystemEventType =
   | "cache_invalidation_needed"
-  | "notification_needed";
+  | "notification_needed"
+  | "achievement_unlocked";
 
 export type AppEventType =
   | SchedulerEventType
@@ -238,6 +239,13 @@ export interface NotificationNeededPayload {
   cacheKeys?: string[][];
 }
 
+export interface AchievementUnlockedPayload {
+  id: string;
+  title: string;
+  description: string;
+  icon?: string;
+}
+
 export type AppEventPayload =
   | TaskStartedPayload
   | TaskPausedPayload
@@ -266,7 +274,8 @@ export type AppEventPayload =
   | AITaskFailedPayload
   | StudySessionCompletedPayload
   | CacheInvalidationNeededPayload
-  | NotificationNeededPayload;
+  | NotificationNeededPayload
+  | AchievementUnlockedPayload;
 
 export type SchedulerEvent<T = unknown> = AppEvent<T>;
 export type SchedulerEventHandler = AppEventHandler;

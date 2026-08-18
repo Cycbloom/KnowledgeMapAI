@@ -9,6 +9,7 @@ import type {
   TaskCompletedPayload,
   FocusSessionEndedPayload,
   ReviewCompletedPayload,
+  AchievementUnlockedPayload,
 } from "@shared/types/events";
 import { logger } from "../../../utils/logger";
 
@@ -29,6 +30,7 @@ class SSENotificationSubscriber {
     this.subscribe("task_completed", this.handleTaskCompleted);
     this.subscribe("focus_session_ended", this.handleFocusSessionEnded);
     this.subscribe("review_completed", this.handleReviewCompleted);
+    this.subscribe("achievement_unlocked", this.handleAchievementUnlocked);
     logger.info("[SSENotificationSubscriber] All event subscribers registered");
   }
 
@@ -119,6 +121,21 @@ class SSENotificationSubscriber {
         knowledgePointId: payload.knowledgePointId,
       },
       cacheKeys: [["study", "review"], ["scheduler", "stats"]],
+    };
+    sseService.sendToUser(event.userId, message);
+  }
+
+  private handleAchievementUnlocked(event: AppEvent) {
+    const payload = event.payload as AchievementUnlockedPayload;
+    const message: SSEMessage = {
+      type: "achievement_unlocked",
+      data: {
+        id: payload.id,
+        title: payload.title,
+        description: payload.description,
+        icon: payload.icon,
+      },
+      cacheKeys: [["achievements"]],
     };
     sseService.sendToUser(event.userId, message);
   }

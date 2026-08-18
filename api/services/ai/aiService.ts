@@ -158,9 +158,27 @@ export class AIService {
       userId?: string;
       graphId?: string;
       language?: string;
+      schema_id?: string;
     },
   ) {
     return contentGenerationService.generateLearningMaterial(topic, context, options);
+  }
+
+  /** AI 辅助设计/优化学习材料章节结构 */
+  async assistLearningSchema(
+    mode: "generate" | "optimize",
+    topic: string,
+    options?: {
+      goal?: string;
+      existingSections?: { title: string; instruction: string; min_words?: number; max_words?: number }[];
+      language?: string;
+      userId?: string;
+      graphId?: string;
+      provider?: import("@shared/types").AIProviderType;
+      model?: string;
+    },
+  ) {
+    return contentGenerationService.assistLearningSchema(mode, topic, options);
   }
 
   async generateTaskDetails(

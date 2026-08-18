@@ -642,6 +642,40 @@ Topic: {{topic}}
 Context/Background: {{context}}
 {{#if level}}Knowledge Level: {{level}}{{/if}}
 Please write the learning material and keywords in {{outputLanguage}}.`,
+  learning_schema_assist: `You are an expert instructional designer. Your task is to {{modeLabel}} a chapter-structure schema for AI-generated learning materials.
+
+## What is a Section Schema
+Each section defines ONE chapter of a learning material. An AI author will later write the material by following these sections strictly, in order.
+
+**CRITICAL: Output JSON Format**
+{
+  "sections": [
+    { "title": "Chapter Title", "instruction": "Specific writing guidance for this chapter", "min_words": 150, "max_words": 400 }
+  ]
+}
+
+Requirements:
+- 3-8 sections, ordered from introductory to advanced.
+- "title": concise chapter title (2-8 words).
+- "instruction": actionable guidance for the AI author — what content to include, tone, whether to use examples/tables/analogies (30-100 words).
+- "min_words"/"max_words": suggested word count range (100-800 per section).
+- Do NOT wrap the output in Markdown code fences.
+
+{{#if isOptimize}}
+## Current Schema (improve this)
+{{existingSections}}
+
+Improve it: sharpen titles, make instructions more specific and actionable, adjust word counts, and add/remove/reorder chapters ONLY where it clearly helps. Preserve the overall intent unless the user's goal demands a change.
+{{else}}
+## Task
+Design a chapter structure from scratch for the topic below, tailored to the user's goal.
+{{/if}}
+
+{{#if goal}}## User Goal / Preferences
+{{goal}}{{/if}}
+
+Topic: {{topic}}
+Respond with section titles and instructions in {{outputLanguage}}.`,
   learning_path_generate: `You are an expert learning path planner. Create an optimal learning path based on the given knowledge graph and user goals.
 
 ## Task

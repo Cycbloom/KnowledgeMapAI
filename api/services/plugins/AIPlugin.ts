@@ -5,6 +5,7 @@ import promptRoutes from "../../routes/prompts";
 import ragRoutes from "../../routes/rag";
 import searchRoutes from "../../routes/search";
 import literatureRoutes from "../../routes/knowledge/literature";
+import learningMaterialSchemaRoutes from "../../routes/learningMaterialSchemas";
 
 export const AIPlugin: Plugin = {
   name: "ai",
@@ -19,5 +20,10 @@ export const AIPlugin: Plugin = {
     kernel.registerRoutes("/api/v1/rag", ragRoutes);
     kernel.registerRoutes("/api/v1/search", searchRoutes);
     kernel.registerRoutes("/api/v1/literature", literatureRoutes, { rateLimiter: "aiHeavy" });
+    kernel.registerRoutes(
+      "/api/v1/learning-material-schemas",
+      learningMaterialSchemaRoutes,
+      { rateLimiter: "ai" },
+    );
   },
 };

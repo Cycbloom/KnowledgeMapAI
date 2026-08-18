@@ -14,9 +14,11 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { performanceMonitor } from "./performanceMonitor";
 import { pricingService } from "./pricingService";
 import { getMockResponse } from "./mock";
-import { promptService } from "./promptService";
+import { promptService, getLanguageInstruction } from "./promptService";
+import { learningMaterialSchemaService } from "./learningMaterialSchemaService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
+import { TemplateEngine } from "../../utils/templateEngine";
 
 export interface GenerateLearningMaterialResult {
   content: string;
@@ -156,6 +158,7 @@ export class ContentGenerationService {
       userId?: string;
       graphId?: string;
       language?: string;
+      schema_id?: string;
     } = {},
   ): Promise<GenerateLearningMaterialResult> {
     const provider = options.provider
@@ -212,14 +215,75 @@ export class ContentGenerationService {
               level: options.level,
             };
 
-            const systemPrompt = await promptService.getRenderedPrompt(
-              getSupabaseAdmin(),
-              "learning_material",
-              templateContext,
-              options.userId,
-              options.graphId,
-              options.language,
-            );
+            // ============================================================
+            // 分支1：有 schema_id 或 通过优先级能解析到 schema → 动态拼装 prompt
+            //        这样用户可以通过可视化章节编辑器自由组合章节
+            // 分支2：未使用 schema → 走原有 prompt_templates 流程
+            // ============================================================
+            let systemPrompt = "";
+            const supabaseAdmin = getSupabaseAdmin();
+            const schemaId = options.schema_id?.trim();
+            let resolvedSchema = schemaId
+              ? await learningMaterialSchemaService.get(supabaseAdmin, schemaId)
+              : null;
+
+            // 如果用户没传 schema_id，但 userId 存在 → 尝试按优先级解析默认 schema
+            if (!resolvedSchema && options.userId) {
+              resolvedSchema = await learningMaterialSchemaService
+                .resolveEffectiveSchema(
+                  supabaseAdmin,
+                  options.userId,
+                  options.graphId,
+                )
+                .catch(() => null);
+            }
+
+            if (resolvedSchema && resolvedSchema.sections.length > 0) {
+              logger.info(
+                `[learning_material] using schema=${resolvedSchema.id} name=${resolvedSchema.name} scope=${resolvedSchema.scope}`,
+              );
+              const promptBase = promptService.buildPromptFromSchema(resolvedSchema);
+              try {
+                systemPrompt = TemplateEngine.render(promptBase, templateContext);
+              } catch (e) {
+                logger.error("Failed to render schema-based prompt", e);
+                systemPrompt = promptBase;
+              }
+              // 追加 output schema / language 指令（与 getRenderedPrompt 保持一致）
+              const outputLanguage = isEnglishLanguage(options.language)
+                ? "English"
+                : "Chinese";
+              systemPrompt = systemPrompt.replace(
+                /\{\{outputLanguage\}\}/g,
+                outputLanguage,
+              );
+              const categoryOptions = isEnglishLanguage(options.language)
+                ? "'Definition', 'Concept', 'Method', 'Conclusion', 'Principle', 'Application', 'Terminology'"
+                : "'定义', '概念', '方法', '结论', '原理', '应用', '术语'";
+              systemPrompt = systemPrompt.replace(
+                /\{\{categoryOptions\}\}/g,
+                categoryOptions,
+              );
+              const { OUTPUT_SCHEMAS } = await import("./promptConstants");
+              if (OUTPUT_SCHEMAS.learning_material) {
+                systemPrompt += `\n\n${OUTPUT_SCHEMAS.learning_material}`.replace(
+                  /\{\{outputLanguage\}\}/g,
+                  outputLanguage,
+                );
+              }
+              const langInstr = getLanguageInstruction(options.language);
+              systemPrompt += `\n\n${langInstr}`;
+            } else {
+              // 分支2：走原有 prompt_templates 优先级链路
+              systemPrompt = await promptService.getRenderedPrompt(
+                supabaseAdmin,
+                "learning_material",
+                templateContext,
+                options.userId,
+                options.graphId,
+                options.language,
+              );
+            }
 
             const completion = await withTimeoutAndRetry(
               () =>
@@ -418,6 +482,206 @@ export class ContentGenerationService {
       }
       throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
         message: err.message || "AI 任务详情生成失败",
+      });
+    }
+  }
+
+  /**
+   * AI 辅助设计学习材料章节结构
+   * - mode="generate": 根据主题 + 学习目标从零生成整套章节
+   * - mode="optimize": 优化现有章节（更具体的指令、调整字数、增删章节）
+   */
+  async assistLearningSchema(
+    mode: "generate" | "optimize",
+    topic: string,
+    options: {
+      goal?: string;
+      existingSections?: { title: string; instruction: string; min_words?: number; max_words?: number }[];
+      language?: string;
+      userId?: string;
+      graphId?: string;
+      provider?: AIProviderType;
+      model?: string;
+    } = {},
+  ): Promise<{ sections: { title: string; instruction: string; min_words?: number; max_words?: number }[] }> {
+    const provider = options.provider
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask("text");
+
+    const language = options.language || "zh-CN";
+    const isEnglish = isEnglishLanguage(language);
+
+    // 无 Key 时返回一份可用的演示结构（保证 UI 可体验）
+    if (!provider.hasKey) {
+      return {
+        sections: [
+          {
+            title: isEnglish ? "Introduction" : "引言",
+            instruction: isEnglish
+              ? "Explain what this topic is and why it matters, with a hook."
+              : "说明该主题是什么、为什么重要，用一个引人入胜的开头。",
+            min_words: 100,
+            max_words: 250,
+          },
+          {
+            title: isEnglish ? "Core Concepts" : "核心概念",
+            instruction: isEnglish
+              ? "Explain the theoretical foundations with analogies."
+              : "讲解理论基础，善用类比。",
+            min_words: 200,
+            max_words: 500,
+          },
+          {
+            title: isEnglish ? "Summary" : "总结",
+            instruction: isEnglish
+              ? "Summarize the key takeaways."
+              : "总结本章要点。",
+            min_words: 80,
+            max_words: 200,
+          },
+        ],
+      };
+    }
+
+    const existingSectionsText = options.existingSections?.length
+      ? JSON.stringify(
+          options.existingSections.map((s) => ({
+            title: s.title,
+            instruction: s.instruction,
+            min_words: s.min_words,
+            max_words: s.max_words,
+          })),
+          null,
+          2,
+        )
+      : "";
+
+    const systemPrompt = await promptService.getRenderedPrompt(
+      getSupabaseAdmin(),
+      "learning_schema_assist",
+      {
+        modeLabel:
+          mode === "optimize"
+            ? isEnglish
+              ? "optimize the existing"
+              : "优化现有"
+            : isEnglish
+              ? "design a new"
+              : "设计一套新的",
+        isOptimize: mode === "optimize",
+        existingSections: existingSectionsText,
+        goal: options.goal ?? "",
+        topic,
+        outputLanguage: isEnglish ? "English" : "Chinese",
+      },
+      options.userId,
+      options.graphId,
+      language,
+    );
+
+    const requestKey = generateRequestKey("assistLearningSchema", {
+      mode,
+      topic: topic.slice(0, 100),
+      goal: (options.goal ?? "").slice(0, 100),
+      sectionCount: options.existingSections?.length ?? 0,
+      model: options.model || provider.model,
+    });
+
+    try {
+      return await dedupedRequest(requestKey, async () => {
+        const model = options.model || provider.model;
+
+        return withAIMonitoring(
+          {
+            operation: "assistLearningSchema",
+            provider: provider.providerType,
+            model,
+            metadata: { topic, mode, userId: options.userId },
+          },
+          async () => {
+            const completion = await withTimeoutAndRetry(
+              () =>
+                provider.client.chat.completions.create({
+                  messages: [
+                    { role: "system", content: systemPrompt },
+                    {
+                      role: "user",
+                      content: isEnglish
+                        ? `Please ${mode} the chapter schema for topic: ${topic}`
+                        : `请${mode === "optimize" ? "优化" : "设计"}主题「${topic}」的章节结构`,
+                    },
+                  ],
+                  model,
+                  response_format: { type: "json_object" },
+                }),
+              {
+                timeout: DEFAULT_TIMEOUT,
+                maxRetries: 3,
+                onRetry: (attempt, error) => {
+                  logger.warn(
+                    `Assist Learning Schema retry attempt ${attempt}: ${error.message}`,
+                  );
+                },
+              },
+            );
+
+            const content = completion.choices[0].message.content || "";
+            const parsed = parseAIResponse<{
+              sections: {
+                title?: string;
+                instruction?: string;
+                min_words?: number;
+                max_words?: number;
+              }[];
+            }>(content, "Assist Learning Schema");
+
+            // 清洗 + 兜底，保证返回结构可用
+            const sections = (Array.isArray(parsed.sections) ? parsed.sections : [])
+              .filter(
+                (s): s is { title: string; instruction: string; min_words?: number; max_words?: number } =>
+                  Boolean(s) &&
+                  typeof s.title === "string" &&
+                  s.title.trim() !== "" &&
+                  typeof s.instruction === "string" &&
+                  s.instruction.trim() !== "",
+              )
+              .slice(0, 12)
+              .map((s) => ({
+                title: s.title.trim().slice(0, 100),
+                instruction: s.instruction.trim().slice(0, 1000),
+                min_words: Number.isFinite(s.min_words)
+                  ? Math.min(2000, Math.max(50, Number(s.min_words)))
+                  : undefined,
+                max_words: Number.isFinite(s.max_words)
+                  ? Math.min(3000, Math.max(100, Number(s.max_words)))
+                  : undefined,
+              }));
+
+            if (sections.length === 0) {
+              throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+                message: "AI 未返回有效的章节结构，请重试或换个主题描述",
+              });
+            }
+
+            return { result: { sections }, usage: completion.usage };
+          },
+        );
+      });
+    } catch (error: unknown) {
+      if (error instanceof AppError) throw error;
+      const err = error as Error;
+      logger.error("AI Assist Learning Schema Error:", error);
+
+      if (err instanceof TimeoutError) {
+        throw new AppError(ErrorCodes.AI_TIMEOUT);
+      }
+      if (err instanceof RetryError) {
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
+        });
+      }
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI 章节结构生成失败",
       });
     }
   }

@@ -32,6 +32,9 @@ export const CacheKeys = {
   GRAPH_LITERATURE: (graphId: string, moduleFilter?: string) => `graph_literature_${graphId}${moduleFilter ? `_${moduleFilter}` : ''}`,
   SEARCH_SIMILAR: (textHash: string, userId: string) => `search_similar_${textHash}_${userId}`,
   EMBEDDING: (textHash: string) => `embedding_gen_${textHash}`,
+  LEARNING_SCHEMA: (id: string) => `learning_schema_${id}`,
+  LEARNING_SCHEMA_LIST: (userId: string, graphId: string = "none") =>
+    `learning_schema_list_${userId}_${graphId}`,
 };
 
 export const CacheTTL = {

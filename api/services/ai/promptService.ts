@@ -15,6 +15,7 @@ import {
   DEFAULT_PROMPTS,
   OUTPUT_SCHEMAS,
 } from "./promptConstants";
+import type { LearningMaterialSchema, LearningMaterialSection } from "@shared/types";
 
 export type { PromptScope, PromptTemplate, PromptListOptions, PromptCreateData, PromptUpdateData };
 export { getLanguageInstruction };
@@ -467,6 +468,65 @@ export class PromptService {
     });
 
     return completion.choices[0].message.content || "";
+  }
+
+  /**
+   * 根据学习材料章节配置方案（可视化编辑器产出）动态拼装 prompt 文本。
+   * 这样用户就可以通过可视化界面自由组合章节，而不必手写完整 prompt。
+   *
+   * 拼装逻辑：
+   * 1. 复用现有 learning_material 模板的"人设+格式"公共头部（兜底用常量）
+   * 2. 把 sections 数组按 order 排序后拼入 Structure 段落
+   * 3. 保留原有的变量占位符（topic, context, level）以便模板引擎继续渲染
+   */
+  buildPromptFromSchema(schema: LearningMaterialSchema): string {
+    const sortedSections = [...schema.sections].sort(
+      (a, b) => (a.order ?? 0) - (b.order ?? 0),
+    );
+
+    const structureLines = sortedSections.map(
+      (sec, idx) => this.formatSectionLine(idx + 1, sec),
+    );
+
+    return `You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.
+
+Target Audience: University students or professionals learning this concept.
+
+Structure:
+${structureLines.join("\n")}
+
+Formatting:
+- Use Markdown headers (## for each section title above, ### for subsections inside).
+- Use bolding for key terms.
+- **IMPORTANT**: Wrap ALL mathematical formulas in LaTeX: $inline$ or $$block$$.
+- Use lists and bullet points for readability.
+- Respect the suggested word count per section whenever feasible.
+
+Topic: {{topic}}
+Context/Background: {{context}}
+${this.wrapOptional("Knowledge Level: {{level}}")}
+Please write the learning material and keywords in {{outputLanguage}}.`;
+  }
+
+  /** 格式化单个章节行 */
+  private formatSectionLine(
+    seqNo: number,
+    sec: LearningMaterialSection,
+  ): string {
+    const parts: string[] = [];
+    parts.push(`${seqNo}. **${sec.title}**: ${sec.instruction.trim()}`);
+    if (sec.min_words && sec.max_words) {
+      parts.push(` Suggested length: approximately ${sec.min_words}-${sec.max_words} words.`);
+    } else if (sec.min_words) {
+      parts.push(` Suggested minimum length: ${sec.min_words} words.`);
+    } else if (sec.max_words) {
+      parts.push(` Suggested maximum length: ${sec.max_words} words.`);
+    }
+    return parts.join("");
+  }
+
+  private wrapOptional(text: string): string {
+    return `{{#if level}}${text}{{/if}}`;
   }
 }
 

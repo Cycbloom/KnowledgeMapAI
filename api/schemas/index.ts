@@ -223,6 +223,27 @@ export const generateLearningMaterialSchema = z.object({
   model: z.string().optional(),
   language: z.string().optional(),
   graph_id: z.string().optional(),
+  schema_id: z.string().optional(),
+});
+
+export const assistLearningSchemaSchema = z.object({
+  mode: z.enum(["generate", "optimize"]),
+  topic: z.string().min(1, "主题不能为空").max(500),
+  goal: z.string().max(2000).optional(),
+  existing_sections: z
+    .array(
+      z.object({
+        title: z.string(),
+        instruction: z.string(),
+        min_words: z.number().optional(),
+        max_words: z.number().optional(),
+      }),
+    )
+    .optional(),
+  provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
+  model: z.string().optional(),
+  language: z.string().optional(),
+  graph_id: z.string().optional(),
 });
 
 export const expandKnowledgeSchema = z.object({

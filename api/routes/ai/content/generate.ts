@@ -4,6 +4,7 @@ import { validate } from "../../../middleware/validate";
 import {
   generateContentSchema,
   generateLearningMaterialSchema,
+  assistLearningSchemaSchema,
 } from "../../../schemas/index";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
 import { AppError } from "../../../middleware/errorHandler";
@@ -120,7 +121,7 @@ router.post(
   requireAuth,
   validate(generateLearningMaterialSchema),
   async (req: AuthedRequest, res: Response) => {
-    const { topic, context, level, provider, model, graph_id, language } =
+    const { topic, context, level, provider, model, graph_id, language, schema_id } =
       req.body;
 
     try {
@@ -131,12 +132,42 @@ router.post(
         userId: req.user.id,
         graphId: graph_id,
         language,
+        schema_id,
       });
       res.json({ content: result.content, keywords: result.keywords });
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Learning Material Error:", error);
       throw new AppError(err.message || "AI 生成学习内容失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+  },
+);
+
+// AI 辅助设计/优化学习材料章节结构
+router.post(
+  "/learning-material-schema/assist",
+  requireAuth,
+  validate(assistLearningSchemaSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { mode, topic, goal, existing_sections, provider, model, language, graph_id } =
+      req.body;
+
+    try {
+      const result = await aiService.assistLearningSchema(mode, topic, {
+        goal,
+        existingSections: existing_sections,
+        language,
+        userId: req.user.id,
+        graphId: graph_id,
+        provider,
+        model,
+      });
+      res.json(result);
+    } catch (error: unknown) {
+      if (error instanceof AppError) throw error;
+      const err = error as Error;
+      logger.error("AI Assist Learning Schema Error:", error);
+      throw new AppError(err.message || "AI 辅助章节结构失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

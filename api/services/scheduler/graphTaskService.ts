@@ -107,7 +107,7 @@ export class GraphTaskService {
 
     const { data: graph, error: graphError } = await supabase
       .from("knowledge_graphs")
-      .select("id, title, task_id, template_type")
+      .select("id, title, task_id")
       .eq("id", graphId)
       .single();
 
@@ -116,15 +116,6 @@ export class GraphTaskService {
       throw new Error(
         `Graph not found: ${graphError?.message || "Unknown error"}`,
       );
-    }
-
-    // 故事创作类型的图谱不应该创建任务
-    if (graph.template_type === "story_creation") {
-      logger.warn("[GraphTaskService] Story creation graph should not have task, skipping:", {
-        graphId,
-        title: graph.title,
-      });
-      return { taskId: "", isNew: false };
     }
 
     if (graph.task_id) {

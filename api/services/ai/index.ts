@@ -74,7 +74,6 @@ export {
   validateTemplate,
   TEMPLATE_VALIDATION_RULES,
 } from "./templateValidationService";
-export { storyTemplateService, StoryTemplateService } from "./storyTemplateService";
 export {
   conceptExtractorService,
   ConceptExtractorService,

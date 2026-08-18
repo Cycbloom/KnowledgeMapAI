@@ -35,13 +35,6 @@ const initGraphSchema = z.object({
   language: z.string().optional(),
   session_id: z.string().uuid().optional(),
   template_type: z.string().optional(),
-  storyConfig: z
-    .object({
-      genre: z.string().optional(),
-      coreConflict: z.string().optional(),
-      characterHints: z.string().optional(),
-    })
-    .optional(),
 });
 
 const expandNodeSchema = z.object({
@@ -84,7 +77,6 @@ router.post(
       language,
       session_id,
       template_type,
-      storyConfig,
     } = req.body;
     const supabase = req.supabase;
     if (!supabase) {
@@ -144,40 +136,6 @@ router.post(
         logger.error("Topic Research Template Error:", error);
         throw new AppError(
           err.message || "专题研究模板生成失败",
-          500,
-          ErrorCodes.SYSTEM_INTERNAL_ERROR,
-        );
-      }
-    }
-
-    // Story creation branch
-    if (template_type === "story_creation") {
-      try {
-        const result =
-          await templateGeneratorService.generateStoryCreationStructure(
-            topic,
-            storyConfig as
-              | {
-                  genre?: string;
-                  coreConflict?: string;
-                  characterHints?: string;
-                }
-              | undefined,
-            req.user.id,
-            graph_id,
-          );
-
-        res.json({
-          sessionId,
-          root: result.root,
-          coreNodes: result.coreNodes,
-        });
-        return;
-      } catch (error) {
-        const err = error as Error;
-        logger.error("Story Creation Template Error:", error);
-        throw new AppError(
-          err.message || "故事创作模板生成失败",
           500,
           ErrorCodes.SYSTEM_INTERNAL_ERROR,
         );

@@ -30,7 +30,6 @@ import {
   type GeneratedTemplateEdge,
   type GeneratedTemplateScheme,
 } from "./templateValidationService";
-import { storyTemplateService } from "./storyTemplateService";
 
 export interface GenerateTemplatesOptions {
   topic: string;
@@ -251,20 +250,6 @@ function getMockTemplates(
 
     return {
       templates: [topicResearchTemplate],
-      metadata: {
-        topic,
-        generatedAt: new Date().toISOString(),
-        provider: "mock",
-        model: "mock",
-      },
-    };
-  }
-
-  if (templateType === "story_creation") {
-    const storyTemplate = storyTemplateService.getStoryCreationMockTemplate(topic);
-
-    return {
-      templates: [storyTemplate as GeneratedTemplateScheme],
       metadata: {
         topic,
         generatedAt: new Date().toISOString(),
@@ -812,9 +797,7 @@ export class TemplateGeneratorService {
       analysis:
         "Focus on analytical structure with factors, comparisons, and conclusions.",
       architecture:
-        "Focus on system architecture with modules, components, and their relationships.",
-      creative:
-        "Focus on narrative structure with story arcs, character development, and dramatic elements.",
+        "Focus on system architecture with modules, components, and their dependencies.",
     };
 
     let templateTypeGuidance = "";
@@ -890,29 +873,6 @@ export class TemplateGeneratorService {
     prompt += `\n\n请为这个主题生成 3 个不同的知识图谱模板方案。`;
 
     return prompt;
-  }
-
-  async generateStoryCreationStructure(
-    topic: string,
-    storyConfig?: {
-      genre?: string;
-      coreConflict?: string;
-      characterHints?: string;
-    },
-    userId?: string,
-    graphId?: string,
-  ): Promise<{
-    root: { title: string; content: string; summary?: string };
-    coreNodes: Array<{ title: string; content?: string; summary?: string }>;
-  }> {
-    return storyTemplateService.generateStoryCreationStructure(
-      topic,
-      storyConfig,
-      userId,
-      graphId,
-      async (category, templateType, preferredLayout, uid, gid) =>
-        this.buildSystemPrompt(category, templateType, preferredLayout, uid, gid),
-    );
   }
 }
 

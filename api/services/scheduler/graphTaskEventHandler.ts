@@ -68,28 +68,7 @@ class GraphTaskEventHandler {
     });
 
     try {
-      // 查询图谱的模板类型
-      const { data: graph, error } = await getSupabaseAdmin()
-        .from("knowledge_graphs")
-        .select("template_type, title")
-        .eq("id", graphId)
-        .single();
-
-      if (error) {
-        logger.error("[GraphTaskEventHandler] Failed to fetch graph info:", error);
-        return;
-      }
-
-      // 故事创作类型的图谱不需要任务调度
-      if (graph?.template_type === "story_creation") {
-        logger.info("[GraphTaskEventHandler] Skipping task creation for story_creation graph:", {
-          graphId,
-          title: graph.title,
-        });
-        return;
-      }
-
-      // 其他类型的图谱创建任务
+      // 为图谱创建任务
       await graphTaskService.createOrUpdateTaskForGraph(
         getSupabaseAdmin(),
         userId,

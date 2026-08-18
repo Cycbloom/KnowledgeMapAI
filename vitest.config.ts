@@ -17,11 +17,26 @@ export default mergeConfig(
       // this virtual module at build/dev time, but vitest cannot resolve it.
       // Tests that need real SW behavior (UpdatePrompt.test.tsx) import the shared
       // swMockState from the mock file and modify it directly before rendering.
-      alias: {
-        "virtual:pwa-register/react": fileURLToPath(
-          new URL("./tests/__mocks__/virtualPwaRegisterReact.ts", import.meta.url),
-        ),
-      },
+      alias: [
+        {
+          find: "virtual:pwa-register/react",
+          replacement: fileURLToPath(
+            new URL("./tests/__mocks__/virtualPwaRegisterReact.ts", import.meta.url),
+          ),
+        },
+        // better-sqlite3 不使用 N-API：node_modules 内的主副本随 electron-rebuild
+        // 被编译为 Electron ABI，无法在 Node（vitest）下加载。测试统一指向
+        // .toolcache 下的 Node ABI 副本（prebuild-install 下载预编译产物），
+        // 两套 ABI 互不干扰。副本缺失时重建步骤：
+        //   robocopy node_modules\better-sqlite3 .toolcache\better-sqlite3-node /E
+        //   cd .toolcache\better-sqlite3-node && npx prebuild-install
+        {
+          find: /^better-sqlite3$/,
+          replacement: fileURLToPath(
+            new URL("./.toolcache/better-sqlite3-node", import.meta.url),
+          ),
+        },
+      ],
       // Load env vars from .env / .env.local / .env.test / .env.test.local into
       // process.env BEFORE any test module is evaluated. Without this, modules
       // like tests/helpers/testDb.ts read process.env.SUPABASE_SERVICE_ROLE_KEY

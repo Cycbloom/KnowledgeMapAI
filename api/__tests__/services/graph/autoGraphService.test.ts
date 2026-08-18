@@ -337,9 +337,14 @@ describe("AutoGraphService", () => {
         data: [{ id: childKpId }],
         error: null,
       });
-      // 2. parent lookup: await select().eq().eq().single() — 终端方法,用 single mock
-      mockSupabase.queryChain.single.mockResolvedValueOnce({
-        data: { knowledge_point_id: existingParentKpId },
+      // 2. parent batch lookup: await from(graph_nodes).select().in().eq()（thenable）
+      mockSupabase.queryChain.mockChainResult({
+        data: [
+          {
+            id: existingParentGraphNodeId,
+            knowledge_point_id: existingParentKpId,
+          },
+        ],
         error: null,
       });
       // 3. createEdgesBatch: await notDeleted(select().eq()) → 现有 edges
@@ -535,9 +540,14 @@ describe("AutoGraphService", () => {
         data: [{ id: childKpId }],
         error: null,
       });
-      // 2. parent lookup: await select().eq().eq().single()
-      mockSupabase.queryChain.single.mockResolvedValueOnce({
-        data: { knowledge_point_id: backboneKpId },
+      // 2. parent batch lookup: await from(graph_nodes).select().in().eq()（thenable）
+      mockSupabase.queryChain.mockChainResult({
+        data: [
+          {
+            id: backboneGraphNodeId,
+            knowledge_point_id: backboneKpId,
+          },
+        ],
         error: null,
       });
       // 3. createEdgesBatch: await notDeleted(select().eq())
@@ -575,7 +585,9 @@ describe("AutoGraphService", () => {
       );
 
       expect(mockSupabase.from).toHaveBeenCalledWith("graph_nodes");
-      expect(mockSupabase.queryChain.eq).toHaveBeenCalledWith("id", backboneGraphNodeId);
+      expect(mockSupabase.queryChain.in).toHaveBeenCalledWith("id", [
+        backboneGraphNodeId,
+      ]);
       expect(mockSupabase.queryChain.eq).toHaveBeenCalledWith("graph_id", graphId);
     });
 

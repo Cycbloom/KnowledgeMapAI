@@ -13,15 +13,26 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-// api mock：ListView 依赖 api.scheduler.getSubtasks / updateSubtask
-vi.mock("../../../services/api", () => ({
-  api: {
-    scheduler: {
-      getSubtasks: vi.fn(),
-      updateSubtask: vi.fn(),
-    },
-  },
+// api mock：仅替换 ListView 依赖的 api.scheduler.getSubtasks / updateSubtask；
+// 其余模块（study/graphs/templates 等）保留真实实现——mutations barrel 在模块
+// 加载期即解引用 api.study.createCardsBatch 等方法，全量替换会导致 TypeError
+const schedulerMock = vi.hoisted(() => ({
+  getSubtasks: vi.fn(),
+  updateSubtask: vi.fn(),
 }));
+
+vi.mock("../../../services/api", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../../services/api")>();
+  return {
+    api: new Proxy(actual.api, {
+      get: (target, prop, receiver) => {
+        if (prop === "scheduler") return schedulerMock;
+        return Reflect.get(target, prop, receiver);
+      },
+    }),
+  };
+});
 
 import { api } from "../../../services/api";
 

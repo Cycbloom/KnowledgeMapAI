@@ -7,12 +7,14 @@ import { useUndoableAction } from "../useUndoableAction";
 const mocks = vi.hoisted(() => ({
   messageSuccess: vi.fn(),
   messageError: vi.fn(),
+  messageDismiss: vi.fn(),
 }));
 
 vi.mock("../../../utils/messageHelper", () => ({
   message: {
     success: mocks.messageSuccess,
     error: mocks.messageError,
+    dismiss: mocks.messageDismiss,
     info: vi.fn(),
     warning: vi.fn(),
   },

@@ -13,6 +13,19 @@ import {
 } from '../localClient';
 import type { IpcDbRequest } from '@shared/types/ipc';
 
+// localClient 通过 logger.debug 输出 IPC 失败日志（不再使用 console.warn），
+// mock logger 以便断言降级路径确实记录了日志
+const { loggerDebug } = vi.hoisted(() => ({ loggerDebug: vi.fn() }));
+
+vi.mock('../../../utils/logger', () => ({
+  logger: {
+    debug: loggerDebug,
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 type MockFn = ReturnType<typeof vi.fn>;
 
 interface ElectronAPIMock {
@@ -209,7 +222,7 @@ describe('localClient', () => {
       expect(result).toBeNull();
       expect(query).toHaveBeenCalledTimes(1);
       expect(query).toHaveBeenCalledWith(request);
-      expect(warnSpy).toHaveBeenCalled();
+      expect(loggerDebug).toHaveBeenCalled();
     });
 
     it('should return data when query is successful', async () => {
@@ -230,7 +243,7 @@ describe('localClient', () => {
       setElectronAPI({ db: { getStatus, query, batch } });
       const result = await localQuery(request);
       expect(result).toBeNull();
-      expect(warnSpy).toHaveBeenCalled();
+      expect(loggerDebug).toHaveBeenCalled();
       // After error, availability should be reset — next call re-checks getStatus
       await isLocalDbAvailable();
       expect(getStatus).toHaveBeenCalledTimes(2);
@@ -274,7 +287,7 @@ describe('localClient', () => {
       const result = await localBatch(operations);
       expect(result).toBeNull();
       expect(batch).toHaveBeenCalledWith(operations);
-      expect(warnSpy).toHaveBeenCalled();
+      expect(loggerDebug).toHaveBeenCalled();
     });
 
     it('should return data array when batch is successful', async () => {
@@ -295,7 +308,7 @@ describe('localClient', () => {
       setElectronAPI({ db: { getStatus, query, batch } });
       const result = await localBatch(operations);
       expect(result).toBeNull();
-      expect(warnSpy).toHaveBeenCalled();
+      expect(loggerDebug).toHaveBeenCalled();
       await isLocalDbAvailable();
       expect(getStatus).toHaveBeenCalledTimes(2);
     });

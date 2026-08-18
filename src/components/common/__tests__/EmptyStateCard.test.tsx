@@ -18,6 +18,9 @@ vi.mock("lucide-react", () => ({
   Database: (props: SVGProps<SVGSVGElement>) => (
     <svg data-testid="illustration-no-data" {...props} />
   ),
+  Compass: (props: SVGProps<SVGSVGElement>) => (
+    <svg data-testid="illustration-guide" {...props} />
+  ),
 }));
 
 describe("EmptyStateCard", () => {

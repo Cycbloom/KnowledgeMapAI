@@ -348,6 +348,11 @@ describe('auth middleware', () => {
       const originalAdminEmails = process.env.ADMIN_EMAILS;
       process.env.ADMIN_EMAILS = 'superadmin@example.com';
 
+      // ADMIN_EMAILS Set 在模块加载期构建，设置 env 后需重新加载模块才能生效。
+      // vi.resetModules 不影响已注册的 vi.mock 工厂（仍引用同一批闭包 mock fn）。
+      vi.resetModules();
+      const { requireAdmin: freshRequireAdmin } = await import('../../middleware/auth');
+
       setupAdminChain('user');
 
       const req = createMockReq({
@@ -362,11 +367,12 @@ describe('auth middleware', () => {
         error: null,
       });
 
-      await requireAdmin(req, res, next);
+      await freshRequireAdmin(req, res, next);
 
       expect(next).toHaveBeenCalledTimes(1);
 
       process.env.ADMIN_EMAILS = originalAdminEmails;
+      vi.resetModules();
     });
 
     it('should not call next when user is not admin (throws in callback)', async () => {

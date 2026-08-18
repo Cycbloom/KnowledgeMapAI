@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import i18next from "i18next";
-import { cacheService } from "../common/cacheService";
+import { cacheService, CacheKeys } from "../common/cacheService";
 import { notDeleted } from "../common/softDeleteHelper";
 import { logger } from "../../utils/logger";
 import {
@@ -477,7 +477,12 @@ export class GraphService {
       }
     }
 
-    await cacheService.invalidateGraphCache(userId, graphId);
+    // 图谱元数据更新（如 tags）会影响用户图谱列表与标签聚合缓存，需一并失效
+    await Promise.all([
+      cacheService.invalidateGraphCache(userId, graphId),
+      cacheService.invalidateUserGraphsCache(userId),
+      cacheService.del(CacheKeys.GRAPH_TAGS(userId)),
+    ]);
 
     await graphVersionService.recordEvent(
       supabase,

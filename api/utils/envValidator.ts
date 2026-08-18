@@ -35,21 +35,25 @@ const ENV_SCHEMA: Record<string, EnvConfig> = {
   SUPABASE_SERVICE_ROLE_KEY: {
     required: true,
     type: 'string',
+    validate: isValidSecret,
     description: 'Supabase service role key',
   },
   DEEPSEEK_API_KEY: {
     required: false,
     type: 'string',
+    validate: isValidSecret,
     description: 'DeepSeek API key',
   },
   ALIYUN_API_KEY: {
     required: false,
     type: 'string',
+    validate: isValidSecret,
     description: 'Aliyun API key',
   },
   VOLCENGINE_API_KEY: {
     required: false,
     type: 'string',
+    validate: isValidSecret,
     description: 'Volcengine API key',
   },
   DISABLE_RATE_LIMIT: {
@@ -59,6 +63,16 @@ const ENV_SCHEMA: Record<string, EnvConfig> = {
     description: 'Disable rate limiting (for testing)',
   },
 };
+
+/**
+ * 密钥有效性校验：拒绝过短或明显为占位符的密钥，
+ * 防止以假密钥启动导致上游调用持续 401/403。
+ */
+function isValidSecret(value: string): boolean {
+  if (value.length < 8) return false;
+  const placeholder = /(your[-_ ]?key|xxx+|changeme|replace[-_ ]?me|todo|^<.+>|example)/i;
+  return !placeholder.test(value);
+}
 
 interface ValidationResult {
   valid: boolean;

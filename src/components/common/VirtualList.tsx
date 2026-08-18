@@ -224,25 +224,20 @@ function VirtualListComponent<T>({
           }}
         >
           {virtualItems.map((virtualItem) => (
-            <div
+            <AnimatedItem
               key={virtualItem.key}
-              data-index={virtualItem.index}
-              ref={virtualizer.measureElement}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-              }}
+              index={virtualItem.index}
+              animate={animate}
+              className={cn(itemClassName)}
             >
-              <AnimatedItem
-                index={virtualItem.index}
-                animate={animate}
-                className={itemClassName}
+              <div
+                data-index={virtualItem.index}
+                ref={virtualizer.measureElement}
+                style={{ width: '100%' }}
               >
                 {renderItem(items[virtualItem.index], virtualItem.index)}
-              </AnimatedItem>
-            </div>
+              </div>
+            </AnimatedItem>
           ))}
         </div>
       </div>

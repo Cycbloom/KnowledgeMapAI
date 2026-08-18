@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { type AuthedRequest } from "../../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { embeddingService } from "../../services/ai";
@@ -7,6 +7,9 @@ import { logger } from "../../utils/logger";
 import { autoGraphRouteService } from "../../services/graph";
 
 const router = Router();
+
+// 嵌入生成/状态查询依赖 req.supabase（用户级 client），必须挂认证
+router.use(requireAuth);
 
 router.post("/generate-embeddings", async (req: AuthedRequest, res) => {
   try {

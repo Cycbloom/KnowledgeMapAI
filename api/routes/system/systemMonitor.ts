@@ -1,5 +1,6 @@
 import { Router } from "express";
 import os from "os";
+import { requireAuth } from "../../middleware/auth";
 import { logger } from "../../utils/logger";
 import { getSupabaseAdmin } from "../../supabase";
 import { systemMonitorService } from "../../services/common";
@@ -7,6 +8,9 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
+
+// 系统级监控（CPU/内存/DB 健康/请求统计）属于敏感信息，要求已认证访问
+router.use(requireAuth);
 
 interface SystemStats {
   cpu: {

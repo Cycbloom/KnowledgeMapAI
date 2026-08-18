@@ -1,10 +1,14 @@
 import { Router } from 'express';
+import { requireAuth } from '../../middleware/auth';
 import { performanceMonitor } from '../../services/ai';
 import type { GetPerformanceLogsQuery } from '@shared/types';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 const router = Router();
+
+// AI 用量/成本日志与数据库统计属于敏感监控数据，要求已认证访问
+router.use(requireAuth);
 
 router.get('/logs', async (req, res) => {
   const query: GetPerformanceLogsQuery = {

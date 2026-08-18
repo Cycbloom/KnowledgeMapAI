@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
+import { requireAuth } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
 import { validate } from '../middleware/validate';
@@ -170,9 +171,9 @@ export const getStatsHandler = async (_req: Request, res: Response): Promise<voi
     throw new AppError('Failed to get analytics stats', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 };
-router.get('/stats', getStatsHandler);
+router.get('/stats', requireAuth, getStatsHandler);
 
-router.get('/performance/recent', async (_req, res): Promise<void> => {
+router.get('/performance/recent', requireAuth, async (_req, res): Promise<void> => {
   try {
     const reports: unknown[] = [];
     res.json({ reports, count: reports.length });
@@ -207,6 +208,6 @@ export const getRecentErrorsHandler = async (req: Request, res: Response): Promi
     throw new AppError('Failed to get recent errors', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 };
-router.get('/errors/recent', getRecentErrorsHandler);
+router.get('/errors/recent', requireAuth, getRecentErrorsHandler);
 
 export default router;

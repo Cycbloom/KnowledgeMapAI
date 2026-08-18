@@ -1,10 +1,14 @@
 import { Router } from 'express';
+import { requireAuth } from '../middleware/auth';
 import { alertManager, type AlertRule } from '../utils/alertManager';
 import { logger } from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 
 const router = Router();
+
+// 告警规则与告警记录属于系统级数据，要求已认证访问
+router.use(requireAuth);
 
 router.get('/rules', (_req, res) => {
   const rules = alertManager.getRules();

@@ -171,6 +171,15 @@ async function ensureBackupDir() {
   }
 }
 
+/** 防御路径穿越：仅允许访问 BACKUP_DIR 内的备份文件 */
+function assertFilePathWithinBackupDir(filePath: string): void {
+  const backupDir = path.resolve(BACKUP_DIR);
+  const resolved = path.resolve(filePath);
+  if (resolved !== backupDir && !resolved.startsWith(backupDir + path.sep)) {
+    throw new AppError(ErrorCodes.VALIDATION_ERROR, { message: '备份文件路径越界' });
+  }
+}
+
 export async function createBackup(
   supabase: SupabaseClient,
   userId: string,
@@ -350,6 +359,7 @@ export async function createBackup(
 
 export async function deleteBackupFile(filePath: string): Promise<void> {
   try {
+    assertFilePathWithinBackupDir(filePath);
     await fs.unlink(filePath);
   } catch (error) {
     logger.warn('Failed to delete backup file:', error);
@@ -357,6 +367,7 @@ export async function deleteBackupFile(filePath: string): Promise<void> {
 }
 
 export async function readBackupFile(filePath: string): Promise<BackupData> {
+  assertFilePathWithinBackupDir(filePath);
   const content = await fs.readFile(filePath, 'utf-8');
   return JSON.parse(content);
 }
@@ -549,6 +560,14 @@ export class BackupService {
 
     if (data.graphs && data.graphs.length > 0) {
       const graphs = data.graphs;
+
+      // task_id 关联 user_tasks（不随备份导出），仅当对应任务仍存在时保留关联，避免外键冲突
+      const { data: existingTasks } = await supabase
+        .from('user_tasks')
+        .select('id')
+        .eq('user_id', userId);
+      const validTaskIds = new Set((existingTasks ?? []).map((t: { id: string }) => t.id));
+
       const graphsToInsert = graphs.map((g) => ({
         user_id: userId,
         title: g.title,
@@ -559,6 +578,7 @@ export class BackupService {
         settings: g.settings || {},
         is_public: g.is_public || false,
         last_used_at: g.last_used_at || null,
+        task_id: g.task_id && validTaskIds.has(g.task_id) ? g.task_id : null,
       }));
 
       const { data: insertedGraphs, error: graphsError } = await supabase
@@ -572,6 +592,23 @@ export class BackupService {
         oldToNewGraphIds.set(graphs[i].id, g.id);
       });
       stats.graphs = insertedGraphs?.length || 0;
+
+      // 恢复图谱分支关系：parent_graph_id 需重映射到新 ID（子表可能先于父表插入，故置后批量更新）
+      const parentLinks = graphs
+        .map((g, i) => {
+          const newId = insertedGraphs?.[i]?.id;
+          const newParentId = g.parent_graph_id ? oldToNewGraphIds.get(g.parent_graph_id) : undefined;
+          if (!newId || !newParentId) return null;
+          return { id: newId, parent_graph_id: newParentId };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+
+      for (const link of parentLinks) {
+        await supabase
+          .from('knowledge_graphs')
+          .update({ parent_graph_id: link.parent_graph_id })
+          .eq('id', link.id);
+      }
 
       // 同步导入 knowledge_graph_contents 记录（1:1 子表）
       if (insertedGraphs && insertedGraphs.length > 0) {
@@ -902,13 +939,19 @@ export class BackupService {
   ): Promise<{ filePath: string; fileSize: number; graphsCount: number; nodesCount: number }> {
     const result = await createBackup(supabase, userId, type);
 
-    await this.createSnapshotRecord(supabase, userId, {
-      type,
-      file_path: result.filePath,
-      file_size: result.fileSize,
-      graphs_count: result.graphsCount,
-      nodes_count: result.nodesCount,
-    });
+    try {
+      await this.createSnapshotRecord(supabase, userId, {
+        type,
+        file_path: result.filePath,
+        file_size: result.fileSize,
+        graphs_count: result.graphsCount,
+        nodes_count: result.nodesCount,
+      });
+    } catch (error) {
+      // 记录写入失败时补偿清理已落盘的文件，避免产生孤儿文件
+      await deleteBackupFile(result.filePath);
+      throw error;
+    }
 
     return result;
   }

@@ -1,5 +1,8 @@
 import { Router, type Response } from "express";
+import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../../middleware/auth";
+import { validate } from "../../middleware/validate";
+import { uuidParamsSchema } from "../../schemas";
 import { logger } from "../../utils/logger";
 import {
   readBackupFile,
@@ -10,6 +13,30 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
+
+/** 快照类型：用于文件名拼接，必须枚举校验以阻止路径注入 */
+const snapshotTypeSchema = z.enum(["auto_30min", "auto_5hour", "auto_1day", "manual"]);
+
+/** 导入模式 */
+const importModeSchema = z.enum(["merge", "replace"]);
+
+/** 备份导入载荷：校验结构并对各数据集设上限，防止超大请求耗尽资源 */
+const backupImportSchema = z.object({
+  version: z.string().optional(),
+  exportedAt: z.string().optional(),
+  user: z.object({ id: z.string(), email: z.string().optional() }).optional(),
+  data: z.object({
+    graphs: z.array(z.any()).max(500).optional(),
+    nodes: z.array(z.any()).max(5000).optional(),
+    edges: z.array(z.any()).max(10000).optional(),
+    study_cards: z.array(z.any()).max(5000).optional(),
+    study_progress: z.array(z.any()).max(500).optional(),
+    focus_sessions: z.array(z.any()).max(10000).optional(),
+    user_achievements: z.array(z.any()).max(2000).optional(),
+    periodic_tasks: z.array(z.any()).max(2000).optional(),
+    backbone_modules: z.array(z.any()).max(1000).optional(),
+  }),
+});
 
 router.get("/export", requireAuth, async (req: AuthedRequest, res: Response) => {
   const userId = req.user.id;
@@ -52,15 +79,16 @@ router.get(
 router.post(
   "/snapshots",
   requireAuth,
+  validate({ body: z.object({ type: snapshotTypeSchema.optional() }) }),
   async (req: AuthedRequest, res: Response) => {
     const userId = req.user.id;
-    const { type = "manual" } = req.body;
+    const { type } = req.body as { type?: "auto_30min" | "auto_5hour" | "auto_1day" | "manual" };
 
     try {
       const result = await backupService.exportAndRecord(
         req.supabase,
         userId,
-        type as "auto_30min" | "auto_5hour" | "auto_1day" | "manual",
+        type ?? "manual",
       );
 
       res.json({
@@ -104,6 +132,7 @@ router.delete(
 router.post(
   "/restore/:id",
   requireAuth,
+  validate({ params: uuidParamsSchema }),
   async (req: AuthedRequest, res: Response) => {
     const userId = req.user.id;
     const { id } = req.params;
@@ -140,34 +169,37 @@ router.post(
   },
 );
 
-router.post("/import", requireAuth, async (req: AuthedRequest, res: Response) => {
-  const userId = req.user.id;
-  const backupData = req.body;
-  const mode = req.query.mode || "merge";
+router.post(
+  "/import",
+  requireAuth,
+  validate({
+    body: backupImportSchema,
+    query: z.object({ mode: importModeSchema.optional() }),
+  }),
+  async (req: AuthedRequest, res: Response) => {
+    const userId = req.user.id;
+    const backupData = req.body;
+    const mode = (req.query.mode as string | undefined) || "merge";
 
-  if (!backupData || !backupData.data) {
-    throw new AppError("无效的备份数据格式", 400, ErrorCodes.VALIDATION_ERROR);
-  }
+    try {
+      const { stats, mode: appliedMode } = await backupService.importBackup(
+        req.supabase,
+        userId,
+        backupData.data,
+        mode,
+      );
 
-  try {
-    const { stats, mode: appliedMode } = await backupService.importBackup(
-      req.supabase,
-      userId,
-      backupData.data,
-      mode as string,
-    );
-
-    res.json({
-      success: true,
-      message: appliedMode === "replace" ? "快照恢复成功" : "备份导入成功",
-      stats,
-      mode: appliedMode,
-    });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    logger.error("Import backup error:", error);
-    throw new AppError((error as Error).message || "导入备份失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+      res.json({
+        success: true,
+        message: appliedMode === "replace" ? "快照恢复成功" : "备份导入成功",
+        stats,
+        mode: appliedMode,
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      logger.error("Import backup error:", error);
+      throw new AppError((error as Error).message || "导入备份失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
 });
 
 export default router;

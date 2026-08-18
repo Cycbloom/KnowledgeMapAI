@@ -1,5 +1,5 @@
 import { getSupabaseAdmin, listAuthUserIds } from '../supabase';
-import { createBackup, cleanupOldSnapshots } from '../services/common/backupService';
+import { createBackup, cleanupOldSnapshots, deleteBackupFile } from '../services/common/backupService';
 import { logger } from '../utils/logger';
 
 const THIRTY_MINUTES = 30 * 60 * 1000;
@@ -51,14 +51,20 @@ async function runAutoBackup(type: 'auto_30min' | 'auto_5hour' | 'auto_1day') {
 
         await cleanupOldSnapshots(getSupabaseAdmin(), userId, type);
 
-        await getSupabaseAdmin().from('backup_snapshots').insert({
-          user_id: userId,
-          type,
-          file_path: result.filePath,
-          file_size: result.fileSize,
-          graphs_count: result.graphsCount,
-          nodes_count: result.nodesCount,
-        });
+        try {
+          await getSupabaseAdmin().from('backup_snapshots').insert({
+            user_id: userId,
+            type,
+            file_path: result.filePath,
+            file_size: result.fileSize,
+            graphs_count: result.graphsCount,
+            nodes_count: result.nodesCount,
+          });
+        } catch (error) {
+          // 记录写入失败时补偿清理已落盘的文件，避免产生孤儿文件
+          await deleteBackupFile(result.filePath);
+          throw error;
+        }
 
         logger.info(`Auto backup created for user ${userId}: ${type}`);
       } catch (error) {

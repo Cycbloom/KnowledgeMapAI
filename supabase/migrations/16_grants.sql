@@ -150,3 +150,6 @@ GRANT EXECUTE ON FUNCTION create_edge(UUID, UUID, UUID, VARCHAR, FLOAT, VARCHAR,
 GRANT EXECUTE ON FUNCTION get_user_graph_tags(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_graph_map_data(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION find_missing_connections(UUID, INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION rename_user_tag(UUID, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION merge_user_tags(UUID, TEXT[], TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION remove_user_tag(UUID, TEXT) TO authenticated;

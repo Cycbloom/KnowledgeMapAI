@@ -1077,6 +1077,7 @@ export type Database = {
           parent_graph_id: string | null
           settings: Json | null
           task_id: string | null
+          tags: string[] | null
           template_type: string | null
           title: string
           updated_at: string | null
@@ -1098,6 +1099,7 @@ export type Database = {
           parent_graph_id?: string | null
           settings?: Json | null
           task_id?: string | null
+          tags?: string[] | null
           template_type?: string | null
           title: string
           updated_at?: string | null
@@ -1119,6 +1121,7 @@ export type Database = {
           parent_graph_id?: string | null
           settings?: Json | null
           task_id?: string | null
+          tags?: string[] | null
           template_type?: string | null
           title?: string
           updated_at?: string | null

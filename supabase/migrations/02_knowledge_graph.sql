@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
   deleted_at TIMESTAMPTZ DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  template_type VARCHAR(64)
+  template_type VARCHAR(64),
+  tags TEXT[] DEFAULT '{}'
 );
 
 COMMENT ON TABLE knowledge_graphs IS '知识图谱主表，存储图谱的基本信息和配置';
@@ -32,6 +33,7 @@ COMMENT ON COLUMN knowledge_graphs.last_used_at IS '最后使用时间，用于�
 COMMENT ON COLUMN knowledge_graphs.embedding IS '图谱嵌入向量，用于语义搜索';
 COMMENT ON COLUMN knowledge_graphs.deleted_at IS '软删除时间，非null表示已删除';
 COMMENT ON COLUMN knowledge_graphs.template_type IS '图谱模板类型，如 topic_research, knowledge_tree 等';
+COMMENT ON COLUMN knowledge_graphs.tags IS '图谱级标签，用于 Dashboard 筛选与管理';
 
 -- =====================================================
 -- Knowledge Graph Contents (1:1 子表)

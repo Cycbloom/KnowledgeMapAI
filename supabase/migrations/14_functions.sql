@@ -237,6 +237,7 @@ END;
 $$;
 
 -- Get user graphs with node counts in a single query
+DROP FUNCTION IF EXISTS get_user_graphs_with_counts(UUID);
 CREATE OR REPLACE FUNCTION get_user_graphs_with_counts(p_user_id UUID)
 RETURNS TABLE (
   id UUID,
@@ -250,7 +251,8 @@ RETURNS TABLE (
   deleted_at TIMESTAMPTZ,
   last_used_at TIMESTAMPTZ,
   nodes_count BIGINT,
-  template_type VARCHAR(64)
+  template_type VARCHAR(64),
+  tags TEXT[]
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -266,7 +268,8 @@ BEGIN
     g.deleted_at,
     g.last_used_at,
     COALESCE(n.count, 0) as nodes_count,
-    g.template_type
+    g.template_type,
+    COALESCE(g.tags, '{}'::TEXT[]) as tags
   FROM knowledge_graphs g
   LEFT JOIN (
     SELECT graph_id, COUNT(*) as count
@@ -1515,6 +1518,155 @@ BEGIN
     AND gn.deleted_at IS NULL
   GROUP BY tag.value
   ORDER BY count DESC;
+END;
+$$;
+
+-- ============================================================
+-- Unified Tag Management Functions (graphs / notes / tasks)
+-- 跨资源标签管理：重命名 / 合并 / 删除，均只作用于未软删除记录
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION rename_user_tag(p_user_id UUID, p_from TEXT, p_to TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+VOLATILE
+AS $$
+DECLARE
+  v_graphs INT := 0;
+  v_notes INT := 0;
+  v_tasks INT := 0;
+  v_to TEXT := btrim(p_to);
+BEGIN
+  IF v_to = '' OR length(v_to) > 30 THEN
+    RAISE EXCEPTION 'invalid tag name: %', v_to;
+  END IF;
+
+  UPDATE knowledge_graphs
+     SET tags = (
+           SELECT COALESCE(array_agg(DISTINCT t), '{}'::TEXT[])
+           FROM unnest(array_replace(tags, p_from, v_to)) AS t
+         ),
+         updated_at = NOW()
+   WHERE user_id = p_user_id
+     AND deleted_at IS NULL
+     AND p_from = ANY(tags);
+  GET DIAGNOSTICS v_graphs = ROW_COUNT;
+
+  UPDATE notes
+     SET tags = (
+           SELECT COALESCE(array_agg(DISTINCT t), '{}'::TEXT[])
+           FROM unnest(array_replace(tags, p_from, v_to)) AS t
+         ),
+         updated_at = NOW()
+   WHERE user_id = p_user_id
+     AND deleted_at IS NULL
+     AND p_from = ANY(tags);
+  GET DIAGNOSTICS v_notes = ROW_COUNT;
+
+  UPDATE user_tasks
+     SET tags = (
+           SELECT COALESCE(array_agg(DISTINCT t), '{}'::TEXT[])
+           FROM unnest(array_replace(tags, p_from, v_to)) AS t
+         ),
+         updated_at = NOW()
+   WHERE user_id = p_user_id
+     AND deleted_at IS NULL
+     AND p_from = ANY(tags);
+  GET DIAGNOSTICS v_tasks = ROW_COUNT;
+
+  RETURN jsonb_build_object('graphs', v_graphs, 'notes', v_notes, 'tasks', v_tasks);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION merge_user_tags(p_user_id UUID, p_sources TEXT[], p_target TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+VOLATILE
+AS $$
+DECLARE
+  v_graphs INT := 0;
+  v_notes INT := 0;
+  v_tasks INT := 0;
+BEGIN
+  IF array_length(p_sources, 1) IS NULL OR array_length(p_sources, 1) > 10 THEN
+    RAISE EXCEPTION 'sources must contain 1-10 tags';
+  END IF;
+  IF p_target = ANY(p_sources) THEN
+    RAISE EXCEPTION 'target must not be in sources';
+  END IF;
+
+  UPDATE knowledge_graphs
+     SET tags = (
+           SELECT COALESCE(array_agg(DISTINCT t), '{}'::TEXT[])
+           FROM unnest(tags || p_target) AS t
+           WHERE NOT t = ANY(p_sources)
+         ),
+         updated_at = NOW()
+   WHERE user_id = p_user_id
+     AND deleted_at IS NULL
+     AND tags && p_sources;
+  GET DIAGNOSTICS v_graphs = ROW_COUNT;
+
+  UPDATE notes
+     SET tags = (
+           SELECT COALESCE(array_agg(DISTINCT t), '{}'::TEXT[])
+           FROM unnest(tags || p_target) AS t
+           WHERE NOT t = ANY(p_sources)
+         ),
+         updated_at = NOW()
+   WHERE user_id = p_user_id
+     AND deleted_at IS NULL
+     AND tags && p_sources;
+  GET DIAGNOSTICS v_notes = ROW_COUNT;
+
+  UPDATE user_tasks
+     SET tags = (
+           SELECT COALESCE(array_agg(DISTINCT t), '{}'::TEXT[])
+           FROM unnest(tags || p_target) AS t
+           WHERE NOT t = ANY(p_sources)
+         ),
+         updated_at = NOW()
+   WHERE user_id = p_user_id
+     AND deleted_at IS NULL
+     AND tags && p_sources;
+  GET DIAGNOSTICS v_tasks = ROW_COUNT;
+
+  RETURN jsonb_build_object('graphs', v_graphs, 'notes', v_notes, 'tasks', v_tasks);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION remove_user_tag(p_user_id UUID, p_name TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+VOLATILE
+AS $$
+DECLARE
+  v_graphs INT := 0;
+  v_notes INT := 0;
+  v_tasks INT := 0;
+BEGIN
+  UPDATE knowledge_graphs
+     SET tags = array_remove(tags, p_name), updated_at = NOW()
+   WHERE user_id = p_user_id
+     AND deleted_at IS NULL
+     AND p_name = ANY(tags);
+  GET DIAGNOSTICS v_graphs = ROW_COUNT;
+
+  UPDATE notes
+     SET tags = array_remove(tags, p_name), updated_at = NOW()
+   WHERE user_id = p_user_id
+     AND deleted_at IS NULL
+     AND p_name = ANY(tags);
+  GET DIAGNOSTICS v_notes = ROW_COUNT;
+
+  UPDATE user_tasks
+     SET tags = array_remove(tags, p_name), updated_at = NOW()
+   WHERE user_id = p_user_id
+     AND deleted_at IS NULL
+     AND p_name = ANY(tags);
+  GET DIAGNOSTICS v_tasks = ROW_COUNT;
+
+  RETURN jsonb_build_object('graphs', v_graphs, 'notes', v_notes, 'tasks', v_tasks);
 END;
 $$;
 

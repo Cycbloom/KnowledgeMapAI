@@ -14,6 +14,7 @@ import { useDocumentTitle } from "./hooks/common/useDocumentTitle";
 import { useTranslation } from "react-i18next";
 import { message } from "@/utils/messageHelper";
 import { getSupabaseClient } from "./utils/supabase";
+import { restoreSession as silentRestoreSession } from "./utils/silentAuth";
 import { authConfig, isSupabaseConfigured } from "./config/authConfig";
 import { isElectron } from "./config/electronConfig";
 import { toUser } from "@shared/types/database";
@@ -189,9 +190,10 @@ function App() {
 
     const restoreSession = async () => {
       try {
-        const {
-          data: { session },
-        } = await client.auth.getSession();
+        // 统一自愈链路：校验本地 session（用户被删时清僵尸会话）→
+        // 本地凭证静默重登（失效时清死凭证）→ 兜底创建新专属用户。
+        // 数据库重置后应用可无感恢复，不会卡死在旧凭证上。
+        const session = await silentRestoreSession(client);
 
         if (session?.user) {
           setUser(
@@ -199,42 +201,8 @@ function App() {
             session.access_token,
             session.refresh_token,
           );
-        } else {
-          const isDev =
-            authConfig.supabase.url.includes("127.0.0.1") ||
-            authConfig.supabase.url.includes("localhost");
-          if (isDev) {
-            try {
-              const testEmail = "test@example.com";
-              const testPassword = import.meta.env.VITE_DEV_TEST_PASSWORD ?? "";
-              const { data } = await client.auth.signInWithPassword({
-                email: testEmail,
-                password: testPassword,
-              });
-              if (data.session?.user) {
-                setUser(
-                  toUser(data.session.user),
-                  data.session.access_token,
-                  data.session.refresh_token,
-                );
-              }
-            } catch {
-              try {
-                const { data } = await client.auth.signInAnonymously();
-                if (data.session?.user) {
-                  setUser(
-                    toUser(data.session.user),
-                    data.session.access_token,
-                    data.session.refresh_token,
-                  );
-                }
-              } catch {
-                // auto auth failed
-              }
-            }
-          } else if (storeToken || storeRefreshToken) {
-            clearAuth();
-          }
+        } else if (storeToken || storeRefreshToken) {
+          clearAuth();
         }
       } finally {
         // 无论 getSession 成功或失败，都解除渲染阻塞。

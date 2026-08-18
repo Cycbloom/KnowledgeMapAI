@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "../../../tests/setup/mswServer";
@@ -13,7 +13,8 @@ const mockNavigate = vi.fn();
 
 // Supabase client mock - 方法可在每个测试中覆盖
 const mockGetSession = vi.fn();
-const mockSignInAnonymously = vi.fn();
+const mockGetUser = vi.fn();
+const mockSignOut = vi.fn();
 const mockSignUp = vi.fn();
 const mockSignInWithPassword = vi.fn();
 
@@ -21,7 +22,8 @@ vi.mock("../../utils/supabase", () => ({
   getSupabaseClient: () => ({
     auth: {
       getSession: mockGetSession,
-      signInAnonymously: mockSignInAnonymously,
+      getUser: mockGetUser,
+      signOut: mockSignOut,
       signUp: mockSignUp,
       signInWithPassword: mockSignInWithPassword,
     },
@@ -59,41 +61,7 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-// 显示 auth 表单辅助函数：
-// 切换到 manual tab → 填写 URL/anonKey → 点击测试连接 → 等待 auth 表单出现
-async function showAuthForm(): Promise<void> {
-  // 切换到手动设置 tab
-  await act(async () => {
-    fireEvent.click(screen.getByText("手动设置"));
-  });
-
-  // 等待初始 loadSavedConfig 完成（dbConnected=true 后显示"已连接"徽章）
-  await waitFor(() => {
-    expect(screen.getByText("已连接")).toBeInTheDocument();
-  });
-
-  // 填写 URL 和 Anon Key（确保 handleTestConnection 校验通过）
-  fireEvent.change(screen.getByPlaceholderText("https://xxx.supabase.co"), {
-    target: { value: "https://test.supabase.co" },
-  });
-  fireEvent.change(screen.getByLabelText("Anon Key"), {
-    target: { value: "test-anon-key" },
-  });
-
-  // 点击测试连接按钮，触发 attemptAutoAuth → setShowAuthForm(true)
-  await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: "测试连接" }));
-  });
-
-  // 等待 auth 表单出现
-  await waitFor(() => {
-    expect(
-      screen.getByText("需要登录才能继续，请注册或登录。"),
-    ).toBeInTheDocument();
-  });
-}
-
-describe("Login 页面", () => {
+describe("Login 页面（无感知会话）", () => {
   beforeEach(() => {
     // 重置 Login 实际使用的 stores（避免 resetStores 对部分 store 抛错）
     useStore.setState(useStore.getInitialState());
@@ -102,7 +70,7 @@ describe("Login 页面", () => {
     sessionStorage.clear();
     vi.clearAllMocks();
 
-    // 注册 MSW handlers 覆盖 Login 组件初始化及 handleTestConnection 中调用的 API 端点
+    // 注册 MSW handlers 覆盖 Login 组件初始化（loadSavedConfig）调用的 API 端点。
     // 注意：不要 mock window.electronAPI，否则 isElectron() 返回 true
     // 导致 axios baseURL 从 /api/v1 变为 http://localhost:3001/api
     // 源组件使用可选链 window.electronAPI?.config，undefined 是安全的
@@ -121,156 +89,95 @@ describe("Login 页面", () => {
       ),
     );
 
-    // 默认：getSession 返回无 session，signInAnonymously 失败
-    // → 触发 attemptAutoAuth 调用 setShowAuthForm(true)
+    // 默认：无 session、本地无凭证（setupTests 的 localStorage stub 恒返回 null）
+    // → 挂载时自动 ensureOwnerSession 走 provisionOwner 分支
     mockGetSession.mockResolvedValue({ data: { session: null } });
-    mockSignInAnonymously.mockResolvedValue({
-      data: {},
-      error: { message: "Anonymous sign-in not enabled" },
-    });
-    // 默认 signUp/signInWithPassword 占位（每个测试可覆盖）
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+    mockSignOut.mockResolvedValue({});
     mockSignUp.mockResolvedValue({ data: {}, error: null });
     mockSignInWithPassword.mockResolvedValue({ data: {}, error: null });
   });
 
-  describe("初始渲染", () => {
-    it("应该显示邮箱输入框、密码输入框和登录按钮", async () => {
-      renderWithProviders(<Login />);
-      await showAuthForm();
+  it("Supabase 已配置时挂载即自动创建专属用户并进入首页", async () => {
+    const mockUser = { id: "user-1", email: "owner@local.app" };
+    mockSignUp.mockResolvedValue({
+      data: {
+        session: {
+          access_token: "access-token-123",
+          refresh_token: "refresh-token-456",
+          user: mockUser,
+        },
+      },
+      error: null,
+    });
 
-      expect(screen.getByPlaceholderText("邮箱")).toBeInTheDocument();
-      expect(screen.getByPlaceholderText("密码")).toBeInTheDocument();
+    renderWithProviders(<Login />);
+
+    await waitFor(() => {
+      expect(mockSignUp).toHaveBeenCalledTimes(1);
+    });
+    // 随机凭证：邮箱为 owner-<uuid>@local.app 形式
+    const signUpArg = mockSignUp.mock.calls[0]?.[0] as {
+      email: string;
+      password: string;
+    };
+    expect(signUpArg.email).toMatch(/^owner-.+@local\.app$/);
+    expect(signUpArg.password.length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/");
+    });
+    expect(useStore.getState().user?.id).toBe("user-1");
+  });
+
+  it("已有有效会话时直接进入首页且不再创建用户", async () => {
+    const mockUser = { id: "user-2", email: "owner@local.app" };
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: "access-token-existing",
+          refresh_token: "refresh-token-existing",
+          user: mockUser,
+        },
+      },
+    });
+    // restoreSession 用 getUser 校验服务端用户仍存在
+    mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null });
+
+    renderWithProviders(<Login />);
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/");
+    });
+    expect(mockSignUp).not.toHaveBeenCalled();
+    expect(mockSignInWithPassword).not.toHaveBeenCalled();
+    expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
+  it("专属用户创建失败时显示错误且不跳转", async () => {
+    // signUp 无 session 且 signInWithPassword 回退也失败
+    mockSignUp.mockResolvedValue({
+      data: { session: null },
+      error: { message: "signups not allowed" },
+    });
+    mockSignInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: null,
+    });
+
+    renderWithProviders(<Login />);
+
+    // 等待 provision 尝试完成（signUp + 回退 signIn 各一次）
+    await waitFor(() => {
+      expect(mockSignInWithPassword).toHaveBeenCalledTimes(1);
+    });
+
+    // 切换到手动设置 tab 查看错误提示
+    fireEvent.click(screen.getByText("手动设置"));
+    await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: "登录" }),
-      ).toBeInTheDocument();
+        screen.getByText("自动创建专属用户失败，请检查数据库认证设置后重试"),
+      ).toBeVisible();
     });
-  });
-
-  describe("表单校验", () => {
-    it("空提交时应该显示校验错误且不调用 supabase auth", async () => {
-      renderWithProviders(<Login />);
-      await showAuthForm();
-
-      // 提交空表单
-      await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "登录" }));
-      });
-
-      await waitFor(() => {
-        expect(screen.getByText("请输入邮箱")).toBeVisible();
-      });
-      expect(screen.getByText("请输入密码")).toBeVisible();
-      expect(mockSignUp).not.toHaveBeenCalled();
-      expect(mockSignInWithPassword).not.toHaveBeenCalled();
-    });
-
-    it("邮箱格式无效时应该显示校验错误且不调用 supabase auth", async () => {
-      renderWithProviders(<Login />);
-      await showAuthForm();
-
-      const emailInput = screen.getByPlaceholderText("邮箱");
-      fireEvent.change(emailInput, { target: { value: "invalid-email" } });
-      fireEvent.blur(emailInput);
-
-      // 填写密码以通过非空校验
-      fireEvent.change(screen.getByPlaceholderText("密码"), {
-        target: { value: "password123" },
-      });
-
-      await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "登录" }));
-      });
-
-      await waitFor(() => {
-        expect(screen.getByText("邮箱格式不正确")).toBeVisible();
-      });
-      expect(mockSignUp).not.toHaveBeenCalled();
-      expect(mockSignInWithPassword).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("登录成功", () => {
-    it("有效凭证时应该调用 supabase auth 并跳转到首页", async () => {
-      const mockUser = { id: "user-1", email: "test@example.com" };
-      const mockSession = {
-        access_token: "access-token-123",
-        refresh_token: "refresh-token-456",
-        expires_in: 3600,
-        token_type: "bearer",
-        user: mockUser,
-      };
-      // signUp 返回 error（用户已存在），signInWithPassword 返回成功 session
-      mockSignUp.mockResolvedValue({
-        data: {},
-        error: { message: "User already registered" },
-      });
-      mockSignInWithPassword.mockResolvedValue({
-        data: { session: mockSession, user: mockUser },
-        error: null,
-      });
-
-      renderWithProviders(<Login />);
-      await showAuthForm();
-
-      fireEvent.change(screen.getByPlaceholderText("邮箱"), {
-        target: { value: "test@example.com" },
-      });
-      fireEvent.change(screen.getByPlaceholderText("密码"), {
-        target: { value: "password123" },
-      });
-
-      await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "登录" }));
-      });
-
-      await waitFor(() => {
-        expect(mockSignUp).toHaveBeenCalledWith({
-          email: "test@example.com",
-          password: "password123",
-        });
-      });
-      await waitFor(() => {
-        expect(mockSignInWithPassword).toHaveBeenCalledWith({
-          email: "test@example.com",
-          password: "password123",
-        });
-      });
-      await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith("/");
-      });
-    });
-  });
-
-  describe("登录失败", () => {
-    it("supabase auth 返回错误时应该显示错误信息且不跳转", async () => {
-      // signUp 返回 error，signInWithPassword 也返回 error
-      mockSignUp.mockResolvedValue({
-        data: {},
-        error: { message: "User already registered" },
-      });
-      mockSignInWithPassword.mockResolvedValue({
-        data: {},
-        error: { message: "Invalid login credentials" },
-      });
-
-      renderWithProviders(<Login />);
-      await showAuthForm();
-
-      fireEvent.change(screen.getByPlaceholderText("邮箱"), {
-        target: { value: "test@example.com" },
-      });
-      fireEvent.change(screen.getByPlaceholderText("密码"), {
-        target: { value: "wrongpassword" },
-      });
-
-      await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "登录" }));
-      });
-
-      await waitFor(() => {
-        expect(screen.getByText("Invalid login credentials")).toBeVisible();
-      });
-      expect(mockNavigate).not.toHaveBeenCalled();
-    });
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

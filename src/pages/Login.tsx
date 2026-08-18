@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useState, useEffect, useCallback, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "../services/api/createApiClient";
@@ -8,11 +8,11 @@ import {
   authConfig,
 } from "../config/authConfig";
 import { getSupabaseClient, resetSupabaseClient } from "../utils/supabase";
+import { restoreSession } from "../utils/silentAuth";
 import { useStore } from "../store/useStore";
-import { useTheme, useFormDraft, useAutofocus } from "../hooks";
+import { useTheme, useFormDraft } from "../hooks";
 import { useKeyboardHandler } from "../hooks/gesture/useKeyboardHandler";
 import { ConfirmationModal } from "../components/common/ConfirmationModal";
-import { Button } from "../components/common/Button";
 import { isElectron } from "../config/electronConfig";
 import { logger } from "../utils/logger";
 import type { AIProviderType } from "@shared/types/ai";
@@ -116,7 +116,6 @@ export const Login = () => {
   const navigate = useNavigate();
   const setUser = useStore((state) => state.setUser);
   const { isDark, toggleTheme } = useTheme();
-  const quickEmailRef = useAutofocus<HTMLInputElement>();
 
   const {
     value: draft,
@@ -126,12 +125,11 @@ export const Login = () => {
     onRestore,
     onDiscard,
   } = useFormDraft<{
-    email: string;
     step: number;
     activeTab: "quick" | "manual";
   }>({
     key: "login_draft",
-    initialValue: { email: "", step: 1, activeTab: "quick" },
+    initialValue: { step: 1, activeTab: "quick" },
     storage: "sessionStorage",
   });
   const [pat, setPat] = useState("");
@@ -189,34 +187,11 @@ export const Login = () => {
     ConfiguredProvider[]
   >([]);
 
-  const [password, setPassword] = useState("");
-  const [showAuthForm, setShowAuthForm] = useState(false);
   const [authenticating, setAuthenticating] = useState(false);
   const [authError, setAuthError] = useState("");
-  const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({
-    email: false,
-    password: false,
-  });
-
-  const validateEmail = (value: string): boolean => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-  };
-  const validatePassword = (value: string): boolean => {
-    return value.trim().length > 0;
-  };
 
   // A11y: 生成唯一 id 用于 label/input/error 关联，避免硬编码 id 冲突
   const patErrorId = useId();
-  const quickEmailInputId = useId();
-  const quickEmailErrorId = useId();
-  const quickPasswordInputId = useId();
-  const quickPasswordErrorId = useId();
-  const quickAuthErrorId = useId();
-  const manualEmailInputId = useId();
-  const manualEmailErrorId = useId();
-  const manualPasswordInputId = useId();
-  const manualPasswordErrorId = useId();
-  const manualAuthErrorId = useId();
   const projectNameInputId = useId();
   const dbPasswordInputId = useId();
   const regionInputId = useId();
@@ -323,6 +298,21 @@ export const Login = () => {
       }
     }
 
+    if (isSupabaseConfigured()) {
+      setDbConnected(true);
+      // Supabase 已配置（env 或本地保存）：先无感恢复/创建专属会话，
+      // 成功即跳转首页；必须等待会话建立后再发认证请求，
+      // 避免与配置加载并行导致 AUTH_HEADER_MISSING 401 竞态。
+      const sessionReady = await ensureOwnerSession();
+      if (sessionReady) {
+        return;
+      }
+      // 会话建立失败：继续展示设置向导（含数据库状态）
+      checkDatabaseStatus();
+    } else {
+      setDbStatus("unknown");
+    }
+
     try {
       const response = (await apiClient.get("/ai/config/database")) as Record<
         string,
@@ -342,13 +332,6 @@ export const Login = () => {
         step: "loadDatabaseConfig",
         error: error instanceof Error ? error.message : String(error),
       });
-    }
-
-    if (isSupabaseConfigured()) {
-      checkDatabaseStatus();
-      setDbConnected(true);
-    } else {
-      setDbStatus("unknown");
     }
 
     loadConfiguredProviders();
@@ -430,10 +413,11 @@ export const Login = () => {
       resetSupabaseClient();
 
       setDbConnected(true);
-      checkDatabaseStatus();
-      attemptAutoAuth().catch(() => {
-        setAuthError(t("configPage.authSkipped"));
-      });
+      // 先建立会话再查询数据库状态，避免无 token 的 401 竞态
+      const sessionReady = await ensureOwnerSession();
+      if (!sessionReady) {
+        checkDatabaseStatus();
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setDbError(message || t("configPage.connectionFailed"));
@@ -442,7 +426,9 @@ export const Login = () => {
     }
   };
 
-  const attemptAutoAuth = async () => {
+  // 无感知会话：恢复现有 session → 本地凭证静默重登 → 首次使用自动创建专属用户。
+  // 三级回退全部失败时仅显示错误提示，不再出现账号密码表单。
+  const ensureOwnerSession = async (): Promise<boolean> => {
     setAuthenticating(true);
     setAuthError("");
 
@@ -450,102 +436,30 @@ export const Login = () => {
       const client = getSupabaseClient();
       if (!client) {
         setAuthenticating(false);
-        return;
+        return false;
       }
 
-      const { data: sessionData } = await client.auth.getSession();
-      if (sessionData.session) {
+      const session = await restoreSession(client);
+      if (session) {
         setUser(
-          sessionData.session.user as unknown as Parameters<typeof setUser>[0],
-          sessionData.session.access_token,
-          sessionData.session.refresh_token,
+          session.user as unknown as Parameters<typeof setUser>[0],
+          session.access_token,
+          session.refresh_token,
         );
         clearDraft();
         navigate("/");
-        return;
+        return true;
       }
 
-      const { data: anonData, error: anonError } =
-        await client.auth.signInAnonymously();
-      if (!anonError && anonData.session) {
-        setUser(
-          anonData.session.user as unknown as Parameters<typeof setUser>[0],
-          anonData.session.access_token,
-          anonData.session.refresh_token,
-        );
-        clearDraft();
-        navigate("/");
-        return;
-      }
-
-      setShowAuthForm(true);
+      setAuthError(t("configPage.ownerProvisionFailed"));
+      return false;
     } catch (error) {
       logger.warn("Login step failed", {
-        step: "anonymousAuth",
+        step: "ensureOwnerSession",
         error: error instanceof Error ? error.message : String(error),
       });
-      setShowAuthForm(true);
-    } finally {
-      setAuthenticating(false);
-    }
-  };
-
-  const handleAuthSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setTouched({ email: true, password: true });
-    if (!draft.email.trim() || !password.trim()) return;
-
-    setAuthenticating(true);
-    setAuthError("");
-
-    try {
-      const client = getSupabaseClient();
-      if (!client) {
-        setAuthError(t("configPage.noSupabaseClient"));
-        return;
-      }
-
-      const { data, error } = await client.auth.signUp({
-        email: draft.email,
-        password,
-      });
-
-      if (error) {
-        const { data: signInData, error: signInError } =
-          await client.auth.signInWithPassword({
-            email: draft.email,
-            password,
-          });
-        if (signInError) {
-          setAuthError(signInError.message);
-          return;
-        }
-        if (signInData.session) {
-          setUser(
-            signInData.session.user as unknown as Parameters<typeof setUser>[0],
-            signInData.session.access_token,
-            signInData.session.refresh_token,
-          );
-          clearDraft();
-          navigate("/");
-        }
-        return;
-      }
-
-      if (data.session) {
-        setUser(
-          data.session.user as unknown as Parameters<typeof setUser>[0],
-          data.session.access_token,
-          data.session.refresh_token,
-        );
-        clearDraft();
-        navigate("/");
-      } else {
-        setAuthError(t("configPage.confirmEmail"));
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setAuthError(message);
+      setAuthError(t("configPage.ownerProvisionFailed"));
+      return false;
     } finally {
       setAuthenticating(false);
     }
@@ -778,55 +692,6 @@ export const Login = () => {
       const message = err instanceof Error ? err.message : String(err);
       setCreateError(message);
       setCreating(false);
-    }
-  };
-
-  const handleQuickSetupComplete = async () => {
-    setAuthenticating(true);
-    setAuthError("");
-
-    try {
-      const client = getSupabaseClient();
-      if (!client) {
-        setShowAuthForm(true);
-        setAuthenticating(false);
-        return;
-      }
-
-      const { data: sessionData } = await client.auth.getSession();
-      if (sessionData.session) {
-        setUser(
-          sessionData.session.user as unknown as Parameters<typeof setUser>[0],
-          sessionData.session.access_token,
-          sessionData.session.refresh_token,
-        );
-        clearDraft();
-        navigate("/");
-        return;
-      }
-
-      const { data: anonData, error: anonError } =
-        await client.auth.signInAnonymously();
-      if (!anonError && anonData.session) {
-        setUser(
-          anonData.session.user as unknown as Parameters<typeof setUser>[0],
-          anonData.session.access_token,
-          anonData.session.refresh_token,
-        );
-        clearDraft();
-        navigate("/");
-        return;
-      }
-
-      setShowAuthForm(true);
-    } catch (error) {
-      logger.warn("Login step failed", {
-        step: "quickSetupComplete",
-        error: error instanceof Error ? error.message : String(error),
-      });
-      setShowAuthForm(true);
-    } finally {
-      setAuthenticating(false);
     }
   };
 
@@ -1214,17 +1079,6 @@ export const Login = () => {
   };
 
   const renderQuickStep5 = () => {
-    const emailError = touched.email
-      ? !draft.email.trim()
-        ? t("configPage.validation.emailRequired")
-        : !validateEmail(draft.email)
-          ? t("configPage.validation.emailInvalid")
-          : ""
-      : "";
-    const passwordError =
-      touched.password && !validatePassword(password)
-        ? t("configPage.validation.passwordRequired")
-        : "";
     return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 mb-2">
@@ -1270,93 +1124,22 @@ export const Login = () => {
         </div>
       </div>
 
-      {showAuthForm && (
-        <div className="pt-3 border-t border-gray-100 dark:border-slate-500">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-            {t("configPage.signInRequired")}
-          </p>
-          <form onSubmit={handleAuthSubmit} className="space-y-3">
-            <input
-              id={quickEmailInputId}
-              type="email"
-              autoComplete="email"
-              ref={quickEmailRef}
-              value={draft.email}
-              onChange={(e) =>
-                setDraft((prev) => ({ ...prev, email: e.target.value }))
-              }
-              onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
-              placeholder={t("configPage.email")}
-              aria-label={t("configPage.email")}
-              aria-invalid={emailError ? true : undefined}
-              aria-describedby={emailError ? quickEmailErrorId : undefined}
-              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-            />
-            {emailError && (
-              <p
-                id={quickEmailErrorId}
-                role="alert"
-                className="mt-1 text-xs text-red-600 dark:text-red-400"
-              >
-                {emailError}
-              </p>
-            )}
-            <input
-              id={quickPasswordInputId}
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
-              placeholder={t("configPage.password")}
-              aria-label={t("configPage.password")}
-              aria-invalid={passwordError ? true : undefined}
-              aria-describedby={passwordError ? quickPasswordErrorId : undefined}
-              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-            />
-            {passwordError && (
-              <p
-                id={quickPasswordErrorId}
-                role="alert"
-                className="mt-1 text-xs text-red-600 dark:text-red-400"
-              >
-                {passwordError}
-              </p>
-            )}
-            {authError && (
-              <p
-                id={quickAuthErrorId}
-                role="alert"
-                className="text-xs text-red-500"
-              >
-                {authError}
-              </p>
-            )}
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              loading={authenticating}
-              disabled={authenticating}
-            >
-              {authenticating
-                ? t("configPage.signingIn")
-                : t("configPage.signIn")}
-            </Button>
-          </form>
-        </div>
+      {authError && (
+        <p role="alert" className="text-xs text-red-500">
+          {authError}
+        </p>
       )}
 
-      {authenticating && !showAuthForm && (
+      {authenticating && (
         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           <Loader2 className="w-4 h-4 animate-spin" />
           {t("configPage.authenticating")}
         </div>
       )}
 
-      {!showAuthForm && !authenticating && (
+      {!authenticating && (
         <button
-          onClick={handleQuickSetupComplete}
+          onClick={() => void ensureOwnerSession()}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
         >
           {t("quickSetup.startUsing")}
@@ -1380,17 +1163,6 @@ export const Login = () => {
   );
 
   const renderSupabaseCard = () => {
-    const emailError = touched.email
-      ? !draft.email.trim()
-        ? t("configPage.validation.emailRequired")
-        : !validateEmail(draft.email)
-          ? t("configPage.validation.emailInvalid")
-          : ""
-      : "";
-    const passwordError =
-      touched.password && !validatePassword(password)
-        ? t("configPage.validation.passwordRequired")
-        : "";
     return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-6 transition-colors">
       <div className="flex items-center gap-3 mb-5">
@@ -1578,83 +1350,13 @@ export const Login = () => {
         </div>
       )}
 
-      {showAuthForm && (
-        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-500">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-            {t("configPage.signInRequired")}
-          </p>
-          <form onSubmit={handleAuthSubmit} className="space-y-3">
-            <input
-              id={manualEmailInputId}
-              type="email"
-              autoComplete="email"
-              value={draft.email}
-              onChange={(e) =>
-                setDraft((prev) => ({ ...prev, email: e.target.value }))
-              }
-              onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
-              placeholder={t("configPage.email")}
-              aria-label={t("configPage.email")}
-              aria-invalid={emailError ? true : undefined}
-              aria-describedby={emailError ? manualEmailErrorId : undefined}
-              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-            />
-            {emailError && (
-              <p
-                id={manualEmailErrorId}
-                role="alert"
-                className="mt-1 text-xs text-red-600 dark:text-red-400"
-              >
-                {emailError}
-              </p>
-            )}
-            <input
-              id={manualPasswordInputId}
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
-              placeholder={t("configPage.password")}
-              aria-label={t("configPage.password")}
-              aria-invalid={passwordError ? true : undefined}
-              aria-describedby={passwordError ? manualPasswordErrorId : undefined}
-              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-            />
-            {passwordError && (
-              <p
-                id={manualPasswordErrorId}
-                role="alert"
-                className="mt-1 text-xs text-red-600 dark:text-red-400"
-              >
-                {passwordError}
-              </p>
-            )}
-            {authError && (
-              <p
-                id={manualAuthErrorId}
-                role="alert"
-                className="text-xs text-red-500"
-              >
-                {authError}
-              </p>
-            )}
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              loading={authenticating}
-              disabled={authenticating}
-            >
-              {authenticating
-                ? t("configPage.signingIn")
-                : t("configPage.signIn")}
-            </Button>
-          </form>
-        </div>
+      {authError && (
+        <p role="alert" className="mt-4 text-xs text-red-500">
+          {authError}
+        </p>
       )}
 
-      {dbConnected && authenticating && !showAuthForm && (
+      {dbConnected && authenticating && (
         <div className="mt-4 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           <Loader2 className="w-4 h-4 animate-spin" />
           {t("configPage.authenticating")}

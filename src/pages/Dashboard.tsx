@@ -77,6 +77,8 @@ export const Dashboard = () => {
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
   const aiGeneratorTitleId = useId();
 
+  const [filterExpanded, setFilterExpanded] = useState(false);
+
   const [batchDeleteProgress, setBatchDeleteProgress] = useState<{
     completed: number;
     total: number;
@@ -353,7 +355,7 @@ export const Dashboard = () => {
       >
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 space-y-4 lg:space-y-6">
           <div
-            className={`grid gap-3 sm:gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}`}
+            className={`grid gap-3 sm:gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}
           >
             {Array.from({ length: 6 }).map((_, i) => (
               <SkeletonCard key={i} lines={3} />
@@ -420,7 +422,23 @@ export const Dashboard = () => {
           setStatusFilter={filters.setStatusFilter}
           timeRangeFilter={filters.timeRangeFilter}
           setTimeRangeFilter={filters.setTimeRangeFilter}
+          filterExpanded={filterExpanded}
+          setFilterExpanded={setFilterExpanded}
         />
+
+        {/* Tag Cloud (shown when filter panel is expanded) */}
+        {filterExpanded && (
+          <TagCloudSection
+            isDark={isDark}
+            isMobile={isMobile}
+            selectedTags={filters.selectedFilterTags}
+            onTagsChange={(tags) => {
+              filters.setSelectedFilterTags(tags);
+              filters.setCurrentPage(1);
+            }}
+            countsKey="graphs"
+          />
+        )}
 
         {/* Recently Edited Section */}
         {recentGraphs.length > 0 && (
@@ -456,18 +474,6 @@ export const Dashboard = () => {
             </div>
           </div>
         )}
-
-        {/* Tag Cloud Section */}
-        <TagCloudSection
-          isDark={isDark}
-          isMobile={isMobile}
-          selectedTags={filters.selectedFilterTags}
-          onTagsChange={(tags) => {
-            filters.setSelectedFilterTags(tags);
-            filters.setCurrentPage(1);
-          }}
-          countsKey="graphs"
-        />
 
         {/* AI Graph Generator Modal */}
         {isAIGeneratorOpen && createPortal(
@@ -540,7 +546,7 @@ export const Dashboard = () => {
 
         {/* Graphs Grid */}
         <div
-          className={`grid gap-3 sm:gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}`}
+          className={`grid gap-3 sm:gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}
         >
           {filters.filteredGraphs.length === 0 ? (
             <div

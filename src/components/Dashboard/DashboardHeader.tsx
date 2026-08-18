@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId, useMemo } from "react";
+import React, { useEffect, useId, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -61,6 +61,9 @@ interface DashboardHeaderProps {
   setStatusFilter: (filter: StatusFilter) => void;
   timeRangeFilter: TimeRangeFilter;
   setTimeRangeFilter: (filter: TimeRangeFilter) => void;
+  // Filter panel expanded state (controlled by parent)
+  filterExpanded: boolean;
+  setFilterExpanded: (expanded: boolean) => void;
 }
 
 const SORT_OPTIONS = [
@@ -119,9 +122,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   setStatusFilter,
   timeRangeFilter,
   setTimeRangeFilter,
+  filterExpanded,
+  setFilterExpanded,
 }) => {
   const { t } = useTranslation();
-  const [filterExpanded, setFilterExpanded] = useState(false);
   const moreMenuId = useId();
   const filterPanelId = useId();
 

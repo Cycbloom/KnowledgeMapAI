@@ -1046,6 +1046,8 @@
   },
   "promptSettings": {
     "updatedAt": "更新于:",
+    "saveSuccess": "提示词已保存",
+    "contentEmpty": "提示词内容不能为空",
     "promptTypes": {
       "expand_knowledge": "知识扩展",
       "generate_cards": "生成卡片",

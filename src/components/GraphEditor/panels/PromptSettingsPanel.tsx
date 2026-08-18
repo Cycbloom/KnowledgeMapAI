@@ -3,7 +3,9 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { formatDate } from "@/utils/formatters";
+import { message } from "../../../utils/messageHelper";
 import { PromptEditor } from "./PromptEditor";
+import { DEFAULT_PROMPTS as FALLBACK_DEFAULTS } from "../../../services/mobile/prompt";
 import {
   Edit,
   RotateCcw,
@@ -231,28 +233,46 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     // If scope is graph, check graph -> user -> system
     if (scope === "graph") {
       const graphTemp = templateMaps.graph.get(code);
-      if (graphTemp) return { ...graphTemp, source: "Graph" };
+      if (graphTemp && graphTemp.template_content && graphTemp.template_content.trim()) {
+        return { ...graphTemp, source: "Graph" };
+      }
     }
 
     // If scope is user (or fallback for graph), check user -> system
     const userTemp = templateMaps.user.get(code);
-    if (userTemp) return { ...userTemp, source: "User" };
+    if (userTemp && userTemp.template_content && userTemp.template_content.trim()) {
+      return { ...userTemp, source: "User" };
+    }
 
     const sysTemp = templateMaps.system.get(code);
-    if (sysTemp) {
+    if (sysTemp && sysTemp.template_content && sysTemp.template_content.trim()) {
       return { ...sysTemp, source: "System" };
     }
+
+    // 终极兜底：后端未从 DB/DEFAULT 补齐时（极端情况），用前端 mobile 包
+    // 的 DEFAULT_PROMPTS 回退，避免空内容进入编辑→保存空字符串失败
+    const fallback = FALLBACK_DEFAULTS[code];
+    if (fallback) {
+      return { code, template_content: fallback, source: "System" };
+    }
+
     return { code, template_content: "", source: "System" };
   };
 
   const handleSave = async (content: string) => {
     if (!editingCode) return;
+    // 阻止保存空内容（后端会拒绝），提前给用户明确提示
+    if (!content || !content.trim()) {
+      message.error(t("graphEditor.promptSettings.contentEmpty"));
+      return;
+    }
     await api.prompts.save({
       code: editingCode,
       scope,
       template_content: content,
       graph_id: scope === "graph" ? graphId : undefined,
     });
+    message.success(t("graphEditor.promptSettings.saveSuccess"));
     setEditingCode(null);
     fetchTemplates();
   };

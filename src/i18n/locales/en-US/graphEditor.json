@@ -1046,6 +1046,8 @@
   },
   "promptSettings": {
     "updatedAt": "Updated:",
+    "saveSuccess": "Prompt saved",
+    "contentEmpty": "Prompt content cannot be empty",
     "promptTypes": {
       "expand_knowledge": "Expand Knowledge",
       "generate_cards": "Generate Cards",

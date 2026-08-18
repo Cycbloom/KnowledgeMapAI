@@ -2,7 +2,6 @@ import { withClient, withClientOptionalUser } from "../utils/clientHelper";
 import type {
   Achievement,
   UserAchievement,
-  AchievementCheckResult,
 } from "@shared/types";
 import { AppError, SharedErrorCodes } from "@/utils/errors";
 
@@ -35,11 +34,4 @@ export const getUserAchievements = async (): Promise<UserAchievement[]> => {
 
     return (data as UserAchievement[] | null) ?? [];
   });
-};
-
-export const checkAchievements = async (): Promise<AchievementCheckResult> => {
-  return {
-    unlocked: [],
-    progress: [],
-  };
 };

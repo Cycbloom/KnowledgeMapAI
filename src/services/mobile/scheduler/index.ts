@@ -257,7 +257,6 @@ export const mobileSchedulerApi: ISchedulerApi = {
   // --- ISchedulerAchievementsApi ---
   getAllAchievements: achievements.getAllAchievements,
   getUserAchievements: achievements.getUserAchievements,
-  checkAchievements: achievements.checkAchievements,
 
   // --- ISchedulerStudyReviewApi (entirely not supported on mobile) ---
   createFirstReviewTask: notSupported("createFirstReviewTask"),

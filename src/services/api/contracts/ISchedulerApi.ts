@@ -42,7 +42,6 @@ import type {
   TaskInsightsResult,
   Achievement,
   UserAchievement,
-  AchievementCheckResult,
   ReviewTask,
   ReviewTaskStats,
   PendingReviewTask,
@@ -243,7 +242,6 @@ export interface ISchedulerAnalyticsApi {
 export interface ISchedulerAchievementsApi {
   getAllAchievements: () => Promise<Achievement[]>;
   getUserAchievements: () => Promise<UserAchievement[]>;
-  checkAchievements: () => Promise<AchievementCheckResult>;
 }
 
 export interface ISchedulerStudyReviewApi {

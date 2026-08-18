@@ -17,6 +17,16 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+router.get('/user', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthRequest).user.id;
+    const userAchievements = await achievementService.getUserAchievements(userId);
+    res.json(userAchievements);
+  } catch (error) {
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+  }
+});
+
 router.post('/check', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as AuthRequest).user.id;

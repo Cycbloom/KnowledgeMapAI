@@ -2,11 +2,10 @@ import { request } from "../../client";
 import type {
   Achievement,
   UserAchievement,
-  AchievementCheckResult,
 } from "@shared/types";
 
 // Re-export for backwards compatibility with existing imports.
-export type { Achievement, UserAchievement, AchievementCheckResult };
+export type { Achievement, UserAchievement };
 
 // 修正：成就 API 由 SchedulerPlugin 注册到 /api/achievements（见
 // api/services/plugins/SchedulerPlugin.ts），不是 /api/scheduler/achievements。
@@ -20,9 +19,4 @@ export const achievementsApi = {
 
   getUserAchievements: (): Promise<UserAchievement[]> =>
     request<UserAchievement[]>("/achievements/user"),
-
-  checkAchievements: (): Promise<AchievementCheckResult> =>
-    request<AchievementCheckResult>("/achievements/check", {
-      method: "POST",
-    }),
 };

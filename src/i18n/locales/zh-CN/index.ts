@@ -25,7 +25,6 @@ import achievements from './achievements.json';
 import tasks from './tasks.json';
 import scheduler from './scheduler.json';
 import graphEditor from './graphEditor.json';
-import storyEditor from './storyEditor.json';
 import autoGraph from './autoGraph.json';
 import prompts from './prompts.json';
 import templates from './templates.json';
@@ -100,7 +99,6 @@ const zhCN = {
   tasks,
   scheduler,
   graphEditor,
-  storyEditor,
   autoGraph,
   prompts,
   templates,

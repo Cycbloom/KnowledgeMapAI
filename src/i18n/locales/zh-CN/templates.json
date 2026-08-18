@@ -54,7 +54,6 @@
     "org_structure": "组织架构",
     "system_architecture": "系统架构",
     "knowledge_system": "知识体系",
-    "story_creation": "小说/故事创作",
     "blank": "空白图谱"
   },
   "templateTypeDescription": {
@@ -75,7 +74,6 @@
     "org_structure": "层级与职能关系",
     "system_architecture": "模块与依赖关系",
     "knowledge_system": "跨领域知识关联",
-    "story_creation": "用于组织小说、剧本等叙事性作品的创作",
     "blank": "自由创建，不使用特定结构"
   },
   "topicResearchPreset": {

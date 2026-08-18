@@ -54,7 +54,6 @@
     "org_structure": "Org Structure",
     "system_architecture": "System Architecture",
     "knowledge_system": "Knowledge System",
-    "story_creation": "Story Creation",
     "blank": "Blank Graph"
   },
   "templateTypeDescription": {
@@ -75,7 +74,6 @@
     "org_structure": "Hierarchical and functional relationships",
     "system_architecture": "Module and dependency relationships",
     "knowledge_system": "Cross-domain knowledge connections",
-    "story_creation": "Organize novels, screenplays and narrative works",
     "blank": "Create freely without specific structure"
   },
   "topicResearchPreset": {

@@ -373,7 +373,10 @@ export class GraphService {
       userId,
     });
 
-    await cacheService.invalidateUserGraphsCache(userId);
+    await Promise.all([
+      cacheService.invalidateUserGraphsCache(userId),
+      cacheService.del(CacheKeys.USER_TAGS(userId)),
+    ]);
 
     appEventBus.publish(
       "graph_created",
@@ -482,6 +485,7 @@ export class GraphService {
       cacheService.invalidateGraphCache(userId, graphId),
       cacheService.invalidateUserGraphsCache(userId),
       cacheService.del(CacheKeys.GRAPH_TAGS(userId)),
+      cacheService.del(CacheKeys.USER_TAGS(userId)),
     ]);
 
     await graphVersionService.recordEvent(

@@ -5,6 +5,7 @@ import type { TimerMode } from "@shared/types";
 import { DEFAULT_FOCUS_SETTINGS } from "../constants/focusSettings";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import type { FocusSettingsChangedPayload } from "../services/FrontendEventTypes";
+import i18n from "../i18n";
 
 // ---------------------------------------------------------------------------
 // State & Actions
@@ -389,6 +390,18 @@ const useTimerStore = create<TimerState & TimerActions>()(
 // 倒计时结束后不还原 title，交由路由的 useDocumentTitle hook 重新设置
 // ---------------------------------------------------------------------------
 
+const formatTimerTitle = (state: TimerState): string => {
+  const mins = Math.floor(state.timeLeft / 60)
+    .toString()
+    .padStart(2, "0");
+  const secs = (state.timeLeft % 60).toString().padStart(2, "0");
+  const modeLabel =
+    state.mode === "focus"
+      ? i18n.t("focusTimer.inProgress")
+      : i18n.t("focusTimer.breakInProgress");
+  return `${mins}:${secs} - ${modeLabel}`;
+};
+
 useTimerStore.subscribe((state, prevState) => {
   if (
     state.isActive === prevState.isActive &&
@@ -402,12 +415,16 @@ useTimerStore.subscribe((state, prevState) => {
     return;
   }
 
-  const mins = Math.floor(state.timeLeft / 60)
-    .toString()
-    .padStart(2, "0");
-  const secs = (state.timeLeft % 60).toString().padStart(2, "0");
-  const modeLabel = state.mode === "focus" ? "专注中" : "休息中";
-  document.title = `${mins}:${secs} - ${modeLabel}`;
+  document.title = formatTimerTitle(state);
+});
+
+// 语言切换时刷新计时器标题，避免切换语言后标题残留旧语言
+i18n.on("languageChanged", () => {
+  const state = useTimerStore.getState();
+  if (!state.isActive) {
+    return;
+  }
+  document.title = formatTimerTitle(state);
 });
 
 export { useTimerStore };

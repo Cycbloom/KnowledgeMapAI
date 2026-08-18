@@ -190,7 +190,7 @@ function VirtualListComponent<T>({
   if (items.length === 0) {
     return (
       <div className={cn('flex items-center justify-center', className)} style={style}>
-        {emptyState ?? <EmptyState title="暂无数据" variant="inline" />}
+        {emptyState ?? <EmptyState title={t('common.empty')} variant="inline" />}
       </div>
     );
   }
@@ -327,7 +327,7 @@ function VirtualGridComponent<T>({
   if (items.length === 0) {
     return (
       <div className={cn('flex items-center justify-center', className)} style={{ height: containerHeight }}>
-        {emptyState ?? <EmptyState title="暂无数据" variant="inline" />}
+        {emptyState ?? <EmptyState title={t('common.empty')} variant="inline" />}
       </div>
     );
   }

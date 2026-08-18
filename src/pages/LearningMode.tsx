@@ -268,7 +268,7 @@ export const LearningMode = () => {
       msgHelper.success(t("learning.node.createSuccess"));
       setNewNodeTitle(""); setNewNodeContent(""); setNewNodeLevel("leaf");
       setSelectedParentNodeId(""); setIsCreateNodeModalOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
       queryClient.invalidateQueries({ queryKey: ["graphLearningPath", graphId] });
       if (graphData) navigate(`/learning?graph_id=${graphId}&node_id=${newNode.id}`);
     } catch (error) {
@@ -314,7 +314,7 @@ export const LearningMode = () => {
         setArticleContent(response.content);
         setKeywords(response.keywords || []);
         await api.nodes.update(nodeId, { learning_material: response.content, keywords: response.keywords || [] });
-        queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(nodeId) });
         msgHelper.success(t("learning.material.regenerated"));
       }
@@ -470,8 +470,8 @@ export const LearningMode = () => {
         await api.nodes.batchDelete(ids);
         msgHelper.success(t("learning.batch.deleteSuccess", { count: ids.length }));
         setSelectedNodeIds(new Set());
-        queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
-        queryClient.invalidateQueries({ queryKey: ["graphLearningPath", graphId] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId ?? "") });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphLearningPath(graphId ?? "") });
       } catch (error) { console.error("Batch delete failed:", error); msgHelper.error(t("learning.batch.deleteFailed")); }
     } else if (action === "expand_graph") {
       if (!isOnline) { msgHelper.error(t("learning.batch.expandOffline")); return; }
@@ -649,7 +649,7 @@ export const LearningMode = () => {
           if (!graphMeta) return;
           try {
             await api.graphs.update(graphMeta.id, data);
-            queryClient.invalidateQueries({ queryKey: ["graph", graphId] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.graph(graphId ?? "") });
             setIsOverviewEditModalOpen(false);
           } catch (error) { console.error("Failed to save graph overview:", error); }
         }}

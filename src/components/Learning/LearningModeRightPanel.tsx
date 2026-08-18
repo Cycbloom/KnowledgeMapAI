@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Bot, Route, FileText, GitMerge, X, Loader2, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../hooks/queries/config";
 import { RAGChatPanel } from "../RAGChat";
 import { LearningPathPanel } from "./LearningPathPanel";
 import { LiteratureExtractPanel } from "../LiteratureExtract/LiteratureExtractPanel";
@@ -224,10 +225,10 @@ export const LearningModeRightPanel = ({
                     }}
                     onConceptsSaved={async () => {
                       await queryClient.invalidateQueries({
-                        queryKey: ["graphData", graphId],
+                        queryKey: queryKeys.graphData(graphId ?? ""),
                       });
                       await queryClient.invalidateQueries({
-                        queryKey: ["graphNodeStatus", graphId],
+                        queryKey: queryKeys.graphNodeStatus(graphId ?? ""),
                       });
                     }}
                     className="h-full"

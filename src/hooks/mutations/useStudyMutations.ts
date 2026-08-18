@@ -60,7 +60,7 @@ export const useUpdateCardProgressMutation = () => {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: studyCardsPrefix });
       queryClient.invalidateQueries({ queryKey: studyCardsInfinitePrefix });
-      queryClient.invalidateQueries({ queryKey: ["graphNodeStatus"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatusPrefix });
     },
   });
 };

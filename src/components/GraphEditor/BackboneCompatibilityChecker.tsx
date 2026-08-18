@@ -9,6 +9,7 @@ import {
 import { api } from "../../services/api";
 import { message } from "../../utils/messageHelper";
 import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../hooks/queries/config";
 import { useTheme } from "../../hooks";
 import { useTranslation } from "react-i18next";
 
@@ -296,7 +297,7 @@ export const BackboneCompatibilityChecker: React.FC<
     setIsOpen(false);
 
     if (successCount > 0) {
-      await queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
       message.success(t("graphEditor.backbone.fixSuccess", { count: successCount }));
     }
 

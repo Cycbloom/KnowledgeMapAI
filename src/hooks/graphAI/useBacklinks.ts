@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { backlinksApi } from "../../services/api/backlinks";
+import { queryKeys } from "../queries/config";
 import type { BacklinkItem } from "@shared/types";
 
 export interface UseBacklinksResult {
@@ -17,7 +18,7 @@ export const useBacklinks = (
   knowledgePointId: string | undefined | null,
 ): UseBacklinksResult => {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["backlinks", knowledgePointId],
+    queryKey: queryKeys.backlinks(knowledgePointId ?? ""),
     queryFn: () => backlinksApi.list(knowledgePointId as string),
     enabled: !!knowledgePointId,
     staleTime: 30_000, // 30 秒内不重新请求

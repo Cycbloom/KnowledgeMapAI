@@ -39,6 +39,7 @@ import { useScrollRestoration } from "../../hooks/common/useScrollRestoration";
 import { useKeyboardHandler } from "../../hooks/gesture/useKeyboardHandler";
 import { usePullToRefresh } from "../../hooks/gesture/usePullToRefresh";
 import { useNotesList, type NoteView } from "../../hooks/queries";
+import { queryKeys } from "../../hooks/queries/config";
 import {
   useCreateNoteMutation,
   useGetOrCreateTodayDailyMutation,
@@ -714,7 +715,7 @@ export const NotesListPage = () => {
     async (id: string) => {
       try {
         await restoreNoteMutation.mutateAsync(id);
-        await queryClient.invalidateQueries({ queryKey: ["notes"] });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.notesPrefix });
         message.success(t("notes.undo.restored"));
       } catch {
         message.error(t("notes.undo.restoreFailed"));
@@ -738,7 +739,7 @@ export const NotesListPage = () => {
       const failedCount = results.filter(
         (r) => r.status === "rejected",
       ).length;
-      await queryClient.invalidateQueries({ queryKey: ["notes"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notesPrefix });
       setSelectedIds(new Set());
       setIsSelectMode(false);
       if (failedCount === 0) {
@@ -774,7 +775,7 @@ export const NotesListPage = () => {
         const failedCount = results.filter(
           (r) => r.status === "rejected",
         ).length;
-        await queryClient.invalidateQueries({ queryKey: ["notes"] });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.notesPrefix });
         if (failedCount === 0) {
           message.success(t("notes.undo.restored"));
         } else {

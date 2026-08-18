@@ -38,6 +38,7 @@ import {
   DashboardPagination,
   DashboardMobileFAB,
   DashboardCardContextMenu,
+  GraphTagsEditor,
 } from "../components/Dashboard";
 import type { Graph } from "@shared/types";
 
@@ -89,6 +90,16 @@ export const Dashboard = () => {
     x: number;
     y: number;
   } | null>(null);
+  const [editingTagsGraph, setEditingTagsGraph] = useState<Graph | null>(null);
+
+  /** 点击卡片/列表项上的标签 chip：切换筛选并回到第 1 页 */
+  const handleTagClick = (tag: string) => {
+    const next = filters.selectedFilterTags.includes(tag)
+      ? filters.selectedFilterTags.filter((item) => item !== tag)
+      : [...filters.selectedFilterTags, tag];
+    filters.setSelectedFilterTags(next);
+    filters.setCurrentPage(1);
+  };
 
   // 首次访问提示：仅在未 dismiss 时显示，引导用户创建第一个图谱
   const firstRunHint = useFirstRunHint({
@@ -455,6 +466,7 @@ export const Dashboard = () => {
             filters.setSelectedFilterTags(tags);
             filters.setCurrentPage(1);
           }}
+          countsKey="graphs"
         />
 
         {/* AI Graph Generator Modal */}
@@ -660,6 +672,8 @@ export const Dashboard = () => {
                           onPrefetch={prefetchGraph}
                           onContextMenu={handleContextMenu}
                           variant="desktop"
+                          onTagClick={handleTagClick}
+                          onEditTags={setEditingTagsGraph}
                         />
                       </motion.tr>
                     ))}
@@ -689,6 +703,8 @@ export const Dashboard = () => {
                         onPrefetch={prefetchGraph}
                         onContextMenu={handleContextMenu}
                         variant="mobile"
+                        onTagClick={handleTagClick}
+                        onEditTags={setEditingTagsGraph}
                       />
                     </motion.div>
                   ))}
@@ -720,6 +736,8 @@ export const Dashboard = () => {
                     onToggleFavorite={handleToggleFavorite}
                     onPrefetch={prefetchGraph}
                     onContextMenu={handleContextMenu}
+                    onTagClick={handleTagClick}
+                    onEditTags={setEditingTagsGraph}
                   />
                 </motion.div>
               ))}
@@ -745,6 +763,12 @@ export const Dashboard = () => {
             setDeleteConfirm((prev) => ({ ...prev, isOpen: false }))
           }
         />
+
+        {/* Graph Tags Editor */}
+        <GraphTagsEditor
+          graph={editingTagsGraph}
+          onClose={() => setEditingTagsGraph(null)}
+        />
       </div>
 
       {/* Mobile FAB */}
@@ -768,6 +792,7 @@ export const Dashboard = () => {
           onClose={handleContextMenuClose}
           onToggleFavorite={handleContextMenuToggleFavorite}
           onDelete={handleContextMenuDelete}
+          onEditTags={setEditingTagsGraph}
         />
       )}
     </div>

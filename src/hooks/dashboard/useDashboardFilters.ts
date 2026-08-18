@@ -245,7 +245,7 @@ export function useDashboardFilters({
       // 预构建选中标签 Set，将内层 some/includes 的 O(tags*tags) 降为 O(1) 查找
       const selectedTagSet = new Set(selectedFilterTags);
       result = result.filter((g) => {
-        const graphTags = ((g as unknown) as { tags?: string[] }).tags || [];
+        const graphTags = g.tags || [];
         return graphTags.some((tag) => selectedTagSet.has(tag));
       });
     }

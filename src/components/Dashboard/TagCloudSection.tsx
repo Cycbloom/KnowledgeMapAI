@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Tag, X } from "lucide-react";
-import { api } from "../../services/api";
+import { useTags } from "../../hooks/queries/useTagQueries";
+import type { TagResourceCounts } from "../../services/api/contracts/ITagsApi";
 
 const TAG_COLORS = [
   "bg-primary-500",
@@ -30,41 +30,43 @@ interface TagCloudSectionProps {
   isMobile: boolean;
   selectedTags: string[];
   onTagsChange: (tags: string[]) => void;
+  /**
+   * chip 上显示的计数维度：
+   * - "graphs" Dashboard 筛选图谱时，显示图谱计数与筛选结果一致
+   * - "total"   跨资源总计数（默认）
+   */
+  countsKey?: keyof TagResourceCounts | "total";
 }
+
+const getTagCount = (
+  tag: { counts: TagResourceCounts; total: number },
+  countsKey: keyof TagResourceCounts | "total",
+): number => (countsKey === "total" ? tag.total : tag.counts[countsKey]);
 
 export const TagCloudSection: React.FC<TagCloudSectionProps> = ({
   isDark,
   isMobile,
   selectedTags,
   onTagsChange,
+  countsKey = "total",
 }) => {
   const [showAll, setShowAll] = useState(false);
   const { t } = useTranslation();
 
-  const { data: tagsData } = useQuery({
-    queryKey: ["graphTags"],
-    queryFn: async () => {
-      const res = await api.graphs.getTags();
-      return ((res as unknown) as { tags?: { name: string; count: number }[] })
-        .tags || [];
-    },
-  });
-
-  const allTags = useMemo(() => {
-    return tagsData || [];
-  }, [tagsData]);
+  // 跨资源标签聚合（图谱/笔记/任务），由 ["tags"] 键统一缓存
+  const { data: allTags } = useTags();
 
   const maxCount = useMemo(() => {
     return Math.max(
-      ...allTags.map((t: { name: string; count: number }) => t.count),
+      ...(allTags ?? []).map((tag) => getTagCount(tag, countsKey)),
       1,
     );
-  }, [allTags]);
+  }, [allTags, countsKey]);
 
   const defaultDisplayCount = isMobile ? 10 : 20;
 
   const displayedTags = useMemo(() => {
-    return showAll ? allTags : allTags.slice(0, defaultDisplayCount);
+    return showAll ? (allTags ?? []) : (allTags ?? []).slice(0, defaultDisplayCount);
   }, [allTags, showAll, defaultDisplayCount]);
 
   // 预构建选中标签集合，将渲染路径的选中判断由 O(tags*selectedTags) 降为 O(1)
@@ -131,9 +133,10 @@ export const TagCloudSection: React.FC<TagCloudSectionProps> = ({
       </div>
 
       <div className="flex flex-wrap gap-1.5 sm:gap-2">
-        {displayedTags.map((tag: { name: string; count: number }) => {
+        {displayedTags.map((tag) => {
           const isSelected = selectedTagSet.has(tag.name);
-          const size = isMobile ? 0.75 : 0.75 + (tag.count / maxCount) * 0.5;
+          const count = getTagCount(tag, countsKey);
+          const size = isMobile ? 0.75 : 0.75 + (count / maxCount) * 0.5;
 
           return (
             <button
@@ -156,7 +159,7 @@ export const TagCloudSection: React.FC<TagCloudSectionProps> = ({
               <span
                 className={`text-xs ${isSelected ? "text-white/80" : isDark ? "text-slate-500" : "text-gray-400"}`}
               >
-                {tag.count}
+                {count}
               </span>
             </button>
           );

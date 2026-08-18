@@ -8,8 +8,12 @@ import {
   Star,
   Trash2,
   Check,
+  Tag,
 } from "lucide-react";
 import type { Graph } from "@shared/types";
+
+/** 卡片上最多展示的标签数，超出折叠为 +N */
+const MAX_VISIBLE_TAGS = 3;
 
 const TEMPLATE_TYPE_CONFIG: Record<
   string,
@@ -70,6 +74,10 @@ interface DashboardGraphCardProps {
   onToggleFavorite: (id: string, currentFavorite: boolean) => void;
   onPrefetch: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, graph: Graph) => void;
+  /** 点击标签 chip 切换该标签筛选 */
+  onTagClick: (tag: string) => void;
+  /** 打开标签编辑对话框 */
+  onEditTags: (graph: Graph) => void;
 }
 
 export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
@@ -85,6 +93,8 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
   onToggleFavorite,
   onPrefetch,
   onContextMenu,
+  onTagClick,
+  onEditTags,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -207,6 +217,22 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
           <div className="flex items-center gap-1 sm:gap-2">
             {!isMobile && !isSelectMode && (
               <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onEditTags(graph);
+                  }}
+                  className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+                    isDark
+                      ? "text-slate-400 hover:bg-primary-900/30 hover:text-primary-400"
+                      : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
+                  }`}
+                  title={t("dashboard.tagsEditor.title")}
+                  aria-label={t("dashboard.tagsEditor.title")}
+                >
+                  <Tag size={18} aria-hidden="true" />
+                </button>
                 <Link
                   to={`/graph/${graph.id}`}
                   onClick={(e) => e.stopPropagation()}
@@ -259,6 +285,22 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
 
             {isMobile && (
               <>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onEditTags(graph);
+                  }}
+                  className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+                    isDark
+                      ? "text-slate-400 hover:bg-primary-900/30 hover:text-primary-400"
+                      : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
+                  }`}
+                  title={t("dashboard.tagsEditor.title")}
+                  aria-label={t("dashboard.tagsEditor.title")}
+                >
+                  <Tag size={18} aria-hidden="true" />
+                </button>
                 <Link
                   to={`/graph/${graph.id}`}
                   onClick={(e) => e.stopPropagation()}
@@ -334,12 +376,49 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
         </h3>
 
         <p
-          className={`text-xs sm:text-sm line-clamp-2 mb-4 sm:mb-6 flex-grow ${
+          className={`text-xs sm:text-sm line-clamp-2 mb-3 sm:mb-4 flex-grow ${
             isDark ? "text-slate-400" : "text-gray-500"
           }`}
         >
           {graph.description || t("dashboard.card.noDescription")}
         </p>
+
+        {/* Tags chips：点击切换筛选，编辑入口在工具栏/右键菜单 */}
+        {(graph.tags?.length ?? 0) > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-3 sm:mb-4">
+            {graph.tags?.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
+              <button
+                key={tag}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick(tag);
+                }}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors ${
+                  isDark
+                    ? "bg-slate-700 text-primary-300 hover:bg-slate-600"
+                    : "bg-primary-50 text-primary-600 hover:bg-primary-100"
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+            {(graph.tags?.length ?? 0) > MAX_VISIBLE_TAGS && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditTags(graph);
+                }}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                  isDark
+                    ? "bg-slate-700 text-slate-400"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                +{(graph.tags?.length ?? 0) - MAX_VISIBLE_TAGS}
+              </button>
+            )}
+          </div>
+        )}
 
         <div
           className={`pt-3 sm:pt-4 mt-auto border-t flex items-center justify-between ${

@@ -27,6 +27,9 @@ export const realtimeQueryConfig = {
 
 export const queryKeys = {
   graphs: ["graphs"] as const,
+  // 图谱列表（按标签筛选维度），可被 ["graphs"] 前缀失效
+  graphsWithTag: (tag?: string) => ["graphs", "tagFilter", tag ?? "all"] as const,
+  tags: ["tags"] as const,
   graph: (id: string) => ["graph", id] as const,
   graphData: (id: string) => ["graphData", id] as const,
   graphDataWithEmbedding: (id: string) => ["graphDataWithEmbedding", id] as const,

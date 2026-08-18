@@ -33,6 +33,7 @@ import type { IStoryCreationApi } from "../api/contracts/IStoryCreationApi";
 import type { IConceptAggregationApi } from "../api/contracts/IConceptAggregationApi";
 import type { IGraphVersionsApi } from "../api/contracts/IGraphVersionsApi";
 import type { INotesApi } from "../api/contracts/INotesApi";
+import type { ITagsApi } from "../api/contracts/ITagsApi";
 import type { IKnowledgePointsApi, IGraphNodesApi, ICombinedViewApi } from "../api/contracts/IKnowledgePointsApi";
 import { NotSupportedError } from "../api/contracts/types";
 
@@ -118,4 +119,5 @@ export const mobileApi: IApi = {
   conceptAggregation: createNotSupportedModule<IConceptAggregationApi>("conceptAggregation"),
   graphVersions: createNotSupportedModule<IGraphVersionsApi>("graphVersions"),
   notes: createNotSupportedModule<INotesApi>("notes"),
+  tags: createNotSupportedModule<ITagsApi>("tags"),
 };

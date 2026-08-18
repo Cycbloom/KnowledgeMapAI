@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, ExternalLink, Star, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, Star, Tag, Trash2 } from "lucide-react";
 import type { Graph } from "@shared/types";
 import { copyToClipboard } from "@/utils/clipboard";
 
@@ -10,9 +10,10 @@ interface DashboardCardContextMenuProps {
   onClose: () => void;
   onToggleFavorite: (id: string) => void;
   onDelete: (id: string) => void;
+  onEditTags: (graph: Graph) => void;
 }
 
-const MENU_ITEM_COUNT = 4;
+const MENU_ITEM_COUNT = 5;
 
 export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> = ({
   graph,
@@ -20,6 +21,7 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
   onClose,
   onToggleFavorite,
   onDelete,
+  onEditTags,
 }) => {
   const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -89,6 +91,11 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
 
   const handleToggleFavorite = () => {
     onToggleFavorite(graph.id);
+    onClose();
+  };
+
+  const handleEditTags = () => {
+    onEditTags(graph);
     onClose();
   };
 
@@ -171,13 +178,25 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
         />
         {t("dashboard.contextMenu.toggleFavorite")}
       </button>
-      <hr className="my-1 border-gray-200 dark:border-slate-500" />
       <button
         ref={(el) => {
           itemRefs.current[3] = el;
         }}
         role="menuitem"
         tabIndex={focusedIndex === 3 ? 0 : -1}
+        onClick={handleEditTags}
+        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
+      >
+        <Tag size={16} className="text-gray-500 dark:text-gray-400" />
+        {t("dashboard.contextMenu.editTags")}
+      </button>
+      <hr className="my-1 border-gray-200 dark:border-slate-500" />
+      <button
+        ref={(el) => {
+          itemRefs.current[4] = el;
+        }}
+        role="menuitem"
+        tabIndex={focusedIndex === 4 ? 0 : -1}
         onClick={handleDelete}
         className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"
       >

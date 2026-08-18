@@ -22,6 +22,7 @@ import {
   Globe,
   Monitor,
   Power,
+  Tags,
 } from "lucide-react";
 const PluginMarketplace = lazy(() =>
   import("../components/PluginMarketplace/PluginMarketplace").then((module) => ({
@@ -46,6 +47,7 @@ import {
   NotificationSettings,
 } from "../components/Settings";
 import { DEFAULT_AVAILABLE_MODES, type DatabaseConfig } from "../components/Settings/settingsConstants";
+import { TagManagerDialog } from "../components/common/TagManagerDialog";
 import { PwaInstallButton } from "../components/PwaInstallButton";
 import { PwaDiagnostics } from "../components/PwaDiagnostics";
 import { useKeyboardHandler } from "../hooks/gesture/useKeyboardHandler";
@@ -79,6 +81,7 @@ export const Settings = () => {
 
   const aiLanguage = useLearningSettingsStore((s) => s.aiLanguage);
   const setAILanguage = useLearningSettingsStore((s) => s.setAILanguage);
+  const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
   const dbSectionRef = useRef<HTMLDivElement>(null);
 
   const [autoLaunchEnabled, setAutoLaunchEnabled] = useState(false);
@@ -112,6 +115,7 @@ export const Settings = () => {
     { id: "graphEditor", label: t("settings.sections.graphEditor") },
     { id: "shortcuts", label: t("settings.sections.shortcuts") },
     { id: "notifications", label: t("settings.sections.notifications") },
+    { id: "tags", label: t("settings.sections.tags") },
     { id: "system", label: t("settings.sections.system") },
     { id: "plugins", label: t("settings.sections.plugins") },
   ];
@@ -473,6 +477,32 @@ export const Settings = () => {
               <NotificationSettings />
             </section>
 
+            {/* 标签管理：跨图谱/笔记/任务的统一标签维护 */}
+            <section
+              id="tags"
+              ref={(el) => {
+                if (el) sectionRefs.current.tags = el;
+              }}
+              className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Tags className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  {t("tags.manager.title")}
+                </h2>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                {t("tags.manager.description")}
+              </p>
+              <button
+                onClick={() => setIsTagManagerOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium bg-primary-500 text-white hover:bg-primary-600 transition-colors min-h-[44px]"
+              >
+                <Tags size={14} />
+                {t("tags.manager.open")}
+              </button>
+            </section>
+
             {/* 仅 Electron 端显示系统设置 */}
             {isElectron() && (
               <section
@@ -565,6 +595,12 @@ export const Settings = () => {
           </div>
         </div>
       </div>
+
+      {/* 标签管理对话框 */}
+      <TagManagerDialog
+        isOpen={isTagManagerOpen}
+        onClose={() => setIsTagManagerOpen(false)}
+      />
     </div>
   );
 };

@@ -63,6 +63,7 @@ export type {
 } from "./conceptAggregation";
 export { graphVersionsApi } from "./graphVersions";
 export { notesApi } from "./notes";
+export { tagsApi } from "./tags";
 
 import { authApi } from "./auth";
 import { graphsApi } from "./graphs";
@@ -102,6 +103,7 @@ import { storyCreationHttpApi } from "./storyCreation";
 import { conceptAggregationApi } from "./conceptAggregation";
 import { graphVersionsApi } from "./graphVersions";
 import { notesApi } from "./notes";
+import { tagsApi } from "./tags";
 import type { IApi } from "./contracts/IApi";
 
 export const api: IApi = {
@@ -147,6 +149,7 @@ export const api: IApi = {
   conceptAggregation: conceptAggregationApi,
   graphVersions: graphVersionsApi,
   notes: notesApi,
+  tags: tagsApi,
 };
 
 export type {

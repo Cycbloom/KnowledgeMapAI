@@ -9,9 +9,13 @@ import {
   Check,
   Calendar,
   Clock,
+  Tag,
 } from "lucide-react";
 import type { Graph } from "@shared/types";
 import { formatDate } from "@/utils/formatters";
+
+/** 行内最多展示的标签数，超出折叠为 +N */
+const MAX_VISIBLE_TAGS = 3;
 
 const TEMPLATE_TYPE_CONFIG: Record<
   string,
@@ -72,6 +76,10 @@ interface DashboardGraphListItemProps {
   onPrefetch: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, graph: Graph) => void;
   variant: "desktop" | "mobile";
+  /** 点击标签 chip 切换该标签筛选 */
+  onTagClick: (tag: string) => void;
+  /** 打开标签编辑对话框 */
+  onEditTags: (graph: Graph) => void;
 }
 
 export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
@@ -86,6 +94,8 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
   onPrefetch,
   onContextMenu,
   variant,
+  onTagClick,
+  onEditTags,
 }) => {
   const { t } = useTranslation();
 
@@ -174,6 +184,41 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
             >
               {graph.description || t("dashboard.card.noDescription")}
             </p>
+            {(graph.tags?.length ?? 0) > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                {graph.tags?.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTagClick(tag);
+                    }}
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                      isDark
+                        ? "bg-slate-700 text-primary-300"
+                        : "bg-primary-50 text-primary-600"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+                {(graph.tags?.length ?? 0) > MAX_VISIBLE_TAGS && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditTags(graph);
+                    }}
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                      isDark
+                        ? "bg-slate-700 text-slate-400"
+                        : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    +{(graph.tags?.length ?? 0) - MAX_VISIBLE_TAGS}
+                  </button>
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-3 text-xs">
               <div
                 className={`flex items-center gap-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}
@@ -196,6 +241,20 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditTags(graph);
+              }}
+              className={`p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                isDark
+                  ? "text-slate-400 hover:bg-primary-900/30"
+                  : "text-gray-400 hover:bg-primary-50"
+              }`}
+              aria-label={t("dashboard.tagsEditor.title")}
+            >
+              <Tag size={18} aria-hidden="true" />
+            </button>
             <Link
               to={`/graph/${graph.id}`}
               onClick={(e) => e.stopPropagation()}
@@ -326,9 +385,40 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
       <td
         className={`px-4 py-3 hidden lg:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}
       >
-        <span className="line-clamp-1 text-sm">
+        <span className="line-clamp-1 text-sm block">
           {graph.description || t("dashboard.card.noDescription")}
         </span>
+        {(graph.tags?.length ?? 0) > 0 && (
+          <div className="flex flex-wrap items-center gap-1 mt-1">
+            {graph.tags?.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
+              <button
+                key={tag}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick(tag);
+                }}
+                className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                  isDark
+                    ? "bg-slate-700 text-primary-300"
+                    : "bg-primary-50 text-primary-600"
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+            {(graph.tags?.length ?? 0) > MAX_VISIBLE_TAGS && (
+              <span
+                className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                  isDark
+                    ? "bg-slate-700 text-slate-400"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                +{(graph.tags?.length ?? 0) - MAX_VISIBLE_TAGS}
+              </span>
+            )}
+          </div>
+        )}
       </td>
       <td className="px-4 py-3 text-center">
         <div
@@ -364,6 +454,22 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
       </td>
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-1">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onEditTags(graph);
+            }}
+            className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+              isDark
+                ? "text-slate-400 hover:bg-primary-900/30 hover:text-primary-400"
+                : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
+            }`}
+            title={t("dashboard.tagsEditor.title")}
+            aria-label={t("dashboard.tagsEditor.title")}
+          >
+            <Tag size={18} aria-hidden="true" />
+          </button>
           <Link
             to={`/graph/${graph.id}`}
             onClick={(e) => e.stopPropagation()}

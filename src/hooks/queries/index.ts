@@ -10,6 +10,7 @@ export * from "./useActivityQueries";
 export * from "./useGraphVersionQueries";
 export { useAiPerformanceLogs, useAiPerformanceStats, useClearAiPerformanceLogs } from "./useAiPerformanceQueries";
 export * from "./useNoteQueries";
+export * from "./useTagQueries";
 export { useRecentGraphs } from "./useRecentGraphs";
 export type { RecentGraphEntry } from "./useRecentGraphs";
 export { useRecentNodes, getRecentNodes, addRecentNode, removeRecentNode, clearRecentNodes } from "./useRecentNodes";

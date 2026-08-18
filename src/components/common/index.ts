@@ -46,6 +46,7 @@ export { OfflineIndicator } from "./OfflineIndicator";
 export { OfflineStatusBar } from "./OfflineStatusBar";
 export { OfflineSyncProgress } from "./OfflineSyncProgress";
 export { ConfirmationModal } from "./ConfirmationModal";
+export { TagManagerDialog } from "./TagManagerDialog";
 export { ModalShell } from "./ModalShell";
 export { FocusTimer } from "./FocusTimer";
 export { MobileFocusTimer } from "./MobileFocusTimer";

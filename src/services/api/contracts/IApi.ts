@@ -32,6 +32,7 @@ import type { IConceptAggregationApi } from './IConceptAggregationApi';
 import type { IGraphVersionsApi } from './IGraphVersionsApi';
 import type { INotesApi } from './INotesApi';
 import type { ITagsApi } from './ITagsApi';
+import type { ILearningMaterialSchemasApi } from './ILearningMaterialSchemasApi';
 
 export interface IApi {
   auth: IAuthApi;
@@ -77,4 +78,5 @@ export interface IApi {
   graphVersions: IGraphVersionsApi;
   notes: INotesApi;
   tags: ITagsApi;
+  learningMaterialSchemas: ILearningMaterialSchemasApi;
 }

@@ -35,6 +35,7 @@ import type { IGraphVersionsApi } from "../api/contracts/IGraphVersionsApi";
 import type { INotesApi } from "../api/contracts/INotesApi";
 import type { ITagsApi } from "../api/contracts/ITagsApi";
 import type { IKnowledgePointsApi, IGraphNodesApi, ICombinedViewApi } from "../api/contracts/IKnowledgePointsApi";
+import type { ILearningMaterialSchemasApi } from "../api/contracts/ILearningMaterialSchemasApi";
 import { NotSupportedError } from "../api/contracts/types";
 
 /**
@@ -120,4 +121,5 @@ export const mobileApi: IApi = {
   graphVersions: createNotSupportedModule<IGraphVersionsApi>("graphVersions"),
   notes: createNotSupportedModule<INotesApi>("notes"),
   tags: createNotSupportedModule<ITagsApi>("tags"),
+  learningMaterialSchemas: createNotSupportedModule<ILearningMaterialSchemasApi>("learningMaterialSchemas"),
 };

@@ -104,6 +104,7 @@ import { conceptAggregationApi } from "./conceptAggregation";
 import { graphVersionsApi } from "./graphVersions";
 import { notesApi } from "./notes";
 import { tagsApi } from "./tags";
+import { learningMaterialSchemasApi } from "./learningMaterialSchemas";
 import type { IApi } from "./contracts/IApi";
 
 export const api: IApi = {
@@ -150,6 +151,7 @@ export const api: IApi = {
   graphVersions: graphVersionsApi,
   notes: notesApi,
   tags: tagsApi,
+  learningMaterialSchemas: learningMaterialSchemasApi,
 };
 
 export type {

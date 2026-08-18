@@ -59,10 +59,35 @@ export interface IAiApi {
     provider?: string;
     model?: string;
     language?: string;
+    schema_id?: string;
   }): Promise<{
     content: string;
     keywords?: Keyword[];
     sections?: Array<{ title: string; content: string }>;
+  }>;
+
+  /** AI 辅助设计/优化学习材料章节结构 */
+  assistLearningSchema(data: {
+    mode: "generate" | "optimize";
+    topic: string;
+    goal?: string;
+    existing_sections?: Array<{
+      title: string;
+      instruction: string;
+      min_words?: number;
+      max_words?: number;
+    }>;
+    graph_id?: string;
+    provider?: string;
+    model?: string;
+    language?: string;
+  }): Promise<{
+    sections: Array<{
+      title: string;
+      instruction: string;
+      min_words?: number;
+      max_words?: number;
+    }>;
   }>;
 
   expand(data: {

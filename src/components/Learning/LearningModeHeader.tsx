@@ -15,6 +15,7 @@ import {
   GraduationCap,
   BrainCircuit,
   Sparkles,
+  BookOpenCheck,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -47,6 +48,7 @@ interface LearningModeHeaderProps {
   onStudyModeChange: (mode: StudyMode) => void;
   onToggleStudyModeDropdown: () => void;
   onOpenSettings: () => void;
+  onOpenSchemaEditor: () => void;
   onEnterFocusMode: () => void;
   onOpenLearningPath: () => void;
   onNavigateToGraph: () => void;
@@ -80,6 +82,7 @@ export const LearningModeHeader = ({
   onStudyModeChange,
   onToggleStudyModeDropdown,
   onOpenSettings,
+  onOpenSchemaEditor,
   onEnterFocusMode,
   onOpenLearningPath,
   onNavigateToGraph,
@@ -256,6 +259,24 @@ export const LearningModeHeader = ({
             title={t("learning.header.settings")}
           >
             <Settings size={isMobile ? 18 : 20} />
+          </button>
+        )}
+
+        {!isMobile && (
+          <button
+            onClick={onOpenSchemaEditor}
+            className={`flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
+              isMobile
+                ? "min-w-[36px] min-h-[36px]"
+                : "min-w-[44px] min-h-[44px]"
+            } ${
+              isDark
+                ? "hover:bg-slate-800 text-slate-400"
+                : "hover:bg-gray-100 text-gray-600"
+            }`}
+            title={t("learning.material.schema.editorTitle")}
+          >
+            <BookOpenCheck size={isMobile ? 18 : 20} />
           </button>
         )}
 

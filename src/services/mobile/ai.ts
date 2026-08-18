@@ -188,6 +188,35 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     }>("/ai/learning-material", payload);
   },
 
+  assistLearningSchema: async (data: {
+    mode: "generate" | "optimize";
+    topic: string;
+    goal?: string;
+    existing_sections?: Array<{
+      title: string;
+      instruction: string;
+      min_words?: number;
+      max_words?: number;
+    }>;
+    graph_id?: string;
+    provider?: string;
+    model?: string;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return post<{
+      sections: Array<{
+        title: string;
+        instruction: string;
+        min_words?: number;
+        max_words?: number;
+      }>;
+    }>("/ai/learning-material-schema/assist", payload);
+  },
+
   expand: async (data: {
     node_title: string;
     node_content?: string;

@@ -114,12 +114,38 @@ export const aiApi: IAiApi = {
     provider?: string;
     model?: string;
     language?: string;
+    schema_id?: string;
   }) => {
     const payload = injectAIConfig(
       { ...data, language: data.language || getAILanguage() },
       "text",
     );
     return request("/ai/learning-material", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  assistLearningSchema: (data: {
+    mode: "generate" | "optimize";
+    topic: string;
+    goal?: string;
+    existing_sections?: Array<{
+      title: string;
+      instruction: string;
+      min_words?: number;
+      max_words?: number;
+    }>;
+    graph_id?: string;
+    provider?: string;
+    model?: string;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/learning-material-schema/assist", {
       method: "POST",
       body: JSON.stringify(payload),
     });

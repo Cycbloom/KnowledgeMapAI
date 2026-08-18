@@ -46,6 +46,7 @@ import { LearningModeOutline } from "../components/Learning/LearningModeOutline"
 import { LearningModeRightPanel } from "../components/Learning/LearningModeRightPanel";
 import { LearningArticleReader } from "../components/Learning/LearningArticleReader";
 import { CreateNodeModal } from "../components/Learning/CreateNodeModal";
+import { LearningChapterSchemaEditor } from "../components/Learning/LearningChapterSchemaEditor";
 import { addQuote } from "../components/RAGChat";
 import { NodeLevel, Keyword } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
@@ -110,6 +111,8 @@ export const LearningMode = () => {
   const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isOverviewEditModalOpen, setIsOverviewEditModalOpen] = useState(false);
+  const [isSchemaEditorOpen, setIsSchemaEditorOpen] = useState(false);
+  const [selectedSchemaId, setSelectedSchemaId] = useState<string | undefined>(undefined);
   const [generateProgress, setGenerateProgress] = useState<{
     current: number; total: number; isGenerating: boolean;
   } | null>(null);
@@ -305,6 +308,7 @@ export const LearningMode = () => {
       const response = await api.ai.generateLearningMaterial({
         topic: node.title || "", context: node.content, level: node.level,
         graph_id: graphId, language: aiLanguage,
+        schema_id: selectedSchemaId,
       });
       if (response.content) {
         setArticleContent(response.content);
@@ -534,6 +538,7 @@ export const LearningMode = () => {
         onStudyModeChange={handleStudyModeChange}
         onToggleStudyModeDropdown={() => setIsStudyModeDropdownOpen(!isStudyModeDropdownOpen)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenSchemaEditor={() => setIsSchemaEditorOpen(true)}
         onEnterFocusMode={() => {
           if (nodeId && articleContent) {
             enterFocusMode(nodeId);
@@ -623,6 +628,14 @@ export const LearningMode = () => {
         onClose={() => { setIsFocusModeOpen(false); exitFocusMode(); }}
         articleContent={articleContent} nodeTitle={nodeTitle}
         isMobile={isMobile} keywords={keywords}
+      />
+
+      <LearningChapterSchemaEditor
+        open={isSchemaEditorOpen}
+        onClose={() => setIsSchemaEditorOpen(false)}
+        graphId={graphId ?? undefined}
+        selectedSchemaId={selectedSchemaId}
+        onSelect={(sid) => setSelectedSchemaId(sid)}
       />
 
       <LearningSettingsPanel

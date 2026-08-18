@@ -35,24 +35,39 @@ router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
   const userId = req.user.id;
   const supabase = req.supabase;
 
-  if (!code || !scope || !template_content) {
+  if (typeof code !== 'string' || !code.trim()) {
     throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
   }
 
-  if (scope === 'system') {
-    throw new AppError(ErrorCodes.CANNOT_MODIFY_SYSTEM_TEMPLATE);
+  const ALLOWED_SCOPES = ['user', 'graph'] as const;
+  type AllowedScope = (typeof ALLOWED_SCOPES)[number];
+  if (typeof scope !== 'string' || !(ALLOWED_SCOPES as ReadonlyArray<string>).includes(scope)) {
+    throw new AppError(ErrorCodes.VALIDATION_INVALID_PARAMS);
+  }
+  const safeScope = scope as AllowedScope;
+
+  if (typeof template_content !== 'string') {
+    throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
   }
 
-  if (scope === 'graph' && !graph_id) {
+  if (!template_content.trim()) {
+    throw new AppError(
+      'errors.errorCodes.validationEmpty',
+      400,
+      ErrorCodes.VALIDATION_ERROR,
+    );
+  }
+
+  if (safeScope === 'graph' && !graph_id) {
     throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
   }
 
   try {
     const data = await promptService.saveTemplate(supabase, {
       code,
-      scope,
+      scope: safeScope,
       user_id: userId,
-      graph_id: scope === 'graph' ? graph_id : null,
+      graph_id: safeScope === 'graph' ? graph_id : null,
       template_content
     });
 

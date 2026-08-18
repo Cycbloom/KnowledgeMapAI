@@ -19,6 +19,59 @@ import {
 export type { PromptScope, PromptTemplate, PromptListOptions, PromptCreateData, PromptUpdateData };
 export { getLanguageInstruction };
 
+const DEFAULT_SCOPE = "system";
+
+/**
+ * 用 DEFAULT_PROMPTS 补齐 DB 中缺失的 system scope 模板。
+ * 遵守"DB 权威、DEFAULT 仅作回退"原则：
+ * - DB 已有同 code 的 system 行 → 保留 DB 行（可能被运维修改过）
+ * - DB 缺该行 → 用 DEFAULT_PROMPTS[code] 合成一条虚拟 system 行，
+ *   id=null 表示它未持久化，管理界面保存时会做 INSERT（upsert）。
+ * 如果有 DB 缺失的 code，会打一条 warning，提示把新 code 加到 53 seed 迁移文件里。
+ */
+function mergeSystemTemplatesWithDefaults(
+  dbRows: PromptTemplate[] | null,
+): PromptTemplate[] {
+  const rows = dbRows ?? [];
+  const dbByCode = new Map(rows.map((row) => [row.code, row]));
+  const missingInDb: string[] = [];
+  const merged = new Map<string, PromptTemplate>();
+
+  // 先插入所有 DB 行（权威源）
+  for (const row of rows) {
+    merged.set(row.code, row);
+  }
+
+  // 再补 DEFAULT_PROMPTS 有、DB 没有的 code
+  for (const code of Object.keys(DEFAULT_PROMPTS)) {
+    if (dbByCode.has(code)) continue;
+    missingInDb.push(code);
+    const now = new Date().toISOString();
+    merged.set(code, {
+      id: null,
+      code,
+      scope: DEFAULT_SCOPE,
+      user_id: null,
+      graph_id: null,
+      template_content: DEFAULT_PROMPTS[code],
+      created_at: now,
+      updated_at: now,
+    });
+  }
+
+  if (missingInDb.length > 0) {
+    logger.warn(
+      `[promptService.list] DB prompt_templates (scope=system) missing ${missingInDb.length} code(s): ${missingInDb.join(
+        ", ",
+      )}. Add them to supabase/migrations/53_seed_prompt_templates.sql.`,
+    );
+  }
+
+  return Array.from(merged.values()).sort((a, b) =>
+    a.code.localeCompare(b.code),
+  );
+}
+
 export class PromptService {
   async list(
     supabase: SupabaseClient,
@@ -63,7 +116,7 @@ export class PromptService {
     }
 
     return {
-      system: systemTemplates || [],
+      system: mergeSystemTemplatesWithDefaults(systemTemplates),
       user: userTemplates || [],
       graph: graphTemplates,
     };
@@ -182,6 +235,7 @@ export class PromptService {
     const template = await this.getTemplate(supabase, code, userId, graphId);
 
     let content = "";
+    let source: "graph" | "user" | "system" | "default" = "default";
 
     if (!template) {
       // DB 为唯一权威来源，所有 12 个 prompt 已 seed 到 DB
@@ -190,7 +244,7 @@ export class PromptService {
       // 新增 prompt 必须通过 supabase/migrations/53_seed_prompt_templates.sql 写入 DB。
       const defaultPrompt = DEFAULT_PROMPTS[code];
       if (defaultPrompt) {
-        logger.info(`Using default prompt for code: ${code}`);
+        logger.info(`[prompt:${code}] source=default (fallback)`);
         try {
           content = TemplateEngine.render(defaultPrompt, context);
         } catch (e) {
@@ -204,6 +258,17 @@ export class PromptService {
         content = "";
       }
     } else {
+      // 识别命中层级（Graph > User > System），用于日志和排障
+      if (template.scope === "graph" && template.graph_id === graphId) {
+        source = "graph";
+      } else if (template.scope === "user" && template.user_id === userId) {
+        source = "user";
+      } else {
+        source = "system";
+      }
+      logger.info(
+        `[prompt:${code}] source=${source} template_id=${template.id ?? "unsaved"}`,
+      );
       try {
         content = TemplateEngine.render(template.template_content, context);
       } catch (e) {

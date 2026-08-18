@@ -10,6 +10,7 @@
   "create": "Create",
   "search": {
     "label": "Search",
+    "failed": "Search failed",
     "scope": {
       "all": "All",
       "today": "Today",

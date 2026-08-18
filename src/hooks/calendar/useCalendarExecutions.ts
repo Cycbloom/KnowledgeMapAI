@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
 import { queryKeys } from "../queries/config";
+import i18n from "../../i18n";
 import type { ExecutionEvent } from "../../types/calendar";
 import type { ExecutionFilters, TaskExecution } from "@shared/types";
 
@@ -24,7 +25,7 @@ export function useCalendarExecutions(filters?: ExecutionFilters) {
       return executions.map((exec: TaskExecution) => ({
         id: exec.id,
         task_id: exec.task_id,
-        task_title: "未知任务",
+        task_title: i18n.t("calendar.unknownTask"),
         started_at: exec.started_at,
         ended_at: exec.ended_at,
         duration: exec.duration,

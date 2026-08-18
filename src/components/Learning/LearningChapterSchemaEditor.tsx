@@ -45,6 +45,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { api } from "@/services/api";
 import { message } from "@/utils/messageHelper";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import i18n from "../../i18n";
 import type {
   LearningMaterialSchema,
   LearningMaterialSection,
@@ -92,19 +93,25 @@ function createBlankSections(): LearningMaterialSection[] {
 }
 
 /** Prompt 结构预览（等宽文本） */
-function buildPreviewPrompt(sections: LearningMaterialSection[]): string {
+function buildPreviewPrompt(
+  sections: LearningMaterialSection[],
+  lang: string,
+): string {
+  const isZh = lang.startsWith("zh");
   const sorted = [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const lines = sorted.map((sec, idx) => {
     const no = idx + 1;
-    let line = `${no}. **${sec.title || "（未命名章节）"}**: ${
-      sec.instruction || "（未填写写作指令）"
-    }`;
+    const title =
+      sec.title || i18n.t("learning.material.schema.untitledSection");
+    const instruction =
+      sec.instruction || i18n.t("learning.material.schema.noInstruction");
+    let line = `${no}. **${title}**: ${instruction}`;
     if (sec.min_words && sec.max_words) {
-      line += `  (≈${sec.min_words}-${sec.max_words} words)`;
+      line += `  (≈${sec.min_words}-${sec.max_words} ${isZh ? "字" : "words"})`;
     } else if (sec.min_words) {
-      line += `  (≥${sec.min_words} words)`;
+      line += `  (≥${sec.min_words} ${isZh ? "字" : "words"})`;
     } else if (sec.max_words) {
-      line += `  (≤${sec.max_words} words)`;
+      line += `  (≤${sec.max_words} ${isZh ? "字" : "words"})`;
     }
     return line;
   });
@@ -935,8 +942,8 @@ export const LearningChapterSchemaEditor: React.FC<Props> = ({
     [editor.sections, i18n.language],
   );
   const promptContent = useMemo(
-    () => buildPreviewPrompt(editor.sections),
-    [editor.sections],
+    () => buildPreviewPrompt(editor.sections, i18n.language),
+    [editor.sections, i18n.language],
   );
 
   if (!open) return null;

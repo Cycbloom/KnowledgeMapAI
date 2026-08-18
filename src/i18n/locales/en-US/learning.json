@@ -530,6 +530,8 @@
       "duplicate": "Duplicate to My Configs",
       "duplicateTitle": "Duplicate System Preset",
       "duplicateHint": "System presets cannot be edited directly — duplicate them first",
+      "untitledSection": "(Untitled)",
+      "noInstruction": "(No instruction yet)",
       "sectionTitle": "Chapter Title",
       "sectionInstruction": "Writing instruction (tell AI what to cover in this chapter)",
       "sectionMinWords": "Suggested min words",

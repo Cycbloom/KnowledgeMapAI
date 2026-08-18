@@ -530,6 +530,8 @@
       "duplicate": "复制为我的",
       "duplicateTitle": "复制系统预设",
       "duplicateHint": "系统预设不可直接修改，请先复制为自定义方案",
+      "untitledSection": "（未命名章节）",
+      "noInstruction": "（未填写写作指令）",
       "sectionTitle": "章节标题",
       "sectionInstruction": "写作指令（告诉AI这一章写什么）",
       "sectionMinWords": "建议最少字数",

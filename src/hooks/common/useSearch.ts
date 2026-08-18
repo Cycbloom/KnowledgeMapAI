@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { searchApi, SearchResult } from '../../services/api/search';
+import i18n from '../../i18n';
 import { debounce } from '@/utils/performanceUtils';
 
 export type SearchMode = 'keyword' | 'semantic';
@@ -62,7 +63,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchResult {
       if (searchSeqRef.current !== seq) return;
       if (err instanceof Error && err.name !== 'AbortError') {
         console.error('Search failed:', err);
-        setError(err.message || '搜索失败');
+        setError(err.message || i18n.t('common.search.failed'));
       }
     } finally {
       if (searchSeqRef.current === seq) {

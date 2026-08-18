@@ -10,6 +10,7 @@
   "create": "创建",
   "search": {
     "label": "搜索",
+    "failed": "搜索失败",
     "scope": {
       "all": "全部",
       "today": "今天",

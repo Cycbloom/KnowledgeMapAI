@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { api } from '../../services/api';
+import i18n from '../../i18n';
 import type { 
   CombinedViewData, 
   CombinedViewLayoutMode,
@@ -53,7 +54,7 @@ export const useCombinedView = (props?: UseCombinedViewProps) => {
       setData(result);
     } catch (err) {
       console.error('Failed to load combined view data:', err);
-      setError('加载联立视图数据失败');
+      setError(i18n.t('combinedViewPage.loadError'));
     } finally {
       setIsLoading(false);
     }

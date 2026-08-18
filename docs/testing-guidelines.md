@@ -235,7 +235,7 @@ vi.mock('./utils'); // 应直接测试 utils，而非 mock
 ### Playwright Fixtures
 
 - **`e2e/fixtures.ts`**（规划中）：提供共享 fixture：
-  - `authenticatedPage`：自动登录测试用户（`test@example.com` / `test123456`）的 page。
+  - `authenticatedPage`：通过无感知会话（自动恢复/创建专属用户）完成认证的 page。
   - `testGraph`：通过 API 预创建一个图谱，返回 graphId。
   - `cleanDb`：在测试开始前清理相关表。
 - 自定义 fixture 通过 `test.extend<Fixtures>({ ... })` 注入。
@@ -436,11 +436,11 @@ describeIfDbAvailable('graphsService 集成测试', () => {
 ```typescript
 // ✅ DO：显式断言（参考 e2e/console.spec.ts）
 import { test, expect } from '@playwright/test';
-import { loginAsTestUser } from './utils/auth';
+import { loginAsOwner } from './utils/auth';
 
 test.describe('控制台', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsTestUser(page);
+    await loginAsOwner(page);
     await page.waitForLoadState('networkidle');
   });
 

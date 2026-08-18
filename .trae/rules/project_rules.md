@@ -30,7 +30,7 @@
 - **迁移文件管理**：所有变更直接修改对应的模块化文件，不创建增量迁移文件
 - **迁移文件命名**：`{两位序号}_{业务域}.sql`
 - **类型生成**：schema 变更后必须运行 `npm run db:gen-types` 重新生成 `shared/types/database.generated.ts`
-- **测试用户**：`test@example.com` / `test123456`（`db:local:reset` 后自动创建）
+- **专属用户**：单用户工具，无测试账号；首次启动设置向导自动创建专属用户（凭证存 localStorage `km-owner-credentials`），`db:seed` 向首个用户插入演示数据
 
 ### 远程数据库修改
 

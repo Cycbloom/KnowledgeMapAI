@@ -82,14 +82,13 @@ npm run db:local:reset
 
 > 实际端口以 `supabase status` 输出为准。
 
-### 1.5 测试账号
+### 1.5 专属用户（无感知会话）
 
-每次 `npm run db:local:reset` 后会通过 `99_seed_test_user.sql` 自动创建测试用户：
+应用为单用户工具，不存在测试账号或登录表单：
 
-- 邮箱：`test@example.com`
-- 密码：`test123456`
-
-> 开发环境配置 `VITE_DEV_TEST_PASSWORD=test123456` 后，应用启动时会自动登录该账号（仅当 `VITE_SUPABASE_URL` 指向 127.0.0.1/localhost 时生效）。
+- 首次启动进入设置向导，完成 Supabase 配置后自动创建一个专属用户（随机凭证保存在浏览器 localStorage，key 为 `km-owner-credentials`），随后直达首页
+- 之后启动自动恢复会话；凭证失效时用本地凭证静默重登，全程无感
+- `npm run db:seed` 会向首个（专属）用户插入演示数据
 
 ### 1.6 启动开发服务器
 
@@ -554,9 +553,8 @@ npm run db:check-types
 ### 6.4 Seed 数据
 
 - `npm run db:local:reset` 会自动应用所有 50-99 的 seed 文件
-- 测试用户通过 `99_seed_test_user.sql` 自动创建：`test@example.com` / `test123456`
 - 业务 seed 数据（成就、模板、Prompt、关系类型）通过 `50-59_seed_*.sql` 注入
-- 单独插入额外测试数据：`npm run db:seed`
+- 单独插入额外测试数据：`npm run db:seed`（需要先启动一次应用以创建专属用户）
 
 ### 6.5 远程数据库修改流程
 

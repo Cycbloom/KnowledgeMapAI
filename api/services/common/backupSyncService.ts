@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { getSupabaseAdmin } from '../../supabase';
+import { getSupabaseAdmin, listAuthUserIds } from '../../supabase';
 import { logger } from '../../utils/logger';
 
 const BACKUP_DIR = process.env.BACKUP_DIR || './backups';
@@ -23,11 +23,15 @@ export async function syncExistingBackups(): Promise<void> {
       return;
     }
 
+    // 以 auth.users 为权威来源：已删除用户（幽灵）的备份文件不再同步
+    const authUserIds = new Set(await listAuthUserIds());
+
     const userDirs = await fs.readdir(BACKUP_DIR);
 
     let syncedCount = 0;
 
     for (const userId of userDirs) {
+      if (!authUserIds.has(userId)) continue;
       const userDir = path.join(BACKUP_DIR, userId);
       const stat = await fs.stat(userDir);
       

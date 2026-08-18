@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from '../supabase';
+import { getSupabaseAdmin, listAuthUserIds } from '../supabase';
 import { createBackup, cleanupOldSnapshots } from '../services/common/backupService';
 import { logger } from '../utils/logger';
 
@@ -30,6 +30,10 @@ export function startAutoBackupScheduler() {
   logger.info('Auto backup scheduler started');
 }
 
+/**
+ * 以 auth.users 为权威来源遍历用户创建备份：
+ * public.users 可能残留已删除用户（幽灵行），为其创建备份会持续产生无效数据。
+ */
 async function runAutoBackup(type: 'auto_30min' | 'auto_5hour' | 'auto_1day') {
   if (isRunning) {
     logger.info('Auto backup already running, skipping...');
@@ -39,33 +43,26 @@ async function runAutoBackup(type: 'auto_30min' | 'auto_5hour' | 'auto_1day') {
   isRunning = true;
 
   try {
-    const { data: users, error } = await getSupabaseAdmin()
-      .from('users')
-      .select('id');
+    const userIds = await listAuthUserIds();
 
-    if (error || !users) {
-      logger.error('Failed to fetch users for auto backup:', error);
-      return;
-    }
-
-    for (const user of users) {
+    for (const userId of userIds) {
       try {
-        const result = await createBackup(getSupabaseAdmin(), user.id, type);
-        
-        await cleanupOldSnapshots(getSupabaseAdmin(), user.id, type);
-        
+        const result = await createBackup(getSupabaseAdmin(), userId, type);
+
+        await cleanupOldSnapshots(getSupabaseAdmin(), userId, type);
+
         await getSupabaseAdmin().from('backup_snapshots').insert({
-          user_id: user.id,
+          user_id: userId,
           type,
           file_path: result.filePath,
           file_size: result.fileSize,
           graphs_count: result.graphsCount,
           nodes_count: result.nodesCount,
         });
-        
-        logger.info(`Auto backup created for user ${user.id}: ${type}`);
+
+        logger.info(`Auto backup created for user ${userId}: ${type}`);
       } catch (error) {
-        logger.error(`Failed to create auto backup for user ${user.id}:`, error);
+        logger.error(`Failed to create auto backup for user ${userId}:`, error);
       }
     }
   } catch (error) {

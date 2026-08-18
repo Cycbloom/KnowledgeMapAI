@@ -187,6 +187,36 @@ let currentConfig = {
 export const getSupabaseAdmin = () => clients.admin;
 export const getSupabaseAnon = () => clients.anon;
 
+/**
+ * 获取所有真实存在的 auth 用户 id（分页遍历）。
+ *
+ * 以 auth.users 为唯一权威来源：public.users 可能残留已删除用户
+ * （幽灵行），基于它派生的任务会持续产生无效数据。
+ */
+export const listAuthUserIds = async (): Promise<string[]> => {
+  const ids: string[] = [];
+  let page = 1;
+  const perPage = 200;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await clients.admin.auth.admin.listUsers({
+      page,
+      perPage,
+    });
+    if (error || !data) {
+      throw new Error(`listUsers failed: ${error?.message ?? "unknown"}`);
+    }
+    for (const user of data.users) {
+      ids.push(user.id);
+    }
+    hasMore = data.users.length === perPage && ids.length < data.total;
+    page++;
+  }
+
+  return ids;
+};
+
 export const reinitializeSupabaseClients = (
   config: { url: string; serviceKey: string; anonKey: string },
 ) => {

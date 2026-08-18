@@ -11,9 +11,12 @@ export interface PaginationResult {
 
 export const DEFAULT_PAGE_SIZE = 20;
 
+/** 单页最大条数，防止非法 limit 导致资源耗尽 */
+export const MAX_PAGE_SIZE = 100;
+
 export function getPaginationParams(options?: PaginationOptions): PaginationResult {
-  const limit = options?.limit ?? DEFAULT_PAGE_SIZE;
-  const offset = options?.offset ?? 0;
+  const limit = Math.min(Math.max(options?.limit ?? DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
+  const offset = Math.max(options?.offset ?? 0, 0);
   return {
     limit,
     offset,

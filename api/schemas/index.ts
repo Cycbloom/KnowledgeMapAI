@@ -104,7 +104,7 @@ export const updateNodeSchema = createNodeSchema
   .omit({ graph_id: true });
 
 export const batchDeleteNodesSchema = z.object({
-  node_ids: z.array(z.string().uuid()).min(1, "请提供有效的节点ID列表"),
+  node_ids: z.array(z.string().uuid()).min(1, "请提供有效的节点ID列表").max(50, "单次最多删除50个节点"),
 });
 
 export const relatedNodesQuerySchema = z.object({
@@ -199,7 +199,8 @@ export const createCardsBatchSchema = z.object({
         options: z.any().optional(),
       }),
     )
-    .min(1, "至少需要一张卡片"),
+    .min(1, "至少需要一张卡片")
+    .max(100, "单次最多创建100张卡片"),
 });
 
 export const updateCardProgressSchema = z.object({
@@ -307,8 +308,8 @@ export const textToGraphSchema = z.object({
   text: z.string().optional(),
   graph_id: z.string().uuid("无效的图谱ID"),
   action: z.enum(["analyze", "save"]).optional(),
-  nodes: z.array(z.any()).optional(),
-  edges: z.array(z.any()).optional(),
+  nodes: z.array(z.any()).max(200, "单次最多200个节点").optional(),
+  edges: z.array(z.any()).max(400, "单次最多400条边").optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
 });
@@ -395,6 +396,7 @@ export const importDataSchema = z.object({
         level: z.string().optional(),
       }),
     )
+    .max(500, "单次最多导入500个节点")
     .optional(),
   edges: z
     .array(
@@ -404,6 +406,7 @@ export const importDataSchema = z.object({
         relationship: z.string().optional(),
       }),
     )
+    .max(1000, "单次最多导入1000条边")
     .optional(),
 });
 
@@ -426,7 +429,8 @@ export const createTemplateSchema = z.object({
         position_zone: z.string().optional(),
       }),
     )
-    .min(1, "至少需要一个节点"),
+    .min(1, "至少需要一个节点")
+    .max(200, "模板最多200个节点"),
   edges: z
     .array(
       z.object({
@@ -435,6 +439,7 @@ export const createTemplateSchema = z.object({
         relationship_type: z.string().optional(),
       }),
     )
+    .max(500, "模板最多500条边")
     .optional(),
   layout: z
     .object({
@@ -529,7 +534,7 @@ export const podcastScriptSchema = z.object({
 
 export const batchExpandGraphSchema = z.object({
   graph_id: z.string().uuid("无效的图谱ID"),
-  node_ids: z.array(z.string().uuid()).min(1, "至少需要一个节点"),
+  node_ids: z.array(z.string().uuid()).min(1, "至少需要一个节点").max(50, "单次最多50个节点"),
   max_depth: z.number().min(1).max(5).optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
@@ -553,7 +558,8 @@ export const saveNodesSchema = z.object({
         parentId: z.string().optional(),
       }),
     )
-    .min(1, "至少需要一个节点"),
+    .min(1, "至少需要一个节点")
+    .max(200, "单次最多保存200个节点"),
 });
 
 // --- Node Batch Operations ---
@@ -566,7 +572,8 @@ export const batchUpdatePositionsSchema = z.object({
         y_position: z.number(),
       }),
     )
-    .min(1, "至少需要一个节点位置"),
+    .min(1, "至少需要一个节点位置")
+    .max(200, "单次最多更新200个节点位置"),
 });
 
 export const batchUpdateNodesSchema = z.object({
@@ -585,7 +592,8 @@ export const batchUpdateNodesSchema = z.object({
         is_accepted: z.boolean().optional(),
       }),
     )
-    .min(1, "至少需要一个节点"),
+    .min(1, "至少需要一个节点")
+    .max(200, "单次最多更新200个节点"),
 });
 
 // --- Data Import Schemas ---
@@ -1004,7 +1012,8 @@ export const createNodesFromConceptsSchema = z.object({
         related: z.array(z.string()).optional(),
       }),
     )
-    .min(1, "至少选择一个知识点"),
+    .min(1, "至少选择一个知识点")
+    .max(100, "单次最多创建100个知识点"),
 });
 
 // --- Note Writing Assist Schema (P2: 写作辅助) ---

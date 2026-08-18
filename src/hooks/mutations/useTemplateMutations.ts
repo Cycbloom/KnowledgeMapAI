@@ -30,6 +30,7 @@ export const usePrefetchTemplates = () => {
         queryKey: queryKeys.templates(category),
         queryFn: () => api.templates.list(category),
         staleTime: 1000 * 60 * 30,
+        meta: { silent: true },
       });
     },
     [queryClient],

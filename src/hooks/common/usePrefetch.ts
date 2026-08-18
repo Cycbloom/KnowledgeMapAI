@@ -37,6 +37,7 @@ export function usePrefetch<TQueryFnData>(options: {
       queryFn,
       staleTime,
       gcTime,
+      meta: { silent: true },
     });
   }, [queryClient]);
 }

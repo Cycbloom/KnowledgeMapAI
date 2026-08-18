@@ -501,6 +501,7 @@ export const usePrefetchGraph = () => {
         queryKey: queryKeys.graph(graphId),
         queryFn: () => api.graphs.get(graphId),
         ...defaultQueryConfig,
+        meta: { silent: true },
       });
       queryClient.prefetchQuery({
         queryKey: queryKeys.graphData(graphId),
@@ -512,6 +513,7 @@ export const usePrefetchGraph = () => {
           };
         },
         ...defaultQueryConfig,
+        meta: { silent: true },
       });
     },
     [queryClient],
@@ -527,6 +529,7 @@ export const usePrefetchStudyCards = () => {
         queryKey: queryKeys.studyCards({ graph_id: graphId }),
         queryFn: () => api.study.getCards({ graph_id: graphId }),
         ...realtimeQueryConfig,
+        meta: { silent: true },
       });
     },
     [queryClient],

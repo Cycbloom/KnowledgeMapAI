@@ -402,52 +402,52 @@ export const Layout = () => {
       switch (path) {
         case "/":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.graphs, queryFn: api.graphs.list });
-            queryClient.prefetchQuery({ queryKey: queryKeys.dashboardStats, queryFn: api.dashboard.getStats });
+            queryClient.prefetchQuery({ queryKey: queryKeys.graphs, queryFn: api.graphs.list, meta: { silent: true } });
+            queryClient.prefetchQuery({ queryKey: queryKeys.dashboardStats, queryFn: api.dashboard.getStats, meta: { silent: true } });
           };
         case "/graph-map":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.graphMap(), queryFn: api.domains.getTree });
+            queryClient.prefetchQuery({ queryKey: queryKeys.graphMap(), queryFn: api.domains.getTree, meta: { silent: true } });
           };
         case "/study":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.studyCards({ due: true }), queryFn: () => api.study.getCards({ due: true }) });
+            queryClient.prefetchQuery({ queryKey: queryKeys.studyCards({ due: true }), queryFn: () => api.study.getCards({ due: true }), meta: { silent: true } });
           };
         case "/notes":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.notes(), queryFn: () => api.notes.list() });
+            queryClient.prefetchQuery({ queryKey: queryKeys.notes(), queryFn: () => api.notes.list(), meta: { silent: true } });
           };
         case "/learning-paths":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.learningLoops(), queryFn: () => api.learningPaths.list() });
+            queryClient.prefetchQuery({ queryKey: queryKeys.learningLoops(), queryFn: () => api.learningPaths.list(), meta: { silent: true } });
           };
         case "/statistics":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.statistics, queryFn: api.statistics.getStats });
+            queryClient.prefetchQuery({ queryKey: queryKeys.statistics, queryFn: api.statistics.getStats, meta: { silent: true } });
           };
         case "/calendar":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.calendarExecutions(), queryFn: () => api.scheduler.list({}) });
+            queryClient.prefetchQuery({ queryKey: queryKeys.calendarExecutions(), queryFn: () => api.scheduler.list({}), meta: { silent: true } });
           };
         case "/achievements":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.achievements(), queryFn: api.achievements.list });
+            queryClient.prefetchQuery({ queryKey: queryKeys.achievements(), queryFn: api.achievements.list, meta: { silent: true } });
           };
         case "/templates":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.templates(), queryFn: () => api.templates.list() });
+            queryClient.prefetchQuery({ queryKey: queryKeys.templates(), queryFn: () => api.templates.list(), meta: { silent: true } });
           };
         case "/tasks":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.tasks(), queryFn: () => api.tasks.list() });
+            queryClient.prefetchQuery({ queryKey: queryKeys.tasks(), queryFn: () => api.tasks.list(), meta: { silent: true } });
           };
         case "/scheduler":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.schedulerTasks(), queryFn: () => api.scheduler.list({}) });
+            queryClient.prefetchQuery({ queryKey: queryKeys.schedulerTasks(), queryFn: () => api.scheduler.list({}), meta: { silent: true } });
           };
         case "/trash":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.trashGraphs, queryFn: api.graphs.listTrash });
+            queryClient.prefetchQuery({ queryKey: queryKeys.trashGraphs, queryFn: api.graphs.listTrash, meta: { silent: true } });
           };
         default:
           return () => {};

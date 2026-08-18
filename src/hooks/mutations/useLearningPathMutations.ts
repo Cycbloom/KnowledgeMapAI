@@ -89,6 +89,7 @@ export const usePrefetchLearningPaths = () => {
             status as "active" | "completed" | "archived" | undefined,
           ),
         staleTime: 1000 * 60 * 5,
+        meta: { silent: true },
       });
     },
     [queryClient],

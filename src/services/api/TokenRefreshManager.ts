@@ -25,12 +25,7 @@ export class TokenRefreshManager {
 
   shouldRefreshToken(error: unknown): boolean {
     return error instanceof TokenExpiredError || 
-      (error instanceof AppError && (
-        error.code === SharedErrorCodes.AUTH_TOKEN_EXPIRED ||
-        error.code === SharedErrorCodes.AUTH_TOKEN_INVALID ||
-        error.code === SharedErrorCodes.AUTH_UNAUTHORIZED ||
-        error.code === SharedErrorCodes.AUTH_TOKEN_REVOKED
-      ));
+      (error instanceof AppError && error.code === SharedErrorCodes.AUTH_TOKEN_EXPIRED);
   }
 
   async refreshAccessToken(): Promise<string> {

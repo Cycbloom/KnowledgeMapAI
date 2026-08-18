@@ -10,6 +10,7 @@ import {
   createErrorFromResponse,
   isRetryableError,
   isNetworkError,
+  SharedErrorCodes,
 } from "@/utils/errors";
 
 import type { AppErrorBase } from "@shared/types/appError";
@@ -80,6 +81,23 @@ export const getCookie = (name: string): string | null => {
   if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
   return null;
 };
+
+/**
+ * 解码 JWT payload（仅前端本地检查，无需依赖库）。
+ * 返回 null 表示 token 不是合法 JWT 格式。
+ */
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = parts[1];
+    // Base64url → 标准 Base64 → 解码
+    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+}
 
 // 内存级 CSRF token 存储 —— cookie 已设为 httpOnly，前端无法通过 document.cookie 读取
 let csrfTokenValue: string | null = null;
@@ -236,7 +254,31 @@ export const createApiClient = (): AxiosInstance => {
       const csrfToken = csrfTokenValue;
 
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        // 检查 JWT 是否过期，避免带着过期 token 发出必然失败的请求
+        const payload = decodeJwtPayload(token);
+        if (payload) {
+          const exp = payload.exp as number | undefined;
+          if (exp && exp * 1000 < Date.now()) {
+            // Token 已过期，尝试刷新
+            try {
+              const tokenRefreshManager = TokenRefreshManager.getInstance();
+              const newToken = await tokenRefreshManager.refreshAccessToken();
+              config.headers.Authorization = `Bearer ${newToken}`;
+            } catch {
+              // 刷新失败：清除 auth 并跳转登录页，跳过本次请求
+              const currentPath = window.location.pathname;
+              useStore.getState().clearAuth();
+              if (currentPath !== '/login') {
+                window.location.href = '/login';
+              }
+              return Promise.reject(new Error('Token expired, redirecting to login'));
+            }
+          } else {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+        } else {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
 
       if (csrfToken) {
@@ -391,6 +433,25 @@ export const createApiClient = (): AxiosInstance => {
             return client(originalRequest);
           }
         }
+      }
+
+      // 不可恢复的鉴权错误：清除 auth 并跳转登录页
+      const isUnrecoverableAuth = (appError as AppErrorBase).code === SharedErrorCodes.AUTH_TOKEN_INVALID
+        || (appError as AppErrorBase).code === SharedErrorCodes.AUTH_TOKEN_REVOKED
+        || (appError as AppErrorBase).code === SharedErrorCodes.AUTH_TOKEN_MISSING
+        || (appError as AppErrorBase).code === SharedErrorCodes.AUTH_HEADER_MISSING
+        || (appError as AppErrorBase).code === SharedErrorCodes.AUTH_UNAUTHORIZED;
+
+      if (isUnrecoverableAuth) {
+        console.warn('[API] Unrecoverable auth error, clearing auth and redirecting to /login', {
+          code: (appError as AppErrorBase).code,
+          url: error.config?.url,
+        });
+        useStore.getState().clearAuth();
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(appError);
       }
 
       const appErrorStatus = (appError as AppErrorBase).statusCode;

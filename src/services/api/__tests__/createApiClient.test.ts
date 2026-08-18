@@ -38,7 +38,7 @@ vi.mock("axios", () => ({
 }));
 
 vi.mock("../../../store/useStore", () => ({
-  useStore: { getState: vi.fn(() => ({ token: "test-token" })) },
+  useStore: { getState: vi.fn(() => ({ token: "test-token", clearAuth: vi.fn() })) },
 }));
 
 vi.mock("../../../utils/errors", () => ({
@@ -163,6 +163,9 @@ describe("createApiClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // Reset getState mock to default (clearAllMocks doesn't clear mockReturnValue)
+    (useStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ token: "test-token", clearAuth: vi.fn() });
+
     // Re-capture interceptor handlers after clearAllMocks resets call history
     mockRef.mockAxiosInstance.interceptors.request.use.mockImplementation(
       (fn: (...args: unknown[]) => unknown) => {
@@ -207,7 +210,7 @@ describe("createApiClient", () => {
     });
 
     it("应该在无 token 时不添加 Authorization 头", async () => {
-      (useStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ token: null });
+      (useStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ token: null, clearAuth: vi.fn() });
       const config = createMockConfig();
 
       const result = await mockRef.requestInterceptor(config);

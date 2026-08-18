@@ -350,13 +350,23 @@ describe("errors utilities", () => {
       expect(error.message).toBe("Invalid data");
     });
 
-    it("should create TokenExpiredError for status 401", () => {
+    it("should create TokenExpiredError for status 401 with AUTH_TOKEN_EXPIRED code", () => {
+      const error = createErrorFromResponse({
+        status: 401,
+        statusText: "Unauthorized",
+        data: { code: "AUTH_TOKEN_EXPIRED" },
+      });
+      expect(error.name).toBe("TokenExpiredError");
+      expect(error.code).toBe("AUTH_TOKEN_EXPIRED");
+    });
+
+    it("should create AppError with AUTH_UNAUTHORIZED for status 401 without code", () => {
       const error = createErrorFromResponse({
         status: 401,
         statusText: "Unauthorized",
       });
-      expect(error.name).toBe("TokenExpiredError");
-      expect(error.code).toBe("AUTH_TOKEN_EXPIRED");
+      expect(error.name).toBe("AppError");
+      expect(error.code).toBe("AUTH_UNAUTHORIZED");
     });
 
     it("should create ForbiddenError for status 403", () => {

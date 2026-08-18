@@ -366,8 +366,17 @@ export function createErrorFromResponse(response: {
       return new NetworkError(message);
     case 400:
       return new ValidationError(message, data?.details);
-    case 401:
-      return new TokenExpiredError(message);
+    case 401: {
+      // 根据后端返回的 code 字段区分鉴权错误类型
+      // 仅 AUTH_TOKEN_EXPIRED 是可恢复的（通过 refresh token 续期）
+      const code = data?.code;
+      if (code === SharedErrorCodes.AUTH_TOKEN_EXPIRED) {
+        return new TokenExpiredError(message);
+      }
+      // 其他鉴权错误（INVALID/REVOKED/HEADER_MISSING/TOKEN_MISSING/UNAUTHORIZED）
+      // 都是不可恢复的，使用实际的 code 创建 AuthError
+      return new AppError(message, (code as ErrorCode) ?? SharedErrorCodes.AUTH_UNAUTHORIZED, 401);
+    }
     case 403:
       return new ForbiddenError(message);
     case 404:

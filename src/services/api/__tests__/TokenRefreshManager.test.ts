@@ -76,19 +76,19 @@ describe('TokenRefreshManager', () => {
       expect(manager.shouldRefreshToken(error)).toBe(true);
     });
 
-    it('传入带 AUTH_TOKEN_INVALID 错误码的 AppError 返回 true', () => {
+    it('传入带 AUTH_TOKEN_INVALID 错误码的 AppError 返回 false（不可恢复）', () => {
       const error = new AppError('test', SharedErrorCodes.AUTH_TOKEN_INVALID, 401);
-      expect(manager.shouldRefreshToken(error)).toBe(true);
+      expect(manager.shouldRefreshToken(error)).toBe(false);
     });
 
-    it('传入带 AUTH_UNAUTHORIZED 错误码的 AppError 返回 true', () => {
+    it('传入带 AUTH_UNAUTHORIZED 错误码的 AppError 返回 false（不可恢复）', () => {
       const error = new AppError('test', SharedErrorCodes.AUTH_UNAUTHORIZED, 401);
-      expect(manager.shouldRefreshToken(error)).toBe(true);
+      expect(manager.shouldRefreshToken(error)).toBe(false);
     });
 
-    it('传入带 AUTH_TOKEN_REVOKED 错误码的 AppError 返回 true', () => {
+    it('传入带 AUTH_TOKEN_REVOKED 错误码的 AppError 返回 false（不可恢复）', () => {
       const error = new AppError('test', SharedErrorCodes.AUTH_TOKEN_REVOKED, 401);
-      expect(manager.shouldRefreshToken(error)).toBe(true);
+      expect(manager.shouldRefreshToken(error)).toBe(false);
     });
 
     it('传入普通 Error 返回 false', () => {

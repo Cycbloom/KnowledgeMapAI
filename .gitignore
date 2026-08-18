@@ -103,3 +103,4 @@ coverage/
 .deepseek-harness/memory/
 .deepseek-harness/knowledgemap/*.json
 .deepseek-harness/knowledgemap/export-*.json
+.deepseek-harness/knowledgemap/*.js

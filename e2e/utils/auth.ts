@@ -61,24 +61,24 @@ export async function authedRequest(
 }
 
 /**
- * 以测试用户身份完成认证。
+ * 以专属用户身份完成认证（无感知会话）。
  *
- * 不再通过 UI 填写登录表单（Login.tsx 的认证表单默认隐藏，且输入框无
- * name 属性）。改为导航到 `/` 触发 App.tsx 的开发模式自动认证
- * （signInWithPassword with test@example.com），然后等待认证 API 请求
- * 返回 200，确认 session 已恢复到 Zustand store。
+ * 不存在固定测试账号：导航到 `/` 后，若浏览器上下文中无会话，Login 页
+ * 会自动运行无感知会话流程（恢复 session → 本地凭证静默重登 → 首次
+ * 自动创建专属用户），随后进入首页。此函数等待认证 API 请求返回 200，
+ * 确认 session 已恢复到 Zustand store。
  */
-export async function loginAsTestUser(page: Page) {
+export async function loginAsOwner(page: Page) {
   await navigateAndWaitForAuth(page, '/');
 }
 
 /**
- * 确保页面已认证。若当前 URL 包含 "login"，则触发自动认证流程。
+ * 确保页面已认证。若当前 URL 包含 "login"，则触发无感知会话流程。
  */
 export async function ensureAuthenticated(page: Page) {
   const currentUrl = page.url();
   if (currentUrl.includes('login')) {
-    await loginAsTestUser(page);
+    await loginAsOwner(page);
   }
 }
 

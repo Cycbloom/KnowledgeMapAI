@@ -1,5 +1,5 @@
 import { test as base, expect, type Page } from "@playwright/test";
-import { authedRequest, loginAsTestUser } from "./utils/auth";
+import { authedRequest, loginAsOwner } from "./utils/auth";
 
 /**
  * 测试图谱数据（由 testGraph fixture 通过 API 创建）。
@@ -82,10 +82,10 @@ export const test = base.extend<CustomFixtures>({
   /**
    * 已登录的 Page。
    *
-   * 通过导航到 `/` 触发 App.tsx 开发模式自动认证，等待认证 API 请求返回 200。
+   * 通过导航到 `/` 触发无感知会话（恢复/创建专属用户），等待认证 API 请求返回 200。
    */
   authenticatedPage: async ({ page }, use) => {
-    await loginAsTestUser(page);
+    await loginAsOwner(page);
     await page.waitForLoadState("load");
     await use(page);
   },

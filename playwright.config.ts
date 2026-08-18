@@ -12,6 +12,8 @@ export default defineConfig({
   // Exclude quarantined (flaky) tests from ALL runs (including test:flaky).
   // To re-run a quarantined test, move it back out of e2e/quarantine/.
   exclude: /quarantine\//,
+  // 整套测试只 provision 一次专属用户，所有 context 复用登录状态
+  globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -32,6 +34,7 @@ export default defineConfig({
     : [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
     baseURL: e2eBaseUrl,
+    storageState: 'test-results/.e2e-auth-state.json',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

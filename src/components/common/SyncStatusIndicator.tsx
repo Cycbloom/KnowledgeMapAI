@@ -54,7 +54,7 @@ export function SyncStatusIndicator() {
         >
           <Icon className="w-3.5 h-3.5" />
         </motion.div>
-        <span className="hidden sm:inline">{config.label}</span>
+        <span className="hidden lg:inline">{config.label}</span>
         {status?.pendingPush ? (
           <span className="bg-blue-500 text-white rounded-full px-1 text-[10px] min-w-[16px] text-center">
             {status.pendingPush}

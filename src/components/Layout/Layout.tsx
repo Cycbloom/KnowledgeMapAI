@@ -561,7 +561,7 @@ export const Layout = () => {
                   : "bg-white border-gray-200"
               }`}
             >
-              <div className="flex-shrink-0 flex items-center gap-2">
+              <div className="flex-shrink-0 flex items-center gap-2 min-w-0">
                 <button
                   className="md:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded transition-colors hover:bg-black/5"
                   onClick={() => setIsMobileDrawerOpen(true)}
@@ -572,12 +572,12 @@ export const Layout = () => {
                 <Breadcrumb />
               </div>
 
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden 2xl:block">
                 <HeaderGreeting />
               </div>
 
               <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-                <DataFreshnessIndicator className="hidden sm:flex" />
+                <DataFreshnessIndicator className="hidden lg:flex" />
                 <SyncStatusIndicator />
                 <SSEStatusIndicator />
                 <NotificationCenter />
@@ -608,7 +608,7 @@ export const Layout = () => {
                 </button>
                 {user && (
                   <div
-                    className={`hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full border transition-colors ${
+                    className={`hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full border transition-colors ${
                       isDark
                         ? "bg-slate-800 border-slate-700"
                         : "bg-gray-50 border-gray-100"

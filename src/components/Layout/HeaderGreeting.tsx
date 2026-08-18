@@ -29,7 +29,7 @@ export const HeaderGreeting: React.FC = () => {
   return (
     <div className="flex items-center gap-4 text-sm">
       <span className={isDark ? "text-slate-300" : "text-gray-700"}>
-        {getGreeting()}，<span className="font-medium">{userName}</span>
+        {getGreeting()}，<span className="font-medium inline-block max-w-[140px] truncate align-bottom">{userName}</span>
       </span>
 
       {streak > 0 && (

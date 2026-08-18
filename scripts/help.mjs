@@ -108,7 +108,7 @@ const scriptFileDescriptions = {
   "help.mjs": "显示所有 npm scripts 与 scripts/ 目录下脚本的用途与用法",
   "incremental-check.mjs": "基于 git 暂存文件的增量 TypeScript 检查",
   "run-db-tests.mjs": "运行 pgTAP 数据库测试（需先启动本地 Supabase）",
-  "seed_test_data.ts": "插入测试数据（test@example.com 等）",
+  "seed_test_data.ts": "向首个（专属）用户插入演示测试数据",
 };
 
 // scripts/ 文件对应的 npm script（如有）

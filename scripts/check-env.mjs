@@ -200,9 +200,6 @@ const optionalVars = [
     key: "VITE_MOBILE_USE_SUPABASE_DIRECT",
     purpose: "移动端是否直连 Supabase",
   },
-  { key: "TEST_USER_EMAIL", purpose: "E2E 测试用户邮箱" },
-  { key: "TEST_USER_PASSWORD", purpose: "E2E 测试用户密码" },
-  { key: "VITE_DEV_TEST_PASSWORD", purpose: "开发环境自动登录测试密码" },
   { key: "DISABLE_RATE_LIMIT", purpose: "是否禁用限流" },
   { key: "CONCEPT_MERGE_THRESHOLD", purpose: "概念合并相似度阈值" },
   {

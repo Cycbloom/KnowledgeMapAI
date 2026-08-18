@@ -13,12 +13,6 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-const TEST_USER = {
-  email: 'test@example.com',
-  password: 'test123456',
-  name: '测试用户',
-};
-
 type GraphNode = { title: string; content: string; level: 'root' | 'core' | 'sub' | 'leaf'; x: number; y: number };
 type GraphEdge = { source: string; target: string; type?: string };
 type GraphData = {
@@ -248,33 +242,25 @@ const STUDY_CARDS = [
 
 
 
-async function createTestUser() {
-  console.log('🔧 Creating test user...');
-  
-  const { data: existingUsers } = await supabase.auth.admin.listUsers();
-  const existingUser = existingUsers?.users?.find((u: { email: string }) => u.email === TEST_USER.email);
-  
-  if (existingUser) {
-    console.log('✅ Test user already exists:', existingUser.id);
-    return existingUser;
-  }
-  
-  const { data, error } = await supabase.auth.admin.createUser({
-    email: TEST_USER.email,
-    password: TEST_USER.password,
-    email_confirm: true,
-    user_metadata: {
-      name: TEST_USER.name,
-    },
-  });
-  
+async function getOwnerUser() {
+  console.log('🔧 Looking up owner user...');
+
+  const { data: existingUsers, error } = await supabase.auth.admin.listUsers();
   if (error) {
-    console.error('❌ Error creating user:', error);
+    console.error('❌ Error listing users:', error);
     throw error;
   }
-  
-  console.log('✅ Test user created:', data.user.id);
-  return data.user;
+
+  const owner = existingUsers?.users?.[0];
+  if (!owner) {
+    console.error(
+      '❌ No user found. Launch the app once first — it auto-creates the owner user on first setup, then re-run this script.',
+    );
+    process.exit(1);
+  }
+
+  console.log('✅ Owner user found:', owner.id, `(${owner.email})`);
+  return owner;
 }
 
 async function updateUserProfile(userId: string) {
@@ -865,9 +851,9 @@ function parseTimeOffset(offset: string): number {
 
 async function main() {
   console.log('🚀 Starting test data seed...\n');
-  
+
   try {
-    const user = await createTestUser();
+    const user = await getOwnerUser();
     await updateUserProfile(user.id);
     
     const jsResult = await createKnowledgeGraphWithData(user.id, JAVASCRIPT_GRAPH);
@@ -922,10 +908,7 @@ async function main() {
     await createUserFocusStats(user.id);
     
     console.log('\n✅ Test data seed completed!');
-    console.log('\n📋 Test Account Info:');
-    console.log(`   Email: ${TEST_USER.email}`);
-    console.log(`   Password: ${TEST_USER.password}`);
-    console.log(`   User ID: ${user.id}`);
+    console.log(`\n📋 Seeded into owner user: ${user.id}`);
     
   } catch (error) {
     console.error('\n❌ Seed failed:', error);

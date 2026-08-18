@@ -65,9 +65,8 @@ interface GraphListItem {
 // Test constants
 // ---------------------------------------------------------------------------
 
-const TEST_USER_EMAIL = 'test@example.com';
-const TEST_USER_PASSWORD = 'test123456';
-const USER_B_PASSWORD = 'test123456';
+const TEST_PASSWORD = 'test123456';
+const USER_B_PASSWORD = TEST_PASSWORD;
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -80,6 +79,7 @@ describeIfDbAvailable('GraphService Integration', () => {
   let userAId: string;
   let userBId: string;
   let userBEmail: string;
+  let userAEmail: string;
 
   beforeAll(async () => {
     // Let MSW pass through requests to local Supabase (server.listen was
@@ -88,11 +88,18 @@ describeIfDbAvailable('GraphService Integration', () => {
 
     adminClient = getAdminClient();
 
-    // Sign in as test user (User A)
-    userAClient = await getAuthedClient(TEST_USER_EMAIL, TEST_USER_PASSWORD);
-    const { data: authData } = await userAClient.auth.getUser();
-    userAId = authData.user?.id ?? '';
-    if (!userAId) throw new Error('Failed to get test user ID');
+    // Create User A (throwaway, no dependency on seeded accounts)
+    userAEmail = `test-a-${Date.now()}@example.com`;
+    const { data: userA, error: createErrorA } =
+      await adminClient.auth.admin.createUser({
+        email: userAEmail,
+        password: TEST_PASSWORD,
+        email_confirm: true,
+      });
+    if (createErrorA) throw createErrorA;
+    userAId = userA.user?.id ?? '';
+    if (!userAId) throw new Error('Failed to create user A');
+    userAClient = await getAuthedClient(userAEmail, TEST_PASSWORD);
 
     // Create User B for isolation tests
     userBEmail = `test-b-${Date.now()}@example.com`;
@@ -114,7 +121,10 @@ describeIfDbAvailable('GraphService Integration', () => {
     // Re-add passthrough (afterEach in setupTests.ts calls server.resetHandlers)
     mswPassthroughLocalSupabase();
 
-    // Clean up User B
+    // Clean up throwaway users
+    if (userAId) {
+      await adminClient.auth.admin.deleteUser(userAId);
+    }
     if (userBId) {
       await adminClient.auth.admin.deleteUser(userBId);
     }

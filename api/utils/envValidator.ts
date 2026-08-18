@@ -52,16 +52,6 @@ const ENV_SCHEMA: Record<string, EnvConfig> = {
     type: 'string',
     description: 'Volcengine API key',
   },
-  TEST_USER_EMAIL: {
-    required: false,
-    type: 'string',
-    description: 'Test user email for E2E testing',
-  },
-  TEST_USER_PASSWORD: {
-    required: false,
-    type: 'string',
-    description: 'Test user password for E2E testing',
-  },
   DISABLE_RATE_LIMIT: {
     required: false,
     type: 'boolean',

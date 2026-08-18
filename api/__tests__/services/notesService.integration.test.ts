@@ -1,10 +1,9 @@
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { http, passthrough } from 'msw';
 import {
   describeIfDbAvailable,
   getAdminClient,
-  getAuthedClient,
   cleanTable,
 } from '../../../tests/helpers/testDb';
 import { server } from '../../../tests/setup/mswServer';
@@ -117,8 +116,7 @@ interface NoteDbRow {
 // Test constants
 // ---------------------------------------------------------------------------
 
-const TEST_USER_EMAIL = 'test@example.com';
-const TEST_USER_PASSWORD = 'test123456';
+const TEST_PASSWORD = 'test123456';
 
 /** Returns today's date as YYYY-MM-DD (local timezone, matches service's getLocalDateString). */
 const getTodayDateStr = (): string => {
@@ -144,11 +142,24 @@ describeIfDbAvailable('NotesService Integration', () => {
 
     adminClient = getAdminClient();
 
-    // Sign in as the seeded test user to obtain its UUID.
-    const userClient = await getAuthedClient(TEST_USER_EMAIL, TEST_USER_PASSWORD);
-    const { data: authData } = await userClient.auth.getUser();
-    userId = authData.user?.id ?? '';
-    if (!userId) throw new Error('Failed to get test user ID');
+    // Create a throwaway user (no dependency on seeded accounts)
+    const email = `test-notes-${Date.now()}@example.com`;
+    const { data: newUser, error: createError } =
+      await adminClient.auth.admin.createUser({
+        email,
+        password: TEST_PASSWORD,
+        email_confirm: true,
+      });
+    if (createError) throw createError;
+    userId = newUser.user?.id ?? '';
+    if (!userId) throw new Error('Failed to create test user');
+  });
+
+  afterAll(async () => {
+    // Clean up the throwaway user
+    if (userId && adminClient) {
+      await adminClient.auth.admin.deleteUser(userId);
+    }
   });
 
   beforeEach(async () => {

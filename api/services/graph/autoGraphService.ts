@@ -1340,6 +1340,9 @@ export class AutoGraphService {
       );
     }
 
+    const MAX_PARSE_RETRIES = 2;
+    let parsed: { children?: AIGeneratedNode[] | null } | null | undefined;
+
     const completion = await withAIMonitoring(
       {
         operation: "auto_graph_expand",
@@ -1355,36 +1358,69 @@ export class AutoGraphService {
         sessionId,
       },
       async () => {
-        const result = await provider.client.chat.completions.create({
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: `请为「${nodeTitle}」生成子节点。${existingChildren && existingChildren.length > 0 ? `\n\n已有的子节点：${existingChildren.map((c) => c.title).join("、")}\n请生成新的、不同的子节点。` : ""}`,
-            },
-          ],
+        const messages: {
+          role: "system" | "user" | "assistant";
+          content: string;
+        }[] = [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `请为「${nodeTitle}」生成子节点。${existingChildren && existingChildren.length > 0 ? `\n\n已有的子节点：${existingChildren.map((c) => c.title).join("、")}\n请生成新的、不同的子节点。` : ""}`,
+          },
+        ];
+
+        let result = await provider.client.chat.completions.create({
+          messages,
           model: model || provider.model,
           response_format: { type: "json_object" },
-          max_tokens: 3000,
+          max_tokens: 12000,
         });
-        return {
-          result,
-          usage: result.usage,
-        };
+
+        for (let attempt = 0; attempt < MAX_PARSE_RETRIES; attempt++) {
+          const content = result.choices[0]?.message?.content || "";
+          try {
+            parsed = JSON.parse(content);
+            break;
+          } catch (_e) {
+            logger.warn(
+              `auto_graph_expand JSON 解析失败（第 ${attempt + 1} 次），尝试修复`,
+              {
+                finishReason: result.choices[0]?.finish_reason,
+                contentSnippet: content.slice(-200),
+              },
+            );
+            messages.push({ role: "assistant", content });
+            messages.push({
+              role: "user",
+              content:
+                "上一条模型输出的 JSON 被截断或语法错误无法解析。请仅输出一份完整、合法的 JSON，结构必须为 {\"children\":[{\"title\":\"...\",\"content\":\"...\",\"level\":\"...\"}]}，不要包含代码块标记或任何解释文字。",
+            });
+            result = await provider.client.chat.completions.create({
+              messages,
+              model: model || provider.model,
+              response_format: { type: "json_object" },
+              max_tokens: 12000,
+            });
+          }
+        }
+
+        return { result, usage: result.usage };
       },
     );
 
-    const content = completion.choices[0].message.content;
-    let parsed;
-    try {
-      parsed = JSON.parse(content || '{"children": []}');
-    } catch (_e) {
-      logger.error("JSON Parse Error:", { content: content?.slice(-100) });
-      throw new AppError(
+    if (!parsed) {
+      const partial = completion.choices[0]?.message?.content;
+      logger.error("JSON Parse Error in auto-graph expand:", {
+        finishReason: completion.choices[0]?.finish_reason,
+        contentSnippet: partial?.slice(-200),
+      });
+      const error = new AppError(
         "AI 生成内容解析失败",
         422,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
+      error.addContext("contentSnippet", partial?.slice(-200) ?? "");
+      throw error;
     }
 
     return {

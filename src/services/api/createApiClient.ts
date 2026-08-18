@@ -329,7 +329,7 @@ export const createApiClient = (): AxiosInstance => {
         performance.measure(`request-${requestId}`, `request-start-${requestId}`, `request-end-${requestId}`);
         const duration = performance.getEntriesByName(`request-${requestId}`)[0]?.duration;
         if (duration !== undefined) {
-          console.warn(`[API] ${response.config?.method?.toUpperCase()} ${response.config?.url} - ${duration.toFixed(0)}ms`);
+          logger.debug(`[API] ${response.config?.method?.toUpperCase()} ${response.config?.url} - ${duration.toFixed(0)}ms`);
         }
         performance.clearMarks(`request-start-${requestId}`);
         performance.clearMarks(`request-end-${requestId}`);
@@ -360,7 +360,7 @@ export const createApiClient = (): AxiosInstance => {
         performance.measure(`request-${requestId}`, `request-start-${requestId}`, `request-end-${requestId}`);
         const duration = performance.getEntriesByName(`request-${requestId}`)[0]?.duration;
         if (duration !== undefined) {
-          console.warn(`[API] ${originalRequest.method?.toUpperCase()} ${originalRequest.url} - ${duration.toFixed(0)}ms - ERROR`);
+          logger.debug(`[API] ${originalRequest.method?.toUpperCase()} ${originalRequest.url} - ${duration.toFixed(0)}ms - ERROR`);
         }
         performance.clearMarks(`request-start-${requestId}`);
         performance.clearMarks(`request-end-${requestId}`);
@@ -443,7 +443,7 @@ export const createApiClient = (): AxiosInstance => {
         || (appError as AppErrorBase).code === SharedErrorCodes.AUTH_UNAUTHORIZED;
 
       if (isUnrecoverableAuth) {
-        console.warn('[API] Unrecoverable auth error, clearing auth and redirecting to /login', {
+        logger.warn('[API] Unrecoverable auth error, clearing auth and redirecting to /login', {
           code: (appError as AppErrorBase).code,
           url: error.config?.url,
         });

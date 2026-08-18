@@ -65,12 +65,12 @@ export async function localQuery<T = unknown>(request: IpcDbRequest): Promise<T 
   try {
     const response = await electronAPI.db.query(request) as IpcDbResponse<T>;
     if (!response.success) {
-      logger.warn(`[LocalClient] IPC query failed: ${response.error}`);
+      logger.debug(`[LocalClient] IPC query fallback: ${response.error}`);
       return null;
     }
     return response.data as T;
   } catch (error) {
-    logger.warn('[LocalClient] IPC query error:', error);
+    logger.debug('[LocalClient] IPC query fallback error:', error);
     resetLocalDbAvailability();
     return null;
   }
@@ -95,12 +95,12 @@ export async function localBatch<T = unknown>(operations: IpcDbRequest[]): Promi
   try {
     const response = await electronAPI.db.batch(operations) as IpcDbResponse<T[]>;
     if (!response.success) {
-      logger.warn(`[LocalClient] IPC batch failed: ${response.error}`);
+      logger.debug(`[LocalClient] IPC batch fallback: ${response.error}`);
       return null;
     }
     return response.data as T[];
   } catch (error) {
-    logger.warn('[LocalClient] IPC batch error:', error);
+    logger.debug('[LocalClient] IPC batch fallback error:', error);
     resetLocalDbAvailability();
     return null;
   }

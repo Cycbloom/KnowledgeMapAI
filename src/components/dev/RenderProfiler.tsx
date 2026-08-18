@@ -1,4 +1,5 @@
 import React from 'react';
+import { logger } from '@/utils/logger';
 
 interface RenderProfilerProps {
   id: string;
@@ -12,8 +13,7 @@ const handleRender: React.ProfilerOnRenderCallback = (
   actualDuration,
 ) => {
   if (actualDuration > SLOW_RENDER_THRESHOLD_MS) {
-     
-    console.warn(
+    logger.debug(
       `[RenderProfiler] Slow render: id="${id}", phase="${phase}", duration=${actualDuration.toFixed(2)}ms`,
     );
   }

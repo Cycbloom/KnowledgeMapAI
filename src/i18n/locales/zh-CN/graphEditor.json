@@ -1119,7 +1119,8 @@
   "edgeContextMenu": {
     "editLabel": "编辑标签",
     "changeRelationshipType": "更改关系类型",
-    "deleteEdge": "删除边"
+    "deleteEdge": "删除边",
+    "deleteEdgeFailed": "删除关联失败"
   },
   "podcastModal": {
     "unknownError": "未知错误",

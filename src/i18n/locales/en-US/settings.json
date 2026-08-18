@@ -199,6 +199,7 @@
   "noVoiceLoaded": "No voice available",
   "ttsTestText": "Test Text",
   "ttsTestTextPlaceholder": "Enter text to synthesize",
+  "ttsSampleText": "Hello, this is a speech synthesis test.",
   "synthesize": "Synthesize & Play",
   "synthesizing": "Synthesizing...",
   "ttsTestSuccess": "Speech synthesis successful, playing audio",

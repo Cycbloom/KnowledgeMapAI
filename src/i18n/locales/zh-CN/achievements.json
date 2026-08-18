@@ -14,7 +14,8 @@
     "login": "每日登录",
     "study_cards": "复习卡片",
     "focus_time": "专注时刻",
-    "create_node": "创造知识"
+    "create_node": "创造知识",
+    "unknown": "任务"
   },
   "dailyTaskDesc": {
     "login": "每日登录应用",

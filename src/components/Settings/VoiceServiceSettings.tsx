@@ -20,7 +20,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
 
   const [ttsHealth, setTtsHealth] = useState<'idle' | 'checking' | 'healthy' | 'unhealthy'>('idle');
   const [ttsVoices, setTtsVoices] = useState<TTSVoice[]>([]);
-  const [ttsTestText, setTtsTestText] = useState("你好，这是一个语音合成测试。");
+  const [ttsTestText, setTtsTestText] = useState(t("settings.ttsSampleText"));
   const [ttsTestVoice, setTtsTestVoice] = useState("Cherry");
   const [ttsTesting, setTtsTesting] = useState(false);
   const [ttsTestResult, setTtsTestResult] = useState<{ success: boolean; message: string } | null>(null);

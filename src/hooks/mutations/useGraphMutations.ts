@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api/adapter";
+import i18n from "../../i18n";
 import { Node, Edge, NodeLevel, Graph } from "../../types";
 import type { CreateNodeData, UpdateNodeData, UpdateGraphData } from "@shared/types/api";
 import {
@@ -464,7 +465,7 @@ export const useDeleteEdgeMutation = () => {
         edges: data.edges.filter((edge) => edge.id !== id),
       };
     },
-    errorMessage: "删除关联失败",
+    errorMessage: i18n.t("graphEditor.edgeContextMenu.deleteEdgeFailed"),
     onSettled: (_data, _error, variables) => {
       frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "edge_deleted" });
       if (variables.graphId) {

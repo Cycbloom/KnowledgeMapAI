@@ -325,7 +325,7 @@ export const Achievements = () => {
                 const isCompleted = task.status === 'completed';
                 const progressPercent = Math.min(100, (task.progress / task.target) * 100);
                 const TaskIcon = taskTypeMap[task.task_type]?.icon || Star;
-                const taskLabel = taskTypeMap[task.task_type]?.label || '任务';
+                const taskLabel = taskTypeMap[task.task_type]?.label || t('achievements.taskTypes.unknown');
 
                 return (
                   <motion.div

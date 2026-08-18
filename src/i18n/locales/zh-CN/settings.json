@@ -199,6 +199,7 @@
   "noVoiceLoaded": "暂无可用音色",
   "ttsTestText": "测试文本",
   "ttsTestTextPlaceholder": "输入要合成的文本",
+  "ttsSampleText": "你好，这是一个语音合成测试。",
   "synthesize": "合成并播放",
   "synthesizing": "合成中...",
   "ttsTestSuccess": "语音合成成功，正在播放",

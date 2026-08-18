@@ -14,7 +14,8 @@
     "login": "Daily Login",
     "study_cards": "Review Cards",
     "focus_time": "Focus Time",
-    "create_node": "Create Knowledge"
+    "create_node": "Create Knowledge",
+    "unknown": "Task"
   },
   "dailyTaskDesc": {
     "login": "Log in to the app daily",

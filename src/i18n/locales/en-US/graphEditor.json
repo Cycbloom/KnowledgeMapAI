@@ -1119,7 +1119,8 @@
   "edgeContextMenu": {
     "editLabel": "Edit Label",
     "changeRelationshipType": "Change Relationship Type",
-    "deleteEdge": "Delete Edge"
+    "deleteEdge": "Delete Edge",
+    "deleteEdgeFailed": "Failed to delete edge"
   },
   "podcastModal": {
     "unknownError": "Unknown error",

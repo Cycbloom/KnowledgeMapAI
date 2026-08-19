@@ -41,6 +41,7 @@ import {
   GraphTagsEditor,
 } from "../components/Dashboard";
 import type { Graph } from "@shared/types";
+import { TodayReview } from "../components/capture/TodayReview";
 
 export const Dashboard = () => {
   const { t } = useTranslation();
@@ -474,6 +475,9 @@ export const Dashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Daily Capture + AI Archive */}
+        <TodayReview />
 
         {/* AI Graph Generator Modal */}
         {isAIGeneratorOpen && createPortal(

@@ -1,5 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../../utils/logger';
+import { CAPTURE_INBOX_TAG } from '@shared/constants/capture';
+import type { TodaySummary } from '@shared/types/api';
 
 export interface HeatmapItem {
   date: string;
@@ -118,6 +120,67 @@ export class DashboardService {
       { name: 'review', value: distribution["Review"], color: '#4ade80' },
       { name: 'relearning', value: distribution["Relearning"], color: '#f87171' }
     ];
+  }
+
+  /**
+   * 首页"今日回顾"摘要计数：
+   * - inboxCount 待归档捕获数
+   * - dueCards 今日到期需复习的卡片数
+   * - dueTasks 今日到期且未完成的任务数
+   */
+  async getTodaySummary(supabase: SupabaseClient, userId: string): Promise<TodaySummary> {
+    const now = new Date();
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).toISOString();
+    const endOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      59,
+      999,
+    ).toISOString();
+
+    const [inboxResult, cardsResult, tasksResult] = await Promise.all([
+      supabase
+        .from('notes')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_archived', false)
+        .is('deleted_at', null)
+        .contains('tags', [CAPTURE_INBOX_TAG]),
+      supabase
+        .from('study_cards')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .lte('next_review', endOfToday),
+      supabase
+        .from('user_tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .neq('status', 'completed')
+        .gte('deadline', startOfToday)
+        .lte('deadline', endOfToday),
+    ]);
+
+    const throwOnError = (label: string) => (error: unknown) => {
+      logger.error(`Today summary: count error on ${label}`, { userId, error });
+      throw error;
+    };
+    if (inboxResult.error) throwOnError('notes')(inboxResult.error);
+    if (cardsResult.error) throwOnError('study_cards')(cardsResult.error);
+    if (tasksResult.error) throwOnError('user_tasks')(tasksResult.error);
+
+    return {
+      inboxCount: inboxResult.count ?? 0,
+      dueCards: cardsResult.count ?? 0,
+      dueTasks: tasksResult.count ?? 0,
+    };
   }
 }
 

@@ -50,6 +50,7 @@
     "toggle-theme": { "name": "切换主题", "description": "切换亮色/暗色主题" },
     "export": { "name": "导出", "description": "打开导出对话框" },
     "settings": { "name": "设置", "description": "打开设置面板" },
+    "quick-capture": { "name": "快速捕获", "description": "打开全局快速捕获窗口" },
     "nav-dashboard": { "name": "我的图谱", "description": "跳到我的图谱首页" },
     "nav-graph-map": { "name": "图谱地图", "description": "跳到知识图谱地图" },
     "nav-tasks": { "name": "任务", "description": "跳到任务页面" },

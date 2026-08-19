@@ -10,4 +10,12 @@ export const mobileDashboardApi: IDashboardApi = {
       distribution: [],
     };
   },
+  getTodaySummary: async () => {
+    // 移动端不展示"今日回顾"聚合摘要（依赖后端 RPC 统计），返回全零计数。
+    return {
+      inboxCount: 0,
+      dueCards: 0,
+      dueTasks: 0,
+    };
+  },
 };

@@ -1,5 +1,6 @@
-import type { DashboardStats } from "@shared/types/api";
+import type { DashboardStats, TodaySummary } from "@shared/types/api";
 
 export interface IDashboardApi {
   getStats(): Promise<DashboardStats>;
+  getTodaySummary(): Promise<TodaySummary>;
 }

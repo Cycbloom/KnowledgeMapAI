@@ -470,6 +470,15 @@ const SHORTCUTS_DATA = [
     icon: 'Settings'
   },
   {
+    id: 'quick-capture',
+    name: 'shortcuts.actions.quick-capture.name',
+    description: 'shortcuts.actions.quick-capture.description',
+    category: 'general',
+    defaultKeys: { key: 'q', ctrl: true, shift: true },
+    action: 'openQuickCapture',
+    icon: 'Inbox'
+  },
+  {
     id: 'nav-dashboard',
     name: 'shortcuts.actions.nav-dashboard.name',
     description: 'shortcuts.actions.nav-dashboard.description',

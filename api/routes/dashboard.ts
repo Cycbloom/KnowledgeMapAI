@@ -17,4 +17,11 @@ router.get('/stats', requireAuth, async (req: AuthedRequest, res: Response) => {
   }
 });
 
+// 首页"今日回顾"摘要：待归档捕获数 + 今日到期卡片 + 今日任务
+router.get('/today', requireAuth, async (req: AuthedRequest, res: Response) => {
+  const userId = req.user.id;
+  const summary = await dashboardService.getTodaySummary(req.supabase, userId);
+  res.json(summary);
+});
+
 export default router;

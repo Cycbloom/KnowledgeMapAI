@@ -11,6 +11,14 @@ export const useDashboardStats = () => {
   });
 };
 
+export const useTodaySummary = () => {
+  return useQuery({
+    queryKey: queryKeys.todaySummary,
+    queryFn: api.dashboard.getTodaySummary,
+    ...defaultQueryConfig,
+  });
+};
+
 export const useStatistics = () => {
   return useQuery({
     queryKey: queryKeys.statistics,

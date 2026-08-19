@@ -95,6 +95,7 @@ export const queryKeys = {
     ] as const,
   user: ["user"] as const,
   dashboardStats: ["dashboardStats"] as const,
+  todaySummary: ["todaySummary"] as const,
   tasks: (status?: string, limit?: number, offset?: number) =>
     ["tasks", status || "all", limit || 20, offset || 0] as const,
   aiStatus: ["aiStatus"] as const,

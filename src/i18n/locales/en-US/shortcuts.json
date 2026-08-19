@@ -50,6 +50,7 @@
     "toggle-theme": { "name": "Toggle Theme", "description": "Toggle light/dark theme" },
     "export": { "name": "Export", "description": "Open the export dialog" },
     "settings": { "name": "Settings", "description": "Open the settings panel" },
+    "quick-capture": { "name": "Quick Capture", "description": "Open the global quick-capture window" },
     "nav-dashboard": { "name": "My Graphs", "description": "Go to my graphs home" },
     "nav-graph-map": { "name": "Graph Map", "description": "Go to the knowledge graph map" },
     "nav-tasks": { "name": "Tasks", "description": "Go to the tasks page" },

@@ -70,6 +70,7 @@ import offlineBanner from './offlineBanner.json';
 import tutor from './tutor.json';
 import pwaInstall from './pwaInstall.json';
 import tags from './tags.json';
+import capture from './capture.json';
 
 const enUS = {
   dashboard,
@@ -144,6 +145,7 @@ const enUS = {
   tutor,
   pwaInstall,
   tags,
+  capture,
 };
 
 export default enUS;

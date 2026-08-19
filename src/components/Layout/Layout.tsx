@@ -19,6 +19,7 @@ import {
   LucideIcon,
   AlertTriangle,
   Upload,
+  Inbox,
 } from "lucide-react";
 import {
   ErrorBoundary,
@@ -68,6 +69,9 @@ const LazyConsole = React.lazy(() =>
 // 改为懒加载，从主入口剥离其按需触发的代码。
 const LazyUpdateOverlay = React.lazy(() =>
   import("../common/UpdateOverlay").then((m) => ({ default: m.UpdateOverlay })),
+);
+const LazyQuickCaptureModal = React.lazy(() =>
+  import("../capture/QuickCaptureModal").then((m) => ({ default: m.QuickCaptureModal })),
 );
 
 /**
@@ -125,6 +129,7 @@ export const Layout = () => {
   const sidebarId = useId();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [schemaStatus, setSchemaStatus] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -204,6 +209,9 @@ export const Layout = () => {
       navStudy: () => navigate("/study"),
       navNotes: () => navigate("/notes"),
       navScheduler: () => navigate("/scheduler"),
+      openQuickCapture: () => {
+        setIsQuickCaptureOpen(true);
+      },
     },
     enabled: true,
   });
@@ -686,6 +694,16 @@ export const Layout = () => {
           <Suspense fallback={null}>
             <LazyUpdateOverlay />
           </Suspense>
+          {!isFullScreenPage && (
+            <button
+              onClick={() => setIsQuickCaptureOpen(true)}
+              className={`fixed right-4 z-30 p-4 rounded-full shadow-lg bg-primary-600 hover:bg-primary-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${isMobile ? "bottom-24" : "bottom-6"}`}
+              title={t('capture.fabLabel')}
+              aria-label={t('capture.fabLabel')}
+            >
+              <Inbox size={22} aria-hidden="true" />
+            </button>
+          )}
           <MessageBar bottomOffset={isMobile && !isFullScreenPage ? 56 : 0} />
           <OfflineIndicator />
           <AchievementNotification />
@@ -711,6 +729,14 @@ export const Layout = () => {
                 context={consoleContext}
                 onToggleMinimize={toggleConsoleMinimize}
                 isMinimized={isConsoleMinimized}
+              />
+            </Suspense>
+          )}
+          {isQuickCaptureOpen && (
+            <Suspense fallback={null}>
+              <LazyQuickCaptureModal
+                isOpen={isQuickCaptureOpen}
+                onClose={() => setIsQuickCaptureOpen(false)}
               />
             </Suspense>
           )}

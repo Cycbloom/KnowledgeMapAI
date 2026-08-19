@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 import { useUpdateCardProgressMutation } from "../../hooks/mutations";
 import { formatTimeFromSeconds } from "../../utils/formatters";
+import { normalizeBooleanAnswer } from "../../utils/textUtils";
 
 type UpdateProgressMutation = ReturnType<typeof useUpdateCardProgressMutation>;
 
@@ -832,11 +833,16 @@ export const QuizViewActive = memo(function QuizViewActive({
                     <div
                       className={`flex ${isMobile ? "flex-col gap-3" : "flex-col md:flex-row gap-3"} justify-center mt-3 md:mt-4`}
                     >
-                      {["True", "False"].map((option) => {
+                      {(["True", "False"] as const).map((option) => {
                         const isSelected = selectedOption === option;
-                        const isCorrect = option === currentCard.answer;
+                        const correctAnswer = normalizeBooleanAnswer(currentCard.answer);
+                        const isCorrect = option === correctAnswer;
 
                         let btnClass = `group flex-1 ${isMobile ? "p-5" : "p-4"} rounded-xl border transition-all duration-200 font-bold ${isMobile ? "text-lg" : "text-base"} relative flex flex-col items-center justify-center gap-2 shadow-sm `;
+                        // 着色语义（用户视角）：
+                        //   - 正确答案选项 → 绿（无论选没选，标出答案）
+                        //   - 用户选错的选项（选了但不是正确答案）→ 红
+                        //   - 其他 → 灰
                         if (showAnswer) {
                           if (isCorrect)
                             {btnClass += isDark
@@ -856,6 +862,10 @@ export const QuizViewActive = memo(function QuizViewActive({
                             : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:from-primary-50 hover:to-white hover:border-primary-300 cursor-pointer text-gray-700 hover:shadow-md";
                         }
 
+                        // 图标语义（只在 showAnswer 展示，避免与"错误"选项本身混淆）：
+                        //   ✅ 放在正确答案选项上（标出"这是正确答案"）
+                        //   ❌ 只放在「用户选了且选错」的选项上（标出"你选这个答错了"）
+                        // 当用户选对时，✅ 本身就足够表达"你答对了"，不额外加 ❌
                         return (
                           <button
                             key={option}

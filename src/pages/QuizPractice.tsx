@@ -21,6 +21,7 @@ import { QuizResult } from '../components/Quiz/QuizResult';
 import { Skeleton } from '../components/common';
 import { EmptyState } from '@/components/common/EmptyState';
 import type { StudyCard } from '@shared/types/common';
+import { isTrueFalseAnswerEqual, normalizeBooleanAnswer } from '../utils/textUtils';
 
 interface AnswerRecord {
   cardId: string;
@@ -145,16 +146,24 @@ export const QuizPractice: React.FC = () => {
 
   const checkAnswer = useCallback(
     (card: StudyCard, userAnswer: string): boolean => {
-      if (isChoice || isTrueFalse) {
+      if (isChoice) {
         return userAnswer === card.answer;
       }
+      if (isTrueFalse) {
+        return isTrueFalseAnswerEqual(userAnswer, card.answer);
+      }
       if (isMultiChoice) {
-        const correctAnswers = JSON.parse(card.answer);
-        const userAnswers = JSON.parse(userAnswer);
-        return (
-          correctAnswers.length === userAnswers.length &&
-          correctAnswers.every((a: string) => userAnswers.includes(a))
-        );
+        try {
+          const correctAnswers = JSON.parse(card.answer) as unknown;
+          const userAnswers = JSON.parse(userAnswer) as unknown;
+          if (!Array.isArray(correctAnswers) || !Array.isArray(userAnswers)) return false;
+          return (
+            correctAnswers.length === userAnswers.length &&
+            correctAnswers.every((a) => userAnswers.includes(a as never))
+          );
+        } catch {
+          return false;
+        }
       }
       return false;
     },
@@ -716,7 +725,8 @@ export const QuizPractice: React.FC = () => {
                   <div className="flex gap-4">
                     {['True', 'False'].map((option) => {
                       const isSelected = selectedOption === option;
-                      const isCorrect = option === currentCard.answer;
+                      const correctAnswer = normalizeBooleanAnswer(currentCard.answer);
+                      const isCorrect = option === correctAnswer;
 
                       let btnClass =
                         'flex-1 p-6 rounded-xl border transition-all font-bold text-lg flex flex-col items-center justify-center gap-2 ';

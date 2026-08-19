@@ -40,3 +40,28 @@ export function truncateText(
     isEnglish: english
   };
 }
+
+/**
+ * 将任意格式的布尔型答案（存储在 study_cards.answer 中）归一化为 "True" | "False" | 原字符串。
+ * 用于解决 AI 生成 / seed 数据里答案格式不一致：
+ *   - 小写: "true", "false"
+ *   - 大写: "TRUE", "FALSE"
+ *   - 首字母大写: "True", "False"
+ *   - 前后空白: " true \n"
+ * 非布尔类答案直接返回 trim 后的原字符串（不影响 choice/qa 等题型）。
+ */
+export function normalizeBooleanAnswer(value: unknown): string {
+  const trimmed = String(value ?? '').trim();
+  const lower = trimmed.toLowerCase();
+  if (lower === 'true') return 'True';
+  if (lower === 'false') return 'False';
+  return trimmed;
+}
+
+/**
+ * 判断判断题答案是否相等，大小写与空白不敏感。
+ * 非 true/false 答案按普通字符串做 trim 后比较（兼容老数据/非标准存储）。
+ */
+export function isTrueFalseAnswerEqual(userAnswer: string, correctAnswer: unknown): boolean {
+  return normalizeBooleanAnswer(userAnswer) === normalizeBooleanAnswer(correctAnswer);
+}

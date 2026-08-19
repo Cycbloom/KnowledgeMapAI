@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { StudyMode } from "@shared/types/scheduler";
 import { STUDY_MODE_PRESETS } from "@shared/constants/studyModePresets";
 import type { StudyModeIconType } from "../../hooks/study/useStudyModeLogic";
+import { useTheme } from "../../hooks";
 
 interface StudyModeSelectorProps {
   studyMode: StudyMode;
@@ -23,7 +24,7 @@ export const StudyModeSelector = ({
   isMobile,
 }: StudyModeSelectorProps) => {
   const { t } = useTranslation();
-  const isDark = document.documentElement.classList.contains("dark");
+  const { isDark } = useTheme();
 
   return (
     <div

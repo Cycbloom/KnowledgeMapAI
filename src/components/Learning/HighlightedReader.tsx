@@ -64,8 +64,13 @@ interface ProseStyleVars extends React.CSSProperties {
   "--tw-prose-links"?: string;
   "--tw-prose-bold"?: string;
   "--tw-prose-quotes"?: string;
+  "--tw-prose-quote-borders"?: string;
   "--tw-prose-counters"?: string;
   "--tw-prose-bullets"?: string;
+  "--tw-prose-hr"?: string;
+  "--tw-prose-th-borders"?: string;
+  "--tw-prose-td-borders"?: string;
+  "--tw-prose-code"?: string;
 }
 
 const cleanupHighlights = (container: HTMLElement) => {
@@ -193,12 +198,15 @@ const analyzeKeywords = (
 };
 
 const getHighlightClassName = (importance?: number, isDark?: boolean): string => {
+  // Force highlight text to a consistent near-black so the light tinted
+  // backgrounds (yellow/amber/lime/etc.) always stay readable, no matter
+  // what the surrounding prose text color resolves to in dark mode.
   const baseClasses =
-    "cursor-help transition-all duration-200 rounded px-0.5 border-b-2";
+    "cursor-help transition-all duration-200 rounded px-0.5 border-b-2 text-slate-900";
 
   if (isDark) {
     if (!importance) {
-      return `${baseClasses} bg-yellow-500/20 border-orange-400 hover:bg-yellow-500/40`;
+      return `${baseClasses} bg-yellow-400/80 border-orange-400 hover:bg-yellow-400`;
     }
 
     const darkColorMap: Record<
@@ -206,29 +214,29 @@ const getHighlightClassName = (importance?: number, isDark?: boolean): string =>
       { bg: string; border: string; hover: string }
     > = {
       5: {
-        bg: "bg-amber-500/30",
+        bg: "bg-amber-400/80",
         border: "border-amber-400",
-        hover: "hover:bg-amber-500/50",
+        hover: "hover:bg-amber-400",
       },
       4: {
-        bg: "bg-yellow-500/20",
+        bg: "bg-yellow-400/80",
         border: "border-yellow-400",
-        hover: "hover:bg-yellow-500/40",
+        hover: "hover:bg-yellow-400",
       },
       3: {
-        bg: "bg-lime-500/20",
+        bg: "bg-lime-400/80",
         border: "border-lime-400",
-        hover: "hover:bg-lime-500/40",
+        hover: "hover:bg-lime-400",
       },
       2: {
-        bg: "bg-emerald-500/20",
+        bg: "bg-emerald-400/80",
         border: "border-emerald-400",
-        hover: "hover:bg-emerald-500/40",
+        hover: "hover:bg-emerald-400",
       },
       1: {
-        bg: "bg-primary-500/20",
+        bg: "bg-primary-400/80",
         border: "border-primary-400",
-        hover: "hover:bg-primary-500/40",
+        hover: "hover:bg-primary-400",
       },
     };
 
@@ -647,6 +655,25 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
       "--tw-prose-quotes": "#292018",
       "--tw-prose-counters": "#6b5d4a",
       "--tw-prose-bullets": "#6b5d4a",
+    };
+  } else if (isDark) {
+    // Default reading mode on dark theme: prose-indigo ships light-tokens
+    // only, so headings/quotes/bold/links would stay dark and become
+    // invisible on a deep-slate background. Override them explicitly so
+    // every markdown element keeps WCAG AA contrast in dark mode.
+    themeVars = {
+      "--tw-prose-body": "#e5e7eb",
+      "--tw-prose-headings": "#f9fafb",
+      "--tw-prose-links": "#a5b4fc",
+      "--tw-prose-bold": "#f9fafb",
+      "--tw-prose-quotes": "#e5e7eb",
+      "--tw-prose-quote-borders": "#475569",
+      "--tw-prose-counters": "#94a3b8",
+      "--tw-prose-bullets": "#94a3b8",
+      "--tw-prose-hr": "#334155",
+      "--tw-prose-th-borders": "#475569",
+      "--tw-prose-td-borders": "#334155",
+      "--tw-prose-code": "#f9fafb",
     };
   }
 

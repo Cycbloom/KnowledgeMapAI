@@ -10,6 +10,10 @@ import type {
   ExtractConceptsResponse,
   CreateNodesFromConceptsRequest,
   CreateNodesFromConceptsResponse,
+  AutoArchiveRequest,
+  AutoArchiveResult,
+  BatchArchiveRequest,
+  BatchArchiveResult,
   UploadImageResponse,
   WritingAssistRequest,
   WritingAssistResponse,
@@ -97,6 +101,14 @@ export interface INotesApi {
     noteId: string,
     data: CreateNodesFromConceptsRequest,
   ): Promise<CreateNodesFromConceptsResponse>;
+
+  // ----- 捕获 AI 自动归档 -----
+
+  /** 单条捕获 AI 自动归档(POST /notes/:id/auto-archive) */
+  autoArchive(noteId: string, data: AutoArchiveRequest): Promise<AutoArchiveResult>;
+
+  /** 批量捕获 AI 自动归档(POST /notes/batch-archive) */
+  batchArchive(data: BatchArchiveRequest): Promise<BatchArchiveResult>;
 
   // ----- P1: 图片上传 -----
 

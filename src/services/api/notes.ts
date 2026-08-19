@@ -14,6 +14,10 @@ import type {
   ExtractConceptsResponse,
   CreateNodesFromConceptsRequest,
   CreateNodesFromConceptsResponse,
+  AutoArchiveRequest,
+  AutoArchiveResult,
+  BatchArchiveRequest,
+  BatchArchiveResult,
   UploadImageResponse,
   WritingAssistRequest,
   WritingAssistResponse,
@@ -123,6 +127,20 @@ export const notesApi: INotesApi = {
     data: CreateNodesFromConceptsRequest,
   ) =>
     request<CreateNodesFromConceptsResponse>(`/notes/${noteId}/create-nodes`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // ----- 捕获 AI 自动归档 -----
+
+  autoArchive: (noteId: string, data: AutoArchiveRequest) =>
+    request<AutoArchiveResult>(`/notes/${noteId}/auto-archive`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  batchArchive: (data: BatchArchiveRequest) =>
+    request<BatchArchiveResult>('/notes/batch-archive', {
       method: 'POST',
       body: JSON.stringify(data),
     }),

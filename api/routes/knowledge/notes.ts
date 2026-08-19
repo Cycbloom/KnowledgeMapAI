@@ -14,6 +14,8 @@ import {
   updateNoteTemplateSchema,
   createNodesFromConceptsSchema,
   writingAssistSchema,
+  autoArchiveSchema,
+  batchArchiveSchema,
 } from "../../schemas/index";
 import { notesService } from "../../services/notes";
 import { blockRefService } from "../../services/notes/blockRefService";
@@ -513,6 +515,54 @@ router.post(
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const data = await notesService.createNodesFromConcepts(
+      req.supabase,
+      req.user.id,
+      id,
+      req.body,
+    );
+    res.json(data);
+  },
+);
+
+/**
+ * POST /notes/batch-archive
+ * 批量捕获 AI 自动归档。Body: BatchArchiveRequest { graphId, noteIds[] }。
+ * 复用 extract-concepts + create-nodes 链路，逐条把捕获建连进图谱并清除捕获箱标记。
+ * 注意：静态路径，须定义在 /:id 系列路由之前。
+ *
+ * 限流:aiHeavy（内部逐条调用 AI 提取）。
+ */
+router.post(
+  "/batch-archive",
+  requireAuth,
+  rateLimiters.aiHeavy,
+  validate({ body: batchArchiveSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { graphId, noteIds } = req.body;
+    const data = await notesService.batchAutoArchive(
+      req.supabase,
+      req.user.id,
+      graphId,
+      noteIds,
+    );
+    res.json(data);
+  },
+);
+
+/**
+ * POST /notes/:id/auto-archive
+ * 单条捕获 AI 自动归档。Body: AutoArchiveRequest { graphId, maxConcepts? }。
+ *
+ * 限流:aiHeavy（内部调用 AI 提取）。
+ */
+router.post(
+  "/:id/auto-archive",
+  requireAuth,
+  rateLimiters.aiHeavy,
+  validate({ params: uuidParamsSchema, body: autoArchiveSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+    const data = await notesService.autoArchive(
       req.supabase,
       req.user.id,
       id,

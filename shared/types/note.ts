@@ -278,6 +278,59 @@ export interface CreateNodesFromConceptsResponse {
   results: CreatedNodeResult[];
 }
 
+// ============================================================
+// AI 自动归档（捕获 → 图谱）
+// ============================================================
+
+/**
+ * 单条捕获 AI 归档请求
+ * 自动提取知识点 → 在目标图谱创建节点并挂载到该笔记 → 移除捕获箱 tag
+ */
+export interface AutoArchiveRequest {
+  /** 目标图谱 ID（节点创建到哪个图谱） */
+  graphId: string;
+  /** 本次自动挑选的最大知识点数量（默认 CAPTURE_DEFAULT_MAX_CONCEPTS） */
+  maxConcepts?: number;
+}
+
+/**
+ * 单条捕获归档结果
+ */
+export interface AutoArchiveResult {
+  /** 被归档的笔记 ID */
+  noteId: string;
+  /** 被归档的笔记标题 */
+  title: string;
+  /** 实际创建的节点（创建失败的条目 success=false） */
+  createdNodes: CreatedNodeResult[];
+  /** 成功创建的节点数量 */
+  nodeCount: number;
+  /** 是否确实提取到了知识点（false 表示无知识点，仅清除捕获箱标记） */
+  created: boolean;
+}
+
+/**
+ * 批量归档请求
+ */
+export interface BatchArchiveRequest {
+  /** 目标图谱 ID */
+  graphId: string;
+  /** 要归档的捕获笔记 ID 列表 */
+  noteIds: string[];
+}
+
+/**
+ * 批量归档结果
+ */
+export interface BatchArchiveResult {
+  /** 每条捕获的归档结果（顺序与请求一致） */
+  results: AutoArchiveResult[];
+  /** 成功归档（含"无知识点仅清除标记"）的条数 */
+  archivedCount: number;
+  /** 失败条数 */
+  failedCount: number;
+}
+
 // ----- 图片上传 -----
 
 /**

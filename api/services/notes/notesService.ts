@@ -18,7 +18,15 @@ import type {
   WritingAssistRequest,
   WritingAssistResponse,
   RefreshDailyAggregationResponse,
+  AutoArchiveRequest,
+  AutoArchiveResult,
+  BatchArchiveResult,
 } from '@shared/types/note';
+import {
+  CAPTURE_INBOX_TAG,
+  CAPTURE_DEFAULT_MAX_CONCEPTS,
+  CAPTURE_MAX_CONCEPTS_LIMIT,
+} from '@shared/constants/capture';
 import { extractWikiLinks } from '@shared/utils/wikiLink';
 import { toLocalDateString } from '@shared/utils/dateFormat';
 import {
@@ -1771,6 +1779,108 @@ export class NotesService {
     }
 
     return { results };
+  }
+
+  // ============================================================
+  // 捕获 AI 自动归档（捕获箱 → 图谱）
+  // ============================================================
+
+  /**
+   * 单条捕获 AI 自动归档。
+   *
+   * 复用 P1 已有链路：
+   * 1. 提取知识点（extractConcepts）
+   * 2. 自动挑选前 N 个（去空名，不超过 maxConcepts）
+   * 3. 在目标图谱创建节点并挂载到本笔记（createNodesFromConcepts）
+   * 4. 移除捕获箱 tag；无知识点时仅清除捕获箱标记（不再视为未处理捕获）
+   *
+   * 失败处理：AI 提取失败抛出底层 AppError（由路由层决定是否终止）；创建节点失败不阻塞本方法。
+   */
+  async autoArchive(
+    supabase: SupabaseClient,
+    userId: string,
+    noteId: string,
+    request: AutoArchiveRequest,
+  ): Promise<AutoArchiveResult> {
+    const note = await this.get(supabase, userId, noteId);
+    const maxConcepts = Math.max(
+      1,
+      Math.min(
+        request.maxConcepts ?? CAPTURE_DEFAULT_MAX_CONCEPTS,
+        CAPTURE_MAX_CONCEPTS_LIMIT,
+      ),
+    );
+
+    // 1. 提取知识点（空内容返回空数组，这里统一处理）
+    const { concepts } = await this.extractConcepts(supabase, userId, noteId);
+    const selected = concepts
+      .filter((c) => c.name.trim().length > 0)
+      .slice(0, maxConcepts);
+
+    // 2. 有知识点则落库建图
+    let createdNodes: CreatedNodeResult[] = [];
+    let created = false;
+    if (selected.length > 0) {
+      const { results } = await this.createNodesFromConcepts(supabase, userId, noteId, {
+        graphId: request.graphId,
+        selectedConcepts: selected,
+      });
+      createdNodes = results;
+      created = true;
+    }
+
+    // 3. 移除捕获箱 tag，并把已建概念名并入 tag（去重）
+    const baseTags = (note.tags ?? []).filter(
+      (tag) => tag.toLowerCase() !== CAPTURE_INBOX_TAG.toLowerCase(),
+    );
+    const conceptTags = createdNodes
+      .filter((r) => r.success && r.conceptName.trim().length > 0)
+      .map((r) => r.conceptName.trim());
+    const mergedTags = Array.from(
+      new Set([...baseTags, ...conceptTags].map((tag) => tag.trim()).filter(Boolean)),
+    );
+    await this.update(supabase, userId, noteId, { tags: mergedTags });
+
+    const nodeCount = createdNodes.filter((r) => r.success).length;
+    return { noteId, title: note.title, createdNodes, nodeCount, created };
+  }
+
+  /**
+   * 批量 AI 自动归档。逐条复用 autoArchive，单条失败不阻塞其他条。
+   */
+  async batchAutoArchive(
+    supabase: SupabaseClient,
+    userId: string,
+    graphId: string,
+    noteIds: string[],
+  ): Promise<BatchArchiveResult> {
+    const results: AutoArchiveResult[] = [];
+    let archivedCount = 0;
+    let failedCount = 0;
+
+    for (const noteId of noteIds) {
+      try {
+        const result = await this.autoArchive(supabase, userId, noteId, { graphId });
+        results.push(result);
+        archivedCount += 1;
+      } catch (error) {
+        failedCount += 1;
+        logger.warn('batchAutoArchive: item failed', {
+          userId,
+          noteId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        results.push({
+          noteId,
+          title: '',
+          createdNodes: [],
+          nodeCount: 0,
+          created: false,
+        });
+      }
+    }
+
+    return { results, archivedCount, failedCount };
   }
 
   // ============================================================

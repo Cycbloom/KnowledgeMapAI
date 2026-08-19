@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CAPTURE_MAX_CONCEPTS_LIMIT } from "@shared/constants/capture";
 
 // --- Auth Schemas ---
 export const registerSchema = z.object({
@@ -1023,6 +1024,25 @@ export const writingAssistSchema = z.object({
   selectedText: z.string().min(1, "选中文本不能为空"),
   contextBefore: z.string().optional(),
   contextAfter: z.string().optional(),
+});
+
+// --- Capture Auto Archive Schema (捕获 AI 自动归档) ---
+export const autoArchiveSchema = z.object({
+  graphId: z.string().uuid("无效的图谱ID"),
+  maxConcepts: z
+    .number()
+    .int("必须是整数")
+    .min(1, "至少选择一个知识点")
+    .max(CAPTURE_MAX_CONCEPTS_LIMIT, "超出单次知识点上限")
+    .optional(),
+});
+
+export const batchArchiveSchema = z.object({
+  graphId: z.string().uuid("无效的图谱ID"),
+  noteIds: z
+    .array(z.string().uuid("无效的笔记ID"))
+    .min(1, "至少选择一条捕获")
+    .max(100, "单次最多归档100条捕获"),
 });
 
 // --- AI Action Route Schemas (re-export from aiAction.ts) ---

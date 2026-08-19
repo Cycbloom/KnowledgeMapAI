@@ -226,6 +226,16 @@ export interface DashboardStats {
   distribution: DistributionItem[];
 }
 
+/** GET /dashboard/today 的返回结构：首页"今日回顾"摘要计数。 */
+export interface TodaySummary {
+  /** 收件箱待归档的捕获数（挂 #inbox 标记、未归档、未删除的笔记）。 */
+  inboxCount: number;
+  /** 今日到期需复习的卡片数（next_review <= 今日结束）。 */
+  dueCards: number;
+  /** 今日到期且未完成的任务数。 */
+  dueTasks: number;
+}
+
 /** GET /statistics 的返回结构。 */
 export interface StatisticsResponse {
   metrics: {

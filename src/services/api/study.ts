@@ -9,6 +9,7 @@ import type {
   FsrsResetResult,
   StudySemanticGroupsResponse,
   DashboardStats,
+  TodaySummary,
   StatisticsResponse,
 } from "@shared/types/api";
 import type { StudyCard } from "@shared/types/common";
@@ -135,6 +136,7 @@ export const studyApi: IStudyApi = {
 
 export const dashboardApi: IDashboardApi = {
   getStats: () => request<DashboardStats>("/dashboard/stats"),
+  getTodaySummary: () => request<TodaySummary>("/dashboard/today"),
 };
 
 export const statisticsApi: IStatisticsApi = {

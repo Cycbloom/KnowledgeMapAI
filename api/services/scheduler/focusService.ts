@@ -18,14 +18,23 @@ export class FocusService {
     data: CreateFocusSessionData,
   ): Promise<FocusSession> {
     const mode = data.mode || (data.is_break ? "shortBreak" : "focus");
+
+    // 兜底：ended_at 缺失时用 started_at；duration 缺失时按时间差或 0 兜底
+    const endedAt = data.ended_at ?? data.started_at;
+    let duration = data.duration;
+    if (duration === undefined || duration === null || Number.isNaN(duration)) {
+      const diffMs = new Date(endedAt).getTime() - new Date(data.started_at).getTime();
+      duration = Math.max(0, Math.round(diffMs / 1000));
+    }
+
     const { data: session, error } = await client
       .from("focus_sessions")
       .insert({
         user_id: userId,
         task_id: data.task_id,
         started_at: data.started_at,
-        ended_at: data.ended_at,
-        duration: data.duration,
+        ended_at: endedAt,
+        duration,
         pomodoro_count: data.pomodoro_count || 0,
         white_noise_type: data.white_noise_type,
         is_break: data.is_break || false,

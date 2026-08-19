@@ -416,16 +416,19 @@ export const Layout = () => {
           };
         case "/graph-map":
           return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.graphMap(), queryFn: api.domains.getTree, meta: { silent: true } });
+            queryClient.prefetchQuery({ queryKey: queryKeys.graphMap(), queryFn: api.graphs.getMap, meta: { silent: true } });
+            queryClient.prefetchQuery({ queryKey: queryKeys.domainTree(), queryFn: api.domains.getTree, meta: { silent: true } });
           };
         case "/study":
           return () => {
             queryClient.prefetchQuery({ queryKey: queryKeys.studyCards({ due: true }), queryFn: () => api.study.getCards({ due: true }), meta: { silent: true } });
           };
         case "/notes":
-          return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.notes(), queryFn: () => api.notes.list(), meta: { silent: true } });
-          };
+          // 注意:useNotesList 是 Infinite Query(结构为 {pages, pageParams}),
+          // 若用普通 prefetchQuery 会把单页 NoteListResult 直接塞进缓存,
+          // 导致后续 RQ 内部访问 undefined.pages/undefined.length 触发渲染崩溃。
+          // 此处不预取,组件自身有 initialData 兜底不会 crash。
+          return () => {};
         case "/learning-paths":
           return () => {
             queryClient.prefetchQuery({ queryKey: queryKeys.learningLoops(), queryFn: () => api.learningPaths.list(), meta: { silent: true } });
@@ -447,9 +450,9 @@ export const Layout = () => {
             queryClient.prefetchQuery({ queryKey: queryKeys.templates(), queryFn: () => api.templates.list(), meta: { silent: true } });
           };
         case "/tasks":
-          return () => {
-            queryClient.prefetchQuery({ queryKey: queryKeys.tasks(), queryFn: () => api.tasks.list(), meta: { silent: true } });
-          };
+          // 同 /notes:useTasks 是 Infinite Query,禁止用普通 prefetchQuery 预热,
+          // 否则缓存结构 {tasks, total} 不匹配 {pages, pageParams} 触发崩溃。
+          return () => {};
         case "/scheduler":
           return () => {
             queryClient.prefetchQuery({ queryKey: queryKeys.schedulerTasks(), queryFn: () => api.scheduler.list({}), meta: { silent: true } });

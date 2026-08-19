@@ -86,8 +86,11 @@ export const useSemanticZoom = ({
         let count = 0;
         const visited = new Set<string>();
         const queue = childMap.get(coreNode.id) || [];
-        while (queue.length > 0) {
-          const currentId = queue.shift();
+        // 用队头指针替代 queue.shift()（数组 shift 为 O(n) 索引重排），
+        // 使单次 BFS 从最坏 O(k²) 降为 O(k)
+        let head = 0;
+        while (head < queue.length) {
+          const currentId = queue[head++];
           if (!currentId) break;
           if (visited.has(currentId)) continue;
           visited.add(currentId);

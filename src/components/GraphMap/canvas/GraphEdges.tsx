@@ -90,7 +90,8 @@ const areEqual = (prev: GraphEdgesProps, next: GraphEdgesProps) => {
     prev.edges.length === next.edges.length &&
     prev.focusedGraphId === next.focusedGraphId &&
     prev.neighborLinkIds.size === next.neighborLinkIds.size &&
-    prev.selectedDomainIds.size === next.selectedDomainIds.size &&
+    prev.linkHighlightState === next.linkHighlightState &&
+    prev.selectedDomainIds === next.selectedDomainIds &&
     prev.isDark === next.isDark &&
     prev.linkStyle === next.linkStyle &&
     prev.linkAnimation === next.linkAnimation

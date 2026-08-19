@@ -146,6 +146,7 @@ const areEqual = (prev: GraphNodesProps, next: GraphNodesProps) => {
     prev.selectedGraphId === next.selectedGraphId &&
     prev.focusedGraphId === next.focusedGraphId &&
     prev.neighborGraphIds.size === next.neighborGraphIds.size &&
+    prev.nodeHighlightState === next.nodeHighlightState &&
     prev.isDark === next.isDark &&
     prev.zoomLevel === next.zoomLevel &&
     prev.colorScheme === next.colorScheme &&

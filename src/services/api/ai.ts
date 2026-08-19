@@ -226,6 +226,11 @@ export const aiApi: IAiApi = {
       custom_prompt?: string;
       cards_per_type?: Record<string, number>;
       count_per_difficulty?: { easy?: number; medium?: number; hard?: number };
+      /** 题型×难度二维矩阵：每个非零格子=一次独立 AI 调用（后端处理） */
+      count_matrix?: Record<
+        string,
+        { easy?: number; medium?: number; hard?: number }
+      >;
     },
   ) => {
     const payloadConfig = injectAIConfig(

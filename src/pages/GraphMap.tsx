@@ -1090,6 +1090,7 @@ export const GraphMap = () => {
       targetNodeIds?: string[];
       cardsPerType?: Partial<Record<string, number>>;
       countPerDifficulty?: Partial<Record<'easy' | 'medium' | 'hard', number>>;
+      countMatrix?: Record<string, { easy: number; medium: number; hard: number }>;
     }) => {
       const nodeIds =
         config.targetNodeIds && config.targetNodeIds.length > 0
@@ -1110,6 +1111,20 @@ export const GraphMap = () => {
                 Object.entries(config.countPerDifficulty).map(([k, v]) => [k, Number(v ?? 0)]),
               )
             : undefined;
+        // 题型×难度矩阵：剔除全零格，保证只传有效配置
+        const countMatrix =
+          config.countMatrix && Object.keys(config.countMatrix).length > 0
+            ? Object.fromEntries(
+                Object.entries(config.countMatrix).map(([k, v]) => [
+                  k,
+                  {
+                    easy: Number(v.easy ?? 0),
+                    medium: Number(v.medium ?? 0),
+                    hard: Number(v.hard ?? 0),
+                  },
+                ]),
+              )
+            : undefined;
 
         const result = await api.ai.batchGenerateCards(nodeIds, {
           count: config.count,
@@ -1119,6 +1134,7 @@ export const GraphMap = () => {
           custom_prompt: config.customPrompt || undefined,
           cards_per_type: cardsPerTypeNum,
           count_per_difficulty: countPerDiffNum as { easy?: number; medium?: number; hard?: number } | undefined,
+          count_matrix: countMatrix,
         });
 
         if (result.success) {

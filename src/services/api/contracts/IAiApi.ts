@@ -147,6 +147,14 @@ export interface IAiApi {
         medium?: number;
         hard?: number;
       };
+      /**
+       * 题型×难度二维数量矩阵（权威配置）：后端每个非零格子
+       * = 一次独立 AI 调用（单题型+单难度）；优先级高于上面两个字段
+       */
+      count_matrix?: Record<
+        string,
+        { easy?: number; medium?: number; hard?: number }
+      >;
     },
   ): Promise<{ success: boolean; taskIds: string[]; message: string; error?: string; results?: Array<{ nodeId: string; success: boolean; count: number }> }>;
 

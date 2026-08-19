@@ -372,6 +372,7 @@ export const LearningMode = () => {
     types: string[];
     cardsPerType: Partial<Record<string, number>>;
     countPerDifficulty: Partial<Record<"easy" | "medium" | "hard", number>>;
+    countMatrix?: Record<string, { easy: number; medium: number; hard: number }>;
     difficulty: "easy" | "medium" | "hard" | "mixed";
     coverage: "current_only" | "with_children" | "with_siblings" | "graph";
     customPrompt: string;
@@ -391,6 +392,19 @@ export const LearningMode = () => {
       config.countPerDifficulty && Object.keys(config.countPerDifficulty).length > 0
         ? Object.fromEntries(
             Object.entries(config.countPerDifficulty).map(([k, v]) => [k, Number(v ?? 0)]),
+          )
+        : undefined;
+    const countMatrixNum =
+      config.countMatrix && Object.keys(config.countMatrix).length > 0
+        ? Object.fromEntries(
+            Object.entries(config.countMatrix).map(([k, v]) => [
+              k,
+              {
+                easy: Number(v.easy ?? 0),
+                medium: Number(v.medium ?? 0),
+                hard: Number(v.hard ?? 0),
+              },
+            ]),
           )
         : undefined;
 
@@ -464,6 +478,7 @@ export const LearningMode = () => {
                   // 把二维矩阵信息传入移动端服务，本地按权重/难度分派：
                   cardsPerType: cardsPerTypeNum,
                   countPerDifficulty: countPerDiffNum,
+                  countMatrix: countMatrixNum,
                 },
               );
               if (result.success) {
@@ -511,6 +526,7 @@ export const LearningMode = () => {
         custom_prompt: config.customPrompt || undefined,
         cards_per_type: cardsPerTypeNum,
         count_per_difficulty: countPerDiffNum as { easy?: number; medium?: number; hard?: number } | undefined,
+        count_matrix: countMatrixNum,
       });
       if (result.success) {
         msgHelper.success(t("learning.cards.taskSubmitted"), {
@@ -541,6 +557,7 @@ export const LearningMode = () => {
       types: string[];
       cardsPerType: Partial<Record<string, number>>;
       countPerDifficulty: Partial<Record<"easy" | "medium" | "hard", number>>;
+      countMatrix?: Record<string, { easy: number; medium: number; hard: number }>;
       difficulty: "easy" | "medium" | "hard" | "mixed";
       coverage: "current_only" | "with_children" | "with_siblings" | "graph";
       customPrompt: string;

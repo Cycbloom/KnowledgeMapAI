@@ -23,6 +23,7 @@ import {
   Minus,
   Wand2,
   ArrowRightLeft,
+  FileText,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -42,6 +43,8 @@ export interface GenerateCardsFullConfig {
   types: string[];
   cardsPerType: Partial<Record<string, number>>;
   countPerDifficulty: Partial<Record<'easy' | 'medium' | 'hard', number>>;
+  /** 题型×难度二维矩阵（权威配置）：后端每个非零格子=一次独立 AI 调用 */
+  countMatrix: Record<string, { easy: number; medium: number; hard: number }>;
   difficulty: GenerateCardsDifficulty;
   coverage: GenerateCardsCoverage;
   customPrompt: string;
@@ -500,7 +503,8 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
     },
   ];
 
-  const previewPrompt = useMemo((): string => {
+  // 生成参数概览（结构化，总是显示；是实际会注入到 AI 上下文中的参数）
+  const paramSummary = useMemo((): string => {
     const questionTypesList = cardTypes
       .filter((c) => typeSet.has(c.id))
       .map((c) => c.label)
@@ -522,32 +526,15 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
     const difficultyLabel =
       difficultyOptions.find((o) => o.id === difficulty)?.label ?? difficulty;
 
-    const trimmedPrompt = customPrompt.trim();
-    if (trimmedPrompt) {
-      return trimmedPrompt
-        .replaceAll('{{topic}}', nodeTitle)
-        .replaceAll('{{count}}', String(grandTotal || count))
-        .replaceAll('{{types}}', questionTypesList || t('learning.generateCards.fallbackAllTypes'))
-        .replaceAll('{{matrix}}', matrixPreview || '-')
-        .replaceAll('{{cardsPerType}}', matrixPreview || '-')
-        .replaceAll('{{difficulty}}', difficultyLabel)
-        .replaceAll('{{coverage}}', coverageLabel)
-        .replaceAll('{{targetNodeCount}}', String(targetNodeIds.length));
-    }
-
     return [
-      `# ${t('learning.generateCards.promptPreviewTitle')}`,
       `- ${t('learning.generateCards.promptPreviewTopic')}：${nodeTitle || '-'}`,
       `- ${t('learning.generateCards.promptPreviewTotalCount')}：${grandTotal || count}`,
       `- ${t('learning.generateCards.promptPreviewTypes')}：${questionTypesList || t('learning.generateCards.fallbackAllTypes')}`,
       `- ${t('learning.generateCards.promptPreviewMatrix')}：${matrixPreview || '-'}`,
       `- ${t('learning.generateCards.promptPreviewDifficulty')}：${difficultyLabel}  [简 ${colTotals.easy} / 中 ${colTotals.medium} / 难 ${colTotals.hard}]`,
       `- ${t('learning.generateCards.promptPreviewCoverage')}：${coverageLabel}（${t('learning.generateCards.promptPreviewNodeCount', { count: targetNodeIds.length })}）`,
-      '',
-      t('learning.generateCards.promptPreviewBody'),
     ].join('\n');
   }, [
-    customPrompt,
     nodeTitle,
     grandTotal,
     count,
@@ -564,6 +551,80 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
     targetNodeIds.length,
     t,
   ]);
+
+  // 自定义提示词渲染结果（仅当用户填写时才有值）
+  const customPromptRendered = useMemo((): string | null => {
+    const trimmed = customPrompt.trim();
+    if (!trimmed) return null;
+    const questionTypesList = cardTypes
+      .filter((c) => typeSet.has(c.id))
+      .map((c) => c.label)
+      .join('、');
+    const matrixPreview = types
+      .map((tp) => {
+        const tpLabel = cardTypes.find((c) => c.id === tp)?.label ?? tp;
+        if (difficulty === 'mixed') {
+          return `${tpLabel}(简×${matrix[tp]?.easy ?? 0}/中×${matrix[tp]?.medium ?? 0}/难×${
+            matrix[tp]?.hard ?? 0
+          })`;
+        }
+        return `${tpLabel}×${rowTotals[tp] ?? 0}`;
+      })
+      .join('、');
+
+    const coverageLabel =
+      coverageOptions.find((o) => o.id === coverage)?.label ?? coverage;
+    const difficultyLabel =
+      difficultyOptions.find((o) => o.id === difficulty)?.label ?? difficulty;
+
+    return trimmed
+      .replaceAll('{{topic}}', nodeTitle)
+      .replaceAll('{{count}}', String(grandTotal || count))
+      .replaceAll('{{types}}', questionTypesList || t('learning.generateCards.fallbackAllTypes'))
+      .replaceAll('{{matrix}}', matrixPreview || '-')
+      .replaceAll('{{cardsPerType}}', matrixPreview || '-')
+      .replaceAll('{{difficulty}}', difficultyLabel)
+      .replaceAll('{{coverage}}', coverageLabel)
+      .replaceAll('{{targetNodeCount}}', String(targetNodeIds.length))
+      .replaceAll('{{nodeCount}}', String(targetNodeIds.length))
+      .replaceAll('{{content}}', `「${t('learning.generateCards.promptContentHint')}」`);
+  }, [
+    customPrompt,
+    nodeTitle,
+    grandTotal,
+    count,
+    cardTypes,
+    typeSet,
+    types,
+    matrix,
+    rowTotals,
+    difficulty,
+    coverage,
+    coverageOptions,
+    difficultyOptions,
+    targetNodeIds.length,
+    t,
+  ]);
+
+  // 给"复制预览"按钮复制的文本：参数 + (自定义渲染 or 默认模板声明)
+  const promptCopyPayload = useMemo((): string => {
+    if (customPromptRendered) {
+      return [
+        `# ${t('learning.generateCards.promptSummaryTitle')}`,
+        paramSummary,
+        '',
+        `# ${t('learning.generateCards.promptCustomTitle')}`,
+        customPromptRendered,
+      ].join('\n');
+    }
+    return [
+      `# ${t('learning.generateCards.promptSummaryTitle')}`,
+      paramSummary,
+      '',
+      `# ${t('learning.generateCards.promptUsingDefaultTitle')}`,
+      t('learning.generateCards.promptUsingDefaultHint'),
+    ].join('\n');
+  }, [paramSummary, customPromptRendered, t]);
 
   const handleToggleType = (typeId: string): void => {
     setTypes((prev) =>
@@ -609,7 +670,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
 
   const handleCopyPrompt = async (): Promise<void> => {
     try {
-      await navigator.clipboard.writeText(previewPrompt);
+      await navigator.clipboard.writeText(promptCopyPayload);
       setCopiedPrompt(true);
       window.setTimeout(() => setCopiedPrompt(false), 1500);
     } catch {
@@ -625,11 +686,25 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
 
     setIsLoading(true);
     try {
+      // 深拷贝矩阵，只保留选中题型、剔除全零行，避免引用泄漏
+      const countMatrix: Record<string, { easy: number; medium: number; hard: number }> = {};
+      for (const tp of types) {
+        const cell = matrix[tp];
+        if (!cell) continue;
+        const easy = cell.easy ?? 0;
+        const medium = cell.medium ?? 0;
+        const hard = cell.hard ?? 0;
+        if (easy > 0 || medium > 0 || hard > 0) {
+          countMatrix[tp] = { easy, medium, hard };
+        }
+      }
+
       await onGenerate({
         count: grandTotal,
         types,
         cardsPerType,
         countPerDifficulty: { ...countPerDifficulty },
+        countMatrix,
         difficulty,
         coverage,
         customPrompt: customPrompt.trim() || '',
@@ -1069,8 +1144,8 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
             </div>
           ) : null}
 
-          {/* 提示词预览 */}
-          <div className="space-y-2">
+          {/* 生成参数 + 提示词预览：分两块展示，空状态不塞占位文字进正文 */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                 <Eye size={14} className="text-slate-400" />
@@ -1094,9 +1169,50 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                 )}
               </button>
             </div>
-            <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 max-h-56 overflow-y-auto font-mono text-slate-600 dark:text-slate-300">
-              {previewPrompt}
-            </pre>
+
+            {/* 1. 生成参数（结构化） */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+              <div className="px-3 py-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 border-b border-slate-200/70 dark:border-slate-700/60 flex items-center gap-1.5">
+                <Settings size={12} />
+                {t('learning.generateCards.promptSummaryTitle')}
+              </div>
+              <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed p-3 font-mono text-slate-600 dark:text-slate-300">
+                {paramSummary}
+              </pre>
+            </div>
+
+            {/* 2. 自定义提示词预览 / 默认模板说明 */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+              <div className={`px-3 py-1.5 text-[11px] font-bold border-b border-slate-200/70 dark:border-slate-700/60 flex items-center gap-1.5 ${
+                customPromptRendered
+                  ? 'text-primary-700 dark:text-primary-300 bg-primary-50/60 dark:bg-primary-900/20'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}>
+                {customPromptRendered ? (
+                  <><Sparkles size={12} />{t('learning.generateCards.promptCustomTitle')}</>
+                ) : (
+                  <><FileText size={12} />{t('learning.generateCards.promptUsingDefaultTitle')}</>
+                )}
+              </div>
+              {customPromptRendered ? (
+                <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed p-3 max-h-56 overflow-y-auto font-mono text-slate-700 dark:text-slate-200">
+                  {customPromptRendered}
+                </pre>
+              ) : (
+                <div className="p-3 space-y-2">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800/60 text-[11px] text-slate-600 dark:text-slate-300 font-semibold">
+                    <Layers size={11} />
+                    {'System → User → Graph'}
+                    <span className="mx-1 text-slate-400/80">·</span>
+                    {'Graph > User > System'}
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {t('learning.generateCards.promptUsingDefaultHint')}
+                  </p>
+                </div>
+              )}
+            </div>
+
             <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed">
               {t('learning.generateCards.promptPreviewHint')}
             </p>

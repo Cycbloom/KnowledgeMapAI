@@ -6,6 +6,7 @@ import { logger } from "../../utils/logger";
 import { parseAIResponse } from "./utils";
 import { withAIMonitoring } from "./aiMonitor";
 import { getMockCards } from "./mock";
+import { embeddingOps } from "./embeddingOps";
 import {
   withTimeoutAndRetry,
   TimeoutError,
@@ -20,6 +21,26 @@ import {
 } from "./aiUtils";
 
 export type CardDifficulty = "easy" | "medium" | "hard" | "mixed";
+
+type CardGenProvider = Awaited<ReturnType<typeof getAIProviderForTask>>;
+type CardGenClient = CardGenProvider["client"];
+
+// 方案D1：生成后向量去重阈值（余弦相似度，>= 视为重复/近似重复）
+const DEDUP_THRESHOLD = 0.92;
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  const len = Math.min(a.length, b.length);
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  for (let i = 0; i < len; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  if (na === 0 || nb === 0) return 0;
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
 
 export interface GeneratedCard {
   type: string;
@@ -304,10 +325,31 @@ Please respond with a valid JSON object.`;
             );
 
             const result = completion.choices[0].message.content || "";
-            const parsed = parseAIResponse<{ cards: unknown[] }>(
-              result,
-              "Generate Cards",
-            );
+            const trimmed = result.trim();
+
+            // 方案D2：JSON 自愈 —— 首次解析失败（常见于 max_tokens 截断）时，带残片回改一次，
+            // 而不是直接整批失败返回 422。
+            let parsed: { cards?: unknown[] };
+            let parseSource = "Generate Cards";
+            try {
+              parsed = parseAIResponse<{ cards: unknown[] }>(
+                result,
+                parseSource,
+              );
+            } catch (firstErr) {
+              const repaired = await this.tryRepairRawJson(
+                provider.client,
+                model,
+                topic,
+                content,
+                trimmed,
+              );
+              if (!repaired) {
+                throw firstErr;
+              }
+              parsed = repaired;
+              parseSource += " (repaired)";
+            }
 
             let cards = (parsed.cards || []) as GeneratedCard[];
             const originalCount = cards.length;
@@ -329,6 +371,10 @@ Please respond with a valid JSON object.`;
               }
             }
 
+            // 方案D1：生成后向量相似度去重 —— 与库内已有题及同批题目做余弦去重，
+            // 复用现有 embedding 基建；embedding 不可用或失败时静默跳过不拦截生成。
+            cards = await this.dedupeGeneratedCardsBySimilarity(cards, existingQuestions);
+
             return { result: { cards }, usage: completion.usage };
           },
         );
@@ -349,6 +395,106 @@ Please respond with a valid JSON object.`;
         message: err.message || "AI card generation failed",
       });
     }
+  }
+
+  /**
+   * 方案D2：JSON 自愈 —— 把截断/损坏的 JSON 交给 AI 补齐修复，返回完整对象。
+   * 修复本身失败时返回 null，调用方回退到原始解析错误。
+   */
+  private async tryRepairRawJson(
+    client: CardGenClient,
+    model: string,
+    topic: string,
+    content: string,
+    broken: string,
+  ): Promise<{ cards?: unknown[] } | null> {
+    if (!broken) return null;
+    try {
+      const repair = await client.chat.completions.create({
+        model,
+        messages: [
+          {
+            role: "system",
+            content:
+              'You repair truncated or slightly malformed JSON. Return ONLY the complete, valid JSON object with a "cards" array. Do NOT add explanations, markdown fences, or any text outside the JSON.',
+          },
+          {
+            role: "user",
+            content: `Topic: ${topic}\nContent: ${content || "No detailed content provided."}\n\nBroken or incomplete JSON to fix (may be cut off at the end):\n${broken}`,
+          },
+        ],
+        temperature: 0,
+        response_format: { type: "json_object" },
+      });
+      const repaired = repair.choices[0]?.message?.content || "";
+      if (!repaired.trim()) return null;
+      return parseAIResponse<{ cards?: unknown[] }>(
+        repaired,
+        "Generate Cards repair",
+      );
+    } catch (error) {
+      logger.warn("[Generate Cards] JSON self-heal failed:", error);
+      return null;
+    }
+  }
+
+  /**
+   * 方案D1：生成后向量相似度去重。
+   * 与库内已有题（existingQuestions）+ 同批已接受的题做余弦对比，超过阈值则剔除。
+   * embedding 无 key / 失败时静默跳过（null 向量一律保留，不做删减）。
+   */
+  private async dedupeGeneratedCardsBySimilarity(
+    cards: GeneratedCard[],
+    existingQuestions: string[],
+  ): Promise<GeneratedCard[]> {
+    if (cards.length <= 1) return cards;
+
+    const refQueries = existingQuestions
+      .filter((q): q is string => typeof q === "string" && q.trim().length > 0)
+      .map((q) => q.trim());
+    if (refQueries.length === 0) return cards;
+
+    const candidateQueries = cards.map((c) => String(c.question ?? "").trim());
+    const texts = [...refQueries, ...candidateQueries];
+
+    let vectors: (number[] | null)[];
+    try {
+      vectors = await embeddingOps.generateEmbeddingsBatch(texts);
+    } catch (error) {
+      logger.warn("[Generate Cards] 向量去重失败，跳过:", error);
+      return cards;
+    }
+
+    // embedding 不可用（如未配置 key）时，全部返回 null → 不删减
+    if (vectors.some((v) => v === null)) return cards;
+
+    const refVecs = refQueries.map((_, i) => vectors[i]).filter(
+      (v): v is number[] => Array.isArray(v),
+    );
+
+    const running = refVecs.slice();
+    const accepted: GeneratedCard[] = [];
+    for (let idx = 0; idx < cards.length; idx++) {
+      const vec = vectors[refQueries.length + idx];
+      if (!vec) {
+        accepted.push(cards[idx]);
+        continue;
+      }
+      const isDuplicate = running.some(
+        (rv) => cosineSimilarity(vec, rv) >= DEDUP_THRESHOLD,
+      );
+      if (!isDuplicate) {
+        accepted.push(cards[idx]);
+        running.push(vec);
+      }
+    }
+
+    if (accepted.length !== cards.length) {
+      logger.warn(
+        `[Generate Cards] 向量去重：保留 ${accepted.length}/${cards.length} 道`,
+      );
+    }
+    return accepted.length > 0 ? accepted : cards;
   }
 }
 

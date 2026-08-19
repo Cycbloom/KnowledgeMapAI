@@ -73,15 +73,39 @@ interface UpdateProgressResult {
 
 const dbCardToFSRS = (dbCard: StudyCard): Card => {
   const empty = createEmptyCard();
+  const rawState = dbCard.fsrs_state
+    ? (State[dbCard.fsrs_state as keyof typeof State] as State | undefined)
+    : undefined;
+  const state = rawState === undefined ? State.New : rawState;
+
+  const reps = Math.max(0, Number.isFinite(dbCard.review_count ?? NaN) ? (dbCard.review_count as number) : 0);
+  // stability/difficulty 在非 New 状态下必须为正有限值，否则用 createEmptyCard 默认值
+  const rawStability = Number(dbCard.fsrs_stability);
+  const stability =
+    state === State.New
+      ? Number.isFinite(rawStability) && rawStability >= 0
+        ? rawStability
+        : empty.stability
+      : Number.isFinite(rawStability) && rawStability > 0
+        ? rawStability
+        : empty.stability;
+  const rawDifficulty = Number(dbCard.fsrs_difficulty);
+  const difficulty =
+    Number.isFinite(rawDifficulty) && rawDifficulty > 0
+      ? rawDifficulty
+      : empty.difficulty;
+  const elapsed = Number(dbCard.fsrs_elapsed_days);
+  const scheduled = Number(dbCard.fsrs_scheduled_days);
+
   return {
     ...empty,
     due: new Date(dbCard.next_review || new Date()),
-    stability: dbCard.fsrs_stability || 0,
-    difficulty: dbCard.fsrs_difficulty || 0,
-    elapsed_days: dbCard.fsrs_elapsed_days || 0,
-    scheduled_days: dbCard.fsrs_scheduled_days || 0,
-    reps: dbCard.review_count || 0,
-    state: dbCard.fsrs_state ? (State[dbCard.fsrs_state as keyof typeof State] ?? State.New) : State.New,
+    stability,
+    difficulty,
+    elapsed_days: Number.isFinite(elapsed) && elapsed >= 0 ? elapsed : 0,
+    scheduled_days: Number.isFinite(scheduled) && scheduled >= 0 ? scheduled : 0,
+    reps,
+    state,
     last_review: dbCard.fsrs_last_review
       ? new Date(dbCard.fsrs_last_review)
       : undefined,
@@ -89,10 +113,11 @@ const dbCardToFSRS = (dbCard: StudyCard): Card => {
 };
 
 const mapQualityToRating = (quality: number): Rating => {
-  if (quality <= 1) return Rating.Again;
-  if (quality === 2) return Rating.Hard;
-  if (quality === 3) return Rating.Good;
-  return Rating.Easy;
+  const q = Number.isFinite(quality) ? Math.trunc(quality) : 1;
+  if (q <= 1) return Rating.Again;   // 0,1 → Again
+  if (q === 2) return Rating.Hard;   // 2   → Hard
+  if (q === 3) return Rating.Good;   // 3   → Good
+  return Rating.Easy;                // 4,5 → Easy
 };
 
 export function mapBinaryRating(correct: boolean): Rating {

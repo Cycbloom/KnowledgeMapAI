@@ -3,6 +3,7 @@ import { GraphEditorState } from './index';
 import { message } from "../../utils/messageHelper";
 import { findShortestPath } from '../../utils/graph/graphUtils';
 import { useTranslation } from 'react-i18next';
+import { useCallback } from 'react';
 
 interface UseGraphInteractionProps {
   nodes: Node[];
@@ -33,7 +34,7 @@ export const useGraphInteraction = ({
     sidebarMode
   } = state;
 
-  const handleNodeClick = (node: Node) => {
+  const handleNodeClick = useCallback((node: Node) => {
     if (isDeleteMode) {
       handleDeleteNode(node);
       return;
@@ -73,9 +74,28 @@ export const useGraphInteraction = ({
     if (state.graphRef.current?.centerNode) {
       state.graphRef.current.centerNode(node.id, { forceRightPanelOpen: true });
     }
-  };
+  }, [
+    isDeleteMode,
+    handleDeleteNode,
+    nodeStatus,
+    isPathfindingMode,
+    pathStartNode,
+    setPathStartNode,
+    pathEndNode,
+    setPathEndNode,
+    nodes,
+    edges,
+    setHighlightedPath,
+    setSelectedNode,
+    setSelectedNodeIds,
+    setPrevSidebarMode,
+    setSidebarMode,
+    sidebarMode,
+    state.graphRef,
+    t,
+  ]);
 
-  const handleSelectionChange = (ids: string[]) => {
+  const handleSelectionChange = useCallback((ids: string[]) => {
     const newSet = new Set(ids);
     setSelectedNodeIds(newSet);
     
@@ -95,13 +115,20 @@ export const useGraphInteraction = ({
       setSelectedNode(null);
       setSidebarMode('none');
     }
-  };
+  }, [
+    setSelectedNodeIds,
+    nodes,
+    setSelectedNode,
+    setPrevSidebarMode,
+    setSidebarMode,
+    sidebarMode,
+  ]);
 
-  const handleBackgroundClick = () => {
+  const handleBackgroundClick = useCallback(() => {
     setSelectedNode(null);
     setSelectedNodeIds(new Set());
     setSidebarMode('none');
-  };
+  }, [setSelectedNode, setSelectedNodeIds, setSidebarMode]);
 
   return {
     handleNodeClick,

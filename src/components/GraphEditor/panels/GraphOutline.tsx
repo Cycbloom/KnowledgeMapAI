@@ -1342,179 +1342,32 @@ export const GraphOutline = React.memo(function GraphOutline({
     onBatchAction?.("delete");
   }, [t, selectedNodeIds.size, onBatchAction]);
 
-  // Tree Mode: Recursive Render
-  const TreeNode = React.memo(
-    ({
-      node,
-      depth,
-      visited,
-      isReadOnly: isNodeReadOnly,
-      setSize,
-      posInSet,
-    }: {
+  // Tree Mode: 行化当前展开的树为扁平行数组，供 VirtualList 虚拟化渲染。
+  // 替代原组件体内递归 TreeNode：组件内定义导致每次渲染生成新组件类型 → 整树卸载重挂，
+  // 且 visited Set 每次递归分配击穿 memo。行化后大图谱只渲染可视行
+  const treeRows = useMemo(() => {
+    const rows: Array<{
       node: Node;
       depth: number;
-      visited: Set<string>;
-      isReadOnly?: boolean;
-      setSize?: number;
-      posInSet?: number;
-    }) => {
-      if (visited.has(node.id)) return null;
-      const newVisited = new Set(visited).add(node.id);
-
-      const children = childrenMap.get(node.id) || [];
-      const hasChildren = children.length > 0;
-      const isExpanded = expandedNodeIds.has(node.id);
-      const isSelected = selectedNodeIds.has(node.id);
-      const backboneModule = node.properties?.backboneModule as
-        | BackboneModule
-        | undefined;
-
-      const paddingLeft = 12 + depth * 16;
-      const childrenId = `outline-children-${node.id}`;
-
-      return (
-        <div className="select-none">
-          <div
-            role="treeitem"
-            aria-level={depth + 1}
-            aria-expanded={hasChildren ? isExpanded : undefined}
-            aria-setsize={setSize}
-            aria-posinset={posInSet}
-            aria-selected={selectedNodeId === node.id && !isMultiSelectMode}
-            tabIndex={selectedNodeId === node.id && !isMultiSelectMode ? 0 : -1}
-            className={`w-full flex items-center pr-2 py-1.5 cursor-pointer text-sm transition-colors group focus:outline-none focus:ring-2 focus:ring-primary-400
-            ${
-              selectedNodeId === node.id && !isMultiSelectMode
-                ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
-                : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-            }`}
-            style={{ paddingLeft: `${paddingLeft}px` }}
-            onClick={() => {
-              if (isMultiSelectMode) {
-                handleToggleSelection(node.id);
-              } else {
-                onNodeClick(node);
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowRight') {
-                if (hasChildren && !isExpanded) {
-                  e.preventDefault();
-                  toggleExpand(node.id, e);
-                }
-              } else if (e.key === 'ArrowLeft') {
-                if (hasChildren && isExpanded) {
-                  e.preventDefault();
-                  toggleExpand(node.id, e);
-                }
-              } else if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                if (isMultiSelectMode) {
-                  handleToggleSelection(node.id);
-                } else {
-                  onNodeClick(node);
-                }
-              }
-            }}
-          >
-            <div
-              className={`w-5 h-5 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-slate-700 mr-1 transition-colors ${hasChildren ? "visible" : "invisible"}`}
-              onClick={(e) => hasChildren && toggleExpand(node.id, e)}
-              aria-hidden="true"
-            >
-              {isExpanded ? (
-                <ChevronDown size={14} aria-hidden="true" />
-              ) : (
-                <ChevronRight size={14} aria-hidden="true" />
-              )}
-            </div>
-
-            {isMultiSelectMode && (
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggleSelection(node.id);
-                }}
-                className="mr-2 cursor-pointer text-slate-400 hover:text-primary-500"
-                aria-hidden="true"
-              >
-                {isSelected ? (
-                  <CheckSquare size={16} className="text-primary-500" aria-hidden="true" />
-                ) : (
-                  <Square size={16} aria-hidden="true" />
-                )}
-              </div>
-            )}
-
-            <div
-              className="w-2 h-2 rounded-full shrink-0 mr-2"
-              style={{
-                backgroundColor: getLevelColors(node.level || "leaf").primary,
-              }}
-              aria-hidden="true"
-            />
-
-            <span className="truncate flex-1 font-medium flex items-center gap-1.5">
-              {backboneModule && (
-                <BackboneNodeIcon
-                  module={backboneModule}
-                  size="small"
-                  showTooltip={true}
-                />
-              )}
-              {node.title || t("graphEditor.outline.unnamedNode")}
-            </span>
-
-            {node.level && (
-              <span
-                className="text-[10px] uppercase ml-2 px-1 rounded hidden group-hover:inline-block group-focus-within:inline-block"
-                style={{
-                  backgroundColor:
-                    selectedNodeId === node.id
-                      ? getLevelColors(node.level).primary
-                      : getLevelColors(node.level).background,
-                  color:
-                    selectedNodeId === node.id
-                      ? "var(--white)"
-                      : getLevelColors(node.level).text,
-                }}
-              >
-                {node.level}
-              </span>
-            )}
-
-            {hasChildren && !isNodeReadOnly && (
-              <button
-                onClick={(e) => handleSelectChildren(node.id, e)}
-                className="ml-2 p-1 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded hidden group-hover:flex group-focus-within:flex items-center justify-center transition-colors"
-                title={t("graphEditor.outline.selectAllChildren")}
-                aria-label={t("graphEditor.outline.selectAllChildren")}
-              >
-                <ListChecks aria-hidden="true" size={14} />
-              </button>
-            )}
-          </div>
-
-          {hasChildren && isExpanded && (
-            <div role="group" id={childrenId}>
-              {children.map((child, index) => (
-                <TreeNode
-                  key={child.id}
-                  node={child}
-                  depth={depth + 1}
-                  visited={newVisited}
-                  isReadOnly={isNodeReadOnly}
-                  setSize={children.length}
-                  posInSet={index + 1}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    },
-  );
+      setSize: number;
+      posInSet: number;
+    }> = [];
+    const visited = new Set<string>();
+    const roots = rootNodes.length === 0 && nodes.length > 0 ? nodes : rootNodes;
+    const walk = (items: Node[], depth: number, setSize: number) => {
+      items.forEach((node, index) => {
+        if (visited.has(node.id)) return;
+        visited.add(node.id);
+        rows.push({ node, depth, setSize, posInSet: index + 1 });
+        const children = childrenMap.get(node.id) || [];
+        if (children.length > 0 && expandedNodeIds.has(node.id)) {
+          walk(children, depth + 1, children.length);
+        }
+      });
+    };
+    walk(roots, 0, roots.length);
+    return rows;
+  }, [rootNodes, nodes, childrenMap, expandedNodeIds]);
 
   return (
     <div
@@ -1865,37 +1718,156 @@ export const GraphOutline = React.memo(function GraphOutline({
           <div className="h-full px-2">{renderList()}</div>
         ) : (
           <div
-            className="space-y-0.5"
+            className="h-full px-2"
             role="tree"
             aria-label={t('graphEditor.outline.treeLabel')}
           >
-            {rootNodes.length === 0 && nodes.length > 0
-              ? nodes.map((node, index) => (
-                  <TreeNode
-                    key={node.id}
-                    node={node}
-                    depth={0}
-                    visited={new Set()}
-                    isReadOnly={isReadOnly}
-                    setSize={nodes.length}
-                    posInSet={index + 1}
-                  />
-                ))
-              : rootNodes.map((node, index) => (
-                  <TreeNode
-                    key={node.id}
-                    node={node}
-                    depth={0}
-                    visited={new Set()}
-                    isReadOnly={isReadOnly}
-                    setSize={rootNodes.length}
-                    posInSet={index + 1}
-                  />
-                ))}
-            {nodes.length === 0 && (
+            {nodes.length === 0 ? (
               <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
                 {t("graphEditor.outline.noNodes")}
               </div>
+            ) : (
+              <VirtualList
+                items={treeRows}
+                getItemKey={(index) => treeRows[index]?.node.id ?? index}
+                estimateSize={() => 36}
+                renderItem={(row) => {
+                  const { node, depth, setSize, posInSet } = row;
+                  const children = childrenMap.get(node.id) || [];
+                  const hasChildren = children.length > 0;
+                  const isExpanded = expandedNodeIds.has(node.id);
+                  const isSelected = selectedNodeIds.has(node.id);
+                  const backboneModule = node.properties?.backboneModule as
+                    | BackboneModule
+                    | undefined;
+                  const paddingLeft = 12 + depth * 16;
+
+                  return (
+                    <div className="select-none">
+                      <div
+                        role="treeitem"
+                        aria-level={depth + 1}
+                        aria-expanded={hasChildren ? isExpanded : undefined}
+                        aria-setsize={setSize}
+                        aria-posinset={posInSet}
+                        aria-selected={selectedNodeId === node.id && !isMultiSelectMode}
+                        tabIndex={selectedNodeId === node.id && !isMultiSelectMode ? 0 : -1}
+                        className={`w-full flex items-center pr-2 py-1.5 cursor-pointer text-sm transition-colors group focus:outline-none focus:ring-2 focus:ring-primary-400
+                ${
+                  selectedNodeId === node.id && !isMultiSelectMode
+                    ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
+                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+                        style={{ paddingLeft: `${paddingLeft}px` }}
+                        onClick={() => {
+                          if (isMultiSelectMode) {
+                            handleToggleSelection(node.id);
+                          } else {
+                            onNodeClick(node);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'ArrowRight') {
+                            if (hasChildren && !isExpanded) {
+                              e.preventDefault();
+                              toggleExpand(node.id, e);
+                            }
+                          } else if (e.key === 'ArrowLeft') {
+                            if (hasChildren && isExpanded) {
+                              e.preventDefault();
+                              toggleExpand(node.id, e);
+                            }
+                          } else if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            if (isMultiSelectMode) {
+                              handleToggleSelection(node.id);
+                            } else {
+                              onNodeClick(node);
+                            }
+                          }
+                        }}
+                      >
+                        <div
+                          className={`w-5 h-5 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-slate-700 mr-1 transition-colors ${hasChildren ? "visible" : "invisible"}`}
+                          onClick={(e) => hasChildren && toggleExpand(node.id, e)}
+                          aria-hidden="true"
+                        >
+                          {isExpanded ? (
+                            <ChevronDown size={14} aria-hidden="true" />
+                          ) : (
+                            <ChevronRight size={14} aria-hidden="true" />
+                          )}
+                        </div>
+
+                        {isMultiSelectMode && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleSelection(node.id);
+                            }}
+                            className="mr-2 cursor-pointer text-slate-400 hover:text-primary-500"
+                            aria-hidden="true"
+                          >
+                            {isSelected ? (
+                              <CheckSquare size={16} className="text-primary-500" aria-hidden="true" />
+                            ) : (
+                              <Square size={16} aria-hidden="true" />
+                            )}
+                          </div>
+                        )}
+
+                        <div
+                          className="w-2 h-2 rounded-full shrink-0 mr-2"
+                          style={{
+                            backgroundColor: getLevelColors(node.level || "leaf").primary,
+                          }}
+                          aria-hidden="true"
+                        />
+
+                        <span className="truncate flex-1 font-medium flex items-center gap-1.5">
+                          {backboneModule && (
+                            <BackboneNodeIcon
+                              module={backboneModule}
+                              size="small"
+                              showTooltip={true}
+                            />
+                          )}
+                          {node.title || t("graphEditor.outline.unnamedNode")}
+                        </span>
+
+                        {node.level && (
+                          <span
+                            className="text-[10px] uppercase ml-2 px-1 rounded hidden group-hover:inline-block group-focus-within:inline-block"
+                            style={{
+                              backgroundColor:
+                                selectedNodeId === node.id
+                                  ? getLevelColors(node.level).primary
+                                  : getLevelColors(node.level).background,
+                              color:
+                                selectedNodeId === node.id
+                                  ? "var(--white)"
+                                  : getLevelColors(node.level).text,
+                            }}
+                          >
+                            {node.level}
+                          </span>
+                        )}
+
+                        {hasChildren && !isReadOnly && (
+                          <button
+                            onClick={(e) => handleSelectChildren(node.id, e)}
+                            className="ml-2 p-1 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded hidden group-hover:flex group-focus-within:flex items-center justify-center transition-colors"
+                            title={t("graphEditor.outline.selectAllChildren")}
+                            aria-label={t("graphEditor.outline.selectAllChildren")}
+                          >
+                            <ListChecks aria-hidden="true" size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }}
+              />
             )}
           </div>
         )}

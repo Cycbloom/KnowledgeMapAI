@@ -326,6 +326,25 @@ export const generateCardsBatchSchema = z.object({
           hard: z.number().int().min(0).max(200).optional(),
         })
         .optional(),
+      // 题型×难度二维数量矩阵（权威配置）：每个非零格子=一次独立 AI 调用，
+      // 优先级高于 cards_per_type / count_per_difficulty
+      count_matrix: z
+        .record(
+          z.enum([
+            "qa",
+            "choice",
+            "true_false",
+            "multi_choice",
+            "fill_in_the_blank",
+            "essay",
+          ]),
+          z.object({
+            easy: z.number().int().min(0).max(200).optional(),
+            medium: z.number().int().min(0).max(200).optional(),
+            hard: z.number().int().min(0).max(200).optional(),
+          }),
+        )
+        .optional(),
     })
     .optional(),
 });

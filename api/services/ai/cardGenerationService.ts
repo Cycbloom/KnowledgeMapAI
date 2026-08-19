@@ -39,6 +39,11 @@ export interface GenerateCardsOptions {
   difficulty?: CardDifficulty;
   language?: string;
   customPrompt?: string;
+  /**
+   * 方案A：库内该知识点已存在的题目题干，注入 prompt 作为 anti-duplicate 约束，
+   * 降低与已有题重复的概率。
+   */
+  existingQuestions?: string[];
 }
 
 class CardGenerationService {
@@ -84,29 +89,50 @@ class CardGenerationService {
     };
 
     const difficultyPrompts: Record<string, string> = {
-      easy: `Difficulty Level: EASY
-- Focus on basic concept recognition and memory recall
-- Questions should directly test knowledge point definitions and basic facts
-- Use straightforward language without complex scenarios
-- For choice questions: distractors should be clearly distinguishable from the correct answer
-- For QA questions: answers should be brief and directly stated in the source material`,
-      medium: `Difficulty Level: MEDIUM
-- Focus on understanding and application of concepts
-- Questions should require comprehension, not just memorization
-- Include simple scenarios or examples to test understanding
-- For choice questions: distractors should be plausible but distinguishable with good understanding
-- For QA questions: answers may require synthesizing information from multiple parts`,
-      hard: `Difficulty Level: HARD
-- Focus on analysis, synthesis, and complex problem-solving
-- Questions should require deep understanding and connecting multiple concepts
-- Include complex scenarios, edge cases, or require multi-step reasoning
-- For choice questions: all options should be plausible, requiring careful analysis
-- For QA questions: answers should demonstrate comprehensive understanding with examples`,
-      mixed: `Difficulty Level: MIXED
-- Generate questions with varying difficulty levels (easy, medium, hard)
-- Distribute difficulty evenly across the generated cards
-- Include a mix of memory recall, understanding, and analytical questions`,
+      easy: `Difficulty Level: EASY (Bloom Level 1-2: Remembering / Understanding)
+Use the source material as the only required knowledge — do NOT import outside facts.
+Anchor criteria (a question is EASY if ANY apply):
+- Remembering: asks to recall a definition, name, term, list, or a directly-stated fact verbatim from the material.
+- Understanding: asks to identify the correct meaning, paraphrase a concept, or pick the statement that correctly restates a sentence in the material.
+Question design:
+- Draw the answer almost verbatim from a single sentence in the source.
+- Use short, plain language; avoid scenario setups longer than one sentence.
+- For choice: distractors must be clearly wrong (wrong term, wrong definition, mis-ordered facts), so the correct answer stands out to a careful recall.
+- For QA/fill-blank: answers should be a term or one short sentence taken directly from the text.
+Do NOT reuse the same sentence for every question in a batch.`,
+      medium: `Difficulty Level: MEDIUM (Bloom Level 3-4: Applying / Analyzing)
+Use the source material as the context; answers may require combining 2-3 facts from different parts of the material.
+Anchor criteria (a question is MEDIUM if ANY apply):
+- Applying: needs using a concept or formula in a slightly novel but concrete example provided in the material.
+- Analyzing: asks to explain cause→effect, compare/contrast two ideas, order steps, or identify why a statement about the material is true/false.
+Question design:
+- Combine information from at least 2 related sentences/sections.
+- Introduce a short concrete scenario (1-3 sentences) that is NOT a verbatim restatement.
+- For choice: distractors should be plausible but break one concept; correct answer requires real understanding to pick.
+- For QA/fill-blank: answers need 1-2 sentences that synthesize across parts of the material.`,
+      hard: `Difficulty Level: HARD (Bloom Level 5-6: Evaluating / Creating)
+Use the source material as the base, but demand higher-order reasoning and multi-step connections.
+Anchor criteria (a question is HARD if ANY apply):
+- Evaluating: asks to judge/critique a claim, weigh trade-offs, or assess which approach is correct given constraints in the material.
+- Creating: asks to design, propose, hypothesize, or apply the material to a novel/unseen case or edge case.
+Question design:
+- Require connecting 3+ ideas across the material, or reasoning about an edge case / boundary condition.
+- Present a realistic complex scenario with implicit distractors (all options plausible at first glance).
+- For choice: all options should look correct; only careful multi-step analysis distinguishes the best answer.
+- For QA/essay: require a structured, multi-part answer (define, reason, example) demonstrating synthesis.`,
+      mixed: `Difficulty Level: MIXED (Bloom Level 1-6, spanning a full cognitive range)
+Generate questions whose difficulty varies across easy / medium / hard.
+- Roughly distribute: easy (remember/understand) ~1/3, medium (apply/analyze) ~1/3, hard (evaluate/create) ~1/3, unless a count target is given.
+- Do not label them all the same difficulty; intentionally span the taxonomy.
+- Anchor each card's difficulty using the rubrics above and ONLY assign the difficulty you actually hit.`,
     };
+
+    // 方案B：要求 AI 对每一题自评难度（sanity check 依据）。对所有非 custom prompt 分支统一追加。
+    const difficultySelfAssessmentInstruction = `For EVERY card you generate, YOU MUST include a "difficulty" field with one of "easy" | "medium" | "hard", self-assessed against this anchored rubric:
+- easy  = Bloom Remembering/Understanding (verbatim recall or direct restatement from the material)
+- medium = Bloom Applying/Analyzing (combines 2-3 facts, short concrete scenario)
+- hard  = Bloom Evaluating/Creating (multi-step connection, edge case, or novel application)
+Assign the difficulty that the card's question ACTUALLY requires to answer — do not force all cards to the same level. The "difficulty" you return is what will be stored, so calibrate it honestly. Provide exactly one of "easy" | "medium" | "hard"; never use other values.`;
 
     const difficulty = options.difficulty || "medium";
     const customPrompt = options.customPrompt ? options.customPrompt.trim() : "";
@@ -156,6 +182,8 @@ class CardGenerationService {
 ${typeRestriction}
 
 ${difficultyInstruction}
+
+${difficultySelfAssessmentInstruction}
 
 Please respond with a valid JSON object.`;
             } else {
@@ -208,6 +236,13 @@ Please respond with a valid JSON object.`;
                   options.graphId,
                   options.language,
                 );
+                if (systemPrompt && systemPrompt.trim().length > 0) {
+                  systemPrompt = `${systemPrompt.trim()}
+
+${difficultySelfAssessmentInstruction}
+
+Please respond with a valid JSON object.`;
+                }
               } else {
                 systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
 
@@ -215,12 +250,30 @@ ${typeRestriction}
 
 ${difficultyInstruction}
 
+${difficultySelfAssessmentInstruction}
+
 Context: ${context || "None"}\n\n${systemPrompt}
 
 Please respond with a valid JSON object.`;
               }
             }
 
+            // 方案A：anti-duplicate —— 库内已有题题干作为约束（统一注入点，三个分支共用）
+            const existingQuestions = (options.existingQuestions || []).filter(
+              (q) => typeof q === "string" && q.trim().length > 0,
+            );
+            if (existingQuestions.length > 0) {
+              const listText = existingQuestions
+                .map((q) => `- ${q.replace(/\s+/g, " ").trim()}`)
+                .join("\n");
+              systemPrompt += `\n\nCRITICAL ANTI-DUPLICATION: The following questions already exist in the user's vault for this topic. DO NOT generate a card that is the same or nearly the same question. Avoid restating the same fact, misconception, or concept in the same wording.\n${listText}`;
+            }
+
+            // 方案E：grounding —— 每题必须携带「原文依据」evidence，并限制拼接进 explanation
+            systemPrompt += `\n\nGROUNDING: Every card MUST include an "evidence" field: the shortest verbatim phrase or sentence from the provided source material that directly supports / contains the answer. If the answer is not grounded in the source, revise the question or answer until it is. Never fabricate facts not present in the source.`;
+
+            // 方案D：重试次数引用（onRetry 递增，驱动温度退火）
+            const attemptRef = { current: 0 };
             const completion = await withTimeoutAndRetry(
               () =>
                 provider.client.chat.completions.create({
@@ -234,12 +287,15 @@ Please respond with a valid JSON object.`;
                     },
                   ],
                   model,
+                  // 方案D：失败重试温度退火，打破低方差重复失败
+                  temperature: 0.4 + attemptRef.current * 0.25,
                   response_format: { type: "json_object" },
                 }),
               {
                 timeout: LONG_TIMEOUT,
                 maxRetries: 3,
                 onRetry: (attempt, error) => {
+                  attemptRef.current = attempt;
                   logger.warn(
                     `Generate Cards retry attempt ${attempt}: ${error.message}`,
                   );

@@ -5,7 +5,13 @@ import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 
-import type { AIProviderType, CardDifficulty } from '@shared/types';
+import {
+  type AIProviderType,
+  type CardDifficulty,
+  cardDifficultyToNumber,
+  cardDifficultyToFsrsInitial,
+  normalizeCardDifficulty,
+} from '@shared/types';
 import { notDeleted } from '../common/softDeleteHelper';
 
 interface BatchGenerateCardsPayload {
@@ -27,6 +33,8 @@ interface BatchGenerateCardsPayload {
       medium?: number;
       hard?: number;
     };
+    /** 题型×难度二维矩阵（权威配置）：每个非零格子=一次独立 AI 调用 */
+    count_matrix?: Record<string, { easy?: number; medium?: number; hard?: number }>;
   };
 }
 
@@ -63,19 +71,13 @@ interface AIGeneratedCard {
   type?: string;
   options?: string[];
   difficulty?: CardDifficulty;
-}
-
-function numericDifficulty(d?: CardDifficulty | string): number {
-  switch (d) {
-    case 'easy': return 1;
-    case 'medium': case 'mixed': default: return 2;
-    case 'hard': return 3;
-  }
+  /** 方案E：AI 返回的「原文依据」，用于锚定答案防幻觉 */
+  evidence?: string;
 }
 
 /**
  * 生成每个节点的 (type, count, difficulty) 任务列表。
- * 优先级 cards_per_type > count_per_difficulty > types×count（或 pack_template 覆盖）
+ * 优先级 count_matrix > cards_per_type > count_per_difficulty > types×count（或 pack_template 覆盖）
  */
 function buildNodeTasks(payload: BatchGenerateCardsPayload): Array<{ type: string; count: number; difficulty: CardDifficulty }> {
   const config = payload.config ?? {};
@@ -104,6 +106,21 @@ function buildNodeTasks(payload: BatchGenerateCardsPayload): Array<{ type: strin
   }
 
   const baseDiff = config.difficulty ?? 'medium';
+  const VALID_TYPES = new Set(['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank', 'essay']);
+  const VALID_DIFFS: ReadonlyArray<CardDifficulty> = ['easy', 'medium', 'hard'];
+
+  // 0) count_matrix：每个非零格子 = 一个独立任务（单题型+单难度）
+  if (config.count_matrix && typeof config.count_matrix === 'object') {
+    const tasks: ReturnType<typeof buildNodeTasks> = [];
+    for (const [type, cell] of Object.entries(config.count_matrix)) {
+      if (!VALID_TYPES.has(type) || !cell || typeof cell !== 'object') continue;
+      for (const diff of VALID_DIFFS) {
+        const v = cell[diff];
+        if (typeof v === 'number' && v > 0) tasks.push({ type, count: v, difficulty: diff });
+      }
+    }
+    if (tasks.length > 0) return tasks;
+  }
 
   // 1) cards_per_type
   if (config.cards_per_type && typeof config.cards_per_type === 'object') {
@@ -115,7 +132,7 @@ function buildNodeTasks(payload: BatchGenerateCardsPayload): Array<{ type: strin
     if (tasks.length > 0) return tasks;
   }
 
-  // 2) count_per_difficulty
+  // 2) count_per_difficulty：每个难度的总数按题型均分（最大余数法），总数不膨胀
   if (config.count_per_difficulty && typeof config.count_per_difficulty === 'object') {
     const diffs: Array<[CardDifficulty, number]> = [];
     (['easy', 'medium', 'hard'] as const).forEach((k) => {
@@ -124,10 +141,15 @@ function buildNodeTasks(payload: BatchGenerateCardsPayload): Array<{ type: strin
     });
     if (diffs.length > 0) {
       const tasks: ReturnType<typeof buildNodeTasks> = [];
-      for (const t of rawTypes) {
-        for (const [d, v] of diffs) tasks.push({ type: t, count: v, difficulty: d });
+      for (const [d, cnt] of diffs) {
+        const base = Math.floor(cnt / rawTypes.length);
+        const remainder = cnt - base * rawTypes.length;
+        rawTypes.forEach((t, idx) => {
+          const c = base + (idx < remainder ? 1 : 0);
+          if (c > 0) tasks.push({ type: t, count: c, difficulty: d });
+        });
       }
-      return tasks;
+      if (tasks.length > 0) return tasks;
     }
   }
 
@@ -190,6 +212,21 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
           content: kp?.content || '',
           level: gn.level,
         };
+      });
+
+      // 方案A：批量查库内已有题题干 → 按节点分组，生成时注入 anti-duplicate 约束
+      const { data: existingRows } = await notDeleted(supabase
+        .from('study_cards')
+        .select('knowledge_point_id, question')
+        .in('knowledge_point_id', node_ids)
+        .limit(500));
+      const existingByNode = new Map<string, string[]>();
+      (existingRows || []).forEach((r) => {
+        if (typeof r.question === 'string' && r.question.trim().length > 0) {
+          const arr = existingByNode.get(r.knowledge_point_id) ?? [];
+          arr.push(r.question);
+          existingByNode.set(r.knowledge_point_id, arr);
+        }
       });
 
       const { data: edges } = await supabase
@@ -268,8 +305,15 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
                   difficulty: t.difficulty ?? globalDifficulty,
                   customPrompt,
                   language,
+                  existingQuestions: existingByNode.get(node.id) ?? [],
                 });
-                return (aiResult.cards || []) as AIGeneratedCard[];
+                const rawCards = (aiResult.cards || []) as AIGeneratedCard[];
+                // 方案B：入库前 normalize AI 自评难度，非法值回退到本任务难度
+                const taskFallback = t.difficulty ?? globalDifficulty;
+                return rawCards.map((card) => ({
+                  ...card,
+                  difficulty: normalizeCardDifficulty(card.difficulty, taskFallback),
+                }));
               }),
             );
             const cards = chunkResults.flat();
@@ -281,14 +325,18 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
                 graph_id: node.graph_id,
                 question: card.question,
                 answer: card.answer,
-                explanation: card.explanation,
+                // 方案E：把 AI 返回的「原文依据」并入 explanation，让答案可追溯、防幻觉
+                explanation: card.evidence
+                  ? [card.explanation, `原文依据：${card.evidence}`].filter(Boolean).join('\n\n')
+                  : card.explanation,
                 card_type: card.type ?? 'qa',
                 options: card.options ? JSON.stringify(card.options) : null,
                 next_review: new Date().toISOString(),
-                difficulty: numericDifficulty(card.difficulty),
+                difficulty: cardDifficultyToNumber(card.difficulty),
                 fsrs_state: 'New' as const,
                 fsrs_stability: 0,
-                fsrs_difficulty: 0,
+                // 方案B：FSRS 初始难度种子（易=3 / 中=5 / 难=7），复习时由 FSRS 自适应更新
+                fsrs_difficulty: cardDifficultyToFsrsInitial(card.difficulty),
                 fsrs_elapsed_days: 0,
                 fsrs_scheduled_days: 0,
                 fsrs_retrievability: 0,

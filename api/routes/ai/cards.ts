@@ -84,13 +84,23 @@ router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchem
 });
 
 /**
- * 把 config（总题数 / cards_per_type / count_per_difficulty）按 node_count 均分，
+ * 把 config（总题数 / cards_per_type / count_per_difficulty / count_matrix）按 node_count 均分，
  * 产出每个节点的 payload.config，保证所有节点合起来 ≈ 用户指定总数，避免膨胀。
  *
- * 语义：count / cards_per_type / count_per_difficulty 都是「所有节点总计」。
+ * 语义：count / cards_per_type / count_per_difficulty / count_matrix 都是「所有节点总计」。
  * 不传入时保持旧行为（每个节点 count=5，兼容存量调用）。
+ *
+ * 关键：当 nodeCount > 用户总量（如 count=5, nodeCount=10）时，base = floor(5/10) = 0，
+ * 调用方的「余数补偿」会把用户总量（5）按格子分配到前 N 个节点上。
+ * 早期实现用 `Math.max(1, base)` 强制每个节点至少 1，会导致总量被放大到 nodeCount（5 张要求变 10 张）。
+ * 这里只做「无膨胀」分摊，是否分到 0 由余数补偿决定。
  */
-function splitConfigAcrossNodes<T extends { count?: number; cards_per_type?: Record<string, number>; count_per_difficulty?: { easy?: number; medium?: number; hard?: number } }>(
+export function splitConfigAcrossNodes<T extends {
+  count?: number;
+  cards_per_type?: Record<string, number>;
+  count_per_difficulty?: { easy?: number; medium?: number; hard?: number };
+  count_matrix?: Record<string, { easy?: number; medium?: number; hard?: number }>;
+}>(
   config: T,
   nodeCount: number,
 ): T {
@@ -100,14 +110,17 @@ function splitConfigAcrossNodes<T extends { count?: number; cards_per_type?: Rec
 
   if (typeof clone.count === "number" && clone.count > 0) {
     const base = Math.floor(clone.count / nodeCount);
-    // 余数会在调用方加到前 `remainder` 个节点上，这里先按 base 算基础
-    clone.count = Math.max(1, base);
+    // 不再强制 Math.max(1, base)——当 nodeCount > count 时 base=0 正确；余数由调用方补到前 N 个节点
+    clone.count = base;
   }
 
   if (clone.cards_per_type && typeof clone.cards_per_type === "object") {
     const splitCardsPerType: Record<string, number> = {};
     for (const [t, v] of Object.entries(clone.cards_per_type)) {
-      if (typeof v === "number" && v > 0) splitCardsPerType[t] = Math.max(1, Math.floor(v / nodeCount));
+      if (typeof v === "number" && v > 0) {
+        // 同上：移除 Math.max(1, …) 避免总量膨胀
+        splitCardsPerType[t] = Math.floor(v / nodeCount);
+      }
     }
     clone.cards_per_type = splitCardsPerType;
   }
@@ -119,6 +132,21 @@ function splitConfigAcrossNodes<T extends { count?: number; cards_per_type?: Rec
     if (typeof src.medium === "number") split.medium = Math.max(0, Math.floor(src.medium / nodeCount));
     if (typeof src.hard === "number") split.hard = Math.max(0, Math.floor(src.hard / nodeCount));
     clone.count_per_difficulty = split;
+  }
+
+  // 题型×难度矩阵：逐格 floor 均分；余数由调用方按格子补偿
+  if (clone.count_matrix && typeof clone.count_matrix === "object") {
+    const splitMatrix: Record<string, { easy?: number; medium?: number; hard?: number }> = {};
+    for (const [t, cell] of Object.entries(clone.count_matrix)) {
+      if (!cell || typeof cell !== "object") continue;
+      const splitCell: { easy?: number; medium?: number; hard?: number } = {};
+      (["easy", "medium", "hard"] as const).forEach((k) => {
+        const v = cell[k];
+        if (typeof v === "number" && v > 0) splitCell[k] = Math.floor(v / nodeCount);
+      });
+      if (Object.keys(splitCell).length > 0) splitMatrix[t] = splitCell;
+    }
+    clone.count_matrix = splitMatrix;
   }
 
   return clone;
@@ -142,6 +170,8 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
       let remainderCount = 0;
       const remainderPerType: Record<string, number> = {};
       const remainderPerDiff: { easy?: number; medium?: number; hard?: number } = {};
+      // 矩阵余数：type -> {diff -> rem}
+      const remainderMatrix: Record<string, { easy?: number; medium?: number; hard?: number }> = {};
       if (typeof config?.count === "number" && config.count > 0) {
         remainderCount = config.count - (baseConfig.count ?? 0) * nodeCount;
       }
@@ -163,6 +193,23 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
           }
         };
         addRem('easy'); addRem('medium'); addRem('hard');
+      }
+      if (config?.count_matrix) {
+        for (const [t, cellRaw] of Object.entries(config.count_matrix)) {
+          if (!cellRaw) continue;
+          const cell = cellRaw as { easy?: number; medium?: number; hard?: number };
+          const baseCell: { easy?: number; medium?: number; hard?: number } = baseConfig.count_matrix?.[t] ?? {};
+          const remCell: { easy?: number; medium?: number; hard?: number } = {};
+          (['easy', 'medium', 'hard'] as const).forEach((k) => {
+            const v = cell[k];
+            if (typeof v === 'number' && v > 0) {
+              const b = Number(baseCell[k] ?? 0);
+              const rem = v - b * nodeCount;
+              if (rem > 0) remCell[k] = rem;
+            }
+          });
+          if (Object.keys(remCell).length > 0) remainderMatrix[t] = remCell;
+        }
       }
 
       for (let i = 0; i < graphNodes.length; i++) {
@@ -192,6 +239,19 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
             }
           };
           apply('easy'); apply('medium'); apply('hard');
+        }
+        // 矩阵余数补偿：每个格子独立按其余数给前 rem 个节点 +1
+        if (nodeConfig.count_matrix) {
+          for (const [t, remCell] of Object.entries(remainderMatrix)) {
+            const target = nodeConfig.count_matrix[t];
+            if (!target) continue;
+            (['easy', 'medium', 'hard'] as const).forEach((k) => {
+              const rem = remCell[k];
+              if (typeof rem === "number" && rem > 0 && i < rem) {
+                target[k] = (target[k] ?? 0) + 1;
+              }
+            });
+          }
         }
 
         const task = await asyncTaskService.createTask(

@@ -7,6 +7,8 @@ export interface GeneratedCard {
   explanation?: string;
   options?: string[];
   correct_indices?: number[];
+  /** 方案B：AI 自评难度（easy/medium/hard），用于 FSRS 初始种子 */
+  difficulty?: "easy" | "medium" | "hard";
 }
 
 export interface GenerateCardsResult {

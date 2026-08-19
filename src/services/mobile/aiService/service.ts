@@ -21,6 +21,85 @@ import {
 import { isValidProvider } from "../aiClient";
 import { logger } from "@/utils/logger";
 import { AppError, SharedErrorCodes } from "@/utils/errors";
+import {
+  cardDifficultyToFsrsInitial,
+  normalizeCardDifficulty,
+} from "@shared/types/quiz";
+
+/**
+ * 方案C：移动端任务分派（对齐后端 buildTasksToRun 优先级）
+ * countMatrix > cardsPerType > countPerDifficulty > types×count
+ * 每个任务 = 一个「单题型 + 单难度」的独立 AI 调用（消除混合生成的格式/数量错误）。
+ */
+function buildMobileTasks(options: {
+  types?: string[];
+  count?: number;
+  countMatrix?: Record<string, { easy?: number; medium?: number; hard?: number }>;
+  cardsPerType?: Record<string, number>;
+  countPerDifficulty?: Record<string, number>;
+  difficulty?: "easy" | "medium" | "hard" | "mixed";
+}): Array<{ type: string; count: number; difficulty: "easy" | "medium" | "hard" }> {
+  const VALID_TYPES = new Set(["qa", "choice", "true_false", "multi_choice", "fill_in_the_blank", "essay"]);
+  const DIFFS: Array<"easy" | "medium" | "hard"> = ["easy", "medium", "hard"];
+  const typesRaw = options.types && options.types.length > 0 ? options.types : ["qa", "choice"];
+  const types = typesRaw.filter((t) => VALID_TYPES.has(t));
+  const baseCount = options.count && options.count > 0 ? options.count : 3;
+
+  // 0) count_matrix：每个非零格子 = 一个独立任务
+  if (options.countMatrix && typeof options.countMatrix === "object") {
+    const tasks: Array<{ type: string; count: number; difficulty: "easy" | "medium" | "hard" }> = [];
+    for (const [type, cell] of Object.entries(options.countMatrix)) {
+      if (!VALID_TYPES.has(type) || !cell || typeof cell !== "object") continue;
+      for (const d of DIFFS) {
+        const v = cell[d];
+        if (typeof v === "number" && v > 0) tasks.push({ type, count: v, difficulty: d });
+      }
+    }
+    if (tasks.length > 0) return tasks;
+  }
+
+  // 1) cards_per_type
+  if (options.cardsPerType && typeof options.cardsPerType === "object") {
+    const entries: Array<{ type: string; count: number; difficulty: "easy" | "medium" | "hard" }> = [];
+    for (const t of types) {
+      const v = options.cardsPerType[t];
+      if (typeof v === "number" && v > 0) entries.push({ type: t, count: v, difficulty: "medium" });
+    }
+    if (entries.length > 0) return entries;
+  }
+
+  // 2) count_per_difficulty：每个难度总数按题型均分（最大余数法），不膨胀
+  if (options.countPerDifficulty && typeof options.countPerDifficulty === "object") {
+    const diffs: Array<{ d: "easy" | "medium" | "hard"; n: number }> = [];
+    for (const d of DIFFS) {
+      const v = options.countPerDifficulty[d];
+      if (typeof v === "number" && v > 0) diffs.push({ d, n: v });
+    }
+    if (diffs.length > 0) {
+      const tasks: Array<{ type: string; count: number; difficulty: "easy" | "medium" | "hard" }> = [];
+      for (const { d, n } of diffs) {
+        const base = Math.floor(n / types.length);
+        const remainder = n - base * types.length;
+        types.forEach((t, idx) => {
+          const c = base + (idx < remainder ? 1 : 0);
+          if (c > 0) tasks.push({ type: t, count: c, difficulty: d });
+        });
+      }
+      if (tasks.length > 0) return tasks;
+    }
+  }
+
+  // 3) 回退：types × count 均分
+  const diff = options.difficulty === "easy" || options.difficulty === "hard" ? options.difficulty : "medium";
+  let remaining = baseCount;
+  const tasks: Array<{ type: string; count: number; difficulty: "easy" | "medium" | "hard" }> = [];
+  for (let i = 0; i < types.length; i++) {
+    const c = Math.ceil(remaining / (types.length - i));
+    remaining -= c;
+    if (c > 0) tasks.push({ type: types[i], count: c, difficulty: diff });
+  }
+  return tasks;
+}
 
 export const mobileAIService = {
   isConfigured: (): boolean => {
@@ -64,6 +143,10 @@ export const mobileAIService = {
       graphId?: string;
       cardsPerType?: Record<string, number>;
       countPerDifficulty?: Record<string, number>;
+      /** 题型×难度二维矩阵：优先于上面两个一维投影，输出精确的目标分布 */
+      countMatrix?: Record<string, { easy?: number; medium?: number; hard?: number }>;
+      /** 方案A：该知识点已存在的题题干，注入提示词防重复 */
+      existingQuestions?: string[];
     } = {},
   ): Promise<GenerateCardsResult> => {
     const client = createAIClient();
@@ -86,18 +169,33 @@ export const mobileAIService = {
     const graphId = options.graphId;
     const cardsPerType = options.cardsPerType;
     const countPerDifficulty = options.countPerDifficulty;
+    const countMatrix = options.countMatrix;
 
     const typeRestriction =
       types.length === 1
         ? `CRITICAL: ONLY generate cards of type '${types[0]}'. DO NOT generate any other types.`
         : `Allowed card types: ${types.join(", ")}. Only generate these types.`;
 
-    // 新增：矩阵分布信息（如果有），用于把「每题型/每难度 数量」传递给模型
+    // 矩阵分布信息：优先输出完整二维矩阵（精确），否则退化到一维投影
     let matrixInfo = "";
-    if (cardsPerType && Object.keys(cardsPerType).length > 0) {
+    if (countMatrix && Object.keys(countMatrix).length > 0) {
+      // 只保留非零格，给模型一个干净的分布表
+      const clean: Record<string, { easy?: number; medium?: number; hard?: number }> = {};
+      for (const [t, d] of Object.entries(countMatrix)) {
+        const cell: { easy?: number; medium?: number; hard?: number } = {};
+        if ((d.easy ?? 0) > 0) cell.easy = d.easy;
+        if ((d.medium ?? 0) > 0) cell.medium = d.medium;
+        if ((d.hard ?? 0) > 0) cell.hard = d.hard;
+        if (Object.keys(cell).length > 0) clean[t] = cell;
+      }
+      if (Object.keys(clean).length > 0) {
+        matrixInfo += `Exact type×difficulty target (authoritative, generate EXACTLY these counts):\n${JSON.stringify(clean)}\n`;
+      }
+    }
+    if (!matrixInfo && cardsPerType && Object.keys(cardsPerType).length > 0) {
       matrixInfo += `Per-type count target: ${JSON.stringify(cardsPerType)}\n`;
     }
-    if (countPerDifficulty && Object.keys(countPerDifficulty).length > 0) {
+    if (!matrixInfo && countPerDifficulty && Object.keys(countPerDifficulty).length > 0) {
       matrixInfo += `Per-difficulty count target: ${JSON.stringify(countPerDifficulty)}\n`;
     }
 
@@ -179,6 +277,17 @@ Important:
       }
     }
 
+    // 方案A：库内已有题题干 → 注入 anti-duplicate 约束，降低与已有题重复概率
+    const existingQuestions = (options.existingQuestions || []).filter(
+      (q) => typeof q === "string" && q.trim().length > 0,
+    );
+    if (existingQuestions.length > 0) {
+      const listText = existingQuestions
+        .map((q) => `- ${q.replace(/\s+/g, " ").trim()}`)
+        .join("\n");
+      systemPrompt += `\n\nCRITICAL ANTI-DUPLICATION: The following questions already exist for this topic. DO NOT generate a card that is the same or nearly the same question. Avoid restating the same fact or concept in the same wording.\n${listText}`;
+    }
+
     const messages = [
       { role: "system" as const, content: systemPrompt },
       {
@@ -234,25 +343,31 @@ Important:
       throw authError;
     }
 
-    const cardsToInsert = cards.map((card) => ({
-      user_id: user.id,
-      knowledge_point_id: knowledgePointId,
-      graph_id: graphId,
-      source_graph_id: graphId,
-      question: card.question,
-      answer: card.answer,
-      explanation: card.explanation || null,
-      card_type: card.type,
-      options: card.options || null,
-      next_review: new Date().toISOString(),
-      difficulty: 1,
-      fsrs_state: "New",
-      fsrs_stability: 0,
-      fsrs_difficulty: 0,
-      fsrs_elapsed_days: 0,
-      fsrs_scheduled_days: 0,
-      fsrs_retrievability: 0,
-    }));
+    const cardsToInsert = cards.map((card) => {
+      // 方案B：入库前用 AI 自评难度做 sanity check，非法/缺失回退 medium
+      const diff = normalizeCardDifficulty(card.difficulty);
+      return {
+        user_id: user.id,
+        knowledge_point_id: knowledgePointId,
+        graph_id: graphId,
+        source_graph_id: graphId,
+        question: card.question,
+        answer: card.answer,
+        explanation: card.explanation || null,
+        card_type: card.type,
+        options: card.options || null,
+        next_review: new Date().toISOString(),
+        difficulty:
+          diff === "easy" ? 1 : diff === "hard" ? 3 : 2,
+        // 方案B：FSRS 初始难度种子（易=3 / 中=5 / 难=7），复习时由 FSRS 自适应更新
+        fsrs_state: "New",
+        fsrs_stability: 0,
+        fsrs_difficulty: cardDifficultyToFsrsInitial(diff),
+        fsrs_elapsed_days: 0,
+        fsrs_scheduled_days: 0,
+        fsrs_retrievability: 0,
+      };
+    });
 
     const { data, error } = await client
       .from("study_cards")
@@ -291,6 +406,8 @@ Important:
       cardsPerType?: Record<string, number>;
       /** 难度 -> 数量，移动端作为 prompt 上下文与分派依据 */
       countPerDifficulty?: Record<string, number>;
+      /** 题型×难度二维矩阵：优先于上面两个一维投影（透传给 generateCards） */
+      countMatrix?: Record<string, { easy?: number; medium?: number; hard?: number }>;
     } = {},
   ): Promise<{
     success: boolean;
@@ -316,26 +433,79 @@ Important:
       }
     }
 
-    const result = await mobileAIService.generateCards(topic, content, {
-      ...options,
-      userId,
-      graphId,
-    });
+    // 方案A：库内该知识点已有题题干 → 传给每个生成单元做 anti-duplicate 约束
+    let existingQuestions: string[] = [];
+    if (supabase) {
+      try {
+        const { data: existingRows, error: qError } = await supabase
+          .from("study_cards")
+          .select("question")
+          .eq("knowledge_point_id", knowledgePointId)
+          .limit(30);
+        if (!qError) {
+          existingQuestions = (existingRows || [])
+            .map((r) => (r as { question?: string }).question)
+            .filter((q): q is string => typeof q === "string" && q.trim().length > 0);
+        }
+      } catch (error) {
+        logger.warn(
+          "[MobileAIService.generateAndSaveCards] 查询已有题目失败:",
+          error,
+        );
+      }
+    }
 
-    if (result.cards.length === 0) {
-      return { success: false, cards: [], savedCount: 0 };
+    // 方案C：按题型×难度拆分为多个独立 AI 调用（消除混合生成的格式/数量错误），
+    // 客户端并发 2 执行，每个任务使用「单题型 + 单难度」
+    const tasks = buildMobileTasks(options);
+    const CONCURRENCY = 2;
+    const allCards: GeneratedCard[] = [];
+    const errors: string[] = [];
+
+    const runTask = async (t: { type: string; count: number; difficulty: "easy" | "medium" | "hard" }) => {
+      try {
+        const r = await mobileAIService.generateCards(topic, content, {
+          types: [t.type],
+          count: t.count,
+          difficulty: t.difficulty,
+          coverage: options.coverage,
+          customPrompt: options.customPrompt,
+          userId,
+          graphId,
+          existingQuestions,
+        });
+        if (r.cards && r.cards.length > 0) allCards.push(...r.cards);
+      } catch (e) {
+        logger.warn(`[MobileAIService.generateAndSaveCards] 生成 ${t.type}[${t.difficulty}] 失败:`, e);
+        errors.push(`${t.type}[${t.difficulty}]`);
+      }
+    };
+
+    for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+      const chunk = tasks.slice(i, i + CONCURRENCY);
+      await Promise.all(chunk.map(runTask));
+    }
+
+    if (allCards.length === 0) {
+      const generateError: AICardGenError = {
+        type: "invalid_response",
+        message: "AI 未能生成任何题目",
+        suggestion: `已尝试 ${tasks.length} 个生成单元。请检查内容与配置后重试。`,
+        retryable: true,
+      };
+      throw generateError;
     }
 
     try {
       const saveResult = await mobileAIService.saveCardsToStudyCards(
-        result.cards,
+        allCards,
         knowledgePointId,
         graphId,
       );
 
       return {
         success: saveResult.success,
-        cards: result.cards,
+        cards: allCards,
         savedCount: saveResult.count,
       };
     } catch (saveError) {
@@ -346,7 +516,7 @@ Important:
       const dbError: AICardGenError = {
         type: "database_error",
         message: "数据库写入失败",
-        suggestion: `题目已生成 ${result.cards.length} 道，但保存失败。请检查网络后重试。`,
+        suggestion: `题目已生成 ${allCards.length} 道，但保存失败。请检查网络后重试。`,
         retryable: true,
       };
       throw dbError;

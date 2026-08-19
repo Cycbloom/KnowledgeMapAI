@@ -51,6 +51,61 @@
       }
     }
   },
+  "coverageSelector": {
+    "title": "Knowledge coverage",
+    "currentOnly": {
+      "label": "Current node only",
+      "description": "Only generate cards for selected knowledge points"
+    },
+    "withChildren": {
+      "label": "With children",
+      "description": "Include current node plus its child nodes"
+    },
+    "withSiblings": {
+      "label": "With siblings",
+      "description": "Include current node plus its sibling nodes"
+    },
+    "graph": {
+      "label": "Entire graph",
+      "description": "Generate cards for all knowledge points in the graph"
+    },
+    "nodeCount": "{{count}} knowledge points"
+  },
+  "generateCardsModal": {
+    "title": "Generate Practice Cards",
+    "subtitle": "Generate AI cards for \"{{node}}\"",
+    "cardTypes": "Card Types",
+    "cardCount": "Total Count",
+    "perTypeCount": "Per-Type Count",
+    "difficulty": "Difficulty",
+    "advanced": "Advanced",
+    "advancedDesc": "Customize the AI prompt (optional)",
+    "customPrompt": "Custom Prompt",
+    "customPromptHelp": "Placeholders: {{types}} {{count}} {{difficulty}} {{coverage}} {{topic}} {{content}}",
+    "preview": "Prompt Preview",
+    "previewEmpty": "(No custom prompt, using the default template)",
+    "applyDefault": "Restore Default Prompt",
+    "useAsDefault": "Save as Global Default",
+    "openPromptConfig": "Open Prompt Settings",
+    "copyPreview": "Copy preview",
+    "copied": "Copied",
+    "targetCountHint": "Generating for {{count}} knowledge points in total",
+    "typeLabel": {
+      "qa": "Q&A",
+      "choice": "Choice",
+      "multi_choice": "Multi-Choice",
+      "true_false": "T/F",
+      "fill_in_the_blank": "Fill-Blank",
+      "essay": "Essay"
+    },
+    "cancel": "Cancel",
+    "start": "Start Generate",
+    "generating": "Generating...",
+    "progress": "Progress {{current}} / {{total}}",
+    "noTypesSelected": "Select at least one card type",
+    "zeroCount": "Count must be greater than 0"
+  },
+  "defaultPrompt": "You are an educational expert. Generate {{count}} flashcards based on the provided topic.\n\nDifficulty: {{difficulty}}\nCoverage: {{coverage}}\nAllowed card types: {{types}}\n\nOutput format (JSON):\n{\n  \"cards\": [\n    {\n      \"type\": \"qa|choice|true_false|multi_choice|fill_in_the_blank|essay\",\n      \"question\": \"The question text\",\n      \"answer\": \"The answer text\",\n      \"explanation\": \"Optional explanation\",\n      \"difficulty\": \"easy|medium|hard\",\n      \"options\": [\"option1\", \"option2\", \"option3\", \"option4\"],\n      \"correct_indices\": [0]\n    }\n  ]\n}",
   "knowledgePointSelector": {
     "treeLabel": "Knowledge point selection tree",
     "searchPlaceholder": "Search knowledge points...",

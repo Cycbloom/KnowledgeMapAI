@@ -38,6 +38,7 @@ export interface GenerateCardsOptions {
   pack_type?: string;
   difficulty?: CardDifficulty;
   language?: string;
+  customPrompt?: string;
 }
 
 class CardGenerationService {
@@ -108,6 +109,7 @@ class CardGenerationService {
     };
 
     const difficulty = options.difficulty || "medium";
+    const customPrompt = options.customPrompt ? options.customPrompt.trim() : "";
 
     try {
       return await dedupedRequest(requestKey, async () => {
@@ -124,62 +126,90 @@ class CardGenerationService {
             },
           },
           async () => {
-            const typeToPromptCode: Record<string, string> = {
-              qa: "generate_cards_qa",
-              choice: "generate_cards_choice",
-              true_false: "generate_cards_true_false",
-              multi_choice: "generate_cards_multi_choice",
-              fill_in_the_blank: "generate_cards_fill_blank",
-              essay: "generate_cards_essay",
+            // 若传入自定义提示词，优先使用（允许占位符替换）
+            const renderContext: Record<string, unknown> = {
+              types: types.join(", "),
+              allowedTypes: types.join(", "),
+              count,
+              difficulty,
+              context: context ? `Parent/Context Info: ${context}` : "",
+              topic,
+              content: content || "No detailed content provided.",
             };
-            const promptParts = await Promise.all(
-              types.map(async (type) => {
-                const code = typeToPromptCode[type] ?? `generate_cards_${type}`;
-                const rendered = await promptService.getRenderedPrompt(
+            const typeRestriction =
+              types.length === 1
+                ? `CRITICAL: ONLY generate cards of type '${types[0]}'. DO NOT generate any other types.`
+                : `Allowed card types: ${types.join(", ")}. Only generate these types.`;
+
+            let systemPrompt = "";
+
+            if (customPrompt.length > 0) {
+              // 用户自定义提示词：渲染占位符，追加类型约束、难度指令、JSON schema 与语言提示
+              let base = customPrompt;
+              for (const [k, v] of Object.entries(renderContext)) {
+                base = base.split(`{{${k}}}`).join(String(v ?? ""));
+              }
+              const difficultyInstruction =
+                difficultyPrompts[difficulty] || difficultyPrompts.medium;
+              systemPrompt = `${base}
+
+${typeRestriction}
+
+${difficultyInstruction}
+
+Please respond with a valid JSON object.`;
+            } else {
+              const typeToPromptCode: Record<string, string> = {
+                qa: "generate_cards_qa",
+                choice: "generate_cards_choice",
+                true_false: "generate_cards_true_false",
+                multi_choice: "generate_cards_multi_choice",
+                fill_in_the_blank: "generate_cards_fill_blank",
+                essay: "generate_cards_essay",
+              };
+              const promptParts = await Promise.all(
+                types.map(async (type) => {
+                  const code = typeToPromptCode[type] ?? `generate_cards_${type}`;
+                  const rendered = await promptService.getRenderedPrompt(
+                    getSupabaseAdmin(),
+                    code,
+                    { count: Math.ceil(count / types.length), difficulty },
+                    options.userId,
+                    options.graphId,
+                    options.language,
+                  );
+
+                  if (rendered && rendered.trim().length > 0) {
+                    return rendered;
+                  }
+
+                  return typePrompts[type] || "";
+                }),
+              );
+
+              systemPrompt = promptParts
+                .filter((p) => p.length > 0)
+                .join("\n\n---\n\n");
+
+              const difficultyInstruction =
+                difficultyPrompts[difficulty] || difficultyPrompts.medium;
+
+              if (!systemPrompt.trim()) {
+                systemPrompt = await promptService.getRenderedPrompt(
                   getSupabaseAdmin(),
-                  code,
-                  { count: Math.ceil(count / types.length), difficulty },
+                  "generate_cards",
+                  {
+                    count,
+                    allowedTypes: types.join(", "),
+                    context: context ? `Parent/Context Info: ${context}` : "",
+                    difficulty,
+                  },
                   options.userId,
                   options.graphId,
                   options.language,
                 );
-
-                if (rendered && rendered.trim().length > 0) {
-                  return rendered;
-                }
-
-                return typePrompts[type] || "";
-              }),
-            );
-
-            let systemPrompt = promptParts
-              .filter((p) => p.length > 0)
-              .join("\n\n---\n\n");
-
-            const difficultyInstruction =
-              difficultyPrompts[difficulty] || difficultyPrompts.medium;
-
-            if (!systemPrompt.trim()) {
-              systemPrompt = await promptService.getRenderedPrompt(
-                getSupabaseAdmin(),
-                "generate_cards",
-                {
-                  count,
-                  allowedTypes: types.join(", "),
-                  context: context ? `Parent/Context Info: ${context}` : "",
-                  difficulty,
-                },
-                options.userId,
-                options.graphId,
-                options.language,
-              );
-            } else {
-              const typeRestriction =
-                types.length === 1
-                  ? `CRITICAL: ONLY generate cards of type '${types[0]}'. DO NOT generate any other types.`
-                  : `Allowed card types: ${types.join(", ")}. Only generate these types.`;
-
-              systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
+              } else {
+                systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
 
 ${typeRestriction}
 
@@ -188,6 +218,7 @@ ${difficultyInstruction}
 Context: ${context || "None"}\n\n${systemPrompt}
 
 Please respond with a valid JSON object.`;
+              }
             }
 
             const completion = await withTimeoutAndRetry(

@@ -221,6 +221,11 @@ export const aiApi: IAiApi = {
       provider?: string;
       model?: string;
       language?: string;
+      difficulty?: 'easy' | 'medium' | 'hard' | 'mixed';
+      coverage?: 'current_only' | 'with_children' | 'with_siblings' | 'graph';
+      custom_prompt?: string;
+      cards_per_type?: Record<string, number>;
+      count_per_difficulty?: { easy?: number; medium?: number; hard?: number };
     },
   ) => {
     const payloadConfig = injectAIConfig(

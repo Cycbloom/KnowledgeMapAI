@@ -51,6 +51,61 @@
       }
     }
   },
+  "coverageSelector": {
+    "title": "知识覆盖范围",
+    "currentOnly": {
+      "label": "仅当前节点",
+      "description": "仅为选中的知识点生成题目"
+    },
+    "withChildren": {
+      "label": "含子节点",
+      "description": "包含当前节点及其下属子节点"
+    },
+    "withSiblings": {
+      "label": "含兄弟节点",
+      "description": "包含当前节点及其同级节点"
+    },
+    "graph": {
+      "label": "整个图谱",
+      "description": "对当前图谱中全部知识点生成题目"
+    },
+    "nodeCount": "共 {{count}} 个知识点"
+  },
+  "generateCardsModal": {
+    "title": "生成练习题",
+    "subtitle": "为「{{node}}」生成 AI 练习题",
+    "cardTypes": "题型选择",
+    "cardCount": "总数量",
+    "perTypeCount": "各题型数量",
+    "difficulty": "难度",
+    "advanced": "高级配置",
+    "advancedDesc": "自定义 AI 生成提示词（可选）",
+    "customPrompt": "自定义提示词",
+    "customPromptHelp": "可用占位符：{{types}} {{count}} {{difficulty}} {{coverage}} {{topic}} {{content}}",
+    "preview": "提示词预览",
+    "previewEmpty": "（暂无自定义提示词，当前使用默认模板）",
+    "applyDefault": "恢复默认提示词",
+    "useAsDefault": "存为全局默认",
+    "openPromptConfig": "前往提示词设置",
+    "copyPreview": "复制预览",
+    "copied": "已复制",
+    "targetCountHint": "本次共针对 {{count}} 个知识点生成题目",
+    "typeLabel": {
+      "qa": "问答",
+      "choice": "单选",
+      "multi_choice": "多选",
+      "true_false": "判断",
+      "fill_in_the_blank": "填空",
+      "essay": "论述"
+    },
+    "cancel": "取消",
+    "start": "开始生成",
+    "generating": "生成中...",
+    "progress": "进度 {{current}} / {{total}}",
+    "noTypesSelected": "请至少选择一种题型",
+    "zeroCount": "题目数量需大于 0"
+  },
+  "defaultPrompt": "You are an educational expert. Generate {{count}} flashcards based on the provided topic.\n\nDifficulty: {{difficulty}}\nCoverage: {{coverage}}\nAllowed card types: {{types}}\n\nOutput format (JSON):\n{\n  \"cards\": [\n    {\n      \"type\": \"qa|choice|true_false|multi_choice|fill_in_the_blank|essay\",\n      \"question\": \"The question text\",\n      \"answer\": \"The answer text\",\n      \"explanation\": \"Optional explanation\",\n      \"difficulty\": \"easy|medium|hard\",\n      \"options\": [\"option1\", \"option2\", \"option3\", \"option4\"],\n      \"correct_indices\": [0]\n    }\n  ]\n}",
   "knowledgePointSelector": {
     "treeLabel": "知识点选择树",
     "searchPlaceholder": "搜索知识点...",

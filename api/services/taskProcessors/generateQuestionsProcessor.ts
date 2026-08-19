@@ -6,18 +6,29 @@ import { cacheService, CacheKeys } from '../common/cacheService';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 
-import type { AIProviderType } from '@shared/types';
+import type { AIProviderType, CardDifficulty } from '@shared/types';
 import { notDeleted } from '../common/softDeleteHelper';
 
 interface GenerateQuestionsPayload {
   knowledge_point_id: string;
   node_title: string;
   node_content?: string;
+  graph_id?: string;
   config?: {
     types?: string[];
     count?: number;
     provider?: string;
     model?: string;
+    difficulty?: CardDifficulty;
+    coverage?: 'current_only' | 'with_children' | 'with_siblings' | 'graph';
+    custom_prompt?: string;
+    language?: string;
+    cards_per_type?: Record<string, number>;
+    count_per_difficulty?: {
+      easy?: number;
+      medium?: number;
+      hard?: number;
+    };
   };
   provider?: string;
   model?: string;
@@ -29,6 +40,86 @@ interface AIGeneratedCard {
   explanation?: string;
   type?: string;
   options?: string[];
+  difficulty?: CardDifficulty;
+}
+
+/**
+ * 1) 优先 cards_per_type：按题型独立分配数量（若用户在 UI 填了题型数量矩阵）
+ * 2) 否则用 count_per_difficulty：按难度分配，默认 types 扩展到每一种；
+ *    processor 里只取总题数做 AI 调用（我们通过 difficulty/mixed 传递混合比例，
+ *    若需要更精细，可在 tasksToRun 按「题型 × 难度」并发）。
+ * 3) 否则退回 totalCount（count）：按 types 均分
+ */
+function buildTasksToRun(payload: GenerateQuestionsPayload): {
+  tasks: Array<{ type: string; count: number; difficulty?: CardDifficulty }>;
+  totalCount: number;
+  effectiveDifficulty: CardDifficulty | 'mixed';
+} {
+  const config = payload.config ?? {};
+  const types =
+    config.types && Array.isArray(config.types) && config.types.length > 0
+      ? config.types
+      : ['qa', 'choice'];
+  const totalCountFallback = config.count ?? 5;
+
+  // 1) cards_per_type：直接以该映射为准（只保留选中的 types，数量≥1）
+  if (config.cards_per_type && typeof config.cards_per_type === 'object') {
+    const entries: Array<[string, number]> = [];
+    for (const t of types) {
+      const v = config.cards_per_type[t];
+      if (typeof v === 'number' && v > 0) entries.push([t, v]);
+    }
+    if (entries.length > 0) {
+      const total = entries.reduce((s, [, v]) => s + v, 0);
+      return {
+        tasks: entries.map(([type, count]) => ({ type, count, difficulty: config.difficulty ?? 'medium' })),
+        totalCount: total,
+        effectiveDifficulty: config.difficulty ?? 'medium',
+      };
+    }
+  }
+
+  // 2) count_per_difficulty：在「全局难度 mixed / custom」时启用：把 easy/medium/hard 分配到每一个 type 并发
+  if (
+    config.count_per_difficulty &&
+    typeof config.count_per_difficulty === 'object'
+  ) {
+    const diffs: Array<[CardDifficulty, number]> = [];
+    (['easy', 'medium', 'hard'] as const).forEach((k) => {
+      const v = config.count_per_difficulty?.[k];
+      if (typeof v === 'number' && v > 0) diffs.push([k, v]);
+    });
+    if (diffs.length > 0) {
+      const tasks: Array<{ type: string; count: number; difficulty: CardDifficulty }> = [];
+      for (const type of types) {
+        for (const [diff, cnt] of diffs) {
+          if (cnt > 0) tasks.push({ type, count: cnt, difficulty: diff });
+        }
+      }
+      const total = tasks.reduce((s, t) => s + t.count, 0);
+      return {
+        tasks,
+        totalCount: total,
+        effectiveDifficulty: 'mixed',
+      };
+    }
+  }
+
+  // 3) 回退：types × totalCount 均分
+  let remaining = totalCountFallback;
+  const tasks: Array<{ type: string; count: number; difficulty?: CardDifficulty }> = [];
+  for (let i = 0; i < types.length; i++) {
+    const countPerType = Math.ceil(remaining / (types.length - i));
+    remaining -= countPerType;
+    if (countPerType > 0) {
+      tasks.push({ type: types[i], count: countPerType, difficulty: config.difficulty ?? 'medium' });
+    }
+  }
+  return {
+    tasks,
+    totalCount: totalCountFallback,
+    effectiveDifficulty: config.difficulty ?? 'medium',
+  };
 }
 
 export class GenerateQuestionsProcessor implements TaskProcessor {
@@ -54,34 +145,24 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
         .eq('knowledge_point_id', node_id)
         )
         .single();
-      const graph_id = graphNodeData?.graph_id;
+      const graph_id = payload.graph_id || graphNodeData?.graph_id;
 
       const MAX_CONTENT_LENGTH = 15000;
       const truncatedContent = node_content
         ? node_content.substring(0, MAX_CONTENT_LENGTH)
         : '';
 
-      const types =
-        config?.types && Array.isArray(config.types) && config.types.length > 0
-          ? config.types
-          : ['qa', 'choice'];
-      const totalRequestCount = config?.count || 5;
       const provider = config?.provider || payload.provider;
       const model = config?.model || payload.model;
+      const language = config?.language;
+      const customPrompt = config?.custom_prompt;
 
-      let remainingCount = totalRequestCount;
-      const tasksToRun: { type: string; count: number }[] = [];
-
-      for (let i = 0; i < types.length; i++) {
-        const countPerType = Math.ceil(remainingCount / (types.length - i));
-        remainingCount -= countPerType;
-        if (countPerType > 0) {
-          tasksToRun.push({ type: types[i], count: countPerType });
-        }
-      }
+      const { tasks: tasksToRun, totalCount: totalRequestCount, effectiveDifficulty } = buildTasksToRun(payload);
 
       logger.debug(
-        `Generating questions for node ${node_title}. Types: ${types.join(',')}, Total: ${totalRequestCount}`,
+        `Generating questions for node ${node_title}. Total: ${totalRequestCount}, effectiveDifficulty=${effectiveDifficulty}, tasks=${tasksToRun
+          .map((t) => `${t.type}×${t.count}[${t.difficulty ?? '-'}]`)
+          .join(' | ')}`,
       );
 
       const CONCURRENCY = 3;
@@ -90,9 +171,11 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
       const processType = async ({
         type,
         count,
+        difficulty,
       }: {
         type: string;
         count: number;
+        difficulty?: CardDifficulty;
       }) => {
         try {
           const aiResult = await aiService.generateCards(
@@ -103,6 +186,11 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
               count,
               provider: provider as AIProviderType | undefined,
               model,
+              userId,
+              graphId: graph_id,
+              difficulty: difficulty ?? effectiveDifficulty,
+              customPrompt,
+              language,
             },
           );
           const cards = (aiResult.cards || []) as AIGeneratedCard[];
@@ -118,7 +206,7 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
               card_type: card.type ?? type,
               options: card.options ? JSON.stringify(card.options) : null,
               next_review: new Date().toISOString(),
-              difficulty: 1,
+              difficulty: this.toNumericDifficulty(card.difficulty ?? difficulty ?? effectiveDifficulty),
               fsrs_state: "New",
               fsrs_stability: 0,
               fsrs_difficulty: 0,
@@ -149,10 +237,12 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
           errors.push(`Failed to generate ${type}: ${errMsg}`);
         } finally {
           completedTasks++;
-          const progress = Math.round((completedTasks / tasksToRun.length) * 100);
+          const progress = tasksToRun.length
+            ? Math.round((completedTasks / tasksToRun.length) * 100)
+            : 100;
           await updateTaskStatus(supabase, taskId, 'in_progress', {
             progress,
-            current_node: `正在生成 ${this.getTypeName(type)}...`,
+            current_node: `正在生成 ${this.getTypeName(type)}${difficulty ? `·${this.getDiffName(difficulty)}` : ''}...`,
           }, undefined, undefined, userId);
         }
       };
@@ -175,6 +265,7 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
         count: totalCount,
         progress: 100,
         errors: errors.length > 0 ? errors : undefined,
+        total_requested: totalRequestCount,
       }, undefined, undefined, userId);
 
     } catch (error: unknown) {
@@ -194,6 +285,23 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
       essay: '解答题',
     };
     return map[type] || type;
+  }
+
+  private getDiffName(d: string): string {
+    return { easy: '简单', medium: '中等', hard: '困难', mixed: '混合' }[d] ?? d;
+  }
+
+  private toNumericDifficulty(d?: CardDifficulty | string): number {
+    switch (d) {
+      case 'easy':
+        return 1;
+      case 'medium':
+      case 'mixed':
+      default:
+        return 2;
+      case 'hard':
+        return 3;
+    }
   }
 }
 

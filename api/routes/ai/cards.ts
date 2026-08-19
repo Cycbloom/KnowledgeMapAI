@@ -20,7 +20,7 @@ import { logger } from '../../utils/logger';
 const router = Router();
 
 router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async (req: AuthedRequest, res: Response) => {
-  const { node_title, node_content, count, types, provider, model, graph_id } = req.body;
+  const { node_title, node_content, count, types, provider, model, difficulty, custom_prompt, language, graph_id } = req.body;
 
   try {
     const aiResult = await aiService.generateCards(node_title, node_content, { 
@@ -29,7 +29,10 @@ router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async
       provider, 
       model,
       userId: req.user.id,
-      graphId: graph_id
+      graphId: graph_id,
+      difficulty,
+      customPrompt: custom_prompt,
+      language: language ?? undefined,
     });
     res.json({ cards: aiResult.cards || [] });
   } catch (error: unknown) {
@@ -43,7 +46,9 @@ const syncGenerateCardsSchema = z.object({
   node_ids: z.array(z.string().uuid()).min(1),
   config: z.object({
     types: z.array(z.string()).optional(),
-    count: z.number().min(1).max(20).optional(),
+    count: z.number().min(1).max(50).optional(),
+    difficulty: z.enum(["easy", "medium", "hard", "mixed"]).optional(),
+    custom_prompt: z.string().max(10000).optional(),
   }).optional(),
   provider: z.string().optional(),
   model: z.string().optional(),
@@ -78,6 +83,47 @@ router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchem
   }
 });
 
+/**
+ * 把 config（总题数 / cards_per_type / count_per_difficulty）按 node_count 均分，
+ * 产出每个节点的 payload.config，保证所有节点合起来 ≈ 用户指定总数，避免膨胀。
+ *
+ * 语义：count / cards_per_type / count_per_difficulty 都是「所有节点总计」。
+ * 不传入时保持旧行为（每个节点 count=5，兼容存量调用）。
+ */
+function splitConfigAcrossNodes<T extends { count?: number; cards_per_type?: Record<string, number>; count_per_difficulty?: { easy?: number; medium?: number; hard?: number } }>(
+  config: T,
+  nodeCount: number,
+): T {
+  if (nodeCount <= 1) return config;
+
+  const clone = { ...config };
+
+  if (typeof clone.count === "number" && clone.count > 0) {
+    const base = Math.floor(clone.count / nodeCount);
+    // 余数会在调用方加到前 `remainder` 个节点上，这里先按 base 算基础
+    clone.count = Math.max(1, base);
+  }
+
+  if (clone.cards_per_type && typeof clone.cards_per_type === "object") {
+    const splitCardsPerType: Record<string, number> = {};
+    for (const [t, v] of Object.entries(clone.cards_per_type)) {
+      if (typeof v === "number" && v > 0) splitCardsPerType[t] = Math.max(1, Math.floor(v / nodeCount));
+    }
+    clone.cards_per_type = splitCardsPerType;
+  }
+
+  if (clone.count_per_difficulty && typeof clone.count_per_difficulty === "object") {
+    const src = clone.count_per_difficulty;
+    const split: typeof src = {};
+    if (typeof src.easy === "number") split.easy = Math.max(0, Math.floor(src.easy / nodeCount));
+    if (typeof src.medium === "number") split.medium = Math.max(0, Math.floor(src.medium / nodeCount));
+    if (typeof src.hard === "number") split.hard = Math.max(0, Math.floor(src.hard / nodeCount));
+    clone.count_per_difficulty = split;
+  }
+
+  return clone;
+}
+
 router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSchema), async (req: AuthedRequest, res: Response) => {
   const { node_ids, config } = req.body;
 
@@ -88,7 +134,66 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
     const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(supabase, node_ids);
 
     if (graphNodes && graphNodes.length > 0) {
-      for (const gn of graphNodes) {
+      const nodeCount = graphNodes.length;
+      // 每个节点的基础均分 config；余数（remainder）分配给前 `remainder` 个节点，避免总数偏差
+      const baseConfig = splitConfigAcrossNodes(config ?? {}, nodeCount);
+
+      // 计算各类「余数」用于前几个节点补偿
+      let remainderCount = 0;
+      const remainderPerType: Record<string, number> = {};
+      const remainderPerDiff: { easy?: number; medium?: number; hard?: number } = {};
+      if (typeof config?.count === "number" && config.count > 0) {
+        remainderCount = config.count - (baseConfig.count ?? 0) * nodeCount;
+      }
+      if (config?.cards_per_type) {
+        for (const [t, v] of Object.entries(config.cards_per_type)) {
+          const base = Number(baseConfig.cards_per_type?.[t] ?? 0);
+          const rem = Number(v ?? 0) - base * nodeCount;
+          if (rem > 0) remainderPerType[t] = rem;
+        }
+      }
+      if (config?.count_per_difficulty) {
+        const src = config.count_per_difficulty;
+        const base = baseConfig.count_per_difficulty ?? {};
+        const addRem = (key: 'easy'|'medium'|'hard') => {
+          if (typeof src[key] === 'number') {
+            const b = Number(base[key] ?? 0);
+            const rem = (src[key] as number) - b * nodeCount;
+            if (rem > 0) remainderPerDiff[key] = rem;
+          }
+        };
+        addRem('easy'); addRem('medium'); addRem('hard');
+      }
+
+      for (let i = 0; i < graphNodes.length; i++) {
+        const gn = graphNodes[i];
+        const nodeConfig: typeof baseConfig & { count?: number; cards_per_type?: Record<string, number>; count_per_difficulty?: { easy?: number; medium?: number; hard?: number } } =
+          structuredClone ? structuredClone(baseConfig) : JSON.parse(JSON.stringify(baseConfig));
+
+        // 把余数加到前 N 个节点（N = 余数大小）
+        if (typeof nodeConfig.count === "number" && remainderCount > 0 && i < remainderCount) {
+          nodeConfig.count += 1;
+        }
+        if (nodeConfig.cards_per_type) {
+          for (const [t, rem] of Object.entries(remainderPerType)) {
+            if (rem > 0 && i < rem) {
+              nodeConfig.cards_per_type[t] = (nodeConfig.cards_per_type[t] ?? 0) + 1;
+            }
+          }
+        }
+        if (nodeConfig.count_per_difficulty) {
+          const apply = (k: 'easy'|'medium'|'hard') => {
+            const rem = remainderPerDiff[k];
+            if (typeof rem === "number" && rem > 0 && i < rem) {
+              const cpd = nodeConfig.count_per_difficulty;
+              if (cpd) {
+                cpd[k] = (cpd[k] ?? 0) + 1;
+              }
+            }
+          };
+          apply('easy'); apply('medium'); apply('hard');
+        }
+
         const task = await asyncTaskService.createTask(
           req.user.id, 
           'generate_questions', 
@@ -96,7 +201,8 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
             knowledge_point_id: gn.knowledge_point_id, 
             node_title: gn.title || '', 
             node_content: gn.content || '',
-            config
+            config: nodeConfig,
+            graph_id: gn.graph_id,
           }, 
           `生成题目: ${gn.title || ''}`
         );

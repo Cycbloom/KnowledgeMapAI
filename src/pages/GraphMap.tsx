@@ -1081,13 +1081,44 @@ export const GraphMap = () => {
   );
 
   const handleGenerateCards = useCallback(
-    async (config: { count: number; types: string[] }) => {
-      if (selectedNodeIds.length === 0) return;
+    async (config: {
+      count: number;
+      types: string[];
+      difficulty?: 'easy' | 'medium' | 'hard' | 'mixed';
+      coverage?: 'current_only' | 'with_children' | 'with_siblings' | 'graph';
+      customPrompt?: string;
+      targetNodeIds?: string[];
+      cardsPerType?: Partial<Record<string, number>>;
+      countPerDifficulty?: Partial<Record<'easy' | 'medium' | 'hard', number>>;
+    }) => {
+      const nodeIds =
+        config.targetNodeIds && config.targetNodeIds.length > 0
+          ? config.targetNodeIds
+          : Array.from(selectedNodeIds);
+      if (nodeIds.length === 0) return;
 
       try {
-        const result = await api.ai.batchGenerateCards(selectedNodeIds, {
+        const cardsPerTypeNum =
+          config.cardsPerType && Object.keys(config.cardsPerType).length > 0
+            ? Object.fromEntries(
+                Object.entries(config.cardsPerType).map(([k, v]) => [k, Number(v ?? 0)]),
+              )
+            : undefined;
+        const countPerDiffNum =
+          config.countPerDifficulty && Object.keys(config.countPerDifficulty).length > 0
+            ? Object.fromEntries(
+                Object.entries(config.countPerDifficulty).map(([k, v]) => [k, Number(v ?? 0)]),
+              )
+            : undefined;
+
+        const result = await api.ai.batchGenerateCards(nodeIds, {
           count: config.count,
           types: config.types,
+          difficulty: config.difficulty,
+          coverage: config.coverage,
+          custom_prompt: config.customPrompt || undefined,
+          cards_per_type: cardsPerTypeNum,
+          count_per_difficulty: countPerDiffNum as { easy?: number; medium?: number; hard?: number } | undefined,
         });
 
         if (result.success) {
@@ -1104,7 +1135,7 @@ export const GraphMap = () => {
         message.error(errMsg);
       }
     },
-    [selectedNodeIds, navigate, t],
+    [selectedNodeIds, t, navigate],
   );
 
   useEffect(() => {

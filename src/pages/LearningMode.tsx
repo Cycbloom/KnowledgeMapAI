@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
@@ -158,6 +158,48 @@ export const LearningMode = () => {
   const { data: graphData } = useGraphData(graphId || "");
   const { data: graphMeta } = useGraph(graphId || "");
   const _nodeStatus = graphData?.nodeStatus;
+
+  // 覆盖范围选择：基于当前 node / graph 结构计算子节点、同级节点、全图节点
+  const allGraphNodeIds = useMemo<string[]>(
+    () => (graphData?.nodes ?? []).map((n) => (n as { id: string }).id).filter(Boolean),
+    [graphData?.nodes],
+  );
+
+  const currentNode = useMemo(
+    () =>
+      nodeId
+        ? (graphData?.nodes ?? []).find((n) => (n as { id: string }).id === nodeId) as
+            | { id: string; parentId?: string | null }
+            | undefined
+        : undefined,
+    [graphData?.nodes, nodeId],
+  );
+
+  const childNodeIds = useMemo<string[]>(() => {
+    if (!nodeId) return [];
+    return (graphData?.nodes ?? [])
+      .filter((n) => {
+        const node = n as { parentId?: string | null };
+        return node.parentId === nodeId;
+      })
+      .map((n) => (n as { id: string }).id)
+      .filter(Boolean);
+  }, [graphData?.nodes, nodeId]);
+
+  const siblingNodeIds = useMemo<string[]>(() => {
+    if (!nodeId) return [];
+    const parentId = currentNode?.parentId ?? null;
+    return (graphData?.nodes ?? [])
+      .filter((n) => {
+        const node = n as { id: string; parentId?: string | null };
+        if (node.id === nodeId) return false;
+        // root siblings: both null parent
+        if (parentId === null) return (node.parentId ?? null) === null;
+        return node.parentId === parentId;
+      })
+      .map((n) => (n as { id: string }).id)
+      .filter(Boolean);
+  }, [graphData?.nodes, nodeId, currentNode?.parentId]);
 
   // Task 11: 节点详情通过 useQuery 获取,RQ 自动处理 stale 请求与缓存
   const { data: node, isLoading: isNodeLoading } = useQuery({
@@ -325,9 +367,32 @@ export const LearningMode = () => {
     } finally { setIsGenerating(false); }
   };
 
-  const handleManualGenerateCards = async (config: { count: number; types: string[] }) => {
-    if (!nodeId) { msgHelper.warning(t("learning.cards.selectNode")); return; }
+  const handleManualGenerateCards = async (config: {
+    count: number;
+    types: string[];
+    cardsPerType: Partial<Record<string, number>>;
+    countPerDifficulty: Partial<Record<"easy" | "medium" | "hard", number>>;
+    difficulty: "easy" | "medium" | "hard" | "mixed";
+    coverage: "current_only" | "with_children" | "with_siblings" | "graph";
+    customPrompt: string;
+    targetNodeIds: string[];
+  }) => {
     if (!isOnline) { msgHelper.error(t("learning.cards.offline")); return; }
+    if (!config.types || config.types.length === 0) return;
+    if (config.count <= 0) return;
+
+    const cardsPerTypeNum =
+      config.cardsPerType && Object.keys(config.cardsPerType).length > 0
+        ? Object.fromEntries(
+            Object.entries(config.cardsPerType).map(([k, v]) => [k, Number(v ?? 0)]),
+          )
+        : undefined;
+    const countPerDiffNum =
+      config.countPerDifficulty && Object.keys(config.countPerDifficulty).length > 0
+        ? Object.fromEntries(
+            Object.entries(config.countPerDifficulty).map(([k, v]) => [k, Number(v ?? 0)]),
+          )
+        : undefined;
 
     const isCapacitor = isCapacitorMobile();
     if (isCapacitor) {
@@ -337,44 +402,79 @@ export const LearningMode = () => {
         });
         return;
       }
+      const targetIds = config.targetNodeIds?.length ? config.targetNodeIds : (nodeId ? [nodeId] : []);
+      if (targetIds.length === 0) {
+        msgHelper.warning(t("learning.cards.selectNode"));
+        return;
+      }
       setIsGeneratingCards(true);
       abortControllerRef.current = new AbortController();
       const { signal } = abortControllerRef.current;
       try {
         const client = getMobileSupabaseClient();
         if (!client) throw new Error("Supabase client not initialized");
-        const { data: graphNodes, error: gnError } = await client
-          .from("graph_nodes")
-          .select(`knowledge_point_id, graph_id, knowledge_points ( id, title, content )`)
-          .eq("knowledge_point_id", nodeId).is("deleted_at", null);
-        if (gnError) { console.error("查询 graph_nodes 失败:", gnError); msgHelper.error(t("learning.cards.queryFailed")); return; }
-        if (!graphNodes || graphNodes.length === 0) { msgHelper.error(t("learning.cards.nodeNotFound")); return; }
-        const graphNode = graphNodes[0] as unknown as {
-          knowledge_point_id: string; graph_id: string;
-          knowledge_points?: { id: string; title?: string | null; content?: string | null } | null;
-        };
-        const node = {
-          knowledge_point_id: graphNode.knowledge_point_id, graph_id: graphNode.graph_id,
-          title: graphNode.knowledge_points?.title || "", content: graphNode.knowledge_points?.content || "",
-        };
-        const totalCards = config.count;
+        const totalCards = Math.max(1, config.count);
         setGenerateProgress({ current: 0, total: totalCards, isGenerating: true });
-        let generatedCount = 0; let savedCount = 0; const batchSize = 3;
-        const batches = Math.ceil(totalCards / batchSize);
-        for (let i = 0; i < batches; i++) {
-          if (signal.aborted) { msgHelper.info(t("learning.cards.cancelled", { count: savedCount })); break; }
-          const currentBatchSize = Math.min(batchSize, totalCards - generatedCount);
-          setGenerateProgress({ current: generatedCount, total: totalCards, isGenerating: true });
-          msgHelper.info(t("learning.cards.generating", { start: generatedCount + 1, end: generatedCount + currentBatchSize, total: totalCards }), { duration: 3000 });
-          try {
-            const result = await mobileAIService.generateAndSaveCards(
-              node.title || "", node.content || "", node.knowledge_point_id, node.graph_id,
-              { types: config.types, count: currentBatchSize },
-            );
-            if (result.success) { generatedCount += currentBatchSize; savedCount += result.savedCount; setGenerateProgress({ current: generatedCount, total: totalCards, isGenerating: true }); }
-          } catch (batchError) {
-            console.error(`Batch ${i + 1} failed:`, batchError);
-            msgHelper.warning(t("learning.cards.batchFailed", { batch: i + 1 }), { duration: 3000 });
+
+        // 均分每类题数（保持总数不变，不足 1 项时单节点独占）
+        const perNodeBase = Math.floor(totalCards / targetIds.length);
+        const remainder = totalCards - perNodeBase * targetIds.length;
+
+        let generatedCount = 0;
+        let savedCount = 0;
+        const batchSize = 3;
+        for (let nIndex = 0; nIndex < targetIds.length; nIndex++) {
+          const id = targetIds[nIndex];
+          const nodeQuota = perNodeBase + (nIndex < remainder ? 1 : 0);
+          if (nodeQuota <= 0) continue;
+
+          const { data: graphNodes, error: gnError } = await client
+            .from("graph_nodes")
+            .select(`knowledge_point_id, graph_id, knowledge_points ( id, title, content )`)
+            .eq("knowledge_point_id", id).is("deleted_at", null);
+          if (gnError) { console.error("查询 graph_nodes 失败:", gnError); msgHelper.error(t("learning.cards.queryFailed")); continue; }
+          if (!graphNodes || graphNodes.length === 0) { continue; }
+          const graphNode = graphNodes[0] as unknown as {
+            knowledge_point_id: string; graph_id: string;
+            knowledge_points?: { id: string; title?: string | null; content?: string | null } | null;
+          };
+          const node = {
+            knowledge_point_id: graphNode.knowledge_point_id, graph_id: graphNode.graph_id,
+            title: graphNode.knowledge_points?.title || "", content: graphNode.knowledge_points?.content || "",
+          };
+
+          const nodeBatches = Math.ceil(nodeQuota / batchSize);
+          for (let i = 0; i < nodeBatches; i++) {
+            if (signal.aborted) { break; }
+            const currentBatchSize = Math.min(batchSize, nodeQuota - (i * batchSize));
+            if (currentBatchSize <= 0) { continue; }
+            setGenerateProgress({ current: generatedCount, total: totalCards, isGenerating: true });
+            msgHelper.info(t("learning.cards.generating", {
+              start: generatedCount + 1, end: generatedCount + currentBatchSize, total: totalCards,
+            }), { duration: 2500 });
+            try {
+              const result = await mobileAIService.generateAndSaveCards(
+                node.title || "", node.content || "", node.knowledge_point_id, node.graph_id,
+                {
+                  types: config.types,
+                  count: currentBatchSize,
+                  difficulty: config.difficulty,
+                  coverage: config.coverage,
+                  customPrompt: config.customPrompt || undefined,
+                  // 把二维矩阵信息传入移动端服务，本地按权重/难度分派：
+                  cardsPerType: cardsPerTypeNum,
+                  countPerDifficulty: countPerDiffNum,
+                },
+              );
+              if (result.success) {
+                generatedCount += currentBatchSize;
+                savedCount += result.savedCount;
+                setGenerateProgress({ current: generatedCount, total: totalCards, isGenerating: true });
+              }
+            } catch (batchError) {
+              console.error(`Batch ${nIndex + 1}-${i + 1} failed:`, batchError);
+              msgHelper.warning(t("learning.cards.batchFailed", { batch: nIndex * nodeBatches + i + 1 }), { duration: 3000 });
+            }
           }
         }
         if (!signal.aborted && savedCount > 0) {
@@ -399,9 +499,19 @@ export const LearningMode = () => {
     }
 
     // Desktop path
+    const desktopTargetIds = config.targetNodeIds?.length ? config.targetNodeIds : (nodeId ? [nodeId] : []);
+    if (desktopTargetIds.length === 0) { msgHelper.warning(t("learning.cards.selectNode")); return; }
     setIsGeneratingCards(true);
     try {
-      const result = await api.ai.batchGenerateCards([nodeId], { count: config.count, types: config.types });
+      const result = await api.ai.batchGenerateCards(desktopTargetIds, {
+        count: config.count,
+        types: config.types,
+        difficulty: config.difficulty,
+        coverage: config.coverage,
+        custom_prompt: config.customPrompt || undefined,
+        cards_per_type: cardsPerTypeNum,
+        count_per_difficulty: countPerDiffNum as { easy?: number; medium?: number; hard?: number } | undefined,
+      });
       if (result.success) {
         msgHelper.success(t("learning.cards.taskSubmitted"), {
           duration: 5000,
@@ -424,7 +534,19 @@ export const LearningMode = () => {
     } finally { setIsGeneratingCards(false); }
   };
 
-  const handleAICardGenError = (error: AICardGenError, config: { count: number; types: string[] }) => {
+  const handleAICardGenError = (
+    error: AICardGenError,
+    config: {
+      count: number;
+      types: string[];
+      cardsPerType: Partial<Record<string, number>>;
+      countPerDifficulty: Partial<Record<"easy" | "medium" | "hard", number>>;
+      difficulty: "easy" | "medium" | "hard" | "mixed";
+      coverage: "current_only" | "with_children" | "with_siblings" | "graph";
+      customPrompt: string;
+      targetNodeIds: string[];
+    },
+  ) => {
     switch (error.type) {
       case "api_key_missing": case "api_key_invalid":
         msgHelper.error(error.message, { duration: 8000, action: { label: t("learning.cards.goToSettings"), onClick: () => navigate("/settings#prompts") } });
@@ -607,6 +729,11 @@ export const LearningMode = () => {
       <GenerateCardsModal
         isOpen={isGenModalOpen} onClose={() => setIsGenModalOpen(false)}
         onGenerate={handleManualGenerateCards} nodeTitle={nodeTitle}
+        nodeId={nodeId ?? undefined}
+        graphId={graphId ?? undefined}
+        childNodeIds={childNodeIds}
+        siblingNodeIds={siblingNodeIds}
+        allGraphNodeIds={allGraphNodeIds}
         generateProgress={generateProgress}
       />
       </Suspense>

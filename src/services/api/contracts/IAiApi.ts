@@ -122,6 +122,9 @@ export interface IAiApi {
     provider?: string;
     model?: string;
     language?: string;
+    difficulty?: 'easy' | 'medium' | 'hard' | 'mixed';
+    coverage?: 'current_only' | 'with_children' | 'with_siblings' | 'graph';
+    custom_prompt?: string;
   }): Promise<{ cards: Array<{ id?: string; question: string; answer: string; type: string; difficulty: string; explanation?: string; options?: string[] }> }>;
 
   batchGenerateCards(
@@ -133,6 +136,17 @@ export interface IAiApi {
       provider?: string;
       model?: string;
       language?: string;
+      difficulty?: 'easy' | 'medium' | 'hard' | 'mixed';
+      coverage?: 'current_only' | 'with_children' | 'with_siblings' | 'graph';
+      custom_prompt?: string;
+      /** 每题型数量：Record<CardType, number>，合计为用户想要的总题数（所有节点均分时后端统一处理） */
+      cards_per_type?: Record<string, number>;
+      /** 每难度数量：单独配置 easy/medium/hard */
+      count_per_difficulty?: {
+        easy?: number;
+        medium?: number;
+        hard?: number;
+      };
     },
   ): Promise<{ success: boolean; taskIds: string[]; message: string; error?: string; results?: Array<{ nodeId: string; success: boolean; count: number }> }>;
 

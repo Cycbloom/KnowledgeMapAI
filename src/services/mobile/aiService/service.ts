@@ -57,9 +57,13 @@ export const mobileAIService = {
     options: {
       types?: string[];
       count?: number;
-      difficulty?: "easy" | "medium" | "hard";
+      difficulty?: "easy" | "medium" | "hard" | "mixed";
+      coverage?: "current_only" | "with_children" | "with_siblings" | "graph";
+      customPrompt?: string;
       userId?: string;
       graphId?: string;
+      cardsPerType?: Record<string, number>;
+      countPerDifficulty?: Record<string, number>;
     } = {},
   ): Promise<GenerateCardsResult> => {
     const client = createAIClient();
@@ -77,26 +81,42 @@ export const mobileAIService = {
     const types = options.types || ["qa", "choice"];
     const count = options.count || 3;
     const difficulty = options.difficulty || "medium";
+    const coverage = options.coverage || "current_only";
     const userId = options.userId;
     const graphId = options.graphId;
+    const cardsPerType = options.cardsPerType;
+    const countPerDifficulty = options.countPerDifficulty;
 
     const typeRestriction =
       types.length === 1
         ? `CRITICAL: ONLY generate cards of type '${types[0]}'. DO NOT generate any other types.`
         : `Allowed card types: ${types.join(", ")}. Only generate these types.`;
 
+    // 新增：矩阵分布信息（如果有），用于把「每题型/每难度 数量」传递给模型
+    let matrixInfo = "";
+    if (cardsPerType && Object.keys(cardsPerType).length > 0) {
+      matrixInfo += `Per-type count target: ${JSON.stringify(cardsPerType)}\n`;
+    }
+    if (countPerDifficulty && Object.keys(countPerDifficulty).length > 0) {
+      matrixInfo += `Per-difficulty count target: ${JSON.stringify(countPerDifficulty)}\n`;
+    }
+
     const defaultSystemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
 
+Difficulty: ${difficulty}
+Coverage: ${coverage}
+${matrixInfo}
 ${typeRestriction}
 
 Output format (JSON):
 {
   "cards": [
     {
-      "type": "qa|choice|true_false|multi_choice|fill_in_the_blank",
+      "type": "qa|choice|true_false|multi_choice|fill_in_the_blank|essay",
       "question": "The question text",
       "answer": "The answer text",
       "explanation": "Optional explanation",
+      "difficulty": "easy|medium|hard",
       "options": ["option1", "option2", "option3", "option4"],
       "correct_indices": [0]
     }
@@ -108,11 +128,21 @@ Important:
 - For 'choice' type: options array with 4 options, correct_indices with single index
 - For 'true_false' type: answer should be "true" or "false"
 - For 'multi_choice' type: correct_indices can have multiple values
-- For 'fill_in_the_blank' type: use '___' for blanks in question`;
+- For 'fill_in_the_blank' type: use '___' for blanks in question
+- For 'essay' type: question is the prompt, answer is the reference rubric`;
 
     let systemPrompt = defaultSystemPrompt;
 
-    if (supabase && userId && graphId) {
+    if (options.customPrompt && options.customPrompt.trim()) {
+      systemPrompt = options.customPrompt
+        .replaceAll("{{types}}", types.join(", "))
+        .replaceAll("{{count}}", String(count))
+        .replaceAll("{{difficulty}}", difficulty)
+        .replaceAll("{{coverage}}", coverage)
+        .replaceAll("{{topic}}", topic)
+        .replaceAll("{{content}}", content || "No detailed content provided.")
+        .replaceAll("{{matrix}}", matrixInfo.trim());
+    } else if (supabase && userId && graphId) {
       try {
         const promptCode =
           types.length === 1
@@ -124,7 +154,10 @@ Important:
           types: types.join(", "),
           count,
           difficulty,
+          coverage,
           typeRestriction,
+          matrix: matrixInfo.trim(),
+          customPrompt: "",
         };
 
         const renderedPrompt = await mobilePromptService.getRenderedPrompt(
@@ -251,7 +284,13 @@ Important:
     options: {
       types?: string[];
       count?: number;
-      difficulty?: "easy" | "medium" | "hard";
+      difficulty?: "easy" | "medium" | "hard" | "mixed";
+      coverage?: "current_only" | "with_children" | "with_siblings" | "graph";
+      customPrompt?: string;
+      /** 题型 -> 数量，移动端按这组数值分派任务并传进提示词 */
+      cardsPerType?: Record<string, number>;
+      /** 难度 -> 数量，移动端作为 prompt 上下文与分派依据 */
+      countPerDifficulty?: Record<string, number>;
     } = {},
   ): Promise<{
     success: boolean;

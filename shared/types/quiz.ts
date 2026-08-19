@@ -4,6 +4,8 @@ export type QuizSetStatus = 'draft' | 'generating' | 'ready';
 
 export type CardType = 'qa' | 'choice' | 'true_false' | 'multi_choice' | 'fill_in_the_blank' | 'essay';
 
+export type CardDifficulty = 'easy' | 'medium' | 'hard';
+
 export interface QuizSetConfig {
   cardTypes: CardType[];
   difficulty: 'easy' | 'medium' | 'hard' | 'mixed';
@@ -11,6 +13,12 @@ export interface QuizSetConfig {
   cardsPerType?: Record<CardType, number>;
   customPrompt?: string;
   aiProvider?: string;
+  /**
+   * 题目生成的知识覆盖策略。作为「快捷选择」由前端转换为最终的
+   * knowledgePointIds；后端只以 knowledgePointIds 为准，coverage
+   * 仅携带供 prompt 模板复用。
+   */
+  coverage?: 'current_only' | 'with_children' | 'with_siblings' | 'graph';
 }
 
 export interface QuizSet {

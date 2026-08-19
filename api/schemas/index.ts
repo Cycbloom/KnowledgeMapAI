@@ -277,6 +277,13 @@ export const generateCardsSchema = z.object({
     .optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
+  difficulty: z.enum(["easy", "medium", "hard", "mixed"]).optional(),
+  coverage: z
+    .enum(["current_only", "with_children", "with_siblings", "graph"])
+    .optional(),
+  custom_prompt: z.string().max(10000).optional(),
+  language: z.string().optional(),
+  graph_id: z.string().optional(),
 });
 
 export const generateCardsBatchSchema = z.object({
@@ -295,12 +302,30 @@ export const generateCardsBatchSchema = z.object({
           ]),
         )
         .optional(),
-      count: z.number().min(1).max(50).optional(), // Increased max count for packs
+      count: z.number().min(1).max(200).optional(),
       pack_template: z
         .enum(["standard", "comprehensive", "exam", "quick"])
         .optional(),
       provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
       model: z.string().optional(),
+      difficulty: z.enum(["easy", "medium", "hard", "mixed"]).optional(),
+      coverage: z
+        .enum(["current_only", "with_children", "with_siblings", "graph"])
+        .optional(),
+      custom_prompt: z.string().max(10000).optional(),
+      language: z.string().optional(),
+      // 按「题型」分配数量：Record<CardType, number>
+      cards_per_type: z
+        .record(z.string(), z.number().int().min(0).max(200))
+        .optional(),
+      // 按「难度」分配数量（在全局难度=custom/mixed 时启用，或作为二维矩阵输入）
+      count_per_difficulty: z
+        .object({
+          easy: z.number().int().min(0).max(200).optional(),
+          medium: z.number().int().min(0).max(200).optional(),
+          hard: z.number().int().min(0).max(200).optional(),
+        })
+        .optional(),
     })
     .optional(),
 });

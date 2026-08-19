@@ -285,7 +285,7 @@ export const LearningModeHeader = ({
             <button
               onClick={onEnterFocusMode}
               disabled={!nodeId || !articleContent}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
+              className={`flex items-center space-x-2 px-2 lg:px-4 py-2 rounded-full font-medium transition-all ${
                 !nodeId || !articleContent
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
                   : isDark
@@ -299,13 +299,13 @@ export const LearningModeHeader = ({
               }
             >
               <Brain size={18} />
-              <span className="hidden sm:inline">
+              <span className="hidden xl:inline">
                 {t("learning.focus.title")}
               </span>
             </button>
             <button
               onClick={onOpenLearningPath}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
+              className={`flex items-center space-x-2 px-2 lg:px-4 py-2 rounded-full font-medium transition-all ${
                 rightPanelMode === "learning-path" && isChatOpen
                   ? "bg-primary-600 text-white"
                   : isDark
@@ -315,13 +315,13 @@ export const LearningModeHeader = ({
               title={t("learning.path.title")}
             >
               <Route size={18} />
-              <span className="hidden sm:inline">
+              <span className="hidden xl:inline">
                 {t("learning.path.title")}
               </span>
             </button>
             <button
               onClick={onNavigateToGraph}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
+              className={`flex items-center space-x-2 px-2 lg:px-4 py-2 rounded-full font-medium transition-all ${
                 isDark
                   ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -329,7 +329,7 @@ export const LearningModeHeader = ({
               title={t("learning.header.mindMap")}
             >
               <Network size={18} />
-              <span className="hidden sm:inline">
+              <span className="hidden xl:inline">
                 {t("learning.header.mindMap")}
               </span>
             </button>
@@ -341,7 +341,7 @@ export const LearningModeHeader = ({
             <button
               onClick={() => isOnline && onOpenGenModal()}
               disabled={!isOnline || generateProgress?.isGenerating}
-              className={`flex items-center ${isMobile ? "px-2 py-1.5" : "space-x-2 px-3 lg:px-4 py-2"} rounded-full font-medium transition-all ${
+              className={`flex items-center ${isMobile ? "px-2 py-1.5" : "space-x-2 px-2 lg:px-3 xl:px-4 py-2"} rounded-full font-medium transition-all ${
                 !isOnline || generateProgress?.isGenerating
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 dark:bg-slate-800 dark:text-slate-600 dark:border-slate-500"
                   : isDark
@@ -355,7 +355,7 @@ export const LearningModeHeader = ({
               }
             >
               <BrainCircuit size={isMobile ? 16 : 18} />
-              <span className="hidden md:inline">
+              <span className="hidden lg:inline">
                 {t("learning.cards.generate")}
               </span>
             </button>
@@ -397,13 +397,13 @@ export const LearningModeHeader = ({
             <button
               onClick={onStartChallenge}
               disabled={isGeneratingCards}
-              className={`flex items-center justify-center ${isMobile ? "p-2" : "space-x-2 px-3 lg:px-6 py-2"} bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-primary-200 dark:shadow-none transition-all ${isMobile ? "" : "hover:scale-105 active:scale-95"} ${
+              className={`flex items-center justify-center ${isMobile ? "p-2" : "space-x-2 px-2 lg:px-3 xl:px-6 py-2"} bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-primary-200 dark:shadow-none transition-all ${isMobile ? "" : "hover:scale-105 active:scale-95"} ${
                 isGeneratingCards ? "opacity-70 cursor-not-allowed" : ""
               }`}
               title={t("learning.challenge.start")}
             >
               <GraduationCap size={isMobile ? 18 : 18} />
-              <span className="hidden sm:inline">
+              <span className="hidden md:inline">
                 {t("learning.challenge.complete")}
               </span>
             </button>

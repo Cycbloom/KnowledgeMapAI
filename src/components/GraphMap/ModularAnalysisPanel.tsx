@@ -10,7 +10,7 @@ import { getScenarioById } from '../PromptConfig';
 import { api } from '../../services/api';
 import { message } from "../../utils/messageHelper";
 import { EmptyState } from '../common/EmptyState';
-import { queryKeys, defaultQueryConfig } from '@/hooks/queries/config';
+import { queryKeys, staticQueryConfig } from '@/hooks/queries/config';
 import { useFocusTrap } from '../../hooks/common/useFocusTrap';
 import { useEscapeKey } from '../../hooks/common/useEscapeKey';
 
@@ -85,7 +85,8 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
       return templates;
     },
     enabled: !!graphId && isOpen,
-    ...defaultQueryConfig,
+    // AI Prompt 模板低频变化，保存后已失效该键，使用长 staleTime 减少重复拉取
+    ...staticQueryConfig,
   });
 
   const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });

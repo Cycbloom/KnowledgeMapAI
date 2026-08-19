@@ -33,15 +33,6 @@ const realtimeQueryConfig = {
   retry: 1,
 };
 
-export const schedulerKeys = {
-  task: (id: string) => ["scheduler", "task", id] as const,
-  queues: () => ["scheduler", "queues"] as const,
-  settings: () => ["scheduler", "settings"] as const,
-  stats: (period: string) => ["scheduler", "stats", period] as const,
-  heatmap: (year?: number, month?: number) =>
-    ["scheduler", "heatmap", year, month] as const,
-};
-
 /** Invalidate scheduler queries affected by a task change */
 function invalidateTaskChange(queryClient: ReturnType<typeof useQueryClient>, taskId?: string) {
   queryClient.invalidateQueries({ queryKey: queryKeys.schedulerTasks() });
@@ -77,7 +68,7 @@ export function useSchedulerTasks(
 
 export function useSchedulerTask(id: string) {
   return useQuery({
-    queryKey: schedulerKeys.task(id),
+    queryKey: queryKeys.schedulerTask(id),
     queryFn: () => api.scheduler.get(id),
     enabled: !!id,
     ...defaultQueryConfig,
@@ -89,7 +80,7 @@ export function useSchedulerQueues(options?: {
   includeCancelled?: boolean;
 }) {
   return useQuery({
-    queryKey: schedulerKeys.queues(),
+    queryKey: queryKeys.queues(),
     queryFn: () => api.scheduler.getQueues(options) as Promise<QueueData>,
     ...realtimeQueryConfig,
   });
@@ -105,7 +96,7 @@ export function useExecutions(filters?: ExecutionFilters) {
 
 export function useSchedulerSettings() {
   return useQuery({
-    queryKey: schedulerKeys.settings(),
+    queryKey: queryKeys.schedulerSettings(),
     queryFn: () => api.scheduler.getSettings() as Promise<TaskSettings>,
     ...defaultQueryConfig,
   });
@@ -115,7 +106,7 @@ export function useSchedulerStats(
   period: "day" | "week" | "month" | "year" = "week",
 ) {
   return useQuery({
-    queryKey: schedulerKeys.stats(period),
+    queryKey: queryKeys.stats(period),
     queryFn: () => api.scheduler.getStats(period) as Promise<UserTaskStats>,
     ...defaultQueryConfig,
   });
@@ -123,7 +114,7 @@ export function useSchedulerStats(
 
 export function useHeatmap(year?: number, month?: number) {
   return useQuery({
-    queryKey: schedulerKeys.heatmap(year, month),
+    queryKey: queryKeys.heatmap(year, month),
     queryFn: () =>
       api.scheduler.getHeatmap(year, month) as Promise<HeatmapData[]>,
     ...defaultQueryConfig,
@@ -280,7 +271,7 @@ export function useUpdateSchedulerSettingsMutation() {
     mutationFn: (data: UpdateTaskSettingsData) =>
       api.scheduler.updateSettings(data) as Promise<TaskSettings>,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: schedulerKeys.settings() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedulerSettings() });
     },
   });
 }

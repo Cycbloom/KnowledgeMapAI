@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
+import { queryKeys } from '../../hooks/queries/config';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Clock, CheckCircle2, Zap } from 'lucide-react';
 
@@ -31,11 +32,12 @@ interface StatCardProps {
 export const FocusStats = () => {
   const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['focus-stats'],
+    queryKey: queryKeys.focusStats(),
     queryFn: async () => {
       const res = await api.focus.getStats() as { data: FocusStatsData };
       return res.data;
-    }
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   if (isLoading || !stats) return <div className="animate-pulse h-64 bg-gray-100 dark:bg-slate-800 rounded-xl" />;

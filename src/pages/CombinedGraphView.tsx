@@ -88,6 +88,8 @@ export const CombinedGraphView: React.FC = () => {
   const { data: mapData, error: error5, refetch: refetch5 } = useQuery({
     queryKey: queryKeys.graphMap(),
     queryFn: () => api.graphs.getMap(),
+    // 与 GraphMap 页共享同 key 缓存，低频数据加长 staleTime
+    staleTime: 5 * 60 * 1000,
   });
   
   const graphRelations = useMemo(() => {

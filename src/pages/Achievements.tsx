@@ -88,22 +88,27 @@ export const Achievements = () => {
   
   const { data: achievements, isLoading: loadingAchievements, error: achievementsError, refetch: refetchAchievements } = useQuery({
     queryKey: queryKeys.achievements(),
-    queryFn: () => api.achievements.list()
+    queryFn: () => api.achievements.list(),
+    // 成就数据低频变化，claimReward 已失效该键
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: dailyTasks, isLoading: loadingTasks, error: dailyTasksError, refetch: refetchDailyTasks } = useQuery({
     queryKey: queryKeys.dailyTasks(),
-    queryFn: () => api.achievements.getDailyTasks()
+    queryFn: () => api.achievements.getDailyTasks(),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: periodicTasks, isLoading: loadingPeriodicTasks, error: periodicTasksError, refetch: refetchPeriodicTasks } = useQuery({
     queryKey: queryKeys.periodicTasks(),
-    queryFn: () => api.periodicTasks.list()
+    queryFn: () => api.periodicTasks.list(),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: passData, isLoading: loadingPass, error: passDataError, refetch: refetchPassData } = useQuery({
     queryKey: queryKeys.passProgress(),
-    queryFn: () => api.periodicTasks.getPass()
+    queryFn: () => api.periodicTasks.getPass(),
+    staleTime: 5 * 60 * 1000
   });
 
   const claimMutation = useMutation({

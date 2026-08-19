@@ -351,6 +351,8 @@ export const GraphMap = () => {
   } = useQuery({
     queryKey: queryKeys.graphMap(),
     queryFn: () => api.graphs.getMap(),
+    // 图谱地图（图谱列表+关系）低频变化，mutation 已显式失效该键，加长 staleTime 减少重复拉取
+    staleTime: 5 * 60 * 1000,
   });
 
   const {
@@ -1931,6 +1933,9 @@ export const GraphMap = () => {
             message.success(t('graphMap.graphCreation.initTaskSubmitted', { count: result.summary.pending }));
           }}
           onLoadSourceGraphs={async () => {
+            // 优先复用已缓存的图谱地图，避免绕过缓存重复拉取全量地图
+            const cached = queryClient.getQueryData<Awaited<ReturnType<typeof api.graphs.getMap>>>(queryKeys.graphMap());
+            if (cached) return { graphs: cached.graphs };
             const result = await api.graphs.getMap();
             return { graphs: result.graphs };
           }}

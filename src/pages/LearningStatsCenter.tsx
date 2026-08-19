@@ -518,6 +518,8 @@ export const LearningStatsCenter = () => {
         return null;
       }
     },
+    // 专注统计低频变化，与 FocusStats 组件共享同 key 缓存
+    staleTime: 5 * 60 * 1000,
   });
 
   const totalNodesCount = useMemo(() => {

@@ -116,6 +116,8 @@ const LearningPathDetailPage: React.FC = () => {
       return mapPathDetail(result);
     },
     enabled: !!pathId,
+    // 学习路径详情低频变化，节点状态更新已失效该键
+    staleTime: 5 * 60 * 1000,
   });
 
   useDocumentTitle(pathDetail?.title, t("documentTitle.suffix"));

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   X,
   Plus,
@@ -33,6 +34,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { domainsApi } from '../../services/api/domains';
 import type { DomainTreeNode } from '@shared/types/graph';
 import { message } from '@/utils/messageHelper';
+import { queryKeys } from '../../hooks/queries/config';
 import { useIsMobile } from '../../hooks';
 import { useFocusTrap } from '../../hooks/common/useFocusTrap';
 import { useEscapeKey } from '../../hooks/common/useEscapeKey';
@@ -252,6 +254,8 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
   } | null>(null);
   const [isGeneratingColor, setIsGeneratingColor] = useState(false);
 
+  const queryClient = useQueryClient();
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -266,7 +270,12 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
   const fetchDomains = useCallback(async () => {
     setLoading(true);
     try {
-      const tree = await domainsApi.getTree();
+      // 优先复用 GraphMap 页已维护的 domainTree 缓存，面板打开时避免重复拉取低频域树
+      let tree = queryClient.getQueryData<DomainTreeNode[]>(queryKeys.domainTree());
+      if (!tree) {
+        tree = await domainsApi.getTree();
+        queryClient.setQueryData(queryKeys.domainTree(), tree);
+      }
       setDomains(tree);
       const firstLevelIds = new Set(tree.map(d => d.id));
       setExpandedIds(firstLevelIds);
@@ -276,7 +285,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (isOpen) {

@@ -208,6 +208,7 @@ export const queryKeys = {
           filters?.to_date ?? "",
         ] as const),
   schedulerTask: (id: string) => ["scheduler", "task", id] as const,
+  schedulerSettings: () => ["scheduler", "settings"] as const,
   queues: () => ["scheduler", "queues"] as const,
   stats: (period?: string) =>
     period === undefined

@@ -9,13 +9,14 @@ import {
   RefreshCcw,
   Sun,
   Eye,
-  Scroll,
-  FileText,
   Settings,
   Zap,
   GripHorizontal,
   Maximize2,
   Minimize2,
+  BookType,
+  Code,
+  Coffee,
 } from "lucide-react";
 import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
 import { useShallow } from "zustand/react/shallow";
@@ -32,23 +33,27 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
 }) => {
   const {
     fontSize,
+    fontFamily,
+    lineHeight,
     readingMode,
-    paginationMode,
     contentWidthMode,
     setFontSize,
+    setFontFamily,
+    setLineHeight,
     setReadingMode,
-    setPaginationMode,
     setContentWidthMode,
     resetSettings,
   } = useLearningSettingsStore(
     useShallow((s) => ({
       fontSize: s.fontSize,
+      fontFamily: s.fontFamily,
+      lineHeight: s.lineHeight,
       readingMode: s.readingMode,
-      paginationMode: s.paginationMode,
       contentWidthMode: s.contentWidthMode,
       setFontSize: s.setFontSize,
+      setFontFamily: s.setFontFamily,
+      setLineHeight: s.setLineHeight,
       setReadingMode: s.setReadingMode,
-      setPaginationMode: s.setPaginationMode,
       setContentWidthMode: s.setContentWidthMode,
       resetSettings: s.resetSettings,
     })),
@@ -116,7 +121,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
               <input
                 type="range"
                 min="12"
-                max="24"
+                max="28"
                 step="1"
                 value={fontSize}
                 onChange={(e) => setFontSize(parseInt(e.target.value))}
@@ -129,7 +134,162 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                 <span>16px</span>
                 <span>20px</span>
                 <span>24px</span>
+                <span>28px</span>
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Type
+                size={16}
+                className="text-slate-500 dark:text-slate-400"
+              />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t("learning.settings.fontFamily")}
+              </span>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label={t("learning.settings.fontFamily")}
+              className="grid grid-cols-3 gap-2"
+            >
+              {(
+                [
+                  {
+                    id: "sans",
+                    label: t("learning.settings.fontSans"),
+                    icon: Type,
+                    color:
+                      "from-slate-100 to-white dark:from-slate-700 dark:to-slate-800",
+                  },
+                  {
+                    id: "serif",
+                    label: t("learning.settings.fontSerif"),
+                    icon: BookType,
+                    color:
+                      "from-rose-50 to-orange-50 dark:from-rose-900/20 dark:to-orange-900/20",
+                  },
+                  {
+                    id: "mono",
+                    label: t("learning.settings.fontMono"),
+                    icon: Code,
+                    color:
+                      "from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20",
+                  },
+                ] as const
+              ).map((mode) => {
+                const isSelected = fontFamily === mode.id;
+                return (
+                  <motion.button
+                    key={mode.id}
+                    onClick={() => setFontFamily(mode.id)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={isSelected ? 0 : -1}
+                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? `border-primary-500 bg-gradient-to-br ${  mode.color}`
+                        : "border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
+                    }`}
+                  >
+                    <mode.icon
+                      size={20}
+                      className={
+                        fontFamily === mode.id
+                          ? "text-primary-600 dark:text-primary-400"
+                          : "text-slate-400 dark:text-slate-500"
+                      }
+                    />
+                    <span
+                      className={`text-xs font-medium ${
+                        fontFamily === mode.id
+                          ? "text-primary-700 dark:text-primary-300"
+                          : "text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      {mode.label}
+                    </span>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <BookOpen
+                size={16}
+                className="text-slate-500 dark:text-slate-400"
+              />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t("learning.settings.lineHeight")}
+              </span>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label={t("learning.settings.lineHeight")}
+              className="grid grid-cols-3 gap-2"
+            >
+              {(
+                [
+                  {
+                    id: "compact",
+                    label: t("learning.settings.lineCompact"),
+                    color:
+                      "from-slate-100 to-white dark:from-slate-700 dark:to-slate-800",
+                  },
+                  {
+                    id: "normal",
+                    label: t("learning.settings.lineNormal"),
+                    color:
+                      "from-violet-50 to-primary-50 dark:from-violet-900/20 dark:to-primary-900/20",
+                  },
+                  {
+                    id: "relaxed",
+                    label: t("learning.settings.lineRelaxed"),
+                    color:
+                      "from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20",
+                  },
+                ] as const
+              ).map((mode) => {
+                const isSelected = lineHeight === mode.id;
+                return (
+                  <motion.button
+                    key={mode.id}
+                    onClick={() => setLineHeight(mode.id)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={isSelected ? 0 : -1}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? `border-primary-500 bg-gradient-to-br ${  mode.color}`
+                        : "border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
+                    }`}
+                  >
+                    <span aria-hidden="true" className="text-sm leading-none">
+                      <span className={`block ${mode.id === "compact" ? "h-2" : mode.id === "relaxed" ? "h-6" : "h-4"}`}>
+                        <span className="block w-6 h-0.5 bg-current rounded-full mt-0.5" />
+                        <span className="block w-6 h-0.5 bg-current rounded-full mt-1" />
+                        <span className="block w-6 h-0.5 bg-current rounded-full mt-1" />
+                      </span>
+                    </span>
+                    <span
+                      className={`text-xs font-medium ${
+                        lineHeight === mode.id
+                          ? "text-primary-700 dark:text-primary-300"
+                          : "text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      {mode.label}
+                    </span>
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
 
@@ -146,7 +306,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
             <div
               role="radiogroup"
               aria-label={t("learning.settings.readingMode")}
-              className="grid grid-cols-2 gap-2"
+              className="grid grid-cols-3 gap-2"
             >
               {(
                 [
@@ -163,6 +323,13 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                     icon: Eye,
                     color:
                       "from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30",
+                  },
+                  {
+                    id: "sepia",
+                    label: t("learning.settings.modeSepia"),
+                    icon: Coffee,
+                    color:
+                      "from-amber-50 to-orange-100 dark:from-amber-900/30 dark:to-orange-800/30",
                   },
                 ] as const
               ).map((mode) => {
@@ -207,60 +374,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
 
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Scroll
-                size={16}
-                className="text-slate-500 dark:text-slate-400"
-              />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t("learning.settings.pagination")}
-              </span>
-            </div>
-            <div
-              role="radiogroup"
-              aria-label={t("learning.settings.pagination")}
-              className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-xl"
-            >
-              {(
-                [
-                  {
-                    id: "scroll",
-                    label: t("learning.settings.scroll"),
-                    icon: Scroll,
-                  },
-                  {
-                    id: "pagination",
-                    label: t("learning.settings.page"),
-                    icon: FileText,
-                  },
-                ] as const
-              ).map((mode) => {
-                const isSelected = paginationMode === mode.id;
-                return (
-                <motion.button
-                  key={mode.id}
-                  onClick={() => setPaginationMode(mode.id)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  role="radio"
-                  aria-checked={isSelected}
-                  tabIndex={isSelected ? 0 : -1}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                    isSelected
-                      ? "bg-white dark:bg-slate-600 text-primary-600 dark:text-primary-400 shadow-sm"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                  }`}
-                >
-                  <mode.icon size={16} />
-                  {mode.label}
-                </motion.button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <FileText
+              <GripHorizontal
                 size={16}
                 className="text-slate-500 dark:text-slate-400"
               />
@@ -285,7 +399,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   {
                     id: "comfortable",
                     label: t("learning.settings.widthComfortable"),
-                    icon: FileText,
+                    icon: GripHorizontal,
                     color:
                       "from-violet-50 to-primary-50 dark:from-violet-900/20 dark:to-primary-900/20",
                   },

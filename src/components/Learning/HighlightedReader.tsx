@@ -13,6 +13,12 @@ import { preprocessMarkdown } from "../../utils/markdownPreprocessor";
 import { useFocusStore } from "../../store/useFocusStore";
 import { useShallow } from "zustand/react/shallow";
 import { useReducedMotionOrPreference } from "@/hooks/common/useReducedMotionOrPreference";
+import type {
+  UserSettingsReadingMode,
+  UserSettingsContentWidthMode,
+  UserSettingsFontFamily,
+  UserSettingsLineHeight,
+} from "@shared/types";
 
 interface HighlightRange {
   start: number;
@@ -43,6 +49,22 @@ interface HighlightedReaderProps {
     category: string;
     explanation: string;
   }) => void;
+  /** Optional reading appearance settings. Omitted by callers like the focus panel that render their own layout. */
+  fontSize?: number;
+  readingMode?: UserSettingsReadingMode;
+  contentWidthMode?: UserSettingsContentWidthMode;
+  fontFamily?: UserSettingsFontFamily;
+  lineHeight?: UserSettingsLineHeight;
+}
+
+interface ProseStyleVars extends React.CSSProperties {
+  "--tw-prose-body"?: string;
+  "--tw-prose-headings"?: string;
+  "--tw-prose-links"?: string;
+  "--tw-prose-bold"?: string;
+  "--tw-prose-quotes"?: string;
+  "--tw-prose-counters"?: string;
+  "--tw-prose-bullets"?: string;
 }
 
 const cleanupHighlights = (container: HTMLElement) => {
@@ -412,6 +434,11 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
   onAnalyze,
   keywords,
   onKeywordClick,
+  fontSize,
+  readingMode,
+  contentWidthMode,
+  fontFamily,
+  lineHeight,
 }) => {
   const { t } = useTranslation();
   const { highlightEnabled, highlightIntensity } = useFocusStore(
@@ -585,6 +612,57 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
 
   const safePosition = calculateTooltipPosition(tooltipPosition.x, tooltipPosition.y);
 
+  // Reading appearance. When explicit reading settings are provided (article
+  // reader) we control width, font size, family, line height and theme here;
+  // otherwise keep the original prose-sm/prose-lg default sizing.
+  const sizingClass =
+    fontSize === undefined ? (isMobile ? "prose-sm" : "prose-lg") : "";
+  const widthClass =
+    contentWidthMode === "full"
+      ? "max-w-none"
+      : contentWidthMode === "narrow"
+        ? "max-w-3xl mx-auto"
+        : contentWidthMode === "comfortable"
+          ? "max-w-4xl mx-auto"
+          : "max-w-3xl mx-auto";
+
+  let themeVars: ProseStyleVars | undefined;
+  if (readingMode === "eye-care") {
+    themeVars = {
+      "--tw-prose-body": "#1f2937",
+      "--tw-prose-headings": "#111827",
+      "--tw-prose-links": "#1d4ed8",
+      "--tw-prose-bold": "#111827",
+      "--tw-prose-quotes": "#111827",
+      "--tw-prose-counters": "#4b5563",
+      "--tw-prose-bullets": "#4b5563",
+    };
+  } else if (readingMode === "sepia") {
+    themeVars = {
+      "--tw-prose-body": "#433422",
+      "--tw-prose-headings": "#292018",
+      "--tw-prose-links": "#9a3412",
+      "--tw-prose-bold": "#292018",
+      "--tw-prose-quotes": "#292018",
+      "--tw-prose-counters": "#6b5d4a",
+      "--tw-prose-bullets": "#6b5d4a",
+    };
+  }
+
+  const fontFamilyClass =
+    fontFamily === "serif" ? "font-serif" : fontFamily === "mono" ? "font-mono" : "";
+  const lineHeightClass =
+    lineHeight === "compact"
+      ? "[&_p]:!leading-snug [&_li]:!leading-snug [&_blockquote]:!leading-snug"
+      : lineHeight === "relaxed"
+        ? "[&_p]:!leading-loose [&_li]:!leading-loose [&_blockquote]:!leading-loose"
+        : "";
+
+  const bodyStyle: ProseStyleVars = {
+    ...(fontSize !== undefined ? { fontSize } : {}),
+    ...(themeVars ?? {}),
+  };
+
   return (
     <div className="relative">
       {highlightEnabled && (
@@ -616,7 +694,8 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
 
       <div
         ref={contentRef}
-        className={`max-w-3xl mx-auto prose ${isMobile ? "prose-sm" : "prose-lg"} prose-indigo ${isDark ? "dark:text-gray-200 text-gray-200" : "text-gray-800"}`}
+        className={`prose prose-indigo ${sizingClass} ${widthClass} ${fontFamilyClass} ${lineHeightClass} ${isDark ? "dark:text-gray-200 text-gray-200" : "text-gray-800"}`}
+        style={bodyStyle}
       >
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkMath]}

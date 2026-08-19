@@ -125,9 +125,11 @@ export const LearningMode = () => {
       setHighlightEnabled: s.setHighlightEnabled,
     })),
   );
-  const { fontSize, readingMode, contentWidthMode } = useLearningSettingsStore(
+  const { fontSize, fontFamily, lineHeight, readingMode, contentWidthMode } = useLearningSettingsStore(
     useShallow((s) => ({
       fontSize: s.fontSize,
+      fontFamily: s.fontFamily,
+      lineHeight: s.lineHeight,
       readingMode: s.readingMode,
       contentWidthMode: s.contentWidthMode,
     })),
@@ -571,7 +573,8 @@ export const LearningMode = () => {
                 isGenerating={isGenerating || isNodeLoading} isOnline={isOnline} isGeneratingCards={isGeneratingCards}
                 studyMode={studyMode} highlightEnabled={highlightEnabled}
                 linkedTask={linkedTask} nodeStatus={_nodeStatus}
-                fontSize={fontSize} readingMode={readingMode} contentWidthMode={contentWidthMode}
+                fontSize={fontSize} fontFamily={fontFamily} lineHeight={lineHeight}
+                readingMode={readingMode} contentWidthMode={contentWidthMode}
                 getStudyModeIcon={getStudyModeIcon} getStrategyHint={getStrategyHint}
                 shouldShowArticle={shouldShowArticle} shouldShowQuiz={shouldShowQuiz}
                 onToggleHighlight={() => setHighlightEnabled(!highlightEnabled)}

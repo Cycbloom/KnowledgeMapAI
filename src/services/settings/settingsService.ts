@@ -128,6 +128,8 @@ export const settingsService = {
       const s = useLearningSettingsStore.getState();
       return {
         fontSize: s.fontSize,
+        fontFamily: s.fontFamily,
+        lineHeight: s.lineHeight,
         readingMode: s.readingMode,
         paginationMode: s.paginationMode,
         contentWidthMode: s.contentWidthMode,

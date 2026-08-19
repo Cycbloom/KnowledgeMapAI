@@ -4,12 +4,16 @@ import type {
   UserSettingsReadingMode,
   UserSettingsPaginationMode,
   UserSettingsContentWidthMode,
+  UserSettingsFontFamily,
+  UserSettingsLineHeight,
   UserSettingsAILanguage,
 } from '@shared/types';
 import { useThemeStore } from './useThemeStore';
 
 interface LearningSettingsState extends UserSettingsLearning {
   setFontSize: (size: number) => void;
+  setFontFamily: (family: UserSettingsFontFamily) => void;
+  setLineHeight: (lineHeight: UserSettingsLineHeight) => void;
   setReadingMode: (mode: UserSettingsReadingMode) => void;
   setPaginationMode: (mode: UserSettingsPaginationMode) => void;
   setContentWidthMode: (mode: UserSettingsContentWidthMode) => void;
@@ -19,6 +23,8 @@ interface LearningSettingsState extends UserSettingsLearning {
 
 const DEFAULT_SETTINGS: UserSettingsLearning = {
   fontSize: 16,
+  fontFamily: 'sans',
+  lineHeight: 'normal',
   readingMode: 'default',
   paginationMode: 'scroll',
   contentWidthMode: 'comfortable',
@@ -30,9 +36,11 @@ export const useLearningSettingsStore = createPersistedStore<LearningSettingsSta
   (set) => ({
     ...DEFAULT_SETTINGS,
     setFontSize: (size) => {
-      const clampedSize = Math.max(12, Math.min(24, size));
+      const clampedSize = Math.max(12, Math.min(28, size));
       set({ fontSize: clampedSize });
     },
+    setFontFamily: (family) => set({ fontFamily: family }),
+    setLineHeight: (lineHeight) => set({ lineHeight }),
     setReadingMode: (mode) => set({ readingMode: mode }),
     setPaginationMode: (mode) => set({ paginationMode: mode }),
     setContentWidthMode: (mode) => set({ contentWidthMode: mode }),
@@ -40,7 +48,7 @@ export const useLearningSettingsStore = createPersistedStore<LearningSettingsSta
     resetSettings: () => set(DEFAULT_SETTINGS),
   }),
   {
-    version: 2,
+    version: 3,
     migrate: (persistedState) => {
       // Migrate legacy readingMode === 'dark'. Dark mode is now owned by the
       // global theme (UserSettingsAppearance.themeMode), so move users who had

@@ -54,13 +54,17 @@ export interface UserSettingsFocus {
 // readingMode === "dark" are migrated in Task 7.
 // ---------------------------------------------------------------------------
 
-export type UserSettingsReadingMode = "default" | "eye-care";
+export type UserSettingsReadingMode = "default" | "eye-care" | "sepia";
 export type UserSettingsPaginationMode = "scroll" | "pagination";
 export type UserSettingsContentWidthMode = "full" | "comfortable" | "narrow";
+export type UserSettingsFontFamily = "sans" | "serif" | "mono";
+export type UserSettingsLineHeight = "compact" | "normal" | "relaxed";
 export type UserSettingsAILanguage = "auto" | "zh-CN" | "en-US";
 
 export interface UserSettingsLearning {
   fontSize: number;
+  fontFamily: UserSettingsFontFamily;
+  lineHeight: UserSettingsLineHeight;
   readingMode: UserSettingsReadingMode;
   paginationMode: UserSettingsPaginationMode;
   contentWidthMode: UserSettingsContentWidthMode;

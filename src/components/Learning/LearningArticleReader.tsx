@@ -9,6 +9,12 @@ import type { LinkedTask } from "../../hooks/scheduler/useLinkedTask";
 import type { StudyMode } from "@shared/types/scheduler";
 import type { StudyModeIconType } from "../../hooks/study/useStudyModeLogic";
 import { STUDY_MODE_PRESETS } from "@shared/constants/studyModePresets";
+import type {
+  UserSettingsReadingMode,
+  UserSettingsContentWidthMode,
+  UserSettingsFontFamily,
+  UserSettingsLineHeight,
+} from "@shared/types";
 
 interface LearningArticleReaderProps {
   isDark: boolean;
@@ -26,8 +32,10 @@ interface LearningArticleReaderProps {
   linkedTask: LinkedTask | null;
   nodeStatus: Record<string, unknown> | undefined;
   fontSize: number;
-  readingMode: string;
-  contentWidthMode: string;
+  fontFamily: UserSettingsFontFamily;
+  lineHeight: UserSettingsLineHeight;
+  readingMode: UserSettingsReadingMode;
+  contentWidthMode: UserSettingsContentWidthMode;
   getStudyModeIcon: (mode: StudyMode) => StudyModeIconType;
   getStrategyHint: (
     mode: StudyMode,
@@ -56,6 +64,8 @@ export const LearningArticleReader = ({
   linkedTask,
   nodeStatus,
   fontSize,
+  fontFamily,
+  lineHeight,
   readingMode,
   contentWidthMode,
   getStudyModeIcon,
@@ -68,6 +78,34 @@ export const LearningArticleReader = ({
 }: LearningArticleReaderProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Reading card container styles: background applies to the FULL card
+  // (rounded, padded), while prose inside is constrained only for text width.
+  const readingCardClasses = [
+    "rounded-2xl border transition-colors duration-200",
+    isMobile ? "px-4 py-6 sm:px-6 sm:py-8" : "px-8 py-10 lg:px-12 lg:py-12",
+    readingMode === "eye-care"
+      ? "bg-amber-50 border-amber-200/70 shadow-[0_1px_3px_rgba(180,140,40,0.06)]"
+      : readingMode === "sepia"
+        ? "bg-[#f5ecd9] border-[#e3d5b5] shadow-[0_1px_3px_rgba(140,100,40,0.08)]"
+        : isDark
+          ? "bg-slate-900 border-slate-800"
+          : "bg-white border-gray-200/70",
+  ].join(" ");
+
+  const renderArticleBody = () => (
+    <HighlightedReader
+      content={articleContent}
+      isDark={isDark}
+      isMobile={isMobile}
+      keywords={keywords}
+      fontSize={fontSize}
+      readingMode={readingMode}
+      contentWidthMode={contentWidthMode}
+      fontFamily={fontFamily}
+      lineHeight={lineHeight}
+    />
+  );
 
   // When article should not be shown (quiz-only mode)
   if (!shouldShowArticle()) {
@@ -233,31 +271,7 @@ export const LearningArticleReader = ({
                 </div>
               ) : null;
             })()}
-          <div
-            className={`${
-              contentWidthMode === "full"
-                ? "max-w-none"
-                : contentWidthMode === "comfortable"
-                  ? "max-w-4xl mx-auto"
-                  : "max-w-3xl mx-auto"
-            } ${
-              readingMode === "default"
-                ? isDark
-                  ? "bg-slate-900 text-slate-50"
-                  : "bg-white text-gray-900"
-                : readingMode === "eye-care"
-                  ? "bg-amber-50 text-gray-800"
-                  : "bg-slate-900 text-slate-50"
-            }`}
-            style={{ fontSize: `${fontSize}px` }}
-          >
-            <HighlightedReader
-              content={articleContent}
-              isDark={isDark || readingMode === "dark"}
-              isMobile={isMobile}
-              keywords={keywords}
-            />
-          </div>
+          <div className={readingCardClasses}>{renderArticleBody()}</div>
         </div>
       )}
     </div>

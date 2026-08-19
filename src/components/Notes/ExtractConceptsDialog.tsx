@@ -37,16 +37,21 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
   const graphsQuery = useGraphs();
   const createNodesMutation = useCreateNodesFromConceptsMutation();
 
+  // 防御：父组件无条件挂载本 Dialog（即使 open=false），但 props 偶传 undefined 时，
+  // useState 初始化立即执行 concepts.map 会抛 "Cannot read properties of undefined (reading 'length')"。
+  // （表现：首次进入笔记页偶发白屏，点重试就好——因为状态恢复了）
+  const safeConcepts = Array.isArray(concepts) ? concepts : [];
+
   // 默认全部勾选:用 index 集合记录选中项,概念列表变化时重置
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(
-    () => new Set(concepts.map((_, idx) => idx)),
+    () => new Set(safeConcepts.map((_, idx) => idx)),
   );
   const [graphId, setGraphId] = useState<string>("");
 
   // concepts 变化(每次打开传入新列表)时重置为全选
   useEffect(() => {
-    setSelectedIndices(new Set(concepts.map((_, idx) => idx)));
-  }, [concepts]);
+    setSelectedIndices(new Set(safeConcepts.map((_, idx) => idx)));
+  }, [safeConcepts]);
 
   // 首个可用图谱作为默认值
   useEffect(() => {
@@ -70,11 +75,11 @@ export const ExtractConceptsDialog: React.FC<ExtractConceptsDialogProps> = ({
   // 合并 map+filter+map 为单趟 for 循环，将多次扫描 O(3n) 降为 O(n)
   const selectedConcepts = useMemo(() => {
     const result: NoteExtractedConcept[] = [];
-    for (let idx = 0; idx < concepts.length; idx++) {
-      if (selectedIndices.has(idx)) result.push(concepts[idx]);
+    for (let idx = 0; idx < safeConcepts.length; idx++) {
+      if (selectedIndices.has(idx)) result.push(safeConcepts[idx]);
     }
     return result;
-  }, [concepts, selectedIndices]);
+  }, [safeConcepts, selectedIndices]);
 
   const canConfirm =
     selectedConcepts.length > 0 && !!graphId && !createNodesMutation.isPending;

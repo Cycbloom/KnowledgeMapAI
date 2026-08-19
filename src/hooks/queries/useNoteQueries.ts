@@ -2,6 +2,7 @@ import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
 import { queryKeys, defaultQueryConfig } from "./config";
 import type { Note, NoteListParams, NoteType, NoteTemplate, BlockContent, BlockRef, BlockRefTarget, NodeBlockRefBacklink } from "@shared/types";
+import type { NoteListResult } from "../../services/api/contracts/INotesApi";
 
 
 /**
@@ -82,7 +83,8 @@ const buildParams = (args: UseNotesListArgs, page: number): NoteListParams => {
  */
 export const useNotesList = (args: UseNotesListArgs) => {
   const { view, enabled = true, tag, search } = args;
-  return useInfiniteQuery({
+  const pageSize = args.pageSize ?? 20;
+  return useInfiniteQuery<NoteListResult>({
     queryKey: queryKeys.notes({
       type: view === "daily" || view === "note" ? view : undefined,
       isArchived: view === "archived",
@@ -90,10 +92,51 @@ export const useNotesList = (args: UseNotesListArgs) => {
       tag,
       search,
     }),
-    queryFn: async ({ pageParam }) =>
-      api.notes.list(buildParams(args, pageParam)),
+    // 关键修复：挂载时保证 data 一定是合法的 InfiniteData<NoteListResult> 结构，
+    // 避免 RQ 内部 getNextPageParam / hasNextPage 在 mountState→createResult 时
+    // 访问 undefined.pages / undefined.length 抛错（表现：首次进入笔记页偶发
+    // "Cannot read properties of undefined (reading 'length') at getNextPageParam"，
+    // 重试后因 data 已就绪恢复正常）。
+    initialData: { pages: [], pageParams: [] },
+    queryFn: async ({ pageParam }) => {
+      const currentPage = typeof pageParam === "number" ? pageParam : 1;
+      const raw = await api.notes.list(buildParams(args, currentPage));
+
+      // 归一化为合法 NoteListResult。
+      // 偶发竞态：后端首次进入页面时因冷启动/缓存脏值返回缺失结构（或 undefined），
+      // 导致下游 getNextPageParam / hasNextPage 在 createResult 时访问 undefined.length/undefined.page 抛错。
+      // 统一兜底后永远返回结构完整的对象。
+      if (
+        !raw ||
+        typeof raw !== "object" ||
+        !Number.isFinite((raw as NoteListResult).total) ||
+        !Number.isFinite((raw as NoteListResult).page) ||
+        !Number.isFinite((raw as NoteListResult).pageSize) ||
+        !Array.isArray((raw as NoteListResult).items)
+      ) {
+        const maybeItems = (raw as NoteListResult | undefined)?.items;
+        const maybeTotal = (raw as NoteListResult | undefined)?.total;
+        return {
+          items: Array.isArray(maybeItems) ? (maybeItems as Note[]) : [],
+          total: Number.isFinite(maybeTotal) ? (maybeTotal as number) : 0,
+          page: currentPage,
+          pageSize,
+        };
+      }
+      return raw as NoteListResult;
+    },
     initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
+    getNextPageParam: (lastPage: NoteListResult) => {
+      // 结构校验：任何字段缺失时视为没有下一页，避免读取 undefined.xxx 抛错
+      // （ErrorReporter 堆栈: getNextPageParam → hasNextPage → createResult → mountState）
+      if (
+        !lastPage ||
+        !Number.isFinite(lastPage.page) ||
+        !Number.isFinite(lastPage.pageSize) ||
+        !Number.isFinite(lastPage.total)
+      ) {
+        return undefined;
+      }
       const seen = lastPage.page * lastPage.pageSize;
       return seen < lastPage.total ? lastPage.page + 1 : undefined;
     },

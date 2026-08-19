@@ -106,6 +106,11 @@ function VirtualListComponent<T>({
   const [internalContainer, setInternalContainer] = useState<HTMLDivElement | null>(null);
   const endReachedSentinelRef = useRef(false);
 
+  // 防御：上游查询结果未就绪/脏数据结构未命中时，items 可能是 undefined/null/非数组，
+  // 直接访问 .length 会抛 "Cannot read properties of undefined (reading 'length')"。
+  // 统一在此归一化，避免"首次进入笔记/列表页偶发白屏，重试就好"的竞态。
+  const safeItems: T[] = Array.isArray(items) ? items : [];
+
   // Use callback ref to get the DOM element
   const setContainerRef = useCallback((node: HTMLDivElement | null) => {
     internalContainerRef.current = node;
@@ -115,7 +120,7 @@ function VirtualListComponent<T>({
   const scrollElement = externalContainerRef?.current ?? internalContainer;
 
   const virtualizer = useVirtualizer({
-    count: items.length,
+    count: safeItems.length,
     getScrollElement: useCallback(() => scrollElement, [scrollElement]),
     estimateSize,
     overscan,
@@ -125,7 +130,7 @@ function VirtualListComponent<T>({
   // ── onEndReached ─────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!onEndReached || items.length === 0) return;
+    if (!onEndReached || safeItems.length === 0) return;
 
     const virtualItems = virtualizer.getVirtualItems();
     if (virtualItems.length === 0) return;
@@ -151,7 +156,7 @@ function VirtualListComponent<T>({
     scrollElement?.clientHeight,
     onEndReached,
     endReachedThreshold,
-    items.length,
+    safeItems.length,
   ]);
 
   // ── Loading state ────────────────────────────────────────────────────────
@@ -187,7 +192,7 @@ function VirtualListComponent<T>({
 
   // ── Empty state ──────────────────────────────────────────────────────────
 
-  if (items.length === 0) {
+  if (safeItems.length === 0) {
     return (
       <div className={cn('flex items-center justify-center', className)} style={style}>
         {emptyState ?? <EmptyState title={t('common.empty')} variant="inline" />}
@@ -235,7 +240,7 @@ function VirtualListComponent<T>({
                 ref={virtualizer.measureElement}
                 style={{ width: '100%' }}
               >
-                {renderItem(items[virtualItem.index], virtualItem.index)}
+                {renderItem(safeItems[virtualItem.index], virtualItem.index)}
               </div>
             </AnimatedItem>
           ))}
@@ -281,8 +286,11 @@ function VirtualGridComponent<T>({
   const { t } = useTranslation();
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // 与 VirtualList 保持一致：items 非数组时归一化为 []，避免偶发的 .length 报错
+  const safeItems: T[] = Array.isArray(items) ? items : [];
+
   const columns = Math.max(1, Math.floor((containerWidth + gap) / (itemWidth + gap)));
-  const rows = Math.ceil(items.length / columns);
+  const rows = Math.ceil(safeItems.length / columns);
   const totalHeight = rows * (itemHeight + gap) - gap;
 
   const gridVirtualizer = useVirtualizer({
@@ -324,7 +332,7 @@ function VirtualGridComponent<T>({
     );
   }
 
-  if (items.length === 0) {
+  if (safeItems.length === 0) {
     return (
       <div className={cn('flex items-center justify-center', className)} style={{ height: containerHeight }}>
         {emptyState ?? <EmptyState title={t('common.empty')} variant="inline" />}
@@ -352,9 +360,9 @@ function VirtualGridComponent<T>({
           const itemsInRow: { item: T; colIndex: number; globalIndex: number }[] = [];
           for (let col = 0; col < columns; col++) {
             const globalIndex = rowIndex * columns + col;
-            if (globalIndex < items.length) {
+            if (globalIndex < safeItems.length) {
               itemsInRow.push({
-                item: items[globalIndex],
+                item: safeItems[globalIndex],
                 colIndex: col,
                 globalIndex,
               });

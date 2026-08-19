@@ -9,6 +9,7 @@ import { api } from "@/services/api";
 import { CAPTURE_INBOX_TAG } from "@shared/constants/capture";
 import type { Note } from "@shared/types/note";
 import type { Graph } from "@shared/types";
+import type { NoteListResult } from "@/services/api/contracts/INotesApi";
 
 /**
  * 今日回顾 / 捕获箱面板（每日捕获 + AI 自动归档的闭环入口）。
@@ -36,10 +37,14 @@ export const TodayReview = () => {
     pageSize: 50,
   });
 
-  const inboxNotes = React.useMemo(
-    () => data?.pages.flatMap((page) => page.items) ?? [],
-    [data],
-  );
+  const inboxNotes = React.useMemo<Note[]>(() => {
+    const pages = data?.pages;
+    if (!Array.isArray(pages)) return [];
+    return pages.flatMap((p) => {
+      if (!p || typeof p !== "object" || !Array.isArray((p as NoteListResult).items)) return [];
+      return (p as NoteListResult).items.filter((n): n is Note => !!n);
+    });
+  }, [data]);
 
   // 默认归档目标：优先用户选择，否则取第一个图谱
   const effectiveGraphId = targetGraphId || graphList[0]?.id || "";

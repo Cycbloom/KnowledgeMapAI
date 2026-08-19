@@ -63,6 +63,7 @@ import { asyncConfirm } from "../../utils/asyncConfirm";
 import { formatDate } from "../../utils/formatters";
 import { message } from "../../utils/messageHelper";
 import type { Note, NoteType } from "@shared/types/note";
+import type { NoteListResult } from "../../services/api/contracts/INotesApi";
 
 const PAGE_SIZE = 20;
 
@@ -468,10 +469,21 @@ export const NotesListPage = () => {
   const restoreNoteMutation = useRestoreNoteMutation();
 
   // useInfiniteQuery: data.pages 是各页 NoteListResult 数组,需展平为单层 note 列表。
-  const notes = useMemo(
-    () => data?.pages.flatMap((p) => p.items) ?? [],
-    [data],
-  );
+  // 多层防御：
+  //  1) data 一定是 { pages: NoteListResult[], pageParams: number[] }（useNotesList 已加 initialData）
+  //  2) 遍历前先保证 pages 是数组
+  //  3) 每页结构缺 items 时跳过；每页 items 不是数组时当空数组
+  //  4) 过滤掉单条为 undefined/null 的脏笔记（flatMap 不丢 undefined，所以显式 filter）
+  const notes = useMemo<Note[]>(() => {
+    const pages = data?.pages;
+    if (!Array.isArray(pages)) return [];
+    return pages.flatMap((p) => {
+      if (!p || typeof p !== "object" || !Array.isArray((p as NoteListResult).items)) {
+        return [];
+      }
+      return (p as NoteListResult).items.filter((n): n is Note => !!n);
+    });
+  }, [data]);
 
   // 卸载时清理 debounce 定时器,避免设置已卸载组件 state 的告警。
   useEffect(() => {

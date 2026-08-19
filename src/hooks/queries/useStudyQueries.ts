@@ -58,16 +58,44 @@ export const useStudyCardsInfinite = (args: UseStudyCardsInfiniteArgs) => {
 
   return useInfiniteQuery({
     queryKey: queryKeys.studyCardsInfinite({ ...filters, pageSize }),
+    // 同 useNotesList：保证挂载时 data 是合法的 InfiniteData 结构，
+    // 避免 RQ 内部 createResult 时访问 undefined.pages / undefined.length
+    initialData: { pages: [], pageParams: [] },
     queryFn: async ({ pageParam }) => {
-      const result = await api.study.getCardsPaged({
+      const currentPage = typeof pageParam === "number" ? pageParam : 1;
+      const raw = await api.study.getCardsPaged({
         ...filters,
-        page: pageParam,
+        page: currentPage,
         pageSize,
       });
-      return result;
+      // 结构归一化，避免竞态下返回脏结构导致 getNextPageParam 抛错
+      if (
+        !raw ||
+        typeof raw !== "object" ||
+        !Number.isFinite(raw.total) ||
+        !Number.isFinite(raw.page) ||
+        !Number.isFinite(raw.pageSize) ||
+        !Array.isArray(raw.items)
+      ) {
+        return {
+          items: Array.isArray(raw?.items) ? raw.items : [],
+          total: Number.isFinite(raw?.total) ? raw.total : 0,
+          page: currentPage,
+          pageSize,
+        };
+      }
+      return raw;
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
+      if (
+        !lastPage ||
+        !Number.isFinite(lastPage.page) ||
+        !Number.isFinite(lastPage.pageSize) ||
+        !Number.isFinite(lastPage.total)
+      ) {
+        return undefined;
+      }
       const seen = lastPage.page * lastPage.pageSize;
       return seen < lastPage.total ? lastPage.page + 1 : undefined;
     },

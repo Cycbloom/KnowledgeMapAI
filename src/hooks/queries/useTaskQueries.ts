@@ -37,23 +37,40 @@ export const useTasks = (
 ) => {
   return useInfiniteQuery<TasksPage>({
     queryKey: queryKeys.tasks(status, limit, offset),
+    // 同 useNotesList：保证挂载时 data 是合法的 InfiniteData 结构，
+    // 避免 RQ 内部 createResult 时访问 undefined.pages / undefined.length
+    initialData: { pages: [], pageParams: [] },
     queryFn: async ({ pageParam }) => {
       // pageParam 类型默认为 unknown（TPageParam 未显式绑定），
       // 此处用类型守卫收敛为 number，避免 unknown ?? number 推断为 {}。
       const currentOffset = typeof pageParam === "number" ? pageParam : offset;
-      const result = (await api.tasks.list(status, limit, currentOffset)) as {
+      const raw = (await api.tasks.list(status, limit, currentOffset)) as {
         tasks: Task[];
         total: number;
-      };
+      } | undefined | null;
+
+      // 结构归一化：避免竞态下 tasks/total 缺失导致 getNextPageParam 读 undefined.xxx
+      const rawObj: { tasks?: unknown; total?: unknown } = raw ?? {};
+      const safeTasks = Array.isArray(rawObj.tasks) ? (rawObj.tasks as Task[]) : [];
+      const safeTotal = Number.isFinite(rawObj.total) ? (rawObj.total as number) : 0;
+
       return {
-        tasks: result.tasks,
-        total: result.total,
+        tasks: safeTasks,
+        total: safeTotal,
         offset: currentOffset,
         limit,
       };
     },
     initialPageParam: offset,
     getNextPageParam: (lastPage) => {
+      if (
+        !lastPage ||
+        !Number.isFinite(lastPage.offset) ||
+        !Number.isFinite(lastPage.limit) ||
+        !Number.isFinite(lastPage.total)
+      ) {
+        return undefined;
+      }
       const nextOffset = lastPage.offset + lastPage.limit;
       return nextOffset < lastPage.total ? nextOffset : undefined;
     },

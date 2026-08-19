@@ -1230,7 +1230,7 @@ export class AutoGraphService {
           ],
           model: model || provider.model,
           response_format: { type: "json_object" },
-          max_tokens: 4000,
+          max_tokens: 12000,
         });
         return {
           result,

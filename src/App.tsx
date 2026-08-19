@@ -10,6 +10,7 @@ import { QueryErrorResetBoundary, useQueryClient } from "@tanstack/react-query";
 import { useDeepLink } from "./hooks/common/useDeepLink";
 import { useMobileInit } from "./hooks/mobile/useMobileInit";
 import { useNetworkStatus } from "./hooks/common/useNetworkStatus";
+import { useUiFont } from "./hooks/common/useUiFont";
 import { useDocumentTitle } from "./hooks/common/useDocumentTitle";
 import { useTranslation } from "react-i18next";
 import { message } from "@/utils/messageHelper";
@@ -116,6 +117,7 @@ function useKernelRoutes(layoutType: "public" | "protected") {
 function App() {
   useMobileInit();
   useDeepLink();
+  useUiFont();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 

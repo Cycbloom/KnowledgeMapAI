@@ -52,3 +52,4 @@ export { usePrefetch } from './usePrefetch';
 export { useRoutePrefetch } from './useRoutePrefetch';
 export { useDataFreshness } from './useDataFreshness';
 export type { DataFreshnessResult, DataFreshnessSnapshot } from './useDataFreshness';
+export { useUiFont } from './useUiFont';

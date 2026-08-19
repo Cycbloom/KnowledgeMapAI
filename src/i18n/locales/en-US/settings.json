@@ -399,5 +399,50 @@
       "label": "Mixed Mode",
       "description": "Auto-select strategy based on node status"
     }
+  },
+  "uiFonts": {
+    "title": "Interface Font",
+    "description": "Pick the global UI typeface. Drop matching .woff2 files into public/fonts for full offline usage; otherwise the operating system native fonts are used as fallback.",
+    "previewLine": "Knowledge Graph: The symbiosis of machine learning, deep learning, and NLP. The quick brown fox jumps over the lazy dog. 0123456789",
+    "fonts": {
+      "systemSans": {
+        "name": "System Default",
+        "tag": "System",
+        "desc": "Follows OS native font (PingFang / Microsoft YaHei / Segoe UI)"
+      },
+      "inter": {
+        "name": "Inter",
+        "tag": "Latin UI",
+        "desc": "Modern sans-serif, best for Latin UI; Chinese text falls back to system"
+      },
+      "notoSansSC": {
+        "name": "Noto Sans SC",
+        "tag": "CJK Sans",
+        "desc": "Open-source Chinese sans-serif, highly legible across platforms"
+      },
+      "notoSerifSC": {
+        "name": "Noto Serif SC",
+        "tag": "CJK Serif",
+        "desc": "Open-source Chinese serif, ideal for knowledge-heavy scenes"
+      },
+      "lxgwWenkai": {
+        "name": "LXGW WenKai",
+        "tag": "Kai-style",
+        "desc": "Handwritten Kai style, immersive reading companion"
+      },
+      "sarasaGothicSC": {
+        "name": "Sarasa Gothic SC",
+        "tag": "CJK Mono",
+        "desc": "CJK monospace style, code + prose mixed layouts love it"
+      }
+    }
+  },
+  "readingFonts": {
+    "fonts": {
+      "sans": { "name": "Sans (Default)", "tag": "General" },
+      "serif": { "name": "Serif (Default)", "tag": "General" },
+      "mono": { "name": "Mono (Default)", "tag": "Code" },
+      "jetbrainsMono": { "name": "JetBrains Mono", "tag": "Code" }
+    }
   }
 }

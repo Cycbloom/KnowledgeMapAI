@@ -14,13 +14,12 @@ import {
   GripHorizontal,
   Maximize2,
   Minimize2,
-  BookType,
-  Code,
   Coffee,
 } from "lucide-react";
 import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
 import { useShallow } from "zustand/react/shallow";
 import { useIsMobile, useFocusTrap, useEscapeKey } from "../../hooks";
+import { READING_FONT_FAMILIES, resolveFontFamily, type ReadingFontFamilyId } from "@shared/constants/fonts";
 
 interface LearningSettingsPanelProps {
   isOpen: boolean;
@@ -152,65 +151,79 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
             <div
               role="radiogroup"
               aria-label={t("learning.settings.fontFamily")}
-              className="grid grid-cols-3 gap-2"
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"
             >
-              {(
-                [
-                  {
-                    id: "sans",
-                    label: t("learning.settings.fontSans"),
-                    icon: Type,
-                    color:
-                      "from-slate-100 to-white dark:from-slate-700 dark:to-slate-800",
-                  },
-                  {
-                    id: "serif",
-                    label: t("learning.settings.fontSerif"),
-                    icon: BookType,
-                    color:
-                      "from-rose-50 to-orange-50 dark:from-rose-900/20 dark:to-orange-900/20",
-                  },
-                  {
-                    id: "mono",
-                    label: t("learning.settings.fontMono"),
-                    icon: Code,
-                    color:
-                      "from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20",
-                  },
-                ] as const
-              ).map((mode) => {
-                const isSelected = fontFamily === mode.id;
+              {READING_FONT_FAMILIES.map((entry) => {
+                const id = entry.id as ReadingFontFamilyId;
+                const isSelected = fontFamily === id;
+                let label: string;
+                let tag: string | null = null;
+                if (id === "sans") {
+                  label = t("learning.settings.fontSans");
+                } else if (id === "serif") {
+                  label = t("learning.settings.fontSerif");
+                } else if (id === "mono") {
+                  label = t("learning.settings.fontMono");
+                } else if (id === "jetbrains-mono") {
+                  label = t(
+                    "settings.readingFonts.fonts.jetbrainsMono.name" as never,
+                  );
+                  tag = t(
+                    "settings.readingFonts.fonts.jetbrainsMono.tag" as never,
+                  );
+                } else {
+                  label = t(
+                    `settings.uiFonts.fonts.${entry.labelKey}.name` as never,
+                  );
+                  tag = t(
+                    `settings.uiFonts.fonts.${entry.labelKey}.tag` as never,
+                  );
+                }
                 return (
                   <motion.button
-                    key={mode.id}
-                    onClick={() => setFontFamily(mode.id)}
+                    key={id}
+                    onClick={() => setFontFamily(id)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     role="radio"
                     aria-checked={isSelected}
                     tabIndex={isSelected ? 0 : -1}
-                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                    title={tag ?? label}
+                    className={`flex flex-col items-start gap-1.5 p-2.5 rounded-xl border-2 transition-all ${
                       isSelected
-                        ? `border-primary-500 bg-gradient-to-br ${  mode.color}`
+                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
                         : "border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
                     }`}
                   >
-                    <mode.icon
-                      size={20}
-                      className={
-                        fontFamily === mode.id
-                          ? "text-primary-600 dark:text-primary-400"
-                          : "text-slate-400 dark:text-slate-500"
-                      }
-                    />
+                    <div className="w-full flex items-center justify-between gap-1">
+                      {tag ? (
+                        <span
+                          className={`text-[9px] font-semibold uppercase tracking-wide rounded-full px-1.5 py-0.5 ${
+                            isSelected
+                              ? "bg-primary-600 text-white"
+                              : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          {tag}
+                        </span>
+                      ) : null}
+                    </div>
                     <span
-                      className={`text-xs font-medium ${
-                        fontFamily === mode.id
+                      className="w-full text-[13px] leading-snug rounded-md bg-white/80 dark:bg-slate-900/80 border border-slate-100 dark:border-slate-700 px-2 py-1 text-slate-800 dark:text-slate-100 line-clamp-2"
+                      style={{
+                        fontFamily: resolveFontFamily(id, "reading"),
+                      }}
+                    >
+                      字：机器学习基础 ML DL NLP
+                    </span>
+                    <span
+                      className={`text-[11px] font-medium truncate w-full ${
+                        isSelected
                           ? "text-primary-700 dark:text-primary-300"
                           : "text-slate-600 dark:text-slate-400"
                       }`}
                     >
-                      {mode.label}
+                      {label}
                     </span>
                   </motion.button>
                 );

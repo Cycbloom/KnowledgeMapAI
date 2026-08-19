@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "../../hooks";
 import { useSaveFeedback } from "../../hooks/common";
 import { usePreferencesStore } from "../../store/usePreferencesStore";
+import { useThemeStore } from "../../store/useThemeStore";
+import { UI_FONT_FAMILIES, resolveFontFamily, type UiFontFamilyId } from "@shared/constants/fonts";
 import {
   Palette,
   Sun,
@@ -12,12 +14,15 @@ import {
   Globe,
   Sparkles,
   Wind,
+  Type,
 } from "lucide-react";
 
 export const AppearanceSettings = React.memo(function AppearanceSettings() {
   const { t, i18n } = useTranslation();
   const { themeMode, setTheme, themePreset, setThemePreset, availablePresets } =
     useTheme();
+  const uiFontFamily = useThemeStore((s) => s.uiFontFamily);
+  const setUiFontFamily = useThemeStore((s) => s.setUiFontFamily);
   const celebrationEnabled = usePreferencesStore((s) => s.celebrationEnabled);
   const setCelebrationEnabled = usePreferencesStore(
     (s) => s.setCelebrationEnabled,
@@ -148,6 +153,95 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
               </span>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* 全局 UI 字体 */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
+        <div className="flex items-center gap-2 mb-2">
+          <Type className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            {t("settings.uiFonts.title")}
+          </h2>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+          {t("settings.uiFonts.description")}
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {UI_FONT_FAMILIES.map((entry) => {
+            const active = uiFontFamily === entry.id;
+            const nameKey = `settings.uiFonts.fonts.${entry.labelKey}.name` as const;
+            const tagKey = `settings.uiFonts.fonts.${entry.labelKey}.tag` as const;
+            const descKey = `settings.uiFonts.fonts.${entry.labelKey}.desc` as const;
+            return (
+              <button
+                key={entry.id}
+                onClick={() => {
+                  setUiFontFamily(entry.id as UiFontFamilyId);
+                  notify();
+                }}
+                aria-pressed={active}
+                aria-label={t(nameKey as never)}
+                title={t(descKey as never)}
+                className={`group flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all ${
+                  active
+                    ? "bg-violet-50 border-violet-200 ring-1 ring-violet-200 dark:bg-violet-900/30 dark:border-violet-800 dark:ring-violet-700"
+                    : "bg-gray-50 border-gray-100 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-500 dark:hover:bg-slate-700"
+                }`}
+              >
+                <div className="flex w-full items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 ${
+                        active
+                          ? "bg-violet-600 text-white dark:bg-violet-500"
+                          : "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-gray-300"
+                      }`}
+                    >
+                      {t(tagKey as never)}
+                    </span>
+                    <span
+                      className={`text-sm font-semibold ${
+                        active
+                          ? "text-violet-800 dark:text-violet-200"
+                          : "text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      {t(nameKey as never)}
+                    </span>
+                  </div>
+                  {active ? (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-600 text-white">
+                      <svg
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden
+                        className="w-3 h-3"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.704 5.29a1 1 0 0 1 .006 1.414l-8.25 8.3a1 1 0 0 1-1.42.006l-4.25-4.3a1 1 0 1 1 1.422-1.404l3.54 3.582 7.542-7.588a1 1 0 0 1 1.45 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                  ) : null}
+                </div>
+                <div
+                  className="w-full rounded-lg bg-white/70 dark:bg-slate-900/70 border border-gray-100 dark:border-slate-600 px-3 py-2 text-[15px] text-gray-800 dark:text-gray-100 leading-relaxed"
+                  style={{
+                    fontFamily: resolveFontFamily(entry.id, "ui"),
+                  }}
+                >
+                  {t("settings.uiFonts.previewLine" as never)}
+                </div>
+                <p className="text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
+                  {t(descKey as never)}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
 

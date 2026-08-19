@@ -2,6 +2,7 @@ import type { AIProviderType } from "./ai";
 import type { GraphViewMode } from "./graph-core";
 import type { NotificationType } from "./common";
 import type { ThemePreset } from "./styles";
+import type { UiFontFamilyId } from "@shared/constants/fonts";
 
 /**
  * Unified user settings type.
@@ -24,9 +25,12 @@ import type { ThemePreset } from "./styles";
 
 export type UserSettingsThemeMode = "light" | "dark" | "system";
 
+export type UserSettingsUiFontFamily = UiFontFamilyId;
+
 export interface UserSettingsAppearance {
   themeMode: UserSettingsThemeMode;
   themePreset: ThemePreset;
+  uiFontFamily: UserSettingsUiFontFamily;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,7 +61,16 @@ export interface UserSettingsFocus {
 export type UserSettingsReadingMode = "default" | "eye-care" | "sepia";
 export type UserSettingsPaginationMode = "scroll" | "pagination";
 export type UserSettingsContentWidthMode = "full" | "comfortable" | "narrow";
-export type UserSettingsFontFamily = "sans" | "serif" | "mono";
+export type UserSettingsFontFamily =
+  | "sans"
+  | "serif"
+  | "mono"
+  | "noto-sans-sc"
+  | "noto-serif-sc"
+  | "lxgw-wenkai"
+  | "sarasa-gothic-sc"
+  | "inter"
+  | "jetbrains-mono";
 export type UserSettingsLineHeight = "compact" | "normal" | "relaxed";
 export type UserSettingsAILanguage = "auto" | "zh-CN" | "en-US";
 

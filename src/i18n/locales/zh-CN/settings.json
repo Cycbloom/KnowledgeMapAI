@@ -399,5 +399,50 @@
       "label": "混合模式",
       "description": "自动按节点状态选择策略"
     }
+  },
+  "uiFonts": {
+    "title": "界面字体",
+    "description": "选择全局 UI 文字的字体。放置对应 .woff2 到 public/fonts 可完全离线，否则使用系统自带的中文字体。",
+    "previewLine": "知识图谱：机器学习、深度学习与自然语言处理的完美结合。The quick brown fox jumps over the lazy dog. 0123456789",
+    "fonts": {
+      "systemSans": {
+        "name": "系统默认",
+        "tag": "系统",
+        "desc": "跟随操作系统原生字体（PingFang / 微软雅黑）"
+      },
+      "inter": {
+        "name": "Inter",
+        "tag": "西文向",
+        "desc": "现代无衬线，英文 UI 首选，中文回退到系统"
+      },
+      "notoSansSC": {
+        "name": "思源黑体",
+        "tag": "中文无衬线",
+        "desc": "Noto Sans SC，开源中文黑体，兼顾可读性"
+      },
+      "notoSerifSC": {
+        "name": "思源宋体",
+        "tag": "中文衬线",
+        "desc": "Noto Serif SC，适合严肃、知识向场景"
+      },
+      "lxgwWenkai": {
+        "name": "霞鹜文楷",
+        "tag": "手写楷体",
+        "desc": "LXGW WenKai，沉浸式阅读首选"
+      },
+      "sarasaGothicSC": {
+        "name": "更纱黑体",
+        "tag": "中文等宽",
+        "desc": "Sarasa Gothic SC，中文+代码混排利器"
+      }
+    }
+  },
+  "readingFonts": {
+    "fonts": {
+      "sans": { "name": "无衬线（默认）", "tag": "通用" },
+      "serif": { "name": "衬线（默认）", "tag": "通用" },
+      "mono": { "name": "等宽（默认）", "tag": "代码" },
+      "jetbrainsMono": { "name": "JetBrains Mono", "tag": "代码" }
+    }
   }
 }

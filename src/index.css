@@ -1,5 +1,157 @@
 @import "katex/dist/katex.min.css";
 @import "./styles/scheduler.css";
+
+/* ---------------------------------------------------------------------------
+ * Fonts (self-hosted first, fall back to Google Fonts subsets and native OS
+ * fonts). Electron users can drop woff2 files into public/fonts/ to go fully
+ * offline; otherwise the `local()` / `url()` chains in @font-face silently
+ * skip missing candidates and the later font-family fallback stack takes over.
+ * ------------------------------------------------------------------------- */
+
+/* System default UI font stack — used when `system` is the chosen UI font. */
+@font-face {
+  font-family: "KnowledgeMap UI System";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local("system-ui");
+}
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Inter"),
+    local("Inter-Regular"),
+    url("/fonts/inter-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local("Inter Bold"),
+    local("Inter-Bold"),
+    url("/fonts/inter-700.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Noto Sans SC"),
+    local("Noto Sans SC Regular"),
+    local("PingFang SC"),
+    local("Microsoft YaHei"),
+    url("/fonts/noto-sans-sc-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local("Noto Sans SC Bold"),
+    local("PingFang SC Heavy"),
+    local("Microsoft YaHei Bold"),
+    url("/fonts/noto-sans-sc-700.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Noto Serif SC";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Noto Serif SC"),
+    local("Source Han Serif SC"),
+    local("Songti SC"),
+    local("SimSun"),
+    url("/fonts/noto-serif-sc-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Serif SC";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local("Noto Serif SC Bold"),
+    local("Source Han Serif SC Heavy"),
+    local("SimSun Bold"),
+    url("/fonts/noto-serif-sc-700.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "LXGW WenKai";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("LXGW WenKai"),
+    local("KaiTi"),
+    local("STKaiti"),
+    url("/fonts/lxgw-wenkai-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "LXGW WenKai";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local("LXGW WenKai Bold"),
+    local("KaiTi Bold"),
+    local("STKaiti Bold"),
+    url("/fonts/lxgw-wenkai-700.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Sarasa Gothic SC";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Sarasa Gothic SC"),
+    local("Cascadia Mono"),
+    local("JetBrains Mono"),
+    url("/fonts/sarasa-gothic-sc-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Sarasa Gothic SC";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local("Sarasa Gothic SC Bold"),
+    local("JetBrains Mono Bold"),
+    url("/fonts/sarasa-gothic-sc-700.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("JetBrains Mono"),
+    local("JetBrainsMono-Regular"),
+    url("/fonts/jetbrains-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local("JetBrains Mono Bold"),
+    local("JetBrainsMono-Bold"),
+    url("/fonts/jetbrains-mono-700.woff2") format("woff2");
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -341,9 +493,20 @@
 }
 
 :root {
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
-    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-ui-current: var(
+    --font-ui-system,
+    "KnowledgeMap UI System",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    "Microsoft YaHei",
+    "Hiragino Sans GB",
+    "Segoe UI",
+    Roboto,
+    sans-serif
+  );
+  font-family: var(--font-ui-current);
   line-height: 1.5;
   font-weight: 400;
 
@@ -1247,4 +1410,54 @@ select:focus-visible {
   select {
     font-size: 16px !important;
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * Global UI font switcher — driven by `html[data-ui-font="<id>"]` set from
+ * the application hook. Per-id variables only override --font-ui-system so
+ * the default fallback chain (PingFang / MS YaHei / system-ui) remains valid
+ * before any selector is explicitly set.
+ * ------------------------------------------------------------------------- */
+
+html {
+  --font-ui-system: "KnowledgeMap UI System", system-ui, -apple-system,
+    BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB",
+    "Segoe UI", Roboto, sans-serif;
+  --font-ui-inter: "Inter", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  --font-ui-noto-sans-sc: "Noto Sans SC", ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+    "Hiragino Sans GB", "Source Han Sans SC", sans-serif;
+  --font-ui-noto-serif-sc: "Noto Serif SC", ui-serif, "Source Han Serif SC",
+    "Songti SC", "SimSun", "Noto Serif", Georgia, serif;
+  --font-ui-lxgw-wenkai: "LXGW WenKai", "KaiTi", "STKaiti", "Songti SC",
+    "SimSun", "Microsoft YaHei", serif;
+  --font-ui-sarasa-gothic-sc: "Sarasa Gothic SC", ui-monospace, ui-sans-serif,
+    "PingFang SC", "Microsoft YaHei", "Cascadia Mono", "JetBrains Mono",
+    Consolas, monospace;
+}
+
+html[data-ui-font="system"] {
+  --font-ui-current: var(--font-ui-system);
+}
+html[data-ui-font="inter"] {
+  --font-ui-current: var(--font-ui-inter);
+}
+html[data-ui-font="noto-sans-sc"] {
+  --font-ui-current: var(--font-ui-noto-sans-sc);
+}
+html[data-ui-font="noto-serif-sc"] {
+  --font-ui-current: var(--font-ui-noto-serif-sc);
+}
+html[data-ui-font="lxgw-wenkai"] {
+  --font-ui-current: var(--font-ui-lxgw-wenkai);
+}
+html[data-ui-font="sarasa-gothic-sc"] {
+  --font-ui-current: var(--font-ui-sarasa-gothic-sc);
+}
+
+/* Wire the semantic `ui` tailwind class (`font-ui`) to the global variable. */
+body,
+.font-ui {
+  font-family: var(--font-ui-current);
 }

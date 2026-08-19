@@ -18,6 +18,7 @@ import type {
   UserSettingsShortcutKey,
   UserSettingsShortcuts,
   UserSettingsThemeMode,
+  UserSettingsUiFontFamily,
   UserSettingsWhiteNoiseType,
 } from "@shared/types";
 import type { StudyStrategyValues } from "@/components/Settings/settingsConstants";
@@ -68,13 +69,15 @@ export const settingsService = {
    */
   appearance: {
     get: (): UserSettingsAppearance => {
-      const { themeMode, themePreset } = useThemeStore.getState();
-      return { themeMode, themePreset };
+      const { themeMode, themePreset, uiFontFamily } = useThemeStore.getState();
+      return { themeMode, themePreset, uiFontFamily };
     },
     setThemeMode: (mode: UserSettingsThemeMode) =>
       useThemeStore.getState().setThemeMode(mode),
     setThemePreset: (preset: ThemePreset) =>
       useThemeStore.getState().setThemePreset(preset),
+    setUiFontFamily: (font: UserSettingsUiFontFamily) =>
+      useThemeStore.getState().setUiFontFamily(font),
   },
 
   /**

@@ -1,5 +1,18 @@
 /** @type {import('tailwindcss').Config} */
 
+import {
+  UI_FONT_FAMILIES,
+  READING_FONT_FAMILIES,
+  buildFontStack,
+} from "./shared/constants/fonts.ts";
+
+const uiFonts = Object.fromEntries(
+  UI_FONT_FAMILIES.map((f) => [`ui-${f.id}`, buildFontStack(f)]),
+);
+const readingFonts = Object.fromEntries(
+  READING_FONT_FAMILIES.map((f) => [`reading-${f.id}`, buildFontStack(f)]),
+);
+
 export default {
   darkMode: "class",
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
@@ -15,6 +28,12 @@ export default {
       "2xl": "1536px",
     },
     extend: {
+      fontFamily: {
+        ui: ["var(--font-ui-current, inherit)"],
+        sans: uiFonts["ui-system"],
+        ...uiFonts,
+        ...readingFonts,
+      },
       spacing: {
         "44": "44px",
         "128": "32rem",

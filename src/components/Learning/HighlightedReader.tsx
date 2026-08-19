@@ -19,6 +19,7 @@ import type {
   UserSettingsFontFamily,
   UserSettingsLineHeight,
 } from "@shared/types";
+import { resolveFontFamily } from "@shared/constants/fonts";
 
 interface HighlightRange {
   start: number;
@@ -649,8 +650,10 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
     };
   }
 
-  const fontFamilyClass =
-    fontFamily === "serif" ? "font-serif" : fontFamily === "mono" ? "font-mono" : "";
+  const resolvedFontFamily =
+    fontFamily !== undefined
+      ? resolveFontFamily(fontFamily, "reading")
+      : undefined;
   const lineHeightClass =
     lineHeight === "compact"
       ? "[&_p]:!leading-snug [&_li]:!leading-snug [&_blockquote]:!leading-snug"
@@ -660,6 +663,9 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
 
   const bodyStyle: ProseStyleVars = {
     ...(fontSize !== undefined ? { fontSize } : {}),
+    ...(resolvedFontFamily !== undefined
+      ? { fontFamily: resolvedFontFamily }
+      : {}),
     ...(themeVars ?? {}),
   };
 
@@ -694,7 +700,7 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
 
       <div
         ref={contentRef}
-        className={`prose prose-indigo ${sizingClass} ${widthClass} ${fontFamilyClass} ${lineHeightClass} ${isDark ? "dark:text-gray-200 text-gray-200" : "text-gray-800"}`}
+        className={`prose prose-indigo ${sizingClass} ${widthClass} ${lineHeightClass} ${isDark ? "dark:text-gray-200 text-gray-200" : "text-gray-800"}`}
         style={bodyStyle}
       >
         <ReactMarkdown

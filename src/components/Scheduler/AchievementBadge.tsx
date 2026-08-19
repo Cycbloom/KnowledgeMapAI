@@ -1,8 +1,9 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Lock, Sparkles } from "lucide-react";
+import { Lock, Sparkles, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Achievement } from "@shared/types";
+import { iconMap } from "../../utils/iconMap";
 import { formatDate } from "../../utils/formatters";
 import { useReducedMotionOrPreference } from "@/hooks/common/useReducedMotionOrPreference";
 
@@ -136,12 +137,15 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
         >
           {unlocked ? (
             <motion.span
-              className={sizeConfig.icon}
+              className={`${sizeConfig.icon} flex items-center justify-center text-white`}
               initial={animate ? (reduceMotion ? false : { scale: 0, rotate: -180 }) : undefined}
               animate={animate ? { scale: 1, rotate: 0 } : undefined}
               transition={transitionOverride ?? { type: "spring", stiffness: 200, damping: 15 }}
             >
-              {achievement.icon}
+              {(() => {
+                const Icon = iconMap[achievement.icon] || Star;
+                return <Icon aria-hidden="true" />;
+              })()}
             </motion.span>
           ) : (
             <Lock
@@ -298,7 +302,10 @@ export const AchievementBadgeNotification: React.FC<
         transition={transitionOverride ?? { delay: 0.6 }}
         className="relative mt-4 flex items-center gap-2 bg-amber-100 dark:bg-amber-500/20 px-4 py-2 rounded-full"
       >
-        <span className="text-lg">{achievement.icon}</span>
+        {(() => {
+          const Icon = iconMap[achievement.icon] || Star;
+          return <Icon size={18} className="text-amber-600 dark:text-amber-300" />;
+        })()}
         <span className="text-amber-700 dark:text-amber-300 font-bold">
           +{achievement.xp_reward} XP
         </span>

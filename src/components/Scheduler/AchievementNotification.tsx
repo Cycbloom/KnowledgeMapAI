@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles } from "lucide-react";
+import { X, Sparkles, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Achievement } from "@shared/types";
+import { iconMap } from "../../utils/iconMap";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import type { AchievementUnlockedPayload } from "../../services/FrontendEventTypes";
 import { useFocusTrap, useEscapeKey, useCelebration } from "../../hooks";
@@ -94,7 +95,10 @@ const SingleNotification: React.FC<{
                 transition={transitionOverride ?? { delay: 0.3 }}
                 className="flex items-center gap-2 mt-2"
               >
-                <span className="text-lg">{notification.icon}</span>
+                {(() => {
+                  const Icon = iconMap[notification.icon] || Star;
+                  return <Icon size={20} className="text-amber-500" />;
+                })()}
               </motion.div>
             )}
           </div>
@@ -305,7 +309,10 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
                   transition={transitionOverride ?? { delay: 0.5 }}
                   className="flex items-center justify-center gap-3 mt-4"
                 >
-                  <span className="text-3xl">{currentAchievement.icon}</span>
+                  {(() => {
+                    const Icon = iconMap[currentAchievement.icon] || Star;
+                    return <Icon size={32} className="text-amber-500" />;
+                  })()}
                   <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
                     +{currentAchievement.xp_reward} XP
                   </span>

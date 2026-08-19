@@ -15,6 +15,7 @@ import {
   Sparkles,
   ChevronDown,
   SlidersHorizontal,
+  TextSearch,
 } from "lucide-react";
 import { SearchResults } from "../common";
 import type {
@@ -245,76 +246,96 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       </div>
 
       {/* Row 2: Search + Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+      {/* 窄屏(<=lg:1024px)保持上下分两行,避免搜索框与按钮组互相挤压导致"关键词"按钮文字竖排溢出、
+          行高错位等问题;lg 以上才横排单行对齐 */}
+      <div className="flex flex-col lg:flex-row gap-3 lg:gap-4">
         {/* Search Box */}
+        {/* 改为纯 flex 行布局,不再使用 absolute + 内部 right 固定:
+            绝对定位 + flex-1 min-w-0 压缩时,absolute 元素会从父容器左侧溢出(right 锁定但左边被挤压),
+            导致窄屏时粉色"关键词"按钮跑出搜索框外甚至越过侧栏。
+            flex row 让各元素参与宽度分配,input 设 min-w-0 收缩,按钮永远在搜索框内部右侧。 */}
         <div className="relative flex-1 min-w-0">
-          <Search
-            className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-500" : "text-gray-400"}`}
-            size={18}
-            aria-hidden="true"
-          />
-          <input
-            ref={searchInputRef}
-            type="search"
-            placeholder={t("dashboard.search.placeholder")}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() =>
-              searchQuery.length >= 2 && setShowSearchResults(true)
-            }
-            aria-label={t("dashboard.search.placeholder")}
-            className={`w-full pl-10 pr-20 sm:pr-24 py-2.5 sm:py-2.5 rounded-xl border outline-none transition-all text-sm ${
-              isDark
-                ? "bg-slate-800 border-slate-700 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-white placeholder:text-slate-500"
-                : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500"
-            }`}
-          />
           <div
-            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 sm:gap-1"
+            className={`flex items-stretch gap-2 rounded-xl border outline-none transition-all pl-3 pr-2 py-1.5 ${
+              isDark
+                ? "bg-slate-800 border-slate-700 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500"
+                : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-500 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500 shadow-sm"
+            }`}
           >
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className={`p-1.5 rounded-md transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 ${
-                  isDark
-                    ? "text-slate-500 hover:text-slate-300 hover:bg-slate-700"
-                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-200"
-                }`}
-                aria-label={t("common.aria.clear")}
-                title={t("common.aria.clear")}
+            <span
+              className={`flex items-center justify-center flex-shrink-0 ${isDark ? "text-slate-500" : "text-gray-400"}`}
+              aria-hidden="true"
+            >
+              <Search size={18} />
+            </span>
+            <input
+              ref={searchInputRef}
+              type="search"
+              placeholder={t("dashboard.search.placeholder")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() =>
+                searchQuery.length >= 2 && setShowSearchResults(true)
+              }
+              aria-label={t("dashboard.search.placeholder")}
+              className={`flex-1 min-w-0 bg-transparent border-0 outline-none py-1.5 text-sm ${
+                isDark
+                  ? "text-white placeholder:text-slate-500"
+                  : "placeholder:text-gray-400 dark:placeholder:text-slate-500"
+              }`}
+            />
+            <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className={`p-1.5 rounded-md transition-colors min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 ${
+                    isDark
+                      ? "text-slate-500 hover:text-slate-300 hover:bg-slate-700"
+                      : "text-gray-400 hover:text-gray-600 hover:bg-gray-200"
+                  }`}
+                  aria-label={t("common.aria.clear")}
+                  title={t("common.aria.clear")}
+                >
+                  <X size={14} />
+                </button>
+              )}
+              <div
+                className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0"
+                role="group"
+                aria-label={t("dashboard.search.searchMode")}
               >
-                <X size={14} />
-              </button>
-            )}
-            <div className="flex items-center gap-0.5 sm:gap-1" role="group" aria-label={t("dashboard.search.searchMode")}>
-            <button
-              onClick={() => setSearchMode("keyword")}
-              className={`px-2 py-2.5 sm:py-1 text-xs rounded-md transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 ${
-                searchMode === "keyword"
-                  ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
-                  : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              }`}
-              aria-label={t("dashboard.search.keyword")}
-              aria-pressed={searchMode === "keyword"}
-            >
-              {t("dashboard.search.keyword")}
-            </button>
-            <button
-              onClick={() => setSearchMode("semantic")}
-              className={`px-2 py-2.5 sm:py-1 text-xs rounded-md transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 justify-center ${
-                searchMode === "semantic"
-                  ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
-                  : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              }`}
-              aria-label={t("dashboard.search.semantic")}
-              aria-pressed={searchMode === "semantic"}
-            >
-              <Sparkles size={12} aria-hidden="true" />
-              <span className="hidden sm:inline">
-                {t("dashboard.search.semantic")}
-              </span>
-            </button>
-          </div>
+                <button
+                  onClick={() => setSearchMode("keyword")}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1 min-h-[40px] min-w-[40px] justify-center whitespace-nowrap ${
+                    searchMode === "keyword"
+                      ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
+                      : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  }`}
+                  aria-label={t("dashboard.search.keyword")}
+                  aria-pressed={searchMode === "keyword"}
+                >
+                  <TextSearch size={12} aria-hidden="true" />
+                  <span className="hidden lg:inline">
+                    {t("dashboard.search.keyword")}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setSearchMode("semantic")}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1 min-h-[40px] min-w-[40px] justify-center whitespace-nowrap ${
+                    searchMode === "semantic"
+                      ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
+                      : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  }`}
+                  aria-label={t("dashboard.search.semantic")}
+                  aria-pressed={searchMode === "semantic"}
+                >
+                  <Sparkles size={12} aria-hidden="true" />
+                  <span className="hidden lg:inline">
+                    {t("dashboard.search.semantic")}
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {showSearchResults && (
@@ -341,7 +362,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {/* Action Buttons - Desktop & Tablet */}
         {!isMobile && (
-          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap lg:flex-nowrap">
+          <div className="flex items-center gap-2 lg:flex-shrink-0 flex-wrap justify-start lg:justify-end">
             <input
               type="file"
               ref={fileInputRef}

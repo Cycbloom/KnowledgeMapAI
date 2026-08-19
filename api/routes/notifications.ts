@@ -92,6 +92,16 @@ router.put(
   },
 );
 
+// 静态路由必须放在 /:id 参数路由之前
+router.delete(
+  '/clear-all',
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    await notificationService.clearAll(req.supabase, req.user.id);
+    res.json({ success: true });
+  },
+);
+
 router.delete(
   '/:id',
   requireAuth,
@@ -99,15 +109,6 @@ router.delete(
     const { id } = req.params;
 
     await notificationService.delete(req.supabase, req.user.id, id);
-    res.json({ success: true });
-  },
-);
-
-router.delete(
-  '/clear-all',
-  requireAuth,
-  async (req: AuthedRequest, res: Response) => {
-    await notificationService.clearAll(req.supabase, req.user.id);
     res.json({ success: true });
   },
 );

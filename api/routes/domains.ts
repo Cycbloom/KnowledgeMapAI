@@ -58,6 +58,62 @@ router.get("/", requireAuth, async (req: AuthedRequest, res: Response) => {
   res.json(tree);
 });
 
+// ---------- 静态路由必须放在 /:id 参数路由之前，否则会被误识别为 id ----------
+
+router.get(
+  "/ensure-uncategorized",
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
+    const userId = req.user.id;
+
+    const id = await domainService.ensureUncategorizedDomain(supabase, userId);
+    res.json({ id, name: "未分类" });
+  }
+);
+
+router.post(
+  "/generate-color",
+  requireAuth,
+  validate({ body: generateColorSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { name, description } = req.body;
+
+    const result = await domainService.generateColor(name, description);
+    res.json(result);
+  }
+);
+
+router.post(
+  "/recommend",
+  requireAuth,
+  validate({ body: recommendDomainsSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
+    const userId = req.user.id;
+    const { title, description } = req.body;
+
+    const result = await domainService.recommendDomains(supabase, userId, title, description);
+    res.json(result);
+  },
+);
+
+router.put(
+  "/reorder",
+  requireAuth,
+  validate({ body: reorderSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
+    const userId = req.user.id;
+    const { reorder_items } = req.body;
+
+    const result = await domainService.reorderDomains(supabase, userId, reorder_items);
+    res.json(result);
+  },
+);
+
+// ---------- 以下为 /:id 参数路由，静态路由必须在其上方定义 ----------
+
 router.get(
   "/:id",
   requireAuth,
@@ -110,58 +166,6 @@ router.delete(
 
     await domainService.deleteDomain(supabase, id, userId);
     res.json({ message: "领域已删除" });
-  },
-);
-
-router.get(
-  "/ensure-uncategorized",
-  requireAuth,
-  async (req: AuthedRequest, res: Response) => {
-    const supabase = req.supabase;
-    const userId = req.user.id;
-
-    const id = await domainService.ensureUncategorizedDomain(supabase, userId);
-    res.json({ id, name: "未分类" });
-  }
-);
-
-router.post(
-  "/generate-color",
-  requireAuth,
-  validate({ body: generateColorSchema }),
-  async (req: AuthedRequest, res: Response) => {
-    const { name, description } = req.body;
-
-    const result = await domainService.generateColor(name, description);
-    res.json(result);
-  }
-);
-
-router.post(
-  "/recommend",
-  requireAuth,
-  validate({ body: recommendDomainsSchema }),
-  async (req: AuthedRequest, res: Response) => {
-    const supabase = req.supabase;
-    const userId = req.user.id;
-    const { title, description } = req.body;
-
-    const result = await domainService.recommendDomains(supabase, userId, title, description);
-    res.json(result);
-  },
-);
-
-router.put(
-  "/reorder",
-  requireAuth,
-  validate({ body: reorderSchema }),
-  async (req: AuthedRequest, res: Response) => {
-    const supabase = req.supabase;
-    const userId = req.user.id;
-    const { reorder_items } = req.body;
-
-    const result = await domainService.reorderDomains(supabase, userId, reorder_items);
-    res.json(result);
   },
 );
 

@@ -40,134 +40,7 @@ router.get(
   },
 );
 
-router.get(
-  "/:id",
-  requireAuth,
-  async (req: AuthedRequest, res: Response) => {
-    const { id } = req.params;
-
-    const data = await knowledgePointService.getAccessible(
-      req.supabase,
-      id,
-      req.user.id,
-    );
-
-    if (!data) {
-      throw new AppError(
-        "Knowledge point not found",
-        404,
-        ErrorCodes.RESOURCE_NOT_FOUND,
-      );
-    }
-
-    res.json(data);
-  },
-);
-
-router.get(
-  "/:id/graphs",
-  requireAuth,
-  async (req: AuthedRequest, res: Response) => {
-    const { id } = req.params;
-
-    const data = await knowledgePointService.getGraphs(
-      req.supabase,
-      id,
-      req.user.id,
-    );
-    res.json(data);
-  },
-);
-
-router.post(
-  "/",
-  requireAuth,
-  validate(createKnowledgePointSchema),
-  async (req: AuthedRequest, res: Response) => {
-    const { title, content, summary, learning_material, properties, visibility } =
-      req.body;
-
-    const data = await knowledgePointService.create(req.supabase, {
-      title,
-      content,
-      summary,
-      learning_material,
-      properties,
-      visibility,
-      owner_id: req.user.id,
-    });
-
-    res.status(201).json(data);
-  },
-);
-
-router.put(
-  "/:id",
-  requireAuth,
-  requireKnowledgePointOwnership,
-  validate(updateKnowledgePointSchema),
-  async (req: AuthedRequest, res: Response) => {
-    const { id } = req.params;
-    const updates = req.body;
-
-    const data = await knowledgePointService.update(
-      req.supabase,
-      id,
-      updates,
-    );
-    res.json(data);
-  },
-);
-
-router.post(
-  "/search-similar",
-  requireAuth,
-  validate(searchSimilarSchema),
-  async (req: AuthedRequest, res: Response) => {
-    const { query, threshold, limit } = req.body;
-
-    try {
-      const embedding = await aiService.generateEmbedding(query);
-
-      if (!embedding) {
-        return res.json([]);
-      }
-
-      const data = await knowledgePointService.searchSimilar(
-        req.supabase,
-        embedding,
-        req.user.id,
-        threshold,
-        limit,
-      );
-
-      res.json(data || []);
-    } catch (error) {
-      logger.error("Search similar error:", error);
-      res.json([]);
-    }
-  },
-);
-
-router.delete(
-  "/:id/hard-delete",
-  requireAuth,
-  async (req: AuthedRequest, res: Response) => {
-    const { id } = req.params;
-
-    const data = await knowledgePointService.delete(
-      req.supabase,
-      id,
-      req.user.id,
-    );
-    await logSecurityEvent(createSecurityEvent('ACCOUNT_DELETE', req, {
-      targetType: 'knowledgePoint',
-      targetId: id,
-      action: 'hard_delete',
-    }));
-    res.json(data);
-  },
-);
+// ---------- 根级静态路由必须放在 /:id 参数路由之前 ----------
 
 router.get(
   "/public",
@@ -298,6 +171,137 @@ router.post(
   },
 );
 
+// ---------- 以下为 /:id 参数路由，根级静态路由必须在其上方定义 ----------
+
+router.get(
+  "/:id",
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+
+    const data = await knowledgePointService.getAccessible(
+      req.supabase,
+      id,
+      req.user.id,
+    );
+
+    if (!data) {
+      throw new AppError(
+        "Knowledge point not found",
+        404,
+        ErrorCodes.RESOURCE_NOT_FOUND,
+      );
+    }
+
+    res.json(data);
+  },
+);
+
+router.get(
+  "/:id/graphs",
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+
+    const data = await knowledgePointService.getGraphs(
+      req.supabase,
+      id,
+      req.user.id,
+    );
+    res.json(data);
+  },
+);
+
+router.post(
+  "/",
+  requireAuth,
+  validate(createKnowledgePointSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { title, content, summary, learning_material, properties, visibility } =
+      req.body;
+
+    const data = await knowledgePointService.create(req.supabase, {
+      title,
+      content,
+      summary,
+      learning_material,
+      properties,
+      visibility,
+      owner_id: req.user.id,
+    });
+
+    res.status(201).json(data);
+  },
+);
+
+router.put(
+  "/:id",
+  requireAuth,
+  requireKnowledgePointOwnership,
+  validate(updateKnowledgePointSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const data = await knowledgePointService.update(
+      req.supabase,
+      id,
+      updates,
+    );
+    res.json(data);
+  },
+);
+
+router.post(
+  "/search-similar",
+  requireAuth,
+  validate(searchSimilarSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { query, threshold, limit } = req.body;
+
+    try {
+      const embedding = await aiService.generateEmbedding(query);
+
+      if (!embedding) {
+        return res.json([]);
+      }
+
+      const data = await knowledgePointService.searchSimilar(
+        req.supabase,
+        embedding,
+        req.user.id,
+        threshold,
+        limit,
+      );
+
+      res.json(data || []);
+    } catch (error) {
+      logger.error("Search similar error:", error);
+      res.json([]);
+    }
+  },
+);
+
+router.delete(
+  "/:id/hard-delete",
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+
+    const data = await knowledgePointService.delete(
+      req.supabase,
+      id,
+      req.user.id,
+    );
+    await logSecurityEvent(createSecurityEvent('ACCOUNT_DELETE', req, {
+      targetType: 'knowledgePoint',
+      targetId: id,
+      action: 'hard_delete',
+    }));
+    res.json(data);
+  },
+);
+
 const listVersionsSchema = z.object({
   params: z.object({
     id: z.string().uuid(),
@@ -378,41 +382,7 @@ router.get(
   },
 );
 
-router.get(
-  "/:id/versions/:versionNumber",
-  requireAuth,
-  validate(getVersionSchema),
-  async (req: AuthedRequest, res: Response) => {
-    const { id, versionNumber } = req.params;
-
-    const kp = await knowledgePointService.getAccessible(req.supabase, id, req.user.id);
-
-    if (!kp) {
-      throw new AppError(
-        "Knowledge point not found",
-        404,
-        ErrorCodes.RESOURCE_NOT_FOUND,
-      );
-    }
-
-    const version = await knowledgePointVersionService.getVersion(
-      req.supabase,
-      id,
-      Number(versionNumber),
-    );
-
-    if (!version) {
-      throw new AppError(
-        "Version not found",
-        404,
-        ErrorCodes.RESOURCE_NOT_FOUND,
-      );
-    }
-
-    res.json(version);
-  },
-);
-
+// 静态路径 compare 必须放在 :versionNumber 参数路由之前
 router.get(
   "/:id/versions/compare",
   requireAuth,
@@ -451,6 +421,41 @@ router.get(
       }
       throw error;
     }
+  },
+);
+
+router.get(
+  "/:id/versions/:versionNumber",
+  requireAuth,
+  validate(getVersionSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { id, versionNumber } = req.params;
+
+    const kp = await knowledgePointService.getAccessible(req.supabase, id, req.user.id);
+
+    if (!kp) {
+      throw new AppError(
+        "Knowledge point not found",
+        404,
+        ErrorCodes.RESOURCE_NOT_FOUND,
+      );
+    }
+
+    const version = await knowledgePointVersionService.getVersion(
+      req.supabase,
+      id,
+      Number(versionNumber),
+    );
+
+    if (!version) {
+      throw new AppError(
+        "Version not found",
+        404,
+        ErrorCodes.RESOURCE_NOT_FOUND,
+      );
+    }
+
+    res.json(version);
   },
 );
 

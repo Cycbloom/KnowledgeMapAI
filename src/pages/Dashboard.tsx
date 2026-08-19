@@ -640,22 +640,22 @@ export const Dashboard = () => {
                           </button>
                         </th>
                       )}
-                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold whitespace-nowrap ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.title")}
                       </th>
-                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold hidden lg:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold whitespace-nowrap hidden lg:table-cell w-[30%] ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.description")}
                       </th>
-                      <th scope="col" className={`text-center px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-center px-4 py-3 text-sm font-semibold whitespace-nowrap w-20 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.nodes")}
                       </th>
-                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold hidden md:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold whitespace-nowrap hidden md:table-cell w-28 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.createdAt")}
                       </th>
-                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold hidden xl:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-left px-4 py-3 text-sm font-semibold whitespace-nowrap hidden xl:table-cell w-28 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.updatedAt")}
                       </th>
-                      <th scope="col" className={`text-right px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                      <th scope="col" className={`text-right px-4 py-3 text-sm font-semibold whitespace-nowrap ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                         {t("dashboard.list.actions")}
                       </th>
                     </tr>
@@ -667,6 +667,26 @@ export const Dashboard = () => {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.02, duration: 0.2 }}
+                        onMouseEnter={() => prefetchGraph(graph.id)}
+                        onContextMenu={(e) => handleContextMenu(e, graph)}
+                        className={`border-b transition-colors cursor-pointer ${
+                          isDark
+                            ? "border-slate-700 hover:bg-slate-700/50"
+                            : "border-gray-100 hover:bg-gray-50"
+                        } ${
+                          filters.isSelectMode && filters.selectedIds.has(graph.id)
+                            ? isDark
+                              ? "bg-primary-900/20"
+                              : "bg-primary-50"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          if (filters.isSelectMode) {
+                            filters.toggleSelect(graph.id);
+                          } else {
+                            handleNavigate(graph.id);
+                          }
+                        }}
                       >
                         <DashboardGraphListItem
                           key={graph.id}

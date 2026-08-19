@@ -86,7 +86,7 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
   onNavigate,
   onDelete,
   onToggleFavorite,
-  onPrefetch,
+  onPrefetch: _onPrefetch,
   onContextMenu,
   variant,
   onTagClick,
@@ -281,30 +281,10 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
     );
   }
 
-  // Desktop table row
+  // Desktop: 仅输出 <td> Fragment,父组件 <motion.tr> 负责整行样式、动画、交互事件。
+  // 这里仅保留 td 内部的 stopPropagation 与局部交互。
   return (
-    <tr
-      onMouseEnter={() => onPrefetch(graph.id)}
-      onContextMenu={(e) => onContextMenu(e, graph)}
-      className={`border-b transition-colors cursor-pointer ${
-        isDark
-          ? "border-slate-700 hover:bg-slate-700/50"
-          : "border-gray-100 hover:bg-gray-50"
-      } ${
-        isSelectMode && isSelected
-          ? isDark
-            ? "bg-primary-900/20"
-            : "bg-primary-50"
-          : ""
-      }`}
-      onClick={() => {
-        if (isSelectMode) {
-          onToggleSelect(graph.id);
-        } else {
-          onNavigate(graph.id);
-        }
-      }}
-    >
+    <>
       {isSelectMode && (
         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
           <button
@@ -377,57 +357,60 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
         </div>
       </td>
       <td
-        className={`px-4 py-3 hidden lg:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}
+        className={`px-4 py-3 hidden lg:table-cell w-[30%] min-w-0 max-w-0 align-top ${isDark ? "text-slate-400" : "text-gray-500"}`}
       >
-        <span className="line-clamp-1 text-sm block">
-          {graph.description || t("dashboard.card.noDescription")}
-        </span>
-        {(graph.tags?.length ?? 0) > 0 && (
-          <div className="flex flex-wrap items-center gap-1 mt-1">
-            {graph.tags?.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
-              <button
-                key={tag}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTagClick(tag);
-                }}
-                className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
-                  isDark
-                    ? "bg-slate-700 text-primary-300"
-                    : "bg-primary-50 text-primary-600"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-            {(graph.tags?.length ?? 0) > MAX_VISIBLE_TAGS && (
-              <span
-                className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
-                  isDark
-                    ? "bg-slate-700 text-slate-400"
-                    : "bg-gray-100 text-gray-500"
-                }`}
-              >
-                +{(graph.tags?.length ?? 0) - MAX_VISIBLE_TAGS}
-              </span>
-            )}
-          </div>
-        )}
+        {/* 两行描述(带省略号) + 下方另起一行标签 chips,整体不超过 2~3 行高度;保留列宽约束避免撑破表格 */}
+        <div className="min-w-0 w-full">
+          <p className="text-sm leading-snug line-clamp-2 min-w-0">
+            {graph.description || t("dashboard.card.noDescription")}
+          </p>
+          {(graph.tags?.length ?? 0) > 0 && (
+            <div className="flex flex-wrap items-center gap-1 mt-1">
+              {graph.tags?.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
+                <button
+                  key={tag}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTagClick(tag);
+                  }}
+                  className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0 ${
+                    isDark
+                      ? "bg-slate-700 text-primary-300"
+                      : "bg-primary-50 text-primary-600"
+                  }`}
+                >
+                  <span className="truncate max-w-[6rem]">{tag}</span>
+                </button>
+              ))}
+              {(graph.tags?.length ?? 0) > MAX_VISIBLE_TAGS && (
+                <span
+                  className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0 ${
+                    isDark
+                      ? "bg-slate-700 text-slate-400"
+                      : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  +{(graph.tags?.length ?? 0) - MAX_VISIBLE_TAGS}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </td>
-      <td className="px-4 py-3 text-center">
+      <td className="px-4 py-3 text-center whitespace-nowrap align-middle w-20">
         <div
-          className={`flex items-center justify-center gap-1 text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
+          className={`inline-flex items-center justify-center gap-1 text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
         >
           <Network size={14} />
           <span>{graph.nodes_count || 0}</span>
         </div>
       </td>
       <td
-        className={`px-4 py-3 hidden md:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}
+        className={`px-4 py-3 hidden md:table-cell whitespace-nowrap align-middle w-28 ${isDark ? "text-slate-400" : "text-gray-500"}`}
       >
-        <div className="flex items-center gap-1.5 text-sm">
-          <Calendar size={14} />
-          <span>
+        <div className="inline-flex items-center gap-1.5 text-sm whitespace-nowrap">
+          <Calendar size={14} className="flex-shrink-0" />
+          <span className="whitespace-nowrap">
             {graph.created_at
               ? formatDate(graph.created_at, 'short')
               : "-"}
@@ -435,11 +418,11 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
         </div>
       </td>
       <td
-        className={`px-4 py-3 hidden xl:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}
+        className={`px-4 py-3 hidden xl:table-cell whitespace-nowrap align-middle w-28 ${isDark ? "text-slate-400" : "text-gray-500"}`}
       >
-        <div className="flex items-center gap-1.5 text-sm">
-          <Clock size={14} />
-          <span>
+        <div className="inline-flex items-center gap-1.5 text-sm whitespace-nowrap">
+          <Clock size={14} className="flex-shrink-0" />
+          <span className="whitespace-nowrap">
             {graph.updated_at
               ? formatDate(graph.updated_at, 'short')
               : "-"}
@@ -525,6 +508,6 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
           </button>
         </div>
       </td>
-    </tr>
+    </>
   );
 };

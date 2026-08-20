@@ -246,13 +246,37 @@ export class AsyncTaskService {
       }
     }
 
-    const updateData: { status: string; updated_at: string; output_data?: Record<string, unknown>; error_message?: string } = { status, updated_at: new Date().toISOString() };
+    const updateData: {
+      status: string;
+      updated_at: string;
+      output_data?: Record<string, unknown>;
+      error_message?: string;
+      runtime_progress?: Record<string, unknown> | null;
+    } = { status, updated_at: new Date().toISOString() };
     if (result) updateData.output_data = result;
     if (errorMsg) updateData.error_message = errorMsg;
+    // Persist runtime progress to the DB column so Task Center can always
+    // render a progress bar after refresh / SSE reconnection. When the
+    // processor explicitly passes null we clear it (e.g. terminal failed
+    // state to hide stale percent); undefined keeps the column unchanged
+    // so callers that only update status don't wipe existing progress.
+    if (progress === null) {
+      updateData.runtime_progress = null;
+    } else if (progress !== undefined) {
+      updateData.runtime_progress =
+        typeof progress === 'object' && progress !== null
+          ? (progress as Record<string, unknown>)
+          : { progress };
+    }
 
     logger.info(`Updating task ${taskId} status to ${status}`, {
       stage: progress?.stage,
       progress: progress?.progress,
+      percent:
+        typeof progress === 'object' && progress !== null
+          ? (progress as Record<string, unknown>).percent ??
+            (progress as Record<string, unknown>).progress
+          : undefined,
     });
 
     const { error } = await supabase

@@ -14,7 +14,9 @@
   "status": {
     "pending": "Pending",
     "in_progress": "In Progress",
+    "running": "Running",
     "completed": "Completed",
+    "failed": "Failed",
     "paused": "Paused",
     "cancelled": "Cancelled"
   },

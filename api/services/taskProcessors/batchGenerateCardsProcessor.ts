@@ -173,14 +173,15 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
     updateTaskStatus: UpdateTaskStatusFunction
   ): Promise<void> {
     logger.info(`Starting batch generate cards task ${taskId} for user ${userId}`, { payload });
-    
-    try {
-      await updateTaskStatus(supabase, taskId, 'in_progress', undefined, undefined, undefined, userId);
       
-      const { node_ids, config } = payload;
-      const globalDifficulty = config?.difficulty ?? 'medium';
-      const customPrompt = config?.custom_prompt;
-      const language = config?.language;
+      try {
+        const { node_ids, config } = payload;
+        const globalDifficulty = config?.difficulty ?? 'medium';
+        const customPrompt = config?.custom_prompt;
+        const language = config?.language;
+
+        const nodeTaskTemplate = buildNodeTasks(payload);
+        const totalRequestedCards = nodeTaskTemplate.reduce((s, t) => s + t.count, 0);
 
       const { data: graphNodes, error: gnError } = await notDeleted(supabase
         .from('graph_nodes')
@@ -275,10 +276,18 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
         return la - lb;
       });
 
+      await updateTaskStatus(supabase, taskId, 'in_progress', {
+        stage: 'init',
+        stageLabel: `准备生成 ${sortedNodes.length} 个节点 · 合计约 ${totalRequestedCards} 题`,
+        progress: 0,
+        processed: 0,
+        total: sortedNodes.length,
+        current_node: `准备处理 ${sortedNodes.length} 个节点`,
+      }, undefined, undefined, userId);
+
       const results = [];
       let totalCards = 0;
       let processedCount = 0;
-      const nodeTaskTemplate = buildNodeTasks(payload);
 
       for (const node of sortedNodes) {
         const parentId = parentMap.get(node.id);
@@ -364,8 +373,12 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
         
         processedCount++;
         await updateTaskStatus(supabase, taskId, 'in_progress', { 
+            stage: 'generating',
+            stageLabel: `节点进度 ${processedCount}/${sortedNodes.length} · 已入库 ${totalCards}/${totalRequestedCards} 题`,
             progress: Math.round((processedCount / sortedNodes.length) * 100),
-            current_node: node.title
+            processed: processedCount,
+            total: sortedNodes.length,
+            current_node: node.title,
         }, undefined, undefined, userId);
       }
 

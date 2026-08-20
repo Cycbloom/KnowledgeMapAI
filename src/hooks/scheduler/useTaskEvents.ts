@@ -28,14 +28,64 @@ interface TasksPage {
 }
 
 /**
+ * useTasks 使用 useInfiniteQuery，因此缓存的 query data 是 InfiniteData 结构：
+ *   { pages: TasksPage[], pageParams: unknown[] }
+ * 而单元测试 / 老代码里可能以扁平结构 { tasks, total, ... } 直接 setQueryData。
+ * 这两个是非对称的（useInfiniteQuery 永远不会把扁平对象存进缓存），
+ * 导致 SSE 处理器按扁平结构去读 oldPage.tasks 时读到 undefined 直接抛错，
+ * 后续的 runtime_progress 写入与 invalidate 都不会执行 → 进度条静止。
+ *
+ * 以下两个 helper 对两种结构统一处理，保证生产(无限分页)与测试(扁平)都能命中。
+ */
+type TasksCacheValue = TasksPage | { pages: TasksPage[]; pageParams: unknown[] };
+
+const getTasksFromCache = (value: unknown): Task[] => {
+  if (!value || typeof value !== "object") return [];
+  const maybeInfinite = value as { pages?: TasksPage[] };
+  if (Array.isArray(maybeInfinite.pages)) {
+    return maybeInfinite.pages.flatMap((p) => p?.tasks ?? []);
+  }
+  const maybeFlat = value as { tasks?: Task[] };
+  if (Array.isArray(maybeFlat.tasks)) {
+    return maybeFlat.tasks;
+  }
+  return [];
+};
+
+const mapTasksInCache = (
+  value: unknown,
+  fn: (tasks: Task[]) => Task[],
+): unknown => {
+  if (!value || typeof value !== "object") return value;
+  const maybeInfinite = value as { pages?: TasksPage[] };
+  if (Array.isArray(maybeInfinite.pages)) {
+    return {
+      ...value,
+      pages: maybeInfinite.pages.map((p) => ({
+        ...p,
+        tasks: fn(Array.isArray(p?.tasks) ? (p.tasks as Task[]) : []),
+      })),
+    };
+  }
+  const maybeFlat = value as { tasks?: Task[] };
+  if (Array.isArray(maybeFlat.tasks)) {
+    return { ...value, tasks: fn(maybeFlat.tasks) };
+  }
+  return value;
+};
+
+/**
  * 将后端 SSE 推送的 progress payload（字段名：stage/progress/current_node/processed/total）
  * 映射为前端 TaskRuntimeProgress（字段名：stage/percent/current/completed/total）。
  *
  * 后端 TaskProgress 接口带 [key: string]: unknown 索引签名，processor 可能传任意字段组合。
  * 同时兼容前端字段名（percent/current/completed），便于未来后端统一命名后无需改动此处。
  * 返回 undefined 表示无可识别的进度字段（前端降级为原 spinner，不抛错）。
+ *
+ * 注：该函数被导出复用，例如 Task Center 从 runtime_progress（JSONB）列读取时字段名与
+ * SSE payload 相同，都需要走同一套映射逻辑。
  */
-const mapToRuntimeProgress = (
+export const mapToRuntimeProgress = (
   raw: unknown,
 ): TaskRuntimeProgress | undefined => {
   if (!raw || typeof raw !== "object") {
@@ -201,12 +251,14 @@ export const useTaskEvents = () => {
               // 旧状态检测：从已缓存的 system_tasks 列表分页中查找匹配任务
               // （按 ["tasks", ...] 前缀遍历所有 status/limit/offset 变体），
               // 避免依赖从未被精确填充的死缓存键。
-              const tasksQueries = queryClient.getQueriesData<TasksPage>({
+              const tasksQueries = queryClient.getQueriesData<TasksCacheValue>({
                 queryKey: queryKeys.tasksPrefix,
               });
               let oldStatus: Task["status"] | undefined;
               for (const [, cached] of tasksQueries) {
-                const found = cached?.tasks.find((t) => t.id === taskId);
+                const found = getTasksFromCache(cached).find(
+                  (t) => t.id === taskId,
+                );
                 if (found) {
                   oldStatus = found.status;
                   break;
@@ -226,19 +278,16 @@ export const useTaskEvents = () => {
               // setQueryData 只能命中单分页，setQueriesData + 前缀匹配覆盖
               // 所有 status/limit/offset 变体），使 TaskProgressBar 即时更新。
               if (runtimeProgress !== undefined) {
-                queryClient.setQueriesData<TasksPage | undefined>(
+                queryClient.setQueriesData<TasksCacheValue | undefined>(
                   { queryKey: queryKeys.tasksPrefix },
-                  (oldPage) => {
-                    if (!oldPage) return oldPage;
-                    return {
-                      ...oldPage,
-                      tasks: oldPage.tasks.map((t) =>
+                  (oldValue) =>
+                    mapTasksInCache(oldValue, (tasks) =>
+                      tasks.map((t) =>
                         t.id === taskId
                           ? { ...t, runtime_progress: runtimeProgress }
                           : t,
                       ),
-                    };
-                  },
+                    ) as TasksCacheValue | undefined,
                 );
               }
 

@@ -233,4 +233,41 @@ describe("useTaskEvents - task_update handler", () => {
     );
     expect(statusChangeCalls.length).toBe(0);
   });
+
+  it("写入 runtime_progress 到 useInfiniteQuery 的真实 pages 缓存结构", () => {
+    // useTasks 用的是 useInfiniteQuery，缓存的 query data 是 InfiniteData：
+    //   { pages: [{ tasks, total, offset, limit }], pageParams }
+    // 而非扁平 { tasks, ... }。这个用例复现并守住"扁平化读取导致
+    // oldPage.tasks 为 undefined 抛错 → 进度条静止"的生产缺陷。
+    queryClient.setQueryData(
+      queryKeys.tasks("all", 20, 0),
+      {
+        pages: [makeTasksPage([makeTask({ id: "t-1" })])],
+        pageParams: [0],
+      },
+    );
+
+    const handler = mountAndWaitForConnection();
+
+    act(() => {
+      handler!({ data: JSON.stringify({
+        type: "task_update",
+        taskId: "t-1",
+        status: "in_progress",
+        progress: { stage: "generating", progress: 66, processed: 2, total: 3, current_node: "nodeB" },
+      }) });
+    });
+
+    const cached = queryClient.getQueryData<{
+      pages: ReturnType<typeof makeTasksPage>[];
+      pageParams: unknown[];
+    }>(queryKeys.tasks("all", 20, 0));
+    expect(cached?.pages[0]?.tasks[0]?.runtime_progress).toEqual({
+      stage: "generating",
+      percent: 66,
+      completed: 2,
+      total: 3,
+      current: "nodeB",
+    });
+  });
 });

@@ -59,7 +59,14 @@ export interface Task {
   estimated_duration: number;
   actual_duration: number;
   deadline: string;
-  status: "pending" | "in_progress" | "paused" | "completed" | "cancelled";
+  status:
+    | "pending"
+    | "in_progress"
+    | "running"
+    | "paused"
+    | "completed"
+    | "failed"
+    | "cancelled";
   tags: string[];
   knowledge_point_id: string;
   priority: number;

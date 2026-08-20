@@ -16,6 +16,8 @@ import { ConfirmationModal, Skeleton, FirstRunHint, FilterTabs, SearchInput } fr
 import { VirtualList } from "../components/common/VirtualList";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TaskProgressBar } from "@/components/common/TaskProgressBar";
+import { mapToRuntimeProgress } from "@/hooks/scheduler/useTaskEvents";
+import type { Task, TaskRuntimeProgress } from "@shared/types";
 import { asyncConfirm } from "../utils/asyncConfirm";
 import { formatDate } from "@/utils/formatters";
 import { copyToClipboard } from "@/utils/clipboard";
@@ -40,8 +42,10 @@ const getStatusBadgeClass = (status: string) => {
   switch (status) {
     case "completed":
       return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700";
+    case "failed":
     case "cancelled":
       return "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700";
+    case "running":
     case "in_progress":
       return "bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300 dark:border-primary-700";
     case "pending":
@@ -54,14 +58,44 @@ const getStatusIcon = (status: string) => {
   switch (status) {
     case "completed":
       return <CheckCircle2 className="w-4 h-4" />;
+    case "failed":
     case "cancelled":
       return <XCircle className="w-4 h-4" />;
+    case "running":
     case "in_progress":
       return <Loader2 className="w-4 h-4 animate-spin" />;
     case "pending":
     default:
       return <Clock className="w-4 h-4" />;
   }
+};
+
+/**
+ * 把 DB runtime_progress（JSONB，字段名沿用 processor 命名：progress/current_node/processed/total）
+ * 统一映射为前端 TaskRuntimeProgress（percent/current/completed/total），
+ * 并在任务处于运行状态但无任何进度字段时，提供一个最小的 indeterminate 占位，
+ * 确保 TaskProgressBar 不会直接 return null（用户看不到任何进度条）。
+ */
+const resolveTaskRuntimeProgress = (
+  task: Pick<Task, "status" | "runtime_progress" | "task_type" | "title">,
+): TaskRuntimeProgress | undefined => {
+  const mapped = mapToRuntimeProgress(task.runtime_progress);
+  const isRunning = task.status === "in_progress" || task.status === "running";
+  if (!isRunning) return mapped;
+  if (mapped) return mapped;
+
+  const fallbackLabel =
+    task.task_type === "generate_questions" ||
+    task.task_type === "batch_generate_cards"
+      ? "正在初始化题目生成流程…"
+      : task.task_type === "ai_generation"
+        ? "正在准备 AI 生成…"
+        : "准备处理中…";
+
+  return {
+    stage: "preparing",
+    stageLabel: fallbackLabel,
+  };
 };
 
 const getTypeLabel = (type: string, t: TFunction) => {
@@ -576,9 +610,9 @@ export const Tasks = () => {
                             </button>
                           </div>
 
-                          {task.status === "in_progress" && (
+                          {(task.status === "in_progress" || task.status === "running") && (
                             <TaskProgressBar
-                              progress={task.runtime_progress}
+                              progress={resolveTaskRuntimeProgress(task)}
                               className="mb-2"
                             />
                           )}

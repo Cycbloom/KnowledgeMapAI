@@ -166,11 +166,28 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
     logger.info(`Starting generate questions task ${taskId} for user ${userId}`, { payload });
 
     try {
-      await updateTaskStatus(supabase, taskId, 'in_progress', undefined, undefined, undefined, userId);
-
       const { knowledge_point_id: node_id, node_title, node_content, config } = payload;
       let totalCount = 0;
       const errors: string[] = [];
+
+      const { tasks: tasksToRun, totalCount: totalRequestCount, effectiveDifficulty } = buildTasksToRun(payload);
+
+      await updateTaskStatus(
+        supabase,
+        taskId,
+        'in_progress',
+        {
+          stage: 'init',
+          stageLabel: this.getInitLabel(tasksToRun.length, totalRequestCount, effectiveDifficulty),
+          progress: 0,
+          processed: 0,
+          total: tasksToRun.length,
+          current_node: node_title ? `准备生成「${node_title}」题目` : '准备生成题目',
+        },
+        undefined,
+        undefined,
+        userId,
+      );
 
       const { data: graphNodeData } = await notDeleted(supabase
         .from('graph_nodes')
@@ -199,8 +216,6 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
       const model = config?.model || payload.model;
       const language = config?.language;
       const customPrompt = config?.custom_prompt;
-
-      const { tasks: tasksToRun, totalCount: totalRequestCount, effectiveDifficulty } = buildTasksToRun(payload);
 
       logger.debug(
         `Generating questions for node ${node_title}. Total: ${totalRequestCount}, effectiveDifficulty=${effectiveDifficulty}, tasks=${tasksToRun
@@ -295,9 +310,15 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
           const progress = tasksToRun.length
             ? Math.round((completedTasks / tasksToRun.length) * 100)
             : 100;
+          const typeName = this.getTypeName(type);
+          const diffName = difficulty ? `·${this.getDiffName(difficulty)}` : '';
           await updateTaskStatus(supabase, taskId, 'in_progress', {
+            stage: 'generating',
+            stageLabel: this.getStageLabel(completedTasks, tasksToRun.length, totalRequestCount, totalCount),
             progress,
-            current_node: `正在生成 ${this.getTypeName(type)}${difficulty ? `·${this.getDiffName(difficulty)}` : ''}...`,
+            processed: completedTasks,
+            total: tasksToRun.length,
+            current_node: `正在生成 ${typeName}${diffName}...`,
           }, undefined, undefined, userId);
         }
       };
@@ -344,6 +365,27 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
 
   private getDiffName(d: string): string {
     return { easy: '简单', medium: '中等', hard: '困难', mixed: '混合' }[d] ?? d;
+  }
+
+  private getInitLabel(
+    taskCount: number,
+    totalCards: number,
+    effectiveDifficulty: CardDifficulty | 'mixed',
+  ): string {
+    const diffLabel = effectiveDifficulty === 'mixed' ? '混合难度' : `${this.getDiffName(effectiveDifficulty)}难度`;
+    if (taskCount <= 0) return `初始化${diffLabel}题目生成流程`;
+    return `准备生成 ${diffLabel} · ${taskCount} 组 AI 调用（共 ${totalCards} 题）`;
+  }
+
+  private getStageLabel(
+    processedTasks: number,
+    totalTasks: number,
+    totalCardsRequested: number,
+    cardsGeneratedSoFar: number,
+  ): string {
+    const head = `生成阶段 ${processedTasks}/${totalTasks}`;
+    const tail = `已入库 ${cardsGeneratedSoFar}/${totalCardsRequested} 题`;
+    return `${head} · ${tail}`;
   }
 }
 

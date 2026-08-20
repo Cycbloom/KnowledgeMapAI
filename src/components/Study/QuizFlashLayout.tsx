@@ -5,13 +5,16 @@ import {
   ThumbsUp,
   ThumbsDown,
   AlertTriangle,
+  ArrowLeft,
 } from "lucide-react";
+import type { LayoutMode } from "../../hooks/quiz/useQuizLayoutPref";
 import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 import { useUpdateCardProgressMutation } from "../../hooks/mutations";
 import { getCardTypeBadgeMeta, badgeToneClasses } from "../../utils/quizBadgeMeta";
 import { QuizOptionArea } from "./QuizOptionArea";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
 import { QuizRatingBar } from "./QuizRatingBar";
+import { QuizLayoutSwitcher } from "./QuizLayoutSwitcher";
 
 type UpdateProgressMutation = ReturnType<typeof useUpdateCardProgressMutation>;
 
@@ -34,6 +37,9 @@ export interface QuizFlashLayoutProps {
   onMultiOptionClick: (option: string) => void;
   onDragEnd: (_: unknown, info: { velocity: { x: number }; offset: { x: number } }) => void;
   onSetShowAnswer: (show: boolean) => void;
+  layoutMode: LayoutMode;
+  setLayoutMode: (mode: LayoutMode) => void;
+  isForcedFlash: boolean;
 }
 
 export const QuizFlashLayout = memo(function QuizFlashLayout({
@@ -49,12 +55,15 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
   quizCards,
   similarityWithPrev,
   updateProgressMutation,
-  onBackToDashboard: _onBackToDashboard,
+  onBackToDashboard,
   onRate,
   onOptionClick,
   onMultiOptionClick,
   onDragEnd,
   onSetShowAnswer,
+  layoutMode,
+  setLayoutMode,
+  isForcedFlash,
 }: QuizFlashLayoutProps) {
   const { t } = useTranslation();
 
@@ -121,9 +130,72 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
 
   return (
     <div
-      className={`h-full w-full flex items-center justify-center ${isMobile ? "p-2" : "p-4 md:p-8"} transition-colors ${isDark ? "bg-slate-900" : "bg-gray-100"}`}
+      className={`h-full w-full flex flex-col ${isMobile ? "p-2" : "p-4 md:p-6"} transition-colors ${isDark ? "bg-slate-900" : "bg-gray-100"}`}
     >
-      <div className="w-full max-w-3xl h-full flex items-center justify-center">
+      <div
+        className={`flex-none flex items-center justify-between gap-3 px-3 md:px-6 py-3 rounded-2xl mb-2 md:mb-3 border shadow-sm ${
+          isDark
+            ? 'bg-slate-800/90 border-slate-700'
+            : 'bg-white border-gray-200'
+        }`}
+      >
+        <div className="flex-none">
+          <button
+            type="button"
+            onClick={onBackToDashboard}
+            aria-label={t('study.header.exit')}
+            className={`min-h-[40px] min-w-[40px] inline-flex items-center justify-center gap-1 px-2 md:px-3 rounded-lg border transition-colors text-xs md:text-sm font-medium ${
+              isDark
+                ? 'bg-slate-900 border-slate-700 hover:bg-slate-700 text-slate-200'
+                : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'
+            }`}
+          >
+            <ArrowLeft size={16} aria-hidden={true} />
+            <span>{t('study.header.exit')}</span>
+          </button>
+        </div>
+
+        <div className="flex-1 min-w-0 text-center">
+          <h2
+            className={`text-sm md:text-base font-semibold truncate ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}
+          >
+            {t('study.header.titleQuiz')}
+          </h2>
+          <div
+            className={`text-[10px] md:text-xs opacity-70 ${
+              isDark ? 'text-slate-300' : 'text-gray-600'
+            }`}
+          >
+            {t('study.header.slideHint')}
+          </div>
+        </div>
+
+        <div className="flex-none flex items-center gap-2">
+          <span
+            className={`inline-flex items-center px-2 md:px-2.5 py-1 rounded-full border text-xs font-medium ${
+              isDark
+                ? 'bg-slate-900 border-slate-700 text-slate-200'
+                : 'bg-white border-gray-200 text-gray-700'
+            }`}
+          >
+            {t('study.header.progressFmt', {
+              current: currentCardIndex + 1,
+              total: _quizCardsLength,
+            })}
+          </span>
+          <div className="max-md:hidden">
+            <QuizLayoutSwitcher
+              layoutMode={layoutMode}
+              onChange={setLayoutMode}
+              disabled={isForcedFlash}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 w-full mx-auto max-w-3xl flex items-center justify-center">
         <div
           className={`relative perspective-1000 h-full w-full flex items-center justify-center`}
         >
@@ -520,16 +592,6 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
             </motion.div>
           </AnimatePresence>
         </div>
-
-        {!showAnswer && !isMobile && (
-          <div className="mt-8 text-center animate-bounce-slow">
-            <p
-              className={`text-sm font-medium ${isDark ? "text-slate-500" : "text-gray-400"}`}
-            >
-              {t("study.quiz.swipeInstruction")}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

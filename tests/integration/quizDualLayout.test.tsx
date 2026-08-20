@@ -4,11 +4,10 @@ import { screen, fireEvent } from '@testing-library/react';
 import React, { useState, type ReactElement } from 'react';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { QuizActiveShell } from '../../src/components/Study/QuizActiveShell';
-import { QuizActiveHeader } from '../../src/components/Study/QuizActiveHeader';
 import { QuizViewActive } from '../../src/components/Study/QuizView';
 import type { StudyCard } from '../../shared/types/common';
 import * as useIsMobileModule from '../../src/hooks/common/useIsMobile';
-import * as _quizLayoutPrefModule from '../../src/hooks/quiz/useQuizLayoutPref';
+import { useQuizLayoutPref } from '../../src/hooks/quiz/useQuizLayoutPref';
 
 const { mockStore } = vi.hoisted(() => {
   type Store = {
@@ -154,21 +153,13 @@ function QuizActiveBranch({ viewProps }: QuizActiveBranchProps): ReactElement {
     <QuizActiveShell
       isDark={false}
       isMobile={false}
-      header={
-        <QuizActiveHeader
-          isDark={false}
-          isMobile={false}
-          layoutMode={layoutMode}
-          onChangeLayout={setLayoutMode}
-          isForcedFlash={isForcedFlash}
-          currentCardIndex={viewProps.currentCardIndex}
-          quizCardsLength={viewProps.quizCardsLength}
-          onBackToDashboard={viewProps.onBackToDashboard}
-          showSliderHint={layoutMode === 'flash'}
-        />
-      }
     >
-      <QuizViewActive {...viewProps} />
+      <QuizViewActive
+        {...viewProps}
+        layoutMode={layoutMode}
+        setLayoutMode={setLayoutMode}
+        isForcedFlash={isForcedFlash}
+      />
     </QuizActiveShell>
   );
 }

@@ -23,7 +23,6 @@ import { StudyHeader } from "../components/Study/StudyHeader";
 import { CardReviewView } from "../components/Study/CardReviewView";
 import { QuizViewFinished, QuizViewActive } from "../components/Study/QuizView";
 import { QuizActiveShell } from "../components/Study/QuizActiveShell";
-import { QuizActiveHeader } from "../components/Study/QuizActiveHeader";
 import { ErrorBoundary, Skeleton } from "../components/common";
 import { motion } from "framer-motion";
 import { useCelebration } from "@/hooks/common";
@@ -432,7 +431,7 @@ export const Study = () => {
     <ErrorBoundary
       fallbackRender={(error, resetErrorBoundary) => (
         <div
-          className={`min-h-full flex flex-col items-center justify-center ${isMobile ? "p-4" : "p-8"} ${isDark ? "bg-slate-900" : "bg-gray-100"}`}
+          className={`min-h-0 h-full flex flex-col items-center justify-center ${isMobile ? "p-4" : "p-8"} ${isDark ? "bg-slate-900" : "bg-gray-100"} overflow-hidden`}
         >
           <div
             className={`w-full max-w-md ${isDark ? "bg-slate-800" : "bg-white"} rounded-2xl shadow-xl ${isMobile ? "p-6" : "p-8"} text-center`}
@@ -465,46 +464,40 @@ export const Study = () => {
         </div>
       )}
     >
-      <QuizActiveShell
-        isDark={isDark}
-        isMobile={isMobile ?? false}
-        header={
-          <QuizActiveHeader
+      <div className="min-h-0 h-full w-full overflow-hidden">
+        <QuizActiveShell
+          isDark={isDark}
+          isMobile={isMobile ?? false}
+        >
+          <QuizViewActive
             isDark={isDark}
             isMobile={isMobile ?? false}
             layoutMode={layoutMode}
-            onChangeLayout={setLayoutMode}
-            isForcedFlash={isForcedFlash}
+          setLayoutMode={setLayoutMode}
+          isForcedFlash={isForcedFlash}
+          onSetLayoutMode={setLayoutMode}
+          onSetIsForcedFlash={isForcedFlash}
+            currentCard={cardReview.currentCard}
             currentCardIndex={cardReview.currentCardIndex}
             quizCardsLength={cardReview.quizCards.length}
+            showAnswer={cardReview.showAnswer}
+            selectedOption={cardReview.selectedOption}
+            cardKey={cardReview.cardKey}
+            swipeDirection={cardReview.swipeDirection}
+            quizCards={cardReview.quizCards}
+            similarityWithPrev={cardReview.similarityWithPrev}
+            updateProgressMutation={cardReview.updateProgressMutation}
             onBackToDashboard={handleBackToDashboard}
-            showSliderHint={layoutMode === "flash"}
+            onRate={cardReview.handleRate}
+            onOptionClick={quizLogic.handleOptionClick}
+            onMultiOptionClick={quizLogic.handleMultiOptionClick}
+            onDragEnd={cardReview.handleDragEnd}
+            onSetShowAnswer={cardReview.setShowAnswer}
+            onPrev={cardReview.handlePrevCard}
+            onNext={handleNextCardPure}
           />
-        }
-      >
-        <QuizViewActive
-          isDark={isDark}
-          isMobile={isMobile ?? false}
-          currentCard={cardReview.currentCard}
-          currentCardIndex={cardReview.currentCardIndex}
-          quizCardsLength={cardReview.quizCards.length}
-          showAnswer={cardReview.showAnswer}
-          selectedOption={cardReview.selectedOption}
-          cardKey={cardReview.cardKey}
-          swipeDirection={cardReview.swipeDirection}
-          quizCards={cardReview.quizCards}
-          similarityWithPrev={cardReview.similarityWithPrev}
-          updateProgressMutation={cardReview.updateProgressMutation}
-          onBackToDashboard={handleBackToDashboard}
-          onRate={cardReview.handleRate}
-          onOptionClick={quizLogic.handleOptionClick}
-          onMultiOptionClick={quizLogic.handleMultiOptionClick}
-          onDragEnd={cardReview.handleDragEnd}
-          onSetShowAnswer={cardReview.setShowAnswer}
-          onPrev={cardReview.handlePrevCard}
-          onNext={handleNextCardPure}
-        />
-      </QuizActiveShell>
+        </QuizActiveShell>
+      </div>
     </ErrorBoundary>
   );
 };

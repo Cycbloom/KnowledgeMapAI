@@ -24,8 +24,7 @@ describe('QuizActiveShell', () => {
       expect(shell).toBeInTheDocument();
 
       const shellClass = shell.className;
-      expect(shellClass).toContain('h-[100dvh]');
-      expect(shellClass).toContain('h-screen');
+      expect(shellClass).toContain('h-full');
       expect(shellClass).toContain('overflow-hidden');
       expect(shellClass).toContain('flex');
       expect(shellClass).toContain('flex-col');

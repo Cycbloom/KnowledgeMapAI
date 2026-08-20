@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { QuizActiveShell } from '../../src/components/Study/QuizActiveShell';
-import { QuizActiveHeader } from '../../src/components/Study/QuizActiveHeader';
 import { QuizFlashLayout } from '../../src/components/Study/QuizFlashLayout';
 import { QuizFocusLayout } from '../../src/components/Study/QuizFocusLayout';
 import type { StudyCard } from '../../shared/types/common';
@@ -92,6 +91,9 @@ function createFlashBaseProps(overrides: Partial<Parameters<typeof QuizFlashLayo
     onMultiOptionClick: vi.fn(),
     onDragEnd: vi.fn(),
     onSetShowAnswer: vi.fn(),
+    layoutMode: 'flash' as const,
+    setLayoutMode: vi.fn(),
+    isForcedFlash: false,
     ...overrides,
   };
 }
@@ -113,21 +115,10 @@ function createFocusBaseProps(overrides: Partial<Parameters<typeof QuizFocusLayo
     onSetShowAnswer: vi.fn(),
     onPrev: vi.fn(),
     onNext: vi.fn(),
-    ...overrides,
-  };
-}
-
-function createHeaderBaseProps(overrides: Partial<Parameters<typeof QuizActiveHeader>[0]> = {}) {
-  return {
-    isDark: false,
-    isMobile: false,
-    layoutMode: 'flash' as const,
-    onChangeLayout: vi.fn(),
-    isForcedFlash: false,
-    currentCardIndex: 0,
-    quizCardsLength: 3,
     onBackToDashboard: vi.fn(),
-    showSliderHint: true,
+    layoutMode: 'focus' as const,
+    setLayoutMode: vi.fn(),
+    isForcedFlash: false,
     ...overrides,
   };
 }
@@ -150,16 +141,14 @@ describe('quizActiveShell 集成测试', () => {
     });
   });
 
-  describe('TR-4.1: 闪卡模式退出按钮唯一', () => {
-    it('QuizActiveShell + QuizActiveHeader + QuizFlashLayout 一起渲染后，退出按钮长度===1', () => {
-      const headerProps = createHeaderBaseProps({ layoutMode: 'flash', showSliderHint: true });
+  describe('TR-4.1: 闪卡模式退出按钮唯一（嵌入卡片顶栏）', () => {
+    it('QuizActiveShell + QuizFlashLayout 渲染后，退出按钮长度===1', () => {
       const flashProps = createFlashBaseProps({ currentCard: qaCard });
 
       renderWithProviders(
         <QuizActiveShell
           isDark={false}
           isMobile={false}
-          header={<QuizActiveHeader {...headerProps} />}
         >
           <QuizFlashLayout {...flashProps} />
         </QuizActiveShell>,
@@ -173,15 +162,13 @@ describe('quizActiveShell 集成测试', () => {
   });
 
   describe('TR-4.2: 外层禁滚容器结构', () => {
-    it('QuizActiveShell 最外层 class 同时含 h-[100dvh] overflow-hidden；main 内容区含 flex-1 min-h-0 overflow-hidden', () => {
-      const headerProps = createHeaderBaseProps();
+    it('QuizActiveShell 最外层 class 同时含 h-full overflow-hidden；main 内容区含 flex-1 min-h-0 overflow-hidden', () => {
       const flashProps = createFlashBaseProps({ currentCard: qaCard });
 
       renderWithProviders(
         <QuizActiveShell
           isDark={false}
           isMobile={false}
-          header={<QuizActiveHeader {...headerProps} />}
         >
           <QuizFlashLayout {...flashProps} />
         </QuizActiveShell>,
@@ -191,7 +178,7 @@ describe('quizActiveShell 集成测试', () => {
       expect(shell).toBeInTheDocument();
 
       const shellClass = shell.className;
-      expect(shellClass).toContain('h-[100dvh]');
+      expect(shellClass).toContain('h-full');
       expect(shellClass).toContain('overflow-hidden');
 
       const main = shell.querySelector('main');
@@ -205,17 +192,12 @@ describe('quizActiveShell 集成测试', () => {
 
   describe('TR-4.3: 专注模式双滚动容器', () => {
     it('QuizActiveShell 包 QuizFocusLayout 后 querySelectorAll .overflow-y-auto.custom-scrollbar 长度 ≥ 2', () => {
-      const headerProps = createHeaderBaseProps({
-        layoutMode: 'focus',
-        showSliderHint: false,
-      });
       const focusProps = createFocusBaseProps();
 
       const { container } = renderWithProviders(
         <QuizActiveShell
           isDark={false}
           isMobile={false}
-          header={<QuizActiveHeader {...headerProps} />}
         >
           <QuizFocusLayout {...focusProps} />
         </QuizActiveShell>,
@@ -227,7 +209,7 @@ describe('quizActiveShell 集成测试', () => {
   });
 
   describe('TR-4.4: 移动端布局切换器隐藏', () => {
-    it('mock useIsMobile 返回 isMobile=true；渲染后 layoutMode radiogroup 返回空或 aria-disabled=true', () => {
+    it('mock useIsMobile 返回 isMobile=true；渲染后 layoutMode radiogroup 返回空或在 max-md:hidden 容器内', () => {
       vi.spyOn(useIsMobileModule, 'useIsMobile').mockReturnValue({
         isMobile: true,
         isTablet: false,
@@ -237,13 +219,9 @@ describe('quizActiveShell 集成测试', () => {
         orientation: 'portrait',
       });
 
-      const headerProps = createHeaderBaseProps({
-        isMobile: true,
-        layoutMode: 'flash',
-        showSliderHint: true,
-      });
       const flashProps = createFlashBaseProps({
         isMobile: true,
+        isForcedFlash: true,
         currentCard: qaCard,
       });
 
@@ -251,7 +229,6 @@ describe('quizActiveShell 集成测试', () => {
         <QuizActiveShell
           isDark={false}
           isMobile={true}
-          header={<QuizActiveHeader {...headerProps} />}
         >
           <QuizFlashLayout {...flashProps} />
         </QuizActiveShell>,

@@ -92,6 +92,9 @@ function createFlashBaseProps(overrides: Partial<Parameters<typeof QuizFlashLayo
     onMultiOptionClick: vi.fn(),
     onDragEnd: vi.fn(),
     onSetShowAnswer: vi.fn(),
+    layoutMode: 'flash' as const,
+    setLayoutMode: vi.fn(),
+    isForcedFlash: false,
     ...overrides,
   };
 }
@@ -113,6 +116,10 @@ function createFocusBaseProps(overrides: Partial<Parameters<typeof QuizFocusLayo
     onSetShowAnswer: vi.fn(),
     onPrev: vi.fn(),
     onNext: vi.fn(),
+    onBackToDashboard: vi.fn(),
+    layoutMode: 'focus' as const,
+    setLayoutMode: vi.fn(),
+    isForcedFlash: false,
     ...overrides,
   };
 }
@@ -140,6 +147,9 @@ function createViewActiveBaseProps(overrides: Partial<Parameters<typeof QuizView
     onSetShowAnswer: vi.fn(),
     onPrev: vi.fn(),
     onNext: vi.fn(),
+    layoutMode: 'flash' as const,
+    setLayoutMode: vi.fn(),
+    isForcedFlash: false,
     ...overrides,
   };
 }
@@ -154,15 +164,15 @@ describe('quizHeaderSync 闪卡/专注组件 Header 同步', () => {
     });
   });
 
-  describe('TR-3.1: QuizFlashLayout 内部 Header 删除与尺寸调整', () => {
-    it('QA 模式：组件内部退出按钮计数=0；最外层 perspective-1000 父容器含 h-full 而非 h-[78vh]', () => {
+  describe('TR-3.1: QuizFlashLayout 内部集成卡片顶栏（退出 + 模式标题 + 进度 + 切换器）', () => {
+    it('QA 模式：卡片顶栏含 1 个退出按钮，perspective-1000 父容器 h-full 而非 h-[78vh]', () => {
       const props = createFlashBaseProps({ currentCard: qaCard, card_type: 'qa' } as never);
       const { container } = renderWithProviders(<QuizFlashLayout {...props} />);
 
       const exitButtons = screen.queryAllByRole('button', {
         name: /退出|返回中心|返回/,
       });
-      expect(exitButtons).toHaveLength(0);
+      expect(exitButtons).toHaveLength(1);
 
       const perspectiveDiv = container.querySelector('.perspective-1000');
       expect(perspectiveDiv).not.toBeNull();
@@ -179,18 +189,17 @@ describe('quizHeaderSync 闪卡/专注组件 Header 同步', () => {
       expect(outermost.className).toContain('h-full');
       expect(outermost.className).toContain('w-full');
       expect(outermost.className).toContain('flex');
-      expect(outermost.className).toContain('items-center');
-      expect(outermost.className).toContain('justify-center');
+      expect(outermost.className).toContain('flex-col');
     });
 
-    it('Choice 模式：组件内部退出按钮计数=0；最外层 wrapper 含 h-full 且不含视口绝对高度', () => {
+    it('Choice 模式：卡片顶栏含 1 个退出按钮，perspective-1000 为 h-full 不含视口绝对高度', () => {
       const props = createFlashBaseProps({ currentCard: choiceCard });
       const { container } = renderWithProviders(<QuizFlashLayout {...props} />);
 
       const exitButtons = screen.queryAllByRole('button', {
         name: /退出|返回中心|返回/,
       });
-      expect(exitButtons).toHaveLength(0);
+      expect(exitButtons).toHaveLength(1);
 
       const perspectiveDiv = container.querySelector('.perspective-1000');
       expect(perspectiveDiv).not.toBeNull();
@@ -233,8 +242,8 @@ describe('quizHeaderSync 闪卡/专注组件 Header 同步', () => {
     });
   });
 
-  describe('TR-3.3: QuizViewActive 双层 Header 防护', () => {
-    it('flash 模式下 QuizViewActive 内部不再出现"答题模式"或退出按钮 wrapper 头行', () => {
+  describe('TR-3.3: QuizViewActive 单层顶栏验证（内嵌卡片 Header，不再双层重复）', () => {
+    it('flash 模式下 QuizViewActive 卡片内部包含「答题模式」头行与 1 个退出按钮，外层 flex 根容器存在', () => {
       vi.spyOn(quizLayoutPrefModule, 'useQuizLayoutPref').mockReturnValue({
         layoutMode: 'flash',
         setLayoutMode: vi.fn(),
@@ -244,41 +253,27 @@ describe('quizHeaderSync 闪卡/专注组件 Header 同步', () => {
       const props = createViewActiveBaseProps();
       const { container } = renderWithProviders(<QuizViewActive {...props} />);
 
-      const quizModeTextNodes = screen.queryAllByText(/答题模式|学习模式/);
-      const layoutInternalCount = quizModeTextNodes.filter((node) => {
-        let current = node.parentElement;
-        while (current) {
-          const cls = current.className ?? '';
-          if (typeof cls === 'string' && (cls.includes('perspective-1000') || cls.includes('grid-rows-\\[1fr_auto\\]'))) {
-            return true;
-          }
-          current = current.parentElement;
-        }
-        return false;
-      });
-      expect(layoutInternalCount).toHaveLength(0);
-
       const topLevelWrapper = container.querySelector('.w-full.h-full.flex.flex-col');
-      expect(topLevelWrapper).toBeNull();
+      expect(topLevelWrapper).not.toBeNull();
+
+      const wrapperChildren = topLevelWrapper?.querySelectorAll(':scope > div');
+      expect(wrapperChildren).toHaveLength(2);
+
+      const headerBar = wrapperChildren?.[0];
+      expect(headerBar).not.toBeUndefined();
+      expect(headerBar!.textContent).toMatch(/答题模式/);
+      expect(headerBar!.textContent).toMatch(/1 \/ 3/);
+
+      const quizModeTextNodes = screen.queryAllByText(/答题模式/);
+      expect(quizModeTextNodes.length).toBeGreaterThanOrEqual(1);
 
       const exitButtons = screen.queryAllByRole('button', {
         name: /退出|返回中心|返回/,
       });
-      const insideLayoutExitButtons = exitButtons.filter((btn) => {
-        let current = btn.parentElement;
-        while (current) {
-          const cls = (current as HTMLElement).className ?? '';
-          if (typeof cls === 'string' && (cls.includes('perspective-1000') || cls.includes('grid-rows-\\[1fr_auto\\]'))) {
-            return true;
-          }
-          current = current.parentElement;
-        }
-        return false;
-      });
-      expect(insideLayoutExitButtons).toHaveLength(0);
+      expect(exitButtons).toHaveLength(1);
 
       const shellFragment = container.firstElementChild;
-      expect(shellFragment?.childNodes.length).toBe(1);
+      expect(shellFragment).not.toBeNull();
     });
   });
 });

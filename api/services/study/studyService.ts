@@ -20,6 +20,14 @@ import { appEventBus } from "../core";
 import type { ReviewCompletedPayload } from "../../../shared/types/events";
 import { masteryCalculationService } from "./masteryCalculationService";
 
+// FSRS 5 difficulty 范围 [1, 10], stability 下限 S_MIN=1e-3。
+// 若数据库遗留老数据或手动插入时偏离合法区间，dbCardToFSRS 需要在
+// 转换时主动 clamp，否则 FSRS.next_state 会抛 Invalid memory state。
+const FSRS_DIFFICULTY_MIN = 1;
+const FSRS_DIFFICULTY_MAX = 10;
+const FSRS_STABILITY_MIN = 1e-3;
+const FSRS_STABILITY_MAX = 36500;
+
 interface GetCardsOptions {
   userId: string;
   graphId?: string;
@@ -79,21 +87,37 @@ const dbCardToFSRS = (dbCard: StudyCard): Card => {
   const state = rawState === undefined ? State.New : rawState;
 
   const reps = Math.max(0, Number.isFinite(dbCard.review_count ?? NaN) ? (dbCard.review_count as number) : 0);
-  // stability/difficulty 在非 New 状态下必须为正有限值，否则用 createEmptyCard 默认值
+  // stability/difficulty 需要严格落在 FSRS 5 的合法区间：
+  //   difficulty ∈ [1, 10]，stability ≥ S_MIN (非 New 状态)。
+  // 若数据库遗留的老数据不在区间内（例如早期手动 seed 写入
+  // difficulty=0.3/0.5/0.7 或 0），这里先 clamp 兜底，避免 repeat
+  // 里的 next_state 抛 "Invalid memory state"。
+  const clamp = (v: number, lo: number, hi: number) =>
+    Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : NaN;
   const rawStability = Number(dbCard.fsrs_stability);
-  const stability =
-    state === State.New
-      ? Number.isFinite(rawStability) && rawStability >= 0
-        ? rawStability
-        : empty.stability
-      : Number.isFinite(rawStability) && rawStability > 0
-        ? rawStability
-        : empty.stability;
+  const stabilityFinite = clamp(rawStability, FSRS_STABILITY_MIN, FSRS_STABILITY_MAX);
+  const stability = state === State.New
+    ? // New 卡允许 stability=0，由 fsrs 用 init_stability 初始化
+      rawStability === 0
+      ? 0
+      : (Number.isNaN(stabilityFinite) ? empty.stability : stabilityFinite)
+    : // 非 New 卡 stability 必须 ≥ S_MIN，遗留 0/极小值一律提拉到底线
+      Math.max(
+        Number.isNaN(stabilityFinite) ? empty.stability : stabilityFinite,
+        FSRS_STABILITY_MIN,
+      );
   const rawDifficulty = Number(dbCard.fsrs_difficulty);
-  const difficulty =
-    Number.isFinite(rawDifficulty) && rawDifficulty > 0
-      ? rawDifficulty
-      : empty.difficulty;
+  const difficultyFinite = clamp(rawDifficulty, FSRS_DIFFICULTY_MIN, FSRS_DIFFICULTY_MAX);
+  const difficulty = state === State.New
+    ? // New 卡 difficulty=0 也合法，由 fsrs 用 init_difficulty 初始化
+      rawDifficulty === 0
+      ? empty.difficulty
+      : (Number.isNaN(difficultyFinite) ? empty.difficulty : difficultyFinite)
+    : // 非 New 卡 difficulty 必须落在 [1,10]，遗留 0.x 一律提拉到底线
+      Math.max(
+        Number.isNaN(difficultyFinite) ? empty.difficulty : difficultyFinite,
+        FSRS_DIFFICULTY_MIN,
+      );
   const elapsed = Number(dbCard.fsrs_elapsed_days);
   const scheduled = Number(dbCard.fsrs_scheduled_days);
 
@@ -175,12 +199,16 @@ const getFSRS = async (userId: string, supabase: SupabaseClient, studyMode?: Stu
       params.maximum_interval = Number(data.settings.maximum_interval);
     }
 
-    // 加载用户个性化 FSRS w 参数
+    // 加载用户个性化 FSRS w 参数，并在迁移后校验长度；任何异常都退回默认
     if (Array.isArray(data?.settings?.fsrs_parameters)) {
-      const wParams = data.settings.fsrs_parameters as number[];
-      // 自动迁移旧版参数（17/19 → 21）
-      const migratedW = migrateParameters(wParams);
-      params.w = migratedW;
+      try {
+        const migratedW = migrateParameters(data.settings.fsrs_parameters as number[]);
+        if (Array.isArray(migratedW) && migratedW.length >= 21 && migratedW.every((w) => Number.isFinite(w))) {
+          params.w = migratedW;
+        }
+      } catch (fsrsMigrateErr) {
+        logger.warn("FSRS migrateParameters failed, falling back to default w", fsrsMigrateErr);
+      }
     }
 
     if (studyMode) {

@@ -26,20 +26,36 @@ export const dbCardToFSRS = (dbCard: StudyCard): Card => {
   const state = rawState === undefined ? State.New : rawState;
 
   const reps = Math.max(0, Number.isFinite(dbCard.review_count ?? NaN) ? (dbCard.review_count as number) : 0);
+  // difficulty/stability 在非 New 状态下必须落在 FSRS 5 的合法区间
+  // （difficulty ∈ [1,10]，stability ≥ S_MIN=1e-3），否则 ts-fsrs.next_state
+  // 会抛 "Invalid memory state"（例如早期遗留稳定性=0 或难度=0.3 的卡）。
+  const clamp = (v: number, lo: number, hi: number) =>
+    Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : NaN;
+  const FSRS_DIFFICULTY_MIN = 1;
+  const FSRS_DIFFICULTY_MAX = 10;
+  const FSRS_STABILITY_MIN = 1e-3;
+  const FSRS_STABILITY_MAX = 36500;
+
   const rawStability = Number(dbCard.fsrs_stability);
-  const stability =
-    state === State.New
-      ? Number.isFinite(rawStability) && rawStability >= 0
-        ? rawStability
-        : empty.stability
-      : Number.isFinite(rawStability) && rawStability > 0
-        ? rawStability
-        : empty.stability;
+  const stabilityFinite = clamp(rawStability, FSRS_STABILITY_MIN, FSRS_STABILITY_MAX);
+  const stability = state === State.New
+    ? rawStability === 0
+      ? 0
+      : (Number.isNaN(stabilityFinite) ? empty.stability : stabilityFinite)
+    : Math.max(
+        Number.isNaN(stabilityFinite) ? empty.stability : stabilityFinite,
+        FSRS_STABILITY_MIN,
+      );
   const rawDifficulty = Number(dbCard.fsrs_difficulty);
-  const difficulty =
-    Number.isFinite(rawDifficulty) && rawDifficulty > 0
-      ? rawDifficulty
-      : empty.difficulty;
+  const difficultyFinite = clamp(rawDifficulty, FSRS_DIFFICULTY_MIN, FSRS_DIFFICULTY_MAX);
+  const difficulty = state === State.New
+    ? rawDifficulty === 0
+      ? empty.difficulty
+      : (Number.isNaN(difficultyFinite) ? empty.difficulty : difficultyFinite)
+    : Math.max(
+        Number.isNaN(difficultyFinite) ? empty.difficulty : difficultyFinite,
+        FSRS_DIFFICULTY_MIN,
+      );
   const elapsed = Number(dbCard.fsrs_elapsed_days);
   const scheduled = Number(dbCard.fsrs_scheduled_days);
 

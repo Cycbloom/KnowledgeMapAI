@@ -476,6 +476,43 @@ describe("StudyService", () => {
       expect(result.scheduledCard).toBeDefined();
       expect(result.scheduledCard.scheduled_days).toBeGreaterThanOrEqual(1);
     });
+
+    it("应该在非 New 状态但遗留非法 stability/difficulty 数据时不抛 FSRS 错误", async () => {
+      const supabase = createMockSupabase();
+      const inner = supabase as unknown as MockSupabaseClient;
+
+      // 复现早期遗留数据：卡片已是 Review 学习状态，但 fsrs_stability=0、
+      // fsrs_difficulty=0.5（FSRS 5 要求 difficulty∈[1,10]、stability≥S_MIN）。
+      // 修复前 ts-fsrs.next_state 会抛 "Invalid memory state"，导致提交记忆评价失败。
+      const existingCard = {
+        id: "legacy1",
+        user_id: "user1",
+        knowledge_point_id: "kp1",
+        graph_id: "g1",
+        next_review: new Date(Date.now() - 86400000).toISOString(),
+        fsrs_state: "Review",
+        fsrs_stability: 0,
+        fsrs_difficulty: 0.5,
+        fsrs_elapsed_days: 1,
+        fsrs_scheduled_days: 3,
+        review_count: 2,
+        fsrs_last_review: new Date(Date.now() - 86400000 * 3).toISOString(),
+        fsrs_retrievability: 0.7,
+      };
+      const updatedCard = { ...existingCard, review_count: 3 };
+
+      inner.from
+        .mockReturnValueOnce(makeChain(existingCard))
+        .mockReturnValueOnce(makeChain({ settings: {} }))
+        .mockReturnValueOnce(makeChain(updatedCard));
+
+      // 修复后不再抛学习算法错误，评价可正常提交
+      const result = await studyService.updateProgress(supabase, "legacy1", 3, "user1");
+
+      expect(result.scheduledCard).toBeDefined();
+      expect(result.scheduledCard.reps).toBeGreaterThanOrEqual(2);
+      expect(result.scheduledCard.due).toBeInstanceOf(Date);
+    });
   });
 
   describe("deleteCard", () => {

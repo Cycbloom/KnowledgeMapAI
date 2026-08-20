@@ -12,12 +12,26 @@ export class VolcengineProvider extends BaseAIProvider {
 
   // Override to support dimensions parameter for Volcengine embedding
   async createEmbedding(text: string) {
-    if (!this.embeddingModel) return null;
+    if (!this.embeddingModel) {
+      logger.warn('[Volcengine] embedding model not configured');
+      return null;
+    }
 
-    logger.info(`[Volcengine] Creating embedding. Model: ${this.embeddingModel}, Is Vision/Multimodal: ${this.embeddingModel.includes('vision') || this.embeddingModel.includes('multimodal')}`);
+    const isVision =
+      this.embeddingModel.includes('vision') ||
+      this.embeddingModel.includes('multimodal');
+    const endpoint = isVision
+      ? `${this.client.baseURL}/embeddings/multimodal`
+      : `${this.client.baseURL}/embeddings`;
 
-    if (this.embeddingModel.includes('vision') || this.embeddingModel.includes('multimodal')) {
-      return this.createMultimodalEmbedding(text);
+    logger.info('[Volcengine] createEmbedding', {
+      model: this.embeddingModel,
+      textLen: text.length,
+      endpoint,
+    });
+
+    if (isVision) {
+      return this.createMultimodalEmbedding(text, endpoint);
     }
 
     // Fallback to standard OpenAI compatible endpoint for other models
@@ -30,96 +44,145 @@ export class VolcengineProvider extends BaseAIProvider {
       });
       if (!response) {
         throw new AppError(ErrorCodes.AI_EMBEDDING_ERROR, {
-          message: 'Embeddings not supported by this provider',
+          message: 'Embeddings not supported by this provider (null response)',
         });
       }
       const data = response as { data: Array<{ embedding: number[] }> };
-      return data.data[0].embedding;
+      const emb = data.data?.[0]?.embedding;
+      if (!emb) {
+        logger.error('[Volcengine] embedding vector missing in response');
+        throw new AppError(ErrorCodes.AI_EMBEDDING_ERROR, {
+          message: 'Response data[0].embedding missing',
+        });
+      }
+      return emb;
     } catch (error) {
-      logger.error('Volcengine embedding error:', error);
+      const sdkErr = error as {
+        status?: number;
+        code?: string;
+        message?: string;
+        error?: unknown;
+        response?: unknown;
+      };
+      const respBody = (sdkErr.response as { data?: unknown } | null)?.data;
+      const innerErr = sdkErr.error as { message?: string; code?: string } | null;
+
+      logger.error('[Volcengine] standard embedding failed', {
+        model: this.embeddingModel,
+        status: sdkErr.status ?? null,
+        code: sdkErr.code ?? innerErr?.code ?? null,
+        message:
+          innerErr?.message ??
+          sdkErr.message ??
+          (error instanceof Error ? error.message : String(error)),
+        responseBody: respBody
+          ? JSON.stringify(respBody).slice(0, 500)
+          : null,
+      });
       throw new AppError(ErrorCodes.AI_EMBEDDING_ERROR, {
-        message: error instanceof Error ? error.message : 'Volcengine embedding error',
+        message:
+          innerErr?.message ??
+          sdkErr.message ??
+          (error instanceof Error ? error.message : 'Volcengine embedding error'),
       });
     }
   }
 
-  // Special handler for doubao-embedding-vision-251215
-  private async createMultimodalEmbedding(text: string) {
+  // Special handler for doubao-embedding-vision-* (multimodal endpoint)
+  private async createMultimodalEmbedding(text: string, endpoint: string) {
     if (!this.embeddingModel) return null;
-
-    const endpoint = `${this.client.baseURL}/embeddings/multimodal`;
-    logger.info(`[Volcengine] Using Multimodal Embedding Endpoint: ${endpoint}`);
 
     const payload = {
       model: this.embeddingModel,
-      input: [
-        {
-          type: "text",
-          text
-        }
-      ],
+      input: [{ type: "text", text }],
       dimensions: 1024,
       encoding_format: "float",
-      multi_embedding: {
-        type: "enabled"
-      },
-      sparse_embedding: {
-        type: "enabled"
-      }
+      multi_embedding: { type: "enabled" },
+      sparse_embedding: { type: "enabled" },
     };
 
     try {
+      const startTime = Date.now();
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.client.apiKey}`
+          'Authorization': `Bearer ${this.client.apiKey}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
+      const elapsed = Date.now() - startTime;
 
       if (!response.ok) {
         const errorText = await response.text();
-        logger.error(
-          `[Volcengine] Multimodal embedding HTTP ${response.status} ${response.statusText}`,
-          {
-            url: endpoint,
-            model: this.embeddingModel,
-            apiKeyPrefix: this.client.apiKey?.slice(0, 8) ?? '',
-            response: errorText.slice(0, 500),
-          },
-        );
+        let parsed: unknown = null;
+        try { parsed = JSON.parse(errorText); } catch { /* ignore */ }
+        const err = parsed as {
+          error?: { message?: string; code?: string };
+          message?: string;
+          code?: string;
+        } | null;
+        const errMsg =
+          err?.error?.message ?? err?.message ?? errorText.slice(0, 500);
+        const errCode = err?.error?.code ?? err?.code ?? response.status;
+
+        logger.error('[Volcengine] multimodal embedding HTTP error', {
+          statusCode: response.status,
+          errorCode: errCode,
+          errorMessage: errMsg,
+          elapsedMs: elapsed,
+        });
         throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
-          message: `Volcengine API Error: ${response.status} ${response.statusText} - ${errorText}`,
+          message: `Volcengine API Error [${errCode}]: ${errMsg}`,
         });
       }
 
-      const data = await response.json() as {
+      const rawText = await response.text();
+      let data: {
         data?: { embedding?: number[] } | Array<{ embedding?: number[] }>;
       };
+      try {
+        data = JSON.parse(rawText) as typeof data;
+      } catch {
+        logger.error('[Volcengine] multimodal embedding non-JSON response', {
+          responseSample: rawText.slice(0, 200),
+          elapsedMs: elapsed,
+        });
+        throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, {
+          message: 'Volcengine returned non-JSON response for multimodal embedding',
+        });
+      }
 
-      if (data && data.data && !Array.isArray(data.data) && data.data.embedding) {
+      if (data?.data && !Array.isArray(data.data) && data.data.embedding) {
         return data.data.embedding;
       }
-      else if (data && data.data && Array.isArray(data.data) && data.data.length > 0 && data.data[0].embedding) {
+      if (
+        data?.data &&
+        Array.isArray(data.data) &&
+        data.data.length > 0 &&
+        data.data[0].embedding
+      ) {
         return data.data[0].embedding;
       }
-      else {
-        logger.error('Unexpected response format from Volcengine:', JSON.stringify(data, null, 2));
-        throw new AppError(ErrorCodes.AI_INVALID_RESPONSE);
-      }
+
+      logger.error('[Volcengine] unexpected multimodal response format', {
+        responseSample: rawText.slice(0, 200),
+      });
+      throw new AppError(ErrorCodes.AI_INVALID_RESPONSE);
     } catch (error) {
-      logger.error(
-        'Volcengine Multimodal embedding error',
-        error instanceof Error
-          ? { message: error.message, stack: error.stack, ...(error as { status?: number }).status !== undefined ? { status: (error as { status?: number }).status } : {} }
-          : error,
-      );
-      if (error instanceof AppError) {
-        throw error;
+      if (!(error instanceof AppError)) {
+        const raw = error as { code?: string; message?: string };
+        logger.error('[Volcengine] multimodal embedding fetch error', {
+          code: raw.code ?? null,
+          message:
+            raw.message ??
+            (error instanceof Error ? error.message : String(error)),
+        });
       }
+      if (error instanceof AppError) throw error;
       throw new AppError(ErrorCodes.AI_EMBEDDING_ERROR, {
-        message: error instanceof Error ? error.message : 'Volcengine multimodal embedding error',
+        message:
+          error instanceof Error ? error.message : 'Volcengine multimodal embedding error',
       });
     }
   }
@@ -129,5 +192,7 @@ providerRegistry.register('volcengine', VolcengineProvider, {
   apiKey: process.env.VOLCENGINE_API_KEY ?? '',
   baseURL: 'https://ark.cn-beijing.volces.com/api/v3',
   model: process.env.VOLCENGINE_MODEL ?? 'doubao-seed-1-8-251228',
-  embeddingModel: process.env.VOLCENGINE_EMBEDDING_MODEL ?? 'doubao-embedding-vision-251215',
+  embeddingModel:
+    process.env.VOLCENGINE_EMBEDDING_MODEL ??
+    'doubao-embedding-vision-251215',
 });

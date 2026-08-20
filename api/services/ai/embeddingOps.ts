@@ -18,14 +18,23 @@ export class EmbeddingOps {
         const embeddingProvider = await getProviderForTask("embedding");
 
         if (!embeddingProvider) {
-          logger.warn("No embedding provider available");
+          logger.warn("No embedding provider available (getProviderForTask returned null)");
           return null;
         }
 
         const provider = await getAIProviderForTask("embedding");
 
+        logger.info("[EmbeddingOps] generateEmbedding", {
+          providerType: provider.providerType,
+          model: provider.embeddingModel ?? null,
+          textLen: text.length,
+          hasKey: provider.hasKey,
+        });
+
         if (!provider.hasKey) {
-          logger.warn("Embedding provider has no API key configured");
+          logger.warn(
+            `[EmbeddingOps] Provider "${embeddingProvider}" has no API key configured`,
+          );
           return null;
         }
 
@@ -39,7 +48,8 @@ export class EmbeddingOps {
                 model: provider.embeddingModel || provider.model,
               },
               async () => ({
-                result: await createEmbedding(text),
+                // 必须显式绑定 this：解构赋值后直接调用会导致方法内 this 丢失。
+                result: await createEmbedding.call(provider, text),
                 tokenCount: text.length,
               }),
             );
@@ -66,7 +76,30 @@ export class EmbeddingOps {
             },
           );
         } catch (error) {
-          logger.error("Failed to generate embedding:", error);
+          const raw = error as {
+            code?: string | number;
+            status?: number;
+            statusCode?: number;
+            message?: string;
+            response?: unknown;
+            error?: unknown;
+          };
+          const respBody = (raw.response as { data?: unknown } | null)?.data;
+          logger.error("Failed to generate embedding", {
+            provider: embeddingProvider,
+            modelUsed: provider.embeddingModel || provider.model || null,
+            errorCode: raw.code ?? null,
+            httpStatus: raw.status ?? raw.statusCode ?? null,
+            message:
+              raw.message ??
+              (error instanceof Error ? error.message : String(error)),
+            responseBody: respBody
+              ? JSON.stringify(respBody).slice(0, 800)
+              : null,
+            innerError: raw.error
+              ? JSON.stringify(raw.error).slice(0, 800)
+              : null,
+          });
           return null;
         }
       },
@@ -115,7 +148,8 @@ export class EmbeddingOps {
                   metadata: { batchCount: batch.length },
                 },
                 async () => ({
-                  result: await createEmbedding(text),
+                  // 同 generateEmbedding：解构调用需显式绑定 this。
+                  result: await createEmbedding.call(provider, text),
                   tokenCount: text.length,
                 }),
               ).catch(() => null),

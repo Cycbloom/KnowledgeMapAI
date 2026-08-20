@@ -4,6 +4,7 @@ import { StudyCard } from "@shared/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useUpdateCardProgressMutation } from "../../hooks/mutations";
 import { getCardTypeBadgeMeta, badgeToneClasses } from "../../utils/quizBadgeMeta";
+import { getDifficultyBadgeMeta } from "../../utils/quizDifficultyMeta";
 import { QuizOptionArea } from "./QuizOptionArea";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
 import { QuizRatingBar } from "./QuizRatingBar";
@@ -108,6 +109,7 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
 
   const currentBadgeMeta = getCardTypeBadgeMeta(currentCard.card_type ?? "qa");
   const CurrentBadgeIcon = currentBadgeMeta.Icon;
+  const currentDifficultyMeta = getDifficultyBadgeMeta(currentCard.difficulty);
 
   const isFirstCard = currentCardIndex === 0;
   const isLastCard = currentCardIndex === quizCardsLength - 1;
@@ -194,6 +196,14 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
                   <CurrentBadgeIcon size={14} />
                   {t(currentBadgeMeta.labelKey as never)}
                 </span>
+                {currentDifficultyMeta && (
+                  <span
+                    className={`${badgeToneClasses(currentDifficultyMeta.tone, isDark)} text-xs md:text-[13px] font-bold inline-flex items-center gap-1 px-2.5 py-1`}
+                    aria-label={t(currentDifficultyMeta.labelKey as never)}
+                  >
+                    {t(currentDifficultyMeta.labelKey as never)}
+                  </span>
+                )}
                 <h3
                   className={`uppercase tracking-widest text-[10px] md:text-[11px] font-bold px-2 md:px-3 py-0.5 md:py-1 rounded-md ${
                     isDark

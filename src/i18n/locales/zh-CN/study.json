@@ -223,7 +223,10 @@
     "submitAnswer": "提交答案",
     "selectOption": "请选择选项",
     "swipeInstruction": "← 滑动查看答案  |  → 滑动跳过",
-    "rateMemory": "记忆程度评价"
+    "rateMemory": "记忆程度评价",
+    "difficultyEasy": "简单",
+    "difficultyMedium": "中等",
+    "difficultyHard": "困难"
   },
   "a11y": {
     "quizQuestionRegion": "题目与选项区域",

@@ -223,7 +223,10 @@
     "submitAnswer": "Submit Answer",
     "selectOption": "Select an option",
     "swipeInstruction": "← Swipe to reveal answer  |  → Swipe to skip",
-    "rateMemory": "Rate Memory"
+    "rateMemory": "Rate Memory",
+    "difficultyEasy": "Easy",
+    "difficultyMedium": "Medium",
+    "difficultyHard": "Hard"
   },
   "a11y": {
     "quizQuestionRegion": "Question and options region",

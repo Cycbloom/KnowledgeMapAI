@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import type { StudyCard } from "@shared/types";
 import type { LayoutMode } from "../../hooks/quiz/useQuizLayoutPref";
+import { useTheme } from "../../hooks";
+import { getCardTypeBadgeMeta, type BadgeTone } from "../../utils/quizBadgeMeta";
+import { getDifficultyBadgeMeta } from "../../utils/quizDifficultyMeta";
 import { QuizLayoutSwitcher } from "./QuizLayoutSwitcher";
 
 interface QuizSidebarProps {
@@ -43,6 +46,10 @@ export function QuizSidebar({
   onToggleCollapsed,
 }: QuizSidebarProps) {
   const { t } = useTranslation();
+  // isDark currently unused: badges rendered as solid color strips/dots,
+  // tone palettes are theme-agnostic between light/dark (500/400/300 shades).
+  // Kept import for potential future use, silence lint with destructuring placeholder.
+  void useTheme();
 
   const total = quizCards.length;
   const progressPercent =
@@ -62,6 +69,30 @@ export function QuizSidebar({
       return;
     }
     onChangeLayout(layoutMode === "flash" ? "focus" : "flash");
+  };
+
+  /** 难度左侧色条（交通灯隐喻：绿=易 / 黄=中 / 红=难）
+   *  未选中：饱和 500 色
+   *  选中：升阶 300 亮色，保证在 primary 粉色背景上对比充足
+   */
+  const difficultyBarTone: Readonly<Record<BadgeTone, { idle: string; active: string }>> = {
+    emerald: { idle: "bg-emerald-500", active: "bg-emerald-300" },
+    amber: { idle: "bg-amber-500", active: "bg-amber-300" },
+    rose: { idle: "bg-rose-500", active: "bg-rose-300" },
+    // 兜底色（理论上难度只有三档）
+    blue: { idle: "bg-slate-400", active: "bg-slate-300" },
+    violet: { idle: "bg-slate-400", active: "bg-slate-300" },
+    slate: { idle: "bg-slate-400", active: "bg-slate-300" },
+  };
+
+  /** 题型图标颜色：未选中 = 语义色 500，选中 = 白色 */
+  const typeIconColor: Readonly<Record<BadgeTone, { idle: string; active: string }>> = {
+    blue: { idle: "text-blue-500", active: "text-white" },
+    rose: { idle: "text-rose-500", active: "text-white" },
+    emerald: { idle: "text-emerald-500", active: "text-white" },
+    violet: { idle: "text-violet-500", active: "text-white" },
+    amber: { idle: "text-amber-500", active: "text-white" },
+    slate: { idle: "text-slate-500", active: "text-white" },
   };
 
   return (
@@ -217,13 +248,25 @@ export function QuizSidebar({
         )}
         {quizCards.map((card, index) => {
           const isActive = index === currentCardIndex;
+          const typeMeta = getCardTypeBadgeMeta(card.card_type ?? "qa");
+          const diffMeta = getDifficultyBadgeMeta(card.difficulty);
+          const TypeIcon = typeMeta.Icon;
+          // 无难度时色条退化为中性灰，避免视觉空洞
+          const diffToneKey = diffMeta?.tone ?? "slate";
+          const diffBarClass = isActive
+            ? difficultyBarTone[diffToneKey].active
+            : difficultyBarTone[diffToneKey].idle;
+          const typeIconClass = isActive
+            ? typeIconColor[typeMeta.tone].active
+            : typeIconColor[typeMeta.tone].idle;
+
           if (isCollapsed) {
             return (
               <button
                 key={card.id}
                 type="button"
                 onClick={() => onSelectCard(index)}
-                className={`w-full flex items-center justify-center min-h-[36px] rounded-lg text-xs font-bold transition-colors ${
+                className={`relative w-full flex items-center justify-center min-h-[36px] rounded-lg text-xs font-bold transition-colors overflow-hidden ${
                   isActive
                     ? "bg-primary-500 dark:bg-primary-600 text-white shadow"
                     : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200"
@@ -232,7 +275,13 @@ export function QuizSidebar({
                 aria-current={isActive ? "step" : undefined}
                 title={t("study.sidebar.cardItem", { index: index + 1 })}
               >
-                {index + 1}
+                {/* 左侧：难度色条（交通灯） */}
+                <span
+                  className={`absolute left-0 top-0 h-full w-[5px] rounded-l-lg ${diffBarClass}`}
+                  aria-hidden="true"
+                />
+                {/* 数字：加 ml-[5px] 平衡左侧色条的视觉偏移 */}
+                <span className="ml-[5px]">{index + 1}</span>
               </button>
             );
           }
@@ -241,23 +290,42 @@ export function QuizSidebar({
               key={card.id}
               type="button"
               onClick={() => onSelectCard(index)}
-              className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors min-h-[40px] ${
                 isActive
                   ? "bg-primary-500 dark:bg-primary-600 text-white shadow"
                   : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
               }`}
               aria-current={isActive ? "step" : undefined}
             >
-              <span
-                className={`flex-none w-6 h-6 rounded flex items-center justify-center text-[11px] font-bold ${
-                  isActive
-                    ? "bg-primary-500/80 text-white"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                }`}
-              >
-                {index + 1}
+              {/* 编码徽章：左色条=难度 / 数字 + 分隔 + 题型图标 */}
+              <span className="relative flex-none">
+                <span
+                  className={`relative flex items-center h-6 rounded pl-[9px] pr-1.5 gap-1 overflow-hidden ${
+                    isActive
+                      ? "bg-black/15 text-white"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {/* 左侧色条：难度（交通灯） */}
+                  <span
+                    className={`absolute left-0 top-0 h-full w-[4px] rounded-l ${diffBarClass}`}
+                    aria-hidden="true"
+                  />
+                  <span className="text-[11px] font-bold leading-none relative z-[1]">
+                    {index + 1}
+                  </span>
+                  {/* 细分隔线 */}
+                  <span
+                    className={`w-px h-3 ${
+                      isActive ? "bg-white/30" : "bg-slate-300 dark:bg-slate-600"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  {/* 题型图标 */}
+                  <TypeIcon size={13} className={`${typeIconClass} shrink-0`} aria-hidden="true" />
+                </span>
               </span>
-              <span className="truncate text-sm">{card.question}</span>
+              <span className="truncate text-sm flex-1 min-w-0 leading-tight">{card.question}</span>
             </button>
           );
         })}

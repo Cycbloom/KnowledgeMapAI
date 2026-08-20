@@ -5,6 +5,7 @@ import type { Node, Edge, CrossGraphNodeConnection, NodeLevel } from '../../type
 import { CombinedNodeDetailSidebar } from './CombinedNodeDetailSidebar';
 import { CombinedNodeEditSidebar } from './CombinedNodeEditSidebar';
 import { EmptyState } from '../common/EmptyState';
+import { getLevelColors } from '../../config/learningStatusColors';
 
 type SidebarMode = 'outline' | 'detail' | 'edit' | 'connections';
 
@@ -302,10 +303,30 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
           </span>
           
           {node.level && (
-            <span className={`text-[10px] uppercase ml-2 px-1 rounded hidden group-hover:inline-block
-               ${isSelected ? 'bg-primary-100 dark:bg-primary-800 text-primary-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-              {node.level}
-            </span>
+            (() => {
+              const levelVal = node.level;
+              const palette = getLevelColors(levelVal);
+              const bg = isSelected ? palette.primary : palette.background;
+              const fg = isSelected ? '#FFFFFF' : palette.text;
+              const border = isSelected
+                ? `1px solid ${palette.primary}`
+                : `1px solid ${palette.primary}22`;
+              return (
+                <span
+                  className="text-[10px] uppercase ml-2 px-1.5 py-0.5 rounded font-medium tracking-wide hidden group-hover:inline-block"
+                  style={{
+                    backgroundColor: bg,
+                    color: fg,
+                    border,
+                    boxShadow: isSelected
+                      ? `0 1px 2px ${palette.primary}33`
+                      : undefined,
+                  }}
+                >
+                  {levelVal}
+                </span>
+              );
+            })()
           )}
         </div>
         
@@ -347,9 +368,30 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
         <span className="truncate flex-1 font-medium">
           {node.title || t('combinedViewPage.graphSidebar.untitledNode')}
         </span>
-        <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded uppercase">
-          {node.level || 'leaf'}
-        </span>
+        {(() => {
+          const levelVal = (node.level || 'leaf') as NodeLevel;
+          const palette = getLevelColors(levelVal);
+          const bg = isSelected ? palette.primary : palette.background;
+          const fg = isSelected ? '#FFFFFF' : palette.text;
+          const border = isSelected
+            ? `1px solid ${palette.primary}`
+            : `1px solid ${palette.primary}22`;
+          return (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded uppercase font-medium tracking-wide flex-shrink-0"
+              style={{
+                backgroundColor: bg,
+                color: fg,
+                border,
+                boxShadow: isSelected
+                  ? `0 1px 2px ${palette.primary}33`
+                  : undefined,
+              }}
+            >
+              {levelVal}
+            </span>
+          );
+        })()}
       </div>
     );
   };

@@ -834,7 +834,6 @@ export const GraphOutline = React.memo(function GraphOutline({
     node: Node,
     nodeIndex: number,
   ) => {
-    const level = node.level || "leaf";
     const isSelected = selectedNodeIds.has(node.id);
     const backboneModule = node.properties?.backboneModule as
       | BackboneModule
@@ -906,16 +905,33 @@ export const GraphOutline = React.memo(function GraphOutline({
           )}
           {node.title || t("graphEditor.outline.unnamedNode")}
         </span>
-        <span
-          className="text-[10px] px-1 py-0.5 rounded uppercase"
-          style={{
-            backgroundColor: getLevelColors(level).background,
-            color: getLevelColors(level).text,
-          }}
-          aria-hidden="true"
-        >
-          {level}
-        </span>
+        {(() => {
+          const levelVal = node.level || "leaf";
+          const palette = getLevelColors(levelVal);
+          const isSel =
+            selectedNodeId === node.id && !isMultiSelectMode;
+          const bg = isSel ? palette.primary : palette.background;
+          const fg = isSel ? "#FFFFFF" : palette.text;
+          const border = isSel
+            ? `1px solid ${palette.primary}`
+            : `1px solid ${palette.primary}22`;
+          return (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded uppercase font-medium tracking-wide flex-shrink-0"
+              style={{
+                backgroundColor: bg,
+                color: fg,
+                border,
+                boxShadow: isSel
+                  ? `0 1px 2px ${palette.primary}33`
+                  : undefined,
+              }}
+              aria-hidden="true"
+            >
+              {levelVal}
+            </span>
+          );
+        })()}
       </div>
     );
   };
@@ -1216,7 +1232,6 @@ export const GraphOutline = React.memo(function GraphOutline({
         getItemKey={(index) => processedNodes[index]?.id ?? index}
         estimateSize={() => 36}
         renderItem={(node) => {
-          const level = node.level || "leaf";
           const isSelected = selectedNodeIds.has(node.id);
           const backboneModule = node.properties?.backboneModule as
             | BackboneModule
@@ -1270,15 +1285,32 @@ export const GraphOutline = React.memo(function GraphOutline({
                 )}
                 {node.title || t("graphEditor.outline.unnamedNode")}
               </span>
-              <span
-                className="text-[10px] px-1 py-0.5 rounded uppercase"
-                style={{
-                  backgroundColor: getLevelColors(level).background,
-                  color: getLevelColors(level).text,
-                }}
-              >
-                {level}
-              </span>
+              {(() => {
+                const levelVal = node.level || "leaf";
+                const palette = getLevelColors(levelVal);
+                const isSel =
+                  selectedNodeId === node.id && !isMultiSelectMode;
+                const bg = isSel ? palette.primary : palette.background;
+                const fg = isSel ? "#FFFFFF" : palette.text;
+                const border = isSel
+                  ? `1px solid ${palette.primary}`
+                  : `1px solid ${palette.primary}22`;
+                return (
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded uppercase font-medium tracking-wide flex-shrink-0"
+                    style={{
+                      backgroundColor: bg,
+                      color: fg,
+                      border,
+                      boxShadow: isSel
+                        ? `0 1px 2px ${palette.primary}33`
+                        : undefined,
+                    }}
+                  >
+                    {levelVal}
+                  </span>
+                );
+              })()}
             </div>
           );
         }}
@@ -1836,21 +1868,32 @@ export const GraphOutline = React.memo(function GraphOutline({
                         </span>
 
                         {node.level && (
-                          <span
-                            className="text-[10px] uppercase ml-2 px-1 rounded hidden group-hover:inline-block group-focus-within:inline-block"
-                            style={{
-                              backgroundColor:
-                                selectedNodeId === node.id
-                                  ? getLevelColors(node.level).primary
-                                  : getLevelColors(node.level).background,
-                              color:
-                                selectedNodeId === node.id
-                                  ? "var(--white)"
-                                  : getLevelColors(node.level).text,
-                            }}
-                          >
-                            {node.level}
-                          </span>
+                          (() => {
+                            const levelVal = node.level;
+                            const palette = getLevelColors(levelVal);
+                            const isSel =
+                              selectedNodeId === node.id && !isMultiSelectMode;
+                            const bg = isSel ? palette.primary : palette.background;
+                            const fg = isSel ? "#FFFFFF" : palette.text;
+                            const border = isSel
+                              ? `1px solid ${palette.primary}`
+                              : `1px solid ${palette.primary}22`;
+                            return (
+                              <span
+                                className="text-[10px] uppercase ml-2 px-1.5 py-0.5 rounded font-medium tracking-wide group-hover:inline-block group-focus-within:inline-block hidden"
+                                style={{
+                                  backgroundColor: bg,
+                                  color: fg,
+                                  border,
+                                  boxShadow: isSel
+                                    ? `0 1px 2px ${palette.primary}33`
+                                    : undefined,
+                                }}
+                              >
+                                {levelVal}
+                              </span>
+                            );
+                          })()
                         )}
 
                         {hasChildren && !isReadOnly && (

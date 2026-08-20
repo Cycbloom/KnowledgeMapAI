@@ -637,25 +637,57 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
 
   let themeVars: ProseStyleVars | undefined;
   if (readingMode === "eye-care") {
-    themeVars = {
-      "--tw-prose-body": "#1f2937",
-      "--tw-prose-headings": "#111827",
-      "--tw-prose-links": "#1d4ed8",
-      "--tw-prose-bold": "#111827",
-      "--tw-prose-quotes": "#111827",
-      "--tw-prose-counters": "#4b5563",
-      "--tw-prose-bullets": "#4b5563",
-    };
+    // 护眼模式在暗色主题下换用深墨绿背景，文字需切换为浅绿系以保持对比度
+    themeVars = isDark
+      ? {
+          "--tw-prose-body": "#cfe8d9",
+          "--tw-prose-headings": "#e6f2ea",
+          "--tw-prose-links": "#6ee7b7",
+          "--tw-prose-bold": "#f0faf4",
+          "--tw-prose-quotes": "#cfe8d9",
+          "--tw-prose-quote-borders": "#2e4a3a",
+          "--tw-prose-counters": "#8fb69f",
+          "--tw-prose-bullets": "#8fb69f",
+          "--tw-prose-hr": "#24402f",
+          "--tw-prose-th-borders": "#2e4a3a",
+          "--tw-prose-td-borders": "#1f382b",
+          "--tw-prose-code": "#e6f2ea",
+        }
+      : {
+          "--tw-prose-body": "#1f2937",
+          "--tw-prose-headings": "#111827",
+          "--tw-prose-links": "#1d4ed8",
+          "--tw-prose-bold": "#111827",
+          "--tw-prose-quotes": "#111827",
+          "--tw-prose-counters": "#4b5563",
+          "--tw-prose-bullets": "#4b5563",
+        };
   } else if (readingMode === "sepia") {
-    themeVars = {
-      "--tw-prose-body": "#433422",
-      "--tw-prose-headings": "#292018",
-      "--tw-prose-links": "#9a3412",
-      "--tw-prose-bold": "#292018",
-      "--tw-prose-quotes": "#292018",
-      "--tw-prose-counters": "#6b5d4a",
-      "--tw-prose-bullets": "#6b5d4a",
-    };
+    // 羊皮纸模式在暗色主题下换用深褐背景，文字切换为浅驼色系
+    themeVars = isDark
+      ? {
+          "--tw-prose-body": "#e3d3bd",
+          "--tw-prose-headings": "#f3e8d5",
+          "--tw-prose-links": "#e0b98f",
+          "--tw-prose-bold": "#faf3e5",
+          "--tw-prose-quotes": "#e3d3bd",
+          "--tw-prose-quote-borders": "#5a4632",
+          "--tw-prose-counters": "#bd9e7b",
+          "--tw-prose-bullets": "#bd9e7b",
+          "--tw-prose-hr": "#4a3826",
+          "--tw-prose-th-borders": "#5a4632",
+          "--tw-prose-td-borders": "#3a2c1c",
+          "--tw-prose-code": "#faf3e5",
+        }
+      : {
+          "--tw-prose-body": "#433422",
+          "--tw-prose-headings": "#292018",
+          "--tw-prose-links": "#9a3412",
+          "--tw-prose-bold": "#292018",
+          "--tw-prose-quotes": "#292018",
+          "--tw-prose-counters": "#6b5d4a",
+          "--tw-prose-bullets": "#6b5d4a",
+        };
   } else if (isDark) {
     // Default reading mode on dark theme: prose-indigo ships light-tokens
     // only, so headings/quotes/bold/links would stay dark and become
@@ -727,7 +759,13 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
 
       <div
         ref={contentRef}
-        className={`prose prose-indigo ${sizingClass} ${widthClass} ${lineHeightClass} ${isDark ? "dark:text-gray-200 text-gray-200" : "text-gray-800"}`}
+        className={`prose prose-indigo ${sizingClass} ${widthClass} ${lineHeightClass} ${
+          // 暗色主题下默认/护眼/羊皮纸三种模式均为深色背景，统一用浅色文字兜底；
+          // 具体 markdown 元素颜色由 themeVars 按模式分别覆盖以保持对比度。
+          isDark
+            ? "dark:text-gray-200 text-gray-200"
+            : "text-gray-800"
+        }`}
         style={bodyStyle}
       >
         <ReactMarkdown

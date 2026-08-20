@@ -85,9 +85,15 @@ export const LearningArticleReader = ({
     "rounded-2xl border transition-colors duration-200",
     isMobile ? "px-4 py-6 sm:px-6 sm:py-8" : "px-8 py-10 lg:px-12 lg:py-12",
     readingMode === "eye-care"
-      ? "bg-amber-50 border-amber-200/70 shadow-[0_1px_3px_rgba(180,140,40,0.06)]"
+      ? // 暗色主题下保持护眼绿身份，但改用深色背景，避免浅色纸质的亮底刺眼
+        isDark
+        ? "bg-[#0f1e16] border-[#24402f]"
+        : "bg-amber-50 border-amber-200/70 shadow-[0_1px_3px_rgba(180,140,40,0.06)]"
       : readingMode === "sepia"
-        ? "bg-[#f5ecd9] border-[#e3d5b5] shadow-[0_1px_3px_rgba(140,100,40,0.08)]"
+        ? // 暗色主题下保持羊皮纸褐身份，改用深褐背景
+          isDark
+          ? "bg-[#241c12] border-[#4a3826]"
+          : "bg-[#f5ecd9] border-[#e3d5b5] shadow-[0_1px_3px_rgba(140,100,40,0.08)]"
         : isDark
           ? "bg-slate-900 border-slate-800"
           : "bg-white border-gray-200/70",

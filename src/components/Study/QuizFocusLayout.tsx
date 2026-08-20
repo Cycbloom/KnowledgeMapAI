@@ -1,10 +1,16 @@
 import { useMemo, memo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
 import { StudyCard } from "@shared/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useUpdateCardProgressMutation } from "../../hooks/mutations";
 import { getCardTypeBadgeMeta, badgeToneClasses } from "../../utils/quizBadgeMeta";
 import { getDifficultyBadgeMeta } from "../../utils/quizDifficultyMeta";
+import { useQuizSettingsStore } from "../../store/useQuizSettingsStore";
+import {
+  resolveFocusWidthClass,
+  resolvePrimaryTextStyle,
+} from "../../utils/quizTypography";
 import { QuizOptionArea } from "./QuizOptionArea";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
 import { QuizRatingBar } from "./QuizRatingBar";
@@ -62,6 +68,16 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
   } = props;
 
   const { t } = useTranslation();
+
+  const { fontSize, lineHeight, contentWidthMode } = useQuizSettingsStore(
+    useShallow((s) => ({
+      fontSize: s.fontSize,
+      lineHeight: s.lineHeight,
+      contentWidthMode: s.contentWidthMode,
+    })),
+  );
+  const primaryTextStyle = resolvePrimaryTextStyle(fontSize, lineHeight);
+  const focusWidthClass = resolveFocusWidthClass(contentWidthMode);
 
   const isQA = !currentCard.card_type || currentCard.card_type === "qa";
   const isChoice = currentCard.card_type === "choice";
@@ -173,11 +189,11 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
     >
       <div className="flex-1 min-h-0 w-full flex items-center justify-center">
         <div
-          className={`grid grid-rows-[1fr_auto] h-full w-full max-w-7xl mx-auto rounded-2xl border overflow-hidden ${
+          className={`grid grid-rows-[1fr_auto] h-full w-full mx-auto rounded-2xl border overflow-hidden ${
             isDark
               ? "bg-surface border-slate-700 dark:bg-slate-800"
               : "bg-white border-gray-200"
-          } grid-cols-1 lg:grid-cols-5`}
+          } grid-cols-1 lg:grid-cols-5 ${focusWidthClass}`}
         >
         <div
           className={`lg:col-span-3 min-h-0 overflow-y-auto custom-scrollbar p-6 md:p-8 border-r ${
@@ -216,6 +232,7 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
               </div>
               <div
                 className={`${isMobile ? "text-base" : "text-lg md:text-xl"} font-semibold leading-snug mt-2 md:mt-3 ${isDark ? "text-slate-100" : "text-gray-900"}`}
+                style={primaryTextStyle}
               >
                 {currentCard.question}
               </div>

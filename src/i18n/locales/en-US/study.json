@@ -194,7 +194,24 @@
     "collapse": "Collapse sidebar",
     "progress": "Progress",
     "cardList": "Card list",
-    "cardItem": "Card {{index}}"
+    "cardItem": "Card {{index}}",
+    "settings": "Quiz settings",
+    "settingsTooltip": "Learning center settings"
+  },
+  "settings": {
+    "title": "Learning Center Settings",
+    "fontSize": "Font size",
+    "previewQuestion": "This question previews the current font size",
+    "previewOption": "Option text scales proportionally",
+    "lineHeight": "Line height",
+    "lineCompact": "Compact",
+    "lineNormal": "Normal",
+    "lineRelaxed": "Relaxed",
+    "contentWidth": "Content width",
+    "widthFull": "Full",
+    "widthComfortable": "Comfortable",
+    "widthNarrow": "Narrow",
+    "resetSettings": "Reset to defaults"
   },
   "quiz": {
     "exit": "Exit",

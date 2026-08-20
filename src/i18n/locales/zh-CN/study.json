@@ -194,7 +194,24 @@
     "collapse": "折叠侧边栏",
     "progress": "进度",
     "cardList": "题目列表",
-    "cardItem": "第 {{index}} 题"
+    "cardItem": "第 {{index}} 题",
+    "settings": "答题设置",
+    "settingsTooltip": "学习中心设置"
+  },
+  "settings": {
+    "title": "学习中心设置",
+    "fontSize": "字号",
+    "previewQuestion": "以下题目用于预览当前字号",
+    "previewOption": "选项文字会按比例同步缩放",
+    "lineHeight": "行距",
+    "lineCompact": "紧凑",
+    "lineNormal": "标准",
+    "lineRelaxed": "宽松",
+    "contentWidth": "内容宽度",
+    "widthFull": "全宽",
+    "widthComfortable": "舒适",
+    "widthNarrow": "窄",
+    "resetSettings": "恢复默认设置"
   },
   "quiz": {
     "exit": "退出",

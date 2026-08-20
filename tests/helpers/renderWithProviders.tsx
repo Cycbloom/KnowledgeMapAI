@@ -13,6 +13,7 @@ import { useFocusStore } from '../../src/store/useFocusStore';
 import { useNoiseStore } from '../../src/store/useNoiseStore';
 import { useShortcutStore } from '../../src/store/useShortcutStore';
 import { useLearningSettingsStore } from '../../src/store/useLearningSettingsStore';
+import { useQuizSettingsStore } from '../../src/store/useQuizSettingsStore';
 import { usePerformanceStore } from '../../src/store/usePerformanceStore';
 
 interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -77,5 +78,6 @@ export function resetStores(): void {
   useNoiseStore.setState(useNoiseStore.getInitialState());
   useShortcutStore.setState(useShortcutStore.getInitialState());
   useLearningSettingsStore.setState(useLearningSettingsStore.getInitialState());
+  useQuizSettingsStore.setState(useQuizSettingsStore.getInitialState());
   usePerformanceStore.setState(usePerformanceStore.getInitialState());
 }

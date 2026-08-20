@@ -85,6 +85,17 @@ export interface UserSettingsLearning {
 }
 
 // ---------------------------------------------------------------------------
+// Quiz (学习中心答题模式) — mirrors src/store/useQuizSettingsStore.ts
+// persisted fields. Drives the reading appearance of flash/focus modes.
+// ---------------------------------------------------------------------------
+
+export interface UserSettingsQuiz {
+  fontSize: number;
+  lineHeight: UserSettingsLineHeight;
+  contentWidthMode: UserSettingsContentWidthMode;
+}
+
+// ---------------------------------------------------------------------------
 // Study — mirrors src/components/Settings/settingsConstants.ts
 // StudyStrategyValues (server-side FSRS / scheduler strategy config).
 // Field names preserve the existing snake_case where the source uses it.

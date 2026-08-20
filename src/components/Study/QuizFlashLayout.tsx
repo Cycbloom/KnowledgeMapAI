@@ -1,5 +1,6 @@
 import { useMemo, memo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
 import { StudyCard } from "@shared/types";
 import {
   ThumbsUp,
@@ -11,6 +12,11 @@ import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 import { useUpdateCardProgressMutation } from "../../hooks/mutations";
 import { getCardTypeBadgeMeta, badgeToneClasses } from "../../utils/quizBadgeMeta";
 import { getDifficultyBadgeMeta } from "../../utils/quizDifficultyMeta";
+import { useQuizSettingsStore } from "../../store/useQuizSettingsStore";
+import {
+  resolveFlashWidthClass,
+  resolvePrimaryTextStyle,
+} from "../../utils/quizTypography";
 import { QuizOptionArea } from "./QuizOptionArea";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
 import { QuizRatingBar } from "./QuizRatingBar";
@@ -59,6 +65,16 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
   onNext,
 }: QuizFlashLayoutProps) {
   const { t } = useTranslation();
+
+  const { fontSize, lineHeight, contentWidthMode } = useQuizSettingsStore(
+    useShallow((s) => ({
+      fontSize: s.fontSize,
+      lineHeight: s.lineHeight,
+      contentWidthMode: s.contentWidthMode,
+    })),
+  );
+  const primaryTextStyle = resolvePrimaryTextStyle(fontSize, lineHeight);
+  const flashWidthClass = resolveFlashWidthClass(contentWidthMode);
 
   const handlePrev = onPrev ?? (() => {});
   const handleNext = onNext ?? (() => {});
@@ -159,7 +175,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
     <div
       className={`h-full w-full flex flex-col ${isMobile ? "p-2" : "p-4 md:p-6"} transition-colors ${isDark ? "bg-slate-900" : "bg-gray-100"}`}
     >
-      <div className="flex-1 min-h-0 w-full mx-auto max-w-3xl flex items-center justify-center">
+      <div className={`flex-1 min-h-0 w-full mx-auto ${flashWidthClass} flex items-center justify-center`}>
         <div
           className={`relative perspective-1000 h-full w-full flex items-center justify-center`}
         >
@@ -255,6 +271,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                           className={`text-base md:text-lg font-semibold leading-snug mb-3 line-clamp-2 ${
                             isDark ? "text-slate-200" : "text-gray-800"
                           }`}
+                          style={primaryTextStyle}
                         >
                           {stackCard.question}
                         </div>
@@ -480,6 +497,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                   </div>
                   <div
                     className={`${isMobile ? "text-base" : "text-lg md:text-xl"} font-semibold leading-snug mt-2 md:mt-3 ${isDark ? "text-slate-100" : "text-gray-900"}`}
+                    style={primaryTextStyle}
                   >
                     {currentCard.question}
                   </div>

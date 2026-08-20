@@ -1,6 +1,12 @@
 import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
 import { StudyCard } from "@shared/types";
 import { Brain, Check, X } from "lucide-react";
+import { useQuizSettingsStore } from "../../store/useQuizSettingsStore";
+import {
+  resolvePrimaryTextStyle,
+  resolveSecondaryTextStyle,
+} from "../../utils/quizTypography";
 
 /**
  * QuizAnswerExplanation 组件 Props
@@ -55,6 +61,15 @@ export function QuizAnswerExplanation({
   isMobile = false,
 }: QuizAnswerExplanationProps) {
   const { t } = useTranslation();
+
+  const { fontSize, lineHeight } = useQuizSettingsStore(
+    useShallow((s) => ({
+      fontSize: s.fontSize,
+      lineHeight: s.lineHeight,
+    })),
+  );
+  const primaryTextStyle = resolvePrimaryTextStyle(fontSize, lineHeight);
+  const secondaryTextStyle = resolveSecondaryTextStyle(fontSize, lineHeight);
 
   if (!showAnswer) {
     return null;
@@ -115,6 +130,7 @@ export function QuizAnswerExplanation({
           </h3>
           <div
             className={`${isMobile ? "text-base" : "text-lg md:text-xl"} font-medium ${isDark ? "text-slate-200" : "text-gray-800"} whitespace-pre-wrap`}
+            style={primaryTextStyle}
           >
             {currentCard.answer}
           </div>
@@ -237,6 +253,7 @@ export function QuizAnswerExplanation({
                 ? "bg-slate-900/50 text-slate-400 border-slate-700"
                 : "bg-primary-50/30 text-gray-600 border-primary-100"
             }`}
+            style={secondaryTextStyle}
           >
             {currentCard.explanation}
           </div>

@@ -1,7 +1,10 @@
 import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
 import { StudyCard } from "@shared/types";
 import { Check, X, BookOpen } from "lucide-react";
 import { normalizeBooleanAnswer } from "../../utils/textUtils";
+import { useQuizSettingsStore } from "../../store/useQuizSettingsStore";
+import { resolveSecondaryTextStyle } from "../../utils/quizTypography";
 
 /**
  * QuizOptionArea 组件 Props
@@ -70,6 +73,14 @@ export function QuizOptionArea({
 }: QuizOptionAreaProps) {
   const { t } = useTranslation();
 
+  const { fontSize, lineHeight } = useQuizSettingsStore(
+    useShallow((s) => ({
+      fontSize: s.fontSize,
+      lineHeight: s.lineHeight,
+    })),
+  );
+  const secondaryTextStyle = resolveSecondaryTextStyle(fontSize, lineHeight);
+
   return (
     <div className="w-full pb-4 md:pb-6">
       {isChoice && currentOptions.length > 0 && (
@@ -118,6 +129,7 @@ export function QuizOptionArea({
                 </span>
                 <span
                   className={`flex-1 ${isMobile ? "text-base" : "text-sm"} font-medium leading-snug`}
+                  style={secondaryTextStyle}
                 >
                   {option.replace(/^[A-Z]\.\s*/, "")}
                 </span>
@@ -189,6 +201,7 @@ export function QuizOptionArea({
                 </span>
                 <span
                   className={`flex-1 ${isMobile ? "text-base" : "text-sm"} font-medium leading-snug`}
+                  style={secondaryTextStyle}
                 >
                   {option.replace(/^[A-Z]\.\s*/, "")}
                 </span>

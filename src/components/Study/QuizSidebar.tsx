@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -6,6 +7,7 @@ import {
   ListOrdered,
   Zap,
   BookOpenCheck,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 import type { StudyCard } from "@shared/types";
@@ -14,6 +16,7 @@ import { useTheme } from "../../hooks";
 import { getCardTypeBadgeMeta, type BadgeTone } from "../../utils/quizBadgeMeta";
 import { getDifficultyBadgeMeta } from "../../utils/quizDifficultyMeta";
 import { QuizLayoutSwitcher } from "./QuizLayoutSwitcher";
+import { QuizSettingsPanel } from "./QuizSettingsPanel";
 
 interface QuizSidebarProps {
   quizCards: StudyCard[];
@@ -50,6 +53,8 @@ export function QuizSidebar({
   // tone palettes are theme-agnostic between light/dark (500/400/300 shades).
   // Kept import for potential future use, silence lint with destructuring placeholder.
   void useTheme();
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const total = quizCards.length;
   const progressPercent =
@@ -191,6 +196,16 @@ export function QuizSidebar({
           >
             <CurrentModeIcon size={18} aria-hidden="true" />
           </button>
+
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            aria-label={t("study.sidebar.settings")}
+            title={t("study.sidebar.settingsTooltip")}
+            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+          >
+            <Settings size={18} aria-hidden="true" />
+          </button>
         </div>
       ) : (
         /* 展开态：退出 + 进度 + 布局切换 */
@@ -233,6 +248,15 @@ export function QuizSidebar({
             onChange={onChangeLayout}
             disabled={isForcedFlash}
           />
+
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-2 px-3 min-h-[40px] rounded-lg border transition-colors text-sm font-medium bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+          >
+            <Settings size={16} aria-hidden="true" />
+            <span>{t("study.sidebar.settings")}</span>
+          </button>
         </div>
       )}
 
@@ -330,6 +354,11 @@ export function QuizSidebar({
           );
         })}
       </nav>
+
+      <QuizSettingsPanel
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </aside>
   );
 }

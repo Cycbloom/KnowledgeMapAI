@@ -181,11 +181,27 @@
     "timeSpent": "用时",
     "accuracy": "准确率"
   },
+  "header": {
+    "exit": "退出",
+    "titleQuiz": "答题模式",
+    "slideHint": "左右滑动切换卡片",
+    "focusHint": "方向键 ← → 切换题目",
+    "progressFmt": "{{current}} / {{total}}"
+  },
   "quiz": {
     "exit": "退出",
     "mode": "答题模式",
+    "layoutLabel": "答题布局",
+    "layoutFlash": "闪卡模式",
+    "layoutFocus": "专注模式",
+    "layoutTooltip": "切换答题布局模式",
     "swipeHint": "左右滑动切换卡片",
     "nextCard": "下一张",
+    "prevCard": "上一题",
+    "emptyExplanation": "答题后此处显示解析与答案",
+    "shortcuts": "快捷键",
+    "switchShortcut": "切换",
+    "submitShortcut": "提交",
     "question": "题目",
     "correct": "正确",
     "incorrect": "错误",
@@ -198,6 +214,10 @@
     "selectOption": "请选择选项",
     "swipeInstruction": "← 滑动查看答案  |  → 滑动跳过",
     "rateMemory": "记忆程度评价"
+  },
+  "a11y": {
+    "quizQuestionRegion": "题目与选项区域",
+    "quizExplanationRegion": "答案与解析区域"
   },
   "cardTypes": {
     "new": "新卡",

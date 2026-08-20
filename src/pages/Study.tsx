@@ -1,4 +1,4 @@
-import { useLayoutEffect, useEffect, useMemo, useState, lazy, Suspense } from "react";
+import { useLayoutEffect, useEffect, useMemo, useState, lazy, Suspense, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQueries } from "@tanstack/react-query";
@@ -15,12 +15,15 @@ const QuizGenerationModal = lazy(() =>
   })),
 );
 import { useTheme, useIsMobile } from "../hooks";
+import { useQuizLayoutPref } from "../hooks/quiz";
 import { api } from "../services/api";
 import { useCardReviewLogic } from "../hooks/study/useCardReviewLogic";
 import { useQuizLogic } from "../hooks/quiz/useQuizLogic";
 import { StudyHeader } from "../components/Study/StudyHeader";
 import { CardReviewView } from "../components/Study/CardReviewView";
 import { QuizViewFinished, QuizViewActive } from "../components/Study/QuizView";
+import { QuizActiveShell } from "../components/Study/QuizActiveShell";
+import { QuizActiveHeader } from "../components/Study/QuizActiveHeader";
 import { ErrorBoundary, Skeleton } from "../components/common";
 import { motion } from "framer-motion";
 import { useCelebration } from "@/hooks/common";
@@ -30,6 +33,7 @@ import { themeClasses } from "@/utils/themeClasses";
 export const Study = () => {
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
+  const { layoutMode, setLayoutMode, isForcedFlash } = useQuizLayoutPref();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
@@ -243,6 +247,30 @@ export const Study = () => {
     setViewState("quiz");
   };
 
+  const handleNextCardPure = useCallback(() => {
+    if (cardReview.currentCardIndex < cardReview.quizCards.length - 1) {
+      cardReview.setCurrentCardIndex((p) => p + 1);
+      cardReview.setShowAnswer(false);
+      cardReview.setSelectedOption(null);
+    } else {
+      cardReview.setSessionDuration(
+        cardReview.sessionStartTime
+          ? Math.floor((Date.now() - cardReview.sessionStartTime) / 1000)
+          : 0,
+      );
+      cardReview.setFinished(true);
+    }
+  }, [
+    cardReview.currentCardIndex,
+    cardReview.quizCards.length,
+    cardReview.setCurrentCardIndex,
+    cardReview.setShowAnswer,
+    cardReview.setSelectedOption,
+    cardReview.setSessionDuration,
+    cardReview.sessionStartTime,
+    cardReview.setFinished,
+  ]);
+
   if (isLoading)
     {return (
       <motion.div
@@ -379,18 +407,20 @@ export const Study = () => {
   // --- Quiz View: Finished ---
   if (cardReview.finished) {
     return (
-      <QuizViewFinished
-        isDark={isDark}
-        isMobile={isMobile ?? false}
-        nodeId={nodeId}
-        from={from}
-        quizCardsLength={cardReview.quizCards.length}
-        reviewedCount={cardReview.reviewedCount}
-        correctCount={cardReview.correctCount}
-        sessionDuration={cardReview.sessionDuration}
-        onBackToDashboard={handleBackToDashboard}
-        onRestart={cardReview.handleRestart}
-      />
+      <div className="h-screen overflow-hidden">
+        <QuizViewFinished
+          isDark={isDark}
+          isMobile={isMobile ?? false}
+          nodeId={nodeId}
+          from={from}
+          quizCardsLength={cardReview.quizCards.length}
+          reviewedCount={cardReview.reviewedCount}
+          correctCount={cardReview.correctCount}
+          sessionDuration={cardReview.sessionDuration}
+          onBackToDashboard={handleBackToDashboard}
+          onRestart={cardReview.handleRestart}
+        />
+      </div>
     );
   }
 
@@ -435,26 +465,46 @@ export const Study = () => {
         </div>
       )}
     >
-      <QuizViewActive
+      <QuizActiveShell
         isDark={isDark}
         isMobile={isMobile ?? false}
-        currentCard={cardReview.currentCard}
-        currentCardIndex={cardReview.currentCardIndex}
-        quizCardsLength={cardReview.quizCards.length}
-        showAnswer={cardReview.showAnswer}
-        selectedOption={cardReview.selectedOption}
-        cardKey={cardReview.cardKey}
-        swipeDirection={cardReview.swipeDirection}
-        quizCards={cardReview.quizCards}
-        similarityWithPrev={cardReview.similarityWithPrev}
-        updateProgressMutation={cardReview.updateProgressMutation}
-        onBackToDashboard={handleBackToDashboard}
-        onRate={cardReview.handleRate}
-        onOptionClick={quizLogic.handleOptionClick}
-        onMultiOptionClick={quizLogic.handleMultiOptionClick}
-        onDragEnd={cardReview.handleDragEnd}
-        onSetShowAnswer={cardReview.setShowAnswer}
-      />
+        header={
+          <QuizActiveHeader
+            isDark={isDark}
+            isMobile={isMobile ?? false}
+            layoutMode={layoutMode}
+            onChangeLayout={setLayoutMode}
+            isForcedFlash={isForcedFlash}
+            currentCardIndex={cardReview.currentCardIndex}
+            quizCardsLength={cardReview.quizCards.length}
+            onBackToDashboard={handleBackToDashboard}
+            showSliderHint={layoutMode === "flash"}
+          />
+        }
+      >
+        <QuizViewActive
+          isDark={isDark}
+          isMobile={isMobile ?? false}
+          currentCard={cardReview.currentCard}
+          currentCardIndex={cardReview.currentCardIndex}
+          quizCardsLength={cardReview.quizCards.length}
+          showAnswer={cardReview.showAnswer}
+          selectedOption={cardReview.selectedOption}
+          cardKey={cardReview.cardKey}
+          swipeDirection={cardReview.swipeDirection}
+          quizCards={cardReview.quizCards}
+          similarityWithPrev={cardReview.similarityWithPrev}
+          updateProgressMutation={cardReview.updateProgressMutation}
+          onBackToDashboard={handleBackToDashboard}
+          onRate={cardReview.handleRate}
+          onOptionClick={quizLogic.handleOptionClick}
+          onMultiOptionClick={quizLogic.handleMultiOptionClick}
+          onDragEnd={cardReview.handleDragEnd}
+          onSetShowAnswer={cardReview.setShowAnswer}
+          onPrev={cardReview.handlePrevCard}
+          onNext={handleNextCardPure}
+        />
+      </QuizActiveShell>
     </ErrorBoundary>
   );
 };

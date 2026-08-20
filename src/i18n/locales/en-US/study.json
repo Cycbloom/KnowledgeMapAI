@@ -181,11 +181,27 @@
     "timeSpent": "Time Spent",
     "accuracy": "Accuracy"
   },
+  "header": {
+    "exit": "Exit",
+    "titleQuiz": "Quiz Mode",
+    "slideHint": "Swipe left or right to navigate",
+    "focusHint": "Arrow keys ← → to navigate",
+    "progressFmt": "{{current}} / {{total}}"
+  },
   "quiz": {
     "exit": "Exit",
     "mode": "Quiz Mode",
+    "layoutLabel": "Quiz Layout",
+    "layoutFlash": "Flash Cards",
+    "layoutFocus": "Focus Mode",
+    "layoutTooltip": "Switch quiz layout mode",
     "swipeHint": "Swipe left/right to switch cards",
     "nextCard": "Next Card",
+    "prevCard": "Previous",
+    "emptyExplanation": "Answer and explanation will appear here after you submit",
+    "shortcuts": "Shortcuts",
+    "switchShortcut": "Switch",
+    "submitShortcut": "Submit",
     "question": "Question",
     "correct": "Correct",
     "incorrect": "Incorrect",
@@ -198,6 +214,10 @@
     "selectOption": "Select an option",
     "swipeInstruction": "← Swipe to reveal answer  |  → Swipe to skip",
     "rateMemory": "Rate Memory"
+  },
+  "a11y": {
+    "quizQuestionRegion": "Question and options region",
+    "quizExplanationRegion": "Answer and explanation region"
   },
   "cardTypes": {
     "new": "New",

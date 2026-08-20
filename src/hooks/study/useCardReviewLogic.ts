@@ -107,6 +107,14 @@ export const useCardReviewLogic = ({
     }
   }, [currentCardIndex, quizCards.length, sessionStartTime]);
 
+  const handlePrevCard = useCallback(() => {
+    if (currentCardIndex > 0) {
+      setCurrentCardIndex((prev) => Math.max(0, prev - 1));
+      setShowAnswer(false);
+      setSelectedOption(null);
+    }
+  }, [currentCardIndex]);
+
   const handleRate = useCallback(
     async (quality: number) => {
       if (!quizCards[currentCardIndex]) return;
@@ -327,11 +335,13 @@ export const useCardReviewLogic = ({
     setFinished,
     setCardKey,
     setSwipeDirection,
+    setSessionDuration,
 
     // Actions
     handleRate,
     handleSwipeRate,
     handleNextCard,
+    handlePrevCard,
     handleRestart,
     handleDragEnd,
     semanticAwareShuffle,

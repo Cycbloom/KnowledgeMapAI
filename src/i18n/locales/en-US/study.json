@@ -188,12 +188,22 @@
     "focusHint": "Arrow keys ← → to navigate",
     "progressFmt": "{{current}} / {{total}}"
   },
+  "sidebar": {
+    "label": "Quiz sidebar",
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar",
+    "progress": "Progress",
+    "cardList": "Card list",
+    "cardItem": "Card {{index}}"
+  },
   "quiz": {
     "exit": "Exit",
     "mode": "Quiz Mode",
     "layoutLabel": "Quiz Layout",
     "layoutFlash": "Flash Cards",
     "layoutFocus": "Focus Mode",
+    "layoutFlashHint": "Swipe to flip cards",
+    "layoutFocusHint": "Split-column deep reading",
     "layoutTooltip": "Switch quiz layout mode",
     "swipeHint": "Swipe left/right to switch cards",
     "nextCard": "Next Card",

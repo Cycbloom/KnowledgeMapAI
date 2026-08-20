@@ -87,6 +87,29 @@ describe('QuizFocusLayout', () => {
       expect(withAriaLabel.length).toBeGreaterThanOrEqual(2);
     });
 
+    it('网格容器含 h-full/max-w-7xl 且不含视口绝对高度；滚动区各带 min-h-0', () => {
+      const props = createBaseProps();
+      const { container } = renderWithProviders(<QuizFocusLayout {...props} />);
+
+      const gridContainer = container.querySelector('.grid.grid-rows-\\[1fr_auto\\]');
+      expect(gridContainer).not.toBeNull();
+      const gridClass = gridContainer!.className;
+      expect(gridClass).not.toContain('h-[88vh]');
+      expect(gridClass).not.toContain('max-h-[920px]');
+      expect(gridClass).toContain('h-full');
+      expect(gridClass).toContain('max-w-7xl');
+      expect(gridClass).toContain('mx-auto');
+      expect(gridClass).toContain('w-full');
+
+      const scrollRegions = container.querySelectorAll('.overflow-y-auto.custom-scrollbar');
+      expect(scrollRegions.length).toBeGreaterThanOrEqual(2);
+      const withMinH0 = Array.from(scrollRegions).filter((el) => {
+        const className = (el as HTMLElement).className;
+        return typeof className === 'string' && className.includes('min-h-0');
+      });
+      expect(withMinH0.length).toBeGreaterThanOrEqual(2);
+    });
+
     it('底栏无 overflow 类名', () => {
       const props = createBaseProps();
       renderWithProviders(<QuizFocusLayout {...props} />);

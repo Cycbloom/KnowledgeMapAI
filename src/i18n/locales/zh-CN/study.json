@@ -188,12 +188,22 @@
     "focusHint": "方向键 ← → 切换题目",
     "progressFmt": "{{current}} / {{total}}"
   },
+  "sidebar": {
+    "label": "答题侧边栏",
+    "expand": "展开侧边栏",
+    "collapse": "折叠侧边栏",
+    "progress": "进度",
+    "cardList": "题目列表",
+    "cardItem": "第 {{index}} 题"
+  },
   "quiz": {
     "exit": "退出",
     "mode": "答题模式",
     "layoutLabel": "答题布局",
     "layoutFlash": "闪卡模式",
     "layoutFocus": "专注模式",
+    "layoutFlashHint": "左右滑动切换卡片",
+    "layoutFocusHint": "分栏详读长解析",
     "layoutTooltip": "切换答题布局模式",
     "swipeHint": "左右滑动切换卡片",
     "nextCard": "下一张",

@@ -23,6 +23,8 @@ import { StudyHeader } from "../components/Study/StudyHeader";
 import { CardReviewView } from "../components/Study/CardReviewView";
 import { QuizViewFinished, QuizViewActive } from "../components/Study/QuizView";
 import { QuizActiveShell } from "../components/Study/QuizActiveShell";
+import { QuizSidebar } from "../components/Study/QuizSidebar";
+import { useQuizUiStore } from "../store/useQuizUiStore";
 import { ErrorBoundary, Skeleton } from "../components/common";
 import { motion } from "framer-motion";
 import { useCelebration } from "@/hooks/common";
@@ -115,12 +117,25 @@ export const Study = () => {
     "dashboard" | "quiz" | "bank" | "focus" | "quizzes"
   >("dashboard");
   const [showQuizModal, setShowQuizModal] = useState(false);
+  // 答题侧边栏折叠状态：移动端默认折叠，桌面端默认展开
+  const [quizSidebarCollapsed, setQuizSidebarCollapsed] = useState(
+    () => isMobile ?? false,
+  );
 
   // Card review logic hook
   const cardReview = useCardReviewLogic({
     semanticSimilarityMap,
     isMobile: isMobile ?? false,
   });
+
+  // 答题激活信号：活动答题视图挂载时隐去全局主侧边栏，由答题专用侧边栏接管
+  const setQuizModeActive = useQuizUiStore((s) => s.setQuizModeActive);
+  const isQuizActiveView =
+    viewState === "quiz" && !cardReview.finished && !!cardReview.currentCard;
+  useEffect(() => {
+    setQuizModeActive(isQuizActiveView);
+    return () => setQuizModeActive(false);
+  }, [isQuizActiveView, setQuizModeActive]);
 
   // 庆祝动画:复习 session 结束时触发(Task 19.2)
   const { triggerCelebration } = useCelebration();
@@ -464,39 +479,52 @@ export const Study = () => {
         </div>
       )}
     >
-      <div className="min-h-0 h-full w-full overflow-hidden">
-        <QuizActiveShell
-          isDark={isDark}
-          isMobile={isMobile ?? false}
-        >
-          <QuizViewActive
+      <div className="min-h-0 h-full w-full overflow-hidden flex">
+        <QuizSidebar
+          quizCards={cardReview.quizCards}
+          currentCardIndex={cardReview.currentCardIndex}
+          layoutMode={layoutMode}
+          onChangeLayout={setLayoutMode}
+          isForcedFlash={isForcedFlash}
+          onBackToDashboard={handleBackToDashboard}
+          onSelectCard={(index) => {
+            cardReview.setCurrentCardIndex(index);
+            cardReview.setShowAnswer(false);
+            cardReview.setSelectedOption(null);
+            cardReview.setCardKey((k) => k + 1);
+          }}
+          isCollapsed={quizSidebarCollapsed}
+          onToggleCollapsed={() => setQuizSidebarCollapsed((c) => !c)}
+        />
+        <div className="flex-1 min-w-0 h-full overflow-hidden">
+          <QuizActiveShell
             isDark={isDark}
             isMobile={isMobile ?? false}
-            layoutMode={layoutMode}
-          setLayoutMode={setLayoutMode}
-          isForcedFlash={isForcedFlash}
-          onSetLayoutMode={setLayoutMode}
-          onSetIsForcedFlash={isForcedFlash}
-            currentCard={cardReview.currentCard}
-            currentCardIndex={cardReview.currentCardIndex}
-            quizCardsLength={cardReview.quizCards.length}
-            showAnswer={cardReview.showAnswer}
-            selectedOption={cardReview.selectedOption}
-            cardKey={cardReview.cardKey}
-            swipeDirection={cardReview.swipeDirection}
-            quizCards={cardReview.quizCards}
-            similarityWithPrev={cardReview.similarityWithPrev}
-            updateProgressMutation={cardReview.updateProgressMutation}
-            onBackToDashboard={handleBackToDashboard}
-            onRate={cardReview.handleRate}
-            onOptionClick={quizLogic.handleOptionClick}
-            onMultiOptionClick={quizLogic.handleMultiOptionClick}
-            onDragEnd={cardReview.handleDragEnd}
-            onSetShowAnswer={cardReview.setShowAnswer}
-            onPrev={cardReview.handlePrevCard}
-            onNext={handleNextCardPure}
-          />
-        </QuizActiveShell>
+          >
+            <QuizViewActive
+              isDark={isDark}
+              isMobile={isMobile ?? false}
+              layoutMode={layoutMode}
+              currentCard={cardReview.currentCard}
+              currentCardIndex={cardReview.currentCardIndex}
+              quizCardsLength={cardReview.quizCards.length}
+              showAnswer={cardReview.showAnswer}
+              selectedOption={cardReview.selectedOption}
+              cardKey={cardReview.cardKey}
+              swipeDirection={cardReview.swipeDirection}
+              quizCards={cardReview.quizCards}
+              similarityWithPrev={cardReview.similarityWithPrev}
+              updateProgressMutation={cardReview.updateProgressMutation}
+              onRate={cardReview.handleRate}
+              onOptionClick={quizLogic.handleOptionClick}
+              onMultiOptionClick={quizLogic.handleMultiOptionClick}
+              onDragEnd={cardReview.handleDragEnd}
+              onSetShowAnswer={cardReview.setShowAnswer}
+              onPrev={cardReview.handlePrevCard}
+              onNext={handleNextCardPure}
+            />
+          </QuizActiveShell>
+        </div>
       </div>
     </ErrorBoundary>
   );

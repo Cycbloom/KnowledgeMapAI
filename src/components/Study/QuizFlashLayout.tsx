@@ -1,20 +1,18 @@
-import { useMemo, memo } from "react";
+import { useMemo, memo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { StudyCard } from "@shared/types";
 import {
   ThumbsUp,
   ThumbsDown,
   AlertTriangle,
-  ArrowLeft,
+  ChevronLeft,
 } from "lucide-react";
-import type { LayoutMode } from "../../hooks/quiz/useQuizLayoutPref";
 import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 import { useUpdateCardProgressMutation } from "../../hooks/mutations";
 import { getCardTypeBadgeMeta, badgeToneClasses } from "../../utils/quizBadgeMeta";
 import { QuizOptionArea } from "./QuizOptionArea";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
 import { QuizRatingBar } from "./QuizRatingBar";
-import { QuizLayoutSwitcher } from "./QuizLayoutSwitcher";
 
 type UpdateProgressMutation = ReturnType<typeof useUpdateCardProgressMutation>;
 
@@ -23,7 +21,6 @@ export interface QuizFlashLayoutProps {
   isMobile: boolean;
   currentCard: StudyCard;
   currentCardIndex: number;
-  quizCardsLength: number;
   showAnswer: boolean;
   selectedOption: string | null;
   cardKey: number;
@@ -31,15 +28,13 @@ export interface QuizFlashLayoutProps {
   quizCards: StudyCard[];
   similarityWithPrev: number | null;
   updateProgressMutation: UpdateProgressMutation;
-  onBackToDashboard: () => void;
   onRate: (quality: number) => void;
   onOptionClick: (option: string) => void;
   onMultiOptionClick: (option: string) => void;
   onDragEnd: (_: unknown, info: { velocity: { x: number }; offset: { x: number } }) => void;
   onSetShowAnswer: (show: boolean) => void;
-  layoutMode: LayoutMode;
-  setLayoutMode: (mode: LayoutMode) => void;
-  isForcedFlash: boolean;
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
 export const QuizFlashLayout = memo(function QuizFlashLayout({
@@ -47,7 +42,6 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
   isMobile,
   currentCard,
   currentCardIndex,
-  quizCardsLength: _quizCardsLength,
   showAnswer,
   selectedOption,
   cardKey,
@@ -55,17 +49,48 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
   quizCards,
   similarityWithPrev,
   updateProgressMutation,
-  onBackToDashboard,
   onRate,
   onOptionClick,
   onMultiOptionClick,
   onDragEnd,
   onSetShowAnswer,
-  layoutMode,
-  setLayoutMode,
-  isForcedFlash,
+  onPrev,
+  onNext,
 }: QuizFlashLayoutProps) {
   const { t } = useTranslation();
+
+  const handlePrev = onPrev ?? (() => {});
+  const handleNext = onNext ?? (() => {});
+
+  /**
+   * 闪卡模式全局键盘导航：与专注模式保持一致。
+   * - ArrowLeft: 上一张
+   * - ArrowRight: 下一张
+   */
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      const tagName = target?.tagName;
+      if (
+        tagName === "INPUT" ||
+        tagName === "TEXTAREA" ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        handlePrev();
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        handleNext();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handlePrev, handleNext]);
 
   const rotation = useMotionValue(0);
   const rightOpacity = useMotionValue(0);
@@ -132,69 +157,6 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
     <div
       className={`h-full w-full flex flex-col ${isMobile ? "p-2" : "p-4 md:p-6"} transition-colors ${isDark ? "bg-slate-900" : "bg-gray-100"}`}
     >
-      <div
-        className={`flex-none flex items-center justify-between gap-3 px-3 md:px-6 py-3 rounded-2xl mb-2 md:mb-3 border shadow-sm ${
-          isDark
-            ? 'bg-slate-800/90 border-slate-700'
-            : 'bg-white border-gray-200'
-        }`}
-      >
-        <div className="flex-none">
-          <button
-            type="button"
-            onClick={onBackToDashboard}
-            aria-label={t('study.header.exit')}
-            className={`min-h-[40px] min-w-[40px] inline-flex items-center justify-center gap-1 px-2 md:px-3 rounded-lg border transition-colors text-xs md:text-sm font-medium ${
-              isDark
-                ? 'bg-slate-900 border-slate-700 hover:bg-slate-700 text-slate-200'
-                : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'
-            }`}
-          >
-            <ArrowLeft size={16} aria-hidden={true} />
-            <span>{t('study.header.exit')}</span>
-          </button>
-        </div>
-
-        <div className="flex-1 min-w-0 text-center">
-          <h2
-            className={`text-sm md:text-base font-semibold truncate ${
-              isDark ? 'text-white' : 'text-gray-900'
-            }`}
-          >
-            {t('study.header.titleQuiz')}
-          </h2>
-          <div
-            className={`text-[10px] md:text-xs opacity-70 ${
-              isDark ? 'text-slate-300' : 'text-gray-600'
-            }`}
-          >
-            {t('study.header.slideHint')}
-          </div>
-        </div>
-
-        <div className="flex-none flex items-center gap-2">
-          <span
-            className={`inline-flex items-center px-2 md:px-2.5 py-1 rounded-full border text-xs font-medium ${
-              isDark
-                ? 'bg-slate-900 border-slate-700 text-slate-200'
-                : 'bg-white border-gray-200 text-gray-700'
-            }`}
-          >
-            {t('study.header.progressFmt', {
-              current: currentCardIndex + 1,
-              total: _quizCardsLength,
-            })}
-          </span>
-          <div className="max-md:hidden">
-            <QuizLayoutSwitcher
-              layoutMode={layoutMode}
-              onChange={setLayoutMode}
-              disabled={isForcedFlash}
-            />
-          </div>
-        </div>
-      </div>
-
       <div className="flex-1 min-h-0 w-full mx-auto max-w-3xl flex items-center justify-center">
         <div
           className={`relative perspective-1000 h-full w-full flex items-center justify-center`}
@@ -472,22 +434,22 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                 </div>
               </motion.div>
 
-              {similarityWithPrev !== null && similarityWithPrev > 0.75 && (
-                <div
-                  className={`absolute ${isMobile ? "top-3 left-3" : "top-6 left-6"} text-[10px] font-bold px-2.5 py-1 rounded-full z-10 flex items-center gap-1 ${
-                    isDark
-                      ? "bg-amber-900/40 text-amber-400 border border-amber-700/50"
-                      : "bg-amber-50 text-amber-600 border border-amber-200"
-                  }`}
-                >
-                  <AlertTriangle size={10} />
-                  {t("study.semantic.similar", { percent: Math.round(similarityWithPrev * 100) })}
-                </div>
-              )}
-
               <div
                 className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar ${isMobile ? "pr-0" : "pr-1"} space-y-4 md:space-y-6 mt-2 md:mt-4`}
               >
+                {similarityWithPrev !== null && similarityWithPrev > 0.75 && (
+                  <div
+                    className={`w-fit text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 ${
+                      isDark
+                        ? "bg-amber-900/40 text-amber-400 border border-amber-700/50"
+                        : "bg-amber-50 text-amber-600 border border-amber-200"
+                    }`}
+                  >
+                    <AlertTriangle size={10} />
+                    {t("study.semantic.similar", { percent: Math.round(similarityWithPrev * 100) })}
+                  </div>
+                )}
+
                 <div className="flex flex-col items-start text-left">
                   <div className="flex items-center gap-2">
                     <span
@@ -556,17 +518,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                 className={`mt-auto ${isMobile ? "pt-4" : "pt-6"} border-t ${isDark ? "border-slate-700" : "border-gray-100"}`}
               >
                 <AnimatePresence mode="wait">
-                  {!showAnswer ? (
-                    <motion.div
-                      key="submit-action"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="w-full"
-                    >
-                      <div className="h-0 opacity-0 pointer-events-none" />
-                    </motion.div>
-                  ) : (
+                  {showAnswer && (
                     <motion.div
                       key="rating-action"
                       initial={{ opacity: 0, y: 10 }}
@@ -574,11 +526,24 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                       exit={{ opacity: 0, y: -10 }}
                       className="w-full"
                     >
+                      {currentCardIndex > 0 && (
+                        <div className="flex items-center justify-between gap-2 mb-2 md:mb-3">
+                          <button
+                            type="button"
+                            onClick={handlePrev}
+                            className={`inline-flex items-center gap-1 text-xs font-medium rounded-md px-2 py-1 transition-colors ${
+                              isDark
+                                ? "text-slate-400 hover:text-slate-200"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
+                          >
+                            <ChevronLeft size={14} aria-hidden={true} />
+                            <span>{t("study.quiz.prevCard")}</span>
+                          </button>
+                          <div className="flex-1" />
+                        </div>
+                      )}
                       <QuizRatingBar
-                        correctSet={correctSet}
-                        isMultiChoice={isMultiChoice}
-                        currentCard={currentCard}
-                        selectedOption={selectedOption}
                         showAnswer={showAnswer}
                         updateProgressMutation={updateProgressMutation}
                         isDark={isDark}

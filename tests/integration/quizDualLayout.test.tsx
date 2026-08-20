@@ -5,6 +5,7 @@ import React, { useState, type ReactElement } from 'react';
 import { renderWithProviders } from '../helpers/renderWithProviders';
 import { QuizActiveShell } from '../../src/components/Study/QuizActiveShell';
 import { QuizViewActive } from '../../src/components/Study/QuizView';
+import { QuizSidebar } from '../../src/components/Study/QuizSidebar';
 import type { StudyCard } from '../../shared/types/common';
 import * as useIsMobileModule from '../../src/hooks/common/useIsMobile';
 import { useQuizLayoutPref } from '../../src/hooks/quiz/useQuizLayoutPref';
@@ -129,7 +130,6 @@ function createBaseProps(overrides: BasePropsOverrides = {}) {
     quizCards: [baseCard],
     similarityWithPrev: null,
     updateProgressMutation: mockMutation,
-    onBackToDashboard: vi.fn(),
     onRate: vi.fn(),
     onOptionClick: vi.fn(),
     onMultiOptionClick: vi.fn(),
@@ -148,19 +148,33 @@ interface QuizActiveBranchProps {
 
 function QuizActiveBranch({ viewProps }: QuizActiveBranchProps): ReactElement {
   const { layoutMode, setLayoutMode, isForcedFlash } = useQuizLayoutPref();
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <QuizActiveShell
-      isDark={false}
-      isMobile={false}
-    >
-      <QuizViewActive
-        {...viewProps}
+    <div className="flex h-full w-full overflow-hidden">
+      <QuizSidebar
+        quizCards={viewProps.quizCards}
+        currentCardIndex={viewProps.currentCardIndex}
         layoutMode={layoutMode}
-        setLayoutMode={setLayoutMode}
+        onChangeLayout={setLayoutMode}
         isForcedFlash={isForcedFlash}
+        onBackToDashboard={vi.fn()}
+        onSelectCard={vi.fn()}
+        isCollapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed((c) => !c)}
       />
-    </QuizActiveShell>
+      <div className="flex-1 min-w-0 h-full overflow-hidden">
+        <QuizActiveShell
+          isDark={false}
+          isMobile={false}
+        >
+          <QuizViewActive
+            {...viewProps}
+            layoutMode={layoutMode}
+          />
+        </QuizActiveShell>
+      </div>
+    </div>
   );
 }
 

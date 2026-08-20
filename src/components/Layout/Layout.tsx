@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStore } from "../../store/useStore";
+import { useQuizUiStore } from "../../store/useQuizUiStore";
 import { useUser, queryKeys } from "../../hooks/queries";
 import { useLogoutMutation, useImportGraphMutation } from "../../hooks/mutations";
 import { useTaskEvents, useConsole, useTheme } from "../../hooks";
@@ -119,6 +120,7 @@ const SidebarLink: React.FC<SidebarLinkProps & { isActive?: boolean }> = ({
 export const Layout = () => {
   const { t } = useTranslation();
   const { user, setUser, token } = useStore();
+  const isQuizModeActive = useQuizUiStore((s) => s.isQuizModeActive);
   const navigate = useNavigate();
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
@@ -504,7 +506,7 @@ export const Layout = () => {
         </div>
       )}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-        {!isFullScreenPage && !isMobile && (
+        {!isFullScreenPage && !isMobile && !isQuizModeActive && (
           <div
             id={sidebarId}
             className={`

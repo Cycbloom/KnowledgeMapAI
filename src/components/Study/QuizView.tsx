@@ -17,9 +17,8 @@ import {
 } from "./QuizFocusLayout";
 
 export type QuizViewActiveProps = QuizFlashLayoutProps & {
+  quizCardsLength: number;
   layoutMode?: "flash" | "focus";
-  onSetLayoutMode?: (mode: "flash" | "focus") => void;
-  onSetIsForcedFlash?: boolean;
   onPrev?: () => void;
   onNext?: () => void;
 };
@@ -179,22 +178,15 @@ export const QuizViewFinished = memo(function QuizViewFinished({
 
 export const QuizViewActive = memo(function QuizViewActive(props: QuizViewActiveProps) {
   const layoutMode = props.layoutMode ?? "flash";
-  const { onPrev, onNext, onSetLayoutMode, onSetIsForcedFlash, setLayoutMode, isForcedFlash } = props;
+  const { onPrev, onNext } = props;
 
   const handlePrevCardProp = onPrev ?? (() => {});
   const handleNextCardProp = onNext ?? (() => {});
-  const handleSetLayoutMode = setLayoutMode ?? onSetLayoutMode ?? (() => {});
-  const resolvedIsForcedFlash = isForcedFlash ?? onSetIsForcedFlash ?? false;
 
   return (
     <>
       {layoutMode === "flash" ? (
-        <QuizFlashLayout
-          {...props}
-          layoutMode={layoutMode}
-          setLayoutMode={handleSetLayoutMode}
-          isForcedFlash={resolvedIsForcedFlash}
-        />
+        <QuizFlashLayout {...props} />
       ) : (
         <QuizFocusLayout
           isDark={props.isDark}
@@ -211,10 +203,6 @@ export const QuizViewActive = memo(function QuizViewActive(props: QuizViewActive
           onSetShowAnswer={props.onSetShowAnswer}
           onPrev={handlePrevCardProp}
           onNext={handleNextCardProp}
-          onBackToDashboard={props.onBackToDashboard}
-          layoutMode={layoutMode}
-          setLayoutMode={handleSetLayoutMode}
-          isForcedFlash={resolvedIsForcedFlash}
           _swipeDirection={props.swipeDirection}
           _onDragEnd={props.onDragEnd}
           _cardKey={props.cardKey}

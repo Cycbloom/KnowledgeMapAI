@@ -141,8 +141,8 @@ describe('quizActiveShell 集成测试', () => {
     });
   });
 
-  describe('TR-4.1: 闪卡模式退出按钮唯一（嵌入卡片顶栏）', () => {
-    it('QuizActiveShell + QuizFlashLayout 渲染后，退出按钮长度===1', () => {
+  describe('TR-4.1: 退出按钮已移入侧边栏（卡片内部不再渲染）', () => {
+    it('QuizActiveShell + QuizFlashLayout 渲染后，退出按钮数量===0', () => {
       const flashProps = createFlashBaseProps({ currentCard: qaCard });
 
       renderWithProviders(
@@ -157,7 +157,7 @@ describe('quizActiveShell 集成测试', () => {
       const exitButtons = screen.queryAllByRole('button', {
         name: /退出|Exit/,
       });
-      expect(exitButtons).toHaveLength(1);
+      expect(exitButtons).toHaveLength(0);
     });
   });
 

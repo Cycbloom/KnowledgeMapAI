@@ -1,0 +1,267 @@
+import { useTranslation } from "react-i18next";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  ListOrdered,
+  Zap,
+  BookOpenCheck,
+  type LucideIcon,
+} from "lucide-react";
+import type { StudyCard } from "@shared/types";
+import type { LayoutMode } from "../../hooks/quiz/useQuizLayoutPref";
+import { QuizLayoutSwitcher } from "./QuizLayoutSwitcher";
+
+interface QuizSidebarProps {
+  quizCards: StudyCard[];
+  currentCardIndex: number;
+  layoutMode: LayoutMode;
+  onChangeLayout: (mode: LayoutMode) => void;
+  isForcedFlash: boolean;
+  onBackToDashboard: () => void;
+  onSelectCard: (index: number) => void;
+  isCollapsed: boolean;
+  onToggleCollapsed: () => void;
+}
+
+/**
+ * QuizSidebar
+ * 答题模式专用左侧侧边栏，取代全局主侧边栏与答题顶栏：
+ * - 展开态：标题 + 折叠开关、退出、进度(数字 pill + 细进度条)、布局切换器、可点击题目列表
+ * - 折叠态：图标功能列 + 纵向进度条 + 编号索引列表
+ * 颜色跟随全局主题：浅色主题用浅色面板，暗色主题用深色面板（dark: 变体）。
+ */
+export function QuizSidebar({
+  quizCards,
+  currentCardIndex,
+  layoutMode,
+  onChangeLayout,
+  isForcedFlash,
+  onBackToDashboard,
+  onSelectCard,
+  isCollapsed,
+  onToggleCollapsed,
+}: QuizSidebarProps) {
+  const { t } = useTranslation();
+
+  const total = quizCards.length;
+  const progressPercent =
+    total > 0
+      ? Math.min(100, Math.round(((currentCardIndex + 1) / total) * 100))
+      : 0;
+  const progressText = t("study.header.progressFmt", {
+    current: currentCardIndex + 1,
+    total,
+  });
+
+  const CurrentModeIcon: LucideIcon =
+    layoutMode === "flash" ? Zap : BookOpenCheck;
+
+  const cycleLayout = () => {
+    if (isForcedFlash) {
+      return;
+    }
+    onChangeLayout(layoutMode === "flash" ? "focus" : "flash");
+  };
+
+  return (
+    <aside
+      className={`flex-none h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white flex flex-col transition-all duration-300 border-r border-slate-200 dark:border-slate-700 ${
+        isCollapsed ? "w-20" : "w-72"
+      }`}
+      aria-label={t("study.sidebar.label")}
+      data-testid="quiz-sidebar"
+    >
+      {/* 顶部：标题 + 折叠开关 */}
+      <div
+        className={`flex-none flex items-center h-14 px-2 border-b border-slate-200 dark:border-slate-700 ${
+          isCollapsed ? "justify-center" : "justify-between"
+        }`}
+      >
+        {!isCollapsed && (
+          <div className="flex items-center gap-2 min-w-0 px-1">
+            <ListOrdered
+              size={16}
+              className="shrink-0 text-primary-500 dark:text-primary-400"
+              aria-hidden="true"
+            />
+            <span className="text-sm font-bold truncate">
+              {t("study.header.titleQuiz")}
+            </span>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+          aria-label={
+            isCollapsed ? t("study.sidebar.expand") : t("study.sidebar.collapse")
+          }
+          aria-expanded={!isCollapsed}
+          title={
+            isCollapsed ? t("study.sidebar.expand") : t("study.sidebar.collapse")
+          }
+        >
+          {isCollapsed ? (
+            <ChevronRight size={20} aria-hidden="true" />
+          ) : (
+            <ChevronLeft size={20} aria-hidden="true" />
+          )}
+        </button>
+      </div>
+
+      {isCollapsed ? (
+        /* 折叠态：图标功能列 */
+        <div className="flex-none flex flex-col items-center gap-4 py-4 border-b border-slate-200/70 dark:border-slate-700/60">
+          <button
+            type="button"
+            onClick={onBackToDashboard}
+            aria-label={t("study.header.exit")}
+            title={t("study.header.exit")}
+            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+          >
+            <ArrowLeft size={18} aria-hidden="true" />
+          </button>
+
+          <div
+            className="flex flex-col items-center gap-1.5"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPercent}
+            aria-label={progressText}
+          >
+            <div className="h-24 w-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div
+                className="w-full bg-primary-500 transition-all duration-300"
+                style={{ height: `${progressPercent}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+              {progressPercent}%
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={cycleLayout}
+            disabled={isForcedFlash}
+            aria-label={t("study.quiz.layoutTooltip")}
+            title={
+              isForcedFlash
+                ? t("study.quiz.layoutFlash")
+                : t("study.quiz.layoutTooltip")
+            }
+            className={`p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded transition-colors ${
+              isForcedFlash
+                ? "text-slate-300 dark:text-slate-600 cursor-not-allowed"
+                : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <CurrentModeIcon size={18} aria-hidden="true" />
+          </button>
+        </div>
+      ) : (
+        /* 展开态：退出 + 进度 + 布局切换 */
+        <div className="flex-none flex flex-col gap-3 px-3 py-4 border-b border-slate-200/70 dark:border-slate-700/60">
+          <button
+            type="button"
+            onClick={onBackToDashboard}
+            className="flex items-center gap-2 px-3 min-h-[40px] rounded-lg border transition-colors text-sm font-medium bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+          >
+            <ArrowLeft size={16} aria-hidden="true" />
+            <span>{t("study.header.exit")}</span>
+          </button>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {t("study.sidebar.progress")}
+              </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-200">
+                {progressText}
+              </span>
+            </div>
+            <div
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressPercent}
+              aria-label={progressText}
+              className="h-1 w-full rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700/60"
+            >
+              <div
+                className="h-full rounded-full transition-all duration-300 bg-primary-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+
+          <QuizLayoutSwitcher
+            layoutMode={layoutMode}
+            onChange={onChangeLayout}
+            disabled={isForcedFlash}
+          />
+        </div>
+      )}
+
+      {/* 题目列表 */}
+      <nav
+        className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-2 space-y-1"
+        aria-label={t("study.sidebar.cardList")}
+      >
+        {quizCards.length === 0 && (
+          <p className="text-xs text-slate-400 dark:text-slate-500 text-center pt-4">
+            {t("study.noCards")}
+          </p>
+        )}
+        {quizCards.map((card, index) => {
+          const isActive = index === currentCardIndex;
+          if (isCollapsed) {
+            return (
+              <button
+                key={card.id}
+                type="button"
+                onClick={() => onSelectCard(index)}
+                className={`w-full flex items-center justify-center min-h-[36px] rounded-lg text-xs font-bold transition-colors ${
+                  isActive
+                    ? "bg-primary-500 dark:bg-primary-600 text-white shadow"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+                aria-label={t("study.sidebar.cardItem", { index: index + 1 })}
+                aria-current={isActive ? "step" : undefined}
+                title={t("study.sidebar.cardItem", { index: index + 1 })}
+              >
+                {index + 1}
+              </button>
+            );
+          }
+          return (
+            <button
+              key={card.id}
+              type="button"
+              onClick={() => onSelectCard(index)}
+              className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left transition-colors ${
+                isActive
+                  ? "bg-primary-500 dark:bg-primary-600 text-white shadow"
+                  : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+              }`}
+              aria-current={isActive ? "step" : undefined}
+            >
+              <span
+                className={`flex-none w-6 h-6 rounded flex items-center justify-center text-[11px] font-bold ${
+                  isActive
+                    ? "bg-primary-500/80 text-white"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                {index + 1}
+              </span>
+              <span className="truncate text-sm">{card.question}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+}

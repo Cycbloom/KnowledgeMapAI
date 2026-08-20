@@ -1,6 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { StudyCard } from "@shared/types";
-import { Check, ThumbsUp, ThumbsDown } from "lucide-react";
+import {
+  Check,
+  ThumbsDown,
+  Meh,
+  ThumbsUp,
+  Smile,
+  type LucideIcon,
+} from "lucide-react";
 import { useUpdateCardProgressMutation } from "../../hooks/mutations";
 
 /**
@@ -10,17 +16,9 @@ type UpdateProgressMutation = ReturnType<typeof useUpdateCardProgressMutation>;
 
 /**
  * QuizRatingBar 组件 Props
- * 底部记忆程度 4 按钮评级组 + spinner + disabled/correctSet 判定
+ * 底部记忆程度 4 按钮评级组 + spinner
  */
 interface QuizRatingBarProps {
-  /** 多选正确答案集合（用于后续判定正确率等） */
-  correctSet: Set<string>;
-  /** 是否多选题型 */
-  isMultiChoice: boolean;
-  /** 当前学习卡片 */
-  currentCard: StudyCard;
-  /** 单选/判断题选中项 */
-  selectedOption: string | null;
   /** 是否显示答案（showAnswer=false 时不渲染） */
   showAnswer: boolean;
   /** 进度更新 Mutation 对象 */
@@ -35,14 +33,11 @@ interface QuizRatingBarProps {
 
 /**
  * QuizRatingBar
- * 底部记忆程度 4 按钮评级组 + spinner + disabled/correctSet 判定
+ * 底部记忆程度 4 按钮评级组 + spinner
+ * 四按钮统一图标（拇指/表情语义），由 FSRS quality 1-4 驱动
  * 此组件同时被 Flash 与 Focus 布局调用
  */
 export function QuizRatingBar({
-  correctSet,
-  isMultiChoice,
-  currentCard,
-  selectedOption,
   showAnswer,
   updateProgressMutation,
   isDark,
@@ -51,14 +46,49 @@ export function QuizRatingBar({
 }: QuizRatingBarProps) {
   const { t } = useTranslation();
 
-  void correctSet;
-  void isMultiChoice;
-  void currentCard;
-  void selectedOption;
-
   if (!showAnswer) {
     return null;
   }
+
+  const ratingButtons: Array<{
+    quality: number;
+    Icon: LucideIcon;
+    label: string;
+    classes: string;
+  }> = [
+    {
+      quality: 1,
+      Icon: ThumbsDown,
+      label: t("study.rating.again"),
+      classes: isDark
+        ? "bg-red-900/20 text-red-400 hover:bg-red-900/40"
+        : "bg-red-50 text-red-700 hover:bg-red-100",
+    },
+    {
+      quality: 2,
+      Icon: Meh,
+      label: t("study.rating.hard"),
+      classes: isDark
+        ? "bg-orange-900/20 text-orange-400 hover:bg-orange-900/40"
+        : "bg-orange-50 text-orange-700 hover:bg-orange-100",
+    },
+    {
+      quality: 3,
+      Icon: ThumbsUp,
+      label: t("study.rating.good"),
+      classes: isDark
+        ? "bg-primary-900/20 text-primary-400 hover:bg-primary-900/40"
+        : "bg-primary-50 text-primary-700 hover:bg-primary-100",
+    },
+    {
+      quality: 4,
+      Icon: Smile,
+      label: t("study.rating.easy"),
+      classes: isDark
+        ? "bg-emerald-900/20 text-emerald-400 hover:bg-emerald-900/40"
+        : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+    },
+  ];
 
   return (
     <div className="w-full">
@@ -86,86 +116,19 @@ export function QuizRatingBar({
       <div
         className={`grid ${isMobile ? "grid-cols-4 gap-2" : "grid-cols-2 md:grid-cols-4 gap-3"}`}
       >
-        <button
-          onClick={() => onRate(1)}
-          className={`relative flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
-            isDark
-              ? "bg-red-900/20 text-red-400 hover:bg-red-900/40"
-              : "bg-red-50 text-red-700 hover:bg-red-100"
-          }`}
-          disabled={updateProgressMutation.isPending}
-        >
-          <span
-            className={`absolute top-1 right-1 ${isMobile ? "text-[9px]" : "text-[10px]"} font-bold opacity-60 px-1 rounded ${isDark ? "bg-slate-900/40" : "bg-white/60"}`}
+        {ratingButtons.map(({ quality, Icon, label, classes }) => (
+          <button
+            key={quality}
+            type="button"
+            onClick={() => onRate(quality)}
+            aria-label={label}
+            className={`relative flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${classes}`}
+            disabled={updateProgressMutation.isPending}
           >
-            1
-          </span>
-          <ThumbsDown
-            size={isMobile ? 16 : 16}
-            className={isMobile ? "mb-1" : "mb-1"}
-          />
-          <span className={isMobile ? "text-xs" : "text-xs"}>
-            {t("study.rating.again")}
-          </span>
-        </button>
-        <button
-          onClick={() => onRate(2)}
-          className={`relative flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
-            isDark
-              ? "bg-orange-900/20 text-orange-400 hover:bg-orange-900/40"
-              : "bg-orange-50 text-orange-700 hover:bg-orange-100"
-          }`}
-          disabled={updateProgressMutation.isPending}
-        >
-          <span
-            className={`absolute top-1 right-1 ${isMobile ? "text-[9px]" : "text-[10px]"} font-bold opacity-60 px-1 rounded ${isDark ? "bg-slate-900/40" : "bg-white/60"}`}
-          >
-            2
-          </span>
-          <span className={isMobile ? "text-xs" : "text-xs"}>
-            {t("study.rating.hard")}
-          </span>
-        </button>
-        <button
-          onClick={() => onRate(3)}
-          className={`relative flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
-            isDark
-              ? "bg-primary-900/20 text-primary-400 hover:bg-primary-900/40"
-              : "bg-primary-50 text-primary-700 hover:bg-primary-100"
-          }`}
-          disabled={updateProgressMutation.isPending}
-        >
-          <span
-            className={`absolute top-1 right-1 ${isMobile ? "text-[9px]" : "text-[10px]"} font-bold opacity-60 px-1 rounded ${isDark ? "bg-slate-900/40" : "bg-white/60"}`}
-          >
-            3
-          </span>
-          <ThumbsUp
-            size={isMobile ? 16 : 16}
-            className={isMobile ? "mb-1" : "mb-1"}
-          />
-          <span className={isMobile ? "text-xs" : "text-xs"}>
-            {t("study.rating.good")}
-          </span>
-        </button>
-        <button
-          onClick={() => onRate(4)}
-          className={`relative flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
-            isDark
-              ? "bg-emerald-900/20 text-emerald-400 hover:bg-emerald-900/40"
-              : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-          }`}
-          disabled={updateProgressMutation.isPending}
-        >
-          <span
-            className={`absolute top-1 right-1 ${isMobile ? "text-[9px]" : "text-[10px]"} font-bold opacity-60 px-1 rounded ${isDark ? "bg-slate-900/40" : "bg-white/60"}`}
-          >
-            4
-          </span>
-          <span className={isMobile ? "text-xs" : "text-xs"}>
-            {t("study.rating.easy")}
-          </span>
-        </button>
+            <Icon size={isMobile ? 16 : 18} className="mb-1" />
+            <span className={isMobile ? "text-xs" : "text-xs"}>{label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

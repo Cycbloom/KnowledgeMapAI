@@ -64,32 +64,71 @@ export const getProviderConfig = async (
   const envConfig = getEnvConfig(provider);
 
   try {
-    const allConfigs =
-      await appSettingsService.getSetting<Record<string, AIProviderConfig>>(
+    const [allConfigs, sysConfig] = await Promise.all([
+      appSettingsService.getSetting<Record<string, AIProviderConfig>>(
         "ai_provider_config",
-      );
+      ),
+      appSettingsService.getSetting<{
+        main_ai?: { provider?: string; model?: string };
+        embedding_ai?: { provider?: string; model?: string };
+      }>("system_config"),
+    ]);
 
-    if (allConfigs && allConfigs[provider]) {
-      const dbConfig = allConfigs[provider];
+    const dbConfig =
+      allConfigs && allConfigs[provider] ? allConfigs[provider] : undefined;
 
-      // 解密数据库中存储的 apiKey（加密格式为 iv:authTag:ciphertext，恰含 2 个冒号）
-      let apiKey = dbConfig.apiKey || "";
-      if (isEncryptedApiKey(apiKey)) {
-        try {
-          apiKey = decrypt(apiKey, getEncryptionKey());
-        } catch {
-          logger.warn(`[Config] Failed to decrypt stored apiKey for ${provider}, falling back to env`);
-          apiKey = "";
-        }
+    // 解密数据库中存储的 apiKey（加密格式为 iv:authTag:ciphertext，恰含 2 个冒号）
+    let apiKey = dbConfig?.apiKey || "";
+    if (isEncryptedApiKey(apiKey)) {
+      try {
+        apiKey = decrypt(apiKey, getEncryptionKey());
+      } catch {
+        logger.warn(`[Config] Failed to decrypt stored apiKey for ${provider}, falling back to env`);
+        apiKey = "";
       }
-
-      return {
-        apiKey: apiKey || envConfig.apiKey,
-        baseURL: dbConfig.baseURL || envConfig.baseURL,
-        model: dbConfig.model || envConfig.model,
-        embeddingModel: dbConfig.embeddingModel || envConfig.embeddingModel,
-      };
     }
+
+    const baseModel = dbConfig?.model || envConfig.model;
+    const baseEmbeddingModel =
+      dbConfig?.embeddingModel || envConfig.embeddingModel;
+
+    // ───────────────────────────────────────────────────────────────────────
+    // 关键修复：设置面板「AI 配置」保存的是 system_config.main_ai /
+    // system_config.embedding_ai，它和 ai_provider_config[provider] 是
+    // 两张不同的表。以前只读取 ai_provider_config，导致用户在 UI 上切
+    // 换「生成模型」或「向量化模型」后，真实调用仍在用旧的
+    // ai_provider_config 值，出现「测试通过但 embedding 生成失败」
+    // 「UI 显示 doubao-seed-1-8-251228（生成）当 embedding」等错乱。
+    // 这里做一次统一 merge：如果当前 provider 被选为 main_ai /
+    // embedding_ai 的目标 provider，就用 system_config 里对应字段
+    // 覆盖 model / embeddingModel，保证 UI 改动立刻生效。
+    // ───────────────────────────────────────────────────────────────────────
+    let finalModel = baseModel;
+    if (
+      sysConfig?.main_ai?.provider === provider &&
+      sysConfig.main_ai.model &&
+      sysConfig.main_ai.model.trim()
+    ) {
+      finalModel = sysConfig.main_ai.model.trim();
+    }
+
+    let finalEmbeddingModel = baseEmbeddingModel;
+    if (
+      sysConfig?.embedding_ai?.provider === provider &&
+      sysConfig.embedding_ai.model &&
+      sysConfig.embedding_ai.model.trim()
+    ) {
+      finalEmbeddingModel = sysConfig.embedding_ai.model.trim();
+    }
+
+    return {
+      apiKey: apiKey || envConfig.apiKey,
+      baseURL: dbConfig?.baseURL || envConfig.baseURL,
+      model: finalModel,
+      ...(finalEmbeddingModel
+        ? { embeddingModel: finalEmbeddingModel }
+        : undefined),
+    };
   } catch (error) {
     logger.error("Failed to load settings from DB, falling back to env", error);
   }

@@ -32,10 +32,15 @@ router.get(
   requireAuth,
   async (_req: AuthRequest, res: Response) => {
     try {
-      const allConfigs =
-        await appSettingsService.getSetting<
+      const [allConfigs, sysConfig] = await Promise.all([
+        appSettingsService.getSetting<
           Record<string, Record<string, string>>
-        >("ai_provider_config");
+        >("ai_provider_config"),
+        appSettingsService.getSetting<{
+          main_ai?: { provider?: string; model?: string };
+          embedding_ai?: { provider?: string; model?: string };
+        }>("system_config"),
+      ]);
 
       const providers: Record<string, Record<string, unknown>> = {};
       const allProviderTypes = providerRegistry.getRegisteredTypes();
@@ -45,17 +50,34 @@ router.get(
         const envAvailable = hasEnvFallback(provider);
         const defaults = PROVIDER_DEFAULTS[provider];
 
+        // 与 getProviderConfig 保持一致：如果 system_config 选了当前
+        // provider 作为 main_ai / embedding_ai，就优先显示用户在 UI 上
+        // 保存的 model / embeddingModel，避免"测试通过但实际调用失败"。
+        let baseModel = dbConfig?.model || defaults.model;
+        if (
+          sysConfig?.main_ai?.provider === provider &&
+          sysConfig.main_ai.model?.trim()
+        ) {
+          baseModel = sysConfig.main_ai.model.trim();
+        }
+
+        let baseEmbeddingModel =
+          dbConfig?.embeddingModel || defaults.embeddingModel;
+        if (
+          sysConfig?.embedding_ai?.provider === provider &&
+          sysConfig.embedding_ai.model?.trim()
+        ) {
+          baseEmbeddingModel = sysConfig.embedding_ai.model.trim();
+        }
+
         if (dbConfig?.apiKey) {
           providers[provider] = {
             configured: true,
             apiKey: maskApiKey(dbConfig.apiKey),
             baseURL: dbConfig.baseURL || defaults.baseURL,
-            model: dbConfig.model || defaults.model,
-            ...(dbConfig.embeddingModel || defaults.embeddingModel
-              ? {
-                  embeddingModel:
-                    dbConfig.embeddingModel || defaults.embeddingModel,
-                }
+            model: baseModel,
+            ...(baseEmbeddingModel
+              ? { embeddingModel: baseEmbeddingModel }
               : {}),
             source: "user",
           };
@@ -159,11 +181,16 @@ router.post(
       let testBaseURL = baseURL;
       let testModel = model;
 
-      if (!testApiKey || !testBaseURL) {
-        const allConfigs =
-          await appSettingsService.getSetting<
+      if (!testApiKey || !testBaseURL || !testModel) {
+        const [allConfigs, sysConfig] = await Promise.all([
+          appSettingsService.getSetting<
             Record<string, Record<string, string>>
-          >("ai_provider_config");
+          >("ai_provider_config"),
+          appSettingsService.getSetting<{
+            main_ai?: { provider?: string; model?: string };
+            embedding_ai?: { provider?: string; model?: string };
+          }>("system_config"),
+        ]);
         const dbConfig = allConfigs?.[provider];
         const defaults = PROVIDER_DEFAULTS[provider];
         const envConfig = getEnvConfig(provider as AIProviderType);
@@ -186,12 +213,46 @@ router.post(
           envConfig.baseURL ||
           defaults?.baseURL ||
           "";
-        testModel =
-          testModel ||
+
+        // 候选模型优先级：请求入参 > ai_provider_config.model > system_config.main_ai.model
+        // > envConfig.model > defaults.model（生成模型）
+        const mainModel =
           dbConfig?.model ||
+          (sysConfig?.main_ai?.provider === provider
+            ? sysConfig.main_ai.model
+            : undefined) ||
           envConfig.model ||
           defaults?.model ||
           "";
+
+        // 向量化模型候选优先级（当请求参数是 embedding 模型时使用）
+        const embeddingModel =
+          dbConfig?.embeddingModel ||
+          (sysConfig?.embedding_ai?.provider === provider
+            ? sysConfig.embedding_ai.model
+            : undefined) ||
+          envConfig.embeddingModel ||
+          defaults?.embeddingModel ||
+          "";
+
+        // 没有传 model 时，智能选择：如果 system_config 把当前 provider
+        // 选成 embedding_ai，就用 embedding 模型测，否则用生成模型测。
+        if (!testModel) {
+          const pickedEmbedding =
+            sysConfig?.embedding_ai?.provider === provider && embeddingModel;
+          testModel = pickedEmbedding || mainModel;
+        } else {
+          // 传了 model，但需要识别它是「生成模型」还是「embedding 模型」，
+          // 避免把 embedding 请求打到生成 model，或反过来。
+          const passedIsEmbedding =
+            testModel.includes("embedding") ||
+            Object.values(PROVIDER_DEFAULTS).some(
+              (d) => d.embeddingModel === testModel,
+            );
+          if (passedIsEmbedding) {
+            testModel = testModel || embeddingModel;
+          }
+        }
       }
 
       if (!testApiKey) {

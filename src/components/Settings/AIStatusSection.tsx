@@ -109,14 +109,19 @@ export const AIStatusSection = React.memo(function AIStatusSection({
           });
         } else {
           try {
+            const defaultEmbeddingProvider = "volcengine";
+            const defaultEmbeddingModel =
+              PROVIDER_DEFAULTS[defaultEmbeddingProvider]?.embeddingModel || "";
             await apiClient.put("/ai/config/embedding", {
-              provider: "volcengine",
-              model: "doubao-embedding-vision-251215",
+              provider: defaultEmbeddingProvider,
+              ...(defaultEmbeddingModel
+                ? { model: defaultEmbeddingModel }
+                : {}),
             });
 
             setEmbeddingAiConfig({
-              provider: "volcengine",
-              model: "doubao-embedding-vision-251215",
+              provider: defaultEmbeddingProvider,
+              model: defaultEmbeddingModel,
               baseURL: "",
               apiKey: "",
               enabled: true,

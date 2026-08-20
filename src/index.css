@@ -2,10 +2,25 @@
 @import "./styles/scheduler.css";
 
 /* ---------------------------------------------------------------------------
- * Fonts (self-hosted first, fall back to Google Fonts subsets and native OS
- * fonts). Electron users can drop woff2 files into public/fonts/ to go fully
- * offline; otherwise the `local()` / `url()` chains in @font-face silently
- * skip missing candidates and the later font-family fallback stack takes over.
+ * Fonts: resolve only against fonts already installed on the user's machine
+ * (via `local()`). This mirrors the behaviour documented in
+ * `public/fonts/README.md` — woff2 files are optional and only needed for
+ * *fully* offline Docker/Electron environments where no system CJK/UI fonts
+ * are installed. To re-enable self-hosted files, place them in public/fonts/
+ * and add a SECOND `src:` declaration after the `local(...)` line, e.g.:
+ *
+ *   src: local("Inter"), local("Inter-Regular");
+ *   src: url("/fonts/inter-400.woff2") format("woff2");
+ *
+ * Do NOT merge them into one `src:` line — that causes browsers to *always*
+ * attempt the url() in parallel with local(), and when the woff2 file is
+ * missing Vite/Express returns the SPA 404 HTML, which the font engine tries
+ * to decode, producing:
+ *   "OTS parsing error: invalid sfntVersion: 1008821359"  (= "<!DO" in ASCII)
+ *
+ * Similarly, `@font-feature-values` and `document.fonts.load()` force the
+ * browser to resolve every candidate in the font-face, so the url() must be
+ * removed here entirely until real woff2 binaries are present.
  * ------------------------------------------------------------------------- */
 
 /* System default UI font stack — used when `system` is the chosen UI font. */
@@ -22,20 +37,14 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src:
-    local("Inter"),
-    local("Inter-Regular"),
-    url("/fonts/inter-400.woff2") format("woff2");
+  src: local("Inter"), local("Inter-Regular");
 }
 @font-face {
   font-family: Inter;
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src:
-    local("Inter Bold"),
-    local("Inter-Bold"),
-    url("/fonts/inter-700.woff2") format("woff2");
+  src: local("Inter Bold"), local("Inter-Bold");
 }
 
 @font-face {
@@ -47,8 +56,7 @@
     local("Noto Sans SC"),
     local("Noto Sans SC Regular"),
     local("PingFang SC"),
-    local("Microsoft YaHei"),
-    url("/fonts/noto-sans-sc-400.woff2") format("woff2");
+    local("Microsoft YaHei");
 }
 @font-face {
   font-family: "Noto Sans SC";
@@ -58,8 +66,7 @@
   src:
     local("Noto Sans SC Bold"),
     local("PingFang SC Heavy"),
-    local("Microsoft YaHei Bold"),
-    url("/fonts/noto-sans-sc-700.woff2") format("woff2");
+    local("Microsoft YaHei Bold");
 }
 
 @font-face {
@@ -71,8 +78,7 @@
     local("Noto Serif SC"),
     local("Source Han Serif SC"),
     local("Songti SC"),
-    local("SimSun"),
-    url("/fonts/noto-serif-sc-400.woff2") format("woff2");
+    local("SimSun");
 }
 @font-face {
   font-family: "Noto Serif SC";
@@ -82,8 +88,7 @@
   src:
     local("Noto Serif SC Bold"),
     local("Source Han Serif SC Heavy"),
-    local("SimSun Bold"),
-    url("/fonts/noto-serif-sc-700.woff2") format("woff2");
+    local("SimSun Bold");
 }
 
 @font-face {
@@ -91,22 +96,14 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src:
-    local("LXGW WenKai"),
-    local("KaiTi"),
-    local("STKaiti"),
-    url("/fonts/lxgw-wenkai-400.woff2") format("woff2");
+  src: local("LXGW WenKai"), local("KaiTi"), local("STKaiti");
 }
 @font-face {
   font-family: "LXGW WenKai";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src:
-    local("LXGW WenKai Bold"),
-    local("KaiTi Bold"),
-    local("STKaiti Bold"),
-    url("/fonts/lxgw-wenkai-700.woff2") format("woff2");
+  src: local("LXGW WenKai Bold"), local("KaiTi Bold"), local("STKaiti Bold");
 }
 
 @font-face {
@@ -114,21 +111,14 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src:
-    local("Sarasa Gothic SC"),
-    local("Cascadia Mono"),
-    local("JetBrains Mono"),
-    url("/fonts/sarasa-gothic-sc-400.woff2") format("woff2");
+  src: local("Sarasa Gothic SC"), local("Cascadia Mono"), local("JetBrains Mono");
 }
 @font-face {
   font-family: "Sarasa Gothic SC";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src:
-    local("Sarasa Gothic SC Bold"),
-    local("JetBrains Mono Bold"),
-    url("/fonts/sarasa-gothic-sc-700.woff2") format("woff2");
+  src: local("Sarasa Gothic SC Bold"), local("JetBrains Mono Bold");
 }
 
 @font-face {
@@ -136,20 +126,14 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src:
-    local("JetBrains Mono"),
-    local("JetBrainsMono-Regular"),
-    url("/fonts/jetbrains-mono-400.woff2") format("woff2");
+  src: local("JetBrains Mono"), local("JetBrainsMono-Regular");
 }
 @font-face {
   font-family: "JetBrains Mono";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src:
-    local("JetBrains Mono Bold"),
-    local("JetBrainsMono-Bold"),
-    url("/fonts/jetbrains-mono-700.woff2") format("woff2");
+  src: local("JetBrains Mono Bold"), local("JetBrainsMono-Bold");
 }
 
 @tailwind base;

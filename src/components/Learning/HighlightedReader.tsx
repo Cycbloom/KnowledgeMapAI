@@ -432,6 +432,12 @@ const applyHighlightsToDom = (
       }
     });
 
+    // 竞态防御：rAF 回调执行时组件可能已卸载或内容被 React 重建，
+    // 此时 node 已不是 parent 的子节点，直接 replaceChild 会抛
+    // "Failed to execute 'replaceChild'/'removeChild': not a child"。
+    // 仅在 node 仍归属 parent 时才替换，否则安全跳过。
+    if (node.parentNode !== parent) return;
+
     parent.replaceChild(fragment, node);
   });
 };

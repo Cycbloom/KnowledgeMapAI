@@ -42,11 +42,11 @@ export interface PromptTemplate {
 
 const GENERATE_CARDS_SCHEMA = `
 Return a JSON object with a 'cards' array. Each card object must have: 
-- 'type' (qa|choice|true_false|multi_choice|fill_in_the_blank|essay)
+- 'type' (qa|choice|true_false|multi_choice|fill_in_the_blank|essay|cloze|select_from_options|matching|ordering)
 - 'question'
 - 'answer'
 - 'explanation' (Detailed analysis/reasoning)
-- 'options' (Array of 4 strings, ONLY for 'choice' and 'multi_choice' types)`;
+- 'options' (Array for 'choice'/'multi_choice'/'select_from_options'/'matching'/'ordering' types)`;
 
 export const DEFAULT_PROMPTS: Record<string, string> = {
   auto_graph_expand: `You are a knowledge graph expert. Expand a node by generating its child nodes.
@@ -501,6 +501,22 @@ For 'fill_in_the_blank' type: Create a sentence with one or more '___' (3 unders
 
 {{#if includesEssay}}
 For 'essay' type: Create complex questions requiring a long-form structured answer. The 'answer' should be a model response with key points. Provide a detailed 'explanation' with scoring criteria.
+{{/if}}
+
+{{#if includesCloze}}
+For 'cloze' type: Create a sentence with one or more '___' (3 underscores) as blanks. The 'answer' MUST be a JSON array like [{"blank":"correct word"},...] with one entry per blank, in order of appearance in the sentence. Provide a detailed 'explanation'.
+{{/if}}
+
+{{#if includesSelectFromOptions}}
+For 'select_from_options' type: Create a sentence with exactly one '___' blank. Provide 4 candidate words in 'options' (one is the correct answer). The 'answer' MUST be the correct word string. Provide a detailed 'explanation'.
+{{/if}}
+
+{{#if includesMatching}}
+For 'matching' type: Create a matching question with two columns. Put the left-column items in 'options' (e.g. 4 concept terms). The 'answer' MUST be a JSON array like [{"left":"A","right":"matching definition"},...] pairing every left item to its correct right item. Provide a detailed 'explanation'.
+{{/if}}
+
+{{#if includesOrdering}}
+For 'ordering' type: Create a sequence question. Put the shuffled items in 'options'. The 'answer' MUST be a JSON array of the items in the correct order (a complete ordered string array). Provide a detailed 'explanation'.
 {{/if}}`,
   generate_cards_choice: `For 'choice' type: Create multiple-choice questions with 4 plausible options.
 Provide the correct answer and a detailed 'explanation' of why it is correct and others are wrong.
@@ -517,6 +533,14 @@ Provide a detailed 'explanation' analyzing the answer.
 Focus on explaining the "Why" and "How" rather than just "What".`,
   generate_cards_true_false: `For 'true_false' type: Create statements focusing on common misconceptions or key details.
 Provide a detailed 'explanation' clarifying the fact.`,
+  generate_cards_cloze: `For 'cloze' type: Create a sentence with one or more '___' (3 underscores) as blanks.
+The 'answer' MUST be a JSON array like [{"blank":"correct word"},...] with one entry per blank, in order of appearance. Provide a detailed 'explanation'.`,
+  generate_cards_select_from_options: `For 'select_from_options' type: Create a sentence with exactly one '___' blank.
+Provide 4 candidate words in 'options' (one is the correct answer). The 'answer' MUST be the correct word string. Provide a detailed 'explanation'.`,
+  generate_cards_matching: `For 'matching' type: Create a matching question with two columns.
+Put the left-column items in 'options' (e.g. 4 concept terms). The 'answer' MUST be a JSON array like [{"left":"A","right":"matching definition"},...] pairing every left item to its correct right item. Provide a detailed 'explanation'.`,
+  generate_cards_ordering: `For 'ordering' type: Create a sequence question.
+Put the shuffled items in 'options'. The 'answer' MUST be a JSON array of the items in the correct order (a complete ordered string array). Provide a detailed 'explanation'.`,
   generate_content: `You are an expert tutor and content creator. Generate detailed, structured educational content for the topic "{{topic}}".
 
 Context: {{context}}
@@ -1281,6 +1305,10 @@ Important:
   generate_cards_multi_choice: GENERATE_CARDS_SCHEMA,
   generate_cards_fill_blank: GENERATE_CARDS_SCHEMA,
   generate_cards_essay: GENERATE_CARDS_SCHEMA,
+  generate_cards_cloze: GENERATE_CARDS_SCHEMA,
+  generate_cards_select_from_options: GENERATE_CARDS_SCHEMA,
+  generate_cards_matching: GENERATE_CARDS_SCHEMA,
+  generate_cards_ordering: GENERATE_CARDS_SCHEMA,
 
   branch_suggestions: `
 return a json object with a 'suggestions' array. Each object must have:

@@ -2,7 +2,20 @@ import type { StudyCard } from './common';
 
 export type QuizSetStatus = 'draft' | 'generating' | 'ready';
 
-export type CardType = 'qa' | 'choice' | 'true_false' | 'multi_choice' | 'fill_in_the_blank' | 'essay';
+export const CARD_TYPES = [
+  'qa',
+  'choice',
+  'true_false',
+  'multi_choice',
+  'fill_in_the_blank',
+  'essay',
+  'cloze',
+  'select_from_options',
+  'matching',
+  'ordering',
+] as const;
+
+export type CardType = (typeof CARD_TYPES)[number];
 
 export type CardDifficulty = 'easy' | 'medium' | 'hard';
 

@@ -400,6 +400,10 @@ async function createStudyCardsForGraph(userId: string, graphId: string, nodeMap
     const knowledgePointId = nodeMap[card.nodeTitle];
     if (!knowledgePointId) continue;
     
+    const focusTopic = card.question.length > 24
+      ? `${card.question.slice(0, 24)  }…`
+      : card.question;
+    
     const { error } = await supabase
       .from('study_cards')
       .insert({
@@ -413,6 +417,7 @@ async function createStudyCardsForGraph(userId: string, graphId: string, nodeMap
         card_type: card.cardType,
         difficulty: card.difficulty,
         review_count: Math.floor(Math.random() * 5),
+        focus_topic: focusTopic,
       });
     
     if (!error) {
@@ -441,6 +446,10 @@ async function createBoundaryStudyCards(userId: string, allNodeMaps: Record<stri
       continue;
     }
     
+    const focusTopic = card.question.length > 24
+      ? `${card.question.slice(0, 24)  }…`
+      : card.question;
+    
     const { error } = await supabase
       .from('study_cards')
       .insert({
@@ -455,6 +464,7 @@ async function createBoundaryStudyCards(userId: string, allNodeMaps: Record<stri
         difficulty: card.difficulty,
         review_count: card.reviewCount,
         mastery_level: card.masteryLevel,
+        focus_topic: focusTopic,
       });
     
     if (!error) {

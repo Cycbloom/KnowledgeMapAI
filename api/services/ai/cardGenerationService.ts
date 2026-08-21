@@ -44,8 +44,11 @@ function cosineSimilarity(a: number[], b: number[]): number {
 
 export interface GeneratedCard {
   type: string;
+  focus_topic?: unknown;
   [key: string]: unknown;
 }
+
+export type GenerateCardsCoverage = 'current_only' | 'with_children' | 'with_siblings' | 'graph';
 
 export interface GenerateCardsOptions {
   type?: string;
@@ -60,11 +63,18 @@ export interface GenerateCardsOptions {
   difficulty?: CardDifficulty;
   language?: string;
   customPrompt?: string;
+  coverage?: GenerateCardsCoverage;
   /**
    * 方案A：库内该知识点已存在的题目题干，注入 prompt 作为 anti-duplicate 约束，
    * 降低与已有题重复的概率。
    */
   existingQuestions?: string[];
+  /** 方案F：兄弟节点（同父）内容，仅用于选择题干扰项生成 */
+  siblingNodes?: { knowledgePointId: string; title: string; content: string | null }[];
+  /** 子节点内容，用于 with_children / graph 时作为背景知识注入 */
+  childrenNodes?: { knowledgePointId: string; title: string; content: string | null }[];
+  /** 方案F：兄弟节点经 AI 相关性筛选后最多注入的干扰项数量（默认 3） */
+  maxSiblingDistractors?: number;
 }
 
 class CardGenerationService {
@@ -107,6 +117,14 @@ class CardGenerationService {
         "For 'fill_in_the_blank' type: Create a sentence with '___' as blanks. Return valid JSON.",
       essay:
         "For 'essay' type: Create complex questions requiring a long-form structured answer.",
+      cloze:
+        "For 'cloze' type: Create a sentence with one or more '___' blanks. The 'answer' MUST be a JSON array like [{\"blank\":\"correct word\"},...], one entry per blank in order. Return valid JSON.",
+      select_from_options:
+        "For 'select_from_options' type: Create a sentence with exactly one '___' blank and 4 candidate words in 'options'. The 'answer' MUST be the correct word string. Return valid JSON.",
+      matching:
+        "For 'matching' type: Create a two-column matching question. Put left items in 'options'. The 'answer' MUST be a JSON array like [{\"left\":\"A\",\"right\":\"matching definition\"},...] pairing every left item to its correct right item. Return valid JSON.",
+      ordering:
+        "For 'ordering' type: Create a sequence question. Put shuffled items in 'options'. The 'answer' MUST be a JSON array of items in correct order. Return valid JSON.",
     };
 
     const difficultyPrompts: Record<string, string> = {
@@ -215,6 +233,10 @@ Please respond with a valid JSON object.`;
                 multi_choice: "generate_cards_multi_choice",
                 fill_in_the_blank: "generate_cards_fill_blank",
                 essay: "generate_cards_essay",
+                cloze: "generate_cards_cloze",
+                select_from_options: "generate_cards_select_from_options",
+                matching: "generate_cards_matching",
+                ordering: "generate_cards_ordering",
               };
               const promptParts = await Promise.all(
                 types.map(async (type) => {
@@ -289,6 +311,57 @@ Please respond with a valid JSON object.`;
                 .join("\n");
               systemPrompt += `\n\nCRITICAL ANTI-DUPLICATION: The following questions already exist in the user's vault for this topic. DO NOT generate a card that is the same or nearly the same question. Avoid restating the same fact, misconception, or concept in the same wording.\n${listText}`;
             }
+
+            // 子节点作为背景知识注入 prompt
+            const childrenContext =
+              (options.coverage === 'with_children' || options.coverage === 'graph') &&
+              options.childrenNodes && options.childrenNodes.length > 0
+                ? options.childrenNodes
+                    .filter((c) => c.title && c.title.trim().length > 0)
+                    .map((c, i) => `## 子节点 ${i + 1}：${c.title}\n${c.content ? c.content.slice(0, 200) : '（无正文）'}`)
+                    .join('\n\n')
+                : '';
+            if (childrenContext) {
+              systemPrompt += `
+## CHILDREN OUTLINE（当前知识节点的直接子节点 · 仅作为背景知识）
+以下为当前节点的直接子节点概念摘要，仅供扩展题目背景、关联解释、例证对比时参考。
+⚠️ 约束：
+1. 正确答案必须仍以当前节点内容为准，不能被子节点概念替换。
+2. 可以在题目题干/解释/例证中引用子节点，但不得将题目主题偷换为子节点。
+
+${childrenContext}
+`;
+            }
+
+            // 方案F：兄弟节点作为选择题干扰项来源注入 prompt
+            const siblingNodes = (options.siblingNodes || []).filter(
+              (n) => n && n.title,
+            );
+            const usesChoice =
+              types.includes("choice") || types.includes("multi_choice");
+            const maxSiblingDistractors = options.maxSiblingDistractors ?? 3;
+            let relevantSiblings: typeof siblingNodes = [];
+            if ((options.coverage === 'with_siblings' || options.coverage === 'graph') && usesChoice && siblingNodes.length > 0) {
+              relevantSiblings = await this.filterRelevantSiblings(
+                provider.client,
+                model,
+                topic,
+                content,
+                siblingNodes,
+                maxSiblingDistractors,
+              );
+              systemPrompt += `\n\nDISCRIMINATOR OPTIONS (choice/multi_choice ONLY): The following are SIBLING nodes (distractor candidates) of the current topic — they are related concepts that can look plausible but are NOT the focus of this question set.
+Use each sibling's "title" to craft 1 distract(e) option for choice/multi_choice questions. Distractor options MUST:
+- Be reworded so they look plausible and correct to a careful reader (not obviously wrong).
+- Represent the sibling concept, NOT the current topic's correct answer.
+- NEVER mark the current topic's content itself as the sibling; the single correct option(s) must uniquely reflect the current topic.
+- For choice: exactly one option is correct (the current topic). For multi_choice: correct options are the current topic aspects; sibling options are wrong.
+Sibling reference candidates:
+${relevantSiblings.map((n) => `- ${n.title}${n.content ? `: ${n.content}` : ""}`).join("\n")}`;
+            }
+
+            // FOCUS TOPIC INSTRUCTION：每卡必须返回 focus_topic 字段
+            systemPrompt += `\n\nFOCUS TOPIC INSTRUCTION: Every card MUST include a "focus_topic" field: a short string (≤30 Chinese characters) that describes the specific fine-grained knowledge point being tested. It MUST NOT be the same as the overall node/topic name. Examples: "损失函数·交叉熵" (not "监督学习"), "变量提升·var机制" (not "JavaScript基础"), "useEffect依赖数组" (not "React Hooks"). Be specific and granular.`;
 
             // 方案E：grounding —— 每题必须携带「原文依据」evidence，并限制拼接进 explanation
             systemPrompt += `\n\nGROUNDING: Every card MUST include an "evidence" field: the shortest verbatim phrase or sentence from the provided source material that directly supports / contains the answer. If the answer is not grounded in the source, revise the question or answer until it is. Never fabricate facts not present in the source.`;
@@ -435,6 +508,97 @@ Please respond with a valid JSON object.`;
     } catch (error) {
       logger.warn("[Generate Cards] JSON self-heal failed:", error);
       return null;
+    }
+  }
+
+  /**
+   * 方案F：AI 相关性筛选 —— 候选兄弟节点过多时，挑选与当前主题语义最相近、
+   * 最容易混淆、最值得辨析的若干节点作为选择题干扰项，降低 prompt 体积、提升干扰项质量。
+   * 兄弟数量不超过 maxCount 时直接返回（不调用 AI，省 token）；
+   * 任何异常（含超时、无 key、解析/匹配失败）都回退前 maxCount 个兄弟，绝不中断生成。
+   */
+  private async filterRelevantSiblings(
+    client: CardGenClient,
+    model: string,
+    topic: string,
+    content: string,
+    siblings: Array<{
+      knowledgePointId: string;
+      title: string;
+      content: string | null;
+    }>,
+    maxCount: number,
+  ): Promise<Array<{ knowledgePointId: string; title: string; content: string | null }>> {
+    if (siblings.length <= maxCount) {
+      return siblings;
+    }
+
+    try {
+      const completion = await client.chat.completions.create({
+        model,
+        messages: [
+          {
+            role: "system",
+            content: `You select sibling distractor candidates for a knowledge topic. From the candidate sibling nodes below, pick at most ${maxCount} whose semantics are closest to the current topic, most easily confused with it, and most worth distinguishing in a multiple-choice question. Return ONLY a JSON object: {"selected": ["title 1", "title 2"]}. Every element in "selected" MUST exactly match the candidate sibling "title" field verbatim (character-for-character); never invent or reword titles.`,
+          },
+          {
+            role: "user",
+            content: `Topic: ${topic}\nContent: ${content || "No detailed content provided."}\n\nCandidate sibling nodes (titles):\n${siblings
+              .map((n) => `- ${n.title}`)
+              .join("\n")}`,
+          },
+        ],
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+      });
+
+      const raw = completion.choices[0]?.message?.content || "";
+      const parsed = parseAIResponse<{ selected?: unknown }>(
+        raw,
+        "Generate Cards sibling filter",
+      );
+      const selectedTitles = Array.isArray(parsed.selected)
+        ? parsed.selected
+            .filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+            .map((s) => s.trim())
+        : [];
+
+      const titleSet = new Set(selectedTitles);
+      const picked: Array<{
+        knowledgePointId: string;
+        title: string;
+        content: string | null;
+      }> = [];
+      const pickedIds = new Set<string>();
+
+      // 按兄弟原顺序映射回节点，去重，最多取 maxCount 个
+      for (const sib of siblings) {
+        if (picked.length >= maxCount) break;
+        if (pickedIds.has(sib.knowledgePointId)) continue;
+        if (titleSet.has(sib.title)) {
+          picked.push(sib);
+          pickedIds.add(sib.knowledgePointId);
+        }
+      }
+
+      // 不足 maxCount 时，从未选中的兄弟中按原顺序补足
+      for (const sib of siblings) {
+        if (picked.length >= maxCount) break;
+        if (pickedIds.has(sib.knowledgePointId)) continue;
+        picked.push(sib);
+        pickedIds.add(sib.knowledgePointId);
+      }
+
+      if (picked.length > 0) {
+        return picked;
+      }
+      return siblings.slice(0, maxCount);
+    } catch (error) {
+      logger.warn(
+        "[Generate Cards] 兄弟节点相关性筛选失败，回退前 N 个兄弟:",
+        error,
+      );
+      return siblings.slice(0, maxCount);
     }
   }
 

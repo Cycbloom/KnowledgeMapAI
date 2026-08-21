@@ -22,12 +22,16 @@ export const getMockResponse = (type: string, input: string): string | object =>
 
 export const getMockCards = (topic: string, types: string[], count: number) => {
   const allCards = [
-    { type: 'qa', question: `什么是 ${topic}?`, answer: `${topic} 的定义是...`, explanation: '这是详细解析...' },
-    { type: 'choice', question: `${topic} 属于哪一类?`, options: ['A类', 'B类', 'C类', 'D类'], answer: 'A类', explanation: '解析：因为...' },
-    { type: 'true_false', question: `${topic} 是一个重要的概念吗?`, answer: 'True', explanation: '解析：是的...' },
-    { type: 'multi_choice', question: `${topic} 的特点有哪些?`, options: ['特点A', '特点B', '特点C', '特点D'], answer: '["特点A", "特点B"]', explanation: '解析：AB是正确的...' },
-    { type: 'fill_in_the_blank', question: `${topic} 是在 ___ 年被提出的。`, answer: '2024', explanation: '解析：根据文献...' },
-    { type: 'essay', question: `请详细阐述 ${topic} 的原理及其应用。`, answer: '原理是... 应用于...', explanation: '解析：得分点包括...' }
+    { type: 'qa', question: `什么是 ${topic}?`, answer: `${topic} 的定义是...`, explanation: '这是详细解析...', focus_topic: `${topic}·定义与概念` },
+    { type: 'choice', question: `${topic} 属于哪一类?`, options: ['A类', 'B类', 'C类', 'D类'], answer: 'A类', explanation: '解析：因为...', focus_topic: `${topic}·分类归属` },
+    { type: 'true_false', question: `${topic} 是一个重要的概念吗?`, answer: 'True', explanation: '解析：是的...', focus_topic: `${topic}·重要性判断` },
+    { type: 'multi_choice', question: `${topic} 的特点有哪些?`, options: ['特点A', '特点B', '特点C', '特点D'], answer: '["特点A", "特点B"]', explanation: '解析：AB是正确的...', focus_topic: `${topic}·核心特点` },
+    { type: 'fill_in_the_blank', question: `${topic} 是在 ___ 年被提出的。`, answer: '2024', explanation: '解析：根据文献...', focus_topic: `${topic}·提出时间` },
+    { type: 'essay', question: `请详细阐述 ${topic} 的原理及其应用。`, answer: '原理是... 应用于...', explanation: '解析：得分点包括...', focus_topic: `${topic}·原理与应用` },
+    { type: 'cloze', question: `${topic} 的三大特征是 ___、___ 和 ___。`, answer: '[{"blank":"特征A"},{"blank":"特征B"},{"blank":"特征C"}]', explanation: '解析：三特征为特征A、特征B、特征C...', focus_topic: `${topic}·核心特征` },
+    { type: 'select_from_options', question: `${topic} 最核心的要素是 ___。`, options: ['要素A', '要素B', '要素C', '要素D'], answer: '要素A', explanation: '解析：核心要素为要素A...', focus_topic: `${topic}·核心要素` },
+    { type: 'matching', question: `将 ${topic} 的相关术语与其定义匹配。`, options: ['术语A', '术语B', '术语C', '术语D'], answer: '[{"left":"术语A","right":"定义A"},{"left":"术语B","right":"定义B"},{"left":"术语C","right":"定义C"},{"left":"术语D","right":"定义D"}]', explanation: '解析：术语A对定义A...', focus_topic: `${topic}·术语定义` },
+    { type: 'ordering', question: `请将 ${topic} 的流程步骤按正确顺序排列。`, options: ['步骤1', '步骤2', '步骤3', '步骤4'], answer: '["步骤1","步骤2","步骤3","步骤4"]', explanation: '解析：正确顺序为步骤1→2→3→4...', focus_topic: `${topic}·流程顺序` }
   ];
   
   return allCards.filter(c => types.includes(c.type)).slice(0, count);

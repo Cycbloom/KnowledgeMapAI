@@ -159,7 +159,11 @@ export interface StudyCard {
     | "true_false"
     | "multi_choice"
     | "fill_in_the_blank"
-    | "essay";
+    | "essay"
+    | "cloze"
+    | "select_from_options"
+    | "matching"
+    | "ordering";
   options?: string[];
   explanation?: string;
   difficulty?: number;
@@ -174,6 +178,7 @@ export interface StudyCard {
   fsrs_retrievability?: number;
   fsrs_last_review?: string;
   created_at?: string;
+  focus_topic?: string | null;
 }
 
 export type TutorMode =

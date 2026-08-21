@@ -95,6 +95,7 @@ blob-report/
 # Test output snapshots and one-off debug scripts
 test-output*.txt
 tmp_*.js
+tmp_screenshots/
 
 # Vitest coverage output
 coverage/

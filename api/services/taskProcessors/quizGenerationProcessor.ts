@@ -6,6 +6,7 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import type { AIProviderType } from '@shared/types';
 import { notDeleted } from '../common/softDeleteHelper';
+import { deriveFocusTopicFallback } from '@shared/utils/cards';
 
 interface QuizGenerationTaskConfig {
   cardTypes: string[];
@@ -55,7 +56,10 @@ interface GeneratedCard {
   explanation?: string;
   type?: string;
   options?: string[];
+  focus_topic?: unknown;
 }
+
+type AIGeneratedCardWithFocus = GeneratedCard & { focus_topic?: unknown };
 
 interface InsertedCard {
   id: string;
@@ -205,18 +209,25 @@ export class QuizGenerationProcessor implements TaskProcessor {
           const cards = (aiResult.cards || []) as GeneratedCard[];
 
           if (cards.length > 0) {
-            const cardsToInsert = cards.map((card) => ({
-              user_id: userId,
-              knowledge_point_id: node.id,
-              graph_id: node.graph_id,
-              question: card.question,
-              answer: card.answer,
-              explanation: card.explanation,
-              card_type: card.type ?? 'qa',
-              difficulty: difficulty === 'mixed' ? this.getRandomDifficulty() : difficulty,
-              options: card.options ? JSON.stringify(card.options) : null,
-              next_review: new Date().toISOString()
-            }));
+            const cardsToInsert = cards.map((card: AIGeneratedCardWithFocus) => {
+              const rawFocus = typeof card.focus_topic === 'string' ? card.focus_topic.trim() : '';
+              const value = rawFocus.length > 0
+                ? rawFocus.slice(0, 200)
+                : deriveFocusTopicFallback(card.question, node.title);
+              return {
+                user_id: userId,
+                knowledge_point_id: node.id,
+                graph_id: node.graph_id,
+                question: card.question,
+                answer: card.answer,
+                explanation: card.explanation,
+                card_type: card.type ?? 'qa',
+                difficulty: difficulty === 'mixed' ? this.getRandomDifficulty() : difficulty,
+                options: card.options ? JSON.stringify(card.options) : null,
+                next_review: new Date().toISOString(),
+                focus_topic: value,
+              };
+            });
 
             const { data: insertedCards, error: insertError } = await supabase
               .from('study_cards')

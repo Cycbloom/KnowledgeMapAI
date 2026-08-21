@@ -13,6 +13,13 @@ import {
   normalizeCardDifficulty,
 } from '@shared/types';
 import { notDeleted } from '../common/softDeleteHelper';
+import {
+  buildSiblingsByParent,
+  type SiblingNode,
+  getDirectChildren,
+} from '../graph/siblingNodesService';
+import type { GenerateCardsCoverage } from '../ai/cardGenerationService';
+import { deriveFocusTopicFallback } from '@shared/utils/cards';
 
 interface BatchGenerateCardsPayload {
   node_ids: string[];
@@ -73,11 +80,20 @@ interface AIGeneratedCard {
   difficulty?: CardDifficulty;
   /** 方案E：AI 返回的「原文依据」，用于锚定答案防幻觉 */
   evidence?: string;
+  focus_topic?: unknown;
 }
+
+type AIGeneratedCardWithFocus = AIGeneratedCard & { focus_topic?: unknown };
 
 /**
  * 生成每个节点的 (type, count, difficulty) 任务列表。
  * 优先级 count_matrix > cards_per_type > count_per_difficulty > types×count（或 pack_template 覆盖）
+ *
+ * 注意（题库批量出题语义）：自 2026-08 起，batch_generate_cards 的 config 是「每节点独立」的题量，
+ * 不再跨节点均分/分摊总数。此处 buildNodeTasks 仅做**单节点内部**的 count_matrix → cards_per_type
+ * → count_per_difficulty → fallback 的标准化展开；跨节点的「均分 vs 每节点完整」由 route 层决定。
+ *   - 旧均分（测验集合生成 quizGenerationProcessor 仍用）：N 节点合计 ≈ 用户要求总数
+ *   - 新每节点完整（batch_generate_cards）：N 节点共产 N × 单节点模板题量
  */
 function buildNodeTasks(payload: BatchGenerateCardsPayload): Array<{ type: string; count: number; difficulty: CardDifficulty }> {
   const config = payload.config ?? {};
@@ -106,7 +122,7 @@ function buildNodeTasks(payload: BatchGenerateCardsPayload): Array<{ type: strin
   }
 
   const baseDiff = config.difficulty ?? 'medium';
-  const VALID_TYPES = new Set(['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank', 'essay']);
+  const VALID_TYPES = new Set(['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank', 'essay', 'cloze', 'select_from_options', 'matching', 'ordering']);
   const VALID_DIFFS: ReadonlyArray<CardDifficulty> = ['easy', 'medium', 'hard'];
 
   // 0) count_matrix：每个非零格子 = 一个独立任务（单题型+单难度）
@@ -132,7 +148,8 @@ function buildNodeTasks(payload: BatchGenerateCardsPayload): Array<{ type: strin
     if (tasks.length > 0) return tasks;
   }
 
-  // 2) count_per_difficulty：每个难度的总数按题型均分（最大余数法），总数不膨胀
+  // 2) count_per_difficulty：**单节点内**的每个难度总数按题型均分（最大余数法），
+  // 例如 easy=6 & types=[qa,choice,tf] → 2/2/2。不是跨节点均分（跨节点的均分在 route 层处理）。
   if (config.count_per_difficulty && typeof config.count_per_difficulty === 'object') {
     const diffs: Array<[CardDifficulty, number]> = [];
     (['easy', 'medium', 'hard'] as const).forEach((k) => {
@@ -269,6 +286,73 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
         }
       }
 
+      // 方案F：兄弟节点作为选择题干扰项 —— 复用已拉取的 edges/parentMap，内存计算每个节点的同父兄弟
+      const coverage = (config?.coverage as GenerateCardsCoverage) ?? 'current_only';
+      const needsSiblings = coverage === 'with_siblings' || coverage === 'graph';
+      const needsChildren = coverage === 'with_children' || coverage === 'graph';
+      const childrenByParent = buildSiblingsByParent(edges || []);
+      const allSiblingIds = Array.from(new Set(
+        node_ids.flatMap((id) => {
+          const parentId = parentMap.get(id);
+          if (!parentId) return [];
+          return (childrenByParent.get(parentId) || []).filter(
+            (sid: string) => sid !== id,
+          );
+        }),
+      ));
+
+      // 方案F：兄弟节点作为选择题干扰项 —— 复用已拉取的 edges/parentMap，内存计算每个节点的同父兄弟
+      // siblingsById：当前节点 kp id → 其同父兄弟节点数组（保持边顺序）
+      const siblingsById = new Map<string, SiblingNode[]>();
+      if (needsSiblings && allSiblingIds.length > 0) {
+        try {
+          const { data: siblingGraphNodes } = await notDeleted(supabase
+            .from('graph_nodes')
+            .select(`
+              knowledge_point_id,
+              knowledge_points (
+                id,
+                title,
+                content
+              )
+            `)
+            .in('knowledge_point_id', allSiblingIds));
+
+          if (siblingGraphNodes) {
+            // 先按兄弟 kp id 建立查表
+            const siblingById = new Map<string, SiblingNode>();
+            siblingGraphNodes.forEach((pgn: ParentGraphNodeWithKnowledgePoint) => {
+              const kp = pgn.knowledge_points?.[0];
+              const rawContent = kp?.content ?? null;
+              siblingById.set(pgn.knowledge_point_id, {
+                knowledgePointId: kp?.id || pgn.knowledge_point_id,
+                title: kp?.title || '',
+                content: rawContent ? rawContent.slice(0, 200) : null,
+              });
+            });
+
+            // 每个节点 → 其同父兄弟节点数组（排除自身，保持边顺序）
+            for (const id of node_ids) {
+              const pid = parentMap.get(id);
+              if (!pid) continue;
+              const siblingIds = (childrenByParent.get(pid) ?? []).filter(
+                (sid: string) => sid !== id,
+              );
+              const sibs: SiblingNode[] = [];
+              for (const sid of siblingIds) {
+                const sib = siblingById.get(sid);
+                if (sib) sibs.push(sib);
+              }
+              if (sibs.length > 0) {
+                siblingsById.set(id, sibs);
+              }
+            }
+          }
+        } catch (sibError: unknown) {
+          logger.warn('[BatchGenerateCardsProcessor] Failed to fetch sibling nodes:', sibError);
+        }
+      }
+
       const levelOrder: Record<string, number> = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
       const sortedNodes = [...nodes].sort((a, b) => {
         const la = levelOrder[a.level || 'leaf'] ?? 4;
@@ -278,7 +362,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
 
       await updateTaskStatus(supabase, taskId, 'in_progress', {
         stage: 'init',
-        stageLabel: `准备生成 ${sortedNodes.length} 个节点 · 合计约 ${totalRequestedCards} 题`,
+        stageLabel: `准备生成 ${sortedNodes.length} 个节点 · 每节点 ${totalRequestedCards} 题 · 合计约 ${sortedNodes.length * totalRequestedCards} 题`,
         progress: 0,
         processed: 0,
         total: sortedNodes.length,
@@ -293,6 +377,21 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
         const parentId = parentMap.get(node.id);
         const parentNode = parentId ? parentNodesMap.get(parentId) : null;
         const context = parentNode ? `Parent Node: "${parentNode.title}"` : 'Root Node';
+        // 方案F：兄弟节点干扰项 —— 仅覆盖 with_siblings / graph 时注入该节点的同父兄弟
+        const nodeSiblings: SiblingNode[] = needsSiblings
+          ? (siblingsById.get(node.id) ?? [])
+          : [];
+
+        // 子节点：per-node 独立查询（每个节点上下文完全独立）
+        let nodeChildren: SiblingNode[] = [];
+        if (needsChildren) {
+          try {
+            nodeChildren = await getDirectChildren(supabase, node.graph_id, node.id, 8);
+          } catch (childErr: unknown) {
+            logger.warn(`[BatchGenerateCardsProcessor] Failed to fetch children for node ${node.id}:`, childErr);
+            nodeChildren = [];
+          }
+        }
 
         try {
           const CONCURRENCY = 3;
@@ -315,6 +414,10 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
                   customPrompt,
                   language,
                   existingQuestions: existingByNode.get(node.id) ?? [],
+                  coverage,
+                  ...(needsChildren && nodeChildren.length > 0 ? { childrenNodes: nodeChildren } : {}),
+                  ...(needsSiblings && nodeSiblings.length > 0 ? { siblingNodes: nodeSiblings } : {}),
+                  maxSiblingDistractors: 3,
                 });
                 const rawCards = (aiResult.cards || []) as AIGeneratedCard[];
                 // 方案B：入库前 normalize AI 自评难度，非法值回退到本任务难度
@@ -328,28 +431,35 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
             const cards = chunkResults.flat();
 
             if (cards.length > 0) {
-              const cardsToInsert = cards.map((card) => ({
-                user_id: userId,
-                knowledge_point_id: node.id,
-                graph_id: node.graph_id,
-                question: card.question,
-                answer: card.answer,
-                // 方案E：把 AI 返回的「原文依据」并入 explanation，让答案可追溯、防幻觉
-                explanation: card.evidence
-                  ? [card.explanation, `原文依据：${card.evidence}`].filter(Boolean).join('\n\n')
-                  : card.explanation,
-                card_type: card.type ?? 'qa',
-                options: card.options ? JSON.stringify(card.options) : null,
-                next_review: new Date().toISOString(),
-                difficulty: cardDifficultyToNumber(card.difficulty),
-                fsrs_state: 'New' as const,
-                fsrs_stability: 0,
-                // 方案B：FSRS 初始难度种子（易=3 / 中=5 / 难=7），复习时由 FSRS 自适应更新
-                fsrs_difficulty: cardDifficultyToFsrsInitial(card.difficulty),
-                fsrs_elapsed_days: 0,
-                fsrs_scheduled_days: 0,
-                fsrs_retrievability: 0,
-              }));
+              const cardsToInsert = cards.map((card: AIGeneratedCardWithFocus) => {
+                const rawFocus = typeof card.focus_topic === 'string' ? card.focus_topic.trim() : '';
+                const value = rawFocus.length > 0
+                  ? rawFocus.slice(0, 200)
+                  : deriveFocusTopicFallback(card.question, node.title);
+                return {
+                  user_id: userId,
+                  knowledge_point_id: node.id,
+                  graph_id: node.graph_id,
+                  question: card.question,
+                  answer: card.answer,
+                  // 方案E：把 AI 返回的「原文依据」并入 explanation，让答案可追溯、防幻觉
+                  explanation: card.evidence
+                    ? [card.explanation, `原文依据：${card.evidence}`].filter(Boolean).join('\n\n')
+                    : card.explanation,
+                  card_type: card.type ?? 'qa',
+                  options: card.options ? JSON.stringify(card.options) : null,
+                  next_review: new Date().toISOString(),
+                  difficulty: cardDifficultyToNumber(card.difficulty),
+                  fsrs_state: 'New' as const,
+                  fsrs_stability: 0,
+                  // 方案B：FSRS 初始难度种子（易=3 / 中=5 / 难=7），复习时由 FSRS 自适应更新
+                  fsrs_difficulty: cardDifficultyToFsrsInitial(card.difficulty),
+                  fsrs_elapsed_days: 0,
+                  fsrs_scheduled_days: 0,
+                  fsrs_retrievability: 0,
+                  focus_topic: value,
+                };
+              });
 
               const { error: insertError } = await supabase
                 .from('study_cards')

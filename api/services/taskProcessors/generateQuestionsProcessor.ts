@@ -13,6 +13,12 @@ import {
   cardDifficultyToFsrsInitial,
 } from '@shared/types';
 import { notDeleted } from '../common/softDeleteHelper';
+import {
+  getSiblingNodes,
+  getDirectChildren,
+} from '../graph/siblingNodesService';
+import type { GenerateCardsCoverage } from '../ai/cardGenerationService';
+import { deriveFocusTopicFallback } from '@shared/utils/cards';
 
 interface GenerateQuestionsPayload {
   knowledge_point_id: string;
@@ -50,7 +56,10 @@ interface AIGeneratedCard {
   difficulty?: CardDifficulty;
   /** 方案E：AI 返回的「原文依据」，用于锚定答案防幻觉 */
   evidence?: string;
+  focus_topic?: unknown;
 }
+
+type AIGeneratedCardWithFocus = AIGeneratedCard & { focus_topic?: unknown };
 
 /**
  * 任务分派策略（优先级从高到低）：
@@ -71,13 +80,13 @@ function buildTasksToRun(payload: GenerateQuestionsPayload): {
       ? config.types
       : ['qa', 'choice'];
   const totalCountFallback = config.count ?? 5;
-  const VALID_TYPES = new Set(['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank', 'essay']);
+  const VALID_TYPES = new Set(['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank', 'essay', 'cloze', 'select_from_options', 'matching', 'ordering']);
   const VALID_DIFFS: ReadonlyArray<CardDifficulty> = ['easy', 'medium', 'hard'];
 
   // 0) count_matrix：每个非零格子 = 一个独立任务（单题型+单难度）
   // 关键：用户显式传了 matrix 即便全零也必须早退，不能回退到 count ?? 5 的默认 5 张
-  // （否则 splitConfigAcrossNodes 把「总题数 3」分摊成 9 节点 × 0 + 1 节点 × 3 = 3 时，
-  //  其余 8 个节点本应 0 张，但回退路径会给每个节点补 5 张默认卡片，造成巨大数据膨胀）
+  // （否则当 UI 想表达「就生成这些矩阵格子指定的，不想要额外 fallback」时，
+  //  会多出一堆默认卡片，造成数量对不上）
   if (config.count_matrix && typeof config.count_matrix === 'object') {
     const tasks: Array<{ type: string; count: number; difficulty: CardDifficulty }> = [];
     for (const [type, cell] of Object.entries(config.count_matrix)) {
@@ -197,6 +206,31 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
         .single();
       const graph_id = payload.graph_id || graphNodeData?.graph_id;
 
+      // 方案F：兄弟节点干扰项 —— 覆盖 with_siblings / graph 时查询当前节点的同父兄弟节点
+      const coverage = (config?.coverage as GenerateCardsCoverage) ?? 'current_only';
+      const needsSiblings = coverage === 'with_siblings' || coverage === 'graph';
+      const needsChildren = coverage === 'with_children' || coverage === 'graph';
+
+      let siblingNodes: Awaited<ReturnType<typeof getSiblingNodes>> = [];
+      if (needsSiblings) {
+        try {
+          siblingNodes = await getSiblingNodes(supabase, graph_id ?? '', node_id, 8);
+        } catch (sibErr: unknown) {
+          logger.warn('[GenerateQuestionsProcessor] Failed to fetch sibling nodes:', sibErr);
+          siblingNodes = [];
+        }
+      }
+
+      let childrenNodes: Awaited<ReturnType<typeof getDirectChildren>> = [];
+      if (needsChildren) {
+        try {
+          childrenNodes = await getDirectChildren(supabase, graph_id ?? '', node_id, 8);
+        } catch (childErr: unknown) {
+          logger.warn('[GenerateQuestionsProcessor] Failed to fetch children nodes:', childErr);
+          childrenNodes = [];
+        }
+      }
+
       // 方案A：查询库内该知识点已有题题干 → 注入 anti-duplicate 约束，降低与已有题重复概率
       const { data: existingRows } = await notDeleted(supabase
         .from('study_cards')
@@ -250,40 +284,51 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
               customPrompt,
               language,
               existingQuestions,
+              coverage,
+              ...(needsChildren && childrenNodes.length > 0 ? { childrenNodes } : {}),
+              ...(needsSiblings && siblingNodes.length > 0 ? { siblingNodes } : {}),
+              maxSiblingDistractors: 3,
             },
           );
           const cards = (aiResult.cards || []) as AIGeneratedCard[];
 
           if (cards.length > 0) {
-            const cardsToInsert = cards.map((card) => ({
-              user_id: userId,
-              knowledge_point_id: node_id,
-              graph_id,
-              question: card.question,
-              answer: card.answer,
-              // 方案E：把 AI 返回的「原文依据」并入 explanation，让答案可追溯、防幻觉
-              explanation: card.evidence
-                ? [card.explanation, `原文依据：${card.evidence}`].filter(Boolean).join('\n\n')
-                : card.explanation,
-              card_type: card.type ?? type,
-              options: card.options ? JSON.stringify(card.options) : null,
-              next_review: new Date().toISOString(),
-              // 方案B：入库前用 AI 自评难度做 sanity check，非法/缺失回退到任务难度
-              difficulty: cardDifficultyToNumber(
-                card.difficulty,
-                difficulty ?? effectiveDifficulty,
-              ),
-              fsrs_state: "New",
-              fsrs_stability: 0,
-              // 方案B：FSRS 初始难度种子（易=3 / 中=5 / 难=7），复习时由 FSRS 自适应更新
-              fsrs_difficulty: cardDifficultyToFsrsInitial(
-                card.difficulty,
-                difficulty ?? effectiveDifficulty,
-              ),
-              fsrs_elapsed_days: 0,
-              fsrs_scheduled_days: 0,
-              fsrs_retrievability: 0,
-            }));
+            const cardsToInsert = cards.map((card: AIGeneratedCardWithFocus) => {
+              const rawFocus = typeof card.focus_topic === 'string' ? card.focus_topic.trim() : '';
+              const value = rawFocus.length > 0
+                ? rawFocus.slice(0, 200)
+                : deriveFocusTopicFallback(card.question, node_title);
+              return {
+                user_id: userId,
+                knowledge_point_id: node_id,
+                graph_id,
+                question: card.question,
+                answer: card.answer,
+                // 方案E：把 AI 返回的「原文依据」并入 explanation，让答案可追溯、防幻觉
+                explanation: card.evidence
+                  ? [card.explanation, `原文依据：${card.evidence}`].filter(Boolean).join('\n\n')
+                  : card.explanation,
+                card_type: card.type ?? type,
+                options: card.options ? JSON.stringify(card.options) : null,
+                next_review: new Date().toISOString(),
+                // 方案B：入库前用 AI 自评难度做 sanity check，非法/缺失回退到任务难度
+                difficulty: cardDifficultyToNumber(
+                  card.difficulty,
+                  difficulty ?? effectiveDifficulty,
+                ),
+                fsrs_state: "New",
+                fsrs_stability: 0,
+                // 方案B：FSRS 初始难度种子（易=3 / 中=5 / 难=7），复习时由 FSRS 自适应更新
+                fsrs_difficulty: cardDifficultyToFsrsInitial(
+                  card.difficulty,
+                  difficulty ?? effectiveDifficulty,
+                ),
+                fsrs_elapsed_days: 0,
+                fsrs_scheduled_days: 0,
+                fsrs_retrievability: 0,
+                focus_topic: value,
+              };
+            });
 
             const { error } = await supabase
               .from('study_cards')

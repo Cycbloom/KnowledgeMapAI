@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HelpCircle, CheckCircle, ListChecks, ToggleLeft, FileText, MessageSquare, AlertCircle } from 'lucide-react';
+import { HelpCircle, CheckCircle, ListChecks, ToggleLeft, FileText, MessageSquare, AlertCircle, ClipboardList, ListFilter, Columns2, Shuffle } from 'lucide-react';
 import { useTheme } from "../../hooks";
 import type { QuizSetConfig, CardType } from '@shared/types/quiz';
 
@@ -63,6 +63,34 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
       description: t('study.quizTypeConfig.types.essay.description'),
       icon: <MessageSquare size={18} />,
       defaultCount: 2,
+    },
+    {
+      id: 'cloze',
+      label: t('study.quizTypeConfig.types.cloze.label'),
+      description: t('study.quizTypeConfig.types.cloze.description'),
+      icon: <ClipboardList size={18} />,
+      defaultCount: 3,
+    },
+    {
+      id: 'select_from_options',
+      label: t('study.quizTypeConfig.types.select_from_options.label'),
+      description: t('study.quizTypeConfig.types.select_from_options.description'),
+      icon: <ListFilter size={18} />,
+      defaultCount: 3,
+    },
+    {
+      id: 'matching',
+      label: t('study.quizTypeConfig.types.matching.label'),
+      description: t('study.quizTypeConfig.types.matching.description'),
+      icon: <Columns2 size={18} />,
+      defaultCount: 3,
+    },
+    {
+      id: 'ordering',
+      label: t('study.quizTypeConfig.types.ordering.label'),
+      description: t('study.quizTypeConfig.types.ordering.description'),
+      icon: <Shuffle size={18} />,
+      defaultCount: 3,
     },
   ], [t]);
 

@@ -48,6 +48,7 @@ interface QuizGenerationModalProps {
   onClose: () => void;
   graphId?: string;
   onComplete: (quizSetId: string) => void;
+  initialSelectedKnowledgePoints?: string[];
 }
 
 const defaultConfig: QuizSetConfig = {
@@ -61,6 +62,10 @@ const defaultConfig: QuizSetConfig = {
     multi_choice: 3,
     fill_in_the_blank: 5,
     essay: 2,
+    cloze: 5,
+    select_from_options: 3,
+    matching: 3,
+    ordering: 3,
   },
 };
 
@@ -79,6 +84,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   onClose,
   graphId: initialGraphId,
   onComplete,
+  initialSelectedKnowledgePoints,
 }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
@@ -196,6 +202,20 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
       setFormData(prev => ({ ...prev, customPrompt: promptConfigs.quiz_generation }));
     }
   }, [open, promptConfigs?.quiz_generation, setFormData]);
+
+  useEffect(() => {
+    if (open && initialSelectedKnowledgePoints && initialSelectedKnowledgePoints.length > 0) {
+      setFormData(prev => {
+        const mergedKps = Array.from(new Set([...prev.selectedKnowledgePoints, ...initialSelectedKnowledgePoints]));
+        const nextGraphId = initialGraphId || prev.selectedGraphId;
+        return {
+          ...prev,
+          selectedKnowledgePoints: mergedKps,
+          ...(nextGraphId ? { selectedGraphId: nextGraphId } : {}),
+        };
+      });
+    }
+  }, [open, initialSelectedKnowledgePoints, initialGraphId, setFormData]);
 
   useEffect(() => {
     if (progress?.status === 'completed' && createdQuizSetId) {

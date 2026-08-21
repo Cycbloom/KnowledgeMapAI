@@ -13,6 +13,10 @@ import {
   ToggleLeft,
   FileText,
   MessageSquare,
+  ClipboardList,
+  ListFilter,
+  Columns2,
+  Shuffle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -42,6 +46,10 @@ const cardTypeConfig: Record<CardType, { labelKey: string; icon: React.ReactNode
   true_false: { labelKey: 'quiz.questionList.type.trueFalse', icon: <ToggleLeft size={16} />, color: 'text-amber-500' },
   fill_in_the_blank: { labelKey: 'quiz.questionList.type.fillInTheBlank', icon: <FileText size={16} />, color: 'text-primary-500' },
   essay: { labelKey: 'quiz.questionList.type.essay', icon: <FileText size={16} />, color: 'text-rose-500' },
+  cloze: { labelKey: 'quiz.questionList.type.cloze', icon: <ClipboardList size={16} />, color: 'text-cyan-500' },
+  select_from_options: { labelKey: 'quiz.questionList.type.selectFromOptions', icon: <ListFilter size={16} />, color: 'text-teal-500' },
+  matching: { labelKey: 'quiz.questionList.type.matching', icon: <Columns2 size={16} />, color: 'text-indigo-500' },
+  ordering: { labelKey: 'quiz.questionList.type.ordering', icon: <Shuffle size={16} />, color: 'text-orange-500' },
 };
 
 const difficultyConfig: Record<number, { labelKey: string; color: string }> = {

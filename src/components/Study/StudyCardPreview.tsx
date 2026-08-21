@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Calendar, Tag, Eye, Play, Trash2, Edit2, CheckSquare, Square } from 'lucide-react';
 import { StudyCard } from '../../types';
 import { formatDate } from '../../utils/formatters';
+import { FocusTopicBadge } from './common/FocusTopicBadge';
 
 interface StudyCardPreviewProps {
   card: StudyCard;
@@ -80,6 +81,8 @@ const StudyCardPreviewComponent: React.FC<StudyCardPreviewProps> = ({
             <span>{card.next_review ? formatDate(card.next_review, 'short') : t('study.cardPreview.notStarted')}</span>
           </div>
         </div>
+
+        <FocusTopicBadge focusTopic={card.focus_topic} variant="pill" />
         
         <h4 className="font-bold line-clamp-2 leading-snug min-h-[2.8rem]">{card.question}</h4>
         <p className={`text-sm line-clamp-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{card.answer}</p>

@@ -27,6 +27,14 @@ interface QuizAnswerExplanationProps {
   isFillBlank: boolean;
   /** 是否简答题型 */
   isEssay: boolean;
+  /** 是否完形填空题型 */
+  isCloze: boolean;
+  /** 是否选词填空题型 */
+  isSelectFromOptions: boolean;
+  /** 是否匹配连线题型 */
+  isMatching: boolean;
+  /** 是否排序题型 */
+  isOrdering: boolean;
   /** 多选已选集合 */
   selectedSet: Set<string>;
   /** 多选正确答案集合 */
@@ -53,6 +61,10 @@ export function QuizAnswerExplanation({
   isTrueFalse,
   isFillBlank,
   isEssay,
+  isCloze,
+  isSelectFromOptions,
+  isMatching,
+  isOrdering,
   selectedSet,
   correctSet,
   selectedOption,
@@ -77,7 +89,7 @@ export function QuizAnswerExplanation({
 
   /** 计算选择题「你选了 X / 正确应为 Y」的状态 */
   const getChoiceStatus = () => {
-    if (!isChoice && !isTrueFalse) {
+    if (!isChoice && !isTrueFalse && !isSelectFromOptions) {
       return null;
     }
     const correctAnswer = isTrueFalse
@@ -89,6 +101,36 @@ export function QuizAnswerExplanation({
       selectedLabel: selectedOption,
       correctLabel: correctAnswer,
     };
+  };
+
+  /** 将 JSON 字符串答案格式化为可读多行文本（cloze/matching/ordering） */
+  const formatStructuredAnswer = (): string => {
+    if (!isCloze && !isMatching && !isOrdering) {
+      return currentCard.answer;
+    }
+    try {
+      const parsed = JSON.parse(currentCard.answer) as unknown;
+      if (!Array.isArray(parsed)) return currentCard.answer;
+      if (isCloze) {
+        return parsed
+          .map((p) => (p as { blank?: unknown })?.blank)
+          .filter((v): v is string => typeof v === "string")
+          .join("\n");
+      }
+      if (isMatching) {
+        return parsed
+          .map((p) => {
+            const it = p as { left?: unknown; right?: unknown };
+            return `${it.left ?? ""} → ${it.right ?? ""}`;
+          })
+          .join("\n");
+      }
+      return parsed
+        .filter((v): v is string => typeof v === "string")
+        .join(" → ");
+    } catch {
+      return currentCard.answer;
+    }
   };
 
   /** 计算多选题「你选了 X / 正确应为 Y」的状态 */
@@ -113,7 +155,7 @@ export function QuizAnswerExplanation({
 
   return (
     <div className="space-y-4 md:space-y-6 animate-fade-in">
-      {(isQA || isEssay || isFillBlank) && (
+      {(isQA || isEssay || isFillBlank || isCloze || isMatching || isOrdering) && (
         <div
           className={`border-t ${isMobile ? "pt-4" : "pt-6"} ${isDark ? "border-slate-700" : "border-gray-100"}`}
         >
@@ -132,12 +174,12 @@ export function QuizAnswerExplanation({
             className={`${isMobile ? "text-base" : "text-lg md:text-xl"} font-medium ${isDark ? "text-slate-200" : "text-gray-800"} whitespace-pre-wrap`}
             style={primaryTextStyle}
           >
-            {currentCard.answer}
+            {formatStructuredAnswer()}
           </div>
         </div>
       )}
 
-      {(isChoice || isTrueFalse) && choiceStatus && (
+      {(isChoice || isTrueFalse || isSelectFromOptions) && choiceStatus && (
         <div
           className={`border-t ${isMobile ? "pt-4" : "pt-6"} ${isDark ? "border-slate-700" : "border-gray-100"}`}
         >

@@ -14,6 +14,7 @@ import {
 import { QuizOptionArea } from "./QuizOptionArea";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
 import { QuizRatingBar } from "./QuizRatingBar";
+import { FocusTopicBadge } from "./common";
 
 type UpdateProgressMutation = ReturnType<typeof useUpdateCardProgressMutation>;
 
@@ -85,6 +86,10 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
   const isTrueFalse = currentCard.card_type === "true_false";
   const isFillBlank = currentCard.card_type === "fill_in_the_blank";
   const isEssay = currentCard.card_type === "essay";
+  const isCloze = currentCard.card_type === "cloze";
+  const isSelectFromOptions = currentCard.card_type === "select_from_options";
+  const isMatching = currentCard.card_type === "matching";
+  const isOrdering = currentCard.card_type === "ordering";
 
   const currentOptions: string[] = useMemo(() => {
     if (!currentCard?.options) return [];
@@ -157,7 +162,7 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
       } else if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         if (!showAnswer) {
-          if (isQA || isEssay || isFillBlank) {
+          if (isQA || isEssay || isFillBlank || isCloze || isMatching || isOrdering) {
             onSetShowAnswer(true);
           } else if (isMultiChoice && selectedOption && selectedSet.size > 0) {
             onSetShowAnswer(true);
@@ -177,6 +182,9 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
     isQA,
     isEssay,
     isFillBlank,
+    isCloze,
+    isMatching,
+    isOrdering,
     isMultiChoice,
     selectedOption,
     selectedSet.size,
@@ -230,6 +238,9 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
                   {t("study.quiz.question")}
                 </h3>
               </div>
+              <div className="mt-2 md:mt-3 w-full">
+                <FocusTopicBadge focusTopic={currentCard.focus_topic ?? undefined} variant="pill" />
+              </div>
               <div
                 className={`${isMobile ? "text-base" : "text-lg md:text-xl"} font-semibold leading-snug mt-2 md:mt-3 ${isDark ? "text-slate-100" : "text-gray-900"}`}
                 style={primaryTextStyle}
@@ -248,6 +259,10 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
                 isTrueFalse={isTrueFalse}
                 isFillBlank={isFillBlank}
                 isEssay={isEssay}
+                isCloze={isCloze}
+                isSelectFromOptions={isSelectFromOptions}
+                isMatching={isMatching}
+                isOrdering={isOrdering}
                 selectedSet={selectedSet}
                 correctSet={correctSet}
                 showAnswer={showAnswer}
@@ -289,6 +304,10 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
               isTrueFalse={isTrueFalse}
               isFillBlank={isFillBlank}
               isEssay={isEssay}
+              isCloze={isCloze}
+              isSelectFromOptions={isSelectFromOptions}
+              isMatching={isMatching}
+              isOrdering={isOrdering}
               selectedSet={selectedSet}
               correctSet={correctSet}
               selectedOption={selectedOption}

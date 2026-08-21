@@ -29,7 +29,7 @@ const getInitialFormData = (initialData?: StudyCard): QuestionFormData => {
       card_type: initialData.card_type,
       explanation: initialData.explanation || '',
       options: initialData.options || (
-        (initialData.card_type === 'choice' || initialData.card_type === 'multi_choice') 
+        (initialData.card_type === 'choice' || initialData.card_type === 'multi_choice' || initialData.card_type === 'select_from_options') 
           ? ['', '', '', ''] 
           : []
       )
@@ -128,7 +128,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
 
     if (!formData.answer.trim()) newErrors.answer = t('study.questionForm.validation.answerRequired');
 
-    if ((formData.card_type === 'choice' || formData.card_type === 'multi_choice')) {
+    if ((formData.card_type === 'choice' || formData.card_type === 'multi_choice' || formData.card_type === 'select_from_options')) {
       if (formData.options.length < 2) {
         newErrors.options = t('study.questionForm.validation.optionsMinLength');
       } else if (formData.options.some(o => !o.trim())) {
@@ -165,7 +165,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     // Sync answer if it matches the old option
     let newAnswer = formData.answer;
     
-    if (formData.card_type === 'choice') {
+    if (formData.card_type === 'choice' || formData.card_type === 'select_from_options') {
       if (formData.answer === oldOption) {
         newAnswer = value;
       }
@@ -188,11 +188,12 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     setFormData(prev => ({ ...prev, options: prev.options.filter((_, i) => i !== index) }));
   };
 
-  // answer 字段在非 true_false/choice/multi_choice 时渲染为 textarea
+  // answer 字段在 判断/单选/多选/选词填空 之外 渲染为 textarea
   const isAnswerTextarea =
     formData.card_type !== 'true_false' &&
     formData.card_type !== 'choice' &&
-    formData.card_type !== 'multi_choice';
+    formData.card_type !== 'multi_choice' &&
+    formData.card_type !== 'select_from_options';
 
   return (
     <div className={`p-4 sm:p-4 border-b ${isDark ? 'bg-slate-800/50' : 'bg-primary-50/50'}`}>
@@ -229,7 +230,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                   setFormData({
                       ...formData, 
                       card_type: type, 
-                      options: (type === 'choice' || type === 'multi_choice') ? ['', '', '', ''] : [],
+                      options: (type === 'choice' || type === 'multi_choice' || type === 'select_from_options') ? ['', '', '', ''] : [],
                       answer: ''
                   });
               }}
@@ -242,19 +243,23 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
               <option value="true_false">{t('study.questionForm.cardType.true_false')}</option>
               <option value="fill_in_the_blank">{t('study.questionForm.cardType.fill_in_the_blank')}</option>
               <option value="essay">{t('study.questionForm.cardType.essay')}</option>
+              <option value="cloze">{t('study.questionForm.cardType.cloze')}</option>
+              <option value="select_from_options">{t('study.questionForm.cardType.select_from_options')}</option>
+              <option value="matching">{t('study.questionForm.cardType.matching')}</option>
+              <option value="ordering">{t('study.questionForm.cardType.ordering')}</option>
             </select>
           </div>
         </div>
         
-        {/* Options for Choice/Multi-Choice */}
-        {(formData.card_type === 'choice' || formData.card_type === 'multi_choice') && (
+        {/* Options for Choice/Multi-Choice/Select-from-options */}
+        {(formData.card_type === 'choice' || formData.card_type === 'multi_choice' || formData.card_type === 'select_from_options') && (
             <div>
                 <label htmlFor={`${optionsInputBaseId}-0`} className="block text-sm font-medium mb-1 label-mobile">
                     {t('study.questionForm.optionsAndAnswer')} <span aria-hidden="true" className="text-red-500">*</span>
                 </label>
                 <div className="space-y-2">
                     {formData.options.map((option, idx) => {
-                        const isChecked = formData.card_type === 'choice' 
+                        const isChecked = (formData.card_type === 'choice' || formData.card_type === 'select_from_options') 
                             ? formData.answer === option
                             : (multiAnswerSet?.has(option) ?? false);
 
@@ -263,7 +268,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                             <button
                                 onClick={() => {
                                     if (!option.trim()) return;
-                                    if (formData.card_type === 'choice') {
+                                    if (formData.card_type === 'choice' || formData.card_type === 'select_from_options') {
                                         setFormData({...formData, answer: option});
                                     } else {
                                         let currentAnswers: string[] = [];
@@ -323,7 +328,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         {/* Answer Input */}
         <div>
           <label htmlFor={isAnswerTextarea ? answerId : undefined} className="block text-sm font-medium mb-1 label-mobile">
-            {(formData.card_type === 'choice' || formData.card_type === 'multi_choice') ? t('study.questionForm.answerPreview') : t('study.questionForm.answerLabel')} <span aria-hidden="true" className="text-red-500">*</span>
+            {(formData.card_type === 'choice' || formData.card_type === 'multi_choice' || formData.card_type === 'select_from_options') ? t('study.questionForm.answerPreview') : t('study.questionForm.answerLabel')} <span aria-hidden="true" className="text-red-500">*</span>
           </label>
           
           {formData.card_type === 'true_false' ? (
@@ -354,7 +359,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                     );
                   })}
               </fieldset>
-          ) : (formData.card_type === 'choice' || formData.card_type === 'multi_choice') ? (
+          ) : (formData.card_type === 'choice' || formData.card_type === 'multi_choice' || formData.card_type === 'select_from_options') ? (
               <div className={`p-3 rounded-lg text-sm ${isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-100 text-gray-600'}`}>
                   {formData.answer || t('study.questionForm.clickToSelectAnswer')}
               </div>
@@ -369,7 +374,10 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                 onChange={e => setFormData({...formData, answer: e.target.value})}
                 className={`w-full p-3 border rounded-lg text-base ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.answer ? 'border-red-500' : ''} resize-none overflow-hidden min-h-[44px]`}
                 rows={1}
-                placeholder={t('study.questionForm.answerPlaceholder')}
+                placeholder={formData.card_type === 'cloze' ? t('study.questionForm.answerJsonHint.cloze')
+                  : formData.card_type === 'matching' ? t('study.questionForm.answerJsonHint.matching')
+                    : formData.card_type === 'ordering' ? t('study.questionForm.answerJsonHint.ordering')
+                      : t('study.questionForm.answerPlaceholder')}
               />
           )}
           {errors.answer && <p role="alert" id={answerErrorId} className="text-red-500 text-xs mt-1">{errors.answer}</p>}

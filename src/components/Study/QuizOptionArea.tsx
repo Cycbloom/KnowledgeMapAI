@@ -1,10 +1,16 @@
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { StudyCard } from "@shared/types";
-import { Check, X, BookOpen } from "lucide-react";
+import { Check, X, BookOpen, ChevronUp, ChevronDown } from "lucide-react";
 import { normalizeBooleanAnswer } from "../../utils/textUtils";
 import { useQuizSettingsStore } from "../../store/useQuizSettingsStore";
 import { resolveSecondaryTextStyle } from "../../utils/quizTypography";
+import {
+  countClozeBlanks,
+  isMatchingCorrect,
+  isOrderingCorrect,
+} from "../../utils/quizNewTypes";
 
 /**
  * QuizOptionArea 组件 Props
@@ -27,6 +33,14 @@ interface QuizOptionAreaProps {
   isFillBlank: boolean;
   /** 是否简答题型 */
   isEssay: boolean;
+  /** 是否完形填空题型 */
+  isCloze: boolean;
+  /** 是否选词填空题型 */
+  isSelectFromOptions: boolean;
+  /** 是否匹配连线题型 */
+  isMatching: boolean;
+  /** 是否排序题型 */
+  isOrdering: boolean;
   /** 多选已选集合 */
   selectedSet: Set<string>;
   /** 多选正确答案集合 */
@@ -61,6 +75,10 @@ export function QuizOptionArea({
   isTrueFalse,
   isFillBlank,
   isEssay,
+  isCloze,
+  isSelectFromOptions,
+  isMatching,
+  isOrdering,
   selectedSet,
   correctSet,
   showAnswer,
@@ -81,9 +99,97 @@ export function QuizOptionArea({
   );
   const secondaryTextStyle = resolveSecondaryTextStyle(fontSize, lineHeight);
 
+  /** 完形填空：用户的逐空输入 */
+  const [clozeInputs, setClozeInputs] = useState<string[]>([]);
+  /** 匹配连线：left -> right 配对；以及当前选中的左列项 */
+  const [matchingPairs, setMatchingPairs] = useState<Record<string, string | undefined>>({});
+  const [matchingSelectedLeft, setMatchingSelectedLeft] = useState<string | null>(null);
+  /** 排序：当前顺序 */
+  const [order, setOrder] = useState<string[]>([]);
+
+  /** 匹配连线的候选右列项（从 answer JSON 去重提取） */
+  const rightOptions = useMemo(() => {
+    if (!currentCard.answer) return [];
+    try {
+      const parsed = JSON.parse(currentCard.answer) as unknown;
+      if (!Array.isArray(parsed)) return [];
+      const rights = parsed
+        .map((p) => (p as { right?: unknown })?.right)
+        .filter((v): v is string => typeof v === "string");
+      return Array.from(new Set(rights));
+    } catch {
+      return [];
+    }
+  }, [currentCard.answer]);
+
+  /** 匹配连线：left -> 正确 right（用于展示对错） */
+  const expectedRightByLeft = useMemo(() => {
+    const map: Record<string, string> = {};
+    try {
+      const parsed = JSON.parse(currentCard.answer ?? "") as unknown;
+      if (Array.isArray(parsed)) {
+        parsed.forEach((p) => {
+          const item = p as { left?: unknown; right?: unknown };
+          if (typeof item.left === "string" && typeof item.right === "string") {
+            map[item.left] = item.right;
+          }
+        });
+      }
+    } catch {
+      // ignore parse errors
+    }
+    return map;
+  }, [currentCard.answer]);
+
+  // 当前卡片变化时重置本地交互状态
+  useEffect(() => {
+    setClozeInputs(new Array(countClozeBlanks(currentCard.question)).fill(""));
+    setMatchingPairs({});
+    setMatchingSelectedLeft(null);
+    setOrder(currentOptions);
+  }, [currentCard, currentOptions]);
+
+  const updateClozeInput = (idx: number, value: string) => {
+    setClozeInputs((prev) => {
+      const next = [...prev];
+      next[idx] = value;
+      return next;
+    });
+  };
+
+  const handleMatchingLeftClick = (left: string) => {
+    if (showAnswer) return;
+    setMatchingSelectedLeft((prev) => (prev === left ? null : left));
+  };
+
+  const handleMatchingRightClick = (right: string) => {
+    if (showAnswer || !matchingSelectedLeft) return;
+    setMatchingPairs((prev) => ({
+      ...prev,
+      [matchingSelectedLeft]: prev[matchingSelectedLeft] === right ? undefined : right,
+    }));
+    setMatchingSelectedLeft(null);
+  };
+
+  const moveOrderItem = (idx: number, dir: "up" | "down") => {
+    if (showAnswer) return;
+    const target = dir === "up" ? idx - 1 : idx + 1;
+    if (target < 0 || target >= order.length) return;
+    setOrder((prev) => {
+      const next = [...prev];
+      const [item] = next.splice(idx, 1);
+      next.splice(target, 0, item);
+      return next;
+    });
+  };
+
+  const matchingIsCorrect = isMatching
+    ? isMatchingCorrect(currentCard.answer, matchingPairs)
+    : false;
+
   return (
     <div className="w-full pb-4 md:pb-6">
-      {isChoice && currentOptions.length > 0 && (
+      {(isChoice || isSelectFromOptions) && currentOptions.length > 0 && (
         <div className="flex flex-col gap-2 md:gap-2 mt-3 md:mt-4">
           {currentOptions.map((option: string, idx: number) => {
             const isSelected = selectedOption === option;
@@ -289,9 +395,186 @@ export function QuizOptionArea({
         </div>
       )}
 
+      {isCloze && (
+        <div className="flex flex-col gap-3 mt-3 md:mt-4">
+          {clozeInputs.map((value, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <span
+                className={`flex-shrink-0 ${isMobile ? "w-8 h-8" : "w-7 h-7"} rounded-lg flex items-center justify-center font-bold ${isMobile ? "text-base" : "text-sm"} ${isDark ? "bg-slate-700 text-slate-400" : "bg-slate-100 text-slate-500"}`}
+              >
+                {idx + 1}
+              </span>
+              <input
+                type="text"
+                value={value}
+                disabled={showAnswer}
+                onChange={(e) => updateClozeInput(idx, e.target.value)}
+                className={`flex-1 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none transition-colors ${isMobile ? "text-base" : "text-sm"} ${isDark ? "bg-slate-800 border-slate-700 text-slate-200 focus:border-primary-500" : "bg-white border-gray-200 text-gray-800 focus:border-primary-400"} disabled:opacity-60`}
+                placeholder={`${t("study.quiz.fillContent")} ${idx + 1}`}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isMatching && (
+        <div className="flex flex-col gap-3 mt-3 md:mt-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
+            <div className="flex flex-col gap-2">
+              {currentOptions.map((left, idx) => {
+                const isSelected = matchingSelectedLeft === left;
+                const isPaired = matchingPairs[left] !== undefined && matchingPairs[left] !== "";
+                const isRowCorrect = matchingPairs[left] === expectedRightByLeft[left];
+                let btnClass = `group ${isMobile ? "p-3" : "p-2.5"} rounded-xl border transition-all duration-200 relative flex items-center gap-2 shadow-sm text-left `;
+                if (!showAnswer) {
+                  btnClass += isSelected
+                    ? isDark
+                      ? "bg-gradient-to-r from-primary-900/40 to-primary-900/20 border-primary-500 text-primary-300 shadow-md cursor-pointer"
+                      : "bg-gradient-to-r from-primary-100 to-primary-50 border-primary-400 text-primary-700 shadow-md cursor-pointer"
+                    : isPaired
+                      ? isDark
+                        ? "bg-slate-800 border-slate-600 text-slate-200"
+                        : "bg-slate-50 border-slate-300 text-gray-700"
+                      : isDark
+                        ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:border-primary-500 cursor-pointer text-slate-200"
+                        : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:border-primary-300 cursor-pointer text-gray-700";
+                } else {
+                  btnClass += isRowCorrect
+                    ? isDark
+                      ? "bg-emerald-900/30 border-emerald-500 text-emerald-400"
+                      : "bg-emerald-50 border-emerald-400 text-emerald-700"
+                    : isPaired
+                      ? isDark
+                        ? "bg-red-900/30 border-red-500 text-red-400"
+                        : "bg-red-50 border-red-400 text-red-700"
+                      : isDark
+                        ? "bg-slate-800/50 border-slate-700 text-slate-500"
+                        : "bg-gray-50 border-gray-200 text-gray-400";
+                }
+                return (
+                  <button
+                    key={left}
+                    onClick={() => handleMatchingLeftClick(left)}
+                    disabled={showAnswer}
+                    className={btnClass}
+                  >
+                    <span
+                      className={`flex-shrink-0 ${isMobile ? "w-7 h-7" : "w-6 h-6"} rounded-md flex items-center justify-center font-bold text-xs ${isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-500"}`}
+                    >
+                      {String.fromCharCode(65 + idx)}
+                    </span>
+                    <span className="flex-1 text-sm font-medium leading-snug" style={secondaryTextStyle}>
+                      {left}
+                    </span>
+                    {showAnswer && isRowCorrect && <Check className="text-emerald-500 flex-shrink-0" size={18} />}
+                    {showAnswer && isPaired && !isRowCorrect && <X className="text-red-500 flex-shrink-0" size={18} />}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex flex-col gap-2">
+              {rightOptions.map((right) => {
+                const usedBy = Object.entries(matchingPairs).find(([, v]) => v === right)?.[0];
+                return (
+                  <button
+                    key={right}
+                    onClick={() => handleMatchingRightClick(right)}
+                    disabled={showAnswer || !matchingSelectedLeft}
+                    className={`group p-2.5 rounded-xl border transition-all duration-200 relative flex items-center gap-2 shadow-sm text-left ${isMobile ? "p-3" : "p-2.5"} ${usedBy ? (isDark ? "bg-slate-800 border-slate-600 text-slate-300" : "bg-slate-50 border-slate-300 text-gray-600") : isDark ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:border-primary-500 text-slate-300" : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:border-primary-300 text-gray-600"} ${!showAnswer && matchingSelectedLeft && !usedBy ? "cursor-pointer" : "opacity-60"}`}
+                  >
+                    {usedBy && (
+                      <span className={`flex-shrink-0 ${isMobile ? "w-6 h-6" : "w-5 h-5"} rounded-md flex items-center justify-center font-bold text-xs ${isDark ? "bg-primary-900/50 text-primary-300" : "bg-primary-100 text-primary-600"}`}>
+                        {String.fromCharCode(65 + currentOptions.indexOf(usedBy))}
+                      </span>
+                    )}
+                    <span className="flex-1 text-sm font-medium leading-snug" style={secondaryTextStyle}>
+                      {right}
+                    </span>
+                    {usedBy && !showAnswer && (
+                      <X
+                        className="text-slate-400 flex-shrink-0"
+                        size={18}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMatchingPairs((prev) => ({ ...prev, [usedBy]: undefined }));
+                        }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {showAnswer && (
+            <div
+              className={`text-center text-sm font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
+              {matchingIsCorrect ? (
+                <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>{t("study.quiz.correct")}</span>
+              ) : (
+                <span className={isDark ? "text-red-400" : "text-red-600"}>{t("study.quiz.incorrect")}</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {isOrdering && order.length > 0 && (
+        <div className="flex flex-col gap-2 mt-3 md:mt-4">
+          {order.map((item, idx) => (
+            <div
+              key={item}
+              className={`flex items-center gap-2 ${isMobile ? "p-3" : "p-2.5"} rounded-xl border shadow-sm ${isDark ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-white border-gray-200 text-gray-700"}`}
+            >
+              <span
+                className={`flex-shrink-0 ${isMobile ? "w-7 h-7" : "w-6 h-6"} rounded-md flex items-center justify-center font-bold text-xs ${isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-500"}`}
+              >
+                {idx + 1}
+              </span>
+              <span className="flex-1 text-sm font-medium leading-snug" style={secondaryTextStyle}>
+                {item}
+              </span>
+              {!showAnswer && (
+                <div className="flex flex-col gap-0.5 flex-shrink-0">
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => moveOrderItem(idx, "up")}
+                    className={`p-1 rounded-md transition-colors ${idx === 0 ? "opacity-30 cursor-not-allowed" : isDark ? "hover:bg-slate-700 text-slate-300" : "hover:bg-gray-100 text-gray-500"}`}
+                    aria-label={t("study.quiz.prevCard")}
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={idx === order.length - 1}
+                    onClick={() => moveOrderItem(idx, "down")}
+                    className={`p-1 rounded-md transition-colors ${idx === order.length - 1 ? "opacity-30 cursor-not-allowed" : isDark ? "hover:bg-slate-700 text-slate-300" : "hover:bg-gray-100 text-gray-500"}`}
+                    aria-label={t("study.quiz.nextCard")}
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {showAnswer && (
+            <div
+              className={`text-center text-sm font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
+              {isOrderingCorrect(currentCard.answer, order) ? (
+                <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>{t("study.quiz.correct")}</span>
+              ) : (
+                <span className={isDark ? "text-red-400" : "text-red-600"}>{t("study.quiz.incorrect")}</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {!showAnswer && (
         <div className="w-full mt-4 md:mt-6">
-          {isQA || isEssay || isFillBlank ? (
+          {isQA || isEssay || isFillBlank || isCloze || isMatching || isOrdering ? (
             <button
               onClick={() => onSetShowAnswer(true)}
               className={`w-full ${isMobile ? "py-4" : "py-4"} bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 flex items-center justify-center gap-2`}

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Info } from 'lucide-react';
 import { StudyCard } from '../../types';
 import { useFocusTrap, useEscapeKey } from '../../hooks';
+import { FocusTopicBadge } from './common/FocusTopicBadge';
 
 interface StudyCardDetailModalProps {
   card: StudyCard | null;
@@ -65,7 +66,11 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
                      card.card_type === 'multi_choice' ? t('study.quizPractice.cardType.multi_choice') : 
                      card.card_type === 'fill_in_the_blank' ? t('study.quizPractice.cardType.fill_in_the_blank') : 
                      card.card_type === 'true_false' ? t('study.quizPractice.cardType.true_false') :
-                     card.card_type === 'essay' ? t('study.quizPractice.cardType.essay') : t('study.quizPractice.cardType.qa')}
+                     card.card_type === 'essay' ? t('study.quizPractice.cardType.essay') :
+                     card.card_type === 'cloze' ? t('study.quizPractice.cardType.cloze') :
+                     card.card_type === 'select_from_options' ? t('study.quizPractice.cardType.select_from_options') :
+                     card.card_type === 'matching' ? t('study.quizPractice.cardType.matching') :
+                     card.card_type === 'ordering' ? t('study.quizPractice.cardType.ordering') : t('study.quizPractice.cardType.qa')}
                   </p>
                 </div>
               </div>
@@ -83,6 +88,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
             <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8">
               <section className="space-y-3">
                 <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('study.questionForm.questionLabel')}</h4>
+                <FocusTopicBadge focusTopic={card.focus_topic} variant="pill" />
                 <div className={`text-xl font-bold leading-relaxed ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   {card.question}
                 </div>

@@ -17,6 +17,7 @@ import { getCardTypeBadgeMeta, type BadgeTone } from "../../utils/quizBadgeMeta"
 import { getDifficultyBadgeMeta } from "../../utils/quizDifficultyMeta";
 import { QuizLayoutSwitcher } from "./QuizLayoutSwitcher";
 import { QuizSettingsPanel } from "./QuizSettingsPanel";
+import { FocusTopicBadge } from "./common";
 
 interface QuizSidebarProps {
   quizCards: StudyCard[];
@@ -88,6 +89,10 @@ export function QuizSidebar({
     blue: { idle: "bg-slate-400", active: "bg-slate-300" },
     violet: { idle: "bg-slate-400", active: "bg-slate-300" },
     slate: { idle: "bg-slate-400", active: "bg-slate-300" },
+    cyan: { idle: "bg-cyan-500", active: "bg-cyan-300" },
+    indigo: { idle: "bg-indigo-500", active: "bg-indigo-300" },
+    orange: { idle: "bg-orange-500", active: "bg-orange-300" },
+    teal: { idle: "bg-teal-500", active: "bg-teal-300" },
   };
 
   /** 题型图标颜色：未选中 = 语义色 500，选中 = 白色 */
@@ -98,6 +103,10 @@ export function QuizSidebar({
     violet: { idle: "text-violet-500", active: "text-white" },
     amber: { idle: "text-amber-500", active: "text-white" },
     slate: { idle: "text-slate-500", active: "text-white" },
+    cyan: { idle: "text-cyan-500", active: "text-white" },
+    indigo: { idle: "text-indigo-500", active: "text-white" },
+    orange: { idle: "text-orange-500", active: "text-white" },
+    teal: { idle: "text-teal-500", active: "text-white" },
   };
 
   return (
@@ -314,7 +323,7 @@ export function QuizSidebar({
               key={card.id}
               type="button"
               onClick={() => onSelectCard(index)}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors min-h-[40px] ${
+              className={`w-full flex flex-col gap-1 px-2 py-1.5 rounded-lg text-left transition-colors min-h-[40px] ${
                 isActive
                   ? "bg-primary-500 dark:bg-primary-600 text-white shadow"
                   : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
@@ -322,7 +331,7 @@ export function QuizSidebar({
               aria-current={isActive ? "step" : undefined}
             >
               {/* 编码徽章：左色条=难度 / 数字 + 分隔 + 题型图标 */}
-              <span className="relative flex-none">
+              <span className="relative flex-none self-start">
                 <span
                   className={`relative flex items-center h-6 rounded pl-[9px] pr-1.5 gap-1 overflow-hidden ${
                     isActive
@@ -349,6 +358,7 @@ export function QuizSidebar({
                   <TypeIcon size={13} className={`${typeIconClass} shrink-0`} aria-hidden="true" />
                 </span>
               </span>
+              <FocusTopicBadge focusTopic={card.focus_topic ?? undefined} variant="text" />
               <span className="truncate text-sm flex-1 min-w-0 leading-tight">{card.question}</span>
             </button>
           );

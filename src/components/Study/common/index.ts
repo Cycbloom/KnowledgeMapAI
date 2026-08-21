@@ -1,0 +1,1 @@
+export { FocusTopicBadge } from './FocusTopicBadge';

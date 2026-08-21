@@ -160,7 +160,11 @@
       "multi_choice": "多选题",
       "fill_in_the_blank": "填空题",
       "true_false": "判断题",
-      "essay": "问答题"
+      "essay": "问答题",
+      "cloze": "完形填空",
+      "select_from_options": "选词填空",
+      "matching": "匹配连线",
+      "ordering": "排序"
     },
     "button": {
       "preview": "预览内容",
@@ -243,7 +247,8 @@
     "rateMemory": "记忆程度评价",
     "difficultyEasy": "简单",
     "difficultyMedium": "中等",
-    "difficultyHard": "困难"
+    "difficultyHard": "困难",
+    "focusTopic": "考察点"
   },
   "a11y": {
     "quizQuestionRegion": "题目与选项区域",
@@ -261,7 +266,11 @@
     "multiChoice": "多选",
     "trueFalse": "判断",
     "fillBlank": "填空",
-    "essay": "简答"
+    "essay": "简答",
+    "cloze": "完形",
+    "selectFromOptions": "选词",
+    "matching": "匹配",
+    "ordering": "排序"
   },
   "semantic": {
     "similar": "语义相近 {{percent}}%"
@@ -374,7 +383,11 @@
       "multi_choice": "多选题",
       "true_false": "判断题",
       "fill_in_the_blank": "填空题",
-      "essay": "解答题"
+      "essay": "解答题",
+      "cloze": "完形填空",
+      "select_from_options": "选词填空",
+      "matching": "匹配连线",
+      "ordering": "排序"
     }
   },
   "quizTypeConfig": {
@@ -409,6 +422,22 @@
       "essay": {
         "label": "论述题",
         "description": "深入分析，需要详细阐述"
+      },
+      "cloze": {
+        "label": "完形填空",
+        "description": "根据上下文在空白处填入正确的词语"
+      },
+      "select_from_options": {
+        "label": "选词填空",
+        "description": "从候选词中选择正确的词填入空白"
+      },
+      "matching": {
+        "label": "匹配连线",
+        "description": "将左侧项目与右侧对应项进行匹配"
+      },
+      "ordering": {
+        "label": "排序",
+        "description": "将项目按正确顺序排列"
       }
     }
   },
@@ -442,7 +471,16 @@
       "multi_choice": "多选",
       "true_false": "判断",
       "fill_in_the_blank": "填空",
-      "essay": "论述"
+      "essay": "论述",
+      "cloze": "完形填空",
+      "select_from_options": "选词填空",
+      "matching": "匹配连线",
+      "ordering": "排序"
+    },
+    "answerJsonHint": {
+      "cloze": "按挖空顺序填 JSON 数组，如 [{\"blank\":\"答案1\"},{\"blank\":\"答案2\"}]",
+      "matching": "填 JSON 数组，如 [{\"left\":\"词A\",\"right\":\"定义A\"}]",
+      "ordering": "按正确顺序填 JSON 数组，如 [\"步骤1\",\"步骤2\",\"步骤3\"]"
     },
     "validation": {
       "questionRequired": "请输入问题",
@@ -537,5 +575,16 @@
     },
     "resetSuccess": "FSRS 参数已重置为默认值",
     "optimizeNotSupported": "移动端暂不支持参数优化，请在桌面端使用"
+  },
+  "generateCoverage": {
+    "contextCount": "上下文 {{count}} 个节点",
+    "contextRange": "上下文约 {{min}}–{{max}} 个节点",
+    "siblingCount": "上下文 {{count}} 个兄弟节点",
+    "childrenCount": "上下文 {{count}} 个子节点",
+    "combinedCount": "上下文 {{count}} 个相关节点"
+  },
+  "generateCards": {
+    "multiSelectedHeader": "已选 {{count}} 个节点 · 每节点各产 {{total}} 题，共将产 {{count}}×{{total}} = {{product}} 题",
+    "multiSelectedHeaderEmpty": "已选 {{count}} 个节点 · 请先配置题型数量"
   }
 }

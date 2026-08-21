@@ -6,11 +6,15 @@ import {
   Type,
   MessageSquareText,
   PenLine,
+  ClipboardList,
+  ListFilter,
+  Columns2,
+  Shuffle,
   type LucideIcon,
 } from "lucide-react";
 
 /** 徽章配色主题联合类型 */
-export type BadgeTone = "blue" | "rose" | "emerald" | "violet" | "amber" | "slate";
+export type BadgeTone = "blue" | "rose" | "emerald" | "violet" | "amber" | "slate" | "cyan" | "teal" | "indigo" | "orange";
 
 /** 题型徽章元信息 */
 export interface CardTypeBadgeMeta {
@@ -54,6 +58,26 @@ const CARD_TYPE_BADGE_MAP: Readonly<Record<CardType, CardTypeBadgeMeta>> = {
     labelKey: "study.cardType.essay",
     tone: "slate",
   },
+  cloze: {
+    Icon: ClipboardList,
+    labelKey: "study.cardType.cloze",
+    tone: "cyan",
+  },
+  select_from_options: {
+    Icon: ListFilter,
+    labelKey: "study.cardType.selectFromOptions",
+    tone: "teal",
+  },
+  matching: {
+    Icon: Columns2,
+    labelKey: "study.cardType.matching",
+    tone: "indigo",
+  },
+  ordering: {
+    Icon: Shuffle,
+    labelKey: "study.cardType.ordering",
+    tone: "orange",
+  },
 };
 
 /**
@@ -78,6 +102,10 @@ export function badgeToneClasses(tone: BadgeTone, isDark: boolean): string {
     violet: "bg-violet-50 text-violet-700 border-violet-200",
     amber: "bg-amber-50 text-amber-700 border-amber-200",
     slate: "bg-slate-100 text-slate-700 border-slate-200",
+    cyan: "bg-cyan-50 text-cyan-700 border-cyan-200",
+    teal: "bg-teal-50 text-teal-700 border-teal-200",
+    indigo: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    orange: "bg-orange-50 text-orange-700 border-orange-200",
   };
   const darkMap: Readonly<Record<BadgeTone, string>> = {
     blue: "bg-blue-950/40 text-blue-300 border-blue-800",
@@ -86,6 +114,10 @@ export function badgeToneClasses(tone: BadgeTone, isDark: boolean): string {
     violet: "bg-violet-950/40 text-violet-300 border-violet-800",
     amber: "bg-amber-950/40 text-amber-300 border-amber-800",
     slate: "bg-slate-800 text-slate-300 border-slate-700",
+    cyan: "bg-cyan-950/40 text-cyan-300 border-cyan-800",
+    teal: "bg-teal-950/40 text-teal-300 border-teal-800",
+    indigo: "bg-indigo-950/40 text-indigo-300 border-indigo-800",
+    orange: "bg-orange-950/40 text-orange-300 border-orange-800",
   };
   const palette = isDark ? darkMap : lightMap;
   return `${palette[tone]} inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium`;

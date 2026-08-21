@@ -160,7 +160,11 @@
       "multi_choice": "Multiple Choice",
       "fill_in_the_blank": "Fill in the Blank",
       "true_false": "True/False",
-      "essay": "Essay"
+      "essay": "Essay",
+      "cloze": "Cloze",
+      "select_from_options": "Select from Options",
+      "matching": "Matching",
+      "ordering": "Ordering"
     },
     "button": {
       "preview": "Preview",
@@ -243,7 +247,8 @@
     "rateMemory": "Rate Memory",
     "difficultyEasy": "Easy",
     "difficultyMedium": "Medium",
-    "difficultyHard": "Hard"
+    "difficultyHard": "Hard",
+    "focusTopic": "Examined Topic"
   },
   "a11y": {
     "quizQuestionRegion": "Question and options region",
@@ -261,7 +266,11 @@
     "multiChoice": "Multi-Choice",
     "trueFalse": "True/False",
     "fillBlank": "Fill in Blank",
-    "essay": "Essay"
+    "essay": "Essay",
+    "cloze": "Cloze",
+    "selectFromOptions": "Select from Options",
+    "matching": "Matching",
+    "ordering": "Ordering"
   },
   "semantic": {
     "similar": "Similar {{percent}}%"
@@ -374,7 +383,11 @@
       "multi_choice": "Multiple Choice",
       "true_false": "True/False",
       "fill_in_the_blank": "Fill in the Blank",
-      "essay": "Essay"
+      "essay": "Essay",
+      "cloze": "Cloze",
+      "select_from_options": "Select from Options",
+      "matching": "Matching",
+      "ordering": "Ordering"
     }
   },
   "quizTypeConfig": {
@@ -409,6 +422,22 @@
       "essay": {
         "label": "Essay",
         "description": "In-depth analysis requiring detailed elaboration"
+      },
+      "cloze": {
+        "label": "Cloze",
+        "description": "Fill each blank with the correct word based on context"
+      },
+      "select_from_options": {
+        "label": "Select from Options",
+        "description": "Pick the correct word from options to fill the blank"
+      },
+      "matching": {
+        "label": "Matching",
+        "description": "Match each left item with its corresponding right item"
+      },
+      "ordering": {
+        "label": "Ordering",
+        "description": "Arrange items in the correct order"
       }
     }
   },
@@ -442,7 +471,16 @@
       "multi_choice": "Multi",
       "true_false": "T/F",
       "fill_in_the_blank": "Fill",
-      "essay": "Essay"
+      "essay": "Essay",
+      "cloze": "Cloze",
+      "select_from_options": "Select Word",
+      "matching": "Matching",
+      "ordering": "Ordering"
+    },
+    "answerJsonHint": {
+      "cloze": "JSON array in blank order, e.g. [{\"blank\":\"ans1\"},{\"blank\":\"ans2\"}]",
+      "matching": "JSON array, e.g. [{\"left\":\"termA\",\"right\":\"defA\"}]",
+      "ordering": "JSON array in correct order, e.g. [\"step1\",\"step2\",\"step3\"]"
     },
     "validation": {
       "questionRequired": "Please enter a question",
@@ -537,5 +575,16 @@
     },
     "resetSuccess": "FSRS parameters have been reset to defaults",
     "optimizeNotSupported": "Parameter optimization is not supported on mobile, please use the desktop app"
+  },
+  "generateCoverage": {
+    "contextCount": "{{count}} context nodes",
+    "contextRange": "~{{min}}–{{max}} context nodes",
+    "siblingCount": "{{count}} sibling nodes as context",
+    "childrenCount": "{{count}} child nodes as context",
+    "combinedCount": "{{count}} related nodes as context"
+  },
+  "generateCards": {
+    "multiSelectedHeader": "{{count}} nodes selected · each node gets {{total}} questions, total {{count}}×{{total}} = {{product}} cards will be generated",
+    "multiSelectedHeaderEmpty": "{{count}} nodes selected · please configure question counts first"
   }
 }

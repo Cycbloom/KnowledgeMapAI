@@ -165,7 +165,11 @@
       "multiChoice": "多选题",
       "trueFalse": "判断题",
       "fillInTheBlank": "填空题",
-      "essay": "论述题"
+      "essay": "论述题",
+      "cloze": "完形填空",
+      "selectFromOptions": "选词填空",
+      "matching": "匹配连线",
+      "ordering": "排序"
     },
     "difficulty": {
       "easy": "简单",

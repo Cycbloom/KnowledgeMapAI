@@ -165,7 +165,11 @@
       "multiChoice": "Multiple Choice",
       "trueFalse": "True/False",
       "fillInTheBlank": "Fill in the Blank",
-      "essay": "Essay"
+      "essay": "Essay",
+      "cloze": "Cloze",
+      "selectFromOptions": "Select from Options",
+      "matching": "Matching",
+      "ordering": "Ordering"
     },
     "difficulty": {
       "easy": "Easy",

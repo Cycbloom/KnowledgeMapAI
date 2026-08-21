@@ -409,6 +409,8 @@
     "batchGenerateQuestions": "批量生成题目",
     "backgroundExpand": "后台拓展",
     "batchDelete": "批量删除",
+    "createQuizSet": "新建测验/组卷",
+    "quizSetCreated": "测验集合已创建，可在学习中心或任务中心查看生成进度",
     "establishConnection": "建立连接",
     "ignore": "忽略",
     "noNodes": "暂无节点",

@@ -409,6 +409,8 @@
     "batchGenerateQuestions": "Batch generate questions",
     "backgroundExpand": "Background expand",
     "batchDelete": "Batch delete",
+    "createQuizSet": "Create Quiz",
+    "quizSetCreated": "Quiz set created. You can check progress in Study Center or Tasks.",
     "establishConnection": "Establish connection",
     "ignore": "Ignore",
     "noNodes": "No nodes",

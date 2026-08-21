@@ -330,35 +330,41 @@ export function QuizSidebar({
               }`}
               aria-current={isActive ? "step" : undefined}
             >
-              {/* 编码徽章：左色条=难度 / 数字 + 分隔 + 题型图标 */}
-              <span className="relative flex-none self-start">
-                <span
-                  className={`relative flex items-center h-6 rounded pl-[9px] pr-1.5 gap-1 overflow-hidden ${
-                    isActive
-                      ? "bg-black/15 text-white"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                  }`}
-                >
-                  {/* 左侧色条：难度（交通灯） */}
+              {/* 第一行：编码徽章 + 考察点（同一行） */}
+              <div className="flex items-center gap-2 min-w-0">
+                {/* 编码徽章：左色条=难度 / 数字 + 分隔 + 题型图标 */}
+                <span className="relative flex-none">
                   <span
-                    className={`absolute left-0 top-0 h-full w-[4px] rounded-l ${diffBarClass}`}
-                    aria-hidden="true"
-                  />
-                  <span className="text-[11px] font-bold leading-none relative z-[1]">
-                    {index + 1}
-                  </span>
-                  {/* 细分隔线 */}
-                  <span
-                    className={`w-px h-3 ${
-                      isActive ? "bg-white/30" : "bg-slate-300 dark:bg-slate-600"
+                    className={`relative flex items-center h-6 rounded pl-[9px] pr-1.5 gap-1 overflow-hidden ${
+                      isActive
+                        ? "bg-black/15 text-white"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                     }`}
-                    aria-hidden="true"
-                  />
-                  {/* 题型图标 */}
-                  <TypeIcon size={13} className={`${typeIconClass} shrink-0`} aria-hidden="true" />
+                  >
+                    {/* 左侧色条：难度（交通灯） */}
+                    <span
+                      className={`absolute left-0 top-0 h-full w-[4px] rounded-l ${diffBarClass}`}
+                      aria-hidden="true"
+                    />
+                    <span className="text-[11px] font-bold leading-none relative z-[1]">
+                      {index + 1}
+                    </span>
+                    {/* 细分隔线 */}
+                    <span
+                      className={`w-px h-3 ${
+                        isActive ? "bg-white/30" : "bg-slate-300 dark:bg-slate-600"
+                      }`}
+                      aria-hidden="true"
+                    />
+                    {/* 题型图标 */}
+                    <TypeIcon size={13} className={`${typeIconClass} shrink-0`} aria-hidden="true" />
+                  </span>
                 </span>
-              </span>
-              <FocusTopicBadge focusTopic={card.focus_topic ?? undefined} variant="text" />
+                <div className="min-w-0 flex-1">
+                  <FocusTopicBadge focusTopic={card.focus_topic ?? undefined} variant="text" isActive={isActive} />
+                </div>
+              </div>
+              {/* 第二行：题目文本 */}
               <span className="truncate text-sm flex-1 min-w-0 leading-tight">{card.question}</span>
             </button>
           );

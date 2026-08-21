@@ -3,17 +3,21 @@ import { useTranslation } from 'react-i18next';
 interface FocusTopicBadgeProps {
   focusTopic?: string | null;
   variant?: 'pill' | 'text';
+  isActive?: boolean;
 }
 
-export function FocusTopicBadge({ focusTopic, variant = 'pill' }: FocusTopicBadgeProps) {
+export function FocusTopicBadge({ focusTopic, variant = 'pill', isActive = false }: FocusTopicBadgeProps) {
   const { t } = useTranslation();
   if (!focusTopic || typeof focusTopic !== 'string' || focusTopic.trim().length === 0) {
     return null;
   }
   const label = t('study.quiz.focusTopic', '考察点');
   if (variant === 'text') {
+    const colorClass = isActive
+      ? 'text-white/85'
+      : 'text-slate-500 dark:text-slate-400';
     return (
-      <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate leading-tight" title={focusTopic}>
+      <div className={`text-[11px] font-medium truncate leading-tight ${colorClass}`} title={focusTopic}>
         {label}：{focusTopic}
       </div>
     );

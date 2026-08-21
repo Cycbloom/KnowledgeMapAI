@@ -3,6 +3,11 @@ import { useTranslation } from 'react-i18next';
 import type { StudyCard } from '@shared/types';
 import { Brain, Clock, Calendar, AlertTriangle } from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
+import {
+  computeCardDisplayMastery,
+  MASTERY_THRESHOLDS,
+  MASTERY_LABEL_KEYS,
+} from '@shared/utils/fsrs/masteryContract';
 
 export type CardStatsStripVariant = 'full' | 'masteryOnly';
 
@@ -108,70 +113,19 @@ function pickToneClasses(tone: Tone, isDark: boolean) {
   };
 }
 
-/**
- * Stability → 长期掌握度基准（0~1 归一化），对数饱和映射：
- *  S = 0     → 0%     （New/从未复习）
- *  S ≈ 1 天  → ~24%   （初学，Hard 档刚复习完的典型值）
- *  S ≈ 7 天  → ~50%   （熟悉，Good 档的典型值）
- *  S ≈ 30 天 → ~74%   （熟练）
- *  S ≈ 90 天 → ~86%   （接近精通）
- *  S = 365 天→ ~95%   （精通天花板）
- *  S → ∞     → 100%   （渐近）
- *
- * 选 log1p 饱和而非线性，是因为 FSRS 的 S 是指数增长（Good 档通常从 1→7→30→90…），
- * log1p 正好把指数增长的 S 映射到用户感知线性的进度条百分位。
- */
-function stabilityToMasteryBaseline(stability: number): number {
-  const s = Number.isFinite(stability) ? Math.max(0, stability) : 0;
-  const HALF_LIFE_S = 7; // S=7 天映射到 ~50% 基准（对应熟悉档中心）
-  return Math.max(0, Math.min(1, Math.log1p(s / HALF_LIFE_S) / Math.log(2)));
-}
-
-/**
- * 当前"掌握程度"综合得分（0~1，驱动进度条百分比与等级标签）
- * = 长期掌握水平（S 归一化 baseline）× 当前瞬时可回忆概率（时间衰减 R=exp(-Δt/S)）
- *
- * 这样两点语义同时满足：
- *  1) 刚复习完（Δt≈0，R≈1）：得分 = baseline，由 S 决定 → Hard→S小→低%，Easy→S大→高%
- *     ✓ 用户点"困难"不会再显示 100% 精通
- *  2) 过了几天（Δt>0，R 衰减）：得分 = baseline × R，进度条自然下降
- *     ✓ 时间流逝会"掉进度"，催促用户回到复习区间
- *
- * Fallback：若 S 非法/为 0，则退回 DB 存的 fsrs_retrievability（纯瞬时回忆概率），
- * 新卡（New）S=0 时显示 0% 初学。
- */
-function computeEffectiveMastery(card: StudyCard, nowMs: number): number {
-  const s = Number(card.fsrs_stability);
-  const lastRaw = card.fsrs_last_review ?? card.last_reviewed;
-  if (Number.isFinite(s) && s > 0) {
-    const baseline = stabilityToMasteryBaseline(s);
-    let decay = 1;
-    if (lastRaw) {
-      const diffMs = nowMs - new Date(lastRaw).getTime();
-      const ΔtDays = Math.max(0, diffMs) / (24 * 60 * 60 * 1000);
-      decay = Math.exp(-ΔtDays / s);
-      if (!Number.isFinite(decay)) decay = 0;
-    }
-    return Math.max(0, Math.min(1, baseline * decay));
-  }
-  const stored = Number(card.fsrs_retrievability);
-  if (Number.isFinite(stored)) return Math.max(0, Math.min(1, stored));
-  return 0;
-}
-
 function getMasteryInfo(card: StudyCard, nowMs: number): {
   labelKey: string;
   tone: Tone;
   percent: number;
   retrievedFromLiveCalc: boolean;
 } {
-  const m = computeEffectiveMastery(card, nowMs);
+  const m = computeCardDisplayMastery(card, nowMs);
   const percent = Math.round(m * 100);
-  if (m < 0.25) return { labelKey: 'scheduler.review.mastery.beginner', tone: 'rose', percent, retrievedFromLiveCalc: m > 0 };
-  if (m < 0.45) return { labelKey: 'scheduler.review.mastery.introductory', tone: 'amber', percent, retrievedFromLiveCalc: true };
-  if (m < 0.65) return { labelKey: 'scheduler.review.mastery.familiar', tone: 'sky', percent, retrievedFromLiveCalc: true };
-  if (m < 0.82) return { labelKey: 'scheduler.review.mastery.proficient', tone: 'violet', percent, retrievedFromLiveCalc: true };
-  return { labelKey: 'scheduler.review.mastery.master', tone: 'emerald', percent, retrievedFromLiveCalc: true };
+  if (m < MASTERY_THRESHOLDS.beginner) return { labelKey: MASTERY_LABEL_KEYS.beginner, tone: 'rose', percent, retrievedFromLiveCalc: m > 0 };
+  if (m < MASTERY_THRESHOLDS.introductory) return { labelKey: MASTERY_LABEL_KEYS.introductory, tone: 'amber', percent, retrievedFromLiveCalc: true };
+  if (m < MASTERY_THRESHOLDS.familiar) return { labelKey: MASTERY_LABEL_KEYS.familiar, tone: 'sky', percent, retrievedFromLiveCalc: true };
+  if (m < MASTERY_THRESHOLDS.proficient) return { labelKey: MASTERY_LABEL_KEYS.proficient, tone: 'violet', percent, retrievedFromLiveCalc: true };
+  return { labelKey: MASTERY_LABEL_KEYS.master, tone: 'emerald', percent, retrievedFromLiveCalc: true };
 }
 
 export function CardStatsStrip({

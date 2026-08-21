@@ -46,7 +46,8 @@
   "viewParentNode": "查看父节点：{{title}}",
   "viewChildNode": "查看子节点：{{title}}",
   "memoryDecay": "记忆衰减",
-  "retrievability": "可提取性: {{percent}}%",
+  "retrievability": "可提取性（旧版）: {{percent}}%",
+  "mastery": "掌握度: {{percent}}%",
   "lastReview": "上次复习",
   "reviewNow": "立即复习"
 }

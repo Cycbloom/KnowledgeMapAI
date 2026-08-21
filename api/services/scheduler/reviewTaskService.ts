@@ -2,6 +2,8 @@
  * 复习任务服务 (FSRS)
  *
  * 所有复习任务统一使用 FSRS 算法，数据存储在 study_cards 表。
+ *
+ * @schedule decision
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -44,6 +46,7 @@ export class ReviewTaskService {
       });
     }
 
+    /** @schedule decision - FSRS 初始字段写入：state/stability/difficulty/retrievability/due */
     const { data: reviewTask, error } = await client
       .from("study_cards")
       .insert({
@@ -53,12 +56,17 @@ export class ReviewTaskService {
         card_type: "qa",
         question: "",
         answer: "",
+        /** @schedule decision - due 队列排序 */
         next_review: new Date().toISOString(),
+        /** @schedule decision - FSRS CardState */
         fsrs_state: "New",
+        /** @schedule decision - FSRS Stability (S) 用于间隔计算 */
         fsrs_stability: 0,
+        /** @schedule decision - FSRS Difficulty (D) */
         fsrs_difficulty: 0,
         fsrs_elapsed_days: 0,
         fsrs_scheduled_days: 0,
+        /** @schedule decision - FSRS Retrievability (R) 快照 */
         fsrs_retrievability: 0,
       })
       .select()
@@ -140,6 +148,7 @@ export class ReviewTaskService {
     userId: string,
     limit?: number,
   ): Promise<PendingReviewTask[]> {
+    /** @schedule decision - due/overdue 队列查询：next_review <= now 过滤 + 排序 */
     const now = new Date().toISOString();
     let query = client
       .from("study_cards")
@@ -161,7 +170,9 @@ export class ReviewTaskService {
     }
 
     const pendingTasks: PendingReviewTask[] = (cards ?? []).map((card: StudyCard) => {
+      /** @schedule decision - urgency 计算：next_review 与当前时间比较 → overdue/today/upcoming/future 优先级 */
       const urgency = this.calculateUrgency(card.next_review);
+      /** @mastery display - 基于 fsrs_stability 估算用户可见掌握度（不用于调度，仅返回给前端渲染） */
       const masteryLevel = card.fsrs_stability
         ? Math.min(1, card.fsrs_stability / 30)
         : 0;
@@ -213,6 +224,7 @@ export class ReviewTaskService {
     let totalRetrievability = 0;
 
     for (const card of cards) {
+      /** @schedule decision - overdue/today/upcoming/future 分类：基于 next_review (due) */
       const urgency = this.calculateUrgency(card.next_review);
       switch (urgency) {
         case "overdue": overdue++; break;
@@ -220,6 +232,7 @@ export class ReviewTaskService {
         case "upcoming": upcoming++; break;
         case "future": future++; break;
       }
+      /** @mastery display - 平均 stability/difficulty/retrievability 仅用于统计面板展示，不参与调度计算 */
       totalStability += card.fsrs_stability ?? 0;
       totalDifficulty += card.fsrs_difficulty ?? 0;
       totalRetrievability += card.fsrs_retrievability ?? 0;
@@ -285,6 +298,7 @@ export class ReviewTaskService {
     });
   }
 
+  /** @schedule decision - overdue/today/upcoming/future 四象限分类：基于 due date 与当前时间比较 */
   private calculateUrgency(nextReview: string): "overdue" | "today" | "upcoming" | "future" {
     const now = new Date();
     const nextDate = new Date(nextReview);
@@ -307,10 +321,15 @@ export class ReviewTaskService {
       knowledge_point_id: card.knowledge_point_id,
       task_id: "",
       algorithm: "fsrs",
+      /** @schedule decision - FSRS Stability (S) 返回给 API 调用方（可能被下游调度逻辑使用） */
       fsrs_stability: card.fsrs_stability,
+      /** @schedule decision - FSRS Difficulty (D) */
       fsrs_difficulty: card.fsrs_difficulty,
+      /** @schedule decision - FSRS CardState (New/Learning/Review/Relearning) */
       fsrs_state: card.fsrs_state,
+      /** @schedule decision | @mastery display - Retrievability 快照：既用于 due 计算 fallback，也可用于 UI 展示旧版逻辑 */
       fsrs_retrievability: card.fsrs_retrievability,
+      /** @schedule decision - next due date (next_review) 用于下游队列/排序 */
       next_review_date: card.next_review,
       last_review_date: card.last_reviewed ?? null,
       last_quality_score: null,

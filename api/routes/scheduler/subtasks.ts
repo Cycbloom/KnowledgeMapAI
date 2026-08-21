@@ -30,7 +30,8 @@ const updateSubtaskBodySchema = z.object({
   learning_state: z
     .enum(["learning", "review", "practice", "quiz"])
     .optional(),
-  mastery_level: z.number().min(0).max(100).optional(),
+  /** @mastery display - 写穿端点：用户/UI 覆盖 mastery_level（仅用于 UI 徽章显示，算法权威源为 knowledge_points） */
+  mastery_level: z.number().min(0).max(1).optional(),
 });
 
 const updateSubtaskParamsSchema = z.object({
@@ -40,7 +41,8 @@ const updateSubtaskParamsSchema = z.object({
 
 const transitionSubtaskBodySchema = z.object({
   to_state: z.enum(["learning", "review", "practice", "quiz"]),
-  mastery_level: z.number().min(0).max(100),
+  /** @schedule decision - FSRS 过渡：算法计算出的 mastery_level（与状态机联动写回） */
+  mastery_level: z.number().min(0).max(1),
   reason: z.string().optional(),
 });
 
@@ -156,7 +158,8 @@ router.patch(
   validate({
     params: subtaskParamsSchema,
     body: z.object({
-      mastery_level: z.number().min(0).max(100),
+      /** @mastery display - 单独 mastery 写穿端点：仅用于 UI 展示徽章/进度条，不参与 FSRS 调度计算 */
+      mastery_level: z.number().min(0).max(1),
     }),
   }),
   async (req: AuthedRequest, res: Response) => {

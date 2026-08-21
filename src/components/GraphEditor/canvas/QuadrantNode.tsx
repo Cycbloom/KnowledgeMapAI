@@ -87,6 +87,7 @@ const QuadrantNodeComponent: React.FC<QuadrantNodeProps> = ({
   positionY,
   regionNodeCount,
 }) => {
+  /** @mastery display - 象限节点渲染：display_mastery 用于 decay 颜色、透明度、严重衰退判定等视觉效果 */
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
@@ -105,9 +106,14 @@ const QuadrantNodeComponent: React.FC<QuadrantNodeProps> = ({
       return getHeatmapColors(heatValue, isDark);
     }
     if (coloringMode === "decay") {
-      const retrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
-      const decayValue = retrievability != null ? retrievability : -1;
-      return getDecayColors(decayValue, isDark);
+      const status = nodeStatus?.[node.id];
+      /** @mastery display - decay 着色：display_mastery 优先用于节点颜色（视觉效果） */
+      const displayMastery = status?.display_mastery;
+      const retrievability = status?.fsrs_retrievability;
+      const decayValue = displayMastery != null
+        ? displayMastery
+        : (retrievability != null ? retrievability : -1);
+      return getDecayColors(decayValue, 'displayMastery', isDark);
     }
     return getStatusColors(status, isDark, colorScheme);
   }, [coloringMode, level, status, isDark, colorScheme, nodeStatus, node.id]);
@@ -269,10 +275,14 @@ const QuadrantNodeComponent: React.FC<QuadrantNodeProps> = ({
 
   const shadowStyle = getShadowStyle(styleConfig.shadow);
   const hoverScale = isHovered ? styleConfig.animation.hoverScale : 1;
-  const fsrsRetrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
+  const decayStatusQ = nodeStatus?.[node.id];
+  /** @mastery display - 严重衰退 pulse 动画：display_mastery 低于阈值触发衰变动画（纯视觉） */
+  const displayMasteryForQ = decayStatusQ?.display_mastery;
+  const fsrsRetrievabilityForQ = decayStatusQ?.fsrs_retrievability;
+  const decayMetricForQ = displayMasteryForQ != null ? displayMasteryForQ : fsrsRetrievabilityForQ;
   const isSeverelyDecayed = coloringMode === "decay" &&
-    fsrsRetrievability != null &&
-    fsrsRetrievability < DECAY_CONFIG.severeDecayThreshold;
+    decayMetricForQ != null &&
+    decayMetricForQ < DECAY_CONFIG.severeDecayThreshold;
 
   return (
     <g

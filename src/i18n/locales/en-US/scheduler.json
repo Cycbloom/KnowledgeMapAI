@@ -284,7 +284,8 @@
     "monthsLater": "In {{count}} months",
     "stability": "Stability",
     "difficulty": "Difficulty",
-    "retrievability": "Retrievability",
+    "retrievability": "Retrievability (Legacy)",
+    "masteryPct": "Mastery",
     "fsrsState": {
       "new": "New Card",
       "learning": "Learning",

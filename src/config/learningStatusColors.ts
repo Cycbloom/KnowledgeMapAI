@@ -575,11 +575,11 @@ export const getHeatmapColors = (heatValue: number, isDark: boolean = false): Co
 };
 
 /**
- * Get decay color based on FSRS retrievability value
+ * Get decay color based on display mastery or FSRS retrievability value
  * Returns hex color string
  */
-export const getDecayColor = (retrievability: number): string => {
-  const clampedValue = Math.max(0, Math.min(1, retrievability));
+export const getDecayColor = (input: number): string => {
+  const clampedValue = Math.max(0, Math.min(1, input));
   const stops = DECAY_CONFIG.colorStops;
 
   let lowerStop: { value: number; color: string } = stops[0];
@@ -609,13 +609,18 @@ export const getDecayColor = (retrievability: number): string => {
 };
 
 /**
- * Get decay ColorConfig for a node based on FSRS retrievability
- * @param retrievability - FSRS retrievability value (0-1), or -1 for no data
+ * Get decay ColorConfig for a node based on display mastery or FSRS retrievability
+ * @param input - display mastery or FSRS retrievability value (0-1), or -1 for no data
+ * @param mode - which metric the input represents: 'displayMastery' (default) or 'fsrsRetrievability'
  * @param isDark - whether dark mode is active
  */
-export const getDecayColors = (retrievability: number, isDark: boolean = false): ColorConfig & { opacity: number } => {
-  if (retrievability < 0) {
-    // No data - use neutral gray
+export const getDecayColors = (
+  input: number,
+  mode: 'displayMastery' | 'fsrsRetrievability' = 'displayMastery',
+  isDark: boolean = false,
+): ColorConfig & { opacity: number } => {
+  void mode;
+  if (input < 0) {
     return {
       primary: DECAY_CONFIG.noDataColor,
       secondary: '#D1D5DB',
@@ -627,13 +632,12 @@ export const getDecayColors = (retrievability: number, isDark: boolean = false):
     };
   }
 
-  const primaryColor = getDecayColor(retrievability);
-  const secondaryColor = getDecayColor(Math.min(1, retrievability + 0.1));
-  const glowColor = getDecayColor(Math.min(1, retrievability + 0.2));
+  const primaryColor = getDecayColor(input);
+  const secondaryColor = getDecayColor(Math.min(1, input + 0.1));
+  const glowColor = getDecayColor(Math.min(1, input + 0.2));
 
-  // Map retrievability to opacity: low retrievability = more transparent
   const { opacityRange } = DECAY_CONFIG;
-  const opacity = opacityRange.min + (opacityRange.max - opacityRange.min) * retrievability;
+  const opacity = opacityRange.min + (opacityRange.max - opacityRange.min) * input;
 
   return {
     primary: primaryColor,

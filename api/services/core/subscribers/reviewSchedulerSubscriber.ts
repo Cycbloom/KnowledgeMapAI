@@ -1,3 +1,4 @@
+/** @schedule decision - review_completed 事件订阅者：触发 FSRS next review 调度副作用 */
 import { appEventBus } from "../eventBus";
 import type {
   AppEvent,
@@ -24,11 +25,13 @@ class ReviewSchedulerSubscriber {
     logger.info("[ReviewSchedulerSubscriber] Subscribers destroyed");
   }
 
+  /** @schedule decision - review_completed 事件处理器：根据算法类型调度下一次复习 */
   private async onReviewCompleted(event: AppEvent) {
     const payload = event.payload as ReviewCompletedPayload;
     await this.scheduleNextReview(event.userId, payload);
   }
 
+  /** @schedule decision - FSRS next_review/stability/difficulty/state 更新调度逻辑 */
   private async scheduleNextReview(userId: string, payload: ReviewCompletedPayload) {
     try {
       // FSRS 路径：studyService.updateProgress 在发布 review_completed 前已经

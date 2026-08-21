@@ -2,13 +2,11 @@ import React, { useCallback } from "react";
 import type { Node, Edge, GraphColorMode, NodeStatus } from "../../../types";
 import type { RelatedNode } from "../../../hooks/graphEditor/useMiscState";
 import { levelLabels, DECAY_CONFIG } from "../../../config/graphConfig";
-import {
-  getLearningStatus,
-  getStatusColors,
-} from "../../../config/learningStatusColors";
+import { getLearningStatus, getStatusColors, } from "../../../config/learningStatusColors";
 import { getLevel } from "../../../utils/graph/graphUtils";
 import { preprocessMarkdown } from "../../../utils/markdownPreprocessor";
 import { formatDate } from "../../../utils/formatters";
+import { formatMasteryPct } from "../../../utils/formatMastery";
 import {
   preprocessWikiLinks,
   WikiLinkRenderer,
@@ -113,6 +111,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   coloringMode = "status",
   onNavigateToNode,
 }) => {
+  /** @mastery display - 节点详情侧边栏：display_mastery 用于衰退指示器、掌握度徽章/进度条（纯 UI） */
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
@@ -163,7 +162,11 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
     return nodes.filter((n) => childIdSet.has(n.id));
   }, [node, edges, nodes]);
 
-  const fsrsRetrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
+  const statusInfo = nodeStatus?.[node.id];
+  /** @mastery display - 掌握度衰退度量：display_mastery 优先于 retrievability 用于 UI 渲染进度条/徽章 */
+  const displayMastery = statusInfo?.display_mastery;
+  const fsrsRetrievability = statusInfo?.fsrs_retrievability;
+  const decayMetric = displayMastery != null ? displayMastery : fsrsRetrievability;
 
   return (
     <div className="h-full flex flex-col">
@@ -206,7 +209,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
         </div>
       )}
 
-      {coloringMode === "decay" && fsrsRetrievability != null && fsrsRetrievability < DECAY_CONFIG.severeDecayThreshold && (
+      {coloringMode === "decay" && decayMetric != null && decayMetric < DECAY_CONFIG.severeDecayThreshold && (
         <div className="mb-4 px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
           <div className="flex items-center gap-2 mb-1.5">
             <AlertTriangle size={14} className="text-amber-500" />
@@ -215,7 +218,9 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             </span>
           </div>
           <p className="text-xs text-amber-600 dark:text-amber-500 mb-2">
-            {t("nodeDetail.retrievability", { percent: Math.round(fsrsRetrievability * 100) })}
+            {displayMastery != null
+              ? t("nodeDetail.mastery", { percent: formatMasteryPct(displayMastery).replace('%', '') })
+              : t("nodeDetail.retrievability", { percent: formatMasteryPct(fsrsRetrievability ?? 0).replace('%', '') })}
           </p>
           <button
             onClick={onStartLearningMode}

@@ -1,5 +1,11 @@
+/** @mastery display */
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
+import {
+  computeCardDisplayMastery,
+  aggregateDisplayMastery,
+  type CardWithDisplayMastery,
+} from "../../../shared/utils/fsrs/masteryContract";
 
 // 学习状态到初始掌握度的映射
 const LEARNING_STATUS_INITIAL_MASTERY: Record<string, number> = {
@@ -15,6 +21,7 @@ interface StudyCardForMastery {
   knowledge_point_id: string;
   fsrs_retrievability: number | null;
   fsrs_stability: number | null;
+  fsrs_last_review: string | null;
 }
 
 interface KnowledgePointForMastery {
@@ -34,7 +41,7 @@ export class MasteryCalculationService {
     // 1. 查询该知识点的 study_cards
     const { data: cards } = await supabase
       .from("study_cards")
-      .select("knowledge_point_id, fsrs_retrievability, fsrs_stability")
+      .select("knowledge_point_id, fsrs_retrievability, fsrs_stability, fsrs_last_review")
       .eq("knowledge_point_id", knowledgePointId);
 
     if (cards && cards.length > 0) {
@@ -70,7 +77,7 @@ export class MasteryCalculationService {
     // 1. 批量查询所有相关 study_cards
     const { data: cards } = await supabase
       .from("study_cards")
-      .select("knowledge_point_id, fsrs_retrievability, fsrs_stability")
+      .select("knowledge_point_id, fsrs_retrievability, fsrs_stability, fsrs_last_review")
       .in("knowledge_point_id", knowledgePointIds);
 
     // 按 knowledge_point_id 分组
@@ -126,31 +133,25 @@ export class MasteryCalculationService {
 
   /**
    * 从 study_cards 聚合计算 mastery_level
-   * 使用 stability 加权平均：mastery = sum(R * S) / sum(S)
+   * 每张卡片先通过 computeCardDisplayMastery 计算 displayMastery，
+   * 再通过 aggregateDisplayMastery 按 stabilityWeighted 策略聚合
    */
   private aggregateFromCards(cards: StudyCardForMastery[]): number {
-    let weightedSum = 0;
-    let stabilitySum = 0;
-
-    for (const card of cards) {
-      const stability = card.fsrs_stability ?? 0;
-      const retrievability = card.fsrs_retrievability ?? 0;
-
-      // 只计入有有效 stability 的卡片
-      if (stability > 0) {
-        weightedSum += retrievability * stability;
-        stabilitySum += stability;
-      } else {
-        // 新卡片（stability=0），使用 retrievability 直接计入
-        // 新卡片 retrievability 通常为 0，但如果有值则等权计入
-        weightedSum += retrievability;
-        stabilitySum += 1; // 等权
-      }
-    }
-
-    if (stabilitySum === 0) return 0;
-
-    return Math.round((weightedSum / stabilitySum) * 1000) / 1000;
+    const nowMs = Date.now();
+    const enriched: CardWithDisplayMastery[] = cards.map((card) => ({
+      fsrs_stability: card.fsrs_stability,
+      fsrs_last_review: card.fsrs_last_review,
+      fsrs_retrievability: card.fsrs_retrievability,
+      displayMastery: computeCardDisplayMastery(
+        {
+          fsrs_stability: card.fsrs_stability,
+          fsrs_last_review: card.fsrs_last_review,
+          fsrs_retrievability: card.fsrs_retrievability,
+        },
+        nowMs,
+      ),
+    }));
+    return aggregateDisplayMastery(enriched, 'stabilityWeighted');
   }
 
   /**

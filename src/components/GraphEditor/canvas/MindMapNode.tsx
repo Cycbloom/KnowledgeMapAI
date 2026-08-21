@@ -158,6 +158,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   levelMap,
   importanceMaps,
 }) => {
+  /** @mastery display - 思维导图节点渲染：display_mastery 用于 decay 着色、不透明度、严重衰退标记等纯视觉效果 */
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
   const level = getLevel(node, edges, levelMap);
@@ -230,9 +231,14 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       const heatValue = calculateNodeHeat(nodeStatus?.[node.id]);
       result = getHeatmapColors(heatValue, isDark);
     } else if (coloringMode === "decay") {
-      const retrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
-      const decayValue = retrievability != null ? retrievability : -1;
-      result = getDecayColors(decayValue, isDark);
+      const status = nodeStatus?.[node.id];
+      /** @mastery display - decay 模式节点颜色：display_mastery 优先于 retrievability 用于颜色映射 */
+      const displayMastery = status?.display_mastery;
+      const retrievability = status?.fsrs_retrievability;
+      const decayValue = displayMastery != null
+        ? displayMastery
+        : (retrievability != null ? retrievability : -1);
+      result = getDecayColors(decayValue, 'displayMastery', isDark);
     } else {
       result = getStatusColors(status, isDark, colorScheme);
     }
@@ -252,10 +258,14 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       return glowRange.min + (glowRange.max - glowRange.min) * heat;
     }
     if (coloringMode === "decay") {
-      const retrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
-      if (retrievability == null) return undefined;
+      const status = nodeStatus?.[node.id];
+      /** @mastery display - heat glow 强度：基于 display_mastery 计算辉光效果（视觉） */
+      const displayMastery = status?.display_mastery;
+      const retrievability = status?.fsrs_retrievability;
+      const decayValue = displayMastery != null ? displayMastery : retrievability;
+      if (decayValue == null) return undefined;
       const { glowRange } = DECAY_CONFIG;
-      return glowRange.min + (glowRange.max - glowRange.min) * retrievability;
+      return glowRange.min + (glowRange.max - glowRange.min) * decayValue;
     }
     return undefined;
   }, [coloringMode, nodeStatus, node.id]);
@@ -271,10 +281,14 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     ? learningPathOpacity
     : Math.min(nodeOpacity, decayOpacity);
   const isAccepted = node.is_accepted !== false;
-  const fsrsRetrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
+  const decayStatus = nodeStatus?.[node.id];
+  /** @mastery display - 严重衰退高亮判定：display_mastery 低于阈值显示警告样式（视觉） */
+  const displayMasteryForDecay = decayStatus?.display_mastery;
+  const fsrsRetrievability = decayStatus?.fsrs_retrievability;
+  const decayMetric = displayMasteryForDecay != null ? displayMasteryForDecay : fsrsRetrievability;
   const isSeverelyDecayed = coloringMode === "decay" &&
-    fsrsRetrievability != null &&
-    fsrsRetrievability < DECAY_CONFIG.severeDecayThreshold;
+    decayMetric != null &&
+    decayMetric < DECAY_CONFIG.severeDecayThreshold;
   const hoverScale =
     isHovered || isTouchPressed ? styleConfig.animation.hoverScale : 1;
   const showHoverGlow = isHovered && styleConfig.animation.hoverGlow;

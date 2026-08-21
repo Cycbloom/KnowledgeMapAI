@@ -82,12 +82,23 @@ export const HEATMAP_CONFIG = {
 export const DECAY_CONFIG = {
   // Color gradient stops for decay visualization (fresh → decayed)
   // High retrievability = fresh/bright, Low retrievability = decayed/dim
+  // Step (nearest-neighbor) interpolation within MASTERY_THRESHOLDS bands:
+  //   [0, 0.25)    → #EF4444 red      (beginner)
+  //   [0.25, 0.45) → #F59E0B amber    (introductory)
+  //   [0.45, 0.65) → #3B82F6 blue     (familiar)
+  //   [0.65, 0.82) → #8B5CF6 violet   (proficient)
+  //   [0.82, 1.0]  → #22C55E green    (master)
   colorStops: [
-    { value: 0.0, color: '#EF4444' },   // Red (severely decayed, retrievability < 0.3)
-    { value: 0.25, color: '#F97316' },   // Orange-red (significantly decayed, 0.3-0.5)
-    { value: 0.5, color: '#F59E0B' },    // Orange (starting to forget, 0.5-0.7)
-    { value: 0.75, color: '#84CC16' },   // Yellow-green (fairly stable, 0.7-0.9)
-    { value: 1.0, color: '#22C55E' },    // Green (well remembered, retrievability >= 0.9)
+    { value: 0.00000, color: '#EF4444' },
+    { value: 0.24999, color: '#EF4444' },
+    { value: 0.25000, color: '#F59E0B' },
+    { value: 0.44999, color: '#F59E0B' },
+    { value: 0.45000, color: '#3B82F6' },
+    { value: 0.64999, color: '#3B82F6' },
+    { value: 0.65000, color: '#8B5CF6' },
+    { value: 0.81999, color: '#8B5CF6' },
+    { value: 0.82000, color: '#22C55E' },
+    { value: 1.00000, color: '#22C55E' },
   ],
   // Opacity mapping: lower retrievability = more transparent
   opacityRange: { min: 0.5, max: 1.0 },

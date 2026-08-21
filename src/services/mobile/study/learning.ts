@@ -1,3 +1,4 @@
+/** @mastery display */
 import { getMobileSupabaseClient } from "@/utils/supabase";
 import { Rating, State, type Card } from "ts-fsrs";
 import i18next from "i18next";
@@ -7,6 +8,7 @@ import type { IStudyApi } from "../../api/contracts/IStudyApi";
 import { fsrsEngine } from "./fsrsEngine";
 import { logger } from "@/utils/logger";
 import { AppError, SharedErrorCodes } from "@/utils/errors";
+import { stabilityToMasteryBaseline, computeCardDisplayMastery } from "@shared/utils/fsrs/masteryContract";
 
 interface StudyCardInsert {
   user_id: string;
@@ -359,6 +361,17 @@ export const mobileStudyApi: IStudyApi = {
     >;
     const scheduledCard = schedulingCards[rating].card;
 
+    const nextStability = Math.max(0, Number(scheduledCard.stability) || 0);
+    const nextRetrievability = nextStability > 0
+      ? stabilityToMasteryBaseline(nextStability)
+      : 0;
+
+    logger.debug("[Mobile.learning.updateProgress] Write fsrs_retrievability baseline", {
+      cardId: id,
+      S: nextStability,
+      baseline: nextRetrievability,
+    });
+
     const { data: updatedCard, error: updateError } = await client
       .from("study_cards")
       .update({
@@ -370,6 +383,7 @@ export const mobileStudyApi: IStudyApi = {
         fsrs_difficulty: scheduledCard.difficulty,
         fsrs_elapsed_days: scheduledCard.elapsed_days,
         fsrs_scheduled_days: scheduledCard.scheduled_days,
+        fsrs_retrievability: nextRetrievability,
         fsrs_last_review: now.toISOString(),
         last_rating: rating,
       })
@@ -458,6 +472,7 @@ export const mobileStudyApi: IStudyApi = {
         reviewCards: 0,
         relearningCards: 0,
         averageRetrievability: 0,
+        averageDisplayMastery: 0,
         averageStability: 0,
         averageDifficulty: 0,
       } satisfies StudyStats;
@@ -465,7 +480,7 @@ export const mobileStudyApi: IStudyApi = {
 
     let query = client
       .from("study_cards")
-      .select("fsrs_state, fsrs_retrievability, fsrs_stability, fsrs_difficulty, next_review")
+      .select("fsrs_state, fsrs_retrievability, fsrs_stability, fsrs_difficulty, next_review, fsrs_last_review")
       .eq("user_id", user.id);
 
     if (graphId) {
@@ -484,15 +499,17 @@ export const mobileStudyApi: IStudyApi = {
       fsrs_retrievability: number | null;
       fsrs_stability: number | null;
       fsrs_difficulty: number | null;
+      fsrs_last_review: string | null;
     }>;
     const now = new Date();
+    const nowMs = now.getTime();
 
     let dueCards = 0;
     let newCards = 0;
     let learningCards = 0;
     let reviewCards = 0;
     let relearningCards = 0;
-    let totalRetrievability = 0;
+    let totalDisplayMastery = 0;
     let totalStability = 0;
     let totalDifficulty = 0;
 
@@ -516,12 +533,14 @@ export const mobileStudyApi: IStudyApi = {
           break;
       }
 
-      totalRetrievability += card.fsrs_retrievability ?? 0;
+      const displayMastery = computeCardDisplayMastery(card, nowMs);
+      totalDisplayMastery += displayMastery;
       totalStability += card.fsrs_stability ?? 0;
       totalDifficulty += card.fsrs_difficulty ?? 0;
     }
 
     const count = allCards.length;
+    const avgDisplayMastery = count > 0 ? Math.round((totalDisplayMastery / count) * 1000) / 1000 : 0;
     return {
       totalCards: count,
       dueCards,
@@ -529,7 +548,8 @@ export const mobileStudyApi: IStudyApi = {
       learningCards,
       reviewCards,
       relearningCards,
-      averageRetrievability: count > 0 ? Math.round((totalRetrievability / count) * 1000) / 1000 : 0,
+      averageRetrievability: avgDisplayMastery,
+      averageDisplayMastery: avgDisplayMastery,
       averageStability: count > 0 ? Math.round((totalStability / count) * 100) / 100 : 0,
       averageDifficulty: count > 0 ? Math.round((totalDifficulty / count) * 100) / 100 : 0,
     };

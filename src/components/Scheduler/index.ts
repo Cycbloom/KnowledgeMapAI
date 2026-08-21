@@ -62,6 +62,7 @@ export { SmartSuggestion } from "./SmartSuggestion";
 
 export { LearningStateBadge } from "./LearningStateBadge";
 export { MasteryProgressBar } from "./MasteryProgressBar";
+export { MasteryLevelBadge } from "./MasteryLevelBadge";
 export { SubtaskStateIcon } from "./SubtaskStateIcon";
 
 export type {

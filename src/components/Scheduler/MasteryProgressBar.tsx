@@ -1,6 +1,10 @@
+/** @mastery display - 用户可见掌握度进度条渲染：颜色分段、百分比标签、动画 */
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import {
+  MASTERY_THRESHOLDS,
+} from "@shared/utils/fsrs/masteryContract";
 
 interface MasteryProgressBarProps {
   masteryLevel: number;
@@ -29,16 +33,16 @@ const SIZE_CONFIGS = {
 };
 
 const getMasteryColor = (
-  level: number,
+  level01: number,
 ): { bg: string; text: string; progress: string } => {
-  if (level < 30) {
+  if (level01 < MASTERY_THRESHOLDS.beginner) {
     return {
       bg: "bg-red-100 dark:bg-red-500/20",
       text: "text-red-600 dark:text-red-400",
       progress: "bg-red-500",
     };
   }
-  if (level < 70) {
+  if (level01 < MASTERY_THRESHOLDS.familiar) {
     return {
       bg: "bg-orange-100 dark:bg-orange-500/20",
       text: "text-orange-600 dark:text-orange-400",
@@ -59,13 +63,15 @@ export const MasteryProgressBar: React.FC<MasteryProgressBarProps> = ({
   size = "md",
   className = "",
 }) => {
+  /** @mastery display - 进度条颜色/百分比/文案标签：纯用户视觉展示 */
   const { t } = useTranslation();
-  const clampedLevel = Math.min(100, Math.max(0, masteryLevel));
+  const clampedLevel = Number.isFinite(masteryLevel) ? Math.min(1, Math.max(0, masteryLevel)) : 0;
+  const percent = Math.round(clampedLevel * 100);
   const colors = getMasteryColor(clampedLevel);
   const sizeConfig = SIZE_CONFIGS[size];
   const label = useMemo(() => {
-    if (clampedLevel < 30) return t("scheduler.masteryProgressBar.needsReview");
-    if (clampedLevel < 70) return t("scheduler.masteryProgressBar.learning");
+    if (clampedLevel < MASTERY_THRESHOLDS.beginner) return t("scheduler.masteryProgressBar.needsReview");
+    if (clampedLevel < MASTERY_THRESHOLDS.familiar) return t("scheduler.masteryProgressBar.learning");
     return t("scheduler.masteryProgressBar.mastered");
   }, [clampedLevel, t]);
 
@@ -73,10 +79,10 @@ export const MasteryProgressBar: React.FC<MasteryProgressBarProps> = ({
   const progressProps = animated
     ? {
         initial: { width: 0 },
-        animate: { width: `${clampedLevel}%` },
+        animate: { width: `${percent}%` },
         transition: { duration: 0.5, ease: "easeOut" },
       }
-    : { style: { width: `${clampedLevel}%` } };
+    : { style: { width: `${percent}%` } };
 
   return (
     <div className={`flex items-center ${sizeConfig.container} ${className}`}>
@@ -95,7 +101,7 @@ export const MasteryProgressBar: React.FC<MasteryProgressBarProps> = ({
         <div
           className={`flex items-center gap-1 ${sizeConfig.text} ${colors.text} whitespace-nowrap`}
         >
-          <span className="font-medium">{clampedLevel}%</span>
+          <span className="font-medium tabular-nums">{percent}%</span>
           <span className="hidden sm:inline opacity-70">
             ({label})
           </span>

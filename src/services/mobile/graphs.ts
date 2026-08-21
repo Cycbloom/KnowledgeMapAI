@@ -19,6 +19,11 @@ import { mobileNodesApi } from "./nodes";
 import { mobileEdgesApi } from "./edges";
 import { logger } from "@/utils/logger";
 import { AppError, SharedErrorCodes } from "@/utils/errors";
+import {
+  computeCardDisplayMastery,
+  aggregateDisplayMastery,
+  type CardWithDisplayMastery,
+} from "@shared/utils/fsrs/masteryContract";
 
 interface GraphSettings {
   viewMode?: string;
@@ -126,7 +131,7 @@ export const mobileGraphsApi: IGraphsApi = {
       const { data: cards, error } = await client
         .from("study_cards")
         .select(
-          "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, fsrs_retrievability, review_count",
+          "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, fsrs_retrievability, review_count, fsrs_last_review, last_reviewed",
         )
         .eq("user_id", userId)
         .eq("graph_id", graphId);
@@ -137,34 +142,54 @@ export const mobileGraphsApi: IGraphsApi = {
       }
 
       const now = new Date();
+      const nowMs = now.getTime();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       const statusMap: Record<string, NodeStatus> = {};
 
-      const cardGroups = new Map<string, { stabilitySum: number; retrievabilitySum: number; reviewCountSum: number; count: number; firstCard: StudyCardRow }>();
+      type CardPick = Pick<StudyCardRow, 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'fsrs_retrievability' | 'review_count' | 'fsrs_last_review' | 'last_reviewed'>;
+      const cardGroups = new Map<string, { cards: CardPick[]; reviewCountSum: number }>();
 
       ((cards || []) as StudyCardRow[]).forEach((card) => {
         const kpId = card.knowledge_point_id ?? '';
         if (!kpId) return;
         if (!cardGroups.has(kpId)) {
-          cardGroups.set(kpId, { stabilitySum: 0, retrievabilitySum: 0, reviewCountSum: 0, count: 0, firstCard: card });
+          cardGroups.set(kpId, { cards: [], reviewCountSum: 0 });
         }
         const group = cardGroups.get(kpId);
         if (!group) return;
-        group.stabilitySum += card.fsrs_stability ?? 0;
-        group.retrievabilitySum += card.fsrs_retrievability ?? 0;
+        group.cards.push(card);
         group.reviewCountSum += card.review_count ?? 0;
-        group.count += 1;
       });
 
       cardGroups.forEach((group, kpId) => {
-        const card = group.firstCard;
+        const card = group.cards[0];
         const nextReview = card.next_review ? new Date(card.next_review) : null;
         const isDue = nextReview ? nextReview <= now : false;
         const isDueToday = nextReview
           ? nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000)
           : false;
-        const avgStability = group.stabilitySum / group.count;
+
+        const cardsWithMastery: CardWithDisplayMastery[] = group.cards.map((c) => ({
+          fsrs_stability: c.fsrs_stability,
+          fsrs_last_review: c.fsrs_last_review,
+          last_reviewed: c.last_reviewed,
+          fsrs_retrievability: c.fsrs_retrievability,
+          displayMastery: computeCardDisplayMastery(
+            {
+              fsrs_stability: c.fsrs_stability,
+              fsrs_last_review: c.fsrs_last_review,
+              last_reviewed: c.last_reviewed,
+              fsrs_retrievability: c.fsrs_retrievability,
+            },
+            nowMs,
+          ),
+        }));
+
+        const displayMastery = aggregateDisplayMastery(cardsWithMastery, 'stabilityWeighted');
+        const avgStability = group.cards.length > 0
+          ? group.cards.reduce((sum, c) => sum + (c.fsrs_stability ?? 0), 0) / group.cards.length
+          : 0;
         const isMastered = avgStability > 21;
 
         statusMap[kpId] = {
@@ -175,7 +200,8 @@ export const mobileGraphsApi: IGraphsApi = {
           due: isDue,
           due_today: isDueToday ? true : undefined,
           fsrs_stability: avgStability,
-          fsrs_retrievability: group.retrievabilitySum / group.count,
+          fsrs_retrievability: displayMastery,
+          display_mastery: displayMastery,
         };
       });
 

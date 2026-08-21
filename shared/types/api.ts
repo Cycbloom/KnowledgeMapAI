@@ -141,7 +141,9 @@ export interface StudyStats {
   learningCards: number;
   reviewCards: number;
   relearningCards: number;
+  /** @deprecated Use averageDisplayMastery instead; same numeric value kept 1 release cycle */
   averageRetrievability: number;
+  averageDisplayMastery: number;
   averageStability: number;
   averageDifficulty: number;
 }

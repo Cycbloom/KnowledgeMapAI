@@ -67,7 +67,7 @@ function makeSubtask(overrides: Partial<TaskSubtask>): TaskSubtask {
     position: 0,
     knowledge_point_id: "kp-1",
     learning_state: "learning",
-    mastery_level: 50,
+    mastery_level: 0.5,
     last_state_change_at: "2026-01-01T00:00:00Z",
     state_history: [],
     created_at: "2026-01-01T00:00:00Z",

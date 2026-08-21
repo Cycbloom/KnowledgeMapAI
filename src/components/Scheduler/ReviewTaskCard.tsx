@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import type { PendingReviewTask } from "@shared/types";
+import { formatMasteryPct } from "@/utils/formatMastery";
 
 interface ReviewTaskCardProps {
   task: PendingReviewTask;
@@ -200,12 +201,12 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
               {t(difficultyInfo.label)}
             </span>
           </div>
-          {task.fsrs_retrievability !== undefined && (
+          {task.masteryLevel !== undefined && (
             <div className="flex items-center gap-1.5">
               <TrendingUp size={14} className="text-primary-500" />
-              <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.retrievability')}:</span>
+              <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.masteryPct')}:</span>
               <span className="font-medium text-slate-700 dark:text-slate-300">
-                {Math.round((task.fsrs_retrievability ?? 0) * 100)}%
+                {formatMasteryPct(task.masteryLevel)}
               </span>
             </div>
           )}

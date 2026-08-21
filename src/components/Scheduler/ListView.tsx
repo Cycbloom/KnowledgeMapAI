@@ -106,8 +106,8 @@ function getSubtaskTypeStats(
 
 function getAverageMastery(subtasks: TaskSubtask[]): number {
   if (subtasks.length === 0) return 0;
-  const total = subtasks.reduce((sum, st) => sum + st.mastery_level, 0);
-  return Math.round(total / subtasks.length);
+  const total = subtasks.reduce((sum, st) => sum + (Number.isFinite(st.mastery_level) ? Math.max(0, Math.min(1, st.mastery_level)) : 0), 0);
+  return total / subtasks.length;
 }
 
 // ─── 桌面表格行（memo 化）────────────────────────────────────────────────────

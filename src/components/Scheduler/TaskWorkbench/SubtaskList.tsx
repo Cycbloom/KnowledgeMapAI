@@ -164,7 +164,8 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
   const { completedCount, totalMastery } = subtasks.reduce(
     (acc, st) => {
       if (st.status === "completed") acc.completedCount++;
-      acc.totalMastery += st.mastery_level || 0;
+      const m = Number.isFinite(st.mastery_level) ? Math.max(0, Math.min(1, st.mastery_level)) : 0;
+      acc.totalMastery += m;
       return acc;
     },
     { completedCount: 0, totalMastery: 0 },

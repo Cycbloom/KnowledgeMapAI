@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, CheckCircle, Loader2, Circle } from "lucide-rea
 import { TaskSubtask } from "@shared/types";
 import { LearningStateBadge } from "../Scheduler/LearningStateBadge";
 import { MasteryProgressBar } from "../Scheduler/MasteryProgressBar";
+import { MasteryLevelBadge } from "../Scheduler/MasteryLevelBadge";
 import { useTheme } from "../../hooks";
 import { useReducedMotionOrPreference } from "@/hooks/common/useReducedMotionOrPreference";
 
@@ -123,7 +124,15 @@ export const CalendarSubtaskStack: React.FC<CalendarSubtaskStackProps> = ({
             <span
               className={`font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}
             >
-              {subtask.mastery_level}%
+              <MasteryLevelBadge
+                mastery={subtask.mastery_level}
+                size="sm"
+                variant="compact"
+                showIcon={false}
+                showLabel={false}
+                showPercent={true}
+                isDark={isDark}
+              />
             </span>
           </div>
         ))}

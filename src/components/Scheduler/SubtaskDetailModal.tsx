@@ -15,12 +15,14 @@ import {
 } from "lucide-react";
 import { LearningStateBadge } from "./LearningStateBadge";
 import { MasteryProgressBar } from "./MasteryProgressBar";
+import { MasteryLevelBadge } from "./MasteryLevelBadge";
 import { DetailCard } from "../common/DetailCard";
 import { subtasksApi, type ValidTransitionsResult } from "../../services/api/modules/scheduler/subtasks";
 import { knowledgePointsApi, type TaskKnowledgePoint } from "../../services/api/modules/scheduler/knowledgePoints";
 import { message } from "../../utils/messageHelper";
 import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import { formatDate as formatDateUtil } from "../../utils/formatters";
+import { formatMasteryPct, getMasteryTone } from "../../utils/formatMastery";
 import type {
   TaskSubtask,
   LearningState,
@@ -153,10 +155,16 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
     return formatDateUtil(dateString, 'full-datetime');
   };
 
-  const getMasteryColor = (level: number): string => {
-    if (level < 30) return "text-red-500";
-    if (level < 70) return "text-orange-500";
-    return "text-green-500";
+  const getMasteryColor = (level01: number): string => {
+    const tone = getMasteryTone(level01);
+    switch (tone) {
+      case 'rose': return isDark ? "text-rose-400" : "text-rose-600";
+      case 'amber': return isDark ? "text-amber-400" : "text-amber-600";
+      case 'emerald': return isDark ? "text-emerald-400" : "text-emerald-600";
+      case 'violet': return isDark ? "text-violet-400" : "text-violet-600";
+      case 'sky': return isDark ? "text-sky-400" : "text-sky-600";
+      default: return isDark ? "text-slate-400" : "text-slate-600";
+    }
   };
 
   const otherValidTransitions = useMemo(
@@ -281,9 +289,15 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm text-slate-600 dark:text-slate-300">{t('scheduler.taskWorkbench.subtaskDetail.mastery')}</span>
-                      <span className={`font-medium ${getMasteryColor(subtask.mastery_level)}`}>
-                        {subtask.mastery_level}%
-                      </span>
+                      <MasteryLevelBadge
+                        mastery={subtask.mastery_level}
+                        size="sm"
+                        variant="full"
+                        showIcon={true}
+                        showLabel={true}
+                        showPercent={true}
+                        isDark={isDark}
+                      />
                     </div>
                     <MasteryProgressBar masteryLevel={subtask.mastery_level} size="lg" />
                   </div>
@@ -331,7 +345,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                           {t("scheduler.subtaskDetail.masteryTransition", {
-                            current: subtask.mastery_level,
+                            current: formatMasteryPct(subtask.mastery_level),
                             next: STATE_LABELS[validTransitions.recommended_next],
                           })}
                         </p>
@@ -376,12 +390,12 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                       type="range"
                       min="0"
                       max="100"
-                      value={masteryLevel}
-                      onChange={(e) => setMasteryLevel(parseInt(e.target.value))}
+                      value={Math.round(masteryLevel * 100)}
+                      onChange={(e) => setMasteryLevel(parseInt(e.target.value) / 100)}
                       className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
                     />
-                    <span className={`font-medium w-12 text-right ${getMasteryColor(masteryLevel)}`}>
-                      {masteryLevel}%
+                    <span className={`font-medium w-12 text-right tabular-nums ${getMasteryColor(masteryLevel)}`}>
+                      {formatMasteryPct(masteryLevel)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -390,7 +404,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
                     </p>
                     <button
                       onClick={handleMasterySave}
-                      disabled={isSaving || masteryLevel === subtask.mastery_level}
+                      disabled={isSaving || Math.abs(masteryLevel - (subtask?.mastery_level ?? 0)) < 0.005}
                       className="px-3 py-1.5 text-sm font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
                     >
                       {isSaving ? (

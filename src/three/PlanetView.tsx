@@ -19,7 +19,7 @@ import {
  * Per-node learning status consumed by heatmap / decay / status coloring modes.
  * Field shape mirrors the param types of `getLearningStatus` and
  * `calculateNodeHeat` in `learningStatusColors.ts`, plus `fsrs_retrievability`
- * accessed directly by the decay coloring branch.
+ * and `display_mastery` accessed directly by the decay coloring branch.
  */
 interface NodeStatus {
   locked: boolean;
@@ -29,6 +29,7 @@ interface NodeStatus {
   review_count?: number;
   next_review?: string;
   fsrs_retrievability?: number;
+  display_mastery?: number;
 }
 
 interface PlanetViewProps {
@@ -314,9 +315,13 @@ function Scene({
         const colors = getLevelColors(nodeLevel, isDark);
         return new THREE.Color(colors.primary);
       }
-      const retrievability = nodeStatus[nodeId]?.fsrs_retrievability;
-      const decayValue = retrievability != null ? retrievability : -1;
-      const colors = getDecayColors(decayValue, isDark);
+      const status = nodeStatus[nodeId];
+      const displayMastery = status?.display_mastery;
+      const retrievability = status?.fsrs_retrievability;
+      const decayValue = displayMastery != null
+        ? displayMastery
+        : (retrievability != null ? retrievability : -1);
+      const colors = getDecayColors(decayValue, 'displayMastery', isDark);
       return new THREE.Color(colors.primary);
     }
 

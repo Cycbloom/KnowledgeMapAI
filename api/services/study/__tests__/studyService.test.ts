@@ -513,6 +513,51 @@ describe("StudyService", () => {
       expect(result.scheduledCard.reps).toBeGreaterThanOrEqual(2);
       expect(result.scheduledCard.due).toBeInstanceOf(Date);
     });
+
+    it("fsrs_retrievability 写入应使用 s/(s+7) 半饱和公式（S=7→50%），不得 clamp 到 100%", async () => {
+      // 回归测试：早期实现用 log1p(s/7)/log(2)，在 S=7 处已等于 1.0 触发 clamp，
+      // 任何 S≥7 的卡片都写成 100%，导致掌握度条丢失 Hard/Good/Easy 等级语义。
+      // 正确公式 s/(s+7) 在 S=7 严格等于 0.5，且对所有 S 单调渐近 1。
+      const supabase = createMockSupabase();
+      const inner = supabase as unknown as MockSupabaseClient;
+      const existingCard = {
+        id: "card-ret",
+        user_id: "user1",
+        knowledge_point_id: "kp1",
+        graph_id: "g1",
+        next_review: new Date().toISOString(),
+        fsrs_stability: 0,
+        fsrs_difficulty: 0,
+        fsrs_elapsed_days: 0,
+        fsrs_scheduled_days: 0,
+        review_count: 0,
+        fsrs_state: "New",
+        fsrs_last_review: null,
+        fsrs_retrievability: 0,
+      };
+      // 第三链是 update().eq().select().single() → 捕获 update 的 payload
+      const updateChain = makeChain({ ...existingCard, review_count: 1 });
+      inner.from
+        .mockReturnValueOnce(makeChain(existingCard))
+        .mockReturnValueOnce(makeChain({ settings: {} }))
+        .mockReturnValueOnce(updateChain);
+
+      await studyService.updateProgress(supabase, "card-ret", 3, "user1");
+
+      const updatePayload = updateChain.update.mock.calls[0]?.[0] as
+        | { fsrs_retrievability?: number; fsrs_stability?: number }
+        | undefined;
+      expect(updatePayload).toBeDefined();
+      const s = Number(updatePayload?.fsrs_stability ?? 0);
+      const r = Number(updatePayload?.fsrs_retrievability ?? 0);
+      // 1) 写入的 stability 必须 > 0（quality=3 必有正 S）
+      expect(s).toBeGreaterThan(0);
+      // 2) 写入的 fsrs_retrievability 应等于 s/(s+7)，绝对误差 < 1e-9
+      const expected = s / (s + 7);
+      expect(Math.abs(r - expected)).toBeLessThan(1e-9);
+      // 3) 关键不变量：r 必须严格 < 1，避免旧 log1p 公式的"100% 饱和"回归
+      expect(r).toBeLessThan(1);
+    });
   });
 
   describe("deleteCard", () => {

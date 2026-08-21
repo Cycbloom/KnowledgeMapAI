@@ -1,3 +1,4 @@
+/** @mastery display */
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   fsrs,
@@ -19,6 +20,7 @@ import { MASTERY_THRESHOLDS } from "../../../shared/constants/masteryThresholds"
 import { appEventBus } from "../core";
 import type { ReviewCompletedPayload } from "../../../shared/types/events";
 import { masteryCalculationService } from "./masteryCalculationService";
+import { stabilityToMasteryBaseline, computeCardDisplayMastery } from "../../../shared/utils/fsrs/masteryContract";
 
 // FSRS 5 difficulty 范围 [1, 10], stability 下限 S_MIN=1e-3。
 // 若数据库遗留老数据或手动插入时偏离合法区间，dbCardToFSRS 需要在
@@ -561,19 +563,20 @@ export class StudyService {
       scheduling_cards as unknown as Record<Rating, { card: Card }>
     )[rating].card;
 
-    // fsrs_retrievability 存储口径：S 的 log1p 饱和归一化长期掌握水平（与前端进度条口径一致）
+    // fsrs_retrievability 存储口径：S 的半饱和（hyperbolic）归一化长期掌握水平（与前端进度条口径一致）
     // 原 forgetting_curve(w, 0, S) 在 Δt=0 时永远=1，所有评分档都写 100%，丢失 Hard/Good/Easy 等级语义
-    // 这里改用 stabilityToMasteryBaseline：S=7天→50%、S=30天→74%、S=365天→95%
+    // 改用 shared stabilityToMasteryBaseline (s / (s + 7))：S=0→0%、S=7→50%、S=30→81%、S=365→98%，单调且与 S=7 半饱和点吻合
     // 注：R=exp(-Δt/S) 的瞬时时间衰减由前端在渲染时基于 fsrs_last_review + now 实时相乘补充
-    function stabilityToMasteryBaseline(s: number): number {
-      const stability = Number.isFinite(s) ? Math.max(0, s) : 0;
-      const HALF_LIFE_S = 7;
-      return Math.max(0, Math.min(1, Math.log1p(stability / HALF_LIFE_S) / Math.log(2)));
-    }
     const nextStability = Math.max(0, Number(scheduledCard.stability) || 0);
     const nextRetrievability = nextStability > 0
       ? stabilityToMasteryBaseline(nextStability)
       : 0;
+
+    logger.debug("[StudyService.updateProgress] Write fsrs_retrievability baseline", {
+      cardId,
+      S: nextStability,
+      baseline: nextRetrievability,
+    });
 
     const { data: updatedCardData, error: updateError } = await supabase
       .from("study_cards")
@@ -706,6 +709,7 @@ export class StudyService {
     reviewCards: number;
     relearningCards: number;
     averageRetrievability: number;
+    averageDisplayMastery: number;
     averageStability: number;
     averageDifficulty: number;
   }> {
@@ -733,9 +737,10 @@ export class StudyService {
     let learningCards = 0;
     let reviewCards = 0;
     let relearningCards = 0;
-    let totalRetrievability = 0;
+    let totalDisplayMastery = 0;
     let totalStability = 0;
     let totalDifficulty = 0;
+    const nowMs = now.getTime();
 
     for (const card of allCards) {
       if (card.next_review && new Date(card.next_review) <= now) {
@@ -757,12 +762,14 @@ export class StudyService {
           break;
       }
 
-      totalRetrievability += card.fsrs_retrievability ?? 0;
+      const displayMastery = computeCardDisplayMastery(card, nowMs);
+      totalDisplayMastery += displayMastery;
       totalStability += card.fsrs_stability ?? 0;
       totalDifficulty += card.fsrs_difficulty ?? 0;
     }
 
     const count = allCards.length;
+    const avgDisplayMastery = count > 0 ? Math.round((totalDisplayMastery / count) * 1000) / 1000 : 0;
     return {
       totalCards: count,
       dueCards,
@@ -770,7 +777,8 @@ export class StudyService {
       learningCards,
       reviewCards,
       relearningCards,
-      averageRetrievability: count > 0 ? Math.round((totalRetrievability / count) * 1000) / 1000 : 0,
+      averageRetrievability: avgDisplayMastery,
+      averageDisplayMastery: avgDisplayMastery,
       averageStability: count > 0 ? Math.round((totalStability / count) * 100) / 100 : 0,
       averageDifficulty: count > 0 ? Math.round((totalDifficulty / count) * 100) / 100 : 0,
     };

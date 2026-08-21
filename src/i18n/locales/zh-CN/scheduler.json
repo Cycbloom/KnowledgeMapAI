@@ -284,7 +284,8 @@
     "monthsLater": "{{count}} 个月后",
     "stability": "稳定度",
     "difficulty": "难度",
-    "retrievability": "可提取性",
+    "retrievability": "可提取性（旧版）",
+    "masteryPct": "掌握度",
     "fsrsState": {
       "new": "新卡片",
       "learning": "学习中",

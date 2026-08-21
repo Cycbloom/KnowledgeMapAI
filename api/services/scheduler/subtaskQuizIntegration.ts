@@ -1,3 +1,4 @@
+/** @schedule decision - FSRS 过渡数学、练习/测验完成后 mastery_level 写入、状态机转换逻辑 */
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import i18next from "i18next";
@@ -68,6 +69,7 @@ interface SubtaskData {
   task_id: string;
   knowledge_point_id: string;
   learning_state: LearningState;
+  /** @schedule decision - mastery_level READ：用于 FSRS 过渡数学（状态机 getNextState + 增量计算 newMastery） */
   mastery_level: number;
   user_id: string;
 }
@@ -95,10 +97,21 @@ interface CardToInsert {
   card_type: string;
   difficulty: number;
   options: string | null;
+  /** @schedule decision - due date：新卡首次复习时间 */
   next_review: string;
   user_id?: string;
   graph_id?: string;
   quiz_set_id?: string;
+  /** @schedule decision - FSRS CardState */
+  fsrs_state: string;
+  /** @schedule decision - FSRS Stability (S) */
+  fsrs_stability: number;
+  /** @schedule decision - FSRS Difficulty (D) */
+  fsrs_difficulty: number;
+  fsrs_elapsed_days: number;
+  fsrs_scheduled_days: number;
+  /** @schedule decision - FSRS Retrievability (R) 初始快照 */
+  fsrs_retrievability: number;
 }
 
 interface QuizSetCardWithStudyCard {
@@ -337,9 +350,12 @@ export class SubtaskQuizIntegrationService {
       PRACTICE_MAX_IMPROVEMENT,
     );
 
+    /** @schedule decision - mastery_level READ：当前掌握度 baseline（用于算法增量） */
     const currentMastery = subtask.mastery_level;
+    /** @schedule decision - mastery_level WRITE（算法输出）：FSRS 过渡后新掌握度 = current + improvement */
     const newMastery = Math.min(1, currentMastery + improvement);
 
+    /** @schedule decision - FSRS next_state：状态机基于 learning_state + mastery_level 计算下一阶段 */
     const newState = subtaskStateMachine.getNextState(
       subtask.learning_state,
       newMastery,
@@ -559,9 +575,12 @@ export class SubtaskQuizIntegrationService {
 
     const improvement = Math.min(score * QUIZ_WEIGHT, QUIZ_MAX_IMPROVEMENT);
 
+    /** @schedule decision - mastery_level READ：当前掌握度 baseline */
     const currentMastery = subtask.mastery_level;
+    /** @schedule decision - mastery_level WRITE（算法输出）：测验后新掌握度 */
     const newMastery = Math.min(1, currentMastery + improvement);
 
+    /** @schedule decision - FSRS next_state：状态机过渡 */
     const newState = subtaskStateMachine.getNextState(
       subtask.learning_state,
       newMastery,
@@ -691,7 +710,18 @@ export class SubtaskQuizIntegrationService {
           card_type: card.type ?? "qa",
           difficulty: 1,
           options: card.options ? JSON.stringify(card.options) : null,
+          /** @schedule decision - due date：新生成卡首次复习时间 */
           next_review: new Date().toISOString(),
+          /** @schedule decision - FSRS CardState 初始 New */
+          fsrs_state: "New",
+          /** @schedule decision - FSRS Stability (S) 初始值 */
+          fsrs_stability: 0,
+          /** @schedule decision - FSRS Difficulty (D) 初始值 */
+          fsrs_difficulty: 0,
+          fsrs_elapsed_days: 0,
+          fsrs_scheduled_days: 0,
+          /** @schedule decision - FSRS Retrievability (R) 初始快照 */
+          fsrs_retrievability: 0,
         });
       }
 
@@ -832,7 +862,18 @@ export class SubtaskQuizIntegrationService {
                 : 2,
         options: card.options ? JSON.stringify(card.options) : null,
         quiz_set_id: quizSetId,
+        /** @schedule decision - due date：新卡首次复习时间 */
         next_review: new Date().toISOString(),
+        /** @schedule decision - FSRS CardState 初始 New */
+        fsrs_state: "New",
+        /** @schedule decision - FSRS Stability (S) 初始值 */
+        fsrs_stability: 0,
+        /** @schedule decision - FSRS Difficulty (D) 初始值 */
+        fsrs_difficulty: 0,
+        fsrs_elapsed_days: 0,
+        fsrs_scheduled_days: 0,
+        /** @schedule decision - FSRS Retrievability (R) 初始快照 */
+        fsrs_retrievability: 0,
       }));
 
       const { data: insertedCards, error: insertError } = await supabase
@@ -907,7 +948,9 @@ export class SubtaskQuizIntegrationService {
     availableCards: number;
   }> {
     const subtask = await this.getSubtaskData(supabase, subtaskId);
-    const { learning_state, mastery_level } = subtask;
+    const { learning_state } = subtask;
+    /** @schedule decision - mastery_level READ：推荐活动分支判定（mastery >= 0.5 才触发 quiz） */
+    const { mastery_level } = subtask;
 
     const cards = await this.getPracticeCards(
       supabase,
@@ -991,6 +1034,7 @@ export class SubtaskQuizIntegrationService {
       task_id: raw.task_id,
       knowledge_point_id: raw.knowledge_point_id,
       learning_state: raw.learning_state as LearningState,
+      /** @schedule decision - mastery_level READ：从 knowledge_points 读取（调度算法输入） */
       mastery_level: raw.knowledge_points?.[0]?.mastery_level ?? 0,
       user_id: task?.user_id ?? "",
     } as SubtaskData;

@@ -1,3 +1,4 @@
+/** @mastery display */
 import { SupabaseClient } from "@supabase/supabase-js";
 import { cacheService, CacheKeys, CacheTTL } from "../common/cacheService";
 import {
@@ -19,6 +20,11 @@ import type { Node, Edge } from "@shared/types";
 import type { NodeStatus } from "@shared/types/graph";
 import type { StudyCardRow } from "@shared/types/database";
 import { notDeleted } from '../common/softDeleteHelper';
+import {
+  computeCardDisplayMastery,
+  aggregateDisplayMastery,
+  type CardWithDisplayMastery,
+} from "../../../shared/utils/fsrs/masteryContract";
 
 interface KnowledgePointWithProperties {
   properties?: {
@@ -432,7 +438,7 @@ export class GraphQueryService {
         const { data: cards, error } = await supabase
           .from("study_cards")
           .select(
-            "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, fsrs_retrievability, review_count",
+            "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, fsrs_retrievability, review_count, fsrs_last_review, last_reviewed",
           )
           .eq("user_id", userId)
           .eq("graph_id", graphId);
@@ -443,32 +449,23 @@ export class GraphQueryService {
         }
 
         const now = new Date();
+        const nowMs = now.getTime();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
         const statusMap: Record<string, NodeStatus> = {};
 
-        type CardPick = Pick<StudyCardRow, 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'fsrs_retrievability' | 'review_count'>;
-        const cardGroups = new Map<string, { cards: CardPick[]; stabilitySum: number; weightedRetrievabilitySum: number; reviewCountSum: number }>();
+        type CardPick = Pick<StudyCardRow, 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'fsrs_retrievability' | 'review_count' | 'fsrs_last_review' | 'last_reviewed'>;
+        const cardGroups = new Map<string, { cards: CardPick[]; reviewCountSum: number }>();
 
         (cards || []).forEach((card: CardPick) => {
           const kpId = card.knowledge_point_id ?? '';
           if (!kpId) return;
           if (!cardGroups.has(kpId)) {
-            cardGroups.set(kpId, { cards: [], stabilitySum: 0, weightedRetrievabilitySum: 0, reviewCountSum: 0 });
+            cardGroups.set(kpId, { cards: [], reviewCountSum: 0 });
           }
           const group = cardGroups.get(kpId);
           if (!group) return;
           group.cards.push(card);
-          const stability = card.fsrs_stability ?? 0;
-          const retrievability = card.fsrs_retrievability ?? 0;
-
-          if (stability > 0) {
-            group.stabilitySum += stability;
-            group.weightedRetrievabilitySum += retrievability * stability;
-          } else {
-            group.stabilitySum += 1;
-            group.weightedRetrievabilitySum += retrievability;
-          }
           group.reviewCountSum += card.review_count || 0;
         });
 
@@ -480,9 +477,23 @@ export class GraphQueryService {
             nextReview &&
             nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-          const weightedRetrievability = group.stabilitySum > 0
-            ? group.weightedRetrievabilitySum / group.stabilitySum
-            : 0;
+          const cardsWithMastery: CardWithDisplayMastery[] = group.cards.map((c) => ({
+            fsrs_stability: c.fsrs_stability,
+            fsrs_last_review: c.fsrs_last_review,
+            last_reviewed: c.last_reviewed,
+            fsrs_retrievability: c.fsrs_retrievability,
+            displayMastery: computeCardDisplayMastery(
+              {
+                fsrs_stability: c.fsrs_stability,
+                fsrs_last_review: c.fsrs_last_review,
+                last_reviewed: c.last_reviewed,
+                fsrs_retrievability: c.fsrs_retrievability,
+              },
+              nowMs,
+            ),
+          }));
+
+          const displayMastery = aggregateDisplayMastery(cardsWithMastery, 'stabilityWeighted');
           const avgStability = group.cards.length > 0
             ? group.cards.reduce((sum, c) => sum + (c.fsrs_stability ?? 0), 0) / group.cards.length
             : 0;
@@ -496,7 +507,8 @@ export class GraphQueryService {
             due: !!isDue,
             due_today: !!isDueToday,
             fsrs_stability: avgStability,
-            fsrs_retrievability: weightedRetrievability,
+            fsrs_retrievability: displayMastery,
+            display_mastery: displayMastery,
           };
         });
 
@@ -538,7 +550,7 @@ export class GraphQueryService {
     const { data: cards, error } = await supabase
       .from("study_cards")
       .select(
-        "graph_id, knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, fsrs_retrievability, review_count",
+        "graph_id, knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, fsrs_retrievability, review_count, fsrs_last_review, last_reviewed",
       )
       .eq("user_id", userId)
       .in("graph_id", uncachedGraphIds);
@@ -552,9 +564,10 @@ export class GraphQueryService {
     }
 
     const now = new Date();
+    const nowMs = now.getTime();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    type CardRow = Pick<StudyCardRow, 'graph_id' | 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'fsrs_retrievability' | 'review_count'>;
-    type CardGroup = { cards: CardRow[]; stabilitySum: number; weightedRetrievabilitySum: number; reviewCountSum: number };
+    type CardRow = Pick<StudyCardRow, 'graph_id' | 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'fsrs_retrievability' | 'review_count' | 'fsrs_last_review' | 'last_reviewed'>;
+    type CardGroup = { cards: CardRow[]; reviewCountSum: number };
 
     const graphGroups = new Map<string, Map<string, CardGroup>>();
 
@@ -570,21 +583,11 @@ export class GraphQueryService {
       if (!kpMap) return;
 
       if (!kpMap.has(kpId)) {
-        kpMap.set(kpId, { cards: [], stabilitySum: 0, weightedRetrievabilitySum: 0, reviewCountSum: 0 });
+        kpMap.set(kpId, { cards: [], reviewCountSum: 0 });
       }
       const group = kpMap.get(kpId);
       if (!group) return;
       group.cards.push(card);
-      const stability = card.fsrs_stability ?? 0;
-      const retrievability = card.fsrs_retrievability ?? 0;
-
-      if (stability > 0) {
-        group.stabilitySum += stability;
-        group.weightedRetrievabilitySum += retrievability * stability;
-      } else {
-        group.stabilitySum += 1;
-        group.weightedRetrievabilitySum += retrievability;
-      }
       group.reviewCountSum += card.review_count || 0;
     });
 
@@ -603,9 +606,23 @@ export class GraphQueryService {
             nextReview &&
             nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-          const weightedRetrievability = group.stabilitySum > 0
-            ? group.weightedRetrievabilitySum / group.stabilitySum
-            : 0;
+          const cardsWithMastery: CardWithDisplayMastery[] = group.cards.map((c) => ({
+            fsrs_stability: c.fsrs_stability,
+            fsrs_last_review: c.fsrs_last_review,
+            last_reviewed: c.last_reviewed,
+            fsrs_retrievability: c.fsrs_retrievability,
+            displayMastery: computeCardDisplayMastery(
+              {
+                fsrs_stability: c.fsrs_stability,
+                fsrs_last_review: c.fsrs_last_review,
+                last_reviewed: c.last_reviewed,
+                fsrs_retrievability: c.fsrs_retrievability,
+              },
+              nowMs,
+            ),
+          }));
+
+          const displayMastery = aggregateDisplayMastery(cardsWithMastery, 'stabilityWeighted');
           const avgStability = group.cards.length > 0
             ? group.cards.reduce((sum, c) => sum + (c.fsrs_stability ?? 0), 0) / group.cards.length
             : 0;
@@ -619,7 +636,8 @@ export class GraphQueryService {
             due: !!isDue,
             due_today: !!isDueToday,
             fsrs_stability: avgStability,
-            fsrs_retrievability: weightedRetrievability,
+            fsrs_retrievability: displayMastery,
+            display_mastery: displayMastery,
           };
         });
       }

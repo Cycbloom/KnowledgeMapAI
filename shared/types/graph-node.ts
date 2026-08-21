@@ -40,6 +40,7 @@ export interface NodeStatus {
   next_review?: string;
   fsrs_stability?: number;
   fsrs_retrievability?: number;
+  display_mastery?: number;
 }
 
 export interface LayoutNode extends Node {

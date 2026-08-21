@@ -128,9 +128,9 @@ const StudyCardPreviewComponent: React.FC<StudyCardPreviewProps> = ({
       {/* =========================================================
           ROW 1 — 四属性紧凑一行：题型 · 难度 · 掌握度 · 日期
           移除了「新内容/已学习」状态胶囊（用户认为是冗余信息）。
-          使用 nowrap + ml-auto 防止日期被挤到第二行，保持始终单行。
+          四项作为一组紧凑排列；flex-wrap 兜底防止窄卡溢出换行。
          ========================================================= */}
-      <div className="flex items-center gap-1.5 px-4 pt-4 pr-4">
+      <div className="flex flex-wrap items-center gap-1.5 px-4 pt-4">
         {/* 1) 题型徽章 */}
         <span className={badgeToneClasses(cardTypeMeta.tone, isDark, 'ring').replace('px-2.5', 'px-2').replace('py-1', 'py-0.5')}>
           <CardTypeIcon size={12} aria-hidden="true" />
@@ -149,9 +149,9 @@ const StudyCardPreviewComponent: React.FC<StudyCardPreviewProps> = ({
           </span>
         )}
 
-        {/* 3) 掌握度 chip — ml-auto 把自身和日期推到右侧 */}
+        {/* 3) 掌握度 chip — 与其余属性一组紧凑排列 */}
         <span
-          className={`inline-flex ml-auto items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium ${
+          className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium ${
             isDark ? 'bg-slate-700/60 text-slate-300 ring-1 ring-slate-600/50' : 'bg-slate-50 text-slate-600 ring-1 ring-slate-100'
           }`}
           title={masteryTooltip}

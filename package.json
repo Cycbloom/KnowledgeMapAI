@@ -81,6 +81,7 @@
     "db:gen-types": "supabase gen types typescript --local > shared/types/database.generated.ts",
     "db:check-types": "node scripts/check-generated-types.mjs",
     "db:seed": "tsx scripts/seed_test_data.ts",
+    "seed:mastery-fixtures": "tsx scripts/seed-mastery-unification-fixtures.ts",
     "db:backfill": "tsx scripts/backfill_embeddings.ts",
     "db:export": "tsx scripts/exportFromSupabase.ts",
     "# Electron": "",

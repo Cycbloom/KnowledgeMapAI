@@ -86,9 +86,11 @@ npm run db:local:reset
 
 应用为单用户工具，不存在测试账号或登录表单：
 
-- 首次启动进入设置向导，完成 Supabase 配置后自动创建一个专属用户（随机凭证保存在浏览器 localStorage，key 为 `km-owner-credentials`），随后直达首页
+- 首次启动进入设置向导，完成 Supabase 配置后自动创建一个专属用户（邮箱形如 `owner-{uuid}@local.app`，随机凭证保存在浏览器 localStorage，key 为 `km-owner-credentials`），随后直达首页
 - 之后启动自动恢复会话；凭证失效时用本地凭证静默重登，全程无感
-- `npm run db:seed` 会向首个（专属）用户插入演示数据
+- `npm run db:seed` **不依赖前端先启动**：会优先复用已存在的 `owner-*@local.app` 用户；若用户已存在但密码未知则自动重置（bcrypt）；若用户不存在则直接在 `auth.users` 中创建同格式账号。运行结束会在终端打印 DevTools localStorage 注入命令，并把可复现凭证落盘到 `.seed-owner-credentials.json`（已在 `.gitignore` 中忽略）
+
+> 注入命令用法：启动 Web/Electron 应用 → F12 打开 DevTools Console → 粘贴 seed 末尾打印的 3 行命令（`localStorage.clear(); setItem(...); location.reload();`）即可自动登入同一 owner，看到 seed 写入的全部演示数据（图谱、卡片、任务、成就等）。
 
 ### 1.6 启动开发服务器
 
@@ -552,9 +554,17 @@ npm run db:check-types
 
 ### 6.4 Seed 数据
 
-- `npm run db:local:reset` 会自动应用所有 50-99 的 seed 文件
+- `npm run db:local:reset` 会自动应用所有 `supabase/migrations/` 下编号 50–99 的 SQL seed
 - 业务 seed 数据（成就、模板、Prompt、关系类型）通过 `50-59_seed_*.sql` 注入
-- 单独插入额外测试数据：`npm run db:seed`（需要先启动一次应用以创建专属用户）
+- 单独插入额外测试数据（5 个演示图谱、30+ 卡片、每日/周期任务、成就、专注统计）：
+  ```bash
+  npm run db:seed
+  ```
+  该命令**不需要先启动前端**：会自动在 `auth.users` 中寻找/创建与前端同格式的 `owner-{uuid}@local.app` 用户，重置密码并将全部演示数据关联到该用户。
+- 脚本执行末尾会输出两段信息：
+  1. **DevTools 注入命令**（3 行 JS）—— 在 Web/Electron 应用的 Console 粘贴后即可静默登录到 seed owner 并看到演示数据
+  2. **本地凭证文件** `.seed-owner-credentials.json`——重复跑 seed 时会优先复用该密码，避免反复重置；该文件已在 `.gitignore` 中忽略，不进入版本控制
+- 额外 fixture：掌握度梯度验证数据集（5×S 梯度、4×due date 梯度）通过 `tsx scripts/seed-mastery-unification-fixtures.ts` 注入，使用同一套 owner 用户与凭证机制
 
 ### 6.5 远程数据库修改流程
 

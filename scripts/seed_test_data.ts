@@ -1,17 +1,257 @@
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
+import { Pool } from 'pg';
+import { writeFile, mkdir } from 'node:fs/promises';
+import * as path from 'node:path';
+import * as crypto from 'node:crypto';
 
 dotenv.config();
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
+/**
+ * Credentials shape intentionally mirrors the browser-side OwnerCredentials in
+ * src/utils/silentAuth.ts (localStorage key `km-owner-credentials`). Same format
+ * means we can hand off seed-created users directly to the frontend without any
+ * transformation.
+ */
+interface OwnerCredentials {
+  email: string;
+  password: string;
+}
+
+/** Supabase GoTrue owner user plus the raw credentials required by the frontend. */
+type SeedOwnerUser = {
+  id: string;
+  email?: string;
+  role?: string;
+  phone?: string | undefined;
+  created_at?: string;
+  /** Credentials payload the frontend expects in localStorage["km-owner-credentials"]. */
+  credentials: OwnerCredentials;
+};
+
+const CREDENTIALS_OUTPUT_FILE = path.resolve(
+  import.meta.dirname ?? process.cwd(),
+  '../.seed-owner-credentials.json',
+);
+
+/**
+ * Mirrors src/utils/silentAuth.ts generateCredentials — same email layout,
+ * same password strength (32 random bytes → base64). The generated email
+ * format `owner-<uuid>@local.app` matches what provisionOwner() creates on
+ * the frontend so both sides produce indistinguishable accounts.
+ */
+const generateOwnerCredentials = (): OwnerCredentials => {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const password = Buffer.from(bytes).toString('base64');
+  return {
+    email: `owner-${crypto.randomUUID()}@local.app`,
+    password,
+  };
+};
+
+/**
+ * Persist seed credentials to disk so later scripts (e2e setup, ownership
+ * migration helpers, db:seed re-runs against non-empty auth.users) can
+ * recover exactly which email/password pair owns the demo rows in public.*
+ *
+ * File location: project root `.seed-owner-credentials.json` — remember to
+ * keep it gitignored (it contains a live bcrypt-hashed password).
+ */
+async function persistSeedCredentials(creds: OwnerCredentials & { userId: string }): Promise<void> {
+  try {
+    await mkdir(path.dirname(CREDENTIALS_OUTPUT_FILE), { recursive: true });
+    await writeFile(CREDENTIALS_OUTPUT_FILE, JSON.stringify(creds, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('⚠️  Could not write credentials file (skipping — not fatal):', (err as Error).message);
+  }
+}
+
+/** Print a one-liner the user can paste directly into DevTools Console. */
+function printLocalStorageInjectCommand(creds: OwnerCredentials): void {
+  const payload = JSON.stringify(JSON.stringify(creds)); // double-encode for the JS string literal
+  console.log('');
+  console.log('═══════════════ Connect frontend to this seed ═══════════════');
+  console.log('  Demo rows in public.* are tied to the owner account below.');
+  console.log('  To see them in the app, run this in DevTools Console (F12):');
+  console.log('');
+  console.log(`     localStorage.clear();`);
+  console.log(`     localStorage.setItem("km-owner-credentials", ${payload});`);
+  console.log(`     location.reload();`);
+  console.log('');
+  console.log(`  Owner credentials (manual sign-in fallback):`);
+  console.log(`        Email:    ${creds.email}`);
+  console.log(`        Password: ${creds.password}`);
+  console.log(`  Saved to: .seed-owner-credentials.json`);
+  console.log('══════════════════════════════════════════════════════════════');
+}
+
+/** Try load a previous seed run's saved credentials; return null if userId mismatch or file missing. */
+async function loadPersistedCredentials(userId: string): Promise<OwnerCredentials | null> {
+  try {
+    const { readFile } = await import('node:fs/promises');
+    const raw = await readFile(CREDENTIALS_OUTPUT_FILE, 'utf-8');
+    const parsed = JSON.parse(raw) as unknown;
+    if (
+      parsed && typeof parsed === 'object' &&
+      'userId' in parsed && (parsed as { userId?: string }).userId === userId &&
+      'email' in parsed && typeof (parsed as { email: unknown }).email === 'string' &&
+      'password' in parsed && typeof (parsed as { password: unknown }).password === 'string'
+    ) {
+      return { email: parsed.email as string, password: parsed.password as string };
+    }
+  } catch {
+    // file not found / malformed JSON → fall through to regeneration
+  }
+  return null;
+}
+
+/**
+ * Overwrite a user's bcrypt password hash via plain Postgres UPDATE.
+ * Needed when we "adopt" a pre-existing user (e.g. created by an earlier
+ * frontend provisionOwner run) — we have no way to recover the original
+ * random password, so we rotate it to a freshly generated one and print the
+ * matching localStorage payload for the user to apply.
+ */
+async function resetUserPasswordViaPg(userId: string, creds: OwnerCredentials): Promise<boolean> {
+  const pool = buildPgPool();
+  let client: import('pg').PoolClient | undefined;
+  try {
+    client = await pool.connect();
+    await client.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto`);
+    const result = await client.query(
+      `UPDATE auth.users
+          SET encrypted_password = crypt($1::text, gen_salt('bf')),
+              email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+              updated_at = NOW(),
+              raw_user_meta_data = COALESCE(NULLIF(raw_user_meta_data, '{}'::jsonb), '{"name":"Owner"}'::jsonb)
+        WHERE id = $2::uuid
+          AND (is_sso_user = false OR is_sso_user IS NULL)`,
+      [creds.password, userId],
+    );
+    return (result.rowCount ?? 0) > 0;
+  } catch (err) {
+    console.warn('[seed_test_data] pg UPDATE auth.users password failed:', (err as Error).message);
+    return false;
+  } finally {
+    if (client) client.release();
+    await pool.end().catch(() => {});
+  }
+}
+
+/**
+ * For an existing auth.users row, obtain a usable {email, password} pair that
+ * matches the localStorage["km-owner-credentials"] contract expected by the
+ * frontend's silentSignIn. Preferences:
+ *   1. Reuse .seed-owner-credentials.json if userId matches (repeatable runs).
+ *   2. Otherwise rotate the password via SQL so we know a valid value, and
+ *      write the rotated credentials back to the JSON file.
+ */
+async function materializeCredentialsForExistingUser(user: {
+  id: string;
+  email?: string | null;
+}): Promise<OwnerCredentials> {
+  const cached = await loadPersistedCredentials(user.id);
+  if (cached) return cached;
+  const fresh: OwnerCredentials = user.email && /^owner-[0-9a-f-]{36}@local\.app$/i.test(user.email)
+    // The user was created by an earlier provisionOwner run — keep the stable
+    // owner-<uuid>@local.app email, only rotate the unknown password.
+    ? { email: user.email, password: generateOwnerCredentials().password }
+    // Otherwise issue a brand-new frontend-style credentials pair and
+    // attempt to sync the email column too (best-effort UPDATE further down).
+    : generateOwnerCredentials();
+
+  const ok = await resetUserPasswordViaPg(user.id, fresh);
+  if (!ok) {
+    // Worst case (e.g. we lost DB connectivity between listUsers and here):
+    // return the credentials anyway; printLocalStorageInjectCommand will
+    // surface them and the user can decide whether to reset manually.
+    console.warn('⚠️  Password reset did not match any row; persisted credentials may not log in.');
+  }
+  return fresh;
+}
+
+const _rawUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
+if (!_rawUrl || !supabaseServiceKey) {
   console.error('❌ Missing Supabase credentials in .env file');
   process.exit(1);
 }
 
+// Normalize URL: host.docker.internal is a Docker-bridge DNS name that is
+// NOT resolvable from the native Windows host shell. When the Supabase stack
+// runs locally via supabase CLI (Docker Desktop), Kong exposes the REST API
+// directly on localhost:54321. We rewrite the client URL so that @supabase/supabase-js
+// (which uses fetch under the hood) can reach Kong without Docker networking.
+const supabaseUrl = (() => {
+  try {
+    const u = new URL(_rawUrl);
+    if (u.hostname === 'host.docker.internal') u.hostname = '127.0.0.1';
+    return u.toString();
+  } catch {
+    return _rawUrl;
+  }
+})();
+
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+/**
+ * Build a pg.Pool from the current environment.
+ * Infers host from VITE_SUPABASE_URL; falls back to Supabase local defaults
+ * (port=54322, user=postgres, db=postgres, password=postgres).
+ * Override any with explicit DB_HOST / DB_PORT / DB_USER / DB_NAME / DB_PASSWORD.
+ */
+function buildPgPool(): Pool {
+  let host = process.env.DB_HOST;
+  if (!host) {
+    try { host = new URL(supabaseUrl).hostname; } catch { host = '127.0.0.1'; }
+  }
+  // host.docker.internal is Docker-internal DNS — not resolvable from the Windows host shell.
+  // When Supabase runs on the same machine via supabase CLI (Docker Desktop), the
+  // Postgres port (default 54322) is exposed directly on localhost/127.0.0.1.
+  if (host === 'host.docker.internal') host = '127.0.0.1';
+  const port = parseInt(process.env.DB_PORT ?? '', 10) || 54322;
+  const user = process.env.DB_USER || 'postgres';
+  const database = process.env.DB_NAME || 'postgres';
+  const password = process.env.DB_PASSWORD || 'postgres';
+  return new Pool({ host, port, user, database, password, ssl: false, connectionTimeoutMillis: 5000 });
+}
+
+function printTroubleshootingGuide(fetchHost: string) {
+  console.log('');
+  console.log('═════════════════════ Troubleshooting ═════════════════════');
+  console.log(`  SUPABASE_URL used:   ${supabaseUrl}`);
+  console.log(`  Host unreachable:    ${fetchHost}`);
+  console.log('');
+  console.log('  Most likely: the local Supabase stack is NOT RUNNING.');
+  console.log('  Supabase CLI starts Kong (REST/entrypoint) / PostgREST / Auth / Postgres');
+  console.log('  as Docker containers — after `supabase db reset` they may be stopped.');
+  console.log('');
+  console.log('  Run these commands in order:');
+  console.log('    1. npm run db:local:status   # check containers running (DB URL / API URL)');
+  console.log('    2. npm run db:local:start    # launch all local Supabase services');
+  console.log('    3. Wait 15-30s until HEALTHY');
+  console.log('    4. npm run db:seed           # retry the seed');
+  console.log('');
+  console.log('  If ports differ from Supabase local defaults, set in .env:');
+  console.log('    DB_HOST / DB_PORT (default 54322)');
+  console.log('    DB_PASSWORD (default postgres)');
+  console.log('    VITE_SUPABASE_URL (e.g. http://127.0.0.1:<kong-port>)');
+  console.log('═════════════════════════════════════════════════════════════');
+}
+
+async function listUsersViaPg(): Promise<Array<{ id: string; email?: string | null }>> {
+  const pool = buildPgPool();
+  try {
+    const { rows } = await pool.query<{ id: string; email?: string | null }>(
+      `SELECT id::text, email FROM auth.users ORDER BY created_at ASC LIMIT 10`,
+    );
+    return rows;
+  } finally {
+    await pool.end().catch(() => {});
+  }
+}
 
 type GraphNode = { title: string; content: string; level: 'root' | 'core' | 'sub' | 'leaf'; x: number; y: number };
 type GraphEdge = { source: string; target: string; type?: string };
@@ -242,25 +482,201 @@ const STUDY_CARDS = [
 
 
 
-async function getOwnerUser() {
+async function createOwnerUserViaPg(
+  credentials: OwnerCredentials = generateOwnerCredentials(),
+): Promise<{ id: string; email: string; credentials: OwnerCredentials } | null> {
+  /**
+   * Creates the owner user directly via SQL INSERT into auth.users using Postgres
+   * pgcrypto crypt(gen_salt('bf'), ...) — the same bcrypt hash used by Supabase
+   * GoTrue. Useful as a last-resort fallback when the Auth Admin REST API is
+   * unreachable (Kong not running after `supabase db reset`) but Postgres itself is.
+   *
+   * Accepts an explicit credentials argument so every caller (Auth Admin API vs
+   * pure-SQL path, re-runs against .seed-owner-credentials.json) produces
+   * accounts indistinguishable from frontend-generated `owner-<uuid>@local.app`
+   * owners created by silentAuth.provisionOwner.
+   */
+  const { email: EMAIL, password: PLAIN_PASSWORD } = credentials;
+  const pool = buildPgPool();
+  let client: import('pg').PoolClient | undefined;
+  try {
+    client = await pool.connect();
+    await client.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto`);
+
+    const userResult = await client.query<{ id: string }>(
+      `INSERT INTO auth.users (
+         id, instance_id, email, encrypted_password, email_confirmed_at,
+         invited_at, confirmation_token, confirmation_sent_at, recovery_token,
+         recovery_sent_at, email_change_token_new, email_change, email_change_sent_at,
+         raw_app_meta_data, raw_user_meta_data, is_super_admin, role, aud,
+         created_at, updated_at, phone, phone_confirmed_at, phone_change,
+         phone_change_token, phone_change_sent_at, email_change_token_current,
+         email_change_confirm_status, banned_until, reauthentication_token,
+         reauthentication_sent_at, is_sso_user, deleted_at
+       ) VALUES (
+         gen_random_uuid(),
+         '00000000-0000-0000-0000-000000000000'::uuid,
+         $1::text,
+         crypt($2::text, gen_salt('bf')),
+         NOW(),
+         NULL, '', NULL, '', NULL, '', '', NULL,
+         '{"provider":"email","providers":["email"]}'::jsonb,
+         '{"name":"Owner"}'::jsonb,
+         FALSE,
+         'authenticated',
+         'authenticated',
+         NOW(), NOW(),
+         NULL, NULL, '', '', NULL,
+         '', 0, NULL, '', NULL,
+         FALSE, NULL
+       )
+       ON CONFLICT (email) WHERE (is_sso_user = false) DO UPDATE SET
+         updated_at = NOW(),
+         email_confirmed_at = NOW(),
+         encrypted_password = EXCLUDED.encrypted_password,
+         raw_user_meta_data = '{"name":"Owner"}'::jsonb
+       RETURNING id::text AS id`,
+      [EMAIL, PLAIN_PASSWORD],
+    );
+
+    const userId = userResult.rows[0]?.id;
+    if (!userId) return null;
+
+    await client.query(
+      `INSERT INTO auth.identities (
+         id, provider_id, user_id, identity_data, provider,
+         last_sign_in_at, created_at, updated_at, email
+       ) VALUES (
+         gen_random_uuid(),
+         $1::text,
+         $2::uuid,
+         jsonb_build_object('sub', $1::text, 'email', $3::text),
+         'email',
+         NOW(), NOW(), NOW(),
+         $3::text
+       )
+       ON CONFLICT (provider, provider_id) DO NOTHING`,
+      [userId, userId, EMAIL],
+    ).catch(() => { /* identity row is optional — seed purpose only */ });
+
+    return { id: userId, email: EMAIL, credentials };
+  } catch (err) {
+    console.warn('[seed_test_data] pg INSERT auth.users failed:', (err as Error).message);
+    return null;
+  } finally {
+    if (client) client.release();
+    await pool.end().catch(() => {});
+  }
+}
+
+async function getOwnerUser(): Promise<SeedOwnerUser> {
   console.log('🔧 Looking up owner user...');
 
-  const { data: existingUsers, error } = await supabase.auth.admin.listUsers();
-  if (error) {
-    console.error('❌ Error listing users:', error);
-    throw error;
-  }
+  /** Wrap a raw user object + credentials into the SeedOwnerUser contract. */
+  const finalize = async (
+    user: { id: string; email?: string | null; role?: string; phone?: string | undefined; created_at?: string },
+    credentials: OwnerCredentials,
+  ): Promise<SeedOwnerUser> => {
+    await persistSeedCredentials({ userId: user.id, email: credentials.email, password: credentials.password });
+    return {
+      id: user.id,
+      email: user.email ?? credentials.email,
+      role: user.role ?? '',
+      phone: user.phone ?? undefined,
+      created_at: user.created_at ?? '',
+      credentials,
+    };
+  };
 
-  const owner = existingUsers?.users?.[0];
-  if (!owner) {
-    console.error(
-      '❌ No user found. Launch the app once first — it auto-creates the owner user on first setup, then re-run this script.',
-    );
+  // === Path 1: Supabase Auth Admin API (REST / Kong) ===
+  try {
+    const { data: existingUsers, error } = await supabase.auth.admin.listUsers();
+    if (!error && existingUsers?.users?.length) {
+      // Prefer frontend-created owner accounts (owner-<uuid>@local.app) so the
+      // seed writes rows to the same user the app will sign into. Fall back to
+      // users[0] if no match (e.g. a previous seed ran with the old format).
+      const owner = existingUsers.users.find(u => u.email && /^owner-[0-9a-f-]{36}@local\.app$/i.test(u.email))
+        ?? existingUsers.users[0];
+      console.log('✅ Owner user found via Auth Admin API:', owner.id, `(${owner.email ?? 'no-email'})`);
+      const credentials = await materializeCredentialsForExistingUser({ id: owner.id, email: owner.email ?? null });
+      return finalize(owner, credentials);
+    }
+    // API reachable but empty → we can use createUser below
+  } catch (err) {
+    const msg = (err as Error).message || String(err);
+    const isConnectError = /fetch failed|AuthRetryableFetchError|ENOTFOUND|ECONNREFUSED|ETIMEDOUT/i.test(msg);
+    if (!isConnectError) {
+      console.error('❌ Error listing users (non-connect):', err);
+      throw err;
+    }
+    console.warn('⚠️  Auth Admin API unreachable:', msg.trim().split('\n')[0]);
+    console.warn('    Falling back to direct Postgres SQL query (auth.users table)...');
+
+    // === Path 2: Direct Postgres (pg) list existing user ===
+    try {
+      const rows = await listUsersViaPg();
+      if (rows.length > 0) {
+        const owner = rows.find(r => r.email && /^owner-[0-9a-f-]{36}@local\.app$/i.test(r.email)) ?? rows[0];
+        console.log(`✅ Owner user found via Postgres auth.users: ${owner.id} (${owner.email ?? 'no-email'})`);
+        const credentials = await materializeCredentialsForExistingUser(owner);
+        return finalize({ id: owner.id, email: owner.email ?? undefined, role: '', phone: undefined, created_at: '' }, credentials);
+      }
+      console.warn('    auth.users empty in Postgres; attempting SQL INSERT of demo owner...');
+      const credentials = generateOwnerCredentials();
+      const created = await createOwnerUserViaPg(credentials);
+      if (created) {
+        console.log(`✅ Owner user auto-created via Postgres SQL: ${created.id} (${created.email})`);
+        return finalize({ id: created.id, email: created.email, role: '', phone: undefined, created_at: '' }, created.credentials);
+      }
+    } catch (pgErr) {
+      console.error('❌ Postgres direct query also failed:', (pgErr as Error).message);
+    }
+    // === Both paths failed — give actionable diagnosis ===
+    let fetchHost = '<unknown>';
+    try {
+      fetchHost = new URL(supabaseUrl).host;
+    } catch {
+      // URL parse failed — keep '<unknown>' default for diagnosis
+    }
+    printTroubleshootingGuide(fetchHost);
     process.exit(1);
   }
 
-  console.log('✅ Owner user found:', owner.id, `(${owner.email})`);
-  return owner;
+  // === Auth Admin API worked but returned EMPTY — auto-create the owner in place ===
+  //   (Previously we exited here and forced the user to launch the frontend setup
+  //    wizard. As a single-user dev tool we can just upsert the demo owner.)
+  console.warn('⚠️  auth.users empty; auto-creating seed owner user via Auth Admin API...');
+
+  const credentials = generateOwnerCredentials();
+  try {
+    const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+      email: credentials.email,
+      password: credentials.password,
+      email_confirm: true,
+      user_metadata: { name: 'Owner' },
+    });
+    if (createErr || !created?.user) {
+      throw createErr ?? new Error('Auth admin createUser returned empty user');
+    }
+    console.log(`✅ Owner user auto-created: ${created.user.id} (${created.user.email})`);
+    return finalize(created.user, credentials);
+  } catch (createErr) {
+    console.error('❌ Auth admin API createUser also failed; attempting SQL INSERT as final fallback...', (createErr as Error).message);
+    const sqlCreated = await createOwnerUserViaPg(credentials);
+    if (sqlCreated) {
+      console.log(`✅ Owner user auto-created via Postgres SQL fallback: ${sqlCreated.id} (${sqlCreated.email})`);
+      return finalize(
+        { id: sqlCreated.id, email: sqlCreated.email, role: '', phone: undefined, created_at: '' },
+        sqlCreated.credentials,
+      );
+    }
+  }
+
+  console.error(
+    '❌ No user found AND auto-creation also failed. Launch the app once first — ' +
+    'it auto-creates the owner user on first setup, then re-run this script.',
+  );
+  process.exit(1);
 }
 
 async function updateUserProfile(userId: string) {
@@ -918,7 +1334,9 @@ async function main() {
     await createUserFocusStats(user.id);
     
     console.log('\n✅ Test data seed completed!');
-    console.log(`\n📋 Seeded into owner user: ${user.id}`);
+    console.log(`\n📋 Seeded into owner user: ${user.id} (${user.email ?? 'no-email'})`);
+    printLocalStorageInjectCommand(user.credentials);
+    console.log(`  Credentials file saved to: ${CREDENTIALS_OUTPUT_FILE}`);
     
   } catch (error) {
     console.error('\n❌ Seed failed:', error);

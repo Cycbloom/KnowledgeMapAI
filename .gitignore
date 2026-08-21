@@ -75,6 +75,12 @@ data/*.db-wal
 .jwt_secret
 .env.check
 
+# Seed runtime artifacts (live bcrypt login for demo owner — never commit)
+.seed-owner-credentials.json
+
+# One-off debug diffs (local troubleshooting artifacts — never commit)
+__diffs__/
+
 # Vercel
 .vercel/
 

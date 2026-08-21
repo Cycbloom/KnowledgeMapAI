@@ -860,8 +860,10 @@ supsabase start                # 宿主机启动 Supabase
 npm run db:local:start         # 启动本地 Supabase
 npm run db:local:reset         # 重置数据库 (清空 + 重新迁移)
 npm run db:gen-types           # 重新生成 TypeScript 类型
-npm run db:seed                # 插入测试数据
+npm run db:seed                # 插入测试数据 (演示图谱/卡片/任务/成就，不需先启动前端)
 ```
+
+> `npm run db:seed` 会自动在 `auth.users` 中寻找/创建前端同格式的 `owner-{uuid}@local.app` 专属用户并关联数据；执行末尾输出 DevTools `localStorage` 注入命令，在应用 Console 粘贴后即可直接看到演示数据；凭证也会同时落盘到 `.seed-owner-credentials.json`（已忽略）。掌握度梯度 fixture 另见 `tsx scripts/seed-mastery-unification-fixtures.ts`。
 
 ### 12.3 代码检查
 

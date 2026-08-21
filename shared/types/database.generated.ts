@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -2696,6 +2696,7 @@ export type Database = {
           created_at: string | null
           difficulty: number | null
           explanation: string | null
+          focus_topic: string | null
           fsrs_difficulty: number | null
           fsrs_elapsed_days: number | null
           fsrs_last_review: string | null
@@ -2723,6 +2724,7 @@ export type Database = {
           created_at?: string | null
           difficulty?: number | null
           explanation?: string | null
+          focus_topic?: string | null
           fsrs_difficulty?: number | null
           fsrs_elapsed_days?: number | null
           fsrs_last_review?: string | null
@@ -2750,6 +2752,7 @@ export type Database = {
           created_at?: string | null
           difficulty?: number | null
           explanation?: string | null
+          focus_topic?: string | null
           fsrs_difficulty?: number | null
           fsrs_elapsed_days?: number | null
           fsrs_last_review?: string | null
@@ -2892,6 +2895,7 @@ export type Database = {
           output_data: Json | null
           priority: number | null
           retry_count: number | null
+          runtime_progress: Json | null
           scheduled_at: string | null
           started_at: string | null
           status: string | null
@@ -2912,6 +2916,7 @@ export type Database = {
           output_data?: Json | null
           priority?: number | null
           retry_count?: number | null
+          runtime_progress?: Json | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: string | null
@@ -2932,6 +2937,7 @@ export type Database = {
           output_data?: Json | null
           priority?: number | null
           retry_count?: number | null
+          runtime_progress?: Json | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: string | null

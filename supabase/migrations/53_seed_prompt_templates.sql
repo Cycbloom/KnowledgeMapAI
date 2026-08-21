@@ -79,6 +79,22 @@ For ''fill_in_the_blank'' type: Create a sentence with one or more ''___'' (3 un
 
 {{#if includesEssay}}
 For ''essay'' type: Create complex questions requiring a long-form structured answer. The ''answer'' should be a model response with key points. Provide a detailed ''explanation'' with scoring criteria.
+{{/if}}
+
+{{#if includesCloze}}
+For ''cloze'' type: Create a sentence with one or more ''___'' (3 underscores) as blanks. The ''answer'' MUST be a JSON array like [{"blank":"correct word"},...] with one entry per blank, in order of appearance. Provide a detailed ''explanation''.
+{{/if}}
+
+{{#if includesSelectFromOptions}}
+For ''select_from_options'' type: Create a sentence with exactly one ''___'' blank. Provide 4 candidate words in ''options'' (one is the correct answer). The ''answer'' MUST be the correct word string. Provide a detailed ''explanation''.
+{{/if}}
+
+{{#if includesMatching}}
+For ''matching'' type: Create a matching question with two columns. Put the left-column items in ''options'' (e.g. 4 concept terms). The ''answer'' MUST be a JSON array like [{"left":"A","right":"matching definition"},...] pairing every left item to its correct right item. Provide a detailed ''explanation''.
+{{/if}}
+
+{{#if includesOrdering}}
+For ''ordering'' type: Create a sequence question. Put the shuffled items in ''options''. The ''answer'' MUST be a JSON array of the items in the correct order (a complete ordered string array). Provide a detailed ''explanation''.
 {{/if}}', NOW(), NOW()),
 ('chat', 'system', null, null, 'You are an intelligent assistant for a Knowledge Graph.
 Answer the user''s question based on the provided Graph Context.
@@ -249,6 +265,14 @@ Provide a detailed ''explanation'' analyzing the answer.
 Focus on explaining the "Why" and "How" rather than just "What".', NOW(), NOW()),
 ('generate_cards_true_false', 'system', null, null, 'For ''true_false'' type: Create statements focusing on common misconceptions or key details.
 Provide a detailed ''explanation'' clarifying the fact.', NOW(), NOW()),
+('generate_cards_cloze', 'system', null, null, 'For ''cloze'' type: Create a sentence with one or more ''___'' (3 underscores) as blanks.
+The ''answer'' MUST be a JSON array like [{"blank":"correct word"},...] with one entry per blank, in order of appearance. Provide a detailed ''explanation''.', NOW(), NOW()),
+('generate_cards_select_from_options', 'system', null, null, 'For ''select_from_options'' type: Create a sentence with exactly one ''___'' blank.
+Provide 4 candidate words in ''options'' (one is the correct answer). The ''answer'' MUST be the correct word string. Provide a detailed ''explanation''.', NOW(), NOW()),
+('generate_cards_matching', 'system', null, null, 'For ''matching'' type: Create a matching question with two columns.
+Put the left-column items in ''options'' (e.g. 4 concept terms). The ''answer'' MUST be a JSON array like [{"left":"A","right":"matching definition"},...] pairing every left item to its correct right item. Provide a detailed ''explanation''.', NOW(), NOW()),
+('generate_cards_ordering', 'system', null, null, 'For ''ordering'' type: Create a sequence question.
+Put the shuffled items in ''options''. The ''answer'' MUST be a JSON array of the items in the correct order (a complete ordered string array). Provide a detailed ''explanation''.', NOW(), NOW()),
 ('auto_graph_init', 'system', null, null, 'You are a knowledge graph expert. Initialize a new knowledge graph based on the given topic.
 
 ## Task

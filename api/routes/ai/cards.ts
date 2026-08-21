@@ -152,6 +152,8 @@ export function splitConfigAcrossNodes<T extends {
   return clone;
 }
 
+function deepClonePlain<T>(o: T): T { return JSON.parse(JSON.stringify(o)); }
+
 router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSchema), async (req: AuthedRequest, res: Response) => {
   const { node_ids, config } = req.body;
 
@@ -162,97 +164,11 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
     const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(supabase, node_ids);
 
     if (graphNodes && graphNodes.length > 0) {
-      const nodeCount = graphNodes.length;
-      // 每个节点的基础均分 config；余数（remainder）分配给前 `remainder` 个节点，避免总数偏差
-      const baseConfig = splitConfigAcrossNodes(config ?? {}, nodeCount);
-
-      // 计算各类「余数」用于前几个节点补偿
-      let remainderCount = 0;
-      const remainderPerType: Record<string, number> = {};
-      const remainderPerDiff: { easy?: number; medium?: number; hard?: number } = {};
-      // 矩阵余数：type -> {diff -> rem}
-      const remainderMatrix: Record<string, { easy?: number; medium?: number; hard?: number }> = {};
-      if (typeof config?.count === "number" && config.count > 0) {
-        remainderCount = config.count - (baseConfig.count ?? 0) * nodeCount;
-      }
-      if (config?.cards_per_type) {
-        for (const [t, v] of Object.entries(config.cards_per_type)) {
-          const base = Number(baseConfig.cards_per_type?.[t] ?? 0);
-          const rem = Number(v ?? 0) - base * nodeCount;
-          if (rem > 0) remainderPerType[t] = rem;
-        }
-      }
-      if (config?.count_per_difficulty) {
-        const src = config.count_per_difficulty;
-        const base = baseConfig.count_per_difficulty ?? {};
-        const addRem = (key: 'easy'|'medium'|'hard') => {
-          if (typeof src[key] === 'number') {
-            const b = Number(base[key] ?? 0);
-            const rem = (src[key] as number) - b * nodeCount;
-            if (rem > 0) remainderPerDiff[key] = rem;
-          }
-        };
-        addRem('easy'); addRem('medium'); addRem('hard');
-      }
-      if (config?.count_matrix) {
-        for (const [t, cellRaw] of Object.entries(config.count_matrix)) {
-          if (!cellRaw) continue;
-          const cell = cellRaw as { easy?: number; medium?: number; hard?: number };
-          const baseCell: { easy?: number; medium?: number; hard?: number } = baseConfig.count_matrix?.[t] ?? {};
-          const remCell: { easy?: number; medium?: number; hard?: number } = {};
-          (['easy', 'medium', 'hard'] as const).forEach((k) => {
-            const v = cell[k];
-            if (typeof v === 'number' && v > 0) {
-              const b = Number(baseCell[k] ?? 0);
-              const rem = v - b * nodeCount;
-              if (rem > 0) remCell[k] = rem;
-            }
-          });
-          if (Object.keys(remCell).length > 0) remainderMatrix[t] = remCell;
-        }
-      }
-
+      // 题库批量出题：用户填的 config 是每个节点的题量（不分摊、不求总数约等于用户总量），
+      // 直接为每个节点复制一份完整配置。例：5 nodes × {choice:4, qa:4, tf:2} = 每节点 10 题，共产 50 张卡片。
       for (let i = 0; i < graphNodes.length; i++) {
         const gn = graphNodes[i];
-        const nodeConfig: typeof baseConfig & { count?: number; cards_per_type?: Record<string, number>; count_per_difficulty?: { easy?: number; medium?: number; hard?: number } } =
-          structuredClone ? structuredClone(baseConfig) : JSON.parse(JSON.stringify(baseConfig));
-
-        // 把余数加到前 N 个节点（N = 余数大小）
-        if (typeof nodeConfig.count === "number" && remainderCount > 0 && i < remainderCount) {
-          nodeConfig.count += 1;
-        }
-        if (nodeConfig.cards_per_type) {
-          for (const [t, rem] of Object.entries(remainderPerType)) {
-            if (rem > 0 && i < rem) {
-              nodeConfig.cards_per_type[t] = (nodeConfig.cards_per_type[t] ?? 0) + 1;
-            }
-          }
-        }
-        if (nodeConfig.count_per_difficulty) {
-          const apply = (k: 'easy'|'medium'|'hard') => {
-            const rem = remainderPerDiff[k];
-            if (typeof rem === "number" && rem > 0 && i < rem) {
-              const cpd = nodeConfig.count_per_difficulty;
-              if (cpd) {
-                cpd[k] = (cpd[k] ?? 0) + 1;
-              }
-            }
-          };
-          apply('easy'); apply('medium'); apply('hard');
-        }
-        // 矩阵余数补偿：每个格子独立按其余数给前 rem 个节点 +1
-        if (nodeConfig.count_matrix) {
-          for (const [t, remCell] of Object.entries(remainderMatrix)) {
-            const target = nodeConfig.count_matrix[t];
-            if (!target) continue;
-            (['easy', 'medium', 'hard'] as const).forEach((k) => {
-              const rem = remCell[k];
-              if (typeof rem === "number" && rem > 0 && i < rem) {
-                target[k] = (target[k] ?? 0) + 1;
-              }
-            });
-          }
-        }
+        const nodeConfig = deepClonePlain(config ?? {});
 
         const task = await asyncTaskService.createTask(
           req.user.id, 

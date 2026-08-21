@@ -196,7 +196,7 @@ export const createCardsBatchSchema = z.object({
         graph_id: z.string().uuid("无效的图谱ID"),
         question: z.string().min(1, "问题不能为空"),
         answer: z.string().min(1, "答案不能为空"),
-        type: z.enum(["qa", "choice", "true_false"]).optional(),
+        type: z.enum(["qa", "choice", "true_false", "multi_choice", "fill_in_the_blank", "essay", "cloze", "select_from_options", "matching", "ordering"]).optional(),
         options: z.any().optional(),
       }),
     )
@@ -272,6 +272,10 @@ export const generateCardsSchema = z.object({
         "multi_choice",
         "fill_in_the_blank",
         "essay",
+        "cloze",
+        "select_from_options",
+        "matching",
+        "ordering",
       ]),
     )
     .optional(),
@@ -299,6 +303,10 @@ export const generateCardsBatchSchema = z.object({
             "multi_choice",
             "fill_in_the_blank",
             "essay",
+            "cloze",
+            "select_from_options",
+            "matching",
+            "ordering",
           ]),
         )
         .optional(),
@@ -337,6 +345,10 @@ export const generateCardsBatchSchema = z.object({
             "multi_choice",
             "fill_in_the_blank",
             "essay",
+            "cloze",
+            "select_from_options",
+            "matching",
+            "ordering",
           ]),
           z.object({
             easy: z.number().int().min(0).max(200).optional(),
@@ -912,6 +924,10 @@ export const generateQuizSchema = z.object({
             "multi_choice",
             "fill_in_the_blank",
             "essay",
+            "cloze",
+            "select_from_options",
+            "matching",
+            "ordering",
           ]),
         )
         .optional(),

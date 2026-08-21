@@ -645,8 +645,8 @@ export class GraphQueryService {
     const { data, error } = await supabase
       .from("learning_paths")
       .select("*")
-      .eq("graph_id", graphId)
-      .order("order_index", { ascending: true });
+      .eq("source_graph_id", graphId)
+      .order("created_at", { ascending: true });
 
     if (error) throw error;
     return data || [];

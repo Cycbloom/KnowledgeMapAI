@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { api } from "../services/api";
 import { useStore } from "../store/useStore";
 import { queryKeys } from "../hooks/queries/config";
+import { useGraphData } from "../hooks/queries";
 import { useIsMobile } from "../hooks/common/useIsMobile";
 import { ErrorBoundary, Skeleton, LazyLoadFallback } from "../components/common";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
@@ -277,6 +278,7 @@ export const GraphMap = () => {
   const [selectedGraphId, setSelectedGraphId] = useState<string | null>(
     fromGraphId,
   );
+  const { data: selectedGraphData } = useGraphData(selectedGraphId ?? "");
   const [multiSelectedGraphIds, setMultiSelectedGraphIds] = useState<
     Set<string>
   >(new Set());
@@ -2016,7 +2018,25 @@ export const GraphMap = () => {
           isOpen={isGenerateCardsModalOpen}
           onClose={() => setIsGenerateCardsModalOpen(false)}
           onGenerate={handleGenerateCards}
-          nodeTitle={t('graphMap.cards.knowledgePoints', { count: selectedNodeIds.length })}
+          graphId={selectedGraphId ?? undefined}
+          selectedNodes={selectedNodeIds
+            .map((id) => {
+              const n = selectedGraphData?.nodes?.find((x) => x.id === id);
+              const title =
+                (n as { title?: string } | undefined)?.title ??
+                (n as { name?: string } | undefined)?.name ??
+                "";
+              return { id, title };
+            })
+            .filter((x) => x.title.length > 0 || x.id)}
+          graphNodes={(selectedGraphData?.nodes ?? []).map((n) => {
+            const node = n as { id: string; title?: string; name?: string };
+            return { id: node.id, title: node.title ?? node.name ?? "" };
+          })}
+          graphEdges={(selectedGraphData?.edges ?? []).map((e) => ({
+            source_knowledge_point_id: e.source_knowledge_point_id,
+            target_knowledge_point_id: e.target_knowledge_point_id,
+          }))}
         />
       </Suspense>
 

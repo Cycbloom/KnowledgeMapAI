@@ -16,7 +16,6 @@ import { X, GripHorizontal } from "lucide-react";
 import { VersionHistoryModal } from "../modals/VersionHistoryModal";
 import { CreateRegionDialog } from "../modals/CreateRegionDialog";
 import type { CustomRegion } from "@shared/types/graph";
-import type { BatchGenerateConfig } from "../modals/BatchGenerateDialog";
 
 interface GraphStats {
   masteredCount: number;
@@ -32,7 +31,7 @@ interface NodeOperations {
 }
 
 interface AIOperations {
-  handleBackgroundTask: (type: "generate_questions" | "expand_graph" | "batch_generate_questions" | "deep_analysis", data?: BatchGenerateConfig | Record<string, unknown>) => void | Promise<void>;
+  handleBackgroundTask: (type: "generate_questions" | "expand_graph" | "batch_generate_questions" | "deep_analysis", data?: Record<string, unknown>) => void | Promise<void>;
   handleStartLevelTest: () => void;
   handleStartLearningMode: () => void;
   handleAIGenerateCards: () => void;
@@ -66,6 +65,7 @@ interface GraphSidebarManagerProps {
   onCreateRegion?: (
     region: Omit<CustomRegion, "id" | "createdAt" | "updatedAt">,
   ) => void;
+  graphId?: string;
 }
 
 export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
@@ -87,6 +87,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
   customRegions: _customRegions = [],
   coloringMode = "status",
   onCreateRegion,
+  graphId,
 }) => {
   const {
     sidebarMode,
@@ -220,7 +221,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             selectedNodeId={selectedNode?.id ?? null}
             selectedNodeIds={selectedNodeIds}
             onSelectionChange={setSelectedNodeIds}
-            onBatchAction={(action: string, data?: BatchGenerateConfig) => {
+            onBatchAction={(action: string, data?: Record<string, unknown>) => {
               if (action === "expand_graph")
                 {aiOps.handleBackgroundTask("expand_graph");}
               else if (action === "delete") nodeOps.handleBatchDelete();
@@ -232,6 +233,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             className="h-full"
             stats={graphStats}
             isReadOnly={isReadOnly}
+            graphId={graphId}
           />
         </div>
       ) : sidebarMode === "detail" && selectedNode ? (

@@ -1,7 +1,6 @@
 import { Node, Edge, BranchSuggestion, ExplorationPathItem } from '../../types';
 import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
 import type { AIAction } from '@shared/types/ai';
-import type { BatchGenerateConfig } from '../../components/GraphEditor/modals/BatchGenerateDialog';
 import type { RelatedNode } from '../graphEditor/useMiscState';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../utils/graph/graphUtils';
 import { HistoryAction } from '../common/useHistory';
@@ -280,11 +279,10 @@ export const useGraphAIOperations = ({
     );
   };
 
-  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions' | 'deep_analysis', params?: BatchGenerateConfig | Record<string, unknown>) => {
+  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions' | 'deep_analysis', params?: Record<string, unknown>) => {
     if (selectedNodeIds.size === 0 && !selectedNode) return;
     if (!id) return;
 
-    // 单趟收集节点 ID 映射，替代 map+find+filter 的 O(m*find nodes) 扫描
     const nodeById = new Map(nodes.map(n => [n.id, n]));
     const nodesToProcess = selectedNodeIds.size > 0
       ? Array.from(selectedNodeIds).map(nid => nodeById.get(nid)).filter((n): n is NonNullable<typeof n> => Boolean(n))
@@ -302,13 +300,18 @@ export const useGraphAIOperations = ({
         if (type === 'batch_generate_questions') {
           message.info(t('toast.graphAI.submitting'), { duration: 2000 });
 
-          const nodeIds = nodesToProcess.map(n => n.id);
+          const targetNodeIdsFromParams = Array.isArray(params?.targetNodeIds)
+            ? (params.targetNodeIds as string[]).filter((x): x is string => typeof x === "string")
+            : [];
+          const nodeIds = targetNodeIdsFromParams.length > 0 ? targetNodeIdsFromParams : nodesToProcess.map(n => n.id);
 
-          const batchParams = params as BatchGenerateConfig | undefined;
+          const p = params ?? {};
+          const types = Array.isArray(p.types) ? (p.types as string[]).filter((x): x is string => typeof x === "string") : undefined;
+          const count = typeof p.count === "number" ? p.count : undefined;
           await api.ai.batchGenerateCards(nodeIds, {
-            types: batchParams?.types,
-            count: batchParams?.count,
-            pack_template: batchParams?.pack_template ?? undefined,
+            ...p,
+            types,
+            count,
             provider,
             model
           });

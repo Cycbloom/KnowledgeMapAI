@@ -328,13 +328,21 @@ function App() {
               </>
             )}
             <Suspense fallback={<LazyLoadFallback />}>
-              {isPublicRoute && (
-                <a
-                  href="#public-main"
-                  className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-skip-link focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
+              {/*
+                Skip link 只在 Web 渲染：Electron 使用 HashRouter，裸 href="#xxx" 会被解析
+                成新的 hash 路由，破坏 #/login 等公共路由并导致页面置空。
+              */}
+              {isPublicRoute && !isElectron && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    publicMainRef.current?.focus();
+                    publicMainRef.current?.scrollIntoView({ block: "start" });
+                  }}
+                  className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-skip-link focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded cursor-pointer"
                 >
                   {t('common.skipToContent')}
-                </a>
+                </button>
               )}
               {isPublicRoute ? (
                 <main

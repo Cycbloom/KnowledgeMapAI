@@ -43,6 +43,7 @@ import { api } from "../../services/api";
 import { useGlobalShortcuts } from "../../hooks/common/useGlobalShortcuts";
 import { useNetworkStatus } from "../../hooks/common/useNetworkStatus";
 import { useSkipToContent } from "../../hooks/common/useSkipToContent";
+import { isElectron } from "../../config/electronConfig";
 import { apiClient } from "../../services/api/createApiClient";
 import { frontendKernel } from "../../App";
 import { iconMap } from "../../utils/iconMap";
@@ -486,13 +487,25 @@ export const Layout = () => {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-skip-link focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
-        onKeyDown={handleSkip}
-      >
-        {t('common.skipToContent')}
-      </a>
+      {/*
+        Skip link 仅在 Web 模式下启用（BrowserRouter + 键盘无障碍用户）。
+        Electron 桌面端用 HashRouter，裸 href="#main-content" 会被解析成跳转到
+        新的 hash 路由「#main-content」，破坏原有 #/xxx 路由并把页面置空；
+        且桌面端无键盘 Tab 导航诉求，因此直接隐藏。
+      */}
+      {!isElectron() && (
+        <button
+          type="button"
+          onClick={() => {
+            mainRef.current?.focus();
+            mainRef.current?.scrollIntoView({ block: "start" });
+          }}
+          onKeyDown={handleSkip}
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-skip-link focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded cursor-pointer"
+        >
+          {t('common.skipToContent')}
+        </button>
+      )}
       {/* Global Drop Zone Overlay */}
       {isDragOver && (
         <div className="fixed inset-0 z-skip-link bg-primary-500/10 border-2 border-dashed border-primary-400 flex flex-col items-center justify-center backdrop-blur-sm">

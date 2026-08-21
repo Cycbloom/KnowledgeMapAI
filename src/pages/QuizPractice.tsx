@@ -22,6 +22,7 @@ import { Skeleton } from '../components/common';
 import { EmptyState } from '@/components/common/EmptyState';
 import type { StudyCard } from '@shared/types/common';
 import { isTrueFalseAnswerEqual, normalizeBooleanAnswer } from '../utils/textUtils';
+import { isSelectFromOptionsCorrect } from '../utils/quizNewTypes';
 
 interface AnswerRecord {
   cardId: string;
@@ -44,6 +45,10 @@ export const QuizPractice: React.FC = () => {
     true_false: t('study.quizPractice.cardType.true_false'),
     fill_in_the_blank: t('study.quizPractice.cardType.fill_in_the_blank'),
     essay: t('study.quizPractice.cardType.essay'),
+    cloze: t('study.quizPractice.cardType.cloze'),
+    select_from_options: t('study.quizPractice.cardType.select_from_options'),
+    matching: t('study.quizPractice.cardType.matching'),
+    ordering: t('study.quizPractice.cardType.ordering'),
   }), [t]);
 
   const { data: quizSetData, isLoading, error } = useQuizSet(quizSetId || '');
@@ -106,6 +111,10 @@ export const QuizPractice: React.FC = () => {
   const isTrueFalse = currentCard?.card_type === 'true_false';
   const isFillBlank = currentCard?.card_type === 'fill_in_the_blank';
   const isEssay = currentCard?.card_type === 'essay';
+  const isSelectFromOptions = currentCard?.card_type === 'select_from_options';
+  const isCloze = currentCard?.card_type === 'cloze';
+  const isMatching = currentCard?.card_type === 'matching';
+  const isOrdering = currentCard?.card_type === 'ordering';
 
   // Options used for keyboard shortcuts (UX2-03): true_false uses hardcoded options
   const keyboardOptions = useMemo(() => {
@@ -149,6 +158,9 @@ export const QuizPractice: React.FC = () => {
       if (isChoice) {
         return userAnswer === card.answer;
       }
+      if (isSelectFromOptions) {
+        return isSelectFromOptionsCorrect(card.answer, userAnswer);
+      }
       if (isTrueFalse) {
         return isTrueFalseAnswerEqual(userAnswer, card.answer);
       }
@@ -167,7 +179,7 @@ export const QuizPractice: React.FC = () => {
       }
       return false;
     },
-    [isChoice, isTrueFalse, isMultiChoice]
+    [isChoice, isTrueFalse, isMultiChoice, isSelectFromOptions]
   );
 
   const handleOptionClick = useCallback(
@@ -597,7 +609,7 @@ export const QuizPractice: React.FC = () => {
                   </h2>
                 </div>
 
-                {isChoice && currentOptions.length > 0 && (
+                {(isChoice || isSelectFromOptions) && currentOptions.length > 0 && (
                   <div className="space-y-3">
                     {currentOptions.map((option, idx) => {
                       const isSelected = selectedOption === option;
@@ -778,7 +790,7 @@ export const QuizPractice: React.FC = () => {
                   </div>
                 )}
 
-                {(isQA || isEssay || isFillBlank) && showAnswer && (
+                {(isQA || isEssay || isFillBlank || isCloze || isMatching || isOrdering) && showAnswer && (
                   <div className="space-y-6">
                     <div
                       className={`p-6 rounded-2xl ${
@@ -832,7 +844,7 @@ export const QuizPractice: React.FC = () => {
                 }`}
               >
                 {!showAnswer ? (
-                  (isQA || isEssay || isFillBlank) ? (
+                  (isQA || isEssay || isFillBlank || isCloze || isMatching || isOrdering) ? (
                     <button
                       onClick={handleShowAnswer}
                       className="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 dark:shadow-primary-900/30 flex items-center justify-center gap-2"

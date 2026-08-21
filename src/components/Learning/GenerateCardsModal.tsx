@@ -56,19 +56,25 @@ interface GenerateProgress {
   isGenerating: boolean;
 }
 
+interface GraphEdge {
+  source_knowledge_point_id: string;
+  target_knowledge_point_id: string;
+}
+
+interface GraphNode {
+  id: string;
+  title: string;
+}
+
 interface GenerateCardsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onGenerate: (config: GenerateCardsFullConfig & { targetNodeIds: string[] }) => Promise<void>;
-  nodeTitle: string;
-  nodeId?: string;
+  selectedNodes: GraphNode[];
+  graphNodes: GraphNode[];
+  graphEdges: GraphEdge[];
+  nodeTitle?: string;
   graphId?: string;
-  /** 用于覆盖范围快捷选项：当前节点的子节点 id 列表 */
-  childNodeIds?: string[];
-  /** 用于覆盖范围快捷选项：当前节点的同级(同 parent)节点 id 列表 */
-  siblingNodeIds?: string[];
-  /** 用于覆盖范围快捷选项：整张图所有节点 id 列表 */
-  allGraphNodeIds?: string[];
   generateProgress?: GenerateProgress | null;
 }
 
@@ -79,6 +85,10 @@ const DEFAULT_CARDS_PER_TYPE: Record<string, number> = {
   multi_choice: 2,
   fill_in_the_blank: 2,
   essay: 1,
+  cloze: 3,
+  select_from_options: 3,
+  matching: 3,
+  ordering: 3,
 };
 
 const DIFFS_MATRIX: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard'];
@@ -92,15 +102,34 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
   isOpen,
   onClose,
   onGenerate,
+  selectedNodes,
+  graphNodes,
+  graphEdges,
   nodeTitle,
-  nodeId,
-  childNodeIds,
-  siblingNodeIds,
-  allGraphNodeIds,
+  graphId,
   generateProgress,
 }) => {
+  void graphId;
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const findParentId = (nodeId: string, edges: GraphEdge[]): string | null => {
+    const found = edges.find((e) => e.target_knowledge_point_id === nodeId);
+    return found ? found.source_knowledge_point_id : null;
+  };
+
+  const getDirectChildrenCount = (nodeId: string, edges: GraphEdge[]): number => {
+    return edges.filter((e) => e.source_knowledge_point_id === nodeId).length;
+  };
+
+  const getSiblingCount = (nodeId: string, edges: GraphEdge[]): number => {
+    const parentId = findParentId(nodeId, edges);
+    if (parentId === null) return 0;
+    const siblings = edges.filter(
+      (e) => e.source_knowledge_point_id === parentId && e.target_knowledge_point_id !== nodeId,
+    );
+    return siblings.length;
+  };
 
   const [types, setTypes] = useState<string[]>([
     'qa',
@@ -233,6 +262,18 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
   }, [types, matrix]);
 
   const grandTotal = colTotals.easy + colTotals.medium + colTotals.hard;
+
+  const multiSelectedHeaderLabel = useMemo(() => {
+    const nCount = selectedNodes.length;
+    if (nCount <= 1) return '';
+    const total = grandTotal || count;
+    if (total <= 0) return t('study.generateCards.multiSelectedHeaderEmpty', { count: nCount });
+    return t('study.generateCards.multiSelectedHeader', {
+      count: nCount,
+      total,
+      product: nCount * total,
+    });
+  }, [selectedNodes.length, grandTotal, count, t]);
 
   // 总题数 <-> cardsPerType / matrix 双向同步：slider 调时按比例重分配，
   // 误差用「最大余数法（Hamilton）」分摊，避免所有增量堆到最后一行/最后一列。
@@ -385,30 +426,8 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
   };
 
   const targetNodeIds = useMemo((): string[] => {
-    const ids: string[] = [];
-    if (!nodeId && coverage === 'current_only') return [];
-
-    switch (coverage) {
-      case 'current_only':
-        return nodeId ? [nodeId] : [];
-      case 'with_children':
-        if (nodeId) ids.push(nodeId);
-        (childNodeIds ?? []).forEach((id) => {
-          if (!ids.includes(id)) ids.push(id);
-        });
-        return ids;
-      case 'with_siblings':
-        if (nodeId) ids.push(nodeId);
-        (siblingNodeIds ?? []).forEach((id) => {
-          if (!ids.includes(id)) ids.push(id);
-        });
-        return ids;
-      case 'graph':
-        return [...(allGraphNodeIds ?? [])];
-      default:
-        return nodeId ? [nodeId] : [];
-    }
-  }, [coverage, nodeId, childNodeIds, siblingNodeIds, allGraphNodeIds]);
+    return selectedNodes.map((n) => n.id);
+  }, [selectedNodes]);
 
   const cardTypes: Array<{ id: string; label: string; descKey: string }> = [
     { id: 'qa', label: t('learning.generateCards.typeQA'), descKey: 'learning.generateCards.typeDescQA' },
@@ -417,6 +436,10 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
     { id: 'multi_choice', label: t('learning.generateCards.typeMultiChoice'), descKey: 'learning.generateCards.typeDescMultiChoice' },
     { id: 'fill_in_the_blank', label: t('learning.generateCards.typeFillBlank'), descKey: 'learning.generateCards.typeDescFillBlank' },
     { id: 'essay', label: t('learning.generateCards.typeEssay'), descKey: 'learning.generateCards.typeDescEssay' },
+    { id: 'cloze', label: t('learning.generateCards.typeCloze'), descKey: 'learning.generateCards.typeDescCloze' },
+    { id: 'select_from_options', label: t('learning.generateCards.typeSelectFromOptions'), descKey: 'learning.generateCards.typeDescSelectFromOptions' },
+    { id: 'matching', label: t('learning.generateCards.typeMatching'), descKey: 'learning.generateCards.typeDescMatching' },
+    { id: 'ordering', label: t('learning.generateCards.typeOrdering'), descKey: 'learning.generateCards.typeDescOrdering' },
   ];
 
   const difficultyOptions: Array<{
@@ -466,39 +489,89 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
     },
   ];
 
+  const coverageCounts = useMemo(() => {
+    const childrenCounts: number[] = [];
+    const siblingCounts: number[] = [];
+    const combinedCounts: number[] = [];
+    selectedNodes.forEach((n) => {
+      const cc = getDirectChildrenCount(n.id, graphEdges);
+      const sc = getSiblingCount(n.id, graphEdges);
+      childrenCounts.push(cc);
+      siblingCounts.push(sc);
+      combinedCounts.push(cc + sc);
+    });
+    return { childrenCounts, siblingCounts, combinedCounts };
+  }, [selectedNodes, graphEdges]);
+
+  const formatCoverageCount = (
+    counts: number[],
+    kind: 'children' | 'sibling' | 'combined',
+  ): string | undefined => {
+    if (counts.length === 0) return undefined;
+    const min = Math.min(...counts);
+    const max = Math.max(...counts);
+    if (min === max) {
+      const n = min;
+      if (kind === 'children') return t('study.generateCoverage.childrenCount', { count: n });
+      if (kind === 'sibling') return t('study.generateCoverage.siblingCount', { count: n });
+      return t('study.generateCoverage.combinedCount', { count: n });
+    }
+    return t('study.generateCoverage.contextRange', { min, max });
+  };
+
   const coverageOptions: Array<{
     id: GenerateCardsCoverage;
     label: string;
     desc: string;
-    count: number | undefined;
+    countBadge: string | undefined;
+    rawCount: number | undefined;
+    disabled: boolean;
     icon: React.ReactNode;
   }> = [
     {
       id: 'current_only',
       label: t('learning.generateCards.coverageCurrentOnly'),
       desc: t('learning.generateCards.coverageCurrentOnlyDesc'),
-      count: nodeId ? 1 : undefined,
+      countBadge:
+        selectedNodes.length === 1
+          ? t('learning.generateCards.coverageNodeCount', { count: 1 })
+          : selectedNodes.length > 1
+            ? t('learning.generateCards.coverageNodeCount', { count: selectedNodes.length })
+            : undefined,
+      rawCount: selectedNodes.length > 0 ? selectedNodes.length : undefined,
+      disabled: selectedNodes.length === 0,
       icon: <CircleDot size={16} />,
     },
     {
       id: 'with_children',
       label: t('learning.generateCards.coverageWithChildren'),
       desc: t('learning.generateCards.coverageWithChildrenDesc'),
-      count: childNodeIds ? (nodeId ? 1 : 0) + childNodeIds.length : undefined,
+      countBadge: formatCoverageCount(coverageCounts.childrenCounts, 'children'),
+      rawCount:
+        coverageCounts.childrenCounts.length > 0 ? Math.max(...coverageCounts.childrenCounts) : 0,
+      disabled: selectedNodes.length === 0,
       icon: <GitBranch size={16} />,
     },
     {
       id: 'with_siblings',
       label: t('learning.generateCards.coverageWithSiblings'),
       desc: t('learning.generateCards.coverageWithSiblingsDesc'),
-      count: siblingNodeIds ? (nodeId ? 1 : 0) + siblingNodeIds.length : undefined,
+      countBadge: formatCoverageCount(coverageCounts.siblingCounts, 'sibling'),
+      rawCount:
+        coverageCounts.siblingCounts.length > 0 ? Math.max(...coverageCounts.siblingCounts) : 0,
+      disabled: selectedNodes.length === 0,
       icon: <GitMerge size={16} />,
     },
     {
       id: 'graph',
       label: t('learning.generateCards.coverageGraph'),
       desc: t('learning.generateCards.coverageGraphDesc'),
-      count: allGraphNodeIds?.length,
+      countBadge:
+        graphNodes.length > 0
+          ? t('study.generateCoverage.contextCount', { count: graphNodes.length })
+          : undefined,
+      rawCount: graphNodes.length > 0 ? graphNodes.length : undefined,
+      disabled: graphNodes.length === 0 || selectedNodes.length === 0,
       icon: <Network size={16} />,
     },
   ];
@@ -526,8 +599,13 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
     const difficultyLabel =
       difficultyOptions.find((o) => o.id === difficulty)?.label ?? difficulty;
 
+    const displayTitle =
+      selectedNodes.length === 1
+        ? nodeTitle ?? selectedNodes[0]?.title ?? ''
+        : multiSelectedHeaderLabel;
+
     return [
-      `- ${t('learning.generateCards.promptPreviewTopic')}：${nodeTitle || '-'}`,
+      `- ${t('learning.generateCards.promptPreviewTopic')}：${displayTitle || '-'}`,
       `- ${t('learning.generateCards.promptPreviewTotalCount')}：${grandTotal || count}`,
       `- ${t('learning.generateCards.promptPreviewTypes')}：${questionTypesList || t('learning.generateCards.fallbackAllTypes')}`,
       `- ${t('learning.generateCards.promptPreviewMatrix')}：${matrixPreview || '-'}`,
@@ -535,6 +613,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
       `- ${t('learning.generateCards.promptPreviewCoverage')}：${coverageLabel}（${t('learning.generateCards.promptPreviewNodeCount', { count: targetNodeIds.length })}）`,
     ].join('\n');
   }, [
+    selectedNodes,
     nodeTitle,
     grandTotal,
     count,
@@ -577,8 +656,13 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
     const difficultyLabel =
       difficultyOptions.find((o) => o.id === difficulty)?.label ?? difficulty;
 
+    const promptTopic =
+      selectedNodes.length === 1
+        ? nodeTitle ?? selectedNodes[0]?.title ?? ''
+        : multiSelectedHeaderLabel;
+
     return trimmed
-      .replaceAll('{{topic}}', nodeTitle)
+      .replaceAll('{{topic}}', promptTopic)
       .replaceAll('{{count}}', String(grandTotal || count))
       .replaceAll('{{types}}', questionTypesList || t('learning.generateCards.fallbackAllTypes'))
       .replaceAll('{{matrix}}', matrixPreview || '-')
@@ -590,6 +674,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
       .replaceAll('{{content}}', `「${t('learning.generateCards.promptContentHint')}」`);
   }, [
     customPrompt,
+    selectedNodes,
     nodeTitle,
     grandTotal,
     count,
@@ -747,7 +832,18 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                 {t('learning.generateCards.title')}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                {t('learning.generateCards.configuring', { title: nodeTitle })}
+                {selectedNodes.length === 1 ? (
+                  t('learning.generateCards.configuring', {
+                    title: nodeTitle ?? selectedNodes[0]?.title ?? '',
+                  })
+                ) : (
+                  <span className="inline-flex items-center gap-2">
+                    <span>{multiSelectedHeaderLabel}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 text-[10px] font-bold tabular-nums">
+                      {selectedNodes.length}
+                    </span>
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -875,8 +971,28 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                 aria-label={t('learning.generateCards.countLabel')}
                 className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600 touch-none"
               />
-              <div className="flex justify-between text-[10px] text-slate-400 mt-1.5 font-medium">
-                <span>1</span><span>15</span><span>30</span><span>60</span>
+              <div className="relative w-full h-4 mt-1 font-medium">
+                {/* 1-15-30-60 非等距刻度，按 1..60 的真实百分比摆放 */}
+                {([1, 15, 30, 60] as const).map((v) => {
+                  const pct = ((v - 1) / (60 - 1)) * 100;
+                  return (
+                    <span
+                      key={v}
+                      className="absolute top-0 text-[10px] text-slate-400"
+                      style={{
+                        left: `${pct}%`,
+                        transform:
+                          v === 1
+                            ? 'translateX(0)'
+                            : v === 60
+                              ? 'translateX(-100%)'
+                              : 'translateX(-50%)',
+                      }}
+                    >
+                      {v}
+                    </span>
+                  );
+                })}
               </div>
             </div>
 
@@ -1085,7 +1201,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
         {/* 右栏：覆盖范围 + 提示词预览 + 自定义 prompt */}
         <aside className="lg:col-span-2 p-5 overflow-y-auto space-y-5 bg-slate-50/70 dark:bg-slate-900/60 min-h-0">
           {/* 覆盖范围 */}
-          {allGraphNodeIds ? (
+          {graphNodes.length > 0 ? (
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                 <span className="w-1.5 h-4 bg-primary-500 rounded-full" />
@@ -1094,11 +1210,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
               <div className="grid grid-cols-1 gap-2">
                 {coverageOptions.map((option) => {
                   const isSelected = coverage === option.id;
-                  const disabled =
-                    (option.id === 'with_children' && !childNodeIds?.length && !nodeId) ||
-                    (option.id === 'with_siblings' && !siblingNodeIds?.length && !nodeId) ||
-                    (option.id === 'graph' && !allGraphNodeIds.length) ||
-                    (option.id === 'current_only' && !nodeId);
+                  const disabled = option.disabled;
                   return (
                     <button
                       type="button"
@@ -1128,9 +1240,9 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                         }`}>
                           {option.label}
                         </span>
-                        {typeof option.count === 'number' ? (
+                        {option.countBadge ? (
                           <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                            {t('learning.generateCards.coverageNodeCount', { count: option.count })}
+                            {option.countBadge}
                           </span>
                         ) : null}
                       </div>

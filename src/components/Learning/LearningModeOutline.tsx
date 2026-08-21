@@ -2,7 +2,6 @@ import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { GraphOutline } from "../GraphEditor/panels/GraphOutline";
 import { LearningPathOutline } from "./LearningPathOutline";
-import type { BatchGenerateConfig } from "../GraphEditor/modals/BatchGenerateDialog";
 
 type OutlineMode = "graph" | "learning-path";
 
@@ -22,7 +21,7 @@ interface LearningModeOutlineProps {
   graphMeta: { template_type?: string } | null | undefined;
   onNodeClick: (nodeId: string) => void;
   onSelectionChange: (ids: Set<string>) => void;
-  onBatchAction: (action: string, data?: BatchGenerateConfig) => void;
+  onBatchAction: (action: string, data?: Record<string, unknown>) => void;
   onAddNode: () => void;
   onBackToGraphOutline: () => void;
 }

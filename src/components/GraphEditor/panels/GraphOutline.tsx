@@ -29,7 +29,12 @@ import {
 import { Node, Edge, type NodeStatus } from "../../../types";
 import { createClient } from "@supabase/supabase-js";
 import { useDebouncedSearch } from "../../../hooks/common/useDebouncedSearch";
-import { BatchGenerateDialog, type BatchGenerateConfig } from "../modals/BatchGenerateDialog";
+import {
+  GenerateCardsModal,
+  type GenerateCardsFullConfig,
+} from "../../Learning/GenerateCardsModal";
+import { QuizGenerationModal } from "../../Quiz/QuizGenerationModal";
+import { message } from "../../../utils/messageHelper";
 import {
   LiteratureSourceDB,
   BackboneModule,
@@ -88,7 +93,10 @@ interface GraphOutlineProps {
   selectedNodeId: string | null;
   selectedNodeIds?: Set<string>;
   onSelectionChange?: (ids: Set<string>) => void;
-  onBatchAction?: (action: "expand_graph" | "delete" | "batch_generate_questions" | "create_region", data?: BatchGenerateConfig) => void;
+  onBatchAction?: (
+    action: "expand_graph" | "delete" | "batch_generate_questions" | "create_region",
+    data?: Record<string, unknown>,
+  ) => void;
   onAddNode?: () => void;
   onConnectNodes?: (sourceId: string, targetId: string) => void;
   className?: string;
@@ -123,7 +131,8 @@ export const GraphOutline = React.memo(function GraphOutline({
     new Set(),
   );
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
-  const [isBatchGenerateOpen, setIsBatchGenerateOpen] = useState(false);
+  const [isGenerateCardsModalOpen, setIsGenerateCardsModalOpen] = useState(false);
+  const [isQuizGenerationModalOpen, setIsQuizGenerationModalOpen] = useState(false);
   const [showConnectionDiscovery, setShowConnectionDiscovery] = useState(false);
   const [literatureSourcesMap, setLiteratureSourcesMap] = useState<
     Map<string, LiteratureSourceDB>
@@ -440,11 +449,13 @@ export const GraphOutline = React.memo(function GraphOutline({
     }
   }, [selectedNodeIds.size, nodes, onSelectionChange]);
 
-  const handleBatchGenerateSuccess = useCallback(
-    (config?: BatchGenerateConfig) => {
+  const handleGenerateCardsSuccess = useCallback(
+    async (config?: GenerateCardsFullConfig & { targetNodeIds: string[] }) => {
       onSelectionChange?.(new Set());
       setIsMultiSelectMode(false);
-      onBatchAction?.("batch_generate_questions", config);
+      if (config && config.targetNodeIds.length > 0) {
+        onBatchAction?.("batch_generate_questions" as const, config as unknown as Record<string, unknown>);
+      }
     },
     [onSelectionChange, onBatchAction],
   );
@@ -1617,13 +1628,22 @@ export const GraphOutline = React.memo(function GraphOutline({
                 <Palette aria-hidden="true" size={16} />
               </button>
               <button
-                onClick={() => setIsBatchGenerateOpen(true)}
+                onClick={() => setIsGenerateCardsModalOpen(true)}
                 disabled={selectedNodeIds.size === 0}
                 className="p-1.5 text-primary-600 hover:bg-primary-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t("graphEditor.outline.batchGenerateQuestions")}
                 aria-label={t("graphEditor.outline.batchGenerateQuestions")}
               >
                 <Sparkles aria-hidden="true" size={16} />
+              </button>
+              <button
+                onClick={() => setIsQuizGenerationModalOpen(true)}
+                disabled={selectedNodeIds.size === 0}
+                className="p-1.5 text-orange-600 hover:bg-orange-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                title={t("graphEditor.outline.createQuizSet")}
+                aria-label={t("graphEditor.outline.createQuizSet")}
+              >
+                <FileText aria-hidden="true" size={16} />
               </button>
               <button
                 onClick={() => onBatchAction?.("expand_graph")}
@@ -1916,11 +1936,35 @@ export const GraphOutline = React.memo(function GraphOutline({
         )}
       </div>
 
-      <BatchGenerateDialog
-        isOpen={isBatchGenerateOpen}
-        onClose={() => setIsBatchGenerateOpen(false)}
-        selectedNodeIds={Array.from(selectedNodeIds)}
-        onSuccess={handleBatchGenerateSuccess}
+      <GenerateCardsModal
+        isOpen={isGenerateCardsModalOpen}
+        onClose={() => setIsGenerateCardsModalOpen(false)}
+        onGenerate={handleGenerateCardsSuccess}
+        selectedNodes={Array.from(selectedNodeIds).map((id) => {
+          const n = nodes.find((x) => x.id === id);
+          const node = n as { id: string; title?: string; name?: string } | undefined;
+          return { id, title: node?.title ?? node?.name ?? "" };
+        })}
+        graphNodes={nodes.map((n) => {
+          const node = n as { id: string; title?: string; name?: string };
+          return { id: node.id, title: node.title ?? node.name ?? "" };
+        })}
+        graphEdges={edges.map((e) => ({
+          source_knowledge_point_id: e.source_knowledge_point_id,
+          target_knowledge_point_id: e.target_knowledge_point_id,
+        }))}
+        graphId={graphId}
+      />
+      <QuizGenerationModal
+        open={isQuizGenerationModalOpen}
+        onClose={() => setIsQuizGenerationModalOpen(false)}
+        graphId={graphId}
+        initialSelectedKnowledgePoints={Array.from(selectedNodeIds)}
+        onComplete={() => {
+          onSelectionChange?.(new Set());
+          setIsMultiSelectMode(false);
+          message.success(t("graphEditor.outline.quizSetCreated"), { duration: 5000 });
+        }}
       />
     </div>
   );

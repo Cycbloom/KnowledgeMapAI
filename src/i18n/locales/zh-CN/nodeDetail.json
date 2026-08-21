@@ -47,5 +47,6 @@
   "viewChildNode": "查看子节点：{{title}}",
   "memoryDecay": "记忆衰减",
   "retrievability": "可提取性: {{percent}}%",
+  "lastReview": "上次复习",
   "reviewNow": "立即复习"
 }

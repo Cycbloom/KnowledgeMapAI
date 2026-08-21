@@ -7,6 +7,7 @@ import {
   resolvePrimaryTextStyle,
   resolveSecondaryTextStyle,
 } from "../../utils/quizTypography";
+import { normalizeBooleanAnswer } from "../../utils/textUtils";
 
 /**
  * QuizAnswerExplanation 组件 Props
@@ -92,14 +93,27 @@ export function QuizAnswerExplanation({
     if (!isChoice && !isTrueFalse && !isSelectFromOptions) {
       return null;
     }
+    // 判断题必须用 normalizeBooleanAnswer 归一化（存储可能是 true/false/TRUE/FALSE/错误/正确等），
+    // 否则会出现 selectedOption("False") === correctAnswer("false") 失败的情况，
+    // 导致明明选对却被判错（结果区/选项按钮均显示错误反馈红底）。
     const correctAnswer = isTrueFalse
-      ? currentCard.answer.trim()
+      ? normalizeBooleanAnswer(currentCard.answer)
       : currentCard.answer;
-    const isCorrect = selectedOption === correctAnswer;
+    const selectedNormalized = isTrueFalse && selectedOption
+      ? normalizeBooleanAnswer(selectedOption)
+      : selectedOption;
+    const isCorrect = selectedNormalized === correctAnswer;
+    // 判断题显示时用中文标签（正确/错误），避免 "True/False" 与选项按钮文字重复
+    const tfDisplay = (v: string | null) => {
+      if (!isTrueFalse) return v;
+      if (v === "True") return t("study.quiz.correct");
+      if (v === "False") return t("study.quiz.incorrect");
+      return v;
+    };
     return {
       isCorrect,
-      selectedLabel: selectedOption,
-      correctLabel: correctAnswer,
+      selectedLabel: tfDisplay(selectedNormalized),
+      correctLabel: tfDisplay(correctAnswer),
     };
   };
 

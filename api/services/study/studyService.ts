@@ -88,36 +88,37 @@ const dbCardToFSRS = (dbCard: StudyCard): Card => {
 
   const reps = Math.max(0, Number.isFinite(dbCard.review_count ?? NaN) ? (dbCard.review_count as number) : 0);
   // stability/difficulty 需要严格落在 FSRS 5 的合法区间：
-  //   difficulty ∈ [1, 10]，stability ≥ S_MIN (非 New 状态)。
-  // 若数据库遗留的老数据不在区间内（例如早期手动 seed 写入
-  // difficulty=0.3/0.5/0.7 或 0），这里先 clamp 兜底，避免 repeat
-  // 里的 next_state 抛 "Invalid memory state"。
+  //   1) New 卡：必须同时满足 stability=0 且 difficulty=0，FSRS.next_state
+  //      才会走 init_stability / init_difficulty 分支；否则会进入下面的
+  //      "d < 1 || s < S_MIN" 校验并抛 "Invalid memory state"。
+  //      因此 New 卡不论数据库遗留了什么非零残留值（如 s=0 但 d=0.3），
+  //      一律强制归零，保证 (d,s)===(0,0)。
+  //   2) 非 New 卡：difficulty ∈ [1, 10]，stability ≥ S_MIN。
+  //      若数据库遗留老数据不在区间内（例如早期 seed 写入
+  //      difficulty=0.3/0.5/0.7 或 0、stability=0），先 clamp 兜底。
   const clamp = (v: number, lo: number, hi: number) =>
     Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : NaN;
   const rawStability = Number(dbCard.fsrs_stability);
-  const stabilityFinite = clamp(rawStability, FSRS_STABILITY_MIN, FSRS_STABILITY_MAX);
-  const stability = state === State.New
-    ? // New 卡允许 stability=0，由 fsrs 用 init_stability 初始化
-      rawStability === 0
-      ? 0
-      : (Number.isNaN(stabilityFinite) ? empty.stability : stabilityFinite)
-    : // 非 New 卡 stability 必须 ≥ S_MIN，遗留 0/极小值一律提拉到底线
-      Math.max(
-        Number.isNaN(stabilityFinite) ? empty.stability : stabilityFinite,
-        FSRS_STABILITY_MIN,
-      );
   const rawDifficulty = Number(dbCard.fsrs_difficulty);
-  const difficultyFinite = clamp(rawDifficulty, FSRS_DIFFICULTY_MIN, FSRS_DIFFICULTY_MAX);
-  const difficulty = state === State.New
-    ? // New 卡 difficulty=0 也合法，由 fsrs 用 init_difficulty 初始化
-      rawDifficulty === 0
-      ? empty.difficulty
-      : (Number.isNaN(difficultyFinite) ? empty.difficulty : difficultyFinite)
-    : // 非 New 卡 difficulty 必须落在 [1,10]，遗留 0.x 一律提拉到底线
-      Math.max(
-        Number.isNaN(difficultyFinite) ? empty.difficulty : difficultyFinite,
-        FSRS_DIFFICULTY_MIN,
-      );
+  let stability: number;
+  let difficulty: number;
+  if (state === State.New) {
+    // 关键修复：New 卡必须 (d,s)===(0,0)，不能出现只有一侧为零的不对称情况。
+    // 任何非零残留值都是上一版写入错误，这里强制对齐 FSRS 的约定。
+    stability = 0;
+    difficulty = empty.difficulty;
+  } else {
+    const stabilityFinite = clamp(rawStability, FSRS_STABILITY_MIN, FSRS_STABILITY_MAX);
+    stability = Math.max(
+      Number.isNaN(stabilityFinite) ? empty.stability : stabilityFinite,
+      FSRS_STABILITY_MIN,
+    );
+    const difficultyFinite = clamp(rawDifficulty, FSRS_DIFFICULTY_MIN, FSRS_DIFFICULTY_MAX);
+    difficulty = Math.max(
+      Number.isNaN(difficultyFinite) ? empty.difficulty : difficultyFinite,
+      FSRS_DIFFICULTY_MIN,
+    );
+  }
   const elapsed = Number(dbCard.fsrs_elapsed_days);
   const scheduled = Number(dbCard.fsrs_scheduled_days);
 
@@ -531,6 +532,25 @@ export class StudyService {
       scheduling_cards = f.repeat(fsrsCard, now);
     } catch (fsrsError) {
       logger.error("FSRS algorithm error:", fsrsError);
+      logger.error("FSRS card state before repeat:", {
+        cardId,
+        state: fsrsCard.state,
+        stability: fsrsCard.stability,
+        difficulty: fsrsCard.difficulty,
+        reps: fsrsCard.reps,
+        elapsed_days: fsrsCard.elapsed_days,
+        scheduled_days: fsrsCard.scheduled_days,
+        due: fsrsCard.due.toISOString(),
+        last_review: fsrsCard.last_review?.toISOString() ?? null,
+        quality,
+        rating,
+        raw: {
+          fsrs_state: (card as StudyCard).fsrs_state,
+          fsrs_stability: (card as StudyCard).fsrs_stability,
+          fsrs_difficulty: (card as StudyCard).fsrs_difficulty,
+          review_count: (card as StudyCard).review_count,
+        },
+      });
       throw new AppError(
         "学习算法计算错误",
         500,
@@ -540,6 +560,20 @@ export class StudyService {
     const scheduledCard = (
       scheduling_cards as unknown as Record<Rating, { card: Card }>
     )[rating].card;
+
+    // fsrs_retrievability 存储口径：S 的 log1p 饱和归一化长期掌握水平（与前端进度条口径一致）
+    // 原 forgetting_curve(w, 0, S) 在 Δt=0 时永远=1，所有评分档都写 100%，丢失 Hard/Good/Easy 等级语义
+    // 这里改用 stabilityToMasteryBaseline：S=7天→50%、S=30天→74%、S=365天→95%
+    // 注：R=exp(-Δt/S) 的瞬时时间衰减由前端在渲染时基于 fsrs_last_review + now 实时相乘补充
+    function stabilityToMasteryBaseline(s: number): number {
+      const stability = Number.isFinite(s) ? Math.max(0, s) : 0;
+      const HALF_LIFE_S = 7;
+      return Math.max(0, Math.min(1, Math.log1p(stability / HALF_LIFE_S) / Math.log(2)));
+    }
+    const nextStability = Math.max(0, Number(scheduledCard.stability) || 0);
+    const nextRetrievability = nextStability > 0
+      ? stabilityToMasteryBaseline(nextStability)
+      : 0;
 
     const { data: updatedCardData, error: updateError } = await supabase
       .from("study_cards")
@@ -552,6 +586,7 @@ export class StudyService {
         fsrs_difficulty: scheduledCard.difficulty,
         fsrs_elapsed_days: scheduledCard.elapsed_days,
         fsrs_scheduled_days: scheduledCard.scheduled_days,
+        fsrs_retrievability: nextRetrievability,
         fsrs_last_review: now.toISOString(),
         last_rating: rating,
       })

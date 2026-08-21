@@ -90,11 +90,45 @@ export function getCardTypeBadgeMeta(cardType: CardType | string): CardTypeBadge
   return CARD_TYPE_BADGE_MAP[key] ?? fallback;
 }
 
+/** 徽章胶囊样式模式：
+ * - 'capsule' 圆角胶囊（默认，现有样式：rounded-full + border）
+ * - 'ring'    方角小 pill（新样式：rounded-md + ring-1，和掌握度区状态 pill 同风）
+ */
+export type BadgeStyle = "capsule" | "ring";
+
 /**
  * 根据 tone 与是否暗色模式返回 Tailwind 胶囊样式 classes。
  * 包含：背景色、文字色、边框色（pill 形圆角 + 内边距）。
  */
-export function badgeToneClasses(tone: BadgeTone, isDark: boolean): string {
+export function badgeToneClasses(tone: BadgeTone, isDark: boolean, style: BadgeStyle = "capsule"): string {
+  if (style === "ring") {
+    const ringLightMap: Readonly<Record<BadgeTone, string>> = {
+      blue: "bg-blue-50 text-blue-700 ring-blue-200",
+      rose: "bg-rose-50 text-rose-700 ring-rose-200",
+      emerald: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+      violet: "bg-violet-50 text-violet-700 ring-violet-200",
+      amber: "bg-amber-50 text-amber-700 ring-amber-200",
+      slate: "bg-slate-50 text-slate-700 ring-slate-200",
+      cyan: "bg-cyan-50 text-cyan-700 ring-cyan-200",
+      teal: "bg-teal-50 text-teal-700 ring-teal-200",
+      indigo: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+      orange: "bg-orange-50 text-orange-700 ring-orange-200",
+    };
+    const ringDarkMap: Readonly<Record<BadgeTone, string>> = {
+      blue: "bg-blue-950/40 text-blue-300 ring-blue-800/60",
+      rose: "bg-rose-950/40 text-rose-300 ring-rose-800/60",
+      emerald: "bg-emerald-950/40 text-emerald-300 ring-emerald-800/60",
+      violet: "bg-violet-950/40 text-violet-300 ring-violet-800/60",
+      amber: "bg-amber-950/40 text-amber-300 ring-amber-800/60",
+      slate: "bg-slate-800/60 text-slate-300 ring-slate-700/60",
+      cyan: "bg-cyan-950/40 text-cyan-300 ring-cyan-800/60",
+      teal: "bg-teal-950/40 text-teal-300 ring-teal-800/60",
+      indigo: "bg-indigo-950/40 text-indigo-300 ring-indigo-800/60",
+      orange: "bg-orange-950/40 text-orange-300 ring-orange-800/60",
+    };
+    const palette = isDark ? ringDarkMap : ringLightMap;
+    return `${palette[tone]} inline-flex items-center gap-1.5 rounded-md ring-1 px-2.5 py-0.5 text-xs font-medium`;
+  }
   const lightMap: Readonly<Record<BadgeTone, string>> = {
     blue: "bg-blue-50 text-blue-700 border-blue-200",
     rose: "bg-rose-50 text-rose-700 border-rose-200",

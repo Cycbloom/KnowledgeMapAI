@@ -368,14 +368,14 @@ export function QuizOptionArea({
                 <span
                   className={`${isMobile ? "text-xl" : "text-lg"} font-bold`}
                 >
+                  {option === "True" ? "TRUE" : "FALSE"}
+                </span>
+                <span
+                  className={`text-xs opacity-60 ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                >
                   {option === "True"
                     ? t("study.quiz.correct")
                     : t("study.quiz.incorrect")}
-                </span>
-                <span
-                  className={`text-xs opacity-50 uppercase tracking-wider`}
-                >
-                  {option}
                 </span>
                 {showAnswer && isCorrect && (
                   <Check

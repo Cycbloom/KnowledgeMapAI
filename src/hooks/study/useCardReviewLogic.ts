@@ -123,10 +123,13 @@ export const useCardReviewLogic = ({
       if (quality >= 3) setCorrectCount((prev) => prev + 1);
 
       try {
-        await updateProgressMutation.mutateAsync({
+        const updatedCard = await updateProgressMutation.mutateAsync({
           id: quizCards[currentCardIndex].id,
           quality,
         });
+        setQuizCards((prev) =>
+          prev.map((card) => (card.id === updatedCard.id ? updatedCard : card)),
+        );
         handleNextCard();
       } catch (err) {
         console.error(err);
@@ -144,10 +147,13 @@ export const useCardReviewLogic = ({
       if (quality >= 3) setCorrectCount((prev) => prev + 1);
 
       try {
-        await updateProgressMutation.mutateAsync({
+        const updatedCard = await updateProgressMutation.mutateAsync({
           id: quizCards[currentCardIndex].id,
           quality,
         });
+        setQuizCards((prev) =>
+          prev.map((card) => (card.id === updatedCard.id ? updatedCard : card)),
+        );
         setPrevKnowledgePointId(quizCards[currentCardIndex].knowledge_point_id);
       } catch (err) {
         console.error(err);

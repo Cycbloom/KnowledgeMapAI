@@ -20,7 +20,7 @@ import {
 import { QuizOptionArea } from "./QuizOptionArea";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
 import { QuizRatingBar } from "./QuizRatingBar";
-import { FocusTopicBadge } from "./common";
+import { FocusTopicBadge, CardStatsStrip, CardDatesLine } from "./common";
 
 type UpdateProgressMutation = ReturnType<typeof useUpdateCardProgressMutation>;
 
@@ -475,36 +475,35 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                 )}
 
                 <div className="flex flex-col items-start text-left">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`${badgeToneClasses(currentBadgeMeta.tone, isDark)} text-xs md:text-[13px] font-bold inline-flex items-center gap-1 px-2.5 py-1`}
-                    >
-                      <CurrentBadgeIcon size={14} />
-                      {t(currentBadgeMeta.labelKey as never)}
-                    </span>
-                    {currentDifficultyMeta && (
+                  {/* 第1行：掌握度条（左 flex-1）+ 题型/难度 ring badge（右 shrink-0）同一行 —— 去掉语义重复的"新卡/复习次数"*/}
+                  <div className="w-full flex items-center justify-between gap-2 md:gap-3">
+                    <div className="flex-1 min-w-0">
+                      <CardStatsStrip card={currentCard} isDark={isDark} isMobile={isMobile} variant="masteryOnly" />
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                       <span
-                        className={`${badgeToneClasses(currentDifficultyMeta.tone, isDark)} text-xs md:text-[13px] font-bold inline-flex items-center gap-1 px-2.5 py-1`}
-                        aria-label={t(currentDifficultyMeta.labelKey as never)}
+                        className={`${badgeToneClasses(currentBadgeMeta.tone, isDark, "ring")} text-xs md:text-[13px] font-bold gap-1 px-2.5 py-1`}
                       >
-                        {t(currentDifficultyMeta.labelKey as never)}
+                        <CurrentBadgeIcon size={14} />
+                        {t(currentBadgeMeta.labelKey as never)}
                       </span>
-                    )}
-                    <h3
-                      className={`uppercase tracking-widest text-[10px] md:text-[11px] font-bold px-2 md:px-3 py-0.5 md:py-1 rounded-md ${
-                        isDark
-                          ? "bg-primary-900/30 text-primary-400"
-                          : "bg-primary-50 text-primary-600"
-                      }`}
-                    >
-                      {t("study.quiz.question")}
-                    </h3>
+                      {currentDifficultyMeta && (
+                        <span
+                          className={`${badgeToneClasses(currentDifficultyMeta.tone, isDark, "ring")} text-xs md:text-[13px] font-bold gap-1 px-2.5 py-1`}
+                          aria-label={t(currentDifficultyMeta.labelKey as never)}
+                        >
+                          {t(currentDifficultyMeta.labelKey as never)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="mt-2 md:mt-3 w-full">
-                    <FocusTopicBadge focusTopic={currentCard.focus_topic ?? undefined} variant="pill" />
+                  {/* 第2行：考察点（左 grow flex-1）+ 复习时间信息（右 shrink-0）—— 两信息同排，空时间不造伪语义*/}
+                  <div className="mt-2 md:mt-3 w-full flex items-start justify-between gap-2 md:gap-3">
+                    <FocusTopicBadge focusTopic={currentCard.focus_topic ?? undefined} variant="pill" grow />
+                    <CardDatesLine card={currentCard} isDark={isDark} isMobile={isMobile} className="shrink-0" />
                   </div>
                   <div
-                    className={`${isMobile ? "text-base" : "text-lg md:text-xl"} font-semibold leading-snug mt-2 md:mt-3 ${isDark ? "text-slate-100" : "text-gray-900"}`}
+                    className={`${isMobile ? "text-base" : "text-lg md:text-xl"} font-semibold leading-snug mt-3 md:mt-4 ${isDark ? "text-slate-100" : "text-gray-900"}`}
                     style={primaryTextStyle}
                   >
                     {currentCard.question}

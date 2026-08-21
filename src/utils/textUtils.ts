@@ -48,13 +48,19 @@ export function truncateText(
  *   - 大写: "TRUE", "FALSE"
  *   - 首字母大写: "True", "False"
  *   - 前后空白: " true \n"
+ *   - 中文: "正确", "错误", "对", "错", "是", "否", "T", "F", "√", "×"
  * 非布尔类答案直接返回 trim 后的原字符串（不影响 choice/qa 等题型）。
  */
 export function normalizeBooleanAnswer(value: unknown): string {
   const trimmed = String(value ?? '').trim();
+  if (trimmed === '') return trimmed;
   const lower = trimmed.toLowerCase();
-  if (lower === 'true') return 'True';
-  if (lower === 'false') return 'False';
+  // 英文 / 缩写 / 符号
+  if (lower === 'true' || lower === 't' || lower === '1' || lower === 'yes' || lower === 'y' || lower === '√') return 'True';
+  if (lower === 'false' || lower === 'f' || lower === '0' || lower === 'no' || lower === 'n' || lower === '×' || lower === 'x') return 'False';
+  // 中文（先判断"错误"以避免"错"被"正确"中的字误匹配，其实互不包含，直接判断即可）
+  if (trimmed === '正确' || trimmed === '对' || trimmed === '是') return 'True';
+  if (trimmed === '错误' || trimmed === '错' || trimmed === '否') return 'False';
   return trimmed;
 }
 

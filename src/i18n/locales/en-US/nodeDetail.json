@@ -47,5 +47,6 @@
   "viewChildNode": "View child node: {{title}}",
   "memoryDecay": "Memory Decay",
   "retrievability": "Retrievability: {{percent}}%",
+  "lastReview": "Last Review",
   "reviewNow": "Review Now"
 }

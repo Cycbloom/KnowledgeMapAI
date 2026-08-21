@@ -86,23 +86,37 @@ export class ReviewTaskService {
     knowledgePointId: string,
     data: { quality: number },
   ): Promise<ReviewTask> {
-    const { data: card, error: fetchError } = await client
+    // 注意：一个 knowledge_point_id 下可能有多张题型卡片（qa / true_false /
+    // cloze / matching 等）。这里优先查找旧版约定的 "qa" 默认卡，找不到再
+    // fallback 到该 KP 下创建时间最早的任意一张卡；若仍没有则静默 warn 并
+    // 返回 null（由调用方决定是否需要报错）。
+    const { data: cards, error: fetchError } = await client
       .from("study_cards")
       .select("*")
       .eq("user_id", userId)
       .eq("knowledge_point_id", knowledgePointId)
-      .single();
+      .order("created_at", { ascending: true });
 
     if (fetchError) {
-      if (fetchError.code === "PGRST116") {
-        throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-          details: { message: i18next.t("scheduler.api.errors.reviewTaskNotFound") },
-        });
-      }
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
         details: { originalError: fetchError.message },
       });
     }
+
+    if (!cards || cards.length === 0) {
+      logger.warn("updateReviewTask: no study_cards found for KP", {
+        userId,
+        knowledgePointId,
+      });
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
+        details: { message: i18next.t("scheduler.api.errors.reviewTaskNotFound") },
+      });
+    }
+
+    // 优先选 card_type === "qa" 的默认卡，没有则选最早的一张
+    const card =
+      (cards.find((c) => (c as StudyCard).card_type === "qa") as StudyCard | undefined) ??
+      (cards[0] as StudyCard);
 
     const result = await studyService.updateProgress(
       client,

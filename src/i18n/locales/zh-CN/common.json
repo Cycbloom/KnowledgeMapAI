@@ -180,6 +180,8 @@
     "scrollRight": "向右滚动",
     "dragHandle": "拖拽手柄",
     "progress": "进度",
+    "selected": "已选中",
+    "select": "选择",
     "toolbar": {
       "graph": "图谱工具栏",
       "graphMap": "图谱地图工具栏",

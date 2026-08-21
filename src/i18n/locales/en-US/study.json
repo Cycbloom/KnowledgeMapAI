@@ -146,7 +146,8 @@
     "searchPlaceholder": "Search cards...",
     "noCardsFound": "No matching cards found",
     "clearSearch": "Clear Search",
-    "switchToAll": "Switch to All Cards"
+    "switchToAll": "Switch to All Cards",
+    "filterByStatus": "Filter by status"
   },
   "cardPreview": {
     "status": {
@@ -154,6 +155,10 @@
       "new": "New"
     },
     "notStarted": "Not started",
+    "dueToday": "Today",
+    "dueTomorrow": "Tomorrow",
+    "overdueDays": "{{count}}d overdue",
+    "mastery": "Mastery",
     "cardType": {
       "qa": "Q&A",
       "choice": "Single Choice",
@@ -167,11 +172,16 @@
       "ordering": "Ordering"
     },
     "button": {
+      "group": {
+        "secondary": "Card utility actions"
+      },
       "preview": "Preview",
       "edit": "Edit",
       "delete": "Delete",
       "practice": "Practice"
-    }
+    },
+    "answerPrefix": "💡",
+    "noAnswer": "(No answer summary)"
   },
   "completed": {
     "levelComplete": "Round Complete!",

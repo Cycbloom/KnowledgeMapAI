@@ -180,6 +180,8 @@
     "scrollRight": "Scroll right",
     "dragHandle": "Drag handle",
     "progress": "Progress",
+    "selected": "Selected",
+    "select": "Select",
     "toolbar": {
       "graph": "Graph toolbar",
       "graphMap": "Graph map toolbar",

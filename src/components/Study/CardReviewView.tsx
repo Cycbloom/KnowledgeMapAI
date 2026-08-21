@@ -531,82 +531,113 @@ export const CardReviewView = ({
       />
 
       {/* Cards List Section */}
-      <div className="space-y-4 md:space-y-6">
+      <section className="space-y-4 md:space-y-5" aria-labelledby="study-card-list-heading">
         <div
-          className={`flex ${isMobile ? "flex-col gap-3" : "flex-col md:flex-row md:items-center justify-between gap-4"}`}
+          className={`flex ${isMobile ? "flex-col gap-3" : "flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4"}`}
         >
-          <h2
-            className={`${isMobile ? "text-lg" : "text-xl"} font-bold flex items-center gap-2`}
-          >
-            <BookOpen
-              className="text-primary-500"
-              size={isMobile ? 20 : 24}
-            />
-            {t("study.cardList.title")}
-          </h2>
+          {/* LEFT: Title + scope tabs (visually coupled because tabs are this list's view state) */}
+          <div className="flex w-full flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3 min-w-0">
+            <h2
+              id="study-card-list-heading"
+              className={`flex shrink-0 items-center gap-2 ${isMobile ? "text-lg" : "text-xl"} font-bold`}
+            >
+              <BookOpen
+                className="text-primary-500"
+                size={isMobile ? 20 : 22}
+                aria-hidden="true"
+              />
+              {t("study.cardList.title")}
+            </h2>
 
-          <div
-            className={`flex ${isMobile ? "flex-col gap-3" : "flex-col md:flex-row items-stretch md:items-center gap-4"}`}
-          >
             <div
-              className={`flex p-1 rounded-xl ${isMobile ? "w-full" : "w-fit"} ${isDark ? "bg-slate-800" : "bg-gray-100"}`}
+              role="tablist"
+              aria-label={t('study.cardList.filterByStatus')}
+              className={`flex p-1 rounded-xl ${isMobile ? "w-full sm:w-fit" : "w-fit"} ${isDark ? "bg-slate-800" : "bg-gray-100"}`}
             >
               <button
-                onClick={() => setTableMode("due")}
-                className={`flex-1 px-3 md:px-4 py-2 md:py-1.5 rounded-lg ${isMobile ? "text-sm" : "text-sm"} font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+                role="tab"
+                aria-selected={tableMode === "due"}
+                type="button"
+                onClick={() => { setTableMode("due"); setCurrentPage(1); }}
+                className={`flex-1 min-w-[84px] px-3 md:px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                   tableMode === "due"
                     ? isDark
-                      ? "bg-primary-600 text-white shadow-lg"
+                      ? "bg-primary-600 text-white shadow-md shadow-primary-900/30"
                       : "bg-white text-primary-600 shadow-sm"
                     : isDark
-                      ? "text-slate-400 hover:text-slate-200"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700/50"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-white/60"
                 }`}
               >
-                {t("study.cardList.due")} ({dueCards.length})
+                {t("study.cardList.due")}
+                <span
+                  aria-hidden="true"
+                  className={`ml-1.5 text-[11px] font-bold tabular-nums ${
+                    tableMode === "due"
+                      ? isDark ? "text-primary-100" : "text-primary-500"
+                      : isDark ? "text-slate-500" : "text-gray-400"
+                  }`}
+                >
+                  {dueCards.length}
+                </span>
               </button>
               <button
-                onClick={() => setTableMode("all")}
-                className={`flex-1 px-3 md:px-4 py-2 md:py-1.5 rounded-lg ${isMobile ? "text-sm" : "text-sm"} font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+                role="tab"
+                aria-selected={tableMode === "all"}
+                type="button"
+                onClick={() => { setTableMode("all"); setCurrentPage(1); }}
+                className={`flex-1 min-w-[84px] px-3 md:px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
                   tableMode === "all"
                     ? isDark
-                      ? "bg-primary-600 text-white shadow-lg"
+                      ? "bg-primary-600 text-white shadow-md shadow-primary-900/30"
                       : "bg-white text-primary-600 shadow-sm"
                     : isDark
-                      ? "text-slate-400 hover:text-slate-200"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700/50"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-white/60"
                 }`}
               >
-                {t("study.cardList.all")} ({allCards.length})
+                {t("study.cardList.all")}
+                <span
+                  aria-hidden="true"
+                  className={`ml-1.5 text-[11px] font-bold tabular-nums ${
+                    tableMode === "all"
+                      ? isDark ? "text-primary-100" : "text-primary-500"
+                      : isDark ? "text-slate-500" : "text-gray-400"
+                  }`}
+                >
+                  {allCards.length}
+                </span>
               </button>
             </div>
+          </div>
 
-            <div
-              role="search"
-              aria-label={t('common.aria.searchWithTarget', { target: t('study.cardList.title') })}
-              className="relative"
-            >
-              <Search
-                className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-500" : "text-gray-400"}`}
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder={t("study.cardList.searchPlaceholder")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`pl-10 pr-4 py-2.5 rounded-xl text-sm border focus:ring-2 focus:ring-primary-500 outline-none transition-all ${isMobile ? "w-full" : "w-full md:w-64"} ${
-                  isDark
-                    ? "bg-slate-800 border-slate-700 text-white"
-                    : "bg-white border-gray-200 text-gray-900 shadow-sm"
-                }`}
-              />
-            </div>
+          {/* RIGHT: Search (stand-alone, visually separated from the title+scope cluster) */}
+          <div
+            role="search"
+            aria-label={t('common.aria.searchWithTarget', { target: t('study.cardList.title') })}
+            className="relative w-full md:w-auto md:min-w-[260px] lg:min-w-[300px]"
+          >
+            <Search
+              className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-500" : "text-gray-400"}`}
+              size={16}
+              aria-hidden="true"
+            />
+            <input
+              type="text"
+              placeholder={t("study.cardList.searchPlaceholder")}
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+              className={`w-full pl-9 pr-4 py-2 rounded-xl text-sm border focus:ring-2 focus:ring-primary-500 outline-none transition-all ${
+                isDark
+                  ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500"
+                  : "bg-white border-gray-200 text-gray-900 shadow-sm placeholder-gray-400"
+              }`}
+            />
           </div>
         </div>
 
         <motion.div
-          className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"} gap-3 md:gap-4`}
+          className={`grid ${isMobile ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"} gap-3 md:gap-4`}
         >
           <AnimatePresence mode="popLayout">
           {paginatedCards.length === 0 ? (
@@ -672,7 +703,6 @@ export const CardReviewView = ({
                   isDark={isDark}
                   onPreview={setPreviewCard}
                   onPractice={onPracticeCard}
-                  showStatus={true}
                 />
               </motion.div>
             ))
@@ -761,7 +791,7 @@ export const CardReviewView = ({
             </button>
           </nav>
         )}
-      </div>
+      </section>
 
       {/* Card Preview Modal */}
       <StudyCardDetailModal

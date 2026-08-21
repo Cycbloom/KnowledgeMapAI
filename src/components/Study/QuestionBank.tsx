@@ -413,7 +413,6 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
                   onSelect={(c) => toggleSelect(c.id)}
                   selected={selectedIds.has(card.id)}
                   selectionMode={true}
-                  showStatus={true}
                   deletePending={deleteCardMutation.isPending}
                 />
               </div>

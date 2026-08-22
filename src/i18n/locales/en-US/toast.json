@@ -163,6 +163,12 @@
     "retryFailed": "Retry failed",
     "taskDeleted": "Task deleted",
     "deleteFailed": "Delete failed",
+    "taskPaused": "Task paused",
+    "pauseFailed": "Failed to pause task",
+    "taskResumed": "Task resumed",
+    "resumeFailed": "Failed to resume task",
+    "taskCancelled": "Task cancelled",
+    "cancelFailed": "Failed to cancel task",
     "noTasksToExport": "No tasks to export",
     "tasksExported": "Tasks exported",
     "batchDeleteSuccess": "Successfully deleted {{count}} tasks"

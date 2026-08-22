@@ -163,6 +163,12 @@
     "retryFailed": "重试失败",
     "taskDeleted": "任务已删除",
     "deleteFailed": "删除失败",
+    "taskPaused": "任务已暂停",
+    "pauseFailed": "暂停失败",
+    "taskResumed": "任务已恢复",
+    "resumeFailed": "恢复失败",
+    "taskCancelled": "任务已终止",
+    "cancelFailed": "终止失败",
     "noTasksToExport": "暂无任务可导出",
     "tasksExported": "任务列表已导出",
     "batchDeleteSuccess": "已成功删除 {{count}} 个任务"

@@ -7,6 +7,9 @@ import { useDebouncedSearch } from "@/hooks/common/useDebouncedSearch";
 import {
   useRetryTaskMutation,
   useDeleteTaskMutation,
+  usePauseTaskMutation,
+  useResumeTaskMutation,
+  useCancelTaskMutation,
 } from "../hooks/mutations";
 import { usePersistedListState } from "../hooks/common/usePersistedListState";
 import { useScrollRestoration } from "../hooks/common/useScrollRestoration";
@@ -36,6 +39,9 @@ import {
   CheckSquare,
   Square,
   X,
+  Pause,
+  Play,
+  Ban,
 } from "lucide-react";
 
 const getStatusBadgeClass = (status: string) => {
@@ -45,6 +51,8 @@ const getStatusBadgeClass = (status: string) => {
     case "failed":
     case "cancelled":
       return "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700";
+    case "paused":
+      return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700";
     case "running":
     case "in_progress":
       return "bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300 dark:border-primary-700";
@@ -61,6 +69,8 @@ const getStatusIcon = (status: string) => {
     case "failed":
     case "cancelled":
       return <XCircle className="w-4 h-4" />;
+    case "paused":
+      return <Pause className="w-4 h-4" />;
     case "running":
     case "in_progress":
       return <Loader2 className="w-4 h-4 animate-spin" />;
@@ -168,6 +178,7 @@ export const Tasks = () => {
   const { data: allData } = useTasks(!!token, "all", 1, 0);
   const { data: pendingData } = useTasks(!!token, "pending", 1, 0);
   const { data: inProgressData } = useTasks(!!token, "in_progress", 1, 0);
+  const { data: pausedData } = useTasks(!!token, "paused", 1, 0);
   const { data: completedData } = useTasks(!!token, "completed", 1, 0);
   const { data: cancelledData } = useTasks(!!token, "cancelled", 1, 0);
 
@@ -183,10 +194,11 @@ export const Tasks = () => {
       all: getCount(allData),
       pending: getCount(pendingData),
       in_progress: getCount(inProgressData),
+      paused: getCount(pausedData),
       completed: getCount(completedData),
       cancelled: getCount(cancelledData),
     } as Record<string, number | undefined>;
-  }, [allData, pendingData, inProgressData, completedData, cancelledData]);
+  }, [allData, pendingData, inProgressData, pausedData, completedData, cancelledData]);
 
   useEffect(() => {
     if (error) {
@@ -204,6 +216,9 @@ export const Tasks = () => {
 
   const retryMutation = useRetryTaskMutation();
   const deleteMutation = useDeleteTaskMutation();
+  const pauseMutation = usePauseTaskMutation();
+  const resumeMutation = useResumeTaskMutation();
+  const cancelMutation = useCancelTaskMutation();
   const tasks = useMemo(() => {
     if (!data?.pages) return [];
     return data.pages.flatMap((p) => p.tasks);
@@ -245,6 +260,11 @@ export const Tasks = () => {
         label: t("tasks.pending"),
         count: statusCounts.pending,
       },
+      {
+        value: "paused",
+        label: t("tasks.status.paused"),
+        count: statusCounts.paused,
+      },
     ] as const,
     [t, statusCounts],
   );
@@ -277,6 +297,42 @@ export const Tasks = () => {
       setDeleteId(null);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : t("toast.tasks.deleteFailed");
+      message.error(errMsg);
+    }
+  };
+
+  const handlePause = async (taskId: string) => {
+    try {
+      await pauseMutation.mutateAsync(taskId);
+      message.success(t("toast.tasks.taskPaused"));
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : t("toast.tasks.pauseFailed");
+      message.error(errMsg);
+    }
+  };
+
+  const handleResume = async (taskId: string) => {
+    try {
+      await resumeMutation.mutateAsync(taskId);
+      message.success(t("toast.tasks.taskResumed"));
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : t("toast.tasks.resumeFailed");
+      message.error(errMsg);
+    }
+  };
+
+  const handleCancel = async (taskId: string) => {
+    const confirmed = await asyncConfirm({
+      title: t("tasks.cancelTask"),
+      message: t("tasks.cancelTaskConfirm"),
+      isDangerous: true,
+    });
+    if (!confirmed) return;
+    try {
+      await cancelMutation.mutateAsync(taskId);
+      message.success(t("toast.tasks.taskCancelled"));
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : t("toast.tasks.cancelFailed");
       message.error(errMsg);
     }
   };
@@ -610,7 +666,9 @@ export const Tasks = () => {
                             </button>
                           </div>
 
-                          {(task.status === "in_progress" || task.status === "running") && (
+                          {(task.status === "in_progress" ||
+                            task.status === "running" ||
+                            task.status === "paused") && (
                             <TaskProgressBar
                               progress={resolveTaskRuntimeProgress(task)}
                               className="mb-2"
@@ -648,31 +706,69 @@ export const Tasks = () => {
                         <div className="flex flex-col items-end gap-2">
                           <div className="flex items-center gap-2">
                             {task.status === "cancelled" && (
-                              <button
-                                onClick={() => handleRetry(task.id)}
-                                disabled={retryMutation.isPending}
-                                className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-md transition-colors"
-                                title={t("tasks.retry")}
-                              >
-                                <RotateCw
-                                  size={18}
-                                  className={
-                                    retryMutation.isPending
-                                      ? "animate-spin"
-                                      : ""
-                                  }
-                                />
-                              </button>
-                            )}
-
                             <button
-                              onClick={() => handleDeleteClick(task.id)}
-                              disabled={deleteMutation.isPending}
-                              className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                              title={t("tasks.deleteTask")}
+                              onClick={() => handleRetry(task.id)}
+                              disabled={retryMutation.isPending}
+                              className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-md transition-colors"
+                              title={t("tasks.retry")}
                             >
-                              <Trash2 size={18} />
+                              <RotateCw
+                                size={18}
+                                className={
+                                  retryMutation.isPending
+                                    ? "animate-spin"
+                                    : ""
+                                }
+                              />
                             </button>
+                          )}
+
+                          {(task.status === "in_progress" ||
+                            task.status === "running" ||
+                            task.status === "pending") && (
+                            <button
+                              onClick={() => handlePause(task.id)}
+                              disabled={pauseMutation.isPending}
+                              className="p-2 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-md transition-colors"
+                              title={t("tasks.pauseTask")}
+                            >
+                              <Pause size={18} />
+                            </button>
+                          )}
+
+                          {task.status === "paused" && (
+                            <button
+                              onClick={() => handleResume(task.id)}
+                              disabled={resumeMutation.isPending}
+                              className="p-2 text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-md transition-colors"
+                              title={t("tasks.resumeTask")}
+                            >
+                              <Play size={18} />
+                            </button>
+                          )}
+
+                          {(task.status === "in_progress" ||
+                            task.status === "running" ||
+                            task.status === "pending" ||
+                            task.status === "paused") && (
+                            <button
+                              onClick={() => handleCancel(task.id)}
+                              disabled={cancelMutation.isPending}
+                              className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                              title={t("tasks.cancelTask")}
+                            >
+                              <Ban size={18} />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleDeleteClick(task.id)}
+                            disabled={deleteMutation.isPending}
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                            title={t("tasks.deleteTask")}
+                          >
+                            <Trash2 size={18} />
+                          </button>
                           </div>
 
                           {graphId && (

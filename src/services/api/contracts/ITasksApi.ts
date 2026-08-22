@@ -5,6 +5,12 @@ export interface ITasksApi {
 
   retry(id: string): Promise<unknown>;
 
+  pause(id: string): Promise<unknown>;
+
+  resume(id: string): Promise<unknown>;
+
+  cancel(id: string): Promise<unknown>;
+
   delete(id: string): Promise<unknown>;
 }
 

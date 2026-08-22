@@ -25,3 +25,27 @@ export const useDeleteTaskMutation = () => {
     invalidateQueries: [queryKeys.tasksPrefix],
   });
 };
+
+export const usePauseTaskMutation = () => {
+  return useOptimisticMutation({
+    mutationFn: (id: string) => api.tasks.pause(id),
+    queryKey: ["tasks"],
+    invalidateQueries: [queryKeys.tasksPrefix],
+  });
+};
+
+export const useResumeTaskMutation = () => {
+  return useOptimisticMutation({
+    mutationFn: (id: string) => api.tasks.resume(id),
+    queryKey: ["tasks"],
+    invalidateQueries: [queryKeys.tasksPrefix],
+  });
+};
+
+export const useCancelTaskMutation = () => {
+  return useOptimisticMutation({
+    mutationFn: (id: string) => api.tasks.cancel(id),
+    queryKey: ["tasks"],
+    invalidateQueries: [queryKeys.tasksPrefix],
+  });
+};

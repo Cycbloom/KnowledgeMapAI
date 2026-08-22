@@ -15,6 +15,12 @@ export const tasksApi = {
 
   retry: (id: string) => request<Task>(`/tasks/${id}/retry`, { method: 'POST' }),
 
+  pause: (id: string) => request<{ success: boolean }>(`/tasks/${id}/pause`, { method: 'POST' }),
+
+  resume: (id: string) => request<{ success: boolean }>(`/tasks/${id}/resume`, { method: 'POST' }),
+
+  cancel: (id: string) => request<{ success: boolean }>(`/tasks/${id}/cancel`, { method: 'POST' }),
+
   delete: (id: string) => request<{ success: boolean }>(`/tasks/${id}`, { method: 'DELETE' }),
 };
 

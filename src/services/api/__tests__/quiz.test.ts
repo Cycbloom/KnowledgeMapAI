@@ -81,8 +81,8 @@ describe('quizApi', () => {
   describe('生成题集', () => {
     it('应该调用 generate 以 POST 请求 /quiz-sets/generate 并传递 JSON body', async () => {
       const data: GenerateQuizData = {
-        title: '生成的题集',
-        graph_id: 'graph-1',
+        quiz_set_id: 'quiz-set-1',
+        node_ids: ['kp-1'],
         config: {
           cardTypes: ['qa'],
           difficulty: 'easy',
@@ -103,14 +103,14 @@ describe('quizApi', () => {
   });
 
   describe('regenerateCard - 可选 data 参数', () => {
-    it('应该在传入 data 时以 POST 请求 /quiz-sets/{quizSetId}/cards/{cardId}/regenerate 并传递 JSON body', async () => {
+    it('应该在传入 data 时以 POST 请求 /quiz-sets/{quizSetId}/regenerate/{cardId} 并传递 JSON body', async () => {
       const data: RegenerateCardData = {
         card_type: 'choice',
         custom_prompt: '生成更难的题目',
       };
       await quizApi.regenerateCard('quiz-set-1', 'card-1', data);
       expect(request).toHaveBeenCalledWith(
-        '/quiz-sets/quiz-set-1/cards/card-1/regenerate',
+        '/quiz-sets/quiz-set-1/regenerate/card-1',
         {
           method: 'POST',
           body: JSON.stringify(data),
@@ -121,7 +121,7 @@ describe('quizApi', () => {
     it('应该在不传 data 时 body 为空对象 {}', async () => {
       await quizApi.regenerateCard('quiz-set-1', 'card-1');
       expect(request).toHaveBeenCalledWith(
-        '/quiz-sets/quiz-set-1/cards/card-1/regenerate',
+        '/quiz-sets/quiz-set-1/regenerate/card-1',
         {
           method: 'POST',
           body: JSON.stringify({}),

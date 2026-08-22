@@ -114,11 +114,18 @@ export async function createKnowledgePointWithGraphNode(
     };
 
     // RPC 不支持 summary/learning_material，需要补充更新
-    if (data.summary || (data.learning_material && Object.keys(data.learning_material).length > 0)) {
+    if (
+      data.summary ||
+      (data.learning_material && Object.keys(data.learning_material).length > 0)
+    ) {
       const updateData: Record<string, string | Record<string, string>> = {};
       if (data.summary) updateData.summary = data.summary;
-      if (data.learning_material && Object.keys(data.learning_material).length > 0)
-        {updateData.learning_material = data.learning_material;}
+      if (
+        data.learning_material &&
+        Object.keys(data.learning_material).length > 0
+      ) {
+        updateData.learning_material = data.learning_material;
+      }
 
       await supabase
         .from("knowledge_points")

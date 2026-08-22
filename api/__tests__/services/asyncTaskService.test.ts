@@ -421,3 +421,141 @@ describe("AsyncTaskService - initialize (启动恢复 + 并发控制)", () => {
     });
   });
 });
+
+describe("AsyncTaskService - 暂停/终止/恢复 (pause/cancel/resume)", () => {
+  let service: AsyncTaskService;
+  let processTaskSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    resetMock();
+    vi.clearAllMocks();
+    service = new AsyncTaskService();
+    processTaskSpy = vi
+      .spyOn(service, "processTask")
+      .mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("cancelTask：pending 任务直接置 cancelled", async () => {
+    mockState.fetchResult = {
+      data: createStalledTask({ id: "task-1", status: "pending" }),
+      error: null,
+    };
+    mockState.updateResults = [{ data: null, error: null }];
+
+    const result = await service.cancelTask("task-1", "user-1");
+
+    expect(result).toEqual({ success: true });
+    expect(captured.updates).toHaveLength(1);
+    expect(captured.updates[0].payload.status).toBe("cancelled");
+    expect(captured.updates[0].eqFilters).toContainEqual(["id", "task-1"]);
+  });
+
+  it("cancelTask：已终止任务抛错且不落库", async () => {
+    mockState.fetchResult = {
+      data: createStalledTask({ id: "task-1", status: "completed" }),
+      error: null,
+    };
+
+    await expect(service.cancelTask("task-1", "user-1")).rejects.toThrow();
+    expect(captured.updates).toHaveLength(0);
+  });
+
+  it("cancelTask：运行中任务写入取消信号而非直接落库", async () => {
+    // 通过 createTask 触发处理流程，claim 成功后建立进程内控制条目
+    mockState.fetchResult = {
+      data: createStalledTask({ id: "task-1", status: "pending" }),
+      error: null,
+    };
+    mockState.updateResults = [
+      { data: [createStalledTask({ id: "task-1" })], error: null }, // claim 成功
+    ];
+    let resolveProcessTask: () => void = () => {};
+    const deferred = new Promise<void>((resolve) => {
+      resolveProcessTask = resolve;
+    });
+    processTaskSpy.mockReturnValue(deferred);
+
+    await service.createTask("user-1", "embedding_generation", {});
+
+    // 等待 claim + 控制条目建立 + processTask 被调用
+    await vi.waitFor(() => {
+      expect(processTaskSpy).toHaveBeenCalledTimes(1);
+    });
+
+    mockState.fetchResult = {
+      data: createStalledTask({ id: "task-1", status: "running" }),
+      error: null,
+    };
+    const updatesBefore = captured.updates.length;
+
+    const result = await service.cancelTask("task-1", "user-1");
+
+    expect(result).toEqual({ success: true, pending: true });
+    // 未新增落库（信号由 processor 在批次检查点响应）
+    expect(captured.updates.length).toBe(updatesBefore);
+
+    resolveProcessTask();
+    await flushMicrotasks();
+  });
+
+  it("pauseTask：pending 任务直接置 paused", async () => {
+    mockState.fetchResult = {
+      data: createStalledTask({ id: "task-1", status: "pending" }),
+      error: null,
+    };
+    mockState.updateResults = [{ data: null, error: null }];
+
+    const result = await service.pauseTask("task-1", "user-1");
+
+    expect(result).toEqual({ success: true });
+    expect(captured.updates).toHaveLength(1);
+    expect(captured.updates[0].payload.status).toBe("paused");
+  });
+
+  it("pauseTask：已暂停任务抛错且不落库", async () => {
+    mockState.fetchResult = {
+      data: createStalledTask({ id: "task-1", status: "paused" }),
+      error: null,
+    };
+
+    await expect(service.pauseTask("task-1", "user-1")).rejects.toThrow();
+    expect(captured.updates).toHaveLength(0);
+  });
+
+  it("resumeTask：paused 任务置 pending 并触发重新处理", async () => {
+    const task = createStalledTask({ id: "task-1", status: "paused" });
+    mockState.fetchResult = { data: task, error: null };
+    mockState.updateResults = [
+      { data: null, error: null }, // updateTaskStatus → pending
+      { data: [task], error: null }, // claimTask → 成功
+    ];
+
+    await service.resumeTask("task-1", "user-1");
+
+    expect(captured.updates[0].payload.status).toBe("pending");
+    expect(captured.updates[0].eqFilters).toContainEqual(["id", "task-1"]);
+
+    await vi.waitFor(() => {
+      expect(processTaskSpy).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        "generate_questions",
+        { topic: "test" },
+      );
+    });
+  });
+
+  it("resumeTask：非 paused 任务抛错且不落库", async () => {
+    mockState.fetchResult = {
+      data: createStalledTask({ id: "task-1", status: "running" }),
+      error: null,
+    };
+
+    await expect(service.resumeTask("task-1", "user-1")).rejects.toThrow();
+    expect(captured.updates).toHaveLength(0);
+  });
+});

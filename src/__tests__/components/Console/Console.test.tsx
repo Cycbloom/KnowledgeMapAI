@@ -47,7 +47,6 @@ describe('Console', () => {
 
   beforeEach(() => {
     // Targeted reset of the only store Console directly uses.
-    // Avoids resetStores() which currently throws on stores lacking partialize.
     useConsoleStore.setState(useConsoleStore.getInitialState());
     vi.clearAllMocks();
     mockExecute.mockResolvedValue({ success: true, message: 'Command executed' });

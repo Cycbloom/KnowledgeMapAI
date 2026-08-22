@@ -78,8 +78,8 @@ vi.mock("../../../../src/components/GraphEditor/OnboardingGuide", () => ({
 }));
 
 // createPersistedStore — replace persist-based stores with plain zustand
-// stores. The persist middleware crashes in jsdom because partialize is
-// explicitly set to undefined (see createPersistedStore.ts line 24).
+// stores. This keeps integration tests isolated from localStorage persistence
+// and async rehydration; the component logic under test doesn't need it.
 // Using plain create() avoids the persist middleware entirely.
 vi.mock("../../../../src/store/createPersistedStore", async () => {
   const { create } = await import("zustand");

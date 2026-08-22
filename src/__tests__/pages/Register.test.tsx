@@ -37,7 +37,6 @@ import { authApi } from '../../services/api/auth';
 describe('Register 页面', () => {
   beforeEach(() => {
     // Targeted reset of only the stores Register uses.
-    // Avoids resetStores() which throws on stores lacking partialize.
     useStore.setState(useStore.getInitialState());
     useThemeStore.setState(useThemeStore.getInitialState());
     localStorage.clear();

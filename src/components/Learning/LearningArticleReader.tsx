@@ -184,8 +184,8 @@ export const LearningArticleReader = ({
         </div>
       ) : (
         <div className="w-full">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-500">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-500 w-full min-w-0">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               <button
                 onClick={() => navigate(`/learning?graph_id=${graphId}`)}
                 className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
@@ -218,11 +218,11 @@ export const LearningArticleReader = ({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => onChangeMaterialLang(materialLang === "en" ? "zh" : "en")}
                 title={t("learning.material.languageLabel")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
                   isDark
                     ? "bg-primary-900/30 text-primary-400 hover:bg-primary-900/50 border border-primary-500/30"
                     : "bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200"
@@ -233,7 +233,7 @@ export const LearningArticleReader = ({
               </button>
               <button
                 onClick={onToggleHighlight}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
                   highlightEnabled
                     ? isDark
                       ? "bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50 border border-yellow-500/30"
@@ -245,12 +245,12 @@ export const LearningArticleReader = ({
                 title={t("learning.enableKeywordHighlight")}
               >
                 <Sparkles size={16} className={highlightEnabled ? "text-yellow-500" : ""} />
-                <span className="hidden sm:inline">{t("learning.keywordHighlight")}</span>
+                <span className="hidden sm:inline-block">{t("learning.keywordHighlight")}</span>
               </button>
               <button
                 onClick={onRegenerateMaterial}
                 disabled={isGenerating || !isOnline}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
                   isGenerating || !isOnline
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
                     : isDark
@@ -260,7 +260,7 @@ export const LearningArticleReader = ({
                 title={isOnline ? t("learning.material.regenerate") : t("learning.cards.offlineUnavailable")}
               >
                 <RefreshCw size={16} className={isGenerating ? "animate-spin" : ""} />
-                <span className="hidden sm:inline">{t("learning.material.regenerate")}</span>
+                <span className="hidden sm:inline-block">{t("learning.material.regenerate")}</span>
               </button>
             </div>
           </div>

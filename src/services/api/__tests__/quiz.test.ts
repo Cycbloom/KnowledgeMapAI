@@ -146,5 +146,13 @@ describe('quizApi', () => {
         { method: 'DELETE' },
       );
     });
+
+    it('应该调用 addCards 以 POST 请求 /quiz-sets/{quizSetId}/cards/batch，body 为 { card_ids }', async () => {
+      await quizApi.addCards('quiz-set-1', ['card-1', 'card-2']);
+      expect(request).toHaveBeenCalledWith('/quiz-sets/quiz-set-1/cards/batch', {
+        method: 'POST',
+        body: JSON.stringify({ card_ids: ['card-1', 'card-2'] }),
+      });
+    });
   });
 });

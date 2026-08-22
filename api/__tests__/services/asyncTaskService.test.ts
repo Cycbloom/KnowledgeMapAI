@@ -186,6 +186,7 @@ vi.mock("../../services/taskProcessors/generateQuestionsProcessor.js", () => ({}
 
 // Import AFTER mocks so the module picks up the mocked dependencies.
 import { AsyncTaskService } from "../../services/asyncTaskService";
+import { getProcessor } from "../../services/taskProcessors/index";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -271,6 +272,31 @@ describe("AsyncTaskService - initialize (启动恢复 + 并发控制)", () => {
       await flushMicrotasks();
       expect(processTaskSpy).not.toHaveBeenCalled();
       expect(captured.updates).toHaveLength(0);
+    });
+
+    it("恢复滞留的 generate_quiz 任务时还原为 generate_quiz processor", async () => {
+      vi.mocked(getProcessor).mockImplementation((type: string) =>
+        type === "generate_quiz" ? ({} as never) : undefined,
+      );
+      const task = createStalledTask({
+        id: "task-quiz",
+        task_type: "ai_generation",
+        title: "generate_quiz",
+        input_data: { quizSetId: "qs-1", knowledgePointIds: ["kp-1"], config: {} },
+      });
+      mockState.fetchResult = { data: [task], error: null };
+      mockState.updateResults = [{ data: [task], error: null }];
+
+      await service.initialize();
+
+      await vi.waitFor(() => {
+        expect(processTaskSpy).toHaveBeenCalledWith(
+          "task-quiz",
+          "user-1",
+          "generate_quiz",
+          expect.objectContaining({ quizSetId: "qs-1" }),
+        );
+      });
     });
 
     it("fetch 返回错误时不执行恢复且不抛出", async () => {

@@ -604,6 +604,10 @@
     "generating": "AI is writing material for you...",
     "generatingTopic": "Generating deep learning content about \"{{title}}\"",
     "generateCards": "Generate Questions",
+    "languageLabel": "Material Language",
+    "langZhShort": "中",
+    "langEnShort": "EN",
+    "englishGenerated": "English material generated",
     "schema": {
       "title": "Chapter Structure",
       "openEditor": "Customize Chapters",

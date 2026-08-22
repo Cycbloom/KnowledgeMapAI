@@ -13,7 +13,7 @@ export interface INodesApi {
 
   update(
     id: string,
-    data: UpdateNodeData & { keywords?: Keyword[] },
+    data: UpdateNodeData & { keywords?: Record<string, Keyword[]> },
   ): Promise<Node>;
 
   delete(id: string, hardDelete?: boolean): Promise<DeleteNodeResult>;

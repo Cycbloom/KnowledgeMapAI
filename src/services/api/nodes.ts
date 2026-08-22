@@ -14,7 +14,7 @@ export const nodesApi: INodesApi = {
   
   get: (id: string) => request<Node>(`/nodes/${id}`),
   
-  update: (id: string, data: UpdateNodeData & { keywords?: Keyword[] }) => request<Node>(`/nodes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  update: (id: string, data: UpdateNodeData & { keywords?: Record<string, Keyword[]> }) => request<Node>(`/nodes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   
   delete: (id: string, hardDelete?: boolean) => {
     const url = hardDelete ? `/nodes/${id}?hard_delete=true` : `/nodes/${id}`;

@@ -65,7 +65,7 @@ export const useKnowledgePointOperations = ({
     level?: string;
     x_position?: number;
     y_position?: number;
-    learning_material?: string;
+    learning_material?: Record<string, string>;
     properties?: Record<string, unknown>;
     autoReuse?: boolean;
   }) => {

@@ -137,6 +137,7 @@ export const settingsService = {
         paginationMode: s.paginationMode,
         contentWidthMode: s.contentWidthMode,
         aiLanguage: s.aiLanguage,
+        materialLanguage: s.materialLanguage,
       };
     },
     setFontSize: (size: number) =>

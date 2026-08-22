@@ -56,6 +56,7 @@ type RightPanelMode =
   | "learning-path"
   | "literature-extract"
   | "concept-aggregation";
+type MaterialLanguage = "zh" | "en";
 
 export const LearningMode = () => {
   const { t } = useTranslation();
@@ -124,15 +125,32 @@ export const LearningMode = () => {
       setHighlightEnabled: s.setHighlightEnabled,
     })),
   );
-  const { fontSize, fontFamily, lineHeight, readingMode, contentWidthMode } = useLearningSettingsStore(
+  const {
+    fontSize,
+    fontFamily,
+    lineHeight,
+    readingMode,
+    contentWidthMode,
+    materialLanguage,
+    setMaterialLanguage,
+  } = useLearningSettingsStore(
     useShallow((s) => ({
       fontSize: s.fontSize,
       fontFamily: s.fontFamily,
       lineHeight: s.lineHeight,
       readingMode: s.readingMode,
       contentWidthMode: s.contentWidthMode,
+      materialLanguage: s.materialLanguage,
+      setMaterialLanguage: s.setMaterialLanguage,
     })),
   );
+  // 有效显示语言：auto 时跟随 AI/界面语言设置（保留原有"根据系统语言自动切换"行为）
+  const effectiveMaterialLang: MaterialLanguage =
+    materialLanguage === "auto"
+      ? aiLanguage === "en-US"
+        ? "en"
+        : "zh"
+      : materialLanguage;
   const queryClient = useQueryClient();
 
   useQuoteShortcut({
@@ -205,28 +223,36 @@ export const LearningMode = () => {
     }
     if (!node) return;
     setNodeTitle(node.title || "");
-    setKeywords(node.keywords || []);
-    if (node.learning_material && node.learning_material.trim().length > 0) {
-      setArticleContent(node.learning_material);
+    const isEn = effectiveMaterialLang === "en";
+    const materialLangCode = isEn ? "en-US" : "zh-CN";
+    const material = node.learning_material?.[materialLangCode];
+    const nodeKeywords = node.keywords?.[materialLangCode] || [];
+    setKeywords(nodeKeywords);
+    if (material && material.trim().length > 0) {
+      setArticleContent(material);
       setIsGenerating(false);
       return;
     }
-    // 节点无学习材料,调用 AI 生成
+    // 当前语言的学习材料缺失,调用 AI 按该语言生成（生成后回写对应字段）
+    if (isGenerating) return;
     const generateMaterial = async () => {
       try {
         setIsGenerating(true);
         const response = await api.ai.generateLearningMaterial({
           topic: node.title || "", context: node.content, level: node.level,
-          graph_id: graphId || undefined, language: aiLanguage,
+          graph_id: graphId || undefined, language: isEn ? "en-US" : "zh-CN",
         });
         if (response.content) {
           setArticleContent(response.content);
           const responseKeywords = response.keywords || [];
           setKeywords(responseKeywords);
           try {
-            await api.nodes.update(nodeId, { learning_material: response.content, keywords: responseKeywords });
+            await api.nodes.update(nodeId, {
+              learning_material: { ...(node.learning_material || {}), [materialLangCode]: response.content },
+              keywords: { ...(node.keywords || {}), [materialLangCode]: responseKeywords },
+            });
             queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(nodeId) });
-            msgHelper.success(t("learning.material.generated"), {
+            msgHelper.success(isEn ? t("learning.material.englishGenerated") : t("learning.material.generated"), {
               duration: 8000,
               action: { label: t("learning.material.generateCards"), onClick: () => handleGenerateCards(nodeId) },
             });
@@ -245,9 +271,27 @@ export const LearningMode = () => {
       }
     };
     generateMaterial();
-    // 依赖 node (来自 useQuery) 触发;其余依赖通过闭包在触发时获取最新值
+    // 依赖 node (来自 useQuery) + effectiveMaterialLang 触发;其余依赖通过闭包在触发时获取最新值
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeId, node]);
+  }, [nodeId, node, effectiveMaterialLang]);
+
+  const handleChangeMaterialLang = (lang: MaterialLanguage) => {
+    if (lang === effectiveMaterialLang || !node) return;
+    const isEn = lang === "en";
+    const materialLangCode = isEn ? "en-US" : "zh-CN";
+    const material = node.learning_material?.[materialLangCode];
+    const nodeKeywords = node.keywords?.[materialLangCode] || [];
+    if (material && material.trim().length > 0) {
+      setArticleContent(material);
+      setKeywords(nodeKeywords);
+      setIsGenerating(false);
+    } else {
+      // 目标语言尚未生成,清空正文进入加载态,由 effect 触发 AI 生成
+      setArticleContent("");
+      setKeywords([]);
+    }
+    setMaterialLanguage(lang);
+  };
 
   const handleCreateNode = async () => {
     if (!graphId || !newNodeTitle.trim()) { msgHelper.warning(t("learning.node.enterTitle")); return; }
@@ -305,15 +349,20 @@ export const LearningMode = () => {
     setIsGenerating(true); setArticleContent("");
     try {
       const node = await api.nodes.get(nodeId);
+      const isEn = effectiveMaterialLang === "en";
       const response = await api.ai.generateLearningMaterial({
         topic: node.title || "", context: node.content, level: node.level,
-        graph_id: graphId, language: aiLanguage,
+        graph_id: graphId, language: isEn ? "en-US" : "zh-CN",
         schema_id: selectedSchemaId,
       });
       if (response.content) {
         setArticleContent(response.content);
         setKeywords(response.keywords || []);
-        await api.nodes.update(nodeId, { learning_material: response.content, keywords: response.keywords || [] });
+        const materialLangCode = isEn ? "en-US" : "zh-CN";
+        await api.nodes.update(nodeId, {
+          learning_material: { ...(node.learning_material || {}), [materialLangCode]: response.content },
+          keywords: { ...(node.keywords || {}), [materialLangCode]: response.keywords || [] },
+        });
         queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(nodeId) });
         msgHelper.success(t("learning.material.regenerated"));
@@ -668,6 +717,7 @@ export const LearningMode = () => {
               <LearningArticleReader
                 isDark={isDark} isMobile={isMobile} nodeId={nodeId} graphId={graphId}
                 nodeTitle={nodeTitle} articleContent={articleContent} keywords={keywords}
+                materialLang={effectiveMaterialLang} onChangeMaterialLang={handleChangeMaterialLang}
                 isGenerating={isGenerating || isNodeLoading} isOnline={isOnline} isGeneratingCards={isGeneratingCards}
                 studyMode={studyMode} highlightEnabled={highlightEnabled}
                 linkedTask={linkedTask} nodeStatus={_nodeStatus}

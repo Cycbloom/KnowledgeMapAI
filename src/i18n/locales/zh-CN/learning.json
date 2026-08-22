@@ -606,6 +606,10 @@
     "generating": "AI 正在为您编写教材...",
     "generatingTopic": "正在生成关于 \"{{title}}\" 的深度学习内容",
     "generateCards": "生成题目",
+    "languageLabel": "学习资料语言",
+    "langZhShort": "中",
+    "langEnShort": "EN",
+    "englishGenerated": "英文教材已生成",
     "schema": {
       "title": "章节结构",
       "openEditor": "自定义章节",

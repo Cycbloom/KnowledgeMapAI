@@ -75,7 +75,7 @@ export const mobileNodesApi: INodesApi & {
 
   update: async (
     id: string,
-    data: UpdateNodeData & { keywords?: Keyword[] },
+    data: UpdateNodeData & { keywords?: Record<string, Keyword[]> },
   ): Promise<Node> => {
     const client = getMobileSupabaseClient();
     if (!client) {

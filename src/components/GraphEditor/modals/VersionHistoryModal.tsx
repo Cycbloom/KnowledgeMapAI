@@ -326,11 +326,16 @@ export const VersionHistoryModal = ({
                   </div>
                 )}
 
-                {selectedVersion.learning_material && (
+                {selectedVersion.learning_material && Object.keys(selectedVersion.learning_material).length > 0 && (
                   <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('graphEditor.versionHistory.fieldLabel.learningMaterial')}</h5>
-                    <div className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap text-sm max-h-60 overflow-y-auto">
-                      {selectedVersion.learning_material}
+                    <div className="text-gray-800 dark:text-gray-200 text-sm max-h-60 overflow-y-auto space-y-3">
+                      {Object.entries(selectedVersion.learning_material).map(([lang, content]) => (
+                        <div key={lang}>
+                          <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-0.5">{lang}</div>
+                          <div className="whitespace-pre-wrap">{content}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

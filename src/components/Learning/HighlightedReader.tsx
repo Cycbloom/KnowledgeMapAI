@@ -160,7 +160,9 @@ const analyzeKeywords = (
 
   keywords.forEach((keyword) => {
     const escapedTerm = keyword.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(escapedTerm, "g");
+    // gi：全局 + 忽略大小写。英文关键词 AI 常给首字母大写（如 "Concept"），
+    // 而正文中可能小写，忽略大小写可避免漏匹配（中文不受影响）。
+    const regex = new RegExp(escapedTerm, "gi");
     let match;
 
     while ((match = regex.exec(content)) !== null) {

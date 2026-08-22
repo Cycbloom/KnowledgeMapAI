@@ -18,6 +18,7 @@ interface LearningSettingsState extends UserSettingsLearning {
   setPaginationMode: (mode: UserSettingsPaginationMode) => void;
   setContentWidthMode: (mode: UserSettingsContentWidthMode) => void;
   setAILanguage: (language: UserSettingsAILanguage) => void;
+  setMaterialLanguage: (language: "auto" | "zh" | "en") => void;
   resetSettings: () => void;
 }
 
@@ -29,6 +30,7 @@ const DEFAULT_SETTINGS: UserSettingsLearning = {
   paginationMode: 'scroll',
   contentWidthMode: 'comfortable',
   aiLanguage: 'auto',
+  materialLanguage: 'auto',
 };
 
 export const useLearningSettingsStore = createPersistedStore<LearningSettingsState>(
@@ -45,6 +47,7 @@ export const useLearningSettingsStore = createPersistedStore<LearningSettingsSta
     setPaginationMode: (mode) => set({ paginationMode: mode }),
     setContentWidthMode: (mode) => set({ contentWidthMode: mode }),
     setAILanguage: (language) => set({ aiLanguage: language }),
+    setMaterialLanguage: (language) => set({ materialLanguage: language }),
     resetSettings: () => set(DEFAULT_SETTINGS),
   }),
   {

@@ -438,7 +438,7 @@ export const useUpdateNodeMutation = () => {
         level?: string;
         x_position?: number;
         y_position?: number;
-        learning_material?: string;
+        learning_material?: Record<string, string>;
         properties?: Record<string, unknown>;
       };
       graphId?: string;

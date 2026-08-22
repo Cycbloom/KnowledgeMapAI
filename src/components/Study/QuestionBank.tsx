@@ -12,7 +12,6 @@ import { StudyCardDetailModal } from './StudyCardDetailModal';
 import { useDebouncedSearch } from '../../hooks/common/useDebouncedSearch';
 import { EmptyState } from '@/components/common/EmptyState';
 import { message } from '@/utils/messageHelper';
-import { FocusTopicBadge } from './common/FocusTopicBadge';
 
 interface QuestionBankProps {
   graph_id?: string;
@@ -401,7 +400,6 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {paginatedCards.map(card => (
               <div key={card.id} className="h-full">
-                <FocusTopicBadge focusTopic={card.focus_topic} variant="pill" />
                 <StudyCardPreview
                   card={card}
                   isDark={isDark}

@@ -13,7 +13,7 @@ COMMENT ON COLUMN system_tasks.claimed_at IS '任务被某实例原子 claim 的
 -- 默认约束名 system_tasks_status_check（PostgreSQL 自动生成）
 ALTER TABLE system_tasks DROP CONSTRAINT IF EXISTS system_tasks_status_check;
 ALTER TABLE system_tasks ADD CONSTRAINT system_tasks_status_check
-  CHECK (status IN ('pending', 'in_progress', 'running', 'completed', 'failed', 'cancelled'));
+  CHECK (status IN ('pending', 'in_progress', 'running', 'paused', 'completed', 'failed', 'cancelled'));
 
 -- 为 claim 查询优化：WHERE id = ? AND status = 'pending'
 CREATE INDEX IF NOT EXISTS idx_system_tasks_claimed_at ON system_tasks(claimed_at) WHERE status = 'running';

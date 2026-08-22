@@ -383,6 +383,7 @@ export class SystemTaskService {
       pending: 0,
       in_progress: 0,
       running: 0,
+      paused: 0,
       completed: 0,
       failed: 0,
       cancelled: 0,

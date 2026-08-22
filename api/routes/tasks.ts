@@ -82,6 +82,36 @@ router.post('/:id/retry', requireAuth, async (req: AuthedRequest, res: Response)
   }
 });
 
+router.post('/:id/pause', requireAuth, requireTaskOwnership, async (req: AuthedRequest, res: Response) => {
+  try {
+    const result = await asyncTaskService.pauseTask(req.params.id, req.user.id);
+    res.json(result);
+  } catch (error) {
+    logger.error('Pause Task Error:', error);
+    throw new AppError((error as Error).message || 'Failed to pause task', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+  }
+});
+
+router.post('/:id/resume', requireAuth, requireTaskOwnership, async (req: AuthedRequest, res: Response) => {
+  try {
+    const result = await asyncTaskService.resumeTask(req.params.id, req.user.id);
+    res.json(result);
+  } catch (error) {
+    logger.error('Resume Task Error:', error);
+    throw new AppError((error as Error).message || 'Failed to resume task', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+  }
+});
+
+router.post('/:id/cancel', requireAuth, requireTaskOwnership, async (req: AuthedRequest, res: Response) => {
+  try {
+    const result = await asyncTaskService.cancelTask(req.params.id, req.user.id);
+    res.json(result);
+  } catch (error) {
+    logger.error('Cancel Task Error:', error);
+    throw new AppError((error as Error).message || 'Failed to cancel task', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+  }
+});
+
 router.delete('/:id', requireAuth, requireTaskOwnership, async (req: AuthedRequest, res: Response) => {
   try {
     await asyncTaskService.deleteTask(req.supabase, req.params.id, req.user.id);

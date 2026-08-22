@@ -44,6 +44,14 @@ CREATE POLICY "Users can view their own system tasks"
   ON system_tasks FOR SELECT
   USING (auth.uid() = user_id);
 
+CREATE POLICY "Users can update own system tasks"
+  ON system_tasks FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own system tasks"
+  ON system_tasks FOR DELETE
+  USING (auth.uid() = user_id);
+
 CREATE POLICY "Service role can manage all system tasks"
   ON system_tasks FOR ALL
   USING (auth.role() = 'service_role');

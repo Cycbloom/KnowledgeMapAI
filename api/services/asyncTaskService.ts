@@ -1,7 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { sseService } from "./core/sseService";
 import { logger } from "../utils/logger";
-import { getProcessor } from "./taskProcessors/index";
+import { getProcessor, TaskAbortError, type TaskControl, type TaskControlSignal } from "./taskProcessors/index";
 import { getPaginationParams, PaginationOptions } from "../utils/pagination";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -51,6 +51,37 @@ try {
 export class AsyncTaskService {
   private static readonly MAX_CONCURRENT = 3;
   private activeCount = 0;
+
+  /**
+   * 进程内任务控制表：外部请求（暂停/终止）写入信号，
+   * processor 在批次检查点通过 buildTaskControl 读取并协作式响应。
+   * 任务结束后（finally）清理对应条目。
+   */
+  private taskControls = new Map<string, { pause: boolean; cancel: boolean }>();
+
+  /**
+   * 为指定任务构建协作控制句柄。
+   *
+   * 信号优先级：cancel > pause > ok。仅本进程正在处理的任务有对应条目；
+   * 不在本进程（pending/paused 或其它实例）的任务 signal 恒为 ok，
+   * 由 pauseTask/cancelTask 直接落库处理。
+   */
+  private buildTaskControl(taskId: string): TaskControl {
+    const getSignal = (): TaskControlSignal => {
+      const c = this.taskControls.get(taskId);
+      if (c?.cancel) return "cancel";
+      if (c?.pause) return "pause";
+      return "ok";
+    };
+    return {
+      signal: getSignal,
+      throwIfAborted: () => {
+        const signal = getSignal();
+        if (signal === "pause") throw new TaskAbortError("paused");
+        if (signal === "cancel") throw new TaskAbortError("cancelled");
+      },
+    };
+  }
 
   private mapTaskTypeToSystemTaskType(type: string): SystemTaskType {
     const typeMap: Record<string, SystemTaskType> = {
@@ -192,11 +223,16 @@ export class AsyncTaskService {
         return;
       }
 
+      // claim 成功后建立控制条目：暂停/终止请求通过写入该条目信号，
+      // 处理器在批次检查点协作式响应。finally 中统一清理。
+      this.taskControls.set(taskId, { pause: false, cancel: false });
+
       await this.processTask(taskId, userId, type, payload);
     } catch (error) {
       logger.error(`Error in async task processing for task ${taskId}:`, error);
     } finally {
       this.activeCount -= 1;
+      this.taskControls.delete(taskId);
     }
   }
 
@@ -410,6 +446,96 @@ export class AsyncTaskService {
     if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to delete task: ${error.message}` });
   }
 
+  private async loadTask(taskId: string): Promise<SystemTask> {
+    const supabase = defaultClient;
+    const { data, error } = await supabase
+      .from("system_tasks")
+      .select("*")
+      .eq("id", taskId)
+      .single();
+
+    if (error || !data) {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { message: "Task not found" });
+    }
+    return data as SystemTask;
+  }
+
+  private isTerminal(status: string): boolean {
+    return status === "completed" || status === "failed" || status === "cancelled";
+  }
+
+  /**
+   * 终止任务。
+   *
+   * - 运行中任务（本进程有控制条目）：写入 cancel 信号，processor 在下一批次
+   *   检查点协作停止并置 cancelled（SSE 广播由 processor 触发）。
+   * - 未运行任务（pending/paused 或其它实例）：直接置 cancelled。
+   */
+  async cancelTask(taskId: string, userId: string) {
+    const task = await this.loadTask(taskId);
+    if (this.isTerminal(task.status)) {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, { message: "Task has already finished" });
+    }
+
+    const control = this.taskControls.get(taskId);
+    if (control) {
+      control.cancel = true;
+      control.pause = false;
+      return { success: true, pending: true };
+    }
+
+    await this.updateTaskStatus(taskId, "cancelled", undefined, undefined, undefined, userId);
+    return { success: true };
+  }
+
+  /**
+   * 暂停任务。
+   *
+   * - 运行中任务（本进程有控制条目）：写入 pause 信号，processor 在当前批次
+   *   完成后协作暂停并置 paused。
+   * - 未运行任务（pending）：直接置 paused，claim（仅 pending → running）
+   *   不会将其拾起。
+   */
+  async pauseTask(taskId: string, userId: string) {
+    const task = await this.loadTask(taskId);
+    if (this.isTerminal(task.status) || task.status === "paused") {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, { message: "Task cannot be paused in current state" });
+    }
+
+    const control = this.taskControls.get(taskId);
+    if (control) {
+      control.pause = true;
+      return { success: true, pending: true };
+    }
+
+    await this.updateTaskStatus(taskId, "paused", undefined, undefined, undefined, userId);
+    return { success: true };
+  }
+
+  /**
+   * 恢复暂停的任务。
+   *
+   * 状态 paused → pending 并重新触发 processTaskAsync（重新 claim 后从头执行；
+   * embedding 等幂等处理器会天然跳过已完成部分，近似续跑）。
+   */
+  async resumeTask(taskId: string, userId: string) {
+    const task = await this.loadTask(taskId);
+    if (task.status !== "paused") {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, { message: "Only paused tasks can be resumed" });
+    }
+
+    this.taskControls.delete(taskId);
+    await this.updateTaskStatus(taskId, "pending", undefined, undefined, undefined, userId);
+
+    const originalType = this.getOriginalTaskType(task.task_type);
+    const payload = (task.input_data as Record<string, unknown>) ?? {};
+    this.processTaskAsync(task.id, task.user_id, originalType, payload).catch((err) => {
+      logger.error(`Failed to resume task ${task.id}:`, err);
+    });
+
+    return { success: true };
+  }
+
   async processTask(
     taskId: string,
     userId: string,
@@ -436,6 +562,7 @@ export class AsyncTaskService {
       payload,
       supabase,
       this.updateTaskStatus.bind(this),
+      this.buildTaskControl(taskId),
     );
   }
 }

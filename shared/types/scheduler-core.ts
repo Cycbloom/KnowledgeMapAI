@@ -39,6 +39,7 @@ export type SystemTaskStatus =
   | "pending"
   | "in_progress"
   | "running"
+  | "paused"
   | "completed"
   | "failed"
   | "cancelled";

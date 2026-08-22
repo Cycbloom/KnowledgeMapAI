@@ -80,6 +80,7 @@ export interface BackupStudyCardItem {
   explanation?: string | null;
   card_type?: string | null;
   options?: unknown | null;
+  focus_topic?: string | null;
   difficulty?: number | null;
   last_reviewed?: string | null;
   next_review?: string | null;
@@ -282,7 +283,7 @@ export async function createBackup(
   const studyCards = (studyCardsResult.data as StudyCardRow[] | null) || [];
 
   const backupData: BackupData = {
-    version: '2.0',
+    version: '2.1',
     exportedAt: new Date().toISOString(),
     user: { id: userId },
     data: {
@@ -316,6 +317,7 @@ export async function createBackup(
         explanation: c.explanation,
         card_type: c.card_type,
         options: c.options,
+        focus_topic: c.focus_topic,
         difficulty: c.difficulty,
         last_reviewed: c.last_reviewed,
         next_review: c.next_review,
@@ -742,6 +744,7 @@ export class BackupService {
             explanation: c.explanation || null,
             card_type: c.card_type || 'qa',
             options: c.options || null,
+            focus_topic: c.focus_topic || null,
             difficulty: c.difficulty || 1,
             last_reviewed: c.last_reviewed || null,
             next_review: c.next_review || new Date().toISOString(),

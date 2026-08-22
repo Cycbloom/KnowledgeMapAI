@@ -15,12 +15,12 @@ function makeKp(overrides: Partial<KnowledgePoint> = {}): KnowledgePoint {
     title: '知识点',
     content: '内容',
     summary: '摘要',
-    learning_material: '学习材料',
+    learning_material: { 'zh-CN': '学习材料' },
     visibility: 'private',
     owner_id: 'user-1',
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
-    keywords: [],
+    keywords: {},
     ...overrides,
   };
 }
@@ -197,7 +197,7 @@ describe('nodeHelpers', () => {
       // 空值合并为默认值
       expect(node?.content).toBe('');
       expect(node?.summary).toBe('');
-      expect(node?.keywords).toEqual([]);
+      expect(node?.keywords).toEqual({});
       expect(node?.properties).toEqual({});
     });
 

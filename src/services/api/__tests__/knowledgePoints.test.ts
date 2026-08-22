@@ -78,7 +78,7 @@ describe('knowledgePointsApi', () => {
         title: '知识点标题',
         content: '内容',
         summary: '摘要',
-        learning_material: '学习材料',
+        learning_material: { 'zh-CN': '学习材料' },
         properties: { key: 'value' },
         visibility: 'public' as const,
       };

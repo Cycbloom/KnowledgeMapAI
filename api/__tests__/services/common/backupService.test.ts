@@ -252,7 +252,7 @@ describe('backupService', () => {
           summary: null,
           learning_material: null,
           properties: {},
-          keywords: [],
+          keywords: {},
           aliases: [],
           visibility: 'private',
           mastery_level: 0,

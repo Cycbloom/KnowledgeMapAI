@@ -10,6 +10,9 @@ import {
   BrainCircuit,
   AlertCircle,
   Layers,
+  Puzzle,
+  RotateCw,
+  ListChecks,
 } from 'lucide-react';
 import { useTheme } from "../../hooks";
 import {
@@ -438,34 +441,100 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
     return Math.round((progress.completed / progress.total) * 100);
   }, [progress]);
 
-  const stepMeta: Array<{ key: Step; title: string }> = [
-    { key: 'scope', title: t('quiz.flow.stepScope', { defaultValue: '范围与信息' }) },
-    { key: 'generate', title: t('quiz.flow.stepGenerate') },
+  const stepMeta: Array<{ key: Step; icon: typeof BrainCircuit; title: string }> = [
+    {
+      key: 'scope',
+      icon: ListChecks,
+      title: t('quiz.flow.stepScope', { defaultValue: '范围与信息' }),
+    },
+    {
+      key: 'generate',
+      icon: Puzzle,
+      title: t('quiz.flow.stepGenerate'),
+    },
   ];
 
   const currentStepIndex = STEP_INDEX[step] ?? 0;
-  const currentStepTitle = stepMeta[currentStepIndex]?.title ?? '';
+  const currentMeta = stepMeta[currentStepIndex];
+  const StepIcon = currentMeta?.icon ?? BrainCircuit;
+  const currentStepTitle = currentMeta?.title ?? '';
+
+  // 步骤指示器
+  const renderStepper = () => (
+    <div className="flex items-center">
+      {stepMeta.map((meta, idx) => {
+        const isActive = idx === currentStepIndex;
+        const isDone = idx < currentStepIndex;
+        const isLast = idx === stepMeta.length - 1;
+        return (
+          <React.Fragment key={meta.key}>
+            <button
+              type="button"
+              onClick={() => isDone && goStep(idx)}
+              disabled={!isDone}
+              aria-current={isActive ? 'step' : undefined}
+              className={`flex items-center gap-2 group ${isActive ? '' : isDone ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+            >
+              <span
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
+                  isActive
+                    ? 'bg-gradient-to-br from-primary-600 to-violet-600 text-white shadow-lg shadow-primary-500/30'
+                    : isDone
+                      ? 'bg-green-500 text-white'
+                      : isDark
+                        ? 'bg-slate-800 text-slate-500'
+                        : 'bg-gray-100 text-gray-400'
+                }`}
+              >
+                {isDone ? <Check size={15} aria-hidden="true" /> : idx + 1}
+              </span>
+              <span
+                className={`hidden sm:block text-xs font-bold transition-colors ${
+                  isActive
+                    ? isDark ? 'text-primary-300' : 'text-primary-600'
+                    : isDone
+                      ? isDark ? 'text-green-400' : 'text-green-600'
+                      : isDark ? 'text-slate-500' : 'text-gray-400'
+                }`}
+              >
+                {meta.title}
+              </span>
+            </button>
+            {!isLast && (
+              <span
+                className={`mx-2 sm:mx-3 h-0.5 w-6 sm:w-14 rounded-full transition-colors ${
+                  isDone ? 'bg-green-400' : isDark ? 'bg-slate-700' : 'bg-gray-200'
+                }`}
+                aria-hidden="true"
+              />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
 
   const renderStepContent = () => {
     switch (STEP_INDEX[step]) {
       case 0:
         return (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6">
             {/* 左栏：基本信息（自动生成 + 可编辑） */}
-            <div className={`p-5 rounded-xl ${isDark ? 'bg-slate-800/40 border border-slate-700' : 'bg-white border border-gray-200'}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className={`p-1.5 rounded-lg ${isDark ? 'bg-primary-900/40 text-primary-400' : 'bg-primary-100 text-primary-600'}`}>
-                  <PenLine size={16} />
+            <div className={`p-5 sm:p-6 rounded-2xl border transition-colors ${
+              isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-white border-gray-200'
+            }`}>
+              <div className="flex items-start gap-3 mb-5">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/25">
+                  <PenLine size={18} aria-hidden="true" />
                 </div>
-                <div>
-                  <h4 className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+                <div className="flex-1">
+                  <h4 className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>
                     {t('quiz.flow.stepBasic', { defaultValue: '基本信息' })}
                   </h4>
-                  <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+                  <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
                     {t('quiz.flow.autoGenHint', { defaultValue: '根据右侧所选知识点自动生成，可手动微调' })}
                   </p>
                 </div>
-                <div className="flex-1" />
                 <button
                   type="button"
                   onClick={() => {
@@ -478,17 +547,18 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
                     });
                   }}
                   disabled={kpTitles.length === 0}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                  title={t('quiz.flow.regenerate', { defaultValue: '重新生成' })}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                     kpTitles.length > 0
                       ? isDark
                         ? 'bg-primary-900/40 text-primary-300 hover:bg-primary-900/60'
-                        : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+                        : 'bg-primary-50 text-primary-600 hover:bg-primary-100'
                       : isDark
                         ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-50 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  <Sparkles size={12} />
+                  <RotateCw size={13} aria-hidden="true" />
                   {t('quiz.flow.regenerate', { defaultValue: '重新生成' })}
                 </button>
               </div>
@@ -499,58 +569,83 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
                     <label className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
                       {t('quiz.generation.quizTitle')} <span aria-hidden="true" className="text-red-500">*</span>
                     </label>
-                    {!titleEditedManually && title && (
-                      <span className={`text-[11px] px-2 py-0.5 rounded-full ${isDark ? 'bg-primary-900/30 text-primary-400' : 'bg-primary-50 text-primary-600'}`}>
-                        {t('quiz.flow.autoBadge', { defaultValue: 'AI·自动生成' })}
+                    {!titleEditedManually && title ? (
+                      <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full ${
+                        isDark ? 'bg-emerald-900/40 text-emerald-300' : 'bg-emerald-50 text-emerald-600'
+                      }`}>
+                        <Sparkles size={11} aria-hidden="true" />
+                        {t('quiz.flow.autoBadge', { defaultValue: 'AI 自动生成' })}
                       </span>
+                    ) : (
+                      titleEditedManually && title && (
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${
+                          isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {t('quiz.flow.manualEdit', { defaultValue: '手动编辑' })}
+                        </span>
+                      )
                     )}
                   </div>
-                  <div className="relative">
+                  <div className="relative group">
                     <input
                       type="text"
                       value={title}
                       onChange={(e) => setPartial({ title: e.target.value, titleEditedManually: true })}
                       placeholder={t('quiz.generation.titlePlaceholder')}
-                      className={`w-full px-4 py-2.5 pr-10 rounded-xl border text-sm transition-colors ${
+                      className={`w-full px-4 py-3 pr-10 rounded-xl border text-sm transition-all ${
                         isDark
-                          ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-primary-500'
-                          : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-500'
+                          ? 'bg-slate-800/70 border-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20'
+                          : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20'
                       }`}
                     />
-                    <PenLine size={16} className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
+                    <PenLine size={16} className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} aria-hidden="true" />
                   </div>
                 </div>
+
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
                       {t('quiz.generation.descriptionOptional')}
                     </label>
-                    {!descriptionEditedManually && description && (
-                      <span className={`text-[11px] px-2 py-0.5 rounded-full ${isDark ? 'bg-primary-900/30 text-primary-400' : 'bg-primary-50 text-primary-600'}`}>
-                        {t('quiz.flow.autoBadge', { defaultValue: 'AI·自动生成' })}
+                    {!descriptionEditedManually && description ? (
+                      <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full ${
+                        isDark ? 'bg-emerald-900/40 text-emerald-300' : 'bg-emerald-50 text-emerald-600'
+                      }`}>
+                        <Sparkles size={11} aria-hidden="true" />
+                        {t('quiz.flow.autoBadge', { defaultValue: 'AI 自动生成' })}
                       </span>
+                    ) : (
+                      descriptionEditedManually && description && (
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${
+                          isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {t('quiz.flow.manualEdit', { defaultValue: '手动编辑' })}
+                        </span>
+                      )
                     )}
                   </div>
                   <textarea
                     value={description}
                     onChange={(e) => setPartial({ description: e.target.value, descriptionEditedManually: true })}
                     placeholder={t('quiz.generation.descriptionPlaceholder')}
-                    rows={7}
-                    className={`w-full px-4 py-2.5 rounded-xl border text-sm resize-none transition-colors leading-relaxed ${
+                    rows={6}
+                    className={`w-full px-4 py-3 rounded-xl border text-sm resize-none transition-all leading-relaxed ${
                       isDark
-                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-primary-500'
-                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-500'
+                        ? 'bg-slate-800/70 border-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20'
+                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20'
                     }`}
                   />
                 </div>
 
                 {/* 已选知识点概览 */}
-                <div className={`p-3 rounded-xl ${isDark ? 'bg-slate-900/60 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
-                  <div className="flex items-center justify-between mb-2">
+                <div className={`p-3.5 rounded-xl ${isDark ? 'bg-slate-900/60 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
+                  <div className="flex items-center justify-between mb-2.5">
                     <span className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                       {t('quiz.flow.selectedKpPreview', { defaultValue: '已选知识点预览' })}
                     </span>
-                    <span className={`text-xs font-bold ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>
+                    <span className={`text-xs font-bold ${
+                      selectedKnowledgePoints.length > 0 ? (isDark ? 'text-primary-400' : 'text-primary-600') : (isDark ? 'text-slate-500' : 'text-gray-400')
+                    }`}>
                       {selectedKnowledgePoints.length > 0
                         ? t('quiz.knowledgePointSelector.selectedCount', { count: selectedKnowledgePoints.length })
                         : t('quiz.flow.noKpSelected', { defaultValue: '未选择' })}
@@ -558,19 +653,22 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
                   </div>
                   {kpTitles.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5">
-                      {kpTitles.slice(0, 8).map((t2) => (
+                      {kpTitles.slice(0, 8).map((kpTitle) => (
                         <span
-                          key={t2}
-                          className={`inline-block px-2 py-0.5 rounded-md text-[11px] truncate max-w-[200px] ${
-                            isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-white text-gray-700 border border-gray-200'
+                          key={kpTitle}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] truncate max-w-[190px] ${
+                            isDark
+                              ? 'bg-slate-800 text-slate-300 border border-slate-700'
+                              : 'bg-white text-gray-700 border border-gray-200'
                           }`}
-                          title={t2}
+                          title={kpTitle}
                         >
-                          {t2}
+                          <span className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-primary-400' : 'bg-primary-500'}`} aria-hidden="true" />
+                          {kpTitle}
                         </span>
                       ))}
                       {kpTitles.length > 8 && (
-                        <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-[11px] ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
                           +{kpTitles.length - 8}
                         </span>
                       )}
@@ -585,16 +683,18 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
             </div>
 
             {/* 右栏：知识点选择 */}
-            <div className={`p-5 rounded-xl ${isDark ? 'bg-slate-800/40 border border-slate-700' : 'bg-white border border-gray-200'}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className={`p-1.5 rounded-lg ${isDark ? 'bg-violet-900/40 text-violet-400' : 'bg-violet-100 text-violet-600'}`}>
-                  <Layers size={16} />
+            <div className={`p-5 sm:p-6 rounded-2xl border transition-colors ${
+              isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-white border-gray-200'
+            }`}>
+              <div className="flex items-start gap-3 mb-5">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-lg shadow-violet-500/25">
+                  <Layers size={18} aria-hidden="true" />
                 </div>
                 <div>
-                  <h4 className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+                  <h4 className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>
                     {t('quiz.flow.stepKnowledge', { defaultValue: '选择知识点' })}
                   </h4>
-                  <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+                  <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
                     {t('quiz.flow.kpHint', { defaultValue: '先选择图谱，再勾选要覆盖的知识点' })}
                   </p>
                 </div>
@@ -611,11 +711,23 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
       case 1:
         return (
           <div className="space-y-5">
-            <div className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'}`}>
+            <div className={`p-5 sm:p-6 rounded-2xl border ${
+              isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-white border-gray-200'
+            }`}>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-primary-500 to-violet-500 text-white shadow-md shadow-primary-500/20">
+                  <Puzzle size={16} aria-hidden="true" />
+                </div>
+                <h4 className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>
+                  {t('quiz.flow.composition', { defaultValue: '题型 × 难度构成' })}
+                </h4>
+              </div>
               <QuizMatrixTypeConfig config={config} onChange={handleConfigChange} />
             </div>
 
-            <div className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'}`}>
+            <div className={`p-5 sm:p-6 rounded-2xl border ${
+              isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-white border-gray-200'
+            }`}>
               <QuizReuseAdjust
                 kps={kps}
                 existingCounts={existingCounts}
@@ -630,10 +742,10 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
             </div>
 
             {requiresAI && aiStatus && !aiStatus.enabled && (
-              <div className={`flex items-center gap-3 p-4 rounded-xl ${
-                isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-50 text-amber-700'
+              <div className={`flex items-center gap-3 p-4 rounded-2xl border ${
+                isDark ? 'bg-amber-900/30 border-amber-800/40 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'
               }`}>
-                <AlertCircle size={20} />
+                <AlertCircle size={20} aria-hidden="true" />
                 <div>
                   <p className="font-medium">{t('quiz.generation.aiNotConfigured')}</p>
                   <p className="text-sm opacity-80">{t('quiz.generation.configureAiHint')}</p>
@@ -641,49 +753,64 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
               </div>
             )}
 
-            <div className={`p-4 rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-gray-200 bg-gray-50'}`}>
-              <div className="flex items-center gap-2 mb-3">
-                <Check size={16} className={isDark ? 'text-green-400' : 'text-green-600'} />
-                <span className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+            <div className={`p-5 sm:p-6 rounded-2xl border ${
+              isDark ? 'border-slate-700 bg-gradient-to-br from-slate-800/60 to-slate-900/40' : 'border-gray-200 bg-gradient-to-br from-gray-50 to-white'
+            }`}>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20">
+                  <Check size={16} aria-hidden="true" />
+                </div>
+                <span className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>
                   {t('quiz.flow.confirmSummary')}
                 </span>
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-                  isDark ? 'bg-green-900/40 text-green-300' : 'bg-green-100 text-green-700'
+              <div className="grid grid-cols-3 gap-3">
+                <div className={`flex flex-col items-center justify-center gap-0.5 p-3 rounded-xl ${
+                  isDark ? 'bg-green-900/30' : 'bg-green-50'
                 }`}>
-                  {t('quiz.generation.summaryReuse', { count: totalReuse })}
-                </span>
-                <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-                  isDark ? 'bg-primary-900/50 text-primary-300' : 'bg-primary-100 text-primary-600'
+                  <span className={`text-2xl font-extrabold ${isDark ? 'text-green-300' : 'text-green-600'}`}>{totalReuse}</span>
+                  <span className={`text-[11px] font-medium ${isDark ? 'text-green-400/80' : 'text-green-700/80'}`}>
+                    {t('quiz.flow.reuseLabel', { defaultValue: '复用' })}
+                  </span>
+                </div>
+                <div className={`flex flex-col items-center justify-center gap-0.5 p-3 rounded-xl ${
+                  isDark ? 'bg-primary-900/40' : 'bg-primary-50'
                 }`}>
-                  {t('quiz.generation.summaryGenerate', { count: totalGap })}
-                </span>
-                <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-                  isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-200 text-gray-700'
+                  <span className={`text-2xl font-extrabold ${isDark ? 'text-primary-300' : 'text-primary-600'}`}>{totalGap}</span>
+                  <span className={`text-[11px] font-medium ${isDark ? 'text-primary-400/80' : 'text-primary-700/80'}`}>
+                    {t('quiz.flow.generateLabel', { defaultValue: '新生成' })}
+                  </span>
+                </div>
+                <div className={`flex flex-col items-center justify-center gap-0.5 p-3 rounded-xl ${
+                  isDark ? 'bg-slate-700/60' : 'bg-gray-200/70'
                 }`}>
-                  {t('quiz.flow.totalCount', { count: totalQuota })}
-                </span>
+                  <span className={`text-2xl font-extrabold ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>{totalQuota}</span>
+                  <span className={`text-[11px] font-medium ${isDark ? 'text-slate-300' : 'text-gray-500'}`}>
+                    {t('quiz.flow.totalLabel', { defaultValue: '总计' })}
+                  </span>
+                </div>
               </div>
-              <p className={`mt-2 text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-                {t('quiz.flow.generateCompositionHint')}
+              <p className={`mt-3 text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                {t('quiz.flow.summaryComposition', { defaultValue: '新题按下方矩阵生成，涉及知识点缺口自动折算；不足部分优先复用已有题目。' })}
               </p>
             </div>
 
             {isGenerating && progress && (
-              <div className={`p-4 rounded-xl ${isDark ? 'bg-primary-900/30' : 'bg-primary-50'}`} role="status" aria-live="polite">
-                <div className="flex items-center justify-between mb-2">
+              <div className={`p-5 rounded-2xl border ${
+                isDark ? 'bg-primary-900/30 border-primary-800/40' : 'bg-primary-50 border-primary-100'
+              }`} role="status" aria-live="polite">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Loader2 size={18} className="animate-spin text-primary-600" />
-                    <span className={`font-medium ${isDark ? 'text-primary-300' : 'text-primary-700'}`}>
+                    <Loader2 size={18} className="animate-spin text-primary-600" aria-hidden="true" />
+                    <span className={`font-semibold ${isDark ? 'text-primary-300' : 'text-primary-700'}`}>
                       {t('quiz.generation.generating')}
                     </span>
                   </div>
-                  <span className={`text-sm font-bold ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>
+                  <span className={`text-sm font-extrabold ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>
                     {progressPercent}%
                   </span>
                 </div>
-                <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-primary-100'}`}>
+                <div className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-primary-100'}`}>
                   <div
                     className="h-full bg-gradient-to-r from-primary-500 to-violet-500 transition-all duration-300"
                     style={{ width: `${progressPercent}%` }}
@@ -691,6 +818,7 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
                     aria-valuenow={progressPercent}
                     aria-valuemin={0}
                     aria-valuemax={100}
+                    aria-label={t('quiz.generation.progressLabel')}
                   />
                 </div>
                 {progress.current && (
@@ -698,6 +826,9 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
                     {t('quiz.generation.processing', { current: progress.current })}
                   </p>
                 )}
+                <p className={`mt-1 text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                  {t('quiz.generation.completedProgress', { completed: progress.completed, total: progress.total })}
+                </p>
               </div>
             )}
           </div>
@@ -708,11 +839,11 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
   };
 
   return (
-    <div className={`rounded-2xl border overflow-hidden animate-in fade-in zoom-in duration-200 ${
+    <div className={`rounded-2xl border overflow-hidden shadow-xl shadow-slate-900/5 animate-in fade-in zoom-in duration-200 ${
       isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'
     }`}>
-      {/* 头部：返回 + 步骤指示 */}
-      <div className={`px-6 py-4 border-b flex items-center gap-4 ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
+      {/* 顶部工具栏：返回 + 连接式步骤指示器 */}
+      <div className={`px-5 sm:px-6 py-3.5 border-b flex items-center gap-3 ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
         <button
           type="button"
           onClick={onCancel}
@@ -721,62 +852,78 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
             isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-800'
           } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={16} aria-hidden="true" />
           {t('quiz.flow.backToList')}
         </button>
         <div className="flex-1" />
-        <div className="flex items-center gap-2">
-          {stepMeta.map((meta, idx) => {
-            const isActive = idx === currentStepIndex;
-            const isDone = idx < currentStepIndex;
-            return (
-              <button
-                key={meta.key}
-                type="button"
-                onClick={() => isDone && goStep(idx)}
-                disabled={!isDone}
-                className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${
-                  isActive
-                    ? isDark ? 'bg-primary-900/50 text-primary-300' : 'bg-primary-100 text-primary-600'
-                    : isDone
-                      ? isDark ? 'text-green-400 hover:bg-slate-800' : 'text-green-600 hover:bg-gray-100'
-                      : isDark ? 'text-slate-600' : 'text-gray-300'
-                }`}
-              >
-                {isDone && <Check size={12} />}
-                {idx + 1}. {meta.title}
-              </button>
-            );
-          })}
-        </div>
+        {renderStepper()}
       </div>
 
       {/* 步骤标题 */}
-      <div className={`px-6 pt-5 flex items-center gap-3 ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
-        <div className={`p-2 rounded-xl ${isDark ? 'bg-primary-900/50 text-primary-400' : 'bg-primary-100 text-primary-600'}`}>
-          <BrainCircuit size={22} />
-        </div>
-        <div>
-          <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            {currentStepTitle}
-          </h3>
-          <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-            {t('quiz.flow.stepOf', { current: currentStepIndex + 1, total: STEPS.length })}
-          </p>
+      <div className={`relative px-5 sm:px-6 pt-6 pb-6 overflow-hidden ${
+        isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-primary-50/60 via-white to-violet-50/50'
+      }`}>
+        {/* 装饰光斑 */}
+        <div className={`pointer-events-none absolute -top-10 -right-8 h-40 w-40 rounded-full blur-3xl ${
+          isDark ? 'bg-primary-600/10' : 'bg-primary-200/40'
+        }`} aria-hidden="true" />
+        <div className={`pointer-events-none absolute -bottom-14 right-32 h-32 w-32 rounded-full blur-3xl ${
+          isDark ? 'bg-violet-600/10' : 'bg-violet-200/40'
+        }`} aria-hidden="true" />
+
+        <div className="relative flex items-center gap-4">
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-600 text-white shadow-lg shadow-primary-500/25">
+            <StepIcon size={24} aria-hidden="true" />
+          </div>
+          <div>
+            <span className={`text-[11px] font-bold uppercase tracking-wider ${
+              isDark ? 'text-primary-400' : 'text-primary-600'
+            }`}>
+              {t('quiz.flow.stepHint', { n: currentStepIndex + 1 })}
+            </span>
+            <h3 className={`text-lg sm:text-xl font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {currentStepTitle}
+            </h3>
+          </div>
+          <div className="flex-1" />
+          {selectedKnowledgePoints.length > 0 && (
+            <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
+              isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-white text-gray-600 border border-gray-200'
+            }`}>
+              <Layers size={13} className={isDark ? 'text-primary-400' : 'text-primary-600'} aria-hidden="true" />
+              {t('quiz.knowledgePointSelector.selectedCount', { count: selectedKnowledgePoints.length })}
+            </div>
+          )}
         </div>
       </div>
 
       {/* 步骤内容 */}
-      <div className={`p-6 overflow-y-auto ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`} aria-busy={isGenerating}>
+      <div className={`p-5 sm:p-6 overflow-y-auto ${
+        isDark
+          ? 'bg-slate-900'
+          : 'bg-gradient-to-b from-gray-50/80 to-gray-50'
+      }`} aria-busy={isGenerating}>
+        {!canContinue && currentStepIndex === 0 && (
+          <div className={`mb-5 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs ${
+            isDark ? 'bg-slate-800 text-slate-400' : 'bg-white text-gray-500 border border-gray-200'
+          }`}>
+            <Sparkles size={14} className={isDark ? 'text-primary-400' : 'text-primary-500'} aria-hidden="true" />
+            {t('quiz.flow.fillTitle', { defaultValue: '请填写标题并选择至少一个知识点开始' })}
+          </div>
+        )}
         {renderStepContent()}
       </div>
 
       {/* 底部导航 */}
-      <div className={`px-6 py-4 border-t flex justify-between items-center ${isDark ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white'}`}>
-        <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+      <div className={`px-5 sm:px-6 py-4 border-t flex justify-between items-center gap-3 ${
+        isDark ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white'
+      }`}>
+        <div className={`text-xs hidden sm:block ${
+          cardsLoading ? (isDark ? 'text-slate-500' : 'text-gray-400') : (isDark ? 'text-slate-500' : 'text-gray-500')
+        }`}>
           {cardsLoading ? t('quiz.reuse.loading') : t('quiz.flow.footerCounts', { reuse: totalReuse, gap: totalGap })}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-1 sm:flex-none sm:justify-end items-center justify-between gap-3 flex-wrap">
           <button
             type="button"
             onClick={() => goStep(currentStepIndex - 1)}
@@ -785,7 +932,7 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
               isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-gray-600 hover:bg-gray-100'
             } ${currentStepIndex === 0 || isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={16} aria-hidden="true" />
             {t('quiz.flow.prev')}
           </button>
 
@@ -796,12 +943,12 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
               disabled={!canContinue || isGenerating}
               className={`flex items-center gap-1.5 px-6 py-2.5 rounded-xl font-bold transition-all ${
                 canContinue && !isGenerating
-                  ? 'bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white shadow-lg shadow-primary-200 dark:shadow-none'
+                  ? 'bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white shadow-lg shadow-primary-500/25 hover:scale-[1.02] active:scale-[0.98]'
                   : isDark ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
             >
               {t('quiz.flow.next')}
-              <ArrowRight size={16} />
+              <ArrowRight size={16} aria-hidden="true" />
             </button>
           ) : (
             <button
@@ -810,7 +957,7 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
               disabled={!canCreate || isGenerating}
               className={`flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold transition-all ${
                 canCreate && !isGenerating
-                  ? 'bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white shadow-lg shadow-primary-200 dark:shadow-none'
+                  ? 'bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white shadow-lg shadow-primary-500/25 hover:scale-[1.02] active:scale-[0.98]'
                   : isDark ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
             >

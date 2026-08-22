@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import ReactMarkdown, { type Components } from "react-markdown";
+import ReactMarkdown from "react-markdown";
 import { debounce } from "@/utils/performanceUtils";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -73,39 +73,25 @@ interface ProseStyleVars extends React.CSSProperties {
   "--tw-prose-code"?: string;
 }
 
-// 提取用于高亮分析的纯文本。跳过的区域必须与 React 侧 transform 的跳过规则
-// 完全一致（pre/code、KaTeX、data-highlight-ignore 包裹的自定义组件），否则
-// 文本偏移会错位。NodeFilter.FILTER_REJECT 会连同整个子树一起跳过。
+const cleanupHighlights = (container: HTMLElement) => {
+  const highlights = container.querySelectorAll('span[data-highlight="true"]');
+  highlights.forEach((span) => {
+    const text = document.createTextNode(span.textContent || "");
+    span.parentNode?.replaceChild(text, span);
+  });
+  container.normalize();
+};
+
 const extractDomPlainText = (container: HTMLElement): string => {
   const walker = document.createTreeWalker(
     container,
-    NodeFilter.SHOW_ALL,
-    {
-      acceptNode: (node) => {
-        if (node.nodeType === Node.TEXT_NODE) return NodeFilter.FILTER_ACCEPT;
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          const el = node as Element;
-          if (
-            el.tagName === "PRE" ||
-            el.tagName === "CODE" ||
-            el.hasAttribute("data-highlight-ignore") ||
-            (typeof el.className === "string" &&
-              el.className.includes("katex"))
-          ) {
-            return NodeFilter.FILTER_REJECT;
-          }
-          return NodeFilter.FILTER_SKIP;
-        }
-        return NodeFilter.FILTER_SKIP;
-      },
-    },
+    NodeFilter.SHOW_TEXT,
+    null,
   );
   let text = "";
-  let node: Node | null;
-  while ((node = walker.nextNode())) {
-    if (node.nodeType === Node.TEXT_NODE) {
-      text += node.textContent || "";
-    }
+  let node: Text | null;
+  while ((node = walker.nextNode() as Text)) {
+    text += node.textContent || "";
   }
   return text;
 };
@@ -326,220 +312,136 @@ const calculateTooltipPosition = (
   return { left, top, transform };
 };
 
-const splitTextByRanges = (
-  text: string,
+const applyHighlightsToDom = (
+  container: HTMLElement,
   ranges: HighlightRange[],
-  startOffset: number,
-): Array<{ text: string; highlight: boolean; range?: HighlightRange }> => {
-  const parts: Array<{
-    text: string;
-    highlight: boolean;
-    range?: HighlightRange;
-  }> = [];
-  let pos = 0;
+  isDark?: boolean,
+) => {
+  if (ranges.length === 0) return;
 
-  ranges.forEach((range) => {
-    const highlightStart = Math.max(0, range.start - startOffset);
-    const highlightEnd = Math.min(text.length, range.end - startOffset);
+  const walker = document.createTreeWalker(
+    container,
+    NodeFilter.SHOW_TEXT,
+    null,
+  );
 
-    if (highlightStart >= highlightEnd) return;
+  const textNodes: { node: Text; start: number; end: number }[] = [];
+  let currentOffset = 0;
 
-    if (highlightStart > pos) {
-      parts.push({ text: text.slice(pos, highlightStart), highlight: false });
-    }
-
-    const highlighted = text
-      .slice(highlightStart, highlightEnd)
-      .replace(/\n/g, " ");
-    if (highlighted.trim()) {
-      parts.push({ text: highlighted, highlight: true, range });
-    } else {
-      parts.push({ text: highlighted, highlight: false });
-    }
-
-    pos = highlightEnd;
+  // 预构建 range -> 下标 映射，避免给每个高亮片段重复线性 range.indexOf（原为 O(relevantRanges*ranges)）
+  const rangeIndexMap = new Map<HighlightRange, number>();
+  ranges.forEach((r, i) => {
+    rangeIndexMap.set(r, i);
   });
 
-  if (pos < text.length) {
-    parts.push({ text: text.slice(pos), highlight: false });
+  let node: Text | null;
+  while ((node = walker.nextNode() as Text)) {
+    const length = node.textContent?.length || 0;
+    textNodes.push({
+      node,
+      start: currentOffset,
+      end: currentOffset + length,
+    });
+    currentOffset += length;
   }
 
-  return parts;
-};
+  textNodes.forEach(({ node, start, end }) => {
+    const relevantRanges = ranges.filter(
+      (r) => !(start >= r.end || end <= r.start),
+    );
+    if (relevantRanges.length === 0) return;
 
-// Highlights are rendered through React instead of mutating the DOM directly.
-// The previous implementation walked the rendered DOM and replaceChild'd text
-// nodes with <span data-highlight> elements. That detached React-owned nodes
-// from their parents, so when React later reconciled/deleted them (e.g. on
-// content change) it threw "NotFoundError: Failed to execute 'removeChild' on
-// 'Node': The node to be removed is not a child of this node". Transforming
-// the React element tree keeps the virtual DOM in sync with the real DOM.
-const transformHighlightedTree = (
-  node: React.ReactNode,
-  ranges: HighlightRange[],
-  rangeIndexMap: Map<HighlightRange, number>,
-  state: { offset: number },
-  isDark?: boolean,
-): React.ReactNode => {
-  if (typeof node === "string" || typeof node === "number") {
-    const text = String(node);
-    const startOffset = state.offset;
-    state.offset += text.length;
+    const text = node.textContent || "";
 
-    const parts = splitTextByRanges(text, ranges, startOffset);
-    if (parts.every((p) => !p.highlight)) return text;
+    const parts: {
+      text: string;
+      highlight: boolean;
+      range?: HighlightRange;
+      rangeIndex?: number;
+    }[] = [];
+    let pos = 0;
 
-    return parts.map((part, i) => {
-      if (!part.highlight || !part.range) return part.text;
-      const { range } = part;
-      return (
-        <span
-          key={`hl-${startOffset}-${i}`}
-          data-highlight="true"
-          data-reason={range.reason}
-          data-range-index={rangeIndexMap.get(range) ?? -1}
-          data-importance={
-            range.importance ? String(range.importance) : undefined
-          }
-          data-category={range.category}
-          className={getHighlightClassName(range.importance, isDark)}
-          onClick={(e) => {
-            if (!range.category) return;
+    relevantRanges.forEach((range) => {
+      const highlightStart = Math.max(0, range.start - start);
+      const highlightEnd = Math.min(text.length, range.end - start);
+
+      if (highlightStart >= highlightEnd) return;
+
+      if (highlightStart > pos) {
+        parts.push({
+          text: text.slice(pos, highlightStart),
+          highlight: false,
+        });
+      }
+
+      const highlighted = text
+        .slice(highlightStart, highlightEnd)
+        .replace(/\n/g, " ");
+      if (highlighted.trim()) {
+        parts.push({
+          text: highlighted,
+          highlight: true,
+          range,
+          rangeIndex: rangeIndexMap.get(range) ?? -1,
+        });
+      } else {
+        parts.push({ text: highlighted, highlight: false });
+      }
+
+      pos = highlightEnd;
+    });
+
+    if (pos < text.length) {
+      parts.push({ text: text.slice(pos), highlight: false });
+    }
+
+    if (parts.every((p) => !p.highlight)) return;
+
+    const parent = node.parentNode;
+    if (!parent) return;
+
+    const fragment = document.createDocumentFragment();
+    parts.forEach((part) => {
+      if (part.highlight && part.range) {
+        const span = document.createElement("span");
+        span.className = getHighlightClassName(part.range.importance, isDark);
+        span.dataset.highlight = "true";
+        span.dataset.reason = part.range.reason;
+        span.dataset.rangeIndex = String(part.rangeIndex);
+        if (part.range.importance) {
+          span.dataset.importance = String(part.range.importance);
+        }
+        if (part.range.category) {
+          span.dataset.category = part.range.category;
+          span.addEventListener("click", () => {
             const event = new CustomEvent("highlight-click", {
               bubbles: true,
               detail: {
                 term: part.text,
-                importance: range.importance,
-                category: range.category,
-                explanation: range.reason,
+                importance: part.range?.importance,
+                category: part.range?.category,
+                explanation: part.range?.reason,
               },
             });
-            e.currentTarget.dispatchEvent(event);
-          }}
-        >
-          {part.text}
-        </span>
-      );
-    });
-  }
-
-  if (Array.isArray(node)) {
-    return node.map((child) =>
-      transformHighlightedTree(child, ranges, rangeIndexMap, state, isDark),
-    );
-  }
-
-  if (React.isValidElement(node)) {
-    if (typeof node.type !== "string") {
-      // Custom React components (CodeBlock, TermTooltip, ...) manage their own
-      // internals — leave untouched to avoid breaking them.
-      return node;
-    }
-    const tag = node.type;
-    const className = (node.props as { className?: string }).className;
-    if (
-      tag === "pre" ||
-      tag === "code" ||
-      tag === "svg" ||
-      tag === "math" ||
-      (typeof className === "string" && className.includes("katex"))
-    ) {
-      return node;
-    }
-    const children = (node.props as { children?: React.ReactNode }).children;
-    if (children == null) return node;
-    return React.cloneElement(
-      node,
-      undefined,
-      transformHighlightedTree(children, ranges, rangeIndexMap, state, isDark),
-    );
-  }
-
-  return node;
-};
-
-const HighlightedBody: React.FC<{
-  content: string;
-  ranges: HighlightRange[];
-  isDark: boolean;
-}> = ({ content, ranges, isDark }) => {
-  const rangeIndexMap = useMemo(() => {
-    const map = new Map<HighlightRange, number>();
-    ranges.forEach((r, i) => {
-      map.set(r, i);
-    });
-    return map;
-  }, [ranges]);
-  // 每个渲染周期独立创建；块级 override 按文档顺序同步推进 offset
-  const state = { offset: 0 };
-
-  const transform = (children: React.ReactNode) =>
-    transformHighlightedTree(children, ranges, rangeIndexMap, state, isDark);
-
-  const SplitBlock: React.FC<{
-    tag: string;
-    node?: unknown;
-    children?: React.ReactNode;
-    [key: string]: unknown;
-  }> = ({ tag, node: _node, children, ...props }) =>
-    React.createElement(tag, props, transform(children));
-
-  const components: Components = {
-    p: (props) => <SplitBlock tag="p" {...props} />,
-    li: (props) => <SplitBlock tag="li" {...props} />,
-    h1: (props) => <SplitBlock tag="h1" {...props} />,
-    h2: (props) => <SplitBlock tag="h2" {...props} />,
-    h3: (props) => <SplitBlock tag="h3" {...props} />,
-    h4: (props) => <SplitBlock tag="h4" {...props} />,
-    h5: (props) => <SplitBlock tag="h5" {...props} />,
-    h6: (props) => <SplitBlock tag="h6" {...props} />,
-    blockquote: (props) => <SplitBlock tag="blockquote" {...props} />,
-    td: (props) => <SplitBlock tag="td" {...props} />,
-    th: (props) => <SplitBlock tag="th" {...props} />,
-    figcaption: (props) => <SplitBlock tag="figcaption" {...props} />,
-    code: ({ className, children, node: _node }) => (
-      <span data-highlight-ignore style={{ display: "contents" }}>
-        <CodeBlock className={className} isDark={isDark} node={_node}>
-          {children}
-        </CodeBlock>
-      </span>
-    ),
-    a: ({ node: _node, ...props }) => {
-      const { href, children } = props;
-      if (href && href.startsWith("term:")) {
-        return (
-          <span data-highlight-ignore style={{ display: "contents" }}>
-            <TermTooltip
-              term={String(children)}
-              explanation={decodeURIComponent(href.replace("term:", ""))}
-            />
-          </span>
-        );
+            span.dispatchEvent(event);
+          });
+          span.style.cursor = "pointer";
+        }
+        span.textContent = part.text;
+        fragment.appendChild(span);
+      } else {
+        fragment.appendChild(document.createTextNode(part.text));
       }
-      return (
-        <SplitBlock
-          tag="a"
-          href={href}
-          className="text-primary-600 underline"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={href}
-        >
-          {children}
-        </SplitBlock>
-      );
-    },
-  };
+    });
 
-  return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[[rehypeKatex, { output: "html" }]]}
-      components={components}
-    >
-      {preprocessMarkdown(content)}
-    </ReactMarkdown>
-  );
+    // 竞态防御：rAF 回调执行时组件可能已卸载或内容被 React 重建，
+    // 此时 node 已不是 parent 的子节点，直接 replaceChild 会抛
+    // "Failed to execute 'replaceChild'/'removeChild': not a child"。
+    // 仅在 node 仍归属 parent 时才替换，否则安全跳过。
+    if (node.parentNode !== parent) return;
+
+    parent.replaceChild(fragment, node);
+  });
 };
 
 export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
@@ -604,17 +506,17 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
   );
 
   useEffect(() => {
-    // Content/keywords/intensity changed → previously computed ranges no longer
-    // map onto the freshly rendered text. Clear them immediately (the debounced
-    // re-analysis re-applies correct ranges) so stale highlights never render.
-    setHighlightRanges([]);
-    setHighlightStats(null);
     if (highlightEnabled && content) {
       debouncedSetNeedsHighlight();
     } else {
       debouncedSetNeedsHighlight.cancel();
+      setHighlightRanges([]);
       setIsAnalyzing(false);
       setNeedsHighlight(false);
+      setHighlightStats(null);
+      if (contentRef.current) {
+        cleanupHighlights(contentRef.current);
+      }
     }
   }, [content, highlightEnabled, highlightIntensity, keywords, debouncedSetNeedsHighlight]);
 
@@ -631,6 +533,8 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
     const container = contentRef.current;
 
     const rafId = requestAnimationFrame(() => {
+      cleanupHighlights(container);
+
       const plainText = extractDomPlainText(container);
       if (!plainText) {
         setHighlightRanges([]);
@@ -641,6 +545,7 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
 
       const finishHighlight = (ranges: HighlightRange[]) => {
         if (cancelled) return;
+        applyHighlightsToDom(container, ranges, isDark);
         setHighlightRanges(ranges);
         setIsAnalyzing(false);
         setNeedsHighlight(false);
@@ -871,7 +776,42 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
         }`}
         style={bodyStyle}
       >
-        <HighlightedBody content={content} ranges={highlightRanges} isDark={isDark} />
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[[rehypeKatex, { output: "html" }]]}
+          components={{
+            code: ({ className, children, node: _node }) => (
+              <CodeBlock className={className} isDark={isDark} node={_node}>
+                {children}
+              </CodeBlock>
+            ),
+            a: ({ node: _node, ...props }) => {
+              const { href, children } = props;
+              if (href && href.startsWith("term:")) {
+                const explanation = href.replace("term:", "");
+                return (
+                  <TermTooltip
+                    term={String(children)}
+                    explanation={decodeURIComponent(explanation)}
+                  />
+                );
+              }
+              return (
+                <a
+                  {...props}
+                  className="text-primary-600 underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={props.href}
+                >
+                  {props.href}
+                </a>
+              );
+            },
+          }}
+        >
+          {preprocessMarkdown(content)}
+        </ReactMarkdown>
       </div>
 
       <AnimatePresence>

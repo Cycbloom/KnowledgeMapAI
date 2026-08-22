@@ -56,4 +56,5 @@ export interface IFocusApi {
     task_id?: string;
   }): Promise<unknown>;
   getStats(): Promise<unknown>;
+  getTodayStats(): Promise<unknown>;
 }

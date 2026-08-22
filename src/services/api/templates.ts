@@ -75,6 +75,8 @@ export const focusApi = {
     request('/scheduler/focus-sessions', { method: 'POST', body: JSON.stringify(data) }),
   
   getStats: () => request('/scheduler/focus-sessions/stats'),
+  
+  getTodayStats: () => request('/scheduler/focus-sessions/today'),
 };
 
 export const achievementsApi: IAchievementsApi = {

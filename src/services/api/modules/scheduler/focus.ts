@@ -110,16 +110,16 @@ export const focusApi = {
     );
   },
 
-  getUserFocusStats: () => requestData<UserFocusStats>("/scheduler/focus-stats"),
+  getUserFocusStats: () => requestData<UserFocusStats>("/scheduler/focus-sessions/stats"),
 
   getDailyFocusStats: (date?: string) => {
-    const params = date ? `?date=${date}` : "";
-    return requestData<DailyFocusStats>(`/scheduler/focus-stats/daily${params}`);
+    const params = date ? `?date=${encodeURIComponent(date)}` : "";
+    return requestData<DailyFocusStats>(`/scheduler/focus-sessions/today${params}`);
   },
 
   getWeeklyFocusStats: (weekStart?: string) => {
-    const params = weekStart ? `?week_start=${weekStart}` : "";
-    return requestData<WeeklyFocusStats>(`/scheduler/focus-stats/weekly${params}`);
+    const params = weekStart ? `?week_start=${encodeURIComponent(weekStart)}` : "";
+    return requestData<WeeklyFocusStats>(`/scheduler/focus-sessions/weekly-stats${params}`);
   },
 
   getMonthlyFocusStats: (year?: number, month?: number) => {
@@ -128,12 +128,12 @@ export const focusApi = {
     if (month !== undefined) params.append("month", String(month));
     const queryString = params.toString();
     return requestData<MonthlyFocusStats>(
-      `/scheduler/focus-stats/monthly${queryString ? `?${queryString}` : ""}`,
+      `/scheduler/focus-sessions/monthly-stats${queryString ? `?${queryString}` : ""}`,
     );
   },
 
   getYearlyHeatmap: (year?: number) => {
     const params = year ? `?year=${year}` : "";
-    return requestData<HeatmapData[]>(`/scheduler/focus-stats/heatmap${params}`);
+    return requestData<HeatmapData[]>(`/scheduler/focus-sessions/heatmap${params}`);
   },
 };

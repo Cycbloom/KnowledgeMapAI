@@ -941,7 +941,7 @@ export const generateQuizSchema = z.object({
       difficulty: z.enum(["easy", "medium", "hard", "mixed"]).optional(),
       knowledgePointIds: z.array(z.string().uuid("无效的知识点ID")).optional(),
       cardsPerType: z
-        .record(z.number().min(1).max(20, "每题型数量需在1-20之间"))
+        .record(z.number().min(0).max(60, "每题型数量需在0-60之间"))
         .optional(),
       customPrompt: z.string().max(4000, "自定义提示词过长").optional(),
       aiProvider: z.string().optional(),
@@ -950,8 +950,12 @@ export const generateQuizSchema = z.object({
         .optional(),
       countMatrix: z
         .record(
-          z.record(z.number().min(0).max(20, "单题型单难度数量需在0-20之间")),
+          z.record(z.number().min(0).max(30, "单题型单难度数量需在0-30之间")),
         )
+        .optional(),
+      // 总数配额制：{ knowledge_point_id: 需要生成的题数 }
+      perNodeCounts: z
+        .record(z.string(), z.number().int().min(1).max(200).optional())
         .optional(),
     })
     .optional(),
@@ -961,7 +965,20 @@ export const generationProgressParamsSchema = z.object({
   taskId: z.string().uuid("无效的任务ID"),
 });
 
+export const addCardsBatchSchema = z.object({
+  card_ids: z
+    .array(z.string().uuid("无效的卡片ID"))
+    .min(1, "至少选择一张卡片")
+    .max(200, "单次最多添加200张卡片"),
+});
+
 export const regenerateCardSchema = z.object({
+  id: z.string().uuid("无效的测验集合ID"),
+  cardId: z.string().uuid("无效的卡片ID"),
+});
+
+/** 测验集合下操作单张卡片的路径参数（删除卡片等） */
+export const quizSetCardParamsSchema = z.object({
   id: z.string().uuid("无效的测验集合ID"),
   cardId: z.string().uuid("无效的卡片ID"),
 });

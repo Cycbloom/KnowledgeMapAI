@@ -86,6 +86,7 @@ export class AsyncTaskService {
   private mapTaskTypeToSystemTaskType(type: string): SystemTaskType {
     const typeMap: Record<string, SystemTaskType> = {
       "generate_questions": "ai_generation",
+      "generate_quiz": "ai_generation",
       "batch_generate_questions": "ai_generation",
       "expand_graph": "graph_expansion",
       "recursive_graph_generation": "graph_expansion",
@@ -128,7 +129,7 @@ export class AsyncTaskService {
       logger.info(`asyncTaskService.initialize: recovering ${stalledTasks.length} stalled task(s)`);
 
       for (const task of stalledTasks) {
-        const originalType = this.getOriginalTaskType(task.task_type);
+        const originalType = this.getOriginalTaskType(task.task_type, task.title);
         const payload = (task.input_data as Record<string, unknown>) ?? {};
         this.processTaskAsync(task.id, task.user_id, originalType, payload).catch((err) => {
           logger.error(`asyncTaskService.initialize: failed to recover task ${task.id}:`, err);
@@ -414,7 +415,7 @@ export class AsyncTaskService {
     if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to retry task: ${error.message}` });
 
     logger.info("Processing retried task synchronously");
-    const originalType = this.getOriginalTaskType(task.task_type);
+    const originalType = this.getOriginalTaskType(task.task_type, task.title);
     this.processTaskAsync(data.id, userId, originalType, (task.input_data as Record<string, unknown>) || {}).catch(
       (err) => {
         logger.error(
@@ -427,7 +428,19 @@ export class AsyncTaskService {
     return data as Task;
   }
 
-  private getOriginalTaskType(systemTaskType: string): string {
+  /**
+   * 还原精确的 processor 类型。
+   *
+   * system_tasks.task_type 只保存粗粒度 SystemTaskType（如 ai_generation），
+   * 同一个 SystemTaskType 下可能注册多个 processor（ai_generation 下既有
+   * generate_questions 也有 generate_quiz）。createTask 时 title 默认等于
+   * 原始类型（title = name || type），因此优先用 title 精确还原 processor；
+   * 否则回退到粗粒度反查表（保证旧任务/自定义名称仍可执行）。
+   */
+  private getOriginalTaskType(systemTaskType: string, title?: string): string {
+    if (title && getProcessor(title)) {
+      return title;
+    }
     const reverseMap: Record<string, string> = {
       "ai_generation": "generate_questions",
       "graph_expansion": "expand_graph",
@@ -527,7 +540,7 @@ export class AsyncTaskService {
     this.taskControls.delete(taskId);
     await this.updateTaskStatus(taskId, "pending", undefined, undefined, undefined, userId);
 
-    const originalType = this.getOriginalTaskType(task.task_type);
+    const originalType = this.getOriginalTaskType(task.task_type, task.title);
     const payload = (task.input_data as Record<string, unknown>) ?? {};
     this.processTaskAsync(task.id, task.user_id, originalType, payload).catch((err) => {
       logger.error(`Failed to resume task ${task.id}:`, err);

@@ -9,6 +9,8 @@ import {
   regenerateCardSchema,
   generationProgressParamsSchema,
   uuidParamsSchema,
+  addCardsBatchSchema,
+  quizSetCardParamsSchema,
 } from "../../schemas/index";
 import { quizSetsService } from "../../services/quiz";
 import { asyncTaskService } from "../../services/asyncTaskService";
@@ -35,7 +37,7 @@ router.get(
 router.get(
   "/generation/:taskId",
   requireAuth,
-  validate(generationProgressParamsSchema),
+  validate({ params: generationProgressParamsSchema }),
   async (req: AuthedRequest, res: Response) => {
     const { taskId } = req.params;
     const task = await asyncTaskService.getTask(req.supabase, taskId, req.user.id);
@@ -67,7 +69,7 @@ router.get(
 router.get(
   "/:id",
   requireAuth,
-  validate(uuidParamsSchema),
+  validate({ params: uuidParamsSchema }),
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const data = await quizSetsService.get(req.supabase, req.user.id, id);
@@ -111,7 +113,7 @@ router.put(
 router.delete(
   "/:id",
   requireAuth,
-  validate(uuidParamsSchema),
+  validate({ params: uuidParamsSchema }),
   requireQuizSetOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
@@ -139,7 +141,7 @@ router.post(
 router.post(
   "/:id/regenerate/:cardId",
   requireAuth,
-  validate(regenerateCardSchema),
+  validate({ params: regenerateCardSchema }),
   async (req: AuthedRequest, res: Response) => {
     const { id, cardId } = req.params;
     const result = await quizSetsService.regenerateCard(
@@ -155,7 +157,7 @@ router.post(
 router.post(
   "/:id/cards",
   requireAuth,
-  validate(uuidParamsSchema),
+  validate({ params: uuidParamsSchema }),
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { card_id } = req.body;
@@ -164,10 +166,27 @@ router.post(
   },
 );
 
+router.post(
+  "/:id/cards/batch",
+  requireAuth,
+  validate(addCardsBatchSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+    const { card_ids } = req.body;
+    const result = await quizSetsService.addCardsBatch(
+      req.supabase,
+      req.user.id,
+      id,
+      card_ids,
+    );
+    res.json(result);
+  },
+);
+
 router.delete(
   "/:id/cards/:cardId",
   requireAuth,
-  validate(uuidParamsSchema),
+  validate({ params: quizSetCardParamsSchema }),
   requireQuizSetOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id, cardId } = req.params;

@@ -76,6 +76,11 @@ export interface QuizSetConfig {
    * 精确落地用户配置；优先级高于 cardsPerType / countPerDifficulty。
    */
   countMatrix?: Partial<Record<CardType, Partial<Record<CardDifficulty, number>>>>;
+  /**
+   * 总数配额制：{ knowledge_point_id: 需要生成的题数 }。
+   * 存在时后端按每个知识点的缺口数量生成，countMatrix/cardsPerType 仅作为题型×难度构成。
+   */
+  perNodeCounts?: Record<string, number>;
 }
 
 export interface QuizSet {

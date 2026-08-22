@@ -49,9 +49,6 @@ describe('createPersistedStore', () => {
         setCount: (n) => set({ count: n }),
         setLabel: (s) => set({ label: s }),
       }),
-      // 提供 partialize 以避免 createPersistedStore 未提供 partialize 时
-      // 传 undefined 给 zustand persist 导致 setItem 报错
-      { partialize: (state) => ({ count: state.count, label: state.label }) },
     );
     useTestStore.getState().setCount(42);
     useTestStore.getState().setLabel('updated');

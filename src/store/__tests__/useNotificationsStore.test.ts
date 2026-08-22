@@ -1,33 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { StateCreator } from 'zustand';
+import { describe, it, expect, beforeEach } from 'vitest';
 import type { NotificationType } from '@shared/types';
-
-// createPersistedStore 在未提供 partialize 时会传 undefined 给 zustand persist
-// 中间件，覆盖其默认的 identity partialize，导致每次状态变更后抛出
-// "options.partialize is not a function"。此处 mock createPersistedStore，
-// 在未提供 partialize 时注入默认 identity 函数，以便测试 store 的真实逻辑。
-vi.mock('../createPersistedStore', async (importOriginal) => {
-  const actual = await importOriginal() as typeof import('../createPersistedStore');
-  return {
-    ...actual,
-    createPersistedStore: function createPersistedStore<T>(
-      name: string,
-      stateCreator: StateCreator<T>,
-      options?: {
-        partialize?: (state: T) => Partial<T>;
-        version?: number;
-        storage?: Storage;
-        migrate?: (persistedState: unknown, version: number) => T | Promise<T>;
-      },
-    ) {
-      return actual.createPersistedStore<T>(name, stateCreator, {
-        ...options,
-        partialize: options?.partialize ?? ((state: T) => state),
-      });
-    },
-  };
-});
 
 import { useNotificationsStore } from '../useNotificationsStore';
 

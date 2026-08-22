@@ -1,5 +1,10 @@
 import { create, type StateCreator } from 'zustand';
-import { persist, devtools, createJSONStorage } from 'zustand/middleware';
+import {
+  persist,
+  devtools,
+  createJSONStorage,
+  type PersistOptions,
+} from 'zustand/middleware';
 
 interface CreatePersistedStoreOptions<T> {
   partialize?: (state: T) => Partial<T>;
@@ -17,25 +22,28 @@ export function createPersistedStore<T>(
   options?: CreatePersistedStoreOptions<T>,
 ) {
   const persistKey = `km-${name}`;
+  const persistOptions: PersistOptions<T, Partial<T>> = {
+    name: persistKey,
+    storage: createJSONStorage(() => options?.storage ?? window.localStorage),
+    version: options?.version ?? 1,
+    migrate: (persistedState: unknown, version: number) => {
+      if (options?.migrate) {
+        return options.migrate(persistedState, version);
+      }
+      return persistedState as T;
+    },
+    onRehydrateStorage: options?.onRehydrateStorage,
+  };
+  // Only forward `partialize` when the caller actually provided one. Zustand
+  // v5's persist middleware already defaults partialize to an identity
+  // function, but explicitly passing `undefined` (spread over its defaults)
+  // would clobber that default — then every write crashes in persist's
+  // setItem with "options.partialize is not a function".
+  if (options?.partialize) {
+    persistOptions.partialize = options.partialize;
+  }
   return create<T>()(
-    devtools(
-      persist(stateCreator, {
-        name: persistKey,
-        storage: createJSONStorage(
-          () => options?.storage ?? window.localStorage,
-        ),
-        partialize: options?.partialize as ((state: T) => T) | undefined,
-        version: options?.version ?? 1,
-        migrate: (persistedState: unknown, version: number) => {
-          if (options?.migrate) {
-            return options.migrate(persistedState, version);
-          }
-          return persistedState as T;
-        },
-        onRehydrateStorage: options?.onRehydrateStorage,
-      }),
-      { name: persistKey },
-    ),
+    devtools(persist(stateCreator, persistOptions), { name: persistKey }),
   );
 }
 

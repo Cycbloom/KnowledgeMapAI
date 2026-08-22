@@ -32,8 +32,7 @@ export const useQuizSettingsStore = createPersistedStore<QuizSettingsState>(
   }),
   {
     version: 1,
-    // 必须显式提供 partialize，否则 undefined 会覆盖 zustand persist 的默认
-    // identity 函数，导致每次 setState 时 setItem 抛 "partialize is not a function"
+    // 仅持久化用户可调项，忽略 action 函数
     partialize: (state) => ({
       fontSize: state.fontSize,
       lineHeight: state.lineHeight,

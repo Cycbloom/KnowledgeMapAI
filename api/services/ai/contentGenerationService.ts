@@ -192,6 +192,7 @@ export class ContentGenerationService {
       topic: topic.slice(0, 100),
       level: options.level || "normal",
       model: options.model || provider.model,
+      language: options.language || "zh-CN",
     });
 
     try {

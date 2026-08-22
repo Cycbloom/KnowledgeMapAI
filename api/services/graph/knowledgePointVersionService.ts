@@ -243,6 +243,7 @@ export class KnowledgePointVersionService {
         content: kp.data.content,
         summary: kp.data.summary,
         learning_material: kp.data.learning_material,
+        keywords: kp.data.keywords,
         properties: kp.data.properties,
         change_summary: changeSummary,
         changed_by: userId,

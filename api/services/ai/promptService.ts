@@ -503,6 +503,7 @@ Formatting:
 - **IMPORTANT**: Wrap ALL mathematical formulas in LaTeX: $inline$ or $$block$$.
 - Use lists and bullet points for readability.
 - Respect the suggested word count per section whenever feasible.
+- **Write every section title in {{outputLanguage}}**: translate each title listed in the Structure above into the target language, do not keep the original-language titles.
 
 Topic: {{topic}}
 Context/Background: {{context}}

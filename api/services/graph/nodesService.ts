@@ -5,7 +5,7 @@ import { knowledgePointService, graphNodeService, edgeService, backlinkService }
 import { buildNodeFromGraphNode, createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers';
 import { appEventBus } from '../core/eventBus';
 import type { NodeCreatedPayload, EdgeCreatedPayload } from '../../../shared/types/events';
-import { BackboneModule, type NodeLevel } from '../../../shared/types/graph';
+import { BackboneModule, type NodeLevel, type Keyword } from '../../../shared/types/graph';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
@@ -26,7 +26,7 @@ interface CreateNodeData {
   properties?: Record<string, unknown>;
   level?: string;
   is_accepted?: boolean;
-  learning_material?: string;
+  learning_material?: Record<string, string>;
   knowledge_point_id?: string;
   reuse_existing?: boolean;
 }
@@ -35,10 +35,10 @@ interface UpdateNodeData {
   title?: string;
   content?: string;
   summary?: string;
-  learning_material?: string;
+  learning_material?: Record<string, string>;
   properties?: Record<string, unknown>;
   visibility?: 'private' | 'public';
-  keywords?: string[];
+  keywords?: Record<string, Keyword[]>;
   x_position?: number;
   y_position?: number;
   level?: string;
@@ -50,7 +50,7 @@ interface BatchUpdateNodeItem {
   title?: string;
   content?: string;
   summary?: string;
-  learning_material?: string;
+  learning_material?: Record<string, string>;
   properties?: Record<string, unknown>;
   x_position?: number;
   y_position?: number;
@@ -137,7 +137,7 @@ export class NodesService {
         title: title || '',
         content: content || '',
         summary,
-        learning_material: learning_material || '',
+        learning_material: learning_material || {},
         properties: properties || {},
         visibility: 'private',
         owner_id: userId,
@@ -414,10 +414,10 @@ export class NodesService {
       title?: string;
       content?: string;
       summary?: string;
-      learning_material?: string;
+      learning_material?: Record<string, string>;
       properties?: Record<string, unknown>;
       visibility?: 'private' | 'public';
-      keywords?: string[];
+      keywords?: Record<string, Keyword[]>;
     } = {};
     const gnUpdates: {
       x_position?: number;

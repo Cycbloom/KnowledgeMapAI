@@ -7,6 +7,7 @@ import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { cacheService, CacheKeys, CacheTTL, computeTextHash } from '../common/cacheService';
 import { backlinkService } from './backlinkService';
 import type { KnowledgePoint, KnowledgePointVisibility } from '../../../shared/types/index';
+import type { Keyword } from '../../../shared/types/graph';
 
 export type { KnowledgePoint, KnowledgePointVisibility };
 
@@ -54,7 +55,7 @@ export interface CreateKnowledgePointData {
   title: string;
   content?: string;
   summary?: string;
-  learning_material?: string;
+  learning_material?: Record<string, string>;
   properties?: Record<string, unknown>;
   visibility?: KnowledgePointVisibility;
   owner_id: string;
@@ -65,7 +66,8 @@ export interface UpdateKnowledgePointData {
   title?: string;
   content?: string;
   summary?: string;
-  learning_material?: string;
+  learning_material?: Record<string, string>;
+  keywords?: Record<string, Keyword[]>;
   properties?: Record<string, unknown>;
   visibility?: KnowledgePointVisibility;
 }
@@ -98,7 +100,7 @@ export class KnowledgePointService {
       title: data.title,
       content: data.content || '',
       summary: data.summary || null,
-      learning_material: data.learning_material || '',
+      learning_material: data.learning_material || {},
       properties: data.properties || {},
       visibility: data.visibility || 'private',
       owner_id: data.owner_id,
@@ -542,7 +544,7 @@ export class KnowledgePointService {
     if (suggestedChanges) {
       if (suggestedChanges.title) updates.title = suggestedChanges.title as string;
       if (suggestedChanges.content) updates.content = suggestedChanges.content as string;
-      if (suggestedChanges.learning_material) updates.learning_material = suggestedChanges.learning_material as string;
+      if (suggestedChanges.learning_material) updates.learning_material = suggestedChanges.learning_material as Record<string, string>;
     }
 
     updates.properties = {

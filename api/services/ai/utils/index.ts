@@ -91,7 +91,7 @@ export interface NodeContextOptions {
 export interface NodeData {
   title?: string;
   content?: string;
-  learning_material?: string;
+  learning_material?: Record<string, string>;
   properties?: Record<string, unknown>;
 }
 
@@ -121,7 +121,14 @@ export function buildNodeContext(
   }
 
   if (includeLearningMaterial && node.learning_material) {
-    parts.push(`学习材料: ${node.learning_material}`);
+    const lmEntries = Object.entries(node.learning_material);
+    if (lmEntries.length > 0) {
+      parts.push(
+        `学习材料: ${lmEntries
+          .map(([lang, content]) => `[${lang}] ${content}`)
+          .join("\n")}`,
+      );
+    }
   }
 
   if (includeProperties && node.properties) {

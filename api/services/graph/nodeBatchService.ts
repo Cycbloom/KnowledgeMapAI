@@ -23,7 +23,7 @@ interface BatchUpdateNodeItem {
   title?: string;
   content?: string;
   summary?: string;
-  learning_material?: string;
+  learning_material?: Record<string, string>;
   properties?: Record<string, unknown>;
   x_position?: number;
   y_position?: number;
@@ -235,7 +235,7 @@ export class NodeBatchService {
         title?: string;
         content?: string;
         summary?: string;
-        learning_material?: string;
+        learning_material?: Record<string, string>;
         properties?: Record<string, unknown>;
       } = {};
       const gnUpdates: {

@@ -25,14 +25,14 @@ interface GraphNodeQueryResult {
     title?: string;
     content?: string;
     summary?: string;
-    learning_material?: string;
+    learning_material?: Record<string, string>;
     properties?: Record<string, unknown>;
   } | {
     id?: string;
     title?: string;
     content?: string;
     summary?: string;
-    learning_material?: string;
+    learning_material?: Record<string, string>;
     properties?: Record<string, unknown>;
   }[];
 }
@@ -44,7 +44,7 @@ interface ExportNode {
   title: string;
   content: string;
   summary: string;
-  learning_material: string;
+  learning_material: Record<string, string>;
   properties: Record<string, unknown>;
   x_position: number;
   y_position: number;
@@ -157,7 +157,7 @@ export class DataService {
         title: kp?.title || '',
         content: kp?.content || '',
         summary: kp?.summary || '',
-        learning_material: kp?.learning_material || '',
+        learning_material: kp?.learning_material || {},
         properties: kp?.properties || {},
         x_position: gn.x_position,
         y_position: gn.y_position,
@@ -519,7 +519,7 @@ export class DataService {
         title: string;
         content?: string;
         summary?: string;
-        learning_material?: string;
+        learning_material?: Record<string, string>;
         x_position?: number;
         y_position?: number;
         level?: string;

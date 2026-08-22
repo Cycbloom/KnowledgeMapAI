@@ -765,11 +765,23 @@ export class BackupService {
       const validTaskIds = new Set((existingTasks ?? []).map((t: { id: string }) => t.id));
 
       const graphsToInsert = graphs.map((g) => {
-        const { id: _id, task_id, parent_graph_id: _parentGraphId, ...rest } = g;
+        const {
+          id: _id,
+          task_id,
+          parent_graph_id: _parentGraphId,
+          // 以下为导出时从 knowledge_graph_contents 扁平化的字段，不属于 knowledge_graphs 列，插入前必须剔除
+          podcast_script: _podcastScript,
+          reference_books: _referenceBooks,
+          external_links: _externalLinks,
+          learning_guide: _learningGuide,
+          ...rest
+        } = g;
         return {
           ...rest,
           user_id: userId,
           parent_graph_id: null,
+          // 分支来源快照依赖后续 graph_snapshots 恢复，先置空避免外键冲突，恢复后重映射
+          branch_source_snapshot_id: null,
           task_id: task_id && validTaskIds.has(task_id) ? task_id : null,
         };
       });
@@ -1005,6 +1017,19 @@ export class BackupService {
           snapshotMap.set((data.graph_snapshots ?? [])[i].id, s.id);
         });
       }
+    }
+
+    // 分支图谱来源快照重映射（快照已恢复，branch_source_snapshot_id 此前暂置空）
+    const branchLinks = graphs
+      .map((g) => {
+        const newId = graphMap.get(g.id);
+        const newSnapshotId = g.branch_source_snapshot_id ? mapId(g.branch_source_snapshot_id, snapshotMap) : null;
+        if (!newId || !newSnapshotId) return null;
+        return { id: newId, branch_source_snapshot_id: newSnapshotId };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+    for (const link of branchLinks) {
+      await supabase.from('knowledge_graphs').update({ branch_source_snapshot_id: link.branch_source_snapshot_id }).eq('id', link.id);
     }
 
     // ---------- 10. 图谱事件 ----------

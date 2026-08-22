@@ -232,15 +232,30 @@ describe('backupService', () => {
           is_public: false,
           is_favorite: false,
           parent_graph_id: null,
-          is_branch: false,
-          branch_name: null,
-          branch_source_snapshot_id: null,
+          is_branch: true,
+          branch_name: '分支',
+          // 模拟真实导出：toBackupGraph 会把这些 contents 字段扁平化进图谱对象
+          branch_source_snapshot_id: 'snap1',
+          podcast_script: '脚本',
+          reference_books: { authors: ['A'] },
+          external_links: ['https://example.com'],
+          learning_guide: '指南',
           last_used_at: '2026-01-01T00:00:00Z',
           task_id: null,
           template_type: null,
           deleted_at: null,
           created_at: '2026-01-01T00:00:00Z',
           updated_at: '2026-01-01T00:00:00Z',
+        },
+      ];
+      data.graph_snapshots = [
+        {
+          id: 'snap1',
+          graph_id: 'g1',
+          version: 1,
+          name: '初始',
+          data: {},
+          created_at: '2026-01-01T00:00:00Z',
         },
       ];
       data.knowledge_points = [
@@ -351,6 +366,20 @@ describe('backupService', () => {
       const graphInsert = mock.insertCalls.find((c) => c.table === 'knowledge_graphs');
       expect(graphInsert?.rows[0].tags).toEqual(['tag-x']);
       expect(graphInsert?.rows[0].user_id).toBe(userId);
+
+      // 关键修复：导出时扁平化的 contents 字段不属于 knowledge_graphs 列，插入前必须剔除（否则真实 DB 报 500）
+      expect(graphInsert?.rows[0]).not.toHaveProperty('podcast_script');
+      expect(graphInsert?.rows[0]).not.toHaveProperty('reference_books');
+      expect(graphInsert?.rows[0]).not.toHaveProperty('external_links');
+      expect(graphInsert?.rows[0]).not.toHaveProperty('learning_guide');
+      // 分支来源快照在快照恢复前先置空，避免外键冲突
+      expect(graphInsert?.rows[0].branch_source_snapshot_id).toBeNull();
+      // 快照恢复后，分支来源快照重映射到新 id
+      const branchUpdateCall = mock.from.mock.results
+        .map((r) => r.value as { update?: { mock: { calls: unknown[][] } } })
+        .flatMap((chain) => chain.update?.mock.calls ?? [])
+        .find((call) => (call[0] as { branch_source_snapshot_id?: unknown })?.branch_source_snapshot_id != null);
+      expect(branchUpdateCall?.[0]).toEqual(expect.objectContaining({ branch_source_snapshot_id: expect.any(String) }));
 
       // graph_nodes 的 graph/kp 被重映射到插入时生成的新 id
       const kpInsert = mock.insertCalls.find((c) => c.table === 'knowledge_points');

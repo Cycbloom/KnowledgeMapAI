@@ -171,6 +171,7 @@
     "stepBasic": "Basic Info",
     "stepKnowledge": "Select Knowledge Points",
     "stepScope": "Scope & Info",
+    "stepCompose": "Type & Difficulty",
     "stepAllocate": "Total & Allocation",
     "stepReuse": "Reuse Existing Questions",
     "stepGenerate": "Generate & Confirm",

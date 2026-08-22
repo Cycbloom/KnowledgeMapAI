@@ -12,10 +12,13 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import type { QuizSetConfig, CardType, CardDifficulty } from '@shared/types/quiz';
+import { useTheme } from '../../hooks';
 
 interface QuizMatrixTypeConfigProps {
   config: QuizSetConfig;
   onChange: (config: Partial<QuizSetConfig>) => void;
+  /** 双栏布局模式：左=配置项，右=矩阵表格（用于创建流程整页双栏） */
+  splitLayout?: boolean;
 }
 
 type MatrixDifficulty = 'easy' | 'medium' | 'hard';
@@ -50,8 +53,10 @@ type Matrix = Record<CardType, Record<MatrixDifficulty, number>>;
 export const QuizMatrixTypeConfig: React.FC<QuizMatrixTypeConfigProps> = ({
   config,
   onChange,
+  splitLayout = false,
 }) => {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
 
   const [types, setTypes] = useState<CardType[]>(() =>
     config.cardTypes?.length
@@ -409,11 +414,10 @@ export const QuizMatrixTypeConfig: React.FC<QuizMatrixTypeConfigProps> = ({
   const colTotalsWeight =
     (countPerDifficulty.easy ?? 0) + (countPerDifficulty.medium ?? 0) + (countPerDifficulty.hard ?? 0);
 
-  return (
-    <fieldset className="space-y-4">
-      <legend className="sr-only">{t('study.quizTypeConfig.typeLegend')}</legend>
+  const cardCls = isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-white border-gray-200';
 
-      <div className="space-y-4">
+  const configPart = (
+    <div className="space-y-4">
         <div>
           <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 mb-2">
             <span className="w-1.5 h-4 bg-primary-500 rounded-full" />
@@ -570,8 +574,10 @@ export const QuizMatrixTypeConfig: React.FC<QuizMatrixTypeConfigProps> = ({
           </div>
         </div>
       </div>
+  );
 
-      <div className="space-y-2">
+  const matrixPart = (
+    <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
             <span className="w-1.5 h-4 bg-primary-500 rounded-full" />
@@ -722,7 +728,7 @@ export const QuizMatrixTypeConfig: React.FC<QuizMatrixTypeConfigProps> = ({
                     </td>
                   )}
                   <td className="px-3 py-2 text-right tabular-nums">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-gradient-to-r from-primary-500 to-violet-500 text-white text-[11px] font-bold">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-gradient-to-r from-primary-500 to-violet-500 text-white text-[11px] font-bold whitespace-nowrap">
                       {t('learning.generateCards.grandTotal', { count: grandTotal })}
                     </span>
                   </td>
@@ -732,6 +738,29 @@ export const QuizMatrixTypeConfig: React.FC<QuizMatrixTypeConfigProps> = ({
           </div>
         </div>
       </div>
+  );
+
+  if (splitLayout) {
+    return (
+      <fieldset className="h-full">
+        <legend className="sr-only">{t('study.quizTypeConfig.typeLegend')}</legend>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6 h-full">
+          <div className={`p-5 sm:p-6 rounded-2xl border flex flex-col min-h-0 overflow-y-auto transition-colors ${cardCls}`}>
+            {configPart}
+          </div>
+          <div className={`p-5 sm:p-6 rounded-2xl border flex flex-col min-h-0 overflow-y-auto transition-colors ${cardCls}`}>
+            {matrixPart}
+          </div>
+        </div>
+      </fieldset>
+    );
+  }
+
+  return (
+    <fieldset className="space-y-4">
+      <legend className="sr-only">{t('study.quizTypeConfig.typeLegend')}</legend>
+      {configPart}
+      {matrixPart}
     </fieldset>
   );
 };

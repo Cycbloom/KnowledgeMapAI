@@ -14,6 +14,8 @@ interface QuizReuseAdjustProps {
   onReuseRatioChange: (r: number) => void;
   onReshuffle: () => void;
   disabled?: boolean;
+  /** 双栏布局模式：左=控制/统计，右=知识点明细（用于创建流程整页双栏） */
+  splitLayout?: boolean;
 }
 
 export const QuizReuseAdjust: React.FC<QuizReuseAdjustProps> = ({
@@ -26,6 +28,7 @@ export const QuizReuseAdjust: React.FC<QuizReuseAdjustProps> = ({
   onReuseRatioChange,
   onReshuffle,
   disabled,
+  splitLayout = false,
 }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -40,8 +43,8 @@ export const QuizReuseAdjust: React.FC<QuizReuseAdjustProps> = ({
     0,
   );
 
-  return (
-    <div className="space-y-4">
+  const leftPart = (
+    <>
       <div className={`flex items-center gap-3 p-4 rounded-xl ${isDark ? 'bg-slate-800/50 border border-slate-700' : 'bg-white border border-gray-200'}`}>
         <div className={`p-2 rounded-lg ${isDark ? 'bg-primary-900/40 text-primary-400' : 'bg-primary-100 text-primary-600'}`}>
           <Database size={18} />
@@ -118,7 +121,11 @@ export const QuizReuseAdjust: React.FC<QuizReuseAdjustProps> = ({
           </div>
         </div>
       </div>
+    </>
+  );
 
+  const detailPart = (
+    <>
       {kps.length === 0 ? (
         <div className={`text-center py-8 rounded-xl border ${isDark ? 'border-slate-800 bg-slate-800/40' : 'border-gray-200 bg-gray-50'}`}>
           <FileStack size={32} className={`mx-auto mb-2 opacity-50 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
@@ -171,6 +178,34 @@ export const QuizReuseAdjust: React.FC<QuizReuseAdjustProps> = ({
           })}
         </div>
       )}
+    </>
+  );
+
+  if (splitLayout) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6 h-full">
+        <div className={`p-5 sm:p-6 rounded-2xl border flex flex-col min-h-0 overflow-y-auto space-y-4 ${isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-white border-gray-200'}`}>
+          {leftPart}
+        </div>
+        <div className={`p-5 sm:p-6 rounded-2xl border flex flex-col min-h-0 overflow-y-auto ${isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-white border-gray-200'}`}>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20">
+              <FileStack size={16} aria-hidden="true" />
+            </div>
+            <h4 className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>
+              {t('quiz.reuseAdjust.detailTitle', { defaultValue: '知识点分配明细' })}
+            </h4>
+          </div>
+          {detailPart}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {leftPart}
+      {detailPart}
     </div>
   );
 };

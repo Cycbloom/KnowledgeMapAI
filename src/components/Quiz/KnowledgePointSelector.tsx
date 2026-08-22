@@ -11,6 +11,8 @@ interface KnowledgePointSelectorProps {
   selectedIds: string[];
   onChange: (ids: string[]) => void;
   onGraphChange?: (graphId: string) => void;
+  /** 填满父容器高度：树区域自动伸展并内部滚动（用于创建流程整页双栏） */
+  fillHeight?: boolean;
 }
 
 interface TreeNode {
@@ -34,6 +36,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
   selectedIds,
   onChange,
   onGraphChange,
+  fillHeight = false,
 }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -344,7 +347,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className={`${fillHeight ? 'h-full flex flex-col' : ''} space-y-4`}>
       <div className="space-y-2">
         <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
           {t('quiz.knowledgePointSelector.selectGraph')}
@@ -411,9 +414,9 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
           <div
             className={`rounded-xl border overflow-hidden ${
               isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-gray-50 border-gray-200'
-            }`}
+            } ${fillHeight ? 'flex-1 min-h-0 flex flex-col' : ''}`}
           >
-            <div className="max-h-[300px] overflow-y-auto p-2">
+            <div className={`${fillHeight ? 'flex-1 min-h-0' : 'max-h-[300px]'} overflow-y-auto p-2`}>
               {nodesLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 size={24} className="animate-spin text-primary-600" />

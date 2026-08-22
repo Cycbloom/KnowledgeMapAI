@@ -171,6 +171,7 @@
     "stepBasic": "基本信息",
     "stepKnowledge": "选择知识点",
     "stepScope": "范围与信息",
+    "stepCompose": "题型与难度构成",
     "stepAllocate": "题目总数与分配",
     "stepReuse": "复用已有题目",
     "stepGenerate": "生成与确认",

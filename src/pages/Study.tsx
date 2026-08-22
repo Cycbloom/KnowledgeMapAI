@@ -340,36 +340,45 @@ export const Study = () => {
     viewState === "bank" ||
     viewState === "quizzes"
   ) {
+    const isCreatingQuiz = viewState === "quizzes" && showQuizCreation;
     return (
       <div
-        className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"} ${isMobile ? "p-3" : "p-8"}`}
+        className={`h-full transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"} ${isMobile ? "p-3" : "p-8"} ${
+          isCreatingQuiz ? "overflow-hidden" : "overflow-y-auto custom-scrollbar"
+        }`}
       >
         <div
-          className={`${isMobile ? "max-w-full" : "max-w-6xl"} mx-auto space-y-6 md:space-y-8`}
+          className={`${isMobile ? "max-w-full" : "max-w-6xl"} mx-auto ${
+            isCreatingQuiz ? "h-full flex flex-col gap-6" : "space-y-6 md:space-y-8"
+          }`}
         >
           <h1 className="sr-only">{t('study.title')}</h1>
-          <StudyHeader
-            isDark={isDark}
-            isMobile={isMobile ?? false}
-            graphId={graphId}
-            nodeId={nodeId}
-            nodeIds={nodeIds}
-            viewState={viewState}
-            setViewState={setViewState}
-          />
+          {!isCreatingQuiz && (
+            <StudyHeader
+              isDark={isDark}
+              isMobile={isMobile ?? false}
+              graphId={graphId}
+              nodeId={nodeId}
+              nodeIds={nodeIds}
+              viewState={viewState}
+              setViewState={setViewState}
+            />
+          )}
 
           {viewState === "bank" ? (
             <QuestionBank {...scopeParams} />
           ) : viewState === "quizzes" ? (
             showQuizCreation ? (
-              <QuizCreationFlow
-                graphId={graphId || undefined}
-                onCancel={() => setShowQuizCreation(false)}
-                onComplete={(quizSetId) => {
-                  setShowQuizCreation(false);
-                  navigate(`/quiz/${quizSetId}`);
-                }}
-              />
+              <div className="flex-1 min-h-0">
+                <QuizCreationFlow
+                  graphId={graphId || undefined}
+                  onCancel={() => setShowQuizCreation(false)}
+                  onComplete={(quizSetId) => {
+                    setShowQuizCreation(false);
+                    navigate(`/quiz/${quizSetId}`);
+                  }}
+                />
+              </div>
             ) : (
               <QuizList
                 onCreateQuiz={() => {

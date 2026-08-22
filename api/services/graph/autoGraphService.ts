@@ -1230,7 +1230,7 @@ export class AutoGraphService {
           ],
           model: model || provider.model,
           response_format: { type: "json_object" },
-          max_tokens: 12000,
+          max_tokens: 32000,
         });
         return {
           result,
@@ -1373,7 +1373,7 @@ export class AutoGraphService {
           messages,
           model: model || provider.model,
           response_format: { type: "json_object" },
-          max_tokens: 12000,
+          max_tokens: 32000,
         });
 
         for (let attempt = 0; attempt < MAX_PARSE_RETRIES; attempt++) {
@@ -1399,7 +1399,7 @@ export class AutoGraphService {
               messages,
               model: model || provider.model,
               response_format: { type: "json_object" },
-              max_tokens: 12000,
+              max_tokens: 32000,
             });
           }
         }

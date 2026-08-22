@@ -30,7 +30,7 @@ export const quizApi: IQuizApi = {
   delete: (id: string) => request<void>(`/quiz-sets/${id}`, { method: 'DELETE' }),
 
   generate: (data: GenerateQuizData) =>
-    request<{ quiz_set_id: string; task_id: string }>('/quiz-sets/generate', {
+    request<{ task_id: string }>('/quiz-sets/generate', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -40,7 +40,7 @@ export const quizApi: IQuizApi = {
 
   regenerateCard: (quizSetId: string, cardId: string, data?: RegenerateCardData) =>
     request<{ card_id: string; question: string; answer: string }>(
-      `/quiz-sets/${quizSetId}/cards/${cardId}/regenerate`,
+      `/quiz-sets/${quizSetId}/regenerate/${cardId}`,
       {
         method: 'POST',
         body: JSON.stringify(data || {}),

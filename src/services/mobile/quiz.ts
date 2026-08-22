@@ -178,7 +178,7 @@ export const mobileQuizApi: IQuizApi = {
 
   generate: async (
     _data: GenerateQuizData,
-  ): Promise<{ quiz_set_id: string; task_id: string }> => {
+  ): Promise<{ task_id: string }> => {
     throw new AppError("Quiz generation is not supported on mobile yet", SharedErrorCodes.VALIDATION_ERROR, 400);
   },
 

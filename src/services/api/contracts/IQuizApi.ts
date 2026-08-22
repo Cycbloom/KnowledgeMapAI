@@ -14,7 +14,7 @@ export interface IQuizApi {
   create(data: CreateQuizSetData): Promise<QuizSet>;
   update(id: string, data: UpdateQuizSetData): Promise<QuizSet>;
   delete(id: string): Promise<void>;
-  generate(data: GenerateQuizData): Promise<{ quiz_set_id: string; task_id: string }>;
+  generate(data: GenerateQuizData): Promise<{ task_id: string }>;
   getGenerationProgress(taskId: string): Promise<QuizGenerationProgress>;
   regenerateCard(
     quizSetId: string,

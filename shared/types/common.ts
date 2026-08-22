@@ -179,6 +179,8 @@ export interface StudyCard {
   fsrs_last_review?: string;
   created_at?: string;
   focus_topic?: string | null;
+  knowledgePointTitle?: string | null;
+  graphTitle?: string | null;
 }
 
 export type TutorMode =

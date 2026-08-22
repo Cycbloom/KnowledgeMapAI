@@ -55,6 +55,29 @@ export interface PaginatedCardsResult {
   pageSize: number;
 }
 
+// 联表查询 study_cards 附带来源信息：
+// knowledge_points!study_cards_knowledge_point_id_fkey → 来源知识点标题
+// knowledge_graphs!study_cards_graph_id_fkey           → 所属图谱标题
+// 显式指定 FK 约束名消歧（study_cards 有两个指向 knowledge_graphs 的外键）
+const CARD_SOURCE_SELECT = "*, knowledge_points!study_cards_knowledge_point_id_fkey(title), knowledge_graphs!study_cards_graph_id_fkey(title)";
+
+interface CardSourceJoinRow {
+  knowledge_points?: { title: string | null } | null;
+  knowledge_graphs?: { title: string | null } | null;
+}
+
+const enrichCardWithSource = (card: StudyCard & CardSourceJoinRow): StudyCard => {
+  const { knowledge_points, knowledge_graphs, ...rest } = card;
+  return {
+    ...rest,
+    knowledgePointTitle: knowledge_points?.title ?? null,
+    graphTitle: knowledge_graphs?.title ?? null,
+  };
+};
+
+const enrichCardsWithSource = (cards: (StudyCard & CardSourceJoinRow)[]): StudyCard[] =>
+  cards.map(enrichCardWithSource);
+
 interface CreateCardData {
   userId: string;
   knowledgePointId: string;
@@ -265,7 +288,7 @@ export class StudyService {
       const cards = await cacheService.getOrSet(cacheKey, async () => {
         const { data, error } = await supabase
           .from("study_cards")
-          .select("*")
+          .select(CARD_SOURCE_SELECT)
           .eq("user_id", userId)
           .eq("graph_id", graphId);
 
@@ -273,7 +296,7 @@ export class StudyService {
           logger.error("Supabase error fetching cards:", error);
           throw error;
         }
-        return (data as StudyCard[]) || [];
+        return enrichCardsWithSource((data as (StudyCard & CardSourceJoinRow)[]) || []);
       });
 
       if (dueOnly && Array.isArray(cards)) {
@@ -284,7 +307,7 @@ export class StudyService {
       return cards as StudyCard[];
     }
 
-    let query = supabase.from("study_cards").select("*").eq("user_id", userId);
+    let query = supabase.from("study_cards").select(CARD_SOURCE_SELECT).eq("user_id", userId);
 
     if (knowledgePointId) {
       query = query.eq("knowledge_point_id", knowledgePointId);
@@ -335,7 +358,7 @@ export class StudyService {
         throw error;
       }
 
-      return (data as StudyCard[]) || [];
+      return enrichCardsWithSource((data as (StudyCard & CardSourceJoinRow)[]) || []);
     }
 
     // Paginated path: count + ranged select.
@@ -402,7 +425,7 @@ export class StudyService {
     }
 
     return {
-      items: (data as StudyCard[]) || [],
+      items: enrichCardsWithSource((data as (StudyCard & CardSourceJoinRow)[]) || []),
       total: total ?? 0,
       page: currentPage,
       pageSize: currentPageSize,
@@ -594,7 +617,7 @@ export class StudyService {
         last_rating: rating,
       })
       .eq("id", cardId)
-      .select()
+      .select(CARD_SOURCE_SELECT)
       .single();
 
     if (updateError) {
@@ -607,7 +630,7 @@ export class StudyService {
     }
 
     // 基于 FSRS retrievability 重新计算知识点 mastery_level
-    const updatedCard = updatedCardData as StudyCard;
+    const updatedCard = enrichCardWithSource(updatedCardData as StudyCard & CardSourceJoinRow);
     if (updatedCard?.knowledge_point_id) {
       masteryCalculationService.updateKnowledgePointMastery(
         supabase,

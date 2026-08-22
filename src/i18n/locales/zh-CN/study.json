@@ -1,6 +1,9 @@
 {
   "loading": "加载中...",
   "title": "学习中心",
+  "cardSource": {
+    "source": "来源"
+  },
   "mode": {
     "singlePoint": "单点复习",
     "pathTraining": "路径训练",

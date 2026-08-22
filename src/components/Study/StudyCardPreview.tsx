@@ -7,6 +7,7 @@ import { formatDate } from '../../utils/formatters';
 import { badgeToneClasses, getCardTypeBadgeMeta, type BadgeTone } from '../../utils/quizBadgeMeta';
 import { getDifficultyBadgeMeta } from '../../utils/quizDifficultyMeta';
 import { stabilityToMasteryBaseline } from '@shared/utils/fsrs/masteryContract';
+import { CardSourceLine } from './common/CardSourceLine';
 
 
 interface StudyCardPreviewProps {
@@ -239,6 +240,16 @@ const StudyCardPreviewComponent: React.FC<StudyCardPreviewProps> = ({
         </p>
       </div>
 
+      {/* ROW 2.5 — 来源信息（左下角 footer）：来源知识点 · 来源图谱 */}
+      {(card.knowledgePointTitle?.trim() || card.graphTitle?.trim()) && (
+        <div className="px-4 pb-3">
+          <CardSourceLine
+            knowledgePointTitle={card.knowledgePointTitle}
+            graphTitle={card.graphTitle}
+          />
+        </div>
+      )}
+
       {/* =========================================================
           ROW 3 — 操作行  (辅助操作组  ↔  主 CTA)
           左：ghost 容器装预览/编辑/删除（次要操作，不抢视觉）
@@ -339,6 +350,8 @@ const areEqual = (prev: StudyCardPreviewProps, next: StudyCardPreviewProps) => {
     prev.card.review_count === next.card.review_count &&
     prev.card.next_review === next.card.next_review &&
     prev.card.difficulty === next.card.difficulty &&
+    prev.card.knowledgePointTitle === next.card.knowledgePointTitle &&
+    prev.card.graphTitle === next.card.graphTitle &&
     prev.isDark === next.isDark &&
     prev.selected === next.selected &&
     prev.selectionMode === next.selectionMode &&

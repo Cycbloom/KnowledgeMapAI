@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Info } from 'lucide-react';
 import { StudyCard } from '../../types';
 import { useFocusTrap, useEscapeKey } from '../../hooks';
-import { FocusTopicBadge } from './common/FocusTopicBadge';
+import { FocusTopicBadge, CardSourceLine } from './common';
 
 interface StudyCardDetailModalProps {
   card: StudyCard | null;
@@ -89,6 +89,10 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
               <section className="space-y-3">
                 <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('study.questionForm.questionLabel')}</h4>
                 <FocusTopicBadge focusTopic={card.focus_topic} variant="pill" />
+                <CardSourceLine
+                  knowledgePointTitle={card.knowledgePointTitle}
+                  graphTitle={card.graphTitle}
+                />
                 <div className={`text-xl font-bold leading-relaxed ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   {card.question}
                 </div>

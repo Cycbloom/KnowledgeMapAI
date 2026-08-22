@@ -14,7 +14,7 @@ import {
 import { QuizOptionArea } from "./QuizOptionArea";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
 import { QuizRatingBar } from "./QuizRatingBar";
-import { FocusTopicBadge, CardStatsStrip, CardDatesLine } from "./common";
+import { FocusTopicBadge, CardStatsStrip, CardDatesLine, CardSourceLine } from "./common";
 
 type UpdateProgressMutation = ReturnType<typeof useUpdateCardProgressMutation>;
 
@@ -271,6 +271,12 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
                 isDark={isDark}
                 isMobile={isMobile}
                 onSetShowAnswer={onSetShowAnswer}
+              />
+            </div>
+            <div className="mt-auto pt-4">
+              <CardSourceLine
+                knowledgePointTitle={currentCard.knowledgePointTitle}
+                graphTitle={currentCard.graphTitle}
               />
             </div>
           </div>

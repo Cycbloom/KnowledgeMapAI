@@ -1,6 +1,9 @@
 {
   "loading": "Loading...",
   "title": "Study Center",
+  "cardSource": {
+    "source": "Source"
+  },
   "mode": {
     "singlePoint": "Single Point Review",
     "pathTraining": "Path Training",

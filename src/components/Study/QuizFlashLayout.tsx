@@ -20,7 +20,7 @@ import {
 import { QuizOptionArea } from "./QuizOptionArea";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
 import { QuizRatingBar } from "./QuizRatingBar";
-import { FocusTopicBadge, CardStatsStrip, CardDatesLine } from "./common";
+import { FocusTopicBadge, CardStatsStrip, CardDatesLine, CardSourceLine } from "./common";
 
 type UpdateProgressMutation = ReturnType<typeof useUpdateCardProgressMutation>;
 
@@ -555,6 +555,13 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                     isMobile={isMobile}
                   />
                 )}
+              </div>
+
+              <div className="pt-3 md:pt-4">
+                <CardSourceLine
+                  knowledgePointTitle={currentCard.knowledgePointTitle}
+                  graphTitle={currentCard.graphTitle}
+                />
               </div>
 
               <div

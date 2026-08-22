@@ -8,7 +8,7 @@ interface UseQuizLogicParams {
   selectedOption: string | null;
   setSelectedOption: (option: string | null) => void;
   setShowAnswer: (show: boolean) => void;
-  setViewState: (state: "dashboard" | "quiz" | "bank" | "focus" | "quizzes") => void;
+  setViewState: (state: "dashboard" | "quiz" | "bank" | "quizzes") => void;
   startCardReview: (cards: StudyCard[]) => void;
   currentOptions: string[];
   isMultiChoice: boolean;

@@ -7,7 +7,6 @@ import { useSemanticGroups, useReviewForecast } from "../hooks/queries";
 import { queryKeys, realtimeQueryConfig } from "../hooks/queries/config";
 import { StudyCard } from "../types";
 import { QuestionBank } from "../components/Study/QuestionBank";
-import { FocusStats } from "../components/Study/FocusStats";
 import { QuizList } from "../components/Quiz";
 const QuizGenerationModal = lazy(() =>
   import("../components/Quiz/QuizGenerationModal").then((module) => ({
@@ -114,7 +113,7 @@ export const Study = () => {
 
   // View State
   const [viewState, setViewState] = useState<
-    "dashboard" | "quiz" | "bank" | "focus" | "quizzes"
+    "dashboard" | "quiz" | "bank" | "quizzes"
   >("dashboard");
   const [showQuizModal, setShowQuizModal] = useState(false);
   // 答题侧边栏折叠状态：移动端默认折叠，桌面端默认展开
@@ -344,7 +343,6 @@ export const Study = () => {
   if (
     viewState === "dashboard" ||
     viewState === "bank" ||
-    viewState === "focus" ||
     viewState === "quizzes"
   ) {
     return (
@@ -367,8 +365,6 @@ export const Study = () => {
 
           {viewState === "bank" ? (
             <QuestionBank {...scopeParams} />
-          ) : viewState === "focus" ? (
-            <FocusStats />
           ) : viewState === "quizzes" ? (
             <QuizList
               onCreateQuiz={() => {

@@ -9,7 +9,6 @@
   "tabs": {
     "overview": "Overview",
     "bank": "Question Bank",
-    "focus": "Focus Mode",
     "quizzes": "Quizzes"
   },
   "questionBank": {
@@ -64,16 +63,6 @@
     "done": "Done",
     "collapseToSide": "Collapse to Side",
     "close": "Close"
-  },
-  "focusStats": {
-    "todayFocus": "Today's Focus",
-    "totalFocus": "Total Focus",
-    "avgDuration": "Average Duration",
-    "sessions": "{{count}} sessions",
-    "minutes": "{{count}} min",
-    "hours": "{{count}} hours",
-    "perSession": "Per session",
-    "weeklyTrend": "7-Day Focus Trend"
   },
   "quizList": {
     "searchPlaceholder": "Search quiz title or description...",

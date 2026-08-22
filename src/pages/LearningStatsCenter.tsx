@@ -376,21 +376,39 @@ const GrowthChart = ({
   </div>
 );
 
-interface FocusStats {
-  today?: { minutes?: number; sessions?: number };
-  total?: { minutes?: number; sessions?: number };
+interface FocusTotalStats {
+  total_focus_seconds: number;
+  total_sessions: number;
+}
+
+interface FocusTodayStats {
+  total_duration: number;
+  session_count: number;
 }
 
 const FocusStatsCard = ({
-  stats,
+  total,
+  today,
   isDark,
   t,
 }: {
-  stats: FocusStats | null;
+  total: FocusTotalStats | null | undefined;
+  today: FocusTodayStats | null | undefined;
   isDark: boolean;
   t: TFunction;
 }) => {
-  if (!stats) return null;
+  if (!total && !today) return null;
+
+  const todayMinutes = today ? Math.round((today.total_duration || 0) / 60) : 0;
+  const todaySessions = today?.session_count || 0;
+  const totalHours = total
+    ? Number(((total.total_focus_seconds || 0) / 3600).toFixed(1))
+    : 0;
+  const totalSessions = total?.total_sessions || 0;
+  const avgMinutes =
+    total && total.total_sessions > 0
+      ? Math.round((total.total_focus_seconds || 0) / 60 / total.total_sessions)
+      : 0;
 
   return (
     <div
@@ -418,12 +436,12 @@ const FocusStatsCard = ({
           <p
             className={`text-lg md:text-xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
           >
-            {formatNumber(stats.today?.minutes || 0)} {t("learningStats.focus.minutes")}
+            {formatNumber(todayMinutes)} {t("learningStats.focus.minutes")}
           </p>
           <p
             className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
           >
-            {stats.today?.sessions || 0} {t("learningStats.focus.sessions")}
+            {todaySessions} {t("learningStats.focus.sessions")}
           </p>
         </div>
         <div
@@ -440,13 +458,13 @@ const FocusStatsCard = ({
           <p
             className={`text-lg md:text-xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
           >
-            {formatNumber(Number(((stats.total?.minutes || 0) / 60).toFixed(1)))}{" "}
+            {formatNumber(totalHours)}{" "}
             {t("learningStats.focus.hours")}
           </p>
           <p
             className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
           >
-            {stats.total?.sessions || 0} {t("learningStats.focus.sessions")}
+            {totalSessions} {t("learningStats.focus.sessions")}
           </p>
         </div>
         <div
@@ -463,9 +481,7 @@ const FocusStatsCard = ({
           <p
             className={`text-lg md:text-xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
           >
-            {stats.total?.sessions && stats.total?.minutes
-              ? Math.round(stats.total.minutes / stats.total.sessions)
-              : 0}{" "}
+            {avgMinutes}{" "}
             {t("learningStats.focus.minutes")}
           </p>
           <p
@@ -508,17 +524,29 @@ export const LearningStatsCenter = () => {
   const { data: graphsData } = useGraphs();
   const retention = userData?.user?.profile?.settings?.request_retention || 0.9;
 
-  const { data: focusStats } = useQuery({
+  const { data: totalFocusStats } = useQuery({
     queryKey: queryKeys.focusStats(),
     queryFn: async () => {
       try {
-        const res = await api.focus.getStats() as { data: FocusStats };
+        const res = await api.focus.getStats() as { data: FocusTotalStats };
         return res.data;
       } catch {
         return null;
       }
     },
-    // 专注统计低频变化，与 FocusStats 组件共享同 key 缓存
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: todayFocusStats } = useQuery({
+    queryKey: queryKeys.focusStats("today"),
+    queryFn: async () => {
+      try {
+        const res = await api.focus.getTodayStats() as { data: FocusTodayStats };
+        return res.data;
+      } catch {
+        return null;
+      }
+    },
     staleTime: 5 * 60 * 1000,
   });
 
@@ -590,8 +618,13 @@ export const LearningStatsCenter = () => {
         streak={userData?.user?.profile?.study_streak || 0}
       />
 
-      {focusStats && (
-        <FocusStatsCard stats={focusStats} isDark={isDark} t={t} />
+      {(totalFocusStats || todayFocusStats) && (
+        <FocusStatsCard
+          total={totalFocusStats}
+          today={todayFocusStats}
+          isDark={isDark}
+          t={t}
+        />
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">

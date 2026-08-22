@@ -8,8 +8,8 @@ interface StudyHeaderProps {
   graphId: string | null;
   nodeId: string | null;
   nodeIds: string | null;
-  viewState: "dashboard" | "quiz" | "bank" | "focus" | "quizzes";
-  setViewState: (state: "dashboard" | "quiz" | "bank" | "focus" | "quizzes") => void;
+  viewState: "dashboard" | "quiz" | "bank" | "quizzes";
+  setViewState: (state: "dashboard" | "quiz" | "bank" | "quizzes") => void;
 }
 
 export const StudyHeader = ({
@@ -25,12 +25,11 @@ export const StudyHeader = ({
   const navigate = useNavigate();
 
   const tabs: Array<{
-    key: "dashboard" | "bank" | "focus" | "quizzes";
+    key: "dashboard" | "bank" | "quizzes";
     label: string;
   }> = [
     { key: "dashboard", label: t("study.tabs.overview") },
     { key: "bank", label: t("study.tabs.bank") },
-    { key: "focus", label: t("study.tabs.focus") },
     { key: "quizzes", label: t("study.tabs.quizzes") },
   ];
 

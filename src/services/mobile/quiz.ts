@@ -236,6 +236,66 @@ export const mobileQuizApi: IQuizApi = {
     return { success: true, message: "Card added successfully" };
   },
 
+  addCards: async (
+    quizSetId: string,
+    cardIds: string[],
+  ): Promise<{ success: boolean; added: number; skipped: number; message: string }> => {
+    const client = getMobileSupabaseClient();
+    if (!client) {
+      throw new AppError("Supabase client not initialized", SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR, 500);
+    }
+
+    const uniqueIds = [...new Set(cardIds)];
+    if (uniqueIds.length === 0) {
+      return { success: true, added: 0, skipped: 0, message: "Cards added successfully" };
+    }
+
+    const { data: existingLinks } = await client
+      .from("quiz_set_cards")
+      .select("card_id")
+      .eq("quiz_set_id", quizSetId)
+      .in("card_id", uniqueIds);
+
+    const existingIdSet = new Set((existingLinks || []).map((l) => l.card_id));
+    const toAdd = uniqueIds.filter((id) => !existingIdSet.has(id));
+
+    if (toAdd.length === 0) {
+      return { success: true, added: 0, skipped: uniqueIds.length, message: "Cards added successfully" };
+    }
+
+    const rows = toAdd.map((cardId, index) => ({
+      quiz_set_id: quizSetId,
+      card_id: cardId,
+      display_order: index + 1,
+    }));
+
+    const { error } = await client.from("quiz_set_cards").insert(rows);
+
+    if (error) {
+      throw new AppError(error.message, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
+    }
+
+    const { count } = await client
+      .from("quiz_set_cards")
+      .select("*", { count: "exact", head: true })
+      .eq("quiz_set_id", quizSetId);
+
+    await client
+      .from("quiz_sets")
+      .update({
+        card_count: count || 0,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", quizSetId);
+
+    return {
+      success: true,
+      added: toAdd.length,
+      skipped: uniqueIds.length - toAdd.length,
+      message: "Cards added successfully",
+    };
+  },
+
   removeCard: async (
     quizSetId: string,
     cardId: string,

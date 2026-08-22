@@ -23,4 +23,8 @@ export interface IQuizApi {
   ): Promise<{ card_id: string; question: string; answer: string }>;
   addCard(quizSetId: string, cardId: string): Promise<{ success: boolean; message: string }>;
   removeCard(quizSetId: string, cardId: string): Promise<{ success: boolean; message: string }>;
+  addCards(
+    quizSetId: string,
+    cardIds: string[],
+  ): Promise<{ success: boolean; added: number; skipped: number; message: string }>;
 }

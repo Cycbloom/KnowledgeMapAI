@@ -58,4 +58,13 @@ export const quizApi: IQuizApi = {
       `/quiz-sets/${quizSetId}/cards/${cardId}`,
       { method: 'DELETE' }
     ),
+
+  addCards: (quizSetId: string, cardIds: string[]) =>
+    request<{ success: boolean; added: number; skipped: number; message: string }>(
+      `/quiz-sets/${quizSetId}/cards/batch`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ card_ids: cardIds }),
+      }
+    ),
 };

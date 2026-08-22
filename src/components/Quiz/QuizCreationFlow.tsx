@@ -440,7 +440,7 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
   const progressPercent = useMemo(() => {
     if (!progress) return 0;
     if (progress.total === 0) return 0;
-    return Math.round((progress.completed / progress.total) * 100);
+    return Math.min(100, Math.max(0, Math.round((progress.completed / progress.total) * 100)));
   }, [progress]);
 
   const stepMeta: Array<{ key: Step; icon: typeof BrainCircuit; title: string }> = [

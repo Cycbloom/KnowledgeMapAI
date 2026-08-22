@@ -2,7 +2,12 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction, TaskControl, TaskAbortError } from './index';
 import { aiService, type CardDifficulty } from '../ai/index';
 import { cardDifficultyToNumber, cardDifficultyToFsrsInitial, type AIProviderType } from '@shared/types';
-import { buildTasksToRun, allocateTasksByCount } from './questionTaskDispatcher';
+import {
+  buildTasksToRun,
+  allocateTasksByCount,
+  type QuestionTask,
+  type QuestionTaskMode,
+} from './questionTaskDispatcher';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
@@ -83,7 +88,12 @@ export class QuizGenerationProcessor implements TaskProcessor {
     logger.info(`Starting quiz generation task ${taskId} for user ${userId}`, { payload });
     
     try {
-      await updateTaskStatus(supabase, taskId, 'in_progress', { stage: 'initializing', percent: 0 }, undefined, undefined, userId);
+      await updateTaskStatus(supabase, taskId, 'in_progress', {
+        stage: 'initializing',
+        stageLabel: '正在准备生成测验',
+        progress: 0,
+        current: '准备知识点与配置…',
+      }, undefined, undefined, userId);
 
       const { quizSetId, knowledgePointIds, config } = payload;
       const { cardTypes = ['qa', 'choice'], difficulty = 'medium', cardsPerType, countPerDifficulty, countMatrix, perNodeCounts, customPrompt, provider, model } = config || {};
@@ -195,20 +205,21 @@ export class QuizGenerationProcessor implements TaskProcessor {
         return la - lb;
       });
 
-      const results = [];
-      let totalCards = 0;
-      let processedCount = 0;
-      const allGeneratedCards: InsertedCard[] = [];
+      // 预分派：先为每个知识点生成任务计划并统计总题量，
+      // 进度按「已生成题数 / 总题数」精确汇报（粒度=每次 AI 调用，远细于按知识点跳档）
+      type NodePlan = {
+        node: (typeof sortedNodes)[number];
+        parentNode: { id: string; title: string; content: string | null } | null;
+        tasks: QuestionTask[];
+        expected: number;
+        effectiveDifficulty: QuestionTaskMode;
+      };
 
+      const plans: NodePlan[] = [];
+      let totalExpectedCards = 0;
       for (const node of sortedNodes) {
-        control.throwIfAborted();
         const parentId = parentMap.get(node.id);
-        const parentNode = parentId ? parentNodesMap.get(parentId) : null;
-        let context = parentNode ? `Parent Node: "${parentNode.title}"` : 'Root Node';
-        
-        if (customPrompt) {
-          context = `${context}\n\nCustom Instructions: ${customPrompt}`;
-        }
+        const parentNode = parentId ? (parentNodesMap.get(parentId) ?? null) : null;
 
         // 按题型×难度矩阵（或 cardsPerType / countPerDifficulty）分派生成任务，
         // 每个非零格子 = 一次独立 AI 调用，精确落地用户配置（批量生成）
@@ -232,13 +243,58 @@ export class QuizGenerationProcessor implements TaskProcessor {
           nodeTasks = allocateTasksByCount(dispatch.tasks, nodeCount, cardTypes, difficulty);
         }
 
+        const expected = nodeTasks.reduce((sum, task) => sum + task.count, 0);
+        if (expected <= 0) {
+          continue;
+        }
+        plans.push({
+          node,
+          parentNode,
+          tasks: nodeTasks,
+          expected,
+          effectiveDifficulty: dispatch.effectiveDifficulty,
+        });
+        totalExpectedCards += expected;
+      }
+
+      const results = [];
+      let totalCards = 0;
+      let generatedCards = 0;
+      const allGeneratedCards: InsertedCard[] = [];
+
+      const reportProgress = async (currentLabel: string) => {
+        const percent = totalExpectedCards > 0
+          ? Math.min(99, Math.round((generatedCards / totalExpectedCards) * 100))
+          : 100;
+        await updateTaskStatus(supabase, taskId, 'in_progress', {
+          stage: 'generating',
+          stageLabel: '正在生成测验',
+          progress: percent,
+          current: currentLabel,
+          completed: generatedCards,
+          total: totalExpectedCards,
+        }, undefined, undefined, userId);
+      };
+
+      // 分派完成后先上报一次「0 / 总题数」，让两端进度条在首题生成前即可显示总题量
+      await reportProgress('准备生成');
+
+      for (const plan of plans) {
+        control.throwIfAborted();
+        const { node, parentNode, tasks, effectiveDifficulty } = plan;
+        let context = parentNode ? `Parent Node: "${parentNode.title}"` : 'Root Node';
+
+        if (customPrompt) {
+          context = `${context}\n\nCustom Instructions: ${customPrompt}`;
+        }
+
         let nodeCards = 0;
         let nodeFailed = false;
         let nodeError: string | undefined;
 
-        for (const task of nodeTasks) {
+        for (const task of tasks) {
           control.throwIfAborted();
-          const taskDifficulty = task.difficulty ?? dispatch.effectiveDifficulty;
+          const taskDifficulty = task.difficulty ?? effectiveDifficulty;
           try {
             const aiResult = await aiService.generateCards(node.title, node.content, {
               context,
@@ -293,6 +349,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
               } else {
                 nodeCards += cards.length;
                 totalCards += cards.length;
+                generatedCards += cards.length;
                 allGeneratedCards.push(...(insertedCards || []));
               }
             }
@@ -301,6 +358,9 @@ export class QuizGenerationProcessor implements TaskProcessor {
             nodeFailed = true;
             nodeError = err instanceof Error ? err.message : String(err);
           }
+
+          // 每个 AI 批次完成后上报一次进度（按「已生成题数 / 总题数」）
+          await reportProgress(`${node.title} · ${this.getTypeName(task.type)}`);
         }
 
         results.push(
@@ -308,15 +368,6 @@ export class QuizGenerationProcessor implements TaskProcessor {
             ? { node_id: node.id, title: node.title, error: nodeError, status: 'failed' }
             : { node_id: node.id, title: node.title, cards: nodeCards, status: 'success' },
         );
-
-        processedCount++;
-        await updateTaskStatus(supabase, taskId, 'in_progress', {
-          stage: 'generating',
-          percent: Math.round((processedCount / sortedNodes.length) * 100),
-          current: node.title,
-          completed: processedCount,
-          total: sortedNodes.length
-        }, undefined, undefined, userId);
       }
 
       if (allGeneratedCards.length > 0) {
@@ -347,6 +398,9 @@ export class QuizGenerationProcessor implements TaskProcessor {
       logger.info(`Quiz generation completed: ${totalCards} cards for quiz set ${quizSetId}`);
       await updateTaskStatus(supabase, taskId, 'completed', {
         success: true,
+        progress: 100,
+        completed: totalCards,
+        total: Math.max(totalExpectedCards, totalCards),
         totalCards,
         quizSetId,
         details: results
@@ -382,6 +436,22 @@ export class QuizGenerationProcessor implements TaskProcessor {
       const errorMessage = error instanceof Error ? error.message : String(error);
       await updateTaskStatus(supabase, taskId, 'failed', null, undefined, errorMessage, userId);
     }
+  }
+
+  private getTypeName(type: string): string {
+    const map: Record<string, string> = {
+      qa: '问答题',
+      choice: '单选题',
+      true_false: '判断题',
+      multi_choice: '多选题',
+      fill_in_the_blank: '填空题',
+      essay: '解答题',
+      cloze: '完形填空',
+      select_from_options: '选词填空',
+      matching: '匹配连线',
+      ordering: '排序',
+    };
+    return map[type] || type;
   }
 }
 

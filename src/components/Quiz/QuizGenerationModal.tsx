@@ -318,7 +318,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   const progressPercent = useMemo(() => {
     if (!progress) return 0;
     if (progress.total === 0) return 0;
-    return Math.round((progress.completed / progress.total) * 100);
+    return Math.min(100, Math.max(0, Math.round((progress.completed / progress.total) * 100)));
   }, [progress]);
 
   if (!open) return null;

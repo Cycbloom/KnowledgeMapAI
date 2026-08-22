@@ -40,7 +40,7 @@ export interface CreateNodeData {
   x_position?: number;
   y_position?: number;
   parent_node_ids?: string[];
-  learning_material?: string;
+  learning_material?: Record<string, string>;
   properties?: Record<string, unknown>;
   knowledge_point_id?: string;
   reuse_existing?: boolean;
@@ -56,7 +56,7 @@ export interface UpdateNodeData {
   level?: string;
   x_position?: number;
   y_position?: number;
-  learning_material?: string;
+  learning_material?: Record<string, string>;
   properties?: Record<string, unknown>;
 }
 

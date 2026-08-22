@@ -39,7 +39,8 @@ export interface KnowledgePoint {
   title: string;
   content?: string;
   summary?: string;
-  learning_material?: string;
+  /** 按语言 key 的学习材料，如 {"zh-CN": 中文, "en-US": English}，新增语言只需增加 key */
+  learning_material?: Record<string, string>;
   properties?: NodeProperties;
   visibility: KnowledgePointVisibility;
   owner_id: string;
@@ -48,7 +49,8 @@ export interface KnowledgePoint {
   updated_at: string;
   level?: NodeLevel;
   is_accepted?: boolean;
-  keywords?: Keyword[];
+  /** 按语言 key 的关键词，如 {"zh-CN": [...], "en-US": [...]}，结构与学习材料对应 */
+  keywords?: Record<string, Keyword[]>;
   aliases?: string[];
 }
 
@@ -59,11 +61,12 @@ export interface KnowledgePointVersion {
   title: string;
   content?: string;
   summary?: string;
-  learning_material?: string;
+  learning_material?: Record<string, string>;
   properties?: NodeProperties;
   change_summary?: string;
   changed_by?: string;
   created_at: string;
+  keywords?: Record<string, Keyword[]>;
 }
 
 export interface KnowledgePointVersionDiff {

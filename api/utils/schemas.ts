@@ -84,19 +84,22 @@ export const createNodeSchema = z.object({
   x_position: z.number().optional(),
   y_position: z.number().optional(),
   properties: z.record(z.any()).optional(),
-  learning_material: z.string().optional(),
+  learning_material: z.record(z.string(), z.string()).optional(),
   level: z
     .enum(['root', 'core', 'sub', 'normal', 'leaf'])
     .optional(),
   is_accepted: z.boolean().optional(),
   keywords: z
-    .array(
-      z.object({
-        term: z.string().min(1, '关键词不能为空'),
-        importance: z.number().min(1).max(5, '重要度范围为 1-5'),
-        category: z.string().min(1, '分类不能为空'),
-        explanation: z.string().min(1, '解释不能为空'),
-      }),
+    .record(
+      z.string(),
+      z.array(
+        z.object({
+          term: z.string().min(1, '关键词不能为空'),
+          importance: z.number().min(1).max(5, '重要度范围为 1-5'),
+          category: z.string().min(1, '分类不能为空'),
+          explanation: z.string().min(1, '解释不能为空'),
+        }),
+      ),
     )
     .optional(),
 });
@@ -116,19 +119,22 @@ export const updateNodeSchema = z.object({
   x_position: z.number().optional(),
   y_position: z.number().optional(),
   properties: z.record(z.any()).optional(),
-  learning_material: z.string().optional(),
+  learning_material: z.record(z.string(), z.string()).optional(),
   level: z
     .enum(['root', 'core', 'sub', 'normal', 'leaf'])
     .optional(),
   is_accepted: z.boolean().optional(),
   keywords: z
-    .array(
-      z.object({
-        term: z.string().min(1, '关键词不能为空'),
-        importance: z.number().min(1).max(5, '重要度范围为 1-5'),
-        category: z.string().min(1, '分类不能为空'),
-        explanation: z.string().min(1, '解释不能为空'),
-      }),
+    .record(
+      z.string(),
+      z.array(
+        z.object({
+          term: z.string().min(1, '关键词不能为空'),
+          importance: z.number().min(1).max(5, '重要度范围为 1-5'),
+          category: z.string().min(1, '分类不能为空'),
+          explanation: z.string().min(1, '解释不能为空'),
+        }),
+      ),
     )
     .optional(),
 });

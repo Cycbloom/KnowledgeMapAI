@@ -1238,7 +1238,7 @@ export type Database = {
           id: string
           keywords: Json | null
           knowledge_point_id: string
-          learning_material: string | null
+          learning_material: Json | null
           properties: Json | null
           summary: string | null
           title: string
@@ -1252,7 +1252,7 @@ export type Database = {
           id?: string
           keywords?: Json | null
           knowledge_point_id: string
-          learning_material?: string | null
+          learning_material?: Json | null
           properties?: Json | null
           summary?: string | null
           title: string
@@ -1266,7 +1266,7 @@ export type Database = {
           id?: string
           keywords?: Json | null
           knowledge_point_id?: string
-          learning_material?: string | null
+          learning_material?: Json | null
           properties?: Json | null
           summary?: string | null
           title?: string
@@ -1291,7 +1291,7 @@ export type Database = {
           id: string
           keywords: Json | null
           last_study_at: string | null
-          learning_material: string | null
+          learning_material: Json | null
           mastery_level: number | null
           owner_id: string
           properties: Json | null
@@ -1312,7 +1312,7 @@ export type Database = {
           id?: string
           keywords?: Json | null
           last_study_at?: string | null
-          learning_material?: string | null
+          learning_material?: Json | null
           mastery_level?: number | null
           owner_id: string
           properties?: Json | null
@@ -1333,7 +1333,7 @@ export type Database = {
           id?: string
           keywords?: Json | null
           last_study_at?: string | null
-          learning_material?: string | null
+          learning_material?: Json | null
           mastery_level?: number | null
           owner_id?: string
           properties?: Json | null
@@ -4155,7 +4155,7 @@ export type Database = {
           created_at: string
           id: string
           keywords: Json
-          learning_material: string
+          learning_material: Json
           owner_id: string
           properties: Json
           title: string

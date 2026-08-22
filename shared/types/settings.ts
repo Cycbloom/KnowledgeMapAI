@@ -82,6 +82,8 @@ export interface UserSettingsLearning {
   paginationMode: UserSettingsPaginationMode;
   contentWidthMode: UserSettingsContentWidthMode;
   aiLanguage: UserSettingsAILanguage;
+  /** 学习资料显示语言：auto=跟随 AI/界面语言设置（保持原有自动切换行为）；zh=中文版；en=英文版（双语学习，可手动切换） */
+  materialLanguage: "auto" | "zh" | "en";
 }
 
 // ---------------------------------------------------------------------------

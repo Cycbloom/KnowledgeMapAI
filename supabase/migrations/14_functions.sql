@@ -356,7 +356,7 @@ RETURNS TABLE (
   id UUID,
   title VARCHAR(512),
   content TEXT,
-  learning_material TEXT,
+  learning_material JSONB,
   keywords JSONB,
   properties JSONB,
   visibility knowledge_point_visibility,

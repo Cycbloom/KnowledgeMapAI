@@ -85,17 +85,20 @@ export const createNodeSchema = z.object({
   x_position: z.number().optional(),
   y_position: z.number().optional(),
   properties: z.record(z.any()).optional(),
-  learning_material: z.string().optional(),
+  learning_material: z.record(z.string(), z.string()).optional(),
   level: z.enum(["root", "core", "sub", "normal", "leaf"]).optional(),
   is_accepted: z.boolean().optional(),
   keywords: z
-    .array(
-      z.object({
-        term: z.string(),
-        importance: z.number().min(1).max(5),
-        category: z.string(),
-        explanation: z.string(),
-      }),
+    .record(
+      z.string(),
+      z.array(
+        z.object({
+          term: z.string(),
+          importance: z.number().min(1).max(5),
+          category: z.string(),
+          explanation: z.string(),
+        }),
+      ),
     )
     .optional(),
 });
@@ -132,7 +135,7 @@ export const createKnowledgePointSchema = z.object({
   title: z.string().min(1).max(255),
   content: z.string().optional(),
   summary: z.string().max(200).optional(),
-  learning_material: z.string().optional(),
+  learning_material: z.record(z.string(), z.string()).optional(),
   properties: z.record(z.unknown()).optional(),
   visibility: z
     .enum(["private", "public", "pending"])
@@ -144,7 +147,7 @@ export const updateKnowledgePointSchema = z.object({
   title: z.string().min(1).max(255).optional(),
   content: z.string().optional(),
   summary: z.string().max(200).optional(),
-  learning_material: z.string().optional(),
+  learning_material: z.record(z.string(), z.string()).optional(),
   properties: z.record(z.unknown()).optional(),
   visibility: z.enum(["private", "public", "pending"]).optional(),
 });
@@ -165,7 +168,7 @@ export const submitPublicSchema = z.object({
         title: z.string().min(1).max(255).optional(),
         content: z.string().optional(),
         summary: z.string().max(200).optional(),
-        learning_material: z.string().optional(),
+        learning_material: z.record(z.string(), z.string()).optional(),
       })
       .optional(),
   }),
@@ -648,7 +651,7 @@ export const batchUpdateNodesSchema = z.object({
         title: z.string().min(1, "标题不能为空").optional(),
         content: z.string().optional(),
         summary: z.string().max(200).optional(),
-        learning_material: z.string().optional(),
+        learning_material: z.record(z.string(), z.string()).optional(),
         properties: z.record(z.any()).optional(),
         x_position: z.number().optional(),
         y_position: z.number().optional(),

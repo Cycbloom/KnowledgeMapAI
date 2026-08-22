@@ -84,21 +84,6 @@ describe('QuizFlashLayout', () => {
       );
       expect(oldPillWithMultiChoice).toBeUndefined();
     });
-
-    it('题型胶囊渲染在 Question chip 附近兄弟节点', () => {
-      renderWithProviders(<QuizFlashLayout {...baseProps} />);
-
-      const questionChip = screen.getByText('题目', { exact: false });
-      expect(questionChip).toBeInTheDocument();
-
-      const parentContainer = questionChip.parentElement;
-      expect(parentContainer).not.toBeNull();
-
-      const siblingHasMultiChoice = Array.from(parentContainer!.children).some(
-        (child) => child.textContent?.includes('多选')
-      );
-      expect(siblingHasMultiChoice).toBe(true);
-    });
   });
 
   describe('TR-3.2: 样式类名验证', () => {

@@ -33,6 +33,12 @@ const statusConfig: Record<string, { color: string; bgColor: string; darkBg: str
     darkBg: 'bg-emerald-900/30',
     darkColor: 'text-emerald-400',
   },
+  error: {
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    darkBg: 'bg-red-900/30',
+    darkColor: 'text-red-400',
+  },
 };
 
 const QuizCardComponent: React.FC<QuizCardProps> = ({

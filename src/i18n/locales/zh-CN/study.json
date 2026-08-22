@@ -76,6 +76,7 @@
     "statusDraft": "草稿",
     "statusGenerating": "生成中",
     "statusReady": "就绪",
+    "statusError": "生成失败",
     "deleted": "(已删除)",
     "newQuiz": "新建测验",
     "loading": "正在加载测验列表...",
@@ -341,7 +342,8 @@
     "status": {
       "draft": "草稿",
       "generating": "生成中",
-      "ready": "就绪"
+      "ready": "就绪",
+      "error": "生成失败"
     },
     "difficulty": {
       "easy": "简单",
@@ -496,6 +498,7 @@
     "statusDraft": "草稿",
     "statusGenerating": "生成中",
     "statusReady": "就绪",
+    "statusError": "生成失败",
     "difficultyEasy": "简单",
     "difficultyMedium": "中等",
     "difficultyHard": "困难",

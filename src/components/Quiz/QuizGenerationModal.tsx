@@ -274,9 +274,8 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
       setCreatedQuizSetId(quizSet.id);
 
       const result = await generateMutation.mutateAsync({
-        title: title.trim(),
-        description: description.trim() || undefined,
-        graph_id: selectedGraphId || undefined,
+        quiz_set_id: quizSet.id,
+        node_ids: fullConfig.knowledgePointIds,
         config: fullConfig,
       });
 

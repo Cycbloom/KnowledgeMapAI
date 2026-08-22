@@ -95,17 +95,19 @@ export const QuizList: React.FC<QuizListProps> = ({
   };
 
   const statusCounts = useMemo(() => {
-    if (!quizSets) return { all: 0, draft: 0, generating: 0, ready: 0 };
+    if (!quizSets) return { all: 0, draft: 0, generating: 0, ready: 0, error: 0 };
     // 单趟统计各状态数量，替代三次 filter 的 O(3*quizSets) 扫描
     let draft = 0;
     let generating = 0;
     let ready = 0;
+    let error = 0;
     for (const q of quizSets) {
       if (q.status === 'draft') draft++;
       else if (q.status === 'generating') generating++;
       else if (q.status === 'ready') ready++;
+      else if (q.status === 'error') error++;
     }
-    return { all: quizSets.length, draft, generating, ready };
+    return { all: quizSets.length, draft, generating, ready, error };
   }, [quizSets]);
 
   if (isLoading) {
@@ -197,7 +199,7 @@ export const QuizList: React.FC<QuizListProps> = ({
 
         <div className="flex items-center gap-2">
           <div className={`flex p-1 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
-            {(['all', 'draft', 'generating', 'ready'] as const).map((status) => (
+            {(['all', 'draft', 'generating', 'ready', 'error'] as const).map((status) => (
               <button
                 key={status}
                 onClick={() => setSelectedStatus(status)}
@@ -211,7 +213,7 @@ export const QuizList: React.FC<QuizListProps> = ({
                       : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {status === 'all' ? t('study.quizList.allStatus') : status === 'draft' ? t('study.quizList.statusDraft') : status === 'generating' ? t('study.quizList.statusGenerating') : t('study.quizList.statusReady')}
+                {status === 'all' ? t('study.quizList.allStatus') : status === 'draft' ? t('study.quizList.statusDraft') : status === 'generating' ? t('study.quizList.statusGenerating') : status === 'ready' ? t('study.quizList.statusReady') : t('study.quizList.statusError')}
                 {status !== 'all' && ` (${statusCounts[status]})`}
               </button>
             ))}

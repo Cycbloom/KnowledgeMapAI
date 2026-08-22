@@ -76,6 +76,7 @@
     "statusDraft": "Draft",
     "statusGenerating": "Generating",
     "statusReady": "Ready",
+    "statusError": "Failed",
     "newQuiz": "New Quiz",
     "loading": "Loading quiz list...",
     "loadFailed": "Failed to load quiz list",
@@ -341,7 +342,8 @@
     "status": {
       "draft": "Draft",
       "generating": "Generating",
-      "ready": "Ready"
+      "ready": "Ready",
+      "error": "Failed"
     },
     "difficulty": {
       "easy": "Easy",
@@ -496,6 +498,7 @@
     "statusDraft": "Draft",
     "statusGenerating": "Generating",
     "statusReady": "Ready",
+    "statusError": "Failed",
     "difficultyEasy": "Easy",
     "difficultyMedium": "Medium",
     "difficultyHard": "Hard",

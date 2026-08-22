@@ -7,14 +7,19 @@ import {
   updateQuizSetSchema,
   generateQuizSchema,
   regenerateCardSchema,
+  generationProgressParamsSchema,
   uuidParamsSchema,
 } from "../../schemas/index";
 import { quizSetsService } from "../../services/quiz";
+import { asyncTaskService } from "../../services/asyncTaskService";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
+import type { QuizGenerationProgress } from "../../../shared/types/quiz";
 
 const router = Router();
 
 router.get(
-  "/quiz-sets",
+  "/",
   requireAuth,
   async (req: AuthedRequest, res: Response) => {
     const { graph_id } = req.query;
@@ -28,7 +33,39 @@ router.get(
 );
 
 router.get(
-  "/quiz-sets/:id",
+  "/generation/:taskId",
+  requireAuth,
+  validate(generationProgressParamsSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { taskId } = req.params;
+    const task = await asyncTaskService.getTask(req.supabase, taskId, req.user.id);
+    if (!task) {
+      throw new AppError("生成任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+    }
+    const runtime = task.runtime_progress as
+      | { percent?: number; current?: string; completed?: number; total?: number }
+      | undefined;
+    const statusMap: Record<string, QuizGenerationProgress["status"]> = {
+      pending: "pending",
+      in_progress: "in_progress",
+      running: "in_progress",
+      completed: "completed",
+      failed: "failed",
+      cancelled: "failed",
+      paused: "pending",
+    };
+    res.json({
+      status: statusMap[task.status] ?? "pending",
+      total: runtime?.total ?? 0,
+      completed: runtime?.completed ?? 0,
+      current: runtime?.current,
+      error: task.error_message,
+    } satisfies QuizGenerationProgress);
+  },
+);
+
+router.get(
+  "/:id",
   requireAuth,
   validate(uuidParamsSchema),
   async (req: AuthedRequest, res: Response) => {
@@ -39,7 +76,7 @@ router.get(
 );
 
 router.post(
-  "/quiz-sets",
+  "/",
   requireAuth,
   validate(createQuizSetSchema),
   async (req: AuthedRequest, res: Response) => {
@@ -55,7 +92,7 @@ router.post(
 );
 
 router.put(
-  "/quiz-sets/:id",
+  "/:id",
   requireAuth,
   validate(updateQuizSetSchema),
   requireQuizSetOwnership,
@@ -72,7 +109,7 @@ router.put(
 );
 
 router.delete(
-  "/quiz-sets/:id",
+  "/:id",
   requireAuth,
   validate(uuidParamsSchema),
   requireQuizSetOwnership,
@@ -84,7 +121,7 @@ router.delete(
 );
 
 router.post(
-  "/quiz-sets/generate",
+  "/generate",
   requireAuth,
   validate(generateQuizSchema),
   async (req: AuthedRequest, res: Response) => {
@@ -100,7 +137,7 @@ router.post(
 );
 
 router.post(
-  "/quiz-sets/:id/regenerate/:cardId",
+  "/:id/regenerate/:cardId",
   requireAuth,
   validate(regenerateCardSchema),
   async (req: AuthedRequest, res: Response) => {
@@ -116,7 +153,7 @@ router.post(
 );
 
 router.post(
-  "/quiz-sets/:id/cards",
+  "/:id/cards",
   requireAuth,
   validate(uuidParamsSchema),
   async (req: AuthedRequest, res: Response) => {
@@ -128,7 +165,7 @@ router.post(
 );
 
 router.delete(
-  "/quiz-sets/:id/cards/:cardId",
+  "/:id/cards/:cardId",
   requireAuth,
   validate(uuidParamsSchema),
   requireQuizSetOwnership,

@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS quiz_sets (
   title VARCHAR(200) NOT NULL,
   description TEXT,
   config JSONB DEFAULT '{}',
-  status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'generating', 'ready')),
+  status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'generating', 'ready', 'error')),
   card_count INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS quiz_sets (
 
 COMMENT ON TABLE quiz_sets IS '测验集合，存储用户创建的测验';
 COMMENT ON COLUMN quiz_sets.config IS '测验生成配置：题型、难度、知识点范围等';
-COMMENT ON COLUMN quiz_sets.status IS '测验状态：draft(草稿), generating(生成中), ready(就绪)';
+COMMENT ON COLUMN quiz_sets.status IS '测验状态：draft(草稿), generating(生成中), ready(就绪), error(生成失败)';
 
 -- Study cards table
 CREATE TABLE IF NOT EXISTS study_cards (

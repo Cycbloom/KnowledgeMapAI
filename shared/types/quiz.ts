@@ -1,6 +1,6 @@
 import type { StudyCard } from './common';
 
-export type QuizSetStatus = 'draft' | 'generating' | 'ready';
+export type QuizSetStatus = 'draft' | 'generating' | 'ready' | 'error';
 
 export const CARD_TYPES = [
   'qa',
@@ -118,9 +118,8 @@ export interface QuizSetWithCards extends QuizSet {
 }
 
 export interface GenerateQuizData {
-  title: string;
-  description?: string;
-  graph_id?: string;
+  quiz_set_id: string;
+  node_ids: string[];
   config: QuizSetConfig;
 }
 

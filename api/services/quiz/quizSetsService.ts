@@ -339,8 +339,8 @@ class QuizSetsService {
         .eq("id", quizSetId);
 
       const task = await asyncTaskService.createTask(userId, "generate_quiz", {
-        quiz_set_id: quizSetId,
-        node_ids,
+        quizSetId,
+        knowledgePointIds: node_ids,
         config,
       });
 

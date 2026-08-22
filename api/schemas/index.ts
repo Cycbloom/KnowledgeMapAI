@@ -208,6 +208,13 @@ export const updateCardProgressSchema = z.object({
   quality: z.number().min(0).max(5, "质量评分必须在0-5之间"),
 });
 
+export const deleteCardsBatchSchema = z.object({
+  ids: z
+    .array(z.string().uuid("无效的卡片ID"))
+    .min(1, "请提供要删除的卡片ID")
+    .max(50, "单次最多删除50张卡片"),
+});
+
 // --- AI Schemas ---
 export const generateContentSchema = z.object({
   topic: z.string().min(1, "主题不能为空"),
@@ -915,7 +922,7 @@ export const generateQuizSchema = z.object({
     .min(1, "至少选择一个知识点"),
   config: z
     .object({
-      types: z
+      cardTypes: z
         .array(
           z.enum([
             "qa",
@@ -931,11 +938,27 @@ export const generateQuizSchema = z.object({
           ]),
         )
         .optional(),
-      count_per_node: z.number().min(1).max(20).optional(),
-      provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
-      model: z.string().optional(),
+      difficulty: z.enum(["easy", "medium", "hard", "mixed"]).optional(),
+      knowledgePointIds: z.array(z.string().uuid("无效的知识点ID")).optional(),
+      cardsPerType: z
+        .record(z.number().min(1).max(20, "每题型数量需在1-20之间"))
+        .optional(),
+      customPrompt: z.string().max(4000, "自定义提示词过长").optional(),
+      aiProvider: z.string().optional(),
+      coverage: z
+        .enum(["current_only", "with_children", "with_siblings", "graph"])
+        .optional(),
+      countMatrix: z
+        .record(
+          z.record(z.number().min(0).max(20, "单题型单难度数量需在0-20之间")),
+        )
+        .optional(),
     })
     .optional(),
+});
+
+export const generationProgressParamsSchema = z.object({
+  taskId: z.string().uuid("无效的任务ID"),
 });
 
 export const regenerateCardSchema = z.object({

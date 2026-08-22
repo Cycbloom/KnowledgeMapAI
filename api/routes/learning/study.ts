@@ -5,6 +5,7 @@ import {
   createCardSchema,
   createCardsBatchSchema,
   updateCardProgressSchema,
+  deleteCardsBatchSchema,
 } from "../../schemas/index";
 import { cacheService, CacheKeys } from "../../services/common";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -287,6 +288,52 @@ router.post(
 
 /**
  * @openapi
+ * /study/cards/batch:
+ *   delete:
+ *     summary: Batch delete flashcards
+ *     description: Delete multiple flashcards in a batch
+ *     tags: [Study]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - ids
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Deleted cards
+ */
+router.delete(
+  "/cards/batch",
+  requireAuth,
+  validate(deleteCardsBatchSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { ids } = req.body;
+
+    try {
+      await studyService.deleteCardsBatch(req.supabase, ids);
+      res.json({ success: true });
+    } catch (error) {
+      const err = error as Error;
+      logger.error("Error deleting cards batch:", error);
+      throw new AppError(
+        err.message || "批量删除学习卡片失败",
+        500,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      );
+    }
+  },
+);
+
+/**
+ * @openapi
  * /study/cards/{id}/progress:
  *   put:
  *     summary: Update card progress
@@ -342,6 +389,45 @@ router.put(
       }
       throw new AppError(
         err.message || "更新卡片进度失败",
+        500,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      );
+    }
+  },
+);
+
+/**
+ * @openapi
+ * /study/cards/{id}:
+ *   delete:
+ *     summary: Delete a flashcard
+ *     description: Delete a single flashcard by ID
+ *     tags: [Study]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Card ID
+ *     responses:
+ *       200:
+ *         description: Deleted card
+ */
+router.delete(
+  "/cards/:id",
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+
+    try {
+      await studyService.deleteCard(req.supabase, id);
+      res.json({ success: true });
+    } catch (error) {
+      const err = error as Error;
+      logger.error("Error deleting card:", error);
+      throw new AppError(
+        err.message || "删除学习卡片失败",
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );

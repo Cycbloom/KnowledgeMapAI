@@ -3,6 +3,8 @@ import {
   TaskProcessor,
   registerProcessor,
   UpdateTaskStatusFunction,
+  TaskControl,
+  TaskAbortError,
 } from "./index";
 import { getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
@@ -93,6 +95,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
     payload: InfiniteExpansionPayload,
     supabase: SupabaseClient,
     updateTaskStatus: UpdateTaskStatusFunction,
+    control: TaskControl,
   ): Promise<void> {
     logger.info(
       `Starting infinite graph expansion task ${taskId} for user ${userId}`,
@@ -160,6 +163,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
       let processedCount = 0;
 
       while (queue.length > 0) {
+        control.throwIfAborted();
         const current = queue.shift();
         if (!current) break;
 
@@ -455,6 +459,19 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
         userId,
       );
     } catch (error: unknown) {
+      if (error instanceof TaskAbortError) {
+        logger.info(`Infinite graph expansion task ${taskId} ${error.reason}`);
+        await updateTaskStatus(
+          supabase,
+          taskId,
+          error.reason,
+          undefined,
+          undefined,
+          undefined,
+          userId,
+        );
+        return;
+      }
       logger.error(
         `Infinite graph expansion failed for task ${taskId}:`,
         error,

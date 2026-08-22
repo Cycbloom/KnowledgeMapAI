@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
+import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction, TaskControl, TaskAbortError } from './index';
 import { aiService } from '../ai/aiService';
 import { logger } from '../../utils/logger';
 import { cacheService, CacheKeys } from '../common/cacheService';
@@ -170,7 +170,8 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
     userId: string,
     payload: GenerateQuestionsPayload,
     supabase: SupabaseClient,
-    updateTaskStatus: UpdateTaskStatusFunction
+    updateTaskStatus: UpdateTaskStatusFunction,
+    control: TaskControl
   ): Promise<void> {
     logger.info(`Starting generate questions task ${taskId} for user ${userId}`, { payload });
 
@@ -369,6 +370,7 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
       };
 
       for (let i = 0; i < tasksToRun.length; i += CONCURRENCY) {
+        control.throwIfAborted();
         const chunk = tasksToRun.slice(i, i + CONCURRENCY);
         await Promise.all(chunk.map((t) => processType(t)));
       }
@@ -390,6 +392,11 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
       }, undefined, undefined, userId);
 
     } catch (error: unknown) {
+      if (error instanceof TaskAbortError) {
+        logger.info(`Generate questions task ${taskId} ${error.reason}`);
+        await updateTaskStatus(supabase, taskId, error.reason, undefined, undefined, undefined, userId);
+        return;
+      }
       logger.error(`Generate questions task ${taskId} failed:`, error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       await updateTaskStatus(supabase, taskId, 'failed', null, undefined, errorMessage, userId);

@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
+import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction, TaskControl, TaskAbortError } from './index';
 import { aiService } from '../ai/aiService';
 import { chunkingService } from '../ai/chunkingService';
 import { logger } from '../../utils/logger';
@@ -17,7 +17,8 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
     userId: string,
     payload: Record<string, unknown>,
     supabase: SupabaseClient,
-    updateTaskStatus: UpdateTaskStatusFunction
+    updateTaskStatus: UpdateTaskStatusFunction,
+    control: TaskControl
   ): Promise<void> {
     logger.info(`Starting embedding generation task ${taskId} for user ${userId}`, { payload });
     
@@ -98,6 +99,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
       const failedIds: string[] = [];
 
       for (let i = 0; i < knowledgePoints.length; i += BATCH_SIZE) {
+        control.throwIfAborted();
         const batch = knowledgePoints.slice(i, i + BATCH_SIZE);
         const texts = batch.map(kp => kp.title);
 
@@ -215,6 +217,11 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
       }, undefined, undefined, userId);
 
     } catch (error: unknown) {
+      if (error instanceof TaskAbortError) {
+        logger.info(`Embedding generation task ${taskId} ${error.reason}`);
+        await updateTaskStatus(supabase, taskId, error.reason, undefined, undefined, undefined, userId);
+        return;
+      }
       logger.error(`Embedding generation task ${taskId} failed:`, error);
       await updateTaskStatus(supabase, taskId, 'failed', null, undefined, error instanceof Error ? error.message : 'Unknown error', userId);
     }

@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
+import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction, TaskControl, TaskAbortError } from './index';
 import { aiService, type CardDifficulty } from '../ai/index';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
@@ -71,7 +71,8 @@ export class QuizGenerationProcessor implements TaskProcessor {
     userId: string,
     payload: QuizGenerationTaskPayload,
     supabase: SupabaseClient,
-    updateTaskStatus: UpdateTaskStatusFunction
+    updateTaskStatus: UpdateTaskStatusFunction,
+    control: TaskControl
   ): Promise<void> {
     logger.info(`Starting quiz generation task ${taskId} for user ${userId}`, { payload });
     
@@ -181,6 +182,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
       const allGeneratedCards: InsertedCard[] = [];
 
       for (const node of sortedNodes) {
+        control.throwIfAborted();
         const parentId = parentMap.get(node.id);
         const parentNode = parentId ? parentNodesMap.get(parentId) : null;
         let context = parentNode ? `Parent Node: "${parentNode.title}"` : 'Root Node';
@@ -292,6 +294,20 @@ export class QuizGenerationProcessor implements TaskProcessor {
       }, undefined, undefined, userId);
 
     } catch (error: unknown) {
+      if (error instanceof TaskAbortError) {
+        logger.info(`Quiz generation task ${taskId} ${error.reason}`);
+        try {
+          const { quizSetId } = payload;
+          await supabase
+            .from('quiz_sets')
+            .update({ status: 'draft', updated_at: new Date().toISOString() })
+            .eq('id', quizSetId);
+        } catch (updateError) {
+          logger.error('Failed to update quiz set status:', updateError);
+        }
+        await updateTaskStatus(supabase, taskId, error.reason, undefined, undefined, undefined, userId);
+        return;
+      }
       logger.error(`Quiz generation task ${taskId} failed:`, error);
 
       try {

@@ -3,6 +3,8 @@ import {
   TaskProcessor,
   registerProcessor,
   UpdateTaskStatusFunction,
+  TaskControl,
+  TaskAbortError,
 } from "./index";
 import { getAIProviderForTask } from "../ai/factory";
 import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers";
@@ -37,6 +39,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
     payload: RecursiveGraphPayload,
     supabase: SupabaseClient,
     updateTaskStatus: UpdateTaskStatusFunction,
+    control: TaskControl,
   ): Promise<void> {
     logger.info(
       `Starting recursive graph generation task ${taskId} for user ${userId}`,
@@ -279,6 +282,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         );
 
         for (let i = 0; i < coreNodeEntries.length; i++) {
+          control.throwIfAborted();
           const [nodeTitle, nodeId] = coreNodeEntries[i];
 
           logger.debug(
@@ -416,6 +420,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         );
 
         for (let i = 0; i < Math.min(subNodeEntries.length, 10); i++) {
+          control.throwIfAborted();
           const [nodeTitle, nodeId] = subNodeEntries[i];
 
           logger.debug(
@@ -559,6 +564,19 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         userId,
       );
     } catch (error: unknown) {
+      if (error instanceof TaskAbortError) {
+        logger.info(`Recursive graph generation task ${taskId} ${error.reason}`);
+        await updateTaskStatus(
+          supabase,
+          taskId,
+          error.reason,
+          undefined,
+          undefined,
+          undefined,
+          userId,
+        );
+        return;
+      }
       logger.error(
         `Recursive graph generation failed for task ${taskId}:`,
         error,

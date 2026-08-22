@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
+import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction, TaskControl, TaskAbortError } from './index';
 import { aiService } from '../ai/aiService';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
@@ -187,7 +187,8 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
     userId: string, 
     payload: BatchGenerateCardsPayload, 
     supabase: SupabaseClient,
-    updateTaskStatus: UpdateTaskStatusFunction
+    updateTaskStatus: UpdateTaskStatusFunction,
+    control: TaskControl
   ): Promise<void> {
     logger.info(`Starting batch generate cards task ${taskId} for user ${userId}`, { payload });
       
@@ -374,6 +375,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
       let processedCount = 0;
 
       for (const node of sortedNodes) {
+        control.throwIfAborted();
         const parentId = parentMap.get(node.id);
         const parentNode = parentId ? parentNodesMap.get(parentId) : null;
         const context = parentNode ? `Parent Node: "${parentNode.title}"` : 'Root Node';
@@ -398,6 +400,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
           let nodeCardCount = 0;
 
           for (let i = 0; i < nodeTaskTemplate.length; i += CONCURRENCY) {
+            control.throwIfAborted();
             const chunk = nodeTaskTemplate.slice(i, i + CONCURRENCY);
             const chunkResults = await Promise.all(
               chunk.map(async (t) => {
@@ -500,6 +503,11 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
       }, undefined, undefined, userId);
 
     } catch (error: unknown) {
+      if (error instanceof TaskAbortError) {
+        logger.info(`Batch generate cards task ${taskId} ${error.reason}`);
+        await updateTaskStatus(supabase, taskId, error.reason, undefined, undefined, undefined, userId);
+        return;
+      }
       logger.error(`Batch generate cards task ${taskId} failed:`, error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       await updateTaskStatus(supabase, taskId, 'failed', null, undefined, errorMessage, userId);

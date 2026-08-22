@@ -37,7 +37,20 @@ export function useDataFreshness(scope?: QueryKey) {
 
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
-      return cache.subscribe(onStoreChange);
+      // cache 写入（如 useInfiniteQuery 的 initialData）常发生在组件渲染阶段同步执行，
+      // 若同步转发 onStoreChange 会触发 "Cannot update X while rendering Y" 警告。
+      // 统一微任务排队，确保通知在当前渲染/提交阶段结束后异步派发。
+      let cancelled = false;
+      const unsub = cache.subscribe(() => {
+        if (cancelled) return;
+        queueMicrotask(() => {
+          if (!cancelled) onStoreChange();
+        });
+      });
+      return () => {
+        cancelled = true;
+        unsub();
+      };
     },
     [cache],
   );

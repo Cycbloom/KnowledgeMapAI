@@ -19,6 +19,7 @@ import {
 } from '../graph/siblingNodesService';
 import type { GenerateCardsCoverage } from '../ai/cardGenerationService';
 import { deriveFocusTopicFallback } from '@shared/utils/cards';
+import { buildTasksToRun as buildTasksToRunShared } from './questionTaskDispatcher';
 
 interface GenerateQuestionsPayload {
   knowledge_point_id: string;
@@ -62,106 +63,22 @@ interface AIGeneratedCard {
 type AIGeneratedCardWithFocus = AIGeneratedCard & { focus_topic?: unknown };
 
 /**
- * 任务分派策略（优先级从高到低）：
- * 0) count_matrix：题型×难度二维矩阵，每个非零格子 = 一个独立任务（单题型+单难度，
- *    每个任务一次独立 AI 调用）——UI 矩阵的权威语义，精确落地用户配置
- * 1) cards_per_type：按题型独立分配数量（若用户在 UI 填了题型数量矩阵的行合计）
- * 2) count_per_difficulty：按难度分配（每个难度的总数按题型均分，最大余数法分摊误差）
- * 3) 回退：totalCount（count）按 types 均分
+ * 任务分派：将 generateQuestions 载荷（snake_case config）归一化为共享
+ * questionTaskDispatcher 的输入，沿用相同优先级（count_matrix > cards_per_type
+ * > count_per_difficulty > 回退）。
  */
-function buildTasksToRun(payload: GenerateQuestionsPayload): {
-  tasks: Array<{ type: string; count: number; difficulty?: CardDifficulty }>;
-  totalCount: number;
-  effectiveDifficulty: CardDifficulty | 'mixed';
-} {
+function buildTasksToRun(
+  payload: GenerateQuestionsPayload,
+): ReturnType<typeof buildTasksToRunShared> {
   const config = payload.config ?? {};
-  const types =
-    config.types && Array.isArray(config.types) && config.types.length > 0
-      ? config.types
-      : ['qa', 'choice'];
-  const totalCountFallback = config.count ?? 5;
-  const VALID_TYPES = new Set(['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank', 'essay', 'cloze', 'select_from_options', 'matching', 'ordering']);
-  const VALID_DIFFS: ReadonlyArray<CardDifficulty> = ['easy', 'medium', 'hard'];
-
-  // 0) count_matrix：每个非零格子 = 一个独立任务（单题型+单难度）
-  // 关键：用户显式传了 matrix 即便全零也必须早退，不能回退到 count ?? 5 的默认 5 张
-  // （否则当 UI 想表达「就生成这些矩阵格子指定的，不想要额外 fallback」时，
-  //  会多出一堆默认卡片，造成数量对不上）
-  if (config.count_matrix && typeof config.count_matrix === 'object') {
-    const tasks: Array<{ type: string; count: number; difficulty: CardDifficulty }> = [];
-    for (const [type, cell] of Object.entries(config.count_matrix)) {
-      if (!VALID_TYPES.has(type) || !cell || typeof cell !== 'object') continue;
-      for (const diff of VALID_DIFFS) {
-        const v = cell[diff];
-        if (typeof v === 'number' && v > 0) {
-          tasks.push({ type, count: v, difficulty: diff });
-        }
-      }
-    }
-    const total = tasks.reduce((s, t) => s + t.count, 0);
-    return { tasks, totalCount: total, effectiveDifficulty: 'mixed' };
-  }
-
-  // 1) cards_per_type：直接以该映射为准（只保留选中的 types，数量≥1）
-  // 同上：用户显式传了 cpt 即便全零也早退
-  if (config.cards_per_type && typeof config.cards_per_type === 'object') {
-    const entries: Array<[string, number]> = [];
-    for (const t of types) {
-      const v = config.cards_per_type[t];
-      if (typeof v === 'number' && v > 0) entries.push([t, v]);
-    }
-    const total = entries.reduce((s, [, v]) => s + v, 0);
-    return {
-      tasks: entries.map(([type, count]) => ({ type, count, difficulty: config.difficulty ?? 'medium' })),
-      totalCount: total,
-      effectiveDifficulty: config.difficulty ?? 'medium',
-    };
-  }
-
-  // 2) count_per_difficulty：每个难度的总数按题型均分（最大余数法），总数不膨胀
-  // 同上：用户显式传了 cpd 即便全零也早退
-  if (
-    config.count_per_difficulty &&
-    typeof config.count_per_difficulty === 'object'
-  ) {
-    const diffs: Array<[CardDifficulty, number]> = [];
-    (['easy', 'medium', 'hard'] as const).forEach((k) => {
-      const v = config.count_per_difficulty?.[k];
-      if (typeof v === 'number' && v > 0) diffs.push([k, v]);
-    });
-    const tasks: Array<{ type: string; count: number; difficulty: CardDifficulty }> = [];
-    for (const [diff, cnt] of diffs) {
-      // cnt 是该难度的总题数：均分到所有选中题型，余数给前面的题型
-      const base = Math.floor(cnt / types.length);
-      const remainder = cnt - base * types.length;
-      types.forEach((type, idx) => {
-        const c = base + (idx < remainder ? 1 : 0);
-        if (c > 0) tasks.push({ type, count: c, difficulty: diff });
-      });
-    }
-    const total = tasks.reduce((s, t) => s + t.count, 0);
-    return {
-      tasks,
-      totalCount: total,
-      effectiveDifficulty: 'mixed',
-    };
-  }
-
-  // 3) 回退：types × totalCount 均分
-  let remaining = totalCountFallback;
-  const tasks: Array<{ type: string; count: number; difficulty?: CardDifficulty }> = [];
-  for (let i = 0; i < types.length; i++) {
-    const countPerType = Math.ceil(remaining / (types.length - i));
-    remaining -= countPerType;
-    if (countPerType > 0) {
-      tasks.push({ type: types[i], count: countPerType, difficulty: config.difficulty ?? 'medium' });
-    }
-  }
-  return {
-    tasks,
-    totalCount: totalCountFallback,
-    effectiveDifficulty: config.difficulty ?? 'medium',
-  };
+  return buildTasksToRunShared({
+    types: config.types,
+    count: config.count,
+    cardsPerType: config.cards_per_type,
+    countPerDifficulty: config.count_per_difficulty,
+    countMatrix: config.count_matrix,
+    difficulty: config.difficulty,
+  });
 }
 
 export class GenerateQuestionsProcessor implements TaskProcessor {

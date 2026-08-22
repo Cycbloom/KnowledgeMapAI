@@ -1,17 +1,22 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction, TaskControl, TaskAbortError } from './index';
 import { aiService, type CardDifficulty } from '../ai/index';
+import { cardDifficultyToNumber, cardDifficultyToFsrsInitial, type AIProviderType } from '@shared/types';
+import { buildTasksToRun, allocateTasksByCount } from './questionTaskDispatcher';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
-import type { AIProviderType } from '@shared/types';
 import { notDeleted } from '../common/softDeleteHelper';
 import { deriveFocusTopicFallback } from '@shared/utils/cards';
 
 interface QuizGenerationTaskConfig {
   cardTypes: string[];
-  difficulty: CardDifficulty;
+  difficulty: CardDifficulty | 'mixed';
   cardsPerType?: Record<string, number>;
+  countPerDifficulty?: { easy?: number; medium?: number; hard?: number };
+  countMatrix?: Record<string, { easy?: number; medium?: number; hard?: number }>;
+  /** 总数配额制：{ knowledge_point_id: 需要生成的题数 }，存在时按每个知识点的缺口生成 */
+  perNodeCounts?: Record<string, number>;
   customPrompt?: string;
   provider?: string;
   model?: string;
@@ -57,6 +62,7 @@ interface GeneratedCard {
   type?: string;
   options?: string[];
   focus_topic?: unknown;
+  difficulty?: string;
 }
 
 type AIGeneratedCardWithFocus = GeneratedCard & { focus_topic?: unknown };
@@ -80,7 +86,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
       await updateTaskStatus(supabase, taskId, 'in_progress', { stage: 'initializing', percent: 0 }, undefined, undefined, userId);
 
       const { quizSetId, knowledgePointIds, config } = payload;
-      const { cardTypes = ['qa', 'choice'], difficulty = 'medium', cardsPerType, customPrompt, provider, model } = config || {};
+      const { cardTypes = ['qa', 'choice'], difficulty = 'medium', cardsPerType, countPerDifficulty, countMatrix, perNodeCounts, customPrompt, provider, model } = config || {};
 
       const { data: quizSet, error: quizSetError } = await supabase
         .from('quiz_sets')
@@ -92,6 +98,19 @@ export class QuizGenerationProcessor implements TaskProcessor {
       if (quizSetError || !quizSet) {
         throw new AppError('Quiz set not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
+
+      // 复用已有题目时，quiz_set_cards 可能已存在关联记录：
+      // 新生成的卡片需接在已有 display_order 之后，card_count 也要累加
+      const { data: existingCardRows } = await supabase
+        .from('quiz_set_cards')
+        .select('display_order')
+        .eq('quiz_set_id', quizSetId);
+      const existingCards = existingCardRows || [];
+      const existingCount = existingCards.length;
+      const maxDisplayOrder = existingCards.reduce(
+        (max, c) => Math.max(max, Number(c.display_order) || 0),
+        0,
+      );
 
       await supabase
         .from('quiz_sets')
@@ -191,65 +210,104 @@ export class QuizGenerationProcessor implements TaskProcessor {
           context = `${context}\n\nCustom Instructions: ${customPrompt}`;
         }
 
-        const typesForNode = cardTypes;
-        const countForNode = cardsPerType ? 
-          cardTypes.reduce((sum, type) => sum + (cardsPerType[type] || 1), 0) : 
-          3;
+        // 按题型×难度矩阵（或 cardsPerType / countPerDifficulty）分派生成任务，
+        // 每个非零格子 = 一次独立 AI 调用，精确落地用户配置（批量生成）
+        const dispatch = buildTasksToRun({
+          types: cardTypes,
+          count: 3,
+          cardsPerType,
+          countPerDifficulty,
+          countMatrix,
+          difficulty,
+        });
 
-        try {
-          const aiResult = await aiService.generateCards(node.title, node.content, {
-            context,
-            types: typesForNode,
-            count: countForNode,
-            difficulty,
-            provider: provider as AIProviderType | undefined,
-            model,
-            userId,
-            graphId: quizSet.graph_id,
-          });
+        // 总数配额制：若配置了 perNodeCounts，按每个知识点的缺口数量生成，
+        // matrix/cardsPerType 仅作为题型×难度构成权重（缺口不足的部分自动折算）
+        let nodeTasks = dispatch.tasks;
+        if (perNodeCounts) {
+          const nodeCount = perNodeCounts[node.id];
+          if (nodeCount === undefined || nodeCount <= 0) {
+            continue;
+          }
+          nodeTasks = allocateTasksByCount(dispatch.tasks, nodeCount, cardTypes, difficulty);
+        }
 
-          const cards = (aiResult.cards || []) as GeneratedCard[];
+        let nodeCards = 0;
+        let nodeFailed = false;
+        let nodeError: string | undefined;
 
-          if (cards.length > 0) {
-            const cardsToInsert = cards.map((card: AIGeneratedCardWithFocus) => {
-              const rawFocus = typeof card.focus_topic === 'string' ? card.focus_topic.trim() : '';
-              const value = rawFocus.length > 0
-                ? rawFocus.slice(0, 200)
-                : deriveFocusTopicFallback(card.question, node.title);
-              return {
-                user_id: userId,
-                knowledge_point_id: node.id,
-                graph_id: node.graph_id,
-                question: card.question,
-                answer: card.answer,
-                explanation: card.explanation,
-                card_type: card.type ?? 'qa',
-                difficulty: difficulty === 'mixed' ? this.getRandomDifficulty() : difficulty,
-                options: card.options ? JSON.stringify(card.options) : null,
-                next_review: new Date().toISOString(),
-                focus_topic: value,
-              };
+        for (const task of nodeTasks) {
+          control.throwIfAborted();
+          const taskDifficulty = task.difficulty ?? dispatch.effectiveDifficulty;
+          try {
+            const aiResult = await aiService.generateCards(node.title, node.content, {
+              context,
+              type: task.type,
+              count: task.count,
+              difficulty: taskDifficulty,
+              provider: provider as AIProviderType | undefined,
+              model,
+              userId,
+              graphId: quizSet.graph_id,
+              customPrompt,
             });
 
-            const { data: insertedCards, error: insertError } = await supabase
-              .from('study_cards')
-              .insert(cardsToInsert)
-              .select('id');
+            const cards = (aiResult.cards || []) as GeneratedCard[];
 
-            if (insertError) {
-              logger.error(`Failed to insert cards for node ${node.id}`, insertError);
-            } else {
-              totalCards += cards.length;
-              allGeneratedCards.push(...(insertedCards || []));
+            if (cards.length > 0) {
+              const cardsToInsert = cards.map((card: AIGeneratedCardWithFocus) => {
+                const rawFocus = typeof card.focus_topic === 'string' ? card.focus_topic.trim() : '';
+                const value = rawFocus.length > 0
+                  ? rawFocus.slice(0, 200)
+                  : deriveFocusTopicFallback(card.question, node.title);
+                return {
+                  user_id: userId,
+                  knowledge_point_id: node.id,
+                  graph_id: node.graph_id,
+                  question: card.question,
+                  answer: card.answer,
+                  explanation: card.explanation,
+                  card_type: card.type ?? task.type ?? 'qa',
+                  options: card.options ? JSON.stringify(card.options) : null,
+                  next_review: new Date().toISOString(),
+                  difficulty: cardDifficultyToNumber(card.difficulty, taskDifficulty),
+                  fsrs_state: "New",
+                  fsrs_stability: 0,
+                  fsrs_difficulty: cardDifficultyToFsrsInitial(card.difficulty, taskDifficulty),
+                  fsrs_elapsed_days: 0,
+                  fsrs_scheduled_days: 0,
+                  fsrs_retrievability: 0,
+                  focus_topic: value,
+                };
+              });
+
+              const { data: insertedCards, error: insertError } = await supabase
+                .from('study_cards')
+                .insert(cardsToInsert)
+                .select('id');
+
+              if (insertError) {
+                logger.error(`Failed to insert cards for node ${node.id} type ${task.type}`, insertError);
+                nodeFailed = true;
+                nodeError = insertError.message;
+              } else {
+                nodeCards += cards.length;
+                totalCards += cards.length;
+                allGeneratedCards.push(...(insertedCards || []));
+              }
             }
+          } catch (err: unknown) {
+            logger.error(`Error generating ${task.type} for node ${node.id}:`, err);
+            nodeFailed = true;
+            nodeError = err instanceof Error ? err.message : String(err);
           }
-
-          results.push({ node_id: node.id, title: node.title, cards: cards.length, status: 'success' });
-        } catch (err: unknown) {
-          logger.error(`Error processing node ${node.id}:`, err);
-          const errMsg = err instanceof Error ? err.message : String(err);
-          results.push({ node_id: node.id, title: node.title, error: errMsg, status: 'failed' });
         }
+
+        results.push(
+          nodeFailed
+            ? { node_id: node.id, title: node.title, error: nodeError, status: 'failed' }
+            : { node_id: node.id, title: node.title, cards: nodeCards, status: 'success' },
+        );
 
         processedCount++;
         await updateTaskStatus(supabase, taskId, 'in_progress', {
@@ -265,7 +323,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
         const quizSetCardsToInsert = allGeneratedCards.map((card: InsertedCard, index: number) => ({
           quiz_set_id: quizSetId,
           card_id: card.id,
-          display_order: index + 1
+          display_order: maxDisplayOrder + index + 1
         }));
 
         const { error: linkError } = await supabase
@@ -281,7 +339,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
         .from('quiz_sets')
         .update({
           status: 'ready',
-          card_count: totalCards,
+          card_count: existingCount + totalCards,
           updated_at: new Date().toISOString()
         })
         .eq('id', quizSetId);
@@ -324,11 +382,6 @@ export class QuizGenerationProcessor implements TaskProcessor {
       const errorMessage = error instanceof Error ? error.message : String(error);
       await updateTaskStatus(supabase, taskId, 'failed', null, undefined, errorMessage, userId);
     }
-  }
-
-  private getRandomDifficulty(): 'easy' | 'medium' | 'hard' {
-    const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
-    return difficulties[Math.floor(Math.random() * difficulties.length)];
   }
 }
 

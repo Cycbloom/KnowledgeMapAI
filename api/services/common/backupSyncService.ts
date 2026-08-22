@@ -61,13 +61,16 @@ export async function syncExistingBackups(): Promise<void> {
         const content = await fs.readFile(filePath, 'utf-8');
         const data = JSON.parse(content);
 
+        // v3 起节点拆分到 knowledge_points / graph_nodes，旧版为扁平化 nodes
+        const nodeCount = data.data?.knowledge_points?.length ?? data.data?.nodes?.length ?? 0;
+
         await getSupabaseAdmin().from('backup_snapshots').insert({
           user_id: userId,
           type,
           file_path: filePath,
           file_size: fileStat.size,
           graphs_count: data.data?.graphs?.length || 0,
-          nodes_count: data.data?.nodes?.length || 0,
+          nodes_count: nodeCount,
           created_at: data.exportedAt || fileStat.birthtime.toISOString(),
         });
 

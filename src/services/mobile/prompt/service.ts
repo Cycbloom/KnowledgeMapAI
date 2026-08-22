@@ -180,13 +180,18 @@ export class MobilePromptService {
   ): Promise<string> {
     const template = await this.getTemplate(supabase, code, userId, graphId);
 
+    // 预计算输出语言并注入渲染上下文，避免模板正文中的 {{outputLanguage}}
+    // 被模板引擎当作缺失变量替换成空字符串
+    const outputLanguage = isEnglishLanguage(language) ? 'English' : 'Chinese';
+    const renderContext = { ...context, outputLanguage };
+
     let content = '';
 
     if (!template) {
       const defaultPrompt = DEFAULT_PROMPTS[code];
       if (defaultPrompt) {
         try {
-          content = TemplateEngine.render(defaultPrompt, context);
+          content = TemplateEngine.render(defaultPrompt, renderContext);
         } catch (e) {
           logger.error(`[PromptService] Failed to render default prompt ${code}`, e);
           content = defaultPrompt;
@@ -197,7 +202,7 @@ export class MobilePromptService {
       }
     } else {
       try {
-        content = TemplateEngine.render(template.template_content, context);
+        content = TemplateEngine.render(template.template_content, renderContext);
       } catch (e) {
         logger.error(`[PromptService] Failed to render prompt ${code}`, e);
         content = template.template_content;
@@ -209,7 +214,7 @@ export class MobilePromptService {
     }
 
     // Replace output language placeholder in schemas
-    const outputLanguage = isEnglishLanguage(language) ? "English" : "Chinese";
+    // （正文模板里的 {{outputLanguage}} 已在渲染阶段替换，这里兜底处理 schema 中的占位符）
     content = content.replace(/\{\{outputLanguage\}\}/g, outputLanguage);
 
     // Replace category options based on language

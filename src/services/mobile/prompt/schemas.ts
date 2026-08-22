@@ -9,10 +9,10 @@ You must respond with a JSON object containing:
 Each keyword object must have:
 - 'term': The keyword text (string)
 - 'importance': Importance level 1-5 (number, where 5 is most important)
-- 'category': Category type - one of: '定义', '概念', '方法', '结论', '原理', '应用', '术语' (string)
+- 'category': Category type - one of: {{categoryOptions}} (string)
 - 'explanation': Brief explanation of the keyword (string, max 50 chars)
 
-Please respond in Chinese.`,
+IMPORTANT: All keyword fields (term, category, explanation) must be in {{outputLanguage}}.`,
 
   expand_knowledge: `
 Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.

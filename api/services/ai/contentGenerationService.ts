@@ -214,6 +214,10 @@ export class ContentGenerationService {
               topic,
               context: context || "General knowledge",
               level: options.level,
+              // 注入输出语言，供 buildPromptFromSchema 中的 {{outputLanguage}} 占位符渲染
+              outputLanguage: isEnglishLanguage(options.language)
+                ? "English"
+                : "Chinese",
             };
 
             // ============================================================

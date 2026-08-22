@@ -237,6 +237,12 @@ export class PromptService {
   ): Promise<string> {
     const template = await this.getTemplate(supabase, code, userId, graphId);
 
+    // 预计算输出语言并注入渲染上下文。模板正文中的 {{outputLanguage}} 依赖该变量，
+    // 必须由 TemplateEngine.render 正确替换（放在上下文里，而不是事后 replace，
+    // 否则会被模板引擎当作缺失变量替换成空字符串）。
+    const outputLanguage = isEnglishLanguage(language) ? "English" : "Chinese";
+    const renderContext = { ...context, outputLanguage };
+
     let content = "";
     let source: "graph" | "user" | "system" | "default" = "default";
 
@@ -249,7 +255,7 @@ export class PromptService {
       if (defaultPrompt) {
         logger.info(`[prompt:${code}] source=default (fallback)`);
         try {
-          content = TemplateEngine.render(defaultPrompt, context);
+          content = TemplateEngine.render(defaultPrompt, renderContext);
         } catch (e) {
           logger.error(`Failed to render default prompt ${code}`, e);
           content = defaultPrompt;
@@ -273,7 +279,7 @@ export class PromptService {
         `[prompt:${code}] source=${source} template_id=${template.id ?? "unsaved"}`,
       );
       try {
-        content = TemplateEngine.render(template.template_content, context);
+        content = TemplateEngine.render(template.template_content, renderContext);
       } catch (e) {
         logger.error(`Failed to render prompt ${code}`, e);
         content = template.template_content;
@@ -286,7 +292,7 @@ export class PromptService {
     }
 
     // Replace output language placeholder in schemas
-    const outputLanguage = isEnglishLanguage(language) ? "English" : "Chinese";
+    // （正文模板里的 {{outputLanguage}} 已在渲染阶段替换，这里兜底处理 schema 中的占位符）
     content = content.replace(/\{\{outputLanguage\}\}/g, outputLanguage);
 
     // Replace category options based on language

@@ -458,6 +458,49 @@ describe("PromptService", () => {
 
       expect(result).toContain(ZH_INSTRUCTION);
     });
+
+    it("模板正文中的 {{outputLanguage}} → 渲染为 English (en-US)", async () => {
+      // 回归：模板正文占位符必须由 TemplateEngine 渲染，而非被替换为空字符串
+      const tpl = createTemplate({
+        template_content: "Please write the learning material and keywords in {{outputLanguage}}.",
+      });
+      const supabase = createMockSupabase({ data: [tpl] });
+
+      const result = await promptService.getRenderedPrompt(
+        supabase,
+        "test_code",
+        {},
+        undefined,
+        undefined,
+        "en-US",
+      );
+
+      expect(result).toContain(
+        "Please write the learning material and keywords in English.",
+      );
+      expect(result).not.toContain("in .");
+    });
+
+    it("模板正文中的 {{outputLanguage}} → 渲染为 Chinese (zh-CN)", async () => {
+      const tpl = createTemplate({
+        template_content: "Please write the learning material and keywords in {{outputLanguage}}.",
+      });
+      const supabase = createMockSupabase({ data: [tpl] });
+
+      const result = await promptService.getRenderedPrompt(
+        supabase,
+        "test_code",
+        {},
+        undefined,
+        undefined,
+        "zh-CN",
+      );
+
+      expect(result).toContain(
+        "Please write the learning material and keywords in Chinese.",
+      );
+      expect(result).not.toContain("in .");
+    });
   });
 
   // ============================================================

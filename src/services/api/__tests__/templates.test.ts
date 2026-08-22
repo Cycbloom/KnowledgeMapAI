@@ -268,6 +268,13 @@ describe('focusApi', () => {
       expect(request).toHaveBeenCalledWith('/scheduler/focus-sessions/stats');
     });
   });
+
+  describe('getTodayStats - GET 请求', () => {
+    it('应该调用 getTodayStats 请求 /scheduler/focus-sessions/today', async () => {
+      await focusApi.getTodayStats();
+      expect(request).toHaveBeenCalledWith('/scheduler/focus-sessions/today');
+    });
+  });
 });
 
 describe('achievementsApi', () => {

@@ -118,3 +118,15 @@ export const useRegenerateCardMutation = () => {
     },
   });
 };
+
+export const useAddCardsToQuizSetMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ quizSetId, cardIds }: { quizSetId: string; cardIds: string[] }) =>
+      api.quiz.addCards(quizSetId, cardIds),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: quizQueryKeys.quizSets });
+      queryClient.invalidateQueries({ queryKey: quizQueryKeys.quizSet(variables.quizSetId) });
+    },
+  });
+};

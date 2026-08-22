@@ -41,14 +41,14 @@ const statusConfig: Record<string, { color: string; bgColor: string; darkBg: str
   },
 };
 
-const QuizCardComponent: React.FC<QuizCardProps> = ({
+const QuizCardComponent = React.forwardRef<HTMLDivElement, QuizCardProps>(({
   quiz,
   isDark,
   onStartPractice,
   onEdit,
   onDelete,
   onClick,
-}) => {
+}, ref) => {
   const { t } = useTranslation();
   const status = statusConfig[quiz.status] || statusConfig.draft;
   const isGenerating = quiz.status === 'generating';
@@ -71,6 +71,7 @@ const QuizCardComponent: React.FC<QuizCardProps> = ({
 
   return (
     <motion.div
+      ref={ref}
       layout
       role="listitem"
       initial={{ opacity: 0, y: 20 }}
@@ -183,7 +184,7 @@ const QuizCardComponent: React.FC<QuizCardProps> = ({
       </div>
     </motion.div>
   );
-};
+});
 
 const areEqual = (prev: QuizCardProps, next: QuizCardProps) => {
   return (

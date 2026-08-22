@@ -1,4 +1,4 @@
-import { useLayoutEffect, useEffect, useMemo, useState, lazy, Suspense, useCallback } from "react";
+import { useLayoutEffect, useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQueries } from "@tanstack/react-query";
@@ -7,12 +7,7 @@ import { useSemanticGroups, useReviewForecast } from "../hooks/queries";
 import { queryKeys, realtimeQueryConfig } from "../hooks/queries/config";
 import { StudyCard } from "../types";
 import { QuestionBank } from "../components/Study/QuestionBank";
-import { QuizList } from "../components/Quiz";
-const QuizGenerationModal = lazy(() =>
-  import("../components/Quiz/QuizGenerationModal").then((module) => ({
-    default: module.QuizGenerationModal,
-  })),
-);
+import { QuizList, QuizCreationFlow } from "../components/Quiz";
 import { useTheme, useIsMobile } from "../hooks";
 import { useQuizLayoutPref } from "../hooks/quiz";
 import { api } from "../services/api";
@@ -115,7 +110,7 @@ export const Study = () => {
   const [viewState, setViewState] = useState<
     "dashboard" | "quiz" | "bank" | "quizzes"
   >("dashboard");
-  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [showQuizCreation, setShowQuizCreation] = useState(false);
   // 答题侧边栏折叠状态：移动端默认折叠，桌面端默认展开
   const [quizSidebarCollapsed, setQuizSidebarCollapsed] = useState(
     () => isMobile ?? false,
@@ -366,20 +361,31 @@ export const Study = () => {
           {viewState === "bank" ? (
             <QuestionBank {...scopeParams} />
           ) : viewState === "quizzes" ? (
-            <QuizList
-              onCreateQuiz={() => {
-                setShowQuizModal(true);
-              }}
-              onEditQuiz={(quiz) => {
-                navigate(`/quiz/${quiz.id}`);
-              }}
-              onStartPractice={(quiz) => {
-                navigate(`/quiz/${quiz.id}/practice`);
-              }}
-              onViewQuiz={(quiz) => {
-                navigate(`/quiz/${quiz.id}`);
-              }}
-            />
+            showQuizCreation ? (
+              <QuizCreationFlow
+                graphId={graphId || undefined}
+                onCancel={() => setShowQuizCreation(false)}
+                onComplete={(quizSetId) => {
+                  setShowQuizCreation(false);
+                  navigate(`/quiz/${quizSetId}`);
+                }}
+              />
+            ) : (
+              <QuizList
+                onCreateQuiz={() => {
+                  setShowQuizCreation(true);
+                }}
+                onEditQuiz={(quiz) => {
+                  navigate(`/quiz/${quiz.id}`);
+                }}
+                onStartPractice={(quiz) => {
+                  navigate(`/quiz/${quiz.id}/practice`);
+                }}
+                onViewQuiz={(quiz) => {
+                  navigate(`/quiz/${quiz.id}`);
+                }}
+              />
+            )
           ) : (
             <CardReviewView
               isDark={isDark}
@@ -397,19 +403,6 @@ export const Study = () => {
             />
           )}
         </div>
-
-        {/* Quiz Generation Modal */}
-        <Suspense fallback={null}>
-          <QuizGenerationModal
-            open={showQuizModal}
-            onClose={() => setShowQuizModal(false)}
-            graphId={graphId || undefined}
-            onComplete={(quizSetId) => {
-              setShowQuizModal(false);
-              navigate(`/quiz/${quizSetId}`);
-            }}
-          />
-        </Suspense>
       </div>
     );
   }

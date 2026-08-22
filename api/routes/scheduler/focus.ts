@@ -37,6 +37,18 @@ const getMonthlyStatsQuerySchema = z.object({
   month: z.coerce.number().int().min(1).max(12).optional(),
 });
 
+const getDailyStatsQuerySchema = z.object({
+  date: z.string().optional(),
+});
+
+const getWeeklyStatsQuerySchema = z.object({
+  week_start: z.string().optional(),
+});
+
+const getHeatmapQuerySchema = z.object({
+  year: z.coerce.number().int().optional(),
+});
+
 router.post(
   "/focus-sessions",
   requireAuth,
@@ -172,18 +184,76 @@ router.get(
 );
 
 router.get(
-  "/focus-sessions/today",
+  "/focus-sessions/weekly-stats",
   requireAuth,
+  validate({ query: getWeeklyStatsQuerySchema }),
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
       throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
+    const { week_start } = req.query as z.infer<
+      typeof getWeeklyStatsQuerySchema
+    >;
+
+    try {
+      const stats = await focusService.getWeeklyFocusStats(
+        supabase,
+        req.user.id,
+        week_start,
+      );
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      const err = error as Error;
+      throw new AppError(err.message || "获取周统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+  },
+);
+
+router.get(
+  "/focus-sessions/heatmap",
+  requireAuth,
+  validate({ query: getHeatmapQuerySchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+
+    const { year } = req.query as z.infer<typeof getHeatmapQuerySchema>;
+
+    try {
+      const heatmap = await focusService.getYearlyHeatmap(
+        supabase,
+        req.user.id,
+        year,
+      );
+      res.json({ success: true, data: heatmap });
+    } catch (error) {
+      const err = error as Error;
+      throw new AppError(err.message || "获取专注热力图失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+  },
+);
+
+router.get(
+  "/focus-sessions/today",
+  requireAuth,
+  validate({ query: getDailyStatsQuerySchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+
+    const { date } = req.query as z.infer<typeof getDailyStatsQuerySchema>;
+
     try {
       const todayStats = await focusService.getDailyFocusStats(
         supabase,
         req.user.id,
+        date,
       );
       res.json({ success: true, data: todayStats });
     } catch (error) {

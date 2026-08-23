@@ -13,6 +13,7 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { notDeleted } from '../common/softDeleteHelper';
 import { deriveFocusTopicFallback } from '@shared/utils/cards';
+import { getKnowledgePoint } from '../../utils/nodeHelpers';
 
 interface QuizGenerationTaskConfig {
   cardTypes: string[];
@@ -34,16 +35,18 @@ interface QuizGenerationTaskPayload {
   config: QuizGenerationTaskConfig;
 }
 
+interface EmbeddedKnowledgePoint {
+  id: string;
+  title: string;
+  content: string | null;
+}
+
 interface GraphNodeWithKnowledgePoint {
   id: string;
   graph_id: string;
   knowledge_point_id: string;
   level: string;
-  knowledge_points: {
-    id: string;
-    title: string;
-    content: string | null;
-  }[] | null;
+  knowledge_points: EmbeddedKnowledgePoint | EmbeddedKnowledgePoint[] | null;
 }
 
 interface EdgeForParent {
@@ -53,11 +56,7 @@ interface EdgeForParent {
 
 interface ParentGraphNodeWithKnowledgePoint {
   knowledge_point_id: string;
-  knowledge_points: {
-    id: string;
-    title: string;
-    content: string | null;
-  }[] | null;
+  knowledge_points: EmbeddedKnowledgePoint | EmbeddedKnowledgePoint[] | null;
 }
 
 interface GeneratedCard {
@@ -148,7 +147,9 @@ export class QuizGenerationProcessor implements TaskProcessor {
       }
 
       const nodes = graphNodes.map((gn: GraphNodeWithKnowledgePoint) => {
-        const kp = gn.knowledge_points?.[0];
+        // PostgREST 对多对一 embed 可能返回对象或数组，用共享 helper 归一化，
+        // 否则 title/content 会静默丢失，导致 AI 收不到主题生成通用题目
+        const kp = getKnowledgePoint(gn.knowledge_points ?? null);
         return {
           id: kp?.id || gn.knowledge_point_id,
           graph_id: gn.graph_id,
@@ -188,7 +189,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
 
         if (parentGraphNodes) {
           parentGraphNodes.forEach((pgn: ParentGraphNodeWithKnowledgePoint) => {
-            const kp = pgn.knowledge_points?.[0];
+            const kp = getKnowledgePoint(pgn.knowledge_points ?? null);
             parentNodesMap.set(pgn.knowledge_point_id, {
               id: kp?.id || pgn.knowledge_point_id,
               title: kp?.title || '',

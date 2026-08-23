@@ -57,9 +57,9 @@ export const GRAPH_NODES_SELECT_WITH_EMBEDDING = `
   )
 `;
 
-export function getKnowledgePoint(
-  kp: KnowledgePoint | KnowledgePoint[] | null,
-): KnowledgePoint | null {
+export function getKnowledgePoint<T extends { id: string }>(
+  kp: T | T[] | null,
+): T | null {
   if (!kp) return null;
   if (Array.isArray(kp)) {
     return kp[0] || null;

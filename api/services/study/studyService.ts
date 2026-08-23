@@ -87,6 +87,8 @@ interface CreateCardData {
   explanation?: string;
   cardType?: StudyCard["card_type"];
   options?: string[];
+  /** 难度数值（1=易 / 2=中 / 3=难），缺省按 1 处理 */
+  difficulty?: number;
 }
 
 interface CreateCardsBatchItem {
@@ -417,7 +419,12 @@ export class StudyService {
 
     const from = (currentPage - 1) * currentPageSize;
     const to = from + currentPageSize - 1;
-    const { data, error } = await query.range(from, to);
+    // 稳定排序（created_at 降序 + id 兜底），避免 PostgREST 默认无序返回导致分页间重复/缺失，
+    // 从而避免同一张卡在无限滚动列表里重复渲染、选择状态互相串扰。
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true })
+      .range(from, to);
 
     if (error) {
       logger.error("Supabase error fetching cards page:", error);
@@ -445,6 +452,7 @@ export class StudyService {
       explanation,
       cardType,
       options,
+      difficulty,
     } = data;
 
     const { data: card, error } = await supabase
@@ -461,7 +469,7 @@ export class StudyService {
           card_type: cardType || "qa",
           options: options || null,
           next_review: new Date().toISOString(),
-          difficulty: 1,
+          difficulty: difficulty ?? 1,
           fsrs_state: "New",
           fsrs_stability: 0,
           fsrs_difficulty: 0,

@@ -8,7 +8,20 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { StudyCard } from "../../../shared/types/common";
 import { transactionExecutor } from "../../database/transactionExecutor";
 import { notDeleted } from '../common/softDeleteHelper';
+import { getKnowledgePoint } from '../../utils/nodeHelpers';
+import { cardDifficultyToNumber } from '../../../shared/types/quiz';
 import i18next from "i18next";
+
+interface EmbeddedKnowledgePoint {
+  id: string;
+  title: string;
+  content: string | null;
+}
+
+interface GraphNodeWithKnowledgePoint {
+  knowledge_point_id: string;
+  knowledge_points: EmbeddedKnowledgePoint | EmbeddedKnowledgePoint[] | null;
+}
 
 interface CreateQuizSetData {
   title: string;
@@ -419,12 +432,23 @@ class QuizSetsService {
         );
       }
 
-      const { data: graphNode } = await notDeleted(supabase
+      // graph_nodes 表没有 title/content 列，需 embed knowledge_points 获取；
+      // 同一知识点可能存在于多个图谱的 graph_nodes 中，取任一行即可（title/content 来自知识点本身）
+      const { data: graphNodeRows } = await notDeleted(supabase
         .from("graph_nodes")
-        .select("title, content")
+        .select(`
+          knowledge_point_id,
+          knowledge_points (
+            id,
+            title,
+            content
+          )
+        `)
         .eq("knowledge_point_id", oldCard.knowledge_point_id)
         )
-        .single();
+        .limit(1);
+
+      const graphNode = (graphNodeRows as GraphNodeWithKnowledgePoint[] | null)?.[0];
 
       if (!graphNode) {
         throw new AppError(
@@ -434,14 +458,22 @@ class QuizSetsService {
         );
       }
 
+      // PostgREST 对多对一 embed 可能返回对象或数组，用共享 helper 归一化，
+      // 否则 title/content 会静默丢失，导致 AI 收不到主题生成通用题目
+      const kp = getKnowledgePoint(graphNode.knowledge_points ?? null);
+
       const config = quizSet.config || {};
-      const types = config.types || [oldCard.card_type || "qa"];
+      // 前端存储键为 cardTypes；向后兼容历史数据里的 types 键
+      const types =
+        config.types ||
+        config.cardTypes ||
+        [oldCard.card_type || "qa"];
       const difficulty = config.difficulty || "medium";
       const count = 1;
 
       const aiResult = await aiService.generateCards(
-        graphNode.title || "",
-        graphNode.content || "",
+        kp?.title || "",
+        kp?.content || "",
         {
           count,
           types,
@@ -465,10 +497,18 @@ class QuizSetsService {
         type?: StudyCard["card_type"];
         card_type?: StudyCard["card_type"];
         options?: string[];
+        difficulty?: string;
       };
 
       const cardType =
         newCardData.type || newCardData.card_type || oldCard.card_type;
+
+      // AI 自评难度转数值落库（1=易 / 2=中 / 3=难），缺失时回退卷面配置难度，
+      // 避免重新生成的卡片难度被硬编码为 1（简单）导致“越生成越简单”。
+      const cardDifficultyNumber = cardDifficultyToNumber(
+        newCardData.difficulty,
+        difficulty,
+      );
 
       if (transactionExecutor.isAvailable()) {
         const newCard = await transactionExecutor.executeInTransaction(
@@ -476,7 +516,7 @@ class QuizSetsService {
             // 1. Create new study_card
             const insertResult = await client.query(
               `INSERT INTO study_cards (user_id, knowledge_point_id, graph_id, source_graph_id, question, answer, explanation, card_type, options, next_review, difficulty, fsrs_state, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_retrievability)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), 1, 'New', 0, 0, 0, 0, 0) RETURNING *`,
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, 'New', 0, 0, 0, 0, 0) RETURNING *`,
               [
                 userId,
                 oldCard.knowledge_point_id,
@@ -487,6 +527,7 @@ class QuizSetsService {
                 newCardData.explanation || null,
                 cardType || "qa",
                 newCardData.options ? JSON.stringify(newCardData.options) : null,
+                cardDifficultyNumber,
               ],
             );
 
@@ -541,6 +582,7 @@ class QuizSetsService {
         explanation: newCardData.explanation,
         cardType,
         options: newCardData.options,
+        difficulty: cardDifficultyNumber,
       });
 
       await supabase.from("quiz_set_cards").delete().eq("card_id", cardId);

@@ -1,19 +1,28 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSpeechRecognition } from './useSpeechRecognition';
+import { useRealtimeSTT } from './useRealtimeSTT';
+
+export type VoiceEngine = 'file' | 'realtime';
 
 export interface UseVoiceDictationResult {
+  /** 当前引擎 */
+  engine: VoiceEngine;
+  setEngine: (engine: VoiceEngine) => void;
+  /** 正在录音（任一引擎） */
   isListening: boolean;
+  /** 文件引擎：转写中 */
   isTranscribing: boolean;
+  /** 实时引擎：连接中 */
+  isConnecting: boolean;
   error: string | null;
-  toggleListening: () => void;
+  toggleListening: () => Promise<void>;
   stopListening: () => Promise<void>;
   hasSupport: boolean;
 }
 
 /**
- * 语音听写 Hook。
- * 基于文件转写引擎（useSpeechRecognition），将识别结果增量拼接到受控文本值，
- * 供测验作答等任意文本输入场景复用。
+ * 语音听写 Hook（支持文件转写 / 实时识别双引擎）。
+ * 将识别结果增量拼接到受控文本值，供测验作答等任意文本输入场景复用。
  *
  * @param value 当前输入框文本（受控值）
  * @param onValueChange 拼接结果的写回回调
@@ -24,52 +33,111 @@ export const useVoiceDictation = (
   onValueChange: (next: string) => void,
   lang: string = 'zh',
 ): UseVoiceDictationResult => {
-  const {
-    isListening,
-    isTranscribing,
-    transcript,
-    error,
-    startListening,
-    stopListening,
-    resetTranscript,
-    hasRecognitionSupport,
-  } = useSpeechRecognition(lang);
+  const fileSTT = useSpeechRecognition(lang);
+  const realtimeSTT = useRealtimeSTT();
+  const [engine, setEngineState] = useState<VoiceEngine>('file');
 
-  const prevTranscriptRef = useRef('');
-
-  // 转写结果到达时，将新增部分拼接到目标文本
+  const valueRef = useRef(value);
+  const onValueChangeRef = useRef(onValueChange);
   useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+  useEffect(() => {
+    onValueChangeRef.current = onValueChange;
+  }, [onValueChange]);
+
+  // ---- 文件引擎：识别完成后把新增片段拼接到文本 ----
+  const prevTranscriptRef = useRef('');
+  useEffect(() => {
+    const transcript = fileSTT.transcript;
     if (!transcript || transcript === prevTranscriptRef.current) return;
     const newPart = transcript.slice(prevTranscriptRef.current.length);
     if (newPart.trim()) {
-      const separator = value.trim() ? ' ' : '';
-      onValueChange(value + separator + newPart.trim());
+      const separator = valueRef.current.trim() ? ' ' : '';
+      onValueChangeRef.current(valueRef.current + separator + newPart.trim());
     }
     prevTranscriptRef.current = transcript;
-    resetTranscript();
-  }, [transcript, value, onValueChange, resetTranscript]);
+    fileSTT.resetTranscript();
+  }, [fileSTT.transcript, fileSTT.resetTranscript]);
 
-  // 每轮录音结束后重置增量基线
   useEffect(() => {
-    if (!isListening) {
+    if (!fileSTT.isListening) {
       prevTranscriptRef.current = '';
     }
-  }, [isListening]);
+  }, [fileSTT.isListening]);
 
-  const toggleListening = useCallback(() => {
-    if (isListening) {
-      void stopListening();
-    } else if (!isTranscribing) {
-      void startListening();
+  // ---- 实时引擎：base + final + interim 实时拼接到文本 ----
+  const realtimeBaseRef = useRef('');
+  const isRealtimeTrackingRef = useRef(false);
+  useEffect(() => {
+    if (!isRealtimeTrackingRef.current) return;
+    const transcriptText = (
+      realtimeSTT.finalTranscript +
+      (realtimeSTT.interimTranscript ? ` ${realtimeSTT.interimTranscript}` : '')
+    ).trim();
+    const separator = realtimeBaseRef.current.trim() ? ' ' : '';
+    onValueChangeRef.current(
+      transcriptText
+        ? realtimeBaseRef.current + separator + transcriptText
+        : realtimeBaseRef.current,
+    );
+  }, [realtimeSTT.finalTranscript, realtimeSTT.interimTranscript]);
+
+  const setEngine = useCallback(
+    (next: VoiceEngine) => {
+      if (next === engine) return;
+      if (engine === 'realtime' && (realtimeSTT.isListening || realtimeSTT.isConnecting)) {
+        isRealtimeTrackingRef.current = false;
+        realtimeSTT.stopListening();
+      }
+      if (engine === 'file' && fileSTT.isListening) {
+        void fileSTT.stopListening();
+      }
+      setEngineState(next);
+    },
+    [engine, realtimeSTT, fileSTT],
+  );
+
+  const toggleListening = useCallback(async () => {
+    if (engine === 'realtime') {
+      if (realtimeSTT.isListening) {
+        isRealtimeTrackingRef.current = false;
+        realtimeSTT.stopListening();
+      } else if (!realtimeSTT.isConnecting) {
+        realtimeBaseRef.current = valueRef.current;
+        isRealtimeTrackingRef.current = true;
+        await realtimeSTT.startListening(lang);
+      }
+    } else {
+      if (fileSTT.isListening) {
+        await fileSTT.stopListening();
+      } else if (!fileSTT.isTranscribing) {
+        await fileSTT.startListening();
+      }
     }
-  }, [isListening, isTranscribing, stopListening, startListening]);
+  }, [engine, realtimeSTT, fileSTT, lang]);
+
+  const stopListening = useCallback(async () => {
+    if (engine === 'realtime') {
+      isRealtimeTrackingRef.current = false;
+      realtimeSTT.stopListening();
+    } else {
+      await fileSTT.stopListening();
+    }
+  }, [engine, realtimeSTT, fileSTT]);
 
   return {
-    isListening,
-    isTranscribing,
-    error,
+    engine,
+    setEngine,
+    isListening:
+      engine === 'realtime'
+        ? realtimeSTT.isListening || realtimeSTT.isConnecting
+        : fileSTT.isListening,
+    isTranscribing: engine === 'file' ? fileSTT.isTranscribing : false,
+    isConnecting: engine === 'realtime' ? realtimeSTT.isConnecting : false,
+    error: engine === 'realtime' ? realtimeSTT.error : fileSTT.error,
     toggleListening,
     stopListening,
-    hasSupport: hasRecognitionSupport,
+    hasSupport: fileSTT.hasRecognitionSupport,
   };
 };

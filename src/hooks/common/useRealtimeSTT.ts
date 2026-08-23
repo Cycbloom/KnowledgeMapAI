@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from '@/store/useStore';
+import { getElectronApiUrl } from '@/config/electronConfig';
 
 interface RealtimeSTTState {
   isListening: boolean;
@@ -59,11 +60,17 @@ export const useRealtimeSTT = (): UseRealtimeSTTReturn => {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
 
-  const getWsUrl = useCallback(() => {
+  const getWsUrl = useCallback(async () => {
     const token = useStore.getState().token;
+    // base: '/api'（Web / Electron dev）或 'http://localhost:<port>/api'（Electron 生产）
+    const base = await getElectronApiUrl();
+    if (base.startsWith('http')) {
+      // 后端实时 STT 端点统一为 /api/v1/ai/stt-realtime
+      return `${base.replace(/^http/, 'ws')}/v1/ai/stt-realtime?token=${token}`;
+    }
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    return `${protocol}//${host}/api/ai/stt-realtime?token=${token}`;
+    return `${protocol}//${host}/api/v1/ai/stt-realtime?token=${token}`;
   }, []);
 
   const cleanup = useCallback(() => {
@@ -118,7 +125,7 @@ export const useRealtimeSTT = (): UseRealtimeSTTReturn => {
       workletNode.connect(audioContext.destination);
       workletNodeRef.current = workletNode;
 
-      const wsUrl = getWsUrl();
+      const wsUrl = await getWsUrl();
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 

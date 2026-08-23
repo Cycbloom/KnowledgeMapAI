@@ -559,15 +559,36 @@ if (!gotLock) {
       iconPath: getResourcePath("public", "icons", "256x256.png"),
     });
 
-    // Task 16: permission request handler — 仅允许剪贴板，其余拒绝
-    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-      const allowed = new Set(["clipboard-read", "clipboard-sanitized-write"]);
-      if (allowed.has(permission)) {
-        callback(true);
-      } else {
-        logger.warn(`[Security] Denied permission request: ${permission}`);
-        callback(false);
+    // Task 16: permission request handler — 剪贴板 + 麦克风（仅音频）放行，其余拒绝
+    session.defaultSession.setPermissionRequestHandler(
+      (_webContents, permission, callback, details) => {
+        // 语音输入：仅放行音频媒体（拒绝摄像头）
+        if (permission === 'media') {
+          const mediaTypes = (details as Electron.PermissionRequestHandlerDetails | undefined)?.mediaTypes ?? [];
+          if (mediaTypes.includes('audio') && !mediaTypes.includes('video')) {
+            callback(true);
+            return;
+          }
+          logger.warn(`[Security] Denied media permission request: ${mediaTypes.join(',')}`);
+          callback(false);
+          return;
+        }
+        const allowed = new Set(["clipboard-read", "clipboard-sanitized-write"]);
+        if (allowed.has(permission)) {
+          callback(true);
+        } else {
+          logger.warn(`[Security] Denied permission request: ${permission}`);
+          callback(false);
+        }
+      },
+    );
+
+    // 权限检查：与请求处理器保持一致——放行音频媒体，保证 navigator.permissions.query 等路径可用
+    session.defaultSession.setPermissionCheckHandler((_webContents, permission, _origin, details) => {
+      if (permission === 'media') {
+        return details.mediaType !== 'video';
       }
+      return permission === 'clipboard-read' || permission === 'clipboard-sanitized-write';
     });
 
     // Initialize local SQLite database (before API server)

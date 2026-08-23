@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Loader2,
   Layers,
   Send,
@@ -24,7 +25,9 @@ import { isSelectFromOptionsCorrect } from '../utils/quizNewTypes';
 import { getCardTypeBadgeMeta, badgeToneClasses } from '../utils/quizBadgeMeta';
 import { getDifficultyBadgeMeta } from '../utils/quizDifficultyMeta';
 import { CardStatsStrip, CardDatesLine, FocusTopicBadge } from '../components/Study/common';
-import { QuizExamNavigator } from '../components/Quiz/QuizExamNavigator';
+import { VoiceDictationControl } from '../components/Study/common/VoiceDictationControl';
+import { useVoiceDictation } from '../hooks/common/useVoiceDictation';
+import { formatTimeFromSeconds } from '../utils/formatters';
 import { QuizExamGrading, type ExamAnswerRecord } from '../components/Quiz/QuizExamGrading';
 
 const isOpenType = (type?: string): boolean => {
@@ -57,6 +60,9 @@ export const QuizPractice: React.FC = () => {
   const [isGrading, setIsGrading] = useState(false);
   const [questionStartTime, setQuestionStartTime] = useState<number>(() => Date.now());
   const [timeSpentByCard, setTimeSpentByCard] = useState<Record<string, number>>({});
+  // 考试总用时：常驻顶部，随会话开始计时，重新测验时归零
+  const sessionStartRef = useRef<number>(Date.now());
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const cards = useMemo(() => {
     if (!quizSetData?.cards) return [];
@@ -98,18 +104,8 @@ export const QuizPractice: React.FC = () => {
     });
   }, [cards, answers]);
 
-  const navigatorItems = useMemo(
-    () =>
-      cards.map((card, idx) => {
-        const answeredFlag = !!answers[card.id] && answers[card.id].trim() !== '';
-        const status = idx === currentIndex ? 'current' : answeredFlag ? 'answered' : 'unanswered';
-        return { id: card.id, status: status as 'current' | 'answered' | 'unanswered' };
-      }),
-    [cards, answers, currentIndex],
-  );
-
   const handleBack = () => {
-    navigate('/study?view=quizzes');
+    navigate('/study?view=quizzes', { replace: true });
   };
 
   const recordCurrentTime = useCallback(() => {
@@ -125,6 +121,38 @@ export const QuizPractice: React.FC = () => {
   const setAnswer = useCallback((cardId: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [cardId]: value }));
   }, []);
+
+  // 开放题语音听写：转写结果写回当前题的答案；录音期间切卡则丢弃迟到结果
+  const voiceCardIdRef = useRef<string | null>(null);
+  const currentAnswerValue = currentCard ? answers[currentCard.id] ?? '' : '';
+  const handleVoiceAnswer = useCallback(
+    (next: string) => {
+      if (!currentCard || voiceCardIdRef.current !== currentCard.id) return;
+      setAnswer(currentCard.id, next);
+    },
+    [currentCard, setAnswer],
+  );
+  const answerDictation = useVoiceDictation(currentAnswerValue, handleVoiceAnswer);
+  const answerDictationRef = useRef(answerDictation);
+  useEffect(() => {
+    answerDictationRef.current = answerDictation;
+  }, [answerDictation]);
+
+  const handleMicToggle = () => {
+    if (
+      currentCard &&
+      !answerDictation.isListening &&
+      !answerDictation.isTranscribing &&
+      !answerDictation.isConnecting
+    ) {
+      voiceCardIdRef.current = currentCard.id;
+    }
+    void answerDictation.toggleListening();
+  };
+
+  const handleEngineToggle = () => {
+    answerDictation.setEngine(answerDictation.engine === "realtime" ? "file" : "realtime");
+  };
 
   const handleOptionSelect = (card: StudyCard, option: string) => {
     if (card.card_type === 'multi_choice') {
@@ -281,11 +309,24 @@ export const QuizPractice: React.FC = () => {
     setCurrentIndex(0);
     setPhase('exam');
     setQuestionStartTime(Date.now());
+    sessionStartRef.current = Date.now();
+    setElapsedSeconds(0);
   };
 
   useEffect(() => {
+    void answerDictationRef.current.stopListening();
     setQuestionStartTime(Date.now());
   }, [currentIndex]);
+
+  // 考试总用时：每秒刷新，基于会话起点计算（与每题耗时 questionStartTime 区分）
+  useEffect(() => {
+    const tick = () => {
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - sessionStartRef.current) / 1000)));
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // 键盘快捷键：左右切换题目
   useEffect(() => {
@@ -382,21 +423,29 @@ export const QuizPractice: React.FC = () => {
       {/* 顶部栏 */}
       <div className={`sticky top-0 z-20 p-4 border-b ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-100'}`}>
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
+          <div className="grid grid-cols-[1fr_minmax(0,auto)_1fr] items-center gap-3 mb-3">
             <button
               onClick={handleBack}
-              className={`flex items-center gap-1 text-sm font-medium transition-colors ${
+              className={`justify-self-start inline-flex items-center gap-1 text-sm font-medium transition-colors ${
                 isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <ArrowLeft size={18} />
               {t('study.quizPractice.exitQuiz', '退出测验')}
             </button>
-            <h1 className={`text-lg font-bold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h1 className={`text-lg font-bold truncate min-w-0 text-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
               {quizSetData.title}
             </h1>
-            <span className={`w-20 text-right text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-              {currentIndex + 1} / {cards.length}
+            <span
+              className={`justify-self-end inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-sm font-medium tabular-nums ${
+                isDark
+                  ? 'bg-slate-800 border-slate-700 text-slate-200'
+                  : 'bg-white border-gray-200 text-gray-600'
+              }`}
+              title={t('quiz.progress.elapsedTime')}
+            >
+              <Clock size={15} className="text-primary-500" aria-hidden="true" />
+              <span aria-live="polite" aria-atomic="true">{formatTimeFromSeconds(elapsedSeconds)}</span>
             </span>
           </div>
           <QuizProgressBar
@@ -404,26 +453,13 @@ export const QuizPractice: React.FC = () => {
             total={cards.length}
             answered={answered}
             onJump={handleJump}
-            startTime={questionStartTime}
           />
         </div>
       </div>
 
-      {/* 主体：左答题情况（桌面）+ 题目卡片 */}
-      <div className="flex-1 flex flex-col md:flex-row gap-4 p-4 md:p-6 max-w-6xl mx-auto w-full">
-        <div className="hidden md:block md:w-56 shrink-0">
-          <div className={`sticky top-28 rounded-2xl border p-4 ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-200'}`}>
-            <QuizExamNavigator
-              items={navigatorItems}
-              currentIndex={currentIndex}
-              onSelect={handleJump}
-              isDark={isDark}
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 min-w-0 flex items-start md:items-center justify-center">
-          <div className="w-full max-w-2xl">
+      {/* 主体：居中的题目卡片 */}
+      <div className="flex-1 flex items-start md:items-center justify-center p-4 md:p-6 max-w-6xl mx-auto w-full">
+        <div className="w-full max-w-3xl">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentCard.id}
@@ -464,16 +500,40 @@ export const QuizPractice: React.FC = () => {
                   {/* 答题输入区 */}
                   {isOpen ? (
                     <div>
-                      <textarea
-                        value={answers[currentCard.id] ?? ''}
-                        onChange={(e) => setAnswer(currentCard.id, e.target.value)}
-                        rows={4}
-                        placeholder={t('study.quizPractice.exam.answerPlaceholder', '在此输入你的答案…')}
-                        className={`w-full p-4 rounded-xl border text-base resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary-500/40 ${
-                          isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-gray-200 text-gray-800'
+                      <div
+                        className={`rounded-xl border transition-colors ${
+                          isDark
+                            ? 'bg-slate-900 border-slate-700 focus-within:border-primary-500'
+                            : 'bg-white border-gray-200 focus-within:border-primary-400'
                         }`}
-                        aria-label={t('study.quizPractice.exam.answerPlaceholder', '在此输入你的答案…')}
-                      />
+                      >
+                        <textarea
+                          value={answers[currentCard.id] ?? ''}
+                          onChange={(e) => setAnswer(currentCard.id, e.target.value)}
+                          rows={4}
+                          placeholder={t('study.quizPractice.exam.answerPlaceholder', '在此输入你的答案…')}
+                          className={`w-full p-4 pb-2 rounded-t-xl text-base resize-y min-h-[120px] bg-transparent focus:outline-none ${
+                            isDark ? 'text-white placeholder-slate-500' : 'text-gray-800 placeholder-gray-400'
+                          }`}
+                          aria-label={t('study.quizPractice.exam.answerPlaceholder', '在此输入你的答案…')}
+                        />
+                        {answerDictation.hasSupport && (
+                          <div className="flex items-center justify-end px-3 pb-3">
+                            <VoiceDictationControl
+                              isDark={isDark}
+                              engine={answerDictation.engine}
+                              isListening={answerDictation.isListening}
+                              isTranscribing={answerDictation.isTranscribing}
+                              isConnecting={answerDictation.isConnecting}
+                              error={answerDictation.error}
+                              hasSupport={answerDictation.hasSupport}
+                              onToggle={handleMicToggle}
+                              onToggleEngine={handleEngineToggle}
+                              className="items-end"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -570,7 +630,6 @@ export const QuizPractice: React.FC = () => {
             </AnimatePresence>
           </div>
         </div>
-      </div>
     </div>
   );
 };

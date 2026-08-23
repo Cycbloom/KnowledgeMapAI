@@ -12,7 +12,11 @@ import {
   isMatchingCorrect,
   isOrderingCorrect,
 } from "../../utils/quizNewTypes";
-import { VoiceDictationButton } from "./common/VoiceDictationButton";
+import {
+  VoiceDictationButton,
+  VoiceEngineToggle,
+  VoiceDictationControl,
+} from "./common";
 
 /**
  * QuizOptionArea 组件 Props
@@ -143,25 +147,43 @@ export function QuizOptionArea({
   const clozeDictation = useVoiceDictation(activeClozeValue, handleClozeVoiceValue);
 
   const handleTextMicToggle = () => {
-    if (!textDictation.isListening) {
+    if (!textDictation.isListening && !textDictation.isTranscribing && !textDictation.isConnecting) {
       textVoiceCardIdRef.current = currentCard.id;
     }
-    textDictation.toggleListening();
+    void textDictation.toggleListening();
+  };
+
+  const handleTextEngineToggle = () => {
+    textDictation.setEngine(textDictation.engine === "realtime" ? "file" : "realtime");
   };
 
   const handleClozeMicToggle = (idx: number) => {
     const isSameTarget =
       activeClozeIdxRef.current === idx && clozeVoiceCardIdRef.current === currentCard.id;
     if (clozeDictation.isListening && isSameTarget) {
-      clozeDictation.toggleListening();
+      void clozeDictation.toggleListening();
       return;
     }
-    if (clozeDictation.isListening || clozeDictation.isTranscribing) return;
+    if (clozeDictation.isListening || clozeDictation.isTranscribing || clozeDictation.isConnecting) return;
     activeClozeIdxRef.current = idx;
     clozeVoiceCardIdRef.current = currentCard.id;
     setActiveClozeIdx(idx);
-    clozeDictation.toggleListening();
+    void clozeDictation.toggleListening();
   };
+
+  const handleClozeEngineToggle = () => {
+    clozeDictation.setEngine(clozeDictation.engine === "realtime" ? "file" : "realtime");
+  };
+
+  // 切卡时停止正在进行的录音，避免结果串到下一题
+  const textDictationRef = useRef(textDictation);
+  useEffect(() => {
+    textDictationRef.current = textDictation;
+  }, [textDictation]);
+  const clozeDictationRef = useRef(clozeDictation);
+  useEffect(() => {
+    clozeDictationRef.current = clozeDictation;
+  }, [clozeDictation]);
 
   /** 匹配连线的候选右列项（从 answer JSON 去重提取） */
   const rightOptions = useMemo(() => {
@@ -199,6 +221,8 @@ export function QuizOptionArea({
 
   // 当前卡片变化时重置本地交互状态
   useEffect(() => {
+    void textDictationRef.current.stopListening();
+    void clozeDictationRef.current.stopListening();
     setClozeInputs(new Array(countClozeBlanks(currentCard.question)).fill(""));
     setMatchingPairs({});
     setMatchingSelectedLeft(null);
@@ -456,6 +480,22 @@ export function QuizOptionArea({
 
       {isCloze && (
         <div className="flex flex-col gap-3 mt-3 md:mt-4">
+          {!showAnswer && clozeDictation.hasSupport && (
+            <div className="flex items-center justify-end gap-1.5">
+              <VoiceEngineToggle
+                isDark={isDark}
+                engine={clozeDictation.engine}
+                onToggle={handleClozeEngineToggle}
+              />
+              <span
+                className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+              >
+                {clozeDictation.engine === "realtime"
+                  ? t("study.quiz.voiceRealtimeActive")
+                  : t("study.quiz.voiceFileMode")}
+              </span>
+            </div>
+          )}
           {clozeInputs.map((value, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <span
@@ -474,21 +514,43 @@ export function QuizOptionArea({
               {!showAnswer && clozeDictation.hasSupport && (
                 <VoiceDictationButton
                   isDark={isDark}
+                  engine={clozeDictation.engine}
                   isListening={clozeDictation.isListening && activeClozeIdx === idx}
                   isTranscribing={clozeDictation.isTranscribing && activeClozeIdx === idx}
+                  isConnecting={clozeDictation.isConnecting && activeClozeIdx === idx}
                   disabled={showAnswer || (clozeDictation.isListening && activeClozeIdx !== idx)}
                   onToggle={() => handleClozeMicToggle(idx)}
                 />
               )}
             </div>
           ))}
-          {!showAnswer && clozeDictation.error && (
+          {!showAnswer && clozeDictation.hasSupport && (clozeDictation.isConnecting || clozeDictation.isListening || clozeDictation.error) && (
             <div
-              role="alert"
-              className={`flex items-center gap-1.5 text-xs ${isDark ? "text-red-400" : "text-red-600"}`}
+              className={`flex items-center gap-1.5 text-xs ${
+                clozeDictation.error
+                  ? isDark ? "text-red-400" : "text-red-600"
+                  : isDark ? "text-slate-400" : "text-slate-500"
+              }`}
+              role={clozeDictation.error ? "alert" : undefined}
+              aria-live="polite"
+              aria-atomic="true"
             >
-              <AlertCircle size={14} aria-hidden="true" />
-              {clozeDictation.error}
+              {clozeDictation.error ? (
+                <>
+                  <AlertCircle size={14} aria-hidden="true" />
+                  {clozeDictation.error}
+                </>
+              ) : clozeDictation.isConnecting ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                  {t("study.quiz.voiceConnecting")}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  {t("study.quiz.voiceListening")}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -510,24 +572,21 @@ export function QuizOptionArea({
             />
             <div className="flex items-center justify-end gap-2 px-2 pb-2">
               {!showAnswer && textDictation.hasSupport && (
-                <VoiceDictationButton
+                <VoiceDictationControl
                   isDark={isDark}
+                  engine={textDictation.engine}
                   isListening={textDictation.isListening}
                   isTranscribing={textDictation.isTranscribing}
+                  isConnecting={textDictation.isConnecting}
+                  error={textDictation.error}
+                  hasSupport={textDictation.hasSupport}
                   onToggle={handleTextMicToggle}
+                  onToggleEngine={handleTextEngineToggle}
+                  className="items-end"
                 />
               )}
             </div>
           </div>
-          {!showAnswer && textDictation.error && (
-            <div
-              role="alert"
-              className={`mt-2 flex items-center gap-1.5 text-xs ${isDark ? "text-red-400" : "text-red-600"}`}
-            >
-              <AlertCircle size={14} aria-hidden="true" />
-              {textDictation.error}
-            </div>
-          )}
         </div>
       )}
 
@@ -543,23 +602,19 @@ export function QuizOptionArea({
               aria-label={t("study.quiz.fillContent")}
             />
             {textDictation.hasSupport && (
-              <VoiceDictationButton
+              <VoiceDictationControl
                 isDark={isDark}
+                engine={textDictation.engine}
                 isListening={textDictation.isListening}
                 isTranscribing={textDictation.isTranscribing}
+                isConnecting={textDictation.isConnecting}
+                error={textDictation.error}
+                hasSupport={textDictation.hasSupport}
                 onToggle={handleTextMicToggle}
+                onToggleEngine={handleTextEngineToggle}
               />
             )}
           </div>
-          {textDictation.error && (
-            <div
-              role="alert"
-              className={`mt-2 flex items-center gap-1.5 text-xs ${isDark ? "text-red-400" : "text-red-600"}`}
-            >
-              <AlertCircle size={14} aria-hidden="true" />
-              {textDictation.error}
-            </div>
-          )}
         </div>
       )}
 

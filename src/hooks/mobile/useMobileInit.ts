@@ -3,7 +3,8 @@ import { StatusBar } from "@capacitor/status-bar";
 import { App } from "@capacitor/app";
 import { Network } from "@capacitor/network";
 import { SplashScreen } from "@capacitor/splash-screen";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useNavigateBack } from "../common/useNavigateBack";
 import { mobileSyncService } from "../../services/sync/mobileSyncService";
 
 // 前置常量：公共路由 Set，避免每次返回事件重建数组与线性查找，includes O(n) → has O(1)
@@ -12,7 +13,7 @@ const PUBLIC_ROUTES = new Set(["/login", "/register"]);
 export function useMobileInit() {
   const [isMobile, setIsMobile] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
-  const navigate = useNavigate();
+  const { goBack } = useNavigateBack();
   const location = useLocation();
 
   useEffect(() => {
@@ -65,7 +66,7 @@ export function useMobileInit() {
       if (location.pathname === "/") {
         App.exitApp();
       } else {
-        navigate(-1);
+        goBack();
       }
     });
 
@@ -74,7 +75,7 @@ export function useMobileInit() {
       Network.removeAllListeners();
       void mobileSyncService.stop();
     };
-  }, [location.pathname, navigate]);
+  }, [location.pathname, goBack]);
 
   return { isMobile, isOnline };
 }

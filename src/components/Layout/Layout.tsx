@@ -39,6 +39,7 @@ import { AchievementNotification } from "../Scheduler/AchievementNotification";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { useSwipeBack } from "../../hooks/gesture/useSwipeBack";
+import { useNavigateBack } from "../../hooks/common/useNavigateBack";
 import { api } from "../../services/api";
 import { useGlobalShortcuts } from "../../hooks/common/useGlobalShortcuts";
 import { useNetworkStatus } from "../../hooks/common/useNetworkStatus";
@@ -126,7 +127,8 @@ export const Layout = () => {
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
-  useSwipeBack({ enabled: isMobile });
+  const { goBack } = useNavigateBack();
+  useSwipeBack({ enabled: isMobile, onSwipeBack: goBack });
   const { mainRef, handleSkip } = useSkipToContent();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(readInitialCollapsed());
   const sidebarId = useId();
@@ -194,7 +196,7 @@ export const Layout = () => {
         setIsCommandPaletteOpen((prev) => !prev);
       },
       navigateBack: () => {
-        navigate(-1);
+        goBack();
       },
       navigateForward: () => {
         navigate(1);

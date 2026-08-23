@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNavigateBack } from "../../hooks/common/useNavigateBack";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Route,
@@ -37,6 +38,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
   onDeletePath,
 }) => {
   const navigate = useNavigate();
+  const { goBack } = useNavigateBack();
   const { t } = useTranslation();
   const formatDate = (dateStr: string) => formatDateUtil(dateStr);
 
@@ -56,7 +58,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
   return (
     <div className="mb-6">
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => goBack()}
         className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mb-4"
       >
         <ArrowLeft className="w-4 h-4" />

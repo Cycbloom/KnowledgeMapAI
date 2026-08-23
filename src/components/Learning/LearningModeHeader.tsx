@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useNavigateBack } from "../../hooks/common/useNavigateBack";
 import type { StudyMode } from "@shared/types/scheduler";
 import { StudyModeSelector } from "./StudyModeSelector";
 import type { StudyModeIconType } from "../../hooks/study/useStudyModeLogic";
@@ -92,6 +93,7 @@ export const LearningModeHeader = ({
 }: LearningModeHeaderProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { goBack } = useNavigateBack();
 
   return (
     <header
@@ -105,9 +107,9 @@ export const LearningModeHeader = ({
         <button
           onClick={() => {
             if (isMobile && nodeId) {
-              navigate(`/learning?graph_id=${graphId}`);
+              navigate(`/learning?graph_id=${graphId}`, { replace: true });
             } else {
-              window.history.back();
+              goBack();
             }
           }}
           className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${

@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useNavigateBack } from "../../hooks/common/useNavigateBack";
 import { ArrowLeft, LayoutGrid } from "lucide-react";
 
 interface StudyHeaderProps {
@@ -23,6 +24,7 @@ export const StudyHeader = ({
 }: StudyHeaderProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { goBack } = useNavigateBack();
 
   const tabs: Array<{
     key: "dashboard" | "bank" | "quizzes";
@@ -41,7 +43,7 @@ export const StudyHeader = ({
         className={`flex items-center ${isMobile ? "w-full" : "space-x-4"}`}
       >
         <button
-          onClick={() => window.history.back()}
+          onClick={() => goBack()}
           className={`min-w-[44px] min-h-[44px] p-2 rounded-lg border transition-colors flex items-center justify-center ${
             isDark
               ? "bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300"

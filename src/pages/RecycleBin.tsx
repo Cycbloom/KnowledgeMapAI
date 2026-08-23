@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTrashGraphs, useTrashNotes } from "../hooks/queries";
 import {
@@ -24,7 +25,7 @@ import {
 import { ConfirmationModal, SkeletonCard, EmptyState, ErrorState, SearchInput } from "../components/common";
 import { useTheme } from "../hooks";
 import { usePullToRefresh } from "../hooks/gesture/usePullToRefresh";
-import { useNavigate } from "react-router-dom";
+import { useNavigateBack } from "../hooks/common/useNavigateBack";
 import { useDebouncedSearch } from "../hooks/common/useDebouncedSearch";
 import { formatDate } from "../utils/formatters";
 import { message } from "@/utils/messageHelper";
@@ -46,6 +47,7 @@ export const RecycleBin = () => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  const { goBack } = useNavigateBack();
   const { data: trashData, isLoading, isFetching, error, refetch } = useTrashGraphs();
   const restoreGraphMutation = useRestoreGraphMutation();
   const permanentDeleteGraphMutation = usePermanentDeleteGraphMutation();
@@ -354,7 +356,7 @@ export const RecycleBin = () => {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => goBack()}
                 className={`p-1 rounded-full hover:bg-opacity-10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${isDark ? "hover:bg-white" : "hover:bg-black"}`}
               >
                 <ArrowLeft

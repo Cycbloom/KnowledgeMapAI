@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { ChevronRight, ChevronLeft, Home } from "lucide-react";
@@ -8,63 +8,12 @@ import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { useNote } from "../../hooks/queries/useNoteQueries";
 import { useLearningPath } from "../../hooks/queries/useLearningPathQueries";
 import { useQuizSet } from "../../hooks/queries/useQuizQueries";
-
-/**
- * 详情路由解析结果，kind 标识详情页类型并携带对应路径参数。
- */
-type DetailKind =
-  | { kind: "note"; noteId: string }
-  | { kind: "learningPath"; id: string }
-  | { kind: "quiz"; quizSetId: string }
-  | { kind: "quizPractice"; quizSetId: string }
-  | { kind: "schedulerTask"; taskId: string }
-  | { kind: "combinedGraphs"; id1: string; id2: string };
-
-/**
- * 从 pathname 解析详情路由。
- * Layout 为布局路由（无 path），useParams 无法取到子路由参数，故直接解析 location.pathname。
- */
-const parseDetailPath = (pathname: string): DetailKind | undefined => {
-  let match: RegExpMatchArray | null = pathname.match(/^\/notes\/([^/]+)$/);
-  if (match) return { kind: "note", noteId: match[1] };
-  match = pathname.match(/^\/learning-paths\/([^/]+)$/);
-  if (match) return { kind: "learningPath", id: match[1] };
-  match = pathname.match(/^\/quiz\/([^/]+)\/practice$/);
-  if (match) return { kind: "quizPractice", quizSetId: match[1] };
-  match = pathname.match(/^\/quiz\/([^/]+)$/);
-  if (match) return { kind: "quiz", quizSetId: match[1] };
-  match = pathname.match(/^\/scheduler\/task\/([^/]+)$/);
-  if (match) return { kind: "schedulerTask", taskId: match[1] };
-  match = pathname.match(/^\/combined-graphs\/([^/]+)\/([^/]+)$/);
-  if (match) return { kind: "combinedGraphs", id1: match[1], id2: match[2] };
-  return undefined;
-};
-
-/**
- * 详情路由的父级（列表）路径，供面包屑解析与移动端返回按钮复用。
- */
-const getDetailParentPath = (pathname: string): string | undefined => {
-  const detail = parseDetailPath(pathname);
-  if (!detail) return undefined;
-  switch (detail.kind) {
-    case "note":
-      return "/notes";
-    case "learningPath":
-      return "/learning-paths";
-    case "quiz":
-      return "/study";
-    case "quizPractice":
-      return `/quiz/${detail.quizSetId}`;
-    case "schedulerTask":
-      return "/scheduler";
-    case "combinedGraphs":
-      return "/graph-map";
-  }
-};
+import { parseDetailPath } from "../../utils/navigation";
+import { useNavigateBack } from "../../hooks/common/useNavigateBack";
 
 export const Breadcrumb: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const { goBack } = useNavigateBack();
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
@@ -174,14 +123,7 @@ export const Breadcrumb: React.FC = () => {
   };
 
   const handleGoBack = () => {
-    const parentPath = getDetailParentPath(path);
-    if (parentPath) {
-      navigate(parentPath);
-    } else if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/");
-    }
+    goBack();
   };
 
   const breadcrumbs = getBreadcrumbs();

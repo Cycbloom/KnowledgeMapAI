@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useNavigateBack } from "../hooks/common/useNavigateBack";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Route } from "lucide-react";
@@ -27,7 +28,7 @@ import { message } from "../utils/messageHelper";
 const LearningPathDetailPage: React.FC = () => {
   const { t } = useTranslation();
   const { id: pathId } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const { goBack } = useNavigateBack();
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
@@ -273,7 +274,7 @@ const LearningPathDetailPage: React.FC = () => {
     try {
       await learningPathsApi.delete(pathId);
       message.success(t("learningPaths.messages.deleteSuccess"));
-      navigate(-1);
+      goBack();
     } catch (error) {
       handleError(error, {
         context: "DeletePath",
@@ -342,7 +343,7 @@ const LearningPathDetailPage: React.FC = () => {
             {t("learningPaths.detail.pathNotExistDesc")}
           </p>
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => goBack()}
             className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
           >
             {t("common.back")}

@@ -7,6 +7,7 @@ import { defaultQueryConfig } from './hooks/queries/config'
 import { subscribeNetworkStatus } from './hooks/common/useNetworkStatus'
 import App from './App'
 import { ThemeProvider } from './hooks'
+import { NavigationProvider } from './hooks/common/useNavigateBack'
 import { unregisterLegacySW } from './utils/serviceWorker'
 import { initPerformanceMonitoring } from './utils/performance'
 import { initErrorReporter, destroyErrorReporter, setUserContext, captureException } from './utils/errorReporter'
@@ -167,7 +168,9 @@ if (rootElement) {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <Router>
-              <App />
+              <NavigationProvider>
+                <App />
+              </NavigationProvider>
             </Router>
           </ThemeProvider>
         </QueryClientProvider>

@@ -7,10 +7,11 @@ import {
   Suspense,
   type MouseEvent,
 } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../hooks/queries";
 import { useStore } from "../store/useStore";
+import { useNavigateBack } from "../hooks/common/useNavigateBack";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
 import { cn } from "../utils/utils";
 import { isElectron } from "../config/electronConfig";
@@ -54,7 +55,7 @@ import { useKeyboardHandler } from "../hooks/gesture/useKeyboardHandler";
 
 export const Settings = () => {
   useKeyboardHandler();
-  const navigate = useNavigate();
+  const { goBack } = useNavigateBack();
   const { t } = useTranslation();
   const { token } = useStore();
 
@@ -236,16 +237,7 @@ export const Settings = () => {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => {
-              // Return to the previous page when there is history; otherwise
-              // fall back to the personal center so the button always works
-              // (e.g. when the page is opened directly / refreshed).
-              if (window.history.length > 1) {
-                navigate(-1);
-              } else {
-                navigate("/profile");
-              }
-            }}
+            onClick={() => goBack("/profile")}
             className="p-3 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-full transition-colors min-h-[44px] min-w-[44px]"
             aria-label={t("settings.back")}
           >

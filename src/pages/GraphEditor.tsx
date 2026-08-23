@@ -46,6 +46,7 @@ import { addRecentNode } from "../hooks/queries/useRecentNodes";
 import { isAppError } from "../utils/errors";
 import { computeRegions } from "../utils/graph";
 import { useDocumentTitle } from "../hooks/common/useDocumentTitle";
+import { useNavigateBack } from "../hooks/common/useNavigateBack";
 import {
   useGraph,
   useGraphData,
@@ -220,6 +221,7 @@ const MobileNodeActionMenu = lazy(() =>
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { goBack } = useNavigateBack();
   const [searchParams] = useSearchParams();
   const nodeIdFromUrl = searchParams.get("node_id");
   const { token, user } = useStore();
@@ -1028,8 +1030,8 @@ export const GraphEditor = () => {
   }, [navigate, id]);
 
   const handleBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
+    goBack();
+  }, [goBack]);
 
   const handleTogglePresentation = useCallback(() => {
     if (isPresentationMode) {

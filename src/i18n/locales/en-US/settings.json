@@ -212,6 +212,13 @@
   "sttTestFailed": "Speech recognition failed",
   "transcriptionResult": "Transcription Result",
   "noFileSelected": "Please select an audio file",
+  "sttModeFile": "Upload audio",
+  "sttModeRecord": "Record online",
+  "sttRecordLabel": "Microphone recording",
+  "sttRecordStart": "Start recording",
+  "sttRecordStop": "Stop & transcribe",
+  "sttTranscribing": "Transcribing...",
+  "sttRecordUnsupported": "Microphone recording is not supported in this environment",
   "voiceServiceHint": "Voice services are provided via Aliyun DashScope API. Ensure Aliyun is configured in AI Provider Config.",
   "graphEditor": {
     "title": "Graph Editor Preferences",

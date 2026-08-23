@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act, fireEvent } from "@testing-library/react";
 import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { VoiceServiceSettings } from "../VoiceServiceSettings";
@@ -13,10 +13,11 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-const { ttsHealthMock, sttHealthMock, ttsVoicesMock } = vi.hoisted(() => ({
+const { ttsHealthMock, sttHealthMock, ttsVoicesMock, sttTranscribeMock } = vi.hoisted(() => ({
   ttsHealthMock: vi.fn(),
   sttHealthMock: vi.fn(),
   ttsVoicesMock: vi.fn(),
+  sttTranscribeMock: vi.fn(),
 }));
 
 // 组件通过 api.tts.health() / api.stt.health() 访问健康状态，这里整体 mock api
@@ -29,7 +30,7 @@ vi.mock("../../../services/api", () => ({
     },
     stt: {
       health: sttHealthMock,
-      transcribe: vi.fn(),
+      transcribe: sttTranscribeMock,
     },
   },
 }));
@@ -49,6 +50,7 @@ describe("VoiceServiceSettings", () => {
     ttsHealthMock.mockReset();
     sttHealthMock.mockReset();
     ttsVoicesMock.mockReset();
+    sttTranscribeMock.mockReset();
   });
 
   afterEach(() => {
@@ -173,5 +175,65 @@ describe("VoiceServiceSettings", () => {
     const select = screen.getByRole("combobox") as HTMLSelectElement;
     expect(select.value).toBe("voice-a");
     expect(screen.queryByText("Cherry")).not.toBeInTheDocument();
+  });
+
+  it("在线录音模式：开始录音后停止并自动转写，展示识别结果", async () => {
+    class MockMediaRecorder {
+      static isTypeSupported = vi.fn(() => true);
+      mimeType = "audio/webm;codecs=opus";
+      ondataavailable: ((event: { data: Blob }) => void) | null = null;
+      onstop: (() => void) | null = null;
+      start(): void {}
+      stop(): void {
+        this.ondataavailable?.({ data: new Blob(["audio"], { type: "audio/webm" }) });
+        this.onstop?.();
+      }
+    }
+
+    Object.defineProperty(window, "MediaRecorder", {
+      value: MockMediaRecorder,
+      configurable: true,
+    });
+    const getUserMediaMock = vi.fn().mockResolvedValue({ getTracks: () => [] });
+    Object.defineProperty(navigator, "mediaDevices", {
+      value: { getUserMedia: getUserMediaMock },
+      configurable: true,
+    });
+
+    ttsHealthMock.mockResolvedValue({ status: "healthy", model_loaded: true });
+    sttHealthMock.mockResolvedValue({ status: "healthy", model_loaded: true });
+    ttsVoicesMock.mockResolvedValue([]);
+    sttTranscribeMock.mockResolvedValue({ text: "你好世界" });
+
+    render(<VoiceServiceSettings />);
+
+    await waitFor(() => {
+      expect(screen.getByText("settings.ttsHealthy")).toBeInTheDocument();
+      expect(screen.getByText("settings.sttHealthy")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.sttModeRecord" }));
+    fireEvent.click(await screen.findByRole("button", { name: "settings.sttRecordStart" }));
+
+    await waitFor(() => {
+      expect(getUserMediaMock).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole("button", { name: "settings.sttRecordStop" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.sttRecordStop" }));
+
+    await waitFor(() => {
+      expect(sttTranscribeMock).toHaveBeenCalledTimes(1);
+    });
+    const recordedFile = sttTranscribeMock.mock.calls[0][0] as File;
+    expect(recordedFile.name).toMatch(/^recording-\d+\.webm$/);
+
+    await waitFor(() => {
+      expect(screen.getByText("settings.sttTestSuccess")).toBeInTheDocument();
+      expect(screen.getByText("你好世界")).toBeInTheDocument();
+    });
+
+    Reflect.deleteProperty(window, "MediaRecorder");
+    Reflect.deleteProperty(navigator, "mediaDevices");
   });
 });

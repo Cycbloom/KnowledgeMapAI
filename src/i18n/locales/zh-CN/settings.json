@@ -212,6 +212,13 @@
   "sttTestFailed": "语音识别失败",
   "transcriptionResult": "识别结果",
   "noFileSelected": "请选择音频文件",
+  "sttModeFile": "上传音频",
+  "sttModeRecord": "在线录音",
+  "sttRecordLabel": "麦克风录音",
+  "sttRecordStart": "开始录音",
+  "sttRecordStop": "停止并转写",
+  "sttTranscribing": "正在转写...",
+  "sttRecordUnsupported": "当前环境不支持麦克风录音",
   "voiceServiceHint": "语音服务通过阿里云 DashScope API 提供，请在 AI 服务密钥配置中确保阿里云已配置。",
   "graphEditor": {
     "title": "图谱编辑器偏好设置",

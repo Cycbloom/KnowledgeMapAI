@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
 import type { TTSVoice } from "@shared/types";
+import { useSpeechRecognition } from "../../hooks/common/useSpeechRecognition";
 import {
   Volume2,
   Mic,
@@ -21,7 +22,7 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
   const [ttsHealth, setTtsHealth] = useState<'idle' | 'checking' | 'healthy' | 'unhealthy'>('idle');
   const [ttsVoices, setTtsVoices] = useState<TTSVoice[]>([]);
   const [ttsTestText, setTtsTestText] = useState(t("settings.ttsSampleText"));
-  const [ttsTestVoice, setTtsTestVoice] = useState("Cherry");
+  const [ttsTestVoice, setTtsTestVoice] = useState("");
   const [ttsTesting, setTtsTesting] = useState(false);
   const [ttsTestResult, setTtsTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
@@ -29,6 +30,17 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
   const [sttTestFile, setSttTestFile] = useState<File | null>(null);
   const [sttTesting, setSttTesting] = useState(false);
   const [sttTestResult, setSttTestResult] = useState<{ success: boolean; text?: string; message: string } | null>(null);
+  const [sttMode, setSttMode] = useState<"file" | "record">("file");
+
+  const {
+    isListening,
+    isTranscribing,
+    transcript,
+    error: recognitionError,
+    startListening,
+    stopListening,
+    hasRecognitionSupport,
+  } = useSpeechRecognition("zh");
 
   const mountedRef = useRef(false);
 
@@ -57,6 +69,9 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
         const voices = await api.tts.voices();
         if (!mountedRef.current) return;
         setTtsVoices(voices);
+        // 默认音色取列表首项；若当前选中项仍在新列表中则保留
+        const fallback = voices[0]?.id ?? '';
+        setTtsTestVoice((current) => (voices.some((v) => v.id === current) ? current : fallback));
       }
     } catch {
       if (!mountedRef.current) return;
@@ -112,6 +127,15 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
       setSttTesting(false);
     }
   };
+
+  const sttDisplayResult: { success: boolean; text?: string; message: string } | null =
+    sttMode === "record"
+      ? recognitionError
+        ? { success: false, message: recognitionError }
+        : transcript
+          ? { success: true, text: transcript, message: t("settings.sttTestSuccess") }
+          : null
+      : sttTestResult;
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-500 p-4 md:p-6 transition-colors">
@@ -304,79 +328,141 @@ export const VoiceServiceSettings = React.memo(function VoiceServiceSettings() {
         </div>
 
         <div className="space-y-3">
-          <div>
-            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-              {t("settings.selectAudioFile")}
-            </label>
-            <div className="flex items-center gap-3">
-              <label className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 border-dashed cursor-pointer transition-colors min-h-[44px] ${
-                sttHealth !== 'healthy'
-                  ? 'border-gray-200 dark:border-slate-500 opacity-50 cursor-not-allowed'
-                  : 'border-gray-300 dark:border-slate-500 hover:border-primary-400 dark:hover:border-primary-500'
-              }`}>
-                <Upload className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                  {sttTestFile ? sttTestFile.name : t("settings.supportedFormats")}
-                </span>
-                <input
-                  type="file"
-                  accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/wave,audio/webm,audio/mp4,audio/x-m4a,audio/m4a,audio/ogg"
-                  className="hidden"
-                  disabled={sttHealth !== 'healthy'}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) setSttTestFile(file);
-                  }}
-                />
-              </label>
-              {sttTestFile && (
-                <button
-                  onClick={() => setSttTestFile(null)}
-                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                >
-                  <XCircle className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+          <div className="flex gap-2">
+            {(["file", "record"] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setSttMode(mode)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors min-h-[36px] ${
+                  sttMode === mode
+                    ? "bg-primary-600 text-white border-primary-600"
+                    : "border-gray-200 dark:border-slate-500 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700"
+                }`}
+              >
+                {mode === "file" ? t("settings.sttModeFile") : t("settings.sttModeRecord")}
+              </button>
+            ))}
           </div>
 
-          <button
-            onClick={handleTestStt}
-            disabled={sttTesting || !sttTestFile || sttHealth !== 'healthy'}
-            className="px-4 py-2.5 rounded-lg bg-primary-600 text-white text-sm hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2 transition-colors min-h-[44px]"
-          >
-            {sttTesting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {t("settings.transcribing")}
-              </>
-            ) : (
-              <>
-                <FileAudio className="w-4 h-4" />
-                {t("settings.transcribe")}
-              </>
-            )}
-          </button>
+          {sttMode === "record" && (
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                {t("settings.sttRecordLabel")}
+              </label>
+              <div className="flex items-center gap-3">
+                {!isListening ? (
+                  <button
+                    onClick={() => void startListening()}
+                    disabled={sttHealth !== 'healthy' || !hasRecognitionSupport || isTranscribing}
+                    className="px-4 py-2.5 rounded-lg bg-primary-600 text-white text-sm hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2 transition-colors min-h-[44px]"
+                  >
+                    {isTranscribing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {t("settings.sttTranscribing")}
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-4 h-4" />
+                        {t("settings.sttRecordStart")}
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => void stopListening()}
+                    className="px-4 py-2.5 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 flex items-center gap-2 transition-colors min-h-[44px]"
+                  >
+                    <span className="w-3 h-3 rounded-full bg-white animate-pulse" aria-hidden="true" />
+                    {t("settings.sttRecordStop")}
+                  </button>
+                )}
+              </div>
+              {!hasRecognitionSupport && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  {t("settings.sttRecordUnsupported")}
+                </p>
+              )}
+            </div>
+          )}
 
-          {sttTestResult && (
+          {sttMode === "file" && (
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                {t("settings.selectAudioFile")}
+              </label>
+              <div className="flex items-center gap-3">
+                <label className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 border-dashed cursor-pointer transition-colors min-h-[44px] ${
+                  sttHealth !== 'healthy'
+                    ? 'border-gray-200 dark:border-slate-500 opacity-50 cursor-not-allowed'
+                    : 'border-gray-300 dark:border-slate-500 hover:border-primary-400 dark:hover:border-primary-500'
+                }`}>
+                  <Upload className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                    {sttTestFile ? sttTestFile.name : t("settings.supportedFormats")}
+                  </span>
+                  <input
+                    type="file"
+                    accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/wave,audio/webm,audio/mp4,audio/x-m4a,audio/m4a,audio/ogg"
+                    className="hidden"
+                    disabled={sttHealth !== 'healthy'}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setSttTestFile(file);
+                    }}
+                  />
+                </label>
+                {sttTestFile && (
+                  <button
+                    onClick={() => setSttTestFile(null)}
+                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {sttMode === "file" && (
+            <button
+              onClick={handleTestStt}
+              disabled={sttTesting || !sttTestFile || sttHealth !== 'healthy'}
+              className="px-4 py-2.5 rounded-lg bg-primary-600 text-white text-sm hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2 transition-colors min-h-[44px]"
+            >
+              {sttTesting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t("settings.transcribing")}
+                </>
+              ) : (
+                <>
+                  <FileAudio className="w-4 h-4" />
+                  {t("settings.transcribe")}
+                </>
+              )}
+            </button>
+          )}
+
+          {sttDisplayResult && (
             <div className={`p-3 rounded-lg text-sm ${
-              sttTestResult.success
+              sttDisplayResult.success
                 ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
                 : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
             }`} aria-live="polite">
               <div className="flex items-start gap-2">
-                {sttTestResult.success ? (
+                {sttDisplayResult.success ? (
                   <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
                 ) : (
                   <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 )}
                 <div className="flex-1">
-                  <p className="font-medium mb-1">{sttTestResult.message}</p>
-                  {sttTestResult.success && sttTestResult.text && (
+                  <p className="font-medium mb-1">{sttDisplayResult.message}</p>
+                  {sttDisplayResult.success && sttDisplayResult.text && (
                     <div className="mt-2">
                       <p className="text-xs opacity-80 mb-1">{t("settings.transcriptionResult")}:</p>
                       <p className="bg-white dark:bg-slate-800 p-2 rounded text-sm border border-gray-200 dark:border-slate-500 break-all">
-                        {sttTestResult.text}
+                        {sttDisplayResult.text}
                       </p>
                     </div>
                   )}

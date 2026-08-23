@@ -138,6 +138,20 @@ export const QuestionList: React.FC<QuestionListProps> = ({
     );
   };
 
+  // options 兼容数组与 JSON 字符串两种存储形态，避免 card.options?.map 报错
+  const getCardOptions = (card: StudyCard): string[] => {
+    if (Array.isArray(card.options)) return card.options;
+    if (typeof card.options === 'string') {
+      try {
+        const parsed: unknown = JSON.parse(card.options);
+        return Array.isArray(parsed) ? (parsed as string[]) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
   const renderAnswer = (card: StudyCard) => {
     if (card.card_type === 'choice' || card.card_type === 'multi_choice') {
       // 多选题答案只解析一次并预构建集合，替代逐选项 JSON.parse + includes 的 O(options*answers)
@@ -150,9 +164,10 @@ export const QuestionList: React.FC<QuestionListProps> = ({
           multiAnswerSet = null;
         }
       }
+      const options = getCardOptions(card);
       return (
         <div className="space-y-1">
-          {card.options?.map((option, idx) => {
+          {options.map((option, idx) => {
             let isCorrect = false;
             if (card.card_type === 'choice') {
               isCorrect = card.answer === option;
@@ -390,7 +405,12 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                               {(cardWithIndex._index ?? idx) + 1}
                             </div>
 
-                            <div className="flex-1 min-w-0">
+                            <div
+                              className="flex-1 min-w-0"
+                              onClick={() => {
+                                if (selectMode) listSelection.toggleId(card.id);
+                              }}
+                            >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1">
                                   <p className="font-medium leading-relaxed">{card.question}</p>
@@ -402,7 +422,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                 {!readOnly && (
                                   <div className="flex items-center gap-1">
                                     <button
-                                      onClick={() => toggleAnswer(card.id)}
+                                      onClick={(e) => { e.stopPropagation(); toggleAnswer(card.id); }}
                                       aria-pressed={isAnswerExpanded}
                                       aria-label={isAnswerExpanded ? t('quiz.questionList.button.hideAnswer') : t('quiz.questionList.button.showAnswer')}
                                       className={`p-1.5 rounded-lg transition-colors ${
@@ -415,7 +435,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                       {isAnswerExpanded ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
                                     </button>
                                     <button
-                                      onClick={() => onEdit(card)}
+                                      onClick={(e) => { e.stopPropagation(); onEdit(card); }}
                                       className={`p-1.5 rounded-lg transition-colors ${
                                         isDark
                                           ? 'text-slate-400 hover:text-amber-400 hover:bg-slate-700'
@@ -426,7 +446,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                       <Edit2 size={16} />
                                     </button>
                                     <button
-                                      onClick={() => onRegenerate(card.id)}
+                                      onClick={(e) => { e.stopPropagation(); onRegenerate(card.id); }}
                                       className={`p-1.5 rounded-lg transition-colors ${
                                         isDark
                                           ? 'text-slate-400 hover:text-primary-400 hover:bg-slate-700'
@@ -437,7 +457,8 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                       <RefreshCw size={16} />
                                     </button>
                                     <button
-                                      onClick={async () => {
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
                                         if (await asyncConfirm({ title: t('common.confirm.deleteTitle'), message: t('common.confirm.deleteMessage'), isDangerous: true })) {
                                           onDelete(card.id);
                                         }

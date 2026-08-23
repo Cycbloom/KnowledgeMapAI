@@ -70,7 +70,7 @@ describe("useStudyCardsInfinite", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
+      expect(result.current.data?.pages).toHaveLength(1);
     });
     expect(mocks.getCardsPaged).toHaveBeenCalledWith({ page: 1, pageSize: 20 });
     expect(result.current.data?.pages[0].items).toHaveLength(20);
@@ -109,14 +109,14 @@ describe("useStudyCardsInfinite", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
+      expect(result.current.data?.pages).toHaveLength(1);
     });
     expect(result.current.hasNextPage).toBe(false);
 
     result.current.fetchNextPage();
 
     await waitFor(() => {
-      expect(result.current.isFetched).toBe(true);
+      expect(result.current.data?.pages).toHaveLength(1);
     });
     expect(mocks.getCardsPaged).toHaveBeenCalledTimes(1);
     expect(result.current.data?.pages).toHaveLength(1);

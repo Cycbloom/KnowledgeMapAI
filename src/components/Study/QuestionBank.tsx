@@ -71,7 +71,16 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
   }, [graph_id, knowledge_point_id, knowledge_point_ids, due, debouncedSearchTerm, selectedType, selectedFsrsStates, reviewCountRange, nextReviewRange]);
 
   const { data, hasNextPage, fetchNextPage, isFetchingNextPage, isLoading } = useStudyCardsInfinite(filterArgs);
-  const paginatedCards = useMemo(() => data?.pages.flatMap((p) => p.items ?? []) ?? [], [data]);
+  // 按 id 去重，防止分页重叠（如分页间数据变更、后端排序不稳定）导致同一张卡重复渲染，
+  // 进而造成选择状态在多个位置同时生效。
+  const paginatedCards = useMemo(() => {
+    const seen = new Set<string>();
+    return (data?.pages.flatMap((p) => p.items ?? []) ?? []).filter((c) => {
+      if (seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
+  }, [data]);
   const total = data?.pages[0]?.total ?? 0;
 
   useEffect(() => {

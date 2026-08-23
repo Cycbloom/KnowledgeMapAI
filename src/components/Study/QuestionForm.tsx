@@ -1,7 +1,7 @@
 import React, { useState, useLayoutEffect, useRef, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StudyCard } from '../../types';
-import { CheckSquare, Plus, X, Loader2 } from 'lucide-react';
+import { Check, CheckSquare, Plus, X, Loader2 } from 'lucide-react';
 import { useTheme, useFormDraft, useBeforeUnload } from "../../hooks";
 import { useKeyboardHandler } from "../../hooks/gesture/useKeyboardHandler";
 import { ConfirmationModal } from '../common/ConfirmationModal';
@@ -22,25 +22,32 @@ interface QuestionFormProps {
 }
 
 const getInitialFormData = (initialData?: StudyCard): QuestionFormData => {
-  if (initialData) {
-    return {
-      question: initialData.question,
-      answer: initialData.answer,
-      card_type: initialData.card_type,
-      explanation: initialData.explanation || '',
-      options: initialData.options || (
-        (initialData.card_type === 'choice' || initialData.card_type === 'multi_choice' || initialData.card_type === 'select_from_options') 
-          ? ['', '', '', ''] 
-          : []
-      )
-    };
+  // options 兼容数组与 JSON 字符串两种存储形态，避免编辑时 formData.options.map 崩溃
+  let options: string[] = [];
+  if (Array.isArray(initialData?.options)) {
+    options = initialData.options as string[];
+  } else if (typeof initialData?.options === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(initialData.options);
+      options = Array.isArray(parsed) ? (parsed as string[]) : [];
+    } catch {
+      options = [];
+    }
+  }
+  if (
+    options.length === 0 &&
+    (initialData?.card_type === 'choice' ||
+      initialData?.card_type === 'multi_choice' ||
+      initialData?.card_type === 'select_from_options')
+  ) {
+    options = ['', '', '', ''];
   }
   return {
-    question: '',
-    answer: '',
-    card_type: 'qa',
-    explanation: '',
-    options: []
+    question: initialData?.question ?? '',
+    answer: initialData?.answer ?? '',
+    card_type: initialData?.card_type ?? 'qa',
+    explanation: initialData?.explanation || '',
+    options,
   };
 };
 
@@ -196,8 +203,8 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     formData.card_type !== 'select_from_options';
 
   return (
-    <div className={`p-4 sm:p-4 border-b ${isDark ? 'bg-slate-800/50' : 'bg-primary-50/50'}`}>
-      <div className="space-y-4 max-w-2xl">
+    <div className={`p-4 sm:p-6 ${isDark ? 'bg-slate-800/40' : 'bg-slate-50/60'}`}>
+      <div className="space-y-5 max-w-2xl">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label htmlFor={questionId} className="block text-sm font-medium mb-1 label-mobile">
@@ -283,16 +290,18 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                                         setFormData({...formData, answer: JSON.stringify(currentAnswers)});
                                     }
                                 }}
-                                className={`w-8 h-8 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full border transition-colors touch-target ${
+                                className={`w-9 h-9 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full border-2 transition-colors touch-target ${
                                     isChecked
-                                    ? 'bg-green-500 border-green-500 text-white' 
-                                    : 'border-gray-300 hover:border-green-400'
+                                    ? 'bg-green-500 border-green-500 text-white shadow-sm'
+                                    : isDark
+                                      ? 'border-slate-600 text-slate-500 hover:border-green-500 hover:text-green-500'
+                                      : 'border-gray-300 text-gray-300 hover:border-green-500 hover:text-green-500'
                                 }`}
                                 title={t('study.questionForm.setAsAnswer')}
                             >
-                                {isChecked && <CheckSquare size={18} />}
+                                {isChecked && <Check size={16} strokeWidth={3} />}
                             </button>
-                            <span className="font-mono text-gray-400 w-6">{String.fromCharCode(65 + idx)}.</span>
+                            <span className={`font-mono w-6 text-center text-xs font-semibold ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{String.fromCharCode(65 + idx)}.</span>
                             <input
                                 type="text"
                                 id={`${optionsInputBaseId}-${idx}`}
@@ -301,13 +310,19 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                                 aria-describedby={errors.options ? optionsErrorId : undefined}
                                 value={option}
                                 onChange={e => updateOption(idx, e.target.value)}
-                                className={`flex-1 p-3 border rounded-lg text-base min-h-[44px] ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
+                                className={`flex-1 px-3.5 py-2.5 border rounded-xl text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-colors ${
+                                  isDark
+                                    ? 'bg-slate-800 border-slate-700 focus:border-primary-500'
+                                    : 'bg-white border-gray-200 focus:border-primary-400'
+                                }`}
                                 placeholder={t('study.questionForm.optionN', { n: idx + 1 })}
                             />
                             <button
                                 onClick={() => removeOption(idx)}
                                 aria-label={t('common.aria.removeOption')}
-                                className="text-gray-400 hover:text-red-500 p-2 touch-target"
+                                className={`p-2 rounded-lg transition-colors touch-target ${
+                                  isDark ? 'text-slate-500 hover:text-red-400 hover:bg-slate-700' : 'text-gray-400 hover:text-red-500 hover:bg-gray-100'
+                                }`}
                             >
                                 <X size={18} />
                             </button>
@@ -360,8 +375,11 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                   })}
               </fieldset>
           ) : (formData.card_type === 'choice' || formData.card_type === 'multi_choice' || formData.card_type === 'select_from_options') ? (
-              <div className={`p-3 rounded-lg text-sm ${isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-100 text-gray-600'}`}>
-                  {formData.answer || t('study.questionForm.clickToSelectAnswer')}
+              <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm ${
+                isDark ? 'bg-slate-900/60 border-slate-700 text-slate-300' : 'bg-slate-50 border-gray-200 text-gray-600'
+              }`}>
+                  <CheckSquare size={16} className={`flex-shrink-0 ${isDark ? 'text-green-400' : 'text-green-500'}`} />
+                  <span>{formData.answer || t('study.questionForm.clickToSelectAnswer')}</span>
               </div>
           ) : (
               <textarea
@@ -396,10 +414,12 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
           />
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2">
           <button 
             onClick={onCancel}
-            className="px-4 py-3 text-gray-500 hover:text-gray-700 min-h-[44px] touch-target font-medium rounded-lg"
+            className={`px-5 py-3 rounded-xl text-gray-500 hover:text-gray-700 min-h-[44px] touch-target font-medium transition-colors ${
+              isDark ? 'hover:bg-slate-700 hover:text-slate-200' : 'hover:bg-gray-100'
+            }`}
             disabled={isSubmitting}
           >
             {t('study.questionForm.cancel')}
@@ -407,7 +427,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
           <button 
             onClick={handleSubmit}
             disabled={!formData.question || !formData.answer || isSubmitting || submitting}
-            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 min-h-[44px] touch-target font-medium inline-flex items-center gap-2"
+            className="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 min-h-[44px] touch-target font-semibold inline-flex items-center justify-center gap-2 shadow-sm transition-colors"
           >
             {(isSubmitting || submitting) ? (
               <><Loader2 size={16} className="animate-spin" />{t('study.questionForm.saving')}</>

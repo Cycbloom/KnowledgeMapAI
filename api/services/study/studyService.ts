@@ -89,6 +89,8 @@ interface CreateCardData {
   options?: string[];
   /** 难度数值（1=易 / 2=中 / 3=难），缺省按 1 处理 */
   difficulty?: number;
+  /** 考察点（细粒度知识点标签） */
+  focusTopic?: string;
 }
 
 interface CreateCardsBatchItem {
@@ -453,6 +455,7 @@ export class StudyService {
       cardType,
       options,
       difficulty,
+      focusTopic,
     } = data;
 
     const { data: card, error } = await supabase
@@ -476,6 +479,7 @@ export class StudyService {
           fsrs_elapsed_days: 0,
           fsrs_scheduled_days: 0,
           fsrs_retrievability: 0,
+          focus_topic: focusTopic || null,
         },
       ])
       .select()

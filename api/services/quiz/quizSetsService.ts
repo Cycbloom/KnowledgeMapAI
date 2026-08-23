@@ -10,6 +10,7 @@ import { transactionExecutor } from "../../database/transactionExecutor";
 import { notDeleted } from '../common/softDeleteHelper';
 import { getKnowledgePoint } from '../../utils/nodeHelpers';
 import { cardDifficultyToNumber } from '../../../shared/types/quiz';
+import { deriveFocusTopicFallback } from '../../../shared/utils/cards';
 import i18next from "i18next";
 
 interface EmbeddedKnowledgePoint {
@@ -498,6 +499,7 @@ class QuizSetsService {
         card_type?: StudyCard["card_type"];
         options?: string[];
         difficulty?: string;
+        focus_topic?: unknown;
       };
 
       const cardType =
@@ -510,13 +512,24 @@ class QuizSetsService {
         difficulty,
       );
 
+      // “考察点”focus_topic：优先取 AI 返回的细粒度考察点，缺失时回退题干/知识点标题，
+      // 与批量生成路径保持一致，避免重新生成后考察点字段为空。
+      const rawFocus =
+        typeof newCardData.focus_topic === "string"
+          ? newCardData.focus_topic.trim()
+          : "";
+      const focusTopic =
+        rawFocus.length > 0
+          ? rawFocus.slice(0, 200)
+          : deriveFocusTopicFallback(newCardData.question, kp?.title);
+
       if (transactionExecutor.isAvailable()) {
         const newCard = await transactionExecutor.executeInTransaction(
           async (client) => {
             // 1. Create new study_card
             const insertResult = await client.query(
-              `INSERT INTO study_cards (user_id, knowledge_point_id, graph_id, source_graph_id, question, answer, explanation, card_type, options, next_review, difficulty, fsrs_state, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_retrievability)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, 'New', 0, 0, 0, 0, 0) RETURNING *`,
+              `INSERT INTO study_cards (user_id, knowledge_point_id, graph_id, source_graph_id, question, answer, explanation, card_type, options, next_review, difficulty, fsrs_state, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_retrievability, focus_topic)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, 'New', 0, 0, 0, 0, 0, $11) RETURNING *`,
               [
                 userId,
                 oldCard.knowledge_point_id,
@@ -528,6 +541,7 @@ class QuizSetsService {
                 cardType || "qa",
                 newCardData.options ? JSON.stringify(newCardData.options) : null,
                 cardDifficultyNumber,
+                focusTopic,
               ],
             );
 
@@ -583,6 +597,7 @@ class QuizSetsService {
         cardType,
         options: newCardData.options,
         difficulty: cardDifficultyNumber,
+        focusTopic,
       });
 
       await supabase.from("quiz_set_cards").delete().eq("card_id", cardId);

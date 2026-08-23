@@ -37,6 +37,7 @@ export const Study = () => {
   const nodeIds = searchParams.get("node_ids");
   const mode = searchParams.get("mode");
   const from = searchParams.get("from");
+  const viewParam = searchParams.get("view");
 
   const scopeParams = useMemo(() => {
     if (nodeIds) return { knowledge_point_ids: nodeIds.split(",") };
@@ -196,13 +197,19 @@ export const Study = () => {
   const weakPoints = weakPointsData?.weakPoints ?? [];
   const predictions = predictionsData?.predictions ?? [];
 
+  // 解析 URL 的 view 参数，作为标签页初始状态（如测验/练习返回时 ?view=quizzes）
+  const resolveViewParam = (): "dashboard" | "bank" | "quizzes" => {
+    if (viewParam === "bank" || viewParam === "quizzes") return viewParam;
+    return "dashboard";
+  };
+
   // Reset state when params change
   useLayoutEffect(() => {
     cardReview.resetReviewState();
-    setViewState(mode === "quiz" ? "quiz" : "dashboard");
+    setViewState(mode === "quiz" ? "quiz" : resolveViewParam());
     // 仅在路由参数变化时重置；cardReview/setViewState 为稳定引用，无需进依赖
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphId, nodeId, nodeIds, mode]);
+  }, [graphId, nodeId, nodeIds, mode, viewParam]);
 
   // Auto-start quiz when mode=quiz and cards loaded
   useEffect(() => {

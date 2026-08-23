@@ -218,6 +218,20 @@ export interface IAiApi {
     onChunk: (content: string) => void,
   ): Promise<void>;
 
+  gradeAnswer(data: {
+    question: string;
+    card_type: string;
+    reference_answer: string;
+    user_answer: string;
+    explanation?: string;
+    difficulty?: string;
+    provider?: string;
+    model?: string;
+  }): Promise<{
+    success: boolean;
+    data: { score: number; feedback: string; correct: boolean };
+  }>;
+
   extractConcepts(data: {
     text: string;
     existing_nodes?: string[];

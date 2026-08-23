@@ -360,6 +360,21 @@ export const aiApi: IAiApi = {
     await createStreamHandler("/ai/tutor-chat", payload, onChunk);
   },
 
+  gradeAnswer: (data: {
+    question: string;
+    card_type: string;
+    reference_answer: string;
+    user_answer: string;
+    explanation?: string;
+    difficulty?: string;
+    provider?: string;
+    model?: string;
+  }) =>
+    request<{
+      success: boolean;
+      data: { score: number; feedback: string; correct: boolean };
+    }>("/ai/grade", { method: "POST", body: JSON.stringify(data) }),
+
   extractConcepts: (data: {
     text: string;
     existing_nodes?: string[];

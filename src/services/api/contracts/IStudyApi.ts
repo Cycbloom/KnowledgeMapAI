@@ -46,4 +46,22 @@ export interface IStudyApi {
   optimizeFsrsParameters(): Promise<FsrsOptimizeResult>;
 
   getSemanticGroups(graphId?: string): Promise<StudySemanticGroupsResponse>;
+
+  recordQuizAttempt(
+    quizSetId: string,
+    results: Array<{
+      card_id: string;
+      correct: boolean;
+      user_answer?: string;
+      time_spent?: number;
+    }>,
+  ): Promise<{
+    success: boolean;
+    data: {
+      sessionId: string;
+      score: number;
+      correctCount: number;
+      totalCount: number;
+    };
+  }>;
 }

@@ -138,7 +138,7 @@ export const Breadcrumb: React.FC = () => {
         case "quizPractice": {
           const parentPath = `/quiz/${detailRoute.quizSetId}`;
           breadcrumbs.push({ path: parentPath, label: quizSet?.title || t("layout.breadcrumb.quiz") });
-          breadcrumbs.push({ path, label: quizSet?.title || t("layout.breadcrumb.quizPractice") });
+          breadcrumbs.push({ path, label: t("layout.breadcrumb.quizPractice") });
           break;
         }
         case "schedulerTask": {

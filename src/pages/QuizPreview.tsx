@@ -117,7 +117,7 @@ export const QuizPreview: React.FC = () => {
       isDangerous: true,
     })) {
       await deleteMutation.mutateAsync(quizSet.id);
-      navigate('/study');
+      navigate('/study?view=quizzes');
     }
   };
 
@@ -272,7 +272,7 @@ export const QuizPreview: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="mb-6">
           <button
-            onClick={() => navigate('/study')}
+            onClick={() => navigate('/study?view=quizzes')}
             className={`flex items-center gap-2 text-sm ${
               isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700'
             }`}

@@ -132,6 +132,28 @@ export const studyApi: IStudyApi = {
       `/study/semantic-groups${query ? `?${query}` : ""}`,
     );
   },
+
+  recordQuizAttempt: (
+    quizSetId: string,
+    results: Array<{
+      card_id: string;
+      correct: boolean;
+      user_answer?: string;
+      time_spent?: number;
+    }>,
+  ) =>
+    request<{
+      success: boolean;
+      data: {
+        sessionId: string;
+        score: number;
+        correctCount: number;
+        totalCount: number;
+      };
+    }>("/study/quiz-sessions/record", {
+      method: "POST",
+      body: JSON.stringify({ quiz_set_id: quizSetId, results }),
+    }),
 };
 
 export const dashboardApi: IDashboardApi = {

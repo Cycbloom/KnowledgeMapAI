@@ -560,6 +560,23 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     await createStreamHandler("/ai/tutor-chat", payload, onChunk);
   },
 
+  gradeAnswer: (data: {
+    question: string;
+    card_type: string;
+    reference_answer: string;
+    user_answer: string;
+    explanation?: string;
+    difficulty?: string;
+    provider?: string;
+    model?: string;
+  }) => {
+    const payload = injectAIConfig(data, "text");
+    return post<{
+      success: boolean;
+      data: { score: number; feedback: string; correct: boolean };
+    }>("/ai/grade", payload);
+  },
+
   extractConcepts: (data: {
     text: string;
     existing_nodes?: string[];

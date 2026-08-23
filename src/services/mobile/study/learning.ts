@@ -695,4 +695,12 @@ export const mobileStudyApi: IStudyApi = {
   getSemanticGroups: async (_graphId?: string) => {
     return { groups: [], interference_pairs: [] };
   },
+
+  recordQuizAttempt: async () => {
+    throw new AppError(
+      "移动端暂不支持记录测验结果",
+      SharedErrorCodes.SYSTEM_CONFIGURATION_ERROR,
+      501,
+    );
+  },
 };

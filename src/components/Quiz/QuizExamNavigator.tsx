@@ -6,12 +6,17 @@ export interface QuizExamItemStatus {
   status: 'unanswered' | 'answered' | 'current' | 'correct' | 'wrong';
 }
 
+export type QuizExamStatusCounts = Partial<
+  Record<'answered' | 'correct' | 'wrong' | 'unanswered', number>
+>;
+
 interface QuizExamNavigatorProps {
   items: QuizExamItemStatus[];
   currentIndex: number;
   onSelect: (index: number) => void;
   isDark: boolean;
   showLegend?: boolean;
+  counts?: QuizExamStatusCounts;
   className?: string;
 }
 
@@ -21,16 +26,22 @@ export const QuizExamNavigator = ({
   onSelect,
   isDark,
   showLegend = true,
+  counts,
   className = '',
 }: QuizExamNavigatorProps) => {
   const { t } = useTranslation();
 
-  const legend: Array<{ status: QuizExamItemStatus['status']; label: string; cls: string }> = [
+  const legend: Array<{ status: keyof NonNullable<QuizExamStatusCounts>; label: string; cls: string }> = [
     { status: 'answered', label: t('study.quizPractice.exam.answered', '已答'), cls: isDark ? 'bg-primary-900/40 text-primary-300 border-primary-700' : 'bg-primary-50 text-primary-600 border-primary-300' },
     { status: 'correct', label: t('study.quizPractice.exam.correct', '正确'), cls: isDark ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : 'bg-emerald-50 text-emerald-600 border-emerald-300' },
     { status: 'wrong', label: t('study.quizPractice.exam.wrong', '错误'), cls: isDark ? 'bg-red-900/50 text-red-400 border-red-700' : 'bg-red-50 text-red-600 border-red-300' },
     { status: 'unanswered', label: t('study.quizPractice.exam.unanswered', '未答'), cls: isDark ? 'bg-slate-800 text-slate-500 border-slate-700' : 'bg-white text-gray-400 border-gray-200' },
   ];
+
+  // 传入 counts 时，图例只展示有计数的状态（适配评分完成阶段的正确/错误语义）
+  const visibleLegend = counts
+    ? legend.filter((l) => counts[l.status] !== undefined)
+    : legend;
 
   return (
     <div className={className}>
@@ -92,10 +103,13 @@ export const QuizExamNavigator = ({
       </div>
       {showLegend && (
         <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
-          {legend.map((l) => (
+          {visibleLegend.map((l) => (
             <span key={l.status} className="flex items-center gap-1 text-[10px]">
               <span className={`inline-block h-3 w-3 rounded border ${l.cls}`} />
-              <span className={isDark ? 'text-slate-500' : 'text-gray-500'}>{l.label}</span>
+              <span className={isDark ? 'text-slate-500' : 'text-gray-500'}>
+                {l.label}
+                {counts ? ` · ${counts[l.status]}` : ''}
+              </span>
             </span>
           ))}
         </div>

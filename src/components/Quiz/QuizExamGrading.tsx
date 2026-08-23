@@ -231,6 +231,7 @@ export const QuizExamGrading = ({
               currentIndex={selectedIndex}
               onSelect={setSelectedIndex}
               isDark={isDark}
+              counts={{ correct: summary.correct, wrong: summary.total - summary.correct }}
             />
           </div>
 

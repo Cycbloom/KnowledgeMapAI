@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Check, Clock, Flag } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Check, Flag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { formatTimeFromSeconds } from '../../utils/formatters';
 
 interface QuizProgressBarProps {
   current: number;
   total: number;
   answered: boolean[];
   onJump: (index: number) => void;
-  startTime?: number;
   flaggedCount?: number;
 }
 
@@ -17,7 +15,6 @@ const QuizProgressBarComponent: React.FC<QuizProgressBarProps> = ({
   total,
   answered,
   onJump,
-  startTime,
   flaggedCount = 0,
 }) => {
   const { t } = useTranslation();
@@ -28,19 +25,6 @@ const QuizProgressBarComponent: React.FC<QuizProgressBarProps> = ({
     return c;
   }, [answered]);
   const progress = total > 0 ? (answeredCount / total) * 100 : 0;
-
-  // Session timer (UX2-04)
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-
-  useEffect(() => {
-    if (!startTime) return;
-    const tick = () => {
-      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [startTime]);
 
   return (
     <div className="w-full space-y-3">
@@ -53,17 +37,6 @@ const QuizProgressBarComponent: React.FC<QuizProgressBarProps> = ({
             <span className="flex items-center gap-1 text-amber-500" title={t('quiz.progress.flaggedForReview')}>
               <Flag size={12} fill="currentColor" aria-hidden="true" />
               {flaggedCount}
-            </span>
-          )}
-          {startTime && (
-            <span
-              className="flex items-center gap-1 text-gray-500 dark:text-slate-400"
-              title={t('quiz.progress.elapsedTime')}
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              <Clock size={12} aria-hidden="true" />
-              {formatTimeFromSeconds(elapsedSeconds)}
             </span>
           )}
           <span
@@ -130,7 +103,6 @@ const areEqual = (prev: QuizProgressBarProps, next: QuizProgressBarProps) => {
   return (
     prev.current === next.current &&
     prev.total === next.total &&
-    prev.startTime === next.startTime &&
     prev.flaggedCount === next.flaggedCount &&
     prev.onJump === next.onJump &&
     prev.answered.length === next.answered.length &&

@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { StudyCard } from "@shared/types";
-import { Check, X, BookOpen, ChevronUp, ChevronDown } from "lucide-react";
+import { AlertCircle, Check, X, BookOpen, ChevronUp, ChevronDown } from "lucide-react";
 import { normalizeBooleanAnswer } from "../../utils/textUtils";
 import { useQuizSettingsStore } from "../../store/useQuizSettingsStore";
 import { resolveSecondaryTextStyle } from "../../utils/quizTypography";
+import { useVoiceDictation } from "../../hooks/common/useVoiceDictation";
 import {
   countClozeBlanks,
   isMatchingCorrect,
   isOrderingCorrect,
 } from "../../utils/quizNewTypes";
+import { VoiceDictationButton } from "./common/VoiceDictationButton";
 
 /**
  * QuizOptionArea 组件 Props
@@ -107,6 +109,60 @@ export function QuizOptionArea({
   /** 排序：当前顺序 */
   const [order, setOrder] = useState<string[]>([]);
 
+  /** QA/简答/填空题的文字作答 */
+  const [textAnswer, setTextAnswer] = useState("");
+  /** 完形填空语音听写的目标空格索引（null 表示无） */
+  const [activeClozeIdx, setActiveClozeIdx] = useState<number | null>(null);
+  /** 听写发起时的卡片 id，切卡后到达的转写结果据此丢弃 */
+  const textVoiceCardIdRef = useRef<string | null>(null);
+  const clozeVoiceCardIdRef = useRef<string | null>(null);
+  const activeClozeIdxRef = useRef<number | null>(null);
+
+  const handleTextVoiceValue = useCallback(
+    (next: string) => {
+      if (textVoiceCardIdRef.current !== currentCard.id) return;
+      setTextAnswer(next);
+    },
+    [currentCard.id],
+  );
+  const textDictation = useVoiceDictation(textAnswer, handleTextVoiceValue);
+
+  const handleClozeVoiceValue = useCallback(
+    (next: string) => {
+      const idx = activeClozeIdxRef.current;
+      if (idx === null || clozeVoiceCardIdRef.current !== currentCard.id) return;
+      setClozeInputs((prev) => {
+        const nextInputs = [...prev];
+        nextInputs[idx] = next;
+        return nextInputs;
+      });
+    },
+    [currentCard.id],
+  );
+  const activeClozeValue = activeClozeIdx !== null ? clozeInputs[activeClozeIdx] ?? "" : "";
+  const clozeDictation = useVoiceDictation(activeClozeValue, handleClozeVoiceValue);
+
+  const handleTextMicToggle = () => {
+    if (!textDictation.isListening) {
+      textVoiceCardIdRef.current = currentCard.id;
+    }
+    textDictation.toggleListening();
+  };
+
+  const handleClozeMicToggle = (idx: number) => {
+    const isSameTarget =
+      activeClozeIdxRef.current === idx && clozeVoiceCardIdRef.current === currentCard.id;
+    if (clozeDictation.isListening && isSameTarget) {
+      clozeDictation.toggleListening();
+      return;
+    }
+    if (clozeDictation.isListening || clozeDictation.isTranscribing) return;
+    activeClozeIdxRef.current = idx;
+    clozeVoiceCardIdRef.current = currentCard.id;
+    setActiveClozeIdx(idx);
+    clozeDictation.toggleListening();
+  };
+
   /** 匹配连线的候选右列项（从 answer JSON 去重提取） */
   const rightOptions = useMemo(() => {
     if (!currentCard.answer) return [];
@@ -147,6 +203,9 @@ export function QuizOptionArea({
     setMatchingPairs({});
     setMatchingSelectedLeft(null);
     setOrder(currentOptions);
+    setTextAnswer("");
+    setActiveClozeIdx(null);
+    activeClozeIdxRef.current = null;
   }, [currentCard, currentOptions]);
 
   const updateClozeInput = (idx: number, value: string) => {
@@ -412,8 +471,95 @@ export function QuizOptionArea({
                 className={`flex-1 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none transition-colors ${isMobile ? "text-base" : "text-sm"} ${isDark ? "bg-slate-800 border-slate-700 text-slate-200 focus:border-primary-500" : "bg-white border-gray-200 text-gray-800 focus:border-primary-400"} disabled:opacity-60`}
                 placeholder={`${t("study.quiz.fillContent")} ${idx + 1}`}
               />
+              {!showAnswer && clozeDictation.hasSupport && (
+                <VoiceDictationButton
+                  isDark={isDark}
+                  isListening={clozeDictation.isListening && activeClozeIdx === idx}
+                  isTranscribing={clozeDictation.isTranscribing && activeClozeIdx === idx}
+                  disabled={showAnswer || (clozeDictation.isListening && activeClozeIdx !== idx)}
+                  onToggle={() => handleClozeMicToggle(idx)}
+                />
+              )}
             </div>
           ))}
+          {!showAnswer && clozeDictation.error && (
+            <div
+              role="alert"
+              className={`flex items-center gap-1.5 text-xs ${isDark ? "text-red-400" : "text-red-600"}`}
+            >
+              <AlertCircle size={14} aria-hidden="true" />
+              {clozeDictation.error}
+            </div>
+          )}
+        </div>
+      )}
+
+      {(isQA || isEssay) && (
+        <div className="mt-3 md:mt-4">
+          <div
+            className={`rounded-xl border transition-colors ${isDark ? "bg-slate-800 border-slate-700 focus-within:border-primary-500" : "bg-white border-gray-200 focus-within:border-primary-400"} ${showAnswer ? "opacity-60" : ""}`}
+          >
+            <textarea
+              value={textAnswer}
+              disabled={showAnswer}
+              onChange={(e) => setTextAnswer(e.target.value)}
+              rows={isMobile ? 3 : 4}
+              placeholder={t("study.quiz.yourAnswer")}
+              aria-label={t("study.quiz.yourAnswer")}
+              className={`w-full bg-transparent resize-none outline-none px-3 pt-2.5 pb-1 font-medium ${isMobile ? "text-base" : "text-sm"} ${isDark ? "text-slate-200 placeholder-slate-500" : "text-gray-800 placeholder-gray-400"}`}
+            />
+            <div className="flex items-center justify-end gap-2 px-2 pb-2">
+              {!showAnswer && textDictation.hasSupport && (
+                <VoiceDictationButton
+                  isDark={isDark}
+                  isListening={textDictation.isListening}
+                  isTranscribing={textDictation.isTranscribing}
+                  onToggle={handleTextMicToggle}
+                />
+              )}
+            </div>
+          </div>
+          {!showAnswer && textDictation.error && (
+            <div
+              role="alert"
+              className={`mt-2 flex items-center gap-1.5 text-xs ${isDark ? "text-red-400" : "text-red-600"}`}
+            >
+              <AlertCircle size={14} aria-hidden="true" />
+              {textDictation.error}
+            </div>
+          )}
+        </div>
+      )}
+
+      {isFillBlank && !showAnswer && (
+        <div className="mt-3 md:mt-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={textAnswer}
+              onChange={(e) => setTextAnswer(e.target.value)}
+              className={`flex-1 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none transition-colors ${isMobile ? "text-base" : "text-sm"} ${isDark ? "bg-slate-800 border-slate-700 text-slate-200 focus:border-primary-500" : "bg-white border-gray-200 text-gray-800 focus:border-primary-400"}`}
+              placeholder={t("study.quiz.fillContent")}
+              aria-label={t("study.quiz.fillContent")}
+            />
+            {textDictation.hasSupport && (
+              <VoiceDictationButton
+                isDark={isDark}
+                isListening={textDictation.isListening}
+                isTranscribing={textDictation.isTranscribing}
+                onToggle={handleTextMicToggle}
+              />
+            )}
+          </div>
+          {textDictation.error && (
+            <div
+              role="alert"
+              className={`mt-2 flex items-center gap-1.5 text-xs ${isDark ? "text-red-400" : "text-red-600"}`}
+            >
+              <AlertCircle size={14} aria-hidden="true" />
+              {textDictation.error}
+            </div>
+          )}
         </div>
       )}
 

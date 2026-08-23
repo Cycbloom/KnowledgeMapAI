@@ -10,6 +10,8 @@ export { useIsMobile } from './useIsMobile';
 export { useGlobalShortcuts } from './useGlobalShortcuts';
 export { ThemeProvider, useTheme } from './useTheme';
 export { useSpeechRecognition } from './useSpeechRecognition';
+export { useVoiceDictation } from './useVoiceDictation';
+export type { UseVoiceDictationResult } from './useVoiceDictation';
 export { useTextToSpeech } from './useTextToSpeech';
 export { useTopicCheck } from './useTopicCheck';
 export { useTutorOperations } from './useTutorOperations';

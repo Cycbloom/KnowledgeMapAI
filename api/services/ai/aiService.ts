@@ -85,6 +85,21 @@ export class AIService {
     return requireChatService().tutorChat(messages, context, options);
   }
 
+  async gradeAnswer(
+    options: {
+      question: string;
+      cardType: string;
+      referenceAnswer: string;
+      userAnswer: string;
+      explanation?: string;
+      difficulty?: string;
+      provider?: import("@shared/types").AIProviderType;
+      model?: string;
+    },
+  ) {
+    return requireChatService().gradeAnswer(options);
+  }
+
   // === 学习卡片生成 (CardGenerationService) ===
   async generateCards(
     topic: string,

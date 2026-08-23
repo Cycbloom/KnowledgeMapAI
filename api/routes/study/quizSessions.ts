@@ -23,6 +23,16 @@ const completeQuizSchema = z.object({
   })),
 });
 
+const recordQuizAttemptSchema = z.object({
+  quiz_set_id: z.string().uuid(),
+  results: z.array(z.object({
+    card_id: z.string().uuid(),
+    correct: z.boolean(),
+    user_answer: z.string().optional(),
+    time_spent: z.number().min(0).optional(),
+  })),
+});
+
 router.post(
   "/",
   requireAuth,
@@ -63,6 +73,29 @@ router.post(
       if (error instanceof AppError) throw error;
       const errorMessage = error instanceof Error ? error.message : "完成测验会话失败";
       logger.error("Complete quiz session error:", error);
+      throw new AppError(errorMessage, 400, ErrorCodes.VALIDATION_ERROR);
+    }
+  },
+);
+
+router.post(
+  "/record",
+  requireAuth,
+  validate({ body: recordQuizAttemptSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { quiz_set_id, results } = req.body;
+    try {
+      const recordResult = await subtaskQuizIntegrationService.recordQuizAttempt(
+        req.supabase,
+        req.user.id,
+        quiz_set_id,
+        results,
+      );
+      res.status(201).json({ success: true, data: recordResult });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      const errorMessage = error instanceof Error ? error.message : "记录测验结果失败";
+      logger.error("Record quiz attempt error:", error);
       throw new AppError(errorMessage, 400, ErrorCodes.VALIDATION_ERROR);
     }
   },

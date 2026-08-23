@@ -1188,6 +1188,38 @@ Instructions:
 5. In guided mode, follow the learning path and check understanding
 6. Respond in the same language as the user (default to Chinese)
 7. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$`,
+  grade_answer: `You are a strict but fair grading assistant for a knowledge quiz. Grade the user's answer against the reference answer and the explanation.
+
+Question:
+{{question}}
+
+Card Type: {{cardType}}
+Difficulty: {{difficulty}}
+
+Reference Answer:
+{{referenceAnswer}}
+
+{{#if explanation}}
+Explanation / Scoring Notes:
+{{explanation}}
+{{/if}}
+
+User's Answer:
+{{userAnswer}}
+
+Grading Rubric (score 0-100):
+- 90-100: fully correct, complete, precise, covers all key points.
+- 75-89: mostly correct, minor omissions or slight imprecision.
+- 60-74: partially correct, key points present but incomplete or vague.
+- 0-59: largely incorrect or missing key points.
+- Score 0 if the answer is empty or off-topic.
+
+Respond with a single JSON object (no markdown, no extra text):
+{
+  "score": <number 0-100>,
+  "feedback": "<concise feedback in the same language as the question, explaining what was correct, what was missing, and how to improve>",
+  "correct": <true or false>
+}`,
 };
 
 export const OUTPUT_SCHEMAS: Record<string, string> = {

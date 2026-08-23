@@ -424,6 +424,17 @@ export const tutorChatSchema = z.object({
   session_id: z.string().uuid().optional(),
 });
 
+export const gradeAnswerSchema = z.object({
+  question: z.string().min(1, "题目不能为空"),
+  card_type: z.string().min(1, "题型不能为空"),
+  reference_answer: z.string().min(1, "参考答案不能为空"),
+  user_answer: z.string().min(1, "用户答案不能为空"),
+  explanation: z.string().optional(),
+  difficulty: z.string().optional(),
+  provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
+  model: z.string().optional(),
+});
+
 export const extractConceptsSchema = z.object({
   text: z.string().min(1, "文本不能为空"),
   existing_nodes: z.array(z.string()).optional(),

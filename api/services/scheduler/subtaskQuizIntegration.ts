@@ -12,6 +12,7 @@ import { subtaskKnowledgeSyncService } from "./subtaskKnowledgeSync";
 import type { IAIProviderService, CardDifficulty } from "./types";
 import { studyService } from "../study/studyService";
 import { notDeleted } from '../common/softDeleteHelper';
+import { transactionExecutor } from "../../database/transactionExecutor";
 
 export interface PracticeSession {
   id: string;
@@ -1145,6 +1146,85 @@ export class SubtaskQuizIntegrationService {
   private getRandomDifficulty(): number {
     const difficulties = [1, 2, 3, 4, 5];
     return difficulties[Math.floor(Math.random() * difficulties.length)];
+  }
+
+  /**
+   * 记录一次独立的测验作答（面向用户测验页，不依赖调度子任务）。
+   * 写入 learning_sessions(session_type='quiz') + learning_session_results。
+   */
+  async recordQuizAttempt(
+    supabase: SupabaseClient,
+    userId: string,
+    quizSetId: string,
+    results: Array<{
+      card_id: string;
+      correct: boolean;
+      user_answer?: string;
+      time_spent?: number;
+    }>,
+  ): Promise<{ sessionId: string; score: number; correctCount: number; totalCount: number }> {
+    const { data: quizSet } = await supabase
+      .from("quiz_sets")
+      .select("id, config")
+      .eq("id", quizSetId)
+      .eq("user_id", userId)
+      .single();
+
+    const { data: cardRows } = await supabase
+      .from("quiz_set_cards")
+      .select("card_id")
+      .eq("quiz_set_id", quizSetId);
+
+    const cardIds = (cardRows ?? []).map((r) => r.card_id as string);
+    const config = (quizSet?.config ?? {}) as QuizSetConfig;
+    const knowledgePointId = config.knowledgePointIds?.[0] ?? null;
+
+    const totalCount = cardIds.length;
+    const correctCount = results.filter((r) => r.correct).length;
+    const score = totalCount > 0 ? correctCount / totalCount : 0;
+    const totalTime = results.reduce((sum, r) => sum + (r.time_spent ?? 0), 0);
+
+    const sessionId = await transactionExecutor.executeInTransaction(
+      async (client) => {
+        const sessionInsert = await client.query(
+          `INSERT INTO learning_sessions (session_type, knowledge_point_id, quiz_set_id, user_id, card_ids, started_at, completed_at, status, score, correct_count, total_count, total_time_spent)
+           VALUES ('quiz', $1, $2, $3, $4, NOW(), NOW(), 'completed', $5, $6, $7, $8)
+           RETURNING id`,
+          [
+            knowledgePointId,
+            quizSetId,
+            userId,
+            cardIds,
+            score,
+            correctCount,
+            totalCount,
+            totalTime,
+          ],
+        );
+
+        const sid = sessionInsert.rows[0]?.id as string;
+
+        for (const r of results) {
+          await client.query(
+            `INSERT INTO learning_session_results (session_id, card_id, correct, user_answer, time_spent)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [sid, r.card_id, r.correct, r.user_answer ?? null, r.time_spent ?? 0],
+          );
+        }
+
+        return sid;
+      },
+    );
+
+    logger.info("Quiz attempt recorded", {
+      quizSetId,
+      sessionId,
+      score,
+      correctCount,
+      totalCount,
+    });
+
+    return { sessionId, score, correctCount, totalCount };
   }
 }
 

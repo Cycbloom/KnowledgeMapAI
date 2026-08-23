@@ -22,6 +22,7 @@ import {
   dedupedRequest,
   generateRequestKey,
 } from "./aiUtils";
+import { parseAIResponse } from "./utils";
 import type { IGraphQueryService } from "./types";
 import {
   buildGraphContext,
@@ -547,6 +548,66 @@ export class ChatService {
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
+  }
+
+  /**
+   * 主观题 AI 判分（测验交卷后使用）。
+   * 返回：score(0-100)、feedback(评语)、correct(是否判定正确)。
+   */
+  async gradeAnswer(
+    options: {
+      question: string;
+      cardType: string;
+      referenceAnswer: string;
+      userAnswer: string;
+      explanation?: string;
+      difficulty?: string;
+      provider?: AIProviderType;
+      model?: string;
+    },
+  ): Promise<{ score: number; feedback: string; correct: boolean }> {
+    if (!options.userAnswer || options.userAnswer.trim() === "") {
+      return { score: 0, feedback: "未作答", correct: false };
+    }
+
+    const systemPrompt = await promptService.getRenderedPrompt(
+      getSupabaseAdmin(),
+      "grade_answer",
+      {
+        question: options.question,
+        cardType: options.cardType,
+        referenceAnswer: options.referenceAnswer,
+        userAnswer: options.userAnswer,
+        explanation: options.explanation || "",
+        difficulty: options.difficulty || "medium",
+      },
+    );
+
+    const raw = await this.chat(
+      [{ role: "system", content: systemPrompt }],
+      {
+        provider: options.provider,
+        model: options.model,
+        timeout: LONG_TIMEOUT,
+        operation: "grade_answer",
+      },
+    );
+
+    let parsed: { score?: number; feedback?: string; correct?: boolean };
+    try {
+      parsed = parseAIResponse<{ score?: number; feedback?: string; correct?: boolean }>(
+        raw,
+        "grade_answer",
+      );
+    } catch {
+      return { score: 50, feedback: "AI 评分未能解析，请人工核对参考答案。", correct: false };
+    }
+
+    const score = Math.max(0, Math.min(100, Math.round(Number(parsed.score) || 0)));
+    const correct = parsed.correct === true || score >= 60;
+    const feedback = (parsed.feedback || "").trim() || "已完成评分。";
+
+    return { score, feedback, correct };
   }
 }
 

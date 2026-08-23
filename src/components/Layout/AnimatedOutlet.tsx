@@ -45,7 +45,7 @@ export const AnimatedOutlet: React.FC = () => {
       initial={reduceMotion ? false : "initial"}
       animate="animate"
       transition={transitionOverride}
-      className="h-full gpu-accelerated"
+      className="h-full"
     >
       <PageLoadedMarker />
       <Outlet />

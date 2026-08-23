@@ -1,4 +1,5 @@
 import React, { useId } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Info } from 'lucide-react';
@@ -28,7 +29,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
 
   if (!card) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -160,6 +161,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -393,7 +394,7 @@ export const QuizPreview: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {regeneratingCardId && (
+        {regeneratingCardId && createPortal(
           <div
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
             role="status"
@@ -409,7 +410,8 @@ export const QuizPreview: React.FC = () => {
               <Loader2 size={32} className="animate-spin mx-auto mb-3 text-primary-500" aria-hidden="true" />
               <p id={regeneratingTitleId} className={isDark ? 'text-slate-300' : 'text-gray-600'}>{t('study.quizPreview.regeneratingTitle')}</p>
             </div>
-          </div>
+          </div>,
+          document.body,
         )}
 
         <QuestionList

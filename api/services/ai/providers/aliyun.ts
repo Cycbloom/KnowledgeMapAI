@@ -54,7 +54,7 @@ export class AliyunProvider extends BaseAIProvider {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "fun-asr-flash-2026-06-15",
+          model: "qwen3-asr-flash",
           messages: [
             {
               role: "user",

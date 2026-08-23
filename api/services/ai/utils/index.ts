@@ -3,6 +3,7 @@ import { AppError } from "../../../middleware/errorHandler";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
 
 export { extractTokenUsage } from "./tokenUtils";
+export { normalizeGeneratedCardAnswers } from "./cardAnswerNormalizer";
 
 export const cleanJsonString = (str: string): string => {
   let cleaned = str.trim();

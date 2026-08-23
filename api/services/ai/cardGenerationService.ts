@@ -3,7 +3,7 @@ import type { AIProviderType } from "@shared/types";
 import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import { parseAIResponse } from "./utils";
+import { parseAIResponse, normalizeGeneratedCardAnswers } from "./utils";
 import { withAIMonitoring } from "./aiMonitor";
 import { getMockCards } from "./mock";
 import { embeddingOps } from "./embeddingOps";
@@ -447,6 +447,8 @@ ${relevantSiblings.map((n) => `- ${n.title}${n.content ? `: ${n.content}` : ""}`
             // 方案D1：生成后向量相似度去重 —— 与库内已有题及同批题目做余弦去重，
             // 复用现有 embedding 基建；embedding 不可用或失败时静默跳过不拦截生成。
             cards = await this.dedupeGeneratedCardsBySimilarity(cards, existingQuestions);
+
+            cards = normalizeGeneratedCardAnswers(cards);
 
             return { result: { cards }, usage: completion.usage };
           },

@@ -10,8 +10,8 @@
 CREATE TABLE IF NOT EXISTS learning_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_type TEXT NOT NULL CHECK (session_type IN ('practice', 'quiz')),
-  subtask_id UUID NOT NULL REFERENCES task_subtasks(id) ON DELETE CASCADE,
-  knowledge_point_id UUID NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,
+  subtask_id UUID REFERENCES task_subtasks(id) ON DELETE CASCADE,
+  knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE CASCADE,
   quiz_set_id UUID REFERENCES quiz_sets(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   card_ids UUID[] DEFAULT '{}',

@@ -53,15 +53,19 @@ export function renderWithProviders(
     content = customWrapper(content);
   }
 
-  const element = (
+  // Provider 树必须通过 RTL 的 wrapper 选项注入而非直接拼进 ui：
+  // rerender(ui) 时 RTL 复用同一 Wrapper 组件包裹新 ui，Provider 类型保持
+  // 稳定 → React 原位更新子树而不是整体卸载重挂载，组件内部状态
+  // （如高亮分析结果、hook 状态）在 rerender 后得以保留。
+  const ProvidersWrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={initialEntries}>
-        <ThemeProvider>{content}</ThemeProvider>
+        <ThemeProvider>{children}</ThemeProvider>
       </MemoryRouter>
     </QueryClientProvider>
   );
 
-  const result = render(element, renderOptions);
+  const result = render(content, { ...renderOptions, wrapper: ProvidersWrapper });
   return { ...result, queryClient };
 }
 

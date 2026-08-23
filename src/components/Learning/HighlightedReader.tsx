@@ -73,27 +73,90 @@ interface ProseStyleVars extends React.CSSProperties {
   "--tw-prose-code"?: string;
 }
 
-const cleanupHighlights = (container: HTMLElement) => {
-  const highlights = container.querySelectorAll('span[data-highlight="true"]');
-  highlights.forEach((span) => {
-    const text = document.createTextNode(span.textContent || "");
-    span.parentNode?.replaceChild(text, span);
-  });
-  container.normalize();
+/** 高亮遍历需要整棵子树跳过的元素：pre/code（CodeBlock 内部 Suspense 加载完成后
+ *  会删除 fallback 子树，高亮日志不能落入其中）、svg、KaTeX 渲染产物（mathml 与
+ *  html 双份文本）、以及显式声明忽略的区域。 */
+const shouldSkipElement = (el: Element): boolean => {
+  if (el.tagName === "PRE" || el.tagName === "CODE" || el.tagName === "SVG") {
+    return true;
+  }
+  if (el.hasAttribute("data-highlight-ignore")) return true;
+  const cls = el.getAttribute("class");
+  return cls !== null && cls.includes("katex");
 };
 
-const extractDomPlainText = (container: HTMLElement): string => {
-  const walker = document.createTreeWalker(
-    container,
-    NodeFilter.SHOW_TEXT,
-    null,
-  );
-  let text = "";
-  let node: Text | null;
-  while ((node = walker.nextNode() as Text)) {
-    text += node.textContent || "";
+interface TextNodeSpan {
+  node: Text;
+  start: number;
+  end: number;
+}
+
+/** 按文档顺序收集参与高亮的文本节点及其在全文中的偏移。
+ *  「计算 ranges 的文本流」与「应用 ranges 的文本流」必须共用本遍历，
+ *  二者严格一致，高亮位置才不可能错位。 */
+const collectTextNodes = (container: HTMLElement): TextNodeSpan[] => {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_ALL, {
+    acceptNode: (node) => {
+      if (node.nodeType === Node.TEXT_NODE) return NodeFilter.FILTER_ACCEPT;
+      if (
+        node.nodeType === Node.ELEMENT_NODE &&
+        shouldSkipElement(node as Element)
+      ) {
+        // REJECT：连同整个子树一并跳过
+        return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_SKIP;
+    },
+  });
+  const textNodes: TextNodeSpan[] = [];
+  let offset = 0;
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    if (node.nodeType !== Node.TEXT_NODE) continue;
+    const text = node as Text;
+    const length = text.textContent?.length ?? 0;
+    textNodes.push({ node: text, start: offset, end: offset + length });
+    offset += length;
   }
-  return text;
+  return textNodes;
+};
+
+const extractDomPlainText = (container: HTMLElement): string =>
+  collectTextNodes(container)
+    .map(({ node }) => node.textContent ?? "")
+    .join("");
+
+/** 一次高亮替换的日志条目：恢复时必须把 React 持有的 original 节点原位放回，
+ *  而不是新建等价文本节点——否则 React fiber→DOM 的引用仍指向已脱离的节点，
+ *  后续 removeChild 依然会抛 NotFoundError。 */
+interface HighlightMutation {
+  parent: Node;
+  original: Text;
+  /** 本次插入片段的首/尾节点，恢复时按区间移除 */
+  first: Node;
+  last: Node;
+  /** 替换发生时 original 的后继节点，恢复时 insertBefore 的锚点 */
+  anchor: Node | null;
+}
+
+/** 逆序还原：高亮按文档顺序应用，靠前的 mutation 可能以靠后的 original 为
+ *  锚点，逆序恢复保证锚点先归位。 */
+const restoreHighlights = (mutations: HighlightMutation[]): void => {
+  for (let i = mutations.length - 1; i >= 0; i--) {
+    const { parent, original, first, last, anchor } = mutations[i];
+    let node: Node | null = first;
+    while (node) {
+      const next: Node | null = node.nextSibling;
+      if (node.parentNode === parent) {
+        parent.removeChild(node);
+      }
+      if (node === last) break;
+      node = next;
+    }
+    if (original.parentNode !== parent) {
+      parent.insertBefore(original, anchor);
+    }
+  }
 };
 
 const analyzeTextLocally = (
@@ -316,34 +379,17 @@ const applyHighlightsToDom = (
   container: HTMLElement,
   ranges: HighlightRange[],
   isDark?: boolean,
-) => {
-  if (ranges.length === 0) return;
+): HighlightMutation[] => {
+  const mutations: HighlightMutation[] = [];
+  if (ranges.length === 0) return mutations;
 
-  const walker = document.createTreeWalker(
-    container,
-    NodeFilter.SHOW_TEXT,
-    null,
-  );
-
-  const textNodes: { node: Text; start: number; end: number }[] = [];
-  let currentOffset = 0;
+  const textNodes = collectTextNodes(container);
 
   // 预构建 range -> 下标 映射，避免给每个高亮片段重复线性 range.indexOf（原为 O(relevantRanges*ranges)）
   const rangeIndexMap = new Map<HighlightRange, number>();
   ranges.forEach((r, i) => {
     rangeIndexMap.set(r, i);
   });
-
-  let node: Text | null;
-  while ((node = walker.nextNode() as Text)) {
-    const length = node.textContent?.length || 0;
-    textNodes.push({
-      node,
-      start: currentOffset,
-      end: currentOffset + length,
-    });
-    currentOffset += length;
-  }
 
   textNodes.forEach(({ node, start, end }) => {
     const relevantRanges = ranges.filter(
@@ -440,9 +486,74 @@ const applyHighlightsToDom = (
     // 仅在 node 仍归属 parent 时才替换，否则安全跳过。
     if (node.parentNode !== parent) return;
 
+    // 记录变更日志：React fiber 仍持有 original 引用，恢复时必须原位放回
+    const anchor = node.nextSibling;
+    const first = fragment.firstChild;
+    const last = fragment.lastChild;
     parent.replaceChild(fragment, node);
+    if (first && last) {
+      mutations.push({ parent, original: node, first, last, anchor });
+    }
   });
+
+  return mutations;
 };
+
+interface HighlightDomGuardProps {
+  contentRef: React.RefObject<HTMLDivElement>;
+  mutationsRef: React.MutableRefObject<HighlightMutation[]>;
+  onRestored: () => void;
+  children: React.ReactNode;
+}
+
+/**
+ * 在 React 提交 DOM 变更（mutation 阶段）之前，还原高亮对 DOM 的命令式改动。
+ *
+ * getSnapshotBeforeUpdate 运行于 before-mutation 阶段——早于本子树内任何 DOM
+ * 增删——此刻把被替换的原始文本节点原位放回，React 后续的 removeChild /
+ * insertBefore 全部作用在与虚拟 DOM 一致的干净树上，从根本上避免
+ * "NotFoundError: The node to be removed is not a child of this node"。
+ * 随后 componentDidUpdate（layout 阶段、绘制前）同步原位重绘同一批 ranges，
+ * 用户不会看到高亮闪断。
+ *
+ * react-markdown v10 为无状态纯函数组件，只随父组件重渲染、没有独立更新
+ * 路径，因此该守卫可覆盖 prose 子树的全部提交。
+ */
+class HighlightDomGuard extends React.Component<HighlightDomGuardProps> {
+  override getSnapshotBeforeUpdate(): boolean {
+    const { contentRef, mutationsRef } = this.props;
+    if (contentRef.current && mutationsRef.current.length > 0) {
+      restoreHighlights(mutationsRef.current);
+      mutationsRef.current = [];
+      return true;
+    }
+    return false;
+  }
+
+  override componentDidUpdate(
+    _prevProps: Readonly<HighlightDomGuardProps>,
+    _prevState: Readonly<Record<string, never>>,
+    restored: boolean,
+  ): void {
+    if (restored) {
+      this.props.onRestored();
+    }
+  }
+
+  override componentWillUnmount(): void {
+    // 卸载走 deletion 路径：父组件的 componentWillUnmount 先于子树 host 节点
+    // 的 removeChild 执行，这里同样先还原，避免删除被替换节点时抛错
+    const { contentRef, mutationsRef } = this.props;
+    if (contentRef.current && mutationsRef.current.length > 0) {
+      restoreHighlights(mutationsRef.current);
+      mutationsRef.current = [];
+    }
+  }
+
+  override render(): React.ReactNode {
+    return this.props.children;
+  }
+}
 
 export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
   content,
@@ -496,6 +607,15 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
     importanceBreakdown: Record<number, number>;
   } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  /** 高亮对 DOM 的改动日志：记录被替换的原始文本节点，恢复时原位放回 React 持有的节点引用 */
+  const mutationsRef = useRef<HighlightMutation[]>([]);
+  /** 当前 highlightRanges 所分析的 content：重绘前校验，内容已变则丢弃，防止旧偏移落到新文本 */
+  const analyzedContentRef = useRef<string | null>(null);
+  /** rAF 异步回调里读取最新主题：主题切换由守卫的原位重绘即时生效，无需触发重新分析 */
+  const isDarkRef = useRef(isDark);
+  useEffect(() => {
+    isDarkRef.current = isDark;
+  }, [isDark]);
   const debouncedSetNeedsHighlight = useMemo(
     () =>
       debounce(() => {
@@ -504,6 +624,19 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
       }, 300),
     [],
   );
+
+  // 守卫还原 DOM 后立即原位重绘：内容未变 → DOM 文本与 ranges 计算时完全一致，
+  // 落点不可能偏移；内容已变则跳过，交给防抖后的重新分析。
+  const handleDomRestored = () => {
+    const container = contentRef.current;
+    if (!container || highlightRanges.length === 0) return;
+    if (analyzedContentRef.current !== content) return;
+    mutationsRef.current = applyHighlightsToDom(
+      container,
+      highlightRanges,
+      isDark,
+    );
+  };
 
   useEffect(() => {
     if (highlightEnabled && content) {
@@ -514,8 +647,9 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
       setIsAnalyzing(false);
       setNeedsHighlight(false);
       setHighlightStats(null);
-      if (contentRef.current) {
-        cleanupHighlights(contentRef.current);
+      if (contentRef.current && mutationsRef.current.length > 0) {
+        restoreHighlights(mutationsRef.current);
+        mutationsRef.current = [];
       }
     }
   }, [content, highlightEnabled, highlightIntensity, keywords, debouncedSetNeedsHighlight]);
@@ -533,7 +667,12 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
     const container = contentRef.current;
 
     const rafId = requestAnimationFrame(() => {
-      cleanupHighlights(container);
+      // 先还原为 React 原始节点：旧高亮 span 不参与新一轮文本收集，
+      // 保证分析与作用在同一份干净 DOM 上
+      if (mutationsRef.current.length > 0) {
+        restoreHighlights(mutationsRef.current);
+        mutationsRef.current = [];
+      }
 
       const plainText = extractDomPlainText(container);
       if (!plainText) {
@@ -545,7 +684,21 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
 
       const finishHighlight = (ranges: HighlightRange[]) => {
         if (cancelled) return;
-        applyHighlightsToDom(container, ranges, isDark);
+        // 异步分析（onAnalyze）期间内容可能已切换：文本不一致说明结果过期，
+        // 直接丢弃，等待内容 effect 触发的重新分析，避免旧 ranges 偏移到新文本
+        if (extractDomPlainText(container) !== plainText) {
+          setHighlightRanges([]);
+          setHighlightStats(null);
+          setIsAnalyzing(false);
+          setNeedsHighlight(false);
+          return;
+        }
+        mutationsRef.current = applyHighlightsToDom(
+          container,
+          ranges,
+          isDarkRef.current,
+        );
+        analyzedContentRef.current = content;
         setHighlightRanges(ranges);
         setIsAnalyzing(false);
         setNeedsHighlight(false);
@@ -576,7 +729,7 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
       cancelled = true;
       cancelAnimationFrame(rafId);
     };
-  }, [needsHighlight, highlightIntensity, keywords, onAnalyze, isDark, patterns]);
+  }, [needsHighlight, highlightIntensity, keywords, onAnalyze, patterns, content]);
 
   useEffect(() => {
     const container = contentRef.current;
@@ -776,42 +929,48 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
         }`}
         style={bodyStyle}
       >
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[[rehypeKatex, { output: "html" }]]}
-          components={{
-            code: ({ className, children, node: _node }) => (
-              <CodeBlock className={className} isDark={isDark} node={_node}>
-                {children}
-              </CodeBlock>
-            ),
-            a: ({ node: _node, ...props }) => {
-              const { href, children } = props;
-              if (href && href.startsWith("term:")) {
-                const explanation = href.replace("term:", "");
-                return (
-                  <TermTooltip
-                    term={String(children)}
-                    explanation={decodeURIComponent(explanation)}
-                  />
-                );
-              }
-              return (
-                <a
-                  {...props}
-                  className="text-primary-600 underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={props.href}
-                >
-                  {props.href}
-                </a>
-              );
-            },
-          }}
+        <HighlightDomGuard
+          contentRef={contentRef}
+          mutationsRef={mutationsRef}
+          onRestored={handleDomRestored}
         >
-          {preprocessMarkdown(content)}
-        </ReactMarkdown>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[[rehypeKatex, { output: "html" }]]}
+            components={{
+              code: ({ className, children, node: _node }) => (
+                <CodeBlock className={className} isDark={isDark} node={_node}>
+                  {children}
+                </CodeBlock>
+              ),
+              a: ({ node: _node, ...props }) => {
+                const { href, children } = props;
+                if (href && href.startsWith("term:")) {
+                  const explanation = href.replace("term:", "");
+                  return (
+                    <TermTooltip
+                      term={String(children)}
+                      explanation={decodeURIComponent(explanation)}
+                    />
+                  );
+                }
+                return (
+                  <a
+                    {...props}
+                    className="text-primary-600 underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={props.href}
+                  >
+                    {props.href}
+                  </a>
+                );
+              },
+            }}
+          >
+            {preprocessMarkdown(content)}
+          </ReactMarkdown>
+        </HighlightDomGuard>
       </div>
 
       <AnimatePresence>

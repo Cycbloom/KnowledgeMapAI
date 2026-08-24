@@ -109,10 +109,36 @@ export function getPwaPlugins(isElectronBuild: boolean) {
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2,json}"],
+        // P1-3: 重型懒加载 vendor（mermaid 图表 / three.js 3D 视图 / recharts 统计图）
+        // 不进入 SW 预缓存，改为运行时按需缓存——安装 SW 与每次发版不再强制
+        // 下载数 MB 的低频资源，首次在线访问后由下方 runtimeCaching 缓存供离线复用。
+        // 这些文件名带内容 hash（不可变），CacheFirst 语义安全。
+        globIgnores: [
+          "**/vendor-mermaid*.js",
+          "**/vendor-three*.js",
+          "**/vendor-postprocessing*.js",
+          "**/vendor-charts*.js",
+        ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         navigationPreload: false,
         runtimeCaching: [
+          {
+            // 被 globIgnores 排除出预缓存的重型 vendor chunk：同源 assets/ 下
+            // 内容 hash 文件名不可变，CacheFirst 命中后不再回源。
+            urlPattern: /assets\/vendor-(?:mermaid|three|postprocessing|charts)[^/]*\.js$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "heavy-vendor-chunks",
+              expiration: {
+                maxEntries: 48,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: "CacheFirst",

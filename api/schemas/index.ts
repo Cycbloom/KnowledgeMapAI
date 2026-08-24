@@ -614,7 +614,7 @@ export const podcastScriptSchema = z.object({
 });
 
 export const batchExpandGraphSchema = z.object({
-  graph_id: z.string().uuid("无效的图谱ID"),
+  graph_id: z.string().uuid("无效的图谱ID").optional(),
   node_ids: z.array(z.string().uuid()).min(1, "至少需要一个节点").max(50, "单次最多50个节点"),
   max_depth: z.number().min(1).max(5).optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),

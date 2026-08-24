@@ -13,6 +13,7 @@ import "./taskProcessors/infiniteExpansionProcessor.js";
 import "./taskProcessors/embeddingGenerationProcessor.js";
 import "./taskProcessors/quizGenerationProcessor.js";
 import "./taskProcessors/generateQuestionsProcessor.js";
+import "./taskProcessors/expandGraphProcessor.js";
 
 export interface TaskProgress {
   stage?: string;

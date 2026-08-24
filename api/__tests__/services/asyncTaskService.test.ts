@@ -183,6 +183,7 @@ vi.mock("../../services/taskProcessors/infiniteExpansionProcessor.js", () => ({}
 vi.mock("../../services/taskProcessors/embeddingGenerationProcessor.js", () => ({}));
 vi.mock("../../services/taskProcessors/quizGenerationProcessor.js", () => ({}));
 vi.mock("../../services/taskProcessors/generateQuestionsProcessor.js", () => ({}));
+vi.mock("../../services/taskProcessors/expandGraphProcessor.js", () => ({}));
 
 // Import AFTER mocks so the module picks up the mocked dependencies.
 import { AsyncTaskService } from "../../services/asyncTaskService";

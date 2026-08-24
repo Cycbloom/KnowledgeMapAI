@@ -1765,13 +1765,13 @@ export type Database = {
           correct_count: number | null
           created_at: string | null
           id: string
-          knowledge_point_id: string
+          knowledge_point_id: string | null
           quiz_set_id: string | null
           score: number | null
           session_type: string
           started_at: string
           status: string | null
-          subtask_id: string
+          subtask_id: string | null
           total_count: number | null
           total_time_spent: number | null
           updated_at: string | null
@@ -1783,13 +1783,13 @@ export type Database = {
           correct_count?: number | null
           created_at?: string | null
           id?: string
-          knowledge_point_id: string
+          knowledge_point_id?: string | null
           quiz_set_id?: string | null
           score?: number | null
           session_type: string
           started_at?: string
           status?: string | null
-          subtask_id: string
+          subtask_id?: string | null
           total_count?: number | null
           total_time_spent?: number | null
           updated_at?: string | null
@@ -1801,13 +1801,13 @@ export type Database = {
           correct_count?: number | null
           created_at?: string | null
           id?: string
-          knowledge_point_id?: string
+          knowledge_point_id?: string | null
           quiz_set_id?: string | null
           score?: number | null
           session_type?: string
           started_at?: string
           status?: string | null
-          subtask_id?: string
+          subtask_id?: string | null
           total_count?: number | null
           total_time_spent?: number | null
           updated_at?: string | null

@@ -43,5 +43,10 @@ export {
   getHistory,
   auditCommands,
   auditCommand,
+  navCommands,
+  navCommand,
+  findNavTarget,
+  statsCommands,
+  statsCommand,
   allCommands,
 } from "./commands";

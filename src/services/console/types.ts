@@ -24,6 +24,7 @@ export interface CommandResult {
 export interface CommandContext {
   userId: string;
   consoleId: string;
+  navigate?: (path: string) => void;
 }
 
 export interface Command {

@@ -166,7 +166,14 @@ const handleVersion = async (_args: ParsedArgs, _context: CommandContext): Promi
   };
 };
 
-const handleHome = async (_args: ParsedArgs, _context: CommandContext): Promise<CommandResult> => {
+const handleHome = async (_args: ParsedArgs, context: CommandContext): Promise<CommandResult> => {
+  if (context.navigate) {
+    context.navigate('/');
+    return {
+      success: true,
+      message: i18n.t('console.commands.system.homeRedirecting'),
+    };
+  }
   if (typeof window !== 'undefined') {
     window.location.href = '/';
     return {

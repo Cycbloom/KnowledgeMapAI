@@ -22,7 +22,10 @@
     "searchPlaceholder": "输入搜索关键词...",
     "confirmPlaceholder": "输入 y 确认 / n 取消",
     "commandPlaceholder": "输入命令... (Tab 补全, Ctrl+R 搜索历史)",
-    "commandAria": "命令输入"
+    "commandAria": "命令输入",
+    "searchAria": "搜索历史命令",
+    "searchNoResults": "没有匹配的历史记录",
+    "searchHint": "↑↓ 选择 · Enter 填充 · Esc 取消"
   },
   "output": {
     "clear": "清空输出",
@@ -442,6 +445,28 @@
       "auditClearUsage": "audit clear",
       "auditLimitOption": "显示的日志数量",
       "auditCommandOption": "要搜索的命令模式"
+    },
+    "nav": {
+      "navDesc": "快速导航到指定页面",
+      "navUsage": "nav <目标 | /路径>",
+      "navigating": "正在导航到 {{target}}...",
+      "unknownTarget": "未知导航目标 \"{{target}}\"，输入 nav 查看可用目标",
+      "noNavigator": "当前环境不支持页面导航",
+      "listTitle": "🧭 可用导航目标",
+      "headerTarget": "目标",
+      "headerPath": "路径",
+      "headerLabel": "页面"
+    },
+    "stats": {
+      "statsDesc": "显示今日学习概览",
+      "statsUsage": "stats",
+      "title": "📅 今日概览",
+      "headerItem": "项目",
+      "headerCount": "数量",
+      "inboxPending": "收件箱待处理",
+      "dueCardsToday": "今日到期卡片",
+      "dueTasksToday": "今日到期任务",
+      "failed": "获取今日概览失败: {{message}}"
     },
     "system": {
       "appName": "KnowledgeMap 控制台",

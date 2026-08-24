@@ -156,6 +156,7 @@ export const Layout = () => {
   } = useConsole({
     userId: user?.id || '',
     autoRegisterCommands: true,
+    navigate,
   });
 
   useGlobalShortcuts({

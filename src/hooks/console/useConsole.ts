@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import { commandRegistry, consoleLogger, allCommands, type CommandResult, type CommandHistoryItem, type CommandContext, type CommandPermission } from '@/services/console';
@@ -7,6 +7,7 @@ import { useConsoleStore, type ConfirmDialogType } from '@/store/useConsoleStore
 export interface UseConsoleOptions {
   userId: string;
   autoRegisterCommands?: boolean;
+  navigate?: (path: string) => void;
 }
 
 export interface UseConsoleReturn {
@@ -43,15 +44,25 @@ export interface UseConsoleReturn {
 
 export function useConsole(options: UseConsoleOptions): UseConsoleReturn {
   const { t } = useTranslation();
-  const { userId, autoRegisterCommands = true } = options;
+  const { userId, autoRegisterCommands = true, navigate } = options;
 
   const commandsRegistered = useRef(false);
   const pendingCommand = useRef<string>('');
+  const consoleIdRef = useRef<string>('');
 
-  const context: CommandContext = {
-    userId,
-    consoleId: crypto.randomUUID(),
-  };
+  if (!consoleIdRef.current) {
+    consoleIdRef.current = crypto.randomUUID();
+  }
+
+  // context 必须保持引用稳定，否则依赖它的 executeCommand 等回调会频繁重建
+  const context = useMemo<CommandContext>(
+    () => ({
+      userId,
+      consoleId: consoleIdRef.current,
+      navigate,
+    }),
+    [userId, navigate],
+  );
 
   // 精确订阅实际使用的字段，避免全量订阅导致无关字段变化触发 hook 消费者重渲染
   const store = useConsoleStore(

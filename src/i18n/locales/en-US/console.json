@@ -22,7 +22,10 @@
     "searchPlaceholder": "Enter search keywords...",
     "confirmPlaceholder": "Enter y to confirm / n to cancel",
     "commandPlaceholder": "Enter command... (Tab for autocomplete, Ctrl+R to search history)",
-    "commandAria": "Command input"
+    "commandAria": "Command input",
+    "searchAria": "Search command history",
+    "searchNoResults": "No matching history",
+    "searchHint": "↑↓ select · Enter fill · Esc cancel"
   },
   "output": {
     "clear": "Clear Output",
@@ -443,6 +446,28 @@
       "auditClearUsage": "audit clear",
       "auditLimitOption": "Number of logs to display",
       "auditCommandOption": "Command pattern to search"
+    },
+    "nav": {
+      "navDesc": "Navigate quickly to a page",
+      "navUsage": "nav <target | /path>",
+      "navigating": "Navigating to {{target}}...",
+      "unknownTarget": "Unknown navigation target \"{{target}}\". Type nav to list available targets",
+      "noNavigator": "Page navigation is not available in this environment",
+      "listTitle": "🧭 Available navigation targets",
+      "headerTarget": "Target",
+      "headerPath": "Path",
+      "headerLabel": "Page"
+    },
+    "stats": {
+      "statsDesc": "Show today's learning overview",
+      "statsUsage": "stats",
+      "title": "📅 Today's Overview",
+      "headerItem": "Item",
+      "headerCount": "Count",
+      "inboxPending": "Inbox pending",
+      "dueCardsToday": "Cards due today",
+      "dueTasksToday": "Tasks due today",
+      "failed": "Failed to load today's overview: {{message}}"
     },
     "system": {
       "appName": "KnowledgeMap Console",

@@ -29,7 +29,7 @@ interface CombinedGraphSidebarProps {
   aiOps?: {
     handleExpandNode: (prompt?: string) => Promise<{ newNodesCount: number; newEdgesCount: number } | null>;
     handleGenerateContent: (prompt?: string) => Promise<string | null>;
-    handleGenerateCards: () => Promise<number | null>;
+    handleGenerateCards: () => void;
     handleStartLevelTest: () => void;
     handleStartLearningMode: () => void;
     handleAnalyzeCrossGraphConnections: () => Promise<unknown>;

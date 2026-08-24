@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import type { Node, Edge, GraphColorMode, NodeStatus } from "../../../types";
-import type { RelatedNode } from "../../../hooks/graphEditor/useMiscState";
 import { levelLabels, DECAY_CONFIG } from "../../../config/graphConfig";
 import { getLearningStatus, getStatusColors, } from "../../../config/learningStatusColors";
 import { getLevel } from "../../../utils/graph/graphUtils";
@@ -15,8 +14,6 @@ import { backlinksApi } from "../../../services/api/backlinks";
 import {
   TermTooltip,
   LazyImage,
-  Skeleton,
-  EmptyState,
   CollapsibleSection,
 } from "../../common";
 import { CodeBlock } from "../../common/CodeBlock";
@@ -60,21 +57,14 @@ interface NodeDetailSidebarProps {
   onDelete: () => void;
   onStartLevelTest: () => void;
   onStartLearningMode: () => void;
-  onGenerateCards: () => void;
-  onFetchRelatedNodes: () => void;
+  onManageCards: () => void;
 
-  showRelatedSection: boolean;
-  isRelatedLoading: boolean;
-  relatedNodes: RelatedNode[];
-  onRelatedNodeClick: (node: RelatedNode) => void;
+  onRelatedNodeClick: (node: Node) => void;
 
   onUpdateNode?: (nodeId: string, updates: Partial<Node>) => void;
   isExplorationMode?: boolean;
 
   onGenerateNodeContent: () => void;
-  onDeepAnalysis: () => void;
-  onGenerateQuiz: () => void;
-  onBackgroundGenerate: () => void;
   isReadOnly?: boolean;
   onShowVersionHistory?: () => void;
   isGeneratingContent?: boolean;
@@ -93,18 +83,11 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   onDelete,
   onStartLevelTest,
   onStartLearningMode,
-  onGenerateCards,
-  onFetchRelatedNodes,
-  showRelatedSection,
-  isRelatedLoading,
-  relatedNodes,
+  onManageCards,
   onRelatedNodeClick,
   onUpdateNode,
   isExplorationMode = false,
   onGenerateNodeContent,
-  onDeepAnalysis,
-  onGenerateQuiz,
-  onBackgroundGenerate,
   nodes = [],
   isReadOnly = false,
   onShowVersionHistory,
@@ -476,58 +459,16 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             </button>
 
             <button
-              onClick={onGenerateCards}
+              onClick={onManageCards}
               className={`flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "p-3.5 min-h-[48px]" : "p-3"}`}
             >
               <Sparkles
                 size={isMobile ? 20 : 18}
                 className="mr-2 text-amber-500"
               />
-              <span className="font-medium">{t("nodeDetail.generateCards")}</span>
+              <span className="font-medium">{t("nodeDetail.manageCards")}</span>
             </button>
           </section>
-        )}
-
-        {/* AI Analysis Section */}
-        {!isReadOnly && (
-          <div className="bg-gradient-to-br from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20 rounded-2xl p-4 border border-primary-100 dark:border-primary-800">
-            <div className="flex items-center justify-between mb-3">
-              <h3
-                className={`font-bold text-primary-900 dark:text-primary-300 flex items-center ${isMobile ? "text-base" : ""}`}
-              >
-                <Wand2 size={isMobile ? 18 : 16} className="mr-2" />
-                {t("nodeDetail.aiDeepExplore")}
-              </h3>
-              <span className="text-[10px] bg-primary-200 dark:bg-primary-800 text-primary-800 dark:text-primary-300 px-2 py-0.5 rounded-full">
-                Beta
-              </span>
-            </div>
-            <p className="text-xs text-primary-700 dark:text-primary-400 mb-4 leading-relaxed">
-              {t("nodeDetail.aiDeepExploreDesc")}
-            </p>
-            <div
-              className={`grid gap-2 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}
-            >
-              <button
-                onClick={onDeepAnalysis}
-                className={`bg-white dark:bg-gray-800 text-primary-700 dark:text-primary-300 text-xs font-bold rounded-lg border border-primary-200 dark:border-primary-700 shadow-sm hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
-              >
-                {t("nodeDetail.deepAnalysis")}
-              </button>
-              <button
-                onClick={onGenerateQuiz}
-                className={`bg-white dark:bg-gray-800 text-primary-700 dark:text-primary-300 text-xs font-bold rounded-lg border border-primary-200 dark:border-primary-700 shadow-sm hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
-              >
-                {t("nodeDetail.generateQuiz")}
-              </button>
-              <button
-                onClick={onBackgroundGenerate}
-                className={`bg-white dark:bg-gray-800 text-primary-700 dark:text-primary-300 text-xs font-bold rounded-lg border border-primary-200 dark:border-primary-700 shadow-sm hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
-              >
-                {t("nodeDetail.backgroundGenerate")}
-              </button>
-            </div>
-          </div>
         )}
 
         {/* Navigation Links */}
@@ -578,62 +519,6 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             </CollapsibleSection>
           )}
         </div>
-
-        {/* Related Nodes Section */}
-        <CollapsibleSection
-          id="related"
-          storagePrefix="node-detail"
-          className="mt-4 pt-4 border-t border-primary-200 dark:border-primary-800"
-          title={
-            <h5 className="text-xs font-bold text-primary-700 dark:text-primary-400">
-              🔗 {t("nodeDetail.semanticRelatedNodes")}
-            </h5>
-          }
-        >
-          {!showRelatedSection && (
-            <div className="mb-2">
-              <button
-                onClick={onFetchRelatedNodes}
-                className="text-[10px] bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 px-2 py-1 rounded hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors"
-              >
-                {t("nodeDetail.loadRelated")}
-              </button>
-            </div>
-          )}
-
-          {showRelatedSection && (
-            <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-2 min-h-[60px]">
-              {isRelatedLoading ? (
-                <div className="flex flex-wrap gap-2">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <Skeleton
-                      key={i}
-                      variant="rectangular"
-                      className="h-6 w-20"
-                    />
-                  ))}
-                </div>
-              ) : relatedNodes.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {relatedNodes.map((rNode) => (
-                    <button
-                      key={rNode.id}
-                      onClick={() => onRelatedNodeClick(rNode)}
-                      className="text-xs bg-white dark:bg-gray-700 border border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-400 px-2 py-1 rounded-md shadow-sm hover:bg-primary-50 dark:hover:bg-gray-600 transition-colors truncate max-w-full"
-                    >
-                      {rNode.title}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  variant="inline"
-                  title={t("nodeDetail.noRelatedNodes")}
-                />
-              )}
-            </div>
-          )}
-        </CollapsibleSection>
 
         {/* Branch Status Section */}
         {isExplorationMode && (

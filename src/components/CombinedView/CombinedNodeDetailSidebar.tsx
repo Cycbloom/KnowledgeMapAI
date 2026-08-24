@@ -45,7 +45,7 @@ interface CombinedNodeDetailSidebarProps {
       prompt?: string,
     ) => Promise<{ newNodesCount: number; newEdgesCount: number } | null>;
     handleGenerateContent: (prompt?: string) => Promise<string | null>;
-    handleGenerateCards: () => Promise<number | null>;
+    handleGenerateCards: () => void;
     handleStartLevelTest: () => void;
     handleStartLearningMode: () => void;
     handleAnalyzeCrossGraphConnections: () => Promise<unknown>;
@@ -302,7 +302,7 @@ export const CombinedNodeDetailSidebar: React.FC<
                 className="flex items-center justify-center p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <Sparkles size={18} className="mr-2 text-amber-500" />
-                <span className="font-medium">{t("nodeDetail.generateCards")}</span>
+                <span className="font-medium">{t("nodeDetail.manageCards")}</span>
               </button>
             </section>
           </>

@@ -10,7 +10,7 @@ interface MobileNodeActionMenuProps {
   nodeTitle?: string;
   onEdit: () => void;
   onAIExpand?: () => void;
-  onGenerateCards?: () => void;
+  onManageCards?: () => void;
   onDelete: () => void;
   onStartLearning?: () => void;
   onGenerateContent?: () => void;
@@ -23,7 +23,7 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
   nodeTitle,
   onEdit,
   onAIExpand,
-  onGenerateCards,
+  onManageCards,
   onDelete,
   onStartLearning,
   onGenerateContent,
@@ -34,7 +34,7 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
     { key: 'edit', icon: Edit3, labelKey: 'nodeDetail.editNode', color: 'text-primary-500' },
     { key: 'aiExpand', icon: Sparkles, labelKey: 'nodeDetail.aiExpand', color: 'text-primary-500' },
     { key: 'generateContent', icon: Wand2, labelKey: 'nodeDetail.generateContent', color: 'text-amber-500' },
-    { key: 'generateCards', icon: Layers, labelKey: 'nodeDetail.generateCards', color: 'text-emerald-500' },
+    { key: 'manageCards', icon: Layers, labelKey: 'nodeDetail.manageCards', color: 'text-emerald-500' },
     { key: 'startLearning', icon: GraduationCap, labelKey: 'nodeDetail.startLearning', color: 'text-primary-500' },
   ] as const;
 
@@ -51,8 +51,8 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
         return onAIExpand;
       case 'generateContent':
         return onGenerateContent;
-      case 'generateCards':
-        return onGenerateCards;
+      case 'manageCards':
+        return onManageCards;
       case 'startLearning':
         return onStartLearning;
       default:

@@ -678,8 +678,6 @@ export const GraphEditor = () => {
     state,
     mutations: {
       aiExpandMutation: mutations.aiExpandMutation,
-      aiGenerateCardsMutation: mutations.aiGenerateCardsMutation,
-      createCardsBatchMutation: mutations.createCardsBatchMutation,
       createTaskMutation: mutations.createTaskMutation,
       createNodeMutation: mutations.createNodeMutation,
       createEdgeMutation: mutations.createEdgeMutation,
@@ -1227,12 +1225,12 @@ export const GraphEditor = () => {
     }
   }, [nodes, mobileActionNodeId, setSelectedNode, setIsTextToGraphOpen]);
 
-  const handleMobileGenerateCards = useCallback(() => {
+  const handleMobileManageCards = useCallback(() => {
     const node = nodes.find((n) => n.id === mobileActionNodeId);
-    if (node) {
-      setSelectedNode(node);
+    if (node && id) {
+      navigate(`/study?node_id=${node.id}&graph_id=${id}&view=bank`);
     }
-  }, [nodes, mobileActionNodeId, setSelectedNode]);
+  }, [nodes, mobileActionNodeId, id, navigate]);
 
   const handleMobileStartLearning = useCallback(() => {
     const node = nodes.find((n) => n.id === mobileActionNodeId);
@@ -1899,7 +1897,7 @@ export const GraphEditor = () => {
             onEdit={handleMobileEdit}
             onAIExpand={handleMobileAIExpand}
             onGenerateContent={handleMobileGenerateContent}
-            onGenerateCards={handleMobileGenerateCards}
+            onManageCards={handleMobileManageCards}
             onStartLearning={handleMobileStartLearning}
             onDelete={handleMobileDelete}
           />

@@ -1,7 +1,6 @@
 import { Node, Edge, BranchSuggestion, ExplorationPathItem } from '../../types';
 import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
 import type { AIAction } from '@shared/types/ai';
-import type { RelatedNode } from '../graphEditor/useMiscState';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../utils/graph/graphUtils';
 import { HistoryAction } from '../common/useHistory';
 import { GraphEditorState } from '../graphEditor';
@@ -18,13 +17,6 @@ import {
   getCurrentChildrenTitles,
   buildDefaultExpandPrompt
 } from '../utils/nodeExpansionUtils';
-
-interface AIGeneratedCard {
-  question: string;
-  answer: string;
-  type: string;
-  options?: string[];
-}
 
 interface AIExpandResult {
   suggestions: Array<{
@@ -47,16 +39,6 @@ interface AIExpandVariables {
   language?: string;
 }
 
-interface AIGenerateCardsVariables {
-  node_title: string;
-  node_content?: string;
-  count?: number;
-  types?: string[];
-  provider?: string;
-  model?: string;
-  language?: string;
-}
-
 interface RecommendConnectionsVariables {
   graph_id: string;
   node_title: string;
@@ -65,8 +47,6 @@ interface RecommendConnectionsVariables {
 
 interface GraphAIMutations {
   aiExpandMutation: UseMutationResult<AIExpandResult, Error, AIExpandVariables, unknown>;
-  aiGenerateCardsMutation: UseMutationResult<{ cards: AIGeneratedCard[] }, Error, AIGenerateCardsVariables, unknown>;
-  createCardsBatchMutation: UseMutationResult<unknown, Error, unknown[], unknown>;
   createTaskMutation: UseMutationResult<unknown, Error, { type: string; payload: unknown }, unknown>;
   createNodeMutation: UseMutationResult<Node, Error, CreateNodeData, unknown>;
   createEdgeMutation: UseMutationResult<Edge, Error, { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type: string; graphId?: string }, unknown>;
@@ -108,8 +88,6 @@ export const useGraphAIOperations = ({
   } = state;
   const {
     aiExpandMutation,
-    aiGenerateCardsMutation,
-    createCardsBatchMutation,
     createTaskMutation,
     createNodeMutation,
     createEdgeMutation,
@@ -240,46 +218,22 @@ export const useGraphAIOperations = ({
     );
   };
 
-  const handleAIGenerateCards = async () => {
-    if (!selectedNode || !id) return;
-
-    await asyncHandler(
-      async () => {
-        const res = await aiGenerateCardsMutation.mutateAsync({
-          node_title: selectedNode.title,
-          node_content: selectedNode.content
-        });
-
-        const cards = res.cards.map((c: AIGeneratedCard) => ({
-          node_id: selectedNode.id,
-          question: c.question,
-          answer: c.answer,
-          type: c.type,
-          options: c.options
-        }));
-
-        if (cards.length === 0) {
-          message.error(t('toast.graphAI.cardGenerateFailed'));
-          return null;
-        }
-
-        await createCardsBatchMutation.mutateAsync(cards);
-        queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(id) });
-        return cards.length;
-      },
-      {
-        loadingSetter: setLoading,
-        errorMessage: t('toast.graphAI.cardGenerateFailed'),
-        onSuccess: (result) => {
-          if (result && typeof result === 'number') {
-            message.success(t('toast.graphAI.cardGenerateSuccess', { count: result }));
-          }
-        }
-      }
-    );
+  const handleStartLevelTest = () => {
+    if (!selectedNode) return;
+    navigate(`/study?node_id=${selectedNode.id}&graph_id=${id}`);
   };
 
-  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions' | 'deep_analysis', params?: Record<string, unknown>) => {
+  const handleStartLearningMode = () => {
+    if (!selectedNode) return;
+    navigate(`/learning?node_id=${selectedNode.id}&graph_id=${id}`);
+  };
+
+  const handleManageCards = () => {
+    if (!selectedNode || !id) return;
+    navigate(`/study?node_id=${selectedNode.id}&graph_id=${id}&view=bank`);
+  };
+
+  const handleBackgroundTask = async (type: 'expand_graph' | 'batch_generate_questions', params?: Record<string, unknown>) => {
     if (selectedNodeIds.size === 0 && !selectedNode) return;
     if (!id) return;
 
@@ -367,34 +321,6 @@ export const useGraphAIOperations = ({
         onSuccess: () => {
           message.success(t('toast.graphAI.submitSuccess'), { duration: 3000 });
         }
-      }
-    );
-  };
-
-  const handleStartLevelTest = () => {
-    if (!selectedNode) return;
-    navigate(`/study?node_id=${selectedNode.id}`);
-  };
-
-  const handleStartLearningMode = () => {
-    if (!selectedNode) return;
-    navigate(`/learning?node_id=${selectedNode.id}&graph_id=${id}`);
-  };
-
-  const handleFetchRelatedNodes = async () => {
-    if (!selectedNode) return;
-    state.setIsRelatedLoading(true);
-    state.setShowRelatedSection(true);
-
-    await asyncHandler(
-      async () => {
-        const res = await api.nodes.getRelated(selectedNode.id);
-        state.setRelatedNodes((res as RelatedNode[]) || []);
-        return res;
-      },
-      {
-        errorMessage: t('common.aiOperations.fetchRelatedNodesFailed'),
-        onFinally: () => state.setIsRelatedLoading(false)
       }
     );
   };
@@ -667,11 +593,10 @@ export const useGraphAIOperations = ({
   return {
     handleAIGenerate,
     handleAIExpand,
-    handleAIGenerateCards,
     handleBackgroundTask,
     handleStartLevelTest,
     handleStartLearningMode,
-    handleFetchRelatedNodes,
+    handleManageCards,
     handleGetBranchSuggestions,
     handleCreateBranch,
     handleSwitchBranch,

@@ -32,11 +32,10 @@ interface NodeOperations {
 }
 
 interface AIOperations {
-  handleBackgroundTask: (type: "generate_questions" | "expand_graph" | "batch_generate_questions" | "deep_analysis", data?: Record<string, unknown>) => void | Promise<void>;
+  handleBackgroundTask: (type: "expand_graph" | "batch_generate_questions", data?: Record<string, unknown>) => void | Promise<void>;
   handleStartLevelTest: () => void;
   handleStartLearningMode: () => void;
-  handleAIGenerateCards: () => void;
-  handleFetchRelatedNodes: () => void;
+  handleManageCards: () => void;
   handleGenerateNodeContent: () => void;
 }
 
@@ -102,9 +101,6 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
     nodeForm,
     setNodeForm,
     loading,
-    showRelatedSection,
-    isRelatedLoading,
-    relatedNodes,
     sidebarWidth,
     setSidebarWidth,
     setFocusedNodeId,
@@ -281,11 +277,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
           onDelete={() => nodeOps.handleDeleteNode()}
           onStartLevelTest={aiOps.handleStartLevelTest}
           onStartLearningMode={aiOps.handleStartLearningMode}
-          onGenerateCards={aiOps.handleAIGenerateCards}
-          onFetchRelatedNodes={aiOps.handleFetchRelatedNodes}
-          showRelatedSection={showRelatedSection}
-          isRelatedLoading={isRelatedLoading}
-          relatedNodes={relatedNodes}
+          onManageCards={aiOps.handleManageCards}
           onRelatedNodeClick={(relatedNode) => {
             const focusedNodes = getFocusedNodes(relatedNode.id, nodes, edges);
             const focusedLinks = getFocusedLinks(focusedNodes, edges);
@@ -306,13 +298,6 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
           }}
           isExplorationMode={isExplorationMode}
           onGenerateNodeContent={aiOps.handleGenerateNodeContent}
-          onDeepAnalysis={() => aiOps.handleBackgroundTask("deep_analysis")}
-          onGenerateQuiz={() =>
-            aiOps.handleBackgroundTask("generate_questions")
-          }
-          onBackgroundGenerate={() =>
-            aiOps.handleBackgroundTask("expand_graph")
-          }
           isReadOnly={isReadOnly}
           onShowVersionHistory={() => setIsVersionHistoryOpen(true)}
           isGeneratingContent={loading}

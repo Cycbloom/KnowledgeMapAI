@@ -4,7 +4,7 @@ import { message } from '../../utils/messageHelper';
 import { api } from '../../services/api';
 import { useStore } from '../../store/useStore';
 import { queryKeys } from '../queries/config';
-import { useAIExpandMutation, useAIGenerateCardsMutation, useCreateCardsBatchMutation, useCreateNodeMutation, useCreateEdgeMutation, useUpdateNodeMutation } from '../mutations';
+import { useAIExpandMutation, useCreateNodeMutation, useCreateEdgeMutation, useUpdateNodeMutation } from '../mutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -36,8 +36,6 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   const { t } = useTranslation();
   
   const aiExpandMutation = useAIExpandMutation();
-  const aiGenerateCardsMutation = useAIGenerateCardsMutation();
-  const createCardsBatchMutation = useCreateCardsBatchMutation();
   const createNodeMutation = useCreateNodeMutation();
   const createEdgeMutation = useCreateEdgeMutation();
   const updateNodeMutation = useUpdateNodeMutation();
@@ -181,53 +179,14 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
     );
   };
   
-  const handleGenerateCards = async () => {
+  const handleGenerateCards = () => {
     if (!selectedNode) {
       message.error(t('toast.graphAI.mergeGraphs.selectNodeFirst'));
-      return null;
+      return;
     }
 
     const currentGraphId = getCurrentGraphId();
-    if (!currentGraphId) {
-      message.error(t('toast.graphAI.mergeGraphs.cannotDetermineGraph'));
-      return null;
-    }
-
-    return await asyncHandler(
-      async () => {
-        const res = await aiGenerateCardsMutation.mutateAsync({
-          node_title: selectedNode.title,
-          node_content: selectedNode.content || ''
-        });
-
-        const cards = res.cards.map((c: { question: string; answer: string; type: string; options?: string[] }) => ({
-          node_id: selectedNode.id,
-          question: c.question,
-          answer: c.answer,
-          type: c.type,
-          options: c.options
-        }));
-
-        if (cards.length === 0) {
-          message.error(t('toast.graphAI.batchGenerate.noCardsGenerated'));
-          return null;
-        }
-
-        await createCardsBatchMutation.mutateAsync(cards);
-        queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(currentGraphId) });
-
-        return cards.length;
-      },
-      {
-        successMessage: t('toast.graphAI.batchGenerate.success'),
-        errorMessage: t('toast.graphAI.batchGenerate.failed'),
-        onSuccess: (result) => {
-          if (result && typeof result === 'number') {
-            message.success(t('toast.graphAI.batchGenerate.successWithCount', { count: result }));
-          }
-        }
-      }
-    );
+    navigate(`/study?node_id=${selectedNode.id}&graph_id=${currentGraphId || ''}&view=bank`);
   };
   
   const handleStartLevelTest = () => {

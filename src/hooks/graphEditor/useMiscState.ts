@@ -1,15 +1,5 @@
 import { useState } from 'react';
 
-export interface RelatedNode {
-  id: string;
-  title: string;
-  content?: string;
-  graph_id: string;
-  graph_title?: string;
-  similarity?: number;
-  knowledge_point_id?: string;
-}
-
 interface Recommendation {
   id: string;
   title: string;
@@ -40,12 +30,6 @@ export interface MiscState {
     message: string;
     onConfirm: () => void;
   }>>;
-  relatedNodes: RelatedNode[];
-  setRelatedNodes: React.Dispatch<React.SetStateAction<RelatedNode[]>>;
-  isRelatedLoading: boolean;
-  setIsRelatedLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  showRelatedSection: boolean;
-  setShowRelatedSection: React.Dispatch<React.SetStateAction<boolean>>;
   recommendations: Recommendation[];
   setRecommendations: React.Dispatch<React.SetStateAction<Recommendation[]>>;
   isRecommending: boolean;
@@ -73,9 +57,6 @@ export const useMiscState = (): MiscState => {
     onConfirm: () => {},
   });
 
-  const [relatedNodes, setRelatedNodes] = useState<RelatedNode[]>([]);
-  const [isRelatedLoading, setIsRelatedLoading] = useState(false);
-  const [showRelatedSection, setShowRelatedSection] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isRecommending, setIsRecommending] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -85,12 +66,6 @@ export const useMiscState = (): MiscState => {
     setExportImageOptions,
     confirmModal,
     setConfirmModal,
-    relatedNodes,
-    setRelatedNodes,
-    isRelatedLoading,
-    setIsRelatedLoading,
-    showRelatedSection,
-    setShowRelatedSection,
     recommendations,
     setRecommendations,
     isRecommending,

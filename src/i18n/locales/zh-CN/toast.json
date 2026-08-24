@@ -46,9 +46,6 @@
     "nodeTitleRequired": "节点标题不能为空",
     "expandComplete": "拓展完成",
     "noNewRelations": "未发现新的关联",
-    "cardGenerateFailed": "AI 未能生成有效的卡片",
-    "cardGenerateSuccess": "成功生成并保存了 {{count}} 张复习卡片",
-    "noCardGenerated": "未能生成卡片",
     "submitting": "正在提交...",
     "submitSuccess": "任务提交成功",
     "branchSwitched": "已切换分支",
@@ -67,14 +64,6 @@
       "started": "AI 内容生成任务已开始...",
       "completed": "AI 内容生成完成",
       "failed": "AI 生成失败"
-    },
-    "batchGenerate": {
-      "selectNodeFirst": "请先选择一个节点",
-      "cannotDetermineGraph": "无法确定节点所属图谱",
-      "noCardsGenerated": "AI 未能生成有效的卡片",
-      "success": "成功生成并保存了复习卡片！",
-      "successWithCount": "成功生成并保存了 {{count}} 张复习卡片！",
-      "failed": "生成卡片失败"
     },
     "analyzeCrossDomain": {
       "analysisComplete": "跨图谱连接分析完成",

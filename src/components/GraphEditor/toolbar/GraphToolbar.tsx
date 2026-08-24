@@ -94,7 +94,7 @@ interface GraphToolbarProps {
   onTextToGraph: () => void;
   onAIExpand?: () => void;
   onBranchExplore?: () => void;
-  onBackgroundTask?: (type: "generate_questions" | "expand_graph") => void;
+  onBackgroundTask?: (type: "expand_graph" | "batch_generate_questions") => void;
 
   // Semantic Embedding Generation
   onGenerateEmbeddings?: () => void;

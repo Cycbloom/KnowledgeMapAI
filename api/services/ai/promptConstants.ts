@@ -52,7 +52,7 @@ export const DEFAULT_PROMPTS: Record<string, string> = {
   auto_graph_expand: `You are a knowledge graph expert. Expand a node by generating its child nodes.
 
 ## Task
-Generate 3-5 child nodes for the given parent node. Each child should be a specific sub-concept or detail. You MUST output a single JSON object (do not wrap in Markdown code fences).
+Generate child nodes for the given parent node. Each child should be a specific sub-concept or detail of the parent. You MUST output a single JSON object (do not wrap in Markdown code fences).
 
 **CRITICAL: Output JSON Format**
 {
@@ -63,17 +63,31 @@ Generate 3-5 child nodes for the given parent node. Each child should be a speci
 }
 
 Requirements:
-- **Exact count**: 3-5 children. \`children\` array must NEVER be empty.
+- **Exact count**: Generate {{minCount}}-{{maxCount}} child nodes. \`children\` array must NEVER be empty.
 - Every child object MUST contain \`title\`, \`content\`, and \`summary\` (all strings, never null/empty).
 - \`summary\`: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
 - Child nodes must be SPECIFIC sub-concepts, not generic umbrella paraphrases of the parent.
-
-Each child node must include a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
 
 ## Context
 - Parent Node: {{nodeTitle}}
 {{#if nodeContent}}- Parent Content: {{nodeContent}}{{/if}}
 - Parent Level: {{nodeLevel}}
+
+{{#if useLevelStrategy}}
+## Level-Aware Strategy
+{{#if isRootOrCore}}
+- Content (HIGH LEVEL): Suggest BROAD CATEGORIES or MAJOR BRANCHES. The 'content' should be a high-level summary or definition.
+- Linking (HIERARCHICAL): NO same-level links; only parent-child (vertical) links are allowed. Primary goal is to generate NEW specific child nodes.
+{{else}}
+{{#if isLeaf}}
+- Content (LEAF LEVEL): Suggest ATOMIC DETAILS, EXAMPLES, or ATTRIBUTES. The 'content' should be very specific, technical, and detailed.
+- Linking (NETWORK): You are expanding a leaf node. You are encouraged to link to existing nodes if they are highly relevant, especially other leaf nodes, to form knowledge connections.
+{{else}}
+- Content (MID LEVEL): Suggest SPECIFIC CONCEPTS or FUNCTIONAL COMPONENTS. The 'content' should be descriptive and explain "how" or "why".
+- Linking (HIERARCHICAL): NO same-level links; only parent-child (vertical) links are allowed. Primary goal is to generate NEW specific child nodes.
+{{/if}}
+{{/if}}
+{{/if}}
 
 {{#if isCustom}}
 ## Custom Instructions
@@ -425,47 +439,6 @@ Output Requirements:
 - **Summary**: Every node must have a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
 - Node count: 40-60 nodes to ensure completeness.
 - All titles and descriptions should match the language of the source document.`,
-  expand_knowledge: `You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply.
-
-Goal: Prioritize generating NEW, specific concepts to broaden the graph's coverage.
-Quantity: Generate up to 8 nodes. Focus on representativeness and hierarchy.
-
-{{#if isCustom}}
-## Custom Instructions
-{{customPrompt}}
-{{/if}}
-
-Each suggestion must include a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
-
-Linking Strategy:
-{{#if isRootOrCore}}
-Linking Strategy (HIERARCHICAL):
-1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins).
-2. **Vertical Links OK**: You MAY link to nodes that would be considered a 'parent' (higher level) or 'child' (lower level) contextually.
-3. **Focus**: Primary goal is to generate NEW specific child nodes for the current node.
-{{else}}
-{{#if isLeaf}}
-Linking Strategy (NETWORK): You are expanding a leaf node. You are encouraged to link to 'Existing Nodes' if they are highly relevant, especially other leaf nodes, to form knowledge connections.
-{{else}}
-Linking Strategy (HIERARCHICAL):
-1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins).
-2. **Vertical Links OK**: You MAY link to nodes that would be considered a 'parent' (higher level) or 'child' (lower level) contextually.
-3. **Focus**: Primary goal is to generate NEW specific child nodes for the current node.
-{{/if}}
-{{/if}}
-
-Content Strategy:
-{{#if isRootOrCore}}
-Content Strategy (HIGH LEVEL): Suggest BROAD CATEGORIES or MAJOR BRANCHES. The 'content' should be a high-level summary or definition.
-{{else}}
-{{#if isLeaf}}
-Content Strategy (LEAF LEVEL): Suggest ATOMIC DETAILS, EXAMPLES, or ATTRIBUTES. The 'content' should be very specific, technical, and detailed.
-{{else}}
-Content Strategy (MID LEVEL): Suggest SPECIFIC CONCEPTS or FUNCTIONAL COMPONENTS. The 'content' should be descriptive and explain 'how' or 'why'.
-{{/if}}
-{{/if}}
-
-Do not suggest topics that are already listed in 'Current Direct Children'.`,
   generate_cards: `You are an educational expert. Generate {{count}} flashcards based on the provided topic and content.
 
 Context: The current node is part of a larger knowledge structure.
@@ -1236,15 +1209,7 @@ Each keyword object must have:
 
 IMPORTANT: All keyword fields (term, category, explanation) must be in {{outputLanguage}}.`,
 
-  expand_knowledge: `
-Return a JSON object with a 'suggestions' array. Each object in the array must have 'title', 'content', and 'summary' fields.
-- 'title': The title of the suggested knowledge point
-- 'content': Detailed description of the knowledge point
-- 'summary': 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼
-Example format: { "suggestions": [{ "title": "Example Title", "content": "Example content", "summary": "20-30字的核心内容概览" }] }`,
-
-  auto_graph_init: `
-Return a JSON object with the following structure:
+  auto_graph_init: `Return a JSON object with the following structure:
 {
   "root": {
     "title": "Root Node Title",
@@ -1272,7 +1237,7 @@ Return a JSON object with the following structure:
 }
 
 Important:
-- Generate 3-5 child nodes
+- Generate the requested number of child nodes (never empty)
 - Each node must have title, content, and summary
 - summary: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼`,
 

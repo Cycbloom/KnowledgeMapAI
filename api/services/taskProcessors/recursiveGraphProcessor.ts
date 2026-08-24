@@ -11,9 +11,10 @@ import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
-import { getAutoGraphPrompt } from "./utils";
-import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
-import { pricingService } from "../ai/pricingService";
+import {
+  generateChildSuggestions,
+  generateGraphSkeleton,
+} from "../ai/nodeSuggestionService";
 import { graphLockService } from "../common/graphLockService";
 import { notDeleted } from '../common/softDeleteHelper';
 
@@ -23,12 +24,6 @@ interface RecursiveGraphPayload {
   depth?: number;
   style?: string;
   batchSessionId?: string;
-  [key: string]: unknown;
-}
-
-interface CoreNodeRef {
-  title: string;
-  content?: string;
   [key: string]: unknown;
 }
 
@@ -131,79 +126,20 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         }
       }
 
-      const systemPrompt = await getAutoGraphPrompt(
+      const { root: rootData, coreNodes } = await generateGraphSkeleton(
         supabase,
-        userId,
-        graph_id,
-        "init",
         {
           topic,
-          isAcademic: style === "academic",
-          hasSources: false,
-          isInit: true,
+          style: style as "academic" | "practical" | "beginner" | "custom",
+          provider,
+          userId,
+          graphId: graph_id,
+          sessionId,
         },
       );
 
-      const enrichedMetadata = await enrichMetadata(supabase, {
-        graphId: graph_id,
-        userId,
-        topic,
-        style,
-        depth,
-      });
-
-      const initStartTime = Date.now();
-      const initCompletion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `主题：${topic}\n\n请生成知识图谱的根节点和核心节点。`,
-          },
-        ],
-        model: provider.model,
-        response_format: { type: "json_object" },
-        max_tokens: 4000,
-      });
-      const initDuration = Date.now() - initStartTime;
-
-      const initUsage = initCompletion.usage;
-      if (initUsage) {
-        const cost = pricingService.calculateCost(
-          provider.providerType,
-          provider.model,
-          initUsage.prompt_tokens,
-          initUsage.completion_tokens,
-          0,
-        );
-        await performanceMonitor.recordLog({
-          operation: "recursive_graph_init",
-          provider: provider.providerType,
-          model: provider.model,
-          inputTokens: initUsage.prompt_tokens,
-          outputTokens: initUsage.completion_tokens,
-          totalTokens: initUsage.prompt_tokens + initUsage.completion_tokens,
-          cachedInputTokens: 0,
-          duration: initDuration,
-          success: true,
-          estimatedCost: cost,
-          metadata: enrichedMetadata,
-          sessionId,
-        });
-      }
-
-      const initParsed = JSON.parse(
-        initCompletion.choices[0].message.content ||
-          '{"root": null, "coreNodes": []}',
-      );
-
-      const coreNodes: CoreNodeRef[] = initParsed.coreNodes || [];
       // 复杂度降低：预构建核心节点标题 Set，替代下方 filter 内对每条 nodeMap 项 O(n) 的 coreNodes.some() 扫描
       const coreNodeTitleSet = new Set(coreNodes.map((c) => c.title));
-      const rootData = initParsed.root || {
-        title: topic,
-        content: `${topic}的核心概念`,
-      };
 
       const rootNodeResult = await createKnowledgePointWithGraphNode(
         supabase,
@@ -303,69 +239,16 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           );
 
           try {
-            const expandPrompt = await getAutoGraphPrompt(
-              supabase,
+            const { children } = await generateChildSuggestions(supabase, {
+              nodeTitle,
+              nodeContent: "",
+              nodeLevel: "core",
+              style: style as "academic" | "practical" | "beginner" | "custom",
+              provider,
               userId,
-              graph_id,
-              "expand",
-              {
-                nodeTitle,
-                nodeContent: "",
-                nodeLevel: "core",
-                isAcademic: style === "academic",
-                hasExistingChildren: false,
-                existingChildren: "",
-              },
-            );
-
-            const expandStartTime = Date.now();
-            const expandCompletion =
-              await provider.client.chat.completions.create({
-                messages: [
-                  { role: "system", content: expandPrompt },
-                  { role: "user", content: `请为「${nodeTitle}」生成子节点。` },
-                ],
-                model: provider.model,
-                response_format: { type: "json_object" },
-                max_tokens: 3000,
-              });
-            const expandDuration = Date.now() - expandStartTime;
-
-            const expandUsage = expandCompletion.usage;
-            if (expandUsage) {
-              const cost = pricingService.calculateCost(
-                provider.providerType,
-                provider.model,
-                expandUsage.prompt_tokens,
-                expandUsage.completion_tokens,
-                0,
-              );
-              await performanceMonitor.recordLog({
-                operation: "recursive_graph_expand_depth2",
-                provider: provider.providerType,
-                model: provider.model,
-                inputTokens: expandUsage.prompt_tokens,
-                outputTokens: expandUsage.completion_tokens,
-                totalTokens:
-                  expandUsage.prompt_tokens + expandUsage.completion_tokens,
-                cachedInputTokens: 0,
-                duration: expandDuration,
-                success: true,
-                estimatedCost: cost,
-                metadata: {
-                  ...enrichedMetadata,
-                  nodeTitle,
-                  nodeId,
-                  nodeLevel: "core",
-                },
-                sessionId,
-              });
-            }
-
-            const expandParsed = JSON.parse(
-              expandCompletion.choices[0].message.content || '{"children": []}',
-            );
-            const children = expandParsed.children || [];
+              graphId: graph_id,
+              sessionId,
+            });
 
             for (const child of children.slice(0, 5)) {
               if (existingNodeTitles.has(child.title)) {
@@ -442,69 +325,16 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           );
 
           try {
-            const expandPrompt = await getAutoGraphPrompt(
-              supabase,
+            const { children } = await generateChildSuggestions(supabase, {
+              nodeTitle,
+              nodeContent: "",
+              nodeLevel: "sub",
+              style: style as "academic" | "practical" | "beginner" | "custom",
+              provider,
               userId,
-              graph_id,
-              "expand",
-              {
-                nodeTitle,
-                nodeContent: "",
-                nodeLevel: "sub",
-                isAcademic: style === "academic",
-                hasExistingChildren: false,
-                existingChildren: "",
-              },
-            );
-
-            const expandStartTime = Date.now();
-            const expandCompletion =
-              await provider.client.chat.completions.create({
-                messages: [
-                  { role: "system", content: expandPrompt },
-                  { role: "user", content: `请为「${nodeTitle}」生成子节点。` },
-                ],
-                model: provider.model,
-                response_format: { type: "json_object" },
-                max_tokens: 2000,
-              });
-            const expandDuration = Date.now() - expandStartTime;
-
-            const expandUsage = expandCompletion.usage;
-            if (expandUsage) {
-              const cost = pricingService.calculateCost(
-                provider.providerType,
-                provider.model,
-                expandUsage.prompt_tokens,
-                expandUsage.completion_tokens,
-                0,
-              );
-              await performanceMonitor.recordLog({
-                operation: "recursive_graph_expand_depth3",
-                provider: provider.providerType,
-                model: provider.model,
-                inputTokens: expandUsage.prompt_tokens,
-                outputTokens: expandUsage.completion_tokens,
-                totalTokens:
-                  expandUsage.prompt_tokens + expandUsage.completion_tokens,
-                cachedInputTokens: 0,
-                duration: expandDuration,
-                success: true,
-                estimatedCost: cost,
-                metadata: {
-                  ...enrichedMetadata,
-                  nodeTitle,
-                  nodeId,
-                  nodeLevel: "sub",
-                },
-                sessionId,
-              });
-            }
-
-            const expandParsed = JSON.parse(
-              expandCompletion.choices[0].message.content || '{"children": []}',
-            );
-            const children = expandParsed.children || [];
+              graphId: graph_id,
+              sessionId,
+            });
 
             for (const child of children.slice(0, 3)) {
               if (existingNodeTitles.has(child.title)) {

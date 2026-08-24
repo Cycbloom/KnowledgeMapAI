@@ -231,7 +231,7 @@ router.post('/batch-expand-graph', requireAuth, validate(batchExpandGraphSchema)
 });
 
 router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthedRequest, res: Response) => {
-  const { node_title, node_content, node_level, existing_titles, current_children, expand_prompt, provider, model, graph_id } = req.body;
+  const { node_title, node_content, node_level, existing_titles, current_children, expand_prompt, min_count, max_count, use_level_strategy, provider, model, graph_id } = req.body;
 
   try {
     const result = await aiService.expandKnowledge(node_title, node_content, existing_titles || [], current_children || [], { 
@@ -239,6 +239,9 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
       model, 
       contextLevel: node_level, 
       expandPrompt: expand_prompt,
+      minCount: min_count,
+      maxCount: max_count,
+      useLevelStrategy: use_level_strategy,
       userId: req.user.id,
       graphId: graph_id
     });

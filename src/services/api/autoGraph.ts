@@ -162,6 +162,9 @@ export const autoGraphApi = {
     style?: "academic" | "practical" | "beginner" | "custom";
     customPrompt?: string;
     existing_children?: Array<{ title: string; content?: string }>;
+    min_count?: number;
+    max_count?: number;
+    use_level_strategy?: boolean;
     provider?: string;
     model?: string;
     language?: string;

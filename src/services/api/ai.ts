@@ -158,6 +158,9 @@ export const aiApi: IAiApi = {
     current_children?: string[];
     node_level?: string;
     expand_prompt?: string;
+    min_count?: number;
+    max_count?: number;
+    use_level_strategy?: boolean;
     graph_id?: string;
     provider?: string;
     model?: string;

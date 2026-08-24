@@ -120,6 +120,9 @@ export class AIService {
       model?: string;
       contextLevel?: string;
       expandPrompt?: string;
+      minCount?: number;
+      maxCount?: number;
+      useLevelStrategy?: boolean;
       userId?: string;
       graphId?: string;
       language?: string;

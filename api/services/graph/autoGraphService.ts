@@ -9,7 +9,6 @@ import { cacheService, CacheKeys } from "../common/cacheService";
 import type { NodeLevel } from "../../../shared/types/graph";
 import type { AIProviderType } from "../../../shared/types";
 import { promptService } from "../ai/promptService";
-import { enrichMetadata } from "../ai/performanceMonitor";
 import { withAIMonitoring } from "../ai/aiMonitor";
 import { getAIProvider, getAIProviderForTask } from "../ai/factory";
 import { autoGraphRouteService } from "./autoGraphRouteService";
@@ -19,6 +18,10 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { transactionExecutor } from "../../database/transactionExecutor";
 import { notDeleted } from '../common/softDeleteHelper';
 import { autoGraphMergeService } from "./autoGraphMergeService";
+import {
+  generateChildSuggestions,
+  generateGraphSkeleton,
+} from "../ai/nodeSuggestionService";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 200;
@@ -77,6 +80,9 @@ export interface ExpandNodeParams {
   style: string;
   customPrompt?: string;
   existingChildren?: ExistingChild[];
+  minCount?: number;
+  maxCount?: number;
+  useLevelStrategy?: boolean;
   providerType?: string;
   model?: string;
   language?: string;
@@ -1149,18 +1155,6 @@ export class AutoGraphService {
 
     const sessionId = inputSessionId || crypto.randomUUID();
 
-    const provider = providerType
-      ? await getAIProvider(providerType as AIProviderType)
-      : await getAIProviderForTask("text");
-
-    if (!provider.hasKey) {
-      throw new AppError(
-        "AI provider not configured",
-        503,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
-    }
-
     let processedSources: string[] = [];
     if (sources && sources.length > 0) {
       processedSources = await Promise.all(
@@ -1168,97 +1162,26 @@ export class AutoGraphService {
       );
     }
 
-    let systemPrompt: string;
-
-    if (style === "custom" && customPrompt) {
-      systemPrompt = await promptService.getRenderedPrompt(
-        supabase,
-        "auto_graph_init",
-        {
-          topic,
-          isCustom: true,
-          customPrompt,
-          hasSources: processedSources.length > 0,
-          sources: processedSources.join("\n\n---\n\n"),
-          isInit: true,
-        },
-        userId,
-        graphId,
-        language,
-      );
-    } else {
-      const templateData: Record<string, unknown> = {
-        topic,
-        isAcademic: style === "academic",
-        isPractical: style === "practical",
-        hasSources: processedSources.length > 0,
-        sources: processedSources.join("\n\n---\n\n"),
-        isInit: true,
-      };
-
-      systemPrompt = await promptService.getRenderedPrompt(
-        supabase,
-        "auto_graph_init",
-        templateData,
-        userId,
-        graphId,
-        language,
-      );
-    }
-
-    const completion = await withAIMonitoring(
-      {
-        operation: "auto_graph_init",
-        provider: provider.providerType,
-        model: model || provider.model,
-        metadata: await enrichMetadata(supabase, {
-          graphId,
-          userId,
-          topic,
-          style,
-        }),
-        sessionId,
-      },
-      async () => {
-        const result = await provider.client.chat.completions.create({
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: `主题：${topic}${processedSources.length > 0 ? `\n\n参考来源：\n${processedSources.join("\n\n---\n\n")}` : ""}`,
-            },
-          ],
-          model: model || provider.model,
-          response_format: { type: "json_object" },
-          max_tokens: 32000,
-        });
-        return {
-          result,
-          usage: result.usage,
-        };
-      },
-    );
-
-    const content = completion.choices[0].message.content;
-    let parsed;
-    try {
-      parsed = JSON.parse(content || '{"root": null, "coreNodes": []}');
-    } catch (_e) {
-      logger.error("JSON Parse Error:", { content: content?.slice(-100) });
-      throw new AppError(
-        "AI 生成内容解析失败",
-        422,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
-    }
+    const skeleton = await generateGraphSkeleton(supabase, {
+      topic,
+      style: style as "academic" | "practical" | "beginner" | "custom",
+      customPrompt,
+      sources: processedSources,
+      providerType: providerType as AIProviderType | undefined,
+      model,
+      language,
+      userId,
+      graphId,
+      sessionId,
+    });
 
     return {
       sessionId,
-      root: parsed.root || {
-        title: topic,
-        content: `${topic}的核心概念和知识体系`,
+      root: {
+        title: skeleton.root.title,
+        content: skeleton.root.content || "",
       },
-      coreNodes: parsed.coreNodes || [],
+      coreNodes: skeleton.coreNodes as AIGeneratedNode[],
     };
   }
 
@@ -1275,6 +1198,9 @@ export class AutoGraphService {
       style,
       customPrompt,
       existingChildren,
+      minCount,
+      maxCount,
+      useLevelStrategy,
       providerType,
       model,
       language,
@@ -1282,151 +1208,30 @@ export class AutoGraphService {
       userId,
     } = params;
 
-    const provider = providerType
-      ? await getAIProvider(providerType as AIProviderType)
-      : await getAIProviderForTask("text");
-
-    if (!provider.hasKey) {
-      throw new AppError(
-        "AI provider not configured",
-        503,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
-    }
-
     const sessionId = inputSessionId || crypto.randomUUID();
 
-    let systemPrompt: string;
-
-    if (style === "custom" && customPrompt) {
-      systemPrompt = await promptService.getRenderedPrompt(
-        supabase,
-        "auto_graph_expand",
-        {
-          nodeTitle,
-          nodeContent: nodeContent || "",
-          nodeLevel: nodeLevel || "normal",
-          isCustom: true,
-          customPrompt,
-          hasExistingChildren:
-            existingChildren && existingChildren.length > 0,
-          existingChildren:
-            existingChildren?.map((c) => c.title).join("、") || "",
-        },
-        userId,
-        graphId,
-        language,
-      );
-    } else {
-      const templateData: Record<string, unknown> = {
-        nodeTitle,
-        nodeContent: nodeContent || "",
-        nodeLevel: nodeLevel || "normal",
-        isAcademic: style === "academic",
-        isPractical: style === "practical",
-        hasExistingChildren:
-          existingChildren && existingChildren.length > 0,
-        existingChildren:
-          existingChildren?.map((c) => c.title).join("、") || "",
-      };
-
-      systemPrompt = await promptService.getRenderedPrompt(
-        supabase,
-        "auto_graph_expand",
-        templateData,
-        userId,
-        graphId,
-        language,
-      );
-    }
-
-    const MAX_PARSE_RETRIES = 2;
-    let parsed: { children?: AIGeneratedNode[] | null } | null | undefined;
-
-    const completion = await withAIMonitoring(
-      {
-        operation: "auto_graph_expand",
-        provider: provider.providerType,
-        model: model || provider.model,
-        metadata: await enrichMetadata(supabase, {
-          graphId,
-          userId,
-          nodeTitle,
-          nodeId,
-          nodeLevel,
-        }),
-        sessionId,
-      },
-      async () => {
-        const messages: {
-          role: "system" | "user" | "assistant";
-          content: string;
-        }[] = [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `请为「${nodeTitle}」生成子节点。${existingChildren && existingChildren.length > 0 ? `\n\n已有的子节点：${existingChildren.map((c) => c.title).join("、")}\n请生成新的、不同的子节点。` : ""}`,
-          },
-        ];
-
-        let result = await provider.client.chat.completions.create({
-          messages,
-          model: model || provider.model,
-          response_format: { type: "json_object" },
-          max_tokens: 32000,
-        });
-
-        for (let attempt = 0; attempt < MAX_PARSE_RETRIES; attempt++) {
-          const content = result.choices[0]?.message?.content || "";
-          try {
-            parsed = JSON.parse(content);
-            break;
-          } catch (_e) {
-            logger.warn(
-              `auto_graph_expand JSON 解析失败（第 ${attempt + 1} 次），尝试修复`,
-              {
-                finishReason: result.choices[0]?.finish_reason,
-                contentSnippet: content.slice(-200),
-              },
-            );
-            messages.push({ role: "assistant", content });
-            messages.push({
-              role: "user",
-              content:
-                "上一条模型输出的 JSON 被截断或语法错误无法解析。请仅输出一份完整、合法的 JSON，结构必须为 {\"children\":[{\"title\":\"...\",\"content\":\"...\",\"level\":\"...\"}]}，不要包含代码块标记或任何解释文字。",
-            });
-            result = await provider.client.chat.completions.create({
-              messages,
-              model: model || provider.model,
-              response_format: { type: "json_object" },
-              max_tokens: 32000,
-            });
-          }
-        }
-
-        return { result, usage: result.usage };
-      },
-    );
-
-    if (!parsed) {
-      const partial = completion.choices[0]?.message?.content;
-      logger.error("JSON Parse Error in auto-graph expand:", {
-        finishReason: completion.choices[0]?.finish_reason,
-        contentSnippet: partial?.slice(-200),
-      });
-      const error = new AppError(
-        "AI 生成内容解析失败",
-        422,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
-      error.addContext("contentSnippet", partial?.slice(-200) ?? "");
-      throw error;
-    }
+    const result = await generateChildSuggestions(supabase, {
+      nodeTitle,
+      nodeContent,
+      nodeLevel,
+      existingChildren: existingChildren?.map((c) => c.title),
+      customPrompt,
+      style: style as "academic" | "practical" | "beginner" | "custom",
+      minCount,
+      maxCount,
+      useLevelStrategy,
+      providerType: providerType as AIProviderType | undefined,
+      model,
+      language,
+      userId,
+      graphId,
+      sessionId,
+    });
 
     return {
       sessionId,
       parentNodeId: nodeId,
-      children: parsed.children || [],
+      children: result.children as AIGeneratedNode[],
     };
   }
 

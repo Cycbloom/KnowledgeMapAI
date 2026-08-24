@@ -7,7 +7,6 @@ import { logger } from "../../utils/logger";
 import { parseAIResponse } from "./utils";
 import { withAIMonitoring } from "./aiMonitor";
 import {
-  getMockResponse,
   getMockBranchSuggestions,
   getMockNextTopics,
 } from "./mock";
@@ -17,12 +16,11 @@ import {
 } from "./aiUtils";
 import {
   withTimeoutAndRetry,
-  TimeoutError,
-  RetryError,
   LONG_TIMEOUT,
 } from "../../../shared/utils/retry";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { generateChildSuggestions } from "./nodeSuggestionService";
 
 export class KnowledgeExpansionService {
   async expandKnowledge(
@@ -35,19 +33,14 @@ export class KnowledgeExpansionService {
       model?: string;
       contextLevel?: string;
       expandPrompt?: string;
+      minCount?: number;
+      maxCount?: number;
+      useLevelStrategy?: boolean;
       userId?: string;
       graphId?: string;
       language?: string;
     } = {},
   ) {
-    const provider = options.provider
-      ? await getAIProvider(options.provider)
-      : await getAIProviderForTask("text");
-
-    if (!provider.hasKey) {
-      return getMockResponse("expand", nodeTitle) as { suggestions: unknown[] };
-    }
-
     const cacheKey = CacheKeys.AI_EXPAND(
       nodeTitle,
       options.contextLevel || "normal",
@@ -57,135 +50,32 @@ export class KnowledgeExpansionService {
       return await cacheService.getOrSet<{ suggestions: unknown[] }>(
         cacheKey,
         async () => {
-          const model = options.model || provider.model;
+          const result = await generateChildSuggestions(getSupabaseAdmin(), {
+            nodeTitle,
+            nodeContent,
+            nodeLevel: options.contextLevel,
+            existingChildren: childNodes,
+            existingNodes,
+            customPrompt: options.expandPrompt,
+            minCount: options.minCount ?? 3,
+            maxCount: options.maxCount ?? 8,
+            useLevelStrategy: options.useLevelStrategy,
+            providerType: options.provider,
+            model: options.model,
+            language: options.language,
+            userId: options.userId,
+            graphId: options.graphId,
+            allowMock: true,
+          });
 
-          return withAIMonitoring(
-            {
-              operation: "expandKnowledge",
-              provider: provider.providerType,
-              model,
-              metadata: {
-                graphId: options.graphId,
-                userId: options.userId,
-              },
-            },
-            async () => {
-              const existingNodesContext =
-                existingNodes && existingNodes.length > 0
-                  ? `\nExisting Nodes in Graph: ${existingNodes
-                      .slice(0, 300)
-                      .join(", ")}`
-                  : "";
-
-              const childrenContext =
-                childNodes && childNodes.length > 0
-                  ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
-                      ", ",
-                    )}`
-                  : "";
-
-              const contextLevel = options.contextLevel || "normal";
-
-              const templateContext = {
-                customPrompt: options.expandPrompt,
-                nodeTitle,
-                nodeContent: nodeContent || "",
-                existingNodes: existingNodesContext,
-                childrenContext,
-                isRootOrCore: ["root", "core"].includes(contextLevel),
-                isLeaf: contextLevel === "leaf",
-              };
-
-              const systemPrompt = await promptService.getRenderedPrompt(
-                getSupabaseAdmin(),
-                "expand_knowledge",
-                templateContext,
-                options.userId,
-                options.graphId,
-                options.language,
-              );
-
-              const completion = await withTimeoutAndRetry(
-                () =>
-                  provider.client.chat.completions.create({
-                    messages: [
-                      { role: "system", content: systemPrompt },
-                      {
-                        role: "user",
-                        content: `Node Title: ${nodeTitle}\nNode Content: ${
-                          nodeContent || ""
-                        }${existingNodesContext}${childrenContext}`,
-                      },
-                    ],
-                    model,
-                    response_format: { type: "json_object" },
-                  }),
-                {
-                  timeout: LONG_TIMEOUT,
-                  maxRetries: 3,
-                  onRetry: (attempt, error) => {
-                    logger.warn(
-                      `Expand Knowledge retry attempt ${attempt}: ${error.message}`,
-                    );
-                  },
-                },
-              );
-
-              const content = completion.choices[0].message.content || "";
-
-              if (!content || content.trim() === "") {
-                throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, {
-                  message: "[AI] Empty response from AI provider for expandKnowledge",
-                });
-              }
-
-              const parsed = parseAIResponse<{ suggestions: unknown[] }>(
-                content,
-                "Expand Knowledge",
-              );
-              const result = {
-                suggestions:
-                  parsed.suggestions ??
-                  (Array.isArray(parsed) ? parsed : [parsed]),
-              };
-
-              return { result, usage: completion.usage };
-            },
-          );
+          return { suggestions: result.children };
         },
         60 * 60 * 24,
       );
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
-
-      if (err instanceof TimeoutError) {
-        throw new AppError(ErrorCodes.AI_TIMEOUT);
-      }
-      if (err instanceof RetryError) {
-        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
-          message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
-        });
-      }
-
-      if (
-        err.message?.includes("Empty response from AI provider for expandKnowledge")
-      ) {
-        logger.error(
-          "[AI] Empty response from AI provider for expandKnowledge",
-        );
-        return getMockResponse("expand", nodeTitle) as {
-          suggestions: unknown[];
-        };
-      }
-
-      if (err.message?.includes("parse") || err.message?.includes("JSON")) {
-        logger.warn("[AI] Returning mock response due to parse error");
-        return getMockResponse("expand", nodeTitle) as {
-          suggestions: unknown[];
-        };
-      }
-
+      if (err instanceof AppError) throw err;
       throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
         message: err.message || "AI expansion failed",
       });

@@ -265,6 +265,9 @@ export const expandKnowledgeSchema = z.object({
   existing_titles: z.array(z.string()).optional(),
   current_children: z.array(z.string()).optional(),
   expand_prompt: z.string().optional(),
+  min_count: z.number().int().min(1).max(20).optional(),
+  max_count: z.number().int().min(1).max(20).optional(),
+  use_level_strategy: z.boolean().optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
 });

@@ -41,7 +41,6 @@ const PROMPT_CATEGORIES = [
     icon: Network,
     color: "emerald",
     codes: [
-      "expand_knowledge",
       "branch_suggestions",
       "recommend_connections",
       "text_to_graph",
@@ -310,7 +309,6 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
   };
 
   const variableMap: Record<string, string[]> = {
-    expand_knowledge: ["isRootOrCore", "isLeaf", "isRoot", "topic"],
     generate_cards: [
       "count",
       "context",
@@ -355,12 +353,18 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
       "nodeTitle",
       "nodeContent",
       "nodeLevel",
+      "minCount",
+      "maxCount",
+      "useLevelStrategy",
+      "isRootOrCore",
+      "isLeaf",
       "isCustom",
       "customPrompt",
       "isAcademic",
       "isPractical",
       "isBeginner",
       "existingChildren",
+      "existingNodesInGraph",
     ],
     literature_concept_extraction: ["title", "authors", "abstract", "content"],
     literature_relation_inference: ["title", "concepts", "existingNodes"],

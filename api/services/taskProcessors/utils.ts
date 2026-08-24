@@ -1,33 +1,16 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { promptService } from "../ai/promptService";
 import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers";
 import { logger } from "../../utils/logger";
 import { getNextLevel } from "../../utils/levelUtils";
-import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
-import { pricingService } from "../ai/pricingService";
 import { notDeleted } from '../common/softDeleteHelper';
 import type { AIProvider } from "@shared/types";
+import {
+  generateChildSuggestions,
+  generateGraphSkeleton,
+} from "../ai/nodeSuggestionService";
 
 interface KPTitleRef {
   knowledge_points?: { title?: string } | { title?: string }[] | null;
-}
-
-export async function getAutoGraphPrompt(
-  supabase: SupabaseClient,
-  userId: string,
-  graphId: string,
-  type: "init" | "expand",
-  data: Record<string, unknown>,
-): Promise<string> {
-  const templateCode =
-    type === "init" ? "auto_graph_init" : "auto_graph_expand";
-  return promptService.getRenderedPrompt(
-    supabase,
-    templateCode,
-    data,
-    userId,
-    graphId,
-  );
 }
 
 export async function generateNodesForGraph(
@@ -58,82 +41,24 @@ export async function generateNodesForGraph(
       if (kp?.title) existingNodeTitles.add(kp.title);
     });
 
-    const systemPrompt = await promptService.getRenderedPrompt(
-      supabase,
-      "auto_graph_init",
-      {
-        topic,
-        isCustom: false,
-        isAcademic: true,
-        isPractical: false,
-        isBeginner: false,
-        hasSources: false,
-        sources: "",
-      },
+    const { root, coreNodes } = await generateGraphSkeleton(supabase, {
+      topic,
+      description,
+      style: "academic",
+      provider,
       userId,
-    );
-
-    const enrichedMetadata = userId
-      ? await enrichMetadata(supabase, {
-          graphId,
-          userId,
-          topic,
-          depth,
-        })
-      : undefined;
-
-    const startTime = Date.now();
-    const completion = await provider.client.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `请为「${topic}」生成知识点。${description ? `\n\n领域描述：${description}` : ""}`,
-        },
-      ],
-      model: provider.model,
-      response_format: { type: "json_object" },
-      max_tokens: 4000,
+      graphId,
+      sessionId: effectiveSessionId,
     });
-    const duration = Date.now() - startTime;
 
-    const usage = completion.usage;
-    if (usage && enrichedMetadata) {
-      const cost = pricingService.calculateCost(
-        provider.providerType,
-        provider.model,
-        usage.prompt_tokens,
-        usage.completion_tokens,
-        0,
-      );
-      await performanceMonitor.recordLog({
-        operation: "generate_nodes_for_graph",
-        provider: provider.providerType,
-        model: provider.model,
-        inputTokens: usage.prompt_tokens,
-        outputTokens: usage.completion_tokens,
-        totalTokens: usage.prompt_tokens + usage.completion_tokens,
-        cachedInputTokens: 0,
-        duration,
-        success: true,
-        estimatedCost: cost,
-        metadata: enrichedMetadata,
-        sessionId: effectiveSessionId,
-      });
-    }
-
-    const parsed = JSON.parse(
-      completion.choices[0].message.content || '{"root":null,"coreNodes":[]}',
-    );
-
-    if (parsed.root) {
+    if (root) {
       const rootNodeResult = await createKnowledgePointWithGraphNode(
         supabase,
         userId || "",
         {
           graph_id: graphId,
-          title: parsed.root.title || topic,
-          content: parsed.root.content || "",
+          title: root.title || topic,
+          content: root.content || "",
           level: "root",
           x_position: 400,
           y_position: 300,
@@ -143,7 +68,6 @@ export async function generateNodesForGraph(
       if (rootNodeResult) {
         totalNodes++;
 
-        const coreNodes = parsed.coreNodes || [];
         const coreNodeIds: string[] = [];
 
         for (let i = 0; i < coreNodes.length; i++) {
@@ -250,74 +174,17 @@ export async function expandNodeForGraph(
       if (kp?.title) existingChildTitles.add(kp.title);
     });
 
-    const systemPrompt = await promptService.getRenderedPrompt(
-      supabase,
-      "auto_graph_expand",
-      {
-        nodeTitle: parentNodeTitle,
-        nodeContent: parentNodeContent || "",
-        nodeLevel: parentLevel,
-        isCustom: false,
-        isAcademic: true,
-        isPractical: false,
-        isBeginner: false,
-        existingChildren: Array.from(existingChildTitles),
-      },
+    const { children } = await generateChildSuggestions(supabase, {
+      nodeTitle: parentNodeTitle,
+      nodeContent: parentNodeContent,
+      nodeLevel: parentLevel,
+      existingChildren: Array.from(existingChildTitles),
+      style: "academic",
+      provider,
       userId,
-    );
-
-    const enrichedMetadata = userId
-      ? await enrichMetadata(supabase, {
-          graphId,
-          userId,
-          nodeTitle: parentNodeTitle,
-          nodeId: parentNodeId,
-          nodeLevel: parentLevel,
-          depth: remainingDepth,
-        })
-      : undefined;
-
-    const startTime = Date.now();
-    const completion = await provider.client.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `请为「${parentNodeTitle}」生成子知识点。` },
-      ],
-      model: provider.model,
-      response_format: { type: "json_object" },
-      max_tokens: 3000,
+      graphId,
+      sessionId: effectiveSessionId,
     });
-    const duration = Date.now() - startTime;
-
-    const usage = completion.usage;
-    if (usage && enrichedMetadata) {
-      const cost = pricingService.calculateCost(
-        provider.providerType,
-        provider.model,
-        usage.prompt_tokens,
-        usage.completion_tokens,
-        0,
-      );
-      await performanceMonitor.recordLog({
-        operation: "expand_node_for_graph",
-        provider: provider.providerType,
-        model: provider.model,
-        inputTokens: usage.prompt_tokens,
-        outputTokens: usage.completion_tokens,
-        totalTokens: usage.prompt_tokens + usage.completion_tokens,
-        cachedInputTokens: 0,
-        duration,
-        success: true,
-        estimatedCost: cost,
-        metadata: enrichedMetadata,
-        sessionId: effectiveSessionId,
-      });
-    }
-
-    const parsed = JSON.parse(
-      completion.choices[0].message.content || '{"children":[]}',
-    );
-    const children = parsed.children || [];
 
     if (children.length > 0) {
       const childNodeIds: string[] = [];

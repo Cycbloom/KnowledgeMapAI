@@ -156,6 +156,29 @@ describe('Console', () => {
         expect(input).toHaveValue('');
       });
     });
+
+    it('执行命令后应该只产生一条输入回显', async () => {
+      mockFind.mockReturnValue({ name: 'test', permission: 'safe' });
+      mockExecute.mockResolvedValueOnce({
+        success: true,
+        message: 'Test output',
+      });
+
+      renderWithProviders(<Console {...defaultProps} />);
+
+      const input = screen.getByPlaceholderText(/输入命令/);
+      fireEvent.change(input, { target: { value: 'test' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      await waitFor(() => {
+        expect(screen.getByText('Test output')).toBeInTheDocument();
+      });
+
+      const outputs = useConsoleStore.getState().output;
+      const inputEchoes = outputs.filter(item => item.type === 'input');
+      expect(inputEchoes).toHaveLength(1);
+      expect(inputEchoes[0]?.content).toBe('test');
+    });
   });
 
   describe('历史记录功能', () => {

@@ -9,10 +9,11 @@ import i18n from '../../../i18n';
 i18n.changeLanguage('zh-CN');
 
 const mockGetAutocompleteSuggestions = vi.fn();
+// 与真实 store 语义一致：历史记录最新在前（prepend），索引 0 即最近一条
 const mockHistory: Array<{ id: string; command: string; timestamp: number }> = [
-  { id: '1', command: 'help', timestamp: Date.now() - 3000 },
-  { id: '2', command: 'version', timestamp: Date.now() - 2000 },
   { id: '3', command: 'clear', timestamp: Date.now() - 1000 },
+  { id: '2', command: 'version', timestamp: Date.now() - 2000 },
+  { id: '1', command: 'help', timestamp: Date.now() - 3000 },
 ];
 
 vi.mock('../../../services/console', () => ({
@@ -412,6 +413,38 @@ describe('ConsoleInput 历史命令导航功能', () => {
       
       expect(onChange).toHaveBeenCalledWith('clear');
     });
+
+    it('非空输入按 ArrowUp 应该保存草稿，ArrowDown 恢复草稿', () => {
+      const { rerender } = render(
+        <ConsoleInput
+          ref={ref}
+          value="draft"
+          onChange={onChange}
+          onSubmit={onSubmit}
+          isDark={false}
+          history={mockHistory}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/输入命令/);
+
+      fireEvent.keyDown(input, { key: 'ArrowUp' });
+      expect(onChange).toHaveBeenLastCalledWith('clear');
+
+      rerender(
+        <ConsoleInput
+          ref={ref}
+          value="clear"
+          onChange={onChange}
+          onSubmit={onSubmit}
+          isDark={false}
+          history={mockHistory}
+        />
+      );
+
+      fireEvent.keyDown(input, { key: 'ArrowDown' });
+      expect(onChange).toHaveBeenLastCalledWith('draft');
+    });
   });
 
   describe('搜索模式 (Ctrl+R)', () => {
@@ -427,10 +460,101 @@ describe('ConsoleInput 历史命令导航功能', () => {
       );
 
       const input = screen.getByPlaceholderText(/输入命令/);
-      
+
       fireEvent.keyDown(input, { key: 'r', ctrlKey: true });
-      
+
       expect(screen.getByPlaceholderText(/输入搜索关键词/)).toBeInTheDocument();
+    });
+
+    it('Ctrl+R 搜索模式应该按关键词过滤历史命令', () => {
+      render(
+        <ConsoleInput
+          ref={ref}
+          value=""
+          onChange={onChange}
+          onSubmit={onSubmit}
+          isDark={false}
+          history={mockHistory}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/输入命令/);
+      fireEvent.keyDown(input, { key: 'r', ctrlKey: true });
+
+      const searchInput = screen.getByPlaceholderText(/输入搜索关键词/);
+      fireEvent.change(searchInput, { target: { value: 'ver' } });
+
+      expect(screen.getByText('version')).toBeInTheDocument();
+      expect(screen.queryByText('help')).not.toBeInTheDocument();
+    });
+
+    it('Enter 应该将选中的搜索结果填充到主输入框并退出搜索模式', () => {
+      render(
+        <ConsoleInput
+          ref={ref}
+          value=""
+          onChange={onChange}
+          onSubmit={onSubmit}
+          isDark={false}
+          history={mockHistory}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/输入命令/);
+      fireEvent.keyDown(input, { key: 'r', ctrlKey: true });
+
+      const searchInput = screen.getByPlaceholderText(/输入搜索关键词/);
+      fireEvent.change(searchInput, { target: { value: 'ver' } });
+      fireEvent.keyDown(searchInput, { key: 'Enter' });
+
+      expect(onChange).toHaveBeenCalledWith('version');
+      expect(screen.getByPlaceholderText(/输入命令/)).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText(/输入搜索关键词/)).not.toBeInTheDocument();
+    });
+
+    it('Esc 应该取消搜索且不修改主输入框内容', () => {
+      render(
+        <ConsoleInput
+          ref={ref}
+          value="hel"
+          onChange={onChange}
+          onSubmit={onSubmit}
+          isDark={false}
+          history={mockHistory}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/输入命令/);
+      fireEvent.keyDown(input, { key: 'r', ctrlKey: true });
+
+      const searchInput = screen.getByPlaceholderText(/输入搜索关键词/);
+      fireEvent.change(searchInput, { target: { value: 'xyz' } });
+      fireEvent.keyDown(searchInput, { key: 'Escape' });
+
+      expect(screen.queryByPlaceholderText(/输入搜索关键词/)).not.toBeInTheDocument();
+      expect(onChange).not.toHaveBeenCalledWith('');
+      expect(screen.getByText('没有匹配的历史记录')).toBeInTheDocument();
+    });
+
+    it('搜索无匹配时应该显示空状态提示', () => {
+      render(
+        <ConsoleInput
+          ref={ref}
+          value=""
+          onChange={onChange}
+          onSubmit={onSubmit}
+          isDark={false}
+          history={mockHistory}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/输入命令/);
+      fireEvent.keyDown(input, { key: 'r', ctrlKey: true });
+
+      const searchInput = screen.getByPlaceholderText(/输入搜索关键词/);
+      fireEvent.change(searchInput, { target: { value: '不存在' } });
+
+      expect(screen.getByText('没有匹配的历史记录')).toBeInTheDocument();
     });
   });
 

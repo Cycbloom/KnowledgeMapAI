@@ -7,10 +7,11 @@ import type { Page } from '@playwright/test';
 // - 测试环境 locale 为 en-US，UI 文本为英文；使用双语正则匹配中英文
 // - 输入框 placeholder（en-US）: "Enter command... (Tab for autocomplete, Ctrl+R to search history)"
 // - 控制台标题（en-US）: "Console"（i18n key: console.tabs.console）
-// - 已知实现缺陷：
-//   1. ConsoleOutput.tsx 的 useEffect 将 visibleCount 设为 output.length，日志折叠功能无效
-//   2. ConsoleInput.tsx 的 ArrowUp 使用 history[length-1-index]，遍历顺序相反（最旧优先）
-//   3. ConsoleInput.tsx 的 canNavigateHistory 条件阻止非空输入的历史导航
+// - 已修复的历史缺陷：
+//   1. 日志折叠失效（visibleCount 被扩张为 output.length）→ 固定初始窗口 20 条
+//   2. ArrowUp 遍历顺序相反（最旧优先）→ 与 store 一致（最新优先）
+//   3. canNavigateHistory 阻止非空输入的历史导航 → 门控已移除
+//   4. executeCommand 与 executeCommandInternal 双重回显 → 每条命令仅 1 条回显
 
 const consoleTitle = 'text=/控制台|Console/';
 const commandInput = 'input[placeholder*="命令"], input[placeholder*="command"]';
@@ -97,6 +98,17 @@ test.describe('控制台历史命令导航功能测试', () => {
     await expect(input).toHaveValue(/^[a-z]+\s$/);
   });
 
+  test('执行命令后 ArrowUp 应召回最近命令', async ({ page }) => {
+    const input = page.locator(commandInput);
+
+    await input.fill('version');
+    await input.press('Enter');
+    await page.waitForTimeout(300);
+
+    await input.press('ArrowUp');
+    await expect(input).toHaveValue('version');
+  });
+
 });
 
 test.describe('控制台性能和边界情况测试', () => {
@@ -146,8 +158,6 @@ test.describe('控制台性能和边界情况测试', () => {
     const outputContainer = page.locator(outputScrollContainer);
     // 每条未知命令产生 1 个 "Unknown command" 错误输出（ConsoleOutput.tsx 中
     // 错误输出使用 text-sm text-red-* 类，不含 font-mono）。
-    // 注意：executeCommand 和 executeCommandInternal 均调用 addOutput 导致
-    // 输入回显重复（2 次），但不影响错误输出计数。
     const errorCount = await outputContainer.locator('text=/Unknown command/').count();
 
     expect(errorCount).toBe(1);
@@ -157,18 +167,17 @@ test.describe('控制台性能和边界情况测试', () => {
   test('恰好 20 条记录的边界情况', async ({ page }) => {
     const input = page.locator(commandInput);
 
-    for (let i = 0; i < 20; i++) {
+    // 回显修复后每条未知命令产生 2 条输出（1 条回显 + 1 条错误），发 10 条凑满 20
+    for (let i = 0; i < 10; i++) {
       await input.fill(`exactly twenty ${i}`);
       await input.press('Enter');
       await page.waitForTimeout(150);
     }
 
     const outputContainer = page.locator(outputScrollContainer);
-    // 计数 "Unknown command" 错误输出（每条命令 1 个），而非 .text-sm.font-mono
-    // （每条命令 2 个，因 executeCommand + executeCommandInternal 双重回显）
     const errorCount = await outputContainer.locator('text=/Unknown command/').count();
 
-    expect(errorCount).toBe(20);
+    expect(errorCount).toBe(10);
     await expect(page.locator(scrollMore)).not.toBeVisible({ timeout: 1000 });
   });
 

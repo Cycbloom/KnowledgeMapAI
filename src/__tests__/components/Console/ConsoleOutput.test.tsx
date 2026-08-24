@@ -49,6 +49,18 @@ describe('ConsoleOutput 日志折叠功能', () => {
       expect(screen.queryByText(/向上滚动查看更多历史记录/)).not.toBeInTheDocument();
       expect(screen.getAllByText(/命令 \d+/).length).toBe(20);
     });
+
+    it('超过 20 条时默认只显示最近 20 条并提示隐藏数量', () => {
+      const output = createMockOutput(30);
+
+      render(<ConsoleOutput ref={ref} output={output} isDark={false} onClear={vi.fn()} />);
+
+      expect(screen.queryByText('命令 1')).not.toBeInTheDocument();
+      expect(screen.getByText('命令 11')).toBeInTheDocument();
+      expect(screen.getByText('命令 30')).toBeInTheDocument();
+      expect(screen.getAllByText(/命令 \d+/).length).toBe(20);
+      expect(screen.getByText(/向上滚动查看更多历史记录 \(10 条\)/)).toBeInTheDocument();
+    });
   });
 
   describe('清空输出功能', () => {
@@ -216,6 +228,27 @@ describe('ConsoleOutput 日志折叠功能', () => {
       });
       
       expect(screen.getAllByText(/新命令/).length).toBe(3);
+    });
+
+    it('折叠状态下追加日志应该保持窗口稳定且包含最新内容', async () => {
+      const initialOutput = createMockOutput(25);
+
+      const { rerender } = render(
+        <ConsoleOutput ref={ref} output={initialOutput} isDark={false} onClear={vi.fn()} />
+      );
+
+      expect(screen.queryByText('命令 5')).not.toBeInTheDocument();
+
+      const newOutput = [...initialOutput, { type: 'input' as const, content: '最新命令' }];
+
+      await act(async () => {
+        rerender(<ConsoleOutput ref={ref} output={newOutput} isDark={false} onClear={vi.fn()} />);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
+
+      expect(screen.getByText('最新命令')).toBeInTheDocument();
+      expect(screen.queryByText('命令 6')).not.toBeInTheDocument();
+      expect(screen.getAllByText(/命令 \d+/).length).toBe(19);
     });
   });
 });

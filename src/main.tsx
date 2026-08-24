@@ -6,6 +6,7 @@ import { persistQueryClient } from '@tanstack/react-query-persist-client'
 import { defaultQueryConfig } from './hooks/queries/config'
 import { subscribeNetworkStatus } from './hooks/common/useNetworkStatus'
 import App from './App'
+import { i18nReady } from './i18n'
 import { ThemeProvider } from './hooks'
 import { NavigationProvider } from './hooks/common/useNavigateBack'
 import { unregisterLegacySW } from './utils/serviceWorker'
@@ -162,7 +163,7 @@ const rootElement = document.getElementById('root');
 if (rootElement) {
   const Router = isElectron ? HashRouter : BrowserRouter;
   void (async () => {
-    await preloadMobileApi();
+    await Promise.all([preloadMobileApi(), i18nReady]);
     createRoot(rootElement).render(
       <StrictMode>
         <QueryClientProvider client={queryClient}>

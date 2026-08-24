@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { changeLanguage as changeAppLanguage } from "@/i18n";
 import { useTheme } from "../../hooks";
 import { useSaveFeedback } from "../../hooks/common";
 import { usePreferencesStore } from "../../store/usePreferencesStore";
@@ -262,7 +263,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={() => {
-                  i18n.changeLanguage("zh-CN");
+                  void changeAppLanguage("zh-CN");
                   notify();
                 }}
                 className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
@@ -279,7 +280,7 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
 
               <button
                 onClick={() => {
-                  i18n.changeLanguage("en-US");
+                  void changeAppLanguage("en-US");
                   notify();
                 }}
                 className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${

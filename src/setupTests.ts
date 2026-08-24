@@ -1,6 +1,6 @@
 import { beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { server } from '../tests/setup/mswServer';
-import i18n from './i18n';
+import { changeLanguage } from './i18n';
 
 const localStorageMock = {
   getItem: vi.fn(() => null),
@@ -13,11 +13,14 @@ const localStorageMock = {
 beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
 
 // 全局设置 i18n 默认语言为 zh-CN,避免每个测试文件重复调用
-// i18n.changeLanguage。jsdom 的 navigator.language 默认为 en-US,且
-// localStorage 被模拟为空,LanguageDetector 会回退到 en-US,导致中文断言失败。
-beforeAll(async () => {
-  await i18n.changeLanguage('zh-CN');
-});
+// changeLanguage。jsdom 的 navigator.language 默认为 en-US,且
+// localStorage 被模拟为空,自动检测会回退到 en-US,导致中文断言失败。
+// changeLanguage 会先动态加载对应语言资源再切换。
+// 必须用顶层 await 而非 beforeAll:i18n 懒加载后资源经动态 import
+// 异步注入,若推迟到 beforeAll,被测模块在「测试文件模块求值期」执行的
+// i18next.t()(如 api 服务里的模块级常量)会拿到原始 key;悬浮的动态
+// import 还会与测试文件的 vi.mock 安装/副作用导入产生时序竞争。
+await changeLanguage('zh-CN');
 
 // jsdom 环境专用的全局 polyfill（node 环境跳过）
 beforeAll(async () => {

@@ -1257,7 +1257,8 @@ export const MindMapCanvas = React.memo(
           {interaction.showMiniMap && layout && (
             <div className="pointer-events-auto">
               <MiniMap
-                nodes={visibleNodes}
+                nodes={layoutNodes}
+                links={layoutLinks}
                 transform={transform}
                 containerWidth={containerSize.width}
                 containerHeight={containerSize.height}
@@ -1266,6 +1267,11 @@ export const MindMapCanvas = React.memo(
                 height={160}
                 viewCenterX={interaction.visualCenterX}
                 viewCenterY={visualCenterY}
+                nodeStatus={nodeStatus}
+                coloringMode={coloringMode}
+                colorScheme={colorScheme}
+                selectedNodeId={selectedNodeId}
+                multiSelectedNodeIds={multiSelectedNodeIds}
               />
             </div>
           )}

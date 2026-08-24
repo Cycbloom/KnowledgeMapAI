@@ -461,6 +461,8 @@ export const GraphMapCanvas = forwardRef<
               height={140}
               viewCenterX={containerSize.width / 2}
               viewCenterY={containerSize.height / 2}
+              selectedNodeId={selectedGraphId}
+              multiSelectedNodeIds={multiSelectedGraphIds}
             />
           </div>
         )}

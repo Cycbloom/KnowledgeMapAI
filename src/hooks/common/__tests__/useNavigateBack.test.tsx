@@ -12,6 +12,7 @@ function Harness() {
   return (
     <div>
       <span data-testid="path">{location.pathname}</span>
+      <span data-testid="search">{location.search}</span>
       <button onClick={() => navigate("/study")}>go-study</button>
       <button onClick={() => navigate("/quiz/123")}>go-quiz</button>
       <button onClick={() => navigate("/quiz/123/practice")}>go-practice</button>
@@ -21,6 +22,8 @@ function Harness() {
     </div>
   );
 }
+
+const currentSearch = () => screen.getByTestId("search").textContent;
 
 function renderHarness(initialEntries: string[] = ["/"]) {
   return render(
@@ -103,5 +106,16 @@ describe("useNavigateBack", () => {
 
     fireEvent.click(screen.getByText("back"));
     expect(currentPath()).toBe("/");
+  });
+
+  it("返回应还原上一页完整 query（学习模式 → 学习中心 → 返回，应带回首 graph_id/node_id）", () => {
+    renderHarness(["/learning?graph_id=abc&node_id=xyz"]);
+
+    fireEvent.click(screen.getByText("go-study"));
+    expect(currentPath()).toBe("/study");
+
+    fireEvent.click(screen.getByText("back"));
+    expect(currentPath()).toBe("/learning");
+    expect(currentSearch()).toBe("?graph_id=abc&node_id=xyz");
   });
 });

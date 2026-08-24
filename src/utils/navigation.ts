@@ -31,7 +31,7 @@ export const getDetailParentPath = (pathname: string): string | undefined => {
     case "learningPath":
       return "/learning-paths";
     case "quiz":
-      return "/study";
+      return "/study?view=quizzes";
     case "quizPractice":
       return `/quiz/${detail.quizSetId}`;
     case "schedulerTask":

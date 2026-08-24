@@ -218,12 +218,19 @@ export const Study = () => {
 
   // Auto-start quiz when mode=quiz and cards loaded
   useEffect(() => {
-    if (mode === "quiz" && allCards.length > 0 && cardReview.quizCards.length === 0) {
+    if (mode === "quiz" && viewState === "quiz" && allCards.length > 0 && cardReview.quizCards.length === 0) {
       cardReview.startCardReview(allCards);
     }
     // 用 quizCards.length（数字）替代数组引用避免重复触发；startCardReview 通过 allCards 入参获取最新数据
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, allCards, cardReview.quizCards.length]);
+  }, [mode, viewState, allCards, cardReview.quizCards.length]);
+
+  // 兜底：mode=quiz 但该范围无卡片时回退仪表盘，避免停留在空白答题视图
+  useEffect(() => {
+    if (mode === "quiz" && viewState === "quiz" && !isLoading && allCards.length === 0) {
+      setViewState("dashboard");
+    }
+  }, [mode, viewState, isLoading, allCards]);
 
   // Stats
   const stats = useMemo(() => {

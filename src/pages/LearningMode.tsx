@@ -46,7 +46,7 @@ import { LearningArticleReader } from "../components/Learning/LearningArticleRea
 import { CreateNodeModal } from "../components/Learning/CreateNodeModal";
 import { LearningChapterSchemaEditor } from "../components/Learning/LearningChapterSchemaEditor";
 import { addQuote } from "../components/RAGChat";
-import { NodeLevel, Keyword } from "../types";
+import { NodeLevel, Keyword, StudyCard } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
 import { useShallow } from "zustand/react/shallow";
 
@@ -57,6 +57,7 @@ type RightPanelMode =
   | "literature-extract"
   | "concept-aggregation";
 type MaterialLanguage = "zh" | "en";
+const TASK_TERMINAL_STATUSES = ["completed", "failed", "cancelled"];
 
 export const LearningMode = () => {
   const { t } = useTranslation();
@@ -116,6 +117,8 @@ export const LearningMode = () => {
     current: number; total: number; isGenerating: boolean;
   } | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // 挑战意图：节点无题打开发题对话框时置位，生成完成后自动进入挑战，关闭对话框即取消
+  const isChallengePendingRef = useRef(false);
 
   const { enterFocusMode, exitFocusMode, highlightEnabled, setHighlightEnabled } = useFocusStore(
     useShallow((s) => ({
@@ -321,7 +324,7 @@ export const LearningMode = () => {
     }
   };
 
-  const handleStartChallenge = async () => {
+  const startChallengeSession = async () => {
     if (!nodeId || !graphId) { msgHelper.warning(t("learning.challenge.missingParams")); return; }
     try {
       let taskId: string;
@@ -341,6 +344,26 @@ export const LearningMode = () => {
       console.error("Failed to create review task:", error);
     }
     navigate(`/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz&from=learning`);
+  };
+
+  const handleStartChallenge = async () => {
+    if (!nodeId || !graphId) { msgHelper.warning(t("learning.challenge.missingParams")); return; }
+    if (isGeneratingCards) { msgHelper.info(t("learning.challenge.generating")); return; }
+    try {
+      const result = await api.study.getCards({ knowledge_point_id: nodeId });
+      const cards = Array.isArray(result)
+        ? result
+        : ((result as unknown as { cards?: StudyCard[] }).cards ?? []);
+      if (cards.length === 0) {
+        isChallengePendingRef.current = true;
+        setIsGenModalOpen(true);
+        msgHelper.info(t("learning.challenge.noCards"));
+        return;
+      }
+    } catch (error) {
+      console.error("Failed to check node cards:", error);
+    }
+    await startChallengeSession();
   };
 
   const handleRegenerateMaterial = async () => {
@@ -497,10 +520,16 @@ export const LearningMode = () => {
           }
         }
         if (!signal.aborted && savedCount > 0) {
-          msgHelper.success(t("learning.cards.generateSuccess", { count: savedCount }), {
-            duration: 5000,
-            action: { label: t("learning.cards.startChallenge"), onClick: handleStartChallenge },
-          });
+          if (isChallengePendingRef.current) {
+            isChallengePendingRef.current = false;
+            setIsGenModalOpen(false);
+            await startChallengeSession();
+          } else {
+            msgHelper.success(t("learning.cards.generateSuccess", { count: savedCount }), {
+              duration: 5000,
+              action: { label: t("learning.cards.startChallenge"), onClick: handleStartChallenge },
+            });
+          }
         }
       } catch (error) {
         console.error("[LearningMode] 移动端题目生成异常:", error);
@@ -533,6 +562,10 @@ export const LearningMode = () => {
         count_matrix: countMatrixNum,
       });
       if (result.success) {
+        if (isChallengePendingRef.current && result.taskIds?.length) {
+          await pollGenerationTasksThenChallenge(result.taskIds);
+          return;
+        }
         msgHelper.success(t("learning.cards.taskSubmitted"), {
           duration: 5000,
           action: { label: t("learning.cards.viewTasks"), onClick: () => navigate("/tasks") },
@@ -552,6 +585,40 @@ export const LearningMode = () => {
       else if (error instanceof Error) errorMessage = t("learning.cards.submitFailed", { error: error.message });
       msgHelper.error(errorMessage);
     } finally { setIsGeneratingCards(false); }
+  };
+
+  const pollGenerationTasksThenChallenge = async (taskIds: string[]) => {
+    msgHelper.info(t("learning.challenge.challengeGenerating"), { duration: 6000 });
+    setGenerateProgress({ current: 0, total: taskIds.length, isGenerating: true });
+    const intervalMs = 3000;
+    const maxAttempts = 200;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+      if (!isChallengePendingRef.current) return;
+      const statuses = await Promise.all(
+        taskIds.map((id) => api.ai.getTaskStatus(id).catch(() => null)),
+      );
+      const fetched = statuses.filter((s): s is { status: string } => !!s);
+      const completedCount = fetched.filter((s) => s.status === "completed").length;
+      setGenerateProgress({ current: completedCount, total: taskIds.length, isGenerating: true });
+      const allSettled =
+        fetched.length === taskIds.length &&
+        fetched.every((s) => TASK_TERMINAL_STATUSES.includes(s.status));
+      if (allSettled) {
+        setGenerateProgress(null);
+        isChallengePendingRef.current = false;
+        if (completedCount === taskIds.length) {
+          setIsGenModalOpen(false);
+          await startChallengeSession();
+        } else {
+          msgHelper.error(t("learning.challenge.challengeGenerateFailed"));
+        }
+        return;
+      }
+    }
+    setGenerateProgress(null);
+    isChallengePendingRef.current = false;
+    msgHelper.info(t("learning.challenge.challengeGenerateTimeout"));
   };
 
   const handleAICardGenError = (
@@ -764,7 +831,8 @@ export const LearningMode = () => {
 
       <Suspense fallback={null}>
       <GenerateCardsModal
-        isOpen={isGenModalOpen} onClose={() => setIsGenModalOpen(false)}
+        isOpen={isGenModalOpen}
+        onClose={() => { setIsGenModalOpen(false); isChallengePendingRef.current = false; }}
         onGenerate={handleManualGenerateCards}
         nodeTitle={nodeTitle}
         graphId={graphId ?? undefined}

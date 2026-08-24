@@ -72,7 +72,9 @@ export interface IAutoGraphApi {
     currentPrompt?: string;
   }): Promise<unknown>;
 
-  generateEmbeddings(limit?: number): Promise<unknown>;
+  generateEmbeddings(
+    limit?: number,
+  ): Promise<{ success: boolean; processed: number; failed: number }>;
 
   getEmbeddingStatus(): Promise<unknown>;
 

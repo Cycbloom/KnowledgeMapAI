@@ -44,6 +44,7 @@ import {
 import { useRecentGraphs } from "../hooks/queries/useRecentGraphs";
 import { addRecentNode } from "../hooks/queries/useRecentNodes";
 import { isAppError } from "../utils/errors";
+import { api } from "../services/api";
 import { computeRegions } from "../utils/graph";
 import { useDocumentTitle } from "../hooks/common/useDocumentTitle";
 import { useNavigateBack } from "../hooks/common/useNavigateBack";
@@ -280,6 +281,7 @@ export const GraphEditor = () => {
     onOpenChat: () => panelState.setIsRAGChatOpen(true),
   });
   const [isSelectingParentNode, setIsSelectingParentNode] = useState(false);
+  const [isGeneratingEmbeddings, setIsGeneratingEmbeddings] = useState(false);
 
   const {
     customRegions,
@@ -1021,6 +1023,58 @@ export const GraphEditor = () => {
     }
   }, [queryClient, id, t]);
 
+  // 批量生成语义向量：循环分批调用后端，直到无待处理数据；完成后刷新含 embedding 的图谱数据
+  // embeddings 变化会触发 MindMapCanvas 的布局 effect，自动重算语义聚类布局
+  const handleGenerateEmbeddings = useCallback(async () => {
+    if (!id || isGeneratingEmbeddings) return;
+    setIsGeneratingEmbeddings(true);
+    const msgId = message.loading(
+      t("graphEditor.semanticEmbedding.generating", { count: 0 }),
+    );
+    let totalProcessed = 0;
+    let totalFailed = 0;
+    try {
+      for (;;) {
+        const res = await api.autoGraph.generateEmbeddings(100);
+        totalProcessed += res.processed;
+        totalFailed += res.failed;
+        if (!res.success || res.processed === 0) break;
+        message.loading(
+          t("graphEditor.semanticEmbedding.generating", {
+            count: totalProcessed,
+          }),
+          { id: msgId },
+        );
+      }
+      message.dismiss(msgId);
+      if (totalProcessed === 0 && totalFailed === 0) {
+        message.info(t("graphEditor.semanticEmbedding.noPending"));
+      } else if (totalFailed > 0) {
+        message.warning(
+          t("graphEditor.semanticEmbedding.doneWithFailures", {
+            processed: totalProcessed,
+            failed: totalFailed,
+          }),
+        );
+      } else {
+        message.success(
+          t("graphEditor.semanticEmbedding.done", {
+            processed: totalProcessed,
+          }),
+        );
+      }
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.graphDataWithEmbedding(id),
+      });
+    } catch (err) {
+      console.error("Failed to generate embeddings:", err);
+      message.dismiss(msgId);
+      message.error(t("graphEditor.semanticEmbedding.failed"));
+    } finally {
+      setIsGeneratingEmbeddings(false);
+    }
+  }, [id, isGeneratingEmbeddings, queryClient, t]);
+
   const handleOpenDetail = useCallback(() => {
     setSidebarMode("detail");
   }, [setSidebarMode]);
@@ -1541,6 +1595,8 @@ export const GraphEditor = () => {
         onAIExpand={aiOps.handleAIExpand}
         onBranchExplore={handleGetBranchSuggestions}
         onBackgroundTask={aiOps.handleBackgroundTask}
+        onGenerateEmbeddings={handleGenerateEmbeddings}
+        isGeneratingEmbeddings={isGeneratingEmbeddings}
         isChatOpen={panelState.isRAGChatOpen}
         setIsChatOpen={panelState.setIsRAGChatOpen}
         isTutorMode={isTutorMode}

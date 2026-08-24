@@ -95,6 +95,10 @@ interface GraphToolbarProps {
   onAIExpand?: () => void;
   onBranchExplore?: () => void;
   onBackgroundTask?: (type: "generate_questions" | "expand_graph") => void;
+
+  // Semantic Embedding Generation
+  onGenerateEmbeddings?: () => void;
+  isGeneratingEmbeddings?: boolean;
   isChatOpen: boolean;
   setIsChatOpen: (open: boolean) => void;
   ragChatWidth?: number;
@@ -314,6 +318,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   onAIExpand,
   onBranchExplore,
   onBackgroundTask,
+  onGenerateEmbeddings,
+  isGeneratingEmbeddings,
   isChatOpen,
   setIsChatOpen,
   isPathfindingMode,
@@ -1633,6 +1639,13 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             icon={Sparkles}
             label={t("graphEditor.toolbar.backgroundExpand")}
             colorClass="text-primary-500"
+          />
+          <MenuItem
+            onClick={onGenerateEmbeddings}
+            disabled={!onGenerateEmbeddings || isGeneratingEmbeddings}
+            icon={Brain}
+            label={t("graphEditor.toolbar.generateEmbeddings")}
+            colorClass="text-violet-500"
           />
           <MenuItem
             onClick={() => setIsChatOpen(!isChatOpen)}

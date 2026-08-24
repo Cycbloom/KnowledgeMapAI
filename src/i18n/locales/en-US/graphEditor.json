@@ -201,6 +201,7 @@
     "literatureLibrary": "Literature Library",
     "intelligentExpand": "Intelligent Expansion (Infinite Mode)",
     "backgroundExpand": "Background Auto Expansion",
+    "generateEmbeddings": "Generate Semantic Vectors",
     "intelligentQnA": "Intelligent Q&A",
     "pathfinding": "Path Navigation",
     "exitPathfinding": "Exit Path Navigation",
@@ -352,7 +353,14 @@
     "statusLocked": "Locked",
     "statusNew": "New",
     "reviewCount": "{{count}} reviews",
-    "semanticUnavailable": "Nodes in this graph lack semantic vector data, switched to standard layout. Ensure knowledge points have generated vector data via AI features."
+    "semanticUnavailable": "Nodes in this graph lack semantic vector data, switched to standard layout. Use \"AI Assistant → Generate Semantic Vectors\" in the toolbar to batch-generate them."
+  },
+  "semanticEmbedding": {
+    "generating": "Generating semantic vectors... ({{count}} done)",
+    "noPending": "No vector data left to generate",
+    "done": "Successfully generated semantic vectors for {{processed}} nodes",
+    "doneWithFailures": "Generated {{processed}}, {{failed}} failed. You can run it again to retry.",
+    "failed": "Failed to generate semantic vectors. Please try again later."
   },
   "narrative": {
     "play": "Play",

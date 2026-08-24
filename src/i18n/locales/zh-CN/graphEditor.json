@@ -201,6 +201,7 @@
     "literatureLibrary": "文献库",
     "intelligentExpand": "智能拓展 (无限模式)",
     "backgroundExpand": "后台自动拓展",
+    "generateEmbeddings": "生成语义向量",
     "intelligentQnA": "智能问答",
     "pathfinding": "路径导航",
     "exitPathfinding": "退出路径导航",
@@ -352,7 +353,14 @@
     "statusLocked": "未解锁",
     "statusNew": "新节点",
     "reviewCount": "复习 {{count}} 次",
-    "semanticUnavailable": "当前图谱节点缺少语义向量数据，已切换为常规布局。请确保知识点已通过 AI 功能生成向量数据。"
+    "semanticUnavailable": "当前图谱节点缺少语义向量数据，已切换为常规布局。可通过工具栏「AI 助手 → 生成语义向量」批量生成。"
+  },
+  "semanticEmbedding": {
+    "generating": "正在批量生成语义向量...（已完成 {{count}} 个）",
+    "noPending": "没有需要生成的向量数据",
+    "done": "已成功生成 {{processed}} 个节点的语义向量",
+    "doneWithFailures": "已生成 {{processed}} 个，{{failed}} 个失败，可重新执行重试",
+    "failed": "语义向量生成失败，请稍后重试"
   },
   "narrative": {
     "play": "播放",

@@ -309,6 +309,9 @@ export const MindMapCanvas = React.memo(
     const [layout, setLayout] = useState<LayoutResult | null>(null);
     const [isLayoutCalculating, setIsLayoutCalculating] = useState(false);
     const [semanticLayoutUnavailable, setSemanticLayoutUnavailable] = useState(false);
+    // 语义不可用提示：短暂显示后自动淡出，避免长时间遮挡画布视野
+    const [semanticHintFading, setSemanticHintFading] = useState(false);
+    const semanticHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Worker hook
     const { calculateMindMapLayout, calculateSemanticLayout } = useGraphWorker();
@@ -413,6 +416,25 @@ export const MindMapCanvas = React.memo(
 
       return () => clearTimeout(timer);
     }, [nodes, edges, containerSize, calculateMindMapLayout, calculateSemanticLayout, _layoutMode, embeddings]);
+
+    // 语义不可用提示自动淡出：展示 5s 后触发 opacity 过渡，淡出期间不拦截任何交互
+    useEffect(() => {
+      if (!semanticLayoutUnavailable) {
+        setSemanticHintFading(false);
+        return;
+      }
+      setSemanticHintFading(false);
+      semanticHintTimerRef.current = setTimeout(() => {
+        setSemanticHintFading(true);
+        semanticHintTimerRef.current = null;
+      }, 5000);
+      return () => {
+        if (semanticHintTimerRef.current !== null) {
+          clearTimeout(semanticHintTimerRef.current);
+          semanticHintTimerRef.current = null;
+        }
+      };
+    }, [semanticLayoutUnavailable]);
 
     const layoutNodes = useMemo(() => layout?.nodes ?? [], [layout]);
     const layoutLinks = useMemo(() => layout?.links ?? [], [layout]);
@@ -1053,7 +1075,10 @@ export const MindMapCanvas = React.memo(
         className="relative w-full h-full overflow-hidden"
       >
         {semanticLayoutUnavailable && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-modal-overlay bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-lg text-sm text-amber-800 dark:text-amber-200">
+          <div
+            aria-hidden={semanticHintFading}
+            className={`absolute top-4 left-1/2 -translate-x-1/2 z-modal-overlay bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-lg text-sm text-amber-800 dark:text-amber-200 transition-opacity duration-1000 ease-out pointer-events-none ${semanticHintFading ? 'opacity-0' : 'opacity-100'}`}
+          >
             {t('graphEditor.mindMap.semanticUnavailable')}
           </div>
         )}

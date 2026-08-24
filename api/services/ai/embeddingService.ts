@@ -33,7 +33,7 @@ export class EmbeddingService {
 
       const { data: knowledgePoints, error } = await supabase
         .from('knowledge_points')
-        .select('id, title, content')
+        .select('id, title, owner_id')
         .is('embedding', null)
         .limit(limit);
 
@@ -61,11 +61,13 @@ export class EmbeddingService {
         try {
           const embeddings = await aiService.generateEmbeddingsBatch(texts);
 
-          const upsertBatch: { id: string; embedding: number[] }[] = [];
+          // RLS 的 INSERT WITH CHECK (auth.uid() = owner_id) 会校验 upsert 待插入行，
+          // 必须显式携带 owner_id，否则该列为 NULL 导致 42501 违反行级安全策略
+          const upsertBatch: { id: string; owner_id: string; embedding: number[] }[] = [];
           for (let j = 0; j < batch.length; j++) {
             const embedding = embeddings[j];
             if (embedding) {
-              upsertBatch.push({ id: batch[j].id, embedding });
+              upsertBatch.push({ id: batch[j].id, owner_id: batch[j].owner_id, embedding });
             } else {
               failed++;
             }

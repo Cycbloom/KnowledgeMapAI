@@ -33,8 +33,9 @@ export const SEMANTIC_ZOOM_CONFIG = {
   detailInfo: {
     showContentPreview: true,
     contentPreviewLength: 30,
-    showLearningStatus: true,
-    showReviewCount: true,
+    // 最大缩放详情视角不再在节点上展示学习状态/复习次数，避免信息过载
+    showLearningStatus: false,
+    showReviewCount: false,
   },
   // Transition duration between levels
   transitionDuration: 300,

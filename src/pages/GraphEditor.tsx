@@ -219,6 +219,12 @@ const MobileNodeActionMenu = lazy(() =>
   })),
 );
 
+const GenerateCardsModal = lazy(() =>
+  import("../components/Learning/GenerateCardsModal").then((module) => ({
+    default: module.GenerateCardsModal,
+  })),
+);
+
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -1792,6 +1798,26 @@ export const GraphEditor = () => {
             coloringMode={coloringMode}
           />
         </ErrorBoundary>
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <GenerateCardsModal
+          isOpen={aiOps.isChallengeGenOpen}
+          onClose={aiOps.handleCloseChallengeGen}
+          onGenerate={aiOps.handleChallengeGenerate}
+          graphId={id}
+          nodeTitle={state.selectedNode?.title}
+          selectedNodes={
+            state.selectedNode
+              ? [{ id: state.selectedNode.id, title: state.selectedNode.title }]
+              : []
+          }
+          graphNodes={nodes.map((n) => ({ id: n.id, title: n.title }))}
+          graphEdges={edges.map((e) => ({
+            source_knowledge_point_id: e.source_knowledge_point_id,
+            target_knowledge_point_id: e.target_knowledge_point_id,
+          }))}
+        />
       </Suspense>
 
       <Suspense fallback={<ViewLoader />}>

@@ -1,4 +1,6 @@
-import { Node, Edge, BranchSuggestion, ExplorationPathItem } from '../../types';
+import { useRef, useState } from 'react';
+import { Node, Edge, BranchSuggestion, ExplorationPathItem, StudyCard } from '../../types';
+import type { GenerateCardsFullConfig } from '../../components/Learning/GenerateCardsModal';
 import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
 import type { AIAction } from '@shared/types/ai';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../utils/graph/graphUtils';
@@ -25,6 +27,9 @@ interface AIExpandResult {
     level?: string;
   }>;
 }
+
+const TASK_TERMINAL_STATUSES = ["completed", "failed", "cancelled"];
+const LEVEL_TEST_PROGRESS_MSG_ID = "level-test-generation-progress";
 
 interface AIExpandVariables {
   node_title: string;
@@ -218,9 +223,154 @@ export const useGraphAIOperations = ({
     );
   };
 
-  const handleStartLevelTest = () => {
-    if (!selectedNode) return;
-    navigate(`/study?node_id=${selectedNode.id}&graph_id=${id}`);
+  const [isChallengeGenOpen, setIsChallengeGenOpen] = useState(false);
+  const challengePendingRef = useRef(false);
+
+  const startLevelTestSession = () => {
+    if (!selectedNode || !id) return;
+    navigate(`/study?node_id=${selectedNode.id}&graph_id=${id}&mode=quiz&from=graph`);
+  };
+
+  const handleStartLevelTest = async () => {
+    if (!selectedNode || !id) return;
+    try {
+      const result = await api.study.getCards({ knowledge_point_id: selectedNode.id });
+      const cards = Array.isArray(result)
+        ? result
+        : ((result as unknown as { cards?: StudyCard[] }).cards ?? []);
+      if (cards.length === 0) {
+        challengePendingRef.current = true;
+        setIsChallengeGenOpen(true);
+        message.info(t('nodeDetail.levelTestNoCards'));
+        return;
+      }
+    } catch (error) {
+      console.error("Failed to check node cards:", error);
+    }
+    startLevelTestSession();
+  };
+
+  const handleCloseChallengeGen = () => {
+    setIsChallengeGenOpen(false);
+    challengePendingRef.current = false;
+  };
+
+  const showLevelTestProgress = (done: number, total: number) => {
+    message.loading(t('nodeDetail.levelTestGeneratingProgress', { current: done, total }), {
+      id: LEVEL_TEST_PROGRESS_MSG_ID,
+    });
+  };
+
+  const pollGenerationTasksThenStartTest = async (taskIds: string[]) => {
+    showLevelTestProgress(0, taskIds.length);
+    const intervalMs = 3000;
+    const maxAttempts = 200;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+      if (!challengePendingRef.current) {
+        message.dismiss(LEVEL_TEST_PROGRESS_MSG_ID);
+        return;
+      }
+      const statuses = await Promise.all(
+        taskIds.map((taskId) => api.ai.getTaskStatus(taskId).catch(() => null)),
+      );
+      const fetched = statuses.filter((s): s is { status: string } => !!s);
+      const completedCount = fetched.filter((s) => s.status === "completed").length;
+      showLevelTestProgress(completedCount, taskIds.length);
+      const allSettled =
+        fetched.length === taskIds.length &&
+        fetched.every((s) => TASK_TERMINAL_STATUSES.includes(s.status));
+      if (allSettled) {
+        message.dismiss(LEVEL_TEST_PROGRESS_MSG_ID);
+        challengePendingRef.current = false;
+        if (completedCount === taskIds.length) {
+          message.success(t('nodeDetail.levelTestReady'));
+          setIsChallengeGenOpen(false);
+          startLevelTestSession();
+        } else {
+          message.error(t('nodeDetail.levelTestGenerateFailed'));
+        }
+        return;
+      }
+    }
+    message.dismiss(LEVEL_TEST_PROGRESS_MSG_ID);
+    challengePendingRef.current = false;
+    message.info(t('nodeDetail.levelTestGenerateTimeout'));
+  };
+
+  const handleChallengeGenerate = async (
+    config: GenerateCardsFullConfig & { targetNodeIds: string[] },
+  ) => {
+    if (!selectedNode || !id) return;
+    const targetIds = config.targetNodeIds?.length
+      ? config.targetNodeIds
+      : [selectedNode.id];
+    if (
+      targetIds.length === 0 ||
+      config.types.length === 0 ||
+      config.count <= 0
+    ) {
+      return;
+    }
+
+    try {
+      const cardsPerTypeNum =
+        config.cardsPerType && Object.keys(config.cardsPerType).length > 0
+          ? Object.fromEntries(
+              Object.entries(config.cardsPerType).map(([k, v]) => [k, Number(v ?? 0)]),
+            )
+          : undefined;
+      const countPerDiffNum =
+        config.countPerDifficulty && Object.keys(config.countPerDifficulty).length > 0
+          ? Object.fromEntries(
+              Object.entries(config.countPerDifficulty).map(([k, v]) => [k, Number(v ?? 0)]),
+            )
+          : undefined;
+      const countMatrix =
+        config.countMatrix && Object.keys(config.countMatrix).length > 0
+          ? Object.fromEntries(
+              Object.entries(config.countMatrix).map(([k, v]) => [
+                k,
+                {
+                  easy: Number(v.easy ?? 0),
+                  medium: Number(v.medium ?? 0),
+                  hard: Number(v.hard ?? 0),
+                },
+              ]),
+            )
+          : undefined;
+
+      const result = await api.ai.batchGenerateCards(targetIds, {
+        count: config.count,
+        types: config.types,
+        difficulty: config.difficulty,
+        coverage: config.coverage,
+        custom_prompt: config.customPrompt || undefined,
+        cards_per_type: cardsPerTypeNum,
+        count_per_difficulty: countPerDiffNum as
+          | { easy?: number; medium?: number; hard?: number }
+          | undefined,
+        count_matrix: countMatrix,
+      });
+
+      if (result.success && result.taskIds?.length && challengePendingRef.current) {
+        await pollGenerationTasksThenStartTest(result.taskIds);
+        return;
+      }
+      if (result.success) {
+        message.success(t('toast.graphAI.submitSuccess'), {
+          duration: 5000,
+          action: {
+            label: t('graphMap.cards.viewTasks'),
+            onClick: () => navigate("/tasks"),
+          },
+        });
+      }
+    } catch (error: unknown) {
+      const errMsg =
+        error instanceof Error ? error.message : t('nodeDetail.levelTestGenerateFailed');
+      message.error(errMsg);
+    }
   };
 
   const handleStartLearningMode = () => {
@@ -597,6 +747,9 @@ export const useGraphAIOperations = ({
     handleStartLevelTest,
     handleStartLearningMode,
     handleManageCards,
+    isChallengeGenOpen,
+    handleCloseChallengeGen,
+    handleChallengeGenerate,
     handleGetBranchSuggestions,
     handleCreateBranch,
     handleSwitchBranch,

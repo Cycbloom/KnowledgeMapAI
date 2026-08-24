@@ -1,12 +1,12 @@
 import { useMemo } from "react";
-import { useStatistics, useUser, useGraphs } from "../hooks/queries";
-import { ActivityHeatmap } from "../components/Statistics/ActivityHeatmap";
+import { useStatistics, useUser, useGraphs } from "../../hooks/queries";
+import { ActivityHeatmap } from "./ActivityHeatmap";
 import {
   KnowledgeHeatmap,
   MasteryDistributionChart,
   QuickStatsCards,
   type CardTypeName,
-} from "../components/Statistics/LearningStatsEnhanced";
+} from "./LearningStatsEnhanced";
 import {
   BarChart,
   Bar,
@@ -30,15 +30,15 @@ import {
   Target,
   LucideIcon,
 } from "lucide-react";
-import { useTheme } from "../hooks";
+import { useTheme } from "../../hooks";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../services/api";
+import { api } from "../../services/api";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import type { Graph } from "../types";
-import { formatNumber } from "../utils/formatters";
-import { Skeleton, ErrorState } from "../components/common";
-import { queryKeys } from "../hooks/queries/config";
+import type { Graph } from "../../types";
+import { formatNumber } from "../../utils/formatters";
+import { Skeleton, ErrorState } from "../common";
+import { queryKeys } from "../../hooks/queries/config";
 
 interface MetricCardProps {
   title: string;

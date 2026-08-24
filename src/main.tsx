@@ -26,7 +26,6 @@ import { message } from './utils/messageHelper'
 import { frontendEventBus } from './services/timer/FrontendEventBus'
 import './store/storeIntegrations'
 import './index.css'
-import 'katex/dist/katex.min.css'
 
 export const queryClient = new QueryClient({
   defaultOptions: {

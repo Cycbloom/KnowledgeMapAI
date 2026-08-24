@@ -2,7 +2,11 @@ import React, { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
-import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, LazyLoadFallback } from "./components/common";
+import { LoadingBar } from "./components/common/LoadingBar";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
+import { RouteErrorFallback } from "./components/common/RouteErrorFallback";
+import { ScrollToTop } from "./components/common/ScrollToTop";
+import { LazyLoadFallback } from "./components/common/LazyLoadFallback";
 import { PageLoadingProvider, usePageLoading } from "./hooks/common/usePageLoading";
 import { GlobalErrorBoundary } from "./components/common/GlobalErrorBoundary";
 import { RenderProfiler } from "./components/dev/RenderProfiler";

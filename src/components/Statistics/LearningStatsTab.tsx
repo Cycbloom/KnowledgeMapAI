@@ -1,5 +1,5 @@
 import React from "react";
-import { LearningStatsCenter } from "../../pages/LearningStatsCenter";
+import { LearningStatsCenter } from "./LearningStatsCenter";
 
 export const LearningStatsTab: React.FC = () => {
   return (

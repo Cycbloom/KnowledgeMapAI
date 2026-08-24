@@ -218,8 +218,6 @@ KnowledgeMap/
 | `/statistics` | StatisticsCenter | 统计中心 |
 | `/templates` | Templates | 模板管理 |
 
-> 另存在未挂载路由的页面：`Home.tsx`、`CombinedViewPage.tsx`、`Statistics.tsx`、`LearningStatsCenter.tsx`、`UnifiedWorkbench.tsx` 等（历史遗留或复用组件）。
-
 ### 4.2 组件体系 (src/components/)
 
 #### 通用组件 (common/)

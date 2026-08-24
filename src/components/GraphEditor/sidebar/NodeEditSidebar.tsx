@@ -27,6 +27,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { preprocessMarkdown } from "../../../utils/markdownPreprocessor";
 import { preprocessWikiLinks, WikiLinkRenderer } from "../../../utils/wikiLinkRemarkPlugin";
 import { backlinksApi } from "../../../services/api/backlinks";

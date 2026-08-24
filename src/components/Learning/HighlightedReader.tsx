@@ -5,6 +5,7 @@ import { debounce } from "@/utils/performanceUtils";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2, Info } from "lucide-react";
 import { TermTooltip } from "../common";

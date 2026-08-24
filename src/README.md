@@ -74,16 +74,13 @@ src/
 │   ├── Achievements.tsx
 │   ├── CalendarPage.tsx
 │   ├── CombinedGraphView.tsx
-│   ├── CombinedViewPage.tsx
 │   ├── CurrentTask.tsx
 │   ├── Dashboard.tsx
 │   ├── GraphEditor.tsx
 │   ├── GraphMap.tsx
-│   ├── Home.tsx
 │   ├── LearningMode.tsx
 │   ├── LearningPathDetail.tsx
 │   ├── LearningPaths.tsx
-│   ├── LearningStatsCenter.tsx
 │   ├── Login.tsx
 │   ├── Profile.tsx
 │   ├── QuizPractice.tsx
@@ -94,13 +91,11 @@ src/
 │   ├── SchedulerStats.tsx
 │   ├── Settings.tsx
 │   ├── SetupWizard.tsx
-│   ├── Statistics.tsx
 │   ├── StatisticsCenter.tsx
 │   ├── Study.tsx
 │   ├── TaskDetailPage.tsx
 │   ├── Tasks.tsx
-│   ├── Templates.tsx
-│   └── UnifiedWorkbench.tsx
+│   └── Templates.tsx
 │
 ├── services/           # API 服务
 │   ├── api/            # API 客户端模块

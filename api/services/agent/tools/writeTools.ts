@@ -3,6 +3,7 @@ import { createKnowledgePointWithGraphNode } from "../../../utils/nodeHelpers";
 import { AppError } from "../../../middleware/errorHandler";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
 import { notDeleted } from '../../common/softDeleteHelper';
+import { edgeService } from '../../graph/edgeService';
 
 const createNodeTool: AgentTool = {
   name: "create_node",
@@ -89,11 +90,11 @@ const createEdgeTool: AgentTool = {
       },
       source_knowledge_point_id: {
         type: "string",
-        description: "源知识点ID",
+        description: "源知识点ID（通过 get_graph_nodes 获取真实ID，禁止编造）",
       },
       target_knowledge_point_id: {
         type: "string",
-        description: "目标知识点ID",
+        description: "目标知识点ID（通过 get_graph_nodes 获取真实ID，禁止编造，且不能与源相同）",
       },
       relationship_type: {
         type: "string",
@@ -109,13 +110,29 @@ const createEdgeTool: AgentTool = {
     const targetKnowledgePointId = params.target_knowledge_point_id as string;
     const relationshipType = params.relationship_type as string;
 
+    if (!graphId || !sourceKnowledgePointId || !targetKnowledgePointId || !relationshipType) {
+      throw new AppError(
+        "Missing required parameters: graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type",
+        400,
+        ErrorCodes.VALIDATION_ERROR,
+      );
+    }
+
+    if (sourceKnowledgePointId === targetKnowledgePointId) {
+      throw new AppError(
+        "Cannot create an edge from a node to itself",
+        400,
+        ErrorCodes.VALIDATION_ERROR,
+      );
+    }
+
     const { data: graph, error: graphError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id")
       .eq("id", graphId)
       .eq("user_id", userId)
       )
-      .single();
+      .maybeSingle();
 
     if (graphError) {
       throw new AppError(`Failed to verify graph ownership: ${graphError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
@@ -125,10 +142,11 @@ const createEdgeTool: AgentTool = {
       throw new AppError("Graph not found or access denied", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
-    const { data: nodes, error: nodesError } = await supabase
+    const { data: nodes, error: nodesError } = await notDeleted(supabase
       .from("graph_nodes")
       .select("knowledge_point_id")
       .eq("graph_id", graphId)
+      )
       .in("knowledge_point_id", [sourceKnowledgePointId, targetKnowledgePointId]);
 
     if (nodesError) {
@@ -143,24 +161,21 @@ const createEdgeTool: AgentTool = {
       throw new AppError("Target knowledge point not found in this graph", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
-    const { data: edge, error: edgeError } = await supabase
-      .from("edges")
-      .insert({
-        graph_id: graphId,
-        source_knowledge_point_id: sourceKnowledgePointId,
-        target_knowledge_point_id: targetKnowledgePointId,
-        relationship_type: relationshipType,
-      })
-      .select("id")
-      .single();
-
-    if (edgeError) {
-      throw new AppError(`Failed to create edge: ${edgeError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const edge = await edgeService.create(supabase, {
+      graph_id: graphId,
+      source_knowledge_point_id: sourceKnowledgePointId,
+      target_knowledge_point_id: targetKnowledgePointId,
+      relationship_type: relationshipType,
+    });
 
     return {
       success: true,
-      edge: { id: edge.id, source: sourceKnowledgePointId, target: targetKnowledgePointId, relationship_type: relationshipType },
+      edge: {
+        id: edge.id,
+        source: edge.source_knowledge_point_id,
+        target: edge.target_knowledge_point_id,
+        relationship_type: edge.relationship_type,
+      },
       graph_id: graphId,
     };
   },

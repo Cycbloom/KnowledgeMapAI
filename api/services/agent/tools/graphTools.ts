@@ -551,6 +551,7 @@ export const getGraphNodesTool: AgentTool = {
       return {
         nodes: formattedNodes.map((n, idx) => ({
           idx,
+          id: n.id,
           title: n.title,
           level: n.level,
           summary: truncateText(n.content, 30),

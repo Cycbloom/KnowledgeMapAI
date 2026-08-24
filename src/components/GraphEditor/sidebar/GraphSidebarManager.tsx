@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Node, Edge, GraphColorMode, NodeStatus } from "../../../types";
@@ -114,6 +115,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
 
   const { isMobile } = useIsMobile();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isResizing, setIsResizing] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isCreateRegionOpen, setIsCreateRegionOpen] = useState(false);
@@ -234,6 +236,13 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             stats={graphStats}
             isReadOnly={isReadOnly}
             graphId={graphId}
+            onCreateQuizSet={(kpIds) => {
+              if (kpIds.length === 0) return;
+              const kpParam = encodeURIComponent(kpIds.join(","));
+              navigate(
+                `/study?graph_id=${graphId ?? ""}&from=graph&view=quizzes&create=1&kp_ids=${kpParam}`,
+              );
+            }}
           />
         </div>
       ) : sidebarMode === "detail" && selectedNode ? (

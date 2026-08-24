@@ -23,6 +23,7 @@ interface LearningModeOutlineProps {
   onSelectionChange: (ids: Set<string>) => void;
   onBatchAction: (action: string, data?: Record<string, unknown>) => void;
   onAddNode: () => void;
+  onCreateQuizSet: (knowledgePointIds: string[]) => void;
   onBackToGraphOutline: () => void;
 }
 
@@ -40,6 +41,7 @@ export const LearningModeOutline = ({
   onSelectionChange,
   onBatchAction,
   onAddNode,
+  onCreateQuizSet,
   onBackToGraphOutline,
 }: LearningModeOutlineProps) => {
   const { t } = useTranslation();
@@ -75,6 +77,7 @@ export const LearningModeOutline = ({
             onSelectionChange={onSelectionChange}
             onBatchAction={onBatchAction}
             onAddNode={onAddNode}
+            onCreateQuizSet={onCreateQuizSet}
             templateType={graphMeta?.template_type}
             graphId={graphId ?? undefined}
             className="h-full border-none"

@@ -669,6 +669,16 @@ export const LearningMode = () => {
     setOutlineMode("graph"); setSelectedLearningPathId(null);
   };
 
+  const handleCreateQuizSet = (knowledgePointIds: string[]) => {
+    // 跳转到学习中心创建测验流程，预选当前多选的知识点（第一步联动）
+    // 携带 from=learning + node_id，便于学习中心返回时回到当前知识图谱与节点
+    if (knowledgePointIds.length === 0) return;
+    const kpParam = encodeURIComponent(knowledgePointIds.join(","));
+    navigate(
+      `/study?graph_id=${graphId ?? ""}&node_id=${nodeId ?? ""}&from=learning&view=quizzes&create=1&kp_ids=${kpParam}`,
+    );
+  };
+
   return (
     <div className={`h-screen flex flex-col ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
       <h1 className="sr-only">{t('learning.modeTitle')}</h1>
@@ -708,6 +718,7 @@ export const LearningMode = () => {
           graphData={graphData} graphMeta={graphMeta}
           onNodeClick={handleNodeClick} onSelectionChange={setSelectedNodeIds}
           onBatchAction={handleBatchAction} onAddNode={() => setIsCreateNodeModalOpen(true)}
+          onCreateQuizSet={handleCreateQuizSet}
           onBackToGraphOutline={handleBackToGraphOutline}
         />
 

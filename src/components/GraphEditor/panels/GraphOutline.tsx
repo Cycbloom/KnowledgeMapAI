@@ -33,8 +33,6 @@ import {
   GenerateCardsModal,
   type GenerateCardsFullConfig,
 } from "../../Learning/GenerateCardsModal";
-import { QuizGenerationModal } from "../../Quiz/QuizGenerationModal";
-import { message } from "../../../utils/messageHelper";
 import {
   LiteratureSourceDB,
   BackboneModule,
@@ -107,6 +105,10 @@ interface GraphOutlineProps {
   isReadOnly?: boolean;
   templateType?: string;
   graphId?: string;
+  /**
+   * 「新建测验/组卷」点击回调，将已选知识点 ID 交由宿主处理（跳转到学习中心创建流程）。
+   */
+  onCreateQuizSet: (knowledgePointIds: string[]) => void;
 }
 
 export const GraphOutline = React.memo(function GraphOutline({
@@ -124,6 +126,7 @@ export const GraphOutline = React.memo(function GraphOutline({
   isReadOnly = false,
   templateType,
   graphId,
+  onCreateQuizSet,
 }: GraphOutlineProps) {
   const { t } = useTranslation();
   const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
@@ -132,7 +135,6 @@ export const GraphOutline = React.memo(function GraphOutline({
   );
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [isGenerateCardsModalOpen, setIsGenerateCardsModalOpen] = useState(false);
-  const [isQuizGenerationModalOpen, setIsQuizGenerationModalOpen] = useState(false);
   const [showConnectionDiscovery, setShowConnectionDiscovery] = useState(false);
   const [literatureSourcesMap, setLiteratureSourcesMap] = useState<
     Map<string, LiteratureSourceDB>
@@ -979,7 +981,7 @@ export const GraphOutline = React.memo(function GraphOutline({
               )
         }
         animate={false}
-        className="h-full"
+        className="flex-1 min-h-0"
       />
     );
   };
@@ -1202,7 +1204,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                 )
           }
           animate={false}
-          className="h-full"
+          className="flex-1 min-h-0"
         />
         {hoveredLiterature && hoverPosition && (
           <LiteratureHoverCard
@@ -1327,7 +1329,7 @@ export const GraphOutline = React.memo(function GraphOutline({
         }}
         animate={false}
         role="tree"
-        className="h-full"
+        className="flex-1 min-h-0"
       />
     );
   };
@@ -1637,7 +1639,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                 <Sparkles aria-hidden="true" size={16} />
               </button>
               <button
-                onClick={() => setIsQuizGenerationModalOpen(true)}
+                onClick={() => onCreateQuizSet(Array.from(selectedNodeIds))}
                 disabled={selectedNodeIds.size === 0}
                 className="p-1.5 text-orange-600 hover:bg-orange-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t("graphEditor.outline.createQuizSet")}
@@ -1742,13 +1744,13 @@ export const GraphOutline = React.memo(function GraphOutline({
       <div
         role="region"
         aria-label={t('graphEditor.outline.region')}
-        className="flex-1 overflow-y-auto py-2"
+        className="flex-1 overflow-hidden min-h-0"
       >
         {viewMode === "module" &&
         !searchQuery.trim() &&
         filterLevel === "all" ? (
           <div
-            className="h-full px-2"
+            className="h-full flex flex-col px-2 py-2"
             role="tree"
             aria-label={t('graphEditor.outline.treeLabel')}
           >
@@ -1758,7 +1760,7 @@ export const GraphOutline = React.memo(function GraphOutline({
           !searchQuery.trim() &&
           filterLevel === "all" ? (
           <div
-            className="h-full px-2"
+            className="h-full flex flex-col px-2 py-2"
             role="tree"
             aria-label={t('graphEditor.outline.treeLabel')}
           >
@@ -1767,10 +1769,10 @@ export const GraphOutline = React.memo(function GraphOutline({
         ) : viewMode === "list" ||
           searchQuery.trim() ||
           filterLevel !== "all" ? (
-          <div className="h-full px-2">{renderList()}</div>
+          <div className="h-full flex flex-col px-2 py-2">{renderList()}</div>
         ) : (
           <div
-            className="h-full px-2"
+            className="h-full flex flex-col px-2 py-2"
             role="tree"
             aria-label={t('graphEditor.outline.treeLabel')}
           >
@@ -1930,6 +1932,7 @@ export const GraphOutline = React.memo(function GraphOutline({
                     </div>
                   );
                 }}
+                className="flex-1 min-h-0"
               />
             )}
           </div>
@@ -1954,17 +1957,6 @@ export const GraphOutline = React.memo(function GraphOutline({
           target_knowledge_point_id: e.target_knowledge_point_id,
         }))}
         graphId={graphId}
-      />
-      <QuizGenerationModal
-        open={isQuizGenerationModalOpen}
-        onClose={() => setIsQuizGenerationModalOpen(false)}
-        graphId={graphId}
-        initialSelectedKnowledgePoints={Array.from(selectedNodeIds)}
-        onComplete={() => {
-          onSelectionChange?.(new Set());
-          setIsMultiSelectMode(false);
-          message.success(t("graphEditor.outline.quizSetCreated"), { duration: 5000 });
-        }}
       />
     </div>
   );

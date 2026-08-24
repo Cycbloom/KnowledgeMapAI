@@ -11,6 +11,8 @@ interface StudyHeaderProps {
   nodeIds: string | null;
   viewState: "dashboard" | "quiz" | "bank" | "quizzes";
   setViewState: (state: "dashboard" | "quiz" | "bank" | "quizzes") => void;
+  /** 从哪个入口进入学习中心：learning=学习模式大纲（返回其节点），graph=图谱编辑器，其他=默认 goBack */
+  from?: string | null;
 }
 
 export const StudyHeader = ({
@@ -21,10 +23,23 @@ export const StudyHeader = ({
   nodeIds,
   viewState,
   setViewState,
+  from,
 }: StudyHeaderProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { goBack } = useNavigateBack();
+
+  const handleBack = () => {
+    if (from === "learning" && graphId) {
+      // 回到学习模式的知识图谱，尽量带上已选节点定位
+      const nodeParam = nodeId ? `&node_id=${nodeId}` : "";
+      navigate(`/learning?graph_id=${graphId}${nodeParam}`, { replace: true });
+    } else if (from === "graph" && graphId) {
+      navigate(`/graph/${graphId}`, { replace: true });
+    } else {
+      goBack();
+    }
+  };
 
   const tabs: Array<{
     key: "dashboard" | "bank" | "quizzes";
@@ -43,7 +58,7 @@ export const StudyHeader = ({
         className={`flex items-center ${isMobile ? "w-full" : "space-x-4"}`}
       >
         <button
-          onClick={() => goBack()}
+          onClick={handleBack}
           className={`min-w-[44px] min-h-[44px] p-2 rounded-lg border transition-colors flex items-center justify-center ${
             isDark
               ? "bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300"

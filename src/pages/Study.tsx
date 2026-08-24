@@ -38,6 +38,9 @@ export const Study = () => {
   const mode = searchParams.get("mode");
   const from = searchParams.get("from");
   const viewParam = searchParams.get("view");
+  // 从学习模式大纲多选跳转：create=1 直接进入创建测验流程，kp_ids 为预选知识点
+  const create = searchParams.get("create");
+  const kpIds = searchParams.get("kp_ids");
 
   const scopeParams = useMemo(() => {
     if (nodeIds) return { knowledge_point_ids: nodeIds.split(",") };
@@ -207,9 +210,11 @@ export const Study = () => {
   useLayoutEffect(() => {
     cardReview.resetReviewState();
     setViewState(mode === "quiz" ? "quiz" : resolveViewParam());
+    // 学习模式大纲多选跳转时，自动进入创建测验流程
+    setShowQuizCreation(create === "1");
     // 仅在路由参数变化时重置；cardReview/setViewState 为稳定引用，无需进依赖
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphId, nodeId, nodeIds, mode, viewParam]);
+  }, [graphId, nodeId, nodeIds, mode, viewParam, create]);
 
   // Auto-start quiz when mode=quiz and cards loaded
   useEffect(() => {
@@ -367,6 +372,7 @@ export const Study = () => {
               graphId={graphId}
               nodeId={nodeId}
               nodeIds={nodeIds}
+              from={from}
               viewState={viewState}
               setViewState={setViewState}
             />
@@ -379,6 +385,7 @@ export const Study = () => {
               <div className="flex-1 min-h-0">
                 <QuizCreationFlow
                   graphId={graphId || undefined}
+                  initialKnowledgePointIds={kpIds ? kpIds.split(",") : undefined}
                   onCancel={() => setShowQuizCreation(false)}
                   onComplete={(quizSetId) => {
                     setShowQuizCreation(false);

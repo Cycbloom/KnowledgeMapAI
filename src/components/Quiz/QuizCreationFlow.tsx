@@ -40,6 +40,8 @@ import {
 
 interface QuizCreationFlowProps {
   graphId?: string;
+  /** 从学习模式大纲多选跳转时预选的知识点 ID，第一步联动选中 */
+  initialKnowledgePointIds?: string[];
   onComplete: (quizSetId: string) => void;
   onCancel: () => void;
 }
@@ -83,6 +85,7 @@ interface QuizFlowDraft {
 
 export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
   graphId: initialGraphId,
+  initialKnowledgePointIds,
   onComplete,
   onCancel,
 }) => {
@@ -95,14 +98,14 @@ export const QuizCreationFlow: React.FC<QuizCreationFlowProps> = ({
       title: '',
       description: '',
       selectedGraphId: initialGraphId || null,
-      selectedKnowledgePoints: [],
+      selectedKnowledgePoints: initialKnowledgePointIds ?? [],
       reuseRatio: 40,
       config: defaultConfig,
       pickedCardIds: [],
       titleEditedManually: false,
       descriptionEditedManually: false,
     }),
-    [initialGraphId],
+    [initialGraphId, initialKnowledgePointIds],
   );
 
   const [draft, setDraft] = useState<QuizFlowDraft>(() => makeInitialDraft());

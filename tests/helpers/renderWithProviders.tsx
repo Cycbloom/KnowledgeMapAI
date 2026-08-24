@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactElement } from 'react';
 import { ThemeProvider } from '../../src/hooks/common/useTheme';
+import { NavigationProvider } from '../../src/hooks/common/useNavigateBack';
 
 import { useStore } from '../../src/store/useStore';
 import { useThemeStore } from '../../src/store/useThemeStore';
@@ -60,7 +61,9 @@ export function renderWithProviders(
   const ProvidersWrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={initialEntries}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <NavigationProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </NavigationProvider>
       </MemoryRouter>
     </QueryClientProvider>
   );

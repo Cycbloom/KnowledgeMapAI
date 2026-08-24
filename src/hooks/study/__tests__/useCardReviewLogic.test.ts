@@ -38,7 +38,12 @@ describe("useCardReviewLogic", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(message, "error").mockReturnValue("test-id");
-    mocks.mutateAsync.mockResolvedValue(undefined);
+    // 生产契约:mutationFn 调用 api.study.updateProgress,mutateAsync 解析为
+    // 服务端返回的更新后 StudyCard(useStudyMutations onSuccess 依赖它覆盖缓存),
+    // 因此默认 mock 必须回传与入参 id 一致的卡片,而非 undefined。
+    mocks.mutateAsync.mockImplementation(async ({ id }: { id: string }) =>
+      makeCard({ id }),
+    );
   });
 
   function renderHook_(overrides: Partial<Parameters<typeof useCardReviewLogic>[0]> = {}) {

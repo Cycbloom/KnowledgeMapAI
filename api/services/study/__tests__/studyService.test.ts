@@ -201,7 +201,11 @@ describe("StudyService", () => {
 
       expect(Array.isArray(result)).toBe(false);
       if (Array.isArray(result)) return;
-      expect(result.items).toEqual(cardItems);
+      // getCards 会联表补充来源标题;mock 未提供 join 对象时为 null
+      expect(result.items).toEqual([
+        { ...cardItems[0], knowledgePointTitle: null, graphTitle: null },
+        { ...cardItems[1], knowledgePointTitle: null, graphTitle: null },
+      ]);
       expect(result.total).toBe(25);
       expect(result.page).toBe(1);
       expect(result.pageSize).toBe(20);

@@ -135,8 +135,6 @@ export const Console: React.FC<ConsoleProps> = ({
   const executeCommandInternal = useCallback(async (command: string) => {
     if (!command.trim()) return;
 
-    setInput('');
-    addOutput({ type: 'input', content: command });
     setIsLoading(true);
 
     try {
@@ -151,7 +149,7 @@ export const Console: React.FC<ConsoleProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [context, setInput, addOutput, addToHistory, setIsLoading]);
+  }, [context, addOutput, addToHistory, setIsLoading]);
 
   const executeCommand = useCallback(async (command: string) => {
     if (pendingConfirm.active) {

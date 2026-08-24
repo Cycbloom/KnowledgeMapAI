@@ -372,17 +372,15 @@ export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
 
     useEffect(() => {
       if (output.length > prevOutputLengthRef.current && !isLoadingMoreRef.current) {
-        setVisibleCount((prev) => {
-          const newCount = Math.max(prev, INITIAL_VISIBLE_COUNT);
-          if (output.length <= newCount) return newCount;
-          return output.length;
-        });
         setIsAtBottom(true);
         setTimeout(() => {
           if (containerRef.current) {
             containerRef.current.scrollTop = containerRef.current.scrollHeight;
           }
         }, 0);
+      }
+      if (output.length < prevOutputLengthRef.current) {
+        setVisibleCount(INITIAL_VISIBLE_COUNT);
       }
       prevOutputLengthRef.current = output.length;
     }, [output.length]);

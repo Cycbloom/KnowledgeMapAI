@@ -97,6 +97,12 @@ export interface UserSettingsQuiz {
   contentWidthMode: UserSettingsContentWidthMode;
   /** 每题倒计时（秒）；0 表示关闭倒计时 */
   timerSeconds: number;
+  /** 选择题每次随机排列选项，避免位置记忆 */
+  optionShuffle: boolean;
+  /** 答错/评价不佳（quality<3）的卡自动插到队尾稍后再练 */
+  wrongRequeue: boolean;
+  /** 测验模式进入时随机打乱整卷题目顺序 */
+  examShuffleQuestions: boolean;
 }
 
 // ---------------------------------------------------------------------------

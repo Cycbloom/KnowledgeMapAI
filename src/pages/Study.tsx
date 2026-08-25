@@ -20,6 +20,7 @@ import { QuizViewFinished, QuizViewActive } from "../components/Study/QuizView";
 import { QuizActiveShell } from "../components/Study/QuizActiveShell";
 import { QuizSidebar } from "../components/Study/QuizSidebar";
 import { useQuizUiStore } from "../store/useQuizUiStore";
+import { useQuizSettingsStore } from "../store/useQuizSettingsStore";
 import { ErrorBoundary, Skeleton } from "../components/common";
 import { motion } from "framer-motion";
 import { useCelebration } from "@/hooks/common";
@@ -149,10 +150,13 @@ export const Study = () => {
   const isSelectFromOptions =
     cardReview.currentCard?.card_type === "select_from_options";
 
+  // 选项随机排列开关（设置面板可关）
+  const optionShuffle = useQuizSettingsStore((s) => s.optionShuffle);
+
   // Compute current options for keyboard shortcuts (UX2-03) & rendering.
   // 选择题（单/多/选词填空）在此统一打乱，既供渲染也供快捷键索引，
   // 以卡片 id 为依赖：每次展示到该卡片重新洗牌、作答中顺序稳定，
-  // 避免因记住固定选项位置（肌肉记忆）而答对。
+  // 避免因记住固定选项位置（肌肉记忆）而答对。用户可在设置中关闭。
   const currentOptions: string[] = useMemo(() => {
     let options: string[] = [];
     if (!cardReview.currentCard?.options) return [];
@@ -166,7 +170,7 @@ export const Study = () => {
         return [];
       }
     }
-    if (isChoice || isMultiChoice || isSelectFromOptions) {
+    if ((isChoice || isMultiChoice || isSelectFromOptions) && optionShuffle) {
       return shuffleOptions(options);
     }
     return options;
@@ -176,6 +180,7 @@ export const Study = () => {
     isChoice,
     isMultiChoice,
     isSelectFromOptions,
+    optionShuffle,
   ]);
 
   // Quiz logic hook

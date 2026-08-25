@@ -30,6 +30,7 @@ import { VoiceDictationControl } from '../components/Study/common/VoiceDictation
 import { useVoiceDictation } from '../hooks/common/useVoiceDictation';
 import { formatTimeFromSeconds } from '../utils/formatters';
 import { shuffleArray, shuffleOptions } from '../utils/quizShuffle';
+import { useQuizSettingsStore } from '../store/useQuizSettingsStore';
 import { QuizExamGrading, type ExamAnswerRecord } from '../components/Quiz/QuizExamGrading';
 
 const isOpenType = (type?: string): boolean => {
@@ -71,8 +72,12 @@ export const QuizPractice: React.FC = () => {
     return quizSetData.cards as StudyCard[];
   }, [quizSetData]);
 
-  // 题目顺序：默认随机打乱整卷（打断顺序记忆），可切换为原始顺序
-  const [shuffleQuestions, setShuffleQuestions] = useState(true);
+  // 题目顺序：默认随机打乱整卷（打断顺序记忆），可在设置中关闭
+  const examShuffleQuestions = useQuizSettingsStore((s) => s.examShuffleQuestions);
+  const setExamShuffleQuestions = useQuizSettingsStore((s) => s.setExamShuffleQuestions);
+  const optionShuffle = useQuizSettingsStore((s) => s.optionShuffle);
+
+  const [shuffleQuestions, setShuffleQuestions] = useState(examShuffleQuestions);
   const [cards, setCards] = useState<StudyCard[]>([]);
   useEffect(() => {
     if (baseCards.length > 0) {
@@ -85,6 +90,7 @@ export const QuizPractice: React.FC = () => {
   const toggleShuffle = useCallback(() => {
     setShuffleQuestions((prev) => {
       const next = !prev;
+      setExamShuffleQuestions(next);
       setCards(next ? shuffleArray(baseCards) : baseCards);
       setCurrentIndex(0);
       setAnswers({});
@@ -92,7 +98,7 @@ export const QuizPractice: React.FC = () => {
       setQuestionStartTime(Date.now());
       return next;
     });
-  }, [baseCards]);
+  }, [baseCards, setExamShuffleQuestions]);
 
   const currentCard = cards[currentIndex];
 
@@ -111,13 +117,13 @@ export const QuizPractice: React.FC = () => {
         return [];
       }
     }
-    // 选择题选项随机排列，打断位置记忆（判分基于完整选项串，不受影响）
+    // 选择题选项随机排列，打断位置记忆（判分基于完整选项串，不受影响；可在设置中关闭）
     if (isChoiceCard || isMultiChoiceCard || isSelectFromOptionsCard) {
-      return shuffleOptions(options);
+      if (optionShuffle) return shuffleOptions(options);
     }
     return options;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentCard?.id, isChoiceCard, isMultiChoiceCard, isSelectFromOptionsCard]);
+  }, [currentCard?.id, isChoiceCard, isMultiChoiceCard, isSelectFromOptionsCard, optionShuffle]);
   const selectedSet = useMemo(() => {
     if (isMultiChoiceCard) {
       try {

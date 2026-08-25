@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { StudyCard } from "@shared/types";
 import { useUpdateCardProgressMutation } from "../mutations";
+import { useQuizSettingsStore } from "../../store/useQuizSettingsStore";
 import { message } from "../../utils/messageHelper";
 
 interface UseCardReviewLogicParams {
@@ -15,6 +16,7 @@ export const useCardReviewLogic = ({
 }: UseCardReviewLogicParams) => {
   const { t } = useTranslation();
   const updateProgressMutation = useUpdateCardProgressMutation();
+  const wrongRequeue = useQuizSettingsStore((s) => s.wrongRequeue);
 
   const [quizCards, setQuizCards] = useState<StudyCard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -127,7 +129,7 @@ export const useCardReviewLogic = ({
           id: quizCards[currentCardIndex].id,
           quality,
         });
-        if (quality < 3) {
+        if (quality < 3 && wrongRequeue) {
           // 错题自动重练：把刚答错/评价不佳的卡插到队尾，稍后再练；
           // 队列变长，因此不触发展示结束，而是前进到下一题。
           setQuizCards((prev) => {
@@ -149,7 +151,7 @@ export const useCardReviewLogic = ({
         message.error(t("study.messages.saveProgressFailed"));
       }
     },
-    [quizCards, currentCardIndex, updateProgressMutation, handleNextCard, t],
+    [quizCards, currentCardIndex, updateProgressMutation, handleNextCard, t, wrongRequeue],
   );
 
   const handleSwipeRate = useCallback(

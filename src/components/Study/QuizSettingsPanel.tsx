@@ -11,6 +11,7 @@ import {
   Maximize2,
   Minimize2,
   Timer,
+  Shuffle,
 } from "lucide-react";
 import { useQuizSettingsStore } from "../../store/useQuizSettingsStore";
 import { useShallow } from "zustand/react/shallow";
@@ -38,10 +39,14 @@ export const QuizSettingsPanel: React.FC<QuizSettingsPanelProps> = ({
     lineHeight,
     contentWidthMode,
     timerSeconds,
+    optionShuffle,
+    wrongRequeue,
     setFontSize,
     setLineHeight,
     setContentWidthMode,
     setTimerSeconds,
+    setOptionShuffle,
+    setWrongRequeue,
     resetSettings,
   } = useQuizSettingsStore(
     useShallow((s) => ({
@@ -49,10 +54,14 @@ export const QuizSettingsPanel: React.FC<QuizSettingsPanelProps> = ({
       lineHeight: s.lineHeight,
       contentWidthMode: s.contentWidthMode,
       timerSeconds: s.timerSeconds,
+      optionShuffle: s.optionShuffle,
+      wrongRequeue: s.wrongRequeue,
       setFontSize: s.setFontSize,
       setLineHeight: s.setLineHeight,
       setContentWidthMode: s.setContentWidthMode,
       setTimerSeconds: s.setTimerSeconds,
+      setOptionShuffle: s.setOptionShuffle,
+      setWrongRequeue: s.setWrongRequeue,
       resetSettings: s.resetSettings,
     })),
   );
@@ -304,6 +313,86 @@ export const QuizSettingsPanel: React.FC<QuizSettingsPanelProps> = ({
                   </motion.button>
                 );
               })}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Shuffle
+                size={16}
+                className="text-slate-500 dark:text-slate-400"
+              />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t("study.settings.quizFeatures")}
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+              <div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {t("study.settings.optionShuffle")}
+                </span>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {t("study.settings.optionShuffleHint")}
+                </p>
+              </div>
+              <div
+                role="switch"
+                aria-checked={optionShuffle}
+                aria-label={t("study.settings.optionShuffle")}
+                tabIndex={0}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                  optionShuffle
+                    ? "bg-primary-600"
+                    : "bg-gray-200 dark:bg-gray-700"
+                }`}
+                onClick={() => setOptionShuffle(!optionShuffle)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setOptionShuffle(!optionShuffle);
+                  }
+                }}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                    optionShuffle ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+              <div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {t("study.settings.wrongRequeue")}
+                </span>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {t("study.settings.wrongRequeueHint")}
+                </p>
+              </div>
+              <div
+                role="switch"
+                aria-checked={wrongRequeue}
+                aria-label={t("study.settings.wrongRequeue")}
+                tabIndex={0}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                  wrongRequeue
+                    ? "bg-primary-600"
+                    : "bg-gray-200 dark:bg-gray-700"
+                }`}
+                onClick={() => setWrongRequeue(!wrongRequeue)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setWrongRequeue(!wrongRequeue);
+                  }
+                }}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                    wrongRequeue ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </div>
             </div>
           </div>
 

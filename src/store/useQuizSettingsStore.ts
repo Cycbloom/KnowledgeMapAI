@@ -10,6 +10,9 @@ interface QuizSettingsState extends UserSettingsQuiz {
   setLineHeight: (lineHeight: UserSettingsLineHeight) => void;
   setContentWidthMode: (mode: UserSettingsContentWidthMode) => void;
   setTimerSeconds: (seconds: number) => void;
+  setOptionShuffle: (enabled: boolean) => void;
+  setWrongRequeue: (enabled: boolean) => void;
+  setExamShuffleQuestions: (enabled: boolean) => void;
   resetSettings: () => void;
 }
 
@@ -18,6 +21,9 @@ const DEFAULT_SETTINGS: UserSettingsQuiz = {
   lineHeight: 'normal',
   contentWidthMode: 'comfortable',
   timerSeconds: 0,
+  optionShuffle: true,
+  wrongRequeue: true,
+  examShuffleQuestions: true,
 };
 
 export const useQuizSettingsStore = createPersistedStore<QuizSettingsState>(
@@ -34,16 +40,22 @@ export const useQuizSettingsStore = createPersistedStore<QuizSettingsState>(
       const clamped = Math.max(0, Math.min(600, Math.round(seconds)));
       set({ timerSeconds: clamped });
     },
+    setOptionShuffle: (enabled) => set({ optionShuffle: enabled }),
+    setWrongRequeue: (enabled) => set({ wrongRequeue: enabled }),
+    setExamShuffleQuestions: (enabled) => set({ examShuffleQuestions: enabled }),
     resetSettings: () => set(DEFAULT_SETTINGS),
   }),
   {
-    version: 2,
+    version: 3,
     // 仅持久化用户可调项，忽略 action 函数
     partialize: (state) => ({
       fontSize: state.fontSize,
       lineHeight: state.lineHeight,
       contentWidthMode: state.contentWidthMode,
       timerSeconds: state.timerSeconds,
+      optionShuffle: state.optionShuffle,
+      wrongRequeue: state.wrongRequeue,
+      examShuffleQuestions: state.examShuffleQuestions,
     }),
   },
 );

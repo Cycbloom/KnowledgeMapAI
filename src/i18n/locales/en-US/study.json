@@ -158,6 +158,8 @@
     "outlineTitle": "Graphs",
     "selectGraph": "View graph {{title}}",
     "showAllPoints": "Show all points",
+    "reviewScope": "Review scope",
+    "allPoints": "All points",
     "expandAll": "Expand all",
     "collapseAll": "Collapse all",
     "expandGroup": "Expand group",

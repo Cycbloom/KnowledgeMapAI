@@ -3,12 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { StudyCard } from '../../types';
 import { useUpdateCardMutation, useDeleteCardMutation, useDeleteCardsBatchMutation, useCreateCardsBatchMutation } from '../../hooks/mutations';
 import { useStudyCardsInfinite } from '../../hooks/queries';
-import { Search, Trash2, Filter, CheckSquare, Square, PlusCircle, XCircle } from 'lucide-react';
+import { Search, Trash2, Filter, CheckSquare, Square, PlusCircle, XCircle, LayoutGrid, ListTree } from 'lucide-react';
 import { useTheme } from "../../hooks";
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { QuestionForm, QuestionFormData } from './QuestionForm';
 import { StudyCardPreview } from './StudyCardPreview';
 import { StudyCardDetailModal } from './StudyCardDetailModal';
+import { CardGroupBrowser } from './CardGroupBrowser';
 import { useDebouncedSearch } from '../../hooks/common/useDebouncedSearch';
 import { EmptyState } from '@/components/common/EmptyState';
 import { message } from '@/utils/messageHelper';
@@ -18,6 +19,12 @@ interface QuestionBankProps {
   knowledge_point_id?: string;
   knowledge_point_ids?: string[];
   due?: boolean;
+  /** 全量卡片（供分组/待复习模式客户端分组），由 Study 页面传入 */
+  allCards?: StudyCard[];
+  /** 待复习卡片（供分组/待复习模式客户端分组），由 Study 页面传入 */
+  dueCards?: StudyCard[];
+  /** 单卡练习入口 */
+  onPracticeCard?: (card: StudyCard) => void;
 }
 
 const ALL_FSRS_STATES = ["New", "Learning", "Review", "Relearning"];
@@ -35,13 +42,17 @@ const CARD_TYPE_OPTIONS = [
   { value: 'ordering', labelKey: 'study.questionBank.typeOrdering' },
 ] as const satisfies ReadonlyArray<{ value: string; labelKey: string }>;
 
-export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_point_id, knowledge_point_ids, due }) => {
+export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_point_id, knowledge_point_ids, due, allCards, dueCards, onPracticeCard }) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm } = useDebouncedSearch();
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  // 待复习 / 全部 范围切换
+  const [statusMode, setStatusMode] = useState<'due' | 'all'>('all');
+  // 平铺（服务端分页，管理模式） / 分组（客户端分组树，浏览模式）
+  const [groupMode, setGroupMode] = useState(false);
   
   // Filter State
   const [reviewCountRange, setReviewCountRange] = useState<{min: string, max: string}>({ min: '', max: '' });
@@ -71,7 +82,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
       graph_id,
       knowledge_point_id,
       knowledge_point_ids,
-      due,
+      due: statusMode === "due" ? true : due,
       search: debouncedSearchTerm.trim() ? debouncedSearchTerm.trim() : undefined,
       card_type: selectedType === "all" ? undefined : selectedType,
       fsrs_state: allSelected ? undefined : selected.join(","),
@@ -81,7 +92,23 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
       next_review_end: nextReviewRange.end || undefined,
       pageSize: 20,
     };
-  }, [graph_id, knowledge_point_id, knowledge_point_ids, due, debouncedSearchTerm, selectedType, selectedFsrsStates, reviewCountRange, nextReviewRange]);
+  }, [graph_id, knowledge_point_id, knowledge_point_ids, due, statusMode, debouncedSearchTerm, selectedType, selectedFsrsStates, reviewCountRange, nextReviewRange]);
+
+  // 分组模式数据源：按待复习/全部选择全量卡片，并做客户端搜索过滤
+  const groupSourceCards = useMemo(() => {
+    const source = statusMode === "due" ? (dueCards ?? []) : (allCards ?? []);
+    const q = debouncedSearchTerm.trim().toLowerCase();
+    if (!q) return source;
+    return source.filter(
+      (c) =>
+        c.question.toLowerCase().includes(q) ||
+        c.answer.toLowerCase().includes(q),
+    );
+  }, [statusMode, allCards, dueCards, debouncedSearchTerm]);
+  const groupDueCardIds = useMemo(
+    () => new Set((dueCards ?? []).map((c) => c.id)),
+    [dueCards],
+  );
 
   const { data, hasNextPage, fetchNextPage, isFetchingNextPage, isLoading } = useStudyCardsInfinite(filterArgs);
   // 按 id 去重，防止分页重叠（如分页间数据变更、后端排序不稳定）导致同一张卡重复渲染，
@@ -210,7 +237,91 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
     <div className={`rounded-xl border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'} overflow-hidden`}>
       {/* Toolbar */}
       <div className="p-4 border-b flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2 flex-1">
+        <div className="flex items-center gap-2 flex-1 flex-wrap">
+          {/* 待复习 / 全部 范围切换 */}
+          <div
+            role="tablist"
+            aria-label={t('study.cardList.filterByStatus')}
+            className={`flex p-1 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}
+          >
+            <button
+              role="tab"
+              aria-selected={statusMode === "due"}
+              type="button"
+              onClick={() => setStatusMode("due")}
+              className={`flex-1 min-w-[64px] px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                statusMode === "due"
+                  ? isDark
+                    ? 'bg-primary-600 text-white shadow-md shadow-primary-900/30'
+                    : 'bg-white text-primary-600 shadow-sm'
+                  : isDark
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-white/60'
+              }`}
+            >
+              {t('study.cardList.due')}
+            </button>
+            <button
+              role="tab"
+              aria-selected={statusMode === "all"}
+              type="button"
+              onClick={() => setStatusMode("all")}
+              className={`flex-1 min-w-[64px] px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                statusMode === "all"
+                  ? isDark
+                    ? 'bg-primary-600 text-white shadow-md shadow-primary-900/30'
+                    : 'bg-white text-primary-600 shadow-sm'
+                  : isDark
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-white/60'
+              }`}
+            >
+              {t('study.cardList.all')}
+            </button>
+          </div>
+
+          {/* 平铺 / 分组 视图切换 */}
+          <div
+            role="group"
+            aria-label={t('study.cardList.toggleGroupMode')}
+            className={`flex p-1 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}
+          >
+            <button
+              type="button"
+              aria-pressed={groupMode === false}
+              onClick={() => setGroupMode(false)}
+              className={`flex items-center gap-1.5 min-w-[64px] px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                groupMode === false
+                  ? isDark
+                    ? 'bg-primary-600 text-white shadow-md shadow-primary-900/30'
+                    : 'bg-white text-primary-600 shadow-sm'
+                  : isDark
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-white/60'
+              }`}
+            >
+              <LayoutGrid size={15} aria-hidden="true" />
+              {t('study.cardList.flatView')}
+            </button>
+            <button
+              type="button"
+              aria-pressed={groupMode === true}
+              onClick={() => setGroupMode(true)}
+              className={`flex items-center gap-1.5 min-w-[64px] px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                groupMode === true
+                  ? isDark
+                    ? 'bg-primary-600 text-white shadow-md shadow-primary-900/30'
+                    : 'bg-white text-primary-600 shadow-sm'
+                  : isDark
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-white/60'
+              }`}
+            >
+              <ListTree size={15} aria-hidden="true" />
+              {t('study.cardList.groupView')}
+            </button>
+          </div>
+
           <div
             role="search"
             aria-label={t('common.aria.searchWithTarget', { target: t('study.tabs.bank') })}
@@ -238,70 +349,79 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
               </button>
             )}
           </div>
-          <select 
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className={`px-3 py-2 rounded-lg border ${
-                isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-200'
-            }`}
-          >
-            <option value="all">{t('study.questionBank.allTypes')}</option>
-            {CARD_TYPE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
-            ))}
-          </select>
 
-          <button
-            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className={`p-2 rounded-lg border transition-colors ${
-              showAdvancedFilters
-                ? 'bg-primary-100 border-primary-200 text-primary-600'
-                : isDark ? 'bg-slate-800 border-slate-700 text-gray-400 hover:text-white' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600'
-            }`}
-            title={t('study.questionBank.advancedFilter')}
-            aria-label={t('study.questionBank.advancedFilter')}
-          >
-            <Filter size={20} aria-hidden="true" />
-          </button>
+          {!groupMode && (
+            <>
+              <select 
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className={`px-3 py-2 rounded-lg border ${
+                    isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-200'
+                }`}
+              >
+                <option value="all">{t('study.questionBank.allTypes')}</option>
+                {CARD_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
+                ))}
+              </select>
+
+              <button
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className={`p-2 rounded-lg border transition-colors ${
+                  showAdvancedFilters
+                    ? 'bg-primary-100 border-primary-200 text-primary-600'
+                    : isDark ? 'bg-slate-800 border-slate-700 text-gray-400 hover:text-white' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600'
+                }`}
+                title={t('study.questionBank.advancedFilter')}
+                aria-label={t('study.questionBank.advancedFilter')}
+              >
+                <Filter size={20} aria-hidden="true" />
+              </button>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleSelectAll}
-            role="checkbox"
-            aria-checked={(isAllSelected ? "true" : isPartialSelected ? "mixed" : "false") as "true" | "false" | "mixed"}
-            aria-label={isAllSelected ? t('study.questionBank.deselectAll') : t('study.questionBank.selectAll')}
-            title={isAllSelected ? t('study.questionBank.deselectAll') : t('study.questionBank.selectAll')}
-            className={`p-2 rounded-lg border transition-colors ${
-              isAllSelected
-                ? 'bg-primary-100 border-primary-200 text-primary-600'
-                : isDark ? 'bg-slate-800 border-slate-700 text-gray-400' : 'bg-white border-gray-200 text-gray-400'
-            }`}
-          >
-            {isAllSelected ? (
-              <CheckSquare size={20} aria-hidden="true" />
-            ) : (
-              <Square size={20} aria-hidden="true" />
-            )}
-          </button>
+          {!groupMode && (
+            <>
+              <button
+                onClick={handleSelectAll}
+                role="checkbox"
+                aria-checked={(isAllSelected ? "true" : isPartialSelected ? "mixed" : "false") as "true" | "false" | "mixed"}
+                aria-label={isAllSelected ? t('study.questionBank.deselectAll') : t('study.questionBank.selectAll')}
+                title={isAllSelected ? t('study.questionBank.deselectAll') : t('study.questionBank.selectAll')}
+                className={`p-2 rounded-lg border transition-colors ${
+                  isAllSelected
+                    ? 'bg-primary-100 border-primary-200 text-primary-600'
+                    : isDark ? 'bg-slate-800 border-slate-700 text-gray-400' : 'bg-white border-gray-200 text-gray-400'
+                }`}
+              >
+                {isAllSelected ? (
+                  <CheckSquare size={20} aria-hidden="true" />
+                ) : (
+                  <Square size={20} aria-hidden="true" />
+                )}
+              </button>
 
-          {selectedIds.size > 0 && (
-            <button 
-              onClick={handleBatchDelete}
-              disabled={deleteBatchMutation.isPending}
-              className="flex items-center gap-1 px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              aria-busy={deleteBatchMutation.isPending}
-            >
-              {deleteBatchMutation.isPending ? (
-                <span
-                  className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
-                  aria-hidden="true"
-                />
-              ) : (
-                <Trash2 size={18} />
+              {selectedIds.size > 0 && (
+                <button 
+                  onClick={handleBatchDelete}
+                  disabled={deleteBatchMutation.isPending}
+                  className="flex items-center gap-1 px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  aria-busy={deleteBatchMutation.isPending}
+                >
+                  {deleteBatchMutation.isPending ? (
+                    <span
+                      className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Trash2 size={18} />
+                  )}
+                  <span>{t('study.questionBank.batchDelete')} ({selectedIds.size})</span>
+                </button>
               )}
-              <span>{t('study.questionBank.batchDelete')} ({selectedIds.size})</span>
-            </button>
+            </>
           )}
           
           <button
@@ -407,9 +527,17 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
         </div>
       )}
 
-      {/* Card Grid */}
+      {/* Card Grid / Group Browser */}
       <div className="p-4">
-        {paginatedCards.length === 0 && !isLoading ? (
+        {groupMode ? (
+          <CardGroupBrowser
+            isDark={isDark}
+            cards={groupSourceCards}
+            dueCardIds={groupDueCardIds}
+            onPractice={(c) => onPracticeCard?.(c)}
+            onPreview={setPreviewCard}
+          />
+        ) : paginatedCards.length === 0 && !isLoading ? (
           <EmptyState
             icon={<Search size={32} className="opacity-50" />}
             title={t('study.questionBank.noQuestionsFound')}
@@ -426,6 +554,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
                   card={card}
                   isDark={isDark}
                   onPreview={setPreviewCard}
+                  onPractice={(c) => onPracticeCard?.(c)}
                   onEdit={startEditing}
                   onDelete={async (c) => {
                     if(await asyncConfirm({ title: t('common.confirm.deleteTitle'), message: t('study.questionBank.deleteCardConfirm'), isDangerous: true })) await deleteCardMutation.mutateAsync(c.id);
@@ -441,8 +570,8 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
         )}
       </div>
 
-      {/* Infinite Scroll Footer */}
-      {paginatedCards.length > 0 && (
+      {/* Infinite Scroll Footer（仅平铺管理模式） */}
+      {!groupMode && paginatedCards.length > 0 && (
         <div className={`p-4 border-t flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
           <div
             className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}
@@ -469,7 +598,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
       )}
 
       {/* Sentinel for infinite scroll */}
-      <div ref={sentinelRef} aria-hidden="true" />
+      {!groupMode && <div ref={sentinelRef} aria-hidden="true" />}
 
       {/* Card Detail Modal */}
       <StudyCardDetailModal

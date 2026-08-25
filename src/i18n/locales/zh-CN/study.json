@@ -158,6 +158,8 @@
     "outlineTitle": "图谱大纲",
     "selectGraph": "查看图谱 {{title}}",
     "showAllPoints": "显示全部知识点",
+    "reviewScope": "复习范围",
+    "allPoints": "全部知识点",
     "expandAll": "全部展开",
     "collapseAll": "全部折叠",
     "expandGroup": "展开分组",

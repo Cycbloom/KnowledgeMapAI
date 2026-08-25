@@ -409,7 +409,12 @@ export const Study = () => {
           )}
 
           {viewState === "bank" ? (
-            <QuestionBank {...scopeParams} />
+            <QuestionBank
+              {...scopeParams}
+              allCards={allCards}
+              dueCards={dueCards}
+              onPracticeCard={handlePracticeCard}
+            />
           ) : viewState === "quizzes" ? (
             showQuizCreation ? (
               <div className="flex-1 min-h-0">
@@ -451,8 +456,14 @@ export const Study = () => {
               weakPoints={weakPoints}
               predictions={predictions}
               forecast={forecastData ?? undefined}
-              onStartQuiz={(mode) => quizLogic.handleStartQuiz(mode, allCards, dueCards)}
-              onPracticeCard={handlePracticeCard}
+              onStartQuiz={(mode, knowledgePointId) =>
+                quizLogic.handleStartQuiz(
+                  mode,
+                  allCards,
+                  dueCards,
+                  knowledgePointId,
+                )
+              }
             />
           )}
         </div>

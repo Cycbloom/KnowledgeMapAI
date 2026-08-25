@@ -27,8 +27,20 @@ export const useQuizLogic = ({
   const { t } = useTranslation();
 
   const handleStartQuiz = useCallback(
-    (mode: "all" | "due", allCards: StudyCard[], dueCards: StudyCard[]) => {
-      const selected = mode === "due" ? dueCards : allCards;
+    (
+      mode: "all" | "due",
+      allCards: StudyCard[],
+      dueCards: StudyCard[],
+      knowledgePointId?: string,
+    ) => {
+      const filter = knowledgePointId
+        ? (cards: StudyCard[]) =>
+            cards.filter(
+              (c) =>
+                (c.knowledge_point_id || "unknown") === knowledgePointId,
+            )
+        : (cards: StudyCard[]) => cards;
+      const selected = filter(mode === "due" ? dueCards : allCards);
 
       if (selected.length === 0) {
         message.info(t("study.messages.noCardsToReview"));

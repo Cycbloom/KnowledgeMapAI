@@ -19,6 +19,10 @@ node_modules/.cache/
 node_modules/.tmp/
 .eslintcache
 
+# Python cache (scripts)
+__pycache__/
+*.py[cod]
+
 # 本地原生模块缓存（Node ABI 的 better-sqlite3 副本，供 vitest 使用）
 .toolcache/
 

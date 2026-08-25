@@ -10,6 +10,7 @@ import {
   Loader2,
   Layers,
   Send,
+  Shuffle,
 } from 'lucide-react';
 import { useTheme } from '../hooks';
 import { useQuizSet } from '../hooks/queries';
@@ -28,6 +29,7 @@ import { CardStatsStrip, CardDatesLine, FocusTopicBadge } from '../components/St
 import { VoiceDictationControl } from '../components/Study/common/VoiceDictationControl';
 import { useVoiceDictation } from '../hooks/common/useVoiceDictation';
 import { formatTimeFromSeconds } from '../utils/formatters';
+import { shuffleArray, shuffleOptions } from '../utils/quizShuffle';
 import { QuizExamGrading, type ExamAnswerRecord } from '../components/Quiz/QuizExamGrading';
 
 const isOpenType = (type?: string): boolean => {
@@ -64,27 +66,58 @@ export const QuizPractice: React.FC = () => {
   const sessionStartRef = useRef<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  const cards = useMemo(() => {
-    if (!quizSetData?.cards) return [];
+  const baseCards = useMemo(() => {
+    if (!quizSetData?.cards) return [] as StudyCard[];
     return quizSetData.cards as StudyCard[];
   }, [quizSetData]);
 
+  // 题目顺序：默认随机打乱整卷（打断顺序记忆），可切换为原始顺序
+  const [shuffleQuestions, setShuffleQuestions] = useState(true);
+  const [cards, setCards] = useState<StudyCard[]>([]);
+  useEffect(() => {
+    if (baseCards.length > 0) {
+      setCards(shuffleQuestions ? shuffleArray(baseCards) : baseCards);
+    }
+    // 数据加载后初始化一次，不随每题切换重置
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseCards]);
+
+  const toggleShuffle = useCallback(() => {
+    setShuffleQuestions((prev) => {
+      const next = !prev;
+      setCards(next ? shuffleArray(baseCards) : baseCards);
+      setCurrentIndex(0);
+      setAnswers({});
+      setTimeSpentByCard({});
+      setQuestionStartTime(Date.now());
+      return next;
+    });
+  }, [baseCards]);
+
   const currentCard = cards[currentIndex];
 
-  const currentOptions: string[] = useMemo(() => {
-    if (!currentCard?.options) return [];
-    if (Array.isArray(currentCard.options)) return currentCard.options;
-    try {
-      if (typeof currentCard.options === 'string') {
-        return JSON.parse(currentCard.options);
-      }
-    } catch {
-      return [];
-    }
-    return [];
-  }, [currentCard]);
-
   const isMultiChoiceCard = currentCard?.card_type === 'multi_choice';
+  const isChoiceCard = currentCard?.card_type === 'choice';
+  const isSelectFromOptionsCard = currentCard?.card_type === 'select_from_options';
+
+  const currentOptions: string[] = useMemo(() => {
+    let options: string[] = [];
+    if (!currentCard?.options) return [];
+    if (Array.isArray(currentCard.options)) options = currentCard.options;
+    else if (typeof currentCard.options === 'string') {
+      try {
+        options = JSON.parse(currentCard.options);
+      } catch {
+        return [];
+      }
+    }
+    // 选择题选项随机排列，打断位置记忆（判分基于完整选项串，不受影响）
+    if (isChoiceCard || isMultiChoiceCard || isSelectFromOptionsCard) {
+      return shuffleOptions(options);
+    }
+    return options;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCard?.id, isChoiceCard, isMultiChoiceCard, isSelectFromOptionsCard]);
   const selectedSet = useMemo(() => {
     if (isMultiChoiceCard) {
       try {
@@ -436,17 +469,38 @@ export const QuizPractice: React.FC = () => {
             <h1 className={`text-lg font-bold truncate min-w-0 text-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
               {quizSetData.title}
             </h1>
-            <span
-              className={`justify-self-end inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-sm font-medium tabular-nums ${
-                isDark
-                  ? 'bg-slate-800 border-slate-700 text-slate-200'
-                  : 'bg-white border-gray-200 text-gray-600'
-              }`}
-              title={t('quiz.progress.elapsedTime')}
-            >
-              <Clock size={15} className="text-primary-500" aria-hidden="true" />
-              <span aria-live="polite" aria-atomic="true">{formatTimeFromSeconds(elapsedSeconds)}</span>
-            </span>
+            <div className="justify-self-end flex items-center gap-2">
+              <button
+                onClick={toggleShuffle}
+                aria-pressed={shuffleQuestions}
+                title={shuffleQuestions ? t('study.quizPractice.shuffleOn', '已随机打乱题目顺序') : t('study.quizPractice.shuffleOff', '按原始顺序作答')}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-sm font-medium transition-colors ${
+                  shuffleQuestions
+                    ? isDark
+                      ? 'bg-primary-900/40 border-primary-500 text-primary-300'
+                      : 'bg-primary-50 border-primary-400 text-primary-700'
+                    : isDark
+                      ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                      : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Shuffle size={15} aria-hidden="true" />
+                {shuffleQuestions
+                  ? t('study.quizPractice.shuffleOn', '已随机')
+                  : t('study.quizPractice.shuffleOff', '原始顺序')}
+              </button>
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-sm font-medium tabular-nums ${
+                  isDark
+                    ? 'bg-slate-800 border-slate-700 text-slate-200'
+                    : 'bg-white border-gray-200 text-gray-600'
+                }`}
+                title={t('quiz.progress.elapsedTime')}
+              >
+                <Clock size={15} className="text-primary-500" aria-hidden="true" />
+                <span aria-live="polite" aria-atomic="true">{formatTimeFromSeconds(elapsedSeconds)}</span>
+              </span>
+            </div>
           </div>
           <QuizProgressBar
             current={currentIndex}

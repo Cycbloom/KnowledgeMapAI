@@ -20,6 +20,7 @@ vi.mock('@/utils/errors', () => {
     SharedErrorCodes: {
       AI_INVALID_RESPONSE: 'AI_INVALID_RESPONSE',
       AI_PROVIDER_ERROR: 'AI_PROVIDER_ERROR',
+      DATABASE_QUERY_ERROR: 'DATABASE_QUERY_ERROR',
     },
   };
 });
@@ -149,6 +150,12 @@ describe('agentApi', () => {
       });
       expect(result).toEqual({ sessions: mockSessions });
     });
+
+    it('should throw when response is not ok', async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+
+      await expect(agentApi.getSessions()).rejects.toThrow('HTTP error: 500');
+    });
   });
 
   describe('deleteSession', () => {
@@ -165,6 +172,12 @@ describe('agentApi', () => {
           headers: { 'Content-Type': 'application/json' },
         },
       );
+    });
+
+    it('should throw when response is not ok', async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+
+      await expect(agentApi.deleteSession('session-1')).rejects.toThrow('HTTP error: 404');
     });
   });
 
@@ -184,11 +197,11 @@ describe('agentApi', () => {
       // Wait for the .then() chain to complete
       await vi.waitFor(() => {
         expect(onEvent).toHaveBeenCalledTimes(2);
+        expect(onComplete).toHaveBeenCalledOnce();
       });
 
       expect(onEvent).toHaveBeenNthCalledWith(1, sseEvents[0]);
       expect(onEvent).toHaveBeenNthCalledWith(2, sseEvents[1]);
-      expect(onComplete).toHaveBeenCalledOnce();
     });
 
     it('should call onError on HTTP error', async () => {
@@ -348,13 +361,18 @@ describe('agentApi', () => {
 
       await agentApi.resumeSessionStream('session-1', onEvent, undefined, onComplete);
 
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        'http://api.test/agent/sessions/session-1/resume',
+        expect.objectContaining({ method: 'POST' }),
+      );
+
       await vi.waitFor(() => {
         expect(onEvent).toHaveBeenCalledTimes(2);
+        expect(onComplete).toHaveBeenCalledOnce();
       });
 
       expect(onEvent).toHaveBeenNthCalledWith(1, sseEvents[0]);
       expect(onEvent).toHaveBeenNthCalledWith(2, sseEvents[1]);
-      expect(onComplete).toHaveBeenCalledOnce();
     });
 
     it('should call onError on HTTP error', async () => {

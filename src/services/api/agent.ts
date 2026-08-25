@@ -203,6 +203,41 @@ async function parseSSEStream(
   }
 }
 
+const streamAgentSession = async (
+  path: string,
+  body: Record<string, unknown> | undefined,
+  onEvent: (event: AgentSSEEvent) => void,
+  onError?: (error: Error) => void,
+  onComplete?: () => void,
+): Promise<AbortController> => {
+  const controller = new AbortController();
+  const baseUrl = await getApiUrl();
+
+  fetch(`${baseUrl}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+    signal: controller.signal,
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new AppError(`HTTP error: ${response.status}`, SharedErrorCodes.AI_PROVIDER_ERROR, 502);
+      }
+      await parseSSEStream(response, onEvent);
+      onComplete?.();
+    })
+    .catch((error) => {
+      if (error.name !== "AbortError") {
+        onError?.(error);
+      }
+    });
+
+  return controller;
+};
+
 export const agentApi = {
   createSession: (options?: {
     skill_id?: string;
@@ -351,81 +386,48 @@ export const agentApi = {
     onEvent: (event: AgentSSEEvent) => void,
     onError?: (error: Error) => void,
     onComplete?: () => void,
-  ): Promise<AbortController> => {
-    const controller = new AbortController();
-    const baseUrl = await getApiUrl();
-
-    fetch(`${baseUrl}/agent/sessions/${encodeURIComponent(sessionId)}/execute`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(),
-      },
-      body: JSON.stringify({ custom_prompt: customPrompt }),
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new AppError(`HTTP error: ${response.status}`, SharedErrorCodes.AI_PROVIDER_ERROR, 502);
-        }
-        await parseSSEStream(response, onEvent);
-        onComplete?.();
-      })
-      .catch((error) => {
-        if (error.name !== "AbortError") {
-          onError?.(error);
-        }
-      });
-
-    return controller;
-  },
+  ): Promise<AbortController> =>
+    streamAgentSession(
+      `/agent/sessions/${encodeURIComponent(sessionId)}/execute`,
+      { custom_prompt: customPrompt },
+      onEvent,
+      onError,
+      onComplete,
+    ),
 
   resumeSessionStream: async (
     sessionId: string,
     onEvent: (event: AgentSSEEvent) => void,
     onError?: (error: Error) => void,
     onComplete?: () => void,
-  ): Promise<AbortController> => {
-    const controller = new AbortController();
-    const baseUrl = await getApiUrl();
-
-    fetch(`${baseUrl}/agent/sessions/${encodeURIComponent(sessionId)}/resume`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(),
-      },
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new AppError(`HTTP error: ${response.status}`, SharedErrorCodes.AI_PROVIDER_ERROR, 502);
-        }
-        await parseSSEStream(response, onEvent);
-        onComplete?.();
-      })
-      .catch((error) => {
-        if (error.name !== "AbortError") {
-          onError?.(error);
-        }
-      });
-
-    return controller;
-  },
+  ): Promise<AbortController> =>
+    streamAgentSession(
+      `/agent/sessions/${encodeURIComponent(sessionId)}/resume`,
+      undefined,
+      onEvent,
+      onError,
+      onComplete,
+    ),
 
   getSessions: async (): Promise<{ sessions: AgentSession[] }> => {
     const baseUrl = await getApiUrl();
     const response = await fetch(`${baseUrl}/agent/sessions`, {
       headers: getHeaders(),
     });
+    if (!response.ok) {
+      throw new AppError(`HTTP error: ${response.status}`, SharedErrorCodes.AI_PROVIDER_ERROR, 502);
+    }
     return response.json();
   },
 
   deleteSession: async (sessionId: string): Promise<void> => {
     const baseUrl = await getApiUrl();
-    await fetch(`${baseUrl}/agent/sessions/${encodeURIComponent(sessionId)}`, {
+    const response = await fetch(`${baseUrl}/agent/sessions/${encodeURIComponent(sessionId)}`, {
       method: "DELETE",
       headers: getHeaders(),
     });
+    if (!response.ok) {
+      throw new AppError(`HTTP error: ${response.status}`, SharedErrorCodes.DATABASE_QUERY_ERROR, 500);
+    }
   },
 };

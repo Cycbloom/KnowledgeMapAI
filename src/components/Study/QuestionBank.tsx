@@ -22,6 +22,19 @@ interface QuestionBankProps {
 
 const ALL_FSRS_STATES = ["New", "Learning", "Review", "Relearning"];
 
+const CARD_TYPE_OPTIONS = [
+  { value: 'qa', labelKey: 'study.questionBank.typeQA' },
+  { value: 'choice', labelKey: 'study.questionBank.typeChoice' },
+  { value: 'multi_choice', labelKey: 'study.questionBank.typeMultiChoice' },
+  { value: 'true_false', labelKey: 'study.questionBank.typeTrueFalse' },
+  { value: 'fill_in_the_blank', labelKey: 'study.questionBank.typeFillInTheBlank' },
+  { value: 'essay', labelKey: 'study.questionBank.typeEssay' },
+  { value: 'cloze', labelKey: 'study.questionBank.typeCloze' },
+  { value: 'select_from_options', labelKey: 'study.questionBank.typeSelectFromOptions' },
+  { value: 'matching', labelKey: 'study.questionBank.typeMatching' },
+  { value: 'ordering', labelKey: 'study.questionBank.typeOrdering' },
+] as const satisfies ReadonlyArray<{ value: string; labelKey: string }>;
+
 export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_point_id, knowledge_point_ids, due }) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
@@ -233,9 +246,9 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ graph_id, knowledge_
             }`}
           >
             <option value="all">{t('study.questionBank.allTypes')}</option>
-            <option value="qa">{t('study.questionBank.typeQA')}</option>
-            <option value="choice">{t('study.questionBank.typeChoice')}</option>
-            <option value="true_false">{t('study.questionBank.typeTrueFalse')}</option>
+            {CARD_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
+            ))}
           </select>
 
           <button

@@ -19,7 +19,14 @@
     "allTypes": "All Types",
     "typeQA": "Q&A",
     "typeChoice": "Choice",
+    "typeMultiChoice": "Multiple Choice",
     "typeTrueFalse": "True/False",
+    "typeFillInTheBlank": "Fill in the Blank",
+    "typeEssay": "Essay",
+    "typeCloze": "Cloze",
+    "typeSelectFromOptions": "Select Word",
+    "typeMatching": "Matching",
+    "typeOrdering": "Ordering",
     "advancedFilter": "Advanced Filter",
     "selectAll": "Select All",
     "deselectAll": "Deselect All",
@@ -140,7 +147,17 @@
     "noCardsFound": "No matching cards found",
     "clearSearch": "Clear Search",
     "switchToAll": "Switch to All Cards",
-    "filterByStatus": "Filter by status"
+    "filterByStatus": "Filter by status",
+    "flatView": "List",
+    "groupView": "Group",
+    "toggleGroupMode": "Card view",
+    "unknownGraph": "Ungrouped graph",
+    "unknownPoint": "Ungrouped point",
+    "cardCount": "{{count}}",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "expandGroup": "Expand group",
+    "collapseGroup": "Collapse group"
   },
   "cardPreview": {
     "status": {

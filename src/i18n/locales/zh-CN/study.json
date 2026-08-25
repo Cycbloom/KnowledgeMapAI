@@ -19,7 +19,14 @@
     "allTypes": "所有题型",
     "typeQA": "问答 (QA)",
     "typeChoice": "单选 (Choice)",
+    "typeMultiChoice": "多选 (Multi)",
     "typeTrueFalse": "判断 (True/False)",
+    "typeFillInTheBlank": "填空 (Fill)",
+    "typeEssay": "论述 (Essay)",
+    "typeCloze": "完形填空 (Cloze)",
+    "typeSelectFromOptions": "选词填空 (Select)",
+    "typeMatching": "匹配连线 (Matching)",
+    "typeOrdering": "排序 (Ordering)",
     "advancedFilter": "高级筛选",
     "selectAll": "全选当前页",
     "deselectAll": "取消全选",
@@ -140,7 +147,17 @@
     "noCardsFound": "未找到匹配的卡片",
     "clearSearch": "清除搜索",
     "switchToAll": "切换到全部卡片",
-    "filterByStatus": "按状态筛选"
+    "filterByStatus": "按状态筛选",
+    "flatView": "平铺",
+    "groupView": "分组",
+    "toggleGroupMode": "卡片视图",
+    "unknownGraph": "未归属图谱",
+    "unknownPoint": "未归属知识点",
+    "cardCount": "{{count}} 张",
+    "expandAll": "全部展开",
+    "collapseAll": "全部折叠",
+    "expandGroup": "展开分组",
+    "collapseGroup": "折叠分组"
   },
   "cardPreview": {
     "status": {

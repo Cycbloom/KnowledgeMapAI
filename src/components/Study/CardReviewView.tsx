@@ -19,7 +19,10 @@ import {
   Activity,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Calendar,
+  ListTree,
+  Tags,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -50,6 +53,19 @@ interface CardReviewViewProps {
   onPracticeCard: (card: StudyCard) => void;
 }
 
+interface PointGroup {
+  pointKey: string;
+  pointTitle: string;
+  cards: StudyCard[];
+}
+
+interface GraphGroup {
+  graphKey: string;
+  graphTitle: string;
+  cards: StudyCard[];
+  pointGroups: PointGroup[];
+}
+
 export const CardReviewView = ({
   isDark,
   isMobile,
@@ -71,6 +87,10 @@ export const CardReviewView = ({
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
   const [previewCard, setPreviewCard] = useState<StudyCard | null>(null);
+  // 卡片列表视图：平铺（带分页） / 按知识图谱→知识点两级分组
+  const [groupMode, setGroupMode] = useState(true);
+  const [collapsedGraphs, setCollapsedGraphs] = useState<Set<string>>(new Set());
+  const [collapsedPoints, setCollapsedPoints] = useState<Set<string>>(new Set());
 
   const pieData = [
     {
@@ -114,6 +134,64 @@ export const CardReviewView = ({
     const start = (currentPage - 1) * pageSize;
     return filteredCards.slice(start, start + pageSize);
   }, [filteredCards, currentPage, pageSize]);
+
+  // 按「知识图谱 → 知识点」两级分组（基于 API 已携带的 graphTitle / knowledgePointTitle）
+  const graphGroups = useMemo<GraphGroup[]>(() => {
+    const graphMap = new Map<string, GraphGroup>();
+    for (const card of filteredCards) {
+      const graphKey = card.graph_id || card.source_graph_id || "unknown";
+      const graphTitle = card.graphTitle || t("study.cardList.unknownGraph");
+      let graph = graphMap.get(graphKey);
+      if (!graph) {
+        graph = { graphKey, graphTitle, cards: [], pointGroups: [] };
+        graphMap.set(graphKey, graph);
+      }
+      graph.cards.push(card);
+
+      const pointKey = `${graphKey}::${card.knowledge_point_id || "unknown"}`;
+      const pointTitle =
+        card.knowledgePointTitle || t("study.cardList.unknownPoint");
+      let point = graph.pointGroups.find((p) => p.pointKey === pointKey);
+      if (!point) {
+        point = { pointKey, pointTitle, cards: [] };
+        graph.pointGroups.push(point);
+      }
+      point.cards.push(card);
+    }
+    const graphs = Array.from(graphMap.values());
+    graphs.sort((a, b) => a.graphTitle.localeCompare(b.graphTitle));
+    for (const graph of graphs) {
+      graph.pointGroups.sort((a, b) => a.pointTitle.localeCompare(b.pointTitle));
+    }
+    return graphs;
+  }, [filteredCards, t]);
+
+  const toggleGraph = (key: string) => {
+    setCollapsedGraphs((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+  const togglePoint = (key: string) => {
+    setCollapsedPoints((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+  const expandAllGroups = () => {
+    setCollapsedGraphs(new Set());
+    setCollapsedPoints(new Set());
+  };
+  const collapseAllGroups = () => {
+    setCollapsedGraphs(new Set(graphGroups.map((g) => g.graphKey)));
+    setCollapsedPoints(
+      new Set(graphGroups.flatMap((g) => g.pointGroups.map((p) => p.pointKey))),
+    );
+  };
 
   // 前置计算每日最大复习数，避免在 forecast.daily.map 内对每个元素重复 Math.max（原为 O(n²)）
   const forecastMaxCount = useMemo(
@@ -611,31 +689,327 @@ export const CardReviewView = ({
             </div>
           </div>
 
-          {/* RIGHT: Search (stand-alone, visually separated from the title+scope cluster) */}
-          <div
-            role="search"
-            aria-label={t('common.aria.searchWithTarget', { target: t('study.cardList.title') })}
-            className="relative w-full md:w-auto md:min-w-[260px] lg:min-w-[300px]"
-          >
-            <Search
-              className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-500" : "text-gray-400"}`}
-              size={16}
-              aria-hidden="true"
-            />
-            <input
-              type="text"
-              placeholder={t("study.cardList.searchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className={`w-full pl-9 pr-4 py-2 rounded-xl text-sm border focus:ring-2 focus:ring-primary-500 outline-none transition-all ${
-                isDark
-                  ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500"
-                  : "bg-white border-gray-200 text-gray-900 shadow-sm placeholder-gray-400"
-              }`}
-            />
+          {/* RIGHT: view toggle + Search */}
+          <div className="flex w-full flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 md:w-auto">
+            <div
+              role="group"
+              aria-label={t('study.cardList.toggleGroupMode')}
+              className={`flex p-1 rounded-xl ${isMobile ? "w-full" : "w-fit"} ${isDark ? "bg-slate-800" : "bg-gray-100"}`}
+            >
+              <button
+                type="button"
+                aria-pressed={groupMode === false}
+                onClick={() => setGroupMode(false)}
+                className={`flex-1 sm:flex-none min-w-[64px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+                  groupMode === false
+                    ? isDark
+                      ? "bg-primary-600 text-white shadow-md shadow-primary-900/30"
+                      : "bg-white text-primary-600 shadow-sm"
+                    : isDark
+                      ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700/50"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-white/60"
+                }`}
+              >
+                <LayoutGrid size={15} aria-hidden="true" />
+                {t("study.cardList.flatView")}
+              </button>
+              <button
+                type="button"
+                aria-pressed={groupMode === true}
+                onClick={() => setGroupMode(true)}
+                className={`flex-1 sm:flex-none min-w-[64px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+                  groupMode === true
+                    ? isDark
+                      ? "bg-primary-600 text-white shadow-md shadow-primary-900/30"
+                      : "bg-white text-primary-600 shadow-sm"
+                    : isDark
+                      ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700/50"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-white/60"
+                }`}
+              >
+                <ListTree size={15} aria-hidden="true" />
+                {t("study.cardList.groupView")}
+              </button>
+            </div>
+
+            <div
+              role="search"
+              aria-label={t('common.aria.searchWithTarget', { target: t('study.cardList.title') })}
+              className="relative w-full md:w-auto md:min-w-[220px]"
+            >
+              <Search
+                className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                size={16}
+                aria-hidden="true"
+              />
+              <input
+                type="text"
+                placeholder={t("study.cardList.searchPlaceholder")}
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                className={`w-full pl-9 pr-4 py-2 rounded-xl text-sm border focus:ring-2 focus:ring-primary-500 outline-none transition-all ${
+                  isDark
+                    ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500"
+                    : "bg-white border-gray-200 text-gray-900 shadow-sm placeholder-gray-400"
+                }`}
+              />
+            </div>
           </div>
         </div>
 
+                {groupMode ? (
+          <div className="space-y-4 md:space-y-5">
+            {graphGroups.length === 0 ? (
+              <div
+                className={`py-12 text-center rounded-3xl border-2 border-dashed ${
+                  isDark
+                    ? "border-slate-800 text-slate-500"
+                    : "border-gray-200 text-gray-400"
+                }`}
+              >
+                <Search className="mx-auto mb-3 opacity-20" size={48} />
+                <p className="mb-4">{t("study.cardList.noCardsFound")}</p>
+                <div className="flex items-center justify-center gap-3">
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        setCurrentPage(1);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+                        isDark
+                          ? "border-slate-600 text-slate-300 hover:bg-slate-800"
+                          : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {t("study.cardList.clearSearch")}
+                    </button>
+                  )}
+                  {tableMode === "due" && (
+                    <button
+                      onClick={() => {
+                        setTableMode("all");
+                        setCurrentPage(1);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+                        isDark
+                          ? "border-primary-700 text-primary-400 hover:bg-primary-900/30"
+                          : "border-primary-300 text-primary-600 hover:bg-primary-50"
+                      }`}
+                    >
+                      {t("study.cardList.switchToAll")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Expand / collapse all */}
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={expandAllGroups}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+                      isDark
+                        ? "border-slate-600 text-slate-300 hover:bg-slate-800"
+                        : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    {t("study.cardList.expandAll")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={collapseAllGroups}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+                      isDark
+                        ? "border-slate-600 text-slate-300 hover:bg-slate-800"
+                        : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    {t("study.cardList.collapseAll")}
+                  </button>
+                </div>
+
+                {graphGroups.map((graph) => {
+                  const graphCollapsed = collapsedGraphs.has(graph.graphKey);
+                  return (
+                    <div
+                      key={graph.graphKey}
+                      className={`rounded-2xl border overflow-hidden ${
+                        isDark
+                          ? "bg-slate-800/40 border-slate-700"
+                          : "bg-white border-gray-200 shadow-sm"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleGraph(graph.graphKey)}
+                        aria-expanded={!graphCollapsed}
+                        aria-label={graphCollapsed
+                          ? t("study.cardList.expandGroup")
+                          : t("study.cardList.collapseGroup")}
+                        className={`w-full flex items-center justify-between gap-3 px-4 md:px-5 py-3 md:py-4 transition-colors ${
+                          isDark ? "hover:bg-slate-700/40" : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
+                          <BookOpen
+                            size={isMobile ? 16 : 18}
+                            className="shrink-0 text-primary-500"
+                            aria-hidden="true"
+                          />
+                          <span className="font-semibold truncate">
+                            {graph.graphTitle}
+                          </span>
+                          <span
+                            className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              isDark
+                                ? "bg-slate-700 text-slate-300"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {t("study.cardList.cardCount", {
+                              count: graph.cards.length,
+                            })}
+                          </span>
+                        </div>
+                        <ChevronDown
+                          size={isMobile ? 18 : 20}
+                          className={`shrink-0 transition-transform duration-200 ${
+                            graphCollapsed
+                              ? "rotate-180"
+                              : isDark
+                                ? "text-slate-400"
+                                : "text-gray-400"
+                          }`}
+                          aria-hidden="true"
+                        />
+                      </button>
+
+                      <AnimatePresence initial={false}>
+                        {!graphCollapsed && (
+                          <motion.div
+                            key="content"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div
+                              className={`border-t px-4 md:px-5 py-3 md:py-4 space-y-3 md:space-y-4 ${
+                                isDark ? "border-slate-700" : "border-gray-100"
+                              }`}
+                            >
+                              {graph.pointGroups.map((point) => {
+                                const pointCollapsed = collapsedPoints.has(
+                                  point.pointKey,
+                                );
+                                return (
+                                  <div
+                                    key={point.pointKey}
+                                    className={`rounded-xl border ${
+                                      isDark
+                                        ? "border-slate-700 bg-slate-800/60"
+                                        : "border-gray-200 bg-gray-50/60"
+                                    }`}
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        togglePoint(point.pointKey)
+                                      }
+                                      aria-expanded={!pointCollapsed}
+                                      aria-label={pointCollapsed
+                                        ? t("study.cardList.expandGroup")
+                                        : t("study.cardList.collapseGroup")}
+                                      className={`w-full flex items-center justify-between gap-3 px-3 md:px-4 py-2.5 transition-colors ${
+                                        isDark
+                                          ? "hover:bg-slate-700/40"
+                                          : "hover:bg-gray-100"
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <Tags
+                                          size={isMobile ? 14 : 16}
+                                          className="shrink-0 text-primary-500"
+                                          aria-hidden="true"
+                                        />
+                                        <span className="text-sm font-medium truncate">
+                                          {point.pointTitle}
+                                        </span>
+                                        <span
+                                          className={`shrink-0 px-1.5 py-0.5 rounded-full text-[11px] font-medium ${
+                                            isDark
+                                              ? "bg-slate-700 text-slate-300"
+                                              : "bg-gray-200 text-gray-600"
+                                          }`}
+                                        >
+                                          {point.cards.length}
+                                        </span>
+                                      </div>
+                                      <ChevronDown
+                                        size={16}
+                                        className={`shrink-0 transition-transform duration-200 ${
+                                          pointCollapsed
+                                            ? "rotate-180"
+                                            : isDark
+                                              ? "text-slate-500"
+                                              : "text-gray-400"
+                                        }`}
+                                        aria-hidden="true"
+                                      />
+                                    </button>
+
+                                    <AnimatePresence initial={false}>
+                                      {!pointCollapsed && (
+                                        <motion.div
+                                          key="content"
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{
+                                            height: "auto",
+                                            opacity: 1,
+                                          }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          transition={{ duration: 0.2 }}
+                                          className="overflow-hidden"
+                                        >
+                                          <div
+                                            className={`border-t p-2 md:p-3 ${
+                                              isDark
+                                                ? "border-slate-700"
+                                                : "border-gray-100"
+                                            }`}
+                                          >
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                                              {point.cards.map((card) => (
+                                                <StudyCardPreview
+                                                  key={card.id}
+                                                  card={card}
+                                                  isDark={isDark}
+                                                  onPreview={setPreviewCard}
+                                                  onPractice={onPracticeCard}
+                                                />
+                                              ))}
+                                            </div>
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        ) : (
         <motion.div
           className={`grid ${isMobile ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"} gap-3 md:gap-4`}
         >
@@ -709,9 +1083,10 @@ export const CardReviewView = ({
           )}
           </AnimatePresence>
         </motion.div>
+        )}
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
+        {/* Pagination Controls (flat mode only) */}
+        {!groupMode && totalPages > 1 && (
           <nav
             aria-label={t("common.aria.pagination")}
             className={`flex items-center justify-center gap-1 md:gap-2 mt-6 md:mt-8`}

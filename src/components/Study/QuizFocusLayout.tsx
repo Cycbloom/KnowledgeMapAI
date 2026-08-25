@@ -11,7 +11,9 @@ import {
   resolveFocusWidthClass,
   resolvePrimaryTextStyle,
 } from "../../utils/quizTypography";
+import { useCardCountdown } from "../../hooks/study/useCardCountdown";
 import { QuizOptionArea } from "./QuizOptionArea";
+import { QuizCountdownTimer } from "./QuizCountdownTimer";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
 import { QuizRatingBar } from "./QuizRatingBar";
 import { FocusTopicBadge, CardStatsStrip, CardDatesLine, CardSourceLine } from "./common";
@@ -30,6 +32,8 @@ export interface QuizFocusLayoutProps {
   quizCardsLength: number;
   showAnswer: boolean;
   selectedOption: string | null;
+  /** 父级传入的可选已打乱选项顺序；未传入时回退到卡片原始顺序 */
+  shuffledOptions?: string[];
   updateProgressMutation: UpdateProgressMutation;
   onRate: (quality: number) => void;
   onOptionClick: (option: string) => void;
@@ -59,6 +63,7 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
     quizCardsLength,
     showAnswer,
     selectedOption,
+    shuffledOptions,
     updateProgressMutation,
     onRate,
     onOptionClick,
@@ -70,15 +75,24 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
 
   const { t } = useTranslation();
 
-  const { fontSize, lineHeight, contentWidthMode } = useQuizSettingsStore(
+  const { fontSize, lineHeight, contentWidthMode, timerSeconds } = useQuizSettingsStore(
     useShallow((s) => ({
       fontSize: s.fontSize,
       lineHeight: s.lineHeight,
       contentWidthMode: s.contentWidthMode,
+      timerSeconds: s.timerSeconds,
     })),
   );
   const primaryTextStyle = resolvePrimaryTextStyle(fontSize, lineHeight);
   const focusWidthClass = resolveFocusWidthClass(contentWidthMode);
+
+  // 每题限时倒计时：超时自动显示答案（视为未答）
+  const { remaining: remainingSeconds } = useCardCountdown({
+    totalSeconds: timerSeconds,
+    active: !showAnswer,
+    cardId: currentCard.id,
+    onTimeUp: () => onSetShowAnswer(true),
+  });
 
   const isQA = !currentCard.card_type || currentCard.card_type === "qa";
   const isChoice = currentCard.card_type === "choice";
@@ -115,6 +129,17 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
     }
     return new Set<string>();
   }, [isMultiChoice, selectedOption]);
+
+  /**
+   * 展示给用户的选项顺序：
+   * - 优先使用父级（Study）传入的已打乱顺序（shuffledOptions），保证与
+   *   数字/A 键快捷键的索引映射一致；
+   * - 未传入时回退到卡片原始顺序（直接渲染场景）。
+   */
+  const displayOptions = useMemo(() => {
+    if (shuffledOptions && shuffledOptions.length > 0) return shuffledOptions;
+    return currentOptions;
+  }, [shuffledOptions, currentOptions]);
 
   const correctSet = useMemo(() => {
     if (isMultiChoice) {
@@ -246,12 +271,22 @@ export const QuizFocusLayout = memo(function QuizFocusLayout(props: QuizFocusLay
               >
                 {currentCard.question}
               </div>
+              {timerSeconds > 0 && !showAnswer && (
+                <div className="mt-3 md:mt-4">
+                  <QuizCountdownTimer
+                    remaining={remainingSeconds}
+                    totalSeconds={timerSeconds}
+                    isDark={isDark}
+                    isMobile={isMobile}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex-1">
               <QuizOptionArea
                 currentCard={currentCard}
-                currentOptions={currentOptions}
+                currentOptions={displayOptions}
                 isQA={isQA}
                 isChoice={isChoice}
                 isMultiChoice={isMultiChoice}

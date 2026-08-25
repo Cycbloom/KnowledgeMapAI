@@ -10,6 +10,7 @@ import { QuestionBank } from "../components/Study/QuestionBank";
 import { QuizList, QuizCreationFlow } from "../components/Quiz";
 import { useTheme, useIsMobile } from "../hooks";
 import { useQuizLayoutPref } from "../hooks/quiz";
+import { shuffleOptions } from "../utils/quizShuffle";
 import { api } from "../services/api";
 import { useCardReviewLogic } from "../hooks/study/useCardReviewLogic";
 import { useQuizLogic } from "../hooks/quiz/useQuizLogic";
@@ -143,22 +144,39 @@ export const Study = () => {
     }
   }, [cardReview.finished, triggerCelebration]);
 
-  // Compute current options for keyboard shortcuts (UX2-03)
+  const isMultiChoice = cardReview.currentCard?.card_type === "multi_choice";
+  const isChoice = cardReview.currentCard?.card_type === "choice";
+  const isSelectFromOptions =
+    cardReview.currentCard?.card_type === "select_from_options";
+
+  // Compute current options for keyboard shortcuts (UX2-03) & rendering.
+  // 选择题（单/多/选词填空）在此统一打乱，既供渲染也供快捷键索引，
+  // 以卡片 id 为依赖：每次展示到该卡片重新洗牌、作答中顺序稳定，
+  // 避免因记住固定选项位置（肌肉记忆）而答对。
   const currentOptions: string[] = useMemo(() => {
+    let options: string[] = [];
     if (!cardReview.currentCard?.options) return [];
     if (Array.isArray(cardReview.currentCard.options))
-      {return cardReview.currentCard.options;}
-    try {
-      if (typeof cardReview.currentCard.options === "string") {
-        return JSON.parse(cardReview.currentCard.options);
+      {options = cardReview.currentCard.options;}
+    else if (typeof cardReview.currentCard.options === "string") {
+      try {
+        options = JSON.parse(cardReview.currentCard.options);
+      } catch (e) {
+        console.error("Failed to parse card options:", e);
+        return [];
       }
-    } catch (e) {
-      console.error("Failed to parse card options:", e);
     }
-    return [];
-  }, [cardReview.currentCard]);
-
-  const isMultiChoice = cardReview.currentCard?.card_type === "multi_choice";
+    if (isChoice || isMultiChoice || isSelectFromOptions) {
+      return shuffleOptions(options);
+    }
+    return options;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    cardReview.currentCard?.id,
+    isChoice,
+    isMultiChoice,
+    isSelectFromOptions,
+  ]);
 
   // Quiz logic hook
   const quizLogic = useQuizLogic({
@@ -529,6 +547,7 @@ export const Study = () => {
               quizCardsLength={cardReview.quizCards.length}
               showAnswer={cardReview.showAnswer}
               selectedOption={cardReview.selectedOption}
+              shuffledOptions={currentOptions}
               cardKey={cardReview.cardKey}
               swipeDirection={cardReview.swipeDirection}
               quizCards={cardReview.quizCards}

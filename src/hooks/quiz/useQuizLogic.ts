@@ -78,10 +78,11 @@ export const useQuizLogic = ({
 
       let optionIndex = -1;
       const key = event.key.toLowerCase();
-      if (key === "a" || key === "1") optionIndex = 0;
-      else if (key === "b" || key === "2") optionIndex = 1;
-      else if (key === "c" || key === "3") optionIndex = 2;
-      else if (key === "d" || key === "4") optionIndex = 3;
+      if (key >= "1" && key <= "9") {
+        optionIndex = Number(key) - 1;
+      } else if (key >= "a" && key <= "i") {
+        optionIndex = key.charCodeAt(0) - "a".charCodeAt(0);
+      }
 
       if (optionIndex < 0 || optionIndex >= currentOptions.length) return;
 

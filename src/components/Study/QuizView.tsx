@@ -196,6 +196,7 @@ export const QuizViewActive = memo(function QuizViewActive(props: QuizViewActive
           quizCardsLength={props.quizCardsLength}
           showAnswer={props.showAnswer}
           selectedOption={props.selectedOption}
+          shuffledOptions={props.shuffledOptions}
           updateProgressMutation={props.updateProgressMutation}
           onRate={props.onRate}
           onOptionClick={props.onOptionClick}

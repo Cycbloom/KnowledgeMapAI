@@ -84,35 +84,41 @@ export class ConceptSimilarityService {
 
     const embedding = kp.embedding as number[];
 
-    let query = supabase
-      .from("knowledge_points")
-      .select("id, title, embedding, properties")
-      .not("id", "eq", knowledgePointId)
-      .not("embedding", "is", null);
-
+    // 先取同图谱节点的 ID 用于排除，避免在 Supabase 链式 builder 上动态追加 not-in
+    // 过滤（会触发 TS2589 深层泛型递归），改为查询后按 ID 集合做 JS 过滤。
+    const excludeIds = new Set<string>();
     if (options.excludeSameGraph && options.graphId) {
       const { data: graphNodes } = await supabase
         .from("graph_nodes")
         .select("knowledge_point_id")
         .eq("graph_id", options.graphId);
 
-      if (graphNodes && graphNodes.length > 0) {
-        const excludeIds = graphNodes.map((gn) => gn.knowledge_point_id);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        query = (query as any).not("id", "in", `(${excludeIds.join(",")})`);
+      for (const gn of graphNodes ?? []) {
+        if (gn.knowledge_point_id) {
+          excludeIds.add(gn.knowledge_point_id);
+        }
       }
     }
 
-    const { data: candidates, error: candidatesError } =
-      await query.limit(1000);
+    const { data: rawCandidates, error: candidatesError } = await supabase
+      .from("knowledge_points")
+      .select("id, title, embedding, properties")
+      .not("id", "eq", knowledgePointId)
+      .not("embedding", "is", null)
+      .limit(1000);
 
-    if (candidatesError || !candidates) {
+    if (candidatesError || !rawCandidates) {
       logger.error(
         "Failed to fetch candidate knowledge points:",
         candidatesError,
       );
       return [];
     }
+
+    const candidates =
+      excludeIds.size > 0
+        ? rawCandidates.filter((c) => !excludeIds.has(c.id))
+        : rawCandidates;
 
     const results: SimilarityResult[] = [];
 

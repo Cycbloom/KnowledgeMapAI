@@ -20,7 +20,7 @@ export const loginSchema = z.object({
 
 export const updateProfileSchema = z.object({
   name: z.string().optional(),
-  settings: z.record(z.any()).optional(),
+  settings: z.record(z.unknown()).optional(),
 });
 
 // --- Common Schemas ---
@@ -33,6 +33,35 @@ export const tagsArraySchema = z
   .array(z.string().trim().min(1, "标签不能为空").max(30, "标签最多 30 个字符"))
   .max(20, "标签最多 20 个")
   .transform((tags) => Array.from(new Set(tags)));
+
+/** 参考书籍单项：结构与 shared/types/graph-entity.ReferenceBook 对应，passthrough 保留扩展字段 */
+const referenceBookSchema = z
+  .object({
+    title: z.string(),
+    author: z.string(),
+    isbn: z.string().optional(),
+    description: z.string().optional(),
+    url: z.string().optional(),
+    type: z
+      .enum(["paper", "book", "article", "document", "report", "webpage"])
+      .optional(),
+    year: z.number().optional(),
+    journal: z.string().optional(),
+    doi: z.string().optional(),
+    processedAt: z.string().optional(),
+    conceptCount: z.number().optional(),
+  })
+  .passthrough();
+
+/** 外部链接单项：结构与 shared/types/graph-entity.ExternalLink 对应 */
+const externalLinkSchema = z
+  .object({
+    title: z.string(),
+    url: z.string(),
+    type: z.enum(["article", "video", "course", "tool", "other"]),
+    description: z.string().optional(),
+  })
+  .passthrough();
 
 // --- Graph Schemas ---
 export const createGraphSchema = z.object({
@@ -54,9 +83,9 @@ export const createGraphSchema = z.object({
 export const updateGraphSchema = z.object({
   title: z.string().min(1, "标题不能为空").optional(),
   description: z.string().optional(),
-  settings: z.record(z.any()).optional(),
-  reference_books: z.any().optional(),
-  external_links: z.any().optional(),
+  settings: z.record(z.unknown()).optional(),
+  reference_books: z.array(referenceBookSchema).optional(),
+  external_links: z.array(externalLinkSchema).optional(),
   learning_guide: z.string().nullable().optional(),
   podcast_script: z.string().nullable().optional(),
   tags: tagsArraySchema.optional(),
@@ -84,7 +113,7 @@ export const createNodeSchema = z.object({
   summary: z.string().max(200).optional(),
   x_position: z.number().optional(),
   y_position: z.number().optional(),
-  properties: z.record(z.any()).optional(),
+  properties: z.record(z.unknown()).optional(),
   learning_material: z.record(z.string(), z.string()).optional(),
   level: z.enum(["root", "core", "sub", "normal", "leaf"]).optional(),
   is_accepted: z.boolean().optional(),
@@ -200,7 +229,7 @@ export const createCardsBatchSchema = z.object({
         question: z.string().min(1, "问题不能为空"),
         answer: z.string().min(1, "答案不能为空"),
         type: z.enum(["qa", "choice", "true_false", "multi_choice", "fill_in_the_blank", "essay", "cloze", "select_from_options", "matching", "ordering"]).optional(),
-        options: z.any().optional(),
+        options: z.array(z.string()).optional(),
       }),
     )
     .min(1, "至少需要一张卡片")
@@ -378,8 +407,33 @@ export const textToGraphSchema = z.object({
   text: z.string().optional(),
   graph_id: z.string().uuid("无效的图谱ID"),
   action: z.enum(["analyze", "save"]).optional(),
-  nodes: z.array(z.any()).max(200, "单次最多200个节点").optional(),
-  edges: z.array(z.any()).max(400, "单次最多400条边").optional(),
+  nodes: z
+    .array(
+      z
+        .object({
+          id: z.string().optional(),
+          title: z.string().optional(),
+          content: z.string().optional(),
+          level: z.string().optional(),
+          properties: z.record(z.unknown()).optional(),
+        })
+        .passthrough(),
+    )
+    .max(200, "单次最多200个节点")
+    .optional(),
+  edges: z
+    .array(
+      z
+        .object({
+          source: z.string(),
+          target: z.string(),
+          relationship_type: z.string().optional(),
+          relationship: z.string().optional(),
+        })
+        .passthrough(),
+    )
+    .max(400, "单次最多400条边")
+    .optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
 });
@@ -387,7 +441,16 @@ export const textToGraphSchema = z.object({
 export const chatSchema = z.object({
   message: z.string().min(1, "消息不能为空"),
   graph_id: z.string().uuid("无效的图谱ID"),
-  history: z.array(z.any()).optional(),
+  history: z
+    .array(
+      z
+        .object({
+          role: z.string(),
+          content: z.string(),
+        })
+        .passthrough(),
+    )
+    .optional(),
   context_node_ids: z.array(z.string().uuid()).optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
@@ -419,7 +482,16 @@ export const branchSuggestionsSchema = z.object({
 export const tutorChatSchema = z.object({
   message: z.string().min(1, "消息不能为空"),
   graph_id: z.string().uuid("无效的图谱ID").optional(),
-  history: z.array(z.any()).optional(),
+  history: z
+    .array(
+      z
+        .object({
+          role: z.string(),
+          content: z.string(),
+        })
+        .passthrough(),
+    )
+    .optional(),
   context_node_ids: z.array(z.string().uuid()).optional(),
   mode: z.enum(["free", "guided"]).optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
@@ -666,7 +738,7 @@ export const batchUpdateNodesSchema = z.object({
         content: z.string().optional(),
         summary: z.string().max(200).optional(),
         learning_material: z.record(z.string(), z.string()).optional(),
-        properties: z.record(z.any()).optional(),
+        properties: z.record(z.unknown()).optional(),
         x_position: z.number().optional(),
         y_position: z.number().optional(),
         level: z.enum(["root", "core", "sub", "normal", "leaf"]).optional(),
@@ -695,19 +767,19 @@ export const createAIActionSchema = z.object({
   name: z.string().min(1, "名称不能为空"),
   description: z.string().optional(),
   trigger: z.enum(["manual", "auto", "scheduled"]),
-  config: z.record(z.any()).optional(),
+  config: z.record(z.unknown()).optional(),
 });
 
 export const updateAIActionSchema = z.object({
   name: z.string().min(1, "名称不能为空").optional(),
   description: z.string().optional(),
-  config: z.record(z.any()).optional(),
+  config: z.record(z.unknown()).optional(),
   is_active: z.boolean().optional(),
 });
 
 export const executeAIActionSchema = z.object({
   action_id: z.string().uuid("无效的操作ID"),
-  params: z.record(z.any()).optional(),
+  params: z.record(z.unknown()).optional(),
 });
 
 // --- Prompt Schemas ---
@@ -857,12 +929,12 @@ export const taskDependencyParamsSchema = z.object({
 export const createTaskScheduleSchema = z.object({
   task_template_id: z.string().uuid("无效的任务模板ID"),
   schedule_type: z.enum(["daily", "weekly", "custom", "smart"]),
-  schedule_config: z.record(z.any()).optional(),
+  schedule_config: z.record(z.unknown()).optional(),
   is_active: z.boolean().optional(),
 });
 
 export const updateTaskScheduleSchema = z.object({
-  schedule_config: z.record(z.any()).optional(),
+  schedule_config: z.record(z.unknown()).optional(),
   is_active: z.boolean().optional(),
 });
 
@@ -918,7 +990,7 @@ export const timeSlotParamsSchema = z.object({
 export const createQuizSetSchema = z.object({
   title: z.string().min(1, "标题不能为空").max(200, "标题最多200个字符"),
   description: z.string().optional(),
-  config: z.record(z.any()).optional(),
+  config: z.record(z.unknown()).optional(),
   graph_id: z.string().uuid("无效的图谱ID").optional(),
 });
 
@@ -929,7 +1001,7 @@ export const updateQuizSetSchema = z.object({
     .max(200, "标题最多200个字符")
     .optional(),
   description: z.string().optional(),
-  config: z.record(z.any()).optional(),
+  config: z.record(z.unknown()).optional(),
 });
 
 export const generateQuizSchema = z.object({

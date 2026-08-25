@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, BookOpen, LucideIcon } from "lucide-react";
 import { iconMap } from "../../utils/iconMap";
-import type { NavLabelKey } from "../../services/kernel/types";
+import type { NavLabelKey } from "../../config/routeConfig";
 
 interface NavItem {
   path: string;

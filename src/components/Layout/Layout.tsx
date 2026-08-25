@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo, useId, Suspense } from "react";
+import React, { useEffect, useRef, useState, useCallback, useId, Suspense } from "react";
 import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
@@ -48,7 +48,7 @@ import { useNetworkStatus } from "../../hooks/common/useNetworkStatus";
 import { useSkipToContent } from "../../hooks/common/useSkipToContent";
 import { isElectron } from "../../config/electronConfig";
 import { apiClient } from "../../services/api/createApiClient";
-import { frontendKernel } from "../../App";
+import { navItems as layoutNavItems } from "@/config/routeConfig";
 import { iconMap } from "../../utils/iconMap";
 import { parseMarkdownToGraph } from "../../utils/markdownParser";
 import { parseOpmlToGraph } from "../../utils/opmlParser";
@@ -411,7 +411,7 @@ export const Layout = () => {
     }
   }, [isCollapsed]);
 
-  const navItems = useMemo(() => frontendKernel.getNavItems(), [frontendKernel]);
+  const navItems = layoutNavItems;
 
   const queryClient = useQueryClient();
   const getPrefetchHandler = useCallback(

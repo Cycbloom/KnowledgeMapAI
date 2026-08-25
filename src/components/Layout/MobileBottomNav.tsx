@@ -7,9 +7,8 @@ import {
   MoreHorizontal,
   LucideIcon,
 } from "lucide-react";
-import { frontendKernel } from "../../App";
+import { navItems, type NavLabelKey } from "@/config/routeConfig";
 import { iconMap } from "../../utils/iconMap";
-import type { NavLabelKey } from "../../services/kernel/types";
 import { useMenuNavigation } from "../../hooks/common/useMenuNavigation";
 
 interface NavItem {
@@ -73,7 +72,7 @@ const backdropVariants = {
 
 function useKernelNavItems() {
   return useMemo(() => {
-    const allItems = frontendKernel.getNavItems();
+    const allItems = navItems;
     const mainItems: NavItem[] = [];
     const moreItems: NavItem[] = [];
 
@@ -91,7 +90,7 @@ function useKernelNavItems() {
     }
 
     return { mainNavItems: mainItems, moreNavItems: moreItems };
-  }, [frontendKernel]);
+  }, []);
 }
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({

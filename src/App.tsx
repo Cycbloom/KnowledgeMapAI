@@ -23,8 +23,7 @@ import { restoreSession as silentRestoreSession } from "./utils/silentAuth";
 import { authConfig, isSupabaseConfigured } from "./config/authConfig";
 import { isElectron } from "./config/electronConfig";
 import { toUser } from "@shared/types/database";
-import { initializeFrontendPlugins } from "./services/kernel/plugins";
-import type { RouteRegistration } from "./services/kernel/types";
+import { routeRegistrations, type RouteRegistration } from "./config/routeConfig";
 import "./i18n";
 
 // P7: 主入口常驻壳层瘦身（第二轮）——仅在 Web 端渲染、且触发时才显示的壳层组件改为
@@ -48,11 +47,6 @@ const LazyOfflineSyncProgress = React.lazy(() =>
 const LazyCelebrationOverlay = React.lazy(() =>
   import("./components/common/CelebrationOverlay").then((m) => ({ default: m.CelebrationOverlay })),
 );
-
-const frontendKernel = initializeFrontendPlugins();
-frontendKernel.activateAll().catch((err: unknown) => {
-  console.error("[Kernel] Failed to activate frontend plugins:", err);
-});
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { token } = useStore();
@@ -110,8 +104,7 @@ function withProfiler(path: string, element: React.ReactNode): React.ReactNode {
 
 function useKernelRoutes(layoutType: "public" | "protected") {
   return useMemo(() => {
-    const allRoutes = frontendKernel.getRoutes();
-    return allRoutes.filter((registration) => {
+    return routeRegistrations.filter((registration) => {
       const layout = registration.layout ?? "protected";
       return layout === layoutType;
     });
@@ -370,4 +363,3 @@ function App() {
 }
 
 export default App;
-export { frontendKernel };

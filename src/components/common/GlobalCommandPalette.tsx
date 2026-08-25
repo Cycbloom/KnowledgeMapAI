@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import { useCombobox } from "../../hooks/common/useCombobox";
-import { frontendKernel } from "../../App";
+import { navItems } from "@/config/routeConfig";
 import { iconMap } from "../../utils/iconMap";
 import {
   useRecentGraphs,
@@ -110,13 +110,12 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
   const commands = useMemo<CommandItem[]>(() => {
     const items: CommandItem[] = [];
 
-    // navigation：从 frontendKernel.getNavItems() 动态获取
-    const navItems = frontendKernel
-      .getNavItems()
+    // navigation：来自静态路由配置 navItems
+    const navItemsFiltered = navItems
       .filter(
         (item) => item.category === "main" || item.category === "more",
       );
-    navItems.forEach((item) => {
+    navItemsFiltered.forEach((item) => {
       const Icon =
         (item.icon ? iconMap[item.icon] : undefined) ?? BookOpen;
       items.push({

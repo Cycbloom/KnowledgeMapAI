@@ -12,6 +12,8 @@ export interface Achievement {
   is_hidden: boolean;
   trigger_events: string[];
   created_at: string;
+  /** 当前用户针对该成就的累计进度（由 /api/v1/achievements 合并返回），用于展示“距解锁还差 x” */
+  progress?: number;
 }
 
 export interface UserAchievement {

@@ -99,19 +99,25 @@ export class AchievementService {
 
     const { data: userAchievements, error: userError } = await getSupabaseAdmin()
       .from('user_achievements')
-      .select('achievement_id, unlocked_at')
+      .select('achievement_id, unlocked_at, progress')
       .eq('user_id', userId);
 
     if (userError) throw userError;
 
     const unlockedMap = new Map(
-      (userAchievements as Pick<UserAchievementRow, 'achievement_id' | 'unlocked_at'>[]).map(
+      (userAchievements as Pick<UserAchievementRow, 'achievement_id' | 'unlocked_at' | 'progress'>[]).map(
         (ua) => [ua.achievement_id, ua.unlocked_at]
+      )
+    );
+    const progressMap = new Map(
+      (userAchievements as Pick<UserAchievementRow, 'achievement_id' | 'unlocked_at' | 'progress'>[]).map(
+        (ua) => [ua.achievement_id, ua.progress ?? 0]
       )
     );
 
     return (allAchievements as AchievementRow[]).map((ach) => ({
       ...toAchievement(ach),
+      progress: progressMap.get(ach.id) ?? 0,
       unlocked_at: unlockedMap.get(ach.id) || null
     }));
   }

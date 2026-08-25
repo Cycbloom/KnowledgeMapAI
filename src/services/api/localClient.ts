@@ -5,6 +5,10 @@ import { logger } from '@/utils/logger';
 const CLOUD_ONLY_RESOURCES = new Set([
   'ai', 'rag', 'embeddings', 'search', 'agent',
   'literature', 'auto_graph', 'story', 'podcast',
+  // achievements 为全局只读表（含按用户合并的 unlocked_at/progress），
+  // 本地 SQLite 不落地该数据，走 IPC findAll 会返回空数组（localResult !== null
+  // 无法触发 HTTP 回退），导致终身成就 tab 空白。强制走 HTTP 由 API 合并用户数据。
+  'achievements',
 ]);
 
 let localDbAvailable: boolean | null = null;

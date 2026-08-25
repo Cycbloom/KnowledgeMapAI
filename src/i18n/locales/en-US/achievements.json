@@ -128,5 +128,13 @@
   "lifetimeAchievements": "Lifetime Achievements",
   "loadError": "Failed to load achievements",
   "retry": "Retry",
-  "claimFailed": "Failed to claim reward, please try again later"
+  "claimFailed": "Failed to claim reward, please try again later",
+  "categoryProgress": "{{unlocked}}/{{total}} unlocked",
+  "unlockProgress": "{{progress}}/{{target}}",
+  "hiddenName": "Hidden Achievement",
+  "hiddenDesc": "Its secret is revealed once a special condition is met",
+  "lifetimeEmpty": {
+    "title": "No achievements available",
+    "desc": "The achievement system isn't ready yet. Check back later."
+  }
 }

@@ -128,5 +128,13 @@
   "lifetimeAchievements": "终身成就",
   "loadError": "加载成就数据失败",
   "retry": "重试",
-  "claimFailed": "领取奖励失败，请稍后重试"
+  "claimFailed": "领取奖励失败，请稍后重试",
+  "categoryProgress": "{{unlocked}}/{{total}} 已解锁",
+  "unlockProgress": "{{progress}}/{{target}}",
+  "hiddenName": "神秘成就",
+  "hiddenDesc": "达成特定条件后揭晓其中奥秘",
+  "lifetimeEmpty": {
+    "title": "暂无成就数据",
+    "desc": "成就系统尚未就绪，稍后再来看看"
+  }
 }

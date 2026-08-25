@@ -19,7 +19,7 @@ import { motion } from 'framer-motion';
 import { PeriodicTaskList } from '../components/Achievements/PeriodicTaskList';
 import { PassProgress } from '../components/Achievements/PassProgress';
 import { StreakDisplay } from '../components/Achievements/StreakDisplay';
-import { Skeleton, SkeletonCard, ErrorState } from '../components/common';
+import { Skeleton, SkeletonCard, ErrorState, EmptyState } from '../components/common';
 
 const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   Flame, Zap, Crown, Timer, Brain, GraduationCap, BookOpen, Trophy, Medal, Target, Star
@@ -458,83 +458,134 @@ export const Achievements = () => {
             tabIndex={0}
             className="space-y-8"
           >
-            {Object.entries(groupedAchievements || {}).map(([category, items]: [string, Achievement[]]) => {
-              const CatIcon = getCategoryIcon(category);
-              return (
-                <div key={category} className="space-y-4">
-                  <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-500 pb-2">
-                    <CatIcon className="text-slate-400" size={20} />
-                    <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
-                      {categories[category as keyof typeof categories] || category}
-                    </h3>
-                  </div>
+            {groupedAchievements && Object.keys(groupedAchievements).length === 0 ? (
+              <EmptyState
+                icon={<Trophy size={40} className="text-slate-300 dark:text-slate-600" />}
+                title={t('achievements.lifetimeEmpty.title')}
+                description={t('achievements.lifetimeEmpty.desc')}
+              />
+            ) : (
+              Object.entries(groupedAchievements || {}).map(([category, items]: [string, Achievement[]]) => {
+                const CatIcon = getCategoryIcon(category);
+                const unlockedInCat = items.filter((a) => a.unlocked_at).length;
+                const catPercent = items.length ? Math.round((unlockedInCat / items.length) * 100) : 0;
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {items.map((ach: Achievement) => {
-                      const Icon = iconMap[ach.icon] || Star;
-                      const isUnlocked = !!ach.unlocked_at;
+                return (
+                  <div key={category} className="space-y-4">
+                    <div className="border-b border-slate-200 dark:border-slate-500 pb-2">
+                      <div className="flex items-center gap-2">
+                        <CatIcon className="text-slate-400 shrink-0" size={20} />
+                        <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+                          {categories[category as keyof typeof categories] || category}
+                        </h3>
+                        <span className="ml-auto text-xs font-medium shrink-0 px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
+                          {t('achievements.categoryProgress', { unlocked: unlockedInCat, total: items.length })}
+                        </span>
+                      </div>
+                      <div className="mt-2 h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary-500 rounded-full transition-all duration-500"
+                          style={{ width: `${catPercent}%` }}
+                        />
+                      </div>
+                    </div>
 
-                      return (
-                        <motion.div
-                          key={ach.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={`relative group rounded-xl p-4 border transition-all duration-300 ${
-                            isUnlocked
-                              ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-500 shadow-sm hover:shadow-md'
-                              : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-75'
-                          }`}
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {items.map((ach: Achievement) => {
+                        const isUnlocked = !!ach.unlocked_at;
+                        const isHidden = ach.is_hidden && !isUnlocked;
+                        const Icon = isHidden ? Lock : iconMap[ach.icon] || Star;
+                        const achTitle = isHidden ? t('achievements.hiddenName') : ach.name;
+                        const achDesc = isHidden ? t('achievements.hiddenDesc') : ach.description;
+                        const target = ach.condition_value;
+                        const current = isUnlocked ? target : Math.min(target, ach.progress ?? 0);
+                        const hasTarget = !isHidden && target > 0;
+                        const progressPct = hasTarget ? Math.round((current / target) * 100) : 0;
+
+                        return (
+                          <motion.div
+                            key={ach.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`relative group rounded-xl p-4 border transition-all duration-300 ${
                               isUnlocked
-                                ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg'
-                                : 'bg-slate-200 dark:bg-slate-800 text-slate-400 grayscale'
-                            }`}>
-                              <Icon className="w-6 h-6" />
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <h4 className={`font-semibold truncate ${
-                                  isUnlocked ? 'text-slate-800 dark:text-slate-100' : 'text-slate-500'
-                                }`}>
-                                  {ach.name}
-                                </h4>
-                                {isUnlocked && <CheckCircle2 size={16} className="text-green-500" />}
+                                ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-500 shadow-sm hover:shadow-md'
+                                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-75'
+                            }`}
+                          >
+                            <div className="flex items-start gap-4">
+                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                                isUnlocked
+                                  ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg'
+                                  : 'bg-slate-200 dark:bg-slate-800 text-slate-400 grayscale'
+                              }`}>
+                                <Icon className="w-6 h-6" />
                               </div>
-                              <p className="text-xs text-slate-500 line-clamp-2 mb-2">
-                                {ach.description}
-                              </p>
-                              <div className="flex items-center justify-between mt-auto">
-                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                                  isUnlocked
-                                    ? 'bg-amber-100 text-amber-700'
-                                    : 'bg-slate-200 text-slate-500'
-                                }`}>
-                                  +{ach.xp_reward} XP
-                                </span>
-                                {ach.unlocked_at && (
-                                  <span className="text-[10px] text-slate-400">
-                                    {formatDate(ach.unlocked_at, 'short')}
-                                  </span>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <h4 className={`font-semibold truncate ${
+                                    isUnlocked ? 'text-slate-800 dark:text-slate-100' : 'text-slate-500'
+                                  }`}>
+                                    {achTitle}
+                                  </h4>
+                                  {isUnlocked && <CheckCircle2 size={16} className="text-green-500 shrink-0" />}
+                                </div>
+                                <p className="text-xs text-slate-500 line-clamp-2 mb-2">
+                                  {achDesc}
+                                </p>
+                                <div className="flex items-center justify-between mt-auto gap-2">
+                                  {!isHidden && (
+                                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                      isUnlocked
+                                        ? 'bg-amber-100 text-amber-700'
+                                        : 'bg-slate-200 text-slate-500'
+                                    }`}>
+                                      +{ach.xp_reward} XP
+                                    </span>
+                                  )}
+                                  {!isUnlocked && !hasTarget && (
+                                    <span className="text-[10px] text-slate-400">🔒</span>
+                                  )}
+                                  {ach.unlocked_at && (
+                                    <span className="text-[10px] text-slate-400 ml-auto">
+                                      {formatDate(ach.unlocked_at, 'short')}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {!isUnlocked && hasTarget && (
+                                  <div className="mt-3 space-y-1">
+                                    <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full transition-all duration-500 ${
+                                          progressPct > 0 ? 'bg-primary-500' : 'bg-slate-300 dark:bg-slate-600'
+                                        }`}
+                                        style={{ width: `${progressPct}%` }}
+                                      />
+                                    </div>
+                                    <div className="flex justify-between text-[10px] text-slate-400">
+                                      <span>{t('achievements.unlockProgress', { progress: current, target })}</span>
+                                      <span>{progressPct}%</span>
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                             </div>
-                          </div>
 
-                          {!isUnlocked && (
-                            <div className="absolute inset-0 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-[1px] rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Lock className="text-slate-400" />
-                            </div>
-                          )}
-                        </motion.div>
-                      );
-                    })}
+                            {!isUnlocked && (
+                              <div className="absolute inset-0 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-[1px] rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Lock className="text-slate-400" />
+                              </div>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         )}
       </div>

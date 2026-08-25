@@ -27,6 +27,8 @@ interface QuizRatingBarProps {
   isDark: boolean;
   /** 是否移动端 */
   isMobile: boolean;
+  /** 客观对错判定（来自 QuizOptionArea），用于预选默认评分与提示 */
+  autoVerdict?: "correct" | "incorrect" | null;
   /** 评分回调函数，参数为 quality: 1|2|3|4 */
   onRate: (quality: number) => void;
 }
@@ -42,6 +44,7 @@ export function QuizRatingBar({
   updateProgressMutation,
   isDark,
   isMobile,
+  autoVerdict = null,
   onRate,
 }: QuizRatingBarProps) {
   const { t } = useTranslation();
@@ -49,6 +52,10 @@ export function QuizRatingBar({
   if (!showAnswer) {
     return null;
   }
+
+  // 依据客观对错映射到 FSRS 建议评分：答对→Good(3)，答错→Again(1)
+  const suggestedQuality =
+    autoVerdict === "correct" ? 3 : autoVerdict === "incorrect" ? 1 : null;
 
   const ratingButtons: Array<{
     quality: number;
@@ -113,22 +120,75 @@ export function QuizRatingBar({
           </span>
         )}
       </div>
+
+      {autoVerdict && (
+        <div
+          className={`mb-2 flex items-center gap-2 rounded-lg px-2.5 py-1.5 ${
+            autoVerdict === "correct"
+              ? isDark
+                ? "bg-emerald-900/30 text-emerald-300"
+                : "bg-emerald-50 text-emerald-700"
+              : isDark
+                ? "bg-red-900/30 text-red-300"
+                : "bg-red-50 text-red-700"
+          }`}
+          role="status"
+          aria-live="polite"
+        >
+          {autoVerdict === "correct" ? (
+            <Check size={13} aria-hidden="true" />
+          ) : (
+            <ThumbsDown size={13} aria-hidden="true" />
+          )}
+          <span className="text-xs font-medium">
+            {autoVerdict === "correct"
+              ? t("study.rating.judgedCorrect")
+              : t("study.rating.judgedWrong")}
+          </span>
+          {suggestedQuality !== null && (
+            <span
+              className={`ml-auto inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                isDark ? "bg-slate-800/60 text-primary-300" : "bg-white/70 text-primary-600"
+              }`}
+            >
+              {t("study.rating.suggested")}
+            </span>
+          )}
+        </div>
+      )}
+
       <div
         className={`grid ${isMobile ? "grid-cols-4 gap-2" : "grid-cols-2 md:grid-cols-4 gap-3"}`}
       >
-        {ratingButtons.map(({ quality, Icon, label, classes }) => (
-          <button
-            key={quality}
-            type="button"
-            onClick={() => onRate(quality)}
-            aria-label={label}
-            className={`relative flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${classes}`}
-            disabled={updateProgressMutation.isPending}
-          >
-            <Icon size={isMobile ? 16 : 18} className="mb-1" />
-            <span className={isMobile ? "text-xs" : "text-xs"}>{label}</span>
-          </button>
-        ))}
+        {ratingButtons.map(({ quality, Icon, label, classes }) => {
+          const isSuggested = suggestedQuality === quality;
+          const highlighted = isSuggested
+            ? `${classes} ${isDark ? "ring-2 ring-primary-400" : "ring-2 ring-primary-500"}`
+            : classes;
+          return (
+            <button
+              key={quality}
+              type="button"
+              onClick={() => onRate(quality)}
+              aria-label={label}
+              aria-pressed={isSuggested}
+              className={`relative flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${highlighted}`}
+              disabled={updateProgressMutation.isPending}
+            >
+              <Icon size={isMobile ? 16 : 18} className="mb-1" />
+              <span className={isMobile ? "text-xs" : "text-xs"}>{label}</span>
+              {isSuggested && (
+                <span
+                  className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                    isDark ? "bg-primary-500 text-white" : "bg-primary-500 text-white"
+                  }`}
+                >
+                  {t("study.rating.suggested")}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

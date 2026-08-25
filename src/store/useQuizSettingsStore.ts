@@ -13,6 +13,7 @@ interface QuizSettingsState extends UserSettingsQuiz {
   setOptionShuffle: (enabled: boolean) => void;
   setWrongRequeue: (enabled: boolean) => void;
   setExamShuffleQuestions: (enabled: boolean) => void;
+  setInterleaveMode: (enabled: boolean) => void;
   resetSettings: () => void;
 }
 
@@ -24,6 +25,7 @@ const DEFAULT_SETTINGS: UserSettingsQuiz = {
   optionShuffle: true,
   wrongRequeue: true,
   examShuffleQuestions: true,
+  interleaveMode: false,
 };
 
 export const useQuizSettingsStore = createPersistedStore<QuizSettingsState>(
@@ -43,6 +45,7 @@ export const useQuizSettingsStore = createPersistedStore<QuizSettingsState>(
     setOptionShuffle: (enabled) => set({ optionShuffle: enabled }),
     setWrongRequeue: (enabled) => set({ wrongRequeue: enabled }),
     setExamShuffleQuestions: (enabled) => set({ examShuffleQuestions: enabled }),
+    setInterleaveMode: (enabled) => set({ interleaveMode: enabled }),
     resetSettings: () => set(DEFAULT_SETTINGS),
   }),
   {
@@ -56,6 +59,7 @@ export const useQuizSettingsStore = createPersistedStore<QuizSettingsState>(
       optionShuffle: state.optionShuffle,
       wrongRequeue: state.wrongRequeue,
       examShuffleQuestions: state.examShuffleQuestions,
+      interleaveMode: state.interleaveMode,
     }),
   },
 );

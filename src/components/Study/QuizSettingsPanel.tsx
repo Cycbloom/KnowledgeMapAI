@@ -41,12 +41,14 @@ export const QuizSettingsPanel: React.FC<QuizSettingsPanelProps> = ({
     timerSeconds,
     optionShuffle,
     wrongRequeue,
+    interleaveMode,
     setFontSize,
     setLineHeight,
     setContentWidthMode,
     setTimerSeconds,
     setOptionShuffle,
     setWrongRequeue,
+    setInterleaveMode,
     resetSettings,
   } = useQuizSettingsStore(
     useShallow((s) => ({
@@ -56,12 +58,14 @@ export const QuizSettingsPanel: React.FC<QuizSettingsPanelProps> = ({
       timerSeconds: s.timerSeconds,
       optionShuffle: s.optionShuffle,
       wrongRequeue: s.wrongRequeue,
+      interleaveMode: s.interleaveMode,
       setFontSize: s.setFontSize,
       setLineHeight: s.setLineHeight,
       setContentWidthMode: s.setContentWidthMode,
       setTimerSeconds: s.setTimerSeconds,
       setOptionShuffle: s.setOptionShuffle,
       setWrongRequeue: s.setWrongRequeue,
+      setInterleaveMode: s.setInterleaveMode,
       resetSettings: s.resetSettings,
     })),
   );
@@ -390,6 +394,40 @@ export const QuizSettingsPanel: React.FC<QuizSettingsPanelProps> = ({
                 <span
                   className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
                     wrongRequeue ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+              <div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {t("study.settings.interleaveMode")}
+                </span>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {t("study.settings.interleaveModeHint")}
+                </p>
+              </div>
+              <div
+                role="switch"
+                aria-checked={interleaveMode}
+                aria-label={t("study.settings.interleaveMode")}
+                tabIndex={0}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                  interleaveMode
+                    ? "bg-primary-600"
+                    : "bg-gray-200 dark:bg-gray-700"
+                }`}
+                onClick={() => setInterleaveMode(!interleaveMode)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setInterleaveMode(!interleaveMode);
+                  }
+                }}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                    interleaveMode ? "translate-x-5" : "translate-x-0.5"
                   }`}
                 />
               </div>

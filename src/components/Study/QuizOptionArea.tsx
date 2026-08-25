@@ -3,20 +3,26 @@ import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { StudyCard } from "@shared/types";
 import { AlertCircle, Check, X, BookOpen, ChevronUp, ChevronDown } from "lucide-react";
-import { normalizeBooleanAnswer } from "../../utils/textUtils";
+import { isTrueFalseAnswerEqual, normalizeBooleanAnswer } from "../../utils/textUtils";
 import { useQuizSettingsStore } from "../../store/useQuizSettingsStore";
 import { resolveSecondaryTextStyle } from "../../utils/quizTypography";
 import { useVoiceDictation } from "../../hooks/common/useVoiceDictation";
 import {
   countClozeBlanks,
+  isClozeCorrect,
   isMatchingCorrect,
   isOrderingCorrect,
+  isSelectFromOptionsCorrect,
 } from "../../utils/quizNewTypes";
+
 import {
   VoiceDictationButton,
   VoiceEngineToggle,
   VoiceDictationControl,
 } from "./common";
+
+/** 客观对错判定结果：correct/incorrect 表示已判定，null 表示不适用（开放题等） */
+export type ObjectiveVerdict = "correct" | "incorrect" | null;
 
 /**
  * QuizOptionArea 组件 Props
@@ -65,6 +71,8 @@ interface QuizOptionAreaProps {
   isMobile: boolean;
   /** 设置 showAnswer 的回调，用于提交按钮内部 */
   onSetShowAnswer: (show: boolean) => void;
+  /** 翻面时上报客观对错（仅适用可自动判分的题型；开放题不上报） */
+  onVerdictChange?: (verdict: Exclude<ObjectiveVerdict, null>) => void;
 }
 
 /**
@@ -94,6 +102,7 @@ export function QuizOptionArea({
   isDark,
   isMobile,
   onSetShowAnswer,
+  onVerdictChange,
 }: QuizOptionAreaProps) {
   const { t } = useTranslation();
 
@@ -269,6 +278,90 @@ export function QuizOptionArea({
   const matchingIsCorrect = isMatching
     ? isMatchingCorrect(currentCard.answer, matchingPairs)
     : false;
+
+  /**
+   * 计算本卡客观对错（复用测验模式的判分逻辑）。
+   * 开放题（qa/essay）与无题型（视为 qa）返回 null（保持主观打分，不上报）。
+   */
+  const computeVerdict = useCallback((): ObjectiveVerdict => {
+    const type = currentCard.card_type;
+    if (!type || type === "qa" || type === "essay") return null;
+
+    if (isChoice) {
+      if (selectedOption == null) return "incorrect";
+      return selectedOption === currentCard.answer ? "correct" : "incorrect";
+    }
+
+    if (isSelectFromOptions) {
+      if (selectedOption == null) return "incorrect";
+      return isSelectFromOptionsCorrect(currentCard.answer, selectedOption) ? "correct" : "incorrect";
+    }
+
+    if (isTrueFalse) {
+      if (selectedOption == null) return "incorrect";
+      return isTrueFalseAnswerEqual(selectedOption, currentCard.answer) ? "correct" : "incorrect";
+    }
+
+    if (isMultiChoice) {
+      try {
+        const correct = JSON.parse(currentCard.answer ?? "[]") as unknown;
+        const user = Array.from(selectedSet);
+        if (!Array.isArray(correct)) return "incorrect";
+        return correct.length === user.length &&
+          correct.every((c) => user.includes(c as string))
+          ? "correct"
+          : "incorrect";
+      } catch {
+        return "incorrect";
+      }
+    }
+
+    if (isFillBlank) {
+      return isSelectFromOptionsCorrect(currentCard.answer, textAnswer) ? "correct" : "incorrect";
+    }
+
+    if (isCloze) {
+      return isClozeCorrect(currentCard.answer, clozeInputs) ? "correct" : "incorrect";
+    }
+
+    if (isMatching) {
+      return isMatchingCorrect(currentCard.answer, matchingPairs) ? "correct" : "incorrect";
+    }
+
+    if (isOrdering) {
+      return isOrderingCorrect(currentCard.answer, order) ? "correct" : "incorrect";
+    }
+
+    return null;
+  }, [
+    currentCard,
+    isChoice,
+    isCloze,
+    isFillBlank,
+    isMatching,
+    isMultiChoice,
+    isOrdering,
+    isSelectFromOptions,
+    isTrueFalse,
+    matchingPairs,
+    order,
+    selectedOption,
+    selectedSet,
+    textAnswer,
+    clozeInputs,
+  ]);
+
+  // 只在「翻面」瞬间计算一次并上报，避免后续依赖变化重复触发
+  const wasRevealedRef = useRef(false);
+  useEffect(() => {
+    const shouldEmit = showAnswer && !wasRevealedRef.current;
+    wasRevealedRef.current = showAnswer;
+    if (!shouldEmit) return;
+    const verdict = computeVerdict();
+    if (verdict) onVerdictChange?.(verdict);
+    // 仅在 showAnswer 变化时评估，computeVerdict 通过闭包读取最新状态
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showAnswer]);
 
   return (
     <div className="w-full pb-4 md:pb-6">

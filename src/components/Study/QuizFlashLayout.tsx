@@ -1,4 +1,4 @@
-import { useMemo, memo, useEffect } from "react";
+import { useMemo, memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { StudyCard } from "@shared/types";
@@ -18,7 +18,7 @@ import {
   resolvePrimaryTextStyle,
 } from "../../utils/quizTypography";
 import { useCardCountdown } from "../../hooks/study/useCardCountdown";
-import { QuizOptionArea } from "./QuizOptionArea";
+import { QuizOptionArea, type ObjectiveVerdict } from "./QuizOptionArea";
 import { QuizCountdownTimer } from "./QuizCountdownTimer";
 import { QuizAnswerExplanation } from "./QuizAnswerExplanation";
 import { QuizRatingBar } from "./QuizRatingBar";
@@ -47,6 +47,8 @@ export interface QuizFlashLayoutProps {
   onSetShowAnswer: (show: boolean) => void;
   onPrev?: () => void;
   onNext?: () => void;
+  /** 客观建议评分变化时上报（供 Space/Enter 快捷键应用建议分） */
+  onSuggestedQualityChange?: (quality: number | null) => void;
 }
 
 export const QuizFlashLayout = memo(function QuizFlashLayout({
@@ -69,6 +71,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
   onSetShowAnswer,
   onPrev,
   onNext,
+  onSuggestedQualityChange,
 }: QuizFlashLayoutProps) {
   const { t } = useTranslation();
 
@@ -80,8 +83,27 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
       timerSeconds: s.timerSeconds,
     })),
   );
+  const interleaveMode = useQuizSettingsStore((s) => s.interleaveMode);
+  const hideCategory = interleaveMode && !showAnswer;
   const primaryTextStyle = resolvePrimaryTextStyle(fontSize, lineHeight);
   const flashWidthClass = resolveFlashWidthClass(contentWidthMode);
+
+  // 客观判定结果（来自 QuizOptionArea），用于预选默认评分；切换卡片时重置
+  const [autoVerdict, setAutoVerdict] = useState<Exclude<ObjectiveVerdict, null> | null>(null);
+  const suggestedQuality = autoVerdict === "correct" ? 3 : autoVerdict === "incorrect" ? 1 : null;
+
+  useEffect(() => {
+    setAutoVerdict(null);
+    onSuggestedQualityChange?.(null);
+    // 卡片切换即视为一次新回答，清空上一张的判定与建议
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCard.id]);
+
+  useEffect(() => {
+    onSuggestedQualityChange?.(suggestedQuality);
+    // 仅在判定结果变化时上报，onSuggestedQualityChange 为稳定回调
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestedQuality]);
 
   // 每题限时倒计时：超时自动显示答案（视为未答）
   const { remaining: remainingSeconds } = useCardCountdown({
@@ -524,7 +546,9 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                   </div>
                   {/* 第2行：考察点（左 grow flex-1）+ 复习时间信息（右 shrink-0）—— 两信息同排，空时间不造伪语义*/}
                   <div className="mt-2 md:mt-3 w-full flex items-start justify-between gap-2 md:gap-3">
-                    <FocusTopicBadge focusTopic={currentCard.focus_topic ?? undefined} variant="pill" grow />
+                    {!hideCategory && (
+                      <FocusTopicBadge focusTopic={currentCard.focus_topic ?? undefined} variant="pill" grow />
+                    )}
                     <CardDatesLine card={currentCard} isDark={isDark} isMobile={isMobile} className="shrink-0" />
                   </div>
                   <div
@@ -567,6 +591,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                   isDark={isDark}
                   isMobile={isMobile}
                   onSetShowAnswer={onSetShowAnswer}
+                  onVerdictChange={setAutoVerdict}
                 />
 
                 {showAnswer && (
@@ -594,8 +619,8 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
 
               <div className="pt-3 md:pt-4">
                 <CardSourceLine
-                  knowledgePointTitle={currentCard.knowledgePointTitle}
-                  graphTitle={currentCard.graphTitle}
+                  knowledgePointTitle={hideCategory ? null : currentCard.knowledgePointTitle}
+                  graphTitle={hideCategory ? null : currentCard.graphTitle}
                 />
               </div>
 
@@ -633,6 +658,7 @@ export const QuizFlashLayout = memo(function QuizFlashLayout({
                         updateProgressMutation={updateProgressMutation}
                         isDark={isDark}
                         isMobile={isMobile}
+                        autoVerdict={autoVerdict}
                         onRate={onRate}
                       />
                     </motion.div>

@@ -565,6 +565,7 @@ export const Study = () => {
               onSetShowAnswer={cardReview.setShowAnswer}
               onPrev={cardReview.handlePrevCard}
               onNext={handleNextCardPure}
+              onSuggestedQualityChange={cardReview.setSuggestedQuality}
             />
           </QuizActiveShell>
         </div>

@@ -204,6 +204,7 @@ export const QuizViewActive = memo(function QuizViewActive(props: QuizViewActive
           onSetShowAnswer={props.onSetShowAnswer}
           onPrev={handlePrevCardProp}
           onNext={handleNextCardProp}
+          onSuggestedQualityChange={props.onSuggestedQualityChange}
           _swipeDirection={props.swipeDirection}
           _onDragEnd={props.onDragEnd}
           _cardKey={props.cardKey}

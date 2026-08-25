@@ -232,6 +232,8 @@
     "wrongRequeueHint": "Wrong or low-rated cards are re-queued for another pass",
     "examShuffleQuestions": "Shuffle exam question order",
     "examShuffleQuestionsHint": "Randomize the whole paper when starting a quiz/exam",
+    "interleaveMode": "Interleaved practice",
+    "interleaveModeHint": "Spread across knowledge points and hide the focus-topic label before answering",
     "resetSettings": "Reset to defaults"
   },
   "quiz": {
@@ -306,7 +308,11 @@
     "hard": "Hard",
     "good": "Good",
     "easy": "Easy",
-    "submitting": "Submitting…"
+    "submitting": "Submitting…",
+    "judgedCorrect": "Judged correct",
+    "judgedWrong": "Judged wrong",
+    "suggested": "Suggested",
+    "nextReview": "Next review in {{days}} days"
   },
   "messages": {
     "noCardsToReview": "No cards to review",
@@ -442,6 +448,8 @@
       "gradingComplete": "Grading complete. Click a question on the left to review.",
       "retry": "Retake Quiz",
       "backToQuiz": "Back to Quiz List",
+      "weaknessTitle": "Weak points",
+      "weaknessGo": "Fill gap",
       "assistantTitle": "AI Tutor",
       "assistantHint": "Ask about the current question; AI answers with the question and your answer in context",
       "assistantEmpty": "e.g. What did I get wrong? What is the key knowledge point here?",

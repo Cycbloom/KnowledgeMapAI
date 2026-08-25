@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
@@ -6,6 +7,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Compass,
   Loader2,
   RefreshCw,
   Send,
@@ -50,6 +52,7 @@ export const QuizExamGrading = ({
   onRetry,
 }: QuizExamGradingProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -92,6 +95,31 @@ export const QuizExamGrading = ({
       }),
     [cards, grades, selectedIndex],
   );
+
+  /** 错题按考察点（focus_topic 优先）聚合，作为弱项清单供回链图谱补齐 */
+  const weakTopics = useMemo(() => {
+    const groups = new Map<string, { count: number; graphId: string; kpId: string; label: string }>();
+    for (const card of cards) {
+      const grade = grades[card.id];
+      if (grade?.isCorrect !== false) continue;
+      const kpId = card.knowledge_point_id;
+      if (!kpId && !card.graph_id) continue;
+      const key = card.focus_topic?.trim() || card.knowledgePointTitle?.trim() || kpId || 'uncategorized';
+      const label = card.focus_topic?.trim() || card.knowledgePointTitle?.trim() || key;
+      const exist = groups.get(key);
+      if (exist) {
+        exist.count += 1;
+      } else {
+        groups.set(key, { count: 1, graphId: card.graph_id, kpId, label });
+      }
+    }
+    return Array.from(groups.values()).sort((a, b) => b.count - a.count);
+  }, [cards, grades]);
+
+  const goToWeakPoint = (graphId: string, kpId: string) => {
+    const base = `/learning?graph_id=${encodeURIComponent(graphId)}`;
+    navigate(kpId ? `${base}&node_id=${encodeURIComponent(kpId)}` : base);
+  };
 
   const scrollChatToEnd = () => {
     requestAnimationFrame(() => {
@@ -233,6 +261,43 @@ export const QuizExamGrading = ({
               isDark={isDark}
               counts={{ correct: summary.correct, wrong: summary.total - summary.correct }}
             />
+
+            {weakTopics.length > 0 && (
+              <div className="mt-4">
+                <div className={`flex items-center gap-1.5 mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                  <Compass size={14} className={isDark ? 'text-amber-400' : 'text-amber-600'} />
+                  <span className="text-xs font-bold">
+                    {t('study.quizPractice.exam.weaknessTitle', '错题弱项')}
+                  </span>
+                </div>
+                <ul className="space-y-2">
+                  {weakTopics.map((topic) => (
+                    <li
+                      key={topic.kpId || topic.label}
+                      className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left ${
+                        isDark ? 'border-slate-700 bg-slate-900/40' : 'border-gray-200 bg-slate-50'
+                      }`}
+                    >
+                      <span className={`flex-1 min-w-0 truncate text-xs ${isDark ? 'text-slate-300' : 'text-gray-700'}`} title={topic.label}>
+                        {topic.label}
+                      </span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                        isDark ? 'bg-amber-900/40 text-amber-300' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {topic.count}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => goToWeakPoint(topic.graphId, topic.kpId)}
+                        className="inline-flex items-center gap-0.5 shrink-0 text-[11px] font-medium text-primary-500 hover:text-primary-600"
+                      >
+                        {t('study.quizPractice.exam.weaknessGo', '去补齐')}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <div className="flex-1 min-w-0 space-y-4">

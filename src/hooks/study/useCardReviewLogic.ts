@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { StudyCard } from "@shared/types";
 import { useUpdateCardProgressMutation } from "../mutations";
@@ -17,6 +17,7 @@ export const useCardReviewLogic = ({
   const { t } = useTranslation();
   const updateProgressMutation = useUpdateCardProgressMutation();
   const wrongRequeue = useQuizSettingsStore((s) => s.wrongRequeue);
+  const interleaveMode = useQuizSettingsStore((s) => s.interleaveMode);
 
   const [quizCards, setQuizCards] = useState<StudyCard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -94,6 +95,45 @@ export const useCardReviewLogic = ({
     [semanticSimilarityMap],
   );
 
+  /**
+   * 交错式练习排程：按知识点分组后轮询取卡，保证相邻两张尽量来自不同知识点。
+   * 组内先打乱，跨组顺序轮询，制造「需要区分概念」的检索难度（区别于纯粹就近相似性的 semanticAwareShuffle）。
+   */
+  const interleaveShuffle = useCallback((cards: StudyCard[]) => {
+    const groups = new Map<string, StudyCard[]>();
+    for (const card of cards) {
+      const key = card.knowledge_point_id || card.id;
+      const arr = groups.get(key) ?? [];
+      arr.push(card);
+      groups.set(key, arr);
+    }
+    for (const arr of groups.values()) arr.sort(() => Math.random() - 0.5);
+    const keys = Array.from(groups.keys()).sort(() => Math.random() - 0.5);
+    const result: StudyCard[] = [];
+    while (result.length < cards.length) {
+      let added = false;
+      for (const key of keys) {
+        const card = groups.get(key)?.shift();
+        if (card) {
+          result.push(card);
+          added = true;
+        }
+      }
+      if (!added) break;
+    }
+    cards.length = 0;
+    cards.push(...result);
+  }, []);
+
+  /** 按当前设置选择排程策略 */
+  const shuffleForReview = useCallback(
+    (cards: StudyCard[]) => {
+      if (interleaveMode) interleaveShuffle(cards);
+      else semanticAwareShuffle(cards);
+    },
+    [interleaveMode, interleaveShuffle, semanticAwareShuffle],
+  );
+
   const handleNextCard = useCallback(() => {
     if (currentCardIndex < quizCards.length - 1) {
       setCurrentCardIndex((prev) => prev + 1);
@@ -117,6 +157,16 @@ export const useCardReviewLogic = ({
     }
   }, [currentCardIndex]);
 
+  // 评分成功后根据 FSRS 排期提示下次复习（仅当间隔 >=1 天且为正向评分，避免打扰）
+  const showNextReviewHint = useCallback(
+    (updatedCard: StudyCard) => {
+      const days = updatedCard?.fsrs_scheduled_days;
+      if (typeof days !== "number" || !Number.isFinite(days) || days < 1) return;
+      message.success(t("study.rating.nextReview", { days: Math.round(days) }));
+    },
+    [t],
+  );
+
   const handleRate = useCallback(
     async (quality: number) => {
       if (!quizCards[currentCardIndex]) return;
@@ -129,6 +179,7 @@ export const useCardReviewLogic = ({
           id: quizCards[currentCardIndex].id,
           quality,
         });
+        if (quality >= 3) showNextReviewHint(updatedCard);
         if (quality < 3 && wrongRequeue) {
           // 错题自动重练：把刚答错/评价不佳的卡插到队尾，稍后再练；
           // 队列变长，因此不触发展示结束，而是前进到下一题。
@@ -151,7 +202,7 @@ export const useCardReviewLogic = ({
         message.error(t("study.messages.saveProgressFailed"));
       }
     },
-    [quizCards, currentCardIndex, updateProgressMutation, handleNextCard, t, wrongRequeue],
+    [quizCards, currentCardIndex, updateProgressMutation, handleNextCard, showNextReviewHint, t, wrongRequeue],
   );
 
   const handleSwipeRate = useCallback(
@@ -166,6 +217,7 @@ export const useCardReviewLogic = ({
           id: quizCards[currentCardIndex].id,
           quality,
         });
+        if (quality >= 3) showNextReviewHint(updatedCard);
         setQuizCards((prev) =>
           prev.map((card) => (card.id === updatedCard.id ? updatedCard : card)),
         );
@@ -175,7 +227,7 @@ export const useCardReviewLogic = ({
         message.error(t("study.messages.saveProgressFailed"));
       }
     },
-    [quizCards, currentCardIndex, updateProgressMutation, t],
+    [quizCards, currentCardIndex, updateProgressMutation, showNextReviewHint, t],
   );
 
   const handleRestart = useCallback(() => {
@@ -193,10 +245,10 @@ export const useCardReviewLogic = ({
 
     setQuizCards((prev) => {
       const next = [...prev];
-      semanticAwareShuffle(next);
+      shuffleForReview(next);
       return next;
     });
-  }, [semanticAwareShuffle]);
+  }, [shuffleForReview]);
 
   const handleDragEnd = useCallback(
     (
@@ -236,7 +288,7 @@ export const useCardReviewLogic = ({
   const startCardReview = useCallback(
     (cards: StudyCard[]) => {
       const next = [...cards];
-      semanticAwareShuffle(next);
+      shuffleForReview(next);
       setQuizCards(next);
       setCurrentCardIndex(0);
       setFinished(false);
@@ -248,7 +300,7 @@ export const useCardReviewLogic = ({
       setReviewedCount(0);
       setCorrectCount(0);
     },
-    [semanticAwareShuffle],
+    [shuffleForReview],
   );
 
   const practiceSingleCard = useCallback((card: StudyCard) => {
@@ -295,6 +347,12 @@ export const useCardReviewLogic = ({
     !finished &&
     !!currentCard;
 
+  /** 布局上报的客观建议评分（1/3），供 Space/Enter 快捷键一键应用；null 时回退 Good(3) */
+  const suggestedQualityRef = useRef<number | null>(null);
+  const setSuggestedQuality = useCallback((quality: number | null) => {
+    suggestedQualityRef.current = quality;
+  }, []);
+
   useEffect(() => {
     if (!canRateWithKeyboard) return;
 
@@ -321,7 +379,7 @@ export const useCardReviewLogic = ({
         handleRate(4);
       } else if (key === " " || key === "Enter") {
         event.preventDefault();
-        handleRate(3);
+        handleRate(suggestedQualityRef.current ?? 3);
       }
     };
 
@@ -365,6 +423,7 @@ export const useCardReviewLogic = ({
     handlePrevCard,
     handleRestart,
     handleDragEnd,
+    setSuggestedQuality,
     semanticAwareShuffle,
     startCardReview,
     practiceSingleCard,

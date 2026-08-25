@@ -103,6 +103,8 @@ export interface UserSettingsQuiz {
   wrongRequeue: boolean;
   /** 测验模式进入时随机打乱整卷题目顺序 */
   examShuffleQuestions: boolean;
+  /** 交错式练习：跨知识点尽量打散排序，并把题目具体考察点标签在作答前隐藏 */
+  interleaveMode: boolean;
 }
 
 // ---------------------------------------------------------------------------

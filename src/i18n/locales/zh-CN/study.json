@@ -232,6 +232,8 @@
     "wrongRequeueHint": "答错或评价不佳的题自动插到队尾稍后再练",
     "examShuffleQuestions": "测验随机题目顺序",
     "examShuffleQuestionsHint": "进入测验时随机打乱整卷题目顺序",
+    "interleaveMode": "交错式练习",
+    "interleaveModeHint": "跨知识点尽量打散排序，并在作答前隐藏考察点标签",
     "resetSettings": "恢复默认设置"
   },
   "quiz": {
@@ -306,7 +308,11 @@
     "hard": "困难",
     "good": "良好",
     "easy": "简单",
-    "submitting": "提交中…"
+    "submitting": "提交中…",
+    "judgedCorrect": "客观判定：已答对",
+    "judgedWrong": "客观判定：答错了",
+    "suggested": "建议",
+    "nextReview": "下次复习 {{days}} 天后"
   },
   "messages": {
     "noCardsToReview": "没有需要复习的卡片",
@@ -442,6 +448,8 @@
       "gradingComplete": "评分完成，点击左侧题目查看对错与解析",
       "retry": "重新测验",
       "backToQuiz": "返回测验列表",
+      "weaknessTitle": "错题弱项",
+      "weaknessGo": "去补齐",
       "assistantTitle": "AI 助教",
       "assistantHint": "可就当前题目提问，AI 会结合题干与你的答案作答",
       "assistantEmpty": "例如：我哪里答错了？这道题的关键知识点是什么？",

@@ -145,10 +145,23 @@ export const Achievements = () => {
       }
     }
   }
-  
-  const level = user?.profile?.level || 1;
-  const currentXp = user?.profile?.xp || 0;
-  const xpNeeded = level * 500;
+
+  // 等级进度与总经验必须同源，避免出现"总 XP 7000 却卡在 Level 1 0/500"
+  // 这种矛盾——原实现从 user.profile.xp/level 读（Supabase auth user_metadata 的
+  // 影子字段，不会随 addXp 写 public.users.xp/level 同步更新）。
+  // 改用 totalLifetimeXp 为唯一权威，并复用后端 addXp 相同的阈值算法：
+  //   Level 1 门槛 = 500；Level 2 门槛 = 1000 ……
+  const { level, currentXp, xpNeeded } = useMemo(() => {
+    let lv = 1;
+    let remaining = totalLifetimeXp;
+    let threshold = lv * 500;
+    while (remaining >= threshold) {
+      remaining -= threshold;
+      lv += 1;
+      threshold = lv * 500;
+    }
+    return { level: lv, currentXp: remaining, xpNeeded: threshold };
+  }, [totalLifetimeXp]);
   const levelProgress = Math.min(100, (currentXp / xpNeeded) * 100);
 
   const categories = {

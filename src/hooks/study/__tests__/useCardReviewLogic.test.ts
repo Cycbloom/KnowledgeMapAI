@@ -20,6 +20,12 @@ vi.mock("../../mutations", () => ({
   }),
 }));
 
+// 固定 quiz 设置：wrongRequeue 开启以覆盖错题自动重练分支，interleaveMode 关闭走默认排程
+vi.mock("../../../store/useQuizSettingsStore", () => ({
+  useQuizSettingsStore: (selector: (s: { wrongRequeue: boolean; interleaveMode: boolean }) => unknown) =>
+    selector({ wrongRequeue: true, interleaveMode: false }),
+}));
+
 function makeCard(overrides: Partial<StudyCard> = {}): StudyCard {
   return {
     id: "card-1",
@@ -148,6 +154,24 @@ describe("useCardReviewLogic", () => {
     await act(async () => { await result.current.handleRate(1); });
     expect(result.current.reviewedCount).toBe(1);
     expect(result.current.correctCount).toBe(0);
+  });
+
+  it("错题重练推进到下一张时应重置 showAnswer 与 selectedOption", async () => {
+    const { result } = renderHook_();
+    act(() => { result.current.startCardReview([makeCard({ id: "1" }), makeCard({ id: "2" })]); });
+    // 模拟：用户已作答并翻面
+    act(() => {
+      result.current.setShowAnswer(true);
+      result.current.setSelectedOption("wrong");
+    });
+    await act(async () => { await result.current.handleRate(1); });
+    // 答错触发重练：索引前进，且下一张卡必须处于未翻面、无选中状态
+    expect(result.current.currentCardIndex).toBe(1);
+    expect(result.current.showAnswer).toBe(false);
+    expect(result.current.selectedOption).toBeNull();
+    // 该卡被插到队尾，等待再次练习
+    expect(result.current.quizCards).toHaveLength(3);
+    expect(result.current.quizCards[2].id).toBe("1");
   });
 
   it("handleRate 在 mutation 失败时应该发布错误消息", async () => {

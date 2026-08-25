@@ -191,6 +191,10 @@ export const useCardReviewLogic = ({
             return next;
           });
           setCurrentCardIndex((prev) => prev + 1);
+          // 与 handleNextCard 一致地重置作答状态：否则下一张卡会以
+          // showAnswer=true（未作答即展示答案）及上一张的选中项进入。
+          setShowAnswer(false);
+          setSelectedOption(null);
         } else {
           setQuizCards((prev) =>
             prev.map((card) => (card.id === updatedCard.id ? updatedCard : card)),

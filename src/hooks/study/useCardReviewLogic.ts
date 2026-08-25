@@ -127,10 +127,23 @@ export const useCardReviewLogic = ({
           id: quizCards[currentCardIndex].id,
           quality,
         });
-        setQuizCards((prev) =>
-          prev.map((card) => (card.id === updatedCard.id ? updatedCard : card)),
-        );
-        handleNextCard();
+        if (quality < 3) {
+          // 错题自动重练：把刚答错/评价不佳的卡插到队尾，稍后再练；
+          // 队列变长，因此不触发展示结束，而是前进到下一题。
+          setQuizCards((prev) => {
+            const next = prev.map((card) =>
+              card.id === updatedCard.id ? updatedCard : card,
+            );
+            next.push(updatedCard);
+            return next;
+          });
+          setCurrentCardIndex((prev) => prev + 1);
+        } else {
+          setQuizCards((prev) =>
+            prev.map((card) => (card.id === updatedCard.id ? updatedCard : card)),
+          );
+          handleNextCard();
+        }
       } catch (err) {
         console.error(err);
         message.error(t("study.messages.saveProgressFailed"));

@@ -265,6 +265,8 @@ export const useGraphAIOperations = ({
     showLevelTestProgress(0, taskIds.length);
     const intervalMs = 3000;
     const maxAttempts = 200;
+    const maxConsecutivePollFailures = 5;
+    let consecutivePollFailures = 0;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
       if (!challengePendingRef.current) {
@@ -274,6 +276,19 @@ export const useGraphAIOperations = ({
       const statuses = await Promise.all(
         taskIds.map((taskId) => api.ai.getTaskStatus(taskId).catch(() => null)),
       );
+      // 全部查询失败视为网络/服务异常：连续超过阈值即终止，
+      // 避免瞬时故障让 allSettled 永不成立而空转到 maxAttempts
+      if (statuses.every((s) => s === null)) {
+        consecutivePollFailures++;
+        if (consecutivePollFailures >= maxConsecutivePollFailures) {
+          message.dismiss(LEVEL_TEST_PROGRESS_MSG_ID);
+          challengePendingRef.current = false;
+          message.error(t('nodeDetail.levelTestGenerateFailed'));
+          return;
+        }
+        continue;
+      }
+      consecutivePollFailures = 0;
       const fetched = statuses.filter((s): s is { status: string } => !!s);
       const completedCount = fetched.filter((s) => s.status === "completed").length;
       showLevelTestProgress(completedCount, taskIds.length);

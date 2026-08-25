@@ -592,12 +592,27 @@ export const LearningMode = () => {
     setGenerateProgress({ current: 0, total: taskIds.length, isGenerating: true });
     const intervalMs = 3000;
     const maxAttempts = 200;
+    const maxConsecutivePollFailures = 5;
+    let consecutivePollFailures = 0;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
       if (!isChallengePendingRef.current) return;
       const statuses = await Promise.all(
         taskIds.map((id) => api.ai.getTaskStatus(id).catch(() => null)),
       );
+      // 全部查询失败视为网络/服务异常：连续超过阈值即终止，
+      // 避免瞬时故障让 allSettled 永不成立而空转到 maxAttempts
+      if (statuses.every((s) => s === null)) {
+        consecutivePollFailures++;
+        if (consecutivePollFailures >= maxConsecutivePollFailures) {
+          setGenerateProgress(null);
+          isChallengePendingRef.current = false;
+          msgHelper.error(t("learning.challenge.challengeGenerateFailed"));
+          return;
+        }
+        continue;
+      }
+      consecutivePollFailures = 0;
       const fetched = statuses.filter((s): s is { status: string } => !!s);
       const completedCount = fetched.filter((s) => s.status === "completed").length;
       setGenerateProgress({ current: completedCount, total: taskIds.length, isGenerating: true });

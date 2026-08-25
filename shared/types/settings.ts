@@ -95,6 +95,8 @@ export interface UserSettingsQuiz {
   fontSize: number;
   lineHeight: UserSettingsLineHeight;
   contentWidthMode: UserSettingsContentWidthMode;
+  /** 每题倒计时（秒）；0 表示关闭倒计时 */
+  timerSeconds: number;
 }
 
 // ---------------------------------------------------------------------------

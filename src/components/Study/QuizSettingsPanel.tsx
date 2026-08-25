@@ -10,6 +10,7 @@ import {
   GripHorizontal,
   Maximize2,
   Minimize2,
+  Timer,
 } from "lucide-react";
 import { useQuizSettingsStore } from "../../store/useQuizSettingsStore";
 import { useShallow } from "zustand/react/shallow";
@@ -36,18 +37,22 @@ export const QuizSettingsPanel: React.FC<QuizSettingsPanelProps> = ({
     fontSize,
     lineHeight,
     contentWidthMode,
+    timerSeconds,
     setFontSize,
     setLineHeight,
     setContentWidthMode,
+    setTimerSeconds,
     resetSettings,
   } = useQuizSettingsStore(
     useShallow((s) => ({
       fontSize: s.fontSize,
       lineHeight: s.lineHeight,
       contentWidthMode: s.contentWidthMode,
+      timerSeconds: s.timerSeconds,
       setFontSize: s.setFontSize,
       setLineHeight: s.setLineHeight,
       setContentWidthMode: s.setContentWidthMode,
+      setTimerSeconds: s.setTimerSeconds,
       resetSettings: s.resetSettings,
     })),
   );
@@ -300,6 +305,55 @@ export const QuizSettingsPanel: React.FC<QuizSettingsPanelProps> = ({
                 );
               })}
             </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Timer
+                size={16}
+                className="text-slate-500 dark:text-slate-400"
+              />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t("study.settings.timerSeconds")}
+              </span>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label={t("study.settings.timerSeconds")}
+              className="grid grid-cols-4 gap-2"
+            >
+              {(
+                [
+                  { value: 0, label: t("study.settings.timerOff") },
+                  { value: 10, label: t("study.settings.timer10") },
+                  { value: 30, label: t("study.settings.timer30") },
+                  { value: 60, label: t("study.settings.timer60") },
+                ] as const
+              ).map((opt) => {
+                const isSelected = timerSeconds === opt.value;
+                return (
+                  <motion.button
+                    key={opt.value}
+                    onClick={() => setTimerSeconds(opt.value)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={isSelected ? 0 : -1}
+                    className={`py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                      isSelected
+                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300"
+                        : "border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    {opt.label}
+                  </motion.button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              {t("study.settings.timerHint")}
+            </p>
           </div>
 
           <div className="pt-2">

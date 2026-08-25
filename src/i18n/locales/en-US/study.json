@@ -218,6 +218,12 @@
     "widthFull": "Full",
     "widthComfortable": "Comfortable",
     "widthNarrow": "Narrow",
+    "timerSeconds": "Per-question timer",
+    "timerOff": "Off",
+    "timer10": "10s",
+    "timer30": "30s",
+    "timer60": "60s",
+    "timerHint": "Auto-reveals the answer when time runs out",
     "resetSettings": "Reset to defaults"
   },
   "quiz": {

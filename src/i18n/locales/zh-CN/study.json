@@ -218,6 +218,12 @@
     "widthFull": "全宽",
     "widthComfortable": "舒适",
     "widthNarrow": "窄",
+    "timerSeconds": "每题限时",
+    "timerOff": "关闭",
+    "timer10": "10秒",
+    "timer30": "30秒",
+    "timer60": "60秒",
+    "timerHint": "倒计时结束自动显示答案",
     "resetSettings": "恢复默认设置"
   },
   "quiz": {

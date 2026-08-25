@@ -3,6 +3,7 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { notDeleted } from '../common/softDeleteHelper';
+import { checkGraphAccess as checkGraphAccessCore } from '../common/graphAccess';
 
 // Supported sync tables configuration
 interface SyncTableConfig {
@@ -448,24 +449,9 @@ export class SyncService {
     graphId: string,
     userId: string,
   ): Promise<boolean> {
-    const { data: graph } = await supabase
-      .from("knowledge_graphs")
-      .select("user_id")
-      .eq("id", graphId)
-      .maybeSingle();
-
-    if (graph?.user_id === userId) return true;
-
-    // Check collaborator
-    const { data: collab } = await supabase
-      .from("graph_collaborators")
-      .select("role")
-      .eq("graph_id", graphId)
-      .eq("user_id", userId)
-      .not("accepted_at", "is", null)
-      .maybeSingle();
-
-    return !!collab;
+    // 委托公共访问校验模块；sync 语义仅 owner-or-collaborator（不含公共图谱）。
+    const result = await checkGraphAccessCore(supabase, graphId, userId);
+    return result.hasAccess;
   }
 
   /**

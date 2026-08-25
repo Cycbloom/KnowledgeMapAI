@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import i18next from "i18next";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { notDeleted } from "../common/softDeleteHelper";
+import { checkGraphAccess as checkGraphAccessCore } from "../common/graphAccess";
 import { logger } from "../../utils/logger";
 import {
   checkDuplicateGraphTopic,
@@ -667,44 +668,10 @@ export async function checkGraphAccess(
   userId: string,
   requiredRole: "viewer" | "editor" | "owner" = "viewer",
 ): Promise<{ hasAccess: boolean; role?: CollaboratorRole; error?: string }> {
-  const { data: graph, error } = await getSupabaseAdmin()
-    .from("knowledge_graphs")
-    .select("user_id, is_public")
-    .eq("id", graphId)
-    .single();
-
-  if (error || !graph) {
-    return { hasAccess: false, error: "图谱不存在" };
-  }
-
-  if (graph.user_id === userId) {
-    return { hasAccess: true, role: "owner" };
-  }
-
-  if (graph.is_public && requiredRole === "viewer") {
-    return { hasAccess: true, role: undefined };
-  }
-
-  const { data: collaborator } = await getSupabaseAdmin()
-    .from("graph_collaborators")
-    .select("role")
-    .eq("graph_id", graphId)
-    .eq("user_id", userId)
-    .not("accepted_at", "is", null)
-    .single();
-
-  if (!collaborator) {
-    return { hasAccess: false, error: "无权访问此图谱" };
-  }
-
-  const role = collaborator.role as CollaboratorRole;
-  const roleHierarchy: Record<CollaboratorRole, number> = {
-    owner: 3,
-    editor: 2,
-    viewer: 1,
-  };
-
-  const hasAccess = roleHierarchy[role] >= roleHierarchy[requiredRole];
-
-  return { hasAccess, role };
+  // 委托公共访问校验模块（admin client 绕过 RLS 做服务端校验，
+  // 保留公共图谱 viewer 访问语义）。
+  return checkGraphAccessCore(getSupabaseAdmin(), graphId, userId, {
+    requiredRole,
+    includePublic: true,
+  });
 }

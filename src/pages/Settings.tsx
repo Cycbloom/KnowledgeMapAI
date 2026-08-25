@@ -45,6 +45,7 @@ import {
   StudyAlgorithmSettings,
   GraphEditorSettings,
   ShortcutSettings,
+  QuizModeSettings,
   NotificationSettings,
 } from "../components/Settings";
 import { DEFAULT_AVAILABLE_MODES, type DatabaseConfig } from "../components/Settings/settingsConstants";
@@ -114,6 +115,7 @@ export const Settings = () => {
     { id: "studyStrategy", label: t("settings.sections.studyStrategy") },
     { id: "studyAlgorithm", label: t("settings.sections.studyAlgorithm") },
     { id: "graphEditor", label: t("settings.sections.graphEditor") },
+    { id: "quizMode", label: t("settings.sections.quizMode") },
     { id: "shortcuts", label: t("settings.sections.shortcuts") },
     { id: "notifications", label: t("settings.sections.notifications") },
     { id: "tags", label: t("settings.sections.tags") },
@@ -451,6 +453,14 @@ export const Settings = () => {
               }}
             >
               <GraphEditorSettings />
+            </section>
+            <section
+              id="quizMode"
+              ref={(el) => {
+                if (el) sectionRefs.current.quizMode = el;
+              }}
+            >
+              <QuizModeSettings />
             </section>
             <section
               id="shortcuts"

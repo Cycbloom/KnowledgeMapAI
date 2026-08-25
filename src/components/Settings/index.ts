@@ -9,4 +9,5 @@ export { StudyStrategySettings } from "./StudyStrategySettings";
 export { StudyAlgorithmSettings } from "./StudyAlgorithmSettings";
 export { GraphEditorSettings } from "./GraphEditorSettings";
 export { ShortcutSettings } from "./ShortcutSettings";
+export { QuizModeSettings } from "./QuizModeSettings";
 export { NotificationSettings } from "./NotificationSettings";

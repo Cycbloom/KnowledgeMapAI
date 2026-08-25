@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Node, Edge, BranchSuggestion, ExplorationPathItem, StudyCard } from '../../types';
 import type { GenerateCardsFullConfig } from '../../components/Learning/GenerateCardsModal';
+import { useLevelTestNotificationStore } from '../../store/useLevelTestNotificationStore';
 import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
 import type { AIAction } from '@shared/types/ai';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../utils/graph/graphUtils';
@@ -27,9 +28,6 @@ interface AIExpandResult {
     level?: string;
   }>;
 }
-
-const TASK_TERMINAL_STATUSES = ["completed", "failed", "cancelled"];
-const LEVEL_TEST_PROGRESS_MSG_ID = "level-test-generation-progress";
 
 interface AIExpandVariables {
   node_title: string;
@@ -224,7 +222,6 @@ export const useGraphAIOperations = ({
   };
 
   const [isChallengeGenOpen, setIsChallengeGenOpen] = useState(false);
-  const challengePendingRef = useRef(false);
 
   const startLevelTestSession = () => {
     if (!selectedNode || !id) return;
@@ -239,7 +236,6 @@ export const useGraphAIOperations = ({
         ? result
         : ((result as unknown as { cards?: StudyCard[] }).cards ?? []);
       if (cards.length === 0) {
-        challengePendingRef.current = true;
         setIsChallengeGenOpen(true);
         message.info(t('nodeDetail.levelTestNoCards'));
         return;
@@ -252,65 +248,6 @@ export const useGraphAIOperations = ({
 
   const handleCloseChallengeGen = () => {
     setIsChallengeGenOpen(false);
-    challengePendingRef.current = false;
-  };
-
-  const showLevelTestProgress = (done: number, total: number) => {
-    message.loading(t('nodeDetail.levelTestGeneratingProgress', { current: done, total }), {
-      id: LEVEL_TEST_PROGRESS_MSG_ID,
-    });
-  };
-
-  const pollGenerationTasksThenStartTest = async (taskIds: string[]) => {
-    showLevelTestProgress(0, taskIds.length);
-    const intervalMs = 3000;
-    const maxAttempts = 200;
-    const maxConsecutivePollFailures = 5;
-    let consecutivePollFailures = 0;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      await new Promise((resolve) => setTimeout(resolve, intervalMs));
-      if (!challengePendingRef.current) {
-        message.dismiss(LEVEL_TEST_PROGRESS_MSG_ID);
-        return;
-      }
-      const statuses = await Promise.all(
-        taskIds.map((taskId) => api.ai.getTaskStatus(taskId).catch(() => null)),
-      );
-      // 全部查询失败视为网络/服务异常：连续超过阈值即终止，
-      // 避免瞬时故障让 allSettled 永不成立而空转到 maxAttempts
-      if (statuses.every((s) => s === null)) {
-        consecutivePollFailures++;
-        if (consecutivePollFailures >= maxConsecutivePollFailures) {
-          message.dismiss(LEVEL_TEST_PROGRESS_MSG_ID);
-          challengePendingRef.current = false;
-          message.error(t('nodeDetail.levelTestGenerateFailed'));
-          return;
-        }
-        continue;
-      }
-      consecutivePollFailures = 0;
-      const fetched = statuses.filter((s): s is { status: string } => !!s);
-      const completedCount = fetched.filter((s) => s.status === "completed").length;
-      showLevelTestProgress(completedCount, taskIds.length);
-      const allSettled =
-        fetched.length === taskIds.length &&
-        fetched.every((s) => TASK_TERMINAL_STATUSES.includes(s.status));
-      if (allSettled) {
-        message.dismiss(LEVEL_TEST_PROGRESS_MSG_ID);
-        challengePendingRef.current = false;
-        if (completedCount === taskIds.length) {
-          message.success(t('nodeDetail.levelTestReady'));
-          setIsChallengeGenOpen(false);
-          startLevelTestSession();
-        } else {
-          message.error(t('nodeDetail.levelTestGenerateFailed'));
-        }
-        return;
-      }
-    }
-    message.dismiss(LEVEL_TEST_PROGRESS_MSG_ID);
-    challengePendingRef.current = false;
-    message.info(t('nodeDetail.levelTestGenerateTimeout'));
   };
 
   const handleChallengeGenerate = async (
@@ -368,8 +305,11 @@ export const useGraphAIOperations = ({
         count_matrix: countMatrix,
       });
 
-      if (result.success && result.taskIds?.length && challengePendingRef.current) {
-        await pollGenerationTasksThenStartTest(result.taskIds);
+      if (result.success && result.taskIds?.length) {
+        setIsChallengeGenOpen(false);
+        useLevelTestNotificationStore
+          .getState()
+          .startGenerationTracking(result.taskIds, selectedNode.id, id, 'graph');
         return;
       }
       if (result.success) {

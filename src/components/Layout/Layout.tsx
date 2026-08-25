@@ -36,6 +36,8 @@ import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
 import { NotificationCenter } from "../Notifications/NotificationCenter";
 import { AchievementNotification } from "../Scheduler/AchievementNotification";
+import { LevelTestNotification } from "../Learning/LevelTestNotification";
+import { useLevelTestNotificationStore } from "../../store/useLevelTestNotificationStore";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { useSwipeBack } from "../../hooks/gesture/useSwipeBack";
@@ -474,6 +476,22 @@ export const Layout = () => {
     [queryClient],
   );
 
+  const levelTestNotice = useLevelTestNotificationStore((s) => s.notice);
+
+  const handleLevelTestStart = useCallback(() => {
+    const notice = useLevelTestNotificationStore.getState().notice;
+    if (!notice) return;
+    const fromParam = notice.from === "learning" ? "learning" : "graph";
+    useLevelTestNotificationStore.getState().clearNotice();
+    navigate(
+      `/study?node_id=${notice.nodeId}&graph_id=${notice.graphId}&mode=quiz&from=${fromParam}`,
+    );
+  }, [navigate]);
+
+  const handleLevelTestClose = useCallback(() => {
+    useLevelTestNotificationStore.getState().clearNotice();
+  }, []);
+
   if (!!token && !user && isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -728,6 +746,11 @@ export const Layout = () => {
           <MessageBar bottomOffset={isMobile && !isFullScreenPage ? 56 : 0} />
           <OfflineIndicator />
           <AchievementNotification />
+          <LevelTestNotification
+            notice={levelTestNotice}
+            onClose={handleLevelTestClose}
+            onStart={handleLevelTestStart}
+          />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
           {isHelpOpen && (
             <Suspense fallback={null}>

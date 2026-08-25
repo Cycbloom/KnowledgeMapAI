@@ -21,6 +21,7 @@ import {
 import { useStudyModeLogic } from "../hooks/study/useStudyModeLogic";
 import { useLearningModeTimer } from "../hooks/study/useLearningModeTimer";
 import { useLinkedTask } from "../hooks/scheduler/useLinkedTask";
+import { useLevelTestNotificationStore } from "../store/useLevelTestNotificationStore";
 import {
   isAppError,
   isNetworkError,
@@ -35,6 +36,7 @@ const GenerateCardsModal = lazy(() =>
     default: module.GenerateCardsModal,
   })),
 );
+
 import { GraphOverviewPanel } from "../components/Learning/GraphOverviewPanel";
 import { GraphOverviewEditModal } from "../components/Learning/GraphOverviewEditModal";
 import { LearningFocusPanel } from "../components/Learning/LearningFocusPanel";
@@ -57,7 +59,6 @@ type RightPanelMode =
   | "literature-extract"
   | "concept-aggregation";
 type MaterialLanguage = "zh" | "en";
-const TASK_TERMINAL_STATUSES = ["completed", "failed", "cancelled"];
 
 export const LearningMode = () => {
   const { t } = useTranslation();
@@ -117,7 +118,7 @@ export const LearningMode = () => {
     current: number; total: number; isGenerating: boolean;
   } | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  // 挑战意图：节点无题打开发题对话框时置位，生成完成后自动进入挑战，关闭对话框即取消
+  // 挑战意图：节点无题打开发题对话框时置位，生成完成后以右下角通知提醒手动进入测验
   const isChallengePendingRef = useRef(false);
 
   const { enterFocusMode, exitFocusMode, highlightEnabled, setHighlightEnabled } = useFocusStore(
@@ -460,6 +461,17 @@ export const LearningMode = () => {
         // 题库批量：每个节点各产一份完整题量，卡片总数 = 节点数 × totalCards
         const totalExpected = totalCards * targetIds.length;
         setGenerateProgress({ current: 0, total: totalExpected, isGenerating: true });
+        if (isChallengePendingRef.current) {
+          setIsGenModalOpen(false);
+          useLevelTestNotificationStore.getState().setNotice({
+            status: "generating",
+            current: 0,
+            total: totalExpected,
+            nodeId: nodeId ?? "",
+            graphId: graphId ?? "",
+            from: "learning",
+          });
+        }
 
         let generatedCount = 0;
         let savedCount = 0;
@@ -490,9 +502,11 @@ export const LearningMode = () => {
             const currentBatchSize = Math.min(batchSize, nodeQuota - (i * batchSize));
             if (currentBatchSize <= 0) { continue; }
             setGenerateProgress({ current: generatedCount, total: totalExpected, isGenerating: true });
-            msgHelper.info(t("learning.cards.generating", {
-              start: generatedCount + 1, end: generatedCount + currentBatchSize, total: totalExpected,
-            }), { duration: 2500 });
+            if (!isChallengePendingRef.current) {
+              msgHelper.info(t("learning.cards.generating", {
+                start: generatedCount + 1, end: generatedCount + currentBatchSize, total: totalExpected,
+              }), { duration: 2500 });
+            }
             try {
               const result = await mobileAIService.generateAndSaveCards(
                 node.title || "", node.content || "", node.knowledge_point_id, node.graph_id,
@@ -512,6 +526,16 @@ export const LearningMode = () => {
                 generatedCount += currentBatchSize;
                 savedCount += result.savedCount;
                 setGenerateProgress({ current: generatedCount, total: totalExpected, isGenerating: true });
+                if (isChallengePendingRef.current) {
+                  useLevelTestNotificationStore.getState().setNotice({
+                    status: "generating",
+                    current: generatedCount,
+                    total: totalExpected,
+                    nodeId: nodeId ?? "",
+                    graphId: graphId ?? "",
+                    from: "learning",
+                  });
+                }
               }
             } catch (batchError) {
               console.error(`Batch ${nIndex + 1}-${i + 1} failed:`, batchError);
@@ -523,13 +547,27 @@ export const LearningMode = () => {
           if (isChallengePendingRef.current) {
             isChallengePendingRef.current = false;
             setIsGenModalOpen(false);
-            await startChallengeSession();
+            useLevelTestNotificationStore.getState().setNotice({
+              status: "success",
+              nodeId: nodeId ?? "",
+              graphId: graphId ?? "",
+              from: "learning",
+            });
           } else {
             msgHelper.success(t("learning.cards.generateSuccess", { count: savedCount }), {
               duration: 5000,
               action: { label: t("learning.cards.startChallenge"), onClick: handleStartChallenge },
             });
           }
+        } else if (!signal.aborted && savedCount === 0 && isChallengePendingRef.current) {
+          isChallengePendingRef.current = false;
+          setIsGenModalOpen(false);
+          useLevelTestNotificationStore.getState().setNotice({
+            status: "error",
+            nodeId: nodeId ?? "",
+            graphId: graphId ?? "",
+            from: "learning",
+          });
         }
       } catch (error) {
         console.error("[LearningMode] 移动端题目生成异常:", error);
@@ -563,7 +601,13 @@ export const LearningMode = () => {
       });
       if (result.success) {
         if (isChallengePendingRef.current && result.taskIds?.length) {
-          await pollGenerationTasksThenChallenge(result.taskIds);
+          const challengeNodeId = nodeId ?? "";
+          const challengeGraphId = graphId ?? "";
+          isChallengePendingRef.current = false;
+          setIsGenModalOpen(false);
+          useLevelTestNotificationStore
+            .getState()
+            .startGenerationTracking(result.taskIds, challengeNodeId, challengeGraphId, "learning");
           return;
         }
         msgHelper.success(t("learning.cards.taskSubmitted"), {
@@ -585,55 +629,6 @@ export const LearningMode = () => {
       else if (error instanceof Error) errorMessage = t("learning.cards.submitFailed", { error: error.message });
       msgHelper.error(errorMessage);
     } finally { setIsGeneratingCards(false); }
-  };
-
-  const pollGenerationTasksThenChallenge = async (taskIds: string[]) => {
-    msgHelper.info(t("learning.challenge.challengeGenerating"), { duration: 6000 });
-    setGenerateProgress({ current: 0, total: taskIds.length, isGenerating: true });
-    const intervalMs = 3000;
-    const maxAttempts = 200;
-    const maxConsecutivePollFailures = 5;
-    let consecutivePollFailures = 0;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      await new Promise((resolve) => setTimeout(resolve, intervalMs));
-      if (!isChallengePendingRef.current) return;
-      const statuses = await Promise.all(
-        taskIds.map((id) => api.ai.getTaskStatus(id).catch(() => null)),
-      );
-      // 全部查询失败视为网络/服务异常：连续超过阈值即终止，
-      // 避免瞬时故障让 allSettled 永不成立而空转到 maxAttempts
-      if (statuses.every((s) => s === null)) {
-        consecutivePollFailures++;
-        if (consecutivePollFailures >= maxConsecutivePollFailures) {
-          setGenerateProgress(null);
-          isChallengePendingRef.current = false;
-          msgHelper.error(t("learning.challenge.challengeGenerateFailed"));
-          return;
-        }
-        continue;
-      }
-      consecutivePollFailures = 0;
-      const fetched = statuses.filter((s): s is { status: string } => !!s);
-      const completedCount = fetched.filter((s) => s.status === "completed").length;
-      setGenerateProgress({ current: completedCount, total: taskIds.length, isGenerating: true });
-      const allSettled =
-        fetched.length === taskIds.length &&
-        fetched.every((s) => TASK_TERMINAL_STATUSES.includes(s.status));
-      if (allSettled) {
-        setGenerateProgress(null);
-        isChallengePendingRef.current = false;
-        if (completedCount === taskIds.length) {
-          setIsGenModalOpen(false);
-          await startChallengeSession();
-        } else {
-          msgHelper.error(t("learning.challenge.challengeGenerateFailed"));
-        }
-        return;
-      }
-    }
-    setGenerateProgress(null);
-    isChallengePendingRef.current = false;
-    msgHelper.info(t("learning.challenge.challengeGenerateTimeout"));
   };
 
   const handleAICardGenError = (

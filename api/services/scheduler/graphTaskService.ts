@@ -245,13 +245,13 @@ export class GraphTaskService {
   async recalculateAllGraphTasks(supabase: SupabaseClient): Promise<void> {
     logger.info("[GraphTaskService] Recalculating all graph tasks");
 
-    const query = supabase
-      .from("user_tasks")
-      .select("id, graph_id")
-      .eq("task_type", "graph_learning")
-      .not("graph_id", "is", null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: graphTasks, error: fetchError } = await notDeleted(query as any);
+    const { data: graphTasks, error: fetchError } = await notDeleted(
+      supabase
+        .from("user_tasks")
+        .select("id, graph_id")
+        .eq("task_type", "graph_learning")
+        .not("graph_id", "is", null),
+    );
 
     if (fetchError) {
       logger.error(

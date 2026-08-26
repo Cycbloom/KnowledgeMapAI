@@ -19,9 +19,13 @@
 /**
  * 类型约束：拥有 `is(column, value)` 方法的链式查询对象。
  * Supabase 的 SupabaseQueryBuilder / QueryBuilder 均满足该约束。
+ *
+ * 注意：`is` 的返回类型刻意不限定为 `T` 自身（自引用 `T extends SoftDeleteFilterable<T>`
+ * 会在复杂 Supabase builder 类型上触发 TS2589 "excessively deep"）。返回 `unknown`
+ * 即可，因为本 helper 只用于在链式查询末尾追加 soft-delete 过滤并直接 await。
  */
-interface SoftDeleteFilterable<T> {
-  is(column: string, value: unknown): T;
+interface SoftDeleteFilterable {
+  is(column: string, value: unknown): unknown;
 }
 
 /**
@@ -29,8 +33,8 @@ interface SoftDeleteFilterable<T> {
  *
  * 仅返回未被软删除的记录。
  */
-export function notDeleted<T extends SoftDeleteFilterable<T>>(query: T): T {
-  return query.is('deleted_at', null);
+export function notDeleted<T extends SoftDeleteFilterable>(query: T): T {
+  return query.is('deleted_at', null) as T;
 }
 
 /**

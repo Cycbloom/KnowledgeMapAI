@@ -3,7 +3,7 @@ import i18next from "i18next";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
-import { graphService } from "../graph/index";
+import { graphService } from "../graph/graphService";
 import { transactionExecutor } from "../../database/transactionExecutor";
 import { buildProgressMap, buildDependencyMaps, generateRulePath, generateAIPath, buildTodayPlan, calculateWeeklyProgress, type LearningPathStage } from "./learningPathAlgorithms";
 import { LearningPathTaskIntegration } from "./learningPathTaskIntegration";

@@ -14,7 +14,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { generateNodesForGraph } from "./utils";
 import { checkDuplicateGraphTopic } from "../../utils/similaritySearch";
-import { aiService } from "../ai/index";
+import { aiService } from "../ai/aiService";
 import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
 import { pricingService } from "../ai/pricingService";
 

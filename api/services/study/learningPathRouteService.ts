@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import i18next from "i18next";
-import { graphService } from "../graph/index";
+import { graphService } from "../graph/graphService";
 import { getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
 import { checkDuplicateGraphTopic } from "../../utils/similaritySearch";

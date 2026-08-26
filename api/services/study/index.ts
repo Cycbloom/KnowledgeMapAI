@@ -18,4 +18,4 @@ export { spacedRepetitionBridge } from "./spacedRepetitionBridge";
 export { studyRouteService, StudyRouteService } from "./studyRouteService";
 export { masteryCalculationService } from "./masteryCalculationService";
 export { semanticInterferenceService } from "./semanticInterferenceService";
-export { embeddingService } from "../ai/index";
+export { embeddingService } from "../ai/embeddingService";

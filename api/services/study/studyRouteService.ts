@@ -4,7 +4,7 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { studyService } from "./studyService";
-import { graphNodeService } from "../graph/index";
+import { graphNodeService } from "../graph/graphNodeService";
 import { aiService } from "../ai/aiService";
 import { getSupabaseAdmin } from "../../supabase";
 import type { StudyCard } from "../../../shared/types/common";

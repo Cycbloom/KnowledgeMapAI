@@ -4,7 +4,7 @@ export { taskSettingService } from "./taskSettingService";
 
 // 注入 aiService 到 subtaskQuizIntegrationService，
 // 拆解 scheduler→ai 运行时循环依赖。
-import { aiService } from "../ai/index";
+import { aiService } from "../ai/aiService";
 import { subtaskQuizIntegrationService } from "./subtaskQuizIntegration";
 
 subtaskQuizIntegrationService.setAIProviderService(aiService);

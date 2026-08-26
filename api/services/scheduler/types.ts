@@ -1,4 +1,4 @@
-import type { CardDifficulty, GenerateCardsOptions } from "../ai/index";
+import type { CardDifficulty, GenerateCardsOptions } from "../ai/cardGenerationService";
 
 /**
  * AI 服务接口，仅包含 scheduler 层实际需要的方法。

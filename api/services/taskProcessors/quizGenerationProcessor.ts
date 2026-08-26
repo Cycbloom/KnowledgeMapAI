@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction, TaskControl, TaskAbortError } from './index';
-import { aiService, type CardDifficulty } from '../ai/index';
+import { aiService } from '../ai/aiService';
+import type { CardDifficulty } from '../ai/cardGenerationService';
 import { cardDifficultyToNumber, cardDifficultyToFsrsInitial, type AIProviderType } from '@shared/types';
 import {
   buildTasksToRun,

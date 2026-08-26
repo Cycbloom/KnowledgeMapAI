@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../../utils/logger';
 import { conceptAggregationService, normalizeTitle } from '../graph/conceptAggregationService';
-import { autoGraphService } from '../graph/index';
+import { autoGraphService } from '../graph/autoGraphService';
 import { aiService } from '../ai/aiService';
 import { cacheService, CacheKeys } from '../common/cacheService';
 import { performanceMonitor } from '../ai/performanceMonitor';

@@ -31,23 +31,13 @@ interface CardBatchItem {
 router.get("/stats", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graph_id } = req.query;
 
-  try {
-    const stats = await studyService.getStudyStats(
-      req.supabase,
-      req.user.id,
-      graph_id as string | undefined,
-    );
+  const stats = await studyService.getStudyStats(
+    req.supabase,
+    req.user.id,
+    graph_id as string | undefined,
+  );
 
-    res.json(stats);
-  } catch (error) {
-    const err = error as Error;
-    logger.error("Error fetching study stats:", error);
-    throw new AppError(
-      err.message || "获取学习统计失败",
-      500,
-      ErrorCodes.SYSTEM_INTERNAL_ERROR,
-    );
-  }
+  res.json(stats);
 });
 
 /**
@@ -109,34 +99,24 @@ router.get("/cards", requireAuth, async (req: AuthedRequest, res: Response) => {
     await cacheService.del(CacheKeys.STUDY_CARDS(graphId));
   }
 
-  try {
-    const cards = await studyService.getCards(req.supabase, {
-      userId: req.user.id,
-      graphId,
-      knowledgePointId,
-      knowledgePointIds,
-      dueOnly,
-      page,
-      pageSize,
-      search,
-      cardType,
-      fsrsState,
-      reviewCountMin,
-      reviewCountMax,
-      nextReviewStart,
-      nextReviewEnd,
-    });
+  const cards = await studyService.getCards(req.supabase, {
+    userId: req.user.id,
+    graphId,
+    knowledgePointId,
+    knowledgePointIds,
+    dueOnly,
+    page,
+    pageSize,
+    search,
+    cardType,
+    fsrsState,
+    reviewCountMin,
+    reviewCountMax,
+    nextReviewStart,
+    nextReviewEnd,
+  });
 
-    res.json(cards);
-  } catch (error) {
-    const err = error as Error;
-    logger.error("Error fetching cards:", error);
-    throw new AppError(
-      err.message || "获取学习卡片失败",
-      500,
-      ErrorCodes.SYSTEM_INTERNAL_ERROR,
-    );
-  }
+  res.json(cards);
 });
 
 /**
@@ -189,30 +169,20 @@ router.post(
       options,
     } = req.body;
 
-    try {
-      const card = await studyRouteService.createCardWithGraphNode(
-        req.supabase,
-        req.user.id,
-        {
-          knowledge_point_id,
-          question,
-          answer,
-          explanation,
-          card_type,
-          options,
-        },
-      );
+    const card = await studyRouteService.createCardWithGraphNode(
+      req.supabase,
+      req.user.id,
+      {
+        knowledge_point_id,
+        question,
+        answer,
+        explanation,
+        card_type,
+        options,
+      },
+    );
 
-      res.status(201).json(card);
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Error creating card:", error);
-      throw new AppError(
-        err.message || "创建学习卡片失败",
-        500,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
-    }
+    res.status(201).json(card);
   },
 );
 
@@ -267,22 +237,12 @@ router.post(
     const { cards } = req.body;
     const typedCards = cards as CardBatchItem[];
 
-    try {
-      const createdCards = await studyRouteService.createCardsBatchWithGraphNodes(
-        req.supabase,
-        req.user.id,
-        typedCards,
-      );
-      res.status(201).json(createdCards);
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Error creating cards batch:", error);
-      throw new AppError(
-        err.message || "创建学习卡片失败",
-        500,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
-    }
+    const createdCards = await studyRouteService.createCardsBatchWithGraphNodes(
+      req.supabase,
+      req.user.id,
+      typedCards,
+    );
+    res.status(201).json(createdCards);
   },
 );
 
@@ -317,18 +277,8 @@ router.delete(
   async (req: AuthedRequest, res: Response) => {
     const { ids } = req.body;
 
-    try {
-      await studyService.deleteCardsBatch(req.supabase, ids);
-      res.json({ success: true });
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Error deleting cards batch:", error);
-      throw new AppError(
-        err.message || "批量删除学习卡片失败",
-        500,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
-    }
+    await studyService.deleteCardsBatch(req.supabase, ids);
+    res.json({ success: true });
   },
 );
 
@@ -420,18 +370,8 @@ router.delete(
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
 
-    try {
-      await studyService.deleteCard(req.supabase, id);
-      res.json({ success: true });
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Error deleting card:", error);
-      throw new AppError(
-        err.message || "删除学习卡片失败",
-        500,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
-    }
+    await studyService.deleteCard(req.supabase, id);
+    res.json({ success: true });
   },
 );
 
@@ -469,21 +409,11 @@ router.get(
 );
 
 router.get("/fsrs-parameters", requireAuth, async (req: AuthedRequest, res: Response) => {
-  try {
-    const params = await fsrsParameterService.getParameters(
-      req.supabase,
-      req.user.id,
-    );
-    res.json(params);
-  } catch (error) {
-    const err = error as Error;
-    logger.error("Error fetching FSRS parameters:", error);
-    throw new AppError(
-      err.message || "获取 FSRS 参数失败",
-      500,
-      ErrorCodes.SYSTEM_INTERNAL_ERROR,
-    );
-  }
+  const params = await fsrsParameterService.getParameters(
+    req.supabase,
+    req.user.id,
+  );
+  res.json(params);
 });
 
 router.put("/fsrs-parameters", requireAuth, async (req: AuthedRequest, res: Response) => {
@@ -493,104 +423,64 @@ router.put("/fsrs-parameters", requireAuth, async (req: AuthedRequest, res: Resp
     throw new AppError("w 参数必须是非空数组", 400, ErrorCodes.VALIDATION_INVALID_PARAMS);
   }
 
-  try {
-    const params = await fsrsParameterService.setParameters(
-      req.supabase,
-      req.user.id,
-      w,
-    );
-    res.json(params);
-  } catch (error) {
-    const err = error as Error;
-    logger.error("Error setting FSRS parameters:", error);
-    throw new AppError(
-      err.message || "设置 FSRS 参数失败",
-      500,
-      ErrorCodes.SYSTEM_INTERNAL_ERROR,
-    );
-  }
+  const params = await fsrsParameterService.setParameters(
+    req.supabase,
+    req.user.id,
+    w,
+  );
+  res.json(params);
 });
 
 router.delete("/fsrs-parameters", requireAuth, async (req: AuthedRequest, res: Response) => {
-  try {
-    await fsrsParameterService.resetParameters(
-      req.supabase,
-      req.user.id,
-    );
-    res.json({ success: true, message: "已重置为默认参数" });
-  } catch (error) {
-    const err = error as Error;
-    logger.error("Error resetting FSRS parameters:", error);
-    throw new AppError(
-      err.message || "重置 FSRS 参数失败",
-      500,
-      ErrorCodes.SYSTEM_INTERNAL_ERROR,
-    );
-  }
+  await fsrsParameterService.resetParameters(
+    req.supabase,
+    req.user.id,
+  );
+  res.json({ success: true, message: "已重置为默认参数" });
 });
 
 router.post("/fsrs-parameters/optimize", requireAuth, async (req: AuthedRequest, res: Response) => {
-  try {
-    const result = await fsrsParameterService.optimizeParameters(
-      req.supabase,
-      req.user.id,
-    );
-    res.json(result);
-  } catch (error) {
-    const err = error as Error;
-    logger.error("Error optimizing FSRS parameters:", error);
-    throw new AppError(
-      err.message || "优化 FSRS 参数失败",
-      500,
-      ErrorCodes.SYSTEM_INTERNAL_ERROR,
-    );
-  }
+  const result = await fsrsParameterService.optimizeParameters(
+    req.supabase,
+    req.user.id,
+  );
+  res.json(result);
 });
 
 router.get("/semantic-groups", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graph_id } = req.query;
 
-  try {
-    // Get due cards for the user
-    let query = req.supabase
-      .from("study_cards")
-      .select("knowledge_point_id")
-      .eq("user_id", req.user.id);
+  // Get due cards for the user
+  let query = req.supabase
+    .from("study_cards")
+    .select("knowledge_point_id")
+    .eq("user_id", req.user.id);
 
-    if (graph_id) {
-      query = query.eq("graph_id", graph_id as string);
-    }
-
-    query = query.lte("next_review", new Date().toISOString());
-
-    const { data: cards, error } = await query;
-
-    if (error) {
-      throw new AppError("获取语义分组失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
-
-    const kpIds = [...new Set((cards ?? []).map((c: { knowledge_point_id: string }) => c.knowledge_point_id))];
-
-    if (kpIds.length === 0) {
-      res.json({ groups: [], interference_pairs: [] });
-      return;
-    }
-
-    const [groups, interferencePairs] = await Promise.all([
-      semanticInterferenceService.getSemanticGroups(req.supabase, kpIds),
-      semanticInterferenceService.detectInterferencePairs(req.supabase, kpIds),
-    ]);
-
-    res.json({ groups, interference_pairs: interferencePairs });
-  } catch (error) {
-    const err = error as Error;
-    logger.error("Error fetching semantic groups:", error);
-    throw new AppError(
-      err.message || "获取语义分组失败",
-      500,
-      ErrorCodes.SYSTEM_INTERNAL_ERROR,
-    );
+  if (graph_id) {
+    query = query.eq("graph_id", graph_id as string);
   }
+
+  query = query.lte("next_review", new Date().toISOString());
+
+  const { data: cards, error } = await query;
+
+  if (error) {
+    throw new AppError("获取语义分组失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+  }
+
+  const kpIds = [...new Set((cards ?? []).map((c: { knowledge_point_id: string }) => c.knowledge_point_id))];
+
+  if (kpIds.length === 0) {
+    res.json({ groups: [], interference_pairs: [] });
+    return;
+  }
+
+  const [groups, interferencePairs] = await Promise.all([
+    semanticInterferenceService.getSemanticGroups(req.supabase, kpIds),
+    semanticInterferenceService.detectInterferencePairs(req.supabase, kpIds),
+  ]);
+
+  res.json({ groups, interference_pairs: interferencePairs });
 });
 
 export default router;

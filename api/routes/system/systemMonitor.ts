@@ -1,11 +1,8 @@
 import { Router } from "express";
 import os from "os";
 import { requireAuth } from "../../middleware/auth";
-import { logger } from "../../utils/logger";
 import { getSupabaseAdmin } from "../../supabase";
 import { systemMonitorService } from "../../services/common";
-import { AppError } from "../../middleware/errorHandler";
-import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -67,28 +64,23 @@ const getMemoryUsage = () => {
 };
 
 router.get("/system", async (_req, res) => {
-  try {
-    const cpuUsage = getCpuUsage();
-    const memoryUsage = getMemoryUsage();
-    const cpus = os.cpus();
+  const cpuUsage = getCpuUsage();
+  const memoryUsage = getMemoryUsage();
+  const cpus = os.cpus();
 
-    const stats: SystemStats = {
-      cpu: {
-        usage: cpuUsage,
-        cores: cpus.length,
-        model: cpus[0]?.model || "Unknown",
-      },
-      memory: memoryUsage,
-      uptime: Math.floor(process.uptime()),
-      platform: process.platform,
-      nodeVersion: process.version,
-    };
+  const stats: SystemStats = {
+    cpu: {
+      usage: cpuUsage,
+      cores: cpus.length,
+      model: cpus[0]?.model || "Unknown",
+    },
+    memory: memoryUsage,
+    uptime: Math.floor(process.uptime()),
+    platform: process.platform,
+    nodeVersion: process.version,
+  };
 
-    res.json(stats);
-  } catch (error) {
-    logger.error("Failed to get system stats:", error);
-    throw new AppError("Failed to get system stats", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  res.json(stats);
 });
 
 router.get("/services", async (_req, res) => {
@@ -191,63 +183,53 @@ router.get("/requests/reset", (_req, res) => {
 });
 
 router.get("/logs", async (_req, res) => {
-  try {
-    const logs: unknown[] = [];
+  const logs: unknown[] = [];
 
-    res.json({ logs, count: logs.length });
-  } catch (error) {
-    logger.error("Failed to get logs:", error);
-    throw new AppError("Failed to get logs", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  res.json({ logs, count: logs.length });
 });
 
 router.get("/dashboard", async (_req, res) => {
-  try {
-    const [cpuUsage, memoryUsage] = [getCpuUsage(), getMemoryUsage()];
-    const cpus = os.cpus();
+  const [cpuUsage, memoryUsage] = [getCpuUsage(), getMemoryUsage()];
+  const cpus = os.cpus();
 
-    // admin client: 系统级监控仪表盘，需绕过 RLS 探测全局数据库健康状态
-    const dbHealth = await systemMonitorService.checkDatabaseHealth(getSupabaseAdmin());
-    const dbStatus = dbHealth.status;
-    const dbLatency = dbHealth.latency;
+  // admin client: 系统级监控仪表盘，需绕过 RLS 探测全局数据库健康状态
+  const dbHealth = await systemMonitorService.checkDatabaseHealth(getSupabaseAdmin());
+  const dbStatus = dbHealth.status;
+  const dbLatency = dbHealth.latency;
 
-    res.json({
-      system: {
-        cpu: {
-          usage: cpuUsage,
-          cores: cpus.length,
-          model: cpus[0]?.model || "Unknown",
-        },
-        memory: memoryUsage,
-        uptime: Math.floor(process.uptime()),
-        platform: process.platform,
-        nodeVersion: process.version,
-        hostname: os.hostname(),
+  res.json({
+    system: {
+      cpu: {
+        usage: cpuUsage,
+        cores: cpus.length,
+        model: cpus[0]?.model || "Unknown",
       },
-      services: {
-        database: {
-          status: dbStatus,
-          latency: dbLatency,
-        },
+      memory: memoryUsage,
+      uptime: Math.floor(process.uptime()),
+      platform: process.platform,
+      nodeVersion: process.version,
+      hostname: os.hostname(),
+    },
+    services: {
+      database: {
+        status: dbStatus,
+        latency: dbLatency,
       },
-      requests: {
-        total: requestStats.total,
-        success: requestStats.success,
-        errors: requestStats.errors,
-        avgResponseTime: requestStats.avgResponseTime,
-        errorRate:
-          requestStats.total > 0
-            ? Math.round(
-                (requestStats.errors / requestStats.total) * 100 * 100,
-              ) / 100
-            : 0,
-      },
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    logger.error("Failed to get dashboard data:", error);
-    throw new AppError("Failed to get dashboard data", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+    },
+    requests: {
+      total: requestStats.total,
+      success: requestStats.success,
+      errors: requestStats.errors,
+      avgResponseTime: requestStats.avgResponseTime,
+      errorRate:
+        requestStats.total > 0
+          ? Math.round(
+              (requestStats.errors / requestStats.total) * 100 * 100,
+            ) / 100
+          : 0,
+    },
+    timestamp: new Date().toISOString(),
+  });
 });
 
 export default router;

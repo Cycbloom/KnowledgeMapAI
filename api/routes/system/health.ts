@@ -1,8 +1,5 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthedRequest } from '../../middleware/auth';
-import { AppError } from '../../middleware/errorHandler';
-import { ErrorCodes } from '../../../shared/types/errorCodes';
-import { logger } from '../../utils/logger';
 import { healthService } from "../../services/core";
 
 const router = Router();
@@ -10,62 +7,37 @@ const router = Router();
 router.get('/overview', requireAuth, async (req: AuthedRequest, res: Response) => {
   const supabase = req.supabase;
 
-  try {
-    const overview = await healthService.getOverview(supabase, req.user.id);
-    res.json(overview);
-  } catch (error) {
-    logger.error('Health Overview Error:', error);
-    throw new AppError((error as Error).message || '获取健康概览失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const overview = await healthService.getOverview(supabase, req.user.id);
+  res.json(overview);
 });
 
 router.get('/heatmap', requireAuth, async (req: AuthedRequest, res: Response) => {
   const supabase = req.supabase;
 
-  try {
-    const heatmap = await healthService.getHeatmap(supabase, req.user.id);
-    res.json({ heatmap });
-  } catch (error) {
-    logger.error('Heatmap Error:', error);
-    throw new AppError((error as Error).message || '获取热力图失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const heatmap = await healthService.getHeatmap(supabase, req.user.id);
+  res.json({ heatmap });
 });
 
 router.get('/weak-points', requireAuth, async (req: AuthedRequest, res: Response) => {
   const supabase = req.supabase;
 
-  try {
-    const weakPoints = await healthService.getWeakPoints(supabase, req.user.id);
-    res.json({ weakPoints });
-  } catch (error) {
-    logger.error('Weak Points Error:', error);
-    throw new AppError((error as Error).message || '获取薄弱点失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const weakPoints = await healthService.getWeakPoints(supabase, req.user.id);
+  res.json({ weakPoints });
 });
 
 router.get('/weekly-activity', requireAuth, async (req: AuthedRequest, res: Response) => {
   const supabase = req.supabase;
 
-  try {
-    const days = parseInt(req.query.days as string) || 7;
-    const activity = await healthService.getActivity(supabase, req.user.id, days);
-    res.json({ activity });
-  } catch (error) {
-    logger.error('Weekly Activity Error:', error);
-    throw new AppError((error as Error).message || '获取活动数据失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const days = parseInt(req.query.days as string) || 7;
+  const activity = await healthService.getActivity(supabase, req.user.id, days);
+  res.json({ activity });
 });
 
 router.get('/predictions', requireAuth, async (req: AuthedRequest, res: Response) => {
   const supabase = req.supabase;
 
-  try {
-    const predictions = await healthService.getPredictions(supabase, req.user.id);
-    res.json({ predictions });
-  } catch (error) {
-    logger.error('Predictions Error:', error);
-    throw new AppError((error as Error).message || '获取预测数据失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const predictions = await healthService.getPredictions(supabase, req.user.id);
+  res.json({ predictions });
 });
 
 router.get('/system', async (_req, res) => {

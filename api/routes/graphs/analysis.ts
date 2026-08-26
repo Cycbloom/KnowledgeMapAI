@@ -116,17 +116,12 @@ router.get(
     const { id } = req.params;
     const userId = req.user.id;
 
-    try {
-      const analysis = await graphService.analyzeGraph(
-        req.supabase,
-        userId,
-        id,
-      );
-      res.json(analysis);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "图谱分析失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const analysis = await graphService.analyzeGraph(
+      req.supabase,
+      userId,
+      id,
+    );
+    res.json(analysis);
   },
 );
 
@@ -140,19 +135,13 @@ router.get(
     const userId = req.user.id;
     const maxSuggestions = parseInt(req.query.max as string) || 10;
 
-    try {
-      const suggestions = await graphService.findMissingConnections(
-        req.supabase,
-        userId,
-        id,
-        maxSuggestions,
-      );
-      res.json({ suggestions });
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "获取连接建议失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const suggestions = await graphService.findMissingConnections(
+      req.supabase,
+      userId,
+      id,
+      maxSuggestions,
+    );
+    res.json({ suggestions });
   },
 );
 
@@ -165,21 +154,16 @@ router.post(
     const { domain, count = 10, context_domain_id, session_id } = req.body;
     const userId = req.user.id;
 
-    try {
-      const result = await analysisRouteService.analyzeDomain(
-        req.supabase,
-        userId,
-        domain,
-        count,
-        context_domain_id,
-        session_id,
-      );
+    const result = await analysisRouteService.analyzeDomain(
+      req.supabase,
+      userId,
+      domain,
+      count,
+      context_domain_id,
+      session_id,
+    );
 
-      res.json(result);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "领域分析失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json(result);
   },
 );
 

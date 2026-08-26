@@ -199,14 +199,8 @@ router.get(
   validate({ params: uuidParamsSchema }),
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    try {
-      const data = await graphCrudService.getResearchProgress(req.supabase, id);
-      res.json(data);
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "研究进度获取失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const data = await graphCrudService.getResearchProgress(req.supabase, id);
+    res.json(data);
   },
 );
 
@@ -218,13 +212,8 @@ router.get(
     const { id } = req.params;
     const moduleFilter = req.query.module as string | undefined;
 
-    try {
-      const data = await graphCrudService.getLiterature(req.supabase, id, moduleFilter);
-      res.json(data);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "文献库获取失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const data = await graphCrudService.getLiterature(req.supabase, id, moduleFilter);
+    res.json(data);
   },
 );
 

@@ -132,18 +132,13 @@ router.post(
     const userId = req.user.id;
     const supabase = req.supabase;
 
-    try {
-      const result = await domainExpansionService.expandDomain(supabase, userId, {
-        graph_ids,
-        domain,
-        count,
-      });
+    const result = await domainExpansionService.expandDomain(supabase, userId, {
+      graph_ids,
+      domain,
+      count,
+    });
 
-      res.json(result);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "领域扩展失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json(result);
   },
 );
 
@@ -157,19 +152,14 @@ router.post(
     const userId = req.user.id;
     const supabase = req.supabase;
 
-    try {
-      const result = await domainExpansionService.batchCreateDomainGraphs(supabase, userId, {
-        graphs,
-        domain,
-        domain_id,
-        relations,
-      });
+    const result = await domainExpansionService.batchCreateDomainGraphs(supabase, userId, {
+      graphs,
+      domain,
+      domain_id,
+      relations,
+    });
 
-      res.json(result);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "批量创建图谱失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json(result);
   },
 );
 
@@ -235,23 +225,17 @@ router.post(
     const { graph_ids, max_suggestions, include_cross_domain } = req.body;
     const userId = req.user.id;
 
-    try {
-      const result = await relationDiscoveryService.discoverRelations(
-        req.supabase,
-        userId,
-        {
-          graph_ids,
-          max_suggestions,
-          include_cross_domain,
-        },
-      );
+    const result = await relationDiscoveryService.discoverRelations(
+      req.supabase,
+      userId,
+      {
+        graph_ids,
+        max_suggestions,
+        include_cross_domain,
+      },
+    );
 
-      res.json(result);
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "图谱关系发现失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json(result);
   },
 );
 
@@ -270,29 +254,24 @@ router.post(
     } = req.body;
     const userId = req.user.id;
 
-    try {
-      const result = await relationDiscoveryService.createRelationFromDiscovery(
-        req.supabase,
-        userId,
-        {
-          source_graph_id,
-          target_graph_id,
-          relation_type,
-          context,
-          confidence,
-          shared_concepts,
-        },
-      );
+    const result = await relationDiscoveryService.createRelationFromDiscovery(
+      req.supabase,
+      userId,
+      {
+        source_graph_id,
+        target_graph_id,
+        relation_type,
+        context,
+        confidence,
+        shared_concepts,
+      },
+    );
 
-      res.json({
-        success: true,
-        relation_id: result.id,
-        message: "关系创建成功",
-      });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "创建关系失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json({
+      success: true,
+      relation_id: result.id,
+      message: "关系创建成功",
+    });
   },
 );
 
@@ -304,29 +283,22 @@ router.post(
     const { graph_ids, min_intersection = 2 } = req.body;
     const userId = req.user.id;
 
-    try {
-      logger.info("Cross-domain insights request", {
-        userId,
+    logger.info("Cross-domain insights request", {
+      userId,
+      graph_ids,
+      min_intersection,
+    });
+
+    const result = await relationDiscoveryService.analyzeCrossDomainInsights(
+      req.supabase,
+      userId,
+      {
         graph_ids,
         min_intersection,
-      });
+      },
+    );
 
-      const result = await relationDiscoveryService.analyzeCrossDomainInsights(
-        req.supabase,
-        userId,
-        {
-          graph_ids,
-          min_intersection,
-        },
-      );
-
-      res.json(result);
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "跨学科洞察分析失败";
-      logger.error("Cross-domain insights failed", error);
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json(result);
   },
 );
 
@@ -338,30 +310,23 @@ router.post(
     const { graph_ids, difficulty } = req.body;
     const userId = req.user.id;
 
-    try {
-      logger.info("Learning path suggestions request", {
+    logger.info("Learning path suggestions request", {
+      userId,
+      graph_ids,
+      difficulty,
+    });
+
+    const result =
+      await relationDiscoveryService.generateLearningPathSuggestions(
+        req.supabase,
         userId,
-        graph_ids,
-        difficulty,
-      });
+        {
+          graph_ids,
+          difficulty,
+        },
+      );
 
-      const result =
-        await relationDiscoveryService.generateLearningPathSuggestions(
-          req.supabase,
-          userId,
-          {
-            graph_ids,
-            difficulty,
-          },
-        );
-
-      res.json(result);
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "学习路径建议生成失败";
-      logger.error("Learning path suggestions failed", error);
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json(result);
   },
 );
 
@@ -373,29 +338,22 @@ router.post(
     const { graph_ids, min_importance } = req.body;
     const userId = req.user.id;
 
-    try {
-      logger.info("Knowledge gaps analysis request", {
-        userId,
+    logger.info("Knowledge gaps analysis request", {
+      userId,
+      graph_ids,
+      min_importance,
+    });
+
+    const result = await relationDiscoveryService.analyzeKnowledgeGaps(
+      req.supabase,
+      userId,
+      {
         graph_ids,
         min_importance,
-      });
+      },
+    );
 
-      const result = await relationDiscoveryService.analyzeKnowledgeGaps(
-        req.supabase,
-        userId,
-        {
-          graph_ids,
-          min_importance,
-        },
-      );
-
-      res.json(result);
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "知识缺口分析失败";
-      logger.error("Knowledge gaps analysis failed", error);
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json(result);
   },
 );
 

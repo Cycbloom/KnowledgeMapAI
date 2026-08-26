@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
-import { queryKeys } from "./config";
+import { queryKeys, DEFAULT_STALE_TIME } from "./config";
 import type { GetActivitiesOptions } from "../../services/api/modules/scheduler/activities";
 
 export function useActivities(options?: GetActivitiesOptions) {
@@ -10,7 +10,7 @@ export function useActivities(options?: GetActivitiesOptions) {
       const result = await api.scheduler.getActivities(options);
       return result;
     },
-    staleTime: 30000,
+    staleTime: DEFAULT_STALE_TIME,
   });
 }
 
@@ -22,7 +22,7 @@ export function useDailyActivities(date: string) {
       return result;
     },
     enabled: !!date,
-    staleTime: 30000,
+    staleTime: DEFAULT_STALE_TIME,
   });
 }
 

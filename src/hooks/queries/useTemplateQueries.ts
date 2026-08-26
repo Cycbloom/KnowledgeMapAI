@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
-import { queryKeys } from "./config";
+import { queryKeys, LONG_STALE_TIME } from "./config";
 import type { TemplateCategory, Template } from "@shared/types/graph";
 
 export const useTemplates = (category?: TemplateCategory) => {
@@ -13,7 +13,7 @@ export const useTemplates = (category?: TemplateCategory) => {
       }
       return Array.isArray(result) ? result : [];
     },
-    staleTime: 1000 * 60 * 30,
+    staleTime: LONG_STALE_TIME,
   });
 };
 
@@ -22,6 +22,6 @@ export const useTemplate = (id: string) => {
     queryKey: queryKeys.template(id),
     queryFn: () => api.templates.get(id),
     enabled: !!id,
-    staleTime: 1000 * 60 * 30,
+    staleTime: LONG_STALE_TIME,
   });
 };

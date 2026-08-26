@@ -3,7 +3,6 @@ import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { progressSyncService } from "../../services/scheduler";
-import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 
@@ -47,20 +46,13 @@ router.post(
 
     const { taskId, durationMinutes } = req.body;
 
-    try {
-      const result = await progressSyncService.syncStudyDuration(supabase, {
-        taskId,
-        userId: req.user.id,
-        durationMinutes,
-      });
+    const result = await progressSyncService.syncStudyDuration(supabase, {
+      taskId,
+      userId: req.user.id,
+      durationMinutes,
+    });
 
-      res.json({ success: true, data: result });
-    } catch (error) {
-      logger.error("Sync study duration error:", error);
-      const message =
-        error instanceof Error ? error.message : "同步学习时长失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json({ success: true, data: result });
   }
 );
 
@@ -76,20 +68,13 @@ router.post(
 
     const { taskId, completionQuality } = req.body;
 
-    try {
-      const result = await progressSyncService.syncTaskCompletion(supabase, {
-        taskId,
-        userId: req.user.id,
-        completionQuality,
-      });
+    const result = await progressSyncService.syncTaskCompletion(supabase, {
+      taskId,
+      userId: req.user.id,
+      completionQuality,
+    });
 
-      res.json({ success: true, data: result });
-    } catch (error) {
-      logger.error("Sync task completion error:", error);
-      const message =
-        error instanceof Error ? error.message : "同步任务完成失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json({ success: true, data: result });
   }
 );
 
@@ -105,20 +90,13 @@ router.get(
 
     const { taskId } = req.params;
 
-    try {
-      const result = await progressSyncService.getTaskProgressSummary(
-        supabase,
-        taskId,
-        req.user.id
-      );
+    const result = await progressSyncService.getTaskProgressSummary(
+      supabase,
+      taskId,
+      req.user.id
+    );
 
-      res.json({ success: true, data: result });
-    } catch (error) {
-      logger.error("Get task progress summary error:", error);
-      const message =
-        error instanceof Error ? error.message : "获取任务进度摘要失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json({ success: true, data: result });
   }
 );
 
@@ -142,32 +120,25 @@ router.post(
       })
     );
 
-    try {
-      const results = await progressSyncService.batchSyncStudyDuration(
-        supabase,
-        paramsList
-      );
+    const results = await progressSyncService.batchSyncStudyDuration(
+      supabase,
+      paramsList
+    );
 
-      const successCount = results.length;
-      const failedCount = items.length - successCount;
+    const successCount = results.length;
+    const failedCount = items.length - successCount;
 
-      res.json({
-        success: true,
-        data: {
-          results,
-          summary: {
-            total: items.length,
-            success: successCount,
-            failed: failedCount,
-          },
+    res.json({
+      success: true,
+      data: {
+        results,
+        summary: {
+          total: items.length,
+          success: successCount,
+          failed: failedCount,
         },
-      });
-    } catch (error) {
-      logger.error("Batch sync study duration error:", error);
-      const message =
-        error instanceof Error ? error.message : "批量同步学习时长失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+      },
+    });
   }
 );
 

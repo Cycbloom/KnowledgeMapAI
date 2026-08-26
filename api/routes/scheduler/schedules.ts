@@ -23,13 +23,8 @@ router.get("/schedules", requireAuth, async (req: AuthRequest, res: Response) =>
     throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 
-  try {
-    const schedules = await scheduleService.listSchedules(supabase, req.user.id);
-    res.json({ success: true, data: schedules });
-  } catch (error) {
-    const err = error as Error & { statusCode?: number };
-    throw new AppError(err.message || "获取周期性任务列表失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const schedules = await scheduleService.listSchedules(supabase, req.user.id);
+  res.json({ success: true, data: schedules });
 });
 
 router.post(
@@ -44,15 +39,10 @@ router.post(
 
     const { task_template_id, schedule_type, schedule_config, is_active } = req.body;
 
-    try {
-      const schedule = await scheduleService.createSchedule(supabase, req.user.id, {
-        task_template_id, schedule_type, schedule_config, is_active,
-      });
-      res.status(201).json({ success: true, data: schedule });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "创建周期性任务配置失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const schedule = await scheduleService.createSchedule(supabase, req.user.id, {
+      task_template_id, schedule_type, schedule_config, is_active,
+    });
+    res.status(201).json({ success: true, data: schedule });
   },
 );
 
@@ -69,15 +59,10 @@ router.put(
     const { id } = req.params;
     const { schedule_config, is_active } = req.body;
 
-    try {
-      const schedule = await scheduleService.updateSchedule(supabase, req.user.id, id, {
-        schedule_config, is_active,
-      });
-      res.json({ success: true, data: schedule });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "更新周期配置失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const schedule = await scheduleService.updateSchedule(supabase, req.user.id, id, {
+      schedule_config, is_active,
+    });
+    res.json({ success: true, data: schedule });
   },
 );
 
@@ -93,13 +78,8 @@ router.delete(
 
     const { id } = req.params;
 
-    try {
-      await scheduleService.deleteSchedule(supabase, req.user.id, id);
-      res.json({ success: true });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "删除周期配置失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    await scheduleService.deleteSchedule(supabase, req.user.id, id);
+    res.json({ success: true });
   },
 );
 
@@ -115,13 +95,8 @@ router.post(
 
     const { id } = req.params;
 
-    try {
-      const result = await scheduleService.runSchedule(supabase, req.user.id, id);
-      res.status(201).json({ success: true, data: result });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "手动运行调度失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const result = await scheduleService.runSchedule(supabase, req.user.id, id);
+    res.status(201).json({ success: true, data: result });
   },
 );
 

@@ -3,7 +3,6 @@ import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { reviewTaskService } from "../../services/scheduler";
-import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 
@@ -38,20 +37,13 @@ router.post(
 
     const { knowledge_point_id, task_id } = req.body;
 
-    try {
-      const reviewTask = await reviewTaskService.createFirstReviewTask(
-        supabase,
-        req.user.id,
-        { knowledge_point_id, task_id },
-      );
+    const reviewTask = await reviewTaskService.createFirstReviewTask(
+      supabase,
+      req.user.id,
+      { knowledge_point_id, task_id },
+    );
 
-      res.status(201).json({ success: true, data: reviewTask });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "创建复习任务失败";
-      logger.error("Create review task error:", error);
-      throw new AppError(errorMessage, 400, ErrorCodes.VALIDATION_ERROR);
-    }
+    res.status(201).json({ success: true, data: reviewTask });
   },
 );
 
@@ -71,21 +63,14 @@ router.put(
     const { knowledgePointId } = req.params;
     const { quality } = req.body;
 
-    try {
-      const updatedTask = await reviewTaskService.updateReviewTask(
-        supabase,
-        req.user.id,
-        knowledgePointId,
-        { quality },
-      );
+    const updatedTask = await reviewTaskService.updateReviewTask(
+      supabase,
+      req.user.id,
+      knowledgePointId,
+      { quality },
+    );
 
-      res.json({ success: true, data: updatedTask });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "更新复习任务失败";
-      logger.error("Update review task error:", error);
-      throw new AppError(errorMessage, 400, ErrorCodes.VALIDATION_ERROR);
-    }
+    res.json({ success: true, data: updatedTask });
   },
 );
 
@@ -103,18 +88,13 @@ router.get(
       typeof pendingQuerySchema
     >;
 
-    try {
-      const pendingTasks = await reviewTaskService.getPendingReviewTasks(
-        supabase,
-        req.user.id,
-        limit,
-      );
+    const pendingTasks = await reviewTaskService.getPendingReviewTasks(
+      supabase,
+      req.user.id,
+      limit,
+    );
 
-      res.json({ success: true, data: pendingTasks });
-    } catch (error) {
-      logger.error("Get pending review tasks error:", error);
-      throw new AppError("获取待复习任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json({ success: true, data: pendingTasks });
   },
 );
 
@@ -127,17 +107,12 @@ router.get(
       throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
-    try {
-      const stats = await reviewTaskService.getReviewTaskStats(
-        supabase,
-        req.user.id,
-      );
+    const stats = await reviewTaskService.getReviewTaskStats(
+      supabase,
+      req.user.id,
+    );
 
-      res.json({ success: true, data: stats });
-    } catch (error) {
-      logger.error("Get review task stats error:", error);
-      throw new AppError("获取复习任务统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json({ success: true, data: stats });
   },
 );
 
@@ -153,22 +128,17 @@ router.get(
 
     const { knowledgePointId } = req.params;
 
-    try {
-      const reviewTask = await reviewTaskService.getReviewTaskByKnowledgePoint(
-        supabase,
-        req.user.id,
-        knowledgePointId,
-      );
+    const reviewTask = await reviewTaskService.getReviewTaskByKnowledgePoint(
+      supabase,
+      req.user.id,
+      knowledgePointId,
+    );
 
-      if (!reviewTask) {
-        throw new AppError("复习任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
-      }
-
-      res.json({ success: true, data: reviewTask });
-    } catch (error) {
-      logger.error("Get review task error:", error);
-      throw new AppError("获取复习任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    if (!reviewTask) {
+      throw new AppError("复习任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
+
+    res.json({ success: true, data: reviewTask });
   },
 );
 
@@ -184,18 +154,13 @@ router.delete(
 
     const { knowledgePointId } = req.params;
 
-    try {
-      await reviewTaskService.deleteReviewTask(
-        supabase,
-        req.user.id,
-        knowledgePointId,
-      );
+    await reviewTaskService.deleteReviewTask(
+      supabase,
+      req.user.id,
+      knowledgePointId,
+    );
 
-      res.json({ success: true });
-    } catch (error) {
-      logger.error("Delete review task error:", error);
-      throw new AppError("删除复习任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json({ success: true });
   },
 );
 

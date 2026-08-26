@@ -1,7 +1,6 @@
 import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { z } from "zod";
-import { logger } from "../../utils/logger";
 import { learningLoopOrchestrator } from "../../services/scheduler/core";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -38,18 +37,13 @@ router.post(
 
     const { knowledge_point_id, graph_id } = parsed.data;
 
-    try {
-      const loop = await learningLoopOrchestrator.startLoop(
-        supabase,
-        req.user.id,
-        knowledge_point_id,
-        graph_id,
-      );
-      res.status(201).json({ success: true, data: loop });
-    } catch (error) {
-      logger.error("[LearningLoops] Failed to start loop:", error);
-      throw new AppError("Failed to start learning loop", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const loop = await learningLoopOrchestrator.startLoop(
+      supabase,
+      req.user.id,
+      knowledge_point_id,
+      graph_id,
+    );
+    res.status(201).json({ success: true, data: loop });
   },
 );
 
@@ -69,18 +63,13 @@ router.post(
 
     const { knowledge_point_id, graph_id } = parsed.data;
 
-    try {
-      const loop = await learningLoopOrchestrator.startLearningWithTask(
-        supabase,
-        req.user.id,
-        knowledge_point_id,
-        graph_id,
-      );
-      res.status(201).json({ success: true, data: loop });
-    } catch (error) {
-      logger.error("[LearningLoops] Failed to start learning with task:", error);
-      throw new AppError("Failed to start learning with task", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const loop = await learningLoopOrchestrator.startLearningWithTask(
+      supabase,
+      req.user.id,
+      knowledge_point_id,
+      graph_id,
+    );
+    res.status(201).json({ success: true, data: loop });
   },
 );
 
@@ -95,22 +84,17 @@ router.post(
 
     const { id } = req.params;
 
-    try {
-      const loop = await learningLoopOrchestrator.advanceLoop(
-        supabase,
-        id,
-        req.user.id,
-      );
+    const loop = await learningLoopOrchestrator.advanceLoop(
+      supabase,
+      id,
+      req.user.id,
+    );
 
-      if (!loop) {
-        throw new AppError("Learning loop not found", 404, ErrorCodes.RESOURCE_NOT_FOUND);
-      }
-
-      res.json({ success: true, data: loop });
-    } catch (error) {
-      logger.error("[LearningLoops] Failed to advance loop:", error);
-      throw new AppError("Failed to advance learning loop", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    if (!loop) {
+      throw new AppError("Learning loop not found", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
+
+    res.json({ success: true, data: loop });
   },
 );
 
@@ -130,17 +114,12 @@ router.get(
 
     const { knowledge_point_id } = parsed.data;
 
-    try {
-      const loop = await learningLoopOrchestrator.getActiveLoop(
-        supabase,
-        req.user.id,
-        knowledge_point_id,
-      );
-      res.json({ success: true, data: loop });
-    } catch (error) {
-      logger.error("[LearningLoops] Failed to get active loop:", error);
-      throw new AppError("Failed to get active learning loop", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const loop = await learningLoopOrchestrator.getActiveLoop(
+      supabase,
+      req.user.id,
+      knowledge_point_id,
+    );
+    res.json({ success: true, data: loop });
   },
 );
 

@@ -73,13 +73,8 @@ router.get(
       typeof getTemplatesQuerySchema
     >;
 
-    try {
-      const result = await templateService.listTemplates(supabase, req.user.id, { category, search, limit, offset });
-      res.json({ success: true, data: result.templates, total: result.total });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "获取模板列表失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const result = await templateService.listTemplates(supabase, req.user.id, { category, search, limit, offset });
+    res.json({ success: true, data: result.templates, total: result.total });
   },
 );
 
@@ -92,13 +87,8 @@ router.get(
       throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
-    try {
-      const categories = await templateService.getTemplateCategories(supabase, req.user.id);
-      res.json({ success: true, data: categories });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "获取分类失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const categories = await templateService.getTemplateCategories(supabase, req.user.id);
+    res.json({ success: true, data: categories });
   },
 );
 
@@ -114,13 +104,8 @@ router.get(
 
     const { id } = req.params;
 
-    try {
-      const template = await templateService.getTemplate(supabase, req.user.id, id);
-      res.json({ success: true, data: template });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "模板不存在", err.statusCode || 404, ErrorCodes.RESOURCE_NOT_FOUND);
-    }
+    const template = await templateService.getTemplate(supabase, req.user.id, id);
+    res.json({ success: true, data: template });
   },
 );
 
@@ -134,13 +119,8 @@ router.post(
       throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
-    try {
-      const template = await templateService.createTemplate(supabase, req.user.id, req.body);
-      res.status(201).json({ success: true, data: template });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "创建模板失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const template = await templateService.createTemplate(supabase, req.user.id, req.body);
+    res.status(201).json({ success: true, data: template });
   },
 );
 
@@ -178,13 +158,8 @@ router.delete(
 
     const { id } = req.params;
 
-    try {
-      await templateService.deleteTemplate(supabase, req.user.id, id);
-      res.json({ success: true });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "删除模板失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    await templateService.deleteTemplate(supabase, req.user.id, id);
+    res.json({ success: true });
   },
 );
 
@@ -201,15 +176,10 @@ router.post(
     const { id } = req.params;
     const { placeholders, queue_level, knowledge_point_id, deadline } = req.body;
 
-    try {
-      const task = await templateService.applyTemplate(supabase, req.user.id, id, {
-        placeholders, queue_level, knowledge_point_id, deadline,
-      });
-      res.status(201).json({ success: true, data: task });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "从模板创建任务失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const task = await templateService.applyTemplate(supabase, req.user.id, id, {
+      placeholders, queue_level, knowledge_point_id, deadline,
+    });
+    res.status(201).json({ success: true, data: task });
   },
 );
 
@@ -226,13 +196,8 @@ router.post(
     const { id } = req.params;
     const { name } = req.body;
 
-    try {
-      const template = await templateService.duplicateTemplate(supabase, req.user.id, id, name);
-      res.status(201).json({ success: true, data: template });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "复制模板失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const template = await templateService.duplicateTemplate(supabase, req.user.id, id, name);
+    res.status(201).json({ success: true, data: template });
   },
 );
 
@@ -248,13 +213,8 @@ router.put(
 
     const { id } = req.params;
 
-    try {
-      const template = await templateService.setDefaultTemplate(supabase, req.user.id, id);
-      res.json({ success: true, data: template });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "设置默认模板失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const template = await templateService.setDefaultTemplate(supabase, req.user.id, id);
+    res.json({ success: true, data: template });
   },
 );
 

@@ -71,15 +71,11 @@ router.get(
       throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
-    try {
-      const analytics = await taskAnalyticsService.getAnalytics(
-        supabase,
-        req.user.id,
-      );
-      res.json({ success: true, data: analytics });
-    } catch (_error) {
-      throw new AppError("获取任务分析数据失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const analytics = await taskAnalyticsService.getAnalytics(
+      supabase,
+      req.user.id,
+    );
+    res.json({ success: true, data: analytics });
   },
 );
 
@@ -92,15 +88,11 @@ router.post(
       throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
-    try {
-      const insights = await taskAnalyticsService.generateInsights(
-        supabase,
-        req.user.id,
-      );
-      res.json({ success: true, data: insights });
-    } catch (_error) {
-      throw new AppError("生成洞察失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const insights = await taskAnalyticsService.generateInsights(
+      supabase,
+      req.user.id,
+    );
+    res.json({ success: true, data: insights });
   },
 );
 

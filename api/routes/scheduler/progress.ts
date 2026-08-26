@@ -30,18 +30,13 @@ router.post(
     const { start_date, end_date, progress_mode, custom_allocations } =
       req.body;
 
-    try {
-      const plans = await progressPlanService.createProgressPlan(
-        supabase,
-        req.user.id,
-        id,
-        { start_date, end_date, progress_mode, custom_allocations },
-      );
-      res.status(201).json({ success: true, data: plans });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "生成进度计划失败", err.statusCode || 400, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const plans = await progressPlanService.createProgressPlan(
+      supabase,
+      req.user.id,
+      id,
+      { start_date, end_date, progress_mode, custom_allocations },
+    );
+    res.status(201).json({ success: true, data: plans });
   },
 );
 
@@ -58,18 +53,13 @@ router.put(
     const { id } = req.params;
     const { plan_date, planned_percentage, notes } = req.body;
 
-    try {
-      const plan = await progressPlanService.updateProgressPlan(
-        supabase,
-        req.user.id,
-        id,
-        { plan_date, planned_percentage, notes },
-      );
-      res.json({ success: true, data: plan });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message, err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const plan = await progressPlanService.updateProgressPlan(
+      supabase,
+      req.user.id,
+      id,
+      { plan_date, planned_percentage, notes },
+    );
+    res.json({ success: true, data: plan });
   },
 );
 
@@ -85,17 +75,12 @@ router.get(
 
     const { id } = req.params;
 
-    try {
-      const result = await progressPlanService.listProgressPlans(
-        supabase,
-        req.user.id,
-        id,
-      );
-      res.json({ success: true, data: result });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message, err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const result = await progressPlanService.listProgressPlans(
+      supabase,
+      req.user.id,
+      id,
+    );
+    res.json({ success: true, data: result });
   },
 );
 
@@ -112,18 +97,13 @@ router.post(
     const { id } = req.params;
     const { date, percentage, notes } = req.body;
 
-    try {
-      const result = await progressPlanService.updateProgress(
-        supabase,
-        req.user.id,
-        id,
-        { date, percentage, notes },
-      );
-      res.json({ success: true, data: result });
-    } catch (error) {
-      const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message, err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const result = await progressPlanService.updateProgress(
+      supabase,
+      req.user.id,
+      id,
+      { date, percentage, notes },
+    );
+    res.json({ success: true, data: result });
   },
 );
 

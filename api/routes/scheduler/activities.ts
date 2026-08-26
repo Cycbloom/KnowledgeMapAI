@@ -1,7 +1,6 @@
 import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { z } from "zod";
-import { logger } from "../../utils/logger";
 import { activityService, autoTaskGenerator, smartTaskLinker } from "../../services/scheduler";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -48,17 +47,12 @@ router.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
     throw new AppError("Invalid request data", 400, ErrorCodes.VALIDATION_ERROR);
   }
 
-  try {
-    const activity = await activityService.recordActivity(
-      supabase,
-      req.user.id,
-      parsed.data as import("../../services/scheduler/activityService").RecordActivityData,
-    );
-    res.status(201).json({ success: true, data: activity });
-  } catch (error) {
-    logger.error("[Activities] Failed to record activity:", error);
-    throw new AppError("Failed to record activity", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const activity = await activityService.recordActivity(
+    supabase,
+    req.user.id,
+    parsed.data as import("../../services/scheduler/activityService").RecordActivityData,
+  );
+  res.status(201).json({ success: true, data: activity });
 });
 
 router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
@@ -67,30 +61,25 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
     throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 
-  try {
-    const options: Record<string, unknown> = {};
-    if (req.query.from_date) options.from_date = req.query.from_date as string;
-    if (req.query.to_date) options.to_date = req.query.to_date as string;
-    if (req.query.activity_type)
-      {options.activity_type = req.query.activity_type as string;}
-    if (req.query.knowledge_point_id)
-      {options.knowledge_point_id = req.query.knowledge_point_id as string;}
-    if (req.query.graph_id) options.graph_id = req.query.graph_id as string;
-    if (req.query.limit)
-      {options.limit = parseInt(req.query.limit as string, 10);}
-    if (req.query.offset)
-      {options.offset = parseInt(req.query.offset as string, 10);}
+  const options: Record<string, unknown> = {};
+  if (req.query.from_date) options.from_date = req.query.from_date as string;
+  if (req.query.to_date) options.to_date = req.query.to_date as string;
+  if (req.query.activity_type)
+    {options.activity_type = req.query.activity_type as string;}
+  if (req.query.knowledge_point_id)
+    {options.knowledge_point_id = req.query.knowledge_point_id as string;}
+  if (req.query.graph_id) options.graph_id = req.query.graph_id as string;
+  if (req.query.limit)
+    {options.limit = parseInt(req.query.limit as string, 10);}
+  if (req.query.offset)
+    {options.offset = parseInt(req.query.offset as string, 10);}
 
-    const result = await activityService.getActivities(
-      supabase,
-      req.user.id,
-      options as Parameters<typeof activityService.getActivities>[2],
-    );
-    res.json({ success: true, data: result.data, total: result.total });
-  } catch (error) {
-    logger.error("[Activities] Failed to get activities:", error);
-    throw new AppError("Failed to get activities", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const result = await activityService.getActivities(
+    supabase,
+    req.user.id,
+    options as Parameters<typeof activityService.getActivities>[2],
+  );
+  res.json({ success: true, data: result.data, total: result.total });
 });
 
 router.get(
@@ -108,17 +97,12 @@ router.get(
       throw new AppError("Invalid date format, expected YYYY-MM-DD", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
-    try {
-      const activities = await activityService.getDailyActivities(
-        supabase,
-        req.user.id,
-        date,
-      );
-      res.json({ success: true, data: activities });
-    } catch (error) {
-      logger.error("[Activities] Failed to get daily activities:", error);
-      throw new AppError("Failed to get daily activities", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const activities = await activityService.getDailyActivities(
+      supabase,
+      req.user.id,
+      date,
+    );
+    res.json({ success: true, data: activities });
   },
 );
 
@@ -141,18 +125,13 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
     throw new AppError("Invalid date format, expected YYYY-MM-DD", 400, ErrorCodes.VALIDATION_ERROR);
   }
 
-  try {
-    const stats = await activityService.getActivityStats(
-      supabase,
-      req.user.id,
-      start_date as string,
-      end_date as string,
-    );
-    res.json({ success: true, data: stats });
-  } catch (error) {
-    logger.error("[Activities] Failed to get activity stats:", error);
-    throw new AppError("Failed to get activity stats", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const stats = await activityService.getActivityStats(
+    supabase,
+    req.user.id,
+    start_date as string,
+    end_date as string,
+  );
+  res.json({ success: true, data: stats });
 });
 
 router.put("/:id/end", requireAuth, async (req: AuthRequest, res: Response) => {
@@ -166,19 +145,14 @@ router.put("/:id/end", requireAuth, async (req: AuthRequest, res: Response) => {
     throw new AppError("Invalid request data", 400, ErrorCodes.VALIDATION_ERROR);
   }
 
-  try {
-    const activity = await activityService.endActivity(
-      supabase,
-      req.user.id,
-      req.params.id,
-      parsed.data.ended_at,
-      parsed.data.duration,
-    );
-    res.json({ success: true, data: activity });
-  } catch (error) {
-    logger.error("[Activities] Failed to end activity:", error);
-    throw new AppError("Failed to end activity", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const activity = await activityService.endActivity(
+    supabase,
+    req.user.id,
+    req.params.id,
+    parsed.data.ended_at,
+    parsed.data.duration,
+  );
+  res.json({ success: true, data: activity });
 });
 
 router.post(
@@ -206,51 +180,46 @@ router.post(
       estimated_time,
     } = parsed.data;
 
-    try {
-      let result;
+    let result;
 
-      switch (type) {
-        case "learning":
-          result = await autoTaskGenerator.generateLearningTask(
-            supabase,
-            req.user.id,
-            knowledge_point_id,
-            { graphId: graph_id, title },
+    switch (type) {
+      case "learning":
+        result = await autoTaskGenerator.generateLearningTask(
+          supabase,
+          req.user.id,
+          knowledge_point_id,
+          { graphId: graph_id, title },
+        );
+        break;
+
+      case "review":
+        result = await autoTaskGenerator.generateReviewTask(
+          supabase,
+          req.user.id,
+          knowledge_point_id,
+          { title, intervalDays: interval_days },
+        );
+        break;
+
+      case "path_node":
+        if (!path_node_id || !parent_task_id) {
+          throw new AppError(
+            "path_node_id and parent_task_id are required for path_node type",
+            400,
+            ErrorCodes.VALIDATION_ERROR,
           );
-          break;
-
-        case "review":
-          result = await autoTaskGenerator.generateReviewTask(
-            supabase,
-            req.user.id,
-            knowledge_point_id,
-            { title, intervalDays: interval_days },
-          );
-          break;
-
-        case "path_node":
-          if (!path_node_id || !parent_task_id) {
-            throw new AppError(
-              "path_node_id and parent_task_id are required for path_node type",
-              400,
-              ErrorCodes.VALIDATION_ERROR,
-            );
-          }
-          result = await autoTaskGenerator.generatePathNodeTask(
-            supabase,
-            req.user.id,
-            path_node_id,
-            parent_task_id,
-            { title, estimatedTime: estimated_time },
-          );
-          break;
-      }
-
-      res.status(201).json({ success: true, data: result });
-    } catch (error) {
-      logger.error("[AutoGenerate] Failed to generate task:", error);
-      throw new AppError("Failed to auto-generate task", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        }
+        result = await autoTaskGenerator.generatePathNodeTask(
+          supabase,
+          req.user.id,
+          path_node_id,
+          parent_task_id,
+          { title, estimatedTime: estimated_time },
+        );
+        break;
     }
+
+    res.status(201).json({ success: true, data: result });
   },
 );
 
@@ -269,29 +238,24 @@ router.get(
       throw new AppError("graph_id or knowledge_point_id is required", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
-    try {
-      let result;
+    let result;
 
-      if (graph_id) {
-        result = await smartTaskLinker.getOrCreateTaskForGraph(
-          supabase,
-          req.user.id,
-          graph_id as string,
-        );
-      } else {
-        result = await smartTaskLinker.getOrCreateTaskForKnowledgePoint(
-          supabase,
-          req.user.id,
-          knowledge_point_id as string,
-          { title: title as string },
-        );
-      }
-
-      res.json({ success: true, data: result });
-    } catch (error) {
-      logger.error("[Activities] Failed to link task:", error);
-      throw new AppError("Failed to link task", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    if (graph_id) {
+      result = await smartTaskLinker.getOrCreateTaskForGraph(
+        supabase,
+        req.user.id,
+        graph_id as string,
+      );
+    } else {
+      result = await smartTaskLinker.getOrCreateTaskForKnowledgePoint(
+        supabase,
+        req.user.id,
+        knowledge_point_id as string,
+        { title: title as string },
+      );
     }
+
+    res.json({ success: true, data: result });
   },
 );
 

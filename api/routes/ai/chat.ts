@@ -70,30 +70,18 @@ router.post("/grade", requireAuth, validate(gradeAnswerSchema), async (req: Auth
 
 router.post("/extract-concepts", requireAuth, validate(extractConceptsSchema), async (req: AuthRequest, res: Response) => {
   const { text, existing_nodes, max_concepts, provider: providerType, model } = req.body;
-  try {
-    const result = await aiService.extractConcepts(text, existing_nodes, {
-      provider: providerType, model, maxConcepts: max_concepts,
-    });
-    res.json(result);
-  } catch (error: unknown) {
-    const err = error as Error;
-    logger.error("AI Extract Concepts Error:", error);
-    throw new AppError(err.message || "AI 概念提取失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const result = await aiService.extractConcepts(text, existing_nodes, {
+    provider: providerType, model, maxConcepts: max_concepts,
+  });
+  res.json(result);
 });
 
 router.post("/suggest-next-topic", requireAuth, validate(suggestNextTopicSchema), async (req: AuthRequest, res: Response) => {
   const { node_title, node_content, existing_nodes, user_progress, provider: providerType, model } = req.body;
-  try {
-    const result = await aiService.suggestNextTopic(node_title, node_content, existing_nodes, {
-      provider: providerType, model, userProgress: user_progress,
-    });
-    res.json(result);
-  } catch (error: unknown) {
-    const err = error as Error;
-    logger.error("AI Suggest Next Topic Error:", error);
-    throw new AppError(err.message || "AI 主题建议失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const result = await aiService.suggestNextTopic(node_title, node_content, existing_nodes, {
+    provider: providerType, model, userProgress: user_progress,
+  });
+  res.json(result);
 });
 
 export default router;

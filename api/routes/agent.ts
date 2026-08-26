@@ -223,14 +223,8 @@ router.post(
 
     const agentService = new AgentService(req.supabase);
 
-    try {
-      const result = await agentService.executeWithAutonomy(id, userId, goal);
-      res.json(result);
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Failed to execute autonomous session", error);
-      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const result = await agentService.executeWithAutonomy(id, userId, goal);
+    res.json(result);
   },
 );
 
@@ -239,17 +233,12 @@ router.get("/skills", requireAuth, async (_req: AuthRequest, res: Response) => {
 });
 
 router.get("/tools", requireAuth, async (_req: AuthRequest, res: Response) => {
-  try {
-    const tools = allTools.map((t) => ({
-      name: t.name,
-      description: t.description,
-      parameters: t.parameters,
-    }));
-    res.json({ tools });
-  } catch (error) {
-    logger.error("Failed to get tools", error);
-    throw new AppError("Failed to get tools", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const tools = allTools.map((t) => ({
+    name: t.name,
+    description: t.description,
+    parameters: t.parameters,
+  }));
+  res.json({ tools });
 });
 
 router.post(
@@ -308,17 +297,11 @@ router.post(
     }
     const { id, actionId } = req.params;
     const agentService = new AgentService(req.supabase);
-    try {
-      const result = await agentService.confirmAction(id, actionId);
-      if (!result.success) {
-        throw new AppError(result.error ?? "操作失败", 400, ErrorCodes.VALIDATION_ERROR);
-      }
-      res.json({ success: true, result: result.result, needsResume: result.needsResume });
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Failed to confirm action", error);
-      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    const result = await agentService.confirmAction(id, actionId);
+    if (!result.success) {
+      throw new AppError(result.error ?? "操作失败", 400, ErrorCodes.VALIDATION_ERROR);
     }
+    res.json({ success: true, result: result.result, needsResume: result.needsResume });
   },
 );
 
@@ -332,17 +315,11 @@ router.post(
     }
     const { id, actionId } = req.params;
     const agentService = new AgentService(req.supabase);
-    try {
-      const result = await agentService.rejectAction(id, actionId);
-      if (!result.success) {
-        throw new AppError(result.error ?? "操作失败", 400, ErrorCodes.VALIDATION_ERROR);
-      }
-      res.json({ success: true, needsResume: result.needsResume });
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Failed to reject action", error);
-      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    const result = await agentService.rejectAction(id, actionId);
+    if (!result.success) {
+      throw new AppError(result.error ?? "操作失败", 400, ErrorCodes.VALIDATION_ERROR);
     }
+    res.json({ success: true, needsResume: result.needsResume });
   },
 );
 
@@ -358,14 +335,8 @@ router.post(
     const { id } = req.params;
     const { action_ids } = req.body;
     const agentService = new AgentService(req.supabase);
-    try {
-      const results = await agentService.batchConfirmActions(id, action_ids);
-      res.json({ success: true, results: results.results, needsResume: results.needsResume });
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Failed to batch confirm actions", error);
-      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const results = await agentService.batchConfirmActions(id, action_ids);
+    res.json({ success: true, results: results.results, needsResume: results.needsResume });
   },
 );
 
@@ -381,14 +352,8 @@ router.post(
     const { id } = req.params;
     const { action_ids } = req.body;
     const agentService = new AgentService(req.supabase);
-    try {
-      const results = await agentService.batchRejectActions(id, action_ids);
-      res.json({ success: true, results: results.results, needsResume: results.needsResume });
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Failed to batch reject actions", error);
-      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const results = await agentService.batchRejectActions(id, action_ids);
+    res.json({ success: true, results: results.results, needsResume: results.needsResume });
   },
 );
 

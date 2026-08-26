@@ -51,68 +51,62 @@ router.post(
       return res.json({ content: getMockResponse("content", topic) as string });
     }
 
-    try {
-      const templateContext = annotationService.buildTemplateContext(topic, context, level);
+    const templateContext = annotationService.buildTemplateContext(topic, context, level);
 
-      const systemPrompt = await promptService.getRenderedPrompt(
-        req.supabase,
-        "generate_content",
-        templateContext,
-        req.user.id,
-        graph_id,
-        language,
+    const systemPrompt = await promptService.getRenderedPrompt(
+      req.supabase,
+      "generate_content",
+      templateContext,
+      req.user.id,
+      graph_id,
+      language,
+    );
+
+    const enrichedMetadata = await enrichMetadata(req.supabase, {
+      graphId: graph_id,
+      userId: req.user.id,
+      topic,
+      nodeLevel: level,
+    });
+
+    const startTime = Date.now();
+    const completion = await provider.client.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `Topic: ${topic}\nContext: ${context || "General knowledge"}`,
+        },
+      ],
+      model: model || provider.model,
+    });
+    const duration = Date.now() - startTime;
+
+    const usage = completion.usage;
+    if (usage) {
+      const cost = pricingService.calculateCost(
+        provider.providerType,
+        model || provider.model,
+        usage.prompt_tokens,
+        usage.completion_tokens,
+        0
       );
-
-      const enrichedMetadata = await enrichMetadata(req.supabase, {
-        graphId: graph_id,
-        userId: req.user.id,
-        topic,
-        nodeLevel: level,
-      });
-
-      const startTime = Date.now();
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `Topic: ${topic}\nContext: ${context || "General knowledge"}`,
-          },
-        ],
+      await performanceMonitor.recordLog({
+        operation: 'generate_content',
+        provider: provider.providerType,
         model: model || provider.model,
+        inputTokens: usage.prompt_tokens,
+        outputTokens: usage.completion_tokens,
+        totalTokens: usage.prompt_tokens + usage.completion_tokens,
+        cachedInputTokens: 0,
+        duration,
+        success: true,
+        estimatedCost: cost,
+        metadata: enrichedMetadata,
       });
-      const duration = Date.now() - startTime;
-
-      const usage = completion.usage;
-      if (usage) {
-        const cost = pricingService.calculateCost(
-          provider.providerType,
-          model || provider.model,
-          usage.prompt_tokens,
-          usage.completion_tokens,
-          0
-        );
-        await performanceMonitor.recordLog({
-          operation: 'generate_content',
-          provider: provider.providerType,
-          model: model || provider.model,
-          inputTokens: usage.prompt_tokens,
-          outputTokens: usage.completion_tokens,
-          totalTokens: usage.prompt_tokens + usage.completion_tokens,
-          cachedInputTokens: 0,
-          duration,
-          success: true,
-          estimatedCost: cost,
-          metadata: enrichedMetadata,
-        });
-      }
-
-      res.json({ content: completion.choices[0].message.content });
-    } catch (error: unknown) {
-      const err = error as Error;
-      logger.error("AI Error:", error);
-      throw new AppError(err.message || "AI 生成失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
+
+    res.json({ content: completion.choices[0].message.content });
   },
 );
 
@@ -124,22 +118,16 @@ router.post(
     const { topic, context, level, provider, model, graph_id, language, schema_id } =
       req.body;
 
-    try {
-      const result = await aiService.generateLearningMaterial(topic, context, {
-        provider,
-        model,
-        level,
-        userId: req.user.id,
-        graphId: graph_id,
-        language,
-        schema_id,
-      });
-      res.json({ content: result.content, keywords: result.keywords });
-    } catch (error: unknown) {
-      const err = error as Error;
-      logger.error("AI Learning Material Error:", error);
-      throw new AppError(err.message || "AI 生成学习内容失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const result = await aiService.generateLearningMaterial(topic, context, {
+      provider,
+      model,
+      level,
+      userId: req.user.id,
+      graphId: graph_id,
+      language,
+      schema_id,
+    });
+    res.json({ content: result.content, keywords: result.keywords });
   },
 );
 

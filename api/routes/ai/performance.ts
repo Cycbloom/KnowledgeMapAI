@@ -2,8 +2,6 @@ import { Router } from 'express';
 import { requireAuth } from '../../middleware/auth';
 import { performanceMonitor } from '../../services/ai';
 import type { GetPerformanceLogsQuery } from '@shared/types';
-import { AppError } from '../../middleware/errorHandler';
-import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 const router = Router();
 
@@ -26,30 +24,22 @@ router.get('/logs', async (req, res) => {
 });
 
 router.get('/historical-logs', async (req, res) => {
-  try {
-    const query: GetPerformanceLogsQuery & { days?: number } = {
-      limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
-      offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
-      operation: req.query.operation as string,
-      provider: req.query.provider as GetPerformanceLogsQuery['provider'],
-      success: req.query.success === 'true' ? true : req.query.success === 'false' ? false : undefined,
-      days: req.query.days ? parseInt(req.query.days as string) : undefined,
-    };
+  const query: GetPerformanceLogsQuery & { days?: number } = {
+    limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
+    offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
+    operation: req.query.operation as string,
+    provider: req.query.provider as GetPerformanceLogsQuery['provider'],
+    success: req.query.success === 'true' ? true : req.query.success === 'false' ? false : undefined,
+    days: req.query.days ? parseInt(req.query.days as string) : undefined,
+  };
 
-    const result = await performanceMonitor.getHistoricalLogs(query);
-    res.json(result);
-  } catch (_error) {
-    throw new AppError('Failed to fetch historical logs', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const result = await performanceMonitor.getHistoricalLogs(query);
+  res.json(result);
 });
 
 router.get('/database-stats', async (_req, res) => {
-  try {
-    const stats = await performanceMonitor.getDatabaseStats();
-    res.json(stats);
-  } catch (_error) {
-    throw new AppError('Failed to fetch database stats', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const stats = await performanceMonitor.getDatabaseStats();
+  res.json(stats);
 });
 
 router.get('/stats', async (req, res) => {

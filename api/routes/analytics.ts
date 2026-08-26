@@ -68,20 +68,15 @@ interface ErrorReport {
 }
 
 router.post('/performance', validate({ body: performanceReportSchema }), async (req, res): Promise<void> => {
-  try {
-    const report: PerformanceReport = req.body;
-    const { metrics, url } = report;
+  const report: PerformanceReport = req.body;
+  const { metrics, url } = report;
 
-    logger.info('Performance report received', {
-      metrics,
-      url: url.substring(0, 100),
-    });
+  logger.info('Performance report received', {
+    metrics,
+    url: url.substring(0, 100),
+  });
 
-    res.json({ success: true });
-  } catch (error) {
-    logger.error('Performance report error:', error);
-    throw new AppError('Failed to process performance report', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  res.json({ success: true });
 });
 
 function truncate(value: string | undefined, max: number): string | undefined {
@@ -143,70 +138,55 @@ export const postErrorsHandler = async (req: Request, res: Response): Promise<vo
 router.post('/errors', validate({ body: postErrorsSchema }), postErrorsHandler);
 
 export const getStatsHandler = async (_req: Request, res: Response): Promise<void> => {
-  try {
-    const supabase = getSupabaseAdmin();
-    const { count: errorTotal, error: countError } = await supabase
-      .from('error_reports')
-      .select('*', { count: 'exact', head: true });
+  const supabase = getSupabaseAdmin();
+  const { count: errorTotal, error: countError } = await supabase
+    .from('error_reports')
+    .select('*', { count: 'exact', head: true });
 
-    if (countError) {
-      logger.error('Failed to count errors', countError);
-      throw new AppError('Failed to get analytics stats', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
-
-    res.json({
-      performance: {
-        total: 0,
-        avgLCP: 0,
-        avgFID: 0,
-        avgCLS: 0,
-      },
-      errors: {
-        total: errorTotal ?? 0,
-        byType: {} as Record<string, number>,
-      },
-    });
-  } catch (error) {
-    logger.error('Analytics stats error:', error);
+  if (countError) {
+    logger.error('Failed to count errors', countError);
     throw new AppError('Failed to get analytics stats', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
+
+  res.json({
+    performance: {
+      total: 0,
+      avgLCP: 0,
+      avgFID: 0,
+      avgCLS: 0,
+    },
+    errors: {
+      total: errorTotal ?? 0,
+      byType: {} as Record<string, number>,
+    },
+  });
 };
 router.get('/stats', requireAuth, getStatsHandler);
 
 router.get('/performance/recent', requireAuth, async (_req, res): Promise<void> => {
-  try {
-    const reports: unknown[] = [];
-    res.json({ reports, count: reports.length });
-  } catch (error) {
-    logger.error('Recent performance error:', error);
-    throw new AppError('Failed to get recent performance data', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const reports: unknown[] = [];
+  res.json({ reports, count: reports.length });
 });
 
 export const getRecentErrorsHandler = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const rawLimit = parseInt(String(req.query.limit), 10);
-    const limit = Number.isNaN(rawLimit)
-      ? DEFAULT_RECENT_LIMIT
-      : Math.min(Math.max(rawLimit, 1), MAX_RECENT_LIMIT);
+  const rawLimit = parseInt(String(req.query.limit), 10);
+  const limit = Number.isNaN(rawLimit)
+    ? DEFAULT_RECENT_LIMIT
+    : Math.min(Math.max(rawLimit, 1), MAX_RECENT_LIMIT);
 
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from('error_reports')
-      .select('*')
-      .order('timestamp', { ascending: false })
-      .limit(limit);
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('error_reports')
+    .select('*')
+    .order('timestamp', { ascending: false })
+    .limit(limit);
 
-    if (error) {
-      logger.error('Failed to fetch recent errors', error);
-      throw new AppError('Failed to get recent errors', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
-
-    res.json({ errors: data ?? [], count: data?.length ?? 0 });
-  } catch (error) {
-    logger.error('Recent errors fetch failed:', error);
+  if (error) {
+    logger.error('Failed to fetch recent errors', error);
     throw new AppError('Failed to get recent errors', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
+
+  res.json({ errors: data ?? [], count: data?.length ?? 0 });
 };
 router.get('/errors/recent', requireAuth, getRecentErrorsHandler);
 

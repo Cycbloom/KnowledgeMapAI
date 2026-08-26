@@ -91,58 +91,48 @@ router.post(
     const sessionId = session_id || crypto.randomUUID();
 
     if (template_type === "topic_research") {
-      try {
-        const result = await templateGeneratorService.generateTemplates({
-          topic,
-          templateType: "topic_research",
-          provider: providerType as AIProviderType,
-          model,
-        });
+      const result = await templateGeneratorService.generateTemplates({
+        topic,
+        templateType: "topic_research",
+        provider: providerType as AIProviderType,
+        model,
+      });
 
-        const template = result.templates[0];
-        if (!template) {
-          throw new AppError("生成模板失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-        }
-
-        const rootNode = template.nodes.find((n) => n.level === "root");
-        const coreNodes = template.nodes.filter((n) => n.level === "core");
-
-        const rootContent =
-          rootNode?.description ||
-          rootNode?.suggestedContent ||
-          `${topic}：本专题研究的核心主题，涵盖研究背景、文献综述、研究方法、核心概念、应用领域和未来方向六大模块`;
-
-        res.json({
-          sessionId,
-          root: {
-            title: rootNode?.title || topic,
-            content: rootContent,
-          },
-          coreNodes: coreNodes.map((n) => {
-            const aiNode = n as AIGeneratedTemplateNode;
-            return {
-              title: n.title,
-              content:
-                n.description ||
-                n.suggestedContent ||
-                `${n.title}：${aiNode.backboneModule ? `${n.title}模块的核心内容` : "该节点的详细内容"}`,
-              level: n.level || "core",
-              backboneModule: aiNode.backboneModule,
-              needsRefinement: aiNode.needsRefinement,
-              color: aiNode.color,
-            };
-          }),
-        });
-        return;
-      } catch (error) {
-        const err = error as Error;
-        logger.error("Topic Research Template Error:", error);
-        throw new AppError(
-          err.message || "专题研究模板生成失败",
-          500,
-          ErrorCodes.SYSTEM_INTERNAL_ERROR,
-        );
+      const template = result.templates[0];
+      if (!template) {
+        throw new AppError("生成模板失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
+
+      const rootNode = template.nodes.find((n) => n.level === "root");
+      const coreNodes = template.nodes.filter((n) => n.level === "core");
+
+      const rootContent =
+        rootNode?.description ||
+        rootNode?.suggestedContent ||
+        `${topic}：本专题研究的核心主题，涵盖研究背景、文献综述、研究方法、核心概念、应用领域和未来方向六大模块`;
+
+      res.json({
+        sessionId,
+        root: {
+          title: rootNode?.title || topic,
+          content: rootContent,
+        },
+        coreNodes: coreNodes.map((n) => {
+          const aiNode = n as AIGeneratedTemplateNode;
+          return {
+            title: n.title,
+            content:
+              n.description ||
+              n.suggestedContent ||
+              `${n.title}：${aiNode.backboneModule ? `${n.title}模块的核心内容` : "该节点的详细内容"}`,
+            level: n.level || "core",
+            backboneModule: aiNode.backboneModule,
+            needsRefinement: aiNode.needsRefinement,
+            color: aiNode.color,
+          };
+        }),
+      });
+      return;
     }
 
     try {
@@ -238,60 +228,50 @@ router.post(
   async (req: AuthedRequest, res: Response) => {
     const { graph_id, nodes } = req.body;
 
-    try {
-      const existingGraphNodes = await graphNodeService.getGraphNodes(
-        req.supabase,
-        graph_id,
-      );
+    const existingGraphNodes = await graphNodeService.getGraphNodes(
+      req.supabase,
+      graph_id,
+    );
 
-      const existingCount = existingGraphNodes?.length || 0;
+    const existingCount = existingGraphNodes?.length || 0;
 
-      const nodesWithTempId = autoGraphService.calculateNodePositions(
-        nodes,
-        existingCount,
-      );
+    const nodesWithTempId = autoGraphService.calculateNodePositions(
+      nodes,
+      existingCount,
+    );
 
-      if (nodesWithTempId.length === 0) {
-        return res.json({ success: true, nodeCount: 0, edgeCount: 0 });
-      }
-
-      const result = await autoGraphService.processAINodes(
-        req.supabase,
-        req.user.id,
-        graph_id,
-        nodesWithTempId,
-      );
-
-      await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
-      await cacheService.del(CacheKeys.GRAPH_NODES("public", graph_id));
-
-      appEventBus.publish<NodeCreatedPayload>(
-          "node_created",
-          { nodeId: "", graphId: graph_id, userId: req.user.id, title: "" },
-          req.user.id,
-          "auto_graph_route",
-        );
-
-      const nodeMapping: Record<
-        string,
-        { graphNodeId: string; knowledgePointId: string }
-      > = result.nodeMapping;
-
-      res.json({
-        success: true,
-        nodeCount: result.nodeCount,
-        edgeCount: result.edgeCount,
-        nodeMapping,
-      });
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Save nodes error:", error);
-      throw new AppError(
-        err.message || "保存节点失败",
-        500,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
+    if (nodesWithTempId.length === 0) {
+      return res.json({ success: true, nodeCount: 0, edgeCount: 0 });
     }
+
+    const result = await autoGraphService.processAINodes(
+      req.supabase,
+      req.user.id,
+      graph_id,
+      nodesWithTempId,
+    );
+
+    await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
+    await cacheService.del(CacheKeys.GRAPH_NODES("public", graph_id));
+
+    appEventBus.publish<NodeCreatedPayload>(
+      "node_created",
+      { nodeId: "", graphId: graph_id, userId: req.user.id, title: "" },
+      req.user.id,
+      "auto_graph_route",
+    );
+
+    const nodeMapping: Record<
+      string,
+      { graphNodeId: string; knowledgePointId: string }
+    > = result.nodeMapping;
+
+    res.json({
+      success: true,
+      nodeCount: result.nodeCount,
+      edgeCount: result.edgeCount,
+      nodeMapping,
+    });
   },
 );
 

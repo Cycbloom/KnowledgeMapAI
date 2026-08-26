@@ -11,13 +11,7 @@ import { TTS_VOICES } from '../../../shared/constants/ttsVoices';
 const router = Router();
 
 router.get('/tts/voices', requireAuth, validate(ttsVoicesSchema), async (_req: AuthRequest, res: Response) => {
-  try {
-    res.json(TTS_VOICES);
-  } catch (error: unknown) {
-    const err = error as Error;
-    logger.error('TTS Voices Error:', error);
-    throw new AppError(err.message || '获取语音列表失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  res.json(TTS_VOICES);
 });
 
 router.post('/tts', requireAuth, validate(ttsSchema), async (req: AuthRequest, res: Response) => {

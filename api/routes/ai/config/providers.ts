@@ -31,74 +31,69 @@ router.get(
   "/providers",
   requireAuth,
   async (_req: AuthRequest, res: Response) => {
-    try {
-      const [allConfigs, sysConfig] = await Promise.all([
-        appSettingsService.getSetting<
-          Record<string, Record<string, string>>
-        >("ai_provider_config"),
-        appSettingsService.getSetting<{
-          main_ai?: { provider?: string; model?: string };
-          embedding_ai?: { provider?: string; model?: string };
-        }>("system_config"),
-      ]);
+    const [allConfigs, sysConfig] = await Promise.all([
+      appSettingsService.getSetting<
+        Record<string, Record<string, string>>
+      >("ai_provider_config"),
+      appSettingsService.getSetting<{
+        main_ai?: { provider?: string; model?: string };
+        embedding_ai?: { provider?: string; model?: string };
+      }>("system_config"),
+    ]);
 
-      const providers: Record<string, Record<string, unknown>> = {};
-      const allProviderTypes = providerRegistry.getRegisteredTypes();
+    const providers: Record<string, Record<string, unknown>> = {};
+    const allProviderTypes = providerRegistry.getRegisteredTypes();
 
-      for (const provider of allProviderTypes) {
-        const dbConfig = allConfigs?.[provider];
-        const envAvailable = hasEnvFallback(provider);
-        const defaults = PROVIDER_DEFAULTS[provider];
+    for (const provider of allProviderTypes) {
+      const dbConfig = allConfigs?.[provider];
+      const envAvailable = hasEnvFallback(provider);
+      const defaults = PROVIDER_DEFAULTS[provider];
 
-        // 与 getProviderConfig 保持一致：如果 system_config 选了当前
-        // provider 作为 main_ai / embedding_ai，就优先显示用户在 UI 上
-        // 保存的 model / embeddingModel，避免"测试通过但实际调用失败"。
-        let baseModel = dbConfig?.model || defaults.model;
-        if (
-          sysConfig?.main_ai?.provider === provider &&
-          sysConfig.main_ai.model?.trim()
-        ) {
-          baseModel = sysConfig.main_ai.model.trim();
-        }
-
-        let baseEmbeddingModel =
-          dbConfig?.embeddingModel || defaults.embeddingModel;
-        if (
-          sysConfig?.embedding_ai?.provider === provider &&
-          sysConfig.embedding_ai.model?.trim()
-        ) {
-          baseEmbeddingModel = sysConfig.embedding_ai.model.trim();
-        }
-
-        if (dbConfig?.apiKey) {
-          providers[provider] = {
-            configured: true,
-            apiKey: maskApiKey(dbConfig.apiKey),
-            baseURL: dbConfig.baseURL || defaults.baseURL,
-            model: baseModel,
-            ...(baseEmbeddingModel
-              ? { embeddingModel: baseEmbeddingModel }
-              : {}),
-            source: "user",
-          };
-        } else if (envAvailable) {
-          providers[provider] = {
-            configured: true,
-            source: "env",
-          };
-        } else {
-          providers[provider] = {
-            configured: false,
-            source: "none",
-          };
-        }
+      // 与 getProviderConfig 保持一致：如果 system_config 选了当前
+      // provider 作为 main_ai / embedding_ai，就优先显示用户在 UI 上
+      // 保存的 model / embeddingModel，避免"测试通过但实际调用失败"。
+      let baseModel = dbConfig?.model || defaults.model;
+      if (
+        sysConfig?.main_ai?.provider === provider &&
+        sysConfig.main_ai.model?.trim()
+      ) {
+        baseModel = sysConfig.main_ai.model.trim();
       }
 
-      res.json({ providers });
-    } catch (error) {
-      logger.error("Failed to get provider configs:", error);
-      throw new AppError("Failed to get provider configs", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      let baseEmbeddingModel =
+        dbConfig?.embeddingModel || defaults.embeddingModel;
+      if (
+        sysConfig?.embedding_ai?.provider === provider &&
+        sysConfig.embedding_ai.model?.trim()
+      ) {
+        baseEmbeddingModel = sysConfig.embedding_ai.model.trim();
+      }
+
+      if (dbConfig?.apiKey) {
+        providers[provider] = {
+          configured: true,
+          apiKey: maskApiKey(dbConfig.apiKey),
+          baseURL: dbConfig.baseURL || defaults.baseURL,
+          model: baseModel,
+          ...(baseEmbeddingModel
+            ? { embeddingModel: baseEmbeddingModel }
+            : {}),
+          source: "user",
+        };
+      } else if (envAvailable) {
+        providers[provider] = {
+          configured: true,
+          source: "env",
+        };
+      } else {
+        providers[provider] = {
+          configured: false,
+          source: "none",
+        };
+      }
     }
+
+    res.json({ providers });
   },
 );
 

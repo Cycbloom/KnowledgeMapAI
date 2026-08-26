@@ -55,42 +55,32 @@ router.post(
         );
       }
 
-      try {
-        const validNodes = nodes.filter(
-          (node: { title?: string }) => node.title && node.title.trim() !== "",
-        );
+      const validNodes = nodes.filter(
+        (node: { title?: string }) => node.title && node.title.trim() !== "",
+      );
 
-        if (validNodes.length === 0) {
-          return res.json({
-            success: true,
-            nodeCount: 0,
-            edgeCount: 0,
-            message: "No valid nodes found to save",
-          });
-        }
-
-        const { nodeCount, edgeCount } = await autoGraphService.saveTextToGraph(
-          req.supabase,
-          req.user.id,
-          graph_id,
-          nodes,
-          edges,
-        );
-
+      if (validNodes.length === 0) {
         return res.json({
           success: true,
-          nodeCount,
-          edgeCount,
+          nodeCount: 0,
+          edgeCount: 0,
+          message: "No valid nodes found to save",
         });
-      } catch (error: unknown) {
-        const err = error as Error;
-        logger.error("Save Graph Error:", error);
-        throw new AppError(
-          err.message || "Failed to save graph",
-          500,
-          ErrorCodes.SYSTEM_INTERNAL_ERROR,
-        );
       }
+
+      const { nodeCount, edgeCount } = await autoGraphService.saveTextToGraph(
+        req.supabase,
+        req.user.id,
+        graph_id,
+        nodes,
+        edges,
+      );
+
+      return res.json({
+        success: true,
+        nodeCount,
+        edgeCount,
+      });
     }
 
     if (!text || text.length < 10) {
@@ -148,85 +138,75 @@ router.post(
       });
     }
 
-    try {
-      const systemPrompt = await promptService.getRenderedPrompt(
-        req.supabase,
-        "text_to_graph",
-        {},
-        req.user.id,
-        graph_id,
-        language,
+    const systemPrompt = await promptService.getRenderedPrompt(
+      req.supabase,
+      "text_to_graph",
+      {},
+      req.user.id,
+      graph_id,
+      language,
+    );
+
+    const enrichedMetadata = await enrichMetadata(req.supabase, {
+      graphId: graph_id,
+      userId: req.user.id,
+      topic: text?.slice(0, 50),
+    });
+
+    const startTime = Date.now();
+    const completion = await provider.client.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Text: ${text.substring(0, 15000)}` },
+      ],
+      model: model || provider.model,
+      response_format: { type: "json_object" },
+      max_tokens: 8000,
+    });
+    const duration = Date.now() - startTime;
+
+    const usage = completion.usage;
+    if (usage) {
+      const cost = pricingService.calculateCost(
+        provider.providerType,
+        model || provider.model,
+        usage.prompt_tokens,
+        usage.completion_tokens,
+        0
       );
-
-      const enrichedMetadata = await enrichMetadata(req.supabase, {
-        graphId: graph_id,
-        userId: req.user.id,
-        topic: text?.slice(0, 50),
-      });
-
-      const startTime = Date.now();
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Text: ${text.substring(0, 15000)}` },
-        ],
+      await performanceMonitor.recordLog({
+        operation: 'text_to_graph',
+        provider: provider.providerType,
         model: model || provider.model,
-        response_format: { type: "json_object" },
-        max_tokens: 8000,
+        inputTokens: usage.prompt_tokens,
+        outputTokens: usage.completion_tokens,
+        totalTokens: usage.prompt_tokens + usage.completion_tokens,
+        cachedInputTokens: 0,
+        duration,
+        success: true,
+        estimatedCost: cost,
+        metadata: enrichedMetadata,
       });
-      const duration = Date.now() - startTime;
+    }
 
-      const usage = completion.usage;
-      if (usage) {
-        const cost = pricingService.calculateCost(
-          provider.providerType,
-          model || provider.model,
-          usage.prompt_tokens,
-          usage.completion_tokens,
-          0
-        );
-        await performanceMonitor.recordLog({
-          operation: 'text_to_graph',
-          provider: provider.providerType,
-          model: model || provider.model,
-          inputTokens: usage.prompt_tokens,
-          outputTokens: usage.completion_tokens,
-          totalTokens: usage.prompt_tokens + usage.completion_tokens,
-          cachedInputTokens: 0,
-          duration,
-          success: true,
-          estimatedCost: cost,
-          metadata: enrichedMetadata,
-        });
-      }
-
-      const content = completion.choices[0].message.content;
-      let parsed;
-      try {
-        parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
-      } catch {
-        throw new AppError(
-          "AI 生成内容过长被截断，请尝试减少文本量或分段生成。",
-          422,
-          ErrorCodes.SYSTEM_INTERNAL_ERROR,
-        );
-      }
-
-      if (parsed.nodes) {
-        parsed.nodes = parsed.nodes.filter(
-          (n: { title?: string }) => n.title && n.title.trim() !== "",
-        );
-      }
-      res.json(parsed);
-    } catch (error: unknown) {
-      const err = error as Error;
-      logger.error("AI Text-to-Graph Error:", error);
+    const content = completion.choices[0].message.content;
+    let parsed;
+    try {
+      parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
+    } catch {
       throw new AppError(
-        err.message || "AI processing failed",
-        500,
+        "AI 生成内容过长被截断，请尝试减少文本量或分段生成。",
+        422,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
+
+    if (parsed.nodes) {
+      parsed.nodes = parsed.nodes.filter(
+        (n: { title?: string }) => n.title && n.title.trim() !== "",
+      );
+    }
+    res.json(parsed);
   },
 );
 
@@ -256,94 +236,84 @@ router.post(
       throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED);
     }
 
-    try {
-      const text = await documentParsingService.parseDocument(file);
+    const text = await documentParsingService.parseDocument(file);
 
-      if (!text || text.trim().length < 20) {
-        throw new AppError(
-          "Document extraction failed: No readable text found",
-          400,
-          ErrorCodes.VALIDATION_ERROR,
-        );
-      }
-
-      logger.info(
-        `Sending ${text.length} characters to AI for graph generation...`,
-      );
-
-      const systemPrompt = await promptService.getRenderedPrompt(
-        req.supabase,
-        "document_to_graph",
-        {},
-        req.user.id,
-        graph_id,
-        language,
-      );
-
-      const enrichedMetadata = await enrichMetadata(req.supabase, {
-        graphId: graph_id,
-        userId: req.user.id,
-        documentName: file.originalname,
-      });
-
-      const startTime = Date.now();
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `文件名: ${file.originalname}\n文本内容:\n\n${text.substring(0, 15000)}`,
-          },
-        ],
-        model: provider.model,
-        response_format: { type: "json_object" },
-        max_tokens: 4000,
-      });
-      const duration = Date.now() - startTime;
-
-      const usage = completion.usage;
-      if (usage) {
-        const cost = pricingService.calculateCost(
-          provider.providerType,
-          provider.model,
-          usage.prompt_tokens,
-          usage.completion_tokens,
-          0
-        );
-        await performanceMonitor.recordLog({
-          operation: 'document_to_graph',
-          provider: provider.providerType,
-          model: provider.model,
-          inputTokens: usage.prompt_tokens,
-          outputTokens: usage.completion_tokens,
-          totalTokens: usage.prompt_tokens + usage.completion_tokens,
-          cachedInputTokens: 0,
-          duration,
-          success: true,
-          estimatedCost: cost,
-          metadata: enrichedMetadata,
-        });
-      }
-
-      const content = completion.choices[0].message.content;
-      const parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
-
-      if (parsed.nodes) {
-        parsed.nodes = parsed.nodes.filter(
-          (n: { title?: string }) => n.title && n.title.trim() !== "",
-        );
-      }
-
-      res.json(parsed);
-    } catch (error: unknown) {
-      const err = error as Error;
-      logger.error("Document-to-Graph Error:", error);
+    if (!text || text.trim().length < 20) {
       throw new AppError(
-        err.message || "Document processing failed",
-        500,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
+        "Document extraction failed: No readable text found",
+        400,
+        ErrorCodes.VALIDATION_ERROR,
       );
     }
+
+    logger.info(
+      `Sending ${text.length} characters to AI for graph generation...`,
+    );
+
+    const systemPrompt = await promptService.getRenderedPrompt(
+      req.supabase,
+      "document_to_graph",
+      {},
+      req.user.id,
+      graph_id,
+      language,
+    );
+
+    const enrichedMetadata = await enrichMetadata(req.supabase, {
+      graphId: graph_id,
+      userId: req.user.id,
+      documentName: file.originalname,
+    });
+
+    const startTime = Date.now();
+    const completion = await provider.client.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `文件名: ${file.originalname}\n文本内容:\n\n${text.substring(0, 15000)}`,
+        },
+      ],
+      model: provider.model,
+      response_format: { type: "json_object" },
+      max_tokens: 4000,
+    });
+    const duration = Date.now() - startTime;
+
+    const usage = completion.usage;
+    if (usage) {
+      const cost = pricingService.calculateCost(
+        provider.providerType,
+        provider.model,
+        usage.prompt_tokens,
+        usage.completion_tokens,
+        0
+      );
+      await performanceMonitor.recordLog({
+        operation: 'document_to_graph',
+        provider: provider.providerType,
+        model: provider.model,
+        inputTokens: usage.prompt_tokens,
+        outputTokens: usage.completion_tokens,
+        totalTokens: usage.prompt_tokens + usage.completion_tokens,
+        cachedInputTokens: 0,
+        duration,
+        success: true,
+        estimatedCost: cost,
+        metadata: enrichedMetadata,
+      });
+    }
+
+    const content = completion.choices[0].message.content;
+    const parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
+
+    if (parsed.nodes) {
+      parsed.nodes = parsed.nodes.filter(
+        (n: { title?: string }) => n.title && n.title.trim() !== "",
+      );
+    }
+
+    res.json(parsed);
   },
 );
 
@@ -359,27 +329,21 @@ router.post(
       throw new AppError(ErrorCodes.NO_FILE_UPLOADED);
     }
 
-    try {
-      const base64Image = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+    const base64Image = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
 
-      const result = await aiService.generateGraphFromImage(base64Image, {
-        provider: providerOverride,
-        model: modelOverride,
+    const result = await aiService.generateGraphFromImage(base64Image, {
+      provider: providerOverride,
+      model: modelOverride,
+    });
+
+    if (result.nodes) {
+      result.nodes = result.nodes.filter((n: unknown) => {
+        const node = n as { title?: string };
+        return node.title && node.title.trim() !== "";
       });
-
-      if (result.nodes) {
-        result.nodes = result.nodes.filter((n: unknown) => {
-          const node = n as { title?: string };
-          return node.title && node.title.trim() !== "";
-        });
-      }
-
-      res.json(result);
-    } catch (error: unknown) {
-      const err = error as Error;
-      logger.error("Image-to-Graph Error:", error);
-      throw new AppError(err.message || "Image processing failed", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
+
+    res.json(result);
   },
 );
 
@@ -390,18 +354,8 @@ router.post(
   async (req: AuthedRequest, res: Response) => {
     const { url } = req.body;
 
-    try {
-      const result = await scrapeUrl(url);
-      res.json(result);
-    } catch (error: unknown) {
-      const err = error as Error;
-      logger.error("URL Scraping Error:", error);
-      throw new AppError(
-        err.message || "Failed to fetch URL content",
-        500,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
-    }
+    const result = await scrapeUrl(url);
+    res.json(result);
   },
 );
 

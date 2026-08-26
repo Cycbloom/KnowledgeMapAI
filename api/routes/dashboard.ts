@@ -1,7 +1,5 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthedRequest } from '../middleware/auth';
-import { ErrorCodes } from '../../shared/types/errorCodes';
-import { AppError } from '../middleware/errorHandler';
 import { dashboardService } from '../services/common';
 
 const router = Router();
@@ -9,12 +7,8 @@ const router = Router();
 router.get('/stats', requireAuth, async (req: AuthedRequest, res: Response) => {
   const userId = req.user.id;
 
-  try {
-    const dashboardStats = await dashboardService.getDashboard(req.supabase, userId);
-    res.json(dashboardStats);
-  } catch (_error) {
-    throw new AppError('获取仪表盘数据失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
+  const dashboardStats = await dashboardService.getDashboard(req.supabase, userId);
+  res.json(dashboardStats);
 });
 
 // 首页"今日回顾"摘要：待归档捕获数 + 今日到期卡片 + 今日任务

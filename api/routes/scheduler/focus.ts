@@ -3,7 +3,6 @@ import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { focusService } from "../../services/scheduler";
-import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 
@@ -59,18 +58,12 @@ router.post(
       throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
-    try {
-      const session = await focusService.createFocusSession(
-        supabase,
-        req.user.id,
-        req.body,
-      );
-      res.status(201).json({ success: true, data: session });
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Create focus session error:", err);
-      throw new AppError(err.message || "创建专注会话失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const session = await focusService.createFocusSession(
+      supabase,
+      req.user.id,
+      req.body,
+    );
+    res.status(201).json({ success: true, data: session });
   },
 );
 
@@ -87,18 +80,13 @@ router.put(
     const { id } = req.params;
     const updates = req.body;
 
-    try {
-      const session = await focusService.updateFocusSession(
-        supabase,
-        id,
-        req.user.id,
-        updates,
-      );
-      res.json({ success: true, data: session });
-    } catch (error) {
-      const err = error as Error;
-      throw new AppError(err.message || "更新专注会话失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const session = await focusService.updateFocusSession(
+      supabase,
+      id,
+      req.user.id,
+      updates,
+    );
+    res.json({ success: true, data: session });
   },
 );
 
@@ -115,23 +103,18 @@ router.get(
     const { from_date, to_date, task_id, is_break, limit } =
       req.query as unknown as z.infer<typeof getFocusSessionsQuerySchema>;
 
-    try {
-      const sessions = await focusService.getFocusSessions(
-        supabase,
-        req.user.id,
-        {
-          from_date,
-          to_date,
-          task_id,
-          is_break,
-          limit,
-        },
-      );
-      res.json({ success: true, data: sessions });
-    } catch (error) {
-      const err = error as Error;
-      throw new AppError(err.message || "获取专注会话失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const sessions = await focusService.getFocusSessions(
+      supabase,
+      req.user.id,
+      {
+        from_date,
+        to_date,
+        task_id,
+        is_break,
+        limit,
+      },
+    );
+    res.json({ success: true, data: sessions });
   },
 );
 
@@ -144,13 +127,8 @@ router.get(
       throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
-    try {
-      const stats = await focusService.getUserFocusStats(supabase, req.user.id);
-      res.json({ success: true, data: stats });
-    } catch (error) {
-      const err = error as Error;
-      throw new AppError(err.message || "获取专注统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const stats = await focusService.getUserFocusStats(supabase, req.user.id);
+    res.json({ success: true, data: stats });
   },
 );
 
@@ -168,18 +146,13 @@ router.get(
       typeof getMonthlyStatsQuerySchema
     >;
 
-    try {
-      const stats = await focusService.getMonthlyFocusStats(
-        supabase,
-        req.user.id,
-        year,
-        month,
-      );
-      res.json({ success: true, data: stats });
-    } catch (error) {
-      const err = error as Error;
-      throw new AppError(err.message || "获取月统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const stats = await focusService.getMonthlyFocusStats(
+      supabase,
+      req.user.id,
+      year,
+      month,
+    );
+    res.json({ success: true, data: stats });
   },
 );
 
@@ -197,17 +170,12 @@ router.get(
       typeof getWeeklyStatsQuerySchema
     >;
 
-    try {
-      const stats = await focusService.getWeeklyFocusStats(
-        supabase,
-        req.user.id,
-        week_start,
-      );
-      res.json({ success: true, data: stats });
-    } catch (error) {
-      const err = error as Error;
-      throw new AppError(err.message || "获取周统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const stats = await focusService.getWeeklyFocusStats(
+      supabase,
+      req.user.id,
+      week_start,
+    );
+    res.json({ success: true, data: stats });
   },
 );
 
@@ -223,17 +191,12 @@ router.get(
 
     const { year } = req.query as z.infer<typeof getHeatmapQuerySchema>;
 
-    try {
-      const heatmap = await focusService.getYearlyHeatmap(
-        supabase,
-        req.user.id,
-        year,
-      );
-      res.json({ success: true, data: heatmap });
-    } catch (error) {
-      const err = error as Error;
-      throw new AppError(err.message || "获取专注热力图失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const heatmap = await focusService.getYearlyHeatmap(
+      supabase,
+      req.user.id,
+      year,
+    );
+    res.json({ success: true, data: heatmap });
   },
 );
 
@@ -249,17 +212,12 @@ router.get(
 
     const { date } = req.query as z.infer<typeof getDailyStatsQuerySchema>;
 
-    try {
-      const todayStats = await focusService.getDailyFocusStats(
-        supabase,
-        req.user.id,
-        date,
-      );
-      res.json({ success: true, data: todayStats });
-    } catch (error) {
-      const err = error as Error;
-      throw new AppError(err.message || "获取今日专注统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const todayStats = await focusService.getDailyFocusStats(
+      supabase,
+      req.user.id,
+      date,
+    );
+    res.json({ success: true, data: todayStats });
   },
 );
 

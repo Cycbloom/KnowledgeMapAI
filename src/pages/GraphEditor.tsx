@@ -16,6 +16,7 @@ import { ArrowLeft, Lock, LogIn, AlertTriangle } from "lucide-react";
 
 import { GraphToolbar } from "../components/GraphEditor/toolbar/GraphToolbar";
 import { MindMapCanvas } from "../components/GraphEditor/canvas/MindMapCanvas";
+import { invalidateGraphLayoutCache } from "../utils/graph/layoutCache";
 import { QuadrantCanvas } from "../components/GraphEditor/canvas/QuadrantCanvas";
 import { NodeBreadcrumb, type NodeBreadcrumbItem } from "../components/GraphEditor/shared/NodeBreadcrumb";
 import {
@@ -987,6 +988,8 @@ export const GraphEditor = () => {
   // --- Extracted callbacks for child components ---
 
   const handleLayoutUpdate = useCallback(() => {
+    // 整理布局意味着要刷新布局：清空该图谱的坐标缓存，强制下次重新计算而不是复用旧布局
+    invalidateGraphLayoutCache(id || undefined);
     queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id || "") });
   }, [queryClient, id]);
 

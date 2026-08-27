@@ -309,6 +309,8 @@ interface MindMapLayoutOptions {
   linkDistance?: number;
   centerForce?: number;
   domainGroups?: Map<string, string[]>;
+  /** 已有节点的初始坐标：用于在布局重算/视图切换时保留原有布局，而非每次随机重排 */
+  initialPositions?: Map<string, { x: number; y: number }>;
 }
 
 interface MindMapLayoutResult {
@@ -386,7 +388,7 @@ const calculateMindMapLayout = (
   edges: MindMapLayoutEdge[],
   options: MindMapLayoutOptions
 ): MindMapLayoutResult => {
-  const { width, height, chargeStrength, linkDistance, centerForce, domainGroups } =
+  const { width, height, chargeStrength, linkDistance, centerForce, domainGroups, initialPositions } =
     options;
 
   const nodeCount = nodes.length;
@@ -410,17 +412,27 @@ const calculateMindMapLayout = (
   // Initialize layout nodes with domain-grouped initial positions
   const layoutNodes: MindMapLayoutNode[] = nodes.map((node) => {
     const domain = node.properties?.domain as string | undefined;
-    let initialX = width / 2 + (Math.random() - 0.5) * 100;
-    let initialY = height / 2 + (Math.random() - 0.5) * 100;
+    const priorPosition = initialPositions?.get(String(node.id));
+    let initialX: number;
+    let initialY: number;
 
-    if (domain && domainGroups) {
-      const domainNodeIds = domainGroups.get(domain);
-      if (domainNodeIds) {
-        const domainIndex = domainIndexByKey?.get(domain) ?? 0;
-        const angle = (domainIndex / domainGroups.size) * Math.PI * 2;
-        const radius = Math.min(width, height) * 0.3;
-        initialX = width / 2 + Math.cos(angle) * radius + (Math.random() - 0.5) * 50;
-        initialY = height / 2 + Math.sin(angle) * radius + (Math.random() - 0.5) * 50;
+    // 已有坐标：直接作为初始位置，保留原有布局（视图切换/增改节点时不再随机整图重排）
+    if (priorPosition && Number.isFinite(priorPosition.x) && Number.isFinite(priorPosition.y)) {
+      initialX = priorPosition.x;
+      initialY = priorPosition.y;
+    } else {
+      initialX = width / 2 + (Math.random() - 0.5) * 100;
+      initialY = height / 2 + (Math.random() - 0.5) * 100;
+
+      if (domain && domainGroups) {
+        const domainNodeIds = domainGroups.get(domain);
+        if (domainNodeIds) {
+          const domainIndex = domainIndexByKey?.get(domain) ?? 0;
+          const angle = (domainIndex / domainGroups.size) * Math.PI * 2;
+          const radius = Math.min(width, height) * 0.3;
+          initialX = width / 2 + Math.cos(angle) * radius + (Math.random() - 0.5) * 50;
+          initialY = height / 2 + Math.sin(angle) * radius + (Math.random() - 0.5) * 50;
+        }
       }
     }
 
@@ -551,6 +563,8 @@ interface SemanticLayoutOptions {
   nNeighbors?: number;
   minDist?: number;
   nEpochs?: number;
+  /** 无 embedding 节点的初始坐标，用于保留原有布局 */
+  initialPositions?: Map<string, { x: number; y: number }>;
 }
 
 interface SemanticLayoutResult {
@@ -566,7 +580,7 @@ const calculateSemanticLayout = (
   embeddings: Record<string, number[]>,
   options: SemanticLayoutOptions,
 ): SemanticLayoutResult => {
-  const { width, height, nNeighbors, minDist = 0.1, nEpochs = 200 } = options;
+  const { width, height, nNeighbors, minDist = 0.1, nEpochs = 200, initialPositions } = options;
 
   // 单趟分桶有/无 embedding 节点，替代两次 filter 的 O(2*nodes) 扫描
   const nodesWithEmbedding: SemanticLayoutNode[] = [];
@@ -628,6 +642,7 @@ const calculateSemanticLayout = (
     const fallbackLayout = calculateMindMapLayout(nodesWithoutEmbedding, edges, {
       width,
       height,
+      initialPositions,
     });
     fallbackLayout.nodes.forEach(n => {
       fallbackPositions.set(n.id, { x: n.x ?? 0, y: n.y ?? 0 });

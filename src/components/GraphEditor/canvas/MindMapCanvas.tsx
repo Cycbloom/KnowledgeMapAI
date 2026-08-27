@@ -18,6 +18,7 @@ import type {
   NodeSizeMode,
   EdgeWidthMode,
   LayoutNode,
+  LayoutLink,
   GraphColorMode,
   NodeStatus,
   Node as GraphNode,
@@ -44,6 +45,11 @@ import {
   useVisibleNodeSet,
 } from "../shared/hooks/useVirtualization";
 import { createMindMapLayout, createSemanticLayout, type LayoutResult } from "../../../utils/mindmapLayout";
+import {
+  layoutCacheKey,
+  collectLayoutSeeds,
+  cacheLayoutPositions,
+} from "../../../utils/graph/layoutCache";
 import { useGraphWorker } from "../../../hooks/common/useWorker";
 import { THEME_COLORS } from "../../../config/learningStatusColors";
 import { DECAY_CONFIG } from "../../../config/graphConfig";
@@ -261,11 +267,19 @@ export const MindMapCanvas = React.memo(
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<SVGGElement>(null);
+    // 仅首次图谱出现时执行一次自动居中；防止后续打开/关闭覆盖面板（如左侧 AI 面板、时间轴）时重算有效视口中心导致整个画布被平移/重排
+    const hasInitiallyCenteredRef = useRef(false);
 
     const [containerSize, setContainerSize] = useState({
       width: typeof window !== "undefined" ? window.innerWidth : width,
       height: typeof window !== "undefined" ? window.innerHeight : height,
     });
+
+    // 布局坐标生成的参考尺寸：只快照一次，布局不随容器/窗口尺寸变化而重算
+    const layoutSizeRef = useRef({ width: containerSize.width, height: containerSize.height });
+    useEffect(() => {
+      layoutSizeRef.current = { width: containerSize.width, height: containerSize.height };
+    }, [containerSize.width, containerSize.height]);
 
     useEffect(() => {
       const updateContainerSize = () => {
@@ -319,7 +333,7 @@ export const MindMapCanvas = React.memo(
     // Worker hook
     const { calculateMindMapLayout, calculateSemanticLayout } = useGraphWorker();
 
-    // 防抖 + 异步布局计算
+    // 防抖 + 异步布局计算；已有缓存布局时直接复用，避免重算导致整图重排
     useEffect(() => {
       if (nodes.length === 0) {
         setLayout(null);
@@ -334,8 +348,40 @@ export const MindMapCanvas = React.memo(
         setSemanticLayoutUnavailable(false);
       }
 
+      const key = layoutCacheKey(graphId, _layoutMode);
+      const nodeIds = nodes.map((n) => String(n.id));
+      const { positions, complete } = collectLayoutSeeds(key, nodeIds);
+
+      // 所有节点坐标已知（典型：视图切走再切回、仅属性刷新无结构改动）：直接复用上次布局，不触发 worker 重排
+      if (complete) {
+        const nodeIdSet = new Set(nodeIds);
+        const layoutNodes = nodes.map((n): LayoutNode => {
+          const p = positions.get(String(n.id));
+          return { ...n, x: p?.x ?? 0, y: p?.y ?? 0, vx: 0, vy: 0 };
+        });
+        const layoutLinks = edges
+          .filter(
+            (e) =>
+              nodeIdSet.has(e.source_knowledge_point_id) &&
+              nodeIdSet.has(e.target_knowledge_point_id),
+          )
+          .map(
+            (e): LayoutLink => ({
+              ...e,
+              source: e.source_knowledge_point_id,
+              target: e.target_knowledge_point_id,
+            }),
+          );
+        setLayout({ nodes: layoutNodes, links: layoutLinks });
+        return;
+      }
+
       const timer = setTimeout(async () => {
         setIsLayoutCalculating(true);
+        // 用已缓存的坐标作为初始播种：局部增改节点时保留既有节点位置，只对新节点重新布点
+        const initialPositions = positions;
+        const layoutWidth = layoutSizeRef.current.width;
+        const layoutHeight = layoutSizeRef.current.height;
         try {
           if (isSemanticMode) {
             if (!embeddings) {
@@ -343,8 +389,8 @@ export const MindMapCanvas = React.memo(
             }
             // Semantic layout: convert Map to Record for Worker serialization
             const embeddingsRecord: Record<string, number[]> = {};
-            embeddings.forEach((value, key) => {
-              embeddingsRecord[key] = value;
+            embeddings.forEach((value, emKey) => {
+              embeddingsRecord[emKey] = value;
             });
 
             const result = await calculateSemanticLayout(
@@ -352,21 +398,25 @@ export const MindMapCanvas = React.memo(
               edges as unknown as Array<Record<string, unknown>>,
               embeddingsRecord,
               {
-                width: containerSize.width,
-                height: containerSize.height,
+                width: layoutWidth,
+                height: layoutHeight,
+                initialPositions,
               }
             );
             if (result) {
               setLayout(result as unknown as LayoutResult);
+              cacheLayoutPositions(key, (result as unknown as LayoutResult).nodes);
             } else {
               // Fallback: Worker 不可用时降级为主线程同步计算
               console.warn('[MindMapCanvas] Worker semantic layout failed, falling back to main thread');
               const fallbackResult = createSemanticLayout(nodes, edges, embeddings, {
-                width: containerSize.width,
-                height: containerSize.height,
+                width: layoutWidth,
+                height: layoutHeight,
                 fast: true,
+                initialPositions,
               });
               setLayout(fallbackResult);
+              cacheLayoutPositions(key, fallbackResult.nodes);
             }
           } else {
             // Force-directed layout (default)
@@ -374,21 +424,25 @@ export const MindMapCanvas = React.memo(
               nodes,
               edges as unknown as Array<Record<string, unknown>>,
               {
-                width: containerSize.width,
-                height: containerSize.height,
+                width: layoutWidth,
+                height: layoutHeight,
+                initialPositions,
               }
             );
             if (result) {
               setLayout(result as unknown as LayoutResult);
+              cacheLayoutPositions(key, (result as unknown as LayoutResult).nodes);
             } else {
               // Fallback: Worker 不可用时降级为主线程同步计算
               console.warn('[MindMapCanvas] Worker layout failed, falling back to main thread');
               const fallbackResult = createMindMapLayout(nodes, edges, {
-                width: containerSize.width,
-                height: containerSize.height,
+                width: layoutWidth,
+                height: layoutHeight,
                 fast: true,
+                initialPositions,
               });
               setLayout(fallbackResult);
+              cacheLayoutPositions(key, fallbackResult.nodes);
             }
           }
         } catch (error) {
@@ -399,18 +453,22 @@ export const MindMapCanvas = React.memo(
               return;
             }
             const fallbackResult = createSemanticLayout(nodes, edges, embeddings, {
-              width: containerSize.width,
-              height: containerSize.height,
+              width: layoutWidth,
+              height: layoutHeight,
               fast: true,
+              initialPositions,
             });
             setLayout(fallbackResult);
+            cacheLayoutPositions(key, fallbackResult.nodes);
           } else {
             const fallbackResult = createMindMapLayout(nodes, edges, {
-              width: containerSize.width,
-              height: containerSize.height,
+              width: layoutWidth,
+              height: layoutHeight,
               fast: true,
+              initialPositions,
             });
             setLayout(fallbackResult);
+            cacheLayoutPositions(key, fallbackResult.nodes);
           }
         } finally {
           setIsLayoutCalculating(false);
@@ -418,7 +476,7 @@ export const MindMapCanvas = React.memo(
       }, 300); // 300ms 防抖
 
       return () => clearTimeout(timer);
-    }, [nodes, edges, containerSize, calculateMindMapLayout, calculateSemanticLayout, _layoutMode, embeddings]);
+    }, [nodes, edges, calculateMindMapLayout, calculateSemanticLayout, _layoutMode, embeddings, graphId]);
 
     // 语义不可用提示自动淡出：展示 5s 后触发 opacity 过渡，淡出期间不拦截任何交互
     useEffect(() => {
@@ -954,6 +1012,8 @@ export const MindMapCanvas = React.memo(
     }));
 
     useEffect(() => {
+      // 只执行一次：面板开合会改变 rightPanelWidth/leftPanelWidth，若每次都重算会让画布随面板平移
+      if (hasInitiallyCenteredRef.current) return;
       if (
         layout &&
         layout.nodes.length > 0 &&
@@ -981,6 +1041,7 @@ export const MindMapCanvas = React.memo(
           updateTransformDOM(newTransform);
           updateTransformState(newTransform);
         }
+        hasInitiallyCenteredRef.current = true;
       }
     }, [
       layout,

@@ -16,6 +16,8 @@ export interface LayoutOptions {
   linkDistance?: number;
   centerForce?: number;
   domainGroups?: Map<string, string[]>;
+  /** 已有节点的初始坐标：用于在布局重算/视图切换时保留原有布局，而非每次随机重排 */
+  initialPositions?: Map<string, { x: number; y: number }>;
   /** 主线程 fallback 模式：>50 节点时降级采样/减少迭代，避免同步计算卡 UI */
   fast?: boolean;
 }
@@ -33,7 +35,7 @@ export const createMindMapLayout = (
   edges: Edge[],
   options: LayoutOptions
 ): LayoutResult => {
-  const { width, height, chargeStrength, linkDistance, centerForce, domainGroups, fast } = options;
+  const { width, height, chargeStrength, linkDistance, centerForce, domainGroups, initialPositions, fast } = options;
 
   const nodeCount = nodes.length;
 
@@ -77,20 +79,30 @@ export const createMindMapLayout = (
 
   const layoutNodes: LayoutNode[] = nodes.map(node => {
     const domain = node.properties?.domain as string | undefined;
-    let initialX = width / 2 + (Math.random() - 0.5) * 100;
-    let initialY = height / 2 + (Math.random() - 0.5) * 100;
-    
-    if (domain && domainGroups && domainIndexByKey) {
-      const domainNodeIds = domainGroups.get(domain);
-      if (domainNodeIds) {
-        const domainIndex = domainIndexByKey.get(domain) ?? 0;
-        const angle = (domainIndex / domainGroups.size) * Math.PI * 2;
-        const radius = Math.min(width, height) * 0.3;
-        initialX = width / 2 + Math.cos(angle) * radius + (Math.random() - 0.5) * 50;
-        initialY = height / 2 + Math.sin(angle) * radius + (Math.random() - 0.5) * 50;
+    const priorPosition = initialPositions?.get(node.id);
+    let initialX: number;
+    let initialY: number;
+
+    // 已有坐标：直接作为初始位置，保留原有布局（视图切换/增改节点时不再随机整图重排）
+    if (priorPosition && Number.isFinite(priorPosition.x) && Number.isFinite(priorPosition.y)) {
+      initialX = priorPosition.x;
+      initialY = priorPosition.y;
+    } else {
+      initialX = width / 2 + (Math.random() - 0.5) * 100;
+      initialY = height / 2 + (Math.random() - 0.5) * 100;
+
+      if (domain && domainGroups && domainIndexByKey) {
+        const domainNodeIds = domainGroups.get(domain);
+        if (domainNodeIds) {
+          const domainIndex = domainIndexByKey.get(domain) ?? 0;
+          const angle = (domainIndex / domainGroups.size) * Math.PI * 2;
+          const radius = Math.min(width, height) * 0.3;
+          initialX = width / 2 + Math.cos(angle) * radius + (Math.random() - 0.5) * 50;
+          initialY = height / 2 + Math.sin(angle) * radius + (Math.random() - 0.5) * 50;
+        }
       }
     }
-    
+
     return {
       ...node,
       x: initialX,
@@ -197,6 +209,8 @@ export interface SemanticLayoutOptions {
   nNeighbors?: number;
   minDist?: number;
   nEpochs?: number;
+  /** 无 embedding 节点的初始坐标，用于保留原有布局 */
+  initialPositions?: Map<string, { x: number; y: number }>;
   /** 主线程 fallback 模式：embedding >50 时抽样跑 UMAP，其余节点就近锚定 */
   fast?: boolean;
 }
@@ -207,7 +221,7 @@ export const createSemanticLayout = (
   embeddings: Map<string, number[]>,
   options: SemanticLayoutOptions,
 ): LayoutResult => {
-  const { width, height, nNeighbors, minDist = 0.1, nEpochs = 200, fast } = options;
+  const { width, height, nNeighbors, minDist = 0.1, nEpochs = 200, initialPositions, fast } = options;
 
   // 单趟分桶有/无 embedding 节点，替代两次 filter 的 O(2*nodes) 扫描
   const nodesWithEmbedding: typeof nodes = [];
@@ -323,6 +337,7 @@ export const createSemanticLayout = (
       width,
       height,
       fast,
+      initialPositions,
     });
     fallbackLayout.nodes.forEach(n => {
       fallbackPositions.set(n.id, { x: n.x, y: n.y });

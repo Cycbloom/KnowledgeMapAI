@@ -104,6 +104,7 @@ interface GraphWorkerApi {
       linkDistance?: number;
       centerForce?: number;
       domainGroups?: Map<string, string[]>;
+      initialPositions?: Map<string, { x: number; y: number }>;
     }
   ) => Promise<{
     nodes: Array<{
@@ -131,6 +132,7 @@ interface GraphWorkerApi {
       nNeighbors?: number;
       minDist?: number;
       nEpochs?: number;
+      initialPositions?: Map<string, { x: number; y: number }>;
     }
   ) => Promise<{
     nodes: Array<{
@@ -224,6 +226,7 @@ export const useGraphWorker = () => {
       linkDistance?: number;
       centerForce?: number;
       domainGroups?: Map<string, string[]>;
+      initialPositions?: Map<string, { x: number; y: number }>;
     }
   ) => {
     if (!proxyRef.current) return null;
@@ -246,6 +249,7 @@ export const useGraphWorker = () => {
       nNeighbors?: number;
       minDist?: number;
       nEpochs?: number;
+      initialPositions?: Map<string, { x: number; y: number }>;
     }
   ) => {
     if (!proxyRef.current) return null;

@@ -2,11 +2,13 @@
 -- Knowledge Map - Knowledge Points
 -- =====================================================
 
+-- title/content/summary 为按语言 key 的 JSONB（如 {"zh-CN":"标题", "en-US":"Title"}），
+-- 与 learning_material/keywords 的多语言约定一致。存量数据迁移到 "zh-CN" key。
 CREATE TABLE IF NOT EXISTS knowledge_points (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title VARCHAR(512) NOT NULL,
-  content TEXT,
-  summary VARCHAR(200),
+  title JSONB NOT NULL DEFAULT '{}'::jsonb,
+  content JSONB DEFAULT '{}'::jsonb,
+  summary JSONB DEFAULT '{}'::jsonb,
   learning_material JSONB DEFAULT '{}'::jsonb,
   keywords JSONB DEFAULT '{}'::jsonb,
   properties JSONB DEFAULT '{}',
@@ -29,6 +31,9 @@ COMMENT ON COLUMN knowledge_points.last_study_at IS '最后学习时间，用于
 COMMENT ON COLUMN knowledge_points.total_study_duration IS '累计学习时长（分钟）';
 COMMENT ON COLUMN knowledge_points.learning_material IS '按语言 key 的学习材料对象，结构: {"zh-CN": "中文材料", "en-US": "English material"}，新增语言只需增加 key';
 COMMENT ON COLUMN knowledge_points.properties IS '自定义属性，JSON格式';
+COMMENT ON COLUMN knowledge_points.title IS '按语言 key 的标题对象，结构: {"zh-CN":"标题", "en-US":"Title"}，zh-CN 为基础语言';
+COMMENT ON COLUMN knowledge_points.content IS '按语言 key 的内容对象，结构同 title';
+COMMENT ON COLUMN knowledge_points.summary IS '按语言 key 的摘要对象，结构同 title';
 
 ALTER TABLE knowledge_points ADD COLUMN IF NOT EXISTS source_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL;
 COMMENT ON COLUMN knowledge_points.source_knowledge_point_id IS '分支知识点来源ID，记录该知识点是从哪个原始知识点复制而来，仅分支副本有值';
@@ -37,9 +42,9 @@ CREATE TABLE IF NOT EXISTS knowledge_point_versions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   knowledge_point_id UUID NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,
   version_number INTEGER NOT NULL,
-  title VARCHAR(512) NOT NULL,
-  content TEXT,
-  summary VARCHAR(200),
+  title JSONB NOT NULL,
+  content JSONB,
+  summary JSONB,
   learning_material JSONB DEFAULT '{}'::jsonb,
   keywords JSONB DEFAULT '{}'::jsonb,
   properties JSONB DEFAULT '{}',

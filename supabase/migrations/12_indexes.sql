@@ -22,8 +22,12 @@ CREATE INDEX IF NOT EXISTS knowledge_graphs_embedding_idx ON knowledge_graphs US
 -- Knowledge points
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_owner_id ON knowledge_points(owner_id);
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_visibility ON knowledge_points(visibility);
-CREATE INDEX IF NOT EXISTS idx_knowledge_points_title_trgm ON knowledge_points USING gin (title gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_knowledge_points_content_trgm ON knowledge_points USING gin (content gin_trgm_ops);
+-- title/content 已改为按语言 JSONB，trigram 索引作用于基础语言文本（zh-CN）。
+-- 先删除同名旧索引，避免列类型变更后残留失效索引导致 IF NOT EXISTS 跳过重建。
+DROP INDEX IF EXISTS idx_knowledge_points_title_trgm;
+DROP INDEX IF EXISTS idx_knowledge_points_content_trgm;
+CREATE INDEX idx_knowledge_points_title_trgm ON knowledge_points USING gin ((title->>'zh-CN') gin_trgm_ops);
+CREATE INDEX idx_knowledge_points_content_trgm ON knowledge_points USING gin ((content->>'zh-CN') gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_embedding ON knowledge_points USING hnsw (embedding vector_cosine_ops);
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_public ON knowledge_points(id) WHERE visibility = 'public';
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_owner_visibility ON knowledge_points(owner_id, visibility);

@@ -1233,43 +1233,43 @@ export type Database = {
         Row: {
           change_summary: string | null
           changed_by: string | null
-          content: string | null
+          content: Json | null
           created_at: string | null
           id: string
           keywords: Json | null
           knowledge_point_id: string
           learning_material: Json | null
           properties: Json | null
-          summary: string | null
-          title: string
+          summary: Json | null
+          title: Json
           version_number: number
         }
         Insert: {
           change_summary?: string | null
           changed_by?: string | null
-          content?: string | null
+          content?: Json | null
           created_at?: string | null
           id?: string
           keywords?: Json | null
           knowledge_point_id: string
           learning_material?: Json | null
           properties?: Json | null
-          summary?: string | null
-          title: string
+          summary?: Json | null
+          title: Json
           version_number: number
         }
         Update: {
           change_summary?: string | null
           changed_by?: string | null
-          content?: string | null
+          content?: Json | null
           created_at?: string | null
           id?: string
           keywords?: Json | null
           knowledge_point_id?: string
           learning_material?: Json | null
           properties?: Json | null
-          summary?: string | null
-          title?: string
+          summary?: Json | null
+          title?: Json
           version_number?: number
         }
         Relationships: [
@@ -1285,7 +1285,7 @@ export type Database = {
       knowledge_points: {
         Row: {
           aliases: string[] | null
-          content: string | null
+          content: Json | null
           created_at: string | null
           embedding: string | null
           id: string
@@ -1296,8 +1296,8 @@ export type Database = {
           owner_id: string
           properties: Json | null
           source_knowledge_point_id: string | null
-          summary: string | null
-          title: string
+          summary: Json | null
+          title: Json
           total_study_duration: number | null
           updated_at: string | null
           visibility:
@@ -1306,7 +1306,7 @@ export type Database = {
         }
         Insert: {
           aliases?: string[] | null
-          content?: string | null
+          content?: Json | null
           created_at?: string | null
           embedding?: string | null
           id?: string
@@ -1317,8 +1317,8 @@ export type Database = {
           owner_id: string
           properties?: Json | null
           source_knowledge_point_id?: string | null
-          summary?: string | null
-          title: string
+          summary?: Json | null
+          title: Json
           total_study_duration?: number | null
           updated_at?: string | null
           visibility?:
@@ -1327,7 +1327,7 @@ export type Database = {
         }
         Update: {
           aliases?: string[] | null
-          content?: string | null
+          content?: Json | null
           created_at?: string | null
           embedding?: string | null
           id?: string
@@ -1338,8 +1338,8 @@ export type Database = {
           owner_id?: string
           properties?: Json | null
           source_knowledge_point_id?: string | null
-          summary?: string | null
-          title?: string
+          summary?: Json | null
+          title?: Json
           total_study_duration?: number | null
           updated_at?: string | null
           visibility?:

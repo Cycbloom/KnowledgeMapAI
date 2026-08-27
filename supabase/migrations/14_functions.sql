@@ -121,8 +121,8 @@ BEGIN
   RETURN QUERY
   SELECT
     kp.id,
-    kp.title,
-    kp.content,
+    COALESCE(kp.title->>'zh-CN', ''),
+    kp.content->>'zh-CN',
     1 - (kp.embedding <=> query_embedding) as similarity
   FROM knowledge_points kp
   WHERE (kp.visibility = 'public' OR (p_user_id IS NOT NULL AND kp.owner_id = p_user_id))
@@ -152,8 +152,8 @@ BEGIN
   RETURN QUERY
   SELECT
     kp.id,
-    kp.title,
-    kp.content,
+    COALESCE(kp.title->>'zh-CN', ''),
+    kp.content->>'zh-CN',
     1 - (kp.embedding <=> query_embedding) as similarity
   FROM knowledge_points kp
   JOIN graph_nodes gn ON gn.knowledge_point_id = kp.id
@@ -368,8 +368,8 @@ BEGIN
   RETURN QUERY
   SELECT
     kp.id,
-    kp.title,
-    kp.content,
+    COALESCE(kp.title->>'zh-CN', ''),
+    kp.content->>'zh-CN',
     kp.learning_material,
     kp.keywords,
     kp.properties,
@@ -401,8 +401,8 @@ BEGIN
   RETURN QUERY
   SELECT
     kp.id,
-    kp.title,
-    kp.content,
+    COALESCE(kp.title->>'zh-CN', ''),
+    kp.content->>'zh-CN',
     1 - (kp.embedding <=> p_query_embedding) as similarity,
     kp.visibility
   FROM knowledge_points kp
@@ -816,8 +816,8 @@ BEGIN
         e.source_knowledge_point_id,
         e.target_knowledge_point_id,
         e.relationship_type,
-        src_kp.title,
-        tgt_kp.title
+        src_kp.title->>'zh-CN',
+        tgt_kp.title->>'zh-CN'
       FROM edges e
       JOIN knowledge_points src_kp ON src_kp.id = e.source_knowledge_point_id
       JOIN knowledge_points tgt_kp ON tgt_kp.id = e.target_knowledge_point_id
@@ -854,8 +854,8 @@ BEGIN
   RETURN QUERY
   SELECT
     v.kp_id AS knowledge_point_id,
-    kp.title,
-    kp.content,
+    COALESCE(kp.title->>'zh-CN', ''),
+    kp.content->>'zh-CN',
     v.hop AS hop_distance,
     v.path AS relationship_path,
     v.rel_type AS relationship_type
@@ -1060,6 +1060,31 @@ $$;
 -- Knowledge Point & Graph Node Transaction Functions
 -- ============================================================
 
+-- 集中把 title/content/summary 的标量字符串写入自动包裹为 { "zh-CN": 原值 }。
+-- 这样 seed / 任务处理器 / 文献导入等直接以字符串插入的路径无需逐处改动；
+-- 应用层写入完整 JSONB 对象时（jsonb_typeof='object'）原样保留。
+CREATE OR REPLACE FUNCTION wrap_kp_scalar_to_localized() RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF jsonb_typeof(NEW.title) = 'string' THEN
+    NEW.title = jsonb_build_object('zh-CN', NEW.title);
+  END IF;
+  IF NEW.content IS NOT NULL AND jsonb_typeof(NEW.content) = 'string' THEN
+    NEW.content = jsonb_build_object('zh-CN', NEW.content);
+  END IF;
+  IF NEW.summary IS NOT NULL AND jsonb_typeof(NEW.summary) = 'string' THEN
+    NEW.summary = jsonb_build_object('zh-CN', NEW.summary);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_wrap_kp_localized ON knowledge_points;
+CREATE TRIGGER trg_wrap_kp_localized
+BEFORE INSERT OR UPDATE ON knowledge_points
+FOR EACH ROW EXECUTE FUNCTION wrap_kp_scalar_to_localized();
+
 CREATE OR REPLACE FUNCTION create_knowledge_point_with_node(
   p_user_id uuid,
   p_graph_id uuid,
@@ -1068,7 +1093,8 @@ CREATE OR REPLACE FUNCTION create_knowledge_point_with_node(
   p_x_position float DEFAULT 0,
   p_y_position float DEFAULT 0,
   p_level varchar DEFAULT 'normal',
-  p_properties jsonb DEFAULT '{}'::jsonb
+  p_properties jsonb DEFAULT '{}'::jsonb,
+  p_language varchar DEFAULT 'zh-CN'
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -1092,9 +1118,13 @@ BEGIN
     RAISE EXCEPTION 'User does not own this graph';
   END IF;
 
-  -- Insert knowledge point
+  -- Insert knowledge point（title/content 按语言 key 存 JSONB）
   INSERT INTO knowledge_points (title, content, visibility, owner_id, properties)
-  VALUES (p_title, p_content, 'private', p_user_id, p_properties)
+  VALUES (
+    jsonb_build_object(p_language, p_title),
+    CASE WHEN p_content IS NULL OR p_content = '' THEN '{}'::jsonb ELSE jsonb_build_object(p_language, p_content) END,
+    'private', p_user_id, p_properties
+  )
   RETURNING id INTO v_knowledge_point_id;
 
   -- Insert graph node

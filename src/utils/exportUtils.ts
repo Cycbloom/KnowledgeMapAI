@@ -109,6 +109,76 @@ export const generateMarkdown = (graph: Graph, nodes: Node[], edges: Edge[]): st
 };
 
 /**
+ * Generates a PPT outline (Markdown) from the graph data.
+ * Each slide = one page: a heading + bullet points from the node's children.
+ * The resulting .md file can be imported into PPT tools (Typora/VS Code
+ * reveal-md/Pandoc) or used directly as a presentation outline.
+ */
+export const generatePPTOutline = (graph: Graph, nodes: Node[], edges: Edge[]): string => {
+  let md = `# ${graph.title}\n\n`;
+  if (graph.description) {
+    md += `> ${graph.description}\n\n`;
+  }
+  md += `---\n\n`;
+
+  const nodeById = new Map<string, Node>(nodes.map(n => [n.id, n]));
+  const childrenByParent = new Map<string, Edge[]>();
+  edges.forEach(e => {
+    const list = childrenByParent.get(e.source_knowledge_point_id);
+    if (list) {
+      list.push(e);
+    } else {
+      childrenByParent.set(e.source_knowledge_point_id, [e]);
+    }
+  });
+
+  const getChildren = (parentId: string): Node[] => {
+    return (childrenByParent.get(parentId) ?? [])
+      .map(e => nodeById.get(e.target_knowledge_point_id))
+      .filter((n): n is Node => !!n);
+  };
+
+  const visited = new Set<string>();
+  const renderSlide = (node: Node) => {
+    if (visited.has(node.id)) return;
+    visited.add(node.id);
+    md += `## ${node.title || ''}\n\n`;
+    if (node.content) {
+      const firstLine = node.content.split('\n').find(l => l.trim());
+      if (firstLine) md += `- ${firstLine.trim()}\n`;
+    }
+    const children = getChildren(node.id);
+    children.forEach(child => {
+      if (visited.has(child.id)) return;
+      md += `- ${child.title || ''}\n`;
+      if (child.content) {
+        const firstLine = child.content.split('\n').find(l => l.trim());
+        if (firstLine) md += `  - ${firstLine.trim()}\n`;
+      }
+    });
+    md += `\n---\n\n`;
+  };
+
+  // 1. Root nodes (explicit level root OR no incoming edges)
+  const rootNodes = nodes.filter(n => n.level === 'root');
+  if (rootNodes.length === 0) {
+    const targets = new Set(edges.map(e => e.target_knowledge_point_id));
+    rootNodes.push(...nodes.filter(n => !targets.has(n.id)));
+  }
+  if (rootNodes.length === 0 && nodes.length > 0) {
+    rootNodes.push(nodes[0]);
+  }
+
+  rootNodes.forEach(root => renderSlide(root));
+
+  // Remaining disconnected nodes
+  const remainingNodes = nodes.filter(n => !visited.has(n.id));
+  remainingNodes.forEach(node => renderSlide(node));
+
+  return md;
+};
+
+/**
  * Generates a JSON string for graph backup.
  */
 export const generateJSON = (graph: Graph, nodes: Node[], edges: Edge[]): string => {

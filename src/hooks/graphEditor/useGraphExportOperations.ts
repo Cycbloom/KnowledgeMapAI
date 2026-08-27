@@ -3,7 +3,7 @@ import { GraphEditorState } from './index';
 import { useTranslation } from 'react-i18next';
 import { message } from "../../utils/messageHelper";
 import { api } from '../../services/api';
-import { generateJSON, downloadFile, downloadImage, generateAnkiDeck } from '../../utils/exportUtils';
+import { generateJSON, downloadFile, downloadImage, generateAnkiDeck, generatePPTOutline } from '../../utils/exportUtils';
 import { UseMutationResult } from '@tanstack/react-query';
 
 interface UseGraphExportOperationsProps {
@@ -70,6 +70,19 @@ export const useGraphExportOperations = ({
     } catch (err) {
       console.error(err);
       message.error(t('graphEditor.export.markdownFailed'));
+    }
+  };
+
+  const handleExportPPT = () => {
+    if (!graphMeta) return;
+    try {
+      setIsExportMenuOpen(false);
+      const outline = generatePPTOutline(graphMeta, nodes, edges);
+      downloadFile(outline, `${graphMeta.title}_ppt大纲.md`, 'text/markdown');
+      message.success(t('graphEditor.export.pptSuccess'));
+    } catch (err) {
+      console.error(err);
+      message.error(t('graphEditor.export.pptFailed'));
     }
   };
 
@@ -159,6 +172,7 @@ export const useGraphExportOperations = ({
   return {
     handleExportJSON,
     handleExportMarkdown,
+    handleExportPPT,
     handleExportAnki,
     handleExportPDF,
     handleDeleteGraph,

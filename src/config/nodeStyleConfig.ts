@@ -280,8 +280,10 @@ export const getNodeShapePath = (
       return `M 0 ${-radius} L ${radius} 0 L 0 ${radius} L ${-radius} 0 Z`;
     }
     case 'hexagon': {
+      // 正六边形（平顶）：所有顶点落在同一外接圆上，cos(30°)≈0.866 为内切半径系数
       const half = radius * 0.5;
-      return `M ${half} ${-radius} L ${radius} 0 L ${half} ${radius} L ${-half} ${radius} L ${-radius} 0 L ${-half} ${-radius} Z`;
+      const h = radius * 0.86602540378;
+      return `M ${-radius} 0 L ${-half} ${-h} L ${half} ${-h} L ${radius} 0 L ${half} ${h} L ${-half} ${h} Z`;
     }
     case 'star': {
       const spikes = 5;

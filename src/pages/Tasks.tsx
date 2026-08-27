@@ -127,9 +127,26 @@ const getTypeLabel = (type: string, t: TFunction) => {
       return t("tasks.embeddingGeneration");
     case "review_generation":
       return t("tasks.reviewGeneration");
+    case "translate_nodes":
+      return t("tasks.translateNodes");
     default:
       return type;
   }
+};
+
+/**
+ * 统一解析任务显示名：
+ * - title 通常是具体 processor 类型字符串（如 translate_nodes / generate_questions），
+ *   通过 getTypeLabel 映射为翻译后的标签；
+ * - 若 title 是用户自定义名字，getTypeLabel 默认原样返回；
+ * - title 为空时回退到粗粒度 task_type。
+ */
+const resolveTypeLabel = (
+  task: { title?: string | null; task_type?: string },
+  t: TFunction,
+) => {
+  if (task.title) return getTypeLabel(task.title, t);
+  return getTypeLabel(task.task_type || "", t);
 };
 
 export const Tasks = () => {
@@ -228,7 +245,7 @@ export const Tasks = () => {
     if (!debouncedSearchQuery.trim()) return tasks;
     const query = debouncedSearchQuery.trim().toLowerCase();
     return tasks.filter((task) => {
-      const title = (task.title || getTypeLabel(task.task_type, t)).toLowerCase();
+      const title = (resolveTypeLabel(task, t)).toLowerCase();
       return title.includes(query);
     });
   }, [tasks, debouncedSearchQuery, t]);
@@ -425,7 +442,7 @@ export const Tasks = () => {
     const header = "ID,Title,Type,Status,Created At,Updated At\n";
     const rows = tasks
       .map((task) => {
-        const title = task.title || getTypeLabel(task.task_type, t);
+        const title = resolveTypeLabel(task, t);
         const escapedTitle = title ? title.replace(/"/g, '""') : "";
 
         return `${task.id},"${escapedTitle}",${task.task_type},${task.status},${task.created_at},${task.updated_at}`;
@@ -633,7 +650,7 @@ export const Tasks = () => {
                         {isSelectMode && (
                           <button
                             onClick={() => toggleTaskSelection(task.id)}
-                            aria-label={t("tasks.selectRow", { title: task.title || getTypeLabel(task.task_type, t) })}
+                            aria-label={t("tasks.selectRow", { title: resolveTypeLabel(task, t) })}
                             aria-pressed={selectedIds.has(task.id)}
                             className="mt-1 flex-shrink-0 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
                           >
@@ -653,7 +670,7 @@ export const Tasks = () => {
                               <span>{t(`tasks.status.${task.status}`)}</span>
                             </span>
                             <span className="font-semibold text-gray-900 dark:text-gray-100">
-                              {task.title || getTypeLabel(task.task_type, t)}
+                              {resolveTypeLabel(task, t)}
                             </span>
                             <button
                               type="button"

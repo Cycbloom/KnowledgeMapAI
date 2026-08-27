@@ -1012,61 +1012,6 @@ export const GraphEditor = () => {
     [id, nodes, mutations, queryClient, t],
   );
 
-  /** 应用节点翻译：把翻译后的 title/content/summary 写入目标语言 key */
-  const handleApplyNodeTranslation = useCallback(
-    async (
-      translations: Array<{
-        node_id: string;
-        title: string;
-        content?: string;
-        summary?: string;
-      }>,
-      targetLanguage: string,
-    ) => {
-      if (!id) return;
-      let appliedCount = 0;
-      for (const tr of translations) {
-        const node = nodes.find((n) => n.id === tr.node_id);
-        if (!node) continue;
-        const data: {
-          title?: string;
-          content?: string;
-          summary?: string;
-          language?: string;
-        } = { language: targetLanguage };
-        if (tr.title && tr.title !== node.title) data.title = tr.title;
-        if (tr.content && tr.content !== node.content) data.content = tr.content;
-        if (tr.summary && tr.summary !== node.summary) data.summary = tr.summary;
-        if (!data.title && !data.content && !data.summary) {
-          appliedCount++;
-          continue;
-        }
-        try {
-          await mutations.updateNodeMutation.mutateAsync({
-            id: tr.node_id,
-            graphId: id,
-            data,
-          });
-          appliedCount++;
-        } catch (err) {
-          console.warn(`Apply translation to node ${tr.node_id} failed:`, err);
-        }
-      }
-      if (appliedCount > 0) {
-        await queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
-      }
-      if (appliedCount < translations.length) {
-        message.warning(
-          t("graphEditor.nodeTranslate.partialApplied", {
-            count: appliedCount,
-            total: translations.length,
-          }),
-        );
-      }
-    },
-    [id, nodes, mutations, queryClient, t],
-  );
-
   const handleNodeClick = useCallback(
     (node: GraphNode) => {
       focusNodeWithNode(node);
@@ -2053,13 +1998,13 @@ export const GraphEditor = () => {
         <NodeTranslatePanel
           isOpen={isNodeTranslateOpen}
           onClose={() => setIsNodeTranslateOpen(false)}
+          graphId={id}
           nodes={nodes.map((n) => ({
             id: n.id,
             title: n.title,
             content: n.content,
             summary: n.summary,
           }))}
-          onApply={handleApplyNodeTranslation}
         />
       </Suspense>
 

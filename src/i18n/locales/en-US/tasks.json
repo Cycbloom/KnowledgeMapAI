@@ -69,6 +69,7 @@
   "infiniteExpansion": "Infinite Knowledge Network Expansion",
   "embeddingGeneration": "Embedding Generation",
   "reviewGeneration": "Review task generation",
+  "translateNodes": "Translate Nodes",
   "searchPlaceholder": "Search tasks...",
   "noSearchResults": "No matching tasks found",
   "clear": "Clear",

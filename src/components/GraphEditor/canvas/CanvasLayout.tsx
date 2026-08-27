@@ -1,21 +1,64 @@
 import React from 'react';
-import { TemplateLayout } from '../../../types';
+import { TemplateLayout, GridStyle } from '../../../types';
 
 interface CanvasLayoutProps {
   layout?: TemplateLayout;
   width: number;
   height: number;
+  /** 画布背景网格样式 */
+  gridStyle?: GridStyle;
+  isDark?: boolean;
 }
+
+const DOT_GRID_SIZE = 32;
+const LINE_GRID_SIZE = 50;
+
+const GridBackground: React.FC<{ style: GridStyle; width: number; height: number; isDark: boolean }> = ({ style, width, height, isDark }) => {
+  if (style === 'hidden') return null;
+
+  const strokeColor = isDark ? 'rgba(148, 163, 184, 0.16)' : 'rgba(100, 116, 139, 0.14)';
+  const dotColor = isDark ? 'rgba(148, 163, 184, 0.22)' : 'rgba(100, 116, 139, 0.2)';
+
+  return (
+    <g className="canvas-layout" style={{ pointerEvents: 'none' }}>
+      {style === 'lines' ? (
+        <>
+          {Array.from({ length: Math.ceil(width / LINE_GRID_SIZE) + 1 }).map((_, i) => (
+            <line key={`gv-${i}`} x1={i * LINE_GRID_SIZE} y1={0} x2={i * LINE_GRID_SIZE} y2={height} stroke={strokeColor} strokeWidth="1" />
+          ))}
+          {Array.from({ length: Math.ceil(height / LINE_GRID_SIZE) + 1 }).map((_, i) => (
+            <line key={`gh-${i}`} x1={0} y1={i * LINE_GRID_SIZE} x2={width} y2={i * LINE_GRID_SIZE} stroke={strokeColor} strokeWidth="1" />
+          ))}
+        </>
+      ) : (
+        <>
+          {Array.from({ length: Math.ceil(width / DOT_GRID_SIZE) + 1 }).map((_, i) =>
+            Array.from({ length: Math.ceil(height / DOT_GRID_SIZE) + 1 }).map((__, j) => (
+              <circle key={`gd-${i}-${j}`} cx={i * DOT_GRID_SIZE} cy={j * DOT_GRID_SIZE} r={1} fill={dotColor} />
+            )),
+          )}
+        </>
+      )}
+    </g>
+  );
+};
 
 export const CanvasLayout = React.memo(({
   layout,
   width,
   height,
+  gridStyle = 'hidden',
+  isDark = false,
 }: CanvasLayoutProps) => {
-  if (!layout) return null;
+  const backgroundGrid =
+    gridStyle !== 'hidden' ? <GridBackground style={gridStyle} width={width} height={height} isDark={isDark} /> : null;
+
+  if (!layout) return <>{backgroundGrid}</>;
 
   if (layout.type === 'quadrant' && layout.showAxes) {
     return (
+      <>
+      {backgroundGrid}
       <g className="canvas-layout">
         {layout.zones?.map((zone) => (
           <g key={zone.id}>
@@ -91,6 +134,7 @@ export const CanvasLayout = React.memo(({
           </text>
         )}
       </g>
+      </>
     );
   }
 
@@ -98,6 +142,8 @@ export const CanvasLayout = React.memo(({
     const isHorizontal = layout.timeline?.direction === 'horizontal';
     
     return (
+      <>
+      {backgroundGrid}
       <g className="canvas-layout">
         {isHorizontal ? (
           <>
@@ -184,6 +230,7 @@ export const CanvasLayout = React.memo(({
           </marker>
         </defs>
       </g>
+      </>
     );
   }
 
@@ -193,6 +240,8 @@ export const CanvasLayout = React.memo(({
     const horizontalLines = Math.ceil(height / gridSize);
 
     return (
+      <>
+      {backgroundGrid}
       <g className="canvas-layout">
         {Array.from({ length: verticalLines }).map((_, i) => (
           <line
@@ -219,6 +268,7 @@ export const CanvasLayout = React.memo(({
           />
         ))}
       </g>
+      </>
     );
   }
 

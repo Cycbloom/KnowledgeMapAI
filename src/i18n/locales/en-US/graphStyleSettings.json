@@ -1,10 +1,19 @@
 {
   "title": "Style Settings",
+  "subtitle": "Customize the knowledge graph appearance, applied in real time",
   "tabs": {
     "colors": "Color Scheme",
     "nodes": "Node Style",
     "links": "Link Style",
+    "grid": "Background Grid",
     "edges": "Edge Settings"
+  },
+  "presets": {
+    "title": "Quick presets",
+    "classic": "Classic",
+    "flow": "Flow",
+    "geometry": "Geometry",
+    "minimal": "Minimal"
   },
   "colorScheme": {
     "selectTitle": "Choose a color scheme",
@@ -12,6 +21,43 @@
     "levelModeHint": "Currently in \"Structure\" coloring mode. Color schemes only take effect in \"Status\" mode.",
     "heatmapModeHint": "Currently in \"Heatmap\" coloring mode. Color schemes only take effect in \"Status\" mode.",
     "decayModeHint": "Currently in \"Decay\" coloring mode. Color schemes only take effect in \"Status\" mode."
+  },
+  "nodeShape": {
+    "title": "Node Shape"
+  },
+  "nodeShapes": {
+    "circle": "Circle",
+    "square": "Square",
+    "diamond": "Diamond",
+    "hexagon": "Hexagon",
+    "star": "Star"
+  },
+  "centerDotShape": {
+    "title": "Center Dot"
+  },
+  "centerDotShapes": {
+    "circle": "Dot",
+    "diamond": "Diamond",
+    "star": "Star",
+    "none": "None"
+  },
+  "linkWidth": {
+    "title": "Link Width",
+    "value": "{{value}}px"
+  },
+  "linkCap": {
+    "title": "Link End Cap"
+  },
+  "linkCaps": {
+    "round": "Round",
+    "square": "Square",
+    "butt": "Butt"
+  },
+  "arrowStyles": {
+    "title": "Arrow Style",
+    "triangle": "Triangle",
+    "chevron": "Chevron",
+    "circle": "Dot"
   },
   "linkStyles": {
     "curved": "Curved",
@@ -71,6 +117,14 @@
       "description": "Adjusted based on relationship type"
     }
   },
+  "gridStyles": {
+    "hidden": "Hidden",
+    "hiddenDesc": "Do not show a background grid",
+    "lines": "Grid Lines",
+    "linesDesc": "Display fine grid lines",
+    "dots": "Dots",
+    "dotsDesc": "Display an even dot grid"
+  },
   "edgeSettings": {
     "showLabels": "Show Labels",
     "showLabelsDesc": "Display relationship type or custom labels on edges",
@@ -83,6 +137,7 @@
   },
   "actions": {
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "reset": "Reset to Default"
   }
 }

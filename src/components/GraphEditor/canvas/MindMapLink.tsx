@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { LayoutNode, LayoutLink, LinkStyle, LinkAnimation, EdgeWidthMode, Edge, Node, RelationshipTypeConfig, RelationshipCategory } from '../../../types';
+import { LayoutNode, LayoutLink, LinkStyle, LinkAnimation, EdgeWidthMode, Edge, Node, RelationshipTypeConfig, RelationshipCategory, LinkCapStyle, ArrowStyle } from '../../../types';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
 import { calculateEdgeStrength, type GraphEdgeMaps } from '../../../utils/graph/graphUtils';
 import { getRelationshipTypeConfig, getDefaultRelationshipType } from '../../../config/relationshipTypes';
@@ -24,6 +24,12 @@ interface MindMapLinkProps {
   relationshipTypeConfig?: RelationshipTypeConfig;
   onContextMenu?: (event: React.MouseEvent, link: LayoutLink) => void;
   edgeDisplayMode?: 'full' | 'simplified' | 'hidden';
+  /** 连线端点线帽 */
+  linkCap?: LinkCapStyle;
+  /** 有向连线箭头样式 */
+  arrowStyle?: ArrowStyle;
+  /** 固定粗细模式下的连线基础宽度 */
+  linkWidth?: number;
 }
 
 const normalizeId = (id: string | number) => String(id).trim();
@@ -60,6 +66,9 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   relationshipTypeConfig,
   onContextMenu,
   edgeDisplayMode = 'full',
+  linkCap = 'round',
+  arrowStyle = 'triangle',
+  linkWidth = 2,
 }) => {
   const sourceId = typeof link.source === 'string' ? normalizeId(link.source) : normalizeId(link.source.id);
   const targetId = typeof link.target === 'string' ? normalizeId(link.target) : normalizeId(link.target.id);
@@ -71,7 +80,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   
   const dynamicWidth = useMemo(() => {
     if (edgeWidthMode === 'fixed') {
-      return 2;
+      return linkWidth;
     }
     
     if (edgeStrength !== undefined) {
@@ -83,8 +92,8 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
       return 1 + strength.score * 4;
     }
     
-    return 2;
-  }, [edgeWidthMode, edgeStrength, allNodes, allEdges, graphEdgeMaps, link]);
+    return linkWidth;
+  }, [edgeWidthMode, edgeStrength, allNodes, allEdges, graphEdgeMaps, link, linkWidth]);
 
   const relationshipConfig = useMemo(() => {
     if (relationshipTypeConfig) {
@@ -283,11 +292,31 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
           markerHeight={arrowSize}
           orient="auto-start-reverse"
         >
-          <path 
-            d="M 0 0 L 10 5 L 0 10 z" 
-            fill={linkStyleConfig.strokeColor}
-            opacity={linkStyleConfig.opacity}
-          />
+          {arrowStyle === 'circle' ? (
+            <circle
+              cx="5"
+              cy="5"
+              r="3.2"
+              fill={linkStyleConfig.strokeColor}
+              opacity={linkStyleConfig.opacity}
+            />
+          ) : arrowStyle === 'chevron' ? (
+            <path
+              d="M 1 1 L 8 5 L 1 9"
+              fill="none"
+              stroke={linkStyleConfig.strokeColor}
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={linkStyleConfig.opacity}
+            />
+          ) : (
+            <path 
+              d="M 0 0 L 10 5 L 0 10 z" 
+              fill={linkStyleConfig.strokeColor}
+              opacity={linkStyleConfig.opacity}
+            />
+          )}
         </marker>
       </defs>
       <path
@@ -305,7 +334,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
         stroke={linkStyleConfig.strokeColor}
         strokeWidth={linkStyleConfig.strokeWidth}
         opacity={linkStyleConfig.opacity}
-        strokeLinecap="round"
+        strokeLinecap={linkCap}
         strokeDasharray={linkStyleConfig.strokeDasharray}
         style={animationStyle}
         markerEnd={linkStyleConfig.showArrow ? `url(#${arrowId})` : undefined}
@@ -319,7 +348,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
             fill="none"
             stroke={linkStyleConfig.strokeColor}
             strokeWidth={linkStyleConfig.strokeWidth * 3.2}
-            strokeLinecap="round"
+            strokeLinecap={linkCap}
             opacity={0.35}
             pathLength={1}
             strokeDasharray="0.18 0.82"
@@ -331,7 +360,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
             fill="none"
             stroke={linkStyleConfig.strokeColor}
             strokeWidth={linkStyleConfig.strokeWidth + 1.5}
-            strokeLinecap="round"
+            strokeLinecap={linkCap}
             opacity={0.95}
             pathLength={1}
             strokeDasharray="0.18 0.82"
@@ -393,6 +422,9 @@ export const MindMapLink = React.memo(MindMapLinkComponent, (prevProps, nextProp
     prevProps.linkAnimation === nextProps.linkAnimation &&
     prevProps.showLabels === nextProps.showLabels &&
     prevProps.showArrows === nextProps.showArrows &&
+    prevProps.linkCap === nextProps.linkCap &&
+    prevProps.arrowStyle === nextProps.arrowStyle &&
+    prevProps.linkWidth === nextProps.linkWidth &&
     prevProps.customColor === nextProps.customColor &&
     prevProps.edgeDisplayMode === nextProps.edgeDisplayMode &&
     relationshipConfigEqual &&

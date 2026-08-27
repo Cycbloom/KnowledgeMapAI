@@ -22,6 +22,11 @@ import type {
   GraphColorMode,
   NodeStatus,
   Node as GraphNode,
+  NodeShape,
+  CenterDotShape,
+  LinkCapStyle,
+  ArrowStyle,
+  GridStyle,
 } from "../../../types";
 import type { GraphRef } from "../../../hooks/graphEditor";
 import { MindMapNode } from "./MindMapNode";
@@ -84,6 +89,8 @@ const COMPARED_PROPS: readonly (keyof MindMapCanvasProps)[] = [
   'selectedNodeId', 'focusedNodeId', 'focusedNodeIds', 'focusedLinkIds', 'forceShowTextIds', 'highlightedPathNodeId', 'multiSelectedNodeIds',
   // Visual configuration
   'colorScheme', 'linkStyle', 'linkAnimation', 'coloringMode', 'nodeSizeMode', 'edgeWidthMode', 'templateLayout', 'layoutMode', 'nodeGlow',
+  // New visual settings
+  'nodeShape', 'centerDotShape', 'linkCap', 'arrowStyle', 'linkWidth', 'gridStyle',
   // Layout & sizing
   'width', 'height', 'rightPanelWidth', 'leftPanelWidth',
   // Mode flags
@@ -193,6 +200,18 @@ interface MindMapCanvasProps {
   onMarqueeSelect?: (nodeIds: string[], additive: boolean) => void;
   // 全局「节点光晕」开关：开启时所有节点渲染渐变光晕盘
   nodeGlow?: boolean;
+  // 全局节点形状覆盖
+  nodeShape?: NodeShape;
+  // 全局中心圆点形状覆盖
+  centerDotShape?: CenterDotShape;
+  // 连线端点线帽
+  linkCap?: LinkCapStyle;
+  // 有向连线箭头样式
+  arrowStyle?: ArrowStyle;
+  // 固定粗细模式下的连线基础宽度
+  linkWidth?: number;
+  // 画布背景网格样式
+  gridStyle?: GridStyle;
 }
 
 export const MindMapCanvas = React.memo(
@@ -259,6 +278,12 @@ export const MindMapCanvas = React.memo(
       multiSelectedNodeIds,
       onMarqueeSelect,
       nodeGlow = false,
+      nodeShape = 'circle',
+      centerDotShape,
+      linkCap = 'round',
+      arrowStyle = 'triangle',
+      linkWidth = 2,
+      gridStyle = 'hidden',
     },
     ref,
   ) => {
@@ -1181,6 +1206,8 @@ export const MindMapCanvas = React.memo(
               layout={templateLayout}
               width={containerSize.width}
               height={containerSize.height}
+              gridStyle={gridStyle}
+              isDark={isDark}
             />
             {edgeDisplayMode !== 'hidden' && narrativeFilteredLinks.map((link) => {
               const linkSourceId = typeof link.source === 'string' ? link.source : link.source.id;
@@ -1204,6 +1231,9 @@ export const MindMapCanvas = React.memo(
                 graphEdgeMaps={graphEdgeMaps}
                 onContextMenu={edgeMgmt.handleEdgeContextMenu}
                 edgeDisplayMode={edgeDisplayMode}
+                linkCap={linkCap}
+                arrowStyle={arrowStyle}
+                linkWidth={linkWidth}
               />
               );
             })}
@@ -1261,6 +1291,8 @@ export const MindMapCanvas = React.memo(
                   levelMap={levelMap}
                   importanceMaps={importanceMaps}
                   nodeGlow={nodeGlow}
+                  nodeShape={nodeShape}
+                  centerDotShape={centerDotShape}
                 />
               );
             })}

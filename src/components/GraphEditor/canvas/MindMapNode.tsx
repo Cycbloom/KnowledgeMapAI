@@ -9,6 +9,8 @@ import type {
   NodeSizeMode,
   Node,
   NodeStatus,
+  NodeShape,
+  CenterDotShape,
 } from "../../../types";
 import { BACKBONE_MODULE_COLORS, type BackboneModule } from "@shared/types/graph";
 import { NodeRing } from "./NodeRing";
@@ -76,6 +78,10 @@ interface MindMapNodeProps {
   importanceMaps?: NodeImportanceMaps;
   /** 全局「节点光晕」开关：开启时所有层级节点都渲染光晕 */
   nodeGlow?: boolean;
+  /** 全局节点形状覆盖（默认由层级配置决定，通常为圆形） */
+  nodeShape?: NodeShape;
+  /** 全局中心圆点形状覆盖 */
+  centerDotShape?: CenterDotShape;
 }
 
 // 提取到函数外部，避免每次调用都创建新对象
@@ -160,6 +166,8 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   levelMap,
   importanceMaps,
   nodeGlow = false,
+  nodeShape = 'circle',
+  centerDotShape,
 }) => {
   /** @mastery display - 思维导图节点渲染：display_mastery 用于 decay 着色、不透明度、严重衰退标记等纯视觉效果 */
   const { t } = useTranslation();
@@ -222,8 +230,10 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     return {
       ...baseConfig,
       baseRadius: baseConfig.baseRadius * dynamicSize,
+      shape: nodeShape,
+      centerDotShape: centerDotShape ?? baseConfig.centerDotShape,
     };
-  }, [level, dynamicSize]);
+  }, [level, dynamicSize, nodeShape, centerDotShape]);
 
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = useMemo(() => {
@@ -331,6 +341,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
         <NodeRing
           key={`ring-${i}`}
           radius={radius}
+          shape={styleConfig.shape}
           strokeWidth={styleConfig.strokeWidth}
           color={color}
           opacity={opacity}
@@ -1105,6 +1116,8 @@ export const MindMapNode = React.memo(
       prevProps.nodeSizeMode === nextProps.nodeSizeMode &&
       prevProps.nodeImportance === nextProps.nodeImportance &&
       prevProps.nodeGlow === nextProps.nodeGlow &&
+      prevProps.nodeShape === nextProps.nodeShape &&
+      prevProps.centerDotShape === nextProps.centerDotShape &&
       nodeStatusEqual,
     );
   },

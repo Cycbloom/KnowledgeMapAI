@@ -1,10 +1,19 @@
 {
   "title": "样式设置",
+  "subtitle": "为知识图谱定制外观，实时预览生效",
   "tabs": {
     "colors": "配色方案",
     "nodes": "节点样式",
     "links": "连线样式",
+    "grid": "背景网格",
     "edges": "边属性"
+  },
+  "presets": {
+    "title": "快速预设",
+    "classic": "经典",
+    "flow": "流动",
+    "geometry": "几何",
+    "minimal": "极简"
   },
   "colorScheme": {
     "selectTitle": "选择配色方案",
@@ -12,6 +21,43 @@
     "levelModeHint": "当前处于\"结构\"着色模式，配色方案仅在\"状态\"模式下生效。",
     "heatmapModeHint": "当前处于\"热力图\"着色模式，配色方案仅在\"状态\"模式下生效。",
     "decayModeHint": "当前处于\"衰减\"着色模式，配色方案仅在\"状态\"模式下生效。"
+  },
+  "nodeShape": {
+    "title": "节点形状"
+  },
+  "nodeShapes": {
+    "circle": "圆形",
+    "square": "方形",
+    "diamond": "菱形",
+    "hexagon": "六边形",
+    "star": "星形"
+  },
+  "centerDotShape": {
+    "title": "中心圆点"
+  },
+  "centerDotShapes": {
+    "circle": "圆点",
+    "diamond": "菱形",
+    "star": "星形",
+    "none": "无"
+  },
+  "linkWidth": {
+    "title": "连线宽度",
+    "value": "{{value}}px"
+  },
+  "linkCap": {
+    "title": "连线端点"
+  },
+  "linkCaps": {
+    "round": "圆头",
+    "square": "方头",
+    "butt": "平头"
+  },
+  "arrowStyles": {
+    "title": "箭头样式",
+    "triangle": "三角形",
+    "chevron": "楔形",
+    "circle": "圆点"
   },
   "linkStyles": {
     "curved": "曲线",
@@ -71,6 +117,14 @@
       "description": "根据关系类型调整粗细"
     }
   },
+  "gridStyles": {
+    "hidden": "隐藏",
+    "hiddenDesc": "不显示背景网格",
+    "lines": "网格线",
+    "linesDesc": "显示细网格线",
+    "dots": "圆点",
+    "dotsDesc": "显示均匀的圆点网格"
+  },
   "edgeSettings": {
     "showLabels": "显示标签",
     "showLabelsDesc": "在边上显示关系类型或自定义标签",
@@ -83,6 +137,7 @@
   },
   "actions": {
     "cancel": "取消",
-    "confirm": "确定"
+    "confirm": "确定",
+    "reset": "恢复默认"
   }
 }

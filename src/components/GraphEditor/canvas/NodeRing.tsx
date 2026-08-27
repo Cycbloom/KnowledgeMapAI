@@ -1,10 +1,13 @@
 import React, { useMemo } from 'react';
-import { GradientConfig } from '../../../types';
+import { GradientConfig, NodeShape } from '../../../types';
+import { getNodeShapePath } from '../../../config/nodeStyleConfig';
 
 interface NodeRingProps {
   radius: number;
   strokeWidth: number;
   color: string;
+  /** 节点几何形状，默认圆形 */
+  shape?: NodeShape;
   opacity?: number;
   dashArray?: string;
   showGlow?: boolean;
@@ -23,6 +26,7 @@ export const NodeRing = React.memo(({
   radius,
   strokeWidth,
   color,
+  shape = 'circle',
   opacity = 1,
   dashArray,
   showGlow = false,
@@ -68,6 +72,9 @@ export const NodeRing = React.memo(({
 
   const useGradientGlow = showGlow && glowColor && glowId;
 
+  // 非圆形形状渲染外轮廓路径，圆形保持 <circle> 以复用既有优化与旋转动画
+  const shapePath = shape !== 'circle' ? getNodeShapePath(shape, radius) : null;
+
   return (
     <g style={rotationStyle}>
       {showGlow && glowColor && (
@@ -99,15 +106,27 @@ export const NodeRing = React.memo(({
           />
         </>
       )}
-      <circle
-        r={radius}
-        fill={fillStyle}
-        stroke={strokeStyle}
-        strokeWidth={strokeWidth}
-        opacity={opacity}
-        strokeDasharray={dashArray}
-        style={shadowStyle}
-      />
+      {shapePath ? (
+        <path
+          d={shapePath}
+          fill={fillStyle}
+          stroke={strokeStyle}
+          strokeWidth={strokeWidth}
+          opacity={opacity}
+          strokeDasharray={dashArray}
+          style={shadowStyle}
+        />
+      ) : (
+        <circle
+          r={radius}
+          fill={fillStyle}
+          stroke={strokeStyle}
+          strokeWidth={strokeWidth}
+          opacity={opacity}
+          strokeDasharray={dashArray}
+          style={shadowStyle}
+        />
+      )}
     </g>
   );
 });

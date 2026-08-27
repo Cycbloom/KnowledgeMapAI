@@ -11,6 +11,7 @@ import React, {
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore } from "../store/useStore";
+import { useGraphStyleSettingsStore } from "../store/useGraphStyleSettingsStore";
 import { message } from "../utils/messageHelper";
 import { ArrowLeft, Lock, LogIn, AlertTriangle } from "lucide-react";
 
@@ -256,6 +257,16 @@ export const GraphEditor = () => {
   const [coloringMode, setColoringMode] = useState<GraphColorMode>("level"); // Default to level (structure) as requested
   const [edgeDisplayMode, setEdgeDisplayMode] = useState<'full' | 'simplified' | 'hidden'>('full');
   const [zoomLevel, setZoomLevel] = useState(1);
+
+  // 新增的持久化样式设置（节点形状 / 连线端点箭头 / 背景网格）
+  const {
+    nodeShape,
+    centerDotShape,
+    linkCap,
+    arrowStyle,
+    linkWidth,
+    gridStyle,
+  } = useGraphStyleSettingsStore();
 
   useQuoteShortcut({
     onAddQuote: addQuote,
@@ -1428,6 +1439,12 @@ export const GraphEditor = () => {
                 multiSelectedNodeIds={selectedNodeIds}
                 onMarqueeSelect={handleMarqueeSelect}
                 nodeGlow={nodeGlow}
+                nodeShape={nodeShape}
+                centerDotShape={centerDotShape}
+                linkCap={linkCap}
+                arrowStyle={arrowStyle}
+                linkWidth={linkWidth}
+                gridStyle={gridStyle}
               />
               </ErrorBoundary>
           )}

@@ -262,6 +262,55 @@ export const getGradientId = (nodeId: string, ringIndex: number): string => {
   return `gradient-${nodeId}-${ringIndex}`;
 };
 
+/**
+ * 生成节点几何形状的外轮廓路径（以原点为中心，radius 为外接半径）。
+ * 仅用于 circle 之外的形状；circle 直接使用 <circle> 元素渲染以保持性能。
+ */
+export const getNodeShapePath = (
+  shape: NodeShape,
+  radius: number,
+): string | null => {
+  switch (shape) {
+    case 'circle':
+      return null;
+    case 'square': {
+      return `M ${-radius} ${-radius} L ${radius} ${-radius} L ${radius} ${radius} L ${-radius} ${radius} Z`;
+    }
+    case 'diamond': {
+      return `M 0 ${-radius} L ${radius} 0 L 0 ${radius} L ${-radius} 0 Z`;
+    }
+    case 'hexagon': {
+      const half = radius * 0.5;
+      return `M ${half} ${-radius} L ${radius} 0 L ${half} ${radius} L ${-half} ${radius} L ${-radius} 0 L ${-half} ${-radius} Z`;
+    }
+    case 'star': {
+      const spikes = 5;
+      const outer = radius;
+      const inner = radius * 0.5;
+      let rot = (Math.PI / 2) * 3;
+      let path = '';
+      const step = Math.PI / spikes;
+      const cx = 0;
+      const cy = 0;
+      path += `M ${cx} ${cy - outer} `;
+      for (let i = 0; i < spikes; i++) {
+        let x = cx + Math.cos(rot) * outer;
+        let y = cy + Math.sin(rot) * outer;
+        path += `L ${x} ${y} `;
+        rot += step;
+        x = cx + Math.cos(rot) * inner;
+        y = cy + Math.sin(rot) * inner;
+        path += `L ${x} ${y} `;
+        rot += step;
+      }
+      path += 'Z';
+      return path;
+    }
+    default:
+      return null;
+  }
+};
+
 export const getCenterDotPath = (radius: number, shape: CenterDotShape): string | null => {
   switch (shape) {
     case 'circle':

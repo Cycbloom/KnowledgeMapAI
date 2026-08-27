@@ -17,6 +17,15 @@ export type LinkStyle = "curved" | "straight" | "step" | "bezier";
 
 export type LinkAnimation = "none" | "flow" | "pulse" | "dash";
 
+/** SVG 连线端点线帽样式 */
+export type LinkCapStyle = "round" | "square" | "butt";
+
+/** 有向连线箭头样式 */
+export type ArrowStyle = "triangle" | "chevron" | "circle";
+
+/** 画布背景网格样式 */
+export type GridStyle = "hidden" | "lines" | "dots";
+
 export type ColorScheme =
   | "default"
   | "nature"

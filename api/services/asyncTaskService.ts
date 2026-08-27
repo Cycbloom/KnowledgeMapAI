@@ -14,6 +14,7 @@ import "./taskProcessors/embeddingGenerationProcessor.js";
 import "./taskProcessors/quizGenerationProcessor.js";
 import "./taskProcessors/generateQuestionsProcessor.js";
 import "./taskProcessors/expandGraphProcessor.js";
+import "./taskProcessors/translateNodesProcessor.js";
 
 export interface TaskProgress {
   stage?: string;
@@ -93,6 +94,7 @@ export class AsyncTaskService {
       "recursive_graph_generation": "graph_expansion",
       "infinite_graph_expansion": "graph_expansion",
       "embedding_generation": "knowledge_sync",
+      "translate_nodes": "ai_generation",
     };
     return typeMap[type] || "ai_generation";
   }

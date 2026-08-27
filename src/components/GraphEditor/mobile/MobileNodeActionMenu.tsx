@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit3, Sparkles, Wand2, Layers, GraduationCap, Trash2, X } from 'lucide-react';
+import { Edit3, Sparkles, Layers, GraduationCap, Trash2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface MobileNodeActionMenuProps {
@@ -13,7 +13,6 @@ interface MobileNodeActionMenuProps {
   onManageCards?: () => void;
   onDelete: () => void;
   onStartLearning?: () => void;
-  onGenerateContent?: () => void;
 }
 
 export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
@@ -26,14 +25,12 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
   onManageCards,
   onDelete,
   onStartLearning,
-  onGenerateContent,
 }) => {
   const { t } = useTranslation();
 
   const menuItems = [
     { key: 'edit', icon: Edit3, labelKey: 'nodeDetail.editNode', color: 'text-primary-500' },
     { key: 'aiExpand', icon: Sparkles, labelKey: 'nodeDetail.aiExpand', color: 'text-primary-500' },
-    { key: 'generateContent', icon: Wand2, labelKey: 'nodeDetail.generateContent', color: 'text-amber-500' },
     { key: 'manageCards', icon: Layers, labelKey: 'nodeDetail.manageCards', color: 'text-emerald-500' },
     { key: 'startLearning', icon: GraduationCap, labelKey: 'nodeDetail.startLearning', color: 'text-primary-500' },
   ] as const;
@@ -49,8 +46,6 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
         return onEdit;
       case 'aiExpand':
         return onAIExpand;
-      case 'generateContent':
-        return onGenerateContent;
       case 'manageCards':
         return onManageCards;
       case 'startLearning':

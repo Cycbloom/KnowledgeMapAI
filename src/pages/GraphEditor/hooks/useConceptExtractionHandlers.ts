@@ -9,18 +9,16 @@ import { queryKeys } from "../../../hooks/queries/config";
 interface UseConceptExtractionHandlersParams {
   /** graph id from useParams */
   id: string | undefined;
-  /** panel state setters for concept preview / literature extract */
+  /** panel state setters for concept preview */
   panelState: Pick<
     UseGraphEditorPanelStateReturn,
-    | "setExtractedConcepts"
-    | "setIsConceptPreviewOpen"
-    | "setIsLiteratureExtractOpen"
+    "setExtractedConcepts" | "setIsConceptPreviewOpen"
   >;
   queryClient: QueryClient;
 }
 
 /**
- * Handles literature extraction completion and concept confirmation flow.
+ * Handles concept confirmation flow.
  *
  * Extracted from GraphEditor.tsx (P1-13).
  */
@@ -30,19 +28,6 @@ export const useConceptExtractionHandlers = ({
   queryClient,
 }: UseConceptExtractionHandlersParams) => {
   const { t } = useTranslation();
-  const handleLiteratureExtractComplete = useCallback(
-    (result: { concepts?: ExtractedConcept[] }) => {
-      if (result.concepts && result.concepts.length > 0) {
-        panelState.setExtractedConcepts(result.concepts);
-        panelState.setIsConceptPreviewOpen(true);
-        panelState.setIsLiteratureExtractOpen(false);
-      } else {
-        message.info(t("graphEditor.noConceptExtracted"));
-      }
-    },
-    [panelState, t],
-  );
-
   const handleConfirmConcepts = useCallback(
     async (selectedConcepts: ExtractedConcept[]) => {
       if (!id || selectedConcepts.length === 0) return;
@@ -81,7 +66,6 @@ export const useConceptExtractionHandlers = ({
   );
 
   return {
-    handleLiteratureExtractComplete,
     handleConfirmConcepts,
   };
 };

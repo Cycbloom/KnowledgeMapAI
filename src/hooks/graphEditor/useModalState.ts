@@ -1,8 +1,6 @@
 import { useState } from 'react';
 
 export interface ModalState {
-  isTextToGraphOpen: boolean;
-  setIsTextToGraphOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isPodcastModalOpen: boolean;
   setIsPodcastModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isSettingsOpen: boolean;
@@ -24,7 +22,6 @@ export interface ModalState {
 }
 
 export const useModalState = (): ModalState => {
-  const [isTextToGraphOpen, setIsTextToGraphOpen] = useState(false);
   const [isPodcastModalOpen, setIsPodcastModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -36,8 +33,6 @@ export const useModalState = (): ModalState => {
   const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
 
   return {
-    isTextToGraphOpen,
-    setIsTextToGraphOpen,
     isPodcastModalOpen,
     setIsPodcastModalOpen,
     isSettingsOpen,

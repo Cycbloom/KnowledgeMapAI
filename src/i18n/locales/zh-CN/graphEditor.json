@@ -195,10 +195,6 @@
     "exploreBranch": "探索分支",
     "branchSuggestionTitle": "查看分支建议",
     "aiAssistant": "AI 助手",
-    "textToGraph": "文本/文档生成",
-    "literatureExtract": "文献提取",
-    "researchProgress": "研究进度",
-    "literatureLibrary": "文献库",
     "intelligentExpand": "智能拓展 (无限模式)",
     "backgroundExpand": "后台自动拓展",
     "generateEmbeddings": "生成语义向量",
@@ -261,9 +257,6 @@
     "preview": "预览",
     "details": "详情",
     "more": "更多",
-    "closeLiteratureExtract": "关闭文献提取",
-    "closeResearchProgress": "关闭研究进度",
-    "closeLiteratureLibrary": "关闭文献库",
     "regionControl": "区域控制",
     "versionHistory": "版本历史",
     "conceptAggregation": "概念聚合",
@@ -301,38 +294,6 @@
   "switcher": {
     "placeholder": "切换图谱",
     "noRecent": "无最近图谱"
-  },
-  "researchProgress": {
-    "title": "研究进度",
-    "subtitle": "各模块节点与文献数量概览",
-    "noModules": "暂无模块数据",
-    "researchGap": "研究空白",
-    "nodes": "知识点",
-    "literature": "文献",
-    "totalNodes": "总节点数",
-    "totalLiterature": "总文献数"
-  },
-  "literatureLibrary": {
-    "title": "文献库",
-    "subtitle": "图谱中涉及的所有文献资料",
-    "noLiterature": "暂无文献数据",
-    "totalCount": "共 {{count}} 篇",
-    "colTitle": "标题",
-    "colAuthors": "作者",
-    "colYear": "年份",
-    "colType": "类型",
-    "colConcepts": "概念",
-    "colModules": "模块",
-    "footer": "共收录 {{count}} 篇文献",
-    "tableAriaLabel": "文献库列表",
-    "typeLabel": {
-      "paper": "论文",
-      "book": "书籍",
-      "article": "文章",
-      "report": "报告",
-      "webpage": "网页",
-      "document": "文档"
-    }
   },
   "mindMap": {
     "unnamed": "未命名",
@@ -933,9 +894,6 @@
       "startGenerate": "开始生成",
       "cancel": "取消"
     }
-  },
-  "textToGraph": {
-    "generateFailed": "文生图失败"
   },
   "mindMapCanvas": {
     "ariaLabel": "思维导图视图，{{count}} 个节点，当前焦点：{{focus}}",

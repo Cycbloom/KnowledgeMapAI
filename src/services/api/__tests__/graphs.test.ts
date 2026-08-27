@@ -69,11 +69,6 @@ describe('graphsApi', () => {
       expect(request).toHaveBeenCalledWith('/graphs/graph-1/analyze');
     });
 
-    it('应该调用 getResearchProgress 请求 /graphs/{id}/research-progress', async () => {
-      await graphsApi.getResearchProgress('graph-1');
-      expect(request).toHaveBeenCalledWith('/graphs/graph-1/research-progress');
-    });
-
     it('应该调用 getModuleGaps 请求 /graphs/{id}/analysis/module-gaps', async () => {
       await graphsApi.getModuleGaps('graph-1');
       expect(request).toHaveBeenCalledWith('/graphs/graph-1/analysis/module-gaps');

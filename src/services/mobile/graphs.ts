@@ -645,10 +645,6 @@ export const mobileGraphsApi: IGraphsApi = {
     throw new NotSupportedError("getLiterature");
   },
 
-  getResearchProgress: async (_id: string) => {
-    throw new NotSupportedError("getResearchProgress");
-  },
-
   getModuleGaps: async (_id: string) => {
     throw new NotSupportedError("getModuleGaps");
   },

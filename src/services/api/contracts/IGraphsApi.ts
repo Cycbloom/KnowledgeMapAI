@@ -106,19 +106,6 @@ export interface IGraphsApi {
     totalCount: number;
   }>;
 
-  getResearchProgress(id: string): Promise<{
-    modules: Array<{
-      module_type: string;
-      title: string;
-      icon: string;
-      color: string;
-      nodeCount: number;
-      literatureCount: number;
-    }>;
-    totalNodes: number;
-    totalLiterature: number;
-  }>;
-
   getModuleGaps(id: string): Promise<{
     needsNewModule: boolean;
     suggestedModules: Array<{ name: string; reason: string }>;

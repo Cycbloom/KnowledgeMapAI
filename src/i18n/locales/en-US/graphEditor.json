@@ -195,10 +195,6 @@
     "exploreBranch": "Explore Branch",
     "branchSuggestionTitle": "View branch suggestions",
     "aiAssistant": "AI Assistant",
-    "textToGraph": "Text/Document Generation",
-    "literatureExtract": "Literature Extract",
-    "researchProgress": "Research Progress",
-    "literatureLibrary": "Literature Library",
     "intelligentExpand": "Intelligent Expansion (Infinite Mode)",
     "backgroundExpand": "Background Auto Expansion",
     "generateEmbeddings": "Generate Semantic Vectors",
@@ -261,9 +257,6 @@
     "preview": "Preview",
     "details": "Details",
     "more": "More",
-    "closeLiteratureExtract": "Close Literature Extract",
-    "closeResearchProgress": "Close Research Progress",
-    "closeLiteratureLibrary": "Close Literature Library",
     "regionControl": "Region Control",
     "versionHistory": "Version History",
     "conceptAggregation": "Concept Aggregation",
@@ -301,38 +294,6 @@
   "switcher": {
     "placeholder": "Switch Graph",
     "noRecent": "No recent graphs"
-  },
-  "researchProgress": {
-    "title": "Research Progress",
-    "subtitle": "Module node and literature count overview",
-    "noModules": "No module data",
-    "researchGap": "Research Gap",
-    "nodes": "Knowledge Points",
-    "literature": "Literature",
-    "totalNodes": "Total Nodes",
-    "totalLiterature": "Total Literature"
-  },
-  "literatureLibrary": {
-    "title": "Literature Library",
-    "subtitle": "All literature referenced in the graph",
-    "noLiterature": "No literature data",
-    "totalCount": "{{count}} total",
-    "colTitle": "Title",
-    "colAuthors": "Authors",
-    "colYear": "Year",
-    "colType": "Type",
-    "colConcepts": "Concepts",
-    "colModules": "Modules",
-    "footer": "{{count}} literature items total",
-    "tableAriaLabel": "Literature Library List",
-    "typeLabel": {
-      "paper": "Paper",
-      "book": "Book",
-      "article": "Article",
-      "report": "Report",
-      "webpage": "Webpage",
-      "document": "Document"
-    }
   },
   "mindMap": {
     "unnamed": "Unnamed",
@@ -933,9 +894,6 @@
       "startGenerate": "Start Generate",
       "cancel": "Cancel"
     }
-  },
-  "textToGraph": {
-    "generateFailed": "Text-to-graph generation failed"
   },
   "mindMapCanvas": {
     "ariaLabel": "Mind map view, {{count}} nodes, focus: {{focus}}",

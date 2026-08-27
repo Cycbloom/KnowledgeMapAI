@@ -51,7 +51,6 @@ import unifiedWorkbench from './unifiedWorkbench.json';
 import schedulerStats from './schedulerStats.json';
 import combinedViewPage from './combinedViewPage.json';
 import graphStyleSettings from './graphStyleSettings.json';
-import textToGraph from './textToGraph.json';
 import collaborators from './collaborators.json';
 import notifications from './notifications.json';
 import notes from './notes.json';
@@ -126,7 +125,6 @@ const enUS = {
   schedulerStats,
   combinedViewPage,
   graphStyleSettings,
-  textToGraph,
   collaborators,
   notifications,
   notes,

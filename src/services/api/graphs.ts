@@ -168,20 +168,6 @@ export const graphsApi: IGraphsApi = {
     }>(`/graphs/${id}/literature${params}`);
   },
 
-  getResearchProgress: (id: string) =>
-    request<{
-      modules: Array<{
-        module_type: string;
-        title: string;
-        icon: string;
-        color: string;
-        nodeCount: number;
-        literatureCount: number;
-      }>;
-      totalNodes: number;
-      totalLiterature: number;
-    }>(`/graphs/${id}/research-progress`),
-
   getModuleGaps: (id: string) =>
     request<{
       needsNewModule: boolean;

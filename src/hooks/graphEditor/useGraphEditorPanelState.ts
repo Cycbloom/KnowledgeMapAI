@@ -25,13 +25,6 @@ export interface UseGraphEditorPanelStateReturn {
   setIsRAGChatOpen: React.Dispatch<React.SetStateAction<boolean>>;
   ragChatWidth: number;
   setRagChatWidth: React.Dispatch<React.SetStateAction<number>>;
-  // Literature
-  isLiteratureExtractOpen: boolean;
-  setIsLiteratureExtractOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  isResearchProgressOpen: boolean;
-  setIsResearchProgressOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  isLiteratureLibraryOpen: boolean;
-  setIsLiteratureLibraryOpen: React.Dispatch<React.SetStateAction<boolean>>;
   // Concepts
   extractedConcepts: ExtractedConcept[];
   setExtractedConcepts: React.Dispatch<React.SetStateAction<ExtractedConcept[]>>;
@@ -76,11 +69,6 @@ export function useGraphEditorPanelState(
   // RAG Chat
   const [isRAGChatOpen, setIsRAGChatOpen] = useState(false);
   const [ragChatWidth, setRagChatWidth] = useState(420);
-
-  // Literature
-  const [isLiteratureExtractOpen, setIsLiteratureExtractOpen] = useState(false);
-  const [isResearchProgressOpen, setIsResearchProgressOpen] = useState(false);
-  const [isLiteratureLibraryOpen, setIsLiteratureLibraryOpen] = useState(false);
 
   // Concepts
   const [extractedConcepts, setExtractedConcepts] = useState<ExtractedConcept[]>([]);
@@ -128,13 +116,6 @@ export function useGraphEditorPanelState(
     setIsRAGChatOpen,
     ragChatWidth,
     setRagChatWidth,
-    // Literature
-    isLiteratureExtractOpen,
-    setIsLiteratureExtractOpen,
-    isResearchProgressOpen,
-    setIsResearchProgressOpen,
-    isLiteratureLibraryOpen,
-    setIsLiteratureLibraryOpen,
     // Concepts
     extractedConcepts,
     setExtractedConcepts,

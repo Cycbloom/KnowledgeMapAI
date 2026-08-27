@@ -45,7 +45,6 @@ import {
   X,
   Eye,
   EyeOff,
-  FileText,
   LayoutGrid,
   Map as MapIcon,
   GitMerge,
@@ -91,7 +90,6 @@ interface GraphToolbarProps {
 
   // Tools
   aiEnabled?: boolean;
-  onTextToGraph: () => void;
   onAIExpand?: () => void;
   onBranchExplore?: () => void;
   onBackgroundTask?: (type: "expand_graph" | "batch_generate_questions") => void;
@@ -174,18 +172,6 @@ interface GraphToolbarProps {
 
   // Read-only mode
   isReadOnly?: boolean;
-
-  // Literature Extract
-  isLiteratureExtractOpen?: boolean;
-  setIsLiteratureExtractOpen?: (open: boolean) => void;
-
-  // Research Progress
-  isResearchProgressOpen?: boolean;
-  setIsResearchProgressOpen?: (open: boolean) => void;
-
-  // Literature Library
-  isLiteratureLibraryOpen?: boolean;
-  setIsLiteratureLibraryOpen?: (open: boolean) => void;
 
   isVersionHistoryOpen?: boolean;
   setIsVersionHistoryOpen?: (open: boolean) => void;
@@ -314,7 +300,6 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   isFocusMode,
   setIsFocusMode,
   aiEnabled,
-  onTextToGraph,
   onAIExpand,
   onBranchExplore,
   onBackgroundTask,
@@ -369,12 +354,6 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   isRAGChatOpen,
   ragChatWidth = 420,
   isReadOnly = false,
-  isLiteratureExtractOpen,
-  setIsLiteratureExtractOpen,
-  isResearchProgressOpen,
-  setIsResearchProgressOpen,
-  isLiteratureLibraryOpen,
-  setIsLiteratureLibraryOpen,
   isVersionHistoryOpen,
   setIsVersionHistoryOpen,
   regions,
@@ -550,45 +529,6 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   }) => {
     const menuItems: Record<"ai" | "view" | "more", MobileMenuItem[]> = {
       ai: [
-        {
-          icon: Sparkles,
-          label: t("graphEditor.toolbar.textToGraph"),
-          onClick: () => {
-            onTextToGraph();
-            onClose();
-          },
-          color: "text-primary-500",
-        },
-        {
-          icon: FileText,
-          label: isLiteratureExtractOpen ? t("graphEditor.toolbar.closeLiteratureExtract") : t("graphEditor.toolbar.literatureExtract"),
-          onClick: () => {
-            setIsLiteratureExtractOpen?.(!isLiteratureExtractOpen);
-            onClose();
-          },
-          active: isLiteratureExtractOpen,
-          color: "text-amber-500",
-        },
-        {
-          icon: BarChart3,
-          label: isResearchProgressOpen ? t("graphEditor.toolbar.closeResearchProgress") : t("graphEditor.toolbar.researchProgress"),
-          onClick: () => {
-            setIsResearchProgressOpen?.(!isResearchProgressOpen);
-            onClose();
-          },
-          active: isResearchProgressOpen,
-          color: "text-emerald-500",
-        },
-        {
-          icon: BookOpen,
-          label: isLiteratureLibraryOpen ? t("graphEditor.toolbar.closeLiteratureLibrary") : t("graphEditor.toolbar.literatureLibrary"),
-          onClick: () => {
-            setIsLiteratureLibraryOpen?.(!isLiteratureLibraryOpen);
-            onClose();
-          },
-          active: isLiteratureLibraryOpen,
-          color: "text-amber-500",
-        },
         {
           icon: Navigation,
           label: t("graphEditor.toolbar.intelligentExpand"),
@@ -1578,45 +1518,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           id="ai"
           icon={Sparkles}
           label={t("graphEditor.toolbar.aiAssistant")}
-          active={
-            isChatOpen ||
-            isPathfindingMode ||
-            isLiteratureExtractOpen ||
-            isResearchProgressOpen ||
-            isLiteratureLibraryOpen
-          }
+          active={isChatOpen || isPathfindingMode}
         >
-          <MenuItem
-            onClick={onTextToGraph}
-            icon={Sparkles}
-            label={t("graphEditor.toolbar.textToGraph")}
-            colorClass="text-primary-500"
-          />
-          <MenuItem
-            onClick={() =>
-              setIsLiteratureExtractOpen?.(!isLiteratureExtractOpen)
-            }
-            icon={FileText}
-            label={t("graphEditor.toolbar.literatureExtract")}
-            active={isLiteratureExtractOpen}
-            colorClass="text-amber-500"
-          />
-          <MenuItem
-            onClick={() => setIsResearchProgressOpen?.(!isResearchProgressOpen)}
-            icon={BarChart3}
-            label={t("graphEditor.toolbar.researchProgress")}
-            active={isResearchProgressOpen}
-            colorClass="text-emerald-500"
-          />
-          <MenuItem
-            onClick={() =>
-              setIsLiteratureLibraryOpen?.(!isLiteratureLibraryOpen)
-            }
-            icon={BookOpen}
-            label={t("graphEditor.toolbar.literatureLibrary")}
-            active={isLiteratureLibraryOpen}
-            colorClass="text-amber-500"
-          />
           <MenuItem
             onClick={() => {
               if (selectedNodeIds.size === 1 && onAIExpand) {

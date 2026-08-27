@@ -194,17 +194,6 @@ router.get(
 );
 
 router.get(
-  "/:id/research-progress",
-  requireAuth,
-  validate({ params: uuidParamsSchema }),
-  async (req: AuthedRequest, res: Response) => {
-    const { id } = req.params;
-    const data = await graphCrudService.getResearchProgress(req.supabase, id);
-    res.json(data);
-  },
-);
-
-router.get(
   "/:id/literature",
   requireAuth,
   validate({ params: uuidParamsSchema }),

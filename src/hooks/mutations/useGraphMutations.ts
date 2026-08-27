@@ -181,14 +181,6 @@ export const useAIGenerateCardsMutation = createSimpleMutation(
   api.ai.generateCards,
 );
 
-export const useDocumentToGraphMutation = createSimpleMutation(
-  api.ai.documentToGraph,
-);
-
-export const useImageToGraphMutation = createSimpleMutation(
-  api.ai.imageToGraph,
-);
-
 export const useRecommendConnectionsMutation = createSimpleMutation(
   api.ai.recommendConnections,
 );
@@ -471,20 +463,6 @@ export const useDeleteEdgeMutation = () => {
       if (variables.graphId) {
         queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graphId) });
       }
-    },
-  });
-};
-
-export const useTextToGraphMutation = () => {
-  return useMutation({
-    mutationFn: api.ai.textToGraph,
-    onSuccess: (_data, variables) => {
-      if (variables.action === "save") {
-        frontendEventBus.publish("graph_data_changed", { graphId: variables.graph_id, changeType: "ai_action_executed" });
-      }
-    },
-    onError: (error) => {
-      console.error("[useTextToGraphMutation] Failed to generate graph:", error);
     },
   });
 };

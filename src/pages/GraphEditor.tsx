@@ -7,7 +7,6 @@ import React, {
   useLayoutEffect,
   useEffect,
   useRef,
-  useId,
 } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -129,30 +128,6 @@ import {
   startOnboardingTour,
 } from "../components/GraphEditor/OnboardingGuide";
 
-const LiteratureExtractPanel = lazy(() =>
-  import("../components/LiteratureExtract/LiteratureExtractPanel").then(
-    (module) => ({
-      default: module.LiteratureExtractPanel,
-    }),
-  ),
-);
-
-const ResearchProgressPanel = lazy(() =>
-  import("../components/GraphEditor/ResearchProgressPanel").then(
-    (module) => ({
-      default: module.ResearchProgressPanel,
-    }),
-  ),
-);
-
-const LiteratureLibraryPanel = lazy(() =>
-  import("../components/GraphEditor/LiteratureLibraryPanel").then(
-    (module) => ({
-      default: module.LiteratureLibraryPanel,
-    }),
-  ),
-);
-
 const VersionHistoryPanel = lazy(() =>
   import("../components/GraphEditor/panels/VersionHistoryPanel").then(
     (module) => ({
@@ -259,7 +234,6 @@ export const GraphEditor = () => {
   const [showOnboarding, setShowOnboarding] = useState(!isOnboardingComplete());
 
   const panelState = useGraphEditorPanelState({ userId: user?.id || "" });
-  const literatureExtractTitleId = useId();
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -298,7 +272,7 @@ export const GraphEditor = () => {
     handleOriginMove,
   } = useRegionHandlers();
 
-  const { handleLiteratureExtractComplete, handleConfirmConcepts } =
+  const { handleConfirmConcepts } =
     useConceptExtractionHandlers({
       id,
       panelState,
@@ -422,7 +396,6 @@ export const GraphEditor = () => {
     setTutorMode,
     suggestedNextTopics,
     // Modal setters
-    setIsTextToGraphOpen,
     setIsSettingsOpen,
     setIsHelpOpen,
     setIsShareModalOpen,
@@ -1223,14 +1196,6 @@ export const GraphEditor = () => {
     }
   }, [nodes, mobileActionNodeId, setSelectedNode, aiOps]);
 
-  const handleMobileGenerateContent = useCallback(() => {
-    const node = nodes.find((n) => n.id === mobileActionNodeId);
-    if (node) {
-      setSelectedNode(node);
-      setIsTextToGraphOpen(true);
-    }
-  }, [nodes, mobileActionNodeId, setSelectedNode, setIsTextToGraphOpen]);
-
   const handleMobileManageCards = useCallback(() => {
     const node = nodes.find((n) => n.id === mobileActionNodeId);
     if (node && id) {
@@ -1252,15 +1217,6 @@ export const GraphEditor = () => {
       nodeOps.handleDeleteNode(node);
     }
   }, [nodes, mobileActionNodeId, nodeOps]);
-
-  const handleConceptsSaved = useCallback(async () => {
-    await queryClient.invalidateQueries({
-      queryKey: queryKeys.graphData(id || ""),
-    });
-    await queryClient.invalidateQueries({
-      queryKey: queryKeys.graphNodeStatus(id || ""),
-    });
-  }, [queryClient, id]);
 
   const handleDiffSelect = useCallback((sourceSnapshotId: string, targetSnapshotId?: string) => {
     panelState.setSelectedDiff({ sourceSnapshotId, targetSnapshotId: targetSnapshotId ?? "" });
@@ -1595,7 +1551,6 @@ export const GraphEditor = () => {
         isFocusMode={isFocusMode}
         setIsFocusMode={setIsFocusMode}
         aiEnabled={aiEnabled}
-        onTextToGraph={() => setIsTextToGraphOpen(true)}
         onAIExpand={aiOps.handleAIExpand}
         onBranchExplore={handleGetBranchSuggestions}
         onBackgroundTask={aiOps.handleBackgroundTask}
@@ -1652,13 +1607,6 @@ export const GraphEditor = () => {
         setIsMobilePreviewMode={setIsMobilePreviewMode}
         isRAGChatOpen={panelState.isRAGChatOpen}
         ragChatWidth={panelState.ragChatWidth}
-        isReadOnly={isReadOnly}
-        isLiteratureExtractOpen={panelState.isLiteratureExtractOpen}
-        setIsLiteratureExtractOpen={panelState.setIsLiteratureExtractOpen}
-        isResearchProgressOpen={panelState.isResearchProgressOpen}
-        setIsResearchProgressOpen={panelState.setIsResearchProgressOpen}
-        isLiteratureLibraryOpen={panelState.isLiteratureLibraryOpen}
-        setIsLiteratureLibraryOpen={panelState.setIsLiteratureLibraryOpen}
         isVersionHistoryOpen={panelState.isVersionHistoryOpen}
         setIsVersionHistoryOpen={panelState.setIsVersionHistoryOpen}
         regions={regions}
@@ -1922,7 +1870,6 @@ export const GraphEditor = () => {
             nodeTitle={mobileActionNodeId ? nodeById.get(mobileActionNodeId)?.title : undefined}
             onEdit={handleMobileEdit}
             onAIExpand={handleMobileAIExpand}
-            onGenerateContent={handleMobileGenerateContent}
             onManageCards={handleMobileManageCards}
             onStartLearning={handleMobileStartLearning}
             onDelete={handleMobileDelete}
@@ -1972,65 +1919,6 @@ export const GraphEditor = () => {
               isMinimized={panelState.isConsoleMinimized}
             />
           </ErrorBoundary>
-        </Suspense>
-      )}
-
-      {panelState.isLiteratureExtractOpen && id && (
-        <Suspense fallback={<ViewLoader />}>
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={literatureExtractTitleId}
-              className="w-full max-w-2xl"
-            >
-              <h2 id={literatureExtractTitleId} className="sr-only">
-                {t("graphEditor.toolbar.literatureExtract")}
-              </h2>
-              <QueryErrorResetBoundary>
-                {({ reset }) => (
-                  <ErrorBoundary onReset={reset} variant="panel">
-                    <LiteratureExtractPanel
-                      graphId={id}
-                      onExtractComplete={handleLiteratureExtractComplete}
-                      onConceptsSaved={handleConceptsSaved}
-                      onClose={() => panelState.setIsLiteratureExtractOpen(false)}
-                    />
-                  </ErrorBoundary>
-                )}
-              </QueryErrorResetBoundary>
-            </div>
-          </div>
-        </Suspense>
-      )}
-
-      {panelState.isResearchProgressOpen && id && (
-        <Suspense fallback={<ViewLoader />}>
-          <QueryErrorResetBoundary>
-            {({ reset }) => (
-              <ErrorBoundary onReset={reset} variant="panel">
-                <ResearchProgressPanel
-                  graphId={id}
-                  onClose={() => panelState.setIsResearchProgressOpen(false)}
-                />
-              </ErrorBoundary>
-            )}
-          </QueryErrorResetBoundary>
-        </Suspense>
-      )}
-
-      {panelState.isLiteratureLibraryOpen && id && (
-        <Suspense fallback={<ViewLoader />}>
-          <QueryErrorResetBoundary>
-            {({ reset }) => (
-              <ErrorBoundary onReset={reset} variant="panel">
-                <LiteratureLibraryPanel
-                  graphId={id}
-                  onClose={() => panelState.setIsLiteratureLibraryOpen(false)}
-                />
-              </ErrorBoundary>
-            )}
-          </QueryErrorResetBoundary>
         </Suspense>
       )}
 

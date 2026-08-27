@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useStore } from "../store/useStore";
 import { useGraphStyleSettingsStore } from "../store/useGraphStyleSettingsStore";
 import { useNodeDisplayLanguageStore } from "../store/useNodeDisplayLanguageStore";
-import { setNodeDisplayLanguage } from "@shared/utils/localization";
+import { setNodeDisplayLanguage, resolveLocalizedText } from "@shared/utils/localization";
 import { message } from "../utils/messageHelper";
 import { ArrowLeft, Lock, LogIn, AlertTriangle } from "lucide-react";
 
@@ -372,7 +372,18 @@ export const GraphEditor = () => {
 
   const templateLayout = graphMeta?.settings?.layout as TemplateLayout | undefined;
 
-  const nodes = useMemo(() => graphData?.nodes || [], [graphData?.nodes]);
+  // 节点当前显示语言：节点标题/内容/摘要来自每个节点自带的原始语言 map（titleTranslations 等），
+  // 在渲染层按当前语言实时重新解析。这样「节点语言」的切换与后端无关、不受 HTTP 304 缓存影响。
+  const nodes = useMemo(
+    () =>
+      (graphData?.nodes || []).map((n) => ({
+        ...n,
+        title: resolveLocalizedText(n.titleTranslations, displayLanguage),
+        content: resolveLocalizedText(n.contentTranslations, displayLanguage),
+        summary: resolveLocalizedText(n.summaryTranslations, displayLanguage),
+      })),
+    [graphData?.nodes, displayLanguage],
+  );
   const edges = useMemo(() => graphData?.edges || [], [graphData?.edges]);
 
   // 预构建 node.id -> node 映射，供渲染与事件路径复用，避免多次线性 find（原各处 O(nodes) 扫描）

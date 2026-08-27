@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
+import { useNodeDisplayLanguageStore } from "../store/useNodeDisplayLanguageStore";
+import { resolveLocalizedText } from "@shared/utils/localization";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, schedulerApi } from "../services/api";
 import { message as msgHelper } from "../utils/messageHelper";
@@ -9,7 +11,6 @@ import { asyncConfirm } from "../utils/asyncConfirm";
 import {
   useTheme,
   useNetworkStatus,
-  useAILanguage,
   useQuoteShortcut,
 } from "../hooks";
 import {
@@ -58,12 +59,10 @@ type RightPanelMode =
   | "learning-path"
   | "literature-extract"
   | "concept-aggregation";
-type MaterialLanguage = "zh" | "en";
 
 export const LearningMode = () => {
   const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
-  const { language: aiLanguage } = useAILanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const nodeId = searchParams.get("node_id");
@@ -135,8 +134,6 @@ export const LearningMode = () => {
     lineHeight,
     readingMode,
     contentWidthMode,
-    materialLanguage,
-    setMaterialLanguage,
   } = useLearningSettingsStore(
     useShallow((s) => ({
       fontSize: s.fontSize,
@@ -144,17 +141,12 @@ export const LearningMode = () => {
       lineHeight: s.lineHeight,
       readingMode: s.readingMode,
       contentWidthMode: s.contentWidthMode,
-      materialLanguage: s.materialLanguage,
-      setMaterialLanguage: s.setMaterialLanguage,
     })),
   );
-  // 有效显示语言：auto 时跟随 AI/界面语言设置（保留原有"根据系统语言自动切换"行为）
-  const effectiveMaterialLang: MaterialLanguage =
-    materialLanguage === "auto"
-      ? aiLanguage === "en-US"
-        ? "en"
-        : "zh"
-      : materialLanguage;
+  // 节点内容语言：复用共享「节点显示语言」，与图编辑器双向联动（一处切换，两处即时同步）
+  const nodeContentLang = useNodeDisplayLanguageStore((s) => s.displayLanguage);
+  const isEn = nodeContentLang === "en-US";
+  const materialLangCode = isEn ? "en-US" : "zh-CN";
   const queryClient = useQueryClient();
 
   useQuoteShortcut({
@@ -226,9 +218,11 @@ export const LearningMode = () => {
       return;
     }
     if (!node) return;
-    setNodeTitle(node.title || "");
-    const isEn = effectiveMaterialLang === "en";
-    const materialLangCode = isEn ? "en-US" : "zh-CN";
+    setNodeTitle(
+      resolveLocalizedText(node.titleTranslations, nodeContentLang) ||
+        node.title ||
+        "",
+    );
     const material = node.learning_material?.[materialLangCode];
     const nodeKeywords = node.keywords?.[materialLangCode] || [];
     setKeywords(nodeKeywords);
@@ -244,7 +238,7 @@ export const LearningMode = () => {
         setIsGenerating(true);
         const response = await api.ai.generateLearningMaterial({
           topic: node.title || "", context: node.content, level: node.level,
-          graph_id: graphId || undefined, language: isEn ? "en-US" : "zh-CN",
+          graph_id: graphId || undefined, language: materialLangCode,
         });
         if (response.content) {
           setArticleContent(response.content);
@@ -275,27 +269,9 @@ export const LearningMode = () => {
       }
     };
     generateMaterial();
-    // 依赖 node (来自 useQuery) + effectiveMaterialLang 触发;其余依赖通过闭包在触发时获取最新值
+    // 依赖 node (来自 useQuery) + nodeContentLang 触发;其余依赖通过闭包在触发时获取最新值
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeId, node, effectiveMaterialLang]);
-
-  const handleChangeMaterialLang = (lang: MaterialLanguage) => {
-    if (lang === effectiveMaterialLang || !node) return;
-    const isEn = lang === "en";
-    const materialLangCode = isEn ? "en-US" : "zh-CN";
-    const material = node.learning_material?.[materialLangCode];
-    const nodeKeywords = node.keywords?.[materialLangCode] || [];
-    if (material && material.trim().length > 0) {
-      setArticleContent(material);
-      setKeywords(nodeKeywords);
-      setIsGenerating(false);
-    } else {
-      // 目标语言尚未生成,清空正文进入加载态,由 effect 触发 AI 生成
-      setArticleContent("");
-      setKeywords([]);
-    }
-    setMaterialLanguage(lang);
-  };
+  }, [nodeId, node, nodeContentLang]);
 
   const handleCreateNode = async () => {
     if (!graphId || !newNodeTitle.trim()) { msgHelper.warning(t("learning.node.enterTitle")); return; }
@@ -373,7 +349,7 @@ export const LearningMode = () => {
     setIsGenerating(true); setArticleContent("");
     try {
       const node = await api.nodes.get(nodeId);
-      const isEn = effectiveMaterialLang === "en";
+      const isEn = nodeContentLang === "en-US";
       const response = await api.ai.generateLearningMaterial({
         topic: node.title || "", context: node.content, level: node.level,
         graph_id: graphId, language: isEn ? "en-US" : "zh-CN",
@@ -805,7 +781,6 @@ export const LearningMode = () => {
               <LearningArticleReader
                 isDark={isDark} isMobile={isMobile} nodeId={nodeId} graphId={graphId}
                 nodeTitle={nodeTitle} articleContent={articleContent} keywords={keywords}
-                materialLang={effectiveMaterialLang} onChangeMaterialLang={handleChangeMaterialLang}
                 isGenerating={isGenerating || isNodeLoading} isOnline={isOnline} isGeneratingCards={isGeneratingCards}
                 studyMode={studyMode} highlightEnabled={highlightEnabled}
                 linkedTask={linkedTask} nodeStatus={_nodeStatus}

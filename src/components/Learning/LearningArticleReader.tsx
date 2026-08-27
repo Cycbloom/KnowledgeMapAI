@@ -1,8 +1,9 @@
 import React from "react";
-import { ArrowLeft, Sparkles, RefreshCw, Info, Route, GraduationCap, Languages } from "lucide-react";
+import { ArrowLeft, Sparkles, RefreshCw, Info, Route, GraduationCap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HighlightedReader } from "./HighlightedReader";
+import { NodeLanguageSwitcher } from "../GraphEditor/NodeLanguageSwitcher";
 import { Skeleton } from "../common";
 import type { Keyword } from "../../types";
 import type { LinkedTask } from "../../hooks/scheduler/useLinkedTask";
@@ -24,8 +25,6 @@ interface LearningArticleReaderProps {
   nodeTitle: string;
   articleContent: string;
   keywords: Keyword[];
-  materialLang: "zh" | "en";
-  onChangeMaterialLang: (lang: "zh" | "en") => void;
   isGenerating: boolean;
   isOnline: boolean;
   isGeneratingCards: boolean;
@@ -58,8 +57,6 @@ export const LearningArticleReader = ({
   nodeTitle,
   articleContent,
   keywords,
-  materialLang,
-  onChangeMaterialLang,
   isGenerating,
   isOnline,
   isGeneratingCards,
@@ -219,18 +216,7 @@ export const LearningArticleReader = ({
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => onChangeMaterialLang(materialLang === "en" ? "zh" : "en")}
-                title={t("learning.material.languageLabel")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
-                  isDark
-                    ? "bg-primary-900/30 text-primary-400 hover:bg-primary-900/50 border border-primary-500/30"
-                    : "bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200"
-                }`}
-              >
-                <Languages size={16} />
-                <span>{materialLang === "en" ? t("learning.material.langEnShort") : t("learning.material.langZhShort")}</span>
-              </button>
+              <NodeLanguageSwitcher />
               <button
                 onClick={onToggleHighlight}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${

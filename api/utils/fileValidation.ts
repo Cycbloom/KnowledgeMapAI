@@ -4,7 +4,7 @@ import path from "node:path";
 /**
  * 允许的 MIME 类型列表
  * - 图片：jpeg、png、gif、webp、svg+xml
- * - 文档：PDF、Markdown、纯文本、CSV
+ * - 文档：PDF、Markdown、纯文本、CSV、PPT/PPTX
  * - JSON
  */
 export const ALLOWED_MIME_TYPES = [
@@ -18,6 +18,8 @@ export const ALLOWED_MIME_TYPES = [
   "text/plain",
   "text/csv",
   "application/json",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-powerpoint",
 ] as const;
 
 export type AllowedMimeType = (typeof ALLOWED_MIME_TYPES)[number];
@@ -37,6 +39,8 @@ export const ALLOWED_EXTENSIONS = [
   ".txt",
   ".csv",
   ".json",
+  ".pptx",
+  ".ppt",
 ] as const;
 
 export type AllowedExtension = (typeof ALLOWED_EXTENSIONS)[number];
@@ -83,7 +87,7 @@ export function validateFile(
   if (!ALLOWED_MIME_TYPE_SET.has(mimetype)) {
     return {
       valid: false,
-      error: `不支持的文件类型: ${mimetype}。仅支持图片（jpeg/png/gif/webp/svg）、文档（pdf/md/txt/csv）和 JSON 文件`,
+      error: `不支持的文件类型: ${mimetype}。仅支持图片（jpeg/png/gif/webp/svg）、文档（pdf/md/txt/csv/pptx/ppt）和 JSON 文件`,
     };
   }
 

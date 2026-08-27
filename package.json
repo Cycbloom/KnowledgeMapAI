@@ -125,6 +125,7 @@
     "electron-updater": "^6.8.9",
     "express": "^4.22.1",
     "express-async-errors": "^3.1.1",
+    "fflate": "^0.8.3",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "lru-cache": "^11.5.1",

@@ -53,6 +53,73 @@ const NODE_COLORS = Object.freeze({
   hover: new THREE.Color('#A5B4FC')
 });
 
+// ===== 方案 A：宇宙星体质感 =====
+// 轻量 3D 值噪声 + FBM，让星体表面呈现非纯色的「类星球」斑驳纹理。
+// 通过 onBeforeCompile 注入到共享 MeshStandardMaterial（保持 InstancedMesh +
+// 每实例 setColorAt 管线不变，兼顾性能与质感）。
+const KM_NOISE_GLSL = /* glsl */ `
+float km_hash31(vec3 p) {
+  p = fract(p * 0.1031);
+  p += dot(p, p.zyx + 31.32);
+  return fract((p.x + p.y) * p.z);
+}
+float km_vnoise(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float n000 = km_hash31(i);
+  float n010 = km_hash31(i + vec3(0.0, 1.0, 0.0));
+  float n100 = km_hash31(i + vec3(1.0, 0.0, 0.0));
+  float n110 = km_hash31(i + vec3(1.0, 1.0, 0.0));
+  float n001 = km_hash31(i + vec3(0.0, 0.0, 1.0));
+  float n011 = km_hash31(i + vec3(0.0, 1.0, 1.0));
+  float n101 = km_hash31(i + vec3(1.0, 0.0, 1.0));
+  float n111 = km_hash31(i + vec3(1.0, 1.0, 1.0));
+  return mix(
+    mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+    mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y),
+    f.z);
+}
+float km_fbm(vec3 p) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  for (int i = 0; i < 3; i++) {
+    value += amplitude * km_vnoise(p);
+    p *= 2.05;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+`;
+
+// 片元主循环输出前的质感叠加逻辑（在 <opaque_fragment> 之前执行，作用于线性色 outgoingLight）
+const KM_FRAGMENT_BODY = `
+  // === 方案 A：宇宙星体质感 ===
+  {
+    // 以实例缩放（vLocalPos 已包含）作每颗星球的唯一相位种子，使不同节点纹理互不相同
+    float seed = (length(vLocalPos) + 3.5) * 1.731;
+    vec3 samplePos = vLocalPos * 2.6 + vec3(seed);
+    // 单次廉价噪声作域扭曲，让纹理更有机、不呆板
+    float warp = km_vnoise(samplePos * 1.6);
+    samplePos += vec3(warp) * 0.6;
+
+    // 表面明暗起伏（FBM）：营造「类星球」斑驳体感
+    float detail = km_fbm(samplePos + uTime * 0.03);
+    float tonal = 0.60 + 0.62 * detail;
+    outgoingLight.rgb *= tonal;
+
+    // 稀疏的能量亮点：星球地表的「星尘」高光
+    float crust = smoothstep(0.80, 0.99, km_vnoise(samplePos * 2.1));
+    outgoingLight.rgb += diffuseColor.rgb * crust * 0.85;
+
+    // Fresnel 大气边缘辉光：视线掠射边缘提亮，营造「浮于太空的气态光环」
+    // 注意：three 0.182 片元主流程使用 geometryViewDir（main 作用域），无裸变量 viewDir
+    float rim = pow(1.0 - abs(dot(normal, geometryViewDir)), 3.2);
+    vec3 rimColor = mix(vec3(1.0), diffuseColor.rgb, 0.45) * 0.55;
+    outgoingLight.rgb += rimColor * rim;
+  }
+`;
+
 interface PlanetNodeProps {
   node: LayoutNode3D;
   isDark: boolean;
@@ -305,12 +372,42 @@ function Scene({
 
   // 共享材质：所有 instance 复用同一份
   // 降低粗糙度、增加 emissive 自发光，让星体在深空中呈现柔和辉光而非哑光台球
-  const sharedMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    roughness: 0.32,
-    metalness: 0.1,
-    emissive: new THREE.Color('#141a3a'),
-    emissiveIntensity: 0.5,
-  }), []);
+  // onBeforeCompile 注入「方案 A」的星体质感：FBM 表面纹理 + Fresnel 大气边缘辉光 +
+  // 稀疏星尘高光，同时保持 InstancedMesh + 每实例 setColorAt 的原生管线
+  const shaderUniformsRef = useRef<Record<string, { value: number }> | null>(null);
+  const sharedMaterial = useMemo(() => {
+    const material = new THREE.MeshStandardMaterial({
+      roughness: 0.32,
+      metalness: 0.1,
+      emissive: new THREE.Color('#141a3a'),
+      emissiveIntensity: 0.5,
+    });
+
+    material.onBeforeCompile = (shader) => {
+      // 缓存 uniforms：着色器生命周期内一次性编译，供每帧更新 uTime 驱动表面扭曲动画
+      shaderUniformsRef.current = shader.uniforms;
+      shader.uniforms.uTime = { value: 0 };
+
+      // 顶点：把对象空间单位球面坐标（已乘实例缩放）传给片元；
+      // 实例缩放即当前球体的世界大小，用作每颗星球的唯一种子，使不同节点纹理互不相同
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vLocalPos;')
+        .replace(
+          '#include <begin_vertex>',
+          `#include <begin_vertex>\n\tvec3 kmScale = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));\n\tvLocalPos = position * kmScale.x;`
+        );
+
+      // 片元：注入噪声函数 + uTime，并在输出前叠加表面 / 边缘质感
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>\n${KM_NOISE_GLSL}\nuniform float uTime;\nvarying vec3 vLocalPos;`
+        )
+        .replace('#include <opaque_fragment>', `${KM_FRAGMENT_BODY}\n\t#include <opaque_fragment>`);
+    };
+
+    return material;
+  }, []);
 
   // 获取节点颜色：根据着色模式计算
   const getNodeColor = useCallback((nodeId: string, level: number): THREE.Color => {
@@ -478,6 +575,11 @@ function Scene({
 
   // 视锥体裁剪 + InstancedMesh 批量更新
   useFrame(({ camera: cam }, delta) => {
+    // 星体质感动画：随时间轻微扭曲表面纹理，让星球更有「生命感」
+    if (shaderUniformsRef.current?.uTime) {
+      shaderUniformsRef.current.uTime.value += delta;
+    }
+
     // 居中动画
     if (isAnimatingRef.current && animationTargetRef.current) {
       const deltaMs = delta * 1000;

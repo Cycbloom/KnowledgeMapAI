@@ -58,6 +58,8 @@ export interface UpdateNodeData {
   y_position?: number;
   learning_material?: Record<string, string>;
   properties?: Record<string, unknown>;
+  /** 写入 title/content/summary 时使用的目标语言 key（默认 zh-CN） */
+  language?: string;
 }
 
 export interface CreateEdgeData {

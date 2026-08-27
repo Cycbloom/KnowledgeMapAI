@@ -6,6 +6,7 @@ import { logger } from '../../utils/logger';
 import { notDeleted } from '../common/softDeleteHelper';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { resolveLocalizedText, type LocalizedText } from '../../../shared/utils/localization';
 
 const BATCH_SIZE = 20;
 const EMBEDDING_DELAY_MS = 100;
@@ -61,23 +62,23 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
 
         knowledgePoints = (graphNodes || [])
           .filter((gn) => {
-            const kpArray = gn.knowledge_points as unknown as { id: string; title: string; content: string | null; embedding: number[] | null }[] | null;
+            const kpArray = gn.knowledge_points as unknown as { id: string; title: unknown; content: unknown; embedding: number[] | null }[] | null;
             const kp = kpArray?.[0];
             return kp && kp.embedding === null;
           })
           .map((gn) => {
-            const kpArray = gn.knowledge_points as unknown as { id: string; title: string; content: string | null }[] | null;
+            const kpArray = gn.knowledge_points as unknown as { id: string; title: unknown; content: unknown }[] | null;
             const kp = kpArray?.[0];
             if (!kp) {
               return null;
             }
             return {
               id: kp.id,
-              title: kp.title,
-              content: kp.content ?? null
+              title: resolveLocalizedText(kp.title as LocalizedText),
+              content: resolveLocalizedText(kp.content as LocalizedText)
             };
           })
-          .filter((kp): kp is { id: string; title: string; content: string | null } => kp !== null);
+          .filter((kp): kp is { id: string; title: string; content: string } => kp !== null);
       } else {
         throw new AppError('Either graphId or knowledgePointIds must be provided', 400, ErrorCodes.VALIDATION_ERROR);
       }

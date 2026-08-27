@@ -15,6 +15,7 @@ const translateNodesSchema = z.object({
           id: z.string(),
           title: z.string(),
           content: z.string().optional(),
+          summary: z.string().optional(),
         }),
       )
       .min(1)
@@ -25,7 +26,7 @@ const translateNodesSchema = z.object({
 
 /**
  * POST /ai/translate-nodes
- * 翻译图谱节点的标题与内容（返回预览，不直接写库）。
+ * 按字段型 schema（标题/内容/摘要）翻译图谱节点为目标语言（返回预览，不直接写库）。
  */
 router.post(
   "/translate-nodes",

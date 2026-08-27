@@ -115,6 +115,8 @@ export const createNodeSchema = z.object({
   y_position: z.number().optional(),
   properties: z.record(z.unknown()).optional(),
   learning_material: z.record(z.string(), z.string()).optional(),
+  /** 写入 title/content/summary 时使用的目标语言 key（默认 zh-CN） */
+  language: z.string().min(2).max(20).optional(),
   level: z.enum(["root", "core", "sub", "normal", "leaf"]).optional(),
   is_accepted: z.boolean().optional(),
   keywords: z

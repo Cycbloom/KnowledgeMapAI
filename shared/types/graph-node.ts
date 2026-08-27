@@ -24,6 +24,12 @@ export type GraphNodeWithKnowledgePoint = GraphNode &
 export type Node = GraphNode &
   Omit<KnowledgePoint, "id"> & {
     tags?: string[];
+    /** 语言 keyed 的标题映射（如 {"zh-CN":"标题","en-US":"Title"}），title 字段已按显示语言解析 */
+    titleTranslations?: string | Record<string, string> | undefined;
+    /** 语言 keyed 的内容映射 */
+    contentTranslations?: string | Record<string, string> | undefined;
+    /** 语言 keyed 的摘要映射 */
+    summaryTranslations?: string | Record<string, string> | undefined;
   };
 
 export interface KnowledgePointWithGraphs extends KnowledgePoint {

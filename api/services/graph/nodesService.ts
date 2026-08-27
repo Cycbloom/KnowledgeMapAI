@@ -12,6 +12,11 @@ import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { transactionExecutor } from '../../database/transactionExecutor';
 import { notDeleted } from '../common/softDeleteHelper';
 import { nodeBatchService } from './nodeBatchService';
+import {
+  mergeLocalizedTranslation,
+  resolveLocalizedText,
+  BASE_CONTENT_LANG,
+} from '../../../shared/utils/localization';
 import i18next from 'i18next';
 
 const REUSE_SIMILARITY_THRESHOLD = 0.85;
@@ -43,6 +48,8 @@ interface UpdateNodeData {
   y_position?: number;
   level?: string;
   is_accepted?: boolean;
+  /** 写入 title/content/summary 时使用的语言 key，默认基础语言 zh-CN */
+  language?: string;
 }
 
 interface BatchUpdateNodeItem {
@@ -387,7 +394,9 @@ export class NodesService {
 
     interface KnowledgePointData {
       id: string;
-      title?: string;
+      title?: string | Record<string, string>;
+      content?: string | Record<string, string>;
+      summary?: string | Record<string, string>;
       properties?: {
         backboneModule?: string;
       };
@@ -405,15 +414,17 @@ export class NodesService {
     if (
       isBackboneNode &&
       updates.title !== undefined &&
-      updates.title !== kp?.title
+      updates.title !== resolveLocalizedText(kp?.title, updates.language)
     ) {
       throw new AppError(i18next.t('graphMap.nodes.errors.backboneTitleImmutable'), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
+    const lang = updates.language || BASE_CONTENT_LANG;
+
     const kpUpdates: {
-      title?: string;
-      content?: string;
-      summary?: string;
+      title?: Record<string, string>;
+      content?: Record<string, string>;
+      summary?: Record<string, string>;
       learning_material?: Record<string, string>;
       properties?: Record<string, unknown>;
       visibility?: 'private' | 'public';
@@ -426,9 +437,12 @@ export class NodesService {
       is_accepted?: boolean;
     } = {};
 
-    if (updates.title !== undefined) kpUpdates.title = updates.title;
-    if (updates.content !== undefined) kpUpdates.content = updates.content;
-    if (updates.summary !== undefined) kpUpdates.summary = updates.summary;
+    if (updates.title !== undefined)
+      {kpUpdates.title = mergeLocalizedTranslation(kp?.title, lang, updates.title);}
+    if (updates.content !== undefined)
+      {kpUpdates.content = mergeLocalizedTranslation(kp?.content, lang, updates.content);}
+    if (updates.summary !== undefined)
+      {kpUpdates.summary = mergeLocalizedTranslation(kp?.summary, lang, updates.summary);}
     if (updates.learning_material !== undefined)
       {kpUpdates.learning_material = updates.learning_material;}
     if (updates.properties !== undefined)
@@ -608,8 +622,8 @@ export class NodesService {
     // 节点重命名时，异步同步笔记正文中 [[oldName]] → [[newName]]（扩展 backlinks 机制）
     // 不阻塞重命名主流程，失败仅记录警告（参考 knowledgePointService.update 中 syncBacklinks 的容错风格）
     // 注意：重命名不改变 node_id，note_node_links 挂载关系无需重新同步
-    if (updates.title !== undefined && kp?.title && updates.title !== kp.title) {
-      const oldTitle = kp.title;
+    if (updates.title !== undefined && kp?.title && updates.title !== resolveLocalizedText(kp.title, lang)) {
+      const oldTitle = resolveLocalizedText(kp.title, lang);
       const newTitle = updates.title;
       Promise.resolve().then(async () => {
         try {

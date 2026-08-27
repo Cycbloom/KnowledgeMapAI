@@ -6,6 +6,7 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { cacheService, CacheKeys, CacheTTL, computeTextHash } from '../common/cacheService';
 import { backlinkService } from './backlinkService';
+import { resolveLocalizedText } from '../../../shared/utils/localization';
 import type { KnowledgePoint, KnowledgePointVisibility } from '../../../shared/types/index';
 import type { Keyword } from '../../../shared/types/graph';
 
@@ -63,9 +64,9 @@ export interface CreateKnowledgePointData {
 }
 
 export interface UpdateKnowledgePointData {
-  title?: string;
-  content?: string;
-  summary?: string;
+  title?: string | Record<string, string>;
+  content?: string | Record<string, string>;
+  summary?: string | Record<string, string>;
   learning_material?: Record<string, string>;
   keywords?: Record<string, Keyword[]>;
   properties?: Record<string, unknown>;
@@ -183,13 +184,14 @@ export class KnowledgePointService {
 
     // 失效 embedding 缓存（标题变更时需同时清理新旧标题的缓存）
     if (data.title !== undefined) {
+      const resolvedTitle = resolveLocalizedText(data.title);
       // 删除新标题的缓存
-      if (data.title) {
-        const newTitleHash = computeTextHash(data.title);
+      if (resolvedTitle) {
+        const newTitleHash = computeTextHash(resolvedTitle);
         await cacheService.del(CacheKeys.EMBEDDING(newTitleHash));
       }
       // 删除原标题的缓存（标题变更后旧缓存不再有效）
-      if (oldTitle && oldTitle !== data.title) {
+      if (oldTitle && oldTitle !== resolvedTitle) {
         const oldTitleHash = computeTextHash(oldTitle);
         await cacheService.del(CacheKeys.EMBEDDING(oldTitleHash));
       }
@@ -198,7 +200,7 @@ export class KnowledgePointService {
     // content 字段变更时，异步触发 B1 双向链接同步（不阻塞保存响应）
     if (data.content !== undefined && userId && graphId) {
       const knowledgePointId = id;
-      const newContent = data.content;
+      const newContent = resolveLocalizedText(data.content);
       // 异步执行，不等待结果，不阻塞保存响应
       Promise.resolve().then(async () => {
         try {

@@ -1,4 +1,8 @@
 import type { Node, KnowledgePoint, GraphNode } from "@shared/types/graph";
+import {
+  resolveLocalizedText,
+  getNodeDisplayLanguage,
+} from "./localization";
 
 export type GraphNodeRaw = Omit<GraphNode, "knowledge_point_id"> & {
   knowledge_point_id: string;
@@ -75,6 +79,8 @@ export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
 
   if (!kp) return null;
 
+  const displayLang = getNodeDisplayLanguage();
+
   return {
     id: gn.knowledge_point_id,
     graph_id: gn.graph_id,
@@ -86,9 +92,16 @@ export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
     deleted_at: gn.deleted_at,
     created_at: gn.created_at,
     updated_at: gn.updated_at,
-    title: kp.title || "",
-    content: kp.content || "",
-    summary: kp.summary || "",
+    // title/content/summary 在 DB 中为语言 keyed JSONB，这里按显示语言解析为字符串；
+    // 同时保留原始语言映射，供翻译工具与语言切换使用。
+    title: resolveLocalizedText(kp.title, displayLang),
+    content: resolveLocalizedText(kp.content, displayLang),
+    summary: resolveLocalizedText(kp.summary, displayLang),
+    titleTranslations: kp.title as string | Record<string, string> | undefined,
+    contentTranslations:
+      kp.content as string | Record<string, string> | undefined,
+    summaryTranslations:
+      kp.summary as string | Record<string, string> | undefined,
     learning_material: kp.learning_material || {},
     keywords: kp.keywords || {},
     properties: kp.properties || {},

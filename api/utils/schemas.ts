@@ -106,6 +106,8 @@ export const createNodeSchema = z.object({
 
 /** 更新节点 */
 export const updateNodeSchema = z.object({
+  /** 写入 title/content/summary 时使用的目标语言 key（默认 zh-CN） */
+  language: z.string().min(2).max(20).optional(),
   title: z
     .string()
     .min(1, '标题不能为空')

@@ -378,9 +378,14 @@ export const GraphEditor = () => {
     () =>
       (graphData?.nodes || []).map((n) => ({
         ...n,
-        title: resolveLocalizedText(n.titleTranslations, displayLanguage),
-        content: resolveLocalizedText(n.contentTranslations, displayLanguage),
-        summary: resolveLocalizedText(n.summaryTranslations, displayLanguage),
+        title:
+          resolveLocalizedText(n.titleTranslations, displayLanguage) || n.title,
+        content:
+          resolveLocalizedText(n.contentTranslations, displayLanguage) ??
+          n.content,
+        summary:
+          resolveLocalizedText(n.summaryTranslations, displayLanguage) ??
+          n.summary,
       })),
     [graphData?.nodes, displayLanguage],
   );

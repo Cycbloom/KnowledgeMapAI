@@ -584,16 +584,14 @@ function Scene({
         const node = visibleNodes[i];
         const baseSize = 3 + (node.importance / 5) * 5;
 
-        // 计算距离和缩放
+        // 固定世界尺寸：不再随相机距离缩放，节点随视角正常远近变化
         tempPosition.set(node.x, node.z, node.y);
-        const distance = cam.position.distanceTo(tempPosition);
-        const scaleFactor = Math.max(0.3, Math.min(2, distance / 200));
 
         // 选中节点略微放大，配合高亮色呈现「弹出」效果
         const selectedBoost = node.id === selectedNodeId ? 1.28 : 1;
 
         // 更新矩阵：位置 + 旋转 + 缩放
-        tempScale.set(baseSize * scaleFactor * selectedBoost, baseSize * scaleFactor * selectedBoost, baseSize * scaleFactor * selectedBoost);
+        tempScale.set(baseSize * selectedBoost, baseSize * selectedBoost, baseSize * selectedBoost);
         tempEuler.set(0, rotationAngleRef.current, 0);
         tempQuaternion.setFromEuler(tempEuler);
         tempMatrix.compose(tempPosition, tempQuaternion, tempScale);

@@ -1,4 +1,4 @@
-import React, { useState, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import React, { useState, useId, useRef, useEffect, useLayoutEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ColorScheme,
@@ -92,6 +92,44 @@ const IconRow: React.FC<{ icon?: LucideIcon; color?: string; children?: React.Re
     {Icon ? <Icon className="w-6 h-6" /> : children}
   </div>
 );
+
+/**
+ * 标签页内容高度动画容器：当内容高度变化时（切换子页面或内容增删），
+ * 用 CSS transition 平滑过渡高度，避免生硬跳变。
+ */
+const AnimatedTabContent: React.FC<{ activeTab: TabId; children: React.ReactNode }> = ({ activeTab, children }) => {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | undefined>(undefined);
+  // 首次渲染（弹窗打开）时不加过渡，避免从 0 到实际高度的开场动画
+  const [animate, setAnimate] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const update = () => setHeight(el.offsetHeight);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [activeTab]);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setAnimate(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  return (
+    <div
+      style={{
+        height: animate ? height : undefined,
+        transition: animate ? 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)' : undefined,
+        overflow: 'hidden',
+      }}
+    >
+      <div ref={innerRef}>{children}</div>
+    </div>
+  );
+};
 
 interface GraphStyleSettingsProps {
   isOpen: boolean;
@@ -400,6 +438,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
 
         {/* 内容 */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
+          <AnimatedTabContent activeTab={activeTab}>
           {activeTab === 'colors' && (
             <div role="tabpanel" id={`${panelIdPrefix}-colors`} aria-labelledby={`${tabIdPrefix}-colors`} tabIndex={0} className="space-y-6">
               {coloringHint && (
@@ -605,7 +644,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           )}
 
           {activeTab === 'grid' && (
-            <div role="tabpanel" id={`${panelIdPrefix}-grid`} aria-labelledby={`${tabIdPrefix}-grid`} tabIndex={0} className="space-y-3">
+            <div role="tabpanel" id={`${panelIdPrefix}-grid`} aria-labelledby={`${tabIdPrefix}-grid`} tabIndex={0} className="space-y-4">
               {gridStyles.map((style) => (
                 <OptionCard key={style.key} active={gridStyle === style.key} onClick={() => setGridStyle(style.key)}>
                   <div className="flex items-center gap-3">
@@ -632,7 +671,9 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                           )}
                         </svg>
                       ) : (
-                        <span className="text-lg text-slate-300 dark:text-slate-600">—</span>
+                        <svg aria-hidden="true" width="56" height="36" viewBox="0 0 56 36" className="text-slate-300 dark:text-slate-600">
+                          <line x1="8" y1="18" x2="48" y2="18" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                        </svg>
                       )}
                     </div>
                     <div className="flex-1">
@@ -646,7 +687,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           )}
 
           {activeTab === 'edges' && (
-            <div role="tabpanel" id={`${panelIdPrefix}-edges`} aria-labelledby={`${tabIdPrefix}-edges`} tabIndex={0} className="space-y-3">
+            <div role="tabpanel" id={`${panelIdPrefix}-edges`} aria-labelledby={`${tabIdPrefix}-edges`} tabIndex={0} className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
                 <div>
                   <div className="font-medium text-sm text-slate-800 dark:text-slate-200">{t('graphStyleSettings.edgeSettings.showLabels')}</div>
@@ -706,6 +747,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
               </div>
             </div>
           )}
+          </AnimatedTabContent>
         </div>
 
         {/* 底部 */}

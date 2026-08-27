@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from "react";
+import React, { useState, useEffect, useId, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   X,
@@ -9,6 +9,7 @@ import {
   Network,
   RefreshCw,
   Info,
+  FolderOpen,
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { message } from "../../../utils/messageHelper";
@@ -57,7 +58,9 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({
   const [edges, setEdges] = useState<TextToGraphEdge[]>([]);
   const [analyzed, setAnalyzed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const textareaId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -67,10 +70,81 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({
       setEdges([]);
       setAnalyzed(false);
       setError(null);
+      setSelectedFileName(null);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const handleImportFile = () => {
+    fileInputRef.current?.click();
+  };
+
+  // 二进制格式：无法在前端读取为文本，需上传后端解析（document-to-graph）
+  const BINARY_FILE_EXTENSIONS = [".pdf", ".ppt", ".pptx"];
+
+  const handleDocumentUpload = async (file: File) => {
+    setAnalyzing(true);
+    setError(null);
+    setText("");
+    setNodes([]);
+    setEdges([]);
+    setAnalyzed(false);
+    setSelectedFileName(file.name);
+    try {
+      const result = await api.ai.documentToGraph({
+        graph_id: graphId,
+        file,
+      });
+      const parsed = result as {
+        nodes?: TextToGraphNode[];
+        edges?: TextToGraphEdge[];
+      };
+      setNodes(parsed.nodes || []);
+      setEdges(parsed.edges || []);
+      setAnalyzed(true);
+      if ((parsed.nodes || []).length === 0) {
+        message.info(t("graphEditor.textToGraph.noNodesFound"));
+      }
+    } catch (err: unknown) {
+      const errMsg =
+        err instanceof Error ? err.message : t("graphEditor.textToGraph.analyzeFailed");
+      setError(errMsg);
+      message.error(errMsg);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // 重置 value，确保再次选择同一文件时仍触发 change 事件
+    e.target.value = "";
+    if (!file) return;
+
+    const ext = `.${file.name.split(".").pop()?.toLowerCase() ?? ""}`;
+    if (BINARY_FILE_EXTENSIONS.includes(ext)) {
+      void handleDocumentUpload(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const content = typeof reader.result === "string" ? reader.result : "";
+      setText(content);
+      setSelectedFileName(file.name);
+      setNodes([]);
+      setEdges([]);
+      setAnalyzed(false);
+      setError(null);
+    };
+    reader.onerror = () => {
+      const errMsg = t("graphEditor.textToGraph.fileReadFailed");
+      setError(errMsg);
+      message.error(errMsg);
+    };
+    reader.readAsText(file);
+  };
 
   const handleAnalyze = async () => {
     if (!text || text.trim().length < 10) {
@@ -210,9 +284,20 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({
           </p>
 
           <div>
-            <label htmlFor={textareaId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              {t("graphEditor.textToGraph.inputLabel")}
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label htmlFor={textareaId} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t("graphEditor.textToGraph.inputLabel")}
+              </label>
+              <button
+                type="button"
+                onClick={handleImportFile}
+                title={t("graphEditor.textToGraph.fileFormatsHint")}
+                className="flex items-center gap-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-500/10 px-2 py-1 rounded-md transition-colors"
+              >
+                <FolderOpen size={14} />
+                {t("graphEditor.textToGraph.importFromFile")}
+              </button>
+            </div>
             <textarea
               id={textareaId}
               value={text}
@@ -221,6 +306,24 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({
               placeholder={t("graphEditor.textToGraph.placeholder")}
               className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
             />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".md,.markdown,.txt,.opml,.json,.xml,.csv,.html,.htm,.pdf,.ppt,.pptx"
+              onChange={handleFileChange}
+              className="hidden"
+              aria-hidden="true"
+              tabIndex={-1}
+            />
+            {selectedFileName && (
+              <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <FileText size={12} className="text-primary-500 flex-shrink-0" />
+                <span className="font-medium text-gray-700 dark:text-gray-300 truncate max-w-[16rem]">
+                  {selectedFileName}
+                </span>
+                <span>{t("graphEditor.textToGraph.fileLoaded")}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -241,6 +344,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({
                   setNodes([]);
                   setEdges([]);
                   setAnalyzed(false);
+                  setSelectedFileName(null);
                 }}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >

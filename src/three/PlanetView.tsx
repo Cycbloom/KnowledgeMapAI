@@ -798,9 +798,9 @@ function Scene({
 
       <EffectComposer>
         <Bloom
-          intensity={0.75}
-          luminanceThreshold={0.4}
-          luminanceSmoothing={0.7}
+          intensity={0.4}
+          luminanceThreshold={0.92}
+          luminanceSmoothing={0.6}
           mipmapBlur
         />
       </EffectComposer>

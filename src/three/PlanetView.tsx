@@ -47,8 +47,10 @@ interface PlanetViewProps {
 }
 
 const NODE_COLORS = Object.freeze({
-  selected: new THREE.Color('#FF69B4'),
-  hover: new THREE.Color('#98FB98')
+  // 选中：亮青色，配合 Bloom 呈现「发热选中」的高亮辉光，与各状态色区分
+  selected: new THREE.Color('#67E8F9'),
+  // hover：柔和的靛蓝反馈，不喧宾夺主
+  hover: new THREE.Color('#A5B4FC')
 });
 
 interface PlanetNodeProps {
@@ -239,10 +241,10 @@ function PlanetLink({ source, target }: PlanetLinkProps) {
   return (
     <Line
       points={points}
-      color="#6366f1"
-      lineWidth={1.5}
+      color="#818cf8"
+      lineWidth={1.4}
       transparent
-      opacity={0.5}
+      opacity={0.45}
     />
   );
 }
@@ -286,9 +288,12 @@ function Scene({
   const sharedSphereGeo = useMemo(() => new THREE.SphereGeometry(1, 32, 32), []);
 
   // 共享材质：所有 instance 复用同一份
+  // 降低粗糙度、增加 emissive 自发光，让星体在深空中呈现柔和辉光而非哑光台球
   const sharedMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    roughness: 0.5,
-    metalness: 0.15,
+    roughness: 0.32,
+    metalness: 0.1,
+    emissive: new THREE.Color('#141a3a'),
+    emissiveIntensity: 0.5,
   }), []);
 
   // 获取节点颜色：根据着色模式计算
@@ -568,8 +573,11 @@ function Scene({
         const distance = cam.position.distanceTo(tempPosition);
         const scaleFactor = Math.max(0.3, Math.min(2, distance / 200));
 
+        // 选中节点略微放大，配合高亮色呈现「弹出」效果
+        const selectedBoost = node.id === selectedNodeId ? 1.28 : 1;
+
         // 更新矩阵：位置 + 旋转 + 缩放
-        tempScale.set(baseSize * scaleFactor, baseSize * scaleFactor, baseSize * scaleFactor);
+        tempScale.set(baseSize * scaleFactor * selectedBoost, baseSize * scaleFactor * selectedBoost, baseSize * scaleFactor * selectedBoost);
         tempEuler.set(0, rotationAngleRef.current, 0);
         tempQuaternion.setFromEuler(tempEuler);
         tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
@@ -688,9 +696,11 @@ function Scene({
 
   return (
     <>
-      <ambientLight intensity={0.8} />
+      {/* 景深雾：远处节点向背景色淡出，强化「悬浮太空」的纵深，中近景保持清晰可读 */}
+      <fog attach="fog" args={[isDark ? '#0b061f' : '#c3cff5', 420, 980]} />
+      <ambientLight intensity={0.7} />
       <pointLight position={[200, 200, 200]} intensity={1.2} />
-      <pointLight position={[-200, -100, -200]} intensity={0.6} color="#6366f1" />
+      <pointLight position={[-200, -100, -200]} intensity={0.7} color="#6366f1" />
 
       <StarField />
 
@@ -767,9 +777,10 @@ function Scene({
 
       <EffectComposer>
         <Bloom
-          intensity={0.3}
-          luminanceThreshold={0.6}
-          luminanceSmoothing={0.9}
+          intensity={0.75}
+          luminanceThreshold={0.4}
+          luminanceSmoothing={0.7}
+          mipmapBlur
         />
       </EffectComposer>
     </>
@@ -850,14 +861,21 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
     setHoveredNodeId(id);
   }, []);
 
+  // 深空星云背景：中心柔和辉光 + 四周向深空过渡，营造「星球悬浮于太空」的纵深感
+  const bgGradient = isDark
+    ? 'radial-gradient(120% 120% at 50% 40%, #4c2a86 0%, #311768 24%, #170b3e 55%, #0b061f 82%, #05030f 100%)'
+    : 'radial-gradient(120% 120% at 50% 40%, #ffffff 0%, #eaeefc 26%, #d6def8 52%, #c3cff5 78%, #b7c4f2 100%)';
+  // 边缘晕影（叠加在 3D 画布之上），让场景四角收拢、聚焦中心
+  const vignette = isDark
+    ? 'inset 0 0 220px 80px rgba(0, 0, 0, 0.62)'
+    : 'inset 0 0 200px 70px rgba(30, 27, 75, 0.2)';
+
   return (
-    <div 
-      style={{ 
-        width: '100%', 
+    <div
+      style={{
+        width: '100%',
         height: '100%',
-        background: isDark 
-          ? 'linear-gradient(135deg, #050510 0%, #0a0a1a 50%, #0f0f2a 100%)'
-          : 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #a5b4fc 100%)',
+        background: bgGradient,
         borderRadius: '8px',
         overflow: 'hidden',
         position: 'relative',
@@ -887,6 +905,17 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
           />
         </Suspense>
       </Canvas>
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '8px',
+          pointerEvents: 'none',
+          boxShadow: vignette,
+          zIndex: 1,
+        }}
+      />
       <div className="sr-only">{ariaLabel}</div>
     </div>
   );

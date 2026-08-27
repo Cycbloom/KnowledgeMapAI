@@ -272,4 +272,29 @@ export interface IAiApi {
     model?: string;
     language?: string;
   }): Promise<{ connections: Array<{ source: string; target: string; type: string; description: string }> }>;
+
+  suggestNodeStyles(data: {
+    nodes: Array<{ id: string; title: string; content?: string; level?: string }>;
+    language?: string;
+  }): Promise<{
+    suggestions: Array<{
+      node_id: string;
+      color: string;
+      icon: string;
+      reason: string;
+    }>;
+    usedDefault: boolean;
+  }>;
+
+  translateNodes(data: {
+    nodes: Array<{ id: string; title: string; content?: string }>;
+    target_language: string;
+  }): Promise<{
+    translations: Array<{
+      node_id: string;
+      title: string;
+      content?: string;
+    }>;
+    usedDefault: boolean;
+  }>;
 }

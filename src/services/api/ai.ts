@@ -454,4 +454,47 @@ export const aiApi: IAiApi = {
       body: JSON.stringify(payload),
     });
   },
+
+  suggestNodeStyles: (data: {
+    nodes: Array<{ id: string; title: string; content?: string; level?: string }>;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request<{
+      suggestions: Array<{
+        node_id: string;
+        color: string;
+        icon: string;
+        reason: string;
+      }>;
+      usedDefault: boolean;
+    }>("/ai/suggest-node-styles", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  translateNodes: (data: {
+    nodes: Array<{ id: string; title: string; content?: string }>;
+    target_language: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.target_language || getAILanguage() },
+      "text",
+    );
+    return request<{
+      translations: Array<{
+        node_id: string;
+        title: string;
+        content?: string;
+      }>;
+      usedDefault: boolean;
+    }>("/ai/translate-nodes", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
 };

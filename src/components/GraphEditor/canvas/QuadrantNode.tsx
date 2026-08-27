@@ -98,6 +98,16 @@ const QuadrantNodeComponent: React.FC<QuadrantNodeProps> = ({
   const status = getLearningStatus(nodeStatus?.[node.id]);
 
   const colors = useMemo(() => {
+    // 节点自定义色（AI 智能配色写入 properties.color）优先
+    const customColor = node.properties?.color;
+    if (typeof customColor === "string" && /^#[0-9A-Fa-f]{6}$/.test(customColor)) {
+      return {
+        ...getLevelColors(level, isDark),
+        primary: customColor,
+        secondary: customColor,
+        glow: customColor,
+      };
+    }
     if (coloringMode === "level") {
       return getLevelColors(level, isDark);
     }
@@ -116,7 +126,7 @@ const QuadrantNodeComponent: React.FC<QuadrantNodeProps> = ({
       return getDecayColors(decayValue, 'displayMastery', isDark);
     }
     return getStatusColors(status, isDark, colorScheme);
-  }, [coloringMode, level, status, isDark, colorScheme, nodeStatus, node.id]);
+  }, [coloringMode, level, status, isDark, colorScheme, nodeStatus, node.id, node.properties]);
 
   const decayOpacity = coloringMode === "decay" && colors.opacity != null ? colors.opacity : 1;
   const nodeOpacity = (!hasFocusMode ? 1 : focused ? 1 : 0.45) * decayOpacity;

@@ -183,6 +183,10 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     | undefined;
   const sourceCount =
     node.properties?.sourceCount ?? node.properties?.sources?.length ?? 0;
+  const nodeIcon =
+    typeof node.properties?.icon === "string" && node.properties.icon
+      ? node.properties.icon
+      : undefined;
   const titleInfo = useMemo(
     () => truncateText(node.title || t("graphEditor.mindMap.unnamed")),
     [node.title, t],
@@ -199,6 +203,9 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     }
     return titleInfo.truncated;
   }, [maxTitleLength, node.title, t, titleInfo.truncated]);
+
+  // 节点图标（AI 智能配色写入 properties.icon）渲染在标题前
+  const displayLabel = nodeIcon ? `${nodeIcon} ${displayTitle}` : displayTitle;
 
   const dynamicSize = useMemo(() => {
     if (nodeSizeMode === "fixed") {
@@ -237,6 +244,16 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
 
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = useMemo(() => {
+    // 节点自定义色（AI 智能配色写入 properties.color）优先
+    const customColor = node.properties?.color;
+    if (typeof customColor === "string" && /^#[0-9A-Fa-f]{6}$/.test(customColor)) {
+      return {
+        ...LEVEL_COLORS.normal,
+        primary: customColor,
+        secondary: customColor,
+        glow: customColor,
+      };
+    }
     let result: typeof LEVEL_COLORS.normal;
     if (coloringMode === "level") {
       result = getLevelColors(level, isDark);
@@ -259,7 +276,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       result = LEVEL_COLORS.normal;
     }
     return result;
-  }, [coloringMode, level, status, isDark, colorScheme, nodeStatus, node.id]);
+  }, [coloringMode, level, status, isDark, colorScheme, nodeStatus, node.id, node.properties]);
 
   const textVisibility = getTextVisibility(level, zoomLevel, forceShowText);
 
@@ -871,7 +888,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
               : `0 ${2 / zoomLevel}px ${4 / zoomLevel}px rgba(0,0,0,0.15), 0 0 ${8 / zoomLevel}px rgba(0,0,0,0.1)`,
           }}
         >
-          {displayTitle}
+          {displayLabel}
           {titleInfo.isTruncated && <title>{titleInfo.original}</title>}
         </text>
       )}

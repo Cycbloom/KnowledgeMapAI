@@ -111,5 +111,9 @@ export { literatureMetadataService, LiteratureMetadataService } from "./literatu
 export type { LiteratureMetadata, LiteratureType, ExtractMetadataOptions } from "./literatureMetadataService";
 export { annotationService, AnnotationService } from "./annotationService";
 export type { Term } from "./annotationService";
+export { nodeStyleService, NodeStyleService } from "./nodeStyleService";
+export type { NodeStyleSuggestion, SuggestNodeStylesResult } from "./nodeStyleService";
+export { nodeTranslationService, NodeTranslationService } from "./nodeTranslationService";
+export type { NodeTranslation, TranslateNodesResult } from "./nodeTranslationService";
 export { documentParsingService, DocumentParsingService } from "./documentParsingService";
 export type { IGraphQueryService } from "./types";

@@ -68,8 +68,17 @@ class SSENotificationSubscriber {
         status: "completed",
         result: payload.result,
       },
+      // 匹配前端 queryKeys：graph(单数) / graphData / graphDataWithEmbedding /
+      // graphNodeStatus / graphLearningPath / graphs(列表前缀)
       cacheKeys: payload.graphId
-        ? [["graphs", payload.graphId], ["nodes"]]
+        ? [
+            ["graphs"],
+            ["graph", payload.graphId],
+            ["graphData", payload.graphId],
+            ["graphDataWithEmbedding", payload.graphId],
+            ["graphNodeStatus", payload.graphId],
+            ["graphLearningPath", payload.graphId],
+          ]
         : [],
     };
     sseService.sendToUser(payload.userId, message);
@@ -84,7 +93,17 @@ class SSENotificationSubscriber {
         status: "failed",
         error: payload.error,
       },
-      cacheKeys: [],
+      // 失败也失效图谱缓存，避免前端保留过期数据
+      cacheKeys: payload.graphId
+        ? [
+            ["graphs"],
+            ["graph", payload.graphId],
+            ["graphData", payload.graphId],
+            ["graphDataWithEmbedding", payload.graphId],
+            ["graphNodeStatus", payload.graphId],
+            ["graphLearningPath", payload.graphId],
+          ]
+        : [],
     };
     sseService.sendToUser(payload.userId, message);
   }

@@ -202,6 +202,30 @@ const GenerateCardsModal = lazy(() =>
   })),
 );
 
+const TextToGraphModal = lazy(() =>
+  import("../components/GraphEditor/modals/TextToGraphModal").then((module) => ({
+    default: module.TextToGraphModal,
+  })),
+);
+
+const SimilarNodesPanel = lazy(() =>
+  import("../components/GraphEditor/panels/SimilarNodesPanel").then((module) => ({
+    default: module.SimilarNodesPanel,
+  })),
+);
+
+const SmartStylePanel = lazy(() =>
+  import("../components/GraphEditor/panels/SmartStylePanel").then((module) => ({
+    default: module.SmartStylePanel,
+  })),
+);
+
+const NodeTranslatePanel = lazy(() =>
+  import("../components/GraphEditor/panels/NodeTranslatePanel").then((module) => ({
+    default: module.NodeTranslatePanel,
+  })),
+);
+
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -234,6 +258,10 @@ export const GraphEditor = () => {
   );
   const [isMobilePreviewMode, setIsMobilePreviewMode] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(!isOnboardingComplete());
+  const [isTextToGraphOpen, setIsTextToGraphOpen] = useState(false);
+  const [isSimilarNodesOpen, setIsSimilarNodesOpen] = useState(false);
+  const [isSmartStyleOpen, setIsSmartStyleOpen] = useState(false);
+  const [isNodeTranslateOpen, setIsNodeTranslateOpen] = useState(false);
 
   const panelState = useGraphEditorPanelState({ userId: user?.id || "" });
   const [contextMenu, setContextMenu] = useState<{
@@ -855,6 +883,165 @@ export const GraphEditor = () => {
     [mutations.createEdgeMutation, id, t],
   );
 
+  /**
+   * 合并两个相似节点：将 remove 节点的内容并入 keeper，迁移 remove 的边到 keeper，然后删除 remove。
+   */
+  const handleMergeNodes = useCallback(
+    async (keeperId: string, removeId: string): Promise<boolean> => {
+      if (!id) return false;
+      try {
+        const keeper = nodes.find((n) => n.id === keeperId);
+        const remove = nodes.find((n) => n.id === removeId);
+        if (!keeper || !remove) return false;
+
+        // 1. 合并内容：remove 的 content 追加到 keeper（若 keeper 无内容或内容不同）
+        if (remove.content && remove.content.trim()) {
+          const keeperContent = keeper.content || "";
+          const removeContent = remove.content.trim();
+          if (!keeperContent.includes(removeContent)) {
+            const mergedContent = keeperContent
+              ? `${keeperContent}\n\n${removeContent}`
+              : removeContent;
+            await mutations.updateNodeMutation.mutateAsync({
+              id: keeperId,
+              graphId: id,
+              data: { content: mergedContent },
+            });
+          }
+        }
+
+        // 2. 迁移 remove 的边到 keeper
+        const edgesToMigrate = edges.filter(
+          (e) =>
+            e.source_knowledge_point_id === removeId ||
+            e.target_knowledge_point_id === removeId,
+        );
+        for (const edge of edgesToMigrate) {
+          const source = edge.source_knowledge_point_id === removeId ? keeperId : edge.source_knowledge_point_id;
+          const target = edge.target_knowledge_point_id === removeId ? keeperId : edge.target_knowledge_point_id;
+          // 跳过自环
+          if (source === target) continue;
+          // 跳过已存在的边
+          const exists = edges.some(
+            (e) =>
+              e.source_knowledge_point_id === source &&
+              e.target_knowledge_point_id === target,
+          );
+          if (exists) continue;
+          try {
+            await mutations.createEdgeMutation.mutateAsync({
+              source_knowledge_point_id: source,
+              target_knowledge_point_id: target,
+              graphId: id,
+              relationship_type: edge.relationship_type || "contains",
+            });
+          } catch {
+            // 忽略单条边迁移失败
+          }
+        }
+
+        // 3. 删除 remove 节点（级联删除其边）
+        await mutations.batchDeleteNodesMutation.mutateAsync({
+          nodeIds: [removeId],
+          graphId: id,
+        });
+
+        await queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
+        message.success(t("graphEditor.similarNodes.mergeSuccess"));
+        return true;
+      } catch (error: unknown) {
+        console.error("Merge nodes failed:", error);
+        message.error(t("graphEditor.similarNodes.mergeFailed"));
+        return false;
+      }
+    },
+    [id, nodes, edges, mutations, queryClient, t],
+  );
+
+  /** 应用 AI 智能配色/图标建议：把 color/icon 写入 knowledge_points.properties */
+  const handleApplySmartStyle = useCallback(
+    async (suggestions: Array<{ node_id: string; color: string; icon: string; reason: string }>) => {
+      if (!id) return;
+      let appliedCount = 0;
+      for (const s of suggestions) {
+        const node = nodes.find((n) => n.id === s.node_id);
+        if (!node) continue;
+        const currentProps = node.properties || {};
+        const nextProps = {
+          ...currentProps,
+          color: s.color,
+          icon: s.icon,
+        };
+        try {
+          await mutations.updateNodeMutation.mutateAsync({
+            id: s.node_id,
+            graphId: id,
+            data: { properties: nextProps },
+          });
+          appliedCount++;
+        } catch (err) {
+          console.error(`Apply style to node ${s.node_id} failed:`, err);
+        }
+      }
+      if (appliedCount > 0) {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
+      }
+      if (appliedCount < suggestions.length) {
+        message.warning(
+          t("graphEditor.smartStyle.partialApplied", {
+            count: appliedCount,
+            total: suggestions.length,
+          }),
+        );
+      }
+    },
+    [id, nodes, mutations, queryClient, t],
+  );
+
+  /** 应用节点翻译：把翻译后的 title/content 写回 knowledge_points */
+  const handleApplyNodeTranslation = useCallback(
+    async (
+      translations: Array<{ node_id: string; title: string; content?: string }>,
+      _targetLanguage: string,
+    ) => {
+      if (!id) return;
+      let appliedCount = 0;
+      for (const tr of translations) {
+        const node = nodes.find((n) => n.id === tr.node_id);
+        if (!node) continue;
+        const data: { title?: string; content?: string } = {};
+        if (tr.title && tr.title !== node.title) data.title = tr.title;
+        if (tr.content && tr.content !== node.content) data.content = tr.content;
+        if (Object.keys(data).length === 0) {
+          appliedCount++;
+          continue;
+        }
+        try {
+          await mutations.updateNodeMutation.mutateAsync({
+            id: tr.node_id,
+            graphId: id,
+            data,
+          });
+          appliedCount++;
+        } catch (err) {
+          console.error(`Apply translation to node ${tr.node_id} failed:`, err);
+        }
+      }
+      if (appliedCount > 0) {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
+      }
+      if (appliedCount < translations.length) {
+        message.warning(
+          t("graphEditor.nodeTranslate.partialApplied", {
+            count: appliedCount,
+            total: translations.length,
+          }),
+        );
+      }
+    },
+    [id, nodes, mutations, queryClient, t],
+  );
+
   const handleNodeClick = useCallback(
     (node: GraphNode) => {
       focusNodeWithNode(node);
@@ -1257,6 +1444,7 @@ export const GraphEditor = () => {
 
   const exportActions = useMemo(() => ({
     onMarkdown: exportOps.handleExportMarkdown,
+    onPPT: exportOps.handleExportPPT,
     onPDF: exportOps.handleExportPDF,
     onJSON: exportOps.handleExportJSON,
     onImage: () => setIsExportImageModalOpen(true),
@@ -1576,6 +1764,11 @@ export const GraphEditor = () => {
         onAIExpand={aiOps.handleAIExpand}
         onBranchExplore={handleGetBranchSuggestions}
         onBackgroundTask={aiOps.handleBackgroundTask}
+        onGenerateQuestions={aiOps.handleOpenChallengeGen}
+        onImportOutline={() => setIsTextToGraphOpen(true)}
+        onFindSimilarNodes={() => setIsSimilarNodesOpen(true)}
+        onSmartStyle={() => setIsSmartStyleOpen(true)}
+        onTranslateNodes={() => setIsNodeTranslateOpen(true)}
         onGenerateEmbeddings={handleGenerateEmbeddings}
         isGeneratingEmbeddings={isGeneratingEmbeddings}
         isChatOpen={panelState.isRAGChatOpen}
@@ -1789,6 +1982,54 @@ export const GraphEditor = () => {
             source_knowledge_point_id: e.source_knowledge_point_id,
             target_knowledge_point_id: e.target_knowledge_point_id,
           }))}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <TextToGraphModal
+          isOpen={isTextToGraphOpen}
+          onClose={() => setIsTextToGraphOpen(false)}
+          graphId={id || ""}
+          onSaved={() => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id || "") });
+          }}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SimilarNodesPanel
+          isOpen={isSimilarNodesOpen}
+          onClose={() => setIsSimilarNodesOpen(false)}
+          nodes={nodes.map((n) => ({ id: n.id, title: n.title, content: n.content }))}
+          onMerge={handleMergeNodes}
+          onNodeClick={(nodeId) => {
+            const node = nodes.find((n) => n.id === nodeId);
+            if (node) handleNodeClick(node);
+          }}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SmartStylePanel
+          isOpen={isSmartStyleOpen}
+          onClose={() => setIsSmartStyleOpen(false)}
+          graphId={id || ""}
+          nodes={nodes.map((n) => ({
+            id: n.id,
+            title: n.title,
+            content: n.content,
+            level: n.level,
+          }))}
+          onApply={handleApplySmartStyle}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <NodeTranslatePanel
+          isOpen={isNodeTranslateOpen}
+          onClose={() => setIsNodeTranslateOpen(false)}
+          nodes={nodes.map((n) => ({ id: n.id, title: n.title, content: n.content }))}
+          onApply={handleApplyNodeTranslation}
         />
       </Suspense>
 

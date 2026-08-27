@@ -650,6 +650,40 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
     }>("/ai/cross-graph-connections", payload);
   },
 
+  suggestNodeStyles: (data: {
+    nodes: Array<{ id: string; title: string; content?: string; level?: string }>;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(data, "text");
+    return post<{
+      suggestions: Array<{
+        node_id: string;
+        color: string;
+        icon: string;
+        reason: string;
+      }>;
+      usedDefault: boolean;
+    }>("/ai/suggest-node-styles", payload);
+  },
+
+  translateNodes: (data: {
+    nodes: Array<{ id: string; title: string; content?: string }>;
+    target_language: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.target_language },
+      "text",
+    );
+    return post<{
+      translations: Array<{
+        node_id: string;
+        title: string;
+        content?: string;
+      }>;
+      usedDefault: boolean;
+    }>("/ai/translate-nodes", payload);
+  },
+
   aiActions: {
     list: (graphId?: string) =>
       get<AIAction[]>(

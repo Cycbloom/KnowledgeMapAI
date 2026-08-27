@@ -223,6 +223,22 @@ export const useGraphAIOperations = ({
 
   const [isChallengeGenOpen, setIsChallengeGenOpen] = useState(false);
 
+  const handleOpenChallengeGen = () => {
+    if (!id) return;
+    // 支持 selectedNodeIds 批量选择（取第一个作为生成目标）或单选
+    const targetNode = selectedNode
+      ? { id: selectedNode.id, title: selectedNode.title }
+      : selectedNodeIds.size > 0
+        ? (() => {
+            const firstId = Array.from(selectedNodeIds)[0];
+            const n = nodes.find((node) => node.id === firstId);
+            return n ? { id: n.id, title: n.title } : null;
+          })()
+        : null;
+    if (!targetNode) return;
+    setIsChallengeGenOpen(true);
+  };
+
   const startLevelTestSession = () => {
     if (!selectedNode || !id) return;
     navigate(`/study?node_id=${selectedNode.id}&graph_id=${id}&mode=quiz&from=graph`);
@@ -704,6 +720,7 @@ export const useGraphAIOperations = ({
     handleManageCards,
     isChallengeGenOpen,
     handleCloseChallengeGen,
+    handleOpenChallengeGen,
     handleChallengeGenerate,
     handleGetBranchSuggestions,
     handleCreateBranch,

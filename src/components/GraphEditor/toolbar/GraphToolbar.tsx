@@ -49,6 +49,9 @@ import {
   Map as MapIcon,
   GitMerge,
   History,
+  FileQuestion,
+  FileText,
+  ScanSearch,
   ZoomIn,
   ZoomOut,
   Spline,
@@ -93,6 +96,11 @@ interface GraphToolbarProps {
   onAIExpand?: () => void;
   onBranchExplore?: () => void;
   onBackgroundTask?: (type: "expand_graph" | "batch_generate_questions") => void;
+  onGenerateQuestions?: () => void;
+  onImportOutline?: () => void;
+  onFindSimilarNodes?: () => void;
+  onSmartStyle?: () => void;
+  onTranslateNodes?: () => void;
 
   // Semantic Embedding Generation
   onGenerateEmbeddings?: () => void;
@@ -144,6 +152,7 @@ interface GraphToolbarProps {
   setIsExportMenuOpen: (open: boolean) => void;
   exportActions: {
     onMarkdown: () => void;
+    onPPT: () => void;
     onPDF: () => void;
     onJSON: () => void;
     onImage: () => void;
@@ -228,6 +237,7 @@ function areEqual(prev: GraphToolbarProps, next: GraphToolbarProps): boolean {
   if (prev.exportActions !== next.exportActions) {
     if (
       prev.exportActions.onMarkdown !== next.exportActions.onMarkdown ||
+      prev.exportActions.onPPT !== next.exportActions.onPPT ||
       prev.exportActions.onPDF !== next.exportActions.onPDF ||
       prev.exportActions.onJSON !== next.exportActions.onJSON ||
       prev.exportActions.onImage !== next.exportActions.onImage ||
@@ -303,6 +313,11 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   onAIExpand,
   onBranchExplore,
   onBackgroundTask,
+  onGenerateQuestions,
+  onImportOutline,
+  onFindSimilarNodes,
+  onSmartStyle,
+  onTranslateNodes,
   onGenerateEmbeddings,
   isGeneratingEmbeddings,
   isChatOpen,
@@ -1559,6 +1574,41 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             shortcutHint={aiChatShortcut}
           />
           <MenuItem
+            onClick={onImportOutline}
+            disabled={!onImportOutline}
+            icon={FileText}
+            label={t("graphEditor.toolbar.importOutline")}
+            colorClass="text-cyan-500"
+          />
+          <MenuItem
+            onClick={onFindSimilarNodes}
+            disabled={!onFindSimilarNodes}
+            icon={ScanSearch}
+            label={t("graphEditor.toolbar.findSimilarNodes")}
+            colorClass="text-amber-500"
+          />
+          <MenuItem
+            onClick={onSmartStyle}
+            disabled={!onSmartStyle}
+            icon={Palette}
+            label={t("graphEditor.toolbar.smartStyle")}
+            colorClass="text-pink-500"
+          />
+          <MenuItem
+            onClick={onTranslateNodes}
+            disabled={!onTranslateNodes}
+            icon={Globe}
+            label={t("graphEditor.toolbar.translateNodes")}
+            colorClass="text-violet-500"
+          />
+          <MenuItem
+            onClick={onGenerateQuestions}
+            disabled={!onGenerateQuestions || selectedNodeIds.size !== 1}
+            icon={FileQuestion}
+            label={t("graphEditor.toolbar.generateQuestions")}
+            colorClass="text-orange-500"
+          />
+          <MenuItem
             onClick={() => {
               setIsPathfindingMode(!isPathfindingMode);
               pathfindingState.reset();
@@ -2028,6 +2078,11 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             onClick={exportActions.onMarkdown}
             icon={Download}
             label={t("graphEditor.toolbar.exportMarkdown")}
+          />
+          <MenuItem
+            onClick={exportActions.onPPT}
+            icon={Download}
+            label={t("graphEditor.toolbar.exportPPT")}
           />
           <MenuItem
             onClick={exportActions.onAnki}

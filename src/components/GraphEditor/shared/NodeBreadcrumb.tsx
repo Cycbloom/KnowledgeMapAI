@@ -33,6 +33,12 @@ export const NodeBreadcrumb = React.memo(({
     return null;
   }
 
+  // 如果父链第一个节点与图谱标题同名，说明根节点被重复包含，跳过第一个避免重复显示
+  const displayParentChain =
+    parentChain.length > 0 && parentChain[0].title === graphTitle
+      ? parentChain.slice(1)
+      : parentChain;
+
   return (
     <nav
       aria-label={t("common.aria.breadcrumb")}
@@ -54,7 +60,7 @@ export const NodeBreadcrumb = React.memo(({
       </span>
 
       {/* 父节点链 */}
-      {parentChain.map((parent) => (
+      {displayParentChain.map((parent) => (
         <React.Fragment key={parent.id}>
           <ChevronRight
             size={14}

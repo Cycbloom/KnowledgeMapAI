@@ -5,6 +5,7 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { notDeleted } from "../common/softDeleteHelper";
+import { getKnowledgePoint } from "../../../shared/utils/nodeHelpers";
 import {
   resolveLocalizedText,
   mergeLocalizedTranslation,
@@ -91,14 +92,24 @@ export class TranslateNodesProcessor implements TaskProcessor {
 
       for (const gn of graphNodes as Array<{
         knowledge_point_id: string;
-        knowledge_points?: Array<{
-          id: string;
-          title: unknown;
-          content: unknown;
-          summary: unknown;
-        }> | null;
+        knowledge_points?:
+          | {
+              id: string;
+              title: unknown;
+              content: unknown;
+              summary: unknown;
+            }
+          | Array<{
+              id: string;
+              title: unknown;
+              content: unknown;
+              summary: unknown;
+            }>
+          | null;
       }>) {
-        const kp = gn.knowledge_points?.[0];
+        // PostgREST 对多对一外键嵌入返回单对象（graph_nodes → knowledge_points），
+        // 少数路径返回数组；用共享工具统一兼容两种形状，避免对象形状取 [0] 得到 undefined
+        const kp = getKnowledgePoint(gn.knowledge_points ?? null);
         if (!kp) continue;
 
         const titleMap = (kp.title || "") as string | Record<string, string>;
@@ -196,7 +207,18 @@ export class TranslateNodesProcessor implements TaskProcessor {
           }
 
           if (Object.keys(update).length > 1) {
-            await supabase.from("knowledge_points").update(update).eq("id", node.id);
+            const { error: updateError } = await supabase
+              .from("knowledge_points")
+              .update(update)
+              .eq("id", node.id);
+            if (updateError) {
+              logger.error(`写入节点 ${node.id} 翻译失败:`, updateError);
+              throw new AppError(
+                `写回翻译失败: ${updateError.message}`,
+                500,
+                ErrorCodes.SYSTEM_INTERNAL_ERROR,
+              );
+            }
           }
           completed++;
         }

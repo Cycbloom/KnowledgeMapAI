@@ -1,5 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { useNodeDisplayLanguageStore } from '@/store/useNodeDisplayLanguageStore';
 
 const LANGUAGE_STORAGE_KEY = 'i18n-language';
 export const DEFAULT_LANGUAGE = 'zh-CN';
@@ -68,14 +69,39 @@ export async function changeLanguage(lng: string | null | undefined): Promise<vo
   if (i18n.language !== target) {
     await i18n.changeLanguage(target);
   }
+  // 节点内容显示语言跟随系统界面语言（未被手动指定时）
+  await syncNodeDisplayLanguage(target);
 }
 
-export const i18nReady = loadLanguageResources(initialLanguage);
+export const i18nReady = (async () => {
+  const target = await loadLanguageResources(initialLanguage);
+  // 首屏初始化时同步一次节点显示语言（后续界面语言切换由 changeLanguage/languageChanged 接管）
+  await syncNodeDisplayLanguage(target);
+  return target;
+})();
 
 i18n.on('languageChanged', (lng) => {
   if (typeof document !== 'undefined') {
     document.documentElement.lang = lng;
   }
+  // 节点内容显示语言跟随系统界面语言（未被手动指定时）
+  void syncNodeDisplayLanguage(lng);
 });
+
+/**
+ * 将系统界面语言同步到节点内容显示语言（仅当用户未手动指定时生效）。
+ * 延迟到 persist 水合后执行，避免读取到 store 初始化默认值而覆盖持久化选择。
+ */
+async function syncNodeDisplayLanguage(lng: string): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      try {
+        useNodeDisplayLanguageStore.getState().applySystemLanguage(lng);
+      } finally {
+        resolve();
+      }
+    });
+  });
+}
 
 export default i18n;

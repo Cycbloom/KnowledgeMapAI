@@ -18,7 +18,6 @@ import {
 } from "../../common";
 import { CodeBlock } from "../../common/CodeBlock";
 import { Mermaid } from "../../common/Mermaid";
-import { NodeLanguageSwitcher } from "../NodeLanguageSwitcher";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -179,7 +178,6 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           </h3>
         </div>
         <div className="flex items-center gap-2">
-          <NodeLanguageSwitcher />
           <button
             onClick={onClose}
             className={`text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors ${isMobile ? "p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center" : "p-1"}`}

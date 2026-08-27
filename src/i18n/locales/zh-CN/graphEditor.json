@@ -78,7 +78,8 @@
     "cancel": "取消"
   },
   "nodeLanguageSwitcher": {
-    "label": "节点内容显示语言"
+    "label": "节点内容显示语言",
+    "followSystem": "跟随系统"
   },
   "export": {
     "title": "导出 PDF 报告",
@@ -303,6 +304,7 @@
     "planetDesc": "星球环绕布局",
     "quadrantDesc": "四象限分类",
     "switchView": "切换视图",
+    "nodeLanguage": "节点语言",
     "sidebarOutline": "侧边栏大纲",
     "searchNodes": "搜索节点",
     "explorationMode": "探索分支模式",

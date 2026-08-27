@@ -78,7 +78,8 @@
     "cancel": "Cancel"
   },
   "nodeLanguageSwitcher": {
-    "label": "Node content display language"
+    "label": "Node content display language",
+    "followSystem": "Follow System"
   },
   "export": {
     "title": "Export PDF Report",
@@ -303,6 +304,7 @@
     "planetDesc": "Orbital layout",
     "quadrantDesc": "Four-quadrant grid",
     "switchView": "Switch View",
+    "nodeLanguage": "Node Language",
     "sidebarOutline": "Sidebar Outline",
     "searchNodes": "Search Nodes",
     "explorationMode": "Exploration Mode",

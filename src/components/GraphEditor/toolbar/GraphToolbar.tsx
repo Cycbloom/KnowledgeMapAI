@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useId, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useId, useMemo, createContext, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -61,6 +61,7 @@ import { useTheme, useIsMobile } from "../../../hooks";
 import { useEscapeKey, useShortcutLabel } from "../../../hooks/common";
 import { ShortcutHint } from "../../common/ShortcutHint";
 import { GraphSwitcher } from "./GraphSwitcher";
+import { NodeLanguageSwitcher } from "../NodeLanguageSwitcher";
 import {
   Node,
   ColorScheme,
@@ -295,6 +296,483 @@ function areEqual(prev: GraphToolbarProps, next: GraphToolbarProps): boolean {
   return true;
 }
 
+/**
+ * 工具栏下拉相关组件的共享上下文。
+ * 这些组件必须定义在模块顶层（而非 GraphToolbarBase 渲染函数体内），
+ * 否则每次工具栏重渲染（如画布滚轮缩放更新 zoomLevel）都会导致组件被卸载重建，
+ * 下拉框的入场动画（animate-in fade-in zoom-in-95）逐帧重放，产生视觉闪动。
+ */
+type ToolbarDropdownId = "edit" | "ai" | "system" | "view";
+
+interface ToolbarContextValue {
+  openDropdown: ToolbarDropdownId | null;
+  setOpenDropdown: React.Dispatch<React.SetStateAction<ToolbarDropdownId | null>>;
+  isDark: boolean;
+}
+
+const ToolbarContext = createContext<ToolbarContextValue | null>(null);
+
+const useToolbarContext = (): ToolbarContextValue => {
+  const ctx = useContext(ToolbarContext);
+  if (!ctx) {
+    throw new Error("Toolbar dropdown components must be used within ToolbarContext.Provider");
+  }
+  return ctx;
+};
+
+const Divider = () => {
+  const { isDark } = useToolbarContext();
+  return (
+    <div className={`w-px h-6 mx-1 flex-shrink-0 ${isDark ? "bg-slate-600" : "bg-gray-300"}`} />
+  );
+};
+
+const MenuItem = ({
+  onClick,
+  icon: Icon,
+  label,
+  active,
+  colorClass,
+  activeClass,
+  disabled,
+  children,
+  keepOpenOnChildClick,
+  keepDropdownOpen,
+  subMenuOpen,
+  onSubMenuToggle,
+  shortcutHint,
+}: {
+  onClick?: () => void;
+  icon: React.ComponentType<{ size?: number | string; className?: string }>;
+  label: string;
+  active?: boolean;
+  colorClass?: string;
+  activeClass?: string;
+  disabled?: boolean;
+  children?: React.ReactNode;
+  keepOpenOnChildClick?: boolean;
+  keepDropdownOpen?: boolean;
+  subMenuOpen?: boolean;
+  onSubMenuToggle?: () => void;
+  shortcutHint?: string | null;
+}) => {
+  const { isDark, setOpenDropdown } = useToolbarContext();
+  const [internalSubMenuOpen, setInternalSubMenuOpen] = useState(false);
+  const [subMenuPosition, setSubMenuPosition] = useState({
+    horizontal: "right" as "right" | "left",
+    maxHeight: undefined as number | undefined,
+  });
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const menuContainerRef = useRef<HTMLDivElement>(null);
+
+  const isOpen =
+    keepOpenOnChildClick && subMenuOpen !== undefined
+      ? subMenuOpen
+      : internalSubMenuOpen;
+
+  const handleToggle = keepOpenOnChildClick
+    ? onSubMenuToggle || (() => setInternalSubMenuOpen(!internalSubMenuOpen))
+    : undefined;
+
+  // 检测子菜单位置和可用空间
+  useEffect(() => {
+    if (isOpen && menuContainerRef.current) {
+      const rect = menuContainerRef.current.getBoundingClientRect();
+      const submenuWidth = 192; // w-48 = 12rem = 192px
+      const padding = 8;
+
+      // 水平方向：右侧空间不足则翻转到左侧
+      const horizontal: "right" | "left" =
+        rect.right + submenuWidth > window.innerWidth ? "left" : "right";
+
+      // 垂直方向：计算可用高度，确保不超出视口底部
+      const availableHeight = window.innerHeight - rect.top - padding;
+      const maxHeight = availableHeight < 400 ? availableHeight : undefined;
+
+      setSubMenuPosition({ horizontal, maxHeight });
+    }
+  }, [isOpen]);
+
+  // 清理关闭定时器
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleOpen = useCallback(() => {
+    if (children && !keepOpenOnChildClick) {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+      setInternalSubMenuOpen(true);
+    }
+  }, [children, keepOpenOnChildClick]);
+
+  const handleClose = useCallback(() => {
+    if (children && !keepOpenOnChildClick) {
+      closeTimerRef.current = setTimeout(() => {
+        setInternalSubMenuOpen(false);
+      }, 150);
+    }
+  }, [children, keepOpenOnChildClick]);
+
+  return (
+    <div
+      ref={menuContainerRef}
+      className="relative w-full"
+      onMouseEnter={handleOpen}
+      onMouseLeave={handleClose}
+    >
+      <button
+        disabled={disabled}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (children && keepOpenOnChildClick) {
+            handleToggle?.();
+          } else if (!children) {
+            onClick?.();
+            if (!keepDropdownOpen) {
+              setOpenDropdown(null);
+            }
+          }
+        }}
+        aria-pressed={active}
+        className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+          disabled
+            ? isDark
+              ? "text-slate-600 cursor-not-allowed"
+              : "text-gray-300 cursor-not-allowed"
+            : active
+              ? activeClass ||
+                (isDark
+                  ? "bg-primary-900/30 text-primary-400"
+                  : "bg-primary-50 text-primary-600")
+              : `${isDark ? "hover:bg-slate-700" : "hover:bg-gray-50"} ${colorClass || (isDark ? "text-gray-300" : "text-gray-700")}`
+        }`}
+      >
+        <Icon size={18} className="flex-shrink-0" aria-hidden="true" />
+        <span className="flex-grow text-left font-medium">{label}</span>
+        {shortcutHint && (
+          <kbd
+            className={`hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded border mr-1 ${
+              isDark
+                ? "bg-slate-800 border-slate-700 text-slate-400"
+                : "bg-gray-100 border-gray-200 text-gray-500"
+            }`}
+          >
+            {shortcutHint}
+          </kbd>
+        )}
+        {children && (
+          <ChevronRight
+            size={14}
+            aria-hidden="true"
+            className={`opacity-50 transition-transform ${isOpen && keepOpenOnChildClick ? "rotate-90" : ""}`}
+          />
+        )}
+      </button>
+
+      {children && isOpen && (
+        <div
+          className={`absolute top-0 ${
+            subMenuPosition.horizontal === "right"
+              ? "left-full ml-1"
+              : "right-full mr-1"
+          } p-2 rounded-xl shadow-2xl border w-48 z-50 flex flex-col gap-1 ${
+            isDark
+              ? "bg-slate-800 border-slate-700 text-gray-100"
+              : "bg-white border-gray-200 text-gray-800"
+          } animate-in fade-in ${
+            subMenuPosition.horizontal === "right"
+              ? "slide-in-from-left-2"
+              : "slide-in-from-right-2"
+          } duration-150`}
+          style={{
+            maxHeight: subMenuPosition.maxHeight
+              ? `${subMenuPosition.maxHeight}px`
+              : undefined,
+            overflowY: subMenuPosition.maxHeight ? "auto" : undefined,
+          }}
+          onClick={(e) => {
+            if (keepOpenOnChildClick) {
+              e.stopPropagation();
+            }
+          }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const DropdownButton = ({
+  id,
+  icon: Icon,
+  label,
+  children,
+  active,
+}: {
+  id: ToolbarDropdownId;
+  icon: LucideIcon;
+  label: string;
+  children: React.ReactNode;
+  active?: boolean;
+}) => {
+  const { openDropdown, setOpenDropdown, isDark } = useToolbarContext();
+  const [dropdownPosition, setDropdownPosition] = useState({
+    horizontal: "left" as "left" | "right",
+    vertical: "below" as "below" | "above",
+    maxHeight: undefined as number | undefined,
+  });
+  const dropdownContainerRef = useRef<HTMLDivElement>(null);
+  const dropdownContentId = useId();
+
+  useEffect(() => {
+    if (openDropdown === id && dropdownContainerRef.current) {
+      const rect = dropdownContainerRef.current.getBoundingClientRect();
+      const dropdownWidth = 224; // w-56 = 14rem = 224px
+      const dropdownMaxHeight = 400; // 预估最大高度
+      const padding = 8;
+
+      // 水平方向：右侧空间不足则右对齐
+      const horizontal: "left" | "right" =
+        rect.left + dropdownWidth > window.innerWidth ? "right" : "left";
+
+      // 垂直方向：下方空间不足则翻转到上方
+      const spaceBelow = window.innerHeight - rect.bottom - padding;
+      const spaceAbove = rect.top - padding;
+      const vertical: "below" | "above" =
+        spaceBelow < dropdownMaxHeight && spaceAbove > spaceBelow
+          ? "above"
+          : "below";
+
+      // 计算最大高度，确保不超出视口
+      const availableHeight = vertical === "below" ? spaceBelow : spaceAbove;
+      const maxHeight =
+        availableHeight < dropdownMaxHeight ? availableHeight : undefined;
+
+      setDropdownPosition({ horizontal, vertical, maxHeight });
+    }
+  }, [openDropdown, id]);
+
+  return (
+    <div
+      ref={dropdownContainerRef}
+      className="relative"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        onClick={() => setOpenDropdown(openDropdown === id ? null : id)}
+        aria-haspopup="menu"
+        aria-expanded={openDropdown === id}
+        aria-controls={dropdownContentId}
+        className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+          active || openDropdown === id
+            ? isDark
+              ? "bg-primary-900/40 text-primary-400"
+              : "bg-primary-50 text-primary-600"
+            : isDark
+              ? "text-gray-300 hover:bg-slate-700"
+              : "text-gray-600 hover:bg-gray-100"
+        }`}
+      >
+        <Icon size={20} aria-hidden="true" />
+        <span className="text-sm font-medium">{label}</span>
+        <ChevronDown
+          size={14}
+          aria-hidden="true"
+          className={`transition-transform duration-200 ${openDropdown === id ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {openDropdown === id && (
+        <div
+          id={dropdownContentId}
+          className={`absolute ${
+            dropdownPosition.vertical === "below"
+              ? "top-full mt-2"
+              : "bottom-full mb-2"
+          } ${
+            dropdownPosition.horizontal === "left" ? "left-0" : "right-0"
+          } p-2 rounded-xl shadow-2xl border w-56 z-50 flex flex-col gap-1 ${
+            isDark
+              ? "bg-slate-800 border-slate-700 text-gray-100"
+              : "bg-white border-gray-200 text-gray-800"
+          } animate-in fade-in zoom-in-95 duration-150`}
+          style={{
+            maxHeight: dropdownPosition.maxHeight
+              ? `${dropdownPosition.maxHeight}px`
+              : undefined,
+            overflowY: dropdownPosition.maxHeight ? "auto" : undefined,
+          }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const BatchMenu = ({
+  selectedNodeIds,
+  onBatchDelete,
+  batchDeleteProgress,
+  onBatchColorUpdate,
+  onBatchLevelUpdate,
+}: {
+  selectedNodeIds: Set<string>;
+  onBatchDelete: () => void;
+  batchDeleteProgress?: { completed: number; total: number } | null;
+  onBatchColorUpdate?: (color: string) => void;
+  onBatchLevelUpdate?: (level: string) => void;
+}) => {
+  const { isDark } = useToolbarContext();
+  const { t } = useTranslation();
+  const [isBatchMenuOpen, setIsBatchMenuOpen] = useState(false);
+  const batchMenuId = useId();
+
+  if (selectedNodeIds.size <= 1) return null;
+
+  return (
+    <div
+      className="relative"
+      role="presentation"
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+    >
+      <button
+        onClick={() => setIsBatchMenuOpen(!isBatchMenuOpen)}
+        aria-expanded={isBatchMenuOpen}
+        aria-haspopup="menu"
+        aria-controls={batchMenuId}
+        aria-label={t("graphEditor.toolbar.batchMenu")}
+        className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+          isBatchMenuOpen
+            ? "bg-primary-600 text-white"
+            : isDark
+              ? "bg-primary-900/40 text-primary-300 border border-primary-800/50 hover:bg-primary-800/60"
+              : "bg-primary-50 text-primary-600 border border-primary-100 hover:bg-primary-100"
+        }`}
+        title={t("graphEditor.toolbar.batchOperations")}
+      >
+        <MoreHorizontal size={18} aria-hidden="true" />
+        <span className="text-xs font-bold">
+          {t("graphEditor.toolbar.batchCount", { count: selectedNodeIds.size })}
+        </span>
+        <ChevronDown
+          size={14}
+          aria-hidden="true"
+          className={`transition-transform ${isBatchMenuOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {isBatchMenuOpen && (
+        <div
+          id={batchMenuId}
+          className={`absolute top-full left-0 mt-2 shadow-2xl rounded-xl border w-60 py-2 z-50 ${
+            isDark
+              ? "bg-slate-800 border-slate-700 text-gray-100"
+              : "bg-white border-gray-200 text-gray-800"
+          } animate-in fade-in zoom-in-95 duration-150`}
+        >
+          <div className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
+            <span>{t("graphEditor.toolbar.batchOperations")}</span>
+            <span className="bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">
+              {t("graphEditor.toolbar.nodeCount", { count: selectedNodeIds.size })}
+            </span>
+          </div>
+          <div className="border-t my-1 border-gray-100 dark:border-slate-500"></div>
+
+          {/* Batch Color */}
+          <div className="px-4 py-3">
+            <div className="text-[10px] text-gray-500 mb-2.5 font-bold flex items-center gap-1.5">
+              <div className="w-1 h-3 bg-primary-500 rounded-full"></div>
+              {t("graphEditor.toolbar.modifyColor")}
+            </div>
+            <div className="flex flex-wrap gap-2.5">
+              {[
+                "var(--primary-500)",
+                "#10B981",
+                "#F59E0B",
+                "#EF4444",
+                "var(--tertiary-500)",
+                "#EC4899",
+                "var(--slate-500)",
+              ].map((color) => (
+                <button
+                  key={color}
+                  onClick={() => {
+                    onBatchColorUpdate?.(color);
+                    setIsBatchMenuOpen(false);
+                  }}
+                  className="w-6 h-6 rounded-full border-2 border-transparent hover:border-white dark:hover:border-slate-400 hover:scale-125 transition-all shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t my-1 border-gray-100 dark:border-slate-500"></div>
+
+          {/* Batch Level */}
+          <div className="px-4 py-3">
+            <div className="text-[10px] text-gray-500 mb-2.5 font-bold flex items-center gap-1.5">
+              <div className="w-1 h-3 bg-green-500 rounded-full"></div>
+              {t("graphEditor.toolbar.modifyLevel")}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: "root", label: t("graphEditor.toolbar.levelRoot") },
+                { id: "core", label: t("graphEditor.toolbar.levelCore") },
+                { id: "sub", label: t("graphEditor.toolbar.levelSub") },
+                { id: "normal", label: t("graphEditor.toolbar.levelNormal") },
+                { id: "leaf", label: t("graphEditor.toolbar.levelLeaf") },
+              ].map((level) => (
+                <button
+                  key={level.id}
+                  onClick={() => {
+                    onBatchLevelUpdate?.(level.id);
+                    setIsBatchMenuOpen(false);
+                  }}
+                  className={`px-2 py-1.5 text-[10px] rounded-lg border font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${isDark ? "hover:bg-slate-700" : "hover:bg-gray-50"} ${isDark ? "border-slate-700 text-gray-300" : "border-gray-200 text-gray-600"}`}
+                >
+                  {level.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t my-1 border-gray-100 dark:border-slate-500"></div>
+          <div className="px-2 pt-1">
+            <button
+              onClick={() => {
+                onBatchDelete();
+                setIsBatchMenuOpen(false);
+              }}
+              disabled={!!batchDeleteProgress}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 transition-colors font-semibold disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
+            >
+              <Trash2 size={16} aria-hidden="true" />
+              <span>
+                {batchDeleteProgress
+                  ? t('tasks.progress.deleting', {
+                      completed: batchDeleteProgress.completed,
+                      total: batchDeleteProgress.total,
+                    })
+                  : t('graphEditor.toolbar.batchDeleteSelected')}
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   onBack,
   onUndo,
@@ -415,6 +893,12 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
 
   useEscapeKey(() => setOpenDropdown(null), !!openDropdown);
 
+  // 供模块级下拉组件消费的上下文值（必须保持引用稳定，避免无关重渲染）
+  const toolbarContextValue = useMemo(
+    () => ({ openDropdown, setOpenDropdown, isDark }),
+    [openDropdown, isDark]
+  );
+
   // Shortcut labels for dropdown menu items
   const searchShortcut = useShortcutLabel("search");
   const toggleGridShortcut = useShortcutLabel("toggle-grid");
@@ -458,11 +942,9 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     itemHover: isDark ? "hover:bg-slate-700" : "hover:bg-gray-50",
   };
 
-  const Divider = () => (
-    <div className={`w-px h-6 mx-1 flex-shrink-0 ${themeClasses.divider}`} />
-  );
-
-  const MobileBottomNav = () => {
+  // 注意：以渲染函数（小写 + 直接调用）而非内联组件形式使用，
+  // 避免每次工具栏重渲染时被当作新组件类型卸载重建（导致动画重放/状态丢失）。
+  const renderMobileBottomNav = () => {
     const navItems = [
       { icon: ArrowLeft, label: t("graphEditor.toolbar.back"), onClick: onBack },
       { icon: Plus, label: t("graphEditor.toolbar.add"), onClick: onAddNode },
@@ -535,7 +1017,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     show?: boolean;
   }
 
-  const MobileBottomSheet = ({
+  const renderMobileBottomSheet = ({
     type,
     onClose,
   }: {
@@ -871,144 +1353,6 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     );
   };
 
-  const BatchMenu = () => {
-    const [isBatchMenuOpen, setIsBatchMenuOpen] = useState(false);
-    const batchMenuId = useId();
-
-    if (selectedNodeIds.size <= 1) return null;
-
-    return (
-      <div
-        className="relative"
-        role="presentation"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={() => setIsBatchMenuOpen(!isBatchMenuOpen)}
-          aria-expanded={isBatchMenuOpen}
-          aria-haspopup="menu"
-          aria-controls={batchMenuId}
-          aria-label={t("graphEditor.toolbar.batchMenu")}
-          className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
-            isBatchMenuOpen
-              ? "bg-primary-600 text-white"
-              : isDark
-                ? "bg-primary-900/40 text-primary-300 border border-primary-800/50 hover:bg-primary-800/60"
-                : "bg-primary-50 text-primary-600 border border-primary-100 hover:bg-primary-100"
-          }`}
-          title={t("graphEditor.toolbar.batchOperations")}
-        >
-          <MoreHorizontal size={18} aria-hidden="true" />
-          <span className="text-xs font-bold">
-            {t("graphEditor.toolbar.batchCount", { count: selectedNodeIds.size })}
-          </span>
-          <ChevronDown
-            size={14}
-            aria-hidden="true"
-            className={`transition-transform ${isBatchMenuOpen ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        {isBatchMenuOpen && (
-          <div
-            id={batchMenuId}
-            className={`absolute top-full left-0 mt-2 shadow-2xl rounded-xl border w-60 py-2 z-50 ${themeClasses.dropdown} animate-in fade-in zoom-in-95 duration-150`}
-          >
-            <div className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
-              <span>{t("graphEditor.toolbar.batchOperations")}</span>
-              <span className="bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">
-                {t("graphEditor.toolbar.nodeCount", { count: selectedNodeIds.size })}
-              </span>
-            </div>
-            <div className="border-t my-1 border-gray-100 dark:border-slate-500"></div>
-
-            {/* Batch Color */}
-            <div className="px-4 py-3">
-              <div className="text-[10px] text-gray-500 mb-2.5 font-bold flex items-center gap-1.5">
-                <div className="w-1 h-3 bg-primary-500 rounded-full"></div>
-                {t("graphEditor.toolbar.modifyColor")}
-              </div>
-              <div className="flex flex-wrap gap-2.5">
-                {[
-                  "var(--primary-500)",
-                  "#10B981",
-                  "#F59E0B",
-                  "#EF4444",
-                  "var(--tertiary-500)",
-                  "#EC4899",
-                  "var(--slate-500)",
-                ].map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => {
-                      onBatchColorUpdate?.(color);
-                      setIsBatchMenuOpen(false);
-                    }}
-                    className="w-6 h-6 rounded-full border-2 border-transparent hover:border-white dark:hover:border-slate-400 hover:scale-125 transition-all shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="border-t my-1 border-gray-100 dark:border-slate-500"></div>
-
-            {/* Batch Level */}
-            <div className="px-4 py-3">
-              <div className="text-[10px] text-gray-500 mb-2.5 font-bold flex items-center gap-1.5">
-                <div className="w-1 h-3 bg-green-500 rounded-full"></div>
-                {t("graphEditor.toolbar.modifyLevel")}
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: "root", label: t("graphEditor.toolbar.levelRoot") },
-                  { id: "core", label: t("graphEditor.toolbar.levelCore") },
-                  { id: "sub", label: t("graphEditor.toolbar.levelSub") },
-                  { id: "normal", label: t("graphEditor.toolbar.levelNormal") },
-                  { id: "leaf", label: t("graphEditor.toolbar.levelLeaf") },
-                ].map((level) => (
-                  <button
-                    key={level.id}
-                    onClick={() => {
-                      onBatchLevelUpdate?.(level.id);
-                      setIsBatchMenuOpen(false);
-                    }}
-                    className={`px-2 py-1.5 text-[10px] rounded-lg border font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.itemHover} ${isDark ? "border-slate-700 text-gray-300" : "border-gray-200 text-gray-600"}`}
-                  >
-                    {level.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-t my-1 border-gray-100 dark:border-slate-500"></div>
-            <div className="px-2 pt-1">
-              <button
-                onClick={() => {
-                  onBatchDelete();
-                  setIsBatchMenuOpen(false);
-                }}
-                disabled={!!batchDeleteProgress}
-                className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 transition-colors font-semibold disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
-              >
-                <Trash2 size={16} aria-hidden="true" />
-                <span>
-                  {batchDeleteProgress
-                    ? t('tasks.progress.deleting', {
-                        completed: batchDeleteProgress.completed,
-                        total: batchDeleteProgress.total,
-                      })
-                    : t('graphEditor.toolbar.batchDeleteSelected')}
-                </span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   // Render logic based on responsive state
   if (isFocusMode) {
     if (isMobile) {
@@ -1047,296 +1391,17 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     );
   }
 
-  const DropdownButton = ({
-    id,
-    icon: Icon,
-    label,
-    children,
-    active,
-  }: {
-    id: "edit" | "ai" | "system" | "view";
-    icon: LucideIcon;
-    label: string;
-    children: React.ReactNode;
-    active?: boolean;
-  }) => {
-    const [dropdownPosition, setDropdownPosition] = useState({
-      horizontal: "left" as "left" | "right",
-      vertical: "below" as "below" | "above",
-      maxHeight: undefined as number | undefined,
-    });
-    const dropdownContainerRef = useRef<HTMLDivElement>(null);
-    const dropdownContentId = useId();
-
-    useEffect(() => {
-      if (openDropdown === id && dropdownContainerRef.current) {
-        const rect = dropdownContainerRef.current.getBoundingClientRect();
-        const dropdownWidth = 224; // w-56 = 14rem = 224px
-        const dropdownMaxHeight = 400; // 预估最大高度
-        const padding = 8;
-
-        // 水平方向：右侧空间不足则右对齐
-        const horizontal: "left" | "right" =
-          rect.left + dropdownWidth > window.innerWidth ? "right" : "left";
-
-        // 垂直方向：下方空间不足则翻转到上方
-        const spaceBelow = window.innerHeight - rect.bottom - padding;
-        const spaceAbove = rect.top - padding;
-        const vertical: "below" | "above" =
-          spaceBelow < dropdownMaxHeight && spaceAbove > spaceBelow
-            ? "above"
-            : "below";
-
-        // 计算最大高度，确保不超出视口
-        const availableHeight = vertical === "below" ? spaceBelow : spaceAbove;
-        const maxHeight =
-          availableHeight < dropdownMaxHeight ? availableHeight : undefined;
-
-        setDropdownPosition({ horizontal, vertical, maxHeight });
-      }
-    }, [openDropdown, id]);
-
-    return (
-      <div
-        ref={dropdownContainerRef}
-        className="relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={() => setOpenDropdown(openDropdown === id ? null : id)}
-          aria-haspopup="menu"
-          aria-expanded={openDropdown === id}
-          aria-controls={dropdownContentId}
-          className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
-            active || openDropdown === id
-              ? isDark
-                ? "bg-primary-900/40 text-primary-400"
-                : "bg-primary-50 text-primary-600"
-              : isDark
-                ? "text-gray-300 hover:bg-slate-700"
-                : "text-gray-600 hover:bg-gray-100"
-          }`}
-        >
-          <Icon size={20} aria-hidden="true" />
-          <span className="text-sm font-medium">{label}</span>
-          <ChevronDown
-            size={14}
-            aria-hidden="true"
-            className={`transition-transform duration-200 ${openDropdown === id ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        {openDropdown === id && (
-          <div
-            id={dropdownContentId}
-            className={`absolute ${
-              dropdownPosition.vertical === "below"
-                ? "top-full mt-2"
-                : "bottom-full mb-2"
-            } ${
-              dropdownPosition.horizontal === "left" ? "left-0" : "right-0"
-            } p-2 rounded-xl shadow-2xl border w-56 z-50 flex flex-col gap-1 ${themeClasses.dropdown} animate-in fade-in zoom-in-95 duration-150`}
-            style={{
-              maxHeight: dropdownPosition.maxHeight
-                ? `${dropdownPosition.maxHeight}px`
-                : undefined,
-              overflowY: dropdownPosition.maxHeight ? "auto" : undefined,
-            }}
-          >
-            {children}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const MenuItem = ({
-    onClick,
-    icon: Icon,
-    label,
-    active,
-    colorClass,
-    activeClass,
-    disabled,
-    children,
-    keepOpenOnChildClick,
-    keepDropdownOpen,
-    subMenuOpen,
-    onSubMenuToggle,
-    shortcutHint,
-  }: {
-    onClick?: () => void;
-    icon: React.ComponentType<{ size?: number | string; className?: string }>;
-    label: string;
-    active?: boolean;
-    colorClass?: string;
-    activeClass?: string;
-    disabled?: boolean;
-    children?: React.ReactNode;
-    keepOpenOnChildClick?: boolean;
-    keepDropdownOpen?: boolean;
-    subMenuOpen?: boolean;
-    onSubMenuToggle?: () => void;
-    shortcutHint?: string | null;
-  }) => {
-    const [internalSubMenuOpen, setInternalSubMenuOpen] = useState(false);
-    const [subMenuPosition, setSubMenuPosition] = useState({
-      horizontal: "right" as "right" | "left",
-      maxHeight: undefined as number | undefined,
-    });
-    const closeTimerRef = useRef<ReturnType<typeof setTimeout>>();
-    const menuContainerRef = useRef<HTMLDivElement>(null);
-
-    const isOpen =
-      keepOpenOnChildClick && subMenuOpen !== undefined
-        ? subMenuOpen
-        : internalSubMenuOpen;
-
-    const handleToggle = keepOpenOnChildClick
-      ? onSubMenuToggle || (() => setInternalSubMenuOpen(!internalSubMenuOpen))
-      : undefined;
-
-    // 检测子菜单位置和可用空间
-    useEffect(() => {
-      if (isOpen && menuContainerRef.current) {
-        const rect = menuContainerRef.current.getBoundingClientRect();
-        const submenuWidth = 192; // w-48 = 12rem = 192px
-        const padding = 8;
-
-        // 水平方向：右侧空间不足则翻转到左侧
-        const horizontal: "right" | "left" =
-          rect.right + submenuWidth > window.innerWidth ? "left" : "right";
-
-        // 垂直方向：计算可用高度，确保不超出视口底部
-        const availableHeight = window.innerHeight - rect.top - padding;
-        const maxHeight = availableHeight < 400 ? availableHeight : undefined;
-
-        setSubMenuPosition({ horizontal, maxHeight });
-      }
-    }, [isOpen]);
-
-    // 清理关闭定时器
-    useEffect(() => {
-      return () => {
-        if (closeTimerRef.current) {
-          clearTimeout(closeTimerRef.current);
-        }
-      };
-    }, []);
-
-    const handleOpen = useCallback(() => {
-      if (children && !keepOpenOnChildClick) {
-        if (closeTimerRef.current) {
-          clearTimeout(closeTimerRef.current);
-        }
-        setInternalSubMenuOpen(true);
-      }
-    }, [children, keepOpenOnChildClick]);
-
-    const handleClose = useCallback(() => {
-      if (children && !keepOpenOnChildClick) {
-        closeTimerRef.current = setTimeout(() => {
-          setInternalSubMenuOpen(false);
-        }, 150);
-      }
-    }, [children, keepOpenOnChildClick]);
-
-    return (
-      <div
-        ref={menuContainerRef}
-        className="relative w-full"
-        onMouseEnter={handleOpen}
-        onMouseLeave={handleClose}
-      >
-        <button
-          disabled={disabled}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (children && keepOpenOnChildClick) {
-              handleToggle?.();
-            } else if (!children) {
-              onClick?.();
-              if (!keepDropdownOpen) {
-                setOpenDropdown(null);
-              }
-            }
-          }}
-          aria-pressed={active}
-          className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
-            disabled
-              ? themeClasses.button.disabled
-              : active
-                ? activeClass ||
-                  (isDark
-                    ? "bg-primary-900/30 text-primary-400"
-                    : "bg-primary-50 text-primary-600")
-                : `${themeClasses.itemHover} ${colorClass || (isDark ? "text-gray-300" : "text-gray-700")}`
-          }`}
-        >
-          <Icon size={18} className="flex-shrink-0" aria-hidden="true" />
-          <span className="flex-grow text-left font-medium">{label}</span>
-          {shortcutHint && (
-            <kbd
-              className={`hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded border mr-1 ${
-                isDark
-                  ? "bg-slate-800 border-slate-700 text-slate-400"
-                  : "bg-gray-100 border-gray-200 text-gray-500"
-              }`}
-            >
-              {shortcutHint}
-            </kbd>
-          )}
-          {children && (
-            <ChevronRight
-              size={14}
-              aria-hidden="true"
-              className={`opacity-50 transition-transform ${isOpen && keepOpenOnChildClick ? "rotate-90" : ""}`}
-            />
-          )}
-        </button>
-
-        {children && isOpen && (
-          <div
-            className={`absolute top-0 ${
-              subMenuPosition.horizontal === "right"
-                ? "left-full ml-1"
-                : "right-full mr-1"
-            } p-2 rounded-xl shadow-2xl border w-48 z-50 flex flex-col gap-1 ${themeClasses.dropdown} animate-in fade-in ${
-              subMenuPosition.horizontal === "right"
-                ? "slide-in-from-left-2"
-                : "slide-in-from-right-2"
-            } duration-150`}
-            style={{
-              maxHeight: subMenuPosition.maxHeight
-                ? `${subMenuPosition.maxHeight}px`
-                : undefined,
-              overflowY: subMenuPosition.maxHeight ? "auto" : undefined,
-            }}
-            onClick={(e) => {
-              if (keepOpenOnChildClick) {
-                e.stopPropagation();
-              }
-            }}
-          >
-            {children}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   // Mobile Layout
   if (isMobile) {
     return (
       <>
-        <MobileBottomNav />
+        {renderMobileBottomNav()}
         <AnimatePresence>
-          {mobileMenuOpen && (
-            <MobileBottomSheet
-              type={mobileMenuOpen}
-              onClose={() => setMobileMenuOpen(null)}
-            />
-          )}
+          {mobileMenuOpen &&
+            renderMobileBottomSheet({
+              type: mobileMenuOpen,
+              onClose: () => setMobileMenuOpen(null),
+            })}
         </AnimatePresence>
       </>
     );
@@ -1344,6 +1409,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
 
   // Desktop Layout - Priority Sorted with Dropdowns
   return (
+    <ToolbarContext.Provider value={toolbarContextValue}>
     <div
       data-tour={dataTour}
       role="toolbar"
@@ -1500,7 +1566,13 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               <div
                 className={`w-px h-6 mx-1 ${isDark ? "bg-slate-700" : "bg-gray-200"}`}
               />
-              <BatchMenu />
+              <BatchMenu
+                selectedNodeIds={selectedNodeIds}
+                onBatchDelete={onBatchDelete}
+                batchDeleteProgress={batchDeleteProgress}
+                onBatchColorUpdate={onBatchColorUpdate}
+                onBatchLevelUpdate={onBatchLevelUpdate}
+              />
             </>
           )}
         </div>
@@ -1692,6 +1764,13 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
               />
             ))}
           </div>
+        </div>
+        <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
+        <div className="px-3 py-2">
+          <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-2 font-bold uppercase">
+            {t("graphEditor.toolbar.nodeLanguage")}
+          </div>
+          <NodeLanguageSwitcher />
         </div>
         {viewMode === "quadrant" && regions && regions.length > 0 && (
           <>
@@ -2120,6 +2199,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         )}
       </DropdownButton>
     </div>
+    </ToolbarContext.Provider>
   );
 };
 

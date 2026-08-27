@@ -2,11 +2,9 @@
   "title": "Style Settings",
   "tabs": {
     "colors": "Color Scheme",
+    "nodes": "Node Style",
     "links": "Link Style",
-    "animations": "Animation",
-    "nodes": "Node Size",
-    "edges": "Edge Width",
-    "edgeSettings": "Edge Settings"
+    "edges": "Edge Settings"
   },
   "colorScheme": {
     "selectTitle": "Choose a color scheme",
@@ -22,6 +20,7 @@
     "bezier": "Bezier"
   },
   "linkAnimations": {
+    "title": "Link Animation",
     "none": "None",
     "flow": "Flow",
     "pulse": "Pulse",
@@ -29,10 +28,14 @@
   },
   "animationDesc": {
     "title": "Animation Description",
-    "flow": "The dashed line on the connection will flow continuously",
+    "flow": "A bright highlight travels along the line, creating an energy-flow effect",
     "pulse": "The connection will have a breathing-like brightening and dimming effect",
     "dash": "Displayed as a dashed line style",
     "none": "No animation effect is displayed"
+  },
+  "nodeGlow": {
+    "title": "Node Glow",
+    "description": "Render a soft gradient glow around every node"
   },
   "nodeSizeMode": {
     "title": "Node Size Mode",

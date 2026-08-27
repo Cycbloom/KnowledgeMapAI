@@ -249,6 +249,7 @@ export const GraphEditor = () => {
   const [colorScheme, setColorScheme] = useState<ColorScheme>("default");
   const [linkStyle, setLinkStyle] = useState<LinkStyle>("curved");
   const [linkAnimation, setLinkAnimation] = useState<LinkAnimation>("none");
+  const [nodeGlow, setNodeGlow] = useState(false);
   const [nodeSizeMode, setNodeSizeMode] = useState<NodeSizeMode>("fixed");
   const [edgeWidthMode, setEdgeWidthMode] = useState<EdgeWidthMode>("fixed");
   const [coloringMode, setColoringMode] = useState<GraphColorMode>("level"); // Default to level (structure) as requested
@@ -1423,6 +1424,7 @@ export const GraphEditor = () => {
                 edgeDisplayMode={edgeDisplayMode}
                 multiSelectedNodeIds={selectedNodeIds}
                 onMarqueeSelect={handleMarqueeSelect}
+                nodeGlow={nodeGlow}
               />
               </ErrorBoundary>
           )}
@@ -1711,6 +1713,8 @@ export const GraphEditor = () => {
           edgeWidthMode={edgeWidthMode}
           onEdgeWidthModeChange={setEdgeWidthMode}
           coloringMode={coloringMode}
+          nodeGlow={nodeGlow}
+          onNodeGlowChange={setNodeGlow}
           onOpenRelationshipTypeSettings={handleOpenRelationshipTypeSettings}
         />
       </Suspense>

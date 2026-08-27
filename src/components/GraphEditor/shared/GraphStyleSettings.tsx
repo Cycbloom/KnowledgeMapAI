@@ -38,12 +38,17 @@ interface GraphStyleSettingsProps {
   edgeWidthMode?: EdgeWidthMode;
   onEdgeWidthModeChange?: (mode: EdgeWidthMode) => void;
   coloringMode?: GraphColorMode;
+  /** 全局「节点光晕」开关 */
+  nodeGlow?: boolean;
+  onNodeGlowChange?: (enabled: boolean) => void;
   showLabels?: boolean;
   onShowLabelsChange?: (show: boolean) => void;
   showArrows?: boolean;
   onShowArrowsChange?: (show: boolean) => void;
   onOpenRelationshipTypeSettings?: () => void;
 }
+
+type TabId = 'colors' | 'nodes' | 'links' | 'edges';
 
 export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   isOpen,
@@ -59,6 +64,8 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   edgeWidthMode = 'fixed',
   onEdgeWidthModeChange,
   coloringMode = 'level',
+  nodeGlow = false,
+  onNodeGlowChange,
   showLabels = true,
   onShowLabelsChange,
   showArrows = true,
@@ -67,7 +74,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
 }) => {
   const { t } = useTranslation();
   const titleId = useId();
-  const [activeTab, setActiveTab] = useState<'colors' | 'links' | 'animations' | 'nodes' | 'edges' | 'edgeSettings'>('colors');
+  const [activeTab, setActiveTab] = useState<TabId>('colors');
   const containerRef = useFocusTrap({ enabled: isOpen, restoreFocus: true });
   useEscapeKey(onClose, isOpen);
 
@@ -76,14 +83,12 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   const panelIdPrefix = `${tablistId}-panel`;
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  const tabs = [
+  const tabs: { id: TabId; label: string }[] = [
     { id: 'colors', label: t('graphStyleSettings.tabs.colors') },
-    { id: 'links', label: t('graphStyleSettings.tabs.links') },
-    { id: 'animations', label: t('graphStyleSettings.tabs.animations') },
     { id: 'nodes', label: t('graphStyleSettings.tabs.nodes') },
+    { id: 'links', label: t('graphStyleSettings.tabs.links') },
     { id: 'edges', label: t('graphStyleSettings.tabs.edges') },
-    { id: 'edgeSettings', label: t('graphStyleSettings.tabs.edgeSettings') },
-  ] as const;
+  ];
 
   const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
     switch (e.key) {
@@ -163,108 +168,26 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
         </div>
 
         <div className="flex border-b border-gray-200 dark:border-slate-500" role="tablist" aria-label={t('graphStyleSettings.title')}>
-          <button
-            ref={(el) => { tabRefs.current[0] = el; }}
-            role="tab"
-            id={`${tabIdPrefix}-colors`}
-            aria-selected={activeTab === 'colors'}
-            aria-controls={`${panelIdPrefix}-colors`}
-            tabIndex={activeTab === 'colors' ? 0 : -1}
-            onKeyDown={(e) => handleTabKeyDown(e, 0)}
-            onClick={() => setActiveTab('colors')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === 'colors'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            {t('graphStyleSettings.tabs.colors')}
-          </button>
-          <button
-            ref={(el) => { tabRefs.current[1] = el; }}
-            role="tab"
-            id={`${tabIdPrefix}-links`}
-            aria-selected={activeTab === 'links'}
-            aria-controls={`${panelIdPrefix}-links`}
-            tabIndex={activeTab === 'links' ? 0 : -1}
-            onKeyDown={(e) => handleTabKeyDown(e, 1)}
-            onClick={() => setActiveTab('links')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === 'links'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            {t('graphStyleSettings.tabs.links')}
-          </button>
-          <button
-            ref={(el) => { tabRefs.current[2] = el; }}
-            role="tab"
-            id={`${tabIdPrefix}-animations`}
-            aria-selected={activeTab === 'animations'}
-            aria-controls={`${panelIdPrefix}-animations`}
-            tabIndex={activeTab === 'animations' ? 0 : -1}
-            onKeyDown={(e) => handleTabKeyDown(e, 2)}
-            onClick={() => setActiveTab('animations')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === 'animations'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            {t('graphStyleSettings.tabs.animations')}
-          </button>
-          <button
-            ref={(el) => { tabRefs.current[3] = el; }}
-            role="tab"
-            id={`${tabIdPrefix}-nodes`}
-            aria-selected={activeTab === 'nodes'}
-            aria-controls={`${panelIdPrefix}-nodes`}
-            tabIndex={activeTab === 'nodes' ? 0 : -1}
-            onKeyDown={(e) => handleTabKeyDown(e, 3)}
-            onClick={() => setActiveTab('nodes')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === 'nodes'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            {t('graphStyleSettings.tabs.nodes')}
-          </button>
-          <button
-            ref={(el) => { tabRefs.current[4] = el; }}
-            role="tab"
-            id={`${tabIdPrefix}-edges`}
-            aria-selected={activeTab === 'edges'}
-            aria-controls={`${panelIdPrefix}-edges`}
-            tabIndex={activeTab === 'edges' ? 0 : -1}
-            onKeyDown={(e) => handleTabKeyDown(e, 4)}
-            onClick={() => setActiveTab('edges')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === 'edges'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            {t('graphStyleSettings.tabs.edges')}
-          </button>
-          <button
-            ref={(el) => { tabRefs.current[5] = el; }}
-            role="tab"
-            id={`${tabIdPrefix}-edgeSettings`}
-            aria-selected={activeTab === 'edgeSettings'}
-            aria-controls={`${panelIdPrefix}-edgeSettings`}
-            tabIndex={activeTab === 'edgeSettings' ? 0 : -1}
-            onKeyDown={(e) => handleTabKeyDown(e, 5)}
-            onClick={() => setActiveTab('edgeSettings')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === 'edgeSettings'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            {t('graphStyleSettings.tabs.edgeSettings')}
-          </button>
+          {tabs.map((tab, index) => (
+            <button
+              key={tab.id}
+              ref={(el) => { tabRefs.current[index] = el; }}
+              role="tab"
+              id={`${tabIdPrefix}-${tab.id}`}
+              aria-selected={activeTab === tab.id}
+              aria-controls={`${panelIdPrefix}-${tab.id}`}
+              tabIndex={activeTab === tab.id ? 0 : -1}
+              onKeyDown={(e) => handleTabKeyDown(e, index)}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'text-primary-600 border-b-2 border-primary-600'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[60vh]">
@@ -299,7 +222,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                   </p>
                 </div>
               )}
-              
+
               <div>
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.colorScheme.selectTitle')}</h3>
                 <div className="grid grid-cols-3 gap-3">
@@ -326,9 +249,9 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                         <div className="flex items-center space-x-2">
                           <div className="flex space-x-1">
                             {previewColors.map((color, idx) => (
-                              <div 
-                                key={idx} 
-                                className="w-3 h-3 rounded-full" 
+                              <div
+                                key={idx}
+                                className="w-3 h-3 rounded-full"
                                 style={{ backgroundColor: color }}
                               />
                             ))}
@@ -359,15 +282,61 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                         currentColors.learning.primary,
                         currentColors.locked.primary
                       ].map((color, idx) => (
-                        <div 
-                          key={idx} 
-                          className="w-8 h-8 rounded-full" 
+                        <div
+                          key={idx}
+                          className="w-8 h-8 rounded-full"
                           style={{ backgroundColor: color }}
                         />
                       ));
                     })()}
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'nodes' && (
+            <div
+              role="tabpanel"
+              id={`${panelIdPrefix}-nodes`}
+              aria-labelledby={`${tabIdPrefix}-nodes`}
+              tabIndex={0}
+              className="space-y-4"
+            >
+              <div>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.nodeSizeMode.title')}</h3>
+                <div className="space-y-2">
+                  {[
+                    { key: 'fixed' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.fixed.name'), description: t('graphStyleSettings.nodeSizeMode.fixed.description') },
+                    { key: 'importance' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.importance.name'), description: t('graphStyleSettings.nodeSizeMode.importance.description') },
+                    { key: 'degree' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.degree.name'), description: t('graphStyleSettings.nodeSizeMode.degree.description') },
+                    { key: 'children' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.children.name'), description: t('graphStyleSettings.nodeSizeMode.children.description') }
+                  ].map((mode) => (
+                    <button
+                      key={mode.key}
+                      onClick={() => onNodeSizeModeChange?.(mode.key)}
+                      className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                        nodeSizeMode === mode.key
+                          ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
+                          : 'border-gray-200 dark:border-slate-500 hover:border-gray-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="font-medium text-gray-900 dark:text-white">{mode.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{mode.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                <div>
+                  <div className="font-medium text-gray-900 dark:text-white">{t('graphStyleSettings.nodeGlow.title')}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphStyleSettings.nodeGlow.description')}</div>
+                </div>
+                <ToggleSwitch
+                  checked={nodeGlow}
+                  onChange={(checked) => onNodeGlowChange?.(checked)}
+                />
               </div>
             </div>
           )}
@@ -414,106 +383,8 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                   ))}
                 </div>
               </div>
-            </div>
-          )}
-
-          {activeTab === 'animations' && (
-            <div
-              role="tabpanel"
-              id={`${panelIdPrefix}-animations`}
-              aria-labelledby={`${tabIdPrefix}-animations`}
-              tabIndex={0}
-              className="space-y-4"
-            >
-              <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.tabs.animations')}</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {linkAnimations.map((animation) => (
-                    <button
-                      key={animation.key}
-                      onClick={() => onLinkAnimationChange(animation.key)}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        currentLinkAnimation === animation.key
-                          ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                          : 'border-gray-200 dark:border-slate-500 hover:border-gray-300 dark:hover:border-slate-600'
-                      }`}
-                    >
-                      <div className="flex items-center justify-center">
-                        <svg aria-hidden="true" width="100" height="40" viewBox="0 0 100 40">
-                          <path
-                            d="M 10 20 Q 50 10 90 20"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeDasharray={animation.key === 'dash' ? '5, 5' : animation.key === 'flow' ? '10, 10' : 'none'}
-                            className={animation.key !== 'none' ? 'animate-pulse' : ''}
-                          />
-                        </svg>
-                      </div>
-                      <span className="text-sm text-gray-700 dark:text-gray-300 mt-2 block">{animation.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               <div className="pt-4 border-t border-gray-200 dark:border-slate-500">
-                <div className="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-primary-900 dark:text-primary-100 mb-2">{t('graphStyleSettings.animationDesc.title')}</h4>
-                  <ul className="text-xs text-primary-800 dark:text-primary-200 space-y-1">
-                    <li>• <strong>{t('graphStyleSettings.linkAnimations.flow')}</strong>: {t('graphStyleSettings.animationDesc.flow')}</li>
-                    <li>• <strong>{t('graphStyleSettings.linkAnimations.pulse')}</strong>: {t('graphStyleSettings.animationDesc.pulse')}</li>
-                    <li>• <strong>{t('graphStyleSettings.linkAnimations.dash')}</strong>: {t('graphStyleSettings.animationDesc.dash')}</li>
-                    <li>• <strong>{t('graphStyleSettings.linkAnimations.none')}</strong>: {t('graphStyleSettings.animationDesc.none')}</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'nodes' && (
-            <div
-              role="tabpanel"
-              id={`${panelIdPrefix}-nodes`}
-              aria-labelledby={`${tabIdPrefix}-nodes`}
-              tabIndex={0}
-              className="space-y-4"
-            >
-              <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.nodeSizeMode.title')}</h3>
-                <div className="space-y-2">
-                  {[
-                    { key: 'fixed' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.fixed.name'), description: t('graphStyleSettings.nodeSizeMode.fixed.description') },
-                    { key: 'importance' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.importance.name'), description: t('graphStyleSettings.nodeSizeMode.importance.description') },
-                    { key: 'degree' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.degree.name'), description: t('graphStyleSettings.nodeSizeMode.degree.description') },
-                    { key: 'children' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.children.name'), description: t('graphStyleSettings.nodeSizeMode.children.description') }
-                  ].map((mode) => (
-                    <button
-                      key={mode.key}
-                      onClick={() => onNodeSizeModeChange?.(mode.key)}
-                      className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
-                        nodeSizeMode === mode.key
-                          ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                          : 'border-gray-200 dark:border-slate-500 hover:border-gray-300 dark:hover:border-slate-600'
-                      }`}
-                    >
-                      <div className="font-medium text-gray-900 dark:text-white">{mode.name}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{mode.description}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'edges' && (
-            <div
-              role="tabpanel"
-              id={`${panelIdPrefix}-edges`}
-              aria-labelledby={`${tabIdPrefix}-edges`}
-              tabIndex={0}
-              className="space-y-4"
-            >
-              <div>
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.edgeWidthMode.title')}</h3>
                 <div className="space-y-2">
                   {[
@@ -536,14 +407,72 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                   ))}
                 </div>
               </div>
+
+              <div className="pt-4 border-t border-gray-200 dark:border-slate-500">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.linkAnimations.title')}</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {linkAnimations.map((animation) => (
+                    <button
+                      key={animation.key}
+                      onClick={() => onLinkAnimationChange(animation.key)}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        currentLinkAnimation === animation.key
+                          ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
+                          : 'border-gray-200 dark:border-slate-500 hover:border-gray-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center">
+                        <svg aria-hidden="true" width="100" height="40" viewBox="0 0 100 40">
+                          <path
+                            d="M 10 20 Q 50 10 90 20"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeDasharray={animation.key === 'dash' ? '5, 5' : 'none'}
+                            className={animation.key === 'pulse' ? 'animate-pulse' : ''}
+                          />
+                          {animation.key === 'flow' && (
+                            <path
+                              d="M 10 20 Q 50 10 90 20"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              pathLength={1}
+                              strokeDasharray="0.2 0.8"
+                              style={{ animation: 'flowPreview 1.4s linear infinite' }}
+                            />
+                          )}
+                          <style>
+                            {`@keyframes flowPreview { to { stroke-dashoffset: -1; } }`}
+                          </style>
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300 mt-2 block">{animation.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-200 dark:border-slate-500">
+                <div className="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-primary-900 dark:text-primary-100 mb-2">{t('graphStyleSettings.animationDesc.title')}</h4>
+                  <ul className="text-xs text-primary-800 dark:text-primary-200 space-y-1">
+                    <li>• <strong>{t('graphStyleSettings.linkAnimations.flow')}</strong>: {t('graphStyleSettings.animationDesc.flow')}</li>
+                    <li>• <strong>{t('graphStyleSettings.linkAnimations.pulse')}</strong>: {t('graphStyleSettings.animationDesc.pulse')}</li>
+                    <li>• <strong>{t('graphStyleSettings.linkAnimations.dash')}</strong>: {t('graphStyleSettings.animationDesc.dash')}</li>
+                    <li>• <strong>{t('graphStyleSettings.linkAnimations.none')}</strong>: {t('graphStyleSettings.animationDesc.none')}</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
 
-          {activeTab === 'edgeSettings' && (
+          {activeTab === 'edges' && (
             <div
               role="tabpanel"
-              id={`${panelIdPrefix}-edgeSettings`}
-              aria-labelledby={`${tabIdPrefix}-edgeSettings`}
+              id={`${panelIdPrefix}-edges`}
+              aria-labelledby={`${tabIdPrefix}-edges`}
               tabIndex={0}
               className="space-y-4"
             >
@@ -557,7 +486,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                   onChange={(checked) => onShowLabelsChange?.(checked)}
                 />
               </div>
-              
+
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
                 <div>
                   <div className="font-medium text-gray-900 dark:text-white">{t('graphStyleSettings.edgeSettings.showArrows')}</div>
@@ -568,7 +497,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                   onChange={(checked) => onShowArrowsChange?.(checked)}
                 />
               </div>
-              
+
               {onOpenRelationshipTypeSettings && (
                 <div className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
                   <div className="flex items-center justify-between">
@@ -585,7 +514,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                   </div>
                 </div>
               )}
-              
+
               <div>
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.edgeSettings.commonRelationshipTypes')}</h4>
                 <div className="grid grid-cols-2 gap-2">

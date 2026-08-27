@@ -207,12 +207,11 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
 
   const animationStyle = useMemo(() => {
     const baseTransition = 'stroke-width 0.2s, opacity 0.2s';
-    
+
     switch (linkAnimation) {
       case 'flow':
+        // 基础线保持实线，由叠加的高亮光点在线上流动
         return {
-          strokeDasharray: '10, 10',
-          animation: 'dash 1s linear infinite',
           transition: baseTransition
         };
       case 'pulse':
@@ -240,6 +239,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   const midY = (source.y + target.y) / 2;
   const arrowId = `arrow-${link.id}`;
   const arrowSize = Math.max(4, Math.min(8, linkStyleConfig.strokeWidth * 2));
+  const isFlow = linkAnimation === 'flow';
 
   const handleContextMenu = (e: React.MouseEvent) => {
     if (onContextMenu) {
@@ -256,6 +256,11 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
           @keyframes dash {
             to {
               stroke-dashoffset: -20;
+            }
+          }
+          @keyframes flowDash {
+            to {
+              stroke-dashoffset: -1;
             }
           }
           @keyframes pulse {
@@ -306,6 +311,34 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
         markerEnd={linkStyleConfig.showArrow ? `url(#${arrowId})` : undefined}
         onContextMenu={handleContextMenu}
       />
+      {isFlow && (
+        <>
+          {/* 流动高光：基础线之上的柔和光晕层 */}
+          <path
+            d={pathData}
+            fill="none"
+            stroke={linkStyleConfig.strokeColor}
+            strokeWidth={linkStyleConfig.strokeWidth * 3.2}
+            strokeLinecap="round"
+            opacity={0.35}
+            pathLength={1}
+            strokeDasharray="0.18 0.82"
+            style={{ animation: 'flowDash 1.4s linear infinite', filter: 'blur(1.5px)' }}
+          />
+          {/* 流动高光：明亮光点沿线前进 */}
+          <path
+            d={pathData}
+            fill="none"
+            stroke={linkStyleConfig.strokeColor}
+            strokeWidth={linkStyleConfig.strokeWidth + 1.5}
+            strokeLinecap="round"
+            opacity={0.95}
+            pathLength={1}
+            strokeDasharray="0.18 0.82"
+            style={{ animation: 'flowDash 1.4s linear infinite' }}
+          />
+        </>
+      )}
       {showLabels && edgeDisplayMode !== 'simplified' && edgeLabel && (
         <g>
           <rect

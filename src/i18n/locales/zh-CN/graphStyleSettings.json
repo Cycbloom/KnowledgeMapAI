@@ -2,11 +2,9 @@
   "title": "样式设置",
   "tabs": {
     "colors": "配色方案",
-    "links": "连接线样式",
-    "animations": "动画效果",
-    "nodes": "节点大小",
-    "edges": "边粗细",
-    "edgeSettings": "边设置"
+    "nodes": "节点样式",
+    "links": "连线样式",
+    "edges": "边属性"
   },
   "colorScheme": {
     "selectTitle": "选择配色方案",
@@ -22,6 +20,7 @@
     "bezier": "贝塞尔"
   },
   "linkAnimations": {
+    "title": "连线动画",
     "none": "无",
     "flow": "流动",
     "pulse": "脉冲",
@@ -29,10 +28,14 @@
   },
   "animationDesc": {
     "title": "动画说明",
-    "flow": "连接线上的虚线会持续流动",
+    "flow": "一个明亮光点沿连接线流动，形成能量传递效果",
     "pulse": "连接线会有呼吸般的明暗变化",
     "dash": "显示为虚线样式",
     "none": "不显示任何动画效果"
+  },
+  "nodeGlow": {
+    "title": "节点光晕",
+    "description": "为所有节点渲染柔和的渐变光晕"
   },
   "nodeSizeMode": {
     "title": "节点大小模式",

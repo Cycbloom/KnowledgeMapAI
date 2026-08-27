@@ -74,6 +74,8 @@ interface MindMapNodeProps {
   childCount?: number;
   levelMap?: Map<string, NodeLevel>;
   importanceMaps?: NodeImportanceMaps;
+  /** 全局「节点光晕」开关：开启时所有层级节点都渲染光晕 */
+  nodeGlow?: boolean;
 }
 
 // 提取到函数外部，避免每次调用都创建新对象
@@ -157,6 +159,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   childCount = 0,
   levelMap,
   importanceMaps,
+  nodeGlow = false,
 }) => {
   /** @mastery display - 思维导图节点渲染：display_mastery 用于 decay 着色、不透明度、严重衰退标记等纯视觉效果 */
   const { t } = useTranslation();
@@ -311,6 +314,8 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
 
   const rings = useMemo(() => {
     const result = [];
+    // 全局光晕开关开启时，所有层级节点均渲染渐变光晕盘
+    const glowEnabled = nodeGlow || styleConfig.showGlow;
     for (let i = 0; i < styleConfig.rings; i++) {
       const radius = getRingRadius(
         styleConfig.baseRadius,
@@ -330,8 +335,9 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
           color={color}
           opacity={opacity}
           dashArray={styleConfig.dashArray}
-          showGlow={i === 0 && styleConfig.showGlow}
+          showGlow={i === 0 && glowEnabled}
           glowColor={colors.glow}
+          glowId={i === 0 && glowEnabled ? `glow-${node.id}` : undefined}
           gradient={styleConfig.gradient}
           gradientId={gradientId}
           enableRotation={styleConfig.animation.enablePulse && i === 0}
@@ -342,7 +348,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       );
     }
     return result;
-  }, [styleConfig, colors.primary, colors.secondary, colors.glow, node.id]);
+  }, [styleConfig, colors.primary, colors.secondary, colors.glow, node.id, nodeGlow]);
 
   const gradientDefinitions = useMemo(() => {
     const defs = [];
@@ -1098,6 +1104,7 @@ export const MindMapNode = React.memo(
       prevProps.coloringMode === nextProps.coloringMode &&
       prevProps.nodeSizeMode === nextProps.nodeSizeMode &&
       prevProps.nodeImportance === nextProps.nodeImportance &&
+      prevProps.nodeGlow === nextProps.nodeGlow &&
       nodeStatusEqual,
     );
   },

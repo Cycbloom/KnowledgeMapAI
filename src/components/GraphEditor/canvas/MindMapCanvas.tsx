@@ -77,7 +77,7 @@ const COMPARED_PROPS: readonly (keyof MindMapCanvasProps)[] = [
   // Selection & focus state
   'selectedNodeId', 'focusedNodeId', 'focusedNodeIds', 'focusedLinkIds', 'forceShowTextIds', 'highlightedPathNodeId', 'multiSelectedNodeIds',
   // Visual configuration
-  'colorScheme', 'linkStyle', 'linkAnimation', 'coloringMode', 'nodeSizeMode', 'edgeWidthMode', 'templateLayout', 'layoutMode',
+  'colorScheme', 'linkStyle', 'linkAnimation', 'coloringMode', 'nodeSizeMode', 'edgeWidthMode', 'templateLayout', 'layoutMode', 'nodeGlow',
   // Layout & sizing
   'width', 'height', 'rightPanelWidth', 'leftPanelWidth',
   // Mode flags
@@ -185,6 +185,8 @@ interface MindMapCanvasProps {
   multiSelectedNodeIds?: Set<string>;
   // Marquee (box) selection callback; additive=true means union with existing selection
   onMarqueeSelect?: (nodeIds: string[], additive: boolean) => void;
+  // 全局「节点光晕」开关：开启时所有节点渲染渐变光晕盘
+  nodeGlow?: boolean;
 }
 
 export const MindMapCanvas = React.memo(
@@ -250,6 +252,7 @@ export const MindMapCanvas = React.memo(
       edgeDisplayMode = 'full',
       multiSelectedNodeIds,
       onMarqueeSelect,
+      nodeGlow = false,
     },
     ref,
   ) => {
@@ -1196,6 +1199,7 @@ export const MindMapCanvas = React.memo(
                   childCount={semanticStrategy?.childCount ?? 0}
                   levelMap={levelMap}
                   importanceMaps={importanceMaps}
+                  nodeGlow={nodeGlow}
                 />
               );
             })}

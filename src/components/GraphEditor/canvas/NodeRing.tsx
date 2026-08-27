@@ -9,6 +9,8 @@ interface NodeRingProps {
   dashArray?: string;
   showGlow?: boolean;
   glowColor?: string;
+  /** 渐变光晕的 defs id（唯一，按节点生成）；提供时渲染径向渐变光晕盘 */
+  glowId?: string;
   gradient?: GradientConfig;
   gradientId?: string;
   enableRotation?: boolean;
@@ -25,6 +27,7 @@ export const NodeRing = React.memo(({
   dashArray,
   showGlow = false,
   glowColor,
+  glowId,
   gradient,
   gradientId,
   enableRotation = false,
@@ -58,19 +61,43 @@ export const NodeRing = React.memo(({
     };
   }, [shadowBlur, shadowColor]);
 
+  // 光晕盘半径：在节点边缘外再延伸一圈柔和辉光
+  const glowRadius = useMemo(() => {
+    return radius + Math.max(8, radius * 0.5) + strokeWidth * 2;
+  }, [radius, strokeWidth]);
+
+  const useGradientGlow = showGlow && glowColor && glowId;
+
   return (
     <g style={rotationStyle}>
       {showGlow && glowColor && (
-        <circle
-          r={radius + strokeWidth}
-          fill="none"
-          stroke={glowColor}
-          strokeWidth={strokeWidth * 2}
-          opacity={0.3}
-          style={{
-            filter: 'blur(2px)'
-          }}
-        />
+        <>
+          {useGradientGlow && (
+            <>
+              <defs>
+                <radialGradient id={glowId} cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor={glowColor} stopOpacity="0.42" />
+                  <stop offset="55%" stopColor={glowColor} stopOpacity="0.16" />
+                  <stop offset="100%" stopColor={glowColor} stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              <circle
+                r={glowRadius}
+                fill={`url(#${glowId})`}
+              />
+            </>
+          )}
+          <circle
+            r={radius + strokeWidth}
+            fill="none"
+            stroke={glowColor}
+            strokeWidth={strokeWidth * 2}
+            opacity={0.3}
+            style={{
+              filter: 'blur(2px)'
+            }}
+          />
+        </>
       )}
       <circle
         r={radius}

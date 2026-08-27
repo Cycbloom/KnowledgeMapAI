@@ -94,18 +94,13 @@ function PlanetNode({
 
   const titleInfo = useMemo(() => truncateText(node.data.title || t('graphEditor.mindMap.unnamed')), [node.data.title, t]);
 
+  // 标题/标签的稳定字号：仅与节点本身的重要性(baseSize)挂钩，不随相机距离缩放，
+  // 避免转视角时文字忽大忽小；远近阅读交给下方的距离 LOD 淡出处理
+  const titleFontSize = useMemo(() => baseSize * 0.85, [baseSize]);
+  const tagFontSize = useMemo(() => baseSize * 0.5, [baseSize]);
+
   useFrame((_, delta) => {
     const distance = camera.position.distanceTo(nodePosRef.current);
-    const baseDistance = 200;
-    const newScale = Math.max(0.3, Math.min(2, distance / baseDistance));
-
-    // 阈值节流：仅当缩放变化超过 0.05 时才更新 Text fontSize
-    if (titleTextRef.current) {
-      titleTextRef.current.fontSize = 5 * newScale;
-    }
-    if (tagTextRef.current) {
-      tagTextRef.current.fontSize = 3 * newScale;
-    }
 
     // 文字距离 LOD 计算
     // LOD 0（距离 < 150）：标题 + 标签
@@ -144,7 +139,7 @@ function PlanetNode({
         <Text
           ref={titleTextRef}
           position={[0, 0, 0]}
-          fontSize={5}
+          fontSize={titleFontSize}
           color={isDark ? '#ffffff' : '#1e293b'}
           anchorX="center"
           anchorY="bottom"
@@ -157,7 +152,7 @@ function PlanetNode({
           <Text
             ref={tagTextRef}
             position={[0, 6, 0]}
-            fontSize={3}
+            fontSize={tagFontSize}
             color={isDark ? '#94a3b8' : '#64748b'}
             anchorX="center"
             anchorY="bottom"
@@ -173,14 +168,28 @@ function PlanetNode({
 interface PlanetLinkProps {
   source: LayoutNode3D;
   target: LayoutNode3D;
+  /** 该连线与当前选中/悬停节点相邻，需要高亮 */
+  active?: boolean;
+  /** 当前是否存在选中/悬停焦点（存在时非相邻连线应降淡） */
+  hasFocal?: boolean;
 }
 
-function PlanetLink({ source, target }: PlanetLinkProps) {
+function PlanetLink({
+  source,
+  target,
+  active = false,
+  hasFocal = false,
+}: PlanetLinkProps) {
   const { camera } = useThree();
-  // 边线距离 LOD 级别
-  // LOD 0（距离 < 200）：贝塞尔曲线（21 点）
-  // LOD 1（200 <= 距离 < 500）：直线（2 端点）
-  // LOD 2（距离 >= 500）：不渲染
+  // 边线距离 LOD 级别：曲线形状始终一致，只随距离减少采样点数
+  // LOD 0（距离较近）：21 点平滑贝塞尔
+  // LOD 1（中距离）：9 点贝塞尔（略微粗放但形状不变）
+  // LOD 2（距离 >= 520）：不渲染
+  // 阈值带迟滞，避免在单一距离边界来回切换导致闪烁
+  const LOD_HI_NEXT = 260; // 近距离→中距离的离开阈值
+  const LOD_HI_BACK = 180; // 中距离→近距离的回落阈值
+  const LOD_OFF_NEXT = 520; // 中距离→隐藏的离开阈值
+  const LOD_OFF_BACK = 470; // 隐藏→中距离的回落阈值
   const [lodLevel, setLodLevel] = useState(0);
   const lodLevelRef = useRef(0);
   const frameCountRef = useRef(0);
@@ -199,10 +208,17 @@ function PlanetLink({ source, target }: PlanetLinkProps) {
     if (frameCountRef.current % 10 !== 0) return;
 
     const distance = camera.position.distanceTo(midPoint);
-    let newLod: number;
-    if (distance < 200) newLod = 0;
-    else if (distance < 500) newLod = 1;
-    else newLod = 2;
+    let newLod = lodLevelRef.current;
+    if (newLod === 0) {
+      if (distance > LOD_HI_NEXT) newLod = 1;
+      if (distance > LOD_OFF_NEXT) newLod = 2;
+    } else if (newLod === 1) {
+      if (distance < LOD_HI_BACK) newLod = 0;
+      else if (distance > LOD_OFF_NEXT) newLod = 2;
+    } else {
+      if (distance < LOD_OFF_BACK) newLod = 1;
+      if (distance < LOD_HI_BACK) newLod = 0;
+    }
 
     if (newLod !== lodLevelRef.current) {
       lodLevelRef.current = newLod;
@@ -211,19 +227,14 @@ function PlanetLink({ source, target }: PlanetLinkProps) {
   });
 
   const points = useMemo(() => {
-    if (lodLevel === 1) {
-      // 直线：仅 2 个端点
-      return [
-        [source.x, source.z, source.y] as [number, number, number],
-        [target.x, target.z, target.y] as [number, number, number]
-      ];
-    }
-    // LOD 0：贝塞尔曲线（21 点）
+    // 近距 21 点，中距 9 点：采样的是同一条贝塞尔曲线，仅在细粒度上略有差异，
+    // 因此不会出现「曲线突然变直线」的跳变
+    const segments = lodLevel === 0 ? 20 : 8;
     const start: [number, number, number] = [source.x, source.z, source.y];
     const end: [number, number, number] = [target.x, target.z, target.y];
     const mid: [number, number, number] = [
       (source.x + target.x) / 2,
-      (source.z + target.z) / 2 + 15,
+      (source.z + target.z) / 2 + 9,
       (source.y + target.y) / 2
     ];
 
@@ -232,19 +243,24 @@ function PlanetLink({ source, target }: PlanetLinkProps) {
       new THREE.Vector3(...mid),
       new THREE.Vector3(...end)
     );
-    return curve.getPoints(20).map(p => [p.x, p.y, p.z] as [number, number, number]);
+    return curve.getPoints(segments).map(p => [p.x, p.y, p.z] as [number, number, number]);
   }, [source, target, lodLevel]);
 
   // LOD 2：不渲染
   if (lodLevel === 2) return null;
 
+  // 焦点态下的连线样式：相邻连线高亮，其余降淡
+  const linkColor = active ? '#a5b4fc' : '#818cf8';
+  const linkWidth = active ? 2.8 : hasFocal ? 1.4 : 2.2;
+  const linkOpacity = active ? 0.98 : hasFocal ? 0.16 : 0.8;
+
   return (
     <Line
       points={points}
-      color="#818cf8"
-      lineWidth={1.4}
+      color={linkColor}
+      lineWidth={linkWidth}
       transparent
-      opacity={0.45}
+      opacity={linkOpacity}
     />
   );
 }
@@ -711,11 +727,18 @@ function Scene({
         const source = nodeMap.get(link.source);
         const target = nodeMap.get(link.target);
         if (!source || !target) return null;
+        // 焦点 = 当前选中或悬停的节点；相邻的连线高亮，其余降淡
+        const focalId = selectedNodeId ?? hoveredNodeId;
+        const hasFocal = !!focalId;
+        const active =
+          hasFocal && (link.source === focalId || link.target === focalId);
         return (
           <PlanetLink
             key={`${link.source}-${link.target}-${index}`}
             source={source}
             target={target}
+            active={active}
+            hasFocal={hasFocal}
           />
         );
       })}

@@ -427,7 +427,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                               <div key={idx} className="w-3 h-3 rounded-full ring-1 ring-black/5" style={{ backgroundColor: color }} />
                             ))}
                           </div>
-                          <span className="text-sm text-slate-700 dark:text-slate-300">{scheme.name}</span>
+                          <span className="text-sm text-slate-700 dark:text-slate-300">{t(scheme.name)}</span>
                         </div>
                       </OptionCard>
                     );

@@ -74,6 +74,10 @@ export const NodeRing = React.memo(({
 
   // 非圆形形状渲染外轮廓路径，圆形保持 <circle> 以复用既有优化与旋转动画
   const shapePath = shape !== 'circle' ? getNodeShapePath(shape, radius) : null;
+  // 光晕盘跟随节点形状：非圆形形状将同样式的路径放大到光晕半径
+  const glowShapePath = shape !== 'circle' ? getNodeShapePath(shape, glowRadius) : null;
+  // 光晕边缘描边也跟随形状（位于节点边缘外一圈）
+  const glowStrokePath = shape !== 'circle' ? getNodeShapePath(shape, radius + strokeWidth) : null;
 
   return (
     <g style={rotationStyle}>
@@ -88,22 +92,42 @@ export const NodeRing = React.memo(({
                   <stop offset="100%" stopColor={glowColor} stopOpacity="0" />
                 </radialGradient>
               </defs>
-              <circle
-                r={glowRadius}
-                fill={`url(#${glowId})`}
-              />
+              {glowShapePath ? (
+                <path
+                  d={glowShapePath}
+                  fill={`url(#${glowId})`}
+                />
+              ) : (
+                <circle
+                  r={glowRadius}
+                  fill={`url(#${glowId})`}
+                />
+              )}
             </>
           )}
-          <circle
-            r={radius + strokeWidth}
-            fill="none"
-            stroke={glowColor}
-            strokeWidth={strokeWidth * 2}
-            opacity={0.3}
-            style={{
-              filter: 'blur(2px)'
-            }}
-          />
+          {glowStrokePath ? (
+            <path
+              d={glowStrokePath}
+              fill="none"
+              stroke={glowColor}
+              strokeWidth={strokeWidth * 2}
+              opacity={0.3}
+              style={{
+                filter: 'blur(2px)'
+              }}
+            />
+          ) : (
+            <circle
+              r={radius + strokeWidth}
+              fill="none"
+              stroke={glowColor}
+              strokeWidth={strokeWidth * 2}
+              opacity={0.3}
+              style={{
+                filter: 'blur(2px)'
+              }}
+            />
+          )}
         </>
       )}
       {shapePath ? (

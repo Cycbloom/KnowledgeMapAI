@@ -12,6 +12,8 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore } from "../store/useStore";
 import { useGraphStyleSettingsStore } from "../store/useGraphStyleSettingsStore";
+import { useNodeDisplayLanguageStore } from "../store/useNodeDisplayLanguageStore";
+import { setNodeDisplayLanguage } from "@shared/utils/localization";
 import { message } from "../utils/messageHelper";
 import { ArrowLeft, Lock, LogIn, AlertTriangle } from "lucide-react";
 
@@ -237,6 +239,18 @@ export const GraphEditor = () => {
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
   const queryClient = useQueryClient();
+
+  // 节点内容显示语言：同步 shared 全局显示语言，变化时重新解析节点字段并刷新
+  const displayLanguage = useNodeDisplayLanguageStore(
+    (s) => s.displayLanguage,
+  );
+  useEffect(() => {
+    setNodeDisplayLanguage(displayLanguage);
+    if (id) {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(id) });
+    }
+  }, [displayLanguage, id, queryClient]);
 
   const ViewLoader = () => (
     <div className={`absolute inset-0 flex items-center justify-center backdrop-blur-sm ${isDark ? 'bg-slate-900/50' : 'bg-white/50'}`}>
@@ -998,21 +1012,32 @@ export const GraphEditor = () => {
     [id, nodes, mutations, queryClient, t],
   );
 
-  /** 应用节点翻译：把翻译后的 title/content 写回 knowledge_points */
+  /** 应用节点翻译：把翻译后的 title/content/summary 写入目标语言 key */
   const handleApplyNodeTranslation = useCallback(
     async (
-      translations: Array<{ node_id: string; title: string; content?: string }>,
-      _targetLanguage: string,
+      translations: Array<{
+        node_id: string;
+        title: string;
+        content?: string;
+        summary?: string;
+      }>,
+      targetLanguage: string,
     ) => {
       if (!id) return;
       let appliedCount = 0;
       for (const tr of translations) {
         const node = nodes.find((n) => n.id === tr.node_id);
         if (!node) continue;
-        const data: { title?: string; content?: string } = {};
+        const data: {
+          title?: string;
+          content?: string;
+          summary?: string;
+          language?: string;
+        } = { language: targetLanguage };
         if (tr.title && tr.title !== node.title) data.title = tr.title;
         if (tr.content && tr.content !== node.content) data.content = tr.content;
-        if (Object.keys(data).length === 0) {
+        if (tr.summary && tr.summary !== node.summary) data.summary = tr.summary;
+        if (!data.title && !data.content && !data.summary) {
           appliedCount++;
           continue;
         }
@@ -1024,7 +1049,7 @@ export const GraphEditor = () => {
           });
           appliedCount++;
         } catch (err) {
-          console.error(`Apply translation to node ${tr.node_id} failed:`, err);
+          console.warn(`Apply translation to node ${tr.node_id} failed:`, err);
         }
       }
       if (appliedCount > 0) {
@@ -2028,7 +2053,12 @@ export const GraphEditor = () => {
         <NodeTranslatePanel
           isOpen={isNodeTranslateOpen}
           onClose={() => setIsNodeTranslateOpen(false)}
-          nodes={nodes.map((n) => ({ id: n.id, title: n.title, content: n.content }))}
+          nodes={nodes.map((n) => ({
+            id: n.id,
+            title: n.title,
+            content: n.content,
+            summary: n.summary,
+          }))}
           onApply={handleApplyNodeTranslation}
         />
       </Suspense>

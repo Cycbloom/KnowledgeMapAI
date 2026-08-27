@@ -60,7 +60,7 @@
     "translate": "AI 翻译",
     "translating": "翻译中...",
     "translateFailed": "翻译失败，请重试",
-    "previewHint": "预览：翻译将覆盖节点原有的标题与内容",
+    "previewHint": "预览：翻译将节点标题、内容与摘要写入所选语言",
     "original": "原文",
     "apply": "应用翻译",
     "applying": "应用中...",
@@ -69,6 +69,9 @@
     "partialApplied": "已应用 {{count}}/{{total}} 个节点的翻译",
     "reset": "重新翻译",
     "cancel": "取消"
+  },
+  "nodeLanguageSwitcher": {
+    "label": "节点内容显示语言"
   },
   "export": {
     "title": "导出 PDF 报告",

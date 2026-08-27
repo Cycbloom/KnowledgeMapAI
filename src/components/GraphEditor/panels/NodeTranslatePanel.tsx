@@ -16,12 +16,13 @@ interface NodeTranslation {
   node_id: string;
   title: string;
   content?: string;
+  summary?: string;
 }
 
 interface NodeTranslatePanelProps {
   isOpen: boolean;
   onClose: () => void;
-  nodes: Array<{ id: string; title: string; content?: string }>;
+  nodes: Array<{ id: string; title: string; content?: string; summary?: string }>;
   onApply: (
     translations: NodeTranslation[],
     targetLanguage: string,
@@ -216,6 +217,11 @@ export const NodeTranslatePanel: React.FC<NodeTranslatePanelProps> = ({
                       <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
                         {tr.title}
                       </div>
+                      {tr.summary && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                          {tr.summary}
+                        </p>
+                      )}
                       {tr.content && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
                           {tr.content}

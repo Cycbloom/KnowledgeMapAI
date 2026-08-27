@@ -60,7 +60,7 @@
     "translate": "AI Translate",
     "translating": "Translating...",
     "translateFailed": "Translation failed. Please retry",
-    "previewHint": "Preview: translations will overwrite the original node titles and contents",
+    "previewHint": "Preview: node title, content and summary will be written to the selected language",
     "original": "Original",
     "apply": "Apply Translations",
     "applying": "Applying...",
@@ -69,6 +69,9 @@
     "partialApplied": "Applied translations to {{count}}/{{total}} nodes",
     "reset": "Re-translate",
     "cancel": "Cancel"
+  },
+  "nodeLanguageSwitcher": {
+    "label": "Node content display language"
   },
   "export": {
     "title": "Export PDF Report",

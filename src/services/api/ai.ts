@@ -478,7 +478,12 @@ export const aiApi: IAiApi = {
   },
 
   translateNodes: (data: {
-    nodes: Array<{ id: string; title: string; content?: string }>;
+    nodes: Array<{
+      id: string;
+      title: string;
+      content?: string;
+      summary?: string;
+    }>;
     target_language: string;
   }) => {
     const payload = injectAIConfig(
@@ -490,6 +495,7 @@ export const aiApi: IAiApi = {
         node_id: string;
         title: string;
         content?: string;
+        summary?: string;
       }>;
       usedDefault: boolean;
     }>("/ai/translate-nodes", {

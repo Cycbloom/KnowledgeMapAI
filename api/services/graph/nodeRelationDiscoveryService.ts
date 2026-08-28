@@ -2,12 +2,11 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
 import { withAIMonitoring } from "../ai/aiMonitor";
-import { parseAIResponse } from "../ai/utils";
 import {
   withTimeoutAndRetry,
   TimeoutError,
   RetryError,
-  DEFAULT_TIMEOUT,
+  LONG_TIMEOUT,
 } from "../../../shared/utils/retry";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
@@ -36,6 +35,9 @@ const MIN_CONFIDENCE = 0.6;
 
 /** 单次发现最多返回的建议数 */
 const DEFAULT_MAX_SUGGESTIONS = 10;
+
+/** AI 返回内容为空或 JSON 无效时的最大解析重试次数 */
+const MAX_PARSE_RETRIES = 2;
 
 interface DiscoverNodeRelationsOptions {
   max_suggestions?: number;
@@ -166,9 +168,43 @@ export class NodeRelationDiscoveryService {
 
     const model = provider.model;
 
-    let parsed: { suggestions?: AIRelationSuggestion[] };
+    // 多轮纠正式解析：模型偶发返回空内容或截断 JSON 时，
+    // 把失败输出回填为 assistant 消息并追加纠正指令重试（与 auto_graph_expand 同模式）。
+    const messages: Array<{
+      role: "system" | "user" | "assistant";
+      content: string;
+    }> = [
+      { role: "system", content: systemPrompt },
+      {
+        role: "user",
+        content: `请分析这些节点之间的关系，输出 JSON。`,
+      },
+    ];
+
+    const callWithRetry = () =>
+      withTimeoutAndRetry(
+        () =>
+          provider.client.chat.completions.create({
+            messages,
+            model,
+            response_format: { type: "json_object" },
+            max_tokens: 32000,
+          }),
+        {
+          timeout: LONG_TIMEOUT,
+          maxRetries: 2,
+          onRetry: (attempt, error) => {
+            logger.warn(
+              `[node_relation_discovery] retry attempt ${attempt}: ${error.message}`,
+            );
+          },
+        },
+      );
+
+    let parsed: { suggestions?: AIRelationSuggestion[] } | undefined;
+
     try {
-      parsed = await withAIMonitoring(
+      await withAIMonitoring(
         {
           operation: "node_relation_discovery",
           provider: provider.providerType,
@@ -180,39 +216,34 @@ export class NodeRelationDiscoveryService {
           },
         },
         async () => {
-          const completion = await withTimeoutAndRetry(
-            () =>
-              provider.client.chat.completions.create({
-                messages: [
-                  { role: "system", content: systemPrompt },
-                  {
-                    role: "user",
-                    content: `请分析这些节点之间的关系，输出 JSON。`,
-                  },
-                ],
-                model,
-                response_format: { type: "json_object" },
-                max_tokens: 3000,
-              }),
-            {
-              timeout: DEFAULT_TIMEOUT,
-              maxRetries: 2,
-              onRetry: (attempt, error) => {
-                logger.warn(
-                  `[node_relation_discovery] retry attempt ${attempt}: ${error.message}`,
-                );
-              },
-            },
-          );
+          let completion = await callWithRetry();
 
-          const content = completion.choices[0].message.content || "";
-          return {
-            result: parseAIResponse<{ suggestions?: AIRelationSuggestion[] }>(
-              content,
-              "Node Relation Discovery",
-            ),
-            usage: completion.usage,
-          };
+          for (let attempt = 0; attempt < MAX_PARSE_RETRIES; attempt++) {
+            const content = completion.choices[0]?.message?.content || "";
+            try {
+              parsed = JSON.parse(content) as {
+                suggestions?: AIRelationSuggestion[];
+              };
+              break;
+            } catch (_e) {
+              logger.warn(
+                `[node_relation_discovery] JSON 解析失败（第 ${attempt + 1} 次），尝试修复`,
+                {
+                  finishReason: completion.choices[0]?.finish_reason,
+                  contentLength: content.length,
+                },
+              );
+              messages.push({ role: "assistant", content });
+              messages.push({
+                role: "user",
+                content:
+                  "上一条模型输出为空或 JSON 无效。请仅输出一份完整、合法的 JSON，结构必须为 {\"suggestions\":[{\"source_id\":\"...\",\"target_id\":\"...\",\"relationship_type\":\"...\",\"confidence\":0.85,\"reason\":\"...\"}]}，不要包含代码块标记或任何解释文字。",
+              });
+              completion = await callWithRetry();
+            }
+          }
+
+          return { result: parsed?.suggestions ?? [], usage: completion.usage };
         },
       );
     } catch (error: unknown) {
@@ -228,6 +259,12 @@ export class NodeRelationDiscoveryService {
       }
       throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
         message: err.message || "节点关系发现失败",
+      });
+    }
+
+    if (!parsed) {
+      throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, {
+        message: "Empty AI response for Node Relation Discovery",
       });
     }
 

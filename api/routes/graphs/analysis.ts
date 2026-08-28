@@ -23,10 +23,6 @@ const batchNodeStatusSchema = z.object({
   graph_ids: z.array(z.string().uuid()).min(1).max(20),
 });
 
-const discoverNodeRelationsSchema = z.object({
-  max_suggestions: z.number().min(1).max(30).optional().default(10),
-});
-
 const applyNodeRelationsSchema = z.object({
   suggestions: z
     .array(
@@ -186,27 +182,9 @@ router.post(
   },
 );
 
-// Discover non-hierarchical relationships between nodes via AI (Auth Required)
-router.post(
-  "/:id/discover-node-relations",
-  requireAuth,
-  validate({ params: uuidParamsSchema, body: discoverNodeRelationsSchema }),
-  async (req: AuthedRequest, res: Response) => {
-    const { id } = req.params;
-    const userId = req.user.id;
-    const { max_suggestions } = req.body;
-
-    const suggestions = await nodeRelationDiscoveryService.discoverNodeRelations(
-      req.supabase,
-      userId,
-      id,
-      { max_suggestions },
-    );
-    res.json({ suggestions });
-  },
-);
-
 // Batch apply AI node relation suggestions to create edges (Auth Required)
+// 说明：关系发现已改为任务中心后台任务（discover_node_relations），
+// 建议结果在任务完成后从 output_data 读取；此处仅保留同步建边。
 router.post(
   "/:id/apply-node-relations",
   requireAuth,

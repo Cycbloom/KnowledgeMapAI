@@ -252,11 +252,6 @@ export interface IGraphsApi {
     analysis_summary: { total_gaps: number; high_priority_count: number };
   }>;
 
-  discoverNodeRelations(
-    graphId: string,
-    data?: { max_suggestions?: number },
-  ): Promise<{ suggestions: NodeRelationSuggestion[] }>;
-
   applyNodeRelations(
     graphId: string,
     suggestions: NodeRelationSuggestion[],

@@ -417,18 +417,6 @@ export const graphsApi: IGraphsApi = {
       body: JSON.stringify(options || {}),
     }),
 
-  discoverNodeRelations: (
-    graphId: string,
-    data?: { max_suggestions?: number },
-  ): Promise<{ suggestions: NodeRelationSuggestion[] }> =>
-    request<{ suggestions: NodeRelationSuggestion[] }>(
-      `/graphs/${graphId}/discover-node-relations`,
-      {
-        method: "POST",
-        body: JSON.stringify(data || {}),
-      },
-    ),
-
   applyNodeRelations: (
     graphId: string,
     suggestions: NodeRelationSuggestion[],

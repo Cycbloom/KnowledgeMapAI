@@ -2,6 +2,10 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { conceptAggregationService, normalizeTitle } from "./conceptAggregationService";
 import { logger } from "../../utils/logger";
 import { notDeleted } from "../common/softDeleteHelper";
+import {
+  resolveLocalizedText,
+  type LocalizedText,
+} from "../../../shared/utils/localization";
 import type { AINodeData } from "./autoGraphService";
 
 const MERGE_THRESHOLD = parseFloat(
@@ -52,7 +56,10 @@ export class AutoGraphMergeService {
           embedding?: number[];
         } | null;
         if (kp) {
-          normalizedTitleToKpId.set(normalizeTitle(kp.title), kp.id);
+          normalizedTitleToKpId.set(
+            normalizeTitle(resolveLocalizedText(kp.title as LocalizedText)),
+            kp.id,
+          );
           if (kp.embedding) {
             embeddingMap.set(kp.id, {
               kpId: kp.id,

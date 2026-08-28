@@ -70,6 +70,7 @@
   "embeddingGeneration": "Embedding Generation",
   "reviewGeneration": "Review task generation",
   "translateNodes": "Translate Nodes",
+  "discoverNodeRelations": "Discover Node Relations",
   "searchPlaceholder": "Search tasks...",
   "noSearchResults": "No matching tasks found",
   "clear": "Clear",

@@ -1,11 +1,22 @@
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { X, GitMerge, Loader2, Check, AlertTriangle, ScanSearch } from "lucide-react";
+import {
+  X,
+  GitMerge,
+  Loader2,
+  Check,
+  AlertTriangle,
+  ScanSearch,
+  Sparkles,
+  SearchCode,
+  Info,
+} from "lucide-react";
 import { useFocusTrap, useEscapeKey } from "../../../hooks/common";
 import {
   findSimilarNodePairs,
   formatSimilarity,
   type NodeSimilarityPair,
+  type SimilaritySource,
 } from "../../../utils/graph/nodeSimilarity";
 
 interface SimilarNodesPanelProps {
@@ -14,6 +25,8 @@ interface SimilarNodesPanelProps {
   nodes: Array<{ id: string; title: string; content?: string }>;
   onMerge: (keeperId: string, removeId: string) => Promise<boolean>;
   onNodeClick?: (nodeId: string) => void;
+  /** 可选：节点 ID → 语义向量。传入后开启「语义优先」模式。 */
+  embeddingsMap?: Map<string, number[]>;
 }
 
 export const SimilarNodesPanel: React.FC<SimilarNodesPanelProps> = ({
@@ -22,22 +35,47 @@ export const SimilarNodesPanel: React.FC<SimilarNodesPanelProps> = ({
   nodes,
   onMerge,
   onNodeClick,
+  embeddingsMap,
 }) => {
   const { t } = useTranslation();
+
+  const SourceBadge: React.FC<{ source: SimilaritySource }> = ({ source }) => {
+    if (source === "vector") {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50">
+          <Sparkles size={10} />
+          {t("graphEditor.similarNodes.sourceSemantic")}
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-600/60 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-500/40">
+        <SearchCode size={10} />
+        {t("graphEditor.similarNodes.sourceHeuristic")}
+      </span>
+    );
+  };
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => onClose(), isOpen);
 
   const [mergingId, setMergingId] = useState<string | null>(null);
   const [donePairs, setDonePairs] = useState<Set<string>>(new Set());
 
-  const pairs = useMemo(() => {
-    if (!isOpen || nodes.length < 2) return [];
-    return findSimilarNodePairs(nodes, 0.72, 50);
-  }, [isOpen, nodes]);
+  const { pairs, meta } = useMemo(() => {
+    if (!isOpen || nodes.length < 2) {
+      return {
+        pairs: [] as NodeSimilarityPair[],
+        meta: { missingEmbeddingCount: 0, totalNodes: nodes.length },
+      };
+    }
+    return findSimilarNodePairs(nodes, 0.72, 50, embeddingsMap);
+  }, [isOpen, nodes, embeddingsMap]);
 
   if (!isOpen) return null;
 
   const pairKey = (p: NodeSimilarityPair) => `${p.a.id}|${p.b.id}`;
+  const showMissingHint =
+    meta.totalNodes > 0 && meta.missingEmbeddingCount > 0;
 
   const handleMerge = async (p: NodeSimilarityPair) => {
     const key = pairKey(p);
@@ -45,7 +83,7 @@ export const SimilarNodesPanel: React.FC<SimilarNodesPanelProps> = ({
     try {
       const ok = await onMerge(p.a.id, p.b.id);
       if (ok) {
-        setDonePairs(prev => new Set(prev).add(key));
+        setDonePairs((prev) => new Set(prev).add(key));
       }
     } finally {
       setMergingId(null);
@@ -78,6 +116,19 @@ export const SimilarNodesPanel: React.FC<SimilarNodesPanelProps> = ({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+          {/* 缺向量提示 */}
+          {showMissingHint && (
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200/70 dark:border-blue-800/50 text-blue-700 dark:text-blue-200">
+              <Info size={16} className="mt-0.5 flex-shrink-0" />
+              <p className="text-xs leading-relaxed">
+                {t("graphEditor.similarNodes.missingEmbeddingsHint", {
+                  missing: meta.missingEmbeddingCount,
+                  total: meta.totalNodes,
+                })}
+              </p>
+            </div>
+          )}
+
           {nodes.length < 2 ? (
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {t("graphEditor.similarNodes.needAtLeastTwo")}
@@ -114,17 +165,20 @@ export const SimilarNodesPanel: React.FC<SimilarNodesPanelProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3 mb-2">
-                      <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded ${
-                          p.score >= 0.85
-                            ? "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300"
-                            : p.score >= 0.78
-                              ? "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300"
-                              : "bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300"
-                        }`}
-                      >
-                        {formatSimilarity(p.score)}
-                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`text-xs font-bold px-2 py-0.5 rounded ${
+                            p.score >= 0.85
+                              ? "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300"
+                              : p.score >= 0.78
+                                ? "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300"
+                                : "bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300"
+                          }`}
+                        >
+                          {formatSimilarity(p.score)}
+                        </span>
+                        <SourceBadge source={p.source} />
+                      </div>
                       {isDone && (
                         <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                           <Check size={14} />

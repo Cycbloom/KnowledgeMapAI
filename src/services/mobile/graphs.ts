@@ -805,10 +805,6 @@ export const mobileGraphsApi: IGraphsApi = {
     throw new NotSupportedError("getKnowledgeGaps");
   },
 
-  discoverNodeRelations: async (_graphId: string, _data?: { max_suggestions?: number }) => {
-    throw new NotSupportedError("discoverNodeRelations");
-  },
-
   applyNodeRelations: async (
     _graphId: string,
     _suggestions: NodeRelationSuggestion[],

@@ -36,7 +36,10 @@
     "merged": "已合并",
     "mergeSuccess": "节点合并成功",
     "mergeFailed": "节点合并失败",
-    "close": "关闭"
+    "close": "关闭",
+    "missingEmbeddingsHint": "{{missing}}/{{total}} 个节点缺少语义向量，启发式结果可能不准。建议先点击工具栏的「生成语义向量」以获取精准检测。",
+    "sourceSemantic": "语义",
+    "sourceHeuristic": "启发式"
   },
   "smartStyle": {
     "title": "智能配色 / 图标",
@@ -143,27 +146,6 @@
     }
   },
   "graphAnalysis": {
-    "title": "图谱分析",
-    "tabOverview": "概览",
-    "tabStructure": "结构分析",
-    "tabConnections": "连接建议",
-    "tabConnectionsWithCount": "连接建议 ({{count}})",
-    "loadFailed": "加载分析数据失败: {{message}}",
-    "healthScore": "健康度评分",
-    "nodeCount": "节点数",
-    "edgeCount": "连接数",
-    "avgDepth": "平均深度",
-    "avgDegree": "平均连接度",
-    "levelDistribution": "层级分布",
-    "centralNodes": "核心节点 (按连接度排序)",
-    "connectionCount": "{{count}} 连接",
-    "nodesWithManyChildren": "子节点较多的节点",
-    "childrenCount": "{{count}} 个子节点",
-    "issuesTitle": "需要关注的问题",
-    "isolatedNodes": "孤立节点: {{count}} 个",
-    "nodesWithoutContent": "缺少内容的节点: {{count}} 个",
-    "createConnection": "创建连接",
-    "loadFailedMessage": "无法加载分析数据",
     "health": {
       "isolatedNodes": "{{count}} 个孤立节点",
       "disconnectedComponents": "{{count}} 个不连通的组件",
@@ -175,20 +157,26 @@
     "connections": {
       "sameParent": "同属于 \"{{parentTitle}}\" 的子节点",
       "unknownParent": "未知"
-    },
+    }
+  },
+  "connectionSuggestions": {
+    "title": "连接建议",
     "nodeRelationDiscovery": {
       "title": "AI 关系发现",
       "description": "AI 分析节点间的语义关联，推荐值得建立的非层级连线（依赖 / 相似 / 时序 / 交互 / 因果）。",
       "hierarchicalHint": "不会生成父子（层级）关系连线，保持图谱树状结构。",
       "discover": "发现关系",
       "discovering": "发现中...",
-      "noSuggestions": "暂无关系建议",
       "empty": "点击上方按钮，AI 将分析图谱内的节点关系",
+      "count": "连接建议 ({{count}})",
       "confidence": "置信度",
       "apply": "应用",
       "applyAll": "全部应用",
       "applying": "应用中...",
       "applied": "已应用",
+      "submitted": "关系发现任务已提交至任务中心",
+      "submittedHint": "任务已加入任务中心",
+      "noSuggestions": "暂无关系建议",
       "discoveredToast": "发现 {{count}} 条关系建议",
       "discoverFailed": "关系发现失败: {{error}}",
       "appliedToast": "已应用 {{count}} 条关系连线",
@@ -303,6 +291,7 @@
     "generateQuestions": "生成测试题",
     "importOutline": "大纲导入建图",
     "findSimilarNodes": "相似节点检测",
+    "discoverNodeRelations": "节点关系发现",
     "smartStyle": "智能配色 / 图标",
     "translateNodes": "节点翻译",
     "pathfinding": "路径导航",
@@ -351,7 +340,6 @@
     "darkMode": "深色模式",
     "focusMode": "专注模式 (F)",
     "graphSettings": "图谱参数设置",
-    "graphAnalysis": "图谱分析",
     "exportGraph": "导出图谱",
     "exportMarkdown": "Markdown",
     "exportPPT": "PPT 大纲",
@@ -569,7 +557,6 @@
   "empty": {
     "branches": "暂无分支",
     "diffs": "两个版本之间没有差异",
-    "connectionSuggestions": "暂无连接建议",
     "snapshots": "暂无快照",
     "versionHistory": "暂无版本历史",
     "commandPaletteNoResult": "未找到相关结果",

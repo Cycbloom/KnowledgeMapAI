@@ -13,6 +13,10 @@ import {
   type ConceptSource,
   type ReferenceBook,
 } from '@shared/types/graph';
+import {
+  resolveLocalizedText,
+  type LocalizedText,
+} from '../../../shared/utils/localization';
 import { notDeleted } from '../common/softDeleteHelper';
 
 const MERGE_THRESHOLD = parseFloat(process.env.CONCEPT_MERGE_THRESHOLD || "0.85");
@@ -101,14 +105,15 @@ class LiteratureApplyService {
             embedding?: number[];
           };
           if (kp) {
+            const title = resolveLocalizedText(kp.title as LocalizedText);
             existingNodesMap.set(kp.id, {
               id: kp.id,
-              title: kp.title,
+              title,
               embedding: kp.embedding,
             });
-            normalizedTitleMap.set(normalizeTitle(kp.title), {
+            normalizedTitleMap.set(normalizeTitle(title), {
               id: kp.id,
-              title: kp.title,
+              title,
               embedding: kp.embedding,
             });
           }

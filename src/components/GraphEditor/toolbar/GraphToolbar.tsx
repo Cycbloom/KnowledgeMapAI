@@ -100,6 +100,7 @@ interface GraphToolbarProps {
   onGenerateQuestions?: () => void;
   onImportOutline?: () => void;
   onFindSimilarNodes?: () => void;
+  onDiscoverRelations?: () => void;
   onSmartStyle?: () => void;
   onTranslateNodes?: () => void;
 
@@ -166,7 +167,6 @@ interface GraphToolbarProps {
   onReplayTutorial?: () => void;
   dataTour?: string;
   onShare?: () => void;
-  onOpenAnalysis?: () => void;
   onOpenConceptAggregation?: () => void;
 
   // Presentation
@@ -794,6 +794,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   onGenerateQuestions,
   onImportOutline,
   onFindSimilarNodes,
+  onDiscoverRelations,
   onSmartStyle,
   onTranslateNodes,
   onGenerateEmbeddings,
@@ -838,7 +839,6 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   setIsTimelineVisible,
   isTutorMode: _isTutorMode,
   onToggleTutorMode: _onToggleTutorMode,
-  onOpenAnalysis,
   onOpenConceptAggregation,
   onTogglePresentation,
   onTogglePodcast,
@@ -1057,6 +1057,16 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             onClose();
           },
           active: isPathfindingMode,
+        },
+        {
+          icon: Network,
+          label: t("graphEditor.toolbar.discoverNodeRelations"),
+          onClick: () => {
+            onDiscoverRelations?.();
+            onClose();
+          },
+          disabled: !onDiscoverRelations,
+          color: "text-teal-500",
         },
       ],
       view: [
@@ -1660,6 +1670,13 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             colorClass="text-amber-500"
           />
           <MenuItem
+            onClick={onDiscoverRelations}
+            disabled={!onDiscoverRelations}
+            icon={Network}
+            label={t("graphEditor.toolbar.discoverNodeRelations")}
+            colorClass="text-teal-500"
+          />
+          <MenuItem
             onClick={onSmartStyle}
             disabled={!onSmartStyle}
             icon={Palette}
@@ -2136,12 +2153,6 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           icon={Settings}
           label={t("graphEditor.toolbar.graphSettings")}
           shortcutHint={settingsShortcut}
-        />
-        <MenuItem
-          onClick={onOpenAnalysis}
-          icon={BarChart3}
-          label={t("graphEditor.toolbar.graphAnalysis")}
-          disabled={!onOpenAnalysis}
         />
         <MenuItem
           onClick={onOpenConceptAggregation}

@@ -111,10 +111,10 @@ const GraphSidebarManager = lazy(() =>
   ),
 );
 
-const GraphAnalysisPanel = lazy(() =>
-  import("../components/GraphEditor/panels/GraphAnalysisPanel").then(
+const ConnectionSuggestionsPanel = lazy(() =>
+  import("../components/GraphEditor/panels/ConnectionSuggestionsPanel").then(
     (module) => ({
-      default: module.GraphAnalysisPanel,
+      default: module.ConnectionSuggestionsPanel,
     }),
   ),
 );
@@ -438,8 +438,8 @@ export const GraphEditor = () => {
     setIsTimelineVisible,
     historicalAlternativeBranches,
     setHistoricalAlternativeBranches,
-    isAnalysisPanelOpen,
-    setIsAnalysisPanelOpen,
+    isConnectionSuggestionsOpen,
+    setIsConnectionSuggestionsOpen,
     // Presentation state
     isPresentationMode,
     setIsPresentationMode,
@@ -1792,7 +1792,7 @@ export const GraphEditor = () => {
         })}
         onOpenShortcutSettings={() => panelState.setIsShortcutHelpOpen(true)}
         onShare={() => setIsShareModalOpen(true)}
-        onOpenAnalysis={() => setIsAnalysisPanelOpen(true)}
+        onDiscoverRelations={() => setIsConnectionSuggestionsOpen(true)}
         onOpenConceptAggregation={() => panelState.setIsConceptAggregationOpen(true)}
         viewMode={viewMode}
         setViewMode={setViewMode}
@@ -1992,6 +1992,7 @@ export const GraphEditor = () => {
             const node = nodes.find((n) => n.id === nodeId);
             if (node) handleNodeClick(node);
           }}
+          embeddingsMap={embeddingsMap}
         />
       </Suspense>
 
@@ -2028,13 +2029,12 @@ export const GraphEditor = () => {
         <QueryErrorResetBoundary>
           {({ reset }) => (
             <ErrorBoundary onReset={reset} variant="panel">
-              <GraphAnalysisPanel
+              <ConnectionSuggestionsPanel
                 graphId={id || ""}
-                isOpen={isAnalysisPanelOpen}
-                onClose={() => setIsAnalysisPanelOpen(false)}
+                isOpen={isConnectionSuggestionsOpen}
+                onClose={() => setIsConnectionSuggestionsOpen(false)}
                 nodes={nodes}
                 onNodeClick={handleAnalysisNodeClick}
-                onCreateConnection={handleConnectNodes}
               />
             </ErrorBoundary>
           )}

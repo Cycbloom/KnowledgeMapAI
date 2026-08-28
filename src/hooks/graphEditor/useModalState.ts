@@ -17,8 +17,8 @@ export interface ModalState {
   setIsShareModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isHelpOpen: boolean;
   setIsHelpOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  isAnalysisPanelOpen: boolean;
-  setIsAnalysisPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isConnectionSuggestionsOpen: boolean;
+  setIsConnectionSuggestionsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const useModalState = (): ModalState => {
@@ -30,7 +30,8 @@ export const useModalState = (): ModalState => {
   const [isExportPDFOpen, setIsExportPDFOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
+  const [isConnectionSuggestionsOpen, setIsConnectionSuggestionsOpen] =
+    useState(false);
 
   return {
     isPodcastModalOpen,
@@ -49,7 +50,7 @@ export const useModalState = (): ModalState => {
     setIsShareModalOpen,
     isHelpOpen,
     setIsHelpOpen,
-    isAnalysisPanelOpen,
-    setIsAnalysisPanelOpen,
+    isConnectionSuggestionsOpen,
+    setIsConnectionSuggestionsOpen,
   };
 };

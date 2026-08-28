@@ -36,7 +36,10 @@
     "merged": "Merged",
     "mergeSuccess": "Nodes merged successfully",
     "mergeFailed": "Failed to merge nodes",
-    "close": "Close"
+    "close": "Close",
+    "missingEmbeddingsHint": "{{missing}}/{{total}} nodes lack semantic embeddings, heuristic results may be inaccurate. Use the toolbar's \"Generate Embeddings\" first for precise detection.",
+    "sourceSemantic": "Semantic",
+    "sourceHeuristic": "Heuristic"
   },
   "smartStyle": {
     "title": "Smart Color / Icon",
@@ -143,27 +146,6 @@
     }
   },
   "graphAnalysis": {
-    "title": "Graph analysis",
-    "tabOverview": "Overview",
-    "tabStructure": "Structure Analysis",
-    "tabConnections": "Connection Suggestions",
-    "tabConnectionsWithCount": "Connection Suggestions ({{count}})",
-    "loadFailed": "Failed to load analysis data: {{message}}",
-    "healthScore": "Health Score",
-    "nodeCount": "Node Count",
-    "edgeCount": "Edge Count",
-    "avgDepth": "Average Depth",
-    "avgDegree": "Average Degree",
-    "levelDistribution": "Level Distribution",
-    "centralNodes": "Central Nodes (sorted by degree)",
-    "connectionCount": "{{count}} connections",
-    "nodesWithManyChildren": "Nodes with Many Children",
-    "childrenCount": "{{count}} children",
-    "issuesTitle": "Issues Needing Attention",
-    "isolatedNodes": "Isolated nodes: {{count}}",
-    "nodesWithoutContent": "Nodes without content: {{count}}",
-    "createConnection": "Create Connection",
-    "loadFailedMessage": "Unable to load analysis data",
     "health": {
       "isolatedNodes": "{{count}} isolated nodes",
       "disconnectedComponents": "{{count}} disconnected components",
@@ -175,20 +157,26 @@
     "connections": {
       "sameParent": "Child of \"{{parentTitle}}\"",
       "unknownParent": "unknown"
-    },
+    }
+  },
+  "connectionSuggestions": {
+    "title": "Connection Suggestions",
     "nodeRelationDiscovery": {
       "title": "AI Relation Discovery",
       "description": "AI analyzes semantic links between nodes and recommends non-hierarchical connections worth creating (dependency / similarity / temporal / interaction / causal).",
       "hierarchicalHint": "Parent-child (hierarchical) connections are excluded to keep the tree structure intact.",
       "discover": "Discover Relations",
       "discovering": "Discovering...",
-      "noSuggestions": "No relation suggestions yet",
       "empty": "Click the button above and AI will analyze relationships between nodes in the graph",
+      "count": "Connection Suggestions ({{count}})",
       "confidence": "Confidence",
       "apply": "Apply",
       "applyAll": "Apply All",
       "applying": "Applying...",
       "applied": "Applied",
+      "submitted": "Relation discovery task submitted to Task Center",
+      "submittedHint": "Task added to Task Center",
+      "noSuggestions": "No relation suggestions yet",
       "discoveredToast": "Discovered {{count}} relation suggestions",
       "discoverFailed": "Relation discovery failed: {{error}}",
       "appliedToast": "Applied {{count}} relation connections",
@@ -303,6 +291,7 @@
     "generateQuestions": "Generate Questions",
     "importOutline": "Import Outline to Graph",
     "findSimilarNodes": "Detect Similar Nodes",
+    "discoverNodeRelations": "Discover Node Relations",
     "smartStyle": "Smart Color / Icon",
     "translateNodes": "Translate Nodes",
     "pathfinding": "Path Navigation",
@@ -351,7 +340,6 @@
     "darkMode": "Dark Mode",
     "focusMode": "Focus Mode (F)",
     "graphSettings": "Graph Settings",
-    "graphAnalysis": "Graph Analysis",
     "exportGraph": "Export Graph",
     "exportMarkdown": "Markdown",
     "exportPPT": "PPT Outline",
@@ -569,7 +557,6 @@
   "empty": {
     "branches": "No branches",
     "diffs": "No differences between versions",
-    "connectionSuggestions": "No connection suggestions",
     "snapshots": "No snapshots",
     "versionHistory": "No version history",
     "commandPaletteNoResult": "No results found",

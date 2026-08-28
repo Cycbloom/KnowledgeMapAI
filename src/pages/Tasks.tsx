@@ -129,6 +129,8 @@ const getTypeLabel = (type: string, t: TFunction) => {
       return t("tasks.reviewGeneration");
     case "translate_nodes":
       return t("tasks.translateNodes");
+    case "discover_node_relations":
+      return t("tasks.discoverNodeRelations");
     default:
       return type;
   }

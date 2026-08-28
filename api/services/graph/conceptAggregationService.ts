@@ -17,6 +17,10 @@ import type {
   ConceptSource,
   KnowledgePoint,
 } from "../../../shared/types/graph";
+import {
+  resolveLocalizedText,
+  type LocalizedText,
+} from "../../../shared/utils/localization";
 
 const SIMILARITY_THRESHOLD = parseFloat(
   process.env.CONCEPT_MERGE_THRESHOLD || "0.85",
@@ -948,15 +952,20 @@ ${conceptList}
         const normalizedAliasSet = new Set(
           existingAliases.map((a) => normalizeTitle(a)),
         );
-        const normalizedTargetTitle = normalizeTitle(targetKp.title);
+        const normalizedTargetTitle = normalizeTitle(
+          resolveLocalizedText(targetKp.title as LocalizedText),
+        );
 
         for (const sourceKp of sourceKps) {
-          const normalizedTitle = normalizeTitle(sourceKp.title);
+          const sourceTitle = resolveLocalizedText(
+            sourceKp.title as LocalizedText,
+          );
+          const normalizedTitle = normalizeTitle(sourceTitle);
           if (
             !normalizedAliasSet.has(normalizedTitle) &&
             normalizedTitle !== normalizedTargetTitle
           ) {
-            newAliases.push(sourceKp.title);
+            newAliases.push(sourceTitle);
           }
         }
 
@@ -1099,7 +1108,9 @@ ${conceptList}
     const properties =
       (kp.properties as { aliases?: string[] }) || {};
     const existingAliases: string[] = properties.aliases || [];
-    const normalizedTitle = normalizeTitle(kp.title);
+    const normalizedTitle = normalizeTitle(
+      resolveLocalizedText(kp.title as LocalizedText),
+    );
 
     // 复杂度降低：预构建规范化别名 Set，避免 filter 内层重复 O(n) 的 some() 线性扫描
     const normalizedAliasSet = new Set(

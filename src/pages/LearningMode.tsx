@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
@@ -171,6 +171,25 @@ export const LearningMode = () => {
   const { data: graphData } = useGraphData(graphId || "");
   const { data: graphMeta } = useGraph(graphId || "");
   const _nodeStatus = graphData?.nodeStatus;
+
+  // 大纲视图的节点标题也按「节点显示语言」本地化（与右侧详情、图编辑器联动）
+  const outlineGraphData = useMemo(() => {
+    if (!graphData) return graphData;
+    return {
+      ...graphData,
+      nodes: (graphData.nodes || []).map((n) => ({
+        ...n,
+        title:
+          resolveLocalizedText(n.titleTranslations, nodeContentLang) || n.title,
+        content:
+          resolveLocalizedText(n.contentTranslations, nodeContentLang) ??
+          n.content,
+        summary:
+          resolveLocalizedText(n.summaryTranslations, nodeContentLang) ??
+          n.summary,
+      })),
+    };
+  }, [graphData, nodeContentLang]);
 
   // Task 11: 节点详情通过 useQuery 获取,RQ 自动处理 stale 请求与缓存
   const { data: node, isLoading: isNodeLoading } = useQuery({
@@ -768,7 +787,7 @@ export const LearningMode = () => {
           isMobile={isMobile} nodeId={nodeId} graphId={graphId}
           isOutlineOpen={isOutlineOpen} outlineMode={outlineMode}
           selectedLearningPathId={selectedLearningPathId} selectedNodeIds={selectedNodeIds}
-          graphData={graphData} graphMeta={graphMeta}
+          graphData={outlineGraphData} graphMeta={graphMeta}
           onNodeClick={handleNodeClick} onSelectionChange={setSelectedNodeIds}
           onBatchAction={handleBatchAction} onAddNode={() => setIsCreateNodeModalOpen(true)}
           onCreateQuizSet={handleCreateQuizSet}

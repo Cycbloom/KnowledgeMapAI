@@ -15,8 +15,14 @@ import {
   Maximize2,
   Minimize2,
   Coffee,
+  Languages,
+  MonitorSmartphone,
 } from "lucide-react";
 import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
+import {
+  useNodeDisplayLanguageStore,
+  NODE_CONTENT_LANGUAGES,
+} from "../../store/useNodeDisplayLanguageStore";
 import { useShallow } from "zustand/react/shallow";
 import { useIsMobile, useFocusTrap, useEscapeKey } from "../../hooks";
 import { READING_FONT_FAMILIES, resolveFontFamily, type ReadingFontFamilyId } from "@shared/constants/fonts";
@@ -58,12 +64,20 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
     })),
   );
 
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isMobile } = useIsMobile();
   const navigate = useNavigate();
   const titleId = useId();
   const modalRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(onClose, isOpen);
+
+  // 节点内容显示语言（共享 store，与图编辑器联动）
+  const nodeDisplayLang = useNodeDisplayLanguageStore((s) => s.displayLanguage);
+  const manuallySet = useNodeDisplayLanguageStore((s) => s.manuallySet);
+  const setNodeDisplayLang = useNodeDisplayLanguageStore(
+    (s) => s.setDisplayLanguage,
+  );
+  const nodeFollowSystem = useNodeDisplayLanguageStore((s) => s.followSystem);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -459,6 +473,94 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                     {mode.label}
                   </span>
                 </motion.button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Languages
+                size={16}
+                className="text-slate-500 dark:text-slate-400"
+              />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t("learning.settings.nodeLanguage")}
+              </span>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label={t("learning.settings.nodeLanguage")}
+              className="grid grid-cols-3 gap-2"
+            >
+              <motion.button
+                onClick={() => nodeFollowSystem(i18n.language)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                role="radio"
+                aria-checked={!manuallySet}
+                tabIndex={!manuallySet ? 0 : -1}
+                className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                  !manuallySet
+                    ? "border-primary-500 bg-gradient-to-br from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20"
+                    : "border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
+                }`}
+              >
+                <MonitorSmartphone
+                  size={20}
+                  className={
+                    !manuallySet
+                      ? "text-primary-600 dark:text-primary-400"
+                      : "text-slate-400 dark:text-slate-500"
+                  }
+                />
+                <span
+                  className={`text-xs font-medium ${
+                    !manuallySet
+                      ? "text-primary-700 dark:text-primary-300"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  {t("learning.settings.followSystem")}
+                </span>
+              </motion.button>
+              {NODE_CONTENT_LANGUAGES.map((lang) => {
+                const isSelected = manuallySet && nodeDisplayLang === lang.code;
+                return (
+                  <motion.button
+                    key={lang.code}
+                    onClick={() => setNodeDisplayLang(lang.code)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={isSelected ? 0 : -1}
+                    title={lang.label}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? "border-primary-500 bg-gradient-to-br from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20"
+                        : "border-slate-200 dark:border-slate-500 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
+                    }`}
+                  >
+                    <span
+                      className={`text-sm font-bold ${
+                        isSelected
+                          ? "text-primary-700 dark:text-primary-300"
+                          : "text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      {lang.short}
+                    </span>
+                    <span
+                      className={`text-[11px] font-medium leading-tight text-center ${
+                        isSelected
+                          ? "text-primary-700 dark:text-primary-300"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {lang.label}
+                    </span>
+                  </motion.button>
                 );
               })}
             </div>

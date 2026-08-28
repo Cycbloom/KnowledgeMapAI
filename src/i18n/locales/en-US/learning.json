@@ -72,6 +72,8 @@
     "widthFull": "Full",
     "widthComfortable": "Comfortable",
     "widthNarrow": "Narrow",
+    "nodeLanguage": "Node Language",
+    "followSystem": "Follow System",
     "aiLanguage": "AI Output Language",
     "languageAuto": "Follow Interface",
     "languageChinese": "Chinese",

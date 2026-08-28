@@ -21,6 +21,7 @@ import type { ReviewCompletedPayload } from "../../../shared/types/events";
 import { masteryCalculationService } from "./masteryCalculationService";
 import { stabilityToMasteryBaseline, computeCardDisplayMastery } from "../../../shared/utils/fsrs/masteryContract";
 import { dbCardToFSRS, mapQualityToRating } from "../../../shared/utils/fsrs/cardConversion";
+import { resolveLocalizedText } from "../../../shared/utils/localization";
 
 interface GetCardsOptions {
   userId: string;
@@ -62,8 +63,14 @@ const enrichCardWithSource = (card: StudyCard & CardSourceJoinRow): StudyCard =>
   const { knowledge_points, knowledge_graphs, ...rest } = card;
   return {
     ...rest,
-    knowledgePointTitle: knowledge_points?.title ?? null,
-    graphTitle: knowledge_graphs?.title ?? null,
+    // knowledge_points.title 为语言 key 化 JSONB（如 {"zh-CN":"标题","en-US":"Title"}），
+    // 需解析为字符串后再返回，供前端排序/分组展示使用；无来源标题时保持 null。
+    knowledgePointTitle: knowledge_points?.title
+      ? resolveLocalizedText(knowledge_points.title)
+      : null,
+    graphTitle: knowledge_graphs?.title
+      ? resolveLocalizedText(knowledge_graphs.title)
+      : null,
   };
 };
 

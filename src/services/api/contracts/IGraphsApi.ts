@@ -12,6 +12,7 @@ import type {
   CreateGraphFromTemplateData,
   GraphMapData,
   GraphRelation,
+  NodeRelationSuggestion,
 } from "@shared/types";
 import type { CreateGraphData, UpdateGraphData } from "@shared/types/api";
 import type {
@@ -249,5 +250,18 @@ export interface IGraphsApi {
   }): Promise<{
     knowledge_gaps: KnowledgeGap[];
     analysis_summary: { total_gaps: number; high_priority_count: number };
+  }>;
+
+  discoverNodeRelations(
+    graphId: string,
+    data?: { max_suggestions?: number },
+  ): Promise<{ suggestions: NodeRelationSuggestion[] }>;
+
+  applyNodeRelations(
+    graphId: string,
+    suggestions: NodeRelationSuggestion[],
+  ): Promise<{
+    applied: number;
+    skipped: Array<{ source_id: string; target_id: string; reason: string }>;
   }>;
 }

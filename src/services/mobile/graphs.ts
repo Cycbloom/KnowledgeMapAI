@@ -6,6 +6,7 @@ import type {
   StudyCardRow,
   CreateGraphFromTemplateData,
   GraphRelationType,
+  NodeRelationSuggestion,
 } from "@shared/types";
 import { toGraph } from "@shared/types/database";
 import type { NodeStatus } from "@shared/types/graph";
@@ -802,5 +803,16 @@ export const mobileGraphsApi: IGraphsApi = {
     min_importance?: "high" | "medium" | "low";
   }) => {
     throw new NotSupportedError("getKnowledgeGaps");
+  },
+
+  discoverNodeRelations: async (_graphId: string, _data?: { max_suggestions?: number }) => {
+    throw new NotSupportedError("discoverNodeRelations");
+  },
+
+  applyNodeRelations: async (
+    _graphId: string,
+    _suggestions: NodeRelationSuggestion[],
+  ) => {
+    throw new NotSupportedError("applyNodeRelations");
   },
 };

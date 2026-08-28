@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useId, useRef, useMemo, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTranslation } from "react-i18next";
-import { BarChart3, AlertTriangle, CheckCircle2, Network, Layers, Lightbulb, TrendingUp, Activity, X } from 'lucide-react';
+import { BarChart3, AlertTriangle, CheckCircle2, Network, Layers, Lightbulb, TrendingUp, Activity, X, Sparkles } from 'lucide-react';
 import { api } from '../../../services/api';
 import { message } from "../../../utils/messageHelper";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Node } from '../../../types';
 import { EmptyState } from '../../common/EmptyState';
+import { useNodeRelationDiscovery } from '../../../hooks/graphEditor';
+import { getRelationshipTypeDisplayName } from '../../../config/relationshipTypes';
 
 interface GraphAnalysis {
   nodeCount: number;
@@ -56,7 +58,24 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'overview' | 'structure' | 'connections'>('overview');
 
+  const {
+    suggestions: relationSuggestions,
+    isDiscovering,
+    isApplying,
+    appliedPairKeys,
+    discover: discoverNodeRelations,
+    applyAll: applyNodeRelations,
+  } = useNodeRelationDiscovery({ graphId });
+
   const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
+
+  const pendingSuggestions = useMemo(
+    () =>
+      relationSuggestions.filter(
+        (s) => !appliedPairKeys.has(`${s.source_id}-${s.target_id}`),
+      ),
+    [relationSuggestions, appliedPairKeys],
+  );
 
   const tablistId = useId();
   const tabIdPrefix = `${tablistId}-tab`;
@@ -230,7 +249,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
-                {t('graphEditor.graphAnalysis.tabConnectionsWithCount', { count: missingConnections.length })}
+                {t('graphEditor.graphAnalysis.tabConnectionsWithCount', { count: missingConnections.length + relationSuggestions.length })}
               </button>
             </div>
 
@@ -398,6 +417,113 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                       tabIndex={0}
                       className="space-y-3"
                     >
+                      {/* AI Relation Discovery */}
+                      <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-500">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Sparkles className="text-primary-500" size={18} />
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {t('graphEditor.graphAnalysis.nodeRelationDiscovery.title')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                          {t('graphEditor.graphAnalysis.nodeRelationDiscovery.description')}
+                        </p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">
+                          {t('graphEditor.graphAnalysis.nodeRelationDiscovery.hierarchicalHint')}
+                        </p>
+
+                        <button
+                          onClick={() => discoverNodeRelations()}
+                          disabled={isDiscovering || isApplying}
+                          className="px-3 py-1.5 text-sm bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isDiscovering
+                            ? t('graphEditor.graphAnalysis.nodeRelationDiscovery.discovering')
+                            : t('graphEditor.graphAnalysis.nodeRelationDiscovery.discover')}
+                        </button>
+
+                        {isDiscovering && (
+                          <div className="flex items-center gap-2 mt-3 text-sm text-slate-500 dark:text-slate-400">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-500"></div>
+                            <span>{t('graphEditor.graphAnalysis.nodeRelationDiscovery.discovering')}</span>
+                          </div>
+                        )}
+
+                        {!isDiscovering && pendingSuggestions.length === 0 && relationSuggestions.length === 0 && (
+                          <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                            {t('graphEditor.graphAnalysis.nodeRelationDiscovery.empty')}
+                          </div>
+                        )}
+
+                        {pendingSuggestions.length > 0 && (
+                          <>
+                            <div className="flex items-center justify-between mt-3 mb-2">
+                              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                {t('graphEditor.graphAnalysis.tabConnectionsWithCount', { count: pendingSuggestions.length })}
+                              </span>
+                              <button
+                                onClick={() => applyNodeRelations(pendingSuggestions)}
+                                disabled={isApplying}
+                                className="px-3 py-1 text-xs bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {isApplying
+                                  ? t('graphEditor.graphAnalysis.nodeRelationDiscovery.applying')
+                                  : t('graphEditor.graphAnalysis.nodeRelationDiscovery.applyAll')}
+                              </button>
+                            </div>
+                            <div className="space-y-2">
+                              {pendingSuggestions.map((suggestion, idx) => (
+                                <div
+                                  key={`${suggestion.source_id}-${suggestion.target_id}-${idx}`}
+                                  className="p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-500"
+                                >
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <button
+                                        onClick={() => onNodeClick?.(suggestion.source_id)}
+                                        className="text-sm font-medium text-primary-600 dark:text-primary-400 underline truncate"
+                                      >
+                                        {nodeById.get(suggestion.source_id)?.title || suggestion.source_title}
+                                      </button>
+                                      <span className="text-slate-400 shrink-0">→</span>
+                                      <button
+                                        onClick={() => onNodeClick?.(suggestion.target_id)}
+                                        className="text-sm font-medium text-primary-600 dark:text-primary-400 underline truncate"
+                                      >
+                                        {nodeById.get(suggestion.target_id)?.title || suggestion.target_title}
+                                      </button>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                                      <span className="px-2 py-0.5 text-xs rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                        {t((getRelationshipTypeDisplayName(suggestion.relationship_type) || suggestion.relationship_type) as never)}
+                                      </span>
+                                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                                        {t('graphEditor.graphAnalysis.nodeRelationDiscovery.confidence')}: {Math.round(suggestion.confidence * 100)}%
+                                      </span>
+                                      <button
+                                        onClick={() => applyNodeRelations([suggestion])}
+                                        disabled={isApplying}
+                                        className="px-2.5 py-1 text-xs bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {t('graphEditor.graphAnalysis.nodeRelationDiscovery.apply')}
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">{suggestion.reason}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        {!isDiscovering && relationSuggestions.length > 0 && pendingSuggestions.length === 0 && (
+                          <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                            <CheckCircle2 size={16} />
+                            <span>{t('graphEditor.graphAnalysis.nodeRelationDiscovery.applied')}</span>
+                          </div>
+                        )}
+                      </div>
+
                       {missingConnections.length === 0 ? (
                         <EmptyState
                           icon={<Lightbulb size={32} />}

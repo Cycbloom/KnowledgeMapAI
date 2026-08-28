@@ -175,6 +175,25 @@
     "connections": {
       "sameParent": "Child of \"{{parentTitle}}\"",
       "unknownParent": "unknown"
+    },
+    "nodeRelationDiscovery": {
+      "title": "AI Relation Discovery",
+      "description": "AI analyzes semantic links between nodes and recommends non-hierarchical connections worth creating (dependency / similarity / temporal / interaction / causal).",
+      "hierarchicalHint": "Parent-child (hierarchical) connections are excluded to keep the tree structure intact.",
+      "discover": "Discover Relations",
+      "discovering": "Discovering...",
+      "noSuggestions": "No relation suggestions yet",
+      "empty": "Click the button above and AI will analyze relationships between nodes in the graph",
+      "confidence": "Confidence",
+      "apply": "Apply",
+      "applyAll": "Apply All",
+      "applying": "Applying...",
+      "applied": "Applied",
+      "discoveredToast": "Discovered {{count}} relation suggestions",
+      "discoverFailed": "Relation discovery failed: {{error}}",
+      "appliedToast": "Applied {{count}} relation connections",
+      "skippedToast": "{{count}} suggestions skipped (duplicate or invalid type)",
+      "applyFailed": "Failed to apply relations: {{error}}"
     }
   },
   "aiActionSettings": {

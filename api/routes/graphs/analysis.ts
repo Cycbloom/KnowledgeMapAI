@@ -7,7 +7,7 @@ import {
 } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { uuidParamsSchema } from "../../schemas/index";
-import { graphService, analysisRouteService } from "../../services/graph";
+import { graphService, analysisRouteService, nodeRelationDiscoveryService } from "../../services/graph";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { AppError } from "../../middleware/errorHandler";
 import { logger } from "../../utils/logger";
@@ -21,6 +21,25 @@ const analyzeDomainSchema = z.object({
 
 const batchNodeStatusSchema = z.object({
   graph_ids: z.array(z.string().uuid()).min(1).max(20),
+});
+
+const discoverNodeRelationsSchema = z.object({
+  max_suggestions: z.number().min(1).max(30).optional().default(10),
+});
+
+const applyNodeRelationsSchema = z.object({
+  suggestions: z
+    .array(
+      z.object({
+        source_id: z.string().uuid(),
+        target_id: z.string().uuid(),
+        relationship_type: z.string().min(1).max(50),
+        confidence: z.number().min(0).max(1).optional(),
+        reason: z.string().max(500).optional(),
+      }),
+    )
+    .min(1)
+    .max(50),
 });
 
 const router = Router();
@@ -163,6 +182,46 @@ router.post(
       session_id,
     );
 
+    res.json(result);
+  },
+);
+
+// Discover non-hierarchical relationships between nodes via AI (Auth Required)
+router.post(
+  "/:id/discover-node-relations",
+  requireAuth,
+  validate({ params: uuidParamsSchema, body: discoverNodeRelationsSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { max_suggestions } = req.body;
+
+    const suggestions = await nodeRelationDiscoveryService.discoverNodeRelations(
+      req.supabase,
+      userId,
+      id,
+      { max_suggestions },
+    );
+    res.json({ suggestions });
+  },
+);
+
+// Batch apply AI node relation suggestions to create edges (Auth Required)
+router.post(
+  "/:id/apply-node-relations",
+  requireAuth,
+  validate({ params: uuidParamsSchema, body: applyNodeRelationsSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { suggestions } = req.body;
+
+    const result = await nodeRelationDiscoveryService.applyNodeRelations(
+      req.supabase,
+      userId,
+      id,
+      suggestions,
+    );
     res.json(result);
   },
 );

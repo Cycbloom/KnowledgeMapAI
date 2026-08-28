@@ -7,6 +7,8 @@ export type { GraphRelationType, GraphRelation, CreateRelationData } from './gra
 export { graphTemplateService, GraphTemplateService } from './graphTemplateService';
 export type { GraphTemplateNode, GraphTemplateEdge, GraphTemplateLayout, GraphTemplate, CreateGraphTemplateData, UpdateGraphTemplateData } from './graphTemplateService';
 export { edgeService, EdgeService } from './edgeService';
+export { nodeRelationDiscoveryService, NodeRelationDiscoveryService } from './nodeRelationDiscoveryService';
+export type { NodeRelationSuggestion } from '../../../shared/types/graph-edge';
 export { backlinkService, BacklinkService } from './backlinkService';
 export { graphVersionService, GraphVersionService } from './graphVersionService';
 export { knowledgePointService, KnowledgePointService } from './knowledgePointService';

@@ -11,8 +11,9 @@ import type {
   LearningPathSuggestion,
   KnowledgeGap,
   CreateGraphFromTemplateData,
-  GraphRelation,
   GraphMapData,
+  GraphRelation,
+  NodeRelationSuggestion,
 } from "@shared/types/graph";
 import type {
   CreateGraphData,
@@ -414,5 +415,32 @@ export const graphsApi: IGraphsApi = {
     }>("/graphs/knowledge-gaps", {
       method: "POST",
       body: JSON.stringify(options || {}),
+    }),
+
+  discoverNodeRelations: (
+    graphId: string,
+    data?: { max_suggestions?: number },
+  ): Promise<{ suggestions: NodeRelationSuggestion[] }> =>
+    request<{ suggestions: NodeRelationSuggestion[] }>(
+      `/graphs/${graphId}/discover-node-relations`,
+      {
+        method: "POST",
+        body: JSON.stringify(data || {}),
+      },
+    ),
+
+  applyNodeRelations: (
+    graphId: string,
+    suggestions: NodeRelationSuggestion[],
+  ): Promise<{
+    applied: number;
+    skipped: Array<{ source_id: string; target_id: string; reason: string }>;
+  }> =>
+    request<{
+      applied: number;
+      skipped: Array<{ source_id: string; target_id: string; reason: string }>;
+    }>(`/graphs/${graphId}/apply-node-relations`, {
+      method: "POST",
+      body: JSON.stringify({ suggestions }),
     }),
 };

@@ -33,6 +33,7 @@ export { useNodeStatusSets } from './useNodeStatusSets';
 export { useGraphEditorPanelState } from './useGraphEditorPanelState';
 export { useFocusNode } from './useFocusNode';
 export { useBranchSelection } from './useBranchSelection';
+export { useNodeRelationDiscovery } from './useNodeRelationDiscovery';
 
 export interface GraphRef {
   centerNode?: (nodeId: string, options?: { forceRightPanelOpen?: boolean }) => void;

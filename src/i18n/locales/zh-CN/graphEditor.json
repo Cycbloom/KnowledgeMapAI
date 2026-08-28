@@ -175,6 +175,25 @@
     "connections": {
       "sameParent": "同属于 \"{{parentTitle}}\" 的子节点",
       "unknownParent": "未知"
+    },
+    "nodeRelationDiscovery": {
+      "title": "AI 关系发现",
+      "description": "AI 分析节点间的语义关联，推荐值得建立的非层级连线（依赖 / 相似 / 时序 / 交互 / 因果）。",
+      "hierarchicalHint": "不会生成父子（层级）关系连线，保持图谱树状结构。",
+      "discover": "发现关系",
+      "discovering": "发现中...",
+      "noSuggestions": "暂无关系建议",
+      "empty": "点击上方按钮，AI 将分析图谱内的节点关系",
+      "confidence": "置信度",
+      "apply": "应用",
+      "applyAll": "全部应用",
+      "applying": "应用中...",
+      "applied": "已应用",
+      "discoveredToast": "发现 {{count}} 条关系建议",
+      "discoverFailed": "关系发现失败: {{error}}",
+      "appliedToast": "已应用 {{count}} 条关系连线",
+      "skippedToast": "{{count}} 条建议因重复或类型不符被跳过",
+      "applyFailed": "应用关系失败: {{error}}"
     }
   },
   "aiActionSettings": {

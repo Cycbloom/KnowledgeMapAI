@@ -94,13 +94,19 @@ i18n.on('languageChanged', (lng) => {
  */
 async function syncNodeDisplayLanguage(lng: string): Promise<void> {
   return new Promise((resolve) => {
-    requestAnimationFrame(() => {
+    const frameCallback = () => {
       try {
         useNodeDisplayLanguageStore.getState().applySystemLanguage(lng);
       } finally {
         resolve();
       }
-    });
+    };
+    // 非浏览器环境（如 node 测试）无 requestAnimationFrame，直接同步执行
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(frameCallback);
+    } else {
+      frameCallback();
+    }
   });
 }
 

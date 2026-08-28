@@ -38,6 +38,8 @@ import { NotificationCenter } from "../Notifications/NotificationCenter";
 import { AchievementNotification } from "../Scheduler/AchievementNotification";
 import { LevelTestNotification } from "../Learning/LevelTestNotification";
 import { useLevelTestNotificationStore } from "../../store/useLevelTestNotificationStore";
+import { RelationDiscoveryNotification } from "../GraphEditor/RelationDiscoveryNotification";
+import { useRelationDiscoveryNotificationStore } from "../../store/useRelationDiscoveryNotificationStore";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { useSwipeBack } from "../../hooks/gesture/useSwipeBack";
@@ -492,6 +494,23 @@ export const Layout = () => {
     useLevelTestNotificationStore.getState().clearNotice();
   }, []);
 
+  const relationNotice = useRelationDiscoveryNotificationStore(
+    (s) => s.notice,
+  );
+
+  const handleRelationContinue = useCallback(() => {
+    const notice = useRelationDiscoveryNotificationStore.getState().notice;
+    if (!notice) return;
+    useRelationDiscoveryNotificationStore.getState().clearNotice();
+    navigate(
+      `/graph/${notice.graphId}?relationTask=${notice.taskId}`,
+    );
+  }, [navigate]);
+
+  const handleRelationClose = useCallback(() => {
+    useRelationDiscoveryNotificationStore.getState().clearNotice();
+  }, []);
+
   if (!!token && !user && isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -750,6 +769,11 @@ export const Layout = () => {
             notice={levelTestNotice}
             onClose={handleLevelTestClose}
             onStart={handleLevelTestStart}
+          />
+          <RelationDiscoveryNotification
+            notice={relationNotice}
+            onClose={handleRelationClose}
+            onContinue={handleRelationContinue}
           />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
           {isHelpOpen && (

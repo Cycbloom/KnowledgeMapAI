@@ -42,6 +42,11 @@ import {
   Pause,
   Play,
   Ban,
+  ExternalLink,
+  FileQuestion,
+  Eye,
+  GraduationCap,
+  GitMerge,
 } from "lucide-react";
 
 const getStatusBadgeClass = (status: string) => {
@@ -722,14 +727,14 @@ export const Tasks = () => {
                           </div>
                         </div>
 
-                        <div className="flex flex-col items-end gap-2">
-                          <div className="flex items-center gap-2">
-                            {task.status === "cancelled" && (
+                        <div className="flex flex-wrap items-center justify-end gap-1.5">
+                          {task.status === "cancelled" && (
                             <button
                               onClick={() => handleRetry(task.id)}
                               disabled={retryMutation.isPending}
                               className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-md transition-colors"
                               title={t("tasks.retry")}
+                              aria-label={t("tasks.retry")}
                             >
                               <RotateCw
                                 size={18}
@@ -750,6 +755,7 @@ export const Tasks = () => {
                               disabled={pauseMutation.isPending}
                               className="p-2 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-md transition-colors"
                               title={t("tasks.pauseTask")}
+                              aria-label={t("tasks.pauseTask")}
                             >
                               <Pause size={18} />
                             </button>
@@ -761,6 +767,7 @@ export const Tasks = () => {
                               disabled={resumeMutation.isPending}
                               className="p-2 text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-md transition-colors"
                               title={t("tasks.resumeTask")}
+                              aria-label={t("tasks.resumeTask")}
                             >
                               <Play size={18} />
                             </button>
@@ -775,27 +782,9 @@ export const Tasks = () => {
                               disabled={cancelMutation.isPending}
                               className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                               title={t("tasks.cancelTask")}
+                              aria-label={t("tasks.cancelTask")}
                             >
                               <Ban size={18} />
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => handleDeleteClick(task.id)}
-                            disabled={deleteMutation.isPending}
-                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                            title={t("tasks.deleteTask")}
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                          </div>
-
-                          {graphId && (
-                            <button
-                              onClick={() => navigate(`/graph/${graphId}`)}
-                              className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 dark:border-slate-500 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white transition-colors"
-                            >
-                              {t("tasks.openGraph")}
                             </button>
                           )}
 
@@ -807,9 +796,11 @@ export const Tasks = () => {
                                     `/study?node_id=${encodeURIComponent(nodeId)}`,
                                   )
                                 }
-                                className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-primary-200 dark:border-primary-800/50 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-primary-200 dark:border-primary-800/50 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                                title={t("tasks.reviewQuestions")}
                               >
-                                {t("tasks.reviewQuestions")}
+                                <FileQuestion size={14} />
+                                <span>{t("tasks.reviewQuestions")}</span>
                               </button>
                             )}
 
@@ -821,9 +812,11 @@ export const Tasks = () => {
                                   navigate(`/graph/${graphId}`);
                                   message.info(t("tasks.openedGraph"));
                                 }}
-                                className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
+                                title={t("tasks.viewResult")}
                               >
-                                {t("tasks.viewResult")}
+                                <Eye size={14} />
+                                <span>{t("tasks.viewResult")}</span>
                               </button>
                             )}
 
@@ -837,11 +830,52 @@ export const Tasks = () => {
                                   );
                                   message.success(t("tasks.enterLearningMode"));
                                 }}
-                                className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
+                                title={t("tasks.startLearning")}
                               >
-                                {t("tasks.startLearning")}
+                                <GraduationCap size={14} />
+                                <span>{t("tasks.startLearning")}</span>
                               </button>
                             )}
+
+                          {task.status === "completed" &&
+                            graphId &&
+                            (task.title === "discover_node_relations" ||
+                              task.task_type === "discover_node_relations") && (
+                              <button
+                                onClick={() =>
+                                  navigate(
+                                    `/graph/${graphId}?relationTask=${task.id}`,
+                                  )
+                                }
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
+                                title={t("tasks.continueRelationCreation")}
+                              >
+                                <GitMerge size={14} />
+                                <span>{t("tasks.continueRelationCreation")}</span>
+                              </button>
+                            )}
+
+                          {graphId && (
+                            <button
+                              onClick={() => navigate(`/graph/${graphId}`)}
+                              className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-md transition-colors"
+                              title={t("tasks.openGraph")}
+                              aria-label={t("tasks.openGraph")}
+                            >
+                              <ExternalLink size={18} />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleDeleteClick(task.id)}
+                            disabled={deleteMutation.isPending}
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                            title={t("tasks.deleteTask")}
+                            aria-label={t("tasks.deleteTask")}
+                          >
+                            <Trash2 size={18} />
+                          </button>
                         </div>
                       </div>
                     </div>

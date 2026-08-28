@@ -71,6 +71,7 @@
   "reviewGeneration": "复习任务生成",
   "translateNodes": "节点翻译",
   "discoverNodeRelations": "节点关系发现",
+  "continueRelationCreation": "继续创建关系",
   "searchPlaceholder": "搜索任务...",
   "noSearchResults": "未找到匹配的任务",
   "clear": "清除",

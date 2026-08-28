@@ -182,6 +182,12 @@
       "appliedToast": "已应用 {{count}} 条关系连线",
       "skippedToast": "{{count}} 条建议因重复或类型不符被跳过",
       "applyFailed": "应用关系失败: {{error}}"
+    },
+    "notification": {
+      "generating": "正在分析图谱节点关系...",
+      "completed": "关系发现完成，发现 {{count}} 条建议",
+      "failed": "关系发现失败",
+      "continue": "继续创建关系"
     }
   },
   "aiActionSettings": {
@@ -404,6 +410,7 @@
     "resetView": "重置视角",
     "fitScreen": "适应屏幕",
     "zoom": "缩放: {{percent}}%",
+    "edgeLegendTitle": "连线类型",
     "statusMastered": "✓ 已掌握",
     "statusLearning": "学习中",
     "statusDue": "待复习",

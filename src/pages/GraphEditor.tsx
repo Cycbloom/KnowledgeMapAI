@@ -232,7 +232,7 @@ export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { goBack } = useNavigateBack();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const nodeIdFromUrl = searchParams.get("node_id");
   const { token, user } = useStore();
   const { t } = useTranslation();
@@ -251,6 +251,19 @@ export const GraphEditor = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.nodeDetail(id) });
     }
   }, [displayLanguage, id, queryClient]);
+
+  // 从任务中心/完成通知跳回时恢复关系发现任务（?relationTask=<taskId>），
+  // 打开连接建议面板并传入任务 ID；消费后清除 URL 参数。
+  useEffect(() => {
+    const relationTask = searchParams.get("relationTask");
+    if (!relationTask) return;
+    setResumeRelationTaskId(relationTask);
+    setIsConnectionSuggestionsOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete("relationTask");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, setSearchParams]);
 
   const ViewLoader = () => (
     <div className={`absolute inset-0 flex items-center justify-center backdrop-blur-sm ${isDark ? 'bg-slate-900/50' : 'bg-white/50'}`}>
@@ -299,6 +312,10 @@ export const GraphEditor = () => {
   const [coloringMode, setColoringMode] = useState<GraphColorMode>("level"); // Default to level (structure) as requested
   const [edgeDisplayMode, setEdgeDisplayMode] = useState<'full' | 'simplified' | 'hidden'>('full');
   const [zoomLevel, setZoomLevel] = useState(1);
+  // 从任务中心/完成通知跳回时待恢复的关系发现任务 ID
+  const [resumeRelationTaskId, setResumeRelationTaskId] = useState<
+    string | null
+  >(null);
 
   // 新增的持久化样式设置（节点形状 / 连线端点箭头 / 背景网格）
   const {
@@ -2032,9 +2049,13 @@ export const GraphEditor = () => {
               <ConnectionSuggestionsPanel
                 graphId={id || ""}
                 isOpen={isConnectionSuggestionsOpen}
-                onClose={() => setIsConnectionSuggestionsOpen(false)}
+                onClose={() => {
+                  setIsConnectionSuggestionsOpen(false);
+                  setResumeRelationTaskId(null);
+                }}
                 nodes={nodes}
                 onNodeClick={handleAnalysisNodeClick}
+                initialTaskId={resumeRelationTaskId}
               />
             </ErrorBoundary>
           )}

@@ -182,6 +182,12 @@
       "appliedToast": "Applied {{count}} relation connections",
       "skippedToast": "{{count}} suggestions skipped (duplicate or invalid type)",
       "applyFailed": "Failed to apply relations: {{error}}"
+    },
+    "notification": {
+      "generating": "Analyzing node relationships...",
+      "completed": "Relation discovery completed, found {{count}} suggestions",
+      "failed": "Relation discovery failed",
+      "continue": "Continue Creating Relations"
     }
   },
   "aiActionSettings": {
@@ -404,6 +410,7 @@
     "resetView": "Reset View",
     "fitScreen": "Fit Screen",
     "zoom": "Zoom: {{percent}}%",
+    "edgeLegendTitle": "Edge Types",
     "statusMastered": "✓ Mastered",
     "statusLearning": "Learning",
     "statusDue": "Due",

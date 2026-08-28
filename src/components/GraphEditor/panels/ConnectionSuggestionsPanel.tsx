@@ -13,6 +13,8 @@ interface ConnectionSuggestionsPanelProps {
   onClose: () => void;
   nodes: Node[];
   onNodeClick?: (nodeId: string) => void;
+  /** 从任务中心/完成通知跳回时携带的任务 ID，用于恢复建议列表 */
+  initialTaskId?: string | null;
 }
 
 /**
@@ -26,6 +28,7 @@ export const ConnectionSuggestionsPanel = React.memo(
     onClose,
     nodes,
     onNodeClick,
+    initialTaskId,
   }: ConnectionSuggestionsPanelProps) {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -38,7 +41,7 @@ export const ConnectionSuggestionsPanel = React.memo(
       taskId,
       discover: discoverNodeRelations,
       applyAll: applyNodeRelations,
-    } = useNodeRelationDiscovery({ graphId });
+    } = useNodeRelationDiscovery({ graphId, initialTaskId });
 
     const nodeById = useMemo(
       () => new Map(nodes.map((n) => [n.id, n])),

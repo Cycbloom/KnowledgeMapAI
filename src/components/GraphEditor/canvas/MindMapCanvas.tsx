@@ -35,6 +35,7 @@ import { AlternativeBranches } from "../shared/AlternativeBranches";
 import { CanvasLayout } from "./CanvasLayout";
 import { MiniMap } from "./MiniMap";
 import { ColorModeLegend } from "./HeatmapLegend";
+import { EdgeTypeLegend } from "./EdgeTypeLegend";
 import { LayoutOrganizer } from "../shared/LayoutOrganizer";
 import { NodePreviewCard } from "../shared/NodePreviewCard";
 import { MobileNodePreviewCard } from "../mobile/MobileNodePreviewCard";
@@ -1522,6 +1523,14 @@ export const MindMapCanvas = React.memo(
             {t(semanticLevelLabel, { defaultValue: '' })}
           </span>
         </div>
+
+        {/* 左下角动态连线图例：选中节点时展示与其相连边的关系类型；置于聊天按钮（bottom-16/72）上方避免遮挡 */}
+        <EdgeTypeLegend
+          edges={edges}
+          selectedNodeId={selectedNodeId}
+          isDark={isDark}
+          bottom={isMobilePreviewMode && selectedNodeId ? 340 : 112}
+        />
 
         <ColorModeLegend coloringMode={coloringMode} isDark={isDark} />
 

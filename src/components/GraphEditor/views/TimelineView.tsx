@@ -349,7 +349,7 @@ const TimelineViewComponent: React.FC<TimelineViewProps> = ({
     }
   }, [progress, sortedNodes.length]);
 
-  const handleWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     const scaleFactor = 1.1;
     const delta = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
@@ -372,6 +372,18 @@ const TimelineViewComponent: React.FC<TimelineViewProps> = ({
     transformRef.current = newTransform;
     throttledSetTransform(newTransform);
   }, [throttledSetTransform]);
+
+  // 使用原生 non-passive 监听 wheel，避免 React 合成事件 passive 限制
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    svg.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      svg.removeEventListener('wheel', handleWheel);
+    };
+  }, [svgRef, handleWheel, layout]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (e.target === svgRef.current) {
@@ -421,7 +433,6 @@ const TimelineViewComponent: React.FC<TimelineViewProps> = ({
         role="application"
         aria-label={timelineAriaLabel}
         style={{ backgroundColor: colors.background, cursor: isDragging ? 'grabbing' : 'grab' }}
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

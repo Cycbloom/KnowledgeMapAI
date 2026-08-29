@@ -1200,7 +1200,8 @@
     "unnamed": "Unnamed"
   },
   "regionHeader": {
-    "nodeCount": "{{count}} nodes"
+    "nodeCount": "{{count}} nodes",
+    "others": "Others"
   },
   "promptEditor": {
     "insertVariable": "Insert {{variable}}"

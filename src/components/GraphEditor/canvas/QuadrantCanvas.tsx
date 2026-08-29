@@ -222,7 +222,7 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
         {};
 
       visibleRegions.forEach((region) => {
-        const regionNodes = region.nodes.filter((n) => n.level !== "core");
+        const regionNodes = region.nodes;
         regionNodes.forEach((node, index) => {
           const normalizedId = normalizeId(node.id);
           if (normalizedId) {
@@ -707,12 +707,10 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
             })}
 
             {visibleRegions.map((region) => {
-              // 预计算本 region 的展示节点与节点数，替代内层循环中重复 filter 的 O(nodes²) 扫描
-              // 复杂度降低：单趟遍历同时收集展示节点与统计非 core 数量，替代两次 filter 对 region.nodes 的重复扫描
+              // 单趟遍历同时收集展示节点与统计节点数，替代重复 filter 的 O(nodes²) 扫描
               let regionNodeCount = 0;
               const regionDisplayNodes: typeof region.nodes = [];
               for (const node of region.nodes) {
-                if (node.level === "core") continue;
                 regionNodeCount++;
                 if (visibleNodeIds.has(normalizeId(node.id))) {
                   regionDisplayNodes.push(node);

@@ -1200,7 +1200,8 @@
     "unnamed": "未命名"
   },
   "regionHeader": {
-    "nodeCount": "{{count}} 个节点"
+    "nodeCount": "{{count}} 个节点",
+    "others": "其他"
   },
   "promptEditor": {
     "insertVariable": "插入 {{variable}}"

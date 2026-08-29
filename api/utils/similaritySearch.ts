@@ -93,6 +93,8 @@ export interface GraphTopicCheckOptions {
   threshold?: number;
   limit?: number;
   excludeGraphId?: string;
+  /** 跳过相似度缓存，实时查库。用于创建图谱前的去重检查，避免缓存快照看不到刚创建的图谱 */
+  bypassCache?: boolean;
 }
 
 export async function searchSimilarGraphs(
@@ -101,42 +103,42 @@ export async function searchSimilarGraphs(
   topic: string,
   options: GraphTopicCheckOptions = {}
 ): Promise<{ similarGraphs: SimilarGraph[]; embedding?: number[] }> {
-  const { threshold = 0.85, limit = 10, excludeGraphId } = options;
+  const { threshold = 0.85, limit = 10, excludeGraphId, bypassCache = false } = options;
+
+  const fetch = async () => {
+    const embedding = await aiService.generateEmbedding(topic);
+    if (!embedding) {
+      logger.warn('Failed to generate embedding for graph topic similarity search');
+      return { similarGraphs: [] };
+    }
+
+    const { data, error } = await supabase.rpc('search_similar_graphs', {
+      p_query_embedding: embedding,
+      p_user_id: userId,
+      p_match_threshold: threshold,
+      p_match_count: limit,
+      p_exclude_graph_id: excludeGraphId || null,
+    });
+
+    if (error) {
+      logger.error('Graph similarity search error:', error);
+      return { similarGraphs: [], embedding };
+    }
+
+    return {
+      similarGraphs: (data || []) as SimilarGraph[],
+      embedding
+    };
+  };
+
+  if (bypassCache) {
+    return fetch();
+  }
 
   const cacheKey = CacheKeys.SEARCH_SIMILAR(computeTextHash(topic), userId);
-
   return cacheService.getOrSet(
     cacheKey,
-    async () => {
-      try {
-        const embedding = await aiService.generateEmbedding(topic);
-        if (!embedding) {
-          logger.warn('Failed to generate embedding for graph topic similarity search');
-          return { similarGraphs: [] };
-        }
-
-        const { data, error } = await supabase.rpc('search_similar_graphs', {
-          p_query_embedding: embedding,
-          p_user_id: userId,
-          p_match_threshold: threshold,
-          p_match_count: limit,
-          p_exclude_graph_id: excludeGraphId || null,
-        });
-
-        if (error) {
-          logger.error('Graph similarity search error:', error);
-          return { similarGraphs: [], embedding };
-        }
-
-        return {
-          similarGraphs: (data || []) as SimilarGraph[],
-          embedding
-        };
-      } catch (error) {
-        logger.error('Graph similarity search failed:', error);
-        return { similarGraphs: [] };
-      }
-    },
+    fetch,
     CacheTTL.SEARCH,
     ['search']
   );

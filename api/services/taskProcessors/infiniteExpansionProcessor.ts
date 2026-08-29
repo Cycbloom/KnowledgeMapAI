@@ -17,6 +17,8 @@ import { checkDuplicateGraphTopic } from "../../utils/similaritySearch";
 import { aiService } from "../ai/aiService";
 import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
 import { pricingService } from "../ai/pricingService";
+import { appEventBus } from "../core/eventBus";
+import type { GraphCreatedPayload } from "../../../shared/types/events";
 
 interface InfiniteExpansionPayload {
   source_graph_id: string;
@@ -139,6 +141,9 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
 
       let totalGraphsCreated = 0;
       let totalNodesCreated = 0;
+      // 本任务已创建图谱的标题集合（归一化），用于同一批次内去重：
+      // 避免 AI 在同一次扩展中给多个建议返回相同标题时重复建图
+      const batchTitles = new Set<string>();
       const createdGraphs: Array<{
         id: string;
         title: string;
@@ -289,11 +294,20 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
           const suggestions = parsed[relationType] || [];
 
           for (const suggestion of suggestions.slice(0, max_graphs_per_level)) {
+            // 同一批次内去重：本任务已创建过归一化同名的图谱则跳过，避免重复建图
+            const normalizedTitle = suggestion.title.trim().toLowerCase();
+            if (batchTitles.has(normalizedTitle)) {
+              logger.info(
+                `[InfiniteExpansion] Skipping duplicate graph topic in same batch: ${suggestion.title}`,
+              );
+              continue;
+            }
+
             const duplicateCheck = await checkDuplicateGraphTopic(
               supabase,
               userId,
               suggestion.title,
-              { threshold: 0.85 },
+              { threshold: 0.85, bypassCache: true },
             );
 
             let targetGraphId: string | undefined;
@@ -332,6 +346,21 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
               if (newGraph) {
                 targetGraphId = newGraph.id;
                 totalGraphsCreated++;
+                batchTitles.add(normalizedTitle);
+
+                // 与 graphService 创建图谱保持一致：发布 graph_created 事件，
+                // 让 cacheInvalidationSubscriber 立即失效该用户的 GRAPH_MAP/USER_GRAPHS 缓存。
+                // 否则新扩展图谱要等缓存 TTL 过期后才在地图上可见，且 forceReload 无法绕过后端进程缓存。
+                appEventBus.publish(
+                  "graph_created",
+                  {
+                    graphId: newGraph.id,
+                    title: suggestion.title,
+                    userId,
+                  } as GraphCreatedPayload,
+                  userId,
+                  "infinite_expansion_processor",
+                );
 
                 if (currentDomainInfo) {
                   const { error: domainError } = await supabase

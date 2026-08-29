@@ -1737,7 +1737,7 @@ BEGIN
       'domain', g.domain,
       'node_count', COALESCE(n.cnt, 0),
       'nodes_count', COALESCE(n.cnt, 0)
-    )
+    ) ORDER BY g.last_used_at DESC NULLS LAST
   ), '[]'::jsonb) INTO v_graphs
   FROM knowledge_graphs g
   LEFT JOIN (
@@ -1747,8 +1747,7 @@ BEGIN
     GROUP BY graph_id
   ) n ON n.graph_id = g.id
   WHERE g.user_id = p_user_id
-    AND g.deleted_at IS NULL
-  ORDER BY g.last_used_at DESC NULLS LAST;
+    AND g.deleted_at IS NULL;
 
   SELECT COALESCE(jsonb_agg(
     jsonb_build_object(

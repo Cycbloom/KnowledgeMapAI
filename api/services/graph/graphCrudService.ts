@@ -42,28 +42,58 @@ export class GraphCrudService {
 
     const graphIds = (graphs || []).map((g) => g.id);
 
-    const [nodeCountsResult, relationsResult] = await Promise.all([
-      notDeleted(supabase
-        .from("graph_nodes")
-        .select("graph_id")
-        .in("graph_id", graphIds)
+    // 图较多时，若把全部 graphId 拼进 PostgREST 的 in()/or() 会超过 URL 长度上限，
+    // 导致 relations / node_count 查询直接失败（表现为图少时有边、图多时只剩节点）。
+    // 按块分批查询再合并，规避 URL 超长。
+    const CHUNK_SIZE = 50;
+    const chunks: string[][] = [];
+    for (let i = 0; i < graphIds.length; i += CHUNK_SIZE) {
+      chunks.push(graphIds.slice(i, i + CHUNK_SIZE));
+    }
+
+    const nodeCountResults = await Promise.all(
+      chunks.map((chunk) =>
+        notDeleted(
+          supabase
+            .from("graph_nodes")
+            .select("graph_id")
+            .in("graph_id", chunk),
         ),
-      supabase
-        .from("graph_relations")
-        .select(
-          "id, source_graph_id, target_graph_id, relation_type, context, metadata, created_at",
-        )
-        .or(
-          `source_graph_id.in.(${graphIds.join(
-            ",",
-          )}),target_graph_id.in.(${graphIds.join(",")})`,
-        ),
-    ]);
+      ),
+    );
+
+    const relationResults = await Promise.all(
+      chunks.map((chunk) =>
+        supabase
+          .from("graph_relations")
+          .select(
+            "id, source_graph_id, target_graph_id, relation_type, context, metadata, created_at",
+          )
+          .or(
+            `source_graph_id.in.(${chunk.join(
+              ",",
+            )}),target_graph_id.in.(${chunk.join(",")})`,
+          ),
+      ),
+    );
 
     const nodeCountMap = new Map<string, number>();
-    (nodeCountsResult.data || []).forEach((n) => {
-      nodeCountMap.set(n.graph_id, (nodeCountMap.get(n.graph_id) || 0) + 1);
+    nodeCountResults.forEach((res) => {
+      (res.data || []).forEach((n) => {
+        nodeCountMap.set(n.graph_id, (nodeCountMap.get(n.graph_id) || 0) + 1);
+      });
     });
+
+    // 相邻块之间的一对关系会在两端块各命中一次，合并后按 id 去重
+    const seenRelationIds = new Set<string>();
+    const relations = (relationResults.flatMap((res) => res.data || [])).filter(
+      (r) => {
+        const id = (r as { id: string }).id;
+        if (seenRelationIds.has(id)) return false;
+        seenRelationIds.add(id);
+        return true;
+      },
+    );
 
     const graphsWithCounts = (graphs || []).map((g) => ({
       ...g,
@@ -73,7 +103,7 @@ export class GraphCrudService {
 
     return {
       graphs: graphsWithCounts,
-      relations: relationsResult.data || [],
+      relations,
     };
   }
 

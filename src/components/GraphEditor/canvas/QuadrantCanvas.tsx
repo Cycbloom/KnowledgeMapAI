@@ -736,6 +736,7 @@ export const QuadrantCanvas = forwardRef<GraphRef | null, QuadrantCanvasProps>(
                           zoomLevel={transform.k}
                           onClick={() => handleNodeClick(node)}
                           colorScheme={_colorScheme}
+                          coloringMode={_coloringMode}
                           originX={originPosition.x}
                           originY={originPosition.y}
                           regionRadius={regionRadius}

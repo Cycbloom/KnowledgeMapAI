@@ -1760,7 +1760,13 @@ export class BackupService {
 
     const stats = await this.restoreBackupData(supabase, userId, data);
 
-    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    // 导入会直接写库，绕过常规 mutation 事件，需手动失效该用户全部聚合缓存，避免后续读到旧数据
+    await cacheService.del([
+      CacheKeys.USER_GRAPHS(userId),
+      CacheKeys.GRAPH_MAP(userId),
+      CacheKeys.GRAPH_DOMAINS(userId),
+      CacheKeys.GRAPH_TAGS(userId),
+    ]);
 
     return { stats, mode };
   }

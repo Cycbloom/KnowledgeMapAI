@@ -250,7 +250,9 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
           ],
           model: provider.model,
           response_format: { type: "json_object" },
-          max_tokens: 4000,
+          // 一次需生成多类关系下的多个图谱（含标题/描述/节点），较小输出上限偶发截断
+          // 导致 JSON 解析失败（Unterminated string），调大以承载完整输出
+          max_tokens: 32000,
         });
         const duration = Date.now() - startTime;
 

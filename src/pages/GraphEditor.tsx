@@ -1836,8 +1836,6 @@ export const GraphEditor = () => {
         onZoomIn={handleCanvasZoomIn}
         onZoomOut={handleCanvasZoomOut}
         onZoomReset={handleCanvasZoomReset}
-        edgeDisplayMode={edgeDisplayMode}
-        setEdgeDisplayMode={setEdgeDisplayMode}
       />
 
       {isPresentationMode && (
@@ -1928,6 +1926,8 @@ export const GraphEditor = () => {
           onNodeSizeModeChange={setNodeSizeMode}
           edgeWidthMode={edgeWidthMode}
           onEdgeWidthModeChange={setEdgeWidthMode}
+          edgeDisplayMode={edgeDisplayMode}
+          onEdgeDisplayModeChange={setEdgeDisplayMode}
           coloringMode={coloringMode}
           nodeGlow={nodeGlow}
           onNodeGlowChange={setNodeGlow}

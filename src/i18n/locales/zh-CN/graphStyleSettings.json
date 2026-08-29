@@ -126,6 +126,15 @@
     "dotsDesc": "显示均匀的圆点网格"
   },
   "edgeSettings": {
+    "edgeDisplayMode": {
+      "title": "边线显示模式",
+      "full": "完整边线",
+      "fullDesc": "显示全部层级及非层级连线",
+      "simplified": "简化",
+      "simplifiedDesc": "细线、低透明度，隐藏关系标签与箭头",
+      "hidden": "隐藏",
+      "hiddenDesc": "隐藏所有边线"
+    },
     "showLabels": "显示标签",
     "showLabelsDesc": "在边上显示关系类型或自定义标签",
     "showArrows": "显示箭头",

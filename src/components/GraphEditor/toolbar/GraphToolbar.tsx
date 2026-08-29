@@ -54,7 +54,6 @@ import {
   ScanSearch,
   ZoomIn,
   ZoomOut,
-  Spline,
   type LucideIcon,
 } from "lucide-react";
 import { useTheme, useIsMobile } from "../../../hooks";
@@ -206,10 +205,6 @@ interface GraphToolbarProps {
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onZoomReset?: () => void;
-
-  // Edge display mode
-  edgeDisplayMode?: "full" | "simplified" | "hidden";
-  setEdgeDisplayMode?: (mode: "full" | "simplified" | "hidden") => void;
 }
 
 function areEqual(prev: GraphToolbarProps, next: GraphToolbarProps): boolean {
@@ -858,8 +853,6 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   onZoomIn,
   onZoomOut,
   onZoomReset,
-  edgeDisplayMode = "full",
-  setEdgeDisplayMode,
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -1533,24 +1526,6 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             </button>
           )}
 
-          {/* AI Expand Shortcut - Visible when 1 node selected */}
-          {selectedNodeIds.size === 1 && onAIExpand && (
-            <button
-              onClick={onAIExpand}
-              className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
-                isDark
-                  ? "bg-primary-900/40 text-primary-300 border border-primary-700/50 hover:bg-primary-800/60"
-                  : "bg-primary-50 text-primary-700 border border-primary-200 hover:bg-primary-100"
-              }`}
-              title={t("graphEditor.toolbar.aiExpandTitle")}
-            >
-              <Sparkles size={16} aria-hidden="true" />
-              <span className="text-xs font-bold">
-                {t("graphEditor.toolbar.infiniteExpand")}
-              </span>
-            </button>
-          )}
-
           {/* Branch Explore Shortcut - Visible when exploration mode and 1 node selected */}
           {isExplorationMode &&
             selectedNodeIds.size === 1 &&
@@ -2015,45 +1990,6 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             </ShortcutHint>
           </div>
         </>
-      )}
-
-      {/* Edge Display Mode Toggle */}
-      {setEdgeDisplayMode && (
-        <div
-          className="relative"
-          role="presentation"
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={() => {
-              const next: Record<string, "full" | "simplified" | "hidden"> = {
-                full: "simplified",
-                simplified: "hidden",
-                hidden: "full",
-              };
-              setEdgeDisplayMode(next[edgeDisplayMode] || "full");
-            }}
-            className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
-              edgeDisplayMode !== "full"
-                ? isDark
-                  ? "bg-primary-900/40 text-primary-400"
-                  : "bg-primary-50 text-primary-600"
-                : themeClasses.button.default
-            }`}
-            title={t("graphEditor.toolbar.edgeDisplayMode")}
-            aria-label={t("graphEditor.toolbar.edgeDisplayMode")}
-          >
-            <Spline size={18} aria-hidden="true" />
-            <span className="text-xs font-medium hidden xl:inline">
-              {edgeDisplayMode === "full"
-                ? t("graphEditor.toolbar.edgeFull")
-                : edgeDisplayMode === "simplified"
-                  ? t("graphEditor.toolbar.edgeSimplified")
-                  : t("graphEditor.toolbar.edgeHidden")}
-            </span>
-          </button>
-        </div>
       )}
 
       {/* AI Status Badge */}

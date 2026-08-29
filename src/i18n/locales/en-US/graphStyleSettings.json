@@ -126,6 +126,15 @@
     "dotsDesc": "Display an even dot grid"
   },
   "edgeSettings": {
+    "edgeDisplayMode": {
+      "title": "Edge Display Mode",
+      "full": "Full Edges",
+      "fullDesc": "Show all hierarchy and non-hierarchy edges",
+      "simplified": "Simplified",
+      "simplifiedDesc": "Thinner lines, lower opacity, hide labels and arrows",
+      "hidden": "Hidden",
+      "hiddenDesc": "Hide all edges"
+    },
     "showLabels": "Show Labels",
     "showLabelsDesc": "Display relationship type or custom labels on edges",
     "showArrows": "Show Arrows",

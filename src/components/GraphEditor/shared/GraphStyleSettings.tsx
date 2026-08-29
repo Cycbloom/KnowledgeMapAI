@@ -144,6 +144,9 @@ interface GraphStyleSettingsProps {
   onNodeSizeModeChange?: (mode: NodeSizeMode) => void;
   edgeWidthMode?: EdgeWidthMode;
   onEdgeWidthModeChange?: (mode: EdgeWidthMode) => void;
+  /** 边线显示模式：完整 / 简化 / 隐藏 */
+  edgeDisplayMode?: 'full' | 'simplified' | 'hidden';
+  onEdgeDisplayModeChange?: (mode: 'full' | 'simplified' | 'hidden') => void;
   coloringMode?: GraphColorMode;
   /** 全局「节点光晕」开关 */
   nodeGlow?: boolean;
@@ -186,6 +189,8 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   onNodeSizeModeChange,
   edgeWidthMode = 'fixed',
   onEdgeWidthModeChange,
+  edgeDisplayMode = 'full',
+  onEdgeDisplayModeChange,
   coloringMode = 'level',
   nodeGlow = false,
   onNodeGlowChange,
@@ -311,6 +316,11 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
     { key: 'lines', label: t('graphStyleSettings.gridStyles.lines'), description: t('graphStyleSettings.gridStyles.linesDesc') },
     { key: 'dots', label: t('graphStyleSettings.gridStyles.dots'), description: t('graphStyleSettings.gridStyles.dotsDesc') },
   ];
+  const edgeDisplayModes: { key: 'full' | 'simplified' | 'hidden'; label: string; description: string }[] = [
+    { key: 'full', label: t('graphStyleSettings.edgeSettings.edgeDisplayMode.full'), description: t('graphStyleSettings.edgeSettings.edgeDisplayMode.fullDesc') },
+    { key: 'simplified', label: t('graphStyleSettings.edgeSettings.edgeDisplayMode.simplified'), description: t('graphStyleSettings.edgeSettings.edgeDisplayMode.simplifiedDesc') },
+    { key: 'hidden', label: t('graphStyleSettings.edgeSettings.edgeDisplayMode.hidden'), description: t('graphStyleSettings.edgeSettings.edgeDisplayMode.hiddenDesc') },
+  ];
 
   const presets: { key: PresetKey; name: string }[] = [
     { key: 'classic', name: t('graphStyleSettings.presets.classic') },
@@ -355,6 +365,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
     onLinkAnimationChange('none');
     onNodeSizeModeChange?.('fixed');
     onEdgeWidthModeChange?.('fixed');
+    onEdgeDisplayModeChange?.('full');
     onNodeGlowChange?.(false);
     onShowLabelsChange?.(true);
     onShowArrowsChange?.(true);
@@ -688,6 +699,18 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
 
           {activeTab === 'edges' && (
             <div role="tabpanel" id={`${panelIdPrefix}-edges`} aria-labelledby={`${tabIdPrefix}-edges`} tabIndex={0} className="space-y-4">
+              <div>
+                <SectionTitle>{t('graphStyleSettings.edgeSettings.edgeDisplayMode.title')}</SectionTitle>
+                <div className="space-y-2">
+                  {edgeDisplayModes.map((mode) => (
+                    <OptionCard key={mode.key} active={edgeDisplayMode === mode.key} onClick={() => onEdgeDisplayModeChange?.(mode.key)}>
+                      <div className="font-medium text-sm text-slate-800 dark:text-slate-200">{mode.label}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{mode.description}</div>
+                    </OptionCard>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
                 <div>
                   <div className="font-medium text-sm text-slate-800 dark:text-slate-200">{t('graphStyleSettings.edgeSettings.showLabels')}</div>

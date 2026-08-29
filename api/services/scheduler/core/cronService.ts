@@ -6,6 +6,7 @@ import { appEventBus } from "../../core/eventBus";
 import type { ScheduleExecutedPayload } from "../../../../shared/types/scheduler";
 import type { NotificationNeededPayload } from "../../../../shared/types/events";
 import { notDeleted } from '../../common/softDeleteHelper';
+import { embeddingService } from "../../ai/embeddingService";
 
 interface CronJob {
   name: string;
@@ -54,6 +55,12 @@ class SchedulerCronService {
       name: "calibrate_achievement_progress",
       intervalMs: 24 * 60 * 60 * 1000,
       handler: this.calibrateAchievementProgress.bind(this),
+    });
+
+    this.registerJob({
+      name: "backfill_missing_embeddings",
+      intervalMs: 24 * 60 * 60 * 1000,
+      handler: this.backfillMissingEmbeddings.bind(this),
     });
 
     for (const job of this.jobs) {
@@ -412,6 +419,72 @@ class SchedulerCronService {
       }
     } catch (error) {
       logger.error("[CronService] Achievement calibration job failed:", error);
+    }
+  }
+
+  /**
+   * 每日回填：扫描所有拥有图谱/知识点的用户，补全其缺失的 embedding。
+   * 任一用户存在失败时向该用户推送底部右侧错误通知（由前端消费）。
+   */
+  private async backfillMissingEmbeddings() {
+    try {
+      const admin = getSupabaseAdmin();
+      const userIds = new Set<string>();
+
+      const [graphRes, pointRes] = await Promise.all([
+        admin
+          .from("knowledge_graphs")
+          .select("user_id")
+          .is("deleted_at", null),
+        admin.from("knowledge_points").select("owner_id"),
+      ]);
+
+      if (graphRes.error) {
+        logger.error("[CronService] Failed to fetch graph owners:", graphRes.error);
+      } else {
+        for (const r of graphRes.data ?? []) userIds.add(r.user_id);
+      }
+      if (pointRes.error) {
+        logger.error("[CronService] Failed to fetch knowledge point owners:", pointRes.error);
+      } else {
+        for (const r of pointRes.data ?? []) userIds.add(r.owner_id);
+      }
+
+      for (const userId of userIds) {
+        try {
+          const result = await embeddingService.backfillMissingEmbeddings(admin, userId);
+          if (result.failed > 0) {
+            appEventBus.publish<NotificationNeededPayload>(
+              "notification_needed",
+              {
+                userId,
+                type: "embedding_backfill_failed",
+                message: "",
+                data: { processed: result.processed, failed: result.failed },
+                cacheKeys: [],
+              },
+              userId,
+              "cron_service",
+            );
+          }
+        } catch (error) {
+          logger.error(`[CronService] Embedding backfill failed for user ${userId}:`, error);
+          appEventBus.publish<NotificationNeededPayload>(
+            "notification_needed",
+            {
+              userId,
+              type: "embedding_backfill_failed",
+              message: "",
+              data: { processed: 0, failed: 1 },
+              cacheKeys: [],
+            },
+            userId,
+            "cron_service",
+          );
+        }
+      }
+    } catch (error) {
+      logger.error("[CronService] Embedding backfill job failed:", error);
     }
   }
 }

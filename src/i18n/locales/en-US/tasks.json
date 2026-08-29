@@ -5,6 +5,8 @@
   "export": "Export",
   "refresh": "Refresh",
   "refreshing": "Refreshing...",
+  "backfillEmbeddings": "Backfill Missing Embeddings",
+  "backfillEmbeddingsHint": "Scan and backfill missing vectors for your graphs and knowledge points",
   "returnToDashboard": "Return to Dashboard",
   "allTasks": "All Tasks",
   "inProgress": "In Progress",

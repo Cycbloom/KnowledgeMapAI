@@ -39,6 +39,7 @@ import { LevelTestNotification } from "../Learning/LevelTestNotification";
 import { useLevelTestNotificationStore } from "../../store/useLevelTestNotificationStore";
 import { RelationDiscoveryNotification } from "../GraphEditor/RelationDiscoveryNotification";
 import { useRelationDiscoveryNotificationStore } from "../../store/useRelationDiscoveryNotificationStore";
+import { EmbeddingBackfillToast } from "../Notifications/EmbeddingBackfillToast";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { useSwipeBack } from "../../hooks/gesture/useSwipeBack";
@@ -754,6 +755,7 @@ export const Layout = () => {
           <MessageBar bottomOffset={isMobile && !isFullScreenPage ? 56 : 0} />
           <OfflineIndicator />
           <AchievementNotification />
+          <EmbeddingBackfillToast />
           <LevelTestNotification
             notice={levelTestNotice}
             onClose={handleLevelTestClose}

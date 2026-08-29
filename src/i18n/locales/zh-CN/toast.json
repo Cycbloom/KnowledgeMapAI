@@ -1,4 +1,7 @@
 {
+  "embeddingBackfillTitle": "自动补全提醒",
+  "embeddingBackfillFailed": "自动补全知识向量失败：{{failed}} 项失败，{{processed}} 项成功",
+  "embeddingBackfillDismiss": "关闭",
   "graph": {
     "snapshotCreated": "快照创建成功",
     "snapshotCreateFailed": "快照创建失败",
@@ -160,7 +163,9 @@
     "cancelFailed": "终止失败",
     "noTasksToExport": "暂无任务可导出",
     "tasksExported": "任务列表已导出",
-    "batchDeleteSuccess": "已成功删除 {{count}} 个任务"
+    "batchDeleteSuccess": "已成功删除 {{count}} 个任务",
+    "embeddingBackfillStarted": "已创建补全缺失 Embedding 的任务",
+    "embeddingBackfillFailed": "创建补全任务失败，请稍后重试"
   },
   "calendar": {
     "taskCreated": "任务创建成功!",

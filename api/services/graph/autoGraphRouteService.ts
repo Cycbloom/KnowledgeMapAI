@@ -5,6 +5,8 @@ import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 interface EmbeddingStatusResult {
   pendingCount: number;
+  /** 缺失 embedding 的图谱数量，供图谱向量回填前后对比 */
+  graphPendingCount: number;
 }
 
 interface TemplateData {
@@ -62,8 +64,15 @@ export class AutoGraphRouteService {
         .select('*', { count: 'exact', head: true })
         .is('embedding', null);
 
+      const { count: graphCount } = await supabase
+        .from('knowledge_graphs')
+        .select('*', { count: 'exact', head: true })
+        .is('deleted_at', null)
+        .is('embedding', null);
+
       return {
         pendingCount: count || 0,
+        graphPendingCount: graphCount || 0,
       };
     } catch (error) {
       const err = error as Error;

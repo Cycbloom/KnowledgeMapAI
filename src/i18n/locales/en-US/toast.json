@@ -1,4 +1,7 @@
 {
+  "embeddingBackfillTitle": "Embedding Backfill",
+  "embeddingBackfillFailed": "Failed to backfill embeddings: {{failed}} failed, {{processed}} succeeded",
+  "embeddingBackfillDismiss": "Dismiss",
   "graph": {
     "snapshotCreated": "Snapshot created",
     "snapshotCreateFailed": "Failed to create snapshot",
@@ -160,7 +163,9 @@
     "cancelFailed": "Failed to cancel task",
     "noTasksToExport": "No tasks to export",
     "tasksExported": "Tasks exported",
-    "batchDeleteSuccess": "Successfully deleted {{count}} tasks"
+    "batchDeleteSuccess": "Successfully deleted {{count}} tasks",
+    "embeddingBackfillStarted": "Created a task to backfill missing embeddings",
+    "embeddingBackfillFailed": "Failed to create backfill task, please try again"
   },
   "calendar": {
     "taskCreated": "Task created successfully!",

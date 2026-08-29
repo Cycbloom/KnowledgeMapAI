@@ -5,6 +5,8 @@
   "export": "导出",
   "refresh": "刷新",
   "refreshing": "刷新中...",
+  "backfillEmbeddings": "补全缺失 Embedding",
+  "backfillEmbeddingsHint": "扫描并补全本用户图谱与知识点的缺失向量",
   "returnToDashboard": "返回仪表盘",
   "allTasks": "全部任务",
   "inProgress": "进行中",

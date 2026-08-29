@@ -18,6 +18,8 @@ interface SSEMessage {
   message?: string;
   data?: Record<string, unknown>;
   cacheKeys?: string[][];
+  /** 通知自身的具体类型（如 review_reminder / embedding_backfill_failed），供前端按类型消费 */
+  notificationType?: string;
 }
 
 class SSENotificationSubscriber {
@@ -51,7 +53,10 @@ class SSENotificationSubscriber {
   private handleNotificationNeeded(event: AppEvent) {
     const payload = event.payload as NotificationNeededPayload;
     const message: SSEMessage = {
-      type: payload.type,
+      // 顶层 type 统一为事件类别，前端 useTaskEvents 据此识别并派发 sse_notification_needed
+      type: "notification_needed",
+      // 具体通知类型单独携带，供按类型消费（如 embedding_backfill_failed）
+      notificationType: payload.type,
       message: payload.message,
       data: payload.data,
       cacheKeys: payload.cacheKeys,

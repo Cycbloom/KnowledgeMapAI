@@ -25,6 +25,7 @@ import { asyncConfirm } from "../utils/asyncConfirm";
 import { formatDate } from "@/utils/formatters";
 import { copyToClipboard } from "@/utils/clipboard";
 import { message } from "../utils/messageHelper";
+import { tasksApi } from "../services/api/tasks";
 import {
   CheckCircle2,
   XCircle,
@@ -36,6 +37,7 @@ import {
   Trash2,
   RotateCw,
   Download,
+  Database,
   CheckSquare,
   Square,
   X,
@@ -474,6 +476,19 @@ export const Tasks = () => {
     message.success(t("toast.tasks.tasksExported"));
   };
 
+  const handleBackfillEmbeddings = useCallback(async () => {
+    try {
+      await tasksApi.create({
+        type: "embedding_generation",
+        payload: { scope: "all" },
+      });
+      message.success(t("toast.tasks.embeddingBackfillStarted"));
+      refetch();
+    } catch {
+      message.error(t("toast.tasks.embeddingBackfillFailed"));
+    }
+  }, [t, refetch]);
+
   return (
     <div className="relative h-full">
       {indicator}
@@ -522,6 +537,14 @@ export const Tasks = () => {
             <span>
               {isFetching ? t("tasks.refreshing") : t("tasks.refresh")}
             </span>
+          </button>
+          <button
+            onClick={handleBackfillEmbeddings}
+            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-500 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            title={t("tasks.backfillEmbeddingsHint")}
+          >
+            <Database className="w-4 h-4" />
+            <span>{t("tasks.backfillEmbeddings")}</span>
           </button>
           <Link
             to="/dashboard"

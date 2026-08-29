@@ -26,11 +26,41 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
     try {
       await updateTaskStatus(supabase, taskId, 'in_progress', undefined, undefined, undefined, userId);
 
-      const { graphId, knowledgePointIds } = payload;
+      const { graphId, knowledgePointIds, scope } = payload;
+      const isAllScope = scope === "all";
 
       let knowledgePoints: Array<{ id: string; title: string; content: string | null }> = [];
+      let graphsToBackfill: Array<{ id: string; title: string }> = [];
 
-      if (knowledgePointIds && Array.isArray(knowledgePointIds) && knowledgePointIds.length > 0) {
+      if (isAllScope) {
+        // 全量回填：当前用户缺失 embedding 的知识点 + 图谱
+        const { data, error } = await supabase
+          .from('knowledge_points')
+          .select('id, title, content')
+          .eq('owner_id', userId)
+          .is('embedding', null);
+
+        if (error) {
+          throw new AppError(`Failed to fetch knowledge points: ${error.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        }
+        knowledgePoints = (data || []).map((kp) => ({
+          id: kp.id,
+          title: resolveLocalizedText(kp.title as LocalizedText),
+          content: kp.content ? resolveLocalizedText(kp.content as LocalizedText) : '',
+        }));
+
+        const { data: graphs, error: graphError } = await notDeleted(supabase
+          .from('knowledge_graphs')
+          .select('id, title')
+          .eq('user_id', userId)
+          .is('embedding', null)
+          );
+
+        if (graphError) {
+          throw new AppError(`Failed to fetch graphs: ${graphError.message}`, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        }
+        graphsToBackfill = (graphs || []).map((g) => ({ id: g.id, title: g.title ?? '' }));
+      } else if (knowledgePointIds && Array.isArray(knowledgePointIds) && knowledgePointIds.length > 0) {
         const { data, error } = await supabase
           .from('knowledge_points')
           .select('id, title, content')
@@ -83,17 +113,26 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
         throw new AppError('Either graphId or knowledgePointIds must be provided', 400, ErrorCodes.VALIDATION_ERROR);
       }
 
-      if (knowledgePoints.length === 0) {
+      if (knowledgePoints.length === 0 && graphsToBackfill.length === 0) {
         await updateTaskStatus(supabase, taskId, 'completed', {
           success: true,
           processed: 0,
           failed: 0,
-          message: 'No knowledge points need embedding generation'
+          message: 'No knowledge points or graphs need embedding generation'
         }, undefined, undefined, userId);
         return;
       }
 
       logger.info(`Processing ${knowledgePoints.length} knowledge points for embedding generation`);
+
+      // 全量回填时把图谱并入同一进度口径（知识点阶段 + 图谱阶段），否则按知识点 0-100
+      const totalWork = knowledgePoints.length + graphsToBackfill.length;
+      const pointsProgress = (done: number) =>
+        isAllScope
+          ? Math.round((Math.min(done, knowledgePoints.length) / Math.max(1, totalWork)) * 100)
+          : Math.round((Math.min(done, knowledgePoints.length) / Math.max(1, knowledgePoints.length)) * 100);
+      const graphsProgress = (done: number) =>
+        Math.round(((knowledgePoints.length + Math.min(done, graphsToBackfill.length)) / Math.max(1, totalWork)) * 100);
 
       let processed = 0;
       let failed = 0;
@@ -127,12 +166,12 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
             }
           }
 
-          const progress = Math.round(((i + batch.length) / knowledgePoints.length) * 50);
+          const progress = pointsProgress(i + batch.length);
           await updateTaskStatus(supabase, taskId, 'in_progress', {
             progress,
             processed,
             failed,
-            total: knowledgePoints.length
+            total: totalWork
           }, undefined, undefined, userId);
 
           if (i + BATCH_SIZE < knowledgePoints.length) {
@@ -145,7 +184,10 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
         }
       }
 
-      const longContentKps = knowledgePoints.filter(kp => kp.content && kp.content.length > CHUNK_CONTENT_THRESHOLD);
+      // 全量回填聚焦向量生成，不做长内容分块
+      const longContentKps = isAllScope
+        ? []
+        : knowledgePoints.filter(kp => kp.content && kp.content.length > CHUNK_CONTENT_THRESHOLD);
 
       if (longContentKps.length > 0) {
         logger.info(`Processing ${longContentKps.length} knowledge points for chunking`);
@@ -207,13 +249,60 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
         }
       }
 
+      if (graphsToBackfill.length > 0) {
+        logger.info(`Processing ${graphsToBackfill.length} knowledge graphs for embedding generation`);
+
+        for (let i = 0; i < graphsToBackfill.length; i += BATCH_SIZE) {
+          control.throwIfAborted();
+          const batch = graphsToBackfill.slice(i, i + BATCH_SIZE);
+          const texts = batch.map(g => g.title);
+
+          try {
+            const embeddings = await aiService.generateEmbeddingsBatch(texts);
+
+            for (let j = 0; j < batch.length; j++) {
+              if (embeddings[j]) {
+                const { error: updateError } = await supabase
+                  .from('knowledge_graphs')
+                  .update({ embedding: embeddings[j] })
+                  .eq('id', batch[j].id);
+
+                if (updateError) {
+                  logger.error(`Failed to update graph embedding for ${batch[j].id}:`, updateError);
+                  failed++;
+                } else {
+                  processed++;
+                }
+              } else {
+                failed++;
+              }
+            }
+
+            const progress = graphsProgress(i + batch.length);
+            await updateTaskStatus(supabase, taskId, 'in_progress', {
+              progress,
+              processed,
+              failed,
+              total: totalWork
+            }, undefined, undefined, userId);
+
+            if (i + BATCH_SIZE < graphsToBackfill.length) {
+              await this.sleep(EMBEDDING_DELAY_MS);
+            }
+          } catch (error) {
+            logger.error(`Failed to generate graph embeddings for batch starting at ${i}:`, error);
+            failed += batch.length;
+          }
+        }
+      }
+
       logger.info(`Embedding generation completed: ${processed} processed, ${failed} failed`);
 
       await updateTaskStatus(supabase, taskId, 'completed', {
         success: true,
         processed,
         failed,
-        total: knowledgePoints.length,
+        total: totalWork,
         failedIds: failedIds.length > 0 ? failedIds : undefined
       }, undefined, undefined, userId);
 

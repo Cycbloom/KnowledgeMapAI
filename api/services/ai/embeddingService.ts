@@ -2,6 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { aiService } from './aiService';
 import { getProviderForTask } from './config';
 import { logger } from '../../utils/logger';
+import { resolveLocalizedText, type LocalizedText } from '../../../shared/utils/localization';
 
 const BATCH_SIZE = 20;
 const EMBEDDING_DELAY_MS = 100;
@@ -230,6 +231,110 @@ export class EmbeddingService {
       logger.error(`Error generating embedding for ${knowledgePointId}:`, error);
       return false;
     }
+  }
+
+  /**
+   * 定时/按需回填：为指定用户缺失 embedding 的知识点 + 图谱补全向量。
+   * 返回 { processed, failed, total }，供定时任务统计与出错提醒。
+   */
+  async backfillMissingEmbeddings(
+    supabase: SupabaseClient,
+    userId: string,
+  ): Promise<{ processed: number; failed: number; total: number }> {
+    const embeddingProvider = await getProviderForTask("embedding");
+    if (!embeddingProvider) {
+      logger.info('Embedding provider not configured, skipping backfill');
+      return { processed: 0, failed: 0, total: 0 };
+    }
+
+    let processed = 0;
+    let failed = 0;
+    let total = 0;
+
+    // 知识点
+    const { data: kps, error: kpError } = await supabase
+      .from('knowledge_points')
+      .select('id, title')
+      .eq('owner_id', userId)
+      .is('embedding', null);
+
+    if (kpError) {
+      logger.error('Failed to fetch knowledge points for embedding backfill:', kpError);
+    } else if (kps && kps.length > 0) {
+      const texts = kps.map((kp) => resolveLocalizedText(kp.title as LocalizedText));
+      for (let i = 0; i < kps.length; i += BATCH_SIZE) {
+        const batchKps = kps.slice(i, i + BATCH_SIZE);
+        const batchTexts = texts.slice(i, i + BATCH_SIZE);
+        try {
+          const embeddings = await aiService.generateEmbeddingsBatch(batchTexts);
+          for (let j = 0; j < batchKps.length; j++) {
+            if (embeddings[j]) {
+              const { error: updateError } = await supabase
+                .from('knowledge_points')
+                .update({ embedding: embeddings[j] })
+                .eq('id', batchKps[j].id);
+              if (updateError) {
+                logger.error(`Failed to update point embedding for ${batchKps[j].id}:`, updateError);
+                failed++;
+              } else {
+                processed++;
+              }
+            } else {
+              failed++;
+            }
+          }
+        } catch (error) {
+          logger.error(`Failed to backfill embeddings for points batch at ${i}:`, error);
+          failed += batchKps.length;
+        }
+        total += batchKps.length;
+        if (i + BATCH_SIZE < kps.length) await this.sleep(EMBEDDING_DELAY_MS);
+      }
+    }
+
+    // 图谱
+    const { data: graphs, error: graphError } = await supabase
+      .from('knowledge_graphs')
+      .select('id, title')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .is('embedding', null);
+
+    if (graphError) {
+      logger.error('Failed to fetch graphs for embedding backfill:', graphError);
+    } else if (graphs && graphs.length > 0) {
+      for (let i = 0; i < graphs.length; i += BATCH_SIZE) {
+        const batchGraphs = graphs.slice(i, i + BATCH_SIZE);
+        const texts = batchGraphs.map((g) => g.title ?? '');
+        try {
+          const embeddings = await aiService.generateEmbeddingsBatch(texts);
+          for (let j = 0; j < batchGraphs.length; j++) {
+            if (embeddings[j]) {
+              const { error: updateError } = await supabase
+                .from('knowledge_graphs')
+                .update({ embedding: embeddings[j] })
+                .eq('id', batchGraphs[j].id);
+              if (updateError) {
+                logger.error(`Failed to update graph embedding for ${batchGraphs[j].id}:`, updateError);
+                failed++;
+              } else {
+                processed++;
+              }
+            } else {
+              failed++;
+            }
+          }
+        } catch (error) {
+          logger.error(`Failed to backfill embeddings for graphs batch at ${i}:`, error);
+          failed += batchGraphs.length;
+        }
+        total += batchGraphs.length;
+        if (i + BATCH_SIZE < graphs.length) await this.sleep(EMBEDDING_DELAY_MS);
+      }
+    }
+
+    logger.info(`Embedding backfill for user ${userId}: ${processed} processed, ${failed} failed, ${total} total`);
+    return { processed, failed, total: processed + failed };
   }
 
   stop() {

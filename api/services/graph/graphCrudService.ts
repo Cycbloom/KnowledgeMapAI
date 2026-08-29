@@ -68,6 +68,7 @@ export class GraphCrudService {
     const graphsWithCounts = (graphs || []).map((g) => ({
       ...g,
       node_count: nodeCountMap.get(g.id) || 0,
+      nodes_count: nodeCountMap.get(g.id) || 0,
     }));
 
     return {

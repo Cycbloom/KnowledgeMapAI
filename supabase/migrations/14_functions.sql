@@ -1735,7 +1735,8 @@ BEGIN
       'created_at', g.created_at,
       'is_public', g.is_public,
       'domain', g.domain,
-      'node_count', COALESCE(n.cnt, 0)
+      'node_count', COALESCE(n.cnt, 0),
+      'nodes_count', COALESCE(n.cnt, 0)
     )
   ), '[]'::jsonb) INTO v_graphs
   FROM knowledge_graphs g

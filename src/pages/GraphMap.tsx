@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { Sparkles, BookOpen, X, ChevronUp, ChevronDown, Layers, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { api } from "../services/api";
-import { useStore } from "../store/useStore";
 import { queryKeys } from "../hooks/queries/config";
 import { useGraphData } from "../hooks/queries";
 import { useIsMobile } from "../hooks/common/useIsMobile";
@@ -129,145 +128,13 @@ interface PromptListResult {
   user?: PromptTemplate[];
 }
 
-interface SingleGraphDomainPickerProps {
-  graphId: string;
-  domainTree: DomainTreeNode[];
-  currentDomains: Array<{ id: string; name: string; color: string }>;
-  isSetting: boolean;
-  onConfirm: (domainIds: string[]) => void;
-  onClose: () => void;
-}
 
-const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
-  domainTree,
-  currentDomains,
-  isSetting,
-  onConfirm,
-  onClose,
-}) => {
-  const { t } = useTranslation();
-  const domainPickerTitleId = useId();
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    () => new Set(currentDomains.map((d) => d.id)),
-  );
-
-  const allDomainList = useMemo(() => {
-    const list: DomainTreeNode[] = [];
-    function flatten(nodes: DomainTreeNode[]) {
-      nodes.forEach((node) => {
-        list.push(node);
-        if (node.children?.length) flatten(node.children);
-      });
-    }
-    flatten(domainTree);
-    return list;
-  }, [domainTree]);
-
-  const toggleDomain = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={domainPickerTitleId}
-        className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-4"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <h2 id={domainPickerTitleId} className="text-base font-semibold text-gray-900 dark:text-white">
-            {t('graphMap.domainPicker.title')}
-          </h2>
-          <button
-            onClick={onClose}
-            aria-label={t('common.aria.close')}
-            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors min-h-[24px] min-w-[24px] flex items-center justify-center"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {isSetting ? (
-          <div className="space-y-2 py-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-2 px-3 py-2.5">
-                <Skeleton variant="circular" width={12} height={12} />
-                <Skeleton variant="rectangular" className="flex-1 h-5" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <>
-            <div className="max-h-[300px] overflow-y-auto space-y-1">
-              {allDomainList.map((domain) => {
-                const isSelected = selectedIds.has(domain.id);
-                return (
-                  <button
-                    key={domain.id}
-                    onClick={() => toggleDomain(domain.id)}
-                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg transition-colors text-left ${
-                      isSelected
-                        ? 'bg-primary-50 dark:bg-primary-900/30 ring-1 ring-primary-200 dark:ring-primary-800'
-                        : 'hover:bg-gray-100 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    <span
-                      className={`w-3 h-3 rounded-full flex-shrink-0 ${isSelected ? 'ring-2 ring-offset-1 ring-primary-400 dark:ring-offset-slate-800' : ''}`}
-                      style={{ backgroundColor: domain.color }}
-                    />
-                    <span className={`text-sm flex-1 ${isSelected ? 'text-primary-700 dark:text-primary-300 font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
-                      {domain.name}
-                    </span>
-                    {isSelected && (
-                      <svg aria-hidden="true" className="w-4 h-4 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                );
-              })}
-              {allDomainList.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-4">{t('graphMap.domainPicker.noDomains')}</p>
-              )}
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={() => onConfirm(Array.from(selectedIds))}
-                disabled={isSetting}
-                className="px-4 py-2 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 transition-colors"
-              >
-                {t('common.confirmButton')}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
 
 export const GraphMap = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const { user } = useStore();
   const { isMobile } = useIsMobile();
   const promptEditorTitleId = useId();
   const batchDomainPickerTitleId = useId();
@@ -323,8 +190,6 @@ export const GraphMap = () => {
   const [isBatchDomainPickerOpen, setIsBatchDomainPickerOpen] = useState(false);
   const [isBatchSettingDomain, setIsBatchSettingDomain] = useState(false);
   const [showDomainManager, setShowDomainManager] = useState(false);
-  const [singleGraphDomainPicker, setSingleGraphDomainPicker] = useState<{ graphId: string; open: boolean }>({ graphId: '', open: false });
-  const [isSettingSingleGraphDomain, setIsSettingSingleGraphDomain] = useState(false);
   const [crossDomainResult, setCrossDomainResult] = useState<CrossDomainAnalysisResult | null>(null);
   const [isAnalyzingCrossDomain, setIsAnalyzingCrossDomain] = useState(false);
   const [showCrossDomainInsights, setShowCrossDomainInsights] = useState(false);
@@ -536,18 +401,6 @@ export const GraphMap = () => {
     }
   }, [graphs]);
 
-  const selectRelatedGraphs = useCallback((graphId: string) => {
-    const relatedIds = new Set<string>([graphId]);
-
-    relations.forEach((r: GraphRelation) => {
-      if (r.source_graph_id === graphId) relatedIds.add(r.target_graph_id);
-      if (r.target_graph_id === graphId) relatedIds.add(r.source_graph_id);
-    });
-
-    setMultiSelectedGraphIds(relatedIds);
-    setSelectedGraphId(null);
-  }, [relations]);
-
   const handleBatchCreateRelation = useCallback(() => {
     setIsCreatePanelOpen(true);
   }, []);
@@ -643,28 +496,6 @@ export const GraphMap = () => {
     }
   }, [multiSelectedGraphIds, queryClient, t]);
 
-  const handleSetSingleGraphDomains = useCallback(async (domainIds: string[]) => {
-    const graphId = singleGraphDomainPicker.graphId;
-    if (!graphId) return;
-
-    setIsSettingSingleGraphDomain(true);
-    try {
-      await graphDomainsApi.updateByGraphId(
-        graphId,
-        domainIds.map((id) => ({ domain_id: id })),
-      );
-      message.success(t('graphMap.domainPicker.setSuccess'));
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-      setSingleGraphDomainPicker({ graphId: '', open: false });
-    } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : t('graphMap.domainPicker.setFailed');
-      message.error(errMsg);
-    } finally {
-      setIsSettingSingleGraphDomain(false);
-    }
-  }, [singleGraphDomainPicker.graphId, queryClient, t]);
-
   const handleCombinedOpen = useCallback(() => {
     const ids = Array.from(multiSelectedGraphIds);
     if (ids.length === 2) {
@@ -745,14 +576,6 @@ export const GraphMap = () => {
       }
     },
     [queryClient, t],
-  );
-
-  const handleCreateRelatedGraph = useCallback(
-    (relationType: GraphRelationType) => {
-      setCreateGraphRelationType(relationType);
-      setIsCreateGraphPanelOpen(true);
-    },
-    [],
   );
 
   const handleInfiniteExpand = useCallback(
@@ -1392,30 +1215,10 @@ export const GraphMap = () => {
                               {domain.name}
                             </span>
                           ))}
-                          {user && graph.user_id === user.id && (
-                            <button
-                              onClick={() => setSingleGraphDomainPicker({ graphId: graph.id, open: true })}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600"
-                            >
-                              <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                              {t('graphMap.graph.setDomain')}
-                            </button>
-                          )}
+                          
                         </div>
                       )}
-                      {user && graph.user_id === user.id && (!graph.domains || graph.domains.length === 0) && (
-                        <button
-                          onClick={() => setSingleGraphDomainPicker({ graphId: graph.id, open: true })}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600 mb-3"
-                        >
-                          <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          {t('graphMap.graph.setDomain')}
-                        </button>
-                      )}
+                      
 
                       <div className="flex gap-2 mb-3">
                         <button
@@ -1424,51 +1227,14 @@ export const GraphMap = () => {
                         >
                           {t('graphMap.graph.openGraph')}
                         </button>
-                        <button
-                          onClick={() => setIsCreatePanelOpen(true)}
-                          className="px-3 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg active:bg-gray-200 dark:active:bg-slate-600 transition-colors"
-                        >
-                          {t('graphMap.graph.addRelation')}
-                        </button>
+                        
                       </div>
 
-                      <button
-                        onClick={() => selectRelatedGraphs(selectedGraphId)}
-                        className="w-full mb-3 px-3 py-2 text-sm bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg active:bg-primary-200 dark:active:bg-primary-900/50 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                        </svg>
-                        {t('graphMap.graph.selectRelated')}
-                      </button>
+                      
 
                       {isMobilePanelExpanded && (
                         <>
-                          <div className="mb-3">
-                            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                              {t('graphMap.graph.quickCreate')}
-                            </h4>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleCreateRelatedGraph("prerequisite")}
-                                className="flex-1 px-2 py-2 text-xs bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg active:bg-primary-100 dark:active:bg-primary-900/50 transition-colors"
-                              >
-                                + {t('graphMap.graph.prerequisite')}
-                              </button>
-                              <button
-                                onClick={() => handleCreateRelatedGraph("extension")}
-                                className="flex-1 px-2 py-2 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg active:bg-green-100 dark:active:bg-green-900/50 transition-colors"
-                              >
-                                + {t('graphMap.graph.extension')}
-                              </button>
-                              <button
-                                onClick={() => handleCreateRelatedGraph("related")}
-                                className="flex-1 px-2 py-2 text-xs bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg active:bg-amber-100 dark:active:bg-amber-900/50 transition-colors"
-                              >
-                                + {t('graphMap.graph.related')}
-                              </button>
-                            </div>
-                          </div>
+                          
 
                           <div className="flex gap-2 mb-3">
                             <button
@@ -1596,30 +1362,7 @@ export const GraphMap = () => {
                               {domain.name}
                             </span>
                           ))}
-                          {user && graph.user_id === user.id && (
-                            <button
-                              onClick={() => setSingleGraphDomainPicker({ graphId: graph.id, open: true })}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600"
-                            >
-                              <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                              {t('graphMap.graph.setDomain')}
-                            </button>
-                          )}
-                        </div>
-                      )}
-                      {user && graph.user_id === user.id && (!graph.domains || graph.domains.length === 0) && (
-                        <div className="mb-3">
-                          <button
-                            onClick={() => setSingleGraphDomainPicker({ graphId: graph.id, open: true })}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600"
-                          >
-                            <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            {t('graphMap.graph.setDomain')}
-                          </button>
+                          
                         </div>
                       )}
 
@@ -1630,51 +1373,12 @@ export const GraphMap = () => {
                         >
                           {t('graphMap.graph.openGraph')}
                         </button>
-                        <button
-                          onClick={() => {
-                            setIsCreatePanelOpen(true);
-                          }}
-                          className="px-3 py-1.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                        >
-                          {t('graphMap.graph.addRelation')}
-                        </button>
+                        
                       </div>
 
-                      <button
-                        onClick={() => selectRelatedGraphs(selectedGraphId)}
-                        className="w-full mt-2 px-3 py-1.5 text-sm bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                        </svg>
-                        {t('graphMap.graph.selectRelated')}
-                      </button>
+                      
 
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                          {t('graphMap.graph.quickCreate')}
-                        </h4>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleCreateRelatedGraph("prerequisite")}
-                            className="flex-1 px-2 py-1.5 text-xs bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
-                          >
-                            + {t('graphMap.graph.prerequisite')}
-                          </button>
-                          <button
-                            onClick={() => handleCreateRelatedGraph("extension")}
-                            className="flex-1 px-2 py-1.5 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
-                          >
-                            + {t('graphMap.graph.extension')}
-                          </button>
-                          <button
-                            onClick={() => handleCreateRelatedGraph("related")}
-                            className="flex-1 px-2 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
-                          >
-                            + {t('graphMap.graph.related')}
-                          </button>
-                        </div>
-                      </div>
+                      
 
                       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                         <button
@@ -2191,17 +1895,6 @@ export const GraphMap = () => {
             )}
           </div>
         </div>
-      )}
-
-      {singleGraphDomainPicker.open && (
-        <SingleGraphDomainPicker
-          graphId={singleGraphDomainPicker.graphId}
-          domainTree={domainTree}
-          currentDomains={graphById.get(singleGraphDomainPicker.graphId)?.domains || []}
-          isSetting={isSettingSingleGraphDomain}
-          onConfirm={handleSetSingleGraphDomains}
-          onClose={() => setSingleGraphDomainPicker({ graphId: '', open: false })}
-        />
       )}
     </div>
 

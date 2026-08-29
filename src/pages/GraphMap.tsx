@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef, useI
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Sparkles, BookOpen, X, ChevronUp, ChevronDown, Layers, Loader2, RefreshCw, AlertCircle } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { Sparkles, BookOpen, X, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
 import { api } from "../services/api";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { queryKeys } from "../hooks/queries/config";
 import { useGraphData } from "../hooks/queries";
 import { useIsMobile } from "../hooks/common/useIsMobile";
@@ -16,9 +16,9 @@ import type { DomainTreeNode, Domain } from "@shared/types/graph";
 import { CreateRelationPanel } from "../components/GraphMap/CreateRelationPanel";
 import { QuickCreateGraphPanel } from "../components/GraphMap/QuickCreateGraphPanel";
 import { DomainManager } from "../components/GraphMap/DomainManager";
-import { CrossDomainInsightsSection } from "../components/GraphMap/CrossDomainInsightsSection";
-import type { CrossDomainAnalysisResult, AnalysisModuleState } from "../components/GraphMap/types";
+import type { AnalysisModuleState } from "../components/GraphMap/types";
 import { useAnalysisModules } from "../hooks/graphAI/useAnalysisModules";
+import { useGraphStyleSettingsStore } from "../store/useGraphStyleSettingsStore";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { message } from "../utils/messageHelper";
 import { getErrorMessage } from "../utils/errors";
@@ -38,6 +38,12 @@ import type {
 const GraphMapCanvas = lazy(() =>
   import("../components/GraphMap/GraphMapCanvas").then((module) => ({
     default: module.GraphMapCanvas,
+  }))
+);
+
+const GraphStyleSettings = lazy(() =>
+  import("../components/GraphEditor/shared/GraphStyleSettings").then((module) => ({
+    default: module.GraphStyleSettings,
   }))
 );
 
@@ -138,7 +144,6 @@ export const GraphMap = () => {
   const { isMobile } = useIsMobile();
   const promptEditorTitleId = useId();
   const batchDomainPickerTitleId = useId();
-  const crossDomainTitleId = useId();
 
   const fromGraphId = searchParams.get("from");
 
@@ -161,6 +166,8 @@ export const GraphMap = () => {
     useState<InfiniteExpansionProgress | null>(null);
   const [isExpansionRunning, setIsExpansionRunning] = useState(false);
   const [expansionSessionId, setExpansionSessionId] = useState<string | null>(null);
+  // 当前 AI 智能扩展(宽度扩展)后台任务的 id，用于按任务过滤 SSE 进度
+  const [infiniteTaskId, setInfiniteTaskId] = useState<string | null>(null);
   const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
   const [promptContent, setPromptContent] = useState("");
   const [promptEditMode, setPromptEditMode] = useState<"depth" | "width">(
@@ -190,9 +197,6 @@ export const GraphMap = () => {
   const [isBatchDomainPickerOpen, setIsBatchDomainPickerOpen] = useState(false);
   const [isBatchSettingDomain, setIsBatchSettingDomain] = useState(false);
   const [showDomainManager, setShowDomainManager] = useState(false);
-  const [crossDomainResult, setCrossDomainResult] = useState<CrossDomainAnalysisResult | null>(null);
-  const [isAnalyzingCrossDomain, setIsAnalyzingCrossDomain] = useState(false);
-  const [showCrossDomainInsights, setShowCrossDomainInsights] = useState(false);
 
   useEffect(() => {
     if (selectedDomainIds.size > 0) {
@@ -210,6 +214,22 @@ export const GraphMap = () => {
     executeModules,
     resetModules,
   } = useAnalysisModules();
+
+  // 图地图样式与图编辑器共用同一份持久化设置（节点形状/中心点/光晕/网格/配色/连线/动画）
+  const {
+    colorScheme,
+    linkStyle,
+    linkAnimation,
+    nodeShape,
+    centerDotShape,
+    nodeGlow,
+    gridStyle,
+    setColorScheme,
+    setLinkStyle,
+    setLinkAnimation,
+    setNodeGlow,
+  } = useGraphStyleSettingsStore();
+  const [isStyleSettingsOpen, setIsStyleSettingsOpen] = useState(false);
 
   const {
     data: mapData,
@@ -589,7 +609,13 @@ export const GraphMap = () => {
       if (!selectedGraphId) return;
 
       try {
-        await api.graphs.infiniteExpand(selectedGraphId, config);
+        const result = (await api.graphs.infiniteExpand(
+          selectedGraphId,
+          config,
+        )) as { taskId?: string } | null;
+        if (result?.taskId) {
+          setInfiniteTaskId(result.taskId);
+        }
         message.success(t('graphMap.expansion.started'));
         setIsExpansionRunning(true);
         setExpansionProgress({
@@ -611,6 +637,102 @@ export const GraphMap = () => {
     },
     [selectedGraphId, queryClient, expansionSessionId, t],
   );
+
+  // 订阅全局 SSE 事件总线，实时同步无限扩展后台任务进度到 AI 智能扩展面板。
+  // useTaskEvents 已在 Layout 层建立 /tasks/events 连接，并广播所有消息到 sse_message。
+  useEffect(() => {
+    if (!infiniteTaskId) return;
+
+    const toPanelStatus = (
+      status: string,
+    ): InfiniteExpansionProgress["status"] => {
+      if (status === "completed") return "completed";
+      if (status === "failed" || status === "cancelled") return "failed";
+      return "running";
+    };
+
+    const handler = (raw: unknown) => {
+      const msg = raw as {
+        type?: string;
+        taskId?: string;
+        status?: string;
+        error?: unknown;
+        progress?: {
+          current_depth?: number;
+          total_graphs_created?: number;
+          total_nodes_created?: number;
+          current_graph_title?: string;
+          created_graphs?: InfiniteExpansionProgress["created_graphs"];
+        };
+      };
+      if (!msg || msg.type !== "task_update" || msg.taskId !== infiniteTaskId) {
+        return;
+      }
+
+      const status = msg.status ?? "in_progress";
+      const p = msg.progress;
+
+      // 任务进入终态（完成/失败/取消）时，追加一次图谱地图刷新，
+      // 覆盖创建任务时那次的失效（此时扩展尚未落库）
+      const isTerminal =
+        status === "completed" || status === "failed" || status === "cancelled";
+      if (status === "completed") {
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      }
+
+      setExpansionProgress((prev) => {
+        const next: InfiniteExpansionProgress = {
+          status: toPanelStatus(status),
+          current_depth: p?.current_depth ?? prev?.current_depth ?? 0,
+          total_graphs_created:
+            p?.total_graphs_created ?? prev?.total_graphs_created ?? 0,
+          total_nodes_created:
+            p?.total_nodes_created ?? prev?.total_nodes_created ?? 0,
+          current_graph_title: p?.current_graph_title,
+          created_graphs: Array.isArray(p?.created_graphs)
+            ? (p.created_graphs as InfiniteExpansionProgress["created_graphs"])
+            : (prev?.created_graphs ?? []),
+          errors:
+            status === "failed" || msg.error != null
+              ? [
+                  {
+                    message:
+                      typeof msg.error === "string"
+                        ? msg.error
+                        : String(msg.error ?? ""),
+                  },
+                ]
+              : (prev?.errors ?? []),
+        };
+        return next;
+      });
+
+      setIsExpansionRunning(!isTerminal);
+    };
+
+    const unsubscribe = frontendEventBus.subscribe("sse_message", handler);
+    return () => unsubscribe();
+  }, [infiniteTaskId, queryClient]);
+
+  // 重新打开 AI 智能扩展面板时（关闭→打开 的上升沿），若无正在运行的扩展，才清理上一次的完成/失败进度，
+  // 避免换了源图谱后仍显示旧任务的「扩展完成」。
+  // 注意：不能用 isExpansionRunning 作依赖，否则任务完成（running 变 false）的瞬间也会触发清理，
+  // 导致面板刚展示「完成」就被打回「未开始」；改用 ref 读取，避免 exhaustive-deps 报缺失依赖。
+  const prevExpansionOpenRef = useRef(false);
+  const expansionRunningRef = useRef(isExpansionRunning);
+  useEffect(() => {
+    expansionRunningRef.current = isExpansionRunning;
+  }, [isExpansionRunning]);
+
+  useEffect(() => {
+    const justOpened = isAIExpansionOpen && !prevExpansionOpenRef.current;
+    prevExpansionOpenRef.current = isAIExpansionOpen;
+    if (justOpened && !expansionRunningRef.current) {
+      setExpansionProgress(null);
+      setInfiniteTaskId(null);
+    }
+  }, [isAIExpansionOpen]);
 
   const handleDepthExpand = useCallback(
     async (config: {
@@ -864,24 +986,6 @@ export const GraphMap = () => {
     [t],
   );
 
-  const handleCrossDomainAnalysis = useCallback(async () => {
-    setIsAnalyzingCrossDomain(true);
-    try {
-      const result = await api.graphs.discoverRelations({
-        include_cross_domain: true,
-      });
-      setCrossDomainResult(result as unknown as CrossDomainAnalysisResult);
-      setShowCrossDomainInsights(true);
-      message.success(t('graphMap.crossDomain.analyzeComplete'));
-    } catch (error: unknown) {
-      const errMsg =
-        error instanceof Error ? error.message : t('graphMap.crossDomain.analyzeFailed');
-      message.error(errMsg);
-    } finally {
-      setIsAnalyzingCrossDomain(false);
-    }
-  }, [t]);
-
   const handleCreateDiscoveredRelation = useCallback(
     async (relation: DiscoveredRelation) => {
       try {
@@ -1025,6 +1129,7 @@ export const GraphMap = () => {
           setIsAgentAnalysisOpen(true);
         }}
         onDomainGenerate={() => setIsDomainGeneratorOpen(true)}
+        onOpenStyleSettings={() => setIsStyleSettingsOpen(true)}
         filterMode={filterMode}
         onFilterChange={setFilterMode}
         graphCount={graphs.length}
@@ -1059,6 +1164,13 @@ export const GraphMap = () => {
               selectedDomainIds={selectedDomainIds}
               domainColorMap={domainColorMap}
               graphDomainMap={graphDomainMap}
+              colorScheme={colorScheme}
+              linkStyle={linkStyle}
+              linkAnimation={linkAnimation}
+              nodeShape={nodeShape}
+              centerDotShape={centerDotShape}
+              nodeGlow={nodeGlow}
+              gridStyle={gridStyle}
             />
           </ErrorBoundary>
         </Suspense>
@@ -1497,28 +1609,6 @@ export const GraphMap = () => {
             </div>
           </div>
         </div>
-
-        <button
-          onClick={handleCrossDomainAnalysis}
-          disabled={isAnalyzingCrossDomain}
-          className={`fixed bottom-6 right-6 px-4 py-3 rounded-full shadow-lg transition-all flex items-center gap-2 z-40 ${
-            isAnalyzingCrossDomain
-              ? 'bg-gradient-to-r from-primary-400 to-pink-400 cursor-wait'
-              : 'bg-gradient-to-r from-primary-500 to-pink-500 hover:from-primary-600 hover:to-pink-600 hover:shadow-xl active:scale-95'
-          }`}
-        >
-          {isAnalyzingCrossDomain ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin text-white" />
-              <span className="text-white font-medium">{t('graphMap.crossDomain.analyzing')}</span>
-            </>
-          ) : (
-            <>
-              <Layers className="w-5 h-5 text-white" />
-              <span className="text-white font-medium">{t('graphMap.crossDomain.analyze')}</span>
-            </>
-          )}
-        </button>
       </div>
 
       <CreateRelationPanel
@@ -1903,82 +1993,21 @@ export const GraphMap = () => {
       onClose={() => setShowDomainManager(false)}
     />
 
-    {showCrossDomainInsights && crossDomainResult && (
-      <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowCrossDomainInsights(false);
-          }}
-        >
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={crossDomainTitleId}
-            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary-50 to-pink-50 dark:from-primary-900/30 dark:to-pink-900/30">
-              <h2 id={crossDomainTitleId} className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Layers className="w-5 h-5 text-primary-500" />
-                {t('graphMap.crossDomain.title')}
-              </h2>
-              <button
-                onClick={() => setShowCrossDomainInsights(false)}
-                className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-5">
-              <Suspense fallback={
-                <div className="space-y-4">
-                  <Skeleton variant="rectangular" className="w-full h-32" />
-                  <Skeleton variant="rectangular" className="w-full h-24" />
-                  <div className="space-y-2">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <Skeleton key={i} variant="rectangular" className="w-full h-16" />
-                    ))}
-                  </div>
-                </div>
-              }>
-                <CrossDomainInsightsSection
-                  result={crossDomainResult}
-                  onGraphClick={(graphId) => {
-                    setSelectedGraphId(graphId);
-                    setShowCrossDomainInsights(false);
-                  }}
-                />
-              </Suspense>
-            </div>
-
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900/50 flex justify-end gap-3">
-              <button
-                onClick={handleCrossDomainAnalysis}
-                disabled={isAnalyzingCrossDomain}
-                className="px-4 py-2 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-              >
-                <RefreshCw className={`w-4 h-4 ${isAnalyzingCrossDomain ? 'animate-spin' : ''}`} />
-                {t('graphMap.crossDomain.reanalyze')}
-              </button>
-              <button
-                onClick={() => setShowCrossDomainInsights(false)}
-                className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
-              >
-                {t('common.close')}
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-      </AnimatePresence>
+    {isStyleSettingsOpen && (
+      <Suspense fallback={null}>
+        <GraphStyleSettings
+          isOpen={isStyleSettingsOpen}
+          onClose={() => setIsStyleSettingsOpen(false)}
+          currentColorScheme={colorScheme}
+          currentLinkStyle={linkStyle}
+          currentLinkAnimation={linkAnimation}
+          onColorSchemeChange={setColorScheme}
+          onLinkStyleChange={setLinkStyle}
+          onLinkAnimationChange={setLinkAnimation}
+          nodeGlow={nodeGlow}
+          onNodeGlowChange={setNodeGlow}
+        />
+      </Suspense>
     )}
     </>
   );

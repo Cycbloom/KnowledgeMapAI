@@ -7,6 +7,9 @@ import type {
   GraphRelation,
   GraphMapFilterMode,
   Graph,
+  NodeShape,
+  CenterDotShape,
+  GridStyle,
 } from "../../types";
 import { CanvasLayout } from "../GraphEditor/canvas/CanvasLayout";
 import { MiniMap } from "../GraphEditor/canvas/MiniMap";
@@ -39,6 +42,10 @@ interface GraphMapCanvasProps {
   colorScheme?: ColorScheme;
   linkStyle?: LinkStyle;
   linkAnimation?: LinkAnimation;
+  nodeShape?: NodeShape;
+  centerDotShape?: CenterDotShape;
+  nodeGlow?: boolean;
+  gridStyle?: GridStyle;
   fromGraphId?: string | null;
   fromGraphTitle?: string;
   onReturnToGraph?: () => void;
@@ -70,6 +77,10 @@ export const GraphMapCanvas = forwardRef<
       colorScheme = "default",
       linkStyle = "curved",
       linkAnimation = "none",
+      nodeShape = 'circle',
+      centerDotShape,
+      nodeGlow = false,
+      gridStyle = 'hidden',
       fromGraphId,
       fromGraphTitle,
       onReturnToGraph,
@@ -115,6 +126,7 @@ export const GraphMapCanvas = forwardRef<
       handleToggleMiniMap,
       handleToggleLegend,
       animateCamera,
+      handleWheel,
     } = useGraphMapInteraction({
       ref,
       svgRef,
@@ -281,6 +293,26 @@ export const GraphMapCanvas = forwardRef<
       return state;
     }, [layout, nodeHighlightState]);
 
+    // 焦点邻域内边集合：两端都在选中节点一阶邻居集合内，聚焦时保持高亮，其余边变暗
+    const focusHighlightLinkIds = useMemo(() => {
+      const ids = new Set<string>();
+      if (!focusedGraphId || !layout) return ids;
+
+      layout.links.forEach((link) => {
+        const sourceId = String(
+          typeof link.source === "string" ? link.source : link.source.id,
+        );
+        const targetId = String(
+          typeof link.target === "string" ? link.target : link.target.id,
+        );
+        if (neighborGraphIds.has(sourceId) && neighborGraphIds.has(targetId)) {
+          ids.add(link.id);
+        }
+      });
+
+      return ids;
+    }, [focusedGraphId, layout, neighborGraphIds]);
+
     const nodeMap = useMemo(
       () => (layout ? new Map(layout.nodes.map((n) => [n.id, n])) : new Map()),
       [layout],
@@ -370,6 +402,7 @@ export const GraphMapCanvas = forwardRef<
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onClick={handleCanvasClick}
+          onWheel={(e) => handleWheel(e.nativeEvent)}
           onContextMenu={(e) => e.preventDefault()}
         >
           <title>{canvasAriaLabel}</title>
@@ -379,6 +412,7 @@ export const GraphMapCanvas = forwardRef<
               layout={undefined}
               width={containerSize.width}
               height={containerSize.height}
+              gridStyle={gridStyle}
             />
             <DomainBackground
               layoutNodes={layout.nodes}
@@ -391,6 +425,7 @@ export const GraphMapCanvas = forwardRef<
               nodeMap={nodeMap}
               focusedGraphId={focusedGraphId}
               neighborLinkIds={neighborLinkIds}
+              focusHighlightLinkIds={focusHighlightLinkIds}
               linkHighlightState={linkHighlightState}
               selectedDomainIds={selectedDomainIds}
               isDark={isDark}
@@ -410,6 +445,9 @@ export const GraphMapCanvas = forwardRef<
               isDark={isDark}
               zoomLevel={transform.k}
               colorScheme={colorScheme}
+              nodeShape={nodeShape}
+              centerDotShape={centerDotShape}
+              nodeGlow={nodeGlow}
               onGraphClick={onGraphClick}
               onMultiSelectGraph={onMultiSelectGraph}
               setFocusedGraphId={setFocusedGraphId}

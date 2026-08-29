@@ -406,20 +406,20 @@ export function useGraphMapInteraction({
 
     const options = { passive: false };
 
-    svg.addEventListener("wheel", handleWheel, options);
+    // wheel 改为在 GraphMapCanvas 上用 React onWheel 绑定（随 svg 挂载自动生效），
+    // 避免此处单次绑定在 svg 延迟挂载时永久丢失监听。
     svg.addEventListener("touchstart", handleTouchStart, options);
     svg.addEventListener("touchmove", handleTouchMove, options);
     svg.addEventListener("touchend", handleTouchEnd, options);
     svg.addEventListener("touchcancel", handleTouchEnd, options);
 
     return () => {
-      svg.removeEventListener("wheel", handleWheel);
       svg.removeEventListener("touchstart", handleTouchStart);
       svg.removeEventListener("touchmove", handleTouchMove);
       svg.removeEventListener("touchend", handleTouchEnd);
       svg.removeEventListener("touchcancel", handleTouchEnd);
     };
-  }, [svgRef, handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd]);
+  }, [svgRef, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
@@ -626,5 +626,6 @@ export function useGraphMapInteraction({
     handleToggleMiniMap,
     handleToggleLegend,
     animateCamera,
+    handleWheel,
   };
 }

@@ -24,6 +24,8 @@ interface GraphEdgesProps {
   nodeMap: Map<string, LayoutNode>;
   focusedGraphId: string | null;
   neighborLinkIds: Set<string>;
+  /** 焦点邻域内（两端都在选中节点一阶邻居集合内）的边 id 集合，用于聚焦时保持高亮 */
+  focusHighlightLinkIds: Set<string>;
   linkHighlightState: Map<string, boolean>;
   selectedDomainIds: Set<string>;
   isDark: boolean;
@@ -37,6 +39,7 @@ const GraphEdgesComponent: React.FC<GraphEdgesProps> = ({
   nodeMap,
   focusedGraphId,
   neighborLinkIds,
+  focusHighlightLinkIds,
   linkHighlightState,
   selectedDomainIds,
   isDark,
@@ -64,6 +67,10 @@ const GraphEdgesComponent: React.FC<GraphEdgesProps> = ({
           ? neighborLinkIds.has(link.id)
           : false;
         const hasFocus = focusedGraphId !== null;
+        // 聚焦时仅邻域内边高亮、其余变暗；无聚焦时才走域名过滤高亮
+        const highlighted = hasFocus
+          ? focusHighlightLinkIds.has(link.id)
+          : (linkHighlightState.get(link.id) || false);
 
         return (
           <MindMapLink
@@ -71,7 +78,7 @@ const GraphEdgesComponent: React.FC<GraphEdgesProps> = ({
             link={link}
             nodes={nodeMap}
             isDark={isDark}
-            highlighted={linkHighlightState.get(link.id) || false}
+            highlighted={highlighted}
             focused={isFocused}
             hasFocusMode={hasFocus || selectedDomainIds.size > 0}
             linkStyle={linkStyle}
@@ -90,6 +97,7 @@ const areEqual = (prev: GraphEdgesProps, next: GraphEdgesProps) => {
     prev.edges.length === next.edges.length &&
     prev.focusedGraphId === next.focusedGraphId &&
     prev.neighborLinkIds.size === next.neighborLinkIds.size &&
+    prev.focusHighlightLinkIds.size === next.focusHighlightLinkIds.size &&
     prev.linkHighlightState === next.linkHighlightState &&
     prev.selectedDomainIds === next.selectedDomainIds &&
     prev.isDark === next.isDark &&

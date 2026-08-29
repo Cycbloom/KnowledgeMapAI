@@ -5,6 +5,9 @@ import type {
   LinkCapStyle,
   ArrowStyle,
   GridStyle,
+  ColorScheme,
+  LinkStyle,
+  LinkAnimation,
 } from '@shared/types';
 
 interface GraphStyleSettingsState {
@@ -20,12 +23,24 @@ interface GraphStyleSettingsState {
   linkWidth: number;
   /** 画布背景网格样式 */
   gridStyle: GridStyle;
+  /** 配色方案 */
+  colorScheme: ColorScheme;
+  /** 连线样式（曲直/折线/贝塞尔） */
+  linkStyle: LinkStyle;
+  /** 连线动画 */
+  linkAnimation: LinkAnimation;
+  /** 全局「节点光晕」开关 */
+  nodeGlow: boolean;
   setNodeShape: (shape: NodeShape) => void;
   setCenterDotShape: (shape: CenterDotShape) => void;
   setLinkCap: (cap: LinkCapStyle) => void;
   setArrowStyle: (style: ArrowStyle) => void;
   setLinkWidth: (width: number) => void;
   setGridStyle: (style: GridStyle) => void;
+  setColorScheme: (scheme: ColorScheme) => void;
+  setLinkStyle: (style: LinkStyle) => void;
+  setLinkAnimation: (animation: LinkAnimation) => void;
+  setNodeGlow: (enabled: boolean) => void;
   resetStyleSettings: () => void;
 }
 
@@ -36,6 +51,10 @@ export const DEFAULT_STYLE_SETTINGS = {
   arrowStyle: 'triangle' as ArrowStyle,
   linkWidth: 2,
   gridStyle: 'hidden' as GridStyle,
+  colorScheme: 'default' as ColorScheme,
+  linkStyle: 'curved' as LinkStyle,
+  linkAnimation: 'none' as LinkAnimation,
+  nodeGlow: false,
 };
 
 export const useGraphStyleSettingsStore =
@@ -52,10 +71,25 @@ export const useGraphStyleSettingsStore =
           linkWidth: Math.max(1, Math.min(6, Math.round(width))),
         }),
       setGridStyle: (style) => set({ gridStyle: style }),
+      setColorScheme: (scheme) => set({ colorScheme: scheme }),
+      setLinkStyle: (style) => set({ linkStyle: style }),
+      setLinkAnimation: (animation) => set({ linkAnimation: animation }),
+      setNodeGlow: (enabled) => set({ nodeGlow: enabled }),
       resetStyleSettings: () => set(DEFAULT_STYLE_SETTINGS),
     }),
     {
-      version: 1,
+      version: 2,
+      // 升版本后旧持久化缺新字段，用默认值浅合并补齐，避免旧数据丢失
+      migrate: (persistedState) => {
+        const data =
+          persistedState && typeof persistedState === 'object'
+            ? (persistedState as Partial<GraphStyleSettingsState>)
+            : {};
+        return {
+          ...DEFAULT_STYLE_SETTINGS,
+          ...data,
+        } as unknown as GraphStyleSettingsState;
+      },
       // 仅持久化用户可调项，忽略 action 函数
       partialize: (state) => ({
         nodeShape: state.nodeShape,
@@ -64,6 +98,10 @@ export const useGraphStyleSettingsStore =
         arrowStyle: state.arrowStyle,
         linkWidth: state.linkWidth,
         gridStyle: state.gridStyle,
+        colorScheme: state.colorScheme,
+        linkStyle: state.linkStyle,
+        linkAnimation: state.linkAnimation,
+        nodeGlow: state.nodeGlow,
       }),
     },
   );

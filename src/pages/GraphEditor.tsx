@@ -60,10 +60,7 @@ import {
 import { useGraphMutations } from "../hooks/mutations";
 import type {
   Node as GraphNode,
-  ColorScheme,
   GraphColorMode,
-  LinkStyle,
-  LinkAnimation,
   NodeSizeMode,
   EdgeWidthMode,
   TutorExtractedConcept,
@@ -303,10 +300,6 @@ export const GraphEditor = () => {
     canvasY: number;
   } | null>(null);
   const [clipboard] = useState<string[]>([]);
-  const [colorScheme, setColorScheme] = useState<ColorScheme>("default");
-  const [linkStyle, setLinkStyle] = useState<LinkStyle>("curved");
-  const [linkAnimation, setLinkAnimation] = useState<LinkAnimation>("none");
-  const [nodeGlow, setNodeGlow] = useState(false);
   const [nodeSizeMode, setNodeSizeMode] = useState<NodeSizeMode>("fixed");
   const [edgeWidthMode, setEdgeWidthMode] = useState<EdgeWidthMode>("fixed");
   const [coloringMode, setColoringMode] = useState<GraphColorMode>("level"); // Default to level (structure) as requested
@@ -317,7 +310,7 @@ export const GraphEditor = () => {
     string | null
   >(null);
 
-  // 新增的持久化样式设置（节点形状 / 连线端点箭头 / 背景网格）
+  // 新增的持久化样式设置（节点形状 / 连线端点箭头 / 背景网格 / 配色 / 连线动画 / 光晕）
   const {
     nodeShape,
     centerDotShape,
@@ -325,6 +318,14 @@ export const GraphEditor = () => {
     arrowStyle,
     linkWidth,
     gridStyle,
+    colorScheme,
+    linkStyle,
+    linkAnimation,
+    nodeGlow,
+    setColorScheme,
+    setLinkStyle,
+    setLinkAnimation,
+    setNodeGlow,
   } = useGraphStyleSettingsStore();
 
   useQuoteShortcut({

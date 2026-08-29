@@ -16,6 +16,7 @@ import {
   Bot,
   Zap,
   Settings2,
+  Palette,
 } from "lucide-react";
 import type { GraphMapFilterMode, AnalysisMode } from "../../types";
 import { useIsMobile } from "../../hooks";
@@ -31,6 +32,7 @@ interface GraphMapToolbarProps {
   onAgentAnalysis: () => void;
   onCustomAnalysis: () => void;
   onDomainGenerate: () => void;
+  onOpenStyleSettings: () => void;
   filterMode: GraphMapFilterMode;
   onFilterChange: (mode: GraphMapFilterMode) => void;
   graphCount: number;
@@ -56,6 +58,7 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
   onAgentAnalysis,
   onCustomAnalysis,
   onDomainGenerate,
+  onOpenStyleSettings,
   filterMode,
   onFilterChange,
   graphCount,
@@ -389,6 +392,14 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
           >
             <Globe className="w-5 h-5" aria-hidden="true" />
           </button>
+          <button
+            onClick={onOpenStyleSettings}
+            className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg"
+            title={t("graphStyleSettings.title")}
+            aria-label={t("graphStyleSettings.title")}
+          >
+            <Palette className="w-5 h-5" aria-hidden="true" />
+          </button>
           <div className="relative" ref={analyzeMenuRef}>
             <button
               onClick={() => setShowAnalyzeMenu(!showAnalyzeMenu)}
@@ -478,6 +489,15 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
           aria-label={t("graphMap.toolbar.domainGenerate")}
         >
           <Globe className="w-5 h-5" aria-hidden="true" />
+        </button>
+
+        <button
+          onClick={onOpenStyleSettings}
+          className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
+          title={t("graphStyleSettings.title")}
+          aria-label={t("graphStyleSettings.title")}
+        >
+          <Palette className="w-5 h-5" aria-hidden="true" />
         </button>
 
         <div className="relative" ref={analyzeMenuRef}>
@@ -654,6 +674,7 @@ const areEqual = (prev: GraphMapToolbarProps, next: GraphMapToolbarProps) => {
     prev.onAgentAnalysis === next.onAgentAnalysis &&
     prev.onCustomAnalysis === next.onCustomAnalysis &&
     prev.onDomainGenerate === next.onDomainGenerate &&
+    prev.onOpenStyleSettings === next.onOpenStyleSettings &&
     prev.onFilterChange === next.onFilterChange &&
     prev.onReturnToGraph === next.onReturnToGraph &&
     prev.onAnalysisModeChange === next.onAnalysisModeChange &&

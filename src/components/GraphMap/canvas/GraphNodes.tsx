@@ -7,6 +7,8 @@ import type {
   ColorScheme,
   GraphColorMode,
   NodeSizeMode,
+  NodeShape,
+  CenterDotShape,
 } from "../../../types";
 import { MindMapNode } from "../../GraphEditor/canvas/MindMapNode";
 
@@ -23,6 +25,9 @@ interface GraphNodesProps {
   isDark: boolean;
   zoomLevel: number;
   colorScheme: ColorScheme;
+  nodeShape?: NodeShape;
+  centerDotShape?: CenterDotShape;
+  nodeGlow?: boolean;
   onGraphClick?: (graph: Graph) => void;
   onMultiSelectGraph?: (
     graphId: string,
@@ -54,6 +59,9 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
   isDark,
   zoomLevel,
   colorScheme,
+  nodeShape,
+  centerDotShape,
+  nodeGlow,
   onGraphClick,
   onMultiSelectGraph,
   setFocusedGraphId,
@@ -131,6 +139,9 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
               nodeSizeMode={"fixed" as NodeSizeMode}
               allNodes={allNodes}
               coloringMode={"level" as GraphColorMode}
+              nodeShape={nodeShape}
+              centerDotShape={centerDotShape}
+              nodeGlow={nodeGlow}
             />
           </g>
         );
@@ -150,6 +161,9 @@ const areEqual = (prev: GraphNodesProps, next: GraphNodesProps) => {
     prev.isDark === next.isDark &&
     prev.zoomLevel === next.zoomLevel &&
     prev.colorScheme === next.colorScheme &&
+    prev.nodeShape === next.nodeShape &&
+    prev.centerDotShape === next.centerDotShape &&
+    prev.nodeGlow === next.nodeGlow &&
     prev.containerWidth === next.containerWidth &&
     prev.containerHeight === next.containerHeight &&
     prev.onGraphClick === next.onGraphClick &&

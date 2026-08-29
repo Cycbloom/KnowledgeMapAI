@@ -20,7 +20,6 @@ import {
   LucideIcon,
   AlertTriangle,
   Upload,
-  Inbox,
 } from "lucide-react";
 import {
   ErrorBoundary,
@@ -752,16 +751,6 @@ export const Layout = () => {
           <Suspense fallback={null}>
             <LazyUpdateOverlay />
           </Suspense>
-          {!isFullScreenPage && (
-            <button
-              onClick={() => setIsQuickCaptureOpen(true)}
-              className={`fixed right-4 z-30 p-4 rounded-full shadow-lg bg-primary-600 hover:bg-primary-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${isMobile ? "bottom-24" : "bottom-6"}`}
-              title={t('capture.fabLabel')}
-              aria-label={t('capture.fabLabel')}
-            >
-              <Inbox size={22} aria-hidden="true" />
-            </button>
-          )}
           <MessageBar bottomOffset={isMobile && !isFullScreenPage ? 56 : 0} />
           <OfflineIndicator />
           <AchievementNotification />

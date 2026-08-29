@@ -392,7 +392,7 @@ CREATE OR REPLACE FUNCTION search_similar_knowledge_points(
 )
 RETURNS TABLE (
   id UUID,
-  title VARCHAR(512),
+  title TEXT,
   content TEXT,
   similarity FLOAT,
   visibility knowledge_point_visibility

@@ -7,7 +7,7 @@ import {
   TaskAbortError,
 } from "./index";
 import { getAIProviderForTask } from "../ai/factory";
-import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers";
+import { createNodeWithCrossGraphReuse } from "./utils";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -141,11 +141,11 @@ export class RecursiveGraphProcessor implements TaskProcessor {
       // 复杂度降低：预构建核心节点标题 Set，替代下方 filter 内对每条 nodeMap 项 O(n) 的 coreNodes.some() 扫描
       const coreNodeTitleSet = new Set(coreNodes.map((c) => c.title));
 
-      const rootNodeResult = await createKnowledgePointWithGraphNode(
+      const rootNodeResult = await createNodeWithCrossGraphReuse(
         supabase,
         userId,
+        graph_id,
         {
-          graph_id,
           title: rootData.title,
           content: rootData.content || "",
           level: "root",
@@ -166,11 +166,11 @@ export class RecursiveGraphProcessor implements TaskProcessor {
             continue;
           }
 
-          const childNodeResult = await createKnowledgePointWithGraphNode(
+          const childNodeResult = await createNodeWithCrossGraphReuse(
             supabase,
             userId,
+            graph_id,
             {
-              graph_id,
               title: coreNode.title,
               content: coreNode.content || "",
               level: "core",
@@ -258,11 +258,11 @@ export class RecursiveGraphProcessor implements TaskProcessor {
                 continue;
               }
 
-              const subNodeResult = await createKnowledgePointWithGraphNode(
+              const subNodeResult = await createNodeWithCrossGraphReuse(
                 supabase,
                 userId,
+                graph_id,
                 {
-                  graph_id,
                   title: child.title,
                   content: child.content || "",
                   level: "sub",
@@ -344,11 +344,11 @@ export class RecursiveGraphProcessor implements TaskProcessor {
                 continue;
               }
 
-              const leafNodeResult = await createKnowledgePointWithGraphNode(
+              const leafNodeResult = await createNodeWithCrossGraphReuse(
                 supabase,
                 userId,
+                graph_id,
                 {
-                  graph_id,
                   title: child.title,
                   content: child.content || "",
                   level: "leaf",

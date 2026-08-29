@@ -768,6 +768,8 @@ export const GraphMap = () => {
               title: n.title,
               content: n.content,
               level: n.level || "core",
+              // core 挂到 root 下：root 在 calculateNodePositions 中恒为 temp-0
+              parentId: "temp-0",
               backboneModule: n.backboneModule,
               needsRefinement: n.needsRefinement,
               color: n.color,

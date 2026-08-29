@@ -210,3 +210,45 @@ export async function getKnowledgePointsByIds(
 
   return buildNodesFromGraphNodes(graphNodes || []);
 }
+
+export interface RefCountNode {
+  id: string;
+  knowledge_point_id?: string;
+  refGraphCount?: number;
+}
+
+/**
+ * 为一批节点批量补充 refGraphCount（该知识点被多少个图谱引用，含当前图谱）。
+ * 一次聚合查询（graph_nodes 按 knowledge_point_id 计数）替代逐节点 N 次往返。
+ */
+export async function attachRefGraphCounts(
+  supabase: SupabaseClient,
+  nodes: Array<RefCountNode | null>,
+): Promise<void> {
+  const validNodes = nodes.filter((n): n is RefCountNode => Boolean(n));
+  if (validNodes.length === 0) return;
+
+  const ids = validNodes.map((n) => n.knowledge_point_id || n.id);
+  const { data, error } = await supabase
+    .from("graph_nodes")
+    .select("knowledge_point_id")
+    .in("knowledge_point_id", ids)
+    .is("deleted_at", null);
+
+  if (error) {
+    logger.warn("attachRefGraphCounts error:", error);
+    return;
+  }
+
+  const countByKp = new Map<string, number>();
+  for (const row of data || []) {
+    countByKp.set(
+      row.knowledge_point_id,
+      (countByKp.get(row.knowledge_point_id) ?? 0) + 1,
+    );
+  }
+  for (const n of validNodes) {
+    const kpId = n.knowledge_point_id || n.id;
+    n.refGraphCount = countByKp.get(kpId) ?? 0;
+  }
+}

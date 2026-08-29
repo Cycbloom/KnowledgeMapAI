@@ -47,5 +47,6 @@
   "retrievability": "Retrievability (Legacy): {{percent}}%",
   "mastery": "Mastery: {{percent}}%",
   "lastReview": "Last Review",
-  "reviewNow": "Review Now"
+  "reviewNow": "Review Now",
+  "referencedGraphs": "In {{count}} graphs"
 }

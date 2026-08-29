@@ -5,6 +5,7 @@ import {
   buildNodeFromGraphNode,
   GRAPH_NODES_SELECT,
   GRAPH_NODES_SELECT_WITH_EMBEDDING,
+  attachRefGraphCounts,
 } from "../../utils/nodeHelpers";
 import type { GraphNodeRaw } from "../../../shared/utils/nodeHelpers";
 import { logger } from "../../utils/logger";
@@ -333,6 +334,8 @@ export class GraphQueryService {
             })
             .filter(Boolean);
 
+          await attachRefGraphCounts(supabase, nodes);
+
           const { data: edges, error: edgesError } = await notDeleted(supabase
             .from("edges")
             .select("*")
@@ -404,6 +407,8 @@ export class GraphQueryService {
             };
           })
           .filter(Boolean);
+
+        await attachRefGraphCounts(supabase, nodes);
 
         const { data: edges, error: edgesError } = await notDeleted(supabase
           .from("edges")

@@ -256,6 +256,17 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
               </span>
             </div>
 
+            {node.refGraphCount !== undefined && node.refGraphCount > 1 && (
+              <div
+                className={`flex items-center bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded ${isMobile ? "px-2.5 py-1.5" : "px-2 py-1"}`}
+              >
+                <LinkIcon size={14} className="mr-1.5" />
+                <span>
+                  {t("nodeDetail.referencedGraphs", { count: node.refGraphCount })}
+                </span>
+              </div>
+            )}
+
             {onShowVersionHistory && (
               <button
                 onClick={onShowVersionHistory}

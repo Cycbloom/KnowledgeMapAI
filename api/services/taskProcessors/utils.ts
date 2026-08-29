@@ -8,9 +8,59 @@ import {
   generateChildSuggestions,
   generateGraphSkeleton,
 } from "../ai/nodeSuggestionService";
+import { graphNodeService } from "../graph/graphNodeService";
+import { findReusableKnowledgePointId } from "../../utils/similaritySearch";
+import type { NodeLevel } from "@shared/types/graph";
 
 interface KPTitleRef {
   knowledge_points?: { title?: string } | { title?: string }[] | null;
+}
+
+interface CreatedNodeRef {
+  id: string;
+}
+
+/**
+ * 带跨图谱复用的建节点：命中本人已有的同义知识点则复用（仅新增 graph_nodes 关联），
+ * 否则按原逻辑新建知识点节点。返回值 id 统一为 knowledge_point_id，供边关系引用。
+ */
+export async function createNodeWithCrossGraphReuse(
+  supabase: SupabaseClient,
+  userId: string | undefined,
+  graphId: string,
+  data: {
+    title: string;
+    content: string;
+    level: string;
+    x_position: number;
+    y_position: number;
+  },
+): Promise<CreatedNodeRef | null> {
+  if (userId) {
+    const reusedId = await findReusableKnowledgePointId(supabase, userId, data.title, {
+      excludeGraphId: graphId,
+    });
+    if (reusedId) {
+      const graphNode = await graphNodeService.addToGraph(supabase, {
+        graph_id: graphId,
+        knowledge_point_id: reusedId,
+        x_position: data.x_position,
+        y_position: data.y_position,
+        level: data.level as NodeLevel,
+        is_accepted: true,
+      });
+      return { id: graphNode.knowledge_point_id };
+    }
+  }
+
+  return createKnowledgePointWithGraphNode(supabase, userId || "", {
+    graph_id: graphId,
+    title: data.title,
+    content: data.content,
+    level: data.level,
+    x_position: data.x_position,
+    y_position: data.y_position,
+  });
 }
 
 export async function generateNodesForGraph(
@@ -52,11 +102,11 @@ export async function generateNodesForGraph(
     });
 
     if (root) {
-      const rootNodeResult = await createKnowledgePointWithGraphNode(
+      const rootNodeResult = await createNodeWithCrossGraphReuse(
         supabase,
-        userId || "",
+        userId,
+        graphId,
         {
-          graph_id: graphId,
           title: root.title || topic,
           content: root.content || "",
           level: "root",
@@ -83,11 +133,11 @@ export async function generateNodesForGraph(
           const angle = (2 * Math.PI * i) / coreNodes.length;
           const radius = 200;
 
-          const childNodeResult = await createKnowledgePointWithGraphNode(
+          const childNodeResult = await createNodeWithCrossGraphReuse(
             supabase,
-            userId || "",
+            userId,
+            graphId,
             {
-              graph_id: graphId,
               title: coreNode.title,
               content: coreNode.content || "",
               level: "core",
@@ -202,11 +252,11 @@ export async function expandNodeForGraph(
         const angle = (2 * Math.PI * i) / children.length;
         const radius = 150;
 
-        const childNodeResult = await createKnowledgePointWithGraphNode(
+        const childNodeResult = await createNodeWithCrossGraphReuse(
           supabase,
-          userId || "",
+          userId,
+          graphId,
           {
-            graph_id: graphId,
             title: child.title,
             content: child.content || "",
             level: getNextLevel(parentLevel),

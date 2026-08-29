@@ -30,6 +30,8 @@ export type Node = GraphNode &
     contentTranslations?: string | Record<string, string> | undefined;
     /** 语言 keyed 的摘要映射 */
     summaryTranslations?: string | Record<string, string> | undefined;
+    /** 该知识点被多少个图谱引用（跨图谱复用次数，含当前图谱）；>1 表示已在多个图谱中复用 */
+    refGraphCount?: number;
   };
 
 export interface KnowledgePointWithGraphs extends KnowledgePoint {

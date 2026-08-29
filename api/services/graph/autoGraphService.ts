@@ -18,6 +18,7 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { transactionExecutor } from "../../database/transactionExecutor";
 import { notDeleted } from '../common/softDeleteHelper';
 import { autoGraphMergeService } from "./autoGraphMergeService";
+import { findReusableKnowledgePointId } from "../../utils/similaritySearch";
 import {
   generateChildSuggestions,
   generateGraphSkeleton,
@@ -255,6 +256,20 @@ export class AutoGraphService {
       logger.info(`Dedup: ${mergedCount} nodes merged with existing concepts`);
     }
 
+    // 跨图谱知识复用：对本次需新建的节点做全局语义检索，命中则复用本人已有的知识点，避免重复创建
+    const crossReuseMap = new Map<string, string>();
+    for (const nodeData of nodesToCreate) {
+      const reusedId = await findReusableKnowledgePointId(supabase, userId, nodeData.title, {
+        excludeGraphId: graphId,
+      });
+      if (reusedId) {
+        crossReuseMap.set(nodeData.tempId, reusedId);
+      }
+    }
+    if (crossReuseMap.size > 0) {
+      logger.info(`Cross-graph reuse: ${crossReuseMap.size} nodes reused existing knowledge points`);
+    }
+
     for (const [tempId, kpId] of reusedKpIds) {
       const { data: existingGN } = await notDeleted(supabase
         .from("graph_nodes")
@@ -283,6 +298,7 @@ export class AutoGraphService {
         nodeMap,
         graphNodeIds,
         mergedCount,
+        crossReuseMap,
       );
     }
 
@@ -292,16 +308,33 @@ export class AutoGraphService {
 
     const failedNodes: string[] = [];
 
+    // 跨图谱复用的节点不新建知识点，仅新增 graph_nodes 关联；其余照常批量创建
+    const toCreateNodes = nodesToCreate.filter(
+      (nodeData) => !crossReuseMap.has(nodeData.tempId),
+    );
+    const kpIdByTempId = new Map<string, string>();
+
     logger.info("Creating knowledge points in batches (without embedding)...");
     const { knowledgePoints, embeddingsGenerated } =
-      await this.createKnowledgePointsBatch(supabase, userId, nodesToCreate);
+      await this.createKnowledgePointsBatch(supabase, userId, toCreateNodes);
+
+    let createdPtr = 0;
+    for (const nodeData of nodesToCreate) {
+      const reusedId = crossReuseMap.get(nodeData.tempId);
+      if (reusedId) {
+        kpIdByTempId.set(nodeData.tempId, reusedId);
+        continue;
+      }
+      const kp = knowledgePoints[createdPtr++];
+      if (kp) {
+        kpIdByTempId.set(nodeData.tempId, kp.id);
+      }
+    }
 
     logger.info("Creating graph nodes...");
-    for (let i = 0; i < nodesToCreate.length; i++) {
-      const nodeData = nodesToCreate[i];
-      const kp = knowledgePoints[i];
-
-      if (!kp) {
+    for (const nodeData of nodesToCreate) {
+      const kpId = kpIdByTempId.get(nodeData.tempId);
+      if (!kpId) {
         failedNodes.push(nodeData.title);
         continue;
       }
@@ -310,7 +343,7 @@ export class AutoGraphService {
         const graphNode = await this.retry(() =>
           graphNodeService.addToGraph(supabase, {
             graph_id: graphId,
-            knowledge_point_id: kp.id,
+            knowledge_point_id: kpId,
             x_position: nodeData.x_position,
             y_position: nodeData.y_position,
             level: (validLevels.includes(nodeData.level) ? nodeData.level : "normal") as NodeLevel,
@@ -320,7 +353,7 @@ export class AutoGraphService {
 
         nodeMap.set(nodeData.tempId, {
           graphNodeId: graphNode.id,
-          knowledgePointId: kp.id,
+          knowledgePointId: kpId,
         });
         graphNodeIds.push(graphNode.id);
       } catch (error) {
@@ -356,14 +389,30 @@ export class AutoGraphService {
     const parentKpByGraphNodeId = new Map<string, string>();
     if (missingParentIds.length > 0) {
       try {
-        const { data: existingParents } = await supabase
+        // 父节点解析：前端可能传 graph_node.id 或 knowledge_point_id，二者都查、
+        // 并同时以两类 id 为键注册，确保后续能命中
+        const register = (rows: Array<{ id: string; knowledge_point_id: string }>) => {
+          for (const row of rows) {
+            parentKpByGraphNodeId.set(row.id, row.knowledge_point_id);
+            parentKpByGraphNodeId.set(row.knowledge_point_id, row.knowledge_point_id);
+          }
+        };
+        const { data: byGraphNodeId } = await notDeleted(supabase
           .from("graph_nodes")
           .select("id, knowledge_point_id")
+          .eq("graph_id", graphId)
           .in("id", missingParentIds)
-          .eq("graph_id", graphId);
-
-        for (const p of existingParents ?? []) {
-          parentKpByGraphNodeId.set(p.id, p.knowledge_point_id);
+          );
+        register(byGraphNodeId ?? []);
+        const byKpIds = missingParentIds.filter((id) => !parentKpByGraphNodeId.has(id));
+        if (byKpIds.length > 0) {
+          const { data: byKnowledgePointId } = await notDeleted(supabase
+            .from("graph_nodes")
+            .select("id, knowledge_point_id")
+            .eq("graph_id", graphId)
+            .in("knowledge_point_id", byKpIds)
+            );
+          register(byKnowledgePointId ?? []);
         }
       } catch (e) {
         logger.warn(`Could not query parent nodes in batch`, {
@@ -526,16 +575,23 @@ export class AutoGraphService {
     nodeMap: Map<string, { graphNodeId: string; knowledgePointId: string }>,
     graphNodeIds: string[],
     mergedCount: number,
+    crossReuseMap: Map<string, string>,
   ): Promise<ProcessAINodesResult> {
-    const knowledgePointIds: string[] = [];
+    const kpIdByTempId = new Map<string, string>();
 
     const { edgeCount } = await transactionExecutor.executeInTransaction(
       async (client) => {
-        // 1. Insert knowledge_points
+        // 1. Insert knowledge_points（跨图谱复用的节点不新建，沿用已有知识点 id）
         logger.info(
           "Creating knowledge points in transaction (without embedding)...",
         );
         for (const nodeData of nodesToCreate) {
+          const reusedId = crossReuseMap.get(nodeData.tempId);
+          if (reusedId) {
+            kpIdByTempId.set(nodeData.tempId, reusedId);
+            continue;
+          }
+
           const embeddingValue = nodeData.embedding
             ? `[${nodeData.embedding.join(",")}]`
             : null;
@@ -565,14 +621,20 @@ export class AutoGraphService {
               ErrorCodes.SYSTEM_INTERNAL_ERROR,
             );
           }
-          knowledgePointIds.push(kpId);
+          kpIdByTempId.set(nodeData.tempId, kpId);
         }
 
         // 2. Insert graph_nodes
         logger.info("Creating graph nodes in transaction...");
-        for (let i = 0; i < nodesToCreate.length; i++) {
-          const nodeData = nodesToCreate[i];
-          const kpId = knowledgePointIds[i];
+        for (const nodeData of nodesToCreate) {
+          const kpId = kpIdByTempId.get(nodeData.tempId);
+          if (!kpId) {
+            throw new AppError(
+              `Missing knowledge point id for: ${nodeData.title}`,
+              500,
+              ErrorCodes.SYSTEM_INTERNAL_ERROR,
+            );
+          }
 
           const gnResult = await client.query(
             `INSERT INTO graph_nodes (graph_id, knowledge_point_id, x_position, y_position, level, is_accepted)
@@ -608,7 +670,7 @@ export class AutoGraphService {
 
             if (!parentInfo && childInfo) {
               const { rows: existingParent } = await client.query(
-                `SELECT knowledge_point_id FROM graph_nodes WHERE id = $1 AND graph_id = $2 AND deleted_at IS NULL`,
+                `SELECT knowledge_point_id FROM graph_nodes WHERE (id = $1 OR knowledge_point_id = $1) AND graph_id = $2 AND deleted_at IS NULL`,
                 [nodeData.parentId, graphId],
               );
 
@@ -723,12 +785,17 @@ export class AutoGraphService {
     // Post-transaction: generate embeddings for knowledge points without them
     const kpsNeedingEmbeddings: Array<{ id: string; text: string }> = [];
     for (let i = 0; i < nodesToCreate.length; i++) {
-      if (knowledgePointIds[i] && !nodesToCreate[i].embedding) {
-        const node = nodesToCreate[i];
+      const node = nodesToCreate[i];
+      if (crossReuseMap.has(node.tempId)) {
+        // 跨图谱复用的知识点已有 embedding，跳过
+        continue;
+      }
+      const kpId = kpIdByTempId.get(node.tempId);
+      if (kpId && !node.embedding) {
         const text = node.content
           ? `${node.title}: ${node.content.slice(0, 500)}`
           : node.title;
-        kpsNeedingEmbeddings.push({ id: knowledgePointIds[i], text });
+        kpsNeedingEmbeddings.push({ id: kpId, text });
       }
     }
 
@@ -771,22 +838,20 @@ export class AutoGraphService {
       }
     }
 
-    if (!embeddingsGenerated) {
-      if (knowledgePointIds.length > 0) {
+    if (!embeddingsGenerated && kpsNeedingEmbeddings.length > 0) {
         try {
           await asyncTaskService.createTask(
             userId,
             "embedding_generation",
-            { knowledgePointIds },
-            `嵌入生成 - ${knowledgePointIds.length}个知识点`,
+            { knowledgePointIds: kpsNeedingEmbeddings.map((kp) => kp.id) },
+            `嵌入生成 - ${kpsNeedingEmbeddings.length}个知识点`,
           );
           logger.info(
-            `Created embedding generation task for ${knowledgePointIds.length} knowledge points`,
+            `Created embedding generation task for ${kpsNeedingEmbeddings.length} knowledge points`,
           );
         } catch (error) {
           logger.error("Failed to create embedding generation task:", error);
         }
-      }
     }
 
     const nodeMappingRecord: Record<

@@ -47,5 +47,6 @@
   "retrievability": "可提取性（旧版）: {{percent}}%",
   "mastery": "掌握度: {{percent}}%",
   "lastReview": "上次复习",
-  "reviewNow": "立即复习"
+  "reviewNow": "立即复习",
+  "referencedGraphs": "已复用于 {{count}} 个图谱"
 }

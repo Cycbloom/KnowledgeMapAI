@@ -275,7 +275,9 @@ export class KnowledgePointService {
           throw error;
         }
 
-        return (data || []) as SimilarKnowledgePointResult[];
+        return Array.isArray(data)
+          ? (data as SimilarKnowledgePointResult[])
+          : [];
       },
       CacheTTL.SEARCH,
       ['search']

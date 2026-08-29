@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { cacheService } from '../common/cacheService';
 import { aiService } from '../ai/aiService';
+import { findReusableKnowledgePointId } from '../../utils/similaritySearch';
 import { knowledgePointService, graphNodeService, edgeService, backlinkService } from './index';
 import { buildNodeFromGraphNode, createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers';
 import { appEventBus } from '../core/eventBus';
@@ -111,6 +112,8 @@ export class NodesService {
 
     let knowledgePointId = existingKpId;
     let graphNodeId: string | undefined;
+    // 复用场景下是否真正新建了知识点（用于决定是否异步生成 embedding）
+    let isNewKnowledgePoint = false;
 
     // 当不需要复用且没有已有知识点时，使用 RPC 原子性创建
     if (!knowledgePointId && !reuse_existing) {
@@ -136,6 +139,17 @@ export class NodesService {
 
       knowledgePointId = result.knowledge_point_id;
       graphNodeId = result.graph_node_id;
+      isNewKnowledgePoint = true;
+    }
+
+    // 默认自动启用跨图谱知识复用：若本人已有同义知识点，则关联复用，不新建
+    if (!knowledgePointId && reuse_existing && title) {
+      const reusedId = await findReusableKnowledgePointId(supabase, userId, title, {
+        excludeGraphId: graph_id,
+      });
+      if (reusedId) {
+        knowledgePointId = reusedId;
+      }
     }
 
     // 复用路径或已有知识点：仅创建 knowledge_point（如需要）+ graph_node
@@ -151,6 +165,7 @@ export class NodesService {
       });
 
       knowledgePointId = newKp.id;
+      isNewKnowledgePoint = true;
     }
 
     try {
@@ -233,8 +248,8 @@ export class NodesService {
           'graph_node_service',
         );
 
-      // 异步处理 embedding（不阻塞返回）
-      if (!existingKpId && title) {
+      // 异步处理 embedding（仅对本次真正新建的知识点生成，复用命中时无需重算覆盖原 embedding）
+      if (isNewKnowledgePoint && title) {
         this.processEmbeddingAsync(supabase, userId, knowledgePointId, title, reuse_existing).catch((err) => {
           logger.warn('Async embedding processing failed:', err);
         });

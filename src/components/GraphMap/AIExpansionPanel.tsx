@@ -133,7 +133,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
     () => new Set(selectedRelationTypes),
     [selectedRelationTypes],
   );
-  const [autoGenerateNodes, setAutoGenerateNodes] = useState(true);
+  const [autoGenerateNodes, setAutoGenerateNodes] = useState(false);
   const [nodeDepth, setNodeDepth] = useState(2);
 
   const [isSubmitting, setIsSubmitting] = useState(false);

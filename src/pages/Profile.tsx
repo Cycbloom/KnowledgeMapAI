@@ -35,6 +35,8 @@ export const Profile = () => {
   const refreshAllData = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.domainTree() }),
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats }),
       queryClient.invalidateQueries({ queryKey: ['studyCards'] }),
       queryClient.invalidateQueries({ queryKey: queryKeys.statistics }),

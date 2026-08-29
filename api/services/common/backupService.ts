@@ -1,7 +1,9 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../../utils/logger';
+import { getSupabaseAdmin } from '../../supabase';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { cacheService, CacheKeys } from './cacheService';
@@ -575,25 +577,25 @@ export class BackupService {
 
   /** replace 模式：按 FK 依赖顺序（子表在前）清空当前用户的全部个人数据 */
   async deleteAllUserData(supabase: SupabaseClient, userId: string): Promise<void> {
+    // 使用服务角色客户端执行硬删除，绕过 RLS 对 DELETE 的拦截（普通用户客户端可能只有 UPDATE/软删权限）
+    const db = getSupabaseAdmin() ?? supabase;
+
     // 子表/无 user_id 列的表需通过父表 ID 清空，父表按序删除
-    const { data: graphIds } = await supabase.from('knowledge_graphs').select('id').eq('user_id', userId);
-    const ids = (graphIds as { id: string }[] | null)?.map((g) => g.id) ?? [];
-    const { data: taskIds } = await supabase.from('user_tasks').select('id').eq('user_id', userId);
+    const { data: taskIds } = await db.from('user_tasks').select('id').eq('user_id', userId);
     const taskIdList = (taskIds as { id: string }[] | null)?.map((t) => t.id) ?? [];
-    const { data: noteIds } = await supabase.from('notes').select('id').eq('user_id', userId);
+    const { data: noteIds } = await db.from('notes').select('id').eq('user_id', userId);
     const noteIdList = (noteIds as { id: string }[] | null)?.map((n) => n.id) ?? [];
-    const { data: pathIds } = await supabase.from('learning_paths').select('id').eq('user_id', userId);
+    const { data: pathIds } = await db.from('learning_paths').select('id').eq('user_id', userId);
     const pathIdList = (pathIds as { id: string }[] | null)?.map((p) => p.id) ?? [];
-    const { data: kpIds } = await supabase.from('knowledge_points').select('id').eq('owner_id', userId);
-    const kpIdList = (kpIds as { id: string }[] | null)?.map((k) => k.id) ?? [];
-    const { data: agentIds } = await supabase.from('agent_sessions').select('id').eq('user_id', userId);
+    const { data: agentIds } = await db.from('agent_sessions').select('id').eq('user_id', userId);
     const agentIdList = (agentIds as { id: string }[] | null)?.map((s) => s.id) ?? [];
-    const { data: quizSetIds } = await supabase.from('quiz_sets').select('id').eq('user_id', userId);
+    const { data: quizSetIds } = await db.from('quiz_sets').select('id').eq('user_id', userId);
     const quizSetIdList = (quizSetIds as { id: string }[] | null)?.map((q) => q.id) ?? [];
 
     const run = async (table: string, ids: string[], column = 'id') => {
       if (ids.length === 0) return;
-      await supabase.from(table).delete().in(column, ids);
+      const { error } = await db.from(table).delete().in(column, ids);
+      if (error) logger.warn(`Failed to clear ${table}:`, error);
     };
 
     // agent 相关（子表）
@@ -602,7 +604,7 @@ export class BackupService {
     await run('agent_messages', agentIdList, 'session_id');
     await run('agent_sessions', agentIdList);
     // 学习会话（子表）
-    const { data: sessionIds } = await supabase.from('learning_sessions').select('id').eq('user_id', userId);
+    const { data: sessionIds } = await db.from('learning_sessions').select('id').eq('user_id', userId);
     const sessionIdList = (sessionIds as { id: string }[] | null)?.map((s) => s.id) ?? [];
     await run('learning_session_results', sessionIdList, 'session_id');
     await run('learning_sessions', sessionIdList);
@@ -613,16 +615,16 @@ export class BackupService {
     await run('note_block_refs', noteIdList, 'source_note_id');
     await run('note_node_links', noteIdList, 'note_id');
     await run('notes', noteIdList);
-    await supabase.from('note_templates').delete().eq('user_id', userId);
+    await db.from('note_templates').delete().eq('user_id', userId);
     // 学习路径（子表）
-    const { data: pathNodeIds } = await supabase.from('learning_path_nodes').select('id').in('path_id', pathIdList);
+    const { data: pathNodeIds } = await db.from('learning_path_nodes').select('id').in('path_id', pathIdList);
     const pathNodeIdList = (pathNodeIds as { id: string }[] | null)?.map((n) => n.id) ?? [];
     await run('learning_path_prerequisites', pathNodeIdList, 'path_node_id');
     await run('learning_path_progress', pathIdList, 'path_id');
     await run('path_node_tasks', pathIdList, 'path_id');
     await run('learning_path_nodes', pathIdList, 'path_id');
     await run('learning_paths', pathIdList);
-    await supabase.from('learning_loops').delete().eq('user_id', userId);
+    await db.from('learning_loops').delete().eq('user_id', userId);
     // 任务（子表）
     await run('task_dependencies', taskIdList, 'task_id');
     await run('task_progress_plans', taskIdList, 'task_id');
@@ -631,49 +633,40 @@ export class BackupService {
     await run('task_knowledge_points', taskIdList, 'task_id');
     await run('task_schedules', taskIdList, 'task_template_id');
     await run('task_reviews', taskIdList, 'task_id');
-    await supabase.from('task_executions').delete().eq('user_id', userId);
+    await db.from('task_executions').delete().eq('user_id', userId);
     await run('user_tasks', taskIdList);
-    await supabase.from('queues').delete().eq('user_id', userId);
-    await supabase.from('task_tags').delete().eq('user_id', userId);
-    await supabase.from('task_settings').delete().eq('user_id', userId);
-    await supabase.from('user_time_slots').delete().eq('user_id', userId);
-    await supabase.from('scheduler_weight_profiles').delete().eq('user_id', userId);
-    await supabase.from('task_templates').delete().eq('user_id', userId);
+    await db.from('queues').delete().eq('user_id', userId);
+    await db.from('task_tags').delete().eq('user_id', userId);
+    await db.from('task_settings').delete().eq('user_id', userId);
+    await db.from('user_time_slots').delete().eq('user_id', userId);
+    await db.from('scheduler_weight_profiles').delete().eq('user_id', userId);
+    await db.from('task_templates').delete().eq('user_id', userId);
     // 学习卡片/进度
-    await supabase.from('study_cards').delete().eq('user_id', userId);
-    await supabase.from('study_progress').delete().eq('user_id', userId);
+    await db.from('study_cards').delete().eq('user_id', userId);
+    await db.from('study_progress').delete().eq('user_id', userId);
     // 专注/效率
-    await supabase.from('focus_sessions').delete().eq('user_id', userId);
-    await supabase.from('user_efficiency_profile').delete().eq('user_id', userId);
-    await supabase.from('user_focus_stats').delete().eq('user_id', userId);
+    await db.from('focus_sessions').delete().eq('user_id', userId);
+    await db.from('user_efficiency_profile').delete().eq('user_id', userId);
+    await db.from('user_focus_stats').delete().eq('user_id', userId);
     // 成就/周期任务
-    await supabase.from('user_achievements').delete().eq('user_id', userId);
-    const { data: passIds } = await supabase.from('periodic_passes').select('id').eq('user_id', userId);
+    await db.from('user_achievements').delete().eq('user_id', userId);
+    const { data: passIds } = await db.from('periodic_passes').select('id').eq('user_id', userId);
     const passIdList = (passIds as { id: string }[] | null)?.map((p) => p.id) ?? [];
     await run('user_pass_progress', passIdList, 'pass_id');
-    await supabase.from('periodic_passes').delete().eq('user_id', userId);
-    await supabase.from('periodic_tasks').delete().eq('user_id', userId);
-    // 图谱相关（子表）
-    await run('graph_events', ids, 'graph_id');
-    await run('graph_snapshots', ids, 'graph_id');
-    await run('literature_sources', ids, 'graph_id');
-    await run('graph_domains', ids, 'graph_id');
-    await run('graph_relations', ids, 'source_graph_id');
-    await run('graph_backbone_modules', ids, 'graph_id');
-    await run('edges', ids, 'graph_id');
-    await run('graph_nodes', ids, 'graph_id');
-    await run('knowledge_point_versions', kpIdList, 'knowledge_point_id');
-    await run('knowledge_points', kpIdList);
-    await run('knowledge_graphs', ids);
-    if (ids.length > 0) {
-      await supabase.from('graph_collaborators').delete().in('graph_id', ids);
-    }
+    await db.from('periodic_passes').delete().eq('user_id', userId);
+    await db.from('periodic_tasks').delete().eq('user_id', userId);
     // 领域/关系类型/插件/配置
-    await supabase.from('domains').delete().eq('user_id', userId);
-    await supabase.from('relationship_types').delete().eq('user_id', userId);
-    await supabase.from('installed_plugins').delete().eq('user_id', userId);
-    await supabase.from('learning_material_schemas').delete().eq('user_id', userId);
-    await supabase.from('notification_settings').delete().eq('user_id', userId);
+    await db.from('domains').delete().eq('user_id', userId);
+    await db.from('relationship_types').delete().eq('user_id', userId);
+    await db.from('installed_plugins').delete().eq('user_id', userId);
+    await db.from('notification_settings').delete().eq('user_id', userId);
+    // 图谱及其全部子表：按 user_id 直接删主表，利用 ON DELETE CASCADE 级联清理
+    // edges/graph_nodes/graph_events/graph_snapshots/literature_sources/graph_domains/graph_relations/graph_backbone_modules/knowledge_graph_contents/graph_collaborators 等，
+    // 避免逐表 .in(大量 id) 导致 PostgREST URL 过长（URI too long）
+    await db.from('learning_material_schemas').delete().eq('user_id', userId);
+    await db.from('knowledge_graphs').delete().eq('user_id', userId);
+    // 知识点及其子表（knowledge_point_versions/document_chunks 等）按 owner_id 级联清理
+    await db.from('knowledge_points').delete().eq('owner_id', userId);
   }
 
   async restoreBackupData(
@@ -722,7 +715,7 @@ export class BackupService {
     if (domains.length > 0) {
       const { data: insertedDomains, error: domainsError } = await supabase
         .from('domains')
-        .insert(domains.map((d) => ({ ...d, id: undefined, user_id: userId })))
+        .insert(domains.map((d) => ({ ...d, id: randomUUID(), user_id: userId })))
         .select('id');
       if (domainsError) {
         logger.warn('Failed to restore domains:', domainsError);
@@ -748,7 +741,7 @@ export class BackupService {
     await restoreBatch(
       supabase,
       'relationship_types',
-      (data.relationship_types ?? []).map((rt) => ({ ...rt, id: undefined, user_id: userId })),
+      (data.relationship_types ?? []).map((rt) => ({ ...rt, id: randomUUID(), user_id: userId })),
       stats as unknown as Record<string, number>,
       'nodes',
       'relationship_types',
@@ -907,14 +900,22 @@ export class BackupService {
     }
 
     // ---------- 5. 知识点版本历史 ----------
+    // 用 upsert-ignore 处理唯一键 (knowledge_point_id, version_number)：快照内如存在重复版本号则跳过而非整批失败
     const kpVersions = (data.knowledge_point_versions ?? [])
       .map((v) => {
         const kpId = mapId(v.knowledge_point_id, kpMap);
         if (!kpId) return null;
-        return { ...v, id: undefined, knowledge_point_id: kpId };
+        return { ...v, id: randomUUID(), knowledge_point_id: kpId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
-    await restoreBatch(supabase, 'knowledge_point_versions', kpVersions, stats as unknown as Record<string, number>, 'nodes', 'knowledge_point_versions');
+    if (kpVersions.length > 0) {
+      const { error } = await supabase
+        .from('knowledge_point_versions')
+        .upsert(kpVersions, { onConflict: 'knowledge_point_id,version_number', ignoreDuplicates: true });
+      if (error) {
+        logger.warn('Failed to restore knowledge_point_versions:', error);
+      }
+    }
 
     // ---------- 6. 图谱节点（兼容新旧格式） ----------
     const gnList: RowOf<'graph_nodes'>[] = hasNewNodeFormat
@@ -992,7 +993,7 @@ export class BackupService {
       .map((bm) => {
         const graphId = mapId(bm.graph_id, graphMap);
         if (!graphId) return null;
-        return { ...bm, id: undefined, graph_id: graphId };
+        return { ...bm, id: randomUUID(), graph_id: graphId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'graph_backbone_modules', backboneModules, stats as unknown as Record<string, number>, 'backbone_modules', 'backbone modules');
@@ -1002,7 +1003,7 @@ export class BackupService {
       .map((s) => {
         const graphId = mapId(s.graph_id, graphMap);
         if (!graphId) return null;
-        return { ...s, id: undefined, graph_id: graphId, operator_id: userId };
+        return { ...s, id: randomUUID(), graph_id: graphId, operator_id: userId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     if (snapshots.length > 0) {
@@ -1039,7 +1040,7 @@ export class BackupService {
         if (!graphId) return null;
         return {
           ...ev,
-          id: undefined,
+          id: randomUUID(),
           graph_id: graphId,
           operator_id: userId,
           snapshot_id: ev.snapshot_id ? mapId(ev.snapshot_id, snapshotMap) : null,
@@ -1053,7 +1054,7 @@ export class BackupService {
       .map((ls) => {
         const graphId = mapId(ls.graph_id, graphMap);
         if (!graphId) return null;
-        return { ...ls, id: undefined, graph_id: graphId };
+        return { ...ls, id: randomUUID(), graph_id: graphId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'literature_sources', literature, stats as unknown as Record<string, number>, 'literature_sources', 'literature sources');
@@ -1064,7 +1065,7 @@ export class BackupService {
         const graphId = mapId(gd.graph_id, graphMap);
         const domainId = mapId(gd.domain_id, domainMap);
         if (!graphId || !domainId) return null;
-        return { id: undefined, graph_id: graphId, domain_id: domainId, is_primary: gd.is_primary ?? false };
+        return { id: randomUUID(), graph_id: graphId, domain_id: domainId, is_primary: gd.is_primary ?? false };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'graph_domains', graphDomains, stats as unknown as Record<string, number>, 'nodes', 'graph_domains');
@@ -1075,7 +1076,7 @@ export class BackupService {
         const sourceId = mapId(gr.source_graph_id, graphMap);
         const targetId = mapId(gr.target_graph_id, graphMap);
         if (!sourceId || !targetId) return null;
-        return { ...gr, id: undefined, source_graph_id: sourceId, target_graph_id: targetId };
+        return { ...gr, id: randomUUID(), source_graph_id: sourceId, target_graph_id: targetId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'graph_relations', graphRelations, stats as unknown as Record<string, number>, 'nodes', 'graph_relations');
@@ -1085,7 +1086,7 @@ export class BackupService {
       .map((p) => {
         const sourceGraphId = p.source_graph_id ? mapId(p.source_graph_id, graphMap) : null;
         const domainId = p.domain_id ? mapId(p.domain_id, domainMap) : null;
-        return { ...p, id: undefined, user_id: userId, source_graph_id: sourceGraphId, domain_id: domainId };
+        return { ...p, id: randomUUID(), user_id: userId, source_graph_id: sourceGraphId, domain_id: domainId };
       });
     if (learningPaths.length > 0) {
       const { data: insertedPaths, error: pathsError } = await supabase
@@ -1109,7 +1110,7 @@ export class BackupService {
         const kpId = pn.knowledge_point_id ? mapId(pn.knowledge_point_id, kpMap) : null;
         const graphId = pn.graph_id ? mapId(pn.graph_id, graphMap) : null;
         if (!pathId) return null;
-        return { ...pn, id: undefined, path_id: pathId, knowledge_point_id: kpId, graph_id: graphId, prerequisites: [] };
+        return { ...pn, id: randomUUID(), path_id: pathId, knowledge_point_id: kpId, graph_id: graphId, prerequisites: [] };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     if (pathNodes.length > 0) {
@@ -1132,7 +1133,7 @@ export class BackupService {
         const nodeId = mapId(pr.path_node_id, pathNodeMap);
         const prereqId = mapId(pr.prerequisite_node_id, pathNodeMap);
         if (!nodeId || !prereqId) return null;
-        return { id: undefined, path_node_id: nodeId, prerequisite_node_id: prereqId };
+        return { id: randomUUID(), path_node_id: nodeId, prerequisite_node_id: prereqId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'learning_path_prerequisites', pathPrereqs, stats as unknown as Record<string, number>, 'nodes', 'learning_path_prerequisites');
@@ -1143,7 +1144,7 @@ export class BackupService {
         const pathId = mapId(pp.path_id, pathMap);
         const nodeId = mapId(pp.node_id, pathNodeMap);
         if (!pathId || !nodeId) return null;
-        return { ...pp, id: undefined, user_id: userId, path_id: pathId, node_id: nodeId, planned_nodes: mapIdList(pp.planned_nodes, pathNodeMap) };
+        return { ...pp, id: randomUUID(), user_id: userId, path_id: pathId, node_id: nodeId, planned_nodes: mapIdList(pp.planned_nodes, pathNodeMap) };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'learning_path_progress', pathProgress, stats as unknown as Record<string, number>, '_', 'learning_path_progress');
@@ -1153,13 +1154,13 @@ export class BackupService {
       .map((ll) => {
         const kpId = ll.knowledge_point_id ? mapId(ll.knowledge_point_id, kpMap) : null;
         const graphId = ll.graph_id ? mapId(ll.graph_id, graphMap) : null;
-        return { ...ll, id: undefined, user_id: userId, knowledge_point_id: kpId, graph_id: graphId };
+        return { ...ll, id: randomUUID(), user_id: userId, knowledge_point_id: kpId, graph_id: graphId };
       });
     await restoreBatch(supabase, 'learning_loops', learningLoops, stats as unknown as Record<string, number>, 'nodes', 'learning_loops');
 
     // ---------- 20. 队列 ----------
     const queues = (data.queues ?? [])
-      .map((q) => ({ ...q, id: undefined, user_id: userId }));
+      .map((q) => ({ ...q, id: randomUUID(), user_id: userId }));
     if (queues.length > 0) {
       const { data: insertedQueues, error: queuesError } = await supabase
         .from('queues')
@@ -1182,7 +1183,7 @@ export class BackupService {
         const graphId = t.graph_id ? mapId(t.graph_id, graphMap) : null;
         return {
           ...t,
-          id: undefined,
+          id: randomUUID(),
           user_id: userId,
           queue_id: queueId,
           knowledge_point_id: kpId,
@@ -1238,7 +1239,7 @@ export class BackupService {
         const nodeId = mapId(pnt.node_id, pathNodeMap);
         const taskId = mapId(pnt.task_id, taskMap);
         if (!pathId || !nodeId || !taskId) return null;
-        return { id: undefined, path_id: pathId, node_id: nodeId, task_id: taskId, user_id: userId };
+        return { id: randomUUID(), path_id: pathId, node_id: nodeId, task_id: taskId, user_id: userId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'path_node_tasks', pathNodeTasks, stats as unknown as Record<string, number>, '_', 'path_node_tasks');
@@ -1249,7 +1250,7 @@ export class BackupService {
         const taskId = mapId(st.task_id, taskMap);
         const kpId = mapId(st.knowledge_point_id, kpMap);
         if (!taskId || !kpId) return null;
-        return { ...st, id: undefined, task_id: taskId, knowledge_point_id: kpId, learning_path_node_id: null };
+        return { ...st, id: randomUUID(), task_id: taskId, knowledge_point_id: kpId, learning_path_node_id: null };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     if (subtasks.length > 0) {
@@ -1282,7 +1283,7 @@ export class BackupService {
     await restoreBatch(
       supabase,
       'task_tags',
-      (data.task_tags ?? []).map((t) => ({ ...t, id: undefined, user_id: userId })),
+      (data.task_tags ?? []).map((t) => ({ ...t, id: randomUUID(), user_id: userId })),
       stats as unknown as Record<string, number>,
       'nodes',
       'task_tags',
@@ -1290,7 +1291,7 @@ export class BackupService {
     await restoreBatch(
       supabase,
       'task_settings',
-      (data.task_settings ?? []).map((t) => ({ ...t, id: undefined, user_id: userId })),
+      (data.task_settings ?? []).map((t) => ({ ...t, id: randomUUID(), user_id: userId })),
       stats as unknown as Record<string, number>,
       'nodes',
       'task_settings',
@@ -1300,7 +1301,7 @@ export class BackupService {
         const taskId = mapId(td.task_id, taskMap);
         const dependsOnId = mapId(td.depends_on_task_id, taskMap);
         if (!taskId || !dependsOnId) return null;
-        return { ...td, id: undefined, task_id: taskId, depends_on_task_id: dependsOnId };
+        return { ...td, id: randomUUID(), task_id: taskId, depends_on_task_id: dependsOnId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'task_dependencies', taskDependencies, stats as unknown as Record<string, number>, 'nodes', 'task_dependencies');
@@ -1308,7 +1309,7 @@ export class BackupService {
       .map((ts) => {
         const templateId = mapId(ts.task_template_id, taskMap);
         if (!templateId) return null;
-        return { ...ts, id: undefined, user_id: userId, task_template_id: templateId };
+        return { ...ts, id: randomUUID(), user_id: userId, task_template_id: templateId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'task_schedules', taskSchedules, stats as unknown as Record<string, number>, 'nodes', 'task_schedules');
@@ -1316,14 +1317,14 @@ export class BackupService {
       .map((tp) => {
         const taskId = mapId(tp.task_id, taskMap);
         if (!taskId) return null;
-        return { ...tp, id: undefined, task_id: taskId };
+        return { ...tp, id: randomUUID(), task_id: taskId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'task_progress_plans', taskProgressPlans, stats as unknown as Record<string, number>, 'nodes', 'task_progress_plans');
     await restoreBatch(
       supabase,
       'user_time_slots',
-      (data.user_time_slots ?? []).map((t) => ({ ...t, id: undefined, user_id: userId })),
+      (data.user_time_slots ?? []).map((t) => ({ ...t, id: randomUUID(), user_id: userId })),
       stats as unknown as Record<string, number>,
       'nodes',
       'user_time_slots',
@@ -1332,7 +1333,7 @@ export class BackupService {
       .map((tl) => {
         const taskId = mapId(tl.task_id, taskMap);
         if (!taskId) return null;
-        return { ...tl, id: undefined, task_id: taskId };
+        return { ...tl, id: randomUUID(), task_id: taskId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'task_links', taskLinks, stats as unknown as Record<string, number>, 'nodes', 'task_links');
@@ -1341,20 +1342,20 @@ export class BackupService {
         const taskId = mapId(tk.task_id, taskMap);
         const kpId = mapId(tk.knowledge_point_id, kpMap);
         if (!taskId || !kpId) return null;
-        return { ...tk, id: undefined, task_id: taskId, knowledge_point_id: kpId };
+        return { ...tk, id: randomUUID(), task_id: taskId, knowledge_point_id: kpId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'task_knowledge_points', taskKps, stats as unknown as Record<string, number>, 'nodes', 'task_knowledge_points');
     const taskReviews = (data.task_reviews ?? [])
       .map((tr) => {
         const taskId = tr.task_id ? mapId(tr.task_id, taskMap) : null;
-        return { ...tr, id: undefined, user_id: userId, task_id: taskId };
+        return { ...tr, id: randomUUID(), user_id: userId, task_id: taskId };
       });
     await restoreBatch(supabase, 'task_reviews', taskReviews, stats as unknown as Record<string, number>, 'nodes', 'task_reviews');
     await restoreBatch(
       supabase,
       'task_templates',
-      (data.task_templates ?? []).map((t) => ({ ...t, id: undefined, user_id: userId })),
+      (data.task_templates ?? []).map((t) => ({ ...t, id: randomUUID(), user_id: userId })),
       stats as unknown as Record<string, number>,
       'nodes',
       'task_templates',
@@ -1362,7 +1363,7 @@ export class BackupService {
     await restoreBatch(
       supabase,
       'scheduler_weight_profiles',
-      (data.scheduler_weight_profiles ?? []).map((s) => ({ ...s, id: undefined, user_id: userId })),
+      (data.scheduler_weight_profiles ?? []).map((s) => ({ ...s, id: randomUUID(), user_id: userId })),
       stats as unknown as Record<string, number>,
       'nodes',
       'scheduler_weight_profiles',
@@ -1372,7 +1373,7 @@ export class BackupService {
     const quizSets = (data.quiz_sets ?? [])
       .map((qs) => {
         const graphId = qs.graph_id ? mapId(qs.graph_id, graphMap) : null;
-        return { ...qs, id: undefined, user_id: userId, graph_id: graphId };
+        return { ...qs, id: randomUUID(), user_id: userId, graph_id: graphId };
       });
     if (quizSets.length > 0) {
       const { data: insertedQuizSets, error: quizSetsError } = await supabase
@@ -1445,7 +1446,7 @@ export class BackupService {
         const quizSetId = mapId(qc.quiz_set_id, quizSetMap);
         const cardId = mapId(qc.card_id, cardMap);
         if (!quizSetId || !cardId) return null;
-        return { id: undefined, quiz_set_id: quizSetId, card_id: cardId, display_order: qc.display_order ?? 0 };
+        return { id: randomUUID(), quiz_set_id: quizSetId, card_id: cardId, display_order: qc.display_order ?? 0 };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'quiz_set_cards', quizSetCards, stats as unknown as Record<string, number>, 'nodes', 'quiz_set_cards');
@@ -1476,7 +1477,7 @@ export class BackupService {
         if (!subtaskId || !kpId) return null;
         return {
           ...ls,
-          id: undefined,
+          id: randomUUID(),
           user_id: userId,
           subtask_id: subtaskId,
           knowledge_point_id: kpId,
@@ -1505,14 +1506,14 @@ export class BackupService {
         const sessionId = mapId(lr.session_id, learningSessionMap);
         const cardId = mapId(lr.card_id, cardMap);
         if (!sessionId || !cardId) return null;
-        return { ...lr, id: undefined, session_id: sessionId, card_id: cardId };
+        return { ...lr, id: randomUUID(), session_id: sessionId, card_id: cardId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'learning_session_results', sessionResults, stats as unknown as Record<string, number>, 'nodes', 'learning_session_results');
 
     // ---------- 29. 笔记模板 ----------
     const noteTemplates = (data.note_templates ?? [])
-      .map((nt) => ({ ...nt, id: undefined, user_id: userId }));
+      .map((nt) => ({ ...nt, id: randomUUID(), user_id: userId }));
     if (noteTemplates.length > 0) {
       const { data: insertedNoteTemplates, error: noteTemplatesError } = await supabase
         .from('note_templates')
@@ -1531,7 +1532,7 @@ export class BackupService {
     const notes = (data.notes ?? [])
       .map((n) => {
         const templateId = n.template_id ? mapId(n.template_id, noteTemplateMap) : null;
-        return { ...n, id: undefined, user_id: userId, template_id: templateId };
+        return { ...n, id: randomUUID(), user_id: userId, template_id: templateId };
       });
     if (notes.length > 0) {
       const { data: insertedNotes, error: notesError } = await supabase
@@ -1555,7 +1556,7 @@ export class BackupService {
         const nodeId = mapId(nl.node_id, gnMap);
         const graphId = mapId(nl.graph_id, graphMap);
         if (!noteId || !nodeId || !graphId) return null;
-        return { id: undefined, note_id: noteId, node_id: nodeId, graph_id: graphId };
+        return { id: randomUUID(), note_id: noteId, node_id: nodeId, graph_id: graphId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'note_node_links', noteNodeLinks, stats as unknown as Record<string, number>, 'nodes', 'note_node_links');
@@ -1566,7 +1567,7 @@ export class BackupService {
         const sourceNoteId = mapId(br.source_note_id, noteMap);
         const targetNoteId = mapId(br.target_note_id, noteMap);
         if (!sourceNoteId || !targetNoteId) return null;
-        return { ...br, id: undefined, source_note_id: sourceNoteId, target_note_id: targetNoteId };
+        return { ...br, id: randomUUID(), source_note_id: sourceNoteId, target_note_id: targetNoteId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'note_block_refs', noteBlockRefs, stats as unknown as Record<string, number>, 'nodes', 'note_block_refs');
@@ -1591,15 +1592,22 @@ export class BackupService {
     await restoreBatch(
       supabase,
       'user_efficiency_profile',
-      (data.user_efficiency_profile ?? []).map((p) => ({ ...p, id: undefined, user_id: userId })),
+      (data.user_efficiency_profile ?? []).map((p) => ({ ...p, id: randomUUID(), user_id: userId })),
       stats as unknown as Record<string, number>,
       'nodes',
       'user_efficiency_profile',
     );
 
     // ---------- 35. 成就 ----------
+    // achievements 为全局只读表，其 id 在各环境是随机生成的；备份里引用的
+    // achievement_id 可能在本环境不存在，需先过滤，否则整批 upsert 会因外键 23503 失败
+    const adminDb = getSupabaseAdmin() ?? supabase;
+    const { data: validAchievements } = await adminDb.from('achievements').select('id');
+    const validAchievementIds = new Set(
+      (validAchievements as { id: string }[] | null)?.map((a) => a.id) ?? [],
+    );
     const achievementsToInsert = (data.user_achievements ?? [])
-      .filter((ua) => ua.achievement_id != null)
+      .filter((ua) => ua.achievement_id != null && validAchievementIds.has(ua.achievement_id))
       .map((ua) => ({
         user_id: userId,
         achievement_id: ua.achievement_id as string,
@@ -1607,7 +1615,17 @@ export class BackupService {
         metadata: ua.metadata ?? {},
         unlocked_at: ua.unlocked_at ?? new Date().toISOString(),
       }));
-    await restoreBatch(supabase, 'user_achievements', achievementsToInsert, stats as unknown as Record<string, number>, 'user_achievements', 'user achievements');
+    // 依赖非 id 的唯一键，需用 upsert-ignore 实现幂等，避免重复导入到已有数据时报唯一键冲突
+    const { error: achError } = achievementsToInsert.length
+      ? await supabase
+          .from('user_achievements')
+          .upsert(achievementsToInsert, { onConflict: 'user_id,achievement_id', ignoreDuplicates: true })
+      : { error: null };
+    if (achError) {
+      logger.warn('Failed to restore user achievements:', achError);
+    } else {
+      stats.user_achievements = achievementsToInsert.length;
+    }
 
     // ---------- 36. 周期任务（全周期类型） ----------
     const periodicTasks = (data.periodic_tasks ?? [])
@@ -1624,11 +1642,21 @@ export class BackupService {
         xp_reward: pt.xp_reward ?? 0,
         pass_points: pt.pass_points ?? 10,
       }));
-    await restoreBatch(supabase, 'periodic_tasks', periodicTasks, stats as unknown as Record<string, number>, 'periodic_tasks', 'periodic tasks');
+    // 依赖非 id 的唯一键，需用 upsert-ignore 实现幂等，避免重复导入到已有数据时报唯一键冲突
+    const { error: ptError } = periodicTasks.length
+      ? await supabase
+          .from('periodic_tasks')
+          .upsert(periodicTasks, { onConflict: 'user_id,period_type,period_start,task_type', ignoreDuplicates: true })
+      : { error: null };
+    if (ptError) {
+      logger.warn('Failed to restore periodic tasks:', ptError);
+    } else {
+      stats.periodic_tasks = periodicTasks.length;
+    }
 
     // ---------- 37. 通行证 ----------
     const periodicPasses = (data.periodic_passes ?? [])
-      .map((pp) => ({ ...pp, id: undefined, user_id: userId }));
+      .map((pp) => ({ ...pp, id: randomUUID(), user_id: userId }));
     if (periodicPasses.length > 0) {
       const { data: insertedPasses, error: passesError } = await supabase
         .from('periodic_passes')
@@ -1647,7 +1675,7 @@ export class BackupService {
       .map((up) => {
         const passId = mapId(up.pass_id, passMap);
         if (!passId) return null;
-        return { ...up, id: undefined, user_id: userId, pass_id: passId };
+        return { ...up, id: randomUUID(), user_id: userId, pass_id: passId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'user_pass_progress', userPassProgress, stats as unknown as Record<string, number>, 'nodes', 'user_pass_progress');
@@ -1655,7 +1683,7 @@ export class BackupService {
     await restoreBatch(
       supabase,
       'user_focus_stats',
-      (data.user_focus_stats ?? []).map((s) => ({ ...s, id: undefined, user_id: userId })),
+      (data.user_focus_stats ?? []).map((s) => ({ ...s, id: randomUUID(), user_id: userId })),
       stats as unknown as Record<string, number>,
       'nodes',
       'user_focus_stats',
@@ -1665,7 +1693,7 @@ export class BackupService {
     const agentSessions = (data.agent_sessions ?? [])
       .map((as_) => ({
         ...as_,
-        id: undefined,
+        id: randomUUID(),
         user_id: userId,
         graph_ids: mapIdList(as_.graph_ids, graphMap),
       }));
@@ -1688,7 +1716,7 @@ export class BackupService {
       .map((am) => {
         const sessionId = mapId(am.session_id, agentSessionMap);
         if (!sessionId) return null;
-        return { ...am, id: undefined, session_id: sessionId };
+        return { ...am, id: randomUUID(), session_id: sessionId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'agent_messages', agentMessages, stats as unknown as Record<string, number>, 'nodes', 'agent_messages');
@@ -1697,7 +1725,7 @@ export class BackupService {
       .map((at) => {
         const sessionId = mapId(at.session_id, agentSessionMap);
         if (!sessionId) return null;
-        return { ...at, id: undefined, session_id: sessionId };
+        return { ...at, id: randomUUID(), session_id: sessionId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'agent_tool_calls', agentToolCalls, stats as unknown as Record<string, number>, 'nodes', 'agent_tool_calls');
@@ -1706,7 +1734,7 @@ export class BackupService {
       .map((ap) => {
         const sessionId = mapId(ap.session_id, agentSessionMap);
         if (!sessionId) return null;
-        return { ...ap, id: undefined, session_id: sessionId };
+        return { ...ap, id: randomUUID(), session_id: sessionId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'agent_pending_actions', agentPendingActions, stats as unknown as Record<string, number>, 'nodes', 'agent_pending_actions');
@@ -1715,7 +1743,7 @@ export class BackupService {
     await restoreBatch(
       supabase,
       'installed_plugins',
-      (data.installed_plugins ?? []).map((p) => ({ ...p, id: undefined, user_id: userId })),
+      (data.installed_plugins ?? []).map((p) => ({ ...p, id: randomUUID(), user_id: userId })),
       stats as unknown as Record<string, number>,
       'nodes',
       'installed_plugins',
@@ -1727,7 +1755,7 @@ export class BackupService {
         const graphId = lms.graph_id ? mapId(lms.graph_id, graphMap) : null;
         // graph 作用域必须能映射到图谱，否则跳过避免约束冲突
         if (lms.scope === 'graph' && !graphId) return null;
-        return { ...lms, id: undefined, user_id: userId, graph_id: graphId };
+        return { ...lms, id: randomUUID(), user_id: userId, graph_id: graphId };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await restoreBatch(supabase, 'learning_material_schemas', learningMaterialSchemas, stats as unknown as Record<string, number>, '_', 'learning_material_schemas');
@@ -1736,7 +1764,7 @@ export class BackupService {
     await restoreBatch(
       supabase,
       'notification_settings',
-      (data.notification_settings ?? []).map((n) => ({ ...n, id: undefined, user_id: userId })),
+      (data.notification_settings ?? []).map((n) => ({ ...n, id: randomUUID(), user_id: userId })),
       stats as unknown as Record<string, number>,
       'nodes',
       'notification_settings',

@@ -581,7 +581,7 @@ export const Login = () => {
 
     try {
       const response = (await apiClient.get(
-        `/api/supabase/organizations?accessToken=${encodeURIComponent(pat)}`,
+        `/api/v1/supabase/organizations?accessToken=${encodeURIComponent(pat)}`,
       )) as Array<{ id: string; name: string; slug: string }>;
       if (Array.isArray(response) && response.length > 0) {
         setOrganizations(response);
@@ -600,7 +600,7 @@ export const Login = () => {
   const loadRegions = useCallback(async () => {
     try {
       const response = (await apiClient.get(
-        `/api/supabase/regions?accessToken=${encodeURIComponent(pat)}`,
+        `/api/v1/supabase/regions?accessToken=${encodeURIComponent(pat)}`,
       )) as Array<{ code: string; name: string; location: string }>;
       if (Array.isArray(response)) {
         setRegions(response);

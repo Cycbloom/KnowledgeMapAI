@@ -22,7 +22,7 @@ async function createNodesForQuadrant(
       parentId: rootId,
     })),
   ];
-  await authedRequest(page, "POST", "/api/auto-graph/save-nodes", {
+  await authedRequest(page, "POST", "/api/v1/auto-graph/save-nodes", {
     graph_id: graphId,
     nodes,
   });

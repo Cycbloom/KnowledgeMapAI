@@ -9,7 +9,7 @@ test.describe('协作功能测试', () => {
 
   test('应该能够创建新图谱', async ({ authenticatedPage: page }) => {
     // App Action: 通过 API 创建图谱（比 UI 点击更快更稳定）
-    const createRes = await authedRequest(page, 'POST', '/api/graphs', {
+    const createRes = await authedRequest(page, 'POST', '/api/v1/graphs', {
       title: '测试协作图谱',
     });
     expect(createRes.ok, `创建图谱失败: HTTP ${createRes.status}`).toBe(true);
@@ -26,7 +26,7 @@ test.describe('协作功能测试', () => {
       });
     } finally {
       // 清理: 永久删除图谱,避免污染测试库
-      await authedRequest(page, 'DELETE', `/api/graphs/${graph.id}/permanent`);
+      await authedRequest(page, 'DELETE', `/api/v1/graphs/${graph.id}/permanent`);
     }
   });
 
@@ -78,7 +78,7 @@ test.describe('版本与快照', () => {
     const createRes = await authedRequest(
       page,
       'POST',
-      `/api/graphs/${testGraph.id}/snapshots`,
+      `/api/v1/graphs/${testGraph.id}/snapshots`,
       { description: '快照创建测试' },
     );
     expect(createRes.ok, `创建快照失败: HTTP ${createRes.status}`).toBe(true);
@@ -95,7 +95,7 @@ test.describe('版本与快照', () => {
     const listRes = await authedRequest(
       page,
       'GET',
-      `/api/graphs/${testGraph.id}/snapshots`,
+      `/api/v1/graphs/${testGraph.id}/snapshots`,
     );
     expect(listRes.ok, `获取快照列表失败: HTTP ${listRes.status}`).toBe(true);
     const list = listRes.body as { data: { id: string }[] };
@@ -107,7 +107,7 @@ test.describe('版本与快照', () => {
     const firstRes = await authedRequest(
       page,
       'POST',
-      `/api/graphs/${testGraph.id}/snapshots`,
+      `/api/v1/graphs/${testGraph.id}/snapshots`,
       { description: '回滚目标状态' },
     );
     expect(firstRes.ok, `创建快照失败: HTTP ${firstRes.status}`).toBe(true);
@@ -116,7 +116,7 @@ test.describe('版本与快照', () => {
     const secondRes = await authedRequest(
       page,
       'POST',
-      `/api/graphs/${testGraph.id}/snapshots`,
+      `/api/v1/graphs/${testGraph.id}/snapshots`,
       { description: '回滚前状态' },
     );
     expect(secondRes.ok, `创建快照失败: HTTP ${secondRes.status}`).toBe(true);
@@ -125,7 +125,7 @@ test.describe('版本与快照', () => {
     const rollbackRes = await authedRequest(
       page,
       'POST',
-      `/api/graphs/${testGraph.id}/rollback`,
+      `/api/v1/graphs/${testGraph.id}/rollback`,
       { snapshotId: firstSnapshot.id },
     );
     expect(rollbackRes.ok, `回滚失败: HTTP ${rollbackRes.status}`).toBe(true);
@@ -140,7 +140,7 @@ test.describe('版本与快照', () => {
     const listRes = await authedRequest(
       page,
       'GET',
-      `/api/graphs/${testGraph.id}/snapshots`,
+      `/api/v1/graphs/${testGraph.id}/snapshots`,
     );
     expect(listRes.ok, `获取快照列表失败: HTTP ${listRes.status}`).toBe(true);
     const list = listRes.body as { data: { snapshotType: string }[] };
@@ -152,7 +152,7 @@ test.describe('版本与快照', () => {
     const branchRes = await authedRequest(
       page,
       'POST',
-      `/api/graphs/${testGraph.id}/branches`,
+      `/api/v1/graphs/${testGraph.id}/branches`,
       { branchName: '测试分支' },
     );
     expect(branchRes.ok, `创建分支失败: HTTP ${branchRes.status}`).toBe(true);
@@ -164,7 +164,7 @@ test.describe('版本与快照', () => {
     const previewRes = await authedRequest(
       page,
       'GET',
-      `/api/graphs/${testGraph.id}/merge-preview?branchGraphId=${branch.graphId}`,
+      `/api/v1/graphs/${testGraph.id}/merge-preview?branchGraphId=${branch.graphId}`,
     );
     expect(previewRes.ok, `merge-preview 失败: HTTP ${previewRes.status}`).toBe(
       true,
@@ -201,7 +201,7 @@ test.describe('实时同步（SSE）', () => {
 
       const controller = new AbortController();
       const events: { type?: string; message?: string }[] = [];
-      const response = await fetch('/api/tasks/events', {
+      const response = await fetch('/api/v1/tasks/events', {
         headers,
         signal: controller.signal,
       });
@@ -251,7 +251,7 @@ test.describe('实时同步（SSE）', () => {
     const changeRes = await authedRequest(
       page,
       'POST',
-      `/api/graphs/${testGraph.id}/snapshots`,
+      `/api/v1/graphs/${testGraph.id}/snapshots`,
       { description: 'SSE 协作变更' },
     );
     expect(changeRes.ok, `触发变更失败: HTTP ${changeRes.status}`).toBe(true);

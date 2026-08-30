@@ -108,9 +108,9 @@ export async function navigateAndWaitForAuth(
       async (response) => {
         const reqUrl = response.url();
         if (
-          !reqUrl.includes('/api/') ||
-          reqUrl.includes('/api/csrf-token') ||
-          reqUrl.includes('/api/health')
+          !reqUrl.includes('/api/v1/') ||
+          reqUrl.includes('/api/v1/csrf-token') ||
+          reqUrl.includes('/api/v1/health')
         ) {
           return false;
         }

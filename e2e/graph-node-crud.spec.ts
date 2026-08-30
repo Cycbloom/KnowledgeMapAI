@@ -6,16 +6,16 @@ import { authedRequest } from "./utils/auth";
  * 图谱节点增删改（CRUD）冒烟测试。
  *
  * 覆盖非骨干节点的创建、更新、删除完整生命周期：
- * - 创建:POST /api/nodes（返回 id）→ GET /api/nodes/:id 读回 title/graph_id
- * - 更新:PUT /api/nodes/:id（改 title）→ GET 读回更新后的值
- * - 删除:DELETE /api/nodes/:id（软删除）→ GET 返回 404
+ * - 创建:POST /api/v1/nodes（返回 id）→ GET /api/v1/nodes/:id 读回 title/graph_id
+ * - 更新:PUT /api/v1/nodes/:id（改 title）→ GET 读回更新后的值
+ * - 删除:DELETE /api/v1/nodes/:id（软删除）→ GET 返回 404
  *
  * 说明:
  * - 骨干节点的标题保护（PUT 403 / 批量跳过）已由 `backbone-node.spec.ts` 覆盖,此处不做重复。
  * - 节点 ID 即 knowledge_point_id,API 路由依此寻址。
  */
 
-/** POST /api/nodes 与 GET /api/nodes/:id 返回的节点结构。 */
+/** POST /api/v1/nodes 与 GET /api/v1/nodes/:id 返回的节点结构。 */
 interface NodeResponse {
   id: string;
   title: string;
@@ -38,7 +38,7 @@ async function createNormalNode(
   graphId: string,
   title: string,
 ): Promise<string> {
-  const createRes = await authedRequest(page, "POST", "/api/nodes", {
+  const createRes = await authedRequest(page, "POST", "/api/v1/nodes", {
     graph_id: graphId,
     title,
     content: "节点 CRUD 测试内容",
@@ -59,7 +59,7 @@ test.describe("图谱节点增删改冒烟测试", () => {
     const nodeId = await createNormalNode(page, testGraph.id, nodeTitle);
 
     // 通过 GET 读回相同 title 与 graph_id
-    const getRes = await authedRequest(page, "GET", `/api/nodes/${nodeId}`);
+    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${nodeId}`);
     expect(getRes.ok).toBe(true);
     const fetched = getRes.body as NodeResponse;
     expect(fetched.title).toBe(nodeTitle);
@@ -81,7 +81,7 @@ test.describe("图谱节点增删改冒烟测试", () => {
     const updateRes = await authedRequest(
       page,
       "PUT",
-      `/api/nodes/${nodeId}`,
+      `/api/v1/nodes/${nodeId}`,
       { title: updatedTitle },
     );
     expect(updateRes.ok, `更新节点失败: HTTP ${updateRes.status}`).toBe(true);
@@ -89,7 +89,7 @@ test.describe("图谱节点增删改冒烟测试", () => {
     expect(updated.title).toBe(updatedTitle);
 
     // 通过 GET 再次读回,确认更新已持久化
-    const getRes = await authedRequest(page, "GET", `/api/nodes/${nodeId}`);
+    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${nodeId}`);
     expect(getRes.ok).toBe(true);
     const fetched = getRes.body as NodeResponse;
     expect(fetched.title).toBe(updatedTitle);
@@ -109,12 +109,12 @@ test.describe("图谱节点增删改冒烟测试", () => {
     const deleteRes = await authedRequest(
       page,
       "DELETE",
-      `/api/nodes/${nodeId}`,
+      `/api/v1/nodes/${nodeId}`,
     );
     expect(deleteRes.ok, `删除节点失败: HTTP ${deleteRes.status}`).toBe(true);
 
     // 删除后再次 GET 应返回 404（软删除后不可见）
-    const getRes = await authedRequest(page, "GET", `/api/nodes/${nodeId}`);
+    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${nodeId}`);
     expect(getRes.status).toBe(404);
     const body = getRes.body as ErrorResponse;
     expect(body.code).toBe("RESOURCE_NODE_NOT_FOUND");

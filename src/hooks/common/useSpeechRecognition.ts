@@ -31,7 +31,7 @@ const checkRecognitionSupport = (): boolean => {
 /**
  * 文件转写语音识别 Hook（qwen3-asr-flash）。
  *
- * 录音流程基于 MediaRecorder，停止录音后将音频文件上传至后端 `/api/ai/stt`
+ * 录音流程基于 MediaRecorder，停止录音后将音频文件上传至后端 `/api/v1/ai/stt`
  * 进行文件转写，转写完成后通过 `transcript` 输出文本。
  */
 export const useSpeechRecognition = (lang: string = 'zh') => {

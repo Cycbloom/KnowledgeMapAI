@@ -155,7 +155,7 @@ export class SyncEngine {
       if (!port) return;
 
       const response = await withRetry(async () => {
-        const resp = await fetch(`http://localhost:${port}/api/sync/pull`, {
+        const resp = await fetch(`http://localhost:${port}/api/v1/sync/pull`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -285,7 +285,7 @@ export class SyncEngine {
         });
 
         const response = await withRetry(async () => {
-          const resp = await fetch(`http://localhost:${port}/api/sync/push`, {
+          const resp = await fetch(`http://localhost:${port}/api/v1/sync/push`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

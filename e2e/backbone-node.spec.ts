@@ -25,7 +25,7 @@ const BACKBONE_TITLE_TO_MODULE: Record<string, string> = {
   未来方向: "future_directions",
 };
 
-/** 图谱节点（GET /api/graphs/:id/nodes 返回） */
+/** 图谱节点（GET /api/v1/graphs/:id/nodes 返回） */
 interface GraphNode {
   id: string;
   title: string;
@@ -34,7 +34,7 @@ interface GraphNode {
   } | null;
 }
 
-/** GET /api/graphs/:id/nodes 响应体 */
+/** GET /api/v1/graphs/:id/nodes 响应体 */
 interface GraphNodesResponse {
   nodes: GraphNode[];
 }
@@ -46,7 +46,7 @@ interface BatchUpdateResultItem {
   reason?: string;
 }
 
-/** POST /api/nodes/batch-update 响应体 */
+/** POST /api/v1/nodes/batch-update 响应体 */
 interface BatchUpdateResponse {
   message: string;
   count: number;
@@ -73,7 +73,7 @@ async function getNodeIdByTitle(
   graphId: string,
   title: string,
 ): Promise<string | null> {
-  const res = await authedRequest(page, "GET", `/api/graphs/${graphId}/nodes`);
+  const res = await authedRequest(page, "GET", `/api/v1/graphs/${graphId}/nodes`);
   if (!res.ok) {
     return null;
   }
@@ -95,7 +95,7 @@ async function setupBackboneModules(
   page: Page,
   graphId: string,
 ): Promise<Map<string, string>> {
-  const res = await authedRequest(page, "GET", `/api/graphs/${graphId}/nodes`);
+  const res = await authedRequest(page, "GET", `/api/v1/graphs/${graphId}/nodes`);
   if (!res.ok) {
     throw new Error(`获取节点列表失败: HTTP ${res.status}`);
   }
@@ -109,7 +109,7 @@ async function setupBackboneModules(
       const updateRes = await authedRequest(
         page,
         "PUT",
-        `/api/nodes/${node.id}`,
+        `/api/v1/nodes/${node.id}`,
         { properties: { backboneModule: module } },
       );
       if (!updateRes.ok) {
@@ -216,7 +216,7 @@ test.describe("专题研究图谱骨干节点测试", () => {
       const response = await authedRequest(
         page,
         "PUT",
-        `/api/nodes/${nodeId}`,
+        `/api/v1/nodes/${nodeId}`,
         { title: "修改后的标题" },
       );
 
@@ -247,7 +247,7 @@ test.describe("专题研究图谱骨干节点测试", () => {
       const response = await authedRequest(
         page,
         "POST",
-        "/api/nodes/batch-update",
+        "/api/v1/nodes/batch-update",
         { nodes: [{ id: nodeId, title: "批量修改的标题" }] },
       );
 

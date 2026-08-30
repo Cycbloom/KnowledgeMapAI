@@ -23,9 +23,9 @@ const clearOutputButton = 'button[title="清空输出"], button[title="Clear Out
 async function openConsole(page: Page) {
   // 确认认证成功：URL 不在 /login
   await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 });
-  // 等待 /api/graphs 响应完成（无论成功或失败），确保 Dashboard 已开始渲染
+  // 等待 /api/v1/graphs 响应完成（无论成功或失败），确保 Dashboard 已开始渲染
   await page.waitForResponse(
-    (res) => res.url().includes('/api/graphs'),
+    (res) => res.url().includes('/api/v1/graphs'),
     { timeout: 15000 },
   ).catch(() => {});
   // 等待 useGlobalShortcuts 注册 Control+Shift+P 监听器

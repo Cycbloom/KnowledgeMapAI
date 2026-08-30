@@ -139,7 +139,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/relationship-types/${encodeURIComponent(editingType.id)}`, {
+      const response = await fetch(`/api/v1/relationship-types/${encodeURIComponent(editingType.id)}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -173,7 +173,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/relationship-types/${encodeURIComponent(id)}`, {
+      const response = await fetch(`/api/v1/relationship-types/${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });

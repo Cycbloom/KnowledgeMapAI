@@ -276,7 +276,7 @@ class GraphCanvasPage {
     let nodeId: string | null = null;
     let backboneModule: string | null = null;
     if (graphId) {
-      const response = await this.page.request.get(`/api/graphs/${graphId}/nodes`);
+      const response = await this.page.request.get(`/api/v1/graphs/${graphId}/nodes`);
       if (response.ok()) {
         const data = await response.json().catch(() => ({ nodes: [], edges: [] }));
         const nodes: GraphNode[] = data.nodes ?? [];
@@ -356,7 +356,7 @@ test.describe("文献提取节点挂载功能测试", () => {
 
         await page.waitForTimeout(2000);
 
-        const response = await page.request.get("/api/test/edges");
+        const response = await page.request.get("/api/v1/test/edges");
         if (response.ok()) {
           const edges: GraphEdge[] = await response.json().catch(() => []);
           expect(Array.isArray(edges)).toBeTruthy();
@@ -438,7 +438,7 @@ test.describe("文献提取节点挂载功能测试", () => {
       const listRes = await authedRequest(
         page,
         "GET",
-        `/api/graphs/${graphId}/nodes`,
+        `/api/v1/graphs/${graphId}/nodes`,
       );
       expect(listRes.ok).toBeTruthy();
       const listBody = listRes.body as { nodes: GraphNode[]; edges: GraphEdge[] };
@@ -454,7 +454,7 @@ test.describe("文献提取节点挂载功能测试", () => {
       for (const node of nodes) {
         const module = titleToModule[node.title];
         if (module) {
-          const updateRes = await authedRequest(page, "PUT", `/api/nodes/${node.id}`, {
+          const updateRes = await authedRequest(page, "PUT", `/api/v1/nodes/${node.id}`, {
             properties: { backboneModule: module },
           });
           expect(updateRes.ok).toBeTruthy();
@@ -465,7 +465,7 @@ test.describe("文献提取节点挂载功能测试", () => {
       const verifyRes = await authedRequest(
         page,
         "GET",
-        `/api/graphs/${graphId}/nodes`,
+        `/api/v1/graphs/${graphId}/nodes`,
       );
       expect(verifyRes.ok).toBeTruthy();
       const verifyBody = verifyRes.body as {
@@ -502,7 +502,7 @@ test.describe("文献提取节点挂载功能测试", () => {
 
         const graphId = page.url().match(/\/graph\/([^/]+)/)?.[1];
         if (graphId) {
-          const response = await page.request.get(`/api/graphs/${graphId}/edges`);
+          const response = await page.request.get(`/api/v1/graphs/${graphId}/edges`);
           if (response.ok()) {
             const edges: GraphEdge[] = await response.json().catch(() => []);
             expect(Array.isArray(edges)).toBeTruthy();
@@ -527,7 +527,7 @@ test.describe("文献提取节点挂载功能测试", () => {
 
         const graphId = page.url().match(/\/graph\/([^/]+)/)?.[1];
         if (graphId) {
-          const response = await page.request.get(`/api/graphs/${graphId}/edges`);
+          const response = await page.request.get(`/api/v1/graphs/${graphId}/edges`);
           if (response.ok()) {
             const edges: GraphEdge[] = await response.json().catch(() => []);
             if (edges.length > 0) {
@@ -562,7 +562,7 @@ test.describe("文献提取节点挂载功能测试", () => {
 
         const graphId = page.url().match(/\/graph\/([^/]+)/)?.[1];
         if (graphId) {
-          const nodesResponse = await page.request.get(`/api/graphs/${graphId}/nodes`);
+          const nodesResponse = await page.request.get(`/api/v1/graphs/${graphId}/nodes`);
 
           if (nodesResponse.ok()) {
             const data = await nodesResponse.json().catch(() => ({ nodes: [], edges: [] }));
@@ -658,7 +658,7 @@ test.describe("文献提取节点挂载功能测试", () => {
 
         await expect(page.locator("text=/成功|添加/").first()).toBeVisible({ timeout: 10000 });
 
-        const response = await page.request.post("/api/auto-graph/save-nodes", {
+        const response = await page.request.post("/api/v1/auto-graph/save-nodes", {
           data: {
             graph_id: page.url().match(/\/graph\/([^/]+)/)?.[1],
             nodes: [],
@@ -839,7 +839,7 @@ test.describe("文献提取节点挂载功能测试", () => {
     test("应该处理网络错误", async ({ page, testGraph }) => {
       await navigateAndWaitForAuth(page, `/graph/${testGraph.id}`);
 
-      await page.route("**/api/auto-graph/**", (route) => route.abort());
+      await page.route("**/api/v1/auto-graph/**", (route) => route.abort());
 
       await extractPage.openExtractPanel();
       await extractPage.fillTextAndExtract(SAMPLE_TEXT_CONTENT);

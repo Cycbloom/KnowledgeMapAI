@@ -95,7 +95,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const fetchCollaborators = async () => {
     setCollaboratorsLoading(true);
     try {
-      const response = await fetch(`/api/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators`, {
+      const response = await fetch(`/api/v1/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators`, {
         credentials: 'include',
       });
       if (response.ok) {
@@ -139,7 +139,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     
     setInviteLoading(true);
     try {
-      const response = await fetch(`/api/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators`, {
+      const response = await fetch(`/api/v1/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -170,7 +170,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     })) return;
     
     try {
-      const response = await fetch(`/api/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators/${encodeURIComponent(collaboratorUserId)}`, {
+      const response = await fetch(`/api/v1/collaborations/graphs/${encodeURIComponent(graphId)}/collaborators/${encodeURIComponent(collaboratorUserId)}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -190,7 +190,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const handleGenerateShareLink = async () => {
     try {
-      const response = await fetch(`/api/collaborations/graphs/${encodeURIComponent(graphId)}/share`, {
+      const response = await fetch(`/api/v1/collaborations/graphs/${encodeURIComponent(graphId)}/share`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

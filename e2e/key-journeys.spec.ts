@@ -49,7 +49,7 @@ test.describe("关键用户旅程冒烟测试", () => {
   }) => {
     // App Action:通过 API 创建节点（比 UI 拖拽更快更稳定）
     const nodeTitle = `冒烟节点_${Date.now()}`;
-    const createRes = await authedRequest(page, "POST", "/api/nodes", {
+    const createRes = await authedRequest(page, "POST", "/api/v1/nodes", {
       graph_id: testGraph.id,
       title: nodeTitle,
       content: "冒烟测试节点内容",
@@ -60,7 +60,7 @@ test.describe("关键用户旅程冒烟测试", () => {
     expect(node.title).toBe(nodeTitle);
 
     // 通过 GET 验证节点已持久化
-    const getRes = await authedRequest(page, "GET", `/api/nodes/${node.id}`);
+    const getRes = await authedRequest(page, "GET", `/api/v1/nodes/${node.id}`);
     expect(getRes.ok).toBe(true);
     const fetched = getRes.body as { title: string; graph_id: string };
     expect(fetched.title).toBe(nodeTitle);
@@ -73,7 +73,7 @@ test.describe("关键用户旅程冒烟测试", () => {
   }) => {
     // App Action:通过 API 创建笔记
     const noteTitle = `冒烟笔记_${Date.now()}`;
-    const createRes = await authedRequest(page, "POST", "/api/notes", {
+    const createRes = await authedRequest(page, "POST", "/api/v1/notes", {
       title: noteTitle,
       content: `关联图谱: ${testGraph.title}`,
       type: "note",
@@ -88,7 +88,7 @@ test.describe("关键用户旅程冒烟测试", () => {
     const listRes = await authedRequest(
       page,
       "GET",
-      `/api/notes?search=${encodeURIComponent(noteTitle)}`,
+      `/api/v1/notes?search=${encodeURIComponent(noteTitle)}`,
     );
     expect(listRes.ok).toBe(true);
     type NoteListItem = { id: string; title: string };
@@ -102,6 +102,6 @@ test.describe("关键用户旅程冒烟测试", () => {
     expect(found, "创建的笔记未出现在列表中").toBe(true);
 
     // 清理:删除笔记
-    await authedRequest(page, "DELETE", `/api/notes/${note.id}`);
+    await authedRequest(page, "DELETE", `/api/v1/notes/${note.id}`);
   });
 });

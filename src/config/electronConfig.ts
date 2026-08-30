@@ -33,11 +33,11 @@ export async function getApiPort(): Promise<number> {
 
 export async function getElectronApiUrl(): Promise<string> {
   if (!isElectron()) {
-    return "/api";
+    return "/api/v1";
   }
   if (isElectronProduction()) {
     const port = await getApiPort();
-    return `http://localhost:${port}/api`;
+    return `http://localhost:${port}/api/v1`;
   }
-  return "/api";
+  return "/api/v1";
 }

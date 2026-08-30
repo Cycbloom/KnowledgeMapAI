@@ -9,11 +9,11 @@ import { authedRequest } from "./utils/auth";
  *
  * 策略(App Action 模式):用 API 做准备与数据断言,用显式断言验证。
  * 端点基于 `api/routes/knowledge/notes.ts` 实际实现:
- * - POST   /api/notes          → 201,返回 Note
- * - GET    /api/notes/:id      → 返回 Note(软删除后仍可读,deletedAt 非空)
- * - PUT    /api/notes/:id      → 更新(实际实现为 PUT,非 spec 简写的 PATCH)
- * - DELETE /api/notes/:id      → 软删除,返回 { success, message }
- * - GET    /api/notes?search=  → { items, total, page, pageSize }
+ * - POST   /api/v1/notes          → 201,返回 Note
+ * - GET    /api/v1/notes/:id      → 返回 Note(软删除后仍可读,deletedAt 非空)
+ * - PUT    /api/v1/notes/:id      → 更新(实际实现为 PUT,非 spec 简写的 PATCH)
+ * - DELETE /api/v1/notes/:id      → 软删除,返回 { success, message }
+ * - GET    /api/v1/notes?search=  → { items, total, page, pageSize }
  */
 
 /** Note 响应类型(与 shared/types/note.ts 对齐) */
@@ -40,7 +40,7 @@ async function createNote(
   title: string,
   content: string,
 ): Promise<Note> {
-  const res = await authedRequest(page, "POST", "/api/notes", {
+  const res = await authedRequest(page, "POST", "/api/v1/notes", {
     title,
     content,
     type: "note",
@@ -58,7 +58,7 @@ async function searchNotes(
   const res = await authedRequest(
     page,
     "GET",
-    `/api/notes?search=${encodeURIComponent(keyword)}`,
+    `/api/v1/notes?search=${encodeURIComponent(keyword)}`,
   );
   expect(res.ok, `检索笔记失败: HTTP ${res.status}`).toBe(true);
   const list = res.body as NoteListResult;
@@ -75,15 +75,15 @@ test.describe("笔记与知识沉淀", () => {
     expect(note.id).toBeTruthy();
     expect(note.title).toBe(title);
 
-    // GET /api/notes/:id 读回 title/content 一致
-    const getRes = await authedRequest(page, "GET", `/api/notes/${note.id}`);
+    // GET /api/v1/notes/:id 读回 title/content 一致
+    const getRes = await authedRequest(page, "GET", `/api/v1/notes/${note.id}`);
     expect(getRes.ok).toBe(true);
     const fetched = getRes.body as Note;
     expect(fetched.title).toBe(title);
     expect(fetched.content).toBe(content);
 
     // 清理:软删除笔记
-    await authedRequest(page, "DELETE", `/api/notes/${note.id}`);
+    await authedRequest(page, "DELETE", `/api/v1/notes/${note.id}`);
   });
 
   test("应该能够按关键词检索到笔记", async ({ authenticatedPage: page }) => {
@@ -96,7 +96,7 @@ test.describe("笔记与知识沉淀", () => {
     expect(found, `检索未命中目标笔记 id=${note.id}`).toBe(true);
 
     // 清理:软删除笔记
-    await authedRequest(page, "DELETE", `/api/notes/${note.id}`);
+    await authedRequest(page, "DELETE", `/api/v1/notes/${note.id}`);
   });
 
   test("应该能够编辑笔记并读回更新后的值", async ({
@@ -105,13 +105,13 @@ test.describe("笔记与知识沉淀", () => {
     const title = `编辑前标题_${Date.now()}`;
     const note = await createNote(page, title, "编辑前正文");
 
-    // 更新 title/content(实际实现为 PUT /api/notes/:id)
+    // 更新 title/content(实际实现为 PUT /api/v1/notes/:id)
     const newTitle = `编辑后标题_${Date.now()}`;
     const newContent = `编辑后正文_${Date.now()}`;
     const updateRes = await authedRequest(
       page,
       "PUT",
-      `/api/notes/${note.id}`,
+      `/api/v1/notes/${note.id}`,
       { title: newTitle, content: newContent },
     );
     expect(updateRes.ok, `更新笔记失败: HTTP ${updateRes.status}`).toBe(true);
@@ -120,14 +120,14 @@ test.describe("笔记与知识沉淀", () => {
     expect(updated.content).toBe(newContent);
 
     // GET 读回为更新后的值
-    const getRes = await authedRequest(page, "GET", `/api/notes/${note.id}`);
+    const getRes = await authedRequest(page, "GET", `/api/v1/notes/${note.id}`);
     expect(getRes.ok).toBe(true);
     const fetched = getRes.body as Note;
     expect(fetched.title).toBe(newTitle);
     expect(fetched.content).toBe(newContent);
 
     // 清理:软删除笔记
-    await authedRequest(page, "DELETE", `/api/notes/${note.id}`);
+    await authedRequest(page, "DELETE", `/api/v1/notes/${note.id}`);
   });
 
   test("应该能够删除笔记且列表不再包含该笔记", async ({
@@ -144,12 +144,12 @@ test.describe("笔记与知识沉淀", () => {
     const delRes = await authedRequest(
       page,
       "DELETE",
-      `/api/notes/${note.id}`,
+      `/api/v1/notes/${note.id}`,
     );
     expect(delRes.ok, `删除笔记失败: HTTP ${delRes.status}`).toBe(true);
 
-    // 删除后:GET /api/notes/:id 仍返回该笔记(软删除保留),deletedAt 非空
-    const getRes = await authedRequest(page, "GET", `/api/notes/${note.id}`);
+    // 删除后:GET /api/v1/notes/:id 仍返回该笔记(软删除保留),deletedAt 非空
+    const getRes = await authedRequest(page, "GET", `/api/v1/notes/${note.id}`);
     expect(getRes.ok).toBe(true);
     const fetched = getRes.body as Note;
     expect(fetched.deletedAt).toBeTruthy();

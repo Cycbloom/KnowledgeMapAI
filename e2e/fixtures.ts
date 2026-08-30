@@ -34,15 +34,15 @@ const BACKBONE_NODE_TITLES = [
 /**
  * 通过 API 创建带骨干节点的专题研究图谱。
  *
- * 1. POST /api/graphs（template_type: "topic_research"）创建图谱 + 模块配置
- * 2. POST /api/auto-graph/save-nodes 保存 root + 6 个 core 骨干节点
+ * 1. POST /api/v1/graphs（template_type: "topic_research"）创建图谱 + 模块配置
+ * 2. POST /api/v1/auto-graph/save-nodes 保存 root + 6 个 core 骨干节点
  */
 async function createTopicResearchGraph(
   page: Page,
   title: string,
 ): Promise<TestGraph> {
   // 步骤 1: 创建图谱
-  const createRes = await authedRequest(page, "POST", "/api/graphs", {
+  const createRes = await authedRequest(page, "POST", "/api/v1/graphs", {
     title,
     template_type: "topic_research",
   });
@@ -67,7 +67,7 @@ async function createTopicResearchGraph(
   const saveRes = await authedRequest(
     page,
     "POST",
-    "/api/auto-graph/save-nodes",
+    "/api/v1/auto-graph/save-nodes",
     { graph_id: graph.id, nodes },
   );
   expect(
@@ -100,7 +100,7 @@ export const test = base.extend<CustomFixtures>({
    */
   testGraph: async ({ authenticatedPage: page }, use) => {
     const title = `测试图谱_${Date.now()}`;
-    const response = await authedRequest(page, "POST", "/api/graphs", {
+    const response = await authedRequest(page, "POST", "/api/v1/graphs", {
       title,
     });
     expect(
@@ -109,8 +109,8 @@ export const test = base.extend<CustomFixtures>({
     ).toBe(true);
     const graph = response.body as TestGraph;
     await use(graph);
-    // 清理:永久删除（DELETE /api/graphs/:id/permanent 直接物理删除）。
-    await authedRequest(page, "DELETE", `/api/graphs/${graph.id}/permanent`);
+    // 清理:永久删除（DELETE /api/v1/graphs/:id/permanent 直接物理删除）。
+    await authedRequest(page, "DELETE", `/api/v1/graphs/${graph.id}/permanent`);
   },
 
   /**
@@ -124,7 +124,7 @@ export const test = base.extend<CustomFixtures>({
     const graph = await createTopicResearchGraph(page, title);
     await use(graph);
     // 清理:永久删除图谱（关联的节点和模块通过 CASCADE 自动删除）。
-    await authedRequest(page, "DELETE", `/api/graphs/${graph.id}/permanent`);
+    await authedRequest(page, "DELETE", `/api/v1/graphs/${graph.id}/permanent`);
   },
 
   /**

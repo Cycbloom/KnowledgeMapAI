@@ -176,18 +176,6 @@ export function createApp(kernel?: Kernel): express.Express {
     }),
   );
 
-  // 旧路径重定向: /api/* → /api/v1/* (308 永久重定向)
-  // 注意: req.path 不含查询串, 需从 originalUrl 提取 query 拼接, 否则
-  // 携带 query 参数(如 merge-preview?branchGraphId=...)的请求会丢失参数。
-  app.use("/api/", (req, res, next) => {
-    if (req.path.startsWith("/v1/")) {
-      return next();
-    }
-    const queryIndex = req.originalUrl.indexOf("?");
-    const queryString = queryIndex >= 0 ? req.originalUrl.slice(queryIndex) : "";
-    res.redirect(308, `/api/v1${req.path}${queryString}`);
-  });
-
   app.get("/api/v1/csrf-token", getCsrfToken);
 
   // CSP violation report endpoint

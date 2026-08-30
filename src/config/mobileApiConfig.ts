@@ -70,7 +70,7 @@ export function getMobileApiBaseUrl(): string {
   if (envUrl) {
     return envUrl;
   }
-  return "/api";
+  return "/api/v1";
 }
 
 export function shouldUseSupabaseDirect(): boolean {

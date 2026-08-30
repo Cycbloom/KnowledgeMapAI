@@ -13,8 +13,8 @@ import { authedRequest } from "./utils/auth";
  *   且不依赖真实 AI 服务）。
  * - 断言：使用显式断言（`toBe(true)` / `toBeGreaterThanOrEqual` / `toBe` 等）。
  *
- * 端点说明：规范简写为 `/api/learning/study/*`，但实际后端将 study 路由挂载在
- * `/api/v1/study`（见 `api/services/plugins/StudyPlugin.ts`），旧 `/api/*` 通过
+ * 端点说明：规范简写为 `/api/v1/learning/study/*`，但实际后端将 study 路由挂载在
+ * `/api/v1/study`（见 `api/services/plugins/StudyPlugin.ts`），旧 `/api/v1/*` 通过
  * 308 重定向到 `/api/v1/*`（见 `api/app.ts`）。以下按实际实现使用 `/api/v1/study/*`。
  */
 

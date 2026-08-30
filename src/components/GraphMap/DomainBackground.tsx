@@ -269,30 +269,25 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
       if (group.nodes.length === 0) return;
 
       let sumX = 0, sumY = 0;
-      // 组内最大节点外缘半径：光晕圆必须覆盖节点盘本身，而非只覆盖中心点
-      let maxRim = 0;
       group.nodes.forEach(node => {
         sumX += node.x;
         sumY += node.y;
-        const rim = getNodeRimRadius(node.level ?? 'leaf');
-        if (rim > maxRim) maxRim = rim;
       });
       group.centerX = sumX / group.nodes.length;
       group.centerY = sumY / group.nodes.length;
 
-      const distances = group.nodes.map(node => {
+      // 外接圆：半径 = 距质心最远的「节点盘外缘」距离，正好包住最外层节点，
+      // 避免 p85 + 大 padding + 放大系数把圆撑得过大
+      let maxOuter = 0;
+      group.nodes.forEach(node => {
         const dx = node.x - group.centerX;
         const dy = node.y - group.centerY;
-        // 距离按「圆心距 + 该节点外缘半径 + 组内最大半径」计，确保最外圈节点盘被完整包住
         const rim = getNodeRimRadius(node.level ?? 'leaf');
-        return Math.sqrt(dx * dx + dy * dy) + rim + maxRim;
+        const outer = Math.sqrt(dx * dx + dy * dy) + rim;
+        if (outer > maxOuter) maxOuter = outer;
       });
-      const pAngle =
-        distances.length > 1
-          ? distances[Math.floor((distances.length - 1) * 0.85)]
-          : distances[0] / 2;
-      const padding = Math.max(70, 110 - group.nodes.length * 2);
-      group.radius = (pAngle + padding) * 1.1;
+      // 少量视觉余量，圆刚好贴合而不互相压挤
+      group.radius = maxOuter + 8;
     });
 
     return Array.from(groups.values());

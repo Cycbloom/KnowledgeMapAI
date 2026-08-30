@@ -62,7 +62,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       message.error(t("toast.calendar.exportFailed"));
       return;
     }
-    const webcalUrl = `webcal://${window.location.host}/api/calendar/subscribe/${userId}`;
+    const webcalUrl = `webcal://${window.location.host}/api/v1/calendar/subscribe/${userId}`;
     void copyToClipboard(webcalUrl, t("toast.calendar.webcalCopied"));
   };
 

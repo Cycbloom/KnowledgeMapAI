@@ -7,7 +7,6 @@ import { pricingService } from "../ai/pricingService";
 import { notDeleted } from '../common/softDeleteHelper';
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
-import { crossDomainAnalysisService } from "./crossDomainAnalysisService";
 
 export interface DiscoveredRelation {
   source_graph_id: string;
@@ -539,84 +538,6 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       ...parsed,
       session_id: sessionId,
     };
-  }
-
-  async analyzeCrossDomainInsights(
-    supabase: SupabaseClient,
-    userId: string,
-    options?: {
-      graph_ids?: string[];
-      min_intersection?: number;
-      session_id?: string;
-    },
-  ): Promise<{
-    cross_domain_insights: CrossDomainInsight[];
-    domain_distribution: Record<string, number>;
-    analysis_summary: { total_domains: number; cross_domain_clusters: number };
-    session_id?: string;
-  }> {
-    return crossDomainAnalysisService.analyzeCrossDomainInsights(
-      supabase,
-      userId,
-      options,
-      (sb, graphs) => this.enrichGraphsWithNodeInfo(sb, graphs),
-    );
-  }
-
-  async generateLearningPathSuggestions(
-    supabase: SupabaseClient,
-    userId: string,
-    options?: {
-      graph_ids?: string[];
-      difficulty?: "beginner" | "intermediate" | "advanced";
-      session_id?: string;
-    },
-  ): Promise<{
-    learning_path_suggestions: Array<{
-      path: string[];
-      path_titles: string[];
-      description: string;
-      estimated_time: string;
-      difficulty: "beginner" | "intermediate" | "advanced";
-    }>;
-    analysis_summary: { total_paths: number; avg_path_length: number };
-    session_id?: string;
-  }> {
-    return crossDomainAnalysisService.generateLearningPathSuggestions(
-      supabase,
-      userId,
-      options,
-      (sb, graphs) => this.enrichGraphsWithNodeInfo(sb, graphs),
-      (sb, graphIds) => this.getExistingRelations(sb, graphIds),
-    );
-  }
-
-  async analyzeKnowledgeGaps(
-    supabase: SupabaseClient,
-    userId: string,
-    options?: {
-      graph_ids?: string[];
-      min_importance?: "high" | "medium" | "low";
-      session_id?: string;
-    },
-  ): Promise<{
-    knowledge_gaps: Array<{
-      missing_topic: string;
-      related_graphs: string[];
-      related_graph_titles: string[];
-      importance: "high" | "medium" | "low";
-      suggested_action: "create" | "merge" | "expand";
-      reason: string;
-    }>;
-    analysis_summary: { total_gaps: number; high_priority_count: number };
-    session_id?: string;
-  }> {
-    return crossDomainAnalysisService.analyzeKnowledgeGaps(
-      supabase,
-      userId,
-      options,
-      (sb, graphs) => this.enrichGraphsWithNodeInfo(sb, graphs),
-    );
   }
 
   private async enrichGraphsWithNodeInfo(

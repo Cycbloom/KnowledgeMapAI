@@ -21,7 +21,6 @@ export type { AINodeData, CreateEdgeData, ProcessAINodesResult, InitGraphParams,
 export { autoGraphMergeService, AutoGraphMergeService } from './autoGraphMergeService';
 export { relationDiscoveryService, RelationDiscoveryService } from './relationDiscoveryService';
 export type { DiscoveredRelation, CrossDomainInsight, DiscoveryResult, IntelligentSuggestion, CreateRelationFromDiscoveryData } from './relationDiscoveryService';
-export { crossDomainAnalysisService, CrossDomainAnalysisService } from './crossDomainAnalysisService';
 export { conceptSimilarityService, ConceptSimilarityService } from './conceptSimilarityService';
 export { conceptEmbeddingService, ConceptEmbeddingService } from './conceptEmbeddingService';
 export { networkAnalysisService } from "./networkAnalysisService";

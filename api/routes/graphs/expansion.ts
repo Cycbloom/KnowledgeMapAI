@@ -77,21 +77,6 @@ const createRelationFromDiscoverySchema = z.object({
   shared_concepts: z.array(z.string()).optional(),
 });
 
-const crossDomainInsightsSchema = z.object({
-  graph_ids: z.array(z.string().uuid()).optional(),
-  min_intersection: z.number().min(1).max(10).default(2),
-});
-
-const learningPathSuggestionsSchema = z.object({
-  graph_ids: z.array(z.string().uuid()).optional(),
-  difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
-});
-
-const knowledgeGapsSchema = z.object({
-  graph_ids: z.array(z.string().uuid()).optional(),
-  min_importance: z.enum(["high", "medium", "low"]).optional(),
-});
-
 const validateBackboneSchema = z.object({
   nodes: z
     .array(
@@ -272,88 +257,6 @@ router.post(
       relation_id: result.id,
       message: "关系创建成功",
     });
-  },
-);
-
-router.post(
-  "/cross-domain-insights",
-  requireAuth,
-  validate({ body: crossDomainInsightsSchema }),
-  async (req: AuthedRequest, res: Response) => {
-    const { graph_ids, min_intersection = 2 } = req.body;
-    const userId = req.user.id;
-
-    logger.info("Cross-domain insights request", {
-      userId,
-      graph_ids,
-      min_intersection,
-    });
-
-    const result = await relationDiscoveryService.analyzeCrossDomainInsights(
-      req.supabase,
-      userId,
-      {
-        graph_ids,
-        min_intersection,
-      },
-    );
-
-    res.json(result);
-  },
-);
-
-router.post(
-  "/learning-path-suggestions",
-  requireAuth,
-  validate({ body: learningPathSuggestionsSchema }),
-  async (req: AuthedRequest, res: Response) => {
-    const { graph_ids, difficulty } = req.body;
-    const userId = req.user.id;
-
-    logger.info("Learning path suggestions request", {
-      userId,
-      graph_ids,
-      difficulty,
-    });
-
-    const result =
-      await relationDiscoveryService.generateLearningPathSuggestions(
-        req.supabase,
-        userId,
-        {
-          graph_ids,
-          difficulty,
-        },
-      );
-
-    res.json(result);
-  },
-);
-
-router.post(
-  "/knowledge-gaps",
-  requireAuth,
-  validate({ body: knowledgeGapsSchema }),
-  async (req: AuthedRequest, res: Response) => {
-    const { graph_ids, min_importance } = req.body;
-    const userId = req.user.id;
-
-    logger.info("Knowledge gaps analysis request", {
-      userId,
-      graph_ids,
-      min_importance,
-    });
-
-    const result = await relationDiscoveryService.analyzeKnowledgeGaps(
-      req.supabase,
-      userId,
-      {
-        graph_ids,
-        min_importance,
-      },
-    );
-
-    res.json(result);
   },
 );
 

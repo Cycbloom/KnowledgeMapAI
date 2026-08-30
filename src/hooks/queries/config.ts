@@ -328,9 +328,6 @@ export const queryKeys = {
   // === Task 7-11 预留方法 ===
   // Task 8: GlobalSearch 查询键
   search: (query: string) => ["search", query] as const,
-  // Task 9: ModularAnalysisPanel 查询键
-  modularAnalysis: (graphId: string) =>
-    ["modularAnalysis", graphId] as const,
   // Task 11: LearningMode 节点详情查询键
   nodeDetail: (nodeId: string) => ["nodes", "detail", nodeId] as const,
 };

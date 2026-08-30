@@ -784,27 +784,6 @@ export const mobileGraphsApi: IGraphsApi = {
     throw new NotSupportedError("getIntelligentSuggestions");
   },
 
-  getCrossDomainInsights: async (_options?: {
-    graph_ids?: string[];
-    min_intersection?: number;
-  }) => {
-    throw new NotSupportedError("getCrossDomainInsights");
-  },
-
-  getLearningPathSuggestions: async (_options?: {
-    graph_ids?: string[];
-    difficulty?: "beginner" | "intermediate" | "advanced";
-  }) => {
-    throw new NotSupportedError("getLearningPathSuggestions");
-  },
-
-  getKnowledgeGaps: async (_options?: {
-    graph_ids?: string[];
-    min_importance?: "high" | "medium" | "low";
-  }) => {
-    throw new NotSupportedError("getKnowledgeGaps");
-  },
-
   applyNodeRelations: async (
     _graphId: string,
     _suggestions: NodeRelationSuggestion[],

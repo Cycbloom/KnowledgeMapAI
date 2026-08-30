@@ -7,9 +7,6 @@ import type {
   DiscoveryResult,
   IntelligentSuggestion,
   GraphRelationType,
-  CrossDomainInsight,
-  LearningPathSuggestion,
-  KnowledgeGap,
   CreateGraphFromTemplateData,
   GraphMapData,
   GraphRelation,
@@ -369,53 +366,6 @@ export const graphsApi: IGraphsApi = {
         : "/graphs/intelligent-suggestions";
     return request<IntelligentSuggestion>(url);
   },
-
-  getCrossDomainInsights: (options?: {
-    graph_ids?: string[];
-    min_intersection?: number;
-  }): Promise<{
-    cross_domain_insights: CrossDomainInsight[];
-    domain_distribution: Record<string, number>;
-    analysis_summary: { total_domains: number; cross_domain_clusters: number };
-  }> =>
-    request<{
-      cross_domain_insights: CrossDomainInsight[];
-      domain_distribution: Record<string, number>;
-      analysis_summary: { total_domains: number; cross_domain_clusters: number };
-    }>("/graphs/cross-domain-insights", {
-      method: "POST",
-      body: JSON.stringify(options || {}),
-    }),
-
-  getLearningPathSuggestions: (options?: {
-    graph_ids?: string[];
-    difficulty?: "beginner" | "intermediate" | "advanced";
-  }): Promise<{
-    learning_path_suggestions: LearningPathSuggestion[];
-    analysis_summary: { total_paths: number; avg_path_length: number };
-  }> =>
-    request<{
-      learning_path_suggestions: LearningPathSuggestion[];
-      analysis_summary: { total_paths: number; avg_path_length: number };
-    }>("/graphs/learning-path-suggestions", {
-      method: "POST",
-      body: JSON.stringify(options || {}),
-    }),
-
-  getKnowledgeGaps: (options?: {
-    graph_ids?: string[];
-    min_importance?: "high" | "medium" | "low";
-  }): Promise<{
-    knowledge_gaps: KnowledgeGap[];
-    analysis_summary: { total_gaps: number; high_priority_count: number };
-  }> =>
-    request<{
-      knowledge_gaps: KnowledgeGap[];
-      analysis_summary: { total_gaps: number; high_priority_count: number };
-    }>("/graphs/knowledge-gaps", {
-      method: "POST",
-      body: JSON.stringify(options || {}),
-    }),
 
   applyNodeRelations: (
     graphId: string,

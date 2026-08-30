@@ -41,7 +41,6 @@ export type {
 export { healthApi } from "./health";
 export { backupApi } from "./backup";
 export { quizApi } from "./quiz";
-export { agentApi } from "./agent";
 export { schedulerApi } from "./modules/scheduler";
 export { performanceApi } from "./performance";
 export { domainsApi, graphDomainsApi } from "./domains";
@@ -91,7 +90,6 @@ import { autoGraphApi } from "./autoGraph";
 import { healthApi } from "./health";
 import { backupApi } from "./backup";
 import { quizApi } from "./quiz";
-import { agentApi } from "./agent";
 import { schedulerApi } from "./modules/scheduler";
 import { performanceApi } from "./performance";
 import { domainsApi, graphDomainsApi } from "./domains";
@@ -136,7 +134,6 @@ export const api: IApi = {
   health: healthApi,
   backup: backupApi,
   quiz: quizApi,
-  agent: agentApi,
   scheduler: schedulerApi,
   performance: performanceApi,
   domains: domainsApi,

@@ -1,11 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { X, Link2, Trash2, Sparkles, Tag } from "lucide-react";
+import { X, Link2, Trash2, Tag } from "lucide-react";
 
 interface BatchOperationPanelProps {
   selectedCount: number;
   onBatchCreateRelation: () => void;
-  onBatchAnalyze: () => void;
   onBatchDelete: () => void;
   onBatchSetDomain: () => void;
   onClearSelection: () => void;
@@ -14,7 +13,6 @@ interface BatchOperationPanelProps {
 export const BatchOperationPanel: React.FC<BatchOperationPanelProps> = ({
   selectedCount,
   onBatchCreateRelation,
-  onBatchAnalyze,
   onBatchDelete,
   onBatchSetDomain,
   onClearSelection,
@@ -39,13 +37,6 @@ export const BatchOperationPanel: React.FC<BatchOperationPanelProps> = ({
       >
         <Link2 className="w-4 h-4" />
         {t('graphMap.batch.createRelation')}
-      </button>
-      <button
-        onClick={onBatchAnalyze}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/60 transition-colors"
-      >
-        <Sparkles className="w-4 h-4" />
-        {t('graphMap.batch.analyze')}
       </button>
       <button
         onClick={onBatchSetDomain}

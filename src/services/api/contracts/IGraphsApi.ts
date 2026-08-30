@@ -6,9 +6,6 @@ import type {
   GraphRelationType,
   DiscoveryResult,
   IntelligentSuggestion,
-  CrossDomainInsight,
-  LearningPathSuggestion,
-  KnowledgeGap,
   CreateGraphFromTemplateData,
   GraphMapData,
   GraphRelation,
@@ -226,31 +223,6 @@ export interface IGraphsApi {
   getIntelligentSuggestions(
     graphIds?: string[],
   ): Promise<IntelligentSuggestion>;
-
-  getCrossDomainInsights(options?: {
-    graph_ids?: string[];
-    min_intersection?: number;
-  }): Promise<{
-    cross_domain_insights: CrossDomainInsight[];
-    domain_distribution: Record<string, number>;
-    analysis_summary: { total_domains: number; cross_domain_clusters: number };
-  }>;
-
-  getLearningPathSuggestions(options?: {
-    graph_ids?: string[];
-    difficulty?: "beginner" | "intermediate" | "advanced";
-  }): Promise<{
-    learning_path_suggestions: LearningPathSuggestion[];
-    analysis_summary: { total_paths: number; avg_path_length: number };
-  }>;
-
-  getKnowledgeGaps(options?: {
-    graph_ids?: string[];
-    min_importance?: "high" | "medium" | "low";
-  }): Promise<{
-    knowledge_gaps: KnowledgeGap[];
-    analysis_summary: { total_gaps: number; high_priority_count: number };
-  }>;
 
   applyNodeRelations(
     graphId: string,

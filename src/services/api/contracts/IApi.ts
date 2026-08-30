@@ -22,7 +22,6 @@ import type { IAutoGraphApi } from './IAutoGraphApi';
 import type { IHealthApi } from './IHealthApi';
 import type { IBackupApi } from './IBackupApi';
 import type { IPerformanceApi } from './IPerformanceApi';
-import type { IAgentApi } from './IAgentApi';
 import type { IDomainsApi, IGraphDomainsApi } from './IDomainsApi';
 import type { IPluginsApi } from './IPluginsApi';
 import type { ILiteratureApi } from './ILiteratureApi';
@@ -64,7 +63,6 @@ export interface IApi {
   health: IHealthApi;
   backup: IBackupApi;
   quiz: IQuizApi;
-  agent: IAgentApi;
   scheduler: ISchedulerApi;
   performance: IPerformanceApi;
   domains: IDomainsApi;

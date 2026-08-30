@@ -24,7 +24,6 @@ import type { IAutoGraphApi } from "../api/contracts/IAutoGraphApi";
 import type { IHealthApi } from "../api/contracts/IHealthApi";
 import type { IBackupApi } from "../api/contracts/IBackupApi";
 import type { IPerformanceApi } from "../api/contracts/IPerformanceApi";
-import type { IAgentApi } from "../api/contracts/IAgentApi";
 import type { IDomainsApi, IGraphDomainsApi } from "../api/contracts/IDomainsApi";
 import type { IPluginsApi } from "../api/contracts/IPluginsApi";
 import type { ILiteratureApi } from "../api/contracts/ILiteratureApi";
@@ -107,7 +106,6 @@ export const mobileApi: IApi = {
   health: createNotSupportedModule<IHealthApi>("health"),
   backup: createNotSupportedModule<IBackupApi>("backup"),
   quiz: mobileQuizApi,
-  agent: createNotSupportedModule<IAgentApi>("agent"),
   scheduler: mobileSchedulerApi,
   performance: createNotSupportedModule<IPerformanceApi>("performance"),
   domains: createNotSupportedModule<IDomainsApi>("domains"),

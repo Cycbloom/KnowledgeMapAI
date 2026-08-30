@@ -32,7 +32,7 @@ export type {
   InitializeGraphResult,
   BatchInitializeResult,
 } from './graphTypes';
-export type { IAgentApi, AgentSession, AgentMessage, ToolCall, SkillDefinition, GraphRecommendation, RelationType, ToolDefinition, AnalysisGoal, ExecuteResult, StructuredAnalysisResult, MergeSuggestion } from './IAgentApi';
+
 export type { IDomainsApi, IGraphDomainsApi, DomainTreeNode } from './IDomainsApi';
 export type { IPluginsApi, RegistryPlugin, InstalledPlugin, PluginUpdate } from './IPluginsApi';
 export type { ILiteratureApi, LiteratureMetadata, LiteratureInfo, LiteratureExtractRequest, LiteratureExtractResponse, LiteratureApplyRequest, LiteratureApplyResponse, ExtractedConcept, ExtractedRelation, ConceptType } from './ILiteratureApi';

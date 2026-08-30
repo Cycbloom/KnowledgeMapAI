@@ -46,6 +46,8 @@ interface GraphMapToolbarProps {
   domains?: DomainTreeNode[];
   selectedDomainIds?: Set<string>;
   onDomainSelectionChange?: (ids: Set<string>) => void;
+  hoveredDomainId?: string | null;
+  onHoverDomainChange?: (id: string | null) => void;
   onManageDomains?: () => void;
 }
 
@@ -72,6 +74,8 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
   domains,
   selectedDomainIds,
   onDomainSelectionChange,
+  hoveredDomainId,
+  onHoverDomainChange,
   onManageDomains,
 }) => {
   const { t } = useTranslation();
@@ -640,6 +644,8 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
             domains={domains}
             selectedDomainIds={selectedDomainIds || new Set()}
             onSelectionChange={onDomainSelectionChange || (() => {})}
+            hoveredDomainId={hoveredDomainId}
+            onHoverDomainChange={onHoverDomainChange}
           />
         )}
         {renderActionButtons()}
@@ -681,7 +687,8 @@ const areEqual = (prev: GraphMapToolbarProps, next: GraphMapToolbarProps) => {
     prev.onManageDomains === next.onManageDomains &&
     prev.domains === next.domains &&
     prev.selectedDomainIds === next.selectedDomainIds &&
-    prev.onDomainSelectionChange === next.onDomainSelectionChange
+    prev.onDomainSelectionChange === next.onDomainSelectionChange &&
+    prev.hoveredDomainId === next.hoveredDomainId
   );
 };
 

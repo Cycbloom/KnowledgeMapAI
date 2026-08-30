@@ -221,6 +221,7 @@ interface DomainBackgroundProps {
   graphs: Array<{ id: string; domain?: string; domainIds?: string[] }>;
   zoomLevel: number;
   selectedDomainIds?: Set<string>;
+  hoveredDomainId?: string | null;
   domainIdToInfo?: Map<string, { name: string; color: string }>;
 }
 
@@ -229,6 +230,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
   graphs,
   zoomLevel,
   selectedDomainIds,
+  hoveredDomainId,
   domainIdToInfo,
 }) => {
   const { isDark } = useTheme();
@@ -309,6 +311,13 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
     return 1 - (zoomLevel - 0.85) / 0.3;
   }, [zoomLevel]);
   const hullOpacity = 1 - glowOpacity;
+
+  // hover 联动：悬停某领域时，其区域保持明亮，其余区域线性降暗
+  const hovering = hoveredDomainId !== null && hoveredDomainId !== undefined;
+  const regionOpacityFor = (domainId: string): number => {
+    if (!hovering) return 1;
+    return domainId === hoveredDomainId ? 1 : 0.12;
+  };
 
   // 胶囊位置按当前模式线性插值，缩小态→放大态位置变化也平滑
   const useZoomedOutPillPos = glowOpacity > 0.5;
@@ -426,7 +435,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
     const badgeCX = pillX + pill.w - badgeR - 7;
 
     return (
-      <g key={`domain-label-${group.domainId}`}>
+      <g key={`domain-label-${group.domainId}`} opacity={regionOpacityFor(group.domainId)}>
         {/* 淡领域色胶囊底 */}
         <rect
           x={pillX}
@@ -478,7 +487,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
           const blurId = `blur-${group.domainId.replace(/\s+/g, '-')}`;
 
           return (
-            <g key={`glow-${group.domainId}`} opacity={glowOpacity * 0.95}>
+            <g key={`glow-${group.domainId}`} opacity={glowOpacity * 0.95 * regionOpacityFor(group.domainId)}>
               <defs>
                 <radialGradient
                   id={gradientId}
@@ -544,7 +553,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
           const hullGradientId = `hull-rg-${group.domainId.replace(/\s+/g, '-')}`;
 
           return (
-            <g key={`block-${group.domainId}`} opacity={hullOpacity}>
+            <g key={`block-${group.domainId}`} opacity={hullOpacity * regionOpacityFor(group.domainId)}>
               <defs>
                 <filter
                   id={hullShadowId}

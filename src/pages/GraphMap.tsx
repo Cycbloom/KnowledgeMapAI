@@ -197,6 +197,8 @@ export const GraphMap = () => {
   const [isBatchDomainPickerOpen, setIsBatchDomainPickerOpen] = useState(false);
   const [isBatchSettingDomain, setIsBatchSettingDomain] = useState(false);
   const [showDomainManager, setShowDomainManager] = useState(false);
+  // 领域 hover 联动：在左侧领域树上悬停某领域时，画布高亮对应领域节点
+  const [hoveredDomainId, setHoveredDomainId] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedDomainIds.size > 0) {
@@ -1148,6 +1150,8 @@ export const GraphMap = () => {
         domains={domainTree || []}
         selectedDomainIds={selectedDomainIds}
         onDomainSelectionChange={handleDomainSelectionChange}
+        hoveredDomainId={hoveredDomainId}
+        onHoverDomainChange={setHoveredDomainId}
         onManageDomains={() => setShowDomainManager(true)}
       />
 
@@ -1167,6 +1171,7 @@ export const GraphMap = () => {
               onMultiSelectGraph={handleMultiSelectGraph}
               onBoxSelection={handleBoxSelection}
               selectedDomainIds={selectedDomainIds}
+              hoveredDomainId={hoveredDomainId}
               domainColorMap={domainColorMap}
               domainIdToInfo={domainIdToInfo}
               graphDomainMap={graphDomainMap}

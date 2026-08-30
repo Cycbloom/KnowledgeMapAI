@@ -10,6 +10,9 @@ interface DomainFilterProps {
   selectedDomainIds: Set<string>;
   onSelectionChange: (ids: Set<string>) => void;
   domainGraphCount?: Map<string, number>;
+  /** 当前悬停的领域 id（用于画布联动高亮）；onHoverDomainChange 在悬停/移出时触发 */
+  hoveredDomainId?: string | null;
+  onHoverDomainChange?: (id: string | null) => void;
 }
 
 interface DomainTreeItemProps {
@@ -23,6 +26,9 @@ interface DomainTreeItemProps {
   graphCountMap?: Map<string, number>;
   /** 域 ID -> option DOM id 的映射，用于 role="option" 的 id 与 aria-activedescendant 对齐 */
   optionIdMap?: Map<string, string>;
+  /** 当前项是否处于悬停状态（画布联动的高亮提示） */
+  hovered?: boolean;
+  onHoverDomainChange?: (id: string | null) => void;
 }
 
 const DomainTreeItemComponent: React.FC<DomainTreeItemProps> = ({
@@ -35,6 +41,8 @@ const DomainTreeItemComponent: React.FC<DomainTreeItemProps> = ({
   graphCount,
   graphCountMap,
   optionIdMap,
+  hovered = false,
+  onHoverDomainChange,
 }) => {
   const hasChildren = domain.children && domain.children.length > 0;
   const isExpanded = expandedIds.has(domain.id);
@@ -47,10 +55,14 @@ const DomainTreeItemComponent: React.FC<DomainTreeItemProps> = ({
         role="option"
         aria-selected={isSelected}
         id={optionIdMap?.get(domain.id)}
+        onMouseEnter={() => onHoverDomainChange?.(domain.id)}
+        onMouseLeave={() => onHoverDomainChange?.(null)}
         className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-sm rounded-md transition-colors ${
-          isSelected
-            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
+          hovered
+            ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-600'
+            : isSelected
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
@@ -95,6 +107,8 @@ const DomainTreeItemComponent: React.FC<DomainTreeItemProps> = ({
               graphCount={graphCountMap?.get(child.id)}
               graphCountMap={graphCountMap}
               optionIdMap={optionIdMap}
+              hovered={false}
+              onHoverDomainChange={onHoverDomainChange}
             />
           ))}
         </div>
@@ -108,6 +122,7 @@ const areEqual = (prev: DomainTreeItemProps, next: DomainTreeItemProps) => {
     prev.domain.id === next.domain.id &&
     prev.depth === next.depth &&
     prev.graphCount === next.graphCount &&
+    prev.hovered === next.hovered &&
     prev.selectedDomainIds.has(prev.domain.id) === next.selectedDomainIds.has(next.domain.id) &&
     prev.expandedIds.has(prev.domain.id) === next.expandedIds.has(next.domain.id) &&
     prev.onToggle === next.onToggle &&
@@ -122,6 +137,8 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
   selectedDomainIds,
   onSelectionChange,
   domainGraphCount,
+  hoveredDomainId,
+  onHoverDomainChange,
 }) => {
   const deviceInfo = useIsMobile();
   const { t } = useTranslation();
@@ -339,6 +356,8 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
                 graphCount={domainGraphCount?.get(domain.id)}
                 graphCountMap={domainGraphCount}
                 optionIdMap={optionIdMap}
+                hovered={hoveredDomainId === domain.id}
+                onHoverDomainChange={onHoverDomainChange}
               />
             ))}
           </div>

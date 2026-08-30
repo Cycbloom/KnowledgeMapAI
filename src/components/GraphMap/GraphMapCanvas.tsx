@@ -97,7 +97,7 @@ export const GraphMapCanvas = forwardRef<
 
     const { t } = useTranslation();
     const { isDark } = useTheme();
-    const svgRef = React.useRef<SVGSVGElement>(null);
+    const svgRef = React.useRef<SVGSVGElement | null>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
     const contentRef = React.useRef<SVGGElement>(null);
     const layoutRef = useRef(null) as React.MutableRefObject<ReturnType<typeof createMindMapLayout> | null>;
@@ -126,7 +126,7 @@ export const GraphMapCanvas = forwardRef<
       handleToggleMiniMap,
       handleToggleLegend,
       animateCamera,
-      handleWheel,
+      svgCallbackRef,
     } = useGraphMapInteraction({
       ref,
       svgRef,
@@ -387,7 +387,7 @@ export const GraphMapCanvas = forwardRef<
         className="relative w-full h-full overflow-hidden"
       >
         <svg
-          ref={svgRef}
+          ref={svgCallbackRef}
           width="100%"
           height="100%"
           role="application"
@@ -402,7 +402,6 @@ export const GraphMapCanvas = forwardRef<
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onClick={handleCanvasClick}
-          onWheel={(e) => handleWheel(e.nativeEvent)}
           onContextMenu={(e) => e.preventDefault()}
         >
           <title>{canvasAriaLabel}</title>

@@ -18,7 +18,7 @@ interface Transform {
 
 interface UseGraphMapInteractionOptions {
   ref: React.ForwardedRef<{ centerNode: (nodeId: string) => void }>;
-  svgRef: React.RefObject<SVGSVGElement | null>;
+  svgRef: React.MutableRefObject<SVGSVGElement | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   contentRef: React.RefObject<SVGGElement | null>;
   width: number;
@@ -53,6 +53,7 @@ export function useGraphMapInteraction({
   const [showLegend, setShowLegend] = useState(false);
   const [focusedGraphId, setFocusedGraphId] = useState<string | null>(null);
   const [hasMoved, setHasMoved] = useState(false);
+  const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null);
 
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionBox, setSelectionBox] = useState<{
@@ -70,6 +71,16 @@ export function useGraphMapInteraction({
   const touchStartTransformRef = useRef<Transform | null>(null);
 
   const animationFrameRef = useRef<number | null>(null);
+
+  // callback ref 同时维护 svgRef 与 svgNode state：
+  // state 变化会触发依赖 svgNode 的 effect 重新执行，避免 svg 延迟挂载时监听永久丢失。
+  const svgCallbackRef = useCallback(
+    (node: SVGSVGElement | null) => {
+      svgRef.current = node;
+      setSvgNode(node);
+    },
+    [svgRef],
+  );
 
   const updateTransformDOM = useCallback((t: Transform) => {
     if (contentRef.current) {
@@ -401,25 +412,32 @@ export function useGraphMapInteraction({
   );
 
   useEffect(() => {
-    const svg = svgRef.current;
+    const svg = svgNode;
     if (!svg) return;
 
     const options = { passive: false };
 
-    // wheel 改为在 GraphMapCanvas 上用 React onWheel 绑定（随 svg 挂载自动生效），
-    // 避免此处单次绑定在 svg 延迟挂载时永久丢失监听。
+    // React onWheel 默认 passive，无法调用 preventDefault 阻止页面滚动；
+    // 改为原生非 passive 绑定，确保 handleWheel 内的 preventDefault 生效。
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      handleWheel(e);
+    };
+
     svg.addEventListener("touchstart", handleTouchStart, options);
     svg.addEventListener("touchmove", handleTouchMove, options);
     svg.addEventListener("touchend", handleTouchEnd, options);
     svg.addEventListener("touchcancel", handleTouchEnd, options);
+    svg.addEventListener("wheel", onWheel, options);
 
     return () => {
       svg.removeEventListener("touchstart", handleTouchStart);
       svg.removeEventListener("touchmove", handleTouchMove);
       svg.removeEventListener("touchend", handleTouchEnd);
       svg.removeEventListener("touchcancel", handleTouchEnd);
+      svg.removeEventListener("wheel", onWheel);
     };
-  }, [svgRef, handleTouchStart, handleTouchMove, handleTouchEnd]);
+  }, [svgNode, handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
@@ -626,6 +644,6 @@ export function useGraphMapInteraction({
     handleToggleMiniMap,
     handleToggleLegend,
     animateCamera,
-    handleWheel,
+    svgCallbackRef,
   };
 }

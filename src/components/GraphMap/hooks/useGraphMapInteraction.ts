@@ -156,6 +156,8 @@ export function useGraphMapInteraction({
       if (!currentLayout) return;
       const node = currentLayout.nodes.find((n) => n.id === nodeId);
       if (node) {
+        // 选中该节点并聚焦高亮（等价于在画布上点击该节点），再移动视角到其位置
+        setFocusedGraphId(nodeId);
         const visualCenterX = containerSize.width / 2;
         const visualCenterY = containerSize.height / 2;
         const targetK = 1.2;

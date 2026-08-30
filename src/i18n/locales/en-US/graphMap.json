@@ -78,7 +78,9 @@
     "removeRelation": "Remove Relation",
     "unknownGraph": "Unknown Graph",
     "getRelationsFailed": "Failed to load related graphs",
-    "deleteRelationFailed": "Failed to delete relation"
+    "deleteRelationFailed": "Failed to delete relation",
+    "directionTo": "This graph points to the related graph",
+    "directionFrom": "The related graph points to this graph"
   },
   "combinedView": {
     "title": "Combined View Mode",

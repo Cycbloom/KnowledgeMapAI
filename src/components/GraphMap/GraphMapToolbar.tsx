@@ -13,6 +13,7 @@ import {
   Filter,
   Palette,
   Tags,
+  Settings,
 } from "lucide-react";
 import type { GraphMapFilterMode } from "../../types";
 import { useIsMobile } from "../../hooks";
@@ -381,13 +382,19 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
           <>
             <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden lg:block flex-shrink-0" />
 
-            <div className="text-sm text-gray-500 dark:text-gray-400 hidden lg:flex items-center whitespace-nowrap flex-shrink-0">
-              <span>
-                {t("graphMap.stats.graphCount", { count: graphCount })}
+            <div className="text-sm text-gray-500 dark:text-gray-400 hidden md:flex items-center whitespace-nowrap flex-shrink-0 gap-1.5">
+              <span className="flex items-center gap-1">
+                <Network className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>
+                  {t("graphMap.stats.graphCount", { count: graphCount })}
+                </span>
               </span>
-              <span className="mx-2">·</span>
-              <span>
-                {t("graphMap.stats.relationCount", { count: relationCount })}
+              <span className="mx-0.5">·</span>
+              <span className="flex items-center gap-1">
+                <ArrowRightLeft className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>
+                  {t("graphMap.stats.relationCount", { count: relationCount })}
+                </span>
               </span>
             </div>
 
@@ -423,10 +430,11 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
         {onManageDomains && domains && domains.length > 0 && (
           <button
             onClick={onManageDomains}
-            className="px-2 py-1 text-xs text-gray-400 dark:text-gray-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
+            className="p-2 text-gray-400 dark:text-gray-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors rounded-lg"
             title={t("graphMap.toolbar.manageDomains")}
+            aria-label={t("graphMap.toolbar.manageDomains")}
           >
-            {t("graphMap.toolbar.manage")}
+            <Settings className="w-5 h-5" aria-hidden="true" />
           </button>
         )}
       </div>

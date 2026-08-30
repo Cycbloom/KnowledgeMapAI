@@ -2,7 +2,19 @@ import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef, useI
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Sparkles, BookOpen, X, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
+import {
+  Sparkles,
+  BookOpen,
+  X,
+  ChevronUp,
+  ChevronDown,
+  AlertCircle,
+  CircleDot,
+  ArrowRightLeft,
+  ArrowUpRight,
+  ArrowLeft,
+  ArrowRight,
+} from "lucide-react";
 import { api } from "../services/api";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { queryKeys } from "../hooks/queries/config";
@@ -364,10 +376,24 @@ export const GraphMap = () => {
   // 通过预构建 graphById 映射取图，替代每次渲染对 graphs 的线性 find（原每次渲染 O(graphs) 扫描）
   const fromGraph = fromGraphId ? graphById.get(fromGraphId) : undefined;
 
+  // 指向 GraphMapCanvas 的命令式句柄：用于把视角移动到指定图谱节点
+  const graphMapCanvasRef = useRef<{ centerNode: (nodeId: string) => void } | null>(
+    null,
+  );
+
   const handleGraphClick = useCallback((graph: Graph | null) => {
     setSelectedGraphId(graph?.id ?? null);
     setMultiSelectedGraphIds(new Set());
   }, []);
+
+  // 信息面板「相关图谱」点击：选中该图谱并移动视角到其画布位置
+  const handleFocusRelatedGraph = useCallback(
+    (graph: Graph) => {
+      handleGraphClick(graph);
+      graphMapCanvasRef.current?.centerNode(graph.id);
+    },
+    [handleGraphClick],
+  );
 
   const handleMultiSelectGraph = useCallback(
     (graphId: string, isMultiSelect: boolean, isRangeSelect?: boolean) => {
@@ -1114,6 +1140,7 @@ export const GraphMap = () => {
         <Suspense fallback={<GraphMapSkeleton />}>
           <ErrorBoundary>
             <GraphMapCanvas
+              ref={graphMapCanvasRef}
               graphs={graphs}
               relations={relations}
               selectedGraphId={selectedGraphId}
@@ -1403,7 +1430,7 @@ export const GraphMap = () => {
                 })()}
               </div>
             ) : (
-              <div className="absolute top-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4 max-w-xs">
+              <div className="absolute top-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4 max-w-xs w-[272px]">
                 {(() => {
                   const graph = graphById.get(selectedGraphId);
                   if (!graph) return null;
@@ -1412,18 +1439,35 @@ export const GraphMap = () => {
 
                   return (
                     <>
-                      <h2 className="font-semibold text-gray-900 dark:text-white mb-2">
-                        {graph.title}
-                      </h2>
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <h2 className="font-semibold text-gray-900 dark:text-white truncate leading-snug">
+                          {graph.title}
+                        </h2>
+                        <button
+                          onClick={() => setSelectedGraphId(null)}
+                          aria-label={t('common.aria.close')}
+                          className="shrink-0 -mr-1 -mt-1 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-md min-w-[28px] min-h-[28px] flex items-center justify-center"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-2">
+                        <span className="flex items-center gap-1">
+                          <CircleDot className="w-3.5 h-3.5" aria-hidden="true" />
+                          {t('graphMap.graph.nodeCount', { count: graph.nodes_count || 0 })}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <ArrowRightLeft className="w-3.5 h-3.5" aria-hidden="true" />
+                          {t('graphMap.graph.relationCount', { count: graphRelations.length })}
+                        </span>
+                      </div>
+
                       {graph.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
                           {graph.description}
                         </p>
                       )}
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                        {t('graphMap.graph.nodeCount', { count: graph.nodes_count || 0 })} ·{" "}
-                        {t('graphMap.graph.relationCount', { count: graphRelations.length })}
-                      </div>
 
                       {graph.domains && graph.domains.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-3">
@@ -1443,49 +1487,38 @@ export const GraphMap = () => {
                               {domain.name}
                             </span>
                           ))}
-                          
                         </div>
                       )}
 
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => navigate(`/graph/${graph.id}`)}
-                          className="flex-1 px-3 py-1.5 bg-primary-500 text-white text-sm rounded-lg hover:bg-primary-600 transition-colors"
-                        >
-                          {t('graphMap.graph.openGraph')}
-                        </button>
-                        
-                      </div>
+                      <button
+                        onClick={() => navigate(`/graph/${graph.id}`)}
+                        className="w-full px-3 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
+                        {t('graphMap.graph.openGraph')}
+                      </button>
 
-                      
+                      <button
+                        onClick={() => setIsAIExpansionOpen(true)}
+                        className="w-full mt-2 px-3 py-2 text-sm bg-gradient-to-r from-primary-500 to-pink-500 text-white rounded-lg hover:from-primary-600 hover:to-pink-600 transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Sparkles className="w-4 h-4" aria-hidden="true" />
+                        {t('graphMap.graph.aiSmartExpand')}
+                      </button>
+                      <p className="text-[11px] leading-tight text-gray-500 dark:text-gray-400 mt-1 text-center">
+                        {t('graphMap.graph.aiExpandDesc')}
+                      </p>
 
-                      
-
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <button
-                          onClick={() => setIsAIExpansionOpen(true)}
-                          className="w-full px-3 py-2 text-sm bg-gradient-to-r from-primary-500 to-pink-500 text-white rounded-lg hover:from-primary-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
-                        >
-                          <Sparkles className="w-4 h-4" />
-                          {t('graphMap.graph.aiSmartExpand')}
-                        </button>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
-                          {t('graphMap.graph.aiExpandDesc')}
-                        </p>
-                      </div>
-
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <button
-                          onClick={() => setIsNodeSelectorOpen(true)}
-                          className="w-full px-3 py-2 text-sm bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-lg hover:from-primary-600 hover:to-violet-600 transition-all flex items-center justify-center gap-2"
-                        >
-                          <BookOpen className="w-4 h-4" />
-                          {t('graphMap.graph.generateQuestions')}
-                        </button>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
-                          {t('graphMap.graph.generateQuestionsDesc')}
-                        </p>
-                      </div>
+                      <button
+                        onClick={() => setIsNodeSelectorOpen(true)}
+                        className="w-full mt-2 px-3 py-2 text-sm bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-lg hover:from-primary-600 hover:to-violet-600 transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <BookOpen className="w-4 h-4" aria-hidden="true" />
+                        {t('graphMap.graph.generateQuestions')}
+                      </button>
+                      <p className="text-[11px] leading-tight text-gray-500 dark:text-gray-400 mt-1 text-center">
+                        {t('graphMap.graph.generateQuestionsDesc')}
+                      </p>
 
                       {graphRelations.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
@@ -1513,27 +1546,31 @@ export const GraphMap = () => {
                                 }[relation.relation_type];
 
                                 return (
-                                  <div
+                                  <button
                                     key={relation.id}
-                                    className="flex items-center justify-between text-xs"
+                                    onClick={() => handleFocusRelatedGraph(otherGraph)}
+                                    title={otherGraph.title}
+                                    className="w-full flex items-center gap-1.5 text-xs text-left group hover:bg-gray-50 dark:hover:bg-slate-700/60 rounded px-1 py-0.5 -mx-1 transition-colors"
                                   >
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                      <div
-                                        className={`w-2 h-2 rounded-full ${relationColor}`}
-                                      />
-                                      <span className="text-gray-700 dark:text-gray-300 truncate">
-                                        {otherGraph.title}
-                                      </span>
-                                    </div>
-                                    <button
-                                      onClick={() =>
-                                        handleDeleteRelation(relation.id)
+                                    <span
+                                      className="shrink-0 text-gray-400 dark:text-gray-500"
+                                      title={
+                                        isSource
+                                          ? t('graphMap.graph.directionTo')
+                                          : t('graphMap.graph.directionFrom')
                                       }
-                                      className="text-gray-400 hover:text-red-500 ml-2"
                                     >
-                                      ×
-                                    </button>
-                                  </div>
+                                      {isSource ? (
+                                        <ArrowRight className="w-3 h-3" aria-hidden="true" />
+                                      ) : (
+                                        <ArrowLeft className="w-3 h-3" aria-hidden="true" />
+                                      )}
+                                    </span>
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${relationColor}`} />
+                                    <span className="text-gray-700 dark:text-gray-300 truncate">
+                                      {otherGraph.title}
+                                    </span>
+                                  </button>
                                 );
                               })}
                           </div>

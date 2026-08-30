@@ -78,7 +78,9 @@
     "removeRelation": "删除关联",
     "unknownGraph": "未知图谱",
     "getRelationsFailed": "获取关联图谱失败",
-    "deleteRelationFailed": "删除关联失败"
+    "deleteRelationFailed": "删除关联失败",
+    "directionTo": "该图谱指向此关联图谱",
+    "directionFrom": "该关联图谱指向此图谱"
   },
   "combinedView": {
     "title": "联立视图模式",

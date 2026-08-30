@@ -1,4 +1,6 @@
-import React, { memo, useCallback } from "react";
+import React, { memo, useCallback, useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import type {
   Graph,
   LayoutNode,
@@ -72,6 +74,62 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
   transformRef,
   panMovedRef,
 }) => {
+  const { t } = useTranslation();
+  const [hover, setHover] = useState<{
+    graph: Graph & { node_count?: number };
+    x: number;
+    y: number;
+  } | null>(null);
+  const hoverTimerRef = useRef<number | null>(null);
+
+  // 离开画布节点时延迟清除 hover：给光标移入 tooltip 前的短暂停留留缓冲，避免抖动闪烁
+  const clearHover = useCallback(() => {
+    if (hoverTimerRef.current !== null) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setHover(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current !== null) {
+        window.clearTimeout(hoverTimerRef.current);
+      }
+    };
+  }, []);
+
+  // 悬停 200ms 无变化才展示 tooltip，减少快速扫过时的视觉噪音
+  const handleNodeHover = useCallback(
+    (node: LayoutNode, e: React.MouseEvent) => {
+      if (hoverTimerRef.current !== null) {
+        window.clearTimeout(hoverTimerRef.current);
+      }
+      const graph = graphs.find((g) => g.id === node.id);
+      if (!graph) return;
+      const x = e.clientX;
+      const y = e.clientY;
+      hoverTimerRef.current = window.setTimeout(
+        () => setHover({ graph, x, y }),
+        200,
+      );
+    },
+    [graphs],
+  );
+
+  const handleNodeMove = useCallback(
+    (node: LayoutNode, e: React.MouseEvent) => {
+      if (hoverTimerRef.current !== null) return;
+      setHover((prev) => {
+        if (prev && prev.graph.id === node.id) {
+          return { ...prev, x: e.clientX, y: e.clientY };
+        }
+        return prev;
+      });
+    },
+    [],
+  );
+
   const handleNodeClick = useCallback(
     (node: LayoutNode, e?: React.MouseEvent) => {
       // 若本次按下发生了平移拖动，则视为拖画布而非点击节点，避免聚焦/回跳
@@ -134,6 +192,9 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
               transition: "opacity 0.3s ease",
               pointerEvents: isNodeHighlighted ? "auto" : "none",
             }}
+            onMouseEnter={(e) => handleNodeHover(node, e)}
+            onMouseMove={(e) => handleNodeMove(node, e)}
+            onMouseLeave={clearHover}
           >
             <MindMapNode
               node={node}
@@ -143,8 +204,6 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
               isDark={isDark}
               zoomLevel={zoomLevel}
               onClick={(e) => handleNodeClick(node, e)}
-              onMouseEnter={() => {}}
-              onMouseLeave={() => {}}
               focused={isFocused}
               forceShowText={true}
               hasFocusMode={hasFocus}
@@ -159,6 +218,41 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
           </g>
         );
       })}
+
+      {hover &&
+        createPortal(
+          <div
+            className="pointer-events-none fixed z-50"
+            role="tooltip"
+            style={{
+              left: Math.min(hover.x + 14, window.innerWidth - 250),
+              top: Math.min(hover.y + 14, window.innerHeight - 96),
+            }}
+          >
+            <div
+              className={`w-[224px] rounded-lg shadow-lg border p-2.5 ${
+                isDark
+                  ? "bg-slate-800/95 border-slate-600 text-gray-200"
+                  : "bg-white/95 border-gray-200 text-gray-800"
+              } backdrop-blur-sm`}
+            >
+              <p className="text-xs font-semibold truncate">
+                {hover.graph.title}
+              </p>
+              {hover.graph.description && (
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                  {hover.graph.description}
+                </p>
+              )}
+              <p className="text-[11px] mt-1 text-gray-500 dark:text-gray-400">
+                {t("graphMap.graph.nodeCount", {
+                  count: hover.graph.node_count ?? hover.graph.nodes_count ?? 0,
+                })}
+              </p>
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 };

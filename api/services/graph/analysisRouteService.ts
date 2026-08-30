@@ -5,6 +5,7 @@ import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { notDeleted } from '../common/softDeleteHelper';
+import { LONG_TIMEOUT } from '../../../shared/utils/retry';
 
 interface Recommendation {
   title: string;
@@ -124,7 +125,7 @@ ${domainContext ? `5. 基于上述已有内容，推荐新的、不重复的知�
           },
           { role: 'user', content: finalPrompt },
         ],
-        { timeout: 60000, sessionId, operation: 'domain_analysis' },
+        { timeout: LONG_TIMEOUT, sessionId, operation: 'domain_analysis' },
       );
 
       let recommendations: Recommendation[] = [];

@@ -7,6 +7,8 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import i18next from "i18next";
 import { notDeleted } from '../common/softDeleteHelper';
+import { cacheService, CacheKeys } from '../common/cacheService';
+import { LONG_TIMEOUT } from '../../../shared/utils/retry';
 
 class DomainExpansionService {
   async expandDomain(
@@ -197,7 +199,7 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
           },
           { role: 'user', content: basePrompt },
         ],
-        { timeout: 60000 },
+        { timeout: LONG_TIMEOUT },
       );
 
       const recommendations: Array<{
@@ -631,6 +633,17 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
           logger.error(`Error during relation creation phase: ${errorMessage}`);
           // 不抛出错误，继续返回图谱创建结果
         }
+      }
+
+      try {
+        await cacheService.del([
+          CacheKeys.GRAPH_MAP(userId),
+          CacheKeys.USER_GRAPHS(userId),
+          CacheKeys.GRAPH_TAGS(userId),
+          CacheKeys.GRAPH_DOMAINS(userId),
+        ]);
+      } catch (invalidateError: unknown) {
+        logger.warn('Failed to invalidate graph map cache after batch create:', invalidateError);
       }
 
       return {

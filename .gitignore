@@ -84,6 +84,10 @@ data/*.db-wal
 # Seed runtime artifacts (live bcrypt login for demo owner — never commit)
 .seed-owner-credentials.json
 
+# Dev owner-credentials auto-synced by the app during login (never commit —
+# contains a live owner password used only by AI/Playwright debug scripts)
+.dev-owner-credentials.json
+
 # One-off debug diffs (local troubleshooting artifacts — never commit)
 __diffs__/
 

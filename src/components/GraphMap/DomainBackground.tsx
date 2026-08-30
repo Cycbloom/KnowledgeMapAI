@@ -65,7 +65,7 @@ function convexHull(points: SampledPoint[]): SampledPoint[] {
  * 精确贴合最外层节点的圆周；否则用直线段连接。
  * @returns SVG path（含 fill + stroke 都适用的闭合轮廓）
  */
-function diskConvexHullPath(nodes: Array<{ x: number; y: number; level?: NodeLevel }>): string {
+function computeDiskConvexHullPath(nodes: Array<{ x: number; y: number; level?: NodeLevel }>): string {
   if (nodes.length === 0) return '';
   if (nodes.length === 1) {
     const r = getNodeRimRadius(nodes[0].level ?? 'leaf');
@@ -100,6 +100,36 @@ function diskConvexHullPath(nodes: Array<{ x: number; y: number; level?: NodeLev
     }
   }
   path += ' Z';
+  return path;
+}
+
+/**
+ * 凸包路径 memo 缓存：同一组节点（位置 + level 不变）在多次渲染间复用结果，
+ * 避免 zoom 缩放等高频刷新时反复做 36×N 采样 + 凸包计算。
+ * key = 排序后的节点指纹（level + 取整坐标）。节点移动/增删时指纹变化自动失效。
+ */
+const hullPathCache = new Map<string, string>();
+const HULL_CACHE_SLOTS = 200;
+
+function diskConvexHullPath(nodes: Array<{ x: number; y: number; level?: NodeLevel }>): string {
+  // 单节点 path 极简单，直接算，不进缓存
+  if (nodes.length <= 1) return computeDiskConvexHullPath(nodes);
+
+  // 指纹：level + 四舍五入坐标，按稳定顺序拼接
+  const parts = nodes.map(n =>
+    `${n.level ?? 'leaf'}:${Math.round(n.x)}:${Math.round(n.y)}`,
+  ).sort();
+  const key = parts.join('|');
+
+  const cached = hullPathCache.get(key);
+  if (cached !== undefined) return cached;
+
+  const path = computeDiskConvexHullPath(nodes);
+  if (hullPathCache.size >= HULL_CACHE_SLOTS) {
+    // 容量上限：弹出最旧的一个，避免无界增长（Map 迭代序=插入序）
+    hullPathCache.delete(hullPathCache.keys().next().value as string);
+  }
+  hullPathCache.set(key, path);
   return path;
 }
 

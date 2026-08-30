@@ -179,9 +179,18 @@ export const GraphMap = () => {
   const [showDomainManager, setShowDomainManager] = useState(false);
   // 领域 hover 联动：在左侧领域树上悬停某领域时，画布高亮对应领域节点
   const [hoveredDomainId, setHoveredDomainId] = useState<string | null>(null);
+  // 点击画布领域标签选中的领域（单一选中，再次点击取消）
+  const [clickedDomainId, setClickedDomainId] = useState<string | null>(null);
   // 「全部」过滤模式下不产生选中/悬停效果：仅当勾选了具体领域时才联动
   const effectiveHoveredDomainId =
     selectedDomainIds.size > 0 ? hoveredDomainId : null;
+  // 画布高亮焦点：悬停优先，其次为点击选中的领域
+  const canvasFocusDomainId = effectiveHoveredDomainId ?? clickedDomainId;
+
+  // 点击领域胶囊标签：单一选中（点击同一领域取消）
+  const handleDomainPillClick = useCallback((domainId: string) => {
+    setClickedDomainId((prev) => (prev === domainId ? null : domainId));
+  }, []);
 
   useEffect(() => {
     if (selectedDomainIds.size > 0) {
@@ -1118,6 +1127,9 @@ export const GraphMap = () => {
               onBoxSelection={handleBoxSelection}
               selectedDomainIds={selectedDomainIds}
               hoveredDomainId={effectiveHoveredDomainId}
+              focusDomainId={canvasFocusDomainId}
+              onDomainPillClick={handleDomainPillClick}
+              onDomainFocusClear={() => setClickedDomainId(null)}
               domainColorMap={domainColorMap}
               domainIdToInfo={domainIdToInfo}
               graphDomainMap={graphDomainMap}

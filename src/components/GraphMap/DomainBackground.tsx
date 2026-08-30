@@ -222,7 +222,7 @@ function ejectToFreeSpot(
 // 标签胶囊两点碰撞：同水平相交时把下方的往下推，多轮收敛，保证缩小态标签不互相遮挡
 function resolvePillOverlap(placements: PillPlacement[]): PillPlacement[] {
   const list = placements.map(p => ({ ...p }));
-  for (let pass = 0; pass < 4; pass++) {
+  for (let pass = 0; pass < 10; pass++) {
     list.sort((a, b) => a.cy - b.cy);
     let moved = false;
     for (let i = 1; i < list.length; i++) {
@@ -251,8 +251,17 @@ interface DomainBackgroundProps {
   graphs: Array<{ id: string; domain?: string; domainIds?: string[] }>;
   zoomLevel: number;
   selectedDomainIds?: Set<string>;
-  hoveredDomainId?: string | null;
+  /** 高亮焦点领域（悬停或点击选中），存在时该领域内节点/区域高亮、其余淡化 */
+  focusDomainId?: string | null;
   domainIdToInfo?: Map<string, { name: string; color: string }>;
+  /**
+   * 渲染变体：
+   * - 'background'：光晕圆 + 凸包（画在节点之下）
+   * - 'labels'：领域胶囊标签（画在节点之上，防止被节点盖住）
+   */
+  variant?: 'background' | 'labels';
+  /** 点击领域标签的回调（仅 labels 变体生效） */
+  onPillClick?: (domainId: string) => void;
 }
 
 export const DomainBackground: React.FC<DomainBackgroundProps> = ({
@@ -260,8 +269,10 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
   graphs,
   zoomLevel,
   selectedDomainIds,
-  hoveredDomainId,
+  focusDomainId,
   domainIdToInfo,
+  variant = 'background',
+  onPillClick,
 }) => {
   const { isDark } = useTheme();
 
@@ -342,11 +353,11 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
   }, [zoomLevel]);
   const hullOpacity = 1 - glowOpacity;
 
-  // hover 联动：悬停某领域时，其区域保持明亮，其余区域线性降暗
-  const hovering = hoveredDomainId !== null && hoveredDomainId !== undefined;
+  // hover/点击焦点联动：聚焦领域时，该领域区域保持明亮，其余区域线性降暗
+  const isFocused = focusDomainId !== null && focusDomainId !== undefined;
   const regionOpacityFor = (domainId: string): number => {
-    if (!hovering) return 1;
-    return domainId === hoveredDomainId ? 1 : 0.12;
+    if (!isFocused) return 1;
+    return domainId === focusDomainId ? 1 : 0.12;
   };
 
   // 胶囊位置按当前模式线性插值，缩小态→放大态位置变化也平滑
@@ -438,10 +449,8 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
       };
     });
 
-    if (useZoomedOutPillPos) {
-      return resolvePillOverlap(placements);
-    }
-    return placements;
+    // 所有状态统一做标签间去重叠，避免胶囊互相遮挡
+    return resolvePillOverlap(placements);
   }, [filteredGroups, zoomLevel, useZoomedOutPillPos, layoutNodes]);
 
   const pillById = useMemo(
@@ -465,17 +474,23 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
     const badgeCX = pillX + pill.w - badgeR - 7;
 
     return (
-      <g key={`domain-label-${group.domainId}`} opacity={regionOpacityFor(group.domainId)}>
-        {/* 淡领域色胶囊底 */}
+      <g
+        key={`domain-label-${group.domainId}`}
+        opacity={regionOpacityFor(group.domainId)}
+        className={onPillClick ? 'cursor-pointer' : undefined}
+        style={onPillClick ? { pointerEvents: 'auto' } : undefined}
+        onClick={onPillClick ? (e) => { e.stopPropagation(); onPillClick(group.domainId); } : undefined}
+      >
+        {/* 实底胶囊：不透明底色，浮于节点之上保证文字可读，不受节点遮挡 */}
         <rect
           x={pillX}
           y={pillY}
           width={pill.w}
           height={pill.h}
           rx={pill.h / 2}
-          fill={isDark ? '#1e293b' : colors.bg}
+          fill={isDark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(255, 255, 255, 0.96)'}
           stroke={colors.text}
-          strokeOpacity={0.45}
+          strokeOpacity={0.6}
           strokeWidth={1}
         />
         {/* 名称 */}
@@ -486,7 +501,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
           dominantBaseline="central"
           fontSize={fontSize * 0.92}
           fontWeight="600"
-          fill={isDark ? '#e2e8f0' : '#1e293b'}
+          fill={isDark ? '#e2e8f0' : '#0f172a'}
         >
           {group.domain}
         </text>
@@ -506,6 +521,15 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
       </g>
     );
   };
+
+  // labels 变体：只渲染胶囊标签，置于节点之上（由 GraphMapCanvas 放在节点层之后）
+  if (variant === 'labels') {
+    return (
+      <g className="domain-labels">
+        {filteredGroups.map(renderPill)}
+      </g>
+    );
+  }
 
   return (
     <g className="domain-backgrounds" style={{ pointerEvents: 'none' }}>
@@ -626,8 +650,6 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
             </g>
           );
         })}
-
-      {filteredGroups.map(renderPill)}
     </g>
   );
 };

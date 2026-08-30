@@ -58,6 +58,12 @@ interface GraphMapCanvasProps {
   onBoxSelection?: (graphIds: string[]) => void;
   selectedDomainIds?: Set<string>;
   hoveredDomainId?: string | null;
+  /** 高亮焦点领域（点击选中或悬停），存在时该领域节点/区域高亮、其余淡化 */
+  focusDomainId?: string | null;
+  /** 点击领域胶囊标签 */
+  onDomainPillClick?: (domainId: string) => void;
+  /** 点击画布空白时清除领域点击高亮 */
+  onDomainFocusClear?: () => void;
   domainColorMap?: Map<string, string>;
   domainIdToInfo?: Map<string, { name: string; color: string }>;
   graphDomainMap?: Map<string, Set<string>>;
@@ -91,6 +97,9 @@ export const GraphMapCanvas = forwardRef<
       onBoxSelection,
       selectedDomainIds = new Set(),
       hoveredDomainId = null,
+      focusDomainId = null,
+      onDomainPillClick,
+      onDomainFocusClear,
       domainColorMap = new Map(),
       domainIdToInfo,
       graphDomainMap = new Map(),
@@ -131,6 +140,7 @@ export const GraphMapCanvas = forwardRef<
       handleToggleLegend,
       animateCamera,
       svgCallbackRef,
+      hasMoved,
       panMovedRef,
     } = useGraphMapInteraction({
       ref,
@@ -253,6 +263,24 @@ export const GraphMapCanvas = forwardRef<
       const state = new Map<string, boolean>();
       if (!layout) return state;
 
+      // 聚焦领域（点击选中或悬停）优先：该领域节点高亮，其余淡化
+      if (focusDomainId) {
+        layout.nodes.forEach((node) => {
+          const nodeDomains = graphDomainMap.get(node.id);
+          let hit = false;
+          if (nodeDomains) {
+            for (const dId of nodeDomains) {
+              if (dId === focusDomainId) {
+                hit = true;
+                break;
+              }
+            }
+          }
+          state.set(node.id, hit);
+        });
+        return state;
+      }
+
       if (selectedDomainIds.size === 0) {
         layout.nodes.forEach((node) => state.set(node.id, true));
         return state;
@@ -274,7 +302,7 @@ export const GraphMapCanvas = forwardRef<
       });
 
       return state;
-    }, [layout, selectedDomainIds, graphDomainMap]);
+    }, [layout, focusDomainId, selectedDomainIds, graphDomainMap]);
 
     const linkHighlightState = useMemo(() => {
       const state = new Map<string, boolean>();
@@ -408,7 +436,13 @@ export const GraphMapCanvas = forwardRef<
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          onClick={handleCanvasClick}
+          onClick={(e) => {
+          // 点击画布空白（SVG 根，非节点/标签）且未发生拖动：清除领域点击高亮
+          if (!hasMoved && e.target === svgRef.current) {
+            onDomainFocusClear?.();
+          }
+          handleCanvasClick(e);
+        }}
           onContextMenu={(e) => e.preventDefault()}
         >
           <title>{canvasAriaLabel}</title>
@@ -425,7 +459,7 @@ export const GraphMapCanvas = forwardRef<
               graphs={graphs}
               zoomLevel={transform.k}
               selectedDomainIds={selectedDomainIds}
-              hoveredDomainId={hoveredDomainId}
+              focusDomainId={focusDomainId ?? hoveredDomainId}
               domainIdToInfo={domainIdToInfo}
             />
             <GraphEdges
@@ -465,6 +499,17 @@ export const GraphMapCanvas = forwardRef<
               containerHeight={containerSize.height}
               transformRef={transformRef}
               panMovedRef={panMovedRef}
+            />
+            {/* 领域胶囊标签层：置于节点之上，避免被节点遮挡，支持点击聚焦领域 */}
+            <DomainBackground
+              variant="labels"
+              layoutNodes={layout.nodes}
+              graphs={graphs}
+              zoomLevel={transform.k}
+              selectedDomainIds={selectedDomainIds}
+              focusDomainId={focusDomainId ?? hoveredDomainId}
+              domainIdToInfo={domainIdToInfo}
+              onPillClick={onDomainPillClick}
             />
           </g>
 

@@ -1165,6 +1165,7 @@ export const GraphMap = () => {
               onBoxSelection={handleBoxSelection}
               selectedDomainIds={selectedDomainIds}
               domainColorMap={domainColorMap}
+              domainIdToInfo={domainIdToInfo}
               graphDomainMap={graphDomainMap}
               colorScheme={colorScheme}
               linkStyle={linkStyle}

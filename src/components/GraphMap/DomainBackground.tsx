@@ -1,66 +1,105 @@
 import React, { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import type { LayoutNode } from '../../types';
+import type { LayoutNode, NodeLevel } from '../../types';
+import { useTheme } from '../../hooks';
+import { NODE_STYLE_CONFIG } from '../../config/nodeStyleConfig';
 
-function getConvexHullPath(nodes: Array<{ x: number; y: number }>): string {
-  if (nodes.length < 3) {
-    if (nodes.length === 0) return '';
-    if (nodes.length === 1) {
-      const r = 60;
-      return `M ${nodes[0].x - r} ${nodes[0].y - r}
-              L ${nodes[0].x + r} ${nodes[0].y - r}
-              L ${nodes[0].x + r} ${nodes[0].y + r}
-              L ${nodes[0].x - r} ${nodes[0].y + r} Z`;
+// ---------- 圆盘凸包（convex hull of disks） ----------
+// 问题：如果只对节点「中心点」求凸包，最外层节点的圆形盘会穿出多边形边界。
+// 正确做法：对每个节点沿其圆周采样若干点，把采样点纳入点集做凸包，
+// 这样凸包边界会贴住最外层节点的圆弧，实现「完全包围」。
+
+/** 每个节点沿圆周采样点数：点越多，圆弧逼近越光滑 */
+const RIM_SAMPLES = 36;
+/** 在节点图形半径之外额外预留的包围缓冲（覆盖描边/光晕/抗锯齿） */
+const RIM_BUFFER = 6;
+
+/** 节点最外层可见圆半径：baseRadius（最外层 ring 即 index 0）+ 描边 + 缓冲 */
+function getNodeRimRadius(level: NodeLevel): number {
+  const cfg = NODE_STYLE_CONFIG[level];
+  return cfg.baseRadius + cfg.strokeWidth + RIM_BUFFER;
+}
+
+interface SampledPoint {
+  x: number;
+  y: number;
+  /** 该点来自哪个节点圆心；用于把同圆两点之间的边界连成圆弧 */
+  src: { cx: number; cy: number } | null;
+}
+
+/** 对每个节点沿圆周采样，标记来源圆心 */
+function sampleDisks(nodes: Array<{ x: number; y: number; level?: NodeLevel }>): SampledPoint[] {
+  const pts: SampledPoint[] = [];
+  for (const n of nodes) {
+    const r = getNodeRimRadius(n.level ?? 'leaf');
+    for (let i = 0; i < RIM_SAMPLES; i++) {
+      const angle = (i / RIM_SAMPLES) * Math.PI * 2;
+      pts.push({ x: n.x + Math.cos(angle) * r, y: n.y + Math.sin(angle) * r, src: { cx: n.x, cy: n.y } });
     }
-    const dx = nodes[1].x - nodes[0].x;
-    const dy = nodes[1].y - nodes[0].y;
-    const perpX = -dy;
-    const perpY = dx;
-    const len = Math.sqrt(perpX * perpX + perpY * perpY) || 1;
-    const nx = (perpX / len) * 50;
-    const ny = (perpY / len) * 50;
-    return `M ${nodes[0].x + nx} ${nodes[0].y + ny}
-            L ${nodes[0].x - nx} ${nodes[0].y - ny}
-            L ${nodes[1].x - nx} ${nodes[1].y - ny}
-            L ${nodes[1].x + nx} ${nodes[1].y + ny} Z`;
   }
+  return pts;
+}
 
-  const points = nodes.map(n => ({ x: n.x, y: n.y }));
-
-  function cross(o: typeof points[0], a: typeof points[0], b: typeof points[0]) {
-    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-  }
-
-  points.sort((a, b) => a.x !== b.x ? a.x - b.x : a.y - b.y);
-
-  const lower: typeof points = [];
-  for (const p of points) {
-    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) {
-      lower.pop();
-    }
+/** 标准凸包（Monotone Chain），返回顺时针多边形顶点（保留 src 标记） */
+function convexHull(points: SampledPoint[]): SampledPoint[] {
+  if (points.length < 3) return points.slice();
+  const sorted = points.slice().sort((a, b) => a.x !== b.x ? a.x - b.x : a.y - b.y);
+  const cross = (o: SampledPoint, a: SampledPoint, b: SampledPoint) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower: SampledPoint[] = [];
+  for (const p of sorted) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
     lower.push(p);
   }
-
-  const upper: typeof points = [];
-  for (let i = points.length - 1; i >= 0; i--) {
-    const p = points[i];
-    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) {
-      upper.pop();
-    }
+  const upper: SampledPoint[] = [];
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const p = sorted[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
     upper.push(p);
   }
-
   lower.pop();
   upper.pop();
+  return [...lower, ...upper];
+}
 
-  const hull = [...lower, ...upper];
+/**
+ * 圆盘凸包边：相邻两凸包顶点若来自同一节点圆，则用一段「圆弧」连接，
+ * 精确贴合最外层节点的圆周；否则用直线段连接。
+ * @returns SVG path（含 fill + stroke 都适用的闭合轮廓）
+ */
+function diskConvexHullPath(nodes: Array<{ x: number; y: number; level?: NodeLevel }>): string {
+  if (nodes.length === 0) return '';
+  if (nodes.length === 1) {
+    const r = getNodeRimRadius(nodes[0].level ?? 'leaf');
+    return `M ${nodes[0].x - r} ${nodes[0].y} A ${r} ${r} 0 1 1 ${nodes[0].x + r - 0.01} ${nodes[0].y} Z`;
+  }
+  const hull = convexHull(sampleDisks(nodes));
+  if (hull.length < 2) return '';
 
+  const sameCircle = (a: SampledPoint, b: SampledPoint): boolean =>
+    a.src !== null && b.src !== null && a.src.cx === b.src.cx && a.src.cy === b.src.cy;
+
+  const n = hull.length;
   let path = `M ${hull[0].x} ${hull[0].y}`;
-  for (let i = 1; i < hull.length; i++) {
-    path += ` L ${hull[i].x} ${hull[i].y}`;
+  for (let i = 1; i < n; i++) {
+    const prev = hull[i - 1];
+    const cur = hull[i];
+    if (sameCircle(prev, cur)) {
+      // 圆弧：sameCircle 已保证两点的 src 均非空，落在同一节点圆上
+      const src = prev.src;
+      const cx0 = src ? src.cx : 0;
+      const cy0 = src ? src.cy : 0;
+      // 半径取该采样点与圆心实际距离，避免硬编码导致弧线与圆盘不贴合
+      const r = Math.hypot(prev.x - cx0, prev.y - cy0) || getNodeRimRadius('leaf');
+      const a1 = Math.atan2(prev.y - cy0, prev.x - cx0);
+      const a2 = Math.atan2(cur.y - cy0, cur.x - cx0);
+      const sweep = ((a2 - a1 + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+      // sweep>0 表示逆时针，SVG 中 sweep-flag=1 为顺时针（y 向下）
+      const sweepFlag = sweep > 0 ? 0 : 1;
+      path += ` A ${r} ${r} 0 0 ${sweepFlag} ${cur.x} ${cur.y}`;
+    } else {
+      path += ` L ${cur.x} ${cur.y}`;
+    }
   }
   path += ' Z';
-
   return path;
 }
 
@@ -84,6 +123,99 @@ const DOMAIN_COLORS = [
   { bg: 'rgba(132, 204, 22, 0.12)', text: 'rgba(132, 204, 22, 0.85)' },
 ];
 
+interface PillPlacement {
+  domainId: string;
+  x: number;
+  cy: number;
+  w: number;
+  h: number;
+}
+
+/** 估算一段文本在指定字号下的像素宽度：全角/中文按 1.0 字宽，半角按 0.55 字宽 */
+function estimateTextWidth(text: string, fontSize: number): number {
+  let width = 0;
+  for (const ch of text) {
+    const code = ch.codePointAt(0) ?? 0;
+    // CJK 统一表意文字、全角标点/字母数字
+    const isWide =
+      (code >= 0x2e80 && code <= 0x9fff) ||
+      (code >= 0xac00 && code <= 0xd7af) ||
+      (code >= 0xff00 && code <= 0xff60) ||
+      (code >= 0x3000 && code <= 0x303f);
+    width += isWide ? fontSize : fontSize * 0.55;
+  }
+  return width;
+}
+
+/** 胶囊矩形是否压到某个节点圆盘（圆角矩形按外接矩形近似即可，圆角很小） */
+function pillHitsDisk(
+  px: number, // 胶囊左边缘
+  py: number, // 胶囊上边缘
+  pw: number,
+  ph: number,
+  dx: number,
+  dy: number,
+  dr: number,
+): boolean {
+  const closestX = Math.max(px, Math.min(dx, px + pw));
+  const closestY = Math.max(py, Math.min(dy, py + ph));
+  const dx0 = dx - closestX;
+  const dy0 = dy - closestY;
+  return dx0 * dx0 + dy0 * dy0 <= dr * dr;
+}
+
+/**
+ * 从起点出发，沿方向 (dx, dy) 逐步外推，返回「第一个不压到任一节点圆盘」的离起点最近位置。
+ * 若 maxEject 内找不到，返回 null。step 为单次推出量，保证标签就近避让而不飞远。
+ */
+function ejectToFreeSpot(
+  startX: number,
+  startY: number, // 胶囊左边缘+上边缘
+  w: number,
+  h: number,
+  dirX: number,
+  dirY: number,
+  disks: Array<{ x: number; y: number; r: number }>,
+  step = 6,
+  maxEject = 200,
+): { x: number; y: number } | null {
+  for (let dist = 0; dist <= maxEject; dist += step) {
+    const x = startX + dirX * dist;
+    const y = startY + dirY * dist;
+    if (!disks.some(d => pillHitsDisk(x, y, w, h, d.x, d.y, d.r))) {
+      return { x, y };
+    }
+  }
+  return null;
+}
+
+// 标签胶囊两点碰撞：同水平相交时把下方的往下推，多轮收敛，保证缩小态标签不互相遮挡
+function resolvePillOverlap(placements: PillPlacement[]): PillPlacement[] {
+  const list = placements.map(p => ({ ...p }));
+  for (let pass = 0; pass < 4; pass++) {
+    list.sort((a, b) => a.cy - b.cy);
+    let moved = false;
+    for (let i = 1; i < list.length; i++) {
+      const cur = list[i];
+      for (let j = 0; j < i; j++) {
+        const before = list[j];
+        const overlapX =
+          Math.min(cur.x + cur.w, before.x + before.w) -
+          Math.max(cur.x, before.x);
+        const overlapY =
+          Math.min(cur.cy + cur.h / 2, before.cy + before.h / 2) -
+          Math.max(cur.cy - cur.h / 2, before.cy - before.h / 2);
+        if (overlapX > 0 && overlapY > 0) {
+          cur.cy = before.cy + before.h / 2 + 6 + cur.h / 2;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+  return list;
+}
+
 interface DomainBackgroundProps {
   layoutNodes: LayoutNode[];
   graphs: Array<{ id: string; domain?: string; domainIds?: string[] }>;
@@ -99,7 +231,8 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
   selectedDomainIds,
   domainIdToInfo,
 }) => {
-  const { t } = useTranslation();
+  const { isDark } = useTheme();
+
   const domainGroups = useMemo(() => {
     const groups: Map<string, DomainGroup> = new Map();
 
@@ -134,26 +267,34 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
 
     groups.forEach(group => {
       if (group.nodes.length === 0) return;
-      
+
       let sumX = 0, sumY = 0;
+      // 组内最大节点外缘半径：光晕圆必须覆盖节点盘本身，而非只覆盖中心点
+      let maxRim = 0;
       group.nodes.forEach(node => {
         sumX += node.x;
         sumY += node.y;
+        const rim = getNodeRimRadius(node.level ?? 'leaf');
+        if (rim > maxRim) maxRim = rim;
       });
       group.centerX = sumX / group.nodes.length;
       group.centerY = sumY / group.nodes.length;
-      
-      let maxDistance = 0;
-      group.nodes.forEach(node => {
+
+      const distances = group.nodes.map(node => {
         const dx = node.x - group.centerX;
         const dy = node.y - group.centerY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        maxDistance = Math.max(maxDistance, distance);
+        // 距离按「圆心距 + 该节点外缘半径 + 组内最大半径」计，确保最外圈节点盘被完整包住
+        const rim = getNodeRimRadius(node.level ?? 'leaf');
+        return Math.sqrt(dx * dx + dy * dy) + rim + maxRim;
       });
-      
-      group.radius = maxDistance + 120;
+      const pAngle =
+        distances.length > 1
+          ? distances[Math.floor((distances.length - 1) * 0.85)]
+          : distances[0] / 2;
+      const padding = Math.max(70, 110 - group.nodes.length * 2);
+      group.radius = (pAngle + padding) * 1.1;
     });
-    
+
     return Array.from(groups.values());
   }, [layoutNodes, graphs, domainIdToInfo]);
 
@@ -164,7 +305,18 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
     return domainGroups.filter(group => selectedDomainIds.has(group.domainId));
   }, [domainGroups, selectedDomainIds]);
 
-  const isZoomedOut = zoomLevel < 1.0;
+  // 缩放模式改为连续过渡，避免在 zoomLevel=1.0 时硬切出现画面跳变
+  // glowOpacity = 1（缩小态，≤0.85）→ 0（放大态，≥1.15）线性递减
+  // hullOpacity 反向
+  const glowOpacity = useMemo(() => {
+    if (zoomLevel <= 0.85) return 1;
+    if (zoomLevel >= 1.15) return 0;
+    return 1 - (zoomLevel - 0.85) / 0.3;
+  }, [zoomLevel]);
+  const hullOpacity = 1 - glowOpacity;
+
+  // 胶囊位置按当前模式线性插值，缩小态→放大态位置变化也平滑
+  const useZoomedOutPillPos = glowOpacity > 0.5;
 
   const getColorsForDomain = (domainId: string): typeof DOMAIN_COLORS[0] => {
     if (domainIdToInfo?.has(domainId)) {
@@ -181,19 +333,157 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
     return DOMAIN_COLORS[index % DOMAIN_COLORS.length];
   };
 
+  // 胶囊标签排版：淡领域色胶囊 + 名称 + 右侧实色计数徽章，宽度按名称长度自适应
+  // 位置做「就近避让」：先放默认位置，若压到节点则沿上/下/左/右逐格外推，取推出最近的方向
+  const pillPlacements = useMemo(() => {
+    if (filteredGroups.length === 0) return [];
+
+    const fontSize = Math.max(10, Math.min(18, 14 / zoomLevel));
+
+    // 全部节点的圆盘（中心+外缘半径），用于标签避让
+    const disks = layoutNodes.map(n => ({
+      x: n.x,
+      y: n.y,
+      r: getNodeRimRadius(n.level ?? 'leaf'),
+    }));
+
+    const placements: PillPlacement[] = filteredGroups.map(group => {
+      const nameW = estimateTextWidth(group.domain, fontSize);
+      const h = fontSize * 1.6 + 12;
+      const badgeR = h * 0.34;
+      const w = Math.max(nameW + 14 + badgeR * 2 + 14 + 8, 76);
+
+      // 默认位置：缩小态在光晕圆正上方；放大态在凸块左上角
+      const defX = !useZoomedOutPillPos
+        ? Math.min(...group.nodes.map(n => n.x)) - 14
+        : group.centerX - w / 2;
+      const defCy = !useZoomedOutPillPos
+        ? Math.min(...group.nodes.map(n => n.y)) - 28
+        : group.centerY - group.radius;
+
+      const defTopY = defCy - h / 2;
+
+      // 若默认位置不压任何节点，直接采用（最贴合、最不突兀）
+      const hitDef = disks.some(d => pillHitsDisk(defX, defTopY, w, h, d.x, d.y, d.r));
+
+      if (!hitDef) {
+        return { domainId: group.domainId, x: defX, cy: defCy, w, h };
+      }
+
+      // 默认位置被遮挡：从默认位置出发，朝领域外侧贴近位置就近移动，取推出距离最小者
+      const cx = group.centerX;
+      const cy = group.centerY;
+      // 四个候选方向：上/下/左/右。起点放在「默认位置」附近，方向朝外推
+      const attempts: Array<{ dirX: number; dirY: number }> = [
+        { dirX: 0, dirY: -1 }, // 上（默认就向上，再往上挪一点即可）
+        { dirX: 0, dirY: 1 },  // 下：从上方向下穿过领域中心外缘找空位
+        { dirX: -1, dirY: 0 }, // 左
+        { dirX: 1, dirY: 0 },  // 右
+      ];
+
+      let best: { x: number; y: number; dist: number } | null = null;
+      for (const att of attempts) {
+        // 起点 = 默认位置（左上角 / 正上方），使其贴着领域顶缘移动
+        const ejected = ejectToFreeSpot(defX, defTopY, w, h, att.dirX, att.dirY, disks, 6, 160);
+        if (!ejected) continue;
+        const dist = Math.abs(ejected.x - cx) + Math.abs(ejected.y - cy);
+        if (!best || dist < best.dist) {
+          best = { x: ejected.x, y: ejected.y, dist };
+        }
+      }
+
+      const cyFinal = best ? best.y + h / 2 : defCy;
+      const xFinal = best ? best.x : defX;
+
+      return {
+        domainId: group.domainId,
+        x: xFinal,
+        cy: cyFinal,
+        w,
+        h,
+      };
+    });
+
+    if (useZoomedOutPillPos) {
+      return resolvePillOverlap(placements);
+    }
+    return placements;
+  }, [filteredGroups, zoomLevel, useZoomedOutPillPos, layoutNodes]);
+
+  const pillById = useMemo(
+    () => new Map(pillPlacements.map(p => [p.domainId, p])),
+    [pillPlacements],
+  );
+
   if (domainGroups.length === 0) return null;
-  
+
   const fontSize = Math.max(10, Math.min(18, 14 / zoomLevel));
-  
+
+  const renderPill = (group: DomainGroup) => {
+    const pill = pillById.get(group.domainId);
+    if (!pill) return null;
+
+    const colors = getColorsForDomain(group.domainId);
+    const pillX = pill.x;
+    const pillY = pill.cy - pill.h / 2;
+    // 右侧实色计数徽章直径略小于胶囊高度，保持呼吸感
+    const badgeR = pill.h * 0.34;
+    const badgeCX = pillX + pill.w - badgeR - 7;
+
+    return (
+      <g key={`domain-label-${group.domainId}`}>
+        {/* 淡领域色胶囊底 */}
+        <rect
+          x={pillX}
+          y={pillY}
+          width={pill.w}
+          height={pill.h}
+          rx={pill.h / 2}
+          fill={isDark ? '#1e293b' : colors.bg}
+          stroke={colors.text}
+          strokeOpacity={0.45}
+          strokeWidth={1}
+        />
+        {/* 名称 */}
+        <text
+          x={pillX + 16}
+          y={pill.cy}
+          textAnchor="start"
+          dominantBaseline="central"
+          fontSize={fontSize * 0.92}
+          fontWeight="600"
+          fill={isDark ? '#e2e8f0' : '#1e293b'}
+        >
+          {group.domain}
+        </text>
+        {/* 右侧实色计数徽章 */}
+        <circle cx={badgeCX} cy={pill.cy} r={badgeR} fill={colors.text} opacity={0.92} />
+        <text
+          x={badgeCX}
+          y={pill.cy}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={badgeR * 0.95}
+          fontWeight="700"
+          fill="#ffffff"
+        >
+          {group.nodes.length}
+        </text>
+      </g>
+    );
+  };
+
   return (
     <g className="domain-backgrounds" style={{ pointerEvents: 'none' }}>
-      {isZoomedOut ? (
+      {/* 缩放 0.85-1.15 区间连续 blend：光晕圆淡出 + 凸包淡入同步进行，消除硬切跳变 */}
+      {glowOpacity > 0.001 &&
         filteredGroups.map((group) => {
           const colors = getColorsForDomain(group.domainId);
           const gradientId = `glow-gradient-${group.domainId.replace(/\s+/g, '-')}`;
+          const blurId = `blur-${group.domainId.replace(/\s+/g, '-')}`;
 
           return (
-            <g key={`glow-${group.domainId}`}>
+            <g key={`glow-${group.domainId}`} opacity={glowOpacity * 0.95}>
               <defs>
                 <radialGradient
                   id={gradientId}
@@ -205,7 +495,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
                 >
                   <stop
                     offset="0%"
-                    stopColor={colors.bg.replace('0.12', '0.18')}
+                    stopColor={colors.bg.replace('0.12', '0.20')}
                     stopOpacity={1}
                   />
                   <stop
@@ -220,7 +510,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
                   />
                 </radialGradient>
                 <filter
-                  id={`blur-${group.domainId.replace(/\s+/g, '-')}`}
+                  id={blurId}
                   x="-50%"
                   y="-50%"
                   width="200%"
@@ -230,90 +520,80 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
                 </filter>
               </defs>
 
+              {/* 柔和光晕圆 */}
               <circle
                 cx={group.centerX}
                 cy={group.centerY}
                 r={group.radius}
                 fill={`url(#${gradientId})`}
-                filter={`url(#blur-${group.domainId.replace(/\s+/g, '-')})`}
-                opacity={0.9}
+                filter={`url(#${blurId})`}
               />
-
-              <text
-                x={group.centerX}
-                y={group.centerY - group.radius + 40}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize={fontSize * 1.2}
-                fontWeight="600"
-                fill={colors.text}
-                opacity={0.95}
-                style={{
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  letterSpacing: '0.08em',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                }}
-              >
-                {group.domain}
-              </text>
-
-              <text
-                x={group.centerX}
-                y={group.centerY - group.radius + 40 + fontSize * 1.5}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize={fontSize * 0.8}
-                fontWeight="500"
-                fill={colors.text}
-                opacity={0.75}
-                style={{
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                }}
-              >
-                {t('graphMap.domainBackground.graphCount', { count: group.nodes.length })}
-              </text>
+              {/* 边界轮廓：移到 radius×0.98 的外圈（不再 0.88 穿节点），改为细实线 + 低透明 */}
+              <circle
+                cx={group.centerX}
+                cy={group.centerY}
+                r={group.radius * 0.98}
+                fill="none"
+                stroke={colors.text}
+                strokeWidth={1}
+                strokeOpacity={0.18}
+              />
             </g>
           );
-        })
-      ) : (
+        })}
+
+      {hullOpacity > 0.001 &&
         filteredGroups.map((group) => {
           const colors = getColorsForDomain(group.domainId);
+          const hullShadowId = `hull-shadow-${group.domainId.replace(/\s+/g, '-')}`;
+          const hullGradientId = `hull-rg-${group.domainId.replace(/\s+/g, '-')}`;
 
           return (
-            <g key={`block-${group.domainId}`}>
+            <g key={`block-${group.domainId}`} opacity={hullOpacity}>
+              <defs>
+                <filter
+                  id={hullShadowId}
+                  x="-20%"
+                  y="-20%"
+                  width="140%"
+                  height="140%"
+                >
+                  <feDropShadow dx="0" dy="6" stdDeviation="10" floodColor={colors.text} floodOpacity="0.08" />
+                </filter>
+                {/* 质心径向渐变：中心深（55%）→ 边缘透明，层次比平面填色更 3D */}
+                <radialGradient
+                  id={hullGradientId}
+                  cx={`${group.centerX}px`}
+                  cy={`${group.centerY}px`}
+                  r={`${group.radius * 1.4}px`}
+                  gradientUnits="userSpaceOnUse"
+                >
+                  <stop offset="0%" stopColor={colors.text} stopOpacity="0.32" />
+                  <stop offset="55%" stopColor={colors.text} stopOpacity="0.14" />
+                  <stop offset="100%" stopColor={colors.text} stopOpacity="0.02" />
+                </radialGradient>
+              </defs>
+              {/* 内层填充：质心径向渐变 + 投影（圆盘凸包，圆弧完全包围最外层节点） */}
               <path
-                d={getConvexHullPath(group.nodes)}
-                fill={`${colors.bg.replace('0.12', '0.25')}`}
+                d={diskConvexHullPath(group.nodes)}
+                fill={`url(#${hullGradientId})`}
+                stroke="none"
+                filter={`url(#${hullShadowId})`}
+              />
+              {/* 虚线边框：更轻盈不抢视觉 */}
+              <path
+                d={diskConvexHullPath(group.nodes)}
+                fill="none"
                 stroke={colors.text}
                 strokeWidth={1.5}
-                strokeOpacity={0.4}
+                strokeOpacity={0.55}
+                strokeDasharray="6 4"
               />
-
-              <rect
-                x={Math.min(...group.nodes.map(n => n.x)) - 20}
-                y={Math.min(...group.nodes.map(n => n.y)) - 28}
-                width={group.domain.length * fontSize * 0.7 + 24}
-                height={22}
-                rx={6}
-                fill={colors.text}
-                opacity={0.9}
-              />
-              <text
-                x={Math.min(...group.nodes.map(n => n.x)) - 8}
-                y={Math.min(...group.nodes.map(n => n.y)) - 14}
-                textAnchor="start"
-                dominantBaseline="middle"
-                fontSize={fontSize * 0.85}
-                fontWeight="600"
-                fill="#fff"
-              >
-                {group.domain}
-              </text>
             </g>
           );
-        })
-      )}
+        })}
+
+      {filteredGroups.map(renderPill)}
     </g>
   );
 };

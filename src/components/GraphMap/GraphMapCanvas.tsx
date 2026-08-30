@@ -58,6 +58,7 @@ interface GraphMapCanvasProps {
   onBoxSelection?: (graphIds: string[]) => void;
   selectedDomainIds?: Set<string>;
   domainColorMap?: Map<string, string>;
+  domainIdToInfo?: Map<string, { name: string; color: string }>;
   graphDomainMap?: Map<string, Set<string>>;
 }
 
@@ -89,6 +90,7 @@ export const GraphMapCanvas = forwardRef<
       onBoxSelection,
       selectedDomainIds = new Set(),
       domainColorMap = new Map(),
+      domainIdToInfo,
       graphDomainMap = new Map(),
     },
     ref,
@@ -417,6 +419,8 @@ export const GraphMapCanvas = forwardRef<
               layoutNodes={layout.nodes}
               graphs={graphs}
               zoomLevel={transform.k}
+              selectedDomainIds={selectedDomainIds}
+              domainIdToInfo={domainIdToInfo}
             />
             <GraphEdges
               links={layout.links}
@@ -431,6 +435,43 @@ export const GraphMapCanvas = forwardRef<
               linkStyle={linkStyle}
               linkAnimation={linkAnimation}
             />
+            {/* 节点领域色光晕：节点之下画圆形色垫，给单节点直接附领域归属标识，不依赖背景整流区 */}
+            <g style={{ pointerEvents: 'none' }}>
+              {layout.nodes.map((node) => {
+                const domainSet = graphDomainMap.get(node.id);
+                if (!domainSet || domainSet.size === 0) return null;
+                const primaryId = Array.from(domainSet)[0] as string;
+                const info = domainIdToInfo?.get(primaryId);
+                const infoColor = info ? info.color : undefined;
+                const color: string | undefined =
+                  infoColor ?? domainColorMap.get(primaryId) ?? undefined;
+                if (!color) return null;
+                const haloR = 50;
+                const active =
+                  selectedDomainIds.size === 0 || selectedDomainIds.has(primaryId);
+                return (
+                  <g key={`dom-halo-${node.id}`}>
+                    <circle
+                      cx={node.x}
+                      cy={node.y}
+                      r={haloR}
+                      fill={color}
+                      opacity={active ? 0.12 : 0.04}
+                    />
+                    {/* 外部细色环，形成明确的颜色锚点 */}
+                    <circle
+                      cx={node.x}
+                      cy={node.y}
+                      r={haloR - 2}
+                      fill="none"
+                      stroke={color}
+                      strokeWidth={1.5}
+                      opacity={active ? 0.55 : 0.12}
+                    />
+                  </g>
+                );
+              })}
+            </g>
             <GraphNodes
               nodes={layout.nodes}
               graphs={graphs}

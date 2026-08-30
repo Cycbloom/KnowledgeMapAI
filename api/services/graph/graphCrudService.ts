@@ -84,6 +84,26 @@ export class GraphCrudService {
       });
     });
 
+    // 图-领域多对多关联（graph_domains 无 deleted_at 列，不能套 notDeleted 过滤）
+    const domainAssocResults = await Promise.all(
+      chunks.map((chunk) =>
+        supabase
+          .from("graph_domains")
+          .select("graph_id, domain_id")
+          .in("graph_id", chunk),
+      ),
+    );
+    const domainIdMap = new Map<string, string[]>();
+    domainAssocResults.forEach((res) => {
+      (res.data || []).forEach((row) => {
+        const gid = (row as { graph_id: string }).graph_id;
+        const did = (row as { domain_id: string }).domain_id;
+        const list = domainIdMap.get(gid) || [];
+        list.push(did);
+        domainIdMap.set(gid, list);
+      });
+    });
+
     // 相邻块之间的一对关系会在两端块各命中一次，合并后按 id 去重
     const seenRelationIds = new Set<string>();
     const relations = (relationResults.flatMap((res) => res.data || [])).filter(
@@ -99,6 +119,7 @@ export class GraphCrudService {
       ...g,
       node_count: nodeCountMap.get(g.id) || 0,
       nodes_count: nodeCountMap.get(g.id) || 0,
+      domainIds: domainIdMap.get(g.id) || [],
     }));
 
     return {

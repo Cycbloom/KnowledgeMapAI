@@ -1735,6 +1735,7 @@ BEGIN
       'created_at', g.created_at,
       'is_public', g.is_public,
       'domain', g.domain,
+      'domainIds', d.ids,
       'node_count', COALESCE(n.cnt, 0),
       'nodes_count', COALESCE(n.cnt, 0)
     ) ORDER BY g.last_used_at DESC NULLS LAST
@@ -1746,6 +1747,11 @@ BEGIN
     WHERE deleted_at IS NULL
     GROUP BY graph_id
   ) n ON n.graph_id = g.id
+  LEFT JOIN LATERAL (
+    SELECT COALESCE(jsonb_agg(gd.domain_id), '[]'::jsonb) AS ids
+    FROM graph_domains gd
+    WHERE gd.graph_id = g.id
+  ) d ON true
   WHERE g.user_id = p_user_id
     AND g.deleted_at IS NULL;
 

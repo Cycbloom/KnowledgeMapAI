@@ -36,6 +36,34 @@
 
 本地修改 → 提取变更 SQL → Supabase Dashboard 执行
 
+## AI 调试登录（代理/Agent 以用户身份登录应用）
+
+> 应用为单用户自动登录，**没有固定测试账号**。AI（本 Agent）用 Playwright 打开应用时是全新空 localStorage，会走到 `provisionOwner()` 自动新建一个**空的临时 owner**，看不到真实数据。为解决此问题，建立「登录即自动同步凭证」链路。
+
+### 机制
+
+1. **前端** `src/utils/silentAuth.ts`：`provisionOwner()` 成功创建新 owner（即每次 `npm run db:local:reset` 后应用自动新建账号的那条链路）时，调用 `syncOwnerCredentials()`，fire-and-forget `POST /api/v1/owner-credentials` 把 `{email,password}` 上报后端。仅 `MODE === "development"` 触发，测试/生产不跑，失败静默不阻塞登录。
+2. **后端** `api/routes/system/ownerCredentials.ts`：非生产环境把凭证落盘到仓库根 `.dev-owner-credentials.json`（已 gitignore，**禁止提交**，内含真实 owner 密码）。生产环境直接 403。
+3. **脚本** `scripts/webapp_login.py`：Page 加载前把该文件里的凭证预注入 `localStorage['km-owner-credentials']`，复用应用既有 `silentSignIn` 链路登录为**同一真实账号**。
+
+### 用法（日常流程）
+
+```bash
+npm run db:local:reset        # 重置数据库
+# 打开应用一次 → 应用自动新建 owner 并登录 → 凭证自动同步到 .dev-owner-credentials.json
+python scripts/webapp_login.py --headless --screenshot /tmp/x.png   # 登录真实账号
+```
+
+- `python scripts/webapp_login.py` → 有头浏览器保持交互；`--headless --screenshot PATH` → 无头截图（供 AI/CI）。
+- 也可 `import webapp_login as wl; wl.open_owner_page(browser, url)` 复用。
+- `.dev-owner-credentials.json` 与 `seed`（`.seed-owner-credentials.json`）**无关**：不以 seed 为准，只同步「实际登录的账号」。
+
+### 新增同链路端点的注意点
+
+- 端点须做**生产环境守卫**（`NODE_ENV === "production"` 抛 403），防止密码落盘泄漏。
+- 前端同步用隔离 `fetch`，**不要**用 api client（避免把 axios 拦截器/token 刷新/登录跳转引入启动认证的早期路径）。
+- 涉及后端路由的新文件改动需重启服务生效（nodemon 监听 `api/` 自动重启）。
+
 ## 测试规范（强制要点）
 
 > 完整规范见 `docs/testing-guidelines.md`

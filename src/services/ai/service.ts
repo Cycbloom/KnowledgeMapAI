@@ -18,7 +18,7 @@ import {
   GenerateLearningMaterialResult,
   getLearningMaterialSystemPrompt,
 } from "./prompts";
-import { isValidProvider } from "../aiClient";
+import { isValidProvider } from "./aiClient";
 import { logger } from "@/utils/logger";
 import { AppError, SharedErrorCodes } from "@/utils/errors";
 import {

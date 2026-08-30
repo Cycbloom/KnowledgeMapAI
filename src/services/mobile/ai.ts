@@ -4,7 +4,7 @@ import { getAIConfig, injectAIConfig } from "../api/client";
 import type { AIAction, TutorMode, BranchSuggestion } from "@shared/types";
 import type { Keyword } from "@shared/types/graph";
 import type { IAiApi, IAiActionsApi } from "../api/contracts/IAiApi";
-import { mobileAIService } from "./aiService";
+import { mobileAIService } from "../ai";
 import { isCapacitorMobile } from "@/config/mobileApiConfig";
 import { getAILanguage } from "@/hooks/ai/useAILanguage";
 import { getMobileSupabaseClient } from "@/utils/supabase";

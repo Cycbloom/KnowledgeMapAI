@@ -28,7 +28,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { isCapacitorMobile } from '../../config/mobileApiConfig';
-import { mobileAIService } from '../../services/mobile/aiService';
+import { mobileAIService } from '../../services/ai';
 import { ModalShell } from '../common';
 
 export type GenerateCardsDifficulty = 'easy' | 'medium' | 'hard' | 'mixed';

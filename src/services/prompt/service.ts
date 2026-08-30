@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TemplateEngine } from '../templateEngine';
+import { TemplateEngine } from './templateEngine';
 import {
   PromptTemplate,
   PromptListOptions,

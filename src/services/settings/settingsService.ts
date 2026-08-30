@@ -26,7 +26,7 @@ import type { StudyStrategyValues } from "@/components/Settings/settingsConstant
 import { api } from "@/services/api";
 import { authApi } from "@/services/api/auth";
 import { apiClient } from "@/services/api/createApiClient";
-import { mobileAIService } from "@/services/mobile/aiService";
+import { mobileAIService } from "@/services/ai";
 import { useFocusStore } from "@/store/useFocusStore";
 import { useGraphEditorPreferencesStore } from "@/store/useGraphEditorPreferencesStore";
 import { useLearningSettingsStore } from "@/store/useLearningSettingsStore";

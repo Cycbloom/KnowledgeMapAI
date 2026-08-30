@@ -3,7 +3,7 @@ import {
   createMobileAIClient,
   MobileAIClient,
   isValidProvider,
-} from "../aiClient";
+} from "./aiClient";
 import type { AIProviderType } from "@shared/types";
 import { logger } from "@/utils/logger";
 

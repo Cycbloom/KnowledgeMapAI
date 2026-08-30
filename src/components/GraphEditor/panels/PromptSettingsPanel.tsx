@@ -5,7 +5,7 @@ import { asyncConfirm } from "@/utils/asyncConfirm";
 import { formatDate } from "@/utils/formatters";
 import { message } from "../../../utils/messageHelper";
 import { PromptEditor } from "./PromptEditor";
-import { DEFAULT_PROMPTS as FALLBACK_DEFAULTS } from "../../../services/mobile/prompt";
+import { DEFAULT_PROMPTS as FALLBACK_DEFAULTS } from "../../../services/prompt";
 import {
   Edit,
   RotateCcw,

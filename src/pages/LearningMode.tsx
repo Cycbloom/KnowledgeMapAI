@@ -30,7 +30,7 @@ import {
   isValidationError,
 } from "../utils/errors";
 import { isCapacitorMobile } from "../config/mobileApiConfig";
-import { mobileAIService, AICardGenError } from "../services/mobile/aiService";
+import { mobileAIService, AICardGenError } from "../services/ai";
 import { getMobileSupabaseClient } from "../utils/supabase";
 const GenerateCardsModal = lazy(() =>
   import("../components/Learning/GenerateCardsModal").then((module) => ({

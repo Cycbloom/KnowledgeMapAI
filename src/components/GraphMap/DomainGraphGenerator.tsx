@@ -70,7 +70,7 @@ interface DomainGraphGeneratorProps {
   onInitializeGraphs?: (graphIds: string[]) => Promise<void>;
   onLoadSourceGraphs?: () => Promise<{ graphs: SourceGraph[] }>;
   onLoadDomains?: () => Promise<{ domains: DomainItem[] }>;
-  onExpandDomain?: (graphIds: string[], count: number, domain?: string) => Promise<{ recommendations: RecommendedGraph[]; relations: GraphRelation[] }>;
+  onExpandDomain?: (graphIds: string[], count: number, domain?: string) => Promise<{ recommendations: RecommendedGraph[]; relations: GraphRelation[]; inferredDomain?: string }>;
 }
 
 interface DomainItem {
@@ -121,6 +121,8 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   const { t } = useTranslation();
   const [domain, setDomain] = useState('');
   const [expandDomain, setExpandDomain] = useState('');
+  // 未手动选择领域时，由 AI 从扩展内容推断的新领域名（用于「从现有图谱拓展」时创建新领域）
+  const [inferredDomain, setInferredDomain] = useState('');
   const [graphCount, setGraphCount] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -220,6 +222,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
           expandDomain.trim() || undefined
         );
         setRecommendedGraphs(result.recommendations);
+        setInferredDomain(result.inferredDomain || '');
       }
       setGraphRelations(result.relations);
       setStep('select');
@@ -286,7 +289,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
     });
 
     try {
-      const effectiveDomain = mode === 'expand' ? expandDomain.trim() : domain.trim();
+      const effectiveDomain = mode === 'expand' ? (expandDomain.trim() || inferredDomain) : domain.trim();
       const result = await onBatchCreate(selectedItems, filteredRelations, effectiveDomain || undefined);
       setCreatedGraphs(result.created);
       setFailedGraphs(result.failed);
@@ -337,7 +340,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
     setIsCreating(true);
     setStep('creating');
     try {
-      const effectiveDomain = mode === 'expand' ? expandDomain.trim() : domain.trim();
+      const effectiveDomain = mode === 'expand' ? (expandDomain.trim() || inferredDomain) : domain.trim();
       const result = await onBatchCreate(retryItems, [], effectiveDomain || undefined);
       setCreatedGraphs(prev => [...prev, ...result.created]);
       setFailedGraphs(result.failed);
@@ -357,6 +360,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
       setMode('new');
       setDomain('');
       setExpandDomain('');
+      setInferredDomain('');
       setRecommendedGraphs([]);
       setGraphRelations([]);
       setSelectedGraphs(new Set());
@@ -674,6 +678,11 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                           })}
                     </span>
                   </div>
+                  {mode === 'expand' && !expandDomain.trim() && inferredDomain && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                      {t('graphMap.domainGenerator.inferredDomainHint', { domain: inferredDomain })}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">

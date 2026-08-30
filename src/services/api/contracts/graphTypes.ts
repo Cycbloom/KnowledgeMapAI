@@ -40,6 +40,8 @@ export interface DomainExpansionResult {
     description?: string;
     domain?: string;
   }>;
+  /** 未指定目标领域时，由 AI 从扩展内容推断的新领域名 */
+  inferred_domain?: string;
 }
 
 export interface BatchCreateDomainGraphsResult {

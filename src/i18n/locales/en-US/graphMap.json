@@ -423,6 +423,7 @@
     "generateCountHint": "Recommended number of graphs. You can optionally initialize knowledge points after creation.",
     "recommendationSummary": "Based on \"{{domain}}\", {{graphCount}} knowledge graphs recommended with {{relationCount}} dependency relations discovered",
     "recommendationSummaryExpand": "Based on existing graphs, {{graphCount}} knowledge graphs recommended with {{relationCount}} dependency relations discovered",
+    "inferredDomainHint": "Will be assigned to a new domain \"{{domain}}\" on creation",
     "selectedCount": "{{selected}} / {{total}} selected",
     "hideRelations": "Hide Relations",
     "viewRelations": "View Relations",

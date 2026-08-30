@@ -38,6 +38,8 @@ class DomainExpansionService {
       domain: string | null;
     }>;
     target_domain?: { id: string; name: string };
+    /** 未指定目标领域时，由 AI 从扩展内容推断的一个新领域名 */
+    inferred_domain?: string;
   }> {
     const { graph_ids, domain, count = 10 } = options;
 
@@ -160,6 +162,7 @@ ${domainContext ? `\n[目标领域上下文 - ${targetDomainName}]\n${domainCont
 ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关的扩展方向。` : ''}
 
 请推荐 ${count} 个扩展知识图谱，并分析它们之间的学习依赖关系。
+${!targetDomainName ? '\n（未指定目标领域。请在返回 JSON 中额外提供一个 "domain" 字段，用不超过12字的短语概括这批扩展内容所属的新领域，应与已有领域区分开。）' : ''}
 
 要求：
 1. 推荐与现有图谱相关的主题，帮助用户扩展知识体系
@@ -175,7 +178,8 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
   ],
   "relations": [
     {"from": "主题A", "to": "主题B", "type": "prerequisite", "reason": "A是B的前置知识"}
-  ]
+  ],
+  "domain": "可选的新领域名"
 }
 
 关系类型说明：
@@ -215,12 +219,22 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
         reason?: string;
       }> = [];
 
+      let inferredDomain: string | null = null;
+
       try {
         const jsonMatch = response.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
           const graphs =
             parsed.graphs || parsed.list || parsed.recommendations || [];
+
+          if (
+            !targetDomainName &&
+            typeof parsed.domain === 'string' &&
+            parsed.domain.trim()
+          ) {
+            inferredDomain = parsed.domain.trim().slice(0, 12);
+          }
 
           for (const item of graphs) {
             if (typeof item === 'string') {
@@ -295,6 +309,7 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
         ...(targetDomainId && targetDomainName
           ? { target_domain: { id: targetDomainId, name: targetDomainName } }
           : {}),
+        ...(inferredDomain ? { inferred_domain: inferredDomain } : {}),
       };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '领域扩展失败';

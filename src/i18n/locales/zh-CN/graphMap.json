@@ -436,6 +436,7 @@
     "generateCountHint": "推荐图谱数量，创建后可选择性初始化知识点。",
     "recommendationSummary": "基于「{{domain}}」为您推荐 {{graphCount}} 个知识图谱，发现 {{relationCount}} 条依赖关系",
     "recommendationSummaryExpand": "基于现有图谱推荐 {{graphCount}} 个知识图谱，发现 {{relationCount}} 条依赖关系",
+    "inferredDomainHint": "创建时将归入新领域「{{domain}}」",
     "selectedCount": "已选 {{selected}} / {{total}} 个",
     "hideRelations": "隐藏关系",
     "viewRelations": "查看关系",

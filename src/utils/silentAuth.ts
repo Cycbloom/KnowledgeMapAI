@@ -53,6 +53,31 @@ export const clearOwnerCredentials = (): void => {
 };
 
 /**
+ * 开发期专属：把新创建的 owner 凭证同步到后端，由后端落盘到仓库根目录
+ * `.dev-owner-credentials.json`。AI/Playwright 调试脚本随后用同一份凭证登录，
+ * 即可看到真实数据。
+ *
+ * fire-and-forget 且内部吞错：仅受开发模式触发，且不因同步失败阻塞登录主流程。
+ * 使用隔离 fetch 而非 api client，避免把 axios 拦截器（token 刷新/登录跳转）引入
+ * 启动认证的早期路径。
+ */
+const syncOwnerCredentials = (credentials: OwnerCredentials): void => {
+  let mode = "development";
+  try {
+    mode = (import.meta.env?.MODE as string | undefined) ?? "development";
+  } catch {
+    // import.meta 不可用时回退为开发模式判断
+  }
+  if (mode !== "development") return;
+
+  void fetch("/api/v1/owner-credentials", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
+  }).catch(() => undefined);
+};
+
+/**
  * 创建专属用户并保存凭证到本地。
  *
  * signUp 在未开启邮箱确认时直接返回 session；若项目开启了邮箱确认
@@ -76,6 +101,7 @@ export const provisionOwner = async (
 
   if (!error && data.session) {
     saveOwnerCredentials(credentials);
+    syncOwnerCredentials(credentials);
     return data.session;
   }
 
@@ -86,6 +112,7 @@ export const provisionOwner = async (
 
   if (signInData.session) {
     saveOwnerCredentials(credentials);
+    syncOwnerCredentials(credentials);
     return signInData.session;
   }
 

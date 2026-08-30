@@ -268,7 +268,9 @@ export const GraphMap = () => {
 
   useEffect(() => {
     if (hasCheckedUncategorized.current) return;
-    if (domainTree && !domainTree.some((d: DomainTreeNode) => d.name === '未分类')) {
+    // 按结构身份识别「未分类」系统领域（is_system + icon），不依赖本地化后的名称字符串，
+    // 兼容历史数据中名称被误存为 i18n key 的情况
+    if (domainTree && !domainTree.some((d: DomainTreeNode) => d.is_system && d.icon === 'FolderOpen')) {
       hasCheckedUncategorized.current = true;
       domainsApi.ensureUncategorized().catch((err) => { console.error(err); });
     }
@@ -507,6 +509,7 @@ export const GraphMap = () => {
       setMultiSelectedGraphIds(new Set());
       queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      queryClient.invalidateQueries({ queryKey: queryKeys.domainTree() });
       setIsBatchDomainPickerOpen(false);
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : t('graphMap.batch.setDomainFailed');
@@ -1774,6 +1777,8 @@ export const GraphMap = () => {
             });
             queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
             queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+            // 批量创建可能新建领域节点，刷新领域树避免工具栏领域筛选/联动使用旧缓存
+            queryClient.invalidateQueries({ queryKey: queryKeys.domainTree() });
             message.success(t('graphMap.graphCreation.batchCreateSuccess', { count: result.created.length, failed: result.failed?.length || 0 }));
             return result;
           }}

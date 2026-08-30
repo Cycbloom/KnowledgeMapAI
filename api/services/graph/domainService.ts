@@ -108,6 +108,10 @@ function detectCycle(
 
 const UNCATEGORIZED_DOMAIN_ICON = "FolderOpen";
 const UNCATEGORIZED_DOMAIN_COLOR = "#94A3B8";
+// 后端 i18next 无翻译资源，i18next.t() 对缺失 key 会原样返回 key 字符串，
+// 不能用于写入数据库的文案；系统内置领域文案用常量硬编码（与路由一致）。
+const UNCATEGORIZED_DOMAIN_NAME = "未分类";
+const UNCATEGORIZED_DOMAIN_DESCRIPTION = "未归类到任何领域的图谱";
 
 async function ensureUncategorizedDomain(
   supabase: SupabaseClient,
@@ -126,8 +130,8 @@ async function ensureUncategorizedDomain(
   const { data: newDomain, error } = await supabase
     .from("domains")
     .insert({
-      name: i18next.t("graphMap.domains.uncategorized.name"),
-      description: i18next.t("graphMap.domains.uncategorized.description"),
+      name: UNCATEGORIZED_DOMAIN_NAME,
+      description: UNCATEGORIZED_DOMAIN_DESCRIPTION,
       color: UNCATEGORIZED_DOMAIN_COLOR,
       icon: UNCATEGORIZED_DOMAIN_ICON,
       is_system: true,
@@ -166,8 +170,8 @@ export const domainService = {
       const uncategorizedId = await ensureUncategorizedDomain(supabase, userId);
       const uncategorizedNode: DomainTreeNode = {
         id: uncategorizedId,
-        name: i18next.t("graphMap.domains.uncategorized.name"),
-        description: i18next.t("graphMap.domains.uncategorized.description"),
+        name: UNCATEGORIZED_DOMAIN_NAME,
+        description: UNCATEGORIZED_DOMAIN_DESCRIPTION,
         color: UNCATEGORIZED_DOMAIN_COLOR,
         icon: UNCATEGORIZED_DOMAIN_ICON,
         parent_id: null,

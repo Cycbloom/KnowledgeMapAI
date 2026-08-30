@@ -9,6 +9,10 @@ const CLOUD_ONLY_RESOURCES = new Set([
   // 本地 SQLite 不落地该数据，走 IPC findAll 会返回空数组（localResult !== null
   // 无法触发 HTTP 回退），导致终身成就 tab 空白。强制走 HTTP 由 API 合并用户数据。
   'achievements',
+  // /domains 返回服务端计算的领域树（buildTree + ensureUncategorizedDomain），
+  // 不是平表读取；本地 SQLite 的 domains 表未同步时 findAll 返回空数组，
+  // 同样不触发 HTTP 回退，导致图谱地图领域标签回退显示原始 domain UUID。
+  'domains',
 ]);
 
 let localDbAvailable: boolean | null = null;

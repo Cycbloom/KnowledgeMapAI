@@ -7,17 +7,14 @@ import {
   BookOpen,
   Layers,
   ArrowRightLeft,
-  Sparkles,
   Globe,
   MoreHorizontal,
   ChevronDown,
   Filter,
-  Bot,
-  Zap,
-  Settings2,
   Palette,
+  Tags,
 } from "lucide-react";
-import type { GraphMapFilterMode, AnalysisMode } from "../../types";
+import type { GraphMapFilterMode } from "../../types";
 import { useIsMobile } from "../../hooks";
 import type { DomainTreeNode } from "@shared/types/graph";
 import { DomainFilter } from "./DomainFilter";
@@ -25,10 +22,8 @@ import { DomainFilter } from "./DomainFilter";
 interface GraphMapToolbarProps {
   onBack: () => void;
   onRefresh: () => void;
-  onIntelligentAnalyze: () => void;
-  onAgentAnalysis: () => void;
-  onCustomAnalysis: () => void;
   onDomainGenerate: () => void;
+  onAutoClassify: () => void;
   onOpenStyleSettings: () => void;
   filterMode: GraphMapFilterMode;
   onFilterChange: (mode: GraphMapFilterMode) => void;
@@ -38,8 +33,6 @@ interface GraphMapToolbarProps {
   fromGraphId?: string | null;
   fromGraphTitle?: string;
   onReturnToGraph?: () => void;
-  analysisMode: AnalysisMode;
-  onAnalysisModeChange: (mode: AnalysisMode) => void;
   domains?: DomainTreeNode[];
   selectedDomainIds?: Set<string>;
   onDomainSelectionChange?: (ids: Set<string>) => void;
@@ -51,10 +44,8 @@ interface GraphMapToolbarProps {
 const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
   onBack,
   onRefresh,
-  onIntelligentAnalyze,
-  onAgentAnalysis,
-  onCustomAnalysis,
   onDomainGenerate,
+  onAutoClassify,
   onOpenStyleSettings,
   filterMode,
   onFilterChange,
@@ -64,8 +55,6 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
   fromGraphId,
   fromGraphTitle,
   onReturnToGraph,
-  analysisMode,
-  onAnalysisModeChange,
   domains,
   selectedDomainIds,
   onDomainSelectionChange,
@@ -77,10 +66,8 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
   const deviceInfo = useIsMobile();
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [showAnalyzeMenu, setShowAnalyzeMenu] = useState(false);
   const filterDropdownRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
-  const analyzeMenuRef = useRef<HTMLDivElement>(null);
 
   const isMobile = deviceInfo.isMobile;
   const isCompact = deviceInfo.screenWidth < 1280;
@@ -112,44 +99,6 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
     },
   ];
 
-  const analysisModeOptions: Array<{
-    mode: AnalysisMode;
-    label: string;
-    description: string;
-    icon: React.ReactNode;
-    color: string;
-    bgColor: string;
-    hoverBgColor: string;
-  }> = [
-    {
-      mode: "quick",
-      label: t("graphMap.analysis.quick"),
-      description: t("graphMap.analysis.quickDesc"),
-      icon: <Zap className="w-4 h-4" />,
-      color: "text-amber-600 dark:text-amber-400",
-      bgColor: "bg-amber-100 dark:bg-amber-900/40",
-      hoverBgColor: "hover:bg-amber-50 dark:hover:bg-amber-900/20",
-    },
-    {
-      mode: "deep",
-      label: t("graphMap.analysis.deep"),
-      description: t("graphMap.analysis.deepDesc"),
-      icon: <Bot className="w-4 h-4" />,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bgColor: "bg-emerald-100 dark:bg-emerald-900/40",
-      hoverBgColor: "hover:bg-emerald-50 dark:hover:bg-emerald-900/20",
-    },
-    {
-      mode: "custom",
-      label: t("graphMap.analysis.custom"),
-      description: t("graphMap.analysis.customDesc"),
-      icon: <Settings2 className="w-4 h-4" />,
-      color: "text-primary-600 dark:text-primary-400",
-      bgColor: "bg-primary-100 dark:bg-primary-900/40",
-      hoverBgColor: "hover:bg-primary-50 dark:hover:bg-primary-900/20",
-    },
-  ];
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -163,12 +112,6 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
         !moreMenuRef.current.contains(event.target as Node)
       ) {
         setShowMoreMenu(false);
-      }
-      if (
-        analyzeMenuRef.current &&
-        !analyzeMenuRef.current.contains(event.target as Node)
-      ) {
-        setShowAnalyzeMenu(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -309,41 +252,16 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
                   <Globe className="w-4 h-4" />
                   {t("graphMap.toolbar.domainGenerate")}
                 </button>
-                <div className="px-3 py-2 border-t border-gray-200 dark:border-slate-500">
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                    {t("graphMap.analysis.title")}
-                  </div>
-                  {analysisModeOptions.map((option) => (
-                    <button
-                      key={option.mode}
-                      onClick={() => {
-                        onAnalysisModeChange(option.mode);
-                        setShowMoreMenu(false);
-                        if (option.mode === "quick") {
-                          onIntelligentAnalyze();
-                        } else if (option.mode === "deep") {
-                          onAgentAnalysis();
-                        } else if (option.mode === "custom") {
-                          onCustomAnalysis();
-                        }
-                      }}
-                      className={`w-full flex items-center gap-2 px-2 py-2 text-sm rounded-lg transition-all duration-150 ${
-                        analysisMode === option.mode
-                          ? `${option.bgColor} ${option.color}`
-                          : `text-gray-700 dark:text-gray-300 ${option.hoverBgColor}`
-                      }`}
-                    >
-                      <div
-                        className={`w-6 h-6 rounded-md ${option.bgColor} flex items-center justify-center flex-shrink-0`}
-                      >
-                        {option.icon}
-                      </div>
-                      <div className="text-left flex-1 min-w-0">
-                        <div className="font-medium">{option.label}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                <button
+                  onClick={() => {
+                    onAutoClassify();
+                    setShowMoreMenu(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30"
+                >
+                  <Tags className="w-4 h-4" />
+                  {t("graphMap.toolbar.autoClassify")}
+                </button>
               </div>
             )}
           </div>
@@ -375,6 +293,14 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
             <Globe className="w-5 h-5" aria-hidden="true" />
           </button>
           <button
+            onClick={onAutoClassify}
+            className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg"
+            title={t("graphMap.toolbar.autoClassify")}
+            aria-label={t("graphMap.toolbar.autoClassify")}
+          >
+            <Tags className="w-5 h-5" aria-hidden="true" />
+          </button>
+          <button
             onClick={onOpenStyleSettings}
             className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg"
             title={t("graphStyleSettings.title")}
@@ -382,57 +308,6 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
           >
             <Palette className="w-5 h-5" aria-hidden="true" />
           </button>
-          <div className="relative" ref={analyzeMenuRef}>
-            <button
-              onClick={() => setShowAnalyzeMenu(!showAnalyzeMenu)}
-              className="p-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg shadow-md hover:shadow-lg hover:from-primary-600 hover:to-primary-700 transition-all duration-200"
-              title={t("graphMap.analysis.title")}
-              aria-label={t("graphMap.analysis.title")}
-            >
-              <Sparkles className="w-5 h-5" aria-hidden="true" />
-            </button>
-            {showAnalyzeMenu && (
-              <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-500 z-50 min-w-[240px] p-2">
-                {analysisModeOptions.map((option) => (
-                  <button
-                    key={option.mode}
-                    onClick={() => {
-                      onAnalysisModeChange(option.mode);
-                      setShowAnalyzeMenu(false);
-                      if (option.mode === "quick") {
-                        onIntelligentAnalyze();
-                      } else if (option.mode === "deep") {
-                        onAgentAnalysis();
-                      } else if (option.mode === "custom") {
-                        onCustomAnalysis();
-                      }
-                    }}
-                    className={`w-full flex items-start gap-3 p-3 rounded-lg transition-all duration-150 ${
-                      analysisMode === option.mode
-                        ? `${option.bgColor} ring-1 ring-gray-200 dark:ring-gray-600`
-                        : option.hoverBgColor
-                    }`}
-                  >
-                    <div
-                      className={`w-8 h-8 rounded-lg ${option.bgColor} flex items-center justify-center flex-shrink-0 ${option.color}`}
-                    >
-                      {option.icon}
-                    </div>
-                    <div className="text-left flex-1 min-w-0">
-                      <div
-                        className={`text-sm font-semibold ${analysisMode === option.mode ? option.color : "text-gray-900 dark:text-white"}`}
-                      >
-                        {option.label}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                        {option.description}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       );
     }
@@ -459,6 +334,15 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
         </button>
 
         <button
+          onClick={onAutoClassify}
+          className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
+          title={t("graphMap.toolbar.autoClassify")}
+          aria-label={t("graphMap.toolbar.autoClassify")}
+        >
+          <Tags className="w-5 h-5" aria-hidden="true" />
+        </button>
+
+        <button
           onClick={onOpenStyleSettings}
           className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
           title={t("graphStyleSettings.title")}
@@ -466,63 +350,6 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
         >
           <Palette className="w-5 h-5" aria-hidden="true" />
         </button>
-
-        <div className="relative" ref={analyzeMenuRef}>
-          <button
-            onClick={() => setShowAnalyzeMenu(!showAnalyzeMenu)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg shadow-md hover:shadow-lg hover:from-primary-600 hover:to-primary-700 transition-all duration-200"
-            title={t("graphMap.analysis.title")}
-          >
-            <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">
-              {t("graphMap.analysis.title")}
-            </span>
-            <ChevronDown
-              className={`w-3.5 h-3.5 transition-transform duration-200 ${showAnalyzeMenu ? "rotate-180" : ""}`}
-            />
-          </button>
-          {showAnalyzeMenu && (
-            <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-500 z-50 min-w-[260px] p-2">
-              {analysisModeOptions.map((option) => (
-                <button
-                  key={option.mode}
-                  onClick={() => {
-                    onAnalysisModeChange(option.mode);
-                    setShowAnalyzeMenu(false);
-                    if (option.mode === "quick") {
-                      onIntelligentAnalyze();
-                    } else if (option.mode === "deep") {
-                      onAgentAnalysis();
-                    } else if (option.mode === "custom") {
-                      onCustomAnalysis();
-                    }
-                  }}
-                  className={`w-full flex items-start gap-3 p-3 rounded-lg transition-all duration-150 ${
-                    analysisMode === option.mode
-                      ? `${option.bgColor} ring-1 ring-gray-200 dark:ring-gray-600`
-                      : option.hoverBgColor
-                  }`}
-                >
-                  <div
-                    className={`w-8 h-8 rounded-lg ${option.bgColor} flex items-center justify-center flex-shrink-0 ${option.color}`}
-                  >
-                    {option.icon}
-                  </div>
-                  <div className="text-left flex-1 min-w-0">
-                    <div
-                      className={`text-sm font-semibold ${analysisMode === option.mode ? option.color : "text-gray-900 dark:text-white"}`}
-                    >
-                      {option.label}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                      {option.description}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     );
   };
@@ -613,19 +440,15 @@ const areEqual = (prev: GraphMapToolbarProps, next: GraphMapToolbarProps) => {
     prev.graphCount === next.graphCount &&
     prev.relationCount === next.relationCount &&
     prev.isLoading === next.isLoading &&
-    prev.analysisMode === next.analysisMode &&
     prev.fromGraphId === next.fromGraphId &&
     prev.fromGraphTitle === next.fromGraphTitle &&
     prev.onBack === next.onBack &&
     prev.onRefresh === next.onRefresh &&
-    prev.onIntelligentAnalyze === next.onIntelligentAnalyze &&
-    prev.onAgentAnalysis === next.onAgentAnalysis &&
-    prev.onCustomAnalysis === next.onCustomAnalysis &&
     prev.onDomainGenerate === next.onDomainGenerate &&
+    prev.onAutoClassify === next.onAutoClassify &&
     prev.onOpenStyleSettings === next.onOpenStyleSettings &&
     prev.onFilterChange === next.onFilterChange &&
     prev.onReturnToGraph === next.onReturnToGraph &&
-    prev.onAnalysisModeChange === next.onAnalysisModeChange &&
     prev.onManageDomains === next.onManageDomains &&
     prev.domains === next.domains &&
     prev.selectedDomainIds === next.selectedDomainIds &&

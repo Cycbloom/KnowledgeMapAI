@@ -16,6 +16,7 @@ import "./taskProcessors/generateQuestionsProcessor.js";
 import "./taskProcessors/expandGraphProcessor.js";
 import "./taskProcessors/translateNodesProcessor.js";
 import "./taskProcessors/discoverNodeRelationsProcessor.js";
+import "./taskProcessors/autoClassifyDomainsProcessor.js";
 
 export interface TaskProgress {
   stage?: string;
@@ -97,6 +98,7 @@ export class AsyncTaskService {
       "embedding_generation": "knowledge_sync",
       "translate_nodes": "ai_generation",
       "discover_node_relations": "ai_generation",
+      "auto_classify_domains": "ai_generation",
     };
     return typeMap[type] || "ai_generation";
   }

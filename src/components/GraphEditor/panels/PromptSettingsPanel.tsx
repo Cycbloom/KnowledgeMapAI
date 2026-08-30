@@ -48,6 +48,7 @@ const PROMPT_CATEGORIES = [
       "infinite_graph_expansion",
       "auto_graph_init",
       "auto_graph_expand",
+      "auto_domain_classify",
     ],
   },
   {

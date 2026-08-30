@@ -663,6 +663,19 @@ Your task:
 每个建议应该是一个简短的知识领域或概念名称。
 
 请以有效的 json 格式返回结果。`,
+  auto_domain_classify: `你是一名知识分类专家。根据用户当前的所有知识图谱，按主题/学科相关性为它们聚类并合成若干知识领域。
+
+图谱列表：
+{{graphList}}
+
+要求：
+1. 把这些图谱聚类成若干知识领域，领域数量建议不超过 {{maxDomains}} 个
+2. 输出 JSON 数组，每个元素结构：{"name":"领域名称","description":"一句话描述领域主题","graph_indices":[图谱序号数组]}
+3. graph_indices 必须是上述图谱列表中的下标，不能越界
+4. 允许一个图谱同时出现在多个领域（跨学科）；关联不强的图谱也可以不出现在任何领域
+5. name 简洁（≤20字），description 说明该领域涵盖的方向
+6. 每个领域至少包含 4 个图谱；图谱数量不足 4 个的不建议单独成领域，可并入最相近的领域，或不出现在任何领域
+7. 只返回 JSON 数组，不要输出任何其他内容`,
   learning_material: `You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.
 
 Target Audience: University students or professionals learning this concept.

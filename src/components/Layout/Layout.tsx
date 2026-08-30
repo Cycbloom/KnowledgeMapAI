@@ -39,6 +39,9 @@ import { LevelTestNotification } from "../Learning/LevelTestNotification";
 import { useLevelTestNotificationStore } from "../../store/useLevelTestNotificationStore";
 import { RelationDiscoveryNotification } from "../GraphEditor/RelationDiscoveryNotification";
 import { useRelationDiscoveryNotificationStore } from "../../store/useRelationDiscoveryNotificationStore";
+import { AutoClassifyNotification } from "../GraphMap/AutoClassifyNotification";
+import { useAutoClassifyNotificationStore } from "../../store/useAutoClassifyNotificationStore";
+import { useAutoClassifyPanelStore } from "../../store/useAutoClassifyPanelStore";
 import { EmbeddingBackfillToast } from "../Notifications/EmbeddingBackfillToast";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
@@ -511,6 +514,22 @@ export const Layout = () => {
     useRelationDiscoveryNotificationStore.getState().clearNotice();
   }, []);
 
+  const autoClassifyNotice = useAutoClassifyNotificationStore(
+    (s) => s.notice,
+  );
+
+  const handleAutoClassifyContinue = useCallback(() => {
+    const notice = useAutoClassifyNotificationStore.getState().notice;
+    if (!notice) return;
+    useAutoClassifyNotificationStore.getState().clearNotice();
+    useAutoClassifyPanelStore.getState().requestOpen(notice.taskId);
+    navigate("/graph-map");
+  }, [navigate]);
+
+  const handleAutoClassifyClose = useCallback(() => {
+    useAutoClassifyNotificationStore.getState().clearNotice();
+  }, []);
+
   if (!!token && !user && isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -765,6 +784,11 @@ export const Layout = () => {
             notice={relationNotice}
             onClose={handleRelationClose}
             onContinue={handleRelationContinue}
+          />
+          <AutoClassifyNotification
+            notice={autoClassifyNotice}
+            onClose={handleAutoClassifyClose}
+            onContinue={handleAutoClassifyContinue}
           />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
           {isHelpOpen && (

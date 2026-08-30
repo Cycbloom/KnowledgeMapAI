@@ -4,6 +4,22 @@ import type {
   DomainTreeNode,
 } from '@shared/types/graph';
 
+// 自动分类领域：候选领域（一个图谱可同时出现在多个领域，多对多）
+export interface AutoClassifiedDomain {
+  suggestion_id: string;
+  name: string;
+  description: string;
+  graph_ids: string[];
+  graph_titles: string[];
+}
+
+export interface AutoClassifyGraphInfo {
+  id: string;
+  title: string;
+  description: string;
+  existing_domains: string[];
+}
+
 export const domainsApi = {
   getTree: () =>
     request<DomainTreeNode[]>('/domains', { method: 'GET' }),
@@ -65,6 +81,22 @@ export const domainsApi = {
     request<{ recommendations: Array<{ id: string; name: string; confidence: number; reason: string }> }>('/domains/recommend', {
       method: 'POST',
       body: JSON.stringify({ title, description }),
+    }),
+
+  // 根据已有图谱自动聚类合成领域（候选确认后再创建）
+  autoClassify: (data?: { graph_ids?: string[]; max_domains?: number }) =>
+    request<{ domains: AutoClassifiedDomain[]; graphs: AutoClassifyGraphInfo[] }>('/domains/auto-classify', {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    }),
+
+  // 批量创建领域并建立图谱-领域多对多关联
+  applyClassify: (data: {
+    domains: Array<{ name: string; description?: string; color?: string; graph_ids: string[] }>;
+  }) =>
+    request<{ created: Array<{ id: string; name: string; graphCount: number }> }>('/domains/apply-classify', {
+      method: 'POST',
+      body: JSON.stringify(data),
     }),
 };
 

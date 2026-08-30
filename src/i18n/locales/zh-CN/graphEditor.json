@@ -1134,6 +1134,7 @@
       "infinite_graph_expansion": "无限扩展知识网络",
       "auto_graph_init": "图谱初始化",
       "auto_graph_expand": "节点展开",
+      "auto_domain_classify": "自动分类领域",
       "generate_task_details": "任务详情生成",
       "literature_concept_extraction": "文献概念提取",
       "literature_relation_inference": "文献关系推断",

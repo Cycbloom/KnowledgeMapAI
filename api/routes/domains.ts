@@ -98,6 +98,59 @@ router.post(
   },
 );
 
+const autoClassifySchema = z.object({
+  graph_ids: z.array(z.string().uuid()).optional(),
+  max_domains: z.number().int().min(1).max(20).optional(),
+});
+
+const applyClassifySchema = z.object({
+  domains: z
+    .array(
+      z.object({
+        name: z.string().min(2).max(200),
+        description: z.string().max(1000).optional(),
+        color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+        graph_ids: z.array(z.string().uuid()).max(500),
+      }),
+    )
+    .min(1)
+    .max(20),
+});
+
+router.post(
+  "/auto-classify",
+  requireAuth,
+  validate({ body: autoClassifySchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
+    const userId = req.user.id;
+    const { graph_ids, max_domains } = req.body;
+
+    const result = await domainService.autoClassifyGraphs(supabase, userId, {
+      graph_ids,
+      max_domains,
+    });
+    res.json(result);
+  },
+);
+
+router.post(
+  "/apply-classify",
+  requireAuth,
+  validate({ body: applyClassifySchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
+    const userId = req.user.id;
+
+    const result = await domainService.applyClassifiedDomains(
+      supabase,
+      userId,
+      req.body.domains,
+    );
+    res.json(result);
+  },
+);
+
 router.put(
   "/reorder",
   requireAuth,

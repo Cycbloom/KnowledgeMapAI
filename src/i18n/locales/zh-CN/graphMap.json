@@ -6,9 +6,7 @@
     "loading": "正在加载图谱地图...",
     "relatedGraphs": "暂无关联图谱",
     "connectionDiscovery": "暂无新的关联建议",
-    "domains": "暂无可选领域，请先为图谱设置领域",
-    "modules": "暂无可用的分析模块",
-    "analysisResults": "暂无分析结果"
+    "domains": "暂无可选领域，请先为图谱设置领域"
   },
   "filter": {
     "all": "全部",
@@ -22,17 +20,37 @@
     "createRelation": "创建关系",
     "createGraph": "创建图谱",
     "domainGenerate": "领域生成",
+    "autoClassify": "自动分类",
     "manageDomains": "管理领域",
     "manage": "管理"
   },
-  "analysis": {
-    "title": "AI 分析",
-    "quick": "快速分析",
-    "quickDesc": "AI发现潜在关系和跨学科关联",
-    "deep": "深度分析",
-    "deepDesc": "渐进式获取信息，深度分析",
-    "custom": "自定义分析",
-    "customDesc": "自定义分析目标和参数"
+  "autoClassify": {
+    "title": "自动分类领域",
+    "titleReview": "自动分类领域 - 确认候选",
+    "submitted": "已提交自动分类后台任务，完成时会通知您",
+    "startFailed": "提交分析任务失败",
+    "loading": "正在加载候选领域…",
+    "noOpenData": "没有可确认的候选领域：请先在工具栏点击「自动分类」启动后台分析，完成后在此确认。",
+    "analyzedHint": "已分析 {{count}} 个图谱，以下为合成的候选领域（可编辑名称/描述，或点击图谱标签调整归属）",
+    "domainName": "领域名称",
+    "domainDescription": "领域描述",
+    "descriptionPlaceholder": "输入领域描述（可选）…",
+    "graphsUnit": "个图谱",
+    "include": "包含此领域",
+    "exclude": "排除此领域",
+    "toggleGraph": "点击切换该图谱是否归入此领域",
+    "apply": "创建并归类",
+    "applyFailed": "创建领域失败",
+    "analyzeFailed": "加载分析结果失败",
+    "appliedSuccess": "已创建 {{count}} 个领域并完成归类",
+    "cancel": "取消",
+    "noneSelected": "请至少保留一个带图谱的候选领域",
+    "notification": {
+      "generating": "正在自动分类领域…",
+      "completed": "自动分类完成，共 {{count}} 个候选领域",
+      "failed": "自动分类失败",
+      "continue": "查看候选领域"
+    }
   },
   "stats": {
     "graphCount": "{{count}} 个图谱",
@@ -74,23 +92,6 @@
     "related": "相关知识",
     "crossDomain": "跨学科"
   },
-  "crossDomain": {
-    "analyze": "跨域分析",
-    "analyzing": "分析中...",
-    "title": "跨学科洞察分析",
-    "reanalyze": "重新分析",
-    "analyzeComplete": "跨域分析完成",
-    "analyzeFailed": "跨域分析失败",
-    "crossTopics": "交叉主题",
-    "relatedGraphs": "相关图谱",
-    "viewGraph": "查看图谱",
-    "more": "+{{count}} 更多",
-    "domainsInvolved": "涉及领域",
-    "crossDomainClustersShort": "交叉集群",
-    "domainDistribution": "领域分布",
-    "noCrossDomainFound": "没有发现跨学科交叉点",
-    "insightsFound": "发现 {{count}} 个跨学科交叉点"
-  },
   "domainPicker": {
     "title": "设置领域",
     "noDomains": "暂无可用领域",
@@ -102,7 +103,6 @@
   "batch": {
     "selected": "已选择 {{count}} 个图谱",
     "createRelation": "批量创建关系",
-    "analyze": "批量分析",
     "setDomain": "设置领域",
     "delete": "批量删除",
     "clearSelection": "清除选择",
@@ -180,54 +180,12 @@
     "relationCreated": "已创建关系: {{source}} → {{target}}",
     "createFailed": "创建关系失败: {{error}}"
   },
-  "actionConfirmation": {
-    "title": "待确认操作",
-    "batchConfirm": "全部确认",
-    "batchReject": "全部拒绝",
-    "executeSuccess": "执行成功",
-    "executeFailed": "执行失败",
-    "executing": "执行中...",
-    "confirm": "确认",
-    "reject": "拒绝",
-    "allResolved": "所有操作已处理完毕",
-    "tool": {
-      "createNode": "创建节点",
-      "createEdge": "创建关系",
-      "createGraphRelation": "创建图谱关系",
-      "createStudyCard": "创建学习卡片",
-      "updateNode": "更新节点"
-    },
-    "riskLevel": {
-      "low": "低风险",
-      "medium": "中风险",
-      "high": "高风险"
-    }
-  },
   "graphCreation": {
     "success": "图谱创建成功",
     "failed": "创建图谱失败",
     "generatingContent": "正在生成初始内容...",
     "batchCreateSuccess": "批量创建完成：成功 {{count}} 个，失败 {{failed}} 个",
     "initTaskSubmitted": "已提交 {{count}} 个初始化任务"
-  },
-  "mergeSuggestions": {
-    "title": "合并建议",
-    "itemCount": "{{count}} 个项目",
-    "moreItems": "还有 {{count}} 项...",
-    "sharedConcepts": "共享概念",
-    "merge": "合并",
-    "link": "关联",
-    "dismiss": "忽略",
-    "merged": "已合并",
-    "linked": "已关联",
-    "dismissed": "已忽略",
-    "tip": "提示：",
-    "tipContent": "AI 检测到可能重复或高度相似的图谱，您可以选择合并、关联或保留独立。",
-    "actions": {
-      "merge": "合并",
-      "link": "关联",
-      "keepSeparate": "保持独立"
-    }
   },
   "expansion": {
     "started": "无限扩展任务已启动",
@@ -323,97 +281,6 @@
     "reorderFailed": "排序域名失败",
     "generateColorFailed": "生成颜色失败",
     "treeLabel": "域树"
-  },
-  "agentAnalysis": {
-    "title": "Agent 分析",
-    "analyzing": "正在分析...",
-    "graphNumber": "图谱 {{number}}",
-    "callingTool": "正在调用 {{tool}}...",
-    "complete": "{{tool}} 完成",
-    "waitingConfirm": "等待确认操作",
-    "analysisComplete": "分析完成",
-    "analysisFailed": "分析失败: {{error}}"
-  },
-  "analysisResult": {
-    "analyzing": "正在分析中...",
-    "estimatedTime": "预计需要 {{time}}",
-    "failed": "分析失败",
-    "unknownError": "未知错误，请重试",
-    "close": "关闭",
-    "complete": "分析完成",
-    "copied": "已复制",
-    "copy": "复制",
-    "recommendedRelations": "推荐的图谱关联",
-    "selected": "已选择 {{count}} 项",
-    "applying": "应用中...",
-    "applySelected": "应用选中项 ({{count}})",
-    "applyFailed": "应用推荐失败",
-    "relationDiscovery": "关系发现结果",
-    "crossDisciplineInsight": "跨学科洞察结果",
-    "learningPathSuggestion": "学习路径建议",
-    "knowledgeGap": "知识缺口分析",
-    "relationTypes": {
-      "prerequisite": "前置依赖",
-      "extension": "扩展",
-      "related": "相关",
-      "crossDomain": "跨领域"
-    }
-  },
-  "analysisConfirm": {
-    "title": "确认分析",
-    "analysisTypeLabel": "分析类型：",
-    "analysisType": {
-      "relationDiscovery": {
-        "name": "关系发现",
-        "description": "发现图谱间潜在的关联关系",
-        "estimatedTime": "5-10秒"
-      },
-      "crossDomainInsights": {
-        "name": "跨学科洞察",
-        "description": "分析跨领域知识交叉点",
-        "estimatedTime": "5-8秒"
-      },
-      "learningPath": {
-        "name": "学习路径",
-        "description": "推荐最优学习顺序",
-        "estimatedTime": "3-5秒"
-      },
-      "knowledgeGap": {
-        "name": "知识缺口",
-        "description": "识别知识体系中的空白",
-        "estimatedTime": "3-5秒"
-      }
-    },
-    "analysisGoal": "分析目标",
-    "analysisGoalPlaceholder": "描述你的分析目标，例如：分析这些图谱之间的知识关联，找出可以合并的重复内容...",
-    "enterAnalysisGoal": "请输入分析目标",
-    "analysisScope": "分析范围：已选择 {{count}} 个图谱",
-    "noGraphSelected": "未选中任何图谱",
-    "noGraphSelectedHint": "请在图谱地图上选择要分析的图谱，或将分析全部图谱（消耗较多 TOKEN）",
-    "estimatedConsumption": "预估消耗：",
-    "tokenRange": "约 {{min}} - {{max}} tokens",
-    "highTokenWarning": "建议减少图谱数量或选择快速分析模式",
-    "analyzing": "分析中...",
-    "startAnalysis": "开始分析",
-    "moreGraphs": "...还有 {{count}} 个图谱",
-    "mode": {
-      "quick": "快速分析",
-      "quickDesc": "快速扫描图谱，提供基础分析结果",
-      "deep": "深度分析",
-      "deepDesc": "渐进式获取信息，深度分析知识结构",
-      "custom": "自定义分析",
-      "customDesc": "根据自定义目标进行针对性分析"
-    }
-  },
-  "sessionLog": {
-    "analysisProcess": "分析过程",
-    "toolCalls": "{{count}} 个工具调用",
-    "callTool": "调用工具: {{tool}}"
-  },
-  "skillSelector": {
-    "selectedForAnalysis": "已选择 {{count}} 个图谱进行分析",
-    "selectType": "选择分析类型",
-    "executionType": "执行型"
   },
   "domainGenerator": {
     "title": "领域图谱批量生成",
@@ -519,50 +386,8 @@
     "hideLegend": "隐藏图例",
     "statusSummary": "缩放: {{zoom}}% | 图谱: {{graphs}} | 关系: {{relations}}"
   },
-  "analysisModuleCard": {
-    "editPrompt": "编辑提示词",
-    "analyzing": "分析中...",
-    "completed": "已完成",
-    "error": "出错",
-    "viewResult": "查看结果"
-  },
   "loadError": "加载图谱地图数据失败",
   "retry": "重试",
-  "knowledgeGaps": {
-    "priorityHigh": "高优先",
-    "priorityMedium": "中优先",
-    "priorityLow": "低优先",
-    "actionCreate": "创建新图谱",
-    "actionMerge": "合并现有图谱",
-    "actionExpand": "扩展现有图谱",
-    "knowledgeGapsLabel": "知识缺口",
-    "highPriorityLabel": "高优先级",
-    "noGapsFound": "没有发现知识缺口",
-    "identifiedGaps": "识别的知识缺口",
-    "relatedGraphs": "相关图谱",
-    "suggestion": "建议：",
-    "creating": "创建中",
-    "createGraph": "创建图谱",
-    "recommendationText": "优先处理高优先级的知识缺口，这些缺口可能会影响您的知识体系完整性"
-  },
-  "modularAnalysis": {
-    "title": "模块化分析",
-    "selectedPrefix": "已选择",
-    "selectedSuffix": "个模块",
-    "completedCount": "{{count}} 已完成",
-    "errorCount": "{{count}} 出错",
-    "selectAll": "全选",
-    "analyzing": "正在分析中，请稍候...",
-    "aboutToExecute": "即将执行 {{count}} 个分析模块",
-    "selectAtLeastOne": "请选择至少一个分析模块",
-    "close": "关闭",
-    "analyzingButton": "分析中...",
-    "startAnalysis": "开始分析",
-    "promptLoading": "提示词加载中...",
-    "promptEditTitle": "{{name}} - 提示词编辑",
-    "promptSaveSuccess": "提示词保存成功",
-    "promptSaveFailed": "保存失败: {{message}}"
-  },
   "a11y": {
     "draggableNode": "可拖动节点，使用方向键移动"
   },
@@ -574,22 +399,6 @@
     "emptyFocus": "无焦点节点",
     "desc": "知识图谱可视化，使用方向键浏览节点",
     "nodesContainer": "节点容器，共 {{count}} 个节点"
-  },
-  "learningPath": {
-    "pathCount": "学习路径",
-    "avgLength": "平均长度",
-    "noSuggestions": "没有发现学习路径建议",
-    "recommendedTitle": "推荐的学习路径",
-    "pathLabel": "路径 {{index}}",
-    "graphCount": "{{count}} 个图谱",
-    "learningOrder": "学习顺序",
-    "tip": "提示：",
-    "tipContent": "学习路径基于图谱间的前置关系和知识依赖分析生成，建议按照推荐顺序学习以获得最佳效果"
-  },
-  "learningPathSuggestions": {
-    "beginner": "入门",
-    "intermediate": "中级",
-    "advanced": "高级"
   },
   "uncategorized": "未分类",
   "domainLabel": "领域：{{domain}}",

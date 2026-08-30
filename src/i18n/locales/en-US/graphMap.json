@@ -6,9 +6,7 @@
     "loading": "Loading graph map...",
     "relatedGraphs": "No related graphs",
     "connectionDiscovery": "No new connection suggestions",
-    "domains": "No available domains, please set domains for the graph first",
-    "modules": "No available analysis modules",
-    "analysisResults": "No analysis results"
+    "domains": "No available domains, please set domains for the graph first"
   },
   "filter": {
     "all": "All",
@@ -22,17 +20,37 @@
     "createRelation": "Create Relation",
     "createGraph": "Create Graph",
     "domainGenerate": "Domain Generate",
+    "autoClassify": "Auto Classify",
     "manageDomains": "Manage Domains",
     "manage": "Manage"
   },
-  "analysis": {
-    "title": "AI Analysis",
-    "quick": "Quick Analysis",
-    "quickDesc": "AI discovers potential relations and cross-domain connections",
-    "deep": "Deep Analysis",
-    "deepDesc": "Progressive information gathering with deep analysis",
-    "custom": "Custom Analysis",
-    "customDesc": "Customize analysis goals and parameters"
+  "autoClassify": {
+    "title": "Auto Classify Domains",
+    "titleReview": "Auto Classify Domains - Confirm Candidates",
+    "submitted": "Auto classification task submitted to background. You'll be notified when done",
+    "startFailed": "Failed to submit analysis task",
+    "loading": "Loading candidate domains…",
+    "noOpenData": "No candidate domains to confirm. Start background analysis via the toolbar's Auto Classify button, then confirm here when done.",
+    "analyzedHint": "Analyzed {{count}} graphs. Below are composed candidate domains (edit name/description, or click a graph tag to adjust membership)",
+    "domainName": "Domain name",
+    "domainDescription": "Domain description",
+    "descriptionPlaceholder": "Enter domain description (optional)…",
+    "graphsUnit": "graphs",
+    "include": "Include this domain",
+    "exclude": "Exclude this domain",
+    "toggleGraph": "Click to toggle whether this graph belongs to this domain",
+    "apply": "Create & Assign",
+    "applyFailed": "Failed to create domains",
+    "analyzeFailed": "Failed to load analysis result",
+    "appliedSuccess": "Created {{count}} domains and assigned graphs",
+    "cancel": "Cancel",
+    "noneSelected": "Please keep at least one candidate domain with graphs",
+    "notification": {
+      "generating": "Classifying domains…",
+      "completed": "Classification done, {{count}} candidate domains",
+      "failed": "Domain classification failed",
+      "continue": "Review candidate domains"
+    }
   },
   "stats": {
     "graphCount": "{{count}} graphs",
@@ -74,23 +92,6 @@
     "related": "Related",
     "crossDomain": "Cross-Domain"
   },
-  "crossDomain": {
-    "analyze": "Cross-Domain Analysis",
-    "analyzing": "Analyzing...",
-    "title": "Cross-Domain Insights Analysis",
-    "reanalyze": "Re-analyze",
-    "analyzeComplete": "Cross-domain analysis complete",
-    "analyzeFailed": "Cross-domain analysis failed",
-    "crossTopics": "Cross topics",
-    "relatedGraphs": "Related graphs",
-    "viewGraph": "View graph",
-    "more": "+{{count}} more",
-    "domainsInvolved": "Domains involved",
-    "crossDomainClustersShort": "Cross-domain clusters",
-    "domainDistribution": "Domain distribution",
-    "noCrossDomainFound": "No cross-domain intersections found",
-    "insightsFound": "Found {{count}} cross-domain intersections"
-  },
   "domainPicker": {
     "title": "Set Domain",
     "noDomains": "No available domains",
@@ -102,7 +103,6 @@
   "batch": {
     "selected": "{{count}} graphs selected",
     "createRelation": "Batch Create Relations",
-    "analyze": "Batch Analyze",
     "setDomain": "Set Domain",
     "delete": "Batch Delete",
     "clearSelection": "Clear Selection",
@@ -167,54 +167,12 @@
     "relationCreated": "Relation created: {{source}} → {{target}}",
     "createFailed": "Failed to create relation: {{error}}"
   },
-  "actionConfirmation": {
-    "title": "Pending Actions",
-    "batchConfirm": "Confirm All",
-    "batchReject": "Reject All",
-    "executeSuccess": "Execution Successful",
-    "executeFailed": "Execution Failed",
-    "executing": "Executing...",
-    "confirm": "Confirm",
-    "reject": "Reject",
-    "allResolved": "All actions have been processed",
-    "tool": {
-      "createNode": "Create Node",
-      "createEdge": "Create Edge",
-      "createGraphRelation": "Create Graph Relation",
-      "createStudyCard": "Create Study Card",
-      "updateNode": "Update Node"
-    },
-    "riskLevel": {
-      "low": "Low Risk",
-      "medium": "Medium Risk",
-      "high": "High Risk"
-    }
-  },
   "graphCreation": {
     "success": "Graph created successfully",
     "failed": "Failed to create graph",
     "generatingContent": "Generating initial content...",
     "batchCreateSuccess": "Batch creation complete: {{count}} succeeded, {{failed}} failed",
     "initTaskSubmitted": "{{count}} initialization tasks submitted"
-  },
-  "mergeSuggestions": {
-    "title": "Merge Suggestions",
-    "itemCount": "{{count}} items",
-    "moreItems": "{{count}} more...",
-    "sharedConcepts": "Shared Concepts",
-    "merge": "Merge",
-    "link": "Link",
-    "dismiss": "Dismiss",
-    "merged": "Merged",
-    "linked": "Linked",
-    "dismissed": "Dismissed",
-    "tip": "Tip:",
-    "tipContent": "AI detected potentially duplicate or highly similar graphs. You can choose to merge, link, or keep them separate.",
-    "actions": {
-      "merge": "Merge",
-      "link": "Link",
-      "keepSeparate": "Keep Separate"
-    }
   },
   "expansion": {
     "started": "Infinite expansion task started",
@@ -310,97 +268,6 @@
     "reorderFailed": "Failed to reorder domains",
     "generateColorFailed": "Failed to generate color",
     "treeLabel": "Domain tree"
-  },
-  "agentAnalysis": {
-    "title": "Agent Analysis",
-    "analyzing": "Analyzing...",
-    "graphNumber": "Graph {{number}}",
-    "callingTool": "Calling {{tool}}...",
-    "complete": "{{tool}} complete",
-    "waitingConfirm": "Waiting for confirmation",
-    "analysisComplete": "Analysis complete",
-    "analysisFailed": "Analysis failed: {{error}}"
-  },
-  "analysisResult": {
-    "analyzing": "Analyzing...",
-    "estimatedTime": "Estimated {{time}}",
-    "failed": "Analysis failed",
-    "unknownError": "Unknown error, please retry",
-    "close": "Close",
-    "complete": "Analysis Complete",
-    "copied": "Copied",
-    "copy": "Copy",
-    "recommendedRelations": "Recommended Graph Relations",
-    "selected": "{{count}} items selected",
-    "applying": "Applying...",
-    "applySelected": "Apply Selected ({{count}})",
-    "applyFailed": "Failed to apply recommendation",
-    "relationDiscovery": "Relation Discovery Results",
-    "crossDisciplineInsight": "Cross-Discipline Insight Results",
-    "learningPathSuggestion": "Learning Path Suggestions",
-    "knowledgeGap": "Knowledge Gap Analysis",
-    "relationTypes": {
-      "prerequisite": "Prerequisite",
-      "extension": "Extension",
-      "related": "Related",
-      "crossDomain": "Cross-Domain"
-    }
-  },
-  "analysisConfirm": {
-    "title": "Confirm Analysis",
-    "analysisTypeLabel": "Analysis Type:",
-    "analysisType": {
-      "relationDiscovery": {
-        "name": "Relation Discovery",
-        "description": "Discover potential relations between graphs",
-        "estimatedTime": "5-10s"
-      },
-      "crossDomainInsights": {
-        "name": "Cross-Domain Insights",
-        "description": "Analyze cross-domain knowledge intersections",
-        "estimatedTime": "5-8s"
-      },
-      "learningPath": {
-        "name": "Learning Path",
-        "description": "Recommend optimal learning order",
-        "estimatedTime": "3-5s"
-      },
-      "knowledgeGap": {
-        "name": "Knowledge Gap",
-        "description": "Identify gaps in knowledge system",
-        "estimatedTime": "3-5s"
-      }
-    },
-    "analysisGoal": "Analysis Goal",
-    "analysisGoalPlaceholder": "Describe your analysis goal, e.g., analyze knowledge relations between these graphs, find duplicate content to merge...",
-    "enterAnalysisGoal": "Please enter analysis goal",
-    "analysisScope": "Analysis Scope: {{count}} graphs selected",
-    "noGraphSelected": "No graphs selected",
-    "noGraphSelectedHint": "Please select graphs on the graph map to analyze, or analyze all graphs (will consume more TOKENS)",
-    "estimatedConsumption": "Estimated Consumption:",
-    "tokenRange": "Approx. {{min}} - {{max}} tokens",
-    "highTokenWarning": "Consider reducing graph count or selecting quick analysis mode",
-    "analyzing": "Analyzing...",
-    "startAnalysis": "Start Analysis",
-    "moreGraphs": "...{{count}} more graphs",
-    "mode": {
-      "quick": "Quick Analysis",
-      "quickDesc": "Quick scan of graphs with basic analysis results",
-      "deep": "Deep Analysis",
-      "deepDesc": "Progressive information gathering with deep knowledge structure analysis",
-      "custom": "Custom Analysis",
-      "customDesc": "Targeted analysis based on custom goals"
-    }
-  },
-  "sessionLog": {
-    "analysisProcess": "Analysis Process",
-    "toolCalls": "{{count}} tool calls",
-    "callTool": "Call tool: {{tool}}"
-  },
-  "skillSelector": {
-    "selectedForAnalysis": "{{count}} graphs selected for analysis",
-    "selectType": "Select Analysis Type",
-    "executionType": "Execution"
   },
   "domainGenerator": {
     "title": "Batch Domain Graph Generation",
@@ -506,50 +373,8 @@
     "hideLegend": "Hide legend",
     "statusSummary": "Zoom: {{zoom}}% | Graphs: {{graphs}} | Relations: {{relations}}"
   },
-  "analysisModuleCard": {
-    "editPrompt": "Edit Prompt",
-    "analyzing": "Analyzing...",
-    "completed": "Completed",
-    "error": "Error",
-    "viewResult": "View Result"
-  },
   "loadError": "Failed to load graph map data",
   "retry": "Retry",
-  "knowledgeGaps": {
-    "priorityHigh": "High Priority",
-    "priorityMedium": "Medium Priority",
-    "priorityLow": "Low Priority",
-    "actionCreate": "Create New Graph",
-    "actionMerge": "Merge Existing Graphs",
-    "actionExpand": "Expand Existing Graphs",
-    "knowledgeGapsLabel": "Knowledge Gaps",
-    "highPriorityLabel": "High Priority",
-    "noGapsFound": "No knowledge gaps found",
-    "identifiedGaps": "Identified Knowledge Gaps",
-    "relatedGraphs": "Related Graphs",
-    "suggestion": "Suggestion: ",
-    "creating": "Creating",
-    "createGraph": "Create Graph",
-    "recommendationText": "Prioritize addressing high-priority knowledge gaps, as these may affect the integrity of your knowledge system"
-  },
-  "modularAnalysis": {
-    "title": "Modular Analysis",
-    "selectedPrefix": "Selected",
-    "selectedSuffix": "modules",
-    "completedCount": "{{count}} Completed",
-    "errorCount": "{{count}} Errors",
-    "selectAll": "Select All",
-    "analyzing": "Analyzing, please wait...",
-    "aboutToExecute": "About to execute {{count}} analysis modules",
-    "selectAtLeastOne": "Please select at least one analysis module",
-    "close": "Close",
-    "analyzingButton": "Analyzing...",
-    "startAnalysis": "Start Analysis",
-    "promptLoading": "Loading prompt...",
-    "promptEditTitle": "{{name}} - Prompt Editor",
-    "promptSaveSuccess": "Prompt saved successfully",
-    "promptSaveFailed": "Save failed: {{message}}"
-  },
   "a11y": {
     "draggableNode": "Draggable node, use arrow keys to move"
   },
@@ -561,22 +386,6 @@
     "emptyFocus": "No focused node",
     "desc": "Knowledge graph visualization, use arrow keys to navigate nodes",
     "nodesContainer": "Nodes container, {{count}} nodes"
-  },
-  "learningPath": {
-    "pathCount": "Learning paths",
-    "avgLength": "Avg. length",
-    "noSuggestions": "No learning path suggestions found",
-    "recommendedTitle": "Recommended learning paths",
-    "pathLabel": "Path {{index}}",
-    "graphCount": "{{count}} graphs",
-    "learningOrder": "Learning order",
-    "tip": "Tip:",
-    "tipContent": "Learning paths are generated based on prerequisite relationships and knowledge dependencies between graphs. Following the recommended order yields the best results."
-  },
-  "learningPathSuggestions": {
-    "beginner": "Beginner",
-    "intermediate": "Intermediate",
-    "advanced": "Advanced"
   },
   "connectionDiscovery": {
     "commonTags": "Common tags: {{tags}}",

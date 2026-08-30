@@ -7,6 +7,9 @@ import { api } from "../services/api";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { queryKeys } from "../hooks/queries/config";
 import { useGraphData } from "../hooks/queries";
+import { tasksApi } from "../services/api/tasks";
+import { useAutoClassifyNotificationStore } from "../store/useAutoClassifyNotificationStore";
+import { useAutoClassifyPanelStore } from "../store/useAutoClassifyPanelStore";
 import { useIsMobile } from "../hooks/common/useIsMobile";
 import { ErrorBoundary, Skeleton, Loading } from "../components/common";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
@@ -15,8 +18,6 @@ import { domainsApi, graphDomainsApi } from "../services/api/domains";
 import type { DomainTreeNode, Domain } from "@shared/types/graph";
 import { CreateRelationPanel } from "../components/GraphMap/CreateRelationPanel";
 import { DomainManager } from "../components/GraphMap/DomainManager";
-import type { AnalysisModuleState } from "../components/GraphMap/types";
-import { useAnalysisModules } from "../hooks/graphAI/useAnalysisModules";
 import { useGraphStyleSettingsStore } from "../store/useGraphStyleSettingsStore";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { message } from "../utils/messageHelper";
@@ -26,10 +27,8 @@ import type {
   GraphRelation,
   GraphMapFilterMode,
   GraphRelationType,
-  QuickCreateGraphRequest,
   InfiniteExpansionProgress,
   DiscoveredRelation,
-  AnalysisMode,
   DiscoveryResult,
   IntelligentSuggestion,
 } from "../types";
@@ -82,27 +81,15 @@ const GraphRelationDiscoveryPanel = lazy(() =>
   }))
 );
 
-const ModularAnalysisPanel = lazy(() =>
-  import("../components/GraphMap/ModularAnalysisPanel").then((module) => ({
-    default: module.ModularAnalysisPanel,
-  }))
-);
-
-const AnalysisResultViewer = lazy(() =>
-  import("../components/GraphMap/AnalysisResultViewer").then((module) => ({
-    default: module.AnalysisResultViewer,
+const AutoClassifyDomainPanel = lazy(() =>
+  import("../components/GraphMap/AutoClassifyDomainPanel").then((module) => ({
+    default: module.AutoClassifyDomainPanel,
   }))
 );
 
 const BatchOperationPanel = lazy(() =>
   import("../components/GraphMap/BatchOperationPanel").then((module) => ({
     default: module.BatchOperationPanel,
-  }))
-);
-
-const AgentAnalysisPanel = lazy(() =>
-  import("../components/GraphMap/AgentAnalysisPanel").then((module) => ({
-    default: module.AgentAnalysisPanel,
   }))
 );
 
@@ -173,6 +160,8 @@ export const GraphMap = () => {
   );
   const [showPromptSelector, setShowPromptSelector] = useState(false);
   const [isDomainGeneratorOpen, setIsDomainGeneratorOpen] = useState(false);
+  const [isAutoClassifyOpen, setIsAutoClassifyOpen] = useState(false);
+  const [autoClassifyTaskId, setAutoClassifyTaskId] = useState<string | null>(null);
   const [domainBatchSessionId, setDomainBatchSessionId] = useState<string | null>(null);
   const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false);
   const [isGenerateCardsModalOpen, setIsGenerateCardsModalOpen] =
@@ -180,10 +169,6 @@ export const GraphMap = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [isDiscoveryPanelOpen, setIsDiscoveryPanelOpen] = useState(false);
   const [isMobilePanelExpanded, setIsMobilePanelExpanded] = useState(false);
-  const [isModularAnalysisOpen, setIsModularAnalysisOpen] = useState(false);
-  const [viewingModule, setViewingModule] = useState<AnalysisModuleState | null>(null);
-  const [isAgentAnalysisOpen, setIsAgentAnalysisOpen] = useState(false);
-  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('quick');
   const [selectedDomainIds, setSelectedDomainIds] = useState<Set<string>>(() => {
     const domainParam = searchParams.get('domain');
     if (!domainParam) return new Set();
@@ -207,13 +192,6 @@ export const GraphMap = () => {
       setSearchParams(newParams, { replace: true });
     }
   }, [selectedDomainIds]);
-
-  const {
-    modules,
-    toggleModule,
-    executeModules,
-    resetModules,
-  } = useAnalysisModules();
 
   // 图地图样式与图编辑器共用同一份持久化设置（节点形状/中心点/光晕/网格/配色/连线/动画）
   const {
@@ -427,9 +405,32 @@ export const GraphMap = () => {
     setIsCreatePanelOpen(true);
   }, []);
 
-  const handleBatchAnalyze = useCallback(() => {
-    setIsModularAnalysisOpen(true);
-  }, []);
+  // 自动分类领域：提交后台任务（AI 聚类较耗时），完成后再通知用户
+  const handleStartAutoClassify = useCallback(async () => {
+    try {
+      const task = await tasksApi.create({
+        type: "auto_classify_domains",
+        payload: {},
+      });
+      useAutoClassifyNotificationStore.getState().startTracking(task.id);
+      message.success(t("graphMap.autoClassify.submitted"));
+    } catch (error: unknown) {
+      const errMsg =
+        getErrorMessage(error) || t("graphMap.autoClassify.startFailed");
+      message.error(errMsg);
+    }
+  }, [t]);
+
+  // 由完成通知「继续」请求打开候选确认面板，并加载对应任务结果
+  const panelTaskId = useAutoClassifyPanelStore((s) =>
+    s.open ? s.taskId : null,
+  );
+  useEffect(() => {
+    if (!panelTaskId) return;
+    useAutoClassifyPanelStore.getState().clearOpen();
+    setAutoClassifyTaskId(panelTaskId);
+    setIsAutoClassifyOpen(true);
+  }, [panelTaskId]);
 
   const handleUndoBatchDelete = useCallback(async (ids: string[]) => {
     try {
@@ -555,47 +556,6 @@ export const GraphMap = () => {
       } catch (error: unknown) {
         const errMsg = error instanceof Error ? error.message : t('graphMap.relation.deleteFailed');
         message.error(errMsg);
-      }
-    },
-    [queryClient, t],
-  );
-
-  const handleQuickCreateGraph = useCallback(
-    async (data: QuickCreateGraphRequest) => {
-      try {
-        const newGraph = await api.graphs.create({
-          title: data.title,
-          description: data.description,
-        });
-
-        if (data.relation_to) {
-          const sourceId =
-            data.relation_to.type === "prerequisite"
-              ? newGraph.id
-              : data.relation_to.graph_id;
-          const targetId =
-            data.relation_to.type === "prerequisite"
-              ? data.relation_to.graph_id
-              : newGraph.id;
-
-          await api.graphs.createRelation({
-            source_graph_id: sourceId,
-            target_graph_id: targetId,
-            relation_type: data.relation_to.type,
-          });
-        }
-
-        message.success(t('graphMap.graphCreation.success'));
-        queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
-        queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-
-        if (data.auto_generate_content) {
-          message.info(t('graphMap.graphCreation.generatingContent'));
-        }
-      } catch (error: unknown) {
-        const errMsg = error instanceof Error ? error.message : t('graphMap.graphCreation.failed');
-        message.error(errMsg);
-        throw error;
       }
     },
     [queryClient, t],
@@ -1122,13 +1082,8 @@ export const GraphMap = () => {
       <GraphMapToolbar
         onBack={() => navigate("/dashboard")}
         onRefresh={() => { void refetchMap(); }}
-        onIntelligentAnalyze={() => setIsModularAnalysisOpen(true)}
-        onAgentAnalysis={() => setIsAgentAnalysisOpen(true)}
-        onCustomAnalysis={() => {
-          setAnalysisMode('custom');
-          setIsAgentAnalysisOpen(true);
-        }}
         onDomainGenerate={() => setIsDomainGeneratorOpen(true)}
+        onAutoClassify={handleStartAutoClassify}
         onOpenStyleSettings={() => setIsStyleSettingsOpen(true)}
         filterMode={filterMode}
         onFilterChange={setFilterMode}
@@ -1138,8 +1093,6 @@ export const GraphMap = () => {
         fromGraphId={fromGraphId}
         fromGraphTitle={fromGraph?.title}
         onReturnToGraph={() => navigate(`/graph/${fromGraphId}`)}
-        analysisMode={analysisMode}
-        onAnalysisModeChange={setAnalysisMode}
         domains={domainTree || []}
         selectedDomainIds={selectedDomainIds}
         onDomainSelectionChange={handleDomainSelectionChange}
@@ -1854,75 +1807,12 @@ export const GraphMap = () => {
       </Suspense>
 
       <Suspense fallback={null}>
-        <ModularAnalysisPanel
-          isOpen={isModularAnalysisOpen}
-          onClose={() => {
-            setIsModularAnalysisOpen(false);
-            resetModules();
-          }}
-          modules={modules}
-          onToggleModule={toggleModule}
-          onExecuteModules={(selectedIds) => {
-            executeModules(selectedIds, { graph_ids: selectedGraphId ? [selectedGraphId] : undefined });
-          }}
-          onViewResult={(moduleId) => {
-            const module = modules.find(m => m.id === moduleId);
-            if (module) {
-              setViewingModule(module);
-            }
-          }}
-          graphId={selectedGraphId ?? undefined}
-        />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <AnalysisResultViewer
-          isOpen={viewingModule !== null}
-          onClose={() => setViewingModule(null)}
-          module={viewingModule}
-          onGraphClick={(graphId) => {
-            setSelectedGraphId(graphId);
-            setViewingModule(null);
-          }}
-          onCreateRelation={async (sourceId, targetId, relationType) => {
-            await handleCreateRelation({
-              source_graph_id: sourceId,
-              target_graph_id: targetId,
-              relation_type: relationType as GraphRelationType,
-            });
-          }}
-          onCreateGraph={async (title, domain) => {
-            await handleQuickCreateGraph({
-              title,
-              description: domain ? t('graphMap.domainLabel', { domain }) : undefined,
-            });
-          }}
-        />
-      </Suspense>
-
-      <Suspense fallback={null}>
         <BatchOperationPanel
           selectedCount={multiSelectedGraphIds.size}
           onBatchCreateRelation={handleBatchCreateRelation}
-          onBatchAnalyze={handleBatchAnalyze}
           onBatchDelete={handleBatchDelete}
           onBatchSetDomain={() => setIsBatchDomainPickerOpen(true)}
           onClearSelection={clearMultiSelection}
-        />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <AgentAnalysisPanel
-          isOpen={isAgentAnalysisOpen}
-          onClose={() => setIsAgentAnalysisOpen(false)}
-          selectedGraphIds={Array.from(multiSelectedGraphIds)}
-          graphTitles={Array.from(multiSelectedGraphIds).map(
-            (id) => graphById.get(id)?.title || ""
-          )}
-          analysisMode={analysisMode}
-          onGraphsMerged={() => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
-          }}
         />
       </Suspense>
 
@@ -1987,6 +1877,24 @@ export const GraphMap = () => {
       isOpen={showDomainManager}
       onClose={() => setShowDomainManager(false)}
     />
+
+    <Suspense fallback={null}>
+      <AutoClassifyDomainPanel
+        isOpen={isAutoClassifyOpen}
+        onClose={() => {
+          setIsAutoClassifyOpen(false);
+          setAutoClassifyTaskId(null);
+        }}
+        initialTaskId={autoClassifyTaskId}
+        onApplied={() => {
+          setIsAutoClassifyOpen(false);
+          setAutoClassifyTaskId(null);
+          queryClient.invalidateQueries({ queryKey: queryKeys.domainTree() });
+          queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
+          queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+        }}
+      />
+    </Suspense>
 
     {isStyleSettingsOpen && (
       <Suspense fallback={null}>

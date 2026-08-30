@@ -1134,6 +1134,7 @@
       "infinite_graph_expansion": "Infinite Graph Expansion",
       "auto_graph_init": "Auto Graph Init",
       "auto_graph_expand": "Auto Graph Expand",
+      "auto_domain_classify": "Auto Classify Domains",
       "generate_task_details": "Generate Task Details",
       "literature_concept_extraction": "Literature Concept Extraction",
       "literature_relation_inference": "Literature Relation Inference",

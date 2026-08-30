@@ -364,8 +364,8 @@ export const GraphMap = () => {
   // 通过预构建 graphById 映射取图，替代每次渲染对 graphs 的线性 find（原每次渲染 O(graphs) 扫描）
   const fromGraph = fromGraphId ? graphById.get(fromGraphId) : undefined;
 
-  const handleGraphClick = useCallback((graph: Graph) => {
-    setSelectedGraphId(graph.id);
+  const handleGraphClick = useCallback((graph: Graph | null) => {
+    setSelectedGraphId(graph?.id ?? null);
     setMultiSelectedGraphIds(new Set());
   }, []);
 

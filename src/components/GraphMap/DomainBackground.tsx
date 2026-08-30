@@ -251,6 +251,8 @@ interface DomainBackgroundProps {
   graphs: Array<{ id: string; domain?: string; domainIds?: string[] }>;
   zoomLevel: number;
   selectedDomainIds?: Set<string>;
+  /** 聚焦节点时，仅显示遮罩的领域白名单（null/缺省表示不限） */
+  visibleDomainIds?: Set<string> | null;
   /** 高亮焦点领域（悬停或点击选中），存在时该领域内节点/区域高亮、其余淡化 */
   focusDomainId?: string | null;
   domainIdToInfo?: Map<string, { name: string; color: string }>;
@@ -269,6 +271,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
   graphs,
   zoomLevel,
   selectedDomainIds,
+  visibleDomainIds,
   focusDomainId,
   domainIdToInfo,
   variant = 'background',
@@ -337,11 +340,16 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
   }, [layoutNodes, graphs, domainIdToInfo]);
 
   const filteredGroups = useMemo(() => {
-    if (!selectedDomainIds || selectedDomainIds.size === 0) {
-      return domainGroups;
+    let groups = domainGroups;
+    if (selectedDomainIds && selectedDomainIds.size > 0) {
+      groups = groups.filter(group => selectedDomainIds.has(group.domainId));
     }
-    return domainGroups.filter(group => selectedDomainIds.has(group.domainId));
-  }, [domainGroups, selectedDomainIds]);
+    // 聚焦节点时：只显示「被高亮节点中 ≥2 个属于该领域」的领域，消除无谓阴影遮罩
+    if (visibleDomainIds) {
+      groups = groups.filter(group => visibleDomainIds.has(group.domainId));
+    }
+    return groups;
+  }, [domainGroups, selectedDomainIds, visibleDomainIds]);
 
   // 缩放模式改为连续过渡，避免在 zoomLevel=1.0 时硬切出现画面跳变
   // glowOpacity = 1（缩小态，≤0.85）→ 0（放大态，≥1.15）线性递减
@@ -631,12 +639,15 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
                   <stop offset="100%" stopColor={colors.text} stopOpacity="0.02" />
                 </radialGradient>
               </defs>
-              {/* 内层填充：质心径向渐变 + 投影（圆盘凸包，圆弧完全包围最外层节点） */}
+              {/* 内层填充：质心径向渐变 + 投影（圆盘凸包，圆弧完全包围最外层节点）
+                  可命中：点击凸包内部空白视为「领域内」，不穿透到 SVG 根，
+                  从而不取消领域高亮（只有凸包外空白才取消） */}
               <path
                 d={diskConvexHullPath(group.nodes)}
                 fill={`url(#${hullGradientId})`}
                 stroke="none"
                 filter={`url(#${hullShadowId})`}
+                style={{ pointerEvents: 'auto' }}
               />
               {/* 虚线边框：更轻盈不抢视觉 */}
               <path

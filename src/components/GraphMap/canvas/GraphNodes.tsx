@@ -28,7 +28,7 @@ interface GraphNodesProps {
   nodeShape?: NodeShape;
   centerDotShape?: CenterDotShape;
   nodeGlow?: boolean;
-  onGraphClick?: (graph: Graph) => void;
+  onGraphClick?: (graph: Graph | null) => void;
   onMultiSelectGraph?: (
     graphId: string,
     isMultiSelect: boolean,
@@ -85,8 +85,14 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
 
       if ((isMultiSelect || isRangeSelect) && onMultiSelectGraph) {
         onMultiSelectGraph(node.id, isMultiSelect, isRangeSelect);
-      } else if (!isMultiSelect && !isRangeSelect && onGraphClick) {
-        onGraphClick(graph);
+      } else if (!isMultiSelect && !isRangeSelect) {
+        // 再次点击已聚焦节点 → 取消选中/聚焦（邻居不再高亮、凸包遮罩消失）
+        if (focusedGraphId === node.id) {
+          onGraphClick?.(null);
+          setFocusedGraphId(null);
+          return;
+        }
+        onGraphClick?.(graph);
         setFocusedGraphId(node.id);
 
         const visualCenterX = containerWidth / 2;
@@ -99,6 +105,7 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
     },
     [
       graphs,
+      focusedGraphId,
       onMultiSelectGraph,
       onGraphClick,
       setFocusedGraphId,

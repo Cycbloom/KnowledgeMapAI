@@ -31,11 +31,14 @@ import { SelectionBox } from "./canvas/SelectionBox";
 import { TransformControls } from "./canvas/TransformControls";
 import { useGraphMapInteraction } from "./hooks/useGraphMapInteraction";
 
+// 聚焦节点时，被高亮节点中至少 N 个属于某领域，才显示该领域的遮罩
+const MIN_NEIGHBOR_DOMAIN_COUNT = 2;
+
 interface GraphMapCanvasProps {
   graphs: Array<Graph & { node_count?: number }>;
   relations: GraphRelation[];
   selectedGraphId?: string | null;
-  onGraphClick?: (graph: Graph) => void;
+  onGraphClick?: (graph: Graph | null) => void;
   width?: number;
   height?: number;
   filterMode?: GraphMapFilterMode;
@@ -259,6 +262,26 @@ export const GraphMapCanvas = forwardRef<
       return links;
     }, [focusedGraphId, filteredRelations]);
 
+    // 聚焦节点时，仅显示「被高亮节点（焦点+一阶邻居）中 ≥2 个属于该领域」的领域遮罩，
+    // 避免聚焦单个节点时所有领域都出阴影，让人分辨不清该节点属于哪个领域
+    const focusVisibleDomainIds = useMemo(() => {
+      if (!focusedGraphId || neighborGraphIds.size === 0) return null;
+      const countByDomain = new Map<string, number>();
+      neighborGraphIds.forEach((nodeId) => {
+        const nodeDomains = graphDomainMap.get(nodeId);
+        if (nodeDomains) {
+          for (const dId of nodeDomains) {
+            countByDomain.set(dId, (countByDomain.get(dId) || 0) + 1);
+          }
+        }
+      });
+      const visible = new Set<string>();
+      for (const [dId, count] of countByDomain) {
+        if (count >= MIN_NEIGHBOR_DOMAIN_COUNT) visible.add(dId);
+      }
+      return visible;
+    }, [focusedGraphId, neighborGraphIds, graphDomainMap]);
+
     const nodeHighlightState = useMemo(() => {
       const state = new Map<string, boolean>();
       if (!layout) return state;
@@ -459,6 +482,7 @@ export const GraphMapCanvas = forwardRef<
               graphs={graphs}
               zoomLevel={transform.k}
               selectedDomainIds={selectedDomainIds}
+              visibleDomainIds={focusVisibleDomainIds}
               focusDomainId={focusDomainId ?? hoveredDomainId}
               domainIdToInfo={domainIdToInfo}
             />
@@ -507,6 +531,7 @@ export const GraphMapCanvas = forwardRef<
               graphs={graphs}
               zoomLevel={transform.k}
               selectedDomainIds={selectedDomainIds}
+              visibleDomainIds={focusVisibleDomainIds}
               focusDomainId={focusDomainId ?? hoveredDomainId}
               domainIdToInfo={domainIdToInfo}
               onPillClick={onDomainPillClick}

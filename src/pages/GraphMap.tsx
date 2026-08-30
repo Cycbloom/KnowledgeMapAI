@@ -376,10 +376,11 @@ export const GraphMap = () => {
   // 通过预构建 graphById 映射取图，替代每次渲染对 graphs 的线性 find（原每次渲染 O(graphs) 扫描）
   const fromGraph = fromGraphId ? graphById.get(fromGraphId) : undefined;
 
-  // 指向 GraphMapCanvas 的命令式句柄：用于把视角移动到指定图谱节点
-  const graphMapCanvasRef = useRef<{ centerNode: (nodeId: string) => void } | null>(
-    null,
-  );
+  // 指向 GraphMapCanvas 的命令式句柄：用于移动视角 / 触发整理布局
+  const graphMapCanvasRef = useRef<{
+    centerNode: (nodeId: string) => void;
+    rearrange: () => void;
+  } | null>(null);
 
   const handleGraphClick = useCallback((graph: Graph | null) => {
     setSelectedGraphId(graph?.id ?? null);

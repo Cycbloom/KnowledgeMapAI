@@ -1,4 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState, forwardRef } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  forwardRef,
+  useCallback,
+} from "react";
 import { useTranslation } from "react-i18next";
 import type {
   ColorScheme,
@@ -30,6 +37,8 @@ import { GraphEdges } from "./canvas/GraphEdges";
 import { SelectionBox } from "./canvas/SelectionBox";
 import { TransformControls } from "./canvas/TransformControls";
 import { useGraphMapInteraction } from "./hooks/useGraphMapInteraction";
+import { useGraphMapLayoutStore } from "../../store/useGraphMapLayoutStore";
+import { message } from "../../utils/messageHelper";
 
 // 聚焦节点时，被高亮节点中至少 N 个属于某领域，才显示该领域的遮罩
 const MIN_NEIGHBOR_DOMAIN_COUNT = 2;
@@ -73,7 +82,7 @@ interface GraphMapCanvasProps {
 }
 
 export const GraphMapCanvas = forwardRef<
-  { centerNode: (nodeId: string) => void },
+  { centerNode: (nodeId: string) => void; rearrange: () => void },
   GraphMapCanvasProps
 >(
   (
@@ -118,6 +127,17 @@ export const GraphMapCanvas = forwardRef<
     const contentRef = React.useRef<SVGGElement>(null);
     const layoutRef = useRef(null) as React.MutableRefObject<ReturnType<typeof createMindMapLayout> | null>;
 
+    // 「固定布局」持久化：保留已固定坐标；整理布局时忽略固定坐标做一次全新重排
+    const useInitialPositionsRef = useRef(true);
+    const [recomputeNonce, setRecomputeNonce] = useState(0);
+
+    const onRearrange = useCallback(() => {
+      useInitialPositionsRef.current = false;
+      setLayout(null);
+      setRecomputeNonce((n) => n + 1);
+      message.success(t("graphMap.toolbar.layoutRearranged"));
+    }, [t]);
+
     const {
       transform,
       transformRef,
@@ -156,6 +176,7 @@ export const GraphMapCanvas = forwardRef<
       graphs,
       onGraphClick,
       onBoxSelection,
+      onRearrange,
     });
 
     const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
@@ -187,6 +208,33 @@ export const GraphMapCanvas = forwardRef<
 
       const domainGroups = getDomainGroups(graphs);
 
+      // 「固定布局」：优先用本地持久化的坐标作为初始位置，避免每次重排整图；
+      // 「整理布局」时忽略已存坐标做一次全新重排
+      const initialPositions = new Map<string, { x: number; y: number }>();
+      if (useInitialPositionsRef.current) {
+        const saved = useGraphMapLayoutStore.getState().positions;
+        nodes.forEach((n) => {
+          const p = saved[n.id];
+          if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) {
+            initialPositions.set(n.id, { x: p.x, y: p.y });
+          }
+        });
+      }
+
+      const persistResult = (result: LayoutResult) => {
+        setLayout(result);
+        // 仅在全图（未按领域过滤）时持久化，避免筛选触发的子集布局覆盖已固定的整图坐标。
+        // 计算完成后恢复「使用固定坐标」，使后续数据刷新继续复用新坐标。
+        if (selectedDomainIds.size === 0) {
+          const pos: Record<string, { x: number; y: number }> = {};
+          result.nodes.forEach((n) => {
+            if (n.id) pos[n.id] = { x: n.x, y: n.y };
+          });
+          useGraphMapLayoutStore.getState().saveLayout(pos);
+        }
+        useInitialPositionsRef.current = true;
+      };
+
       const timer = setTimeout(async () => {
         try {
           const result = await calculateMindMapLayout(
@@ -196,10 +244,11 @@ export const GraphMapCanvas = forwardRef<
               width: containerSize.width,
               height: containerSize.height,
               domainGroups,
+              initialPositions,
             }
           );
           if (result) {
-            setLayout(result as unknown as LayoutResult);
+            persistResult(result as unknown as LayoutResult);
           } else {
             // Fallback: Worker 不可用时降级为主线程同步计算
             console.warn('[GraphMapCanvas] Worker layout failed, falling back to main thread');
@@ -207,8 +256,9 @@ export const GraphMapCanvas = forwardRef<
               width: containerSize.width,
               height: containerSize.height,
               domainGroups,
+              initialPositions,
             });
-            setLayout(fallbackResult);
+            persistResult(fallbackResult);
           }
         } catch (error) {
           // 错误时也降级到主线程
@@ -217,13 +267,14 @@ export const GraphMapCanvas = forwardRef<
             width: containerSize.width,
             height: containerSize.height,
             domainGroups,
+            initialPositions,
           });
-          setLayout(fallbackResult);
+          persistResult(fallbackResult);
         }
       }, 300); // 300ms 防抖
 
       return () => clearTimeout(timer);
-    }, [nodes, edges, containerSize, graphs, calculateMindMapLayout]);
+    }, [nodes, edges, containerSize, graphs, calculateMindMapLayout, selectedDomainIds, recomputeNonce]);
 
     layoutRef.current = layout;
 
@@ -552,6 +603,7 @@ export const GraphMapCanvas = forwardRef<
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onResetView={handleResetView}
+          onRearrange={onRearrange}
           transformK={transform.k}
           graphsCount={graphs.length}
           relationsCount={relations.length}

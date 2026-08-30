@@ -17,7 +17,10 @@ interface Transform {
 }
 
 interface UseGraphMapInteractionOptions {
-  ref: React.ForwardedRef<{ centerNode: (nodeId: string) => void }>;
+  ref: React.ForwardedRef<{
+    centerNode: (nodeId: string) => void;
+    rearrange: () => void;
+  }>;
   svgRef: React.MutableRefObject<SVGSVGElement | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   contentRef: React.RefObject<SVGGElement | null>;
@@ -27,6 +30,8 @@ interface UseGraphMapInteractionOptions {
   graphs: Array<Graph & { node_count?: number }>;
   onGraphClick?: (graph: Graph) => void;
   onBoxSelection?: (graphIds: string[]) => void;
+  /** 触发「整理布局」：忽略已固定的坐标做一次全新重排 */
+  onRearrange?: () => void;
 }
 
 export function useGraphMapInteraction({
@@ -40,6 +45,7 @@ export function useGraphMapInteraction({
   graphs,
   onGraphClick,
   onBoxSelection,
+  onRearrange,
 }: UseGraphMapInteractionOptions) {
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
   const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
@@ -166,6 +172,7 @@ export function useGraphMapInteraction({
         animateCamera(targetX, targetY, targetK, 800);
       }
     },
+    rearrange: () => onRearrange?.(),
   }));
 
   useEffect(() => {

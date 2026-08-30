@@ -12,6 +12,7 @@ interface TransformControlsProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetView: () => void;
+  onRearrange?: () => void;
   transformK: number;
   graphsCount: number;
   relationsCount: number;
@@ -28,6 +29,7 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
   onZoomIn,
   onZoomOut,
   onResetView,
+  onRearrange,
   transformK,
   graphsCount,
   relationsCount,
@@ -165,6 +167,27 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
+            </svg>
+          </button>
+
+          <button
+            onClick={onRearrange}
+            className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+            title={t('graphMap.toolbar.rearrangeLayout')}
+            aria-label={t('graphMap.toolbar.rearrangeLayout')}
+          >
+            <svg aria-hidden="true"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
             </svg>
           </button>
 

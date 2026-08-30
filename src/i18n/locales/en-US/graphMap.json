@@ -22,7 +22,9 @@
     "domainGenerate": "Domain Generate",
     "autoClassify": "Auto Classify",
     "manageDomains": "Manage Domains",
-    "manage": "Manage"
+    "manage": "Manage",
+    "rearrangeLayout": "Rearrange Layout",
+    "layoutRearranged": "Layout rearranged and pinned"
   },
   "autoClassify": {
     "title": "Auto Classify Domains",

@@ -22,7 +22,9 @@
     "domainGenerate": "领域生成",
     "autoClassify": "自动分类",
     "manageDomains": "管理领域",
-    "manage": "管理"
+    "manage": "管理",
+    "rearrangeLayout": "整理布局",
+    "layoutRearranged": "布局已整理并固定"
   },
   "autoClassify": {
     "title": "自动分类领域",

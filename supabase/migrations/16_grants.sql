@@ -6,9 +6,54 @@
 -- ALTER DEFAULT PRIVILEGES in 00_extensions_and_types.sql covers tables created
 -- after that migration, but this blanket grant is a safety net for any tables
 -- that might have been created before default privileges were set.
-GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+-- GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role would also hit
+-- extension-owned views (e.g. pgTAP's tap_funky / pg_all_foreign_keys, owned by
+-- supabase_admin), which PostgreSQL refuses to touch and warns about per object.
+-- Grant on application-defined relations only (skip extension members).
+DO $$
+DECLARE
+  r regclass;
+BEGIN
+  FOR r IN
+    SELECT c.oid::regclass
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
+      AND NOT EXISTS (
+        SELECT 1 FROM pg_depend d
+        WHERE d.classid = 'pg_class'::regclass
+          AND d.objid = c.oid
+          AND d.deptype = 'e'
+      )
+  LOOP
+    EXECUTE format('GRANT ALL ON %s TO service_role', r);
+  END LOOP;
+END $$;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
+-- GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role would flood
+-- db reset output: it iterates every public function, and PostgreSQL refuses to
+-- touch extension-owned ones (vector, pgTAP, ...), warning per function. Grant
+-- execute only on application-defined functions (skip extension members).
+DO $$
+DECLARE
+  f regprocedure;
+BEGIN
+  FOR f IN
+    SELECT p.oid::regprocedure
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND NOT EXISTS (
+        SELECT 1 FROM pg_depend d
+        WHERE d.classid = 'pg_proc'::regclass
+          AND d.objid = p.oid
+          AND d.deptype = 'e'
+      )
+  LOOP
+    EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO service_role', f);
+  END LOOP;
+END $$;
 
 -- Core tables
 GRANT ALL PRIVILEGES ON users TO authenticated;

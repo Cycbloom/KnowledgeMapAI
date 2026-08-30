@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
-  Plus,
   RefreshCw,
   Network,
   BookOpen,
@@ -26,8 +25,6 @@ import { DomainFilter } from "./DomainFilter";
 interface GraphMapToolbarProps {
   onBack: () => void;
   onRefresh: () => void;
-  onCreateRelation: () => void;
-  onCreateGraph: () => void;
   onIntelligentAnalyze: () => void;
   onAgentAnalysis: () => void;
   onCustomAnalysis: () => void;
@@ -54,8 +51,6 @@ interface GraphMapToolbarProps {
 const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
   onBack,
   onRefresh,
-  onCreateRelation,
-  onCreateGraph,
   onIntelligentAnalyze,
   onAgentAnalysis,
   onCustomAnalysis,
@@ -281,13 +276,6 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
     if (isMobile) {
       return (
         <div className="flex items-center gap-1">
-          <button
-            onClick={onCreateRelation}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-500 text-white rounded-lg text-sm font-medium"
-          >
-            <Network className="w-4 h-4" />
-            <span>{t("graphMap.toolbar.createRelation")}</span>
-          </button>
           <div className="relative" ref={moreMenuRef}>
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
@@ -356,16 +344,6 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
                     </button>
                   ))}
                 </div>
-                <button
-                  onClick={() => {
-                    onCreateGraph();
-                    setShowMoreMenu(false);
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 last:rounded-b-lg"
-                >
-                  <Plus className="w-4 h-4" />
-                  {t("graphMap.toolbar.createGraph")}
-                </button>
               </div>
             )}
           </div>
@@ -455,21 +433,6 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
               </div>
             )}
           </div>
-          <button
-            onClick={onCreateGraph}
-            className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg"
-            title={t("graphMap.toolbar.createGraph")}
-            aria-label={t("graphMap.toolbar.createGraph")}
-          >
-            <Plus className="w-5 h-5" aria-hidden="true" />
-          </button>
-          <button
-            onClick={onCreateRelation}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-500 text-white rounded-lg text-sm font-medium"
-          >
-            <Network className="w-4 h-4" />
-            <span>{t("graphMap.toolbar.createRelation")}</span>
-          </button>
         </div>
       );
     }
@@ -560,25 +523,6 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
             </div>
           )}
         </div>
-
-        <button
-          onClick={onCreateGraph}
-          className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
-          title={t("graphMap.toolbar.createGraph")}
-          aria-label={t("graphMap.toolbar.createGraph")}
-        >
-          <Plus className="w-5 h-5" aria-hidden="true" />
-        </button>
-
-        <button
-          onClick={onCreateRelation}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
-        >
-          <Network className="w-4 h-4" />
-          <span className="text-sm font-medium">
-            {t("graphMap.toolbar.createRelation")}
-          </span>
-        </button>
       </div>
     );
   };
@@ -674,8 +618,6 @@ const areEqual = (prev: GraphMapToolbarProps, next: GraphMapToolbarProps) => {
     prev.fromGraphTitle === next.fromGraphTitle &&
     prev.onBack === next.onBack &&
     prev.onRefresh === next.onRefresh &&
-    prev.onCreateRelation === next.onCreateRelation &&
-    prev.onCreateGraph === next.onCreateGraph &&
     prev.onIntelligentAnalyze === next.onIntelligentAnalyze &&
     prev.onAgentAnalysis === next.onAgentAnalysis &&
     prev.onCustomAnalysis === next.onCustomAnalysis &&

@@ -14,7 +14,6 @@ import { GraphMapSkeleton } from "../components/GraphMap/GraphMapSkeleton";
 import { domainsApi, graphDomainsApi } from "../services/api/domains";
 import type { DomainTreeNode, Domain } from "@shared/types/graph";
 import { CreateRelationPanel } from "../components/GraphMap/CreateRelationPanel";
-import { QuickCreateGraphPanel } from "../components/GraphMap/QuickCreateGraphPanel";
 import { DomainManager } from "../components/GraphMap/DomainManager";
 import type { AnalysisModuleState } from "../components/GraphMap/types";
 import { useAnalysisModules } from "../hooks/graphAI/useAnalysisModules";
@@ -157,10 +156,6 @@ export const GraphMap = () => {
   >(new Set());
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1);
   const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false);
-  const [isCreateGraphPanelOpen, setIsCreateGraphPanelOpen] = useState(false);
-  const [createGraphRelationType, setCreateGraphRelationType] = useState<
-    GraphRelationType | undefined
-  >(undefined);
   const [isAIExpansionOpen, setIsAIExpansionOpen] = useState(false);
   const [expansionProgress, setExpansionProgress] =
     useState<InfiniteExpansionProgress | null>(null);
@@ -1124,11 +1119,6 @@ export const GraphMap = () => {
       <GraphMapToolbar
         onBack={() => navigate("/dashboard")}
         onRefresh={() => { void refetchMap(); }}
-        onCreateRelation={() => setIsCreatePanelOpen(true)}
-        onCreateGraph={() => {
-          setCreateGraphRelationType(undefined);
-          setIsCreateGraphPanelOpen(true);
-        }}
         onIntelligentAnalyze={() => setIsModularAnalysisOpen(true)}
         onAgentAnalysis={() => setIsAgentAnalysisOpen(true)}
         onCustomAnalysis={() => {
@@ -1628,18 +1618,6 @@ export const GraphMap = () => {
         onClose={() => setIsCreatePanelOpen(false)}
         onSubmit={handleCreateRelation}
         initialSourceId={selectedGraphId || undefined}
-      />
-
-      <QuickCreateGraphPanel
-        isOpen={isCreateGraphPanelOpen}
-        onClose={() => setIsCreateGraphPanelOpen(false)}
-        onSubmit={handleQuickCreateGraph}
-        relatedGraphId={selectedGraphId || undefined}
-        relatedGraphTitle={
-          graphById.get(selectedGraphId ?? '')?.title || undefined
-        }
-        defaultRelationType={createGraphRelationType}
-        domains={domainTree}
       />
 
       <Suspense fallback={null}>

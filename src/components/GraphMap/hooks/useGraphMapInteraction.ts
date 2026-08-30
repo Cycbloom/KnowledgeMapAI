@@ -55,6 +55,10 @@ export function useGraphMapInteraction({
   const [hasMoved, setHasMoved] = useState(false);
   const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null);
 
+  // 同步标记「本次按下后是否已发生真实平移拖动」，
+  // 用于 mouseup 时抑制节点 onClick，避免拖动画布后相机回跳。
+  const panMovedRef = useRef(false);
+
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionBox, setSelectionBox] = useState<{
     start: { x: number; y: number };
@@ -196,6 +200,25 @@ export function useGraphMapInteraction({
   useEffect(() => {
     updateTransformDOM(transformRef.current);
   }, [updateTransformDOM]);
+
+  // 捕获阶段监听 mousedown：在节点 stopPropagation 之前触发，
+  // 保证从顶点上也能拖动画布，并阻止浏览器原生文本选择/复制。
+  const handlePanStartCapture = useCallback(
+    (e: MouseEvent) => {
+      // 阻止原生文本选择与拖拽，避免在节点上按住滑动时复制文字
+      e.preventDefault();
+      if (e.button !== 0 || e.shiftKey || isSelecting) return;
+      setIsDragging(true);
+      setHasMoved(false);
+      panMovedRef.current = false;
+      mouseDownPos.current = { x: e.clientX, y: e.clientY };
+      dragStartRef.current = {
+        x: e.clientX - transformRef.current.x,
+        y: e.clientY - transformRef.current.y,
+      };
+    },
+    [isSelecting],
+  );
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
@@ -429,6 +452,7 @@ export function useGraphMapInteraction({
     svg.addEventListener("touchend", handleTouchEnd, options);
     svg.addEventListener("touchcancel", handleTouchEnd, options);
     svg.addEventListener("wheel", onWheel, options);
+    svg.addEventListener("mousedown", handlePanStartCapture, true);
 
     return () => {
       svg.removeEventListener("touchstart", handleTouchStart);
@@ -436,8 +460,16 @@ export function useGraphMapInteraction({
       svg.removeEventListener("touchend", handleTouchEnd);
       svg.removeEventListener("touchcancel", handleTouchEnd);
       svg.removeEventListener("wheel", onWheel);
+      svg.removeEventListener("mousedown", handlePanStartCapture, true);
     };
-  }, [svgNode, handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd]);
+  }, [
+    svgNode,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handlePanStartCapture,
+  ]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
@@ -489,6 +521,7 @@ export function useGraphMapInteraction({
 
         if (distance > 5) {
           setHasMoved(true);
+          panMovedRef.current = true;
         }
 
         const newTransform = {
@@ -550,6 +583,7 @@ export function useGraphMapInteraction({
 
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
+      panMovedRef.current = false;
       if (e.target === svgRef.current && !hasMoved) {
         setFocusedGraphId(null);
       }
@@ -630,6 +664,7 @@ export function useGraphMapInteraction({
     focusedGraphId,
     setFocusedGraphId,
     hasMoved,
+    panMovedRef,
     isSelecting,
     selectionBox,
     applyTransform,

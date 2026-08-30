@@ -44,6 +44,7 @@ interface GraphNodesProps {
   containerWidth: number;
   containerHeight: number;
   transformRef: React.MutableRefObject<{ x: number; y: number; k: number }>;
+  panMovedRef: React.MutableRefObject<boolean>;
 }
 
 const GraphNodesComponent: React.FC<GraphNodesProps> = ({
@@ -69,9 +70,13 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
   containerWidth,
   containerHeight,
   transformRef,
+  panMovedRef,
 }) => {
   const handleNodeClick = useCallback(
     (node: LayoutNode, e?: React.MouseEvent) => {
+      // 若本次按下发生了平移拖动，则视为拖画布而非点击节点，避免聚焦/回跳
+      if (panMovedRef.current) return;
+
       const graph = graphs.find((g) => g.id === node.id);
       if (!graph) return;
 
@@ -101,6 +106,7 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
       containerWidth,
       containerHeight,
       transformRef,
+      panMovedRef,
     ],
   );
 

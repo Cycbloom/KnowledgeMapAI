@@ -57,6 +57,7 @@ interface GraphMapCanvasProps {
   ) => void;
   onBoxSelection?: (graphIds: string[]) => void;
   selectedDomainIds?: Set<string>;
+  hoveredDomainId?: string | null;
   domainColorMap?: Map<string, string>;
   domainIdToInfo?: Map<string, { name: string; color: string }>;
   graphDomainMap?: Map<string, Set<string>>;
@@ -89,6 +90,7 @@ export const GraphMapCanvas = forwardRef<
       onMultiSelectGraph,
       onBoxSelection,
       selectedDomainIds = new Set(),
+      hoveredDomainId = null,
       domainColorMap = new Map(),
       domainIdToInfo,
       graphDomainMap = new Map(),
@@ -129,6 +131,7 @@ export const GraphMapCanvas = forwardRef<
       handleToggleLegend,
       animateCamera,
       svgCallbackRef,
+      panMovedRef,
     } = useGraphMapInteraction({
       ref,
       svgRef,
@@ -398,6 +401,8 @@ export const GraphMapCanvas = forwardRef<
             backgroundColor: colors.background,
             cursor: isDragging ? "grabbing" : "grab",
             touchAction: "none",
+            userSelect: "none",
+            WebkitUserSelect: "none",
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -420,6 +425,7 @@ export const GraphMapCanvas = forwardRef<
               graphs={graphs}
               zoomLevel={transform.k}
               selectedDomainIds={selectedDomainIds}
+              hoveredDomainId={hoveredDomainId}
               domainIdToInfo={domainIdToInfo}
             />
             <GraphEdges
@@ -440,34 +446,79 @@ export const GraphMapCanvas = forwardRef<
               {layout.nodes.map((node) => {
                 const domainSet = graphDomainMap.get(node.id);
                 if (!domainSet || domainSet.size === 0) return null;
-                const primaryId = Array.from(domainSet)[0] as string;
-                const info = domainIdToInfo?.get(primaryId);
-                const infoColor = info ? info.color : undefined;
-                const color: string | undefined =
-                  infoColor ?? domainColorMap.get(primaryId) ?? undefined;
-                if (!color) return null;
+
+                // 收集去重后的领域色（过滤无色项）
+                const colors: string[] = [];
+                const seenDomains = new Set<string>();
+                for (const id of domainSet as Set<string>) {
+                  if (seenDomains.has(id)) continue;
+                  seenDomains.add(id);
+                  const info = domainIdToInfo?.get(id);
+                  const c = info ? info.color : domainColorMap.get(id);
+                  if (c) colors.push(c);
+                }
+                if (colors.length === 0) return null;
+
                 const haloR = 50;
-                const active =
-                  selectedDomainIds.size === 0 || selectedDomainIds.has(primaryId);
+                const ringR = haloR - 2;
+                const anyActive =
+                  selectedDomainIds.size === 0 ||
+                  Array.from(domainSet as Set<string>).some((id) => selectedDomainIds.has(id));
+                const single = colors.length === 1;
+
+                // hover 联动：悬停某领域时，仅该领域节点保持明亮，其余降暗
+                const hoverDimming = hoveredDomainId !== null && hoveredDomainId !== undefined;
+                const hoverMatched =
+                  !hoverDimming ||
+                  (domainSet as Set<string>).has(hoveredDomainId as string);
+                // 同时匹配选中态：hoverDimming 时以 hover 为准，否则用 selection 状态
+                const lit = hoverDimming ? hoverMatched : anyActive;
+
                 return (
                   <g key={`dom-halo-${node.id}`}>
+                    {/* 基底色垫：单领域用其色，多领域用中性灰，避免叠色混杂 */}
                     <circle
                       cx={node.x}
                       cy={node.y}
                       r={haloR}
-                      fill={color}
-                      opacity={active ? 0.12 : 0.04}
+                      fill={single ? colors[0] : '#94a3b8'}
+                      opacity={single ? (lit ? 0.12 : 0.02) : (lit ? 0.08 : 0.02)}
                     />
-                    {/* 外部细色环，形成明确的颜色锚点 */}
-                    <circle
-                      cx={node.x}
-                      cy={node.y}
-                      r={haloR - 2}
-                      fill="none"
-                      stroke={color}
-                      strokeWidth={1.5}
-                      opacity={active ? 0.55 : 0.12}
-                    />
+                    {single ? (
+                      <circle
+                        cx={node.x}
+                        cy={node.y}
+                        r={ringR}
+                        fill="none"
+                        stroke={colors[0]}
+                        strokeWidth={1.5}
+                        opacity={lit ? 0.55 : 0.06}
+                      />
+                    ) : (
+                      /* 多领域：核心环按领域切成等分色段，顶部开始逆序分布 */
+                      <g>
+                        {colors.map((c, i) => {
+                          const pct = 100 / colors.length;
+                          const segmentGap = 3;
+                          return (
+                            <circle
+                              key={`${node.id}-seg-${i}`}
+                              cx={node.x}
+                              cy={node.y}
+                              r={ringR}
+                              fill="none"
+                              stroke={c}
+                              strokeWidth={2.2}
+                              pathLength={100}
+                              strokeDasharray={`${pct - segmentGap} ${100 - pct + segmentGap}`}
+                              strokeDashoffset={-i * pct}
+                              transform={`rotate(-90 ${node.x} ${node.y})`}
+                              opacity={lit ? 0.75 : 0.06}
+                            />
+                          );
+                        })}
+                      </g>
+                    )}
                   </g>
                 );
               })}
@@ -495,6 +546,7 @@ export const GraphMapCanvas = forwardRef<
               containerWidth={containerSize.width}
               containerHeight={containerSize.height}
               transformRef={transformRef}
+              panMovedRef={panMovedRef}
             />
           </g>
 

@@ -2,7 +2,7 @@ import { getSupabaseAdmin } from "../supabase";
 import { asyncTaskService } from "../services/asyncTaskService";
 import type { Task } from "@shared/types/common";
 import { aiService } from "../services/ai/aiService";
-import { getNextLevel } from "../utils/graphUtils";
+import { getNextLevel } from "../utils/levelUtils";
 import { createKnowledgePointWithGraphNode } from "../utils/nodeHelpers";
 import { logger } from "../utils/logger";
 import { appEventBus } from "../services/core/eventBus";

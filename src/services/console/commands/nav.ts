@@ -9,7 +9,8 @@ interface NavTarget {
 }
 
 const NAV_TARGETS: NavTarget[] = [
-  { name: 'home', path: '/', labelKey: 'layout.myGraphs', aliases: ['dashboard', 'graphs', '首页'] },
+  { name: 'home', path: '/', labelKey: 'layout.home', aliases: ['dashboard', '首页'] },
+  { name: 'graphs', path: '/graphs', labelKey: 'layout.graphs', aliases: ['graphs', '图谱', '图谱列表'] },
   { name: 'graph-map', path: '/graph-map', labelKey: 'layout.graphMap', aliases: ['map', '图谱地图'] },
   { name: 'study', path: '/study', labelKey: 'layout.studyCenter', aliases: ['学习中心'] },
   { name: 'learning', path: '/learning', labelKey: 'layout.breadcrumb.learningMode', aliases: ['学习模式'] },

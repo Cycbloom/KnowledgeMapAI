@@ -1,6 +1,8 @@
 {
   "appName": "知识图谱",
   "mainNavigation": "主导航",
+  "home": "首页",
+  "graphs": "图谱列表",
   "myGraphs": "我的图谱",
   "graphMap": "图谱地图",
   "studyCenter": "学习中心",
@@ -46,6 +48,7 @@
   },
   "breadcrumb": {
     "home": "首页",
+    "graphs": "图谱列表",
     "graphMap": "图谱地图",
     "studyCenter": "学习中心",
     "notes": "笔记",

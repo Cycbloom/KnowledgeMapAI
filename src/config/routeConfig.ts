@@ -31,6 +31,8 @@ export interface RouteRegistration {
 
 /** 导航项 label 的 i18n key，需在 layout.json（zh-CN 与 en-US）中存在。 */
 export type NavLabelKey =
+  | "layout.home"
+  | "layout.graphs"
   | "layout.myGraphs"
   | "layout.graphMap"
   | "layout.studyCenter"
@@ -78,7 +80,7 @@ export const routeRegistrations: RouteRegistration[] = [
     component: () => import("../pages/Dashboard").then((m) => ({ default: m.Dashboard })),
     options: { index: true, protected: true },
     layout: "protected",
-    title: "layout.breadcrumb.dashboard",
+    title: "layout.breadcrumb.home",
   },
   {
     path: "/profile",
@@ -103,15 +105,15 @@ export const routeRegistrations: RouteRegistration[] = [
   },
   {
     path: "/dashboard",
-    component: () => import("../pages/Dashboard").then((m) => ({ default: m.Dashboard })),
-    redirect: "/",
+    component: () => import("../pages/GraphsPage").then((m) => ({ default: m.GraphsPage })),
+    redirect: "/graphs",
     layout: "protected",
   },
   {
     path: "/graphs",
-    component: () => import("../pages/Dashboard").then((m) => ({ default: m.Dashboard })),
-    redirect: "/",
+    component: () => import("../pages/GraphsPage").then((m) => ({ default: m.GraphsPage })),
     layout: "protected",
+    title: "layout.breadcrumb.graphs",
   },
 
   // ---- graph ----
@@ -272,8 +274,9 @@ export const routeRegistrations: RouteRegistration[] = [
 
 /** 静态侧边/底部导航配置，按 order 升序（与原 getNavItems() 排序结果一致）。 */
 export const navItems: NavItemRegistration[] = [
-  { path: "/", label: "layout.myGraphs", icon: "BookOpen", order: 1, category: "main" },
-  { path: "/graph-map", label: "layout.graphMap", icon: "Network", order: 2, category: "main" },
+  { path: "/", label: "layout.home", icon: "Home", order: 1, category: "main" },
+  { path: "/graphs", label: "layout.graphs", icon: "BookOpen", order: 2, category: "more" },
+  { path: "/graph-map", label: "layout.graphMap", icon: "Network", order: 3, category: "main" },
   { path: "/notes", label: "layout.notes", icon: "NotebookPen", order: 5, category: "main" },
   { path: "/study", label: "layout.studyCenter", icon: "GraduationCap", order: 10, category: "main" },
   { path: "/learning-paths", label: "layout.learningPaths", icon: "Route", order: 11, category: "more" },

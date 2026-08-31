@@ -33,6 +33,8 @@ export const Breadcrumb: React.FC = () => {
   const getRouteLabel = (routePath: string): string | undefined => {
     switch (routePath) {
       case "/": return t('layout.breadcrumb.home');
+      case "/graphs": return t('layout.breadcrumb.graphs');
+      case "/dashboard": return t('layout.breadcrumb.graphs');
       case "/graph-map": return t('layout.breadcrumb.graphMap');
       case "/study": return t('layout.breadcrumb.studyCenter');
       case "/learning": return t('layout.breadcrumb.learningMode');

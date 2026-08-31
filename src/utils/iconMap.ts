@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Home,
   Network,
   GraduationCap,
   BarChart3,
@@ -21,6 +22,7 @@ import {
  */
 export const iconMap: Record<string, LucideIcon> = {
   BookOpen,
+  Home,
   Network,
   GraduationCap,
   BarChart3,

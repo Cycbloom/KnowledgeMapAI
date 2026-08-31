@@ -1,6 +1,8 @@
 {
   "appName": "Knowledge Graph",
   "mainNavigation": "Main Navigation",
+  "home": "Home",
+  "graphs": "Graphs",
   "myGraphs": "My Graphs",
   "graphMap": "Graph Map",
   "studyCenter": "Study Center",
@@ -46,6 +48,7 @@
   },
   "breadcrumb": {
     "home": "Home",
+    "graphs": "Graphs",
     "graphMap": "Graph Map",
     "studyCenter": "Study Center",
     "notes": "Notes",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -27,12 +27,18 @@ import { MasteryProgressBar } from "../MasteryProgressBar";
 import { useFormDraft } from "../../../hooks";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
 import { useKnowledgePointMastery } from "@/hooks/useKnowledgePointMastery";
+import { useQuestionConfigModal } from "@/hooks/useQuestionConfigModal";
 import {
   learningMaterialUrl,
   studyCenterUrl,
-  createQuizForKp,
   createQuizForKps,
 } from "@/utils/studyUrls";
+
+const GenerateCardsModal = lazy(() =>
+  import("../../Learning/GenerateCardsModal").then((module) => ({
+    default: module.GenerateCardsModal,
+  })),
+);
 
 interface SubtaskDraft {
   title: string;
@@ -90,6 +96,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     () => Array.from(new Set(subtasks.map((s) => s.knowledge_point_id))),
     [subtasks],
   );
+  const questionConfig = useQuestionConfigModal(graphId);
   const { masteryByKp } = useKnowledgePointMastery(kpIds);
 
   useEffect(() => {
@@ -471,7 +478,16 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                         <BookOpen size={15} />
                       </button>
                       <button
-                        onClick={() => navigate(studyCenterUrl(kpId, graphId))}
+                        onClick={async () => {
+                          // 无题时先打开「题目配置」（练习用），避免打开学习中心后无可练习内容
+                          const cards =
+                            (await api.study.getCards({ knowledge_point_id: kpId })) ?? [];
+                          if (cards.length === 0) {
+                            questionConfig.openFor(kpId, subtask.title);
+                            return;
+                          }
+                          navigate(studyCenterUrl(kpId, graphId));
+                        }}
                         className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
                         title={t('scheduler.taskWorkbench.subtaskList.actions.studyCenter')}
                         aria-label={t('scheduler.taskWorkbench.subtaskList.actions.studyCenter')}
@@ -479,7 +495,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                         <GraduationCap size={15} />
                       </button>
                       <button
-                        onClick={() => navigate(createQuizForKp(kpId, graphId))}
+                        onClick={() => questionConfig.openFor(kpId, subtask.title)}
                         className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
                         title={t('scheduler.taskWorkbench.subtaskList.actions.createQuiz')}
                         aria-label={t('scheduler.taskWorkbench.subtaskList.actions.createQuiz')}
@@ -538,6 +554,38 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           isDangerous={false}
         />
       )}
+
+      {/* 题目配置面板（练习用，区别于创建测验） */}
+      <Suspense fallback={null}>
+        <GenerateCardsModal
+          isOpen={questionConfig.isOpen}
+          onClose={questionConfig.close}
+          onGenerate={questionConfig.onGenerate}
+          nodeTitle={questionConfig.target?.title}
+          graphId={graphId ?? undefined}
+          selectedNodes={
+            questionConfig.target
+              ? [
+                  {
+                    id: questionConfig.target.kpId,
+                    title: questionConfig.target.title,
+                  },
+                ]
+              : []
+          }
+          graphNodes={
+            questionConfig.target
+              ? [
+                  {
+                    id: questionConfig.target.kpId,
+                    title: questionConfig.target.title,
+                  },
+                ]
+              : []
+          }
+          graphEdges={[]}
+        />
+      </Suspense>
     </div>
   );
 };

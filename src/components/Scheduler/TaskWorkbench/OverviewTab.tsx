@@ -23,8 +23,11 @@ import { LEARNING_STATE_CONFIGS, type LearningState } from "@shared/types";
 import { EmptyState } from "../../common/EmptyState";
 import { MasteryProgressBar } from "../MasteryProgressBar";
 import { useKnowledgePointMastery } from "@/hooks/useKnowledgePointMastery";
-import { useLevelTestNotificationStore } from "@/store/useLevelTestNotificationStore";
-import { message } from "@/utils/messageHelper";
+import { useQuestionConfigModal } from "@/hooks/useQuestionConfigModal";
+import type {
+  LoopsDecision,
+  SmallLoopDecision,
+} from "@/services/api/modules/scheduler/orchestrator";
 import {
   learningMaterialUrl,
   studyCenterUrl,
@@ -36,7 +39,6 @@ const GenerateCardsModal = lazy(() =>
     default: module.GenerateCardsModal,
   })),
 );
-import type { GenerateCardsFullConfig } from "../../Learning/GenerateCardsModal";
 
 interface OverviewTabProps {
   taskId: string;
@@ -61,11 +63,40 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const navigate = useNavigate();
   const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isGenModalOpen, setIsGenModalOpen] = useState(false);
-  const [pendingTarget, setPendingTarget] = useState<{
-    kpId: string;
-    title: string;
-  } | null>(null);
+  const questionConfig = useQuestionConfigModal(graphId);
+  const [loops, setLoops] = useState<LoopsDecision | null>(null);
+  const [nextAction, setNextAction] = useState<
+    | (NonNullable<SmallLoopDecision["nextAction"]> & {
+        graphId?: string;
+        url?: string;
+        taskTitle?: string;
+      })
+    | undefined
+  >(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.scheduler
+      .getLoops()
+      .then((data) => {
+        if (!cancelled) setLoops(data);
+      })
+      .catch(() => {
+        // 调度决策拉取失败不影响概览其余部分，静默降级
+      });
+    api.scheduler
+      .getNextActionForTask(taskId)
+      .then((res) => {
+        if (!cancelled) setNextAction(res.action ?? undefined);
+      })
+      .catch(() => {
+        // 同步失败降级为无推荐动作
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId]);
 
   const loadSubtasks = async () => {
     try {
@@ -115,6 +146,22 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const kpId = current?.knowledge_point_id;
   const currentMastery = kpId ? masteryByKp.get(kpId) : undefined;
 
+  // 大/小循环调度决策派生（接入 getLoops）
+  const bigType = loops?.big.type;
+  const isReviewInterrupt = bigType === "review";
+  const isThisGraphAdvancing =
+    bigType === "graph" && loops?.big.graphTask?.taskId === taskId;
+  const schedulerNextSubtaskTitle = isThisGraphAdvancing
+    ? loops?.small?.nextSubtask?.title
+    : undefined;
+  const otherGraphTitle =
+    bigType === "graph" && !isThisGraphAdvancing
+      ? loops?.big.graphTask?.taskTitle
+      : undefined;
+  const reviewKpId = loops?.big.review?.knowledgePointId;
+  const reviewGraphId = loops?.big.review?.graphId;
+  const reviewTitle = loops?.big.review?.title;
+
   const completedCount = useMemo(
     () => subtasks.filter((s) => s.status === "completed").length,
     [subtasks],
@@ -157,12 +204,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     extra?: { title: string; icon: React.ReactNode; onClick: () => void };
   }
 
-  // 始终打开题目生成面板（跳过空题判断）
-  const openGenerateModal = (kpId: string, title: string) => {
-    setPendingTarget({ kpId, title });
-    setIsGenModalOpen(true);
-  };
-
   const actions: OverviewAction[] | [] =
     current && kpId
       ? [
@@ -185,108 +226,22 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             onClick: async () => {
               const cards = (await api.study.getCards({ knowledge_point_id: kpId })) ?? [];
               if (cards.length === 0) {
-                // 没有题目 → 打开生成题目面板
-                openGenerateModal(kpId, current.title);
+                // 没有题目 → 打开「题目配置」面板（练习用，区别于创建测验）
+                questionConfig.openFor(kpId, current.title);
                 return;
               }
               // 已有题目 → 直接打开学习中心练习
               navigate(studyCenterUrl(kpId, graphId));
             },
-            // 小按钮：跳过判断，始终进入题目生成
+            // 小按钮：跳过判断，始终进入题目配置
             extra: {
               title: t("scheduler.taskWorkbench.overview.createQuestions"),
               icon: <Plus size={16} />,
-              onClick: () => openGenerateModal(kpId, current.title),
+              onClick: () => questionConfig.openFor(kpId, current.title),
             },
           },
         ]
       : [];
-
-  // 生成题目：提交后台任务，成功后经全局 LevelTestNotification 弹窗提示并进入练习
-  const handleGenerateCards = async (
-    config: GenerateCardsFullConfig & { targetNodeIds: string[] },
-  ) => {
-    const target = pendingTarget;
-    if (!target) return;
-
-    const cardsPerTypeSrc = config.cardsPerType;
-    const cardsPerTypeNum: Record<string, number> | undefined = cardsPerTypeSrc
-      ? (() => {
-          const out: Record<string, number> = {};
-          for (const [k, v] of Object.entries(cardsPerTypeSrc)) {
-            if (v !== undefined) out[k] = Number(v);
-          }
-          return Object.keys(out).length > 0 ? out : undefined;
-        })()
-      : undefined;
-
-    const countPerDiffSrc = config.countPerDifficulty;
-    const countPerDiffNum:
-      | { easy?: number; medium?: number; hard?: number }
-      | undefined = countPerDiffSrc
-      ? (() => {
-          const out: { easy?: number; medium?: number; hard?: number } = {};
-          for (const k of ["easy", "medium", "hard"] as const) {
-            const v = countPerDiffSrc[k];
-            if (v !== undefined) out[k] = Number(v);
-          }
-          return Object.values(out).some((x) => x !== undefined) ? out : undefined;
-        })()
-      : undefined;
-
-    const countMatrixSrc = config.countMatrix;
-    const countMatrixNum =
-      countMatrixSrc && Object.keys(countMatrixSrc).length > 0
-        ? Object.fromEntries(
-            Object.entries(countMatrixSrc).map(([k, v]) => [
-              k,
-              {
-                easy: Number(v.easy ?? 0),
-                medium: Number(v.medium ?? 0),
-                hard: Number(v.hard ?? 0),
-              },
-            ]),
-          )
-        : undefined;
-
-    try {
-      const result = await api.ai.batchGenerateCards([target.kpId], {
-        count: config.count,
-        types: config.types,
-        difficulty: config.difficulty,
-        coverage: config.coverage,
-        custom_prompt: config.customPrompt || undefined,
-        cards_per_type: cardsPerTypeNum,
-        count_per_difficulty: countPerDiffNum as
-          | { easy?: number; medium?: number; hard?: number }
-          | undefined,
-        count_matrix: countMatrixNum,
-      });
-      if (result.success) {
-        if (result.taskIds?.length) {
-          setIsGenModalOpen(false);
-          setPendingTarget(null);
-          useLevelTestNotificationStore
-            .getState()
-            .startGenerationTracking(
-              result.taskIds,
-              target.kpId,
-              graphId ?? "",
-              "learning",
-            );
-        } else {
-          message.success(t("learning.cards.taskSubmitted"));
-        }
-      } else {
-        const errMsg = result.message || result.error || t("learning.cards.unknownError");
-        message.error(t("learning.cards.submitFailed", { error: errMsg }));
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : t("learning.cards.unknownError");
-      message.error(t("learning.cards.submitFailed", { error: errorMessage }));
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -362,6 +317,55 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </span>
           )}
         </div>
+
+        {/* 调度决策条（接入大/小循环） */}
+        {isReviewInterrupt && reviewKpId ? (
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2">
+            <span className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
+              <Clock size={13} className="shrink-0" />
+              {t("scheduler.taskWorkbench.overview.schedulerReviewHint", {
+                title: reviewTitle ?? "",
+              })}
+            </span>
+            <button
+              onClick={() =>
+                reviewKpId && navigate(studyCenterUrl(reviewKpId, reviewGraphId))
+              }
+              className="shrink-0 px-2.5 py-1 text-xs font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors"
+            >
+              {t("scheduler.taskWorkbench.overview.schedulerGoReview")}
+            </button>
+          </div>
+        ) : isThisGraphAdvancing && schedulerNextSubtaskTitle ? (
+          <div className="mt-3 text-xs text-primary-600 dark:text-primary-400 flex items-center gap-2">
+            <ListChecks size={13} className="shrink-0" />
+            {t("scheduler.taskWorkbench.overview.schedulerNextSubtask", {
+              title: schedulerNextSubtaskTitle,
+            })}
+          </div>
+        ) : otherGraphTitle ? (
+          <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            {t("scheduler.taskWorkbench.overview.schedulerOtherGraph", {
+              title: otherGraphTitle,
+            })}
+          </div>
+        ) : bigType === "empty" ? (
+          <div className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+            {t("scheduler.taskWorkbench.overview.schedulerIdle")}
+          </div>
+        ) : null}
+
+        {/* 执行动作：把小循环推荐的下一步直接喂给跳转 */}
+        {isThisGraphAdvancing && nextAction?.url && nextAction.activity && (
+          <button
+            onClick={() => nextAction.url && navigate(nextAction.url)}
+            className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 rounded-lg transition-colors"
+          >
+            {t("scheduler.taskWorkbench.overview.schedulerGoNext", {
+              action: t(`learning.stageLabels.${nextAction.activity}`),
+            })}
+          </button>
+        )}
       </section>
 
       {/* 当前子任务 + 多入口卡片 */}
@@ -450,25 +454,32 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         </section>
       ) : null}
 
-      {/* 生成题目面板：仅当当前子任务无题目时打开 */}
+      {/* 题目配置面板（练习用，区别于创建测验） */}
       <Suspense fallback={null}>
         <GenerateCardsModal
-          isOpen={isGenModalOpen}
-          onClose={() => {
-            setIsGenModalOpen(false);
-            setPendingTarget(null);
-          }}
-          onGenerate={handleGenerateCards}
-          nodeTitle={pendingTarget?.title}
+          isOpen={questionConfig.isOpen}
+          onClose={questionConfig.close}
+          onGenerate={questionConfig.onGenerate}
+          nodeTitle={questionConfig.target?.title}
           graphId={graphId ?? undefined}
           selectedNodes={
-            pendingTarget
-              ? [{ id: pendingTarget.kpId, title: pendingTarget.title }]
+            questionConfig.target
+              ? [
+                  {
+                    id: questionConfig.target.kpId,
+                    title: questionConfig.target.title,
+                  },
+                ]
               : []
           }
           graphNodes={
-            pendingTarget
-              ? [{ id: pendingTarget.kpId, title: pendingTarget.title }]
+            questionConfig.target
+              ? [
+                  {
+                    id: questionConfig.target.kpId,
+                    title: questionConfig.target.title,
+                  },
+                ]
               : []
           }
           graphEdges={[]}

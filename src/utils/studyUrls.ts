@@ -23,15 +23,6 @@ export const learningMaterialUrl = (nodeId: string, graphId?: string): string =>
 export const studyCenterUrl = (nodeId: string, graphId?: string): string =>
   `/study${buildQuery({ node_id: nodeId, ...withGraph(graphId) })}`;
 
-/** 为单个知识点创建题目 */
-export const createQuizForKp = (nodeId: string, graphId?: string): string =>
-  `/study${buildQuery({
-    node_id: nodeId,
-    view: "quizzes",
-    create: "1",
-    ...withGraph(graphId),
-  })}`;
-
 /** 面向多个知识点创建测验（用户在图内自选），跳转图谱级创建流程 */
 export const createQuizForGraph = (graphId?: string): string =>
   `/study${buildQuery({
@@ -40,10 +31,11 @@ export const createQuizForGraph = (graphId?: string): string =>
     ...withGraph(graphId),
   })}`;
 
-/** 为多个知识点创建跨知识点测验 */
+/** 为多个知识点创建跨知识点测验（需要 view=quizzes + create=1 才进入测验创建面板） */
 export const createQuizForKps = (kpIds: string[], graphId?: string): string =>
   `/study${buildQuery({
     node_ids: kpIds.join(","),
+    view: "quizzes",
     create: "1",
     ...withGraph(graphId),
   })}`;

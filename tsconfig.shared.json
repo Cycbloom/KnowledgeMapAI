@@ -9,6 +9,6 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.shared.tsbuildinfo",
     "types": ["node"]
   },
-  "include": ["shared/**/*"],
+  "include": ["shared/**/*", "shared/i18n/locales/**/*.json"],
   "exclude": ["**/*.test.ts"]
 }

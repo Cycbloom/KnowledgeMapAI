@@ -1606,6 +1606,11 @@
       "studyGraph": "学习图谱: {{title}}"
     }
   },
+  "graphLearning": {
+    "defaults": {
+      "pathTitle": "学习路径"
+    }
+  },
   "calendarService": {
     "calName": "KnowledgeMap 任务日历",
     "calDesc": "KnowledgeMap 任务调度系统的日历同步",

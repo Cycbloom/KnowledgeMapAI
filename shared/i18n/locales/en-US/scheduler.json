@@ -1606,6 +1606,11 @@
       "studyGraph": "Study graph: {{title}}"
     }
   },
+  "graphLearning": {
+    "defaults": {
+      "pathTitle": "Learning Path"
+    }
+  },
   "calendarService": {
     "calName": "KnowledgeMap Task Calendar",
     "calDesc": "Calendar sync for KnowledgeMap task scheduling system",

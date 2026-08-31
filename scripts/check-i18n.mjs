@@ -16,11 +16,14 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
-const localesDir = join(projectRoot, "src", "i18n", "locales");
+const LOCALE_ROOTS = [
+  join(projectRoot, "src", "i18n", "locales"),
+  join(projectRoot, "shared", "i18n", "locales"),
+];
 const srcDir = join(projectRoot, "src");
 
-const EN_DIR = join(localesDir, "en-US");
-const ZH_DIR = join(localesDir, "zh-CN");
+const EN_DIRS = LOCALE_ROOTS.map((root) => join(root, "en-US"));
+const ZH_DIRS = LOCALE_ROOTS.map((root) => join(root, "zh-CN"));
 
 /**
  * 递归提取对象的扁平化 key 路径（用点号连接）
@@ -55,27 +58,45 @@ function extractKeyPaths(obj, prefix = "") {
  * @param {string} dir
  * @returns {Set<string>}
  */
-function getJsonFiles(dir) {
-  try {
-    return new Set(
-      readdirSync(dir).filter((f) => f.endsWith(".json")),
-    );
-  } catch {
-    return new Set();
+function getJsonFiles(dirs) {
+  const files = new Set();
+  for (const dir of dirs) {
+    try {
+      for (const f of readdirSync(dir)) {
+        if (f.endsWith(".json")) files.add(f);
+      }
+    } catch {
+      // dir 不存在则跳过
+    }
   }
+  return files;
+}
+
+function findFile(baseDirs, fileName) {
+  for (const dir of baseDirs) {
+    const p = join(dir, fileName);
+    try {
+      readFileSync(p, "utf-8");
+      return p;
+    } catch {
+      // 尝试下一个 base
+    }
+  }
+  return null;
 }
 
 /**
- * 加载目录下所有 JSON 文件，返回带命名空间前缀的 key 集合
- * @param {string} dir
+ * 加载目录组下所有 JSON 文件，返回带命名空间前缀的 key 集合
+ * @param {string[]} dirs
  * @returns {Set<string>} - 全部扁平化 key（含命名空间前缀）
  */
-function loadAllKeys(dir) {
+function loadAllKeys(dirs) {
   const result = new Set();
-  const files = getJsonFiles(dir);
+  const files = getJsonFiles(dirs);
   for (const file of files) {
     const namespace = file.replace(/\.json$/, "");
-    const filePath = join(dir, file);
+    const filePath = findFile(dirs, file);
+    if (!filePath) continue;
     const content = readFileSync(filePath, "utf-8");
     const data = JSON.parse(content);
     const keys = extractKeyPaths(data, namespace);
@@ -149,8 +170,8 @@ console.log("🔍 i18n key 自动化校验报告");
 console.log("=".repeat(60));
 
 // 1. 加载两边 key 集合
-const enAllKeys = loadAllKeys(EN_DIR);
-const zhAllKeys = loadAllKeys(ZH_DIR);
+const enAllKeys = loadAllKeys(EN_DIRS);
+const zhAllKeys = loadAllKeys(ZH_DIRS);
 
 // 2. 对比两边 key 集合
 console.log("\n📐 一、Key 集合对比（zh-CN vs en-US）\n");

@@ -1,7 +1,6 @@
 import dashboard from './dashboard.json';
 import documentTitle from './documentTitle.json';
 import focusTimer from './focusTimer.json';
-import study from './study.json';
 import promptConfig from './promptConfig.json';
 import errors from './errors.json';
 import common from './common.json';
@@ -11,10 +10,8 @@ import settings from './settings.json';
 import setup from './setup.json';
 import layout from './layout.json';
 import console from './console.json';
-import graphMap from './graphMap.json';
 import graphLevel from './graphLevel.json';
 import learningPaths from './learningPaths.json';
-import learningPath from './learningPath.json';
 import ai from './ai.json';
 import learning from './learning.json';
 import statistics from './statistics.json';
@@ -23,7 +20,6 @@ import learningStats from './learningStats.json';
 import calendar from './calendar.json';
 import achievements from './achievements.json';
 import tasks from './tasks.json';
-import scheduler from './scheduler.json';
 import graphEditor from './graphEditor.json';
 import autoGraph from './autoGraph.json';
 import prompts from './prompts.json';
@@ -51,16 +47,12 @@ import unifiedWorkbench from './unifiedWorkbench.json';
 import schedulerStats from './schedulerStats.json';
 import combinedViewPage from './combinedViewPage.json';
 import graphStyleSettings from './graphStyleSettings.json';
-import collaborators from './collaborators.json';
 import notifications from './notifications.json';
-import notes from './notes.json';
-import quiz from './quiz.json';
 import conceptAggregation from './conceptAggregation.json';
 import appearance from './appearance.json';
 import shortcuts from './shortcuts.json';
 import form from './form.json';
 import toast from './toast.json';
-import relationshipTypes from './relationshipTypes.json';
 import learningStatus from './learningStatus.json';
 import syncStatus from './syncStatus.json';
 import pwaDiagnostics from './pwaDiagnostics.json';
@@ -70,6 +62,18 @@ import tutor from './tutor.json';
 import pwaInstall from './pwaInstall.json';
 import tags from './tags.json';
 import capture from './capture.json';
+import { zhNameSpaces } from '@shared/i18n';
+
+const {
+  scheduler,
+  study,
+  learningPath,
+  graphMap,
+  collaborators,
+  notes,
+  quiz,
+  relationshipTypes,
+} = zhNameSpaces;
 
 const zhCN = {
   dashboard,

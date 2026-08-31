@@ -12,10 +12,13 @@ import { resolve, dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const localesDir = resolve(__dirname, "../src/i18n/locales");
+const LOCALE_ROOTS = [
+  resolve(__dirname, "../src/i18n/locales"),
+  resolve(__dirname, "../shared/i18n/locales"),
+];
 
-const EN_DIR = join(localesDir, "en-US");
-const ZH_DIR = join(localesDir, "zh-CN");
+const EN_DIRS = LOCALE_ROOTS.map((root) => join(root, "en-US"));
+const ZH_DIRS = LOCALE_ROOTS.map((root) => join(root, "zh-CN"));
 
 const useJsonOutput = process.argv.includes("--json");
 
@@ -39,24 +42,42 @@ function extractKeyPaths(obj: unknown, prefix = ""): string[] {
   return paths;
 }
 
-function getJsonFiles(dir: string): Set<string> {
-  try {
-    return new Set(
-      readdirSync(dir).filter((f) => f.endsWith(".json")),
-    );
-  } catch {
-    return new Set();
+function getJsonFiles(dirs: string[]): Set<string> {
+  const files = new Set<string>();
+  for (const dir of dirs) {
+    try {
+      for (const f of readdirSync(dir)) {
+        if (f.endsWith(".json")) files.add(f);
+      }
+    } catch {
+      // dir 不存在则跳过
+    }
   }
+  return files;
 }
 
-function loadJson(filePath: string): unknown {
+function findFile(baseDirs: string[], fileName: string): string | null {
+  for (const dir of baseDirs) {
+    const p = join(dir, fileName);
+    try {
+      readFileSync(p, "utf-8");
+      return p;
+    } catch {
+      // 尝试下一个 base
+    }
+  }
+  return null;
+}
+
+function loadJson(filePath: string | null): unknown {
+  if (!filePath) return null;
   const content = readFileSync(filePath, "utf-8");
   return JSON.parse(content);
 }
 
 // --- Main ---
-const enFiles = getJsonFiles(EN_DIR);
-const zhFiles = getJsonFiles(ZH_DIR);
+const enFiles = getJsonFiles(EN_DIRS);
+const zhFiles = getJsonFiles(ZH_DIRS);
 
 const allFiles = new Set([...enFiles, ...zhFiles]);
 const sortedFiles = [...allFiles].sort();
@@ -90,8 +111,8 @@ for (const file of sortedFiles) {
     continue;
   }
 
-  const enData = loadJson(join(EN_DIR, file));
-  const zhData = loadJson(join(ZH_DIR, file));
+  const enData = loadJson(findFile(EN_DIRS, file));
+  const zhData = loadJson(findFile(ZH_DIRS, file));
 
   const enKeys = new Set(extractKeyPaths(enData));
   const zhKeys = new Set(extractKeyPaths(zhData));

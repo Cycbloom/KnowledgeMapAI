@@ -3,6 +3,7 @@ import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { taskLinkService } from "../../services/scheduler";
+import { fetchLinkMetadata } from "../../services/scheduler/linkMetadataService";
 
 const router = Router();
 
@@ -39,6 +40,21 @@ const linkParamsSchema = z.object({
   id: z.string().uuid("无效的任务ID"),
   linkId: z.string().uuid("无效的链接ID"),
 });
+
+const metadataBodySchema = z.object({
+  url: z.string().url("无效的链接地址"),
+});
+
+router.post(
+  "/tasks/link-metadata",
+  requireAuth,
+  validate({ body: metadataBodySchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { url } = req.body;
+    const metadata = await fetchLinkMetadata(url as string);
+    res.json({ success: true, data: metadata });
+  },
+);
 
 router.post(
   "/tasks/:id/links",

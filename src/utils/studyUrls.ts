@@ -31,10 +31,10 @@ export const createQuizForGraph = (graphId?: string): string =>
     ...withGraph(graphId),
   })}`;
 
-/** 为多个知识点创建跨知识点测验（需要 view=quizzes + create=1 才进入测验创建面板） */
+/** 为多个知识点创建跨知识点测验（kp_ids 为预选知识点；需要 view=quizzes + create=1 才进入测验创建面板） */
 export const createQuizForKps = (kpIds: string[], graphId?: string): string =>
   `/study${buildQuery({
-    node_ids: kpIds.join(","),
+    kp_ids: kpIds.join(","),
     view: "quizzes",
     create: "1",
     ...withGraph(graphId),

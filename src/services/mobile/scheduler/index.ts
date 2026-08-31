@@ -296,6 +296,10 @@ export const mobileSchedulerApi: ISchedulerApi = {
   advanceLearningLoop: notSupported("advanceLearningLoop"),
   getActiveLearningLoop: notSupported("getActiveLearningLoop"),
   startLearningWithTask: notSupported("startLearningWithTask"),
+  getNextStep: notSupported("getNextStep"),
+  getLoops: notSupported("getLoops"),
+  getReviewInterrupt: notSupported("getReviewInterrupt"),
+  getNextActionForTask: notSupported("getNextActionForTask"),
 
   // --- ISchedulerSystemTasksApi (entirely not supported on mobile) ---
   getSystemTasks: notSupported("getSystemTasks"),

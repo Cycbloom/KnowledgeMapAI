@@ -66,6 +66,55 @@ export interface NextStepDecision {
   overdueReviewCount: number;
 }
 
+/** 大循环决策：此刻该推进哪个学习图谱大任务（或先记忆打断复习） */
+export interface BigLoopDecision {
+  type: "review" | "graph" | "empty";
+  interrupted: boolean;
+  graphTask?: {
+    taskId: string;
+    taskTitle: string;
+    graphId?: string;
+    queueLevel: number;
+    priority: number;
+    deadline?: string;
+    score: number;
+  };
+  review?: NextStepDecision["review"];
+  reason: string;
+  overdueReviewCount: number;
+}
+
+/** 小循环决策：在大循环选定的图谱大任务内，下一个该做的知识点子任务 + 阶段推进建议 */
+export interface SmallLoopDecision {
+  taskId: string;
+  nextSubtask?: {
+    id: string;
+    title?: string;
+    knowledgePointId?: string;
+    learningState?: string;
+    position?: number;
+    masteryLevel?: number;
+  };
+  subtaskProgress?: { total: number; completed: number };
+  /** 下一步动作建议（基于掌握度阈值自动推进 learning→practice→review→quiz） */
+  nextAction?: {
+    subtaskId: string;
+    knowledgePointId?: string;
+    currentState?: "learning" | "review" | "practice" | "quiz";
+    activity: "learning" | "review" | "practice" | "quiz";
+    recommendedState: "learning" | "review" | "practice" | "quiz";
+    mastery: number;
+    reason: string;
+  };
+  reason: string;
+}
+
+/** 大循环 + 小循环两层决策 */
+export interface LoopsDecision {
+  big: BigLoopDecision;
+  small?: SmallLoopDecision;
+}
+
 export const orchestratorApi = {
   startLearningLoop: async (knowledgePointId?: string, graphId?: string) => {
     return requestData<LearningLoop>("/scheduler/learning-loops", {
@@ -109,6 +158,27 @@ export const orchestratorApi = {
       ? `?overdue_threshold=${overdueThreshold}`
       : "";
     return requestData<NextStepDecision>(`/scheduler/next-step${params}`);
+  },
+
+  /** 大循环 + 小循环两层决策 */
+  getLoops: async (overdueThreshold?: number) => {
+    const params = overdueThreshold
+      ? `?overdue_threshold=${overdueThreshold}`
+      : "";
+    return requestData<LoopsDecision>(`/scheduler/decision/loops${params}`);
+  },
+
+  /** 执行动作：给定图谱大任务返回小循环「下一步」对应跳转 */
+  getNextActionForTask: async (taskId: string) => {
+    return requestData<{
+      action:
+        | (SmallLoopDecision["nextAction"] & {
+            graphId?: string;
+            url?: string;
+            taskTitle?: string;
+          })
+        | null;
+    }>(`/scheduler/decision/next-action?task_id=${encodeURIComponent(taskId)}`);
   },
 
   /** 是否需要记忆打断（供 UI 提示） */

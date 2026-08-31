@@ -1,6 +1,11 @@
 // R31: Public API contract file. The actual `schedulerApi` export has inferred
 // return types; this contract is only used for compile-time satisfaction check.
 import type {
+  LoopsDecision,
+  NextStepDecision,
+  SmallLoopDecision,
+} from "../modules/scheduler/orchestrator";
+import type {
   CreateUserTaskData,
   UpdateUserTaskData,
   UserTaskFilters,
@@ -286,6 +291,10 @@ export interface ISchedulerOrchestratorApi {
   advanceLearningLoop: (loopId: string) => Promise<LearningLoop>;
   getActiveLearningLoop: (knowledgePointId?: string) => Promise<LearningLoop | null>;
   startLearningWithTask: (knowledgePointId: string, graphId?: string) => Promise<LearningLoop | null>;
+  getNextStep: (overdueThreshold?: number) => Promise<NextStepDecision>;
+  getLoops: (overdueThreshold?: number) => Promise<LoopsDecision>;
+  getReviewInterrupt: () => Promise<{ overdueCount: number; shouldInterrupt: boolean }>;
+  getNextActionForTask: (taskId: string) => Promise<{ action: (SmallLoopDecision["nextAction"] & { graphId?: string; url?: string; taskTitle?: string }) | null }>;
 }
 
 export interface ISchedulerSystemTasksApi {

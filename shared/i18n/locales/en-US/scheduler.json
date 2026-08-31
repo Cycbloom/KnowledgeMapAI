@@ -574,7 +574,13 @@
       "cardPracticeTitle": "Practice questions",
       "cardPracticeDesc": "Practice \"{{title}}\" in Study Center",
       "createQuiz": "Create Quiz",
-      "createQuestions": "Create questions"
+      "createQuestions": "Create questions",
+      "schedulerReviewHint": "Suggested review: \"{{title}}\"",
+      "schedulerGoReview": "Review",
+      "schedulerNextSubtask": "Small-loop next: {{title}}",
+      "schedulerOtherGraph": "Scheduling prioritizes \"{{title}}\"",
+      "schedulerIdle": "No learning big task to advance",
+      "schedulerGoNext": "Next: {{action}}"
     },
     "progressDetail": {
       "notePlaceholder": "Add note...",

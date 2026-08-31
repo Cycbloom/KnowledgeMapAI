@@ -574,7 +574,13 @@
       "cardPracticeTitle": "练习做题",
       "cardPracticeDesc": "在学习中心练习「{{title}}」",
       "createQuiz": "创建测验",
-      "createQuestions": "创建题目"
+      "createQuestions": "创建题目",
+      "schedulerReviewHint": "建议先复习「{{title}}」",
+      "schedulerGoReview": "去复习",
+      "schedulerNextSubtask": "小循环下一步：{{title}}",
+      "schedulerOtherGraph": "当前调度优先推进「{{title}}」",
+      "schedulerIdle": "暂无待推进的学习大任务",
+      "schedulerGoNext": "下一步：{{action}}"
     },
     "progressDetail": {
       "notePlaceholder": "添加备注...",

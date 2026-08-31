@@ -392,22 +392,37 @@ export class TaskRecommendationService {
 
     const { data: tasks, error } = await notDeleted(client
       .from("user_tasks")
-      .select(
-        `
-        *,
-        knowledge_graphs!left(
-          id,
-          deleted_at
-        )
-      `,
-      )
+      .select("*")
       .eq("user_id", userId)
-      .in("status", ["pending", "paused"])
+      // 含 in_progress：进行中/暂停的队列任务也应能被调度到（首页「下一步」/ 推荐）
+      .in("status", ["pending", "paused", "in_progress"])
       )
       .order("priority", { ascending: false });
 
     if (error || !tasks) {
       return [];
+    }
+
+    // 过滤掉关联了已删除图谱的任务（user_tasks↔knowledge_graphs 存在两条外键，
+    // JOIN 会歧义报错，故分两步查询：先取任务，再单独查图谱软删状态）
+    const graphIds = Array.from(
+      new Set(
+        tasks
+          .map((t) => t.graph_id)
+          .filter((g): g is string => !!g),
+      ),
+    );
+    const deletedGraphIds = new Set<string>();
+    if (graphIds.length > 0) {
+      const { data: graphs } = await notDeleted(
+        client
+          .from("knowledge_graphs")
+          .select("id, deleted_at")
+          .in("id", graphIds),
+      );
+      for (const g of graphs ?? []) {
+        if (g.deleted_at) deletedGraphIds.add(g.id);
+      }
     }
 
     // 过滤掉关联了已删除图谱的任务
@@ -416,17 +431,9 @@ export class TaskRecommendationService {
       if (task.task_type !== "graph_learning") {
         return true;
       }
-
-      // 图谱学习任务，检查图谱是否被删除
-      const graphData = task.knowledge_graphs;
-      if (!graphData || (Array.isArray(graphData) && graphData.length === 0)) {
-        // 没有关联图谱，可能是数据不一致，但仍然保留
-        return true;
-      }
-
-      // 检查图谱是否被软删除
-      const graph = Array.isArray(graphData) ? graphData[0] : graphData;
-      return !graph.deleted_at;
+      // 图谱学习任务，检查图谱是否被软删除；无关联图谱则保留（数据可能不一致）
+      if (!task.graph_id) return true;
+      return !deletedGraphIds.has(task.graph_id);
     });
 
     const efficiencyData = await this.calculateEfficiencyData(client, userId);

@@ -739,6 +739,16 @@ export class TaskService {
       .order("started_at", { ascending: false })
       .limit(20);
 
+    const { count: focusSessionCount, error: fsCountError } = await client
+      .from("focus_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("task_id", taskId);
+    if (fsCountError) {
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
+        message: `Failed to count focus sessions: ${fsCountError.message}`,
+      });
+    }
+
     const { data: subtasks } = await client
       .from("task_subtasks")
       .select("*")
@@ -765,6 +775,7 @@ export class TaskService {
       subtask_count: subtaskCount,
       subtask_completed: subtaskCompleted,
       has_subtasks: subtaskCount > 0,
+      focus_session_count: focusSessionCount || 0,
     };
   }
 

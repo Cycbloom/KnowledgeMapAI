@@ -16,7 +16,7 @@ const nextActionQuerySchema = z.object({
 
 /** 调度决策：返回「现在最该做的下一步」（复习打断 / 队列推进） */
 router.get(
-  "/scheduler/next-step",
+  "/next-step",
   requireAuth,
   validate({ query: nextStepQuerySchema }),
   async (req: AuthRequest, res: Response) => {
@@ -38,7 +38,7 @@ router.get(
 
 /** 是否需要记忆打断（供 UI 提示） */
 router.get(
-  "/scheduler/review-interrupt",
+  "/review-interrupt",
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     const result = await schedulerDecisionService.needsReviewInterrupt(
@@ -51,7 +51,7 @@ router.get(
 
 /** 大循环 + 小循环两层决策（供概览/编排面板展示「推进哪个图 / 下一步做哪个知识点」） */
 router.get(
-  "/scheduler/decision/loops",
+  "/decision/loops",
   requireAuth,
   validate({ query: nextStepQuerySchema }),
   async (req: AuthRequest, res: Response) => {
@@ -82,7 +82,7 @@ router.get(
 
 /** 执行动作：给定图谱大任务，返回小循环「下一步」对应跳转（把推荐喂给跳转） */
 router.get(
-  "/scheduler/decision/next-action",
+  "/decision/next-action",
   requireAuth,
   validate({ query: nextActionQuerySchema }),
   async (req: AuthRequest, res: Response) => {

@@ -60,6 +60,7 @@ class LearningProgressSubscriber {
       await timeSettlementService.settleFocusSession(getSupabaseAdmin(), userId, {
         taskId: payload.taskId,
         duration: payload.duration,
+        sessionId: payload.sessionId,
       });
     } catch (error) {
       logger.error("[LearningProgressSubscriber] Failed to settle focus session time:", error);

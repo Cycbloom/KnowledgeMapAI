@@ -3,6 +3,7 @@ import {
   getPaginationParams,
   PaginationOptions,
 } from "../../utils/pagination";
+import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type {
@@ -74,7 +75,14 @@ export class ExecutionService {
       .select()
       .single();
 
-    if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
+    if (error) {
+      logger.warn("[Execution] update failed", {
+        executionId,
+        errorCode: (error as { code?: unknown } | null)?.code,
+        originalError: error.message,
+      });
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message, errorCode: (error as { code?: unknown } | null)?.code } });
+    }
     if (!data) throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
     return data as TaskExecution;
   }
@@ -143,11 +151,15 @@ export class ExecutionService {
       return this.updateExecution(client, openNorm.id, updates);
     }
 
-    if (!ctx.taskId) return null;
+    // 自动挂靠任务：直接学习某知识点（无指定任务/子任务）时，解析并绑定所属任务与子任务，
+    // 让时长有记账锚点、调度能接管焦点；孤立知识点（无图谱/无法建任务）则本次不记时。
+    const anchor = await this.resolveTaskAnchor(client, userId, ctx);
+
+    if (!anchor.taskId) return null;
     const newExecution = await this.createExecution(client, {
-      task_id: ctx.taskId,
+      task_id: anchor.taskId,
       user_id: userId,
-      subtask_id: ctx.subtaskId,
+      subtask_id: anchor.subtaskId,
       knowledge_point_id: ctx.knowledgePointId,
       stage: ctx.stage,
       activity_log: [
@@ -208,12 +220,32 @@ export class ExecutionService {
     const now = new Date().toISOString();
     const activityLog = this.finalizeCurrentSlice(normalized.activity_log, now);
     const duration = this.slicesToDuration(activityLog, normalized.started_at, now);
-    return this.updateExecution(client, executionId, {
+    const updated = await this.updateExecution(client, executionId, {
       activity_log: activityLog,
       ended_at: now,
       duration,
       status: "completed",
     });
+
+    // 会话为权威时长来源：结束时把真实学习时长结算进任务/子任务/路径
+    const minutes = Math.round(duration / 60);
+    if (minutes > 0) {
+      try {
+        const { timeSettlementService } = await import("./timeSettlementService");
+        await timeSettlementService.settleSession(client, userId, {
+          taskId: normalized.task_id,
+          subtaskId: normalized.subtask_id,
+          minutes,
+        });
+      } catch (error) {
+        logger.warn("[Execution] session settlement failed", {
+          executionId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    return updated;
   }
 
   /**
@@ -265,6 +297,66 @@ export class ExecutionService {
       queue_level: 0,
       status: "pending",
     });
+  }
+
+  /**
+   * 解析会话的「任务/子任务」锚点（自动挂靠）：
+   * - 优先用传入的 taskId / subtaskId；
+   * - 有知识点时，在指定任务内补齐其子任务；无任务则用 smartTaskLinker 自动建/取所属图谱任务并定位子任务。
+   */
+  private async resolveTaskAnchor(
+    client: SupabaseClient,
+    userId: string,
+    ctx: SessionActivityContext,
+  ): Promise<{ taskId?: string; subtaskId?: string }> {
+    let taskId = ctx.taskId;
+    let subtaskId = ctx.subtaskId;
+
+    if (!ctx.knowledgePointId) return { taskId, subtaskId };
+
+    // 补齐子任务锚点
+    if (!subtaskId && taskId) {
+      const sub = await this.findSubtaskByKp(client, taskId, ctx.knowledgePointId);
+      if (sub?.id) subtaskId = sub.id;
+    }
+
+    // 无任务 → 自动建/取所属图谱任务（孤立知识点无法建任务时返回空）
+    if (!taskId) {
+      try {
+        const { smartTaskLinker } = await import("./smartTaskLinker");
+        const info = await smartTaskLinker.getOrCreateTaskForKnowledgePoint(
+          client,
+          userId,
+          ctx.knowledgePointId,
+        );
+        if (info?.taskId) {
+          taskId = info.taskId;
+          if (!subtaskId && info.subtaskId) subtaskId = info.subtaskId;
+        }
+      } catch (error) {
+        logger.warn("[Execution] auto-attach task failed", {
+          knowledgePointId: ctx.knowledgePointId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    return { taskId, subtaskId };
+  }
+
+  /** 在指定任务内按知识点查找其子任务 */
+  private async findSubtaskByKp(
+    client: SupabaseClient,
+    taskId: string,
+    knowledgePointId: string,
+  ): Promise<{ id: string } | null> {
+    const { data } = await client
+      .from("task_subtasks")
+      .select("id")
+      .eq("task_id", taskId)
+      .eq("knowledge_point_id", knowledgePointId)
+      .maybeSingle();
+    return data ? ({ id: (data as { id: string }).id } as { id: string }) : null;
   }
 
   private async getRaw(

@@ -489,7 +489,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onStartTask(task);
               }}
-              className={`p-2.5 rounded-md transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center ${queueStyle.bg} ${queueStyle.text}`}
+              className={`p-1.5 rounded-md transition-all hover:scale-110 min-h-[32px] min-w-[32px] flex items-center justify-center ${queueStyle.bg} ${queueStyle.text}`}
               title={t("scheduler.taskCard.actionStart")}
               aria-label={t("scheduler.taskCard.actionStart")}
             >
@@ -503,7 +503,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onPauseTask(task);
               }}
-              className="p-2.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110 min-h-[32px] min-w-[32px] flex items-center justify-center"
               title={t("scheduler.taskCard.actionPause")}
               aria-label={t("scheduler.taskCard.actionPause")}
             >
@@ -520,7 +520,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                   e.stopPropagation();
                   onCompleteTask(task);
                 }}
-                className="p-2.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110 min-h-[32px] min-w-[32px] flex items-center justify-center"
                 title={t("scheduler.taskCard.actionComplete")}
                 aria-label={t("scheduler.taskCard.actionComplete")}
               >
@@ -534,7 +534,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onViewTaskDetail(task);
               }}
-              className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110 min-h-[32px] min-w-[32px] flex items-center justify-center"
               title={t("scheduler.taskCard.actionDetail")}
               aria-label={t("scheduler.taskCard.actionDetail")}
             >
@@ -548,7 +548,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onEditTask(task);
               }}
-              className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110 min-h-[32px] min-w-[32px] flex items-center justify-center"
               title={t("scheduler.taskCard.actionEdit")}
               aria-label={t("scheduler.taskCard.actionEdit")}
             >
@@ -562,7 +562,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onDeleteTask(task);
               }}
-              className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110 min-h-[32px] min-w-[32px] flex items-center justify-center"
               title={t("scheduler.taskCard.actionDelete")}
               aria-label={t("scheduler.taskCard.actionDelete")}
             >

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 
 /** Update info passed to update:available / update:downloaded callbacks. */
 export interface UpdateInfo {
@@ -92,6 +92,9 @@ const electronAPI = {
   },
   shell: {
     openExternal: (url: string) => ipcRenderer.invoke("shell:openExternal", url),
+    openPath: (filePath: string) => ipcRenderer.invoke("shell:openPath", filePath),
+    // 从拖入的 File 对象取真实本地路径（现代 Electron 需经 webUtils，File.path 已废弃）
+    getPathForFile: (file: File) => webUtils.getPathForFile(file),
   },
   api: {
     getPort: () => ipcRenderer.invoke("api:getPort"),

@@ -80,6 +80,7 @@ const IPC_HANDLE_CHANNELS = new Set([
   "sync:fullSync",
   // shell domain
   "shell:openExternal",
+  "shell:openPath",
   // power domain
   "power:startBlocker",
   "power:stopBlocker",
@@ -564,7 +565,8 @@ if (!gotLock) {
       (_webContents, permission, callback, details) => {
         // 语音输入：仅放行音频媒体（拒绝摄像头）
         if (permission === 'media') {
-          const mediaTypes = (details as Electron.PermissionRequestHandlerDetails | undefined)?.mediaTypes ?? [];
+          const mediaTypes =
+            details && 'mediaTypes' in details ? (details.mediaTypes ?? []) : [];
           if (mediaTypes.includes('audio') && !mediaTypes.includes('video')) {
             callback(true);
             return;

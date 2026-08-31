@@ -49,7 +49,21 @@ class LearningProgressSubscriber {
     await Promise.allSettled([
       this.updatePeriodicTaskProgressOnFocus(event.userId, payload),
       this.handleLearningLoopFocusSession(event.userId, payload),
+      this.settleFocusSessionTime(event.userId, payload),
     ]);
+  }
+
+  /** @schedule decision - 专注时长统一结算：subtask actual_duration + path time_spent + task actual_duration */
+  private async settleFocusSessionTime(userId: string, payload: FocusSessionEndedPayload) {
+    try {
+      const { timeSettlementService } = await import("../../scheduler/timeSettlementService");
+      await timeSettlementService.settleFocusSession(getSupabaseAdmin(), userId, {
+        taskId: payload.taskId,
+        duration: payload.duration,
+      });
+    } catch (error) {
+      logger.error("[LearningProgressSubscriber] Failed to settle focus session time:", error);
+    }
   }
 
   private async syncKnowledgePointProgress(userId: string, payload: TaskCompletedPayload) {

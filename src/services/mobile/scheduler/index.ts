@@ -239,6 +239,7 @@ export const mobileSchedulerApi: ISchedulerApi = {
   // --- ISchedulerLinksApi ---
   getLinks: links.getLinks,
   createLink: links.createLink,
+  getLinkMetadata: links.getLinkMetadata,
   updateLink: links.updateLink,
   deleteLink: links.deleteLink,
 

@@ -24,6 +24,17 @@ export const linksApi = {
       body: JSON.stringify(data),
     }),
 
+  getLinkMetadata: (
+    url: string,
+  ): Promise<{ title: string; description: string }> =>
+    requestData<{ title: string; description: string }>(
+      "/scheduler/tasks/link-metadata",
+      {
+        method: "POST",
+        body: JSON.stringify({ url }),
+      },
+    ),
+
   updateLink: (
     taskId: string,
     linkId: string,

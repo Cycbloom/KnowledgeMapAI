@@ -18,6 +18,13 @@ export const getLinks = async (taskId: string): Promise<TaskLink[]> => {
   });
 };
 
+// 移动端不支持后端抓取解析，直接回退空元数据（前端以 hostname 兜底）
+export const getLinkMetadata = async (
+  _url: string,
+): Promise<{ title: string; description: string }> => {
+  return { title: "", description: "" };
+};
+
 export const createLink = async (
   _taskId: string,
   data: {

@@ -153,6 +153,9 @@ export const Layout = () => {
     location.pathname === "/learning" ||
     location.pathname.startsWith("/scheduler/task/");
 
+  // 任务详情页有自身的「快速链接」拖拽区，需禁用全局「拖文件建图谱」，避免被全屏 Overlay 拦截
+  const disableGraphDrop = location.pathname.startsWith("/scheduler/task/");
+
   const {
     isOpen: isConsoleOpen,
     isMinimized: isConsoleMinimized,
@@ -271,11 +274,12 @@ export const Layout = () => {
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (disableGraphDrop) return;
     dragCounterRef.current += 1;
     if (dragCounterRef.current === 1) {
       setIsDragOver(true);
     }
-  }, []);
+  }, [disableGraphDrop]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -296,6 +300,7 @@ export const Layout = () => {
     e.stopPropagation();
     dragCounterRef.current = 0;
     setIsDragOver(false);
+    if (disableGraphDrop) return;
 
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
@@ -341,7 +346,7 @@ export const Layout = () => {
         message.error(t('layout.importFailed', { message: errorMessage }));
       }
     }
-  }, [navigate, importGraphMutation, t]);
+  }, [navigate, importGraphMutation, t, disableGraphDrop]);
 
   const hasSetUserRef = useRef(false);
 
@@ -566,7 +571,7 @@ export const Layout = () => {
         </button>
       )}
       {/* Global Drop Zone Overlay */}
-      {isDragOver && (
+      {isDragOver && !disableGraphDrop && (
         <div className="fixed inset-0 z-skip-link bg-primary-500/10 border-2 border-dashed border-primary-400 flex flex-col items-center justify-center backdrop-blur-sm">
           <Upload className="w-16 h-16 text-primary-500 mb-4" />
           <p className={`text-xl font-semibold ${isDark ? "text-primary-400" : "text-primary-600"}`}>

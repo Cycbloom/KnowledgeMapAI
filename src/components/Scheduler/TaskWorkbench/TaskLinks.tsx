@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Plus,
   ExternalLink,
@@ -9,6 +9,8 @@ import {
   Link2,
   ChevronDown,
   ChevronRight,
+  UploadCloud,
+  Loader2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
@@ -16,6 +18,7 @@ import { TaskLink } from "../../../types";
 import { message as messageHelper } from "../../../utils/messageHelper";
 import { asyncConfirm } from "../../../utils/asyncConfirm";
 import { EmptyState } from "../../common/EmptyState";
+import { isElectron } from "@/config/electronConfig";
 
 interface TaskLinksProps {
   taskId: string;
@@ -35,6 +38,55 @@ const getLinkTypeIcon = (type: string) => {
   }
 };
 
+const formatBytes = (bytes: number): string => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const getFilePath = (file: File): string | undefined => {
+  // 优先走 preload 暴露的 webUtils（现代 Electron 官方取真实路径的方式）
+  try {
+    if (window.electronAPI?.shell?.getPathForFile) {
+      const p = window.electronAPI.shell.getPathForFile(file);
+      if (typeof p === "string" && p) return p;
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    const w = window as unknown as {
+      webUtils?: { getPathForFile: (f: File) => string };
+    };
+    if (isElectron() && w.webUtils?.getPathForFile) {
+      return w.webUtils.getPathForFile(file);
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    const p = (file as unknown as { path?: string }).path;
+    if (typeof p === "string" && p) return p;
+  } catch {
+    // ignore
+  }
+  return undefined;
+};
+
+const hostnameOf = (url: string): string => {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+};
+
+const firstWebUrl = (text: string): string | undefined => {
+  const line = text.split(/\r?\n/).map((s) => s.trim()).find((s) => /^https?:\/\//i.test(s));
+  return line || undefined;
+};
+
 export const TaskLinks: React.FC<TaskLinksProps> = ({
   taskId,
   className = "",
@@ -50,6 +102,110 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
     url: "",
     description: "",
   });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
+  const dragDepth = useRef(0);
+
+  const handleDragEnter = () => {
+    dragDepth.current++;
+    setIsDragging(true);
+  };
+  const handleDragLeave = () => {
+    dragDepth.current--;
+    if (dragDepth.current <= 0) {
+      dragDepth.current = 0;
+      setIsDragging(false);
+    }
+  };
+
+  const addLink = async (data: {
+    link_type: "web" | "file" | "api";
+    url: string;
+    title?: string;
+    description?: string;
+  }): Promise<TaskLink | null> => {
+    try {
+      const created = await api.scheduler.createLink(taskId, {
+        link_type: data.link_type,
+        url: data.url,
+        title: data.title || undefined,
+        description: data.description || undefined,
+      });
+      setLinks((prev) => [created, ...prev]);
+      return created;
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskLinks.dropAddFailed');
+      messageHelper.error(errMsg);
+      return null;
+    }
+  };
+
+  const handleDropUrl = async (url: string) => {
+    const fallbackTitle = hostnameOf(url);
+    setIsResolving(true);
+    try {
+      const meta = await api.scheduler.getLinkMetadata(url);
+      await addLink({
+        link_type: "web",
+        url,
+        title: meta.title || fallbackTitle,
+        description: meta.description || undefined,
+      });
+      messageHelper.success(t('scheduler.taskLinks.dropAdded'));
+    } catch {
+      // 元数据识别失败 → 回退为纯 URL
+      await addLink({ link_type: "web", url, title: fallbackTitle });
+      messageHelper.success(t('scheduler.taskLinks.dropAdded'));
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
+  const handleDropFiles = async (files: File[]) => {
+    let added = 0;
+    for (const file of files) {
+      const path = getFilePath(file);
+      const url = path
+        ? `file:///${path.replace(/\\/g, "/")}`
+        : `file:///${encodeURIComponent(file.name)}`;
+      const sizeLabel = formatBytes(file.size);
+      const created = await addLink({
+        link_type: "file",
+        url,
+        title: file.name,
+        description: [file.type, sizeLabel].filter(Boolean).join(" · ") || undefined,
+      });
+      if (created) added++;
+    }
+    if (added > 0) messageHelper.success(t('scheduler.taskLinks.dropFilesAdded', { count: added }));
+    else if (files.length > 0) messageHelper.error(t('scheduler.taskLinks.dropAddFailed'));
+  };
+
+  const handleDropEvent = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current = 0;
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files ?? []);
+    if (files.length > 0) {
+      await handleDropFiles(files);
+      return;
+    }
+    // Edge/Chrome 拖拽标签页或链接：URL 可能只在 text/uri-list 或 text/plain 中，
+    // 某些场景（拖拽外部标签页）还需要从 text/html 的 href 兜底提取。
+    const raw = `${e.dataTransfer.getData("text/uri-list")}\n${e.dataTransfer.getData("text/plain")}`;
+    let url = firstWebUrl(raw);
+    if (!url) {
+      const html = e.dataTransfer.getData("text/html");
+      const href = /href=["'](https?:\/\/[^"']+)["']/i.exec(html)?.[1];
+      url = href;
+    }
+    if (url) {
+      await handleDropUrl(url);
+    } else {
+      messageHelper.error(t('scheduler.taskLinks.dropInvalid'));
+    }
+  };
 
   const getLinkTypeLabel = useMemo(() => {
     return (type: string): string => {
@@ -116,11 +272,30 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
     }
   };
 
-  const handleOpenLink = (link: TaskLink) => {
+  const handleOpenLink = async (link: TaskLink) => {
     if (link.link_type === "web") {
       window.open(link.url, "_blank", "noopener,noreferrer");
     } else if (link.link_type === "file") {
-      window.open(link.url, "_blank");
+      // 本地文件仅桌面版可用系统默认软件打开；网页端浏览器禁止 file:// 访问
+      if (isElectron() && window.electronAPI?.shell?.openPath) {
+        try {
+          // file:///C:/... → 去掉 file:/// 三个斜杠后为 C:/...
+          const filePath = link.url.replace(/^file:\/\/\//i, "");
+          const res = await window.electronAPI.shell.openPath(filePath);
+          if (res?.success) {
+            messageHelper.success(t('scheduler.taskLinks.openFileSuccess'));
+          } else if (res?.error) {
+            messageHelper.error(t('scheduler.taskLinks.openFileFailed', { error: res.error }));
+          } else {
+            messageHelper.error(t('scheduler.taskLinks.openFileNoHandler'));
+          }
+        } catch (error) {
+          const errMsg = error instanceof Error ? error.message : t('scheduler.taskLinks.openFileNoHandler');
+          messageHelper.error(errMsg);
+        }
+      } else {
+        messageHelper.info(t('scheduler.taskLinks.openFileDesktopOnly'));
+      }
     } else {
       window.open(link.url, "_blank");
     }
@@ -171,6 +346,37 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
 
       {isExpanded && (
         <>
+          {/* 拖拽区 */}
+          <div
+            onDragEnter={handleDragEnter}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragging(true);
+            }}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDropEvent}
+            className={`mb-3 flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-dashed text-sm transition-all ${
+              isDragging
+                ? "border-primary-500 bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400"
+                : isResolving
+                  ? "border-primary-300 dark:border-primary-500/40 text-slate-500 dark:text-slate-400"
+                  : "border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:border-primary-400 dark:hover:border-primary-500/50"
+            }`}
+          >
+            {isResolving ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                {t('scheduler.taskLinks.resolving')}
+              </>
+            ) : (
+              <>
+                <UploadCloud size={16} />
+                {t('scheduler.taskLinks.dropHint')}
+              </>
+            )}
+          </div>
+
           {isAdding && (
             <div className="mb-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-500">
               <div className="flex gap-2 mb-3">

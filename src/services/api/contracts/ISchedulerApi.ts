@@ -221,6 +221,7 @@ export interface ISchedulerSubtasksApi {
 export interface ISchedulerLinksApi {
   getLinks: (taskId: string) => Promise<TaskLink[]>;
   createLink: (taskId: string, data: { link_type?: "web" | "file" | "api"; title?: string; url: string; description?: string; icon?: string; metadata?: Record<string, unknown> }) => Promise<TaskLink>;
+  getLinkMetadata: (url: string) => Promise<{ title: string; description: string }>;
   updateLink: (taskId: string, linkId: string, data: { title?: string; description?: string; icon?: string; metadata?: Record<string, unknown> }) => Promise<TaskLink>;
   deleteLink: (taskId: string, linkId: string) => Promise<void>;
 }

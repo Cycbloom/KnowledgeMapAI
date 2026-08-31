@@ -1400,7 +1400,17 @@
     "linkCount": "{{count}} 个链接",
     "add": "添加",
     "cancel": "取消",
-    "addFirstLink": "添加第一个链接"
+    "addFirstLink": "添加第一个链接",
+    "dropHint": "拖入链接或文件，自动识别元数据",
+    "resolving": "正在识别链接元数据...",
+    "dropAdded": "链接已添加",
+    "dropFilesAdded": "已添加 {{count}} 个文件链接",
+    "dropInvalid": "无法识别，请拖入有效链接或文件",
+    "dropAddFailed": "添加链接失败",
+    "openFileSuccess": "已通过系统默认软件打开文件",
+    "openFileFailed": "无法打开文件：{{error}}",
+    "openFileNoHandler": "无法打开文件，未找到可用的默认打开方式",
+    "openFileDesktopOnly": "本地文件请在桌面版应用中使用系统默认软件打开"
   },
   "taskRecommendation": {
     "priorityUrgent": "紧急",

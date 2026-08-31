@@ -1400,7 +1400,17 @@
     "linkCount": "{{count}} links",
     "add": "Add",
     "cancel": "Cancel",
-    "addFirstLink": "Add first link"
+    "addFirstLink": "Add first link",
+    "dropHint": "Drop a link or file to auto-detect metadata",
+    "resolving": "Resolving link metadata...",
+    "dropAdded": "Link added",
+    "dropFilesAdded": "{{count}} file links added",
+    "dropInvalid": "Unrecognized drop. Drop a valid link or file",
+    "dropAddFailed": "Failed to add link",
+    "openFileSuccess": "Opened with the system default app",
+    "openFileFailed": "Unable to open file: {{error}}",
+    "openFileNoHandler": "Cannot open — no default app is associated with this file type",
+    "openFileDesktopOnly": "Local files can only be opened in the desktop app"
   },
   "taskRecommendation": {
     "priorityUrgent": "Urgent",

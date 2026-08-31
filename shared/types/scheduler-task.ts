@@ -262,6 +262,8 @@ export interface UserTaskDetail extends UserTask {
   subtask_count: number;
   subtask_completed: number;
   has_subtasks: boolean;
+  /** 关联该任务的专注/番茄钟会话次数 */
+  focus_session_count?: number;
 }
 
 export interface TaskSettings {

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   CheckCircle,
@@ -8,6 +9,11 @@ import {
   ChevronDown,
   ChevronRight,
   BookOpen,
+  GraduationCap,
+  Pencil,
+  Square,
+  CheckSquare,
+  FileCheck,
   ListTodo,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -20,6 +26,13 @@ import { LearningStateBadge } from "../LearningStateBadge";
 import { MasteryProgressBar } from "../MasteryProgressBar";
 import { useFormDraft } from "../../../hooks";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
+import { useKnowledgePointMastery } from "@/hooks/useKnowledgePointMastery";
+import {
+  learningMaterialUrl,
+  studyCenterUrl,
+  createQuizForKp,
+  createQuizForKps,
+} from "@/utils/studyUrls";
 
 interface SubtaskDraft {
   title: string;
@@ -31,6 +44,7 @@ interface SubtaskDraft {
 interface SubtaskListProps {
   taskId: string;
   knowledgePointId?: string;
+  graphId?: string;
   className?: string;
 }
 
@@ -42,13 +56,18 @@ interface KnowledgePoint {
 export const SubtaskList: React.FC<SubtaskListProps> = ({
   taskId,
   knowledgePointId: defaultKnowledgePointId,
+  graphId,
   className = "",
 }) => {
+  const navigate = useNavigate();
   const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
   const [knowledgePoints, setKnowledgePoints] = useState<KnowledgePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [selectedKpIds, setSelectedKpIds] = useState<Set<string>>(
+    new Set(),
+  );
   const { t } = useTranslation();
   const {
     value: newSubtask,
@@ -67,10 +86,30 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     },
   });
 
+  const kpIds = useMemo(
+    () => Array.from(new Set(subtasks.map((s) => s.knowledge_point_id))),
+    [subtasks],
+  );
+  const { masteryByKp } = useKnowledgePointMastery(kpIds);
+
   useEffect(() => {
     loadSubtasks();
     loadKnowledgePoints();
+    // 切换 task 后重置选择
+    setSelectedKpIds(new Set());
   }, [taskId]);
+
+  const toggleSelect = (kpId: string) => {
+    setSelectedKpIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(kpId)) {
+        next.delete(kpId);
+      } else {
+        next.add(kpId);
+      }
+      return next;
+    });
+  };
 
   const loadSubtasks = async () => {
     try {
@@ -160,25 +199,44 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     }
   };
 
-  // 单趟同时统计完成数与掌握度总和，替代 filter + reduce 两次扫描
-  const { completedCount, totalMastery } = subtasks.reduce(
+  // 单趟统计完成数
+  const { completedCount } = subtasks.reduce(
     (acc, st) => {
       if (st.status === "completed") acc.completedCount++;
-      const m = Number.isFinite(st.mastery_level) ? Math.max(0, Math.min(1, st.mastery_level)) : 0;
-      acc.totalMastery += m;
       return acc;
     },
-    { completedCount: 0, totalMastery: 0 },
+    { completedCount: 0 },
   );
   const progress =
     subtasks.length > 0
       ? Math.round((completedCount / subtasks.length) * 100)
       : 0;
 
-  const avgMastery =
-    subtasks.length > 0
-      ? totalMastery / subtasks.length
-      : 0;
+  // 实时掌握度：优先按学习卡计算，缺失时回退子任务已存值
+  const masteryOf = (subtask: TaskSubtask): number | undefined => {
+    const live = subtask.knowledge_point_id
+      ? masteryByKp.get(subtask.knowledge_point_id)
+      : undefined;
+    return live != null ? live : subtask.mastery_level;
+  };
+
+  // 平均掌握度改用实时值（汇总）
+  const avgMastery = useMemo(() => {
+    if (subtasks.length === 0) return 0;
+    let sum = 0;
+    let count = 0;
+    for (const st of subtasks) {
+      const live = st.knowledge_point_id
+        ? masteryByKp.get(st.knowledge_point_id)
+        : undefined;
+      const m = live != null ? live : st.mastery_level;
+      if (m != null && Number.isFinite(m)) {
+        sum += Math.max(0, Math.min(1, m));
+        count++;
+      }
+    }
+    return count > 0 ? sum / count : 0;
+  }, [subtasks, masteryByKp]);
 
   if (loading) {
     return (
@@ -330,7 +388,10 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           )}
 
           <div className="space-y-2">
-            {subtasks.map((subtask) => (
+            {subtasks.map((subtask) => {
+              const masteryValue = masteryOf(subtask);
+              const kpId = subtask.knowledge_point_id;
+              return (
               <div
                 key={subtask.id}
                 className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
@@ -373,13 +434,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                     </p>
                   )}
                   <div className="flex items-center gap-3 mt-1">
-                    {subtask.mastery_level !== undefined && (
-                      <MasteryProgressBar
-                        masteryLevel={subtask.mastery_level}
-                        size="sm"
-                        showLabel
-                      />
-                    )}
+                    <MasteryProgressBar
+                      masteryLevel={masteryValue ?? 0}
+                      size="sm"
+                      showLabel
+                    />
                     {subtask.estimated_duration && (
                       <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
                         <Clock size={12} />
@@ -388,14 +447,76 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                     )}
                   </div>
                 </div>
+                <div className="flex items-center gap-0.5">
+                  {kpId && (
+                    <>
+                      <button
+                        onClick={() => toggleSelect(kpId)}
+                        className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
+                        title={t('scheduler.taskWorkbench.subtaskList.actions.select')}
+                        aria-label={t('scheduler.taskWorkbench.subtaskList.actions.select')}
+                      >
+                        {selectedKpIds.has(kpId) ? (
+                          <CheckSquare className="w-4 h-4 text-primary-500" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => navigate(learningMaterialUrl(kpId, graphId))}
+                        className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
+                        title={t('scheduler.taskWorkbench.subtaskList.actions.learnMaterial')}
+                        aria-label={t('scheduler.taskWorkbench.subtaskList.actions.learnMaterial')}
+                      >
+                        <BookOpen size={15} />
+                      </button>
+                      <button
+                        onClick={() => navigate(studyCenterUrl(kpId, graphId))}
+                        className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
+                        title={t('scheduler.taskWorkbench.subtaskList.actions.studyCenter')}
+                        aria-label={t('scheduler.taskWorkbench.subtaskList.actions.studyCenter')}
+                      >
+                        <GraduationCap size={15} />
+                      </button>
+                      <button
+                        onClick={() => navigate(createQuizForKp(kpId, graphId))}
+                        className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
+                        title={t('scheduler.taskWorkbench.subtaskList.actions.createQuiz')}
+                        aria-label={t('scheduler.taskWorkbench.subtaskList.actions.createQuiz')}
+                      >
+                        <Pencil size={15} />
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => handleDeleteSubtask(subtask.id)}
+                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            );
+            })}
+
+            {selectedKpIds.size > 0 && (
+              <div className="sticky bottom-0 flex items-center justify-between gap-3 p-3 bg-primary-50 dark:bg-slate-800 border border-primary-200 dark:border-primary-500/30 rounded-xl">
+                <span className="text-sm text-primary-700 dark:text-primary-300">
+                  {t('scheduler.taskWorkbench.overview.batchSelected', {
+                    count: selectedKpIds.size,
+                  })}
+                </span>
                 <button
-                  onClick={() => handleDeleteSubtask(subtask.id)}
-                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                  onClick={() =>
+                    navigate(createQuizForKps(Array.from(selectedKpIds), graphId))
+                  }
+                  className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 rounded-lg transition-colors"
                 >
-                  <Trash2 size={16} />
+                  <FileCheck size={15} />
+                  {t('scheduler.taskWorkbench.overview.createBatchQuiz')}
                 </button>
               </div>
-            ))}
+            )}
 
             {subtasks.length === 0 && !isAdding && (
               <EmptyState

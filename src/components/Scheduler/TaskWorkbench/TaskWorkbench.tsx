@@ -14,6 +14,9 @@ import {
   BarChart3,
   FileText,
   Bookmark,
+  LayoutDashboard,
+  Flame,
+  CalendarClock,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
@@ -27,10 +30,11 @@ import { KnowledgePointAssociation } from "./KnowledgePointAssociation";
 import { ExecutionRecords } from "./ExecutionRecords";
 import { ProgressDetail } from "./ProgressDetail";
 import { NotesTab } from "./NotesTab";
+import { OverviewTab } from "./OverviewTab";
 import { SaveAsTemplateModal } from "../SaveAsTemplateModal";
 import { Skeleton, SkeletonCard } from "@/components/common";
 
-type WorkTab = "notes" | "subtasks" | "executions" | "progress";
+type WorkTab = "overview" | "notes" | "subtasks" | "executions" | "progress";
 
 interface TaskWorkbenchProps {
   taskId: string;
@@ -45,7 +49,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
 }) => {
   const [task, setTask] = useState<UserTaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<WorkTab>("notes");
+  const [activeTab, setActiveTab] = useState<WorkTab>("overview");
   const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
   const { t } = useTranslation();
 
@@ -218,6 +222,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   };
 
   const tabs: { id: WorkTab; label: string; icon: React.ReactNode }[] = [
+    { id: "overview", label: t('scheduler.taskWorkbench.tabOverview'), icon: <LayoutDashboard size={16} /> },
     { id: "notes", label: t('scheduler.taskWorkbench.tabNotes'), icon: <FileText size={16} /> },
     { id: "subtasks", label: t('scheduler.taskWorkbench.tabSubtasks'), icon: <CheckCircle size={16} /> },
     { id: "executions", label: t('scheduler.taskWorkbench.tabExecutions'), icon: <Clock size={16} /> },
@@ -309,6 +314,19 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   }
 
   const priorityInfo = getPriorityInfo(task.priority);
+
+  // 实际时长：无任何番茄钟会话时显示「未计时」
+  const actualDurationLabel = task.actual_duration
+    ? formatDurationMinutes(task.actual_duration, { format: 'zh-spaced' })
+    : t('scheduler.taskWorkbench.notTimerStarted');
+
+  // 截止倒计时
+  let deadlineDays: number | null = null;
+  if (task.deadline) {
+    deadlineDays = Math.ceil(
+      (new Date(task.deadline).getTime() - Date.now()) / 86400000,
+    );
+  }
 
   return (
     <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950">
@@ -414,17 +432,27 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 <span className="text-xs">{t('scheduler.taskWorkbench.actualDuration')}</span>
               </div>
               <p className="text-base font-semibold text-slate-900 dark:text-white">
-                {formatDurationMinutes(task.actual_duration, { format: 'zh-spaced', emptyText: t('scheduler.taskWorkbench.dateNotSet') })}
+                {actualDurationLabel}
               </p>
             </div>
 
             <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-500">
               <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1">
-                <BarChart3 className="w-3.5 h-3.5" />
-                <span className="text-xs">{t('scheduler.taskWorkbench.totalDuration')}</span>
+                <Flame className="w-3.5 h-3.5" />
+                <span className="text-xs">{t('scheduler.taskWorkbench.focusSessions')}</span>
               </div>
               <p className="text-base font-semibold text-slate-900 dark:text-white">
-                {formatDurationMinutes(task.total_duration, { format: 'zh-spaced', emptyText: t('scheduler.taskWorkbench.dateNotSet') })}
+                {task.focus_session_count ?? 0}
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-500">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1">
+                <CalendarClock className="w-3.5 h-3.5" />
+                <span className="text-xs">{t('scheduler.taskWorkbench.scheduledStart')}</span>
+              </div>
+              <p className="text-xs font-semibold text-slate-900 dark:text-white">
+                {task.scheduled_start ? formatDate(task.scheduled_start) : t('scheduler.taskWorkbench.dateNotSet')}
               </p>
             </div>
 
@@ -436,6 +464,23 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
               <p className="text-xs font-semibold text-slate-900 dark:text-white">
                 {task.deadline ? formatDate(task.deadline) : t('scheduler.taskWorkbench.dateNotSet')}
               </p>
+              {deadlineDays !== null && (
+                <span
+                  className={`text-xs font-medium ${
+                    deadlineDays < 0
+                      ? 'text-red-500'
+                      : deadlineDays <= 1
+                        ? 'text-amber-500'
+                        : 'text-slate-400 dark:text-slate-500'
+                  }`}
+                >
+                  {deadlineDays < 0
+                    ? t('scheduler.taskWorkbench.overdueDays', { count: -deadlineDays })
+                    : deadlineDays === 0
+                      ? t('scheduler.taskWorkbench.dueToday')
+                      : t('scheduler.taskWorkbench.remainingDays', { count: deadlineDays })}
+                </span>
+              )}
             </div>
           </div>
 
@@ -525,6 +570,23 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
 
           {/* Tab content */}
           <div className="flex-1 min-h-0 overflow-hidden p-4">
+            {activeTab === "overview" && (
+              <div
+                role="tabpanel"
+                id={`${panelIdPrefix}-overview`}
+                aria-labelledby={`${tabIdPrefix}-overview`}
+                tabIndex={0}
+                className="h-full overflow-y-auto"
+              >
+                <OverviewTab
+                  taskId={task.id}
+                  graphId={task.graph_id}
+                  status={task.status}
+                  onGoSubtasks={() => setActiveTab("subtasks")}
+                />
+              </div>
+            )}
+
             {activeTab === "notes" && (
               <div
                 role="tabpanel"
@@ -547,9 +609,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 id={`${panelIdPrefix}-subtasks`}
                 aria-labelledby={`${tabIdPrefix}-subtasks`}
                 tabIndex={0}
-                className="h-full"
+                className="h-full overflow-y-auto"
               >
-                <SubtaskList taskId={task.id} />
+                <SubtaskList taskId={task.id} graphId={task.graph_id} />
               </div>
             )}
 

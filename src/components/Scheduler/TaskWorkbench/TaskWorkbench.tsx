@@ -26,7 +26,6 @@ import { message as messageHelper } from "../../../utils/messageHelper";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { SubtaskList } from "./SubtaskList";
 import { TaskLinks } from "./TaskLinks";
-import { KnowledgePointAssociation } from "./KnowledgePointAssociation";
 import { ExecutionRecords } from "./ExecutionRecords";
 import { ProgressDetail } from "./ProgressDetail";
 import { NotesTab } from "./NotesTab";
@@ -524,9 +523,6 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
 
           {/* Quick Links */}
           <TaskLinks taskId={task.id} />
-
-          {/* Knowledge Points */}
-          <KnowledgePointAssociation taskId={task.id} />
 
           {/* Timestamps */}
           <div className="text-xs text-slate-400 dark:text-slate-500 space-y-1 pt-3 border-t border-slate-200 dark:border-slate-500">

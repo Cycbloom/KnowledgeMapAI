@@ -6,6 +6,10 @@ import type {
   SmallLoopDecision,
 } from "../modules/scheduler/orchestrator";
 import type {
+  StartActivityData,
+  AppendActivityData,
+} from "../modules/scheduler/executions";
+import type {
   CreateUserTaskData,
   UpdateUserTaskData,
   UserTaskFilters,
@@ -173,6 +177,9 @@ export interface ISchedulerQueuesApi {
 export interface ISchedulerExecutionsApi {
   getExecutions: (filters?: ExecutionFilters) => Promise<TaskExecution[]>;
   getTaskExecutions: (taskId: string) => Promise<TaskExecution[]>;
+  startSession: (data: StartActivityData) => Promise<TaskExecution | null>;
+  appendSessionActivity: (data: AppendActivityData) => Promise<TaskExecution>;
+  endSession: (executionId: string) => Promise<TaskExecution>;
 }
 
 export interface ISchedulerDependenciesApi {

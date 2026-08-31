@@ -22,15 +22,17 @@ export function useCalendarExecutions(filters?: ExecutionFilters) {
     queryFn: async (): Promise<ExecutionEvent[]> => {
       const res = await api.scheduler.getExecutions(filters);
       const executions: TaskExecution[] = res ?? [];
-      return executions.map((exec: TaskExecution) => ({
-        id: exec.id,
-        task_id: exec.task_id,
-        task_title: i18n.t("calendar.unknownTask"),
-        started_at: exec.started_at,
-        ended_at: exec.ended_at,
-        duration: exec.duration,
-        status: exec.status,
-      }));
+      return executions
+        .filter((exec): exec is TaskExecution & { started_at: string } => !!exec.started_at)
+        .map((exec) => ({
+          id: exec.id,
+          task_id: exec.task_id,
+          task_title: i18n.t("calendar.unknownTask"),
+          started_at: exec.started_at,
+          ended_at: exec.ended_at,
+          duration: exec.duration,
+          status: exec.status,
+        }));
     },
     ...defaultQueryConfig,
   });

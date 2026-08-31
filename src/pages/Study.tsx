@@ -5,6 +5,8 @@ import { useQueries } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { useSemanticGroups, useReviewForecast } from "../hooks/queries";
 import { queryKeys, realtimeQueryConfig } from "../hooks/queries/config";
+import { setExecutionContext } from "../utils/executionSessionContext";
+import { useLinkedTask } from "../hooks/scheduler/useLinkedTask";
 import { StudyCard } from "../types";
 import { QuestionBank } from "../components/Study/QuestionBank";
 import { QuizList, QuizCreationFlow } from "../components/Quiz";
@@ -43,6 +45,8 @@ export const Study = () => {
   // 从学习模式大纲多选跳转：create=1 直接进入创建测验流程，kp_ids 为预选知识点
   const create = searchParams.get("create");
   const kpIds = searchParams.get("kp_ids");
+
+  const { linkedTask } = useLinkedTask({ graphId, nodeId });
 
   const scopeParams = useMemo(() => {
     if (nodeIds) return { knowledge_point_ids: nodeIds.split(",") };
@@ -136,6 +140,18 @@ export const Study = () => {
     setQuizModeActive(isQuizActiveView);
     return () => setQuizModeActive(false);
   }, [isQuizActiveView, setQuizModeActive]);
+
+  // 答题模式即计时：激活答题视图即记录做题活动；离开/切换由会话桥统一收尾（不在此结束会话）
+  useEffect(() => {
+    if (isQuizActiveView && nodeId) {
+      setExecutionContext({
+        kind: "quiz",
+        stage: "quiz",
+        knowledgePointId: nodeId,
+        taskId: linkedTask?.mainTaskId,
+      });
+    }
+  }, [isQuizActiveView, nodeId, linkedTask?.mainTaskId]);
 
   // 庆祝动画:复习 session 结束时触发(Task 19.2)
   const { triggerCelebration } = useCelebration();

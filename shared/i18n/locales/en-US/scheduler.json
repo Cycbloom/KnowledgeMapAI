@@ -1323,6 +1323,7 @@
     "unknownDuration": "Unknown",
     "today": "Today",
     "yesterday": "Yesterday",
+    "pendingStages": "Pending stages",
     "statusLabels": {
       "completed": "Completed",
       "interrupted": "Interrupted",

@@ -254,7 +254,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                             #{index + 1}
                           </span>
                           <span className="text-sm text-white">
-                            {formatDateTime(execution.started_at)}
+                            {execution.started_at ? formatDateTime(execution.started_at) : '-'}
                           </span>
                           <span
                             className={`px-2 py-0.5 rounded text-xs ${execStatus.bg} ${execStatus.color}`}

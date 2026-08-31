@@ -15,6 +15,7 @@ import { api } from "../../../services/api";
 import { EmptyState } from "../../common/EmptyState";
 import { formatDuration, formatDate } from "../../../utils/formatters";
 import { TaskExecution } from "../../../types";
+import type { ActivitySlice } from "@shared/types";
 
 interface ExecutionRecordsProps {
   taskId: string;
@@ -53,7 +54,8 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
   const groupByDate = (execs: TaskExecution[]): GroupedExecutions => {
     const grouped: GroupedExecutions = {};
     execs.forEach((exec) => {
-      const date = formatDate(exec.started_at, 'short-date');
+      // started_at 为空 → 待计时阶段，单独归入一组
+      const date = exec.started_at ? formatDate(exec.started_at, 'short-date') : '__pending__';
       if (!grouped[date]) {
         grouped[date] = [];
       }
@@ -63,6 +65,9 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
   };
 
   const formatDateLabel = (dateStr: string): string => {
+    if (dateStr === '__pending__') {
+      return t('scheduler.executionRecords.pendingStages');
+    }
     const date = new Date(dateStr);
     const today = new Date();
     const yesterday = new Date(today);
@@ -126,6 +131,44 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
     },
     { totalDuration: 0, completedCount: 0 },
   );
+
+  const stageLabels: Record<string, string> = {
+    learning: t("scheduler.activeTaskPanel.states.learning"),
+    review: t("scheduler.activeTaskPanel.states.review"),
+    practice: t("scheduler.activeTaskPanel.states.practice"),
+    quiz: t("scheduler.activeTaskPanel.states.quiz"),
+  };
+
+  const stageBadgeClass: Record<string, string> = {
+    learning:
+      "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+    review:
+      "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300",
+    practice:
+      "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+    quiz: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+  };
+
+  const sliceBreakdown = (log?: ActivitySlice[]): Record<string, number> | null => {
+    if (!Array.isArray(log) || log.length === 0) return null;
+    return log.reduce<Record<string, number>>((acc, s) => {
+      const key = stageLabels[s.kind] ?? s.kind;
+      acc[key] = (acc[key] ?? 0) + (s.duration_seconds ?? 0);
+      return acc;
+    }, {});
+  };
+
+  const renderSliceBreakdown = (log?: ActivitySlice[]): React.ReactNode => {
+    const breakdown = sliceBreakdown(log);
+    if (!breakdown) return null;
+    return (
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {Object.entries(breakdown)
+          .map(([label, secs]) => `${label} ${formatDuration(secs, { round: true })}`)
+          .join(" · ")}
+      </p>
+    );
+  };
 
   if (loading) {
     return (
@@ -235,15 +278,20 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
                             {getStatusIcon(exec.status)}
                             <div>
                               <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                {formatTime(exec.started_at)} -{" "}
+                                {exec.started_at ? formatTime(exec.started_at) : "—"} -{" "}
                                 {exec.ended_at
                                   ? formatTime(exec.ended_at)
                                   : t('scheduler.executionRecords.inProgress')}
                               </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                Q{exec.queue_level} ·{" "}
-                                {getStatusLabel(exec.status)}
+                              <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 flex-wrap">
+                                {exec.stage ? (
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${stageBadgeClass[exec.stage] ?? ""}`}>
+                                    {stageLabels[exec.stage] ?? exec.stage}
+                                  </span>
+                                ) : null}
+                                <span>Q{exec.queue_level} · {getStatusLabel(exec.status)}</span>
                               </p>
+                              {renderSliceBreakdown(exec.activity_log)}
                             </div>
                           </div>
                           <div className="text-right">

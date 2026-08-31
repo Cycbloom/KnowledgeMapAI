@@ -1349,6 +1349,7 @@
     "unknownDuration": "未知",
     "today": "今日",
     "yesterday": "昨日",
+    "pendingStages": "待计时阶段",
     "statusLabels": {
       "completed": "已完成",
       "interrupted": "中断",

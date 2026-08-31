@@ -82,16 +82,50 @@ CREATE TABLE IF NOT EXISTS task_executions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  started_at TIMESTAMPTZ NOT NULL,
+  subtask_id UUID,
+  knowledge_point_id UUID,
+  stage TEXT,
+  activity_log JSONB DEFAULT '[]'::jsonb,
+  started_at TIMESTAMPTZ,
   ended_at TIMESTAMPTZ,
   duration INTEGER,
   queue_level INTEGER,
-  status TEXT CHECK (status IN ('completed', 'interrupted', 'time_slice_ended'))
+  status TEXT CHECK (status IN ('completed', 'interrupted', 'time_slice_ended', 'pending', 'in_progress'))
 );
+
+-- Existing database: idempotent column additions / constraint relaxation
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'subtask_id') THEN
+    ALTER TABLE task_executions ADD COLUMN subtask_id UUID;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'knowledge_point_id') THEN
+    ALTER TABLE task_executions ADD COLUMN knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'stage') THEN
+    ALTER TABLE task_executions ADD COLUMN stage TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'activity_log') THEN
+    ALTER TABLE task_executions ADD COLUMN activity_log JSONB DEFAULT '[]'::jsonb;
+  END IF;
+  -- knowledge_point_id FK（列已存在时补充外键）
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'task_executions_knowledge_point_id_fkey') THEN
+    NULL;
+  ELSIF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'knowledge_point_id') THEN
+    ALTER TABLE task_executions ADD CONSTRAINT task_executions_knowledge_point_id_fkey
+      FOREIGN KEY (knowledge_point_id) REFERENCES knowledge_points(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+ALTER TABLE task_executions ALTER COLUMN started_at DROP NOT NULL;
+ALTER TABLE task_executions DROP CONSTRAINT IF EXISTS task_executions_status_check;
+ALTER TABLE task_executions ADD CONSTRAINT task_executions_status_check CHECK (status IN ('completed', 'interrupted', 'time_slice_ended', 'pending', 'in_progress'));
 
 COMMENT ON TABLE task_executions IS 'Task execution history for tracking work sessions';
 COMMENT ON COLUMN task_executions.duration IS 'Execution duration in seconds';
-COMMENT ON COLUMN task_executions.status IS 'Execution result: completed, interrupted, time_slice_ended';
+COMMENT ON COLUMN task_executions.status IS 'Execution result: completed, interrupted, time_slice_ended, pending, in_progress';
+COMMENT ON COLUMN task_executions.activity_log IS 'Activity slices: [{kind, knowledge_point_id, started_at, ended_at, duration_seconds}]';
+COMMENT ON COLUMN task_executions.stage IS 'Learning stage context: learning, review, practice, quiz';
 
 -- Task tags table (user-defined tags)
 CREATE TABLE IF NOT EXISTS task_tags (
@@ -217,6 +251,15 @@ COMMENT ON COLUMN task_subtasks.knowledge_point_id IS 'Associated knowledge poin
 COMMENT ON COLUMN task_subtasks.learning_state IS 'Learning state machine: learning(once) -> review -> practice -> quiz -> review(cycle)';
 COMMENT ON COLUMN task_subtasks.last_state_change_at IS 'Timestamp of last learning state change';
 COMMENT ON COLUMN task_subtasks.state_history IS 'History of learning state transitions';
+
+-- task_executions.subtask_id FK（task_subtasks 已创建，故在此补充；列在 CREATE 阶段已存在）
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'task_executions_subtask_id_fkey') THEN
+    ALTER TABLE task_executions ADD CONSTRAINT task_executions_subtask_id_fkey
+      FOREIGN KEY (subtask_id) REFERENCES task_subtasks(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- Task links table
 CREATE TABLE IF NOT EXISTS task_links (

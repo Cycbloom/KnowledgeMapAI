@@ -7,6 +7,7 @@ import type {
   ScheduleType,
   SubtaskStatus,
   LearningState,
+  ActivityKind,
   LinkType,
   TaskSource,
   SystemTaskType,
@@ -176,11 +177,24 @@ export interface TaskProgressPlan {
   created_at: string;
 }
 
+export interface ActivitySlice {
+  kind: ActivityKind;
+  knowledge_point_id?: string;
+  started_at: string | null;
+  ended_at?: string;
+  duration_seconds?: number;
+  material_duration_seconds?: number;
+}
+
 export interface TaskExecution {
   id: string;
   task_id: string;
   user_id: string;
-  started_at: string;
+  subtask_id?: string;
+  knowledge_point_id?: string;
+  stage?: LearningState;
+  activity_log?: ActivitySlice[];
+  started_at: string | null;
   ended_at?: string;
   duration?: number;
   queue_level: number;

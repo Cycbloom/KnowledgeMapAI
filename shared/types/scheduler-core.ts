@@ -11,7 +11,12 @@ export type UserTaskStatus =
   | "completed"
   | "cancelled";
 
-export type ExecutionStatus = "completed" | "interrupted" | "time_slice_ended";
+export type ExecutionStatus =
+  | "completed"
+  | "interrupted"
+  | "time_slice_ended"
+  | "pending"
+  | "in_progress";
 
 export type DependencyType = "strict" | "soft";
 
@@ -20,6 +25,8 @@ export type ScheduleType = "daily" | "weekly" | "custom" | "smart";
 export type SubtaskStatus = "pending" | "in_progress" | "completed";
 
 export type LearningState = "learning" | "review" | "practice" | "quiz";
+
+export type ActivityKind = LearningState;
 
 export type LinkType = "web" | "file" | "api";
 

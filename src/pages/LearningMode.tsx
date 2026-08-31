@@ -22,6 +22,7 @@ import {
 } from "../hooks/queries";
 import { useStudyModeLogic } from "../hooks/study/useStudyModeLogic";
 import { useLearningModeTimer } from "../hooks/study/useLearningModeTimer";
+import { setExecutionContext } from "../utils/executionSessionContext";
 import { useLinkedTask } from "../hooks/scheduler/useLinkedTask";
 import { useTaskSettledInvalidator } from "../hooks/scheduler/useTaskSettledInvalidator";
 import { useLevelTestNotificationStore } from "../store/useLevelTestNotificationStore";
@@ -89,6 +90,21 @@ export const LearningMode = () => {
     nodeTitle: "",
     linkedTaskMainTaskId: linkedTask?.mainTaskId,
   });
+
+  // 学习模式即计时：选中知识点阅读即记录学习活动；离开/切换由会话桥统一收尾
+  useEffect(() => {
+    if (nodeId) {
+      setExecutionContext({
+        kind: "learning",
+        stage: "learning",
+        knowledgePointId: nodeId,
+        taskId: linkedTask?.mainTaskId,
+      });
+    } else {
+      setExecutionContext(null);
+    }
+    return () => setExecutionContext(null);
+  }, [nodeId, linkedTask?.mainTaskId]);
 
   // Local state
   const [nodeTitle, setNodeTitle] = useState("");

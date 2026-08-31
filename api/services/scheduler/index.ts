@@ -49,7 +49,7 @@ export type {
   UserTaskFilters,
 } from "./taskService";
 
-export type { TaskExecution, ExecutionFilters } from "./executionService";
+export type { TaskExecution, ExecutionFilters, SessionActivityContext } from "./executionService";
 
 export type {
   FocusSession,

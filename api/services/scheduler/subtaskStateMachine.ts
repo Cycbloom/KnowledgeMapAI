@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { MASTERY_THRESHOLDS } from "../../../shared/constants/masteryThresholds";
+import { executionService } from "./executionService";
 import type {
   LearningState,
   StateHistoryEntry,
@@ -255,10 +256,44 @@ class SubtaskStateMachine {
       `[SubtaskStateMachine] Subtask ${subtaskId}: ${fromState} → ${toState} (mastery: ${(masteryBefore * 100).toFixed(0)}% → ${(masteryLevel * 100).toFixed(0)}%)`,
     );
 
+    // 阶段推进回写：为真实迁移产生一条待计时执行记录（阶段开始不计时）
+    if (fromState !== toState) {
+      try {
+        const owner = await this.resolveOwner(supabase, subtask.task_id);
+        if (owner) {
+          await executionService.createPendingForStage(supabase, owner, {
+            taskId: subtask.task_id,
+            subtaskId,
+            knowledgePointId: subtask.knowledge_point_id,
+            stage: toState,
+          });
+        }
+      } catch (error) {
+        logger.warn("[SubtaskStateMachine] failed to write pending stage execution", {
+          subtaskId,
+          toState,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
     return {
       success: true,
       subtask: this.flattenSubtaskMastery(updatedSubtask) as TaskSubtask,
     };
+  }
+
+  /** 从任务解析拥有者 user_id（task_executions.user_id 来源） */
+  private async resolveOwner(
+    supabase: SupabaseClient,
+    taskId: string,
+  ): Promise<string | null> {
+    const { data } = await supabase
+      .from("user_tasks")
+      .select("user_id")
+      .eq("id", taskId)
+      .single();
+    return data?.user_id ?? null;
   }
 
   /**

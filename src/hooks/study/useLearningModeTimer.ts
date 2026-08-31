@@ -13,10 +13,7 @@ export function useLearningModeTimer({
   nodeTitle,
   linkedTaskMainTaskId,
 }: UseLearningModeTimerOptions) {
-  const startFocusTimer = useTimerStore((s) => s.start);
   const completeFocusTimer = useTimerStore((s) => s.complete);
-  const focusTaskId = useTimerStore((s) => s.taskId);
-  const isFocusTimerActive = useTimerStore((s) => s.isActive);
 
   const { startActivity, endActivity } = useActivityTracker();
   const activityRef = useRef(false);
@@ -25,13 +22,6 @@ export function useLearningModeTimer({
   useEffect(() => {
     activityFnsRef.current = { startActivity, endActivity };
   }, [startActivity, endActivity]);
-
-  // Auto-start focus timer when a node is selected
-  useEffect(() => {
-    if (nodeId && !focusTaskId && !isFocusTimerActive) {
-      startFocusTimer(nodeId, 25);
-    }
-  }, [nodeId, focusTaskId, isFocusTimerActive, startFocusTimer]);
 
   // Track activity for the current node
   useEffect(() => {
@@ -56,7 +46,5 @@ export function useLearningModeTimer({
 
   return {
     completeFocusTimer,
-    focusTaskId,
-    isFocusTimerActive,
   };
 }

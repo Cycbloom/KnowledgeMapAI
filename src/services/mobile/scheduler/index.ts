@@ -192,6 +192,9 @@ export const mobileSchedulerApi: ISchedulerApi = {
   // --- ISchedulerExecutionsApi ---
   getExecutions: executions.getExecutions,
   getTaskExecutions: notSupported("getTaskExecutions"),
+  startSession: notSupported("startSession"),
+  appendSessionActivity: notSupported("appendSessionActivity"),
+  endSession: notSupported("endSession"),
 
   // --- ISchedulerDependenciesApi ---
   addTaskDependency: dependencies.addTaskDependency,

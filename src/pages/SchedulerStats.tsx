@@ -515,7 +515,7 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
                     {execution.task_id.slice(0, 8)}...
                   </td>
                   <td className="py-3 px-4 text-slate-300 text-sm">
-                    {formatDateTime(execution.started_at)}
+                    {execution.started_at ? formatDateTime(execution.started_at) : '-'}
                   </td>
                   <td className="py-3 px-4 text-slate-300 text-sm">
                     {execution.ended_at ? formatDateTime(execution.ended_at) : '-'}

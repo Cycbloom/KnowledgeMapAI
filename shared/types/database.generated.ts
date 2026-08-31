@@ -2989,36 +2989,62 @@ export type Database = {
       }
       task_executions: {
         Row: {
+          activity_log: Json | null
           duration: number | null
           ended_at: string | null
           id: string
+          knowledge_point_id: string | null
           queue_level: number | null
-          started_at: string
+          stage: string | null
+          started_at: string | null
           status: string | null
+          subtask_id: string | null
           task_id: string
           user_id: string
         }
         Insert: {
+          activity_log?: Json | null
           duration?: number | null
           ended_at?: string | null
           id?: string
+          knowledge_point_id?: string | null
           queue_level?: number | null
-          started_at: string
+          stage?: string | null
+          started_at?: string | null
           status?: string | null
+          subtask_id?: string | null
           task_id: string
           user_id: string
         }
         Update: {
+          activity_log?: Json | null
           duration?: number | null
           ended_at?: string | null
           id?: string
+          knowledge_point_id?: string | null
           queue_level?: number | null
-          started_at?: string
+          stage?: string | null
+          started_at?: string | null
           status?: string | null
+          subtask_id?: string | null
           task_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "task_executions_knowledge_point_id_fkey"
+            columns: ["knowledge_point_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_points"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_executions_subtask_id_fkey"
+            columns: ["subtask_id"]
+            isOneToOne: false
+            referencedRelation: "task_subtasks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "task_executions_task_id_fkey"
             columns: ["task_id"]

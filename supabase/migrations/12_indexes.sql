@@ -146,6 +146,9 @@ CREATE INDEX IF NOT EXISTS idx_user_tasks_graph_id ON user_tasks(graph_id) WHERE
 -- Task executions
 CREATE INDEX IF NOT EXISTS idx_task_executions_task ON task_executions(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_executions_user_started ON task_executions(user_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_task_executions_task_stage ON task_executions(task_id, stage);
+CREATE INDEX IF NOT EXISTS idx_task_executions_kp ON task_executions(knowledge_point_id);
+CREATE INDEX IF NOT EXISTS idx_task_executions_user_status ON task_executions(user_id, status);
 
 -- Task tags
 CREATE INDEX IF NOT EXISTS idx_task_tags_user ON task_tags(user_id);

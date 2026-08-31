@@ -10,6 +10,7 @@ import { LazyLoadFallback } from "./components/common/LazyLoadFallback";
 import { PageLoadingProvider, usePageLoading } from "./hooks/common/usePageLoading";
 import { GlobalErrorBoundary } from "./components/common/GlobalErrorBoundary";
 import { RenderProfiler } from "./components/dev/RenderProfiler";
+import { ExecutionSessionBridge } from "./components/common/ExecutionSessionBridge";
 import { QueryErrorResetBoundary, useQueryClient } from "@tanstack/react-query";
 import { useDeepLink } from "./hooks/common/useDeepLink";
 import { useMobileInit } from "./hooks/mobile/useMobileInit";
@@ -277,6 +278,7 @@ function App() {
       <Route
         element={
           <ProtectedRoute>
+            <ExecutionSessionBridge />
             <Layout />
           </ProtectedRoute>
         }

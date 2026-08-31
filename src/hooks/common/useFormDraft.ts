@@ -29,6 +29,9 @@ export function useFormDraft<T>(options: UseFormDraftOptions<T>): UseFormDraftRe
   const [showRestorePrompt, setShowRestorePrompt] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstWriteRef = useRef(true);
+  // 挂载时的初始值快照：仅在与初始值存在实质差异时才记录草稿/提示恢复，
+  // 避免把等于初始值的空草稿误判为“未保存的草稿”。
+  const initialRef = useRef(initialValue);
 
   const getStorage = useCallback((): Storage | null => {
     try {
@@ -38,14 +41,31 @@ export function useFormDraft<T>(options: UseFormDraftOptions<T>): UseFormDraftRe
     }
   }, [storageType]);
 
+  const clearDraft = useCallback(() => {
+    const storage = getStorage();
+    if (!storage) return;
+    try {
+      storage.removeItem(key);
+      setHasDraft(false);
+    } catch (error) {
+      console.error('[useFormDraft] failed to clear draft:', error);
+    }
+  }, [key, getStorage]);
+
   useEffect(() => {
     const storage = getStorage();
     if (!storage) return;
     try {
       const raw = storage.getItem(key);
+      // 仅有实际内容差异的草稿才算“未保存的草稿”。等于初始值的残留空草稿
+      // （如挂载即自动写入、取消未清理）直接清理并清理提示，避免每次打开误弹“恢复草稿”。
       if (raw !== null) {
-        setHasDraft(true);
-        setShowRestorePrompt(true);
+        if (raw === JSON.stringify(initialRef.current)) {
+          storage.removeItem(key);
+        } else if (raw !== 'null' && raw !== 'undefined' && raw !== '') {
+          setHasDraft(true);
+          setShowRestorePrompt(true);
+        }
       }
     } catch (error) {
       console.error('[useFormDraft] failed to read draft on mount:', error);
@@ -59,6 +79,11 @@ export function useFormDraft<T>(options: UseFormDraftOptions<T>): UseFormDraftRe
     }
     if (timerRef.current !== null) {
       clearTimeout(timerRef.current);
+    }
+    // 值回到了初始值说明没有实质草稿，清理残留即可，不再落盘
+    if (JSON.stringify(value) === JSON.stringify(initialRef.current)) {
+      clearDraft();
+      return;
     }
     timerRef.current = setTimeout(() => {
       const storage = getStorage();
@@ -76,22 +101,11 @@ export function useFormDraft<T>(options: UseFormDraftOptions<T>): UseFormDraftRe
         timerRef.current = null;
       }
     };
-  }, [value, key, debounceDelay, getStorage]);
+  }, [value, key, debounceDelay, getStorage, clearDraft]);
 
   const setValue = useCallback((v: T | ((prev: T) => T)) => {
     setValueState(v);
   }, []);
-
-  const clearDraft = useCallback(() => {
-    const storage = getStorage();
-    if (!storage) return;
-    try {
-      storage.removeItem(key);
-      setHasDraft(false);
-    } catch (error) {
-      console.error('[useFormDraft] failed to clear draft:', error);
-    }
-  }, [key, getStorage]);
 
   const onRestore = useCallback(() => {
     const storage = getStorage();

@@ -158,7 +158,7 @@ export interface IAiApi {
     },
   ): Promise<{ success: boolean; taskIds: string[]; message: string; error?: string; results?: Array<{ nodeId: string; success: boolean; count: number }> }>;
 
-  batchExpandGraph(node_ids: string[]): Promise<{ success: boolean; message: string }>;
+  batchExpandGraph(node_ids: string[]): Promise<{ success: boolean; taskIds: string[]; message: string }>;
 
   getTaskStatus(id: string): Promise<{ status: string; progress?: number; result?: unknown }>;
 

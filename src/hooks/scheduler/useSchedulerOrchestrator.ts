@@ -41,10 +41,30 @@ export function useSchedulerOrchestrator() {
     },
   });
 
+  /** 统一「开始学习图谱」入口 */
+  const startLearningForGraph = useMutation({
+    mutationFn: ({ graphId, dailyMinutes }: { graphId: string; dailyMinutes?: number }) =>
+      orchestratorApi.startLearningForGraph(graphId, dailyMinutes),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.scheduler() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphLearningPath(variables.graphId) });
+    },
+  });
+
+  /** 调度决策：现在最该做的下一步 */
+  const nextStep = useQuery({
+    queryKey: queryKeys.schedulerNextStep(),
+    queryFn: () => orchestratorApi.getNextStep(),
+    staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 60 * 5,
+  });
+
   return {
     startLearningLoop,
     advanceLearningLoop,
     activeLoop,
     startLearningWithTask,
+    startLearningForGraph,
+    nextStep,
   };
 }

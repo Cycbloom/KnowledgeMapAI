@@ -6,6 +6,7 @@ import { useNodeDisplayLanguageStore } from "../store/useNodeDisplayLanguageStor
 import { resolveLocalizedText } from "@shared/utils/localization";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, schedulerApi } from "../services/api";
+import { orchestratorApi } from "../services/api/modules/scheduler/orchestrator";
 import { message as msgHelper } from "../utils/messageHelper";
 import { asyncConfirm } from "../utils/asyncConfirm";
 import {
@@ -22,6 +23,7 @@ import {
 import { useStudyModeLogic } from "../hooks/study/useStudyModeLogic";
 import { useLearningModeTimer } from "../hooks/study/useLearningModeTimer";
 import { useLinkedTask } from "../hooks/scheduler/useLinkedTask";
+import { useTaskSettledInvalidator } from "../hooks/scheduler/useTaskSettledInvalidator";
 import { useLevelTestNotificationStore } from "../store/useLevelTestNotificationStore";
 import {
   isAppError,
@@ -106,6 +108,8 @@ export const LearningMode = () => {
   const [newNodeLevel, setNewNodeLevel] = useState<NodeLevel>("leaf");
   const [selectedParentNodeId, setSelectedParentNodeId] = useState<string>("");
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
+  // 后台拓展（大纲多选「拓展」）已提交的任务，完成后刷新图谱节点数据
+  const [expandTaskIds, setExpandTaskIds] = useState<string[]>([]);
   const [outlineMode, setOutlineMode] = useState<OutlineMode>("graph");
   const [selectedLearningPathId, setSelectedLearningPathId] = useState<string | null>(null);
   const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
@@ -148,6 +152,19 @@ export const LearningMode = () => {
   const isEn = nodeContentLang === "en-US";
   const materialLangCode = isEn ? "en-US" : "zh-CN";
   const queryClient = useQueryClient();
+
+  // 后台拓展任务全部完成后刷新图谱节点与学习路径缓存，使大纲视图即时显示新拓展节点
+  useTaskSettledInvalidator({
+    taskIds: expandTaskIds,
+    onAllSettled: () => {
+      if (!graphId) return;
+      setExpandTaskIds([]);
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.graphLearningPath(graphId),
+      });
+    },
+  });
 
   useQuoteShortcut({
     onAddQuote: addQuote,
@@ -334,7 +351,12 @@ export const LearningMode = () => {
         taskId = newTask.id;
       }
       await completeFocusTimer();
-      await schedulerApi.createFirstReviewTask({ knowledge_point_id: nodeId, task_id: taskId });
+      // 学习完成统一推进：重算掌握度 → 推进子任务状态机 → 创建首次复习卡片
+      await orchestratorApi.completeLearning({
+        knowledge_point_id: nodeId,
+        task_id: taskId,
+        graph_id: graphId,
+      });
       msgHelper.success(t("learning.challenge.completed"));
     } catch (error) {
       console.error("Failed to create review task:", error);
@@ -694,6 +716,10 @@ export const LearningMode = () => {
       try {
         const result = await api.ai.batchExpandGraph(ids);
         if (result.success) {
+          // 记录本次提交的后台任务，全部完成后刷新图谱节点数据
+          if (Array.isArray(result.taskIds) && result.taskIds.length > 0) {
+            setExpandTaskIds((prev) => [...prev, ...result.taskIds]);
+          }
           msgHelper.success(t("learning.batch.expandSuccess", { count: ids.length }), { duration: 5000, action: { label: t("learning.cards.viewTasks"), onClick: () => navigate("/tasks") } });
           setSelectedNodeIds(new Set());
         } else { msgHelper.error(t("learning.batch.submitFailed")); }

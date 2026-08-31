@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { tasksApi } from "../../../services/api/tasks";
 import { useFocusTrap, useEscapeKey } from "../../../hooks/common";
+import { useTaskSettledInvalidator } from "../../../hooks/scheduler/useTaskSettledInvalidator";
+import { queryKeys } from "../../../hooks/queries/config";
+import { useQueryClient } from "@tanstack/react-query";
 import { message } from "../../../utils/messageHelper";
 
 interface NodeTranslatePanelProps {
@@ -61,6 +64,19 @@ export const NodeTranslatePanel: React.FC<NodeTranslatePanelProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [createdTaskId, setCreatedTaskId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  // 节点翻译是后台 task：任务全部完成后失效图谱节点/学习路径缓存，无需手动重取即可看到翻译结果
+  useTaskSettledInvalidator({
+    taskIds: createdTaskId ? [createdTaskId] : [],
+    onAllSettled: () => {
+      if (!graphId) return;
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.graphLearningPath(graphId),
+      });
+    },
+  });
 
   if (!isOpen) return null;
 

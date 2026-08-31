@@ -421,9 +421,10 @@ export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
   },
 
   batchExpandGraph: (node_ids: string[]) =>
-    post<{ success: boolean; message: string }>("/ai/batch-expand-graph", {
-      node_ids,
-    }),
+    post<{ success: boolean; taskIds: string[]; message: string }>(
+      "/ai/batch-expand-graph",
+      { node_ids },
+    ),
 
   getTaskStatus: (id: string) =>
     get<{ status: string; progress?: number; result?: unknown }>(

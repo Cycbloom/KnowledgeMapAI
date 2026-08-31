@@ -247,10 +247,13 @@ export const aiApi: IAiApi = {
   },
 
   batchExpandGraph: (node_ids: string[]) => {
-    return request("/ai/batch-expand-graph", {
-      method: "POST",
-      body: JSON.stringify({ node_ids }),
-    });
+    return request<{ success: boolean; taskIds: string[]; message: string }>(
+      "/ai/batch-expand-graph",
+      {
+        method: "POST",
+        body: JSON.stringify({ node_ids }),
+      },
+    );
   },
 
   getTaskStatus: (id: string) => request(`/ai/tasks/${id}`),

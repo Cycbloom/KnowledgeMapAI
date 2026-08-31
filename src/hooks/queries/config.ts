@@ -226,6 +226,7 @@ export const queryKeys = {
   // === Learning loops 相关 ===
   learningLoops: () => ["learning-loops"] as const,
   activeLearningLoop: () => ["learning-loops", "active"] as const,
+  schedulerNextStep: () => ["scheduler", "next-step"] as const,
 
   // === GraphMap 相关 ===
   graphMap: () => ["graphMap"] as const,

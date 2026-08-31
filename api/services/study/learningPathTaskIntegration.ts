@@ -10,6 +10,13 @@ import type {
 } from "./learningPathService";
 import { topologicalSortNodes } from "./learningPathAlgorithms";
 import { notDeleted } from '../common/softDeleteHelper';
+import {
+  formatLearningPathTaskTitle,
+  formatNodeTaskTitle,
+} from "../../../shared/constants/taskTitles";
+
+/** 学习路径任务默认描述（后端不加载 locale，不能走 i18next 取 key） */
+const PATH_TASK_DEFAULT_DESCRIPTION = "学习路径任务";
 
 export class LearningPathTaskIntegration {
   private learningPathService: LearningPathService;
@@ -57,8 +64,11 @@ export class LearningPathTaskIntegration {
       .from("user_tasks")
       .insert({
         user_id: userId,
-        title: i18next.t("learningPath.api.taskIntegration.pathTaskTitle", { title: path.title }),
-        description: path.description || path.goal || i18next.t("learningPath.api.taskIntegration.pathTaskDescription"),
+        title: formatLearningPathTaskTitle(path.title),
+        description:
+          path.description ||
+          path.goal ||
+          PATH_TASK_DEFAULT_DESCRIPTION,
         queue_level: 0,
         position: count ?? 0,
         estimated_duration: totalEstimatedTime,
@@ -190,7 +200,7 @@ export class LearningPathTaskIntegration {
       .from("user_tasks")
       .insert({
         user_id: userId,
-        title: i18next.t("learningPath.api.taskIntegration.nodeTaskTitle", { title: node.title }),
+        title: formatNodeTaskTitle(node.title),
         description: node.description,
         queue_level: options?.queue_level ?? 0,
         position: count ?? 0,
@@ -473,8 +483,10 @@ export class LearningPathTaskIntegration {
              RETURNING id`,
             [
               userId,
-              i18next.t("learningPath.api.taskIntegration.pathTaskTitle", { title: path.title }),
-              path.description || path.goal || i18next.t("learningPath.api.taskIntegration.pathTaskDescription"),
+              formatLearningPathTaskTitle(path.title),
+              path.description ||
+                path.goal ||
+                PATH_TASK_DEFAULT_DESCRIPTION,
               position,
               totalEstimatedTime,
               startDate.toISOString(),

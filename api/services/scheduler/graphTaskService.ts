@@ -1,8 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import i18next from "i18next";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { formatStudyGraphTaskTitle } from "../../../shared/constants/taskTitles";
 import { smartTaskLinker } from "./smartTaskLinker";
 import { notDeleted } from '../common/softDeleteHelper';
 
@@ -160,7 +160,7 @@ export class GraphTaskService {
       .from("user_tasks")
       .insert({
         user_id: userId,
-        title: i18next.t("scheduler.graphTask.titles.studyGraph", { title: graph.title }),
+        title: formatStudyGraphTaskTitle(graph.title),
         queue_level: 1,
         position: count ?? 0,
         priority: 5,

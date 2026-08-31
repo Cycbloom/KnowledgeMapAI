@@ -1,7 +1,6 @@
 /** @schedule decision - FSRS 过渡数学、练习/测验完成后 mastery_level 写入、状态机转换逻辑 */
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
-import i18next from "i18next";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { StudyCard } from "../../../shared/types/common";
@@ -13,6 +12,8 @@ import type { IAIProviderService, CardDifficulty } from "./types";
 import { studyService } from "../study/studyService";
 import { notDeleted } from '../common/softDeleteHelper';
 import { transactionExecutor } from "../../database/transactionExecutor";
+import { formatQuizSetTitle } from "../../../shared/constants/taskTitles";
+import { resolveLocalizedText } from "../../../shared/utils/localization";
 
 export interface PracticeSession {
   id: string;
@@ -799,8 +800,8 @@ export class SubtaskQuizIntegrationService {
     const { error: quizSetError } = await supabase.from("quiz_sets").insert({
       id: quizSetId,
       user_id: userId,
-      title: i18next.t("scheduler.api.messages.quizTitle", { title: knowledgePoint.title }),
-      description: `针对知识点 "${knowledgePoint.title}" 的综合测验`,
+      title: formatQuizSetTitle(resolveLocalizedText(knowledgePoint.title)),
+      description: `针对知识点 "${resolveLocalizedText(knowledgePoint.title)}" 的综合测验`,
       config,
       status: "generating",
       card_count: 0,

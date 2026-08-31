@@ -6,6 +6,7 @@ import { appEventBus } from "../core/eventBus";
 import { getSupabaseAdmin } from "../../supabase";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { resolveLocalizedText } from "../../../shared/utils/localization";
 import type { AppEvent, GraphCreatedPayload } from "../../../shared/types/events";
 
 export interface LinkedTaskResult {
@@ -197,11 +198,12 @@ class SmartTaskLinker {
       .map((gn) => {
         const kp = gn.knowledge_points as unknown as {
           id: string;
-          title: string;
+          title: string | { [lang: string]: string };
         };
         return {
           id: gn.knowledge_point_id,
-          title: kp.title,
+          // knowledge_points.title 为 JSONB 本地化对象，写入任务/子任务标题前需解析为可读文本
+          title: resolveLocalizedText(kp.title),
         };
       });
   }

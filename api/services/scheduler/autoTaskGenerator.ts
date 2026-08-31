@@ -2,6 +2,15 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import i18next from "i18next";
 import { logger } from "../../utils/logger";
 import { notDeleted } from '../common/softDeleteHelper';
+import {
+  formatStudyTaskTitle,
+  formatReviewTaskTitle,
+  formatPathNodeSubtaskTitle,
+} from "../../../shared/constants/taskTitles";
+import { resolveLocalizedText } from "../../../shared/utils/localization";
+
+/** 知识点默认名称（后端不加载 locale，不能走 i18next 取 key） */
+const DEFAULT_KNOWLEDGE_POINT_LABEL = "知识点";
 
 interface AutoTaskResult {
   taskId: string;
@@ -39,9 +48,9 @@ class AutoTaskGenerator {
       };
     }
 
-    let title = i18next.t("scheduler.autoTask.titles.study", { title: i18next.t("scheduler.learningLoop.defaults.knowledgePoint") });
+    let title = formatStudyTaskTitle(DEFAULT_KNOWLEDGE_POINT_LABEL);
     if (options?.title) {
-      title = i18next.t("scheduler.autoTask.titles.study", { title: options.title });
+      title = formatStudyTaskTitle(options.title);
     } else if (knowledgePointId) {
       const { data: kp } = await supabase
         .from("knowledge_points")
@@ -49,7 +58,7 @@ class AutoTaskGenerator {
         .eq("id", knowledgePointId)
         .single();
       if (kp?.title) {
-        title = i18next.t("scheduler.autoTask.titles.studyKnowledgePoint", { title: kp.title });
+        title = formatStudyTaskTitle(resolveLocalizedText(kp.title));
       }
     }
 
@@ -125,9 +134,9 @@ class AutoTaskGenerator {
       };
     }
 
-    let title = i18next.t("scheduler.autoTask.titles.review", { title: i18next.t("scheduler.learningLoop.defaults.knowledgePoint") });
+    let title = formatReviewTaskTitle(DEFAULT_KNOWLEDGE_POINT_LABEL);
     if (options?.title) {
-      title = i18next.t("scheduler.autoTask.titles.review", { title: options.title });
+      title = formatReviewTaskTitle(options.title);
     } else if (knowledgePointId) {
       const { data: kp } = await supabase
         .from("knowledge_points")
@@ -135,7 +144,7 @@ class AutoTaskGenerator {
         .eq("id", knowledgePointId)
         .single();
       if (kp?.title) {
-        title = i18next.t("scheduler.autoTask.titles.review", { title: kp.title });
+        title = formatReviewTaskTitle(resolveLocalizedText(kp.title));
       }
     }
 
@@ -216,7 +225,7 @@ class AutoTaskGenerator {
       };
     }
 
-    let title = i18next.t("scheduler.autoTask.titles.pathNode", { title: i18next.t("scheduler.learningLoop.defaults.knowledgePoint") });
+    let title = formatPathNodeSubtaskTitle(DEFAULT_KNOWLEDGE_POINT_LABEL);
     if (options?.title) {
       title = options.title;
     } else {

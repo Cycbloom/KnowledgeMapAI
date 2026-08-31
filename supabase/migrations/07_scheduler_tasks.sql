@@ -90,7 +90,8 @@ CREATE TABLE IF NOT EXISTS task_executions (
   ended_at TIMESTAMPTZ,
   duration INTEGER,
   queue_level INTEGER,
-  status TEXT CHECK (status IN ('completed', 'interrupted', 'time_slice_ended', 'pending', 'in_progress'))
+  status TEXT CHECK (status IN ('completed', 'interrupted', 'time_slice_ended', 'pending', 'in_progress')),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Existing database: idempotent column additions / constraint relaxation
@@ -107,6 +108,9 @@ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'activity_log') THEN
     ALTER TABLE task_executions ADD COLUMN activity_log JSONB DEFAULT '[]'::jsonb;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'updated_at') THEN
+    ALTER TABLE task_executions ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
   END IF;
   -- knowledge_point_id FK（列已存在时补充外键）
   IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'task_executions_knowledge_point_id_fkey') THEN

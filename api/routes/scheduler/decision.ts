@@ -71,6 +71,8 @@ router.get(
       small = await schedulerDecisionService.decideSmallLoop(
         req.supabase,
         big.graphTask,
+        undefined,
+        req.user.id,
       );
     }
 
@@ -88,6 +90,7 @@ router.get(
     const result = await schedulerDecisionService.getNextActionForTask(
       req.supabase,
       task_id,
+      req.user.id,
     );
     res.json({ success: true, data: result });
   },

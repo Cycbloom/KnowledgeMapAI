@@ -5,6 +5,7 @@ import { spacedRepetitionBridge } from "../study/spacedRepetitionBridge";
 import { taskRecommendationService } from "./taskRecommendationService";
 import { learningFlowService } from "./learningFlowService";
 import { subtaskStateMachine } from "./subtaskStateMachine";
+import { executionService } from "./executionService";
 import type { StateHistoryEntry } from "../../../shared/types/scheduler";
 import { notDeleted } from "../common/softDeleteHelper";
 
@@ -162,9 +163,14 @@ class SchedulerDecisionService {
     supabase: SupabaseClient,
     graphTask: NonNullable<BigLoopDecision["graphTask"]> | QueueTaskItem,
     now?: Date,
+    userId?: string,
   ): Promise<SmallLoopDecision> {
     void now;
-    const picked = await this.pickSubtask(supabase, graphTask.taskId);
+    const picked = await this.pickSubtaskPreferringActive(
+      supabase,
+      userId,
+      graphTask.taskId,
+    );
 
     const nextSubtask: QueueTaskItem["nextSubtask"] = picked
       ? {
@@ -203,6 +209,56 @@ class SchedulerDecisionService {
 
   /**
    * 小循环：取指定图谱大任务的下一个待执行子任务（pending / in_progress），返回详细字段供阶段推进推导。
+   * 若存在活跃会话（当前执行焦点），优先返回该会话所在子任务——用户手动绕过调度器直接学习时，由会话接管焦点。
+   */
+  private async pickSubtaskPreferringActive(
+    supabase: SupabaseClient,
+    userId: string | undefined,
+    taskId: string,
+  ): Promise<
+    | {
+        id: string;
+        title?: string;
+        knowledgePointId?: string;
+        learningState?: "learning" | "review" | "practice" | "quiz";
+        position?: number;
+        mastery: number;
+        stateHistory?: StateHistoryEntry[];
+      }
+    | undefined
+  > {
+    if (userId) {
+      const open = await executionService.findOpen(supabase, userId);
+      if (open) {
+        // 优先按 subtask_id 精确命中，其次按 knowledge_point_id
+        const tries: Array<{ id?: string; kp?: string }> = [];
+        if (open.subtask_id) tries.push({ id: open.subtask_id as string });
+        if (open.knowledge_point_id) tries.push({ kp: open.knowledge_point_id as string });
+
+        for (const t of tries) {
+          let query = supabase
+            .from("task_subtasks")
+            .select(
+              "id, title, knowledge_point_id, learning_state, position, state_history, knowledge_points(mastery_level)",
+            )
+            .eq("task_id", taskId)
+            .in("status", ["pending", "in_progress"])
+            .order("position", { ascending: true })
+            .limit(1);
+          if (t.id) query = query.eq("id", t.id);
+          else if (t.kp) query = query.eq("knowledge_point_id", t.kp);
+
+          const { data } = await query;
+          const raw = (Array.isArray(data) ? data : data ? [data] : [])[0];
+          if (raw) return this.mapSubtask(raw);
+        }
+      }
+    }
+    return this.pickSubtask(supabase, taskId);
+  }
+
+  /**
+   * 小循环：默认按 position 挑任务下第一个待执行子任务。
    */
   private async pickSubtask(
     supabase: SupabaseClient,
@@ -219,10 +275,10 @@ class SchedulerDecisionService {
       }
     | undefined
   > {
-    const { data: subtasks } = await supabase
+    const { data } = await supabase
       .from("task_subtasks")
       .select(
-        "id, title, knowledge_point_id, learning_state, position, estimated_duration, state_history, knowledge_points(mastery_level)",
+        "id, title, knowledge_point_id, learning_state, position, state_history, knowledge_points(mastery_level)",
       )
       .eq("task_id", taskId)
       .not("learning_path_node_id", "is", null)
@@ -230,21 +286,29 @@ class SchedulerDecisionService {
       .order("position", { ascending: true })
       .limit(1);
 
-    const raw = subtasks?.[0] as
-      | {
-          id: string;
-          title?: string;
-          knowledge_point_id?: string;
-          learning_state?: string;
-          position?: number;
-          estimated_duration?: number;
-          state_history?: StateHistoryEntry[] | null;
-          knowledge_points?: { mastery_level: number | null }[] | null;
-        }
-      | undefined;
+    const raw = data?.[0];
+    return raw ? this.mapSubtask(raw) : undefined;
+  }
 
-    if (!raw) return undefined;
-
+  private mapSubtask(
+    raw: {
+      id: string;
+      title?: string;
+      knowledge_point_id?: string;
+      learning_state?: string;
+      position?: number;
+      state_history?: StateHistoryEntry[] | null;
+      knowledge_points?: { mastery_level: number | null }[] | null;
+    },
+  ): {
+    id: string;
+    title?: string;
+    knowledgePointId?: string;
+    learningState?: "learning" | "review" | "practice" | "quiz";
+    position?: number;
+    mastery: number;
+    stateHistory?: StateHistoryEntry[];
+  } {
     const rawLearningState = raw.learning_state;
     const learningState = ["learning", "review", "practice", "quiz"].includes(
       rawLearningState ?? "",
@@ -260,6 +324,38 @@ class SchedulerDecisionService {
       position: raw.position,
       mastery: raw.knowledge_points?.[0]?.mastery_level ?? 0,
       stateHistory: raw.state_history ?? [],
+    };
+  }
+
+  /**
+   * 大循环：若存在活跃学习会话（当前执行焦点），返回其所在任务，供「接管焦点」使用。
+   * 仅在用户真实处于学习/答题会话时接管；会话结束回到普通调度。
+   */
+  private async findActiveFocusTask(
+    supabase: SupabaseClient,
+    userId: string,
+  ): Promise<{ taskId: string; taskTitle: string; graphId?: string } | null> {
+    const open = await executionService.findOpen(supabase, userId);
+    if (!open?.task_id) return null;
+
+    const { data: task } = await supabase
+      .from("user_tasks")
+      .select("id, title, graph_id, status")
+      .eq("id", open.task_id)
+      .single();
+
+    if (!task) return null;
+    if (
+      task.status === "completed" ||
+      task.status === "cancelled" ||
+      task.status === "paused"
+    ) {
+      return null;
+    }
+    return {
+      taskId: task.id,
+      taskTitle: (task.title as string) ?? task.id,
+      graphId: task.graph_id ?? undefined,
     };
   }
 
@@ -327,6 +423,7 @@ class SchedulerDecisionService {
   async getNextActionForTask(
     supabase: SupabaseClient,
     taskId: string,
+    userId?: string,
   ): Promise<{
     action:
       | (NonNullable<SmallLoopDecision["nextAction"]> & {
@@ -342,7 +439,9 @@ class SchedulerDecisionService {
       .eq("id", taskId)
       .maybeSingle();
 
-    const picked = await this.pickSubtask(supabase, taskId);
+    const picked = userId
+      ? await this.pickSubtaskPreferringActive(supabase, userId, taskId)
+      : await this.pickSubtask(supabase, taskId);
     const nextAction = picked ? this.computeNextAction(picked) : undefined;
     if (!nextAction || !nextAction.knowledgePointId) {
       return { action: null };
@@ -399,7 +498,7 @@ class SchedulerDecisionService {
         overdueReviewCount: big.overdueReviewCount,
       };
     }
-    if (big.type === "empty" || !big.graphTask) {
+    if (big.type === "empty" && !big.graphTask) {
       return {
         type: "empty",
         interrupted: false,
@@ -408,20 +507,43 @@ class SchedulerDecisionService {
       };
     }
 
-    // 小循环：在该大任务内挑下一个子任务
-    const small = await this.decideSmallLoop(supabase, big.graphTask, now);
+    // 会话接管焦点：若用户正处在一次活跃学习/答题会话中，优先继续该会话所在任务
+    const focus = await this.findActiveFocusTask(supabase, userId);
+    const graphTask = focus
+      ? {
+          taskId: focus.taskId,
+          taskTitle: focus.taskTitle,
+          graphId: focus.graphId,
+          queueLevel: big.graphTask?.queueLevel ?? 0,
+          priority: big.graphTask?.priority ?? 0,
+          deadline: big.graphTask?.deadline,
+          score: big.graphTask?.score ?? 100,
+        }
+      : big.graphTask;
+
+    if (!graphTask) {
+      return {
+        type: "empty",
+        interrupted: false,
+        reason: big.reason,
+        overdueReviewCount: big.overdueReviewCount,
+      };
+    }
+
+    // 小循环：在该大任务内挑下一个子任务（优先当前会话所在的子任务）
+    const small = await this.decideSmallLoop(supabase, graphTask, now, userId);
 
     return {
       type: "progress",
       interrupted: false,
       progress: {
-        taskId: big.graphTask.taskId,
-        taskTitle: big.graphTask.taskTitle,
-        graphId: big.graphTask.graphId,
-        queueLevel: big.graphTask.queueLevel,
-        priority: big.graphTask.priority,
-        deadline: big.graphTask.deadline,
-        score: big.graphTask.score,
+        taskId: graphTask.taskId,
+        taskTitle: graphTask.taskTitle,
+        graphId: graphTask.graphId,
+        queueLevel: graphTask.queueLevel,
+        priority: graphTask.priority,
+        deadline: graphTask.deadline,
+        score: graphTask.score,
         nextSubtask: small.nextSubtask,
         subtaskProgress: small.subtaskProgress,
       },

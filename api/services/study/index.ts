@@ -1,6 +1,15 @@
 export { studyService } from "./studyService";
 export { learningPathService } from "./learningPathService";
 export type { LearningPath, LearningPathResult } from "./learningPathService";
+export { crossGraphLearningPathService } from "./crossGraphLearningPathService";
+export type { CrossGraphPathResult, NextGraphInPath, CrossGraphSummary } from "./crossGraphLearningPathService";
+export {
+  generateCrossGraphRulePath,
+  generateCrossGraphAIPath,
+  buildCrossGraphDependencyMaps,
+  CROSS_GRAPH_COMPLETION_THRESHOLD,
+} from "./crossGraphPathAlgorithms";
+export type { CrossGraphStage } from "./crossGraphPathAlgorithms";
 export { LearningPathNodeService } from "./learningPathNodeService";
 export { LearningPathProgressService, learningPathProgressService } from "./learningPathProgressService";
 export { LearningPathPlanService } from "./learningPathPlanService";

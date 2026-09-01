@@ -1266,7 +1266,10 @@ export class LearningPathService {
     const graphMeta = await this.getGraphMeta(supabase, graphId);
 
     const progressMap = await buildProgressMap(supabase, userId, nodes);
-    const { parentMap, childMap } = buildDependencyMaps(nodes, edges);
+    const { parentMap, childMap, softParentMap } = buildDependencyMaps(
+      nodes,
+      edges,
+    );
 
     let stages: LearningPathStage[];
     let suggestions: string[];
@@ -1302,6 +1305,7 @@ export class LearningPathService {
         childMap,
         target_knowledge_point_id,
         daily_time_minutes,
+        softParentMap,
       );
       stages = ruleResult.stages;
       suggestions = ruleResult.suggestions;

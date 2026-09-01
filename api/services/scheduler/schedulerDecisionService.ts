@@ -6,6 +6,8 @@ import { taskRecommendationService } from "./taskRecommendationService";
 import { learningFlowService } from "./learningFlowService";
 import { subtaskStateMachine } from "./subtaskStateMachine";
 import { executionService } from "./executionService";
+import { smartTaskLinker } from "./smartTaskLinker";
+import { crossGraphLearningPathService } from "../study/crossGraphLearningPathService";
 import { resolveLocalizedText } from "../../../shared/utils/localization";
 import type { StateHistoryEntry } from "../../../shared/types/scheduler";
 import { notDeleted } from "../common/softDeleteHelper";
@@ -555,12 +557,22 @@ class SchedulerDecisionService {
 
   /**
    * 大循环：从队列挑得分最高的进行中图谱学习大任务（不含子任务详情）。
+   * 优先按 active 跨图谱学习路径推进（路径中下一个未完成的图谱）；
+   * 无跨图路径时回退到推荐队列。
    */
   private async pickQueueGraphTask(
     supabase: SupabaseClient,
     userId: string,
     now: Date,
   ): Promise<NonNullable<BigLoopDecision["graphTask"]> | null> {
+    // 1. 若存在 active 跨图谱学习路径，大循环按路径推进
+    const crossGraphTask = await this.pickFromCrossGraphPath(
+      supabase,
+      userId,
+    );
+    if (crossGraphTask) return crossGraphTask;
+
+    // 2. 回退：推荐队列
     const recommendations =
       await taskRecommendationService.getTaskRecommendations(supabase, userId, {
         currentTime: now,
@@ -582,6 +594,44 @@ class SchedulerDecisionService {
       deadline: task.deadline ?? undefined,
       score: topRec.score,
     };
+  }
+
+  /**
+   * 大循环：优先按「跨图谱学习路径」推进——取路径中下一个未完成的图谱，
+   * 确保其 graph_learning 大任务存在后作为大循环目标返回。
+   */
+  private async pickFromCrossGraphPath(
+    supabase: SupabaseClient,
+    userId: string,
+  ): Promise<NonNullable<BigLoopDecision["graphTask"]> | null> {
+    const next = await crossGraphLearningPathService.getNextGraphInPath(
+      supabase,
+      userId,
+    );
+    if (!next) return null;
+
+    try {
+      const info = await smartTaskLinker.getOrCreateTaskForGraph(
+        supabase,
+        userId,
+        next.graphId,
+      );
+      return {
+        taskId: info.mainTaskId,
+        taskTitle: info.graphName,
+        graphId: next.graphId,
+        queueLevel: 1,
+        priority: 1,
+        deadline: undefined,
+        score: 100,
+      };
+    } catch (error) {
+      logger.warn("[SchedulerDecision] pickFromCrossGraphPath failed", {
+        graphId: next.graphId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
   }
 
   /**

@@ -131,79 +131,90 @@ export async function buildProgressMap(
   return progressMap;
 }
 
+/** 学习前置依赖：dependency 类 + 时序 follows + 因果 causes/derives，真正约束学习顺序 */
+const HARD_DEPENDENCY_RELATIONSHIPS = new Set([
+  "depends_on",
+  "prerequisite",
+  "constrains",
+  "supports",
+  "follows",
+  "causes",
+  "derives",
+]);
+
+/** 层级结构：contains/part_of 等，仅作为「父先于子」的软排序，不强制约束学习顺序 */
+const HIERARCHY_RELATIONSHIPS = new Set([
+  "contains",
+  "part_of",
+  "parent_child",
+  "derived_from",
+]);
+
+function isHardDependency(type?: string): boolean {
+  if (!type) return true; // 缺省类型时保守视为学习依赖
+  return HARD_DEPENDENCY_RELATIONSHIPS.has(type);
+}
+
+function isHierarchy(type?: string): boolean {
+  return !!type && HIERARCHY_RELATIONSHIPS.has(type);
+}
+
 export function buildDependencyMaps(
   nodes: (NodeForPath | null)[],
   edges: EdgeForPath[],
 ): {
+  /** 硬依赖（学习前置）source→target 有向边 */
   parentMap: Map<string, string[]>;
   childMap: Map<string, string[]>;
+  /** 软依赖（层级结构）source→target，仅用于同级内「父先于子」排序 */
+  softParentMap: Map<string, string[]>;
+  softChildMap: Map<string, string[]>;
 } {
   const parentMap = new Map<string, string[]>();
   const childMap = new Map<string, string[]>();
+  const softParentMap = new Map<string, string[]>();
+  const softChildMap = new Map<string, string[]>();
 
   nodes.forEach((node: NodeForPath | null) => {
     if (!node) return;
     parentMap.set(node.id, []);
     childMap.set(node.id, []);
+    softParentMap.set(node.id, []);
+    softChildMap.set(node.id, []);
   });
 
   edges.forEach((edge: EdgeForPath) => {
-    const parents = parentMap.get(edge.target_knowledge_point_id) || [];
-    parents.push(edge.source_knowledge_point_id);
-    parentMap.set(edge.target_knowledge_point_id, parents);
+    const type = edge.relationship_type;
+    const source = edge.source_knowledge_point_id;
+    const target = edge.target_knowledge_point_id;
 
-    const children = childMap.get(edge.source_knowledge_point_id) || [];
-    children.push(edge.target_knowledge_point_id);
-    childMap.set(edge.source_knowledge_point_id, children);
-  });
-
-  return { parentMap, childMap };
-}
-
-export function topologicalSort(
-  nodes: (NodeForPath | null)[],
-  parentMap: Map<string, string[]>,
-): string[] {
-  const sortedNodes: string[] = [];
-  const visited = new Set<string>();
-  const temp = new Set<string>();
-  const cycleNodes = new Set<string>();
-
-  const visit = (nodeId: string, path: string[] = []): boolean => {
-    if (temp.has(nodeId)) {
-      cycleNodes.add(nodeId);
-      logger.warn(`检测到循环依赖: ${[...path, nodeId].join(" -> ")}`);
-      return false;
-    }
-    if (visited.has(nodeId)) return true;
-
-    temp.add(nodeId);
-
-    const parents = parentMap.get(nodeId) || [];
-    for (const parentId of parents) {
-      if (!visit(parentId, [...path, nodeId])) {
-        break;
+    if (isHardDependency(type)) {
+      const parents = parentMap.get(target) || [];
+      if (!parents.includes(source)) {
+        parents.push(source);
+        parentMap.set(target, parents);
+      }
+      const children = childMap.get(source) || [];
+      if (!children.includes(target)) {
+        children.push(target);
+        childMap.set(source, children);
+      }
+    } else if (isHierarchy(type)) {
+      const softParents = softParentMap.get(target) || [];
+      if (!softParents.includes(source)) {
+        softParents.push(source);
+        softParentMap.set(target, softParents);
+      }
+      const softChildren = softChildMap.get(source) || [];
+      if (!softChildren.includes(target)) {
+        softChildren.push(target);
+        softChildMap.set(source, softChildren);
       }
     }
-
-    temp.delete(nodeId);
-    visited.add(nodeId);
-    sortedNodes.push(nodeId);
-    return true;
-  };
-
-  nodes.forEach((node: NodeForPath | null) => {
-    if (!node) return;
-    if (!visited.has(node.id)) {
-      visit(node.id);
-    }
+    // semantic / interaction / 其余类型不参与学习顺序排序
   });
 
-  if (cycleNodes.size > 0) {
-    logger.info(`检测到 ${cycleNodes.size} 个循环依赖节点，已按最优顺序排列`);
-  }
-
-  return sortedNodes;
+  return { parentMap, childMap, softParentMap, softChildMap };
 }
 
 export function calculateEstimatedTime(
@@ -319,12 +330,9 @@ export function generateRulePath(
   childMap: Map<string, string[]>,
   targetNodeId: string | undefined,
   _dailyTimeMinutes: number,
+  softParentMap?: Map<string, string[]>,
 ): { stages: LearningPathStage[]; suggestions: string[] } {
-  const sortedNodes = topologicalSort(nodes, parentMap);
-
   const today = new Date();
-  const stages: LearningPathStage[] = [];
-  let order = 0;
 
   // 预构建 nodeId -> node 映射，替代循环内 nodes.find 的 O(sortedNodes*nodes) 扫描
   const nodeById = new Map<string, NodeForPath>(
@@ -333,7 +341,93 @@ export function generateRulePath(
       .map((n) => [n.id, n]),
   );
 
-  for (const nodeId of sortedNodes) {
+  // 优先级评分：到期复习 / 低掌握度 = 0(high)，需巩固 = 1(medium)，其余 = 2(low)
+  const priorityScore = (nodeId: string): number => {
+    const progress = progressMap.get(nodeId);
+    if (
+      progress?.nextReviewDate &&
+      new Date(progress.nextReviewDate) <= today
+    ) {
+      return 0;
+    }
+    if (!progress || progress.masteryLevel < 0.3) return 0;
+    if (progress.masteryLevel < 0.6) return 1;
+    return 2;
+  };
+
+  // 掌握度感知 Kahn：硬依赖（学习前置）约束顺序，同级内按优先级/掌握度/软层级/重要性排序
+  const inDegree = new Map<string, number>();
+  nodes.forEach((n) => {
+    if (!n) return;
+    inDegree.set(n.id, (parentMap.get(n.id) ?? []).length);
+  });
+
+  const visited = new Set<string>();
+  const ordered: string[] = [];
+
+  const sortReady = (ids: string[]) =>
+    ids.sort((aId, bId) => {
+      const a = nodeById.get(aId);
+      const b = nodeById.get(bId);
+      if (!a || !b) return 0;
+      const ap = priorityScore(aId);
+      const bp = priorityScore(bId);
+      if (ap !== bp) return ap - bp;
+      const am = progressMap.get(aId)?.masteryLevel ?? 0;
+      const bm = progressMap.get(bId)?.masteryLevel ?? 0;
+      if (am !== bm) return am - bm;
+      // 软依赖：未处理的层级父节点越少越优先（父先于子）
+      const aSoft = (softParentMap?.get(aId) ?? []).filter(
+        (p) => !visited.has(p),
+      ).length;
+      const bSoft = (softParentMap?.get(bId) ?? []).filter(
+        (p) => !visited.has(p),
+      ).length;
+      if (aSoft !== bSoft) return aSoft - bSoft;
+      const ac = (childMap.get(aId) ?? []).length;
+      const bc = (childMap.get(bId) ?? []).length;
+      if (ac !== bc) return bc - ac;
+      return a.title.localeCompare(b.title);
+    });
+
+  let ready = sortReady(
+    nodes
+      .filter((n): n is NodeForPath => n !== null)
+      .filter((n) => (inDegree.get(n.id) ?? 0) === 0)
+      .map((n) => n.id),
+  );
+
+  while (ready.length > 0) {
+    const next = ready.shift();
+    if (!next) break;
+    if (visited.has(next)) continue;
+    visited.add(next);
+    ordered.push(next);
+
+    for (const childId of childMap.get(next) ?? []) {
+      const newDegree = (inDegree.get(childId) ?? 1) - 1;
+      inDegree.set(childId, newDegree);
+      if (newDegree === 0 && !visited.has(childId)) {
+        ready.push(childId);
+      }
+    }
+    ready = sortReady(ready);
+  }
+
+  // 环兜底：剩余节点按同规则追加到末尾，保证路径覆盖全部节点
+  if (visited.size < nodeById.size) {
+    const remaining = sortReady(
+      Array.from(nodeById.keys()).filter((id) => !visited.has(id)),
+    );
+    ordered.push(...remaining);
+    logger.info("[LearningPath] dependency cycle detected, remaining appended", {
+      remaining: remaining.length,
+    });
+  }
+
+  const stages: LearningPathStage[] = [];
+
+  for (const nodeId of ordered) {
     const node = nodeById.get(nodeId);
     const progress = progressMap.get(nodeId);
 
@@ -386,7 +480,7 @@ export function generateRulePath(
       nodeTitle: node.title,
       nodeContent: node.content || "",
       level: node.level || "normal",
-      order: order++,
+      order: stages.length,
       priority,
       reason,
       estimatedTime,
@@ -396,18 +490,6 @@ export function generateRulePath(
       nextReviewDate: progress?.nextReviewDate?.toISOString() || null,
     });
   }
-
-  stages.sort((a, b) => {
-    if (a.priority !== b.priority) {
-      const priorityOrder: Record<"high" | "medium" | "low", number> = {
-        high: 0,
-        medium: 1,
-        low: 2,
-      };
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
-    }
-    return a.order - b.order;
-  });
 
   const suggestions = generateSuggestions(stages, today);
 

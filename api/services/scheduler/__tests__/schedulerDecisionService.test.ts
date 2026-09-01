@@ -22,9 +22,23 @@ vi.mock("../learningFlowService", () => ({
   },
 }));
 
+vi.mock("../smartTaskLinker", () => ({
+  smartTaskLinker: {
+    getOrCreateTaskForGraph: vi.fn(),
+  },
+}));
+
+vi.mock("../../study/crossGraphLearningPathService", () => ({
+  crossGraphLearningPathService: {
+    getNextGraphInPath: vi.fn(),
+  },
+}));
+
 import { schedulerDecisionService } from "../schedulerDecisionService";
 import { spacedRepetitionBridge } from "../../study/spacedRepetitionBridge";
 import { taskRecommendationService } from "../taskRecommendationService";
+import { smartTaskLinker } from "../smartTaskLinker";
+import { crossGraphLearningPathService } from "../../study/crossGraphLearningPathService";
 
 // 从多个表各自返回数据的 supabase mock
 function buildMockSupabase(dataByFrom: Record<string, unknown>): MockSupabaseClient {
@@ -56,7 +70,9 @@ function dueReviewItem(p: {
 
 describe("SchedulerDecisionService (S3)", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // 需 reset（而非 clear）：跨图路径 mock 的 mockResolvedValue 若不重置，
+    // 会泄漏到后续「empty」用例导致误命中 progress
+    vi.resetAllMocks();
   });
 
   it("到期复习达到阈值时中断，返回 review 决策", async () => {
@@ -160,6 +176,58 @@ describe("SchedulerDecisionService (S3)", () => {
     expect(decision.interrupted).toBe(false);
     expect(decision.progress?.taskId).toBe("task-1");
     expect(decision.progress?.nextSubtask?.learningState).toBe("practice");
+  });
+
+  it("存在跨图谱学习路径时，大循环按路径推进该图的学习任务", async () => {
+    const now = new Date("2026-01-01T12:00:00Z");
+
+    vi.mocked(spacedRepetitionBridge.getUnifiedReviewQueue).mockResolvedValue(
+      [] as never,
+    );
+    vi.mocked(crossGraphLearningPathService.getNextGraphInPath).mockResolvedValue(
+      {
+        graphId: "graph-cross-1",
+        graphTitle: "跨图路径下一图",
+        order: 0,
+        completion: 0.2,
+        nodeCount: 10,
+      },
+    );
+    vi.mocked(smartTaskLinker.getOrCreateTaskForGraph).mockResolvedValue({
+      mainTaskId: "task-cross-1",
+      graphId: "graph-cross-1",
+      graphName: "跨图路径下一图",
+      totalNodes: 10,
+      completedNodes: 2,
+      subtasks: [],
+    } as never);
+
+    const supabase = buildMockSupabase({
+      graph_nodes: [],
+      task_subtasks: [
+        {
+          id: "st-c",
+          title: "子任务",
+          knowledge_point_id: "kp-1",
+          learning_path_node_id: "pn-1",
+          learning_state: "learning",
+          position: 0,
+          knowledge_points: { mastery_level: 0.1 },
+        },
+      ],
+    });
+
+    const decision = await schedulerDecisionService.getNextStep(
+      supabase as never,
+      "user-1",
+      { now },
+    );
+
+    expect(decision.type).toBe("progress");
+    expect(decision.progress?.taskId).toBe("task-cross-1");
+    expect(decision.progress?.graphId).toBe("graph-cross-1");
+    // 跨图路径命中后不再走推荐队列
+    expect(taskRecommendationService.getTaskRecommendations).not.toHaveBeenCalled();
   });
 
   it("无到期复习也无队列任务时返回 empty", async () => {

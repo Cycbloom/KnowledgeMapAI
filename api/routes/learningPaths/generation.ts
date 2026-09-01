@@ -7,6 +7,7 @@ import { validate } from "../../middleware/validate";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { learningPathService, learningPathRouteService } from "../../services/study";
+import { crossGraphLearningPathService } from "../../services/study/crossGraphLearningPathService";
 import { logger } from "../../utils/logger";
 
 const router = Router();
@@ -50,6 +51,14 @@ const getQuestionsSchema = z.object({
 const autoScheduleSchema = z.object({
   start_date: z.string().datetime().optional(),
   daily_minutes: z.number().min(5).max(240).optional(),
+});
+
+// 跨图谱学习路径生成请求 schema
+const generateCrossGraphSchema = z.object({
+  daily_time_minutes: z.number().min(5).max(240).optional(),
+  title: z.string().max(200).optional(),
+  force: z.boolean().optional(),
+  target_goal: z.string().min(5).max(500).optional(),
 });
 
 // 生成学习路径预览
@@ -190,6 +199,55 @@ router.post(
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
+  },
+);
+
+// 生成并保存跨图谱学习路径（大调度：图谱级学习顺序）
+router.post(
+  "/generate-cross-graph",
+  requireAuth,
+  validate({ body: generateCrossGraphSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { daily_time_minutes, title, force, target_goal } = req.body;
+    const result = await crossGraphLearningPathService.generateCrossGraphPath(
+      req.supabase,
+      req.user.id,
+      {
+        dailyMinutes: daily_time_minutes,
+        title,
+        force,
+        targetGoal: target_goal,
+      },
+    );
+    res.json({ success: true, data: result });
+  },
+);
+
+// 获取跨图谱学习路径中「下一个该学的图谱」（大调度决策辅助）
+// 注意：路径为两段，避免与 crud 的 GET /:id 单段参数路由冲突
+router.get(
+  "/cross-graph/next",
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    const next =
+      await crossGraphLearningPathService.getNextGraphInPath(
+        req.supabase,
+        req.user.id,
+      );
+    res.json({ success: true, data: next });
+  },
+);
+
+// 获取跨图谱学习路径概览（首页「下一步」/学习路径面板展示）
+router.get(
+  "/cross-graph/summary",
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    const summary = await crossGraphLearningPathService.getCrossGraphSummary(
+      req.supabase,
+      req.user.id,
+    );
+    res.json({ success: true, data: summary });
   },
 );
 

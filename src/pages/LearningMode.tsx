@@ -5,7 +5,7 @@ import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
 import { useNodeDisplayLanguageStore } from "../store/useNodeDisplayLanguageStore";
 import { resolveLocalizedText } from "@shared/utils/localization";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, schedulerApi } from "../services/api";
+import { api } from "../services/api";
 import { orchestratorApi } from "../services/api/modules/scheduler/orchestrator";
 import { message as msgHelper } from "../utils/messageHelper";
 import { asyncConfirm } from "../utils/asyncConfirm";
@@ -356,21 +356,13 @@ export const LearningMode = () => {
   const startChallengeSession = async () => {
     if (!nodeId || !graphId) { msgHelper.warning(t("learning.challenge.missingParams")); return; }
     try {
-      let taskId: string;
-      const existingTask = await schedulerApi.get(nodeId).catch(() => null);
-      if (existingTask?.id) { taskId = existingTask.id; }
-      else {
-        const newTask = await schedulerApi.create({
-          title: nodeTitle || `学习: ${nodeId}`, knowledge_point_id: nodeId,
-          task_type: "learning", queue_level: 1, estimated_duration: 30,
-        });
-        taskId = newTask.id;
-      }
+      // 复用图谱大任务作为任务锚点（useLinkedTask 已确保其与子任务存在），
+      // 避免每次挑战都新建独立 learning 任务导致会话/复习卡挂靠错位。
       await completeFocusTimer();
       // 学习完成统一推进：重算掌握度 → 推进子任务状态机 → 创建首次复习卡片
       await orchestratorApi.completeLearning({
         knowledge_point_id: nodeId,
-        task_id: taskId,
+        task_id: linkedTask?.mainTaskId,
         graph_id: graphId,
       });
       msgHelper.success(t("learning.challenge.completed"));

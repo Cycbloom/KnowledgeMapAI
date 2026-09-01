@@ -244,6 +244,9 @@ export class AutoGraphService {
 
     logger.info(`Processing ${validNodes.length} nodes for graph ${graphId}`);
 
+    // AI 新建节点落地前，若存在缺失 embedding 则自动补全，保证跨图语义复用（findReusableKnowledgePointId）可达
+    await asyncTaskService.ensureEmbeddingBackfill(userId);
+
     const nodeMap = new Map<
       string,
       { graphNodeId: string; knowledgePointId: string }
@@ -1221,6 +1224,10 @@ export class AutoGraphService {
 
     const sessionId = inputSessionId || crypto.randomUUID();
 
+    // 深度拓展/初始化会新增知识点并做语义去重（saveNodes → processAINodes 的跨图复用），
+    // 若有缺口则自动补全缺失的 embedding，避免节点重复
+    await asyncTaskService.ensureEmbeddingBackfill(userId);
+
     let processedSources: string[] = [];
     if (sources && sources.length > 0) {
       processedSources = await Promise.all(
@@ -1228,11 +1235,26 @@ export class AutoGraphService {
       );
     }
 
+    // 深度拓展重跑时（解锁后），把图内已有节点传给骨架生成，让 AI 复用、避免重复生成
+    let existingNodes: string[] = [];
+    if (graphId) {
+      try {
+        const existing = await graphNodeService.getGraphNodes(supabase, graphId);
+        existingNodes = (existing || [])
+          .map((n) => n.title)
+          .filter((t): t is string => Boolean(t && t.trim()))
+          .slice(0, 100);
+      } catch (e) {
+        logger.warn("Failed to load existing graph nodes before init", e);
+      }
+    }
+
     const skeleton = await generateGraphSkeleton(supabase, {
       topic,
       style: style as "academic" | "practical" | "beginner" | "custom",
       customPrompt,
       sources: processedSources,
+      existingNodes,
       providerType: providerType as AIProviderType | undefined,
       model,
       language,

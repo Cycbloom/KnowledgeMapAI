@@ -54,6 +54,7 @@ export interface GenerateGraphSkeletonParams {
   style?: "academic" | "practical" | "beginner" | "custom";
   customPrompt?: string;
   sources?: string[];
+  existingNodes?: string[];
   provider?: AIProvider;
   providerType?: AIProviderType;
   model?: string;
@@ -284,6 +285,7 @@ export async function generateGraphSkeleton(
     style = "academic",
     customPrompt,
     sources,
+    existingNodes,
     provider,
     providerType,
     model,
@@ -304,6 +306,11 @@ export async function generateGraphSkeleton(
   const effectiveModel = model || resolvedProvider.model;
   const sourcesText =
     sources && sources.length > 0 ? sources.join("\n\n---\n\n") : "";
+  const existingNodesList = existingNodes ?? [];
+  const hasExistingNodes = existingNodesList.length > 0;
+  const existingNodesInGraph = hasExistingNodes
+    ? existingNodesList.slice(0, 100).join("、")
+    : "";
 
   const templateContext: Record<string, unknown> =
     style === "custom" && customPrompt
@@ -314,6 +321,8 @@ export async function generateGraphSkeleton(
           hasSources: Boolean(sourcesText),
           sources: sourcesText,
           isInit: true,
+          hasExistingNodes,
+          existingNodesInGraph,
         }
       : {
           topic,
@@ -322,6 +331,8 @@ export async function generateGraphSkeleton(
           hasSources: Boolean(sourcesText),
           sources: sourcesText,
           isInit: true,
+          hasExistingNodes,
+          existingNodesInGraph,
         };
 
   const systemPrompt = await promptService.getRenderedPrompt(

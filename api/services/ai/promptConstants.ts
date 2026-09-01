@@ -154,6 +154,20 @@ Requirements:
 ## Output Language
 根节点、核心节点以及 \`description\` 的全部文本（title/content/summary/description）都必须使用 **{{outputLanguage}}** 输出。
 
+{{#if hasExistingNodes}}
+## 已有节点（务必复用，不要重复生成）
+图中已存在以下知识点：
+{{existingNodesInGraph}}
+
+请严格遵循：
+- **复用**这些已有节点，结果**不要重复生成**它们（无论标题完全一致还是语义相同）。
+- root 若已在图中存在，则沿用其已有标题，不要另起一个新的 root。
+- 只需补充图中**缺失**的全新核心分支与子主题；\`description\` 仍应完整、详细介绍整张图谱。
+{{else}}
+## 全新初始化
+图中暂无知识点，请按主题全新生成 root 与 core 节点。
+{{/if}}
+
 {{#if isCustom}}
 ## Custom Instructions
 {{customPrompt}}

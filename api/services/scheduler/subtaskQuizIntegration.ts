@@ -10,6 +10,7 @@ import { subtaskStateMachine } from "./subtaskStateMachine";
 import { subtaskKnowledgeSyncService } from "./subtaskKnowledgeSync";
 import type { IAIProviderService, CardDifficulty } from "./types";
 import { studyService } from "../study/studyService";
+import { masteryCalculationService } from "../study/masteryCalculationService";
 import { notDeleted } from '../common/softDeleteHelper';
 import { transactionExecutor } from "../../database/transactionExecutor";
 import { formatQuizSetTitle } from "../../../shared/constants/taskTitles";
@@ -347,20 +348,10 @@ export class SubtaskQuizIntegrationService {
     const totalCount = results.length;
     const accuracy = totalCount > 0 ? correctCount / totalCount : 0;
 
+    // 报告用作答正确率指标（不再作为掌握度增量来源，掌握度统一走 FSRS）
     const improvement = Math.min(
       accuracy * PRACTICE_WEIGHT,
       PRACTICE_MAX_IMPROVEMENT,
-    );
-
-    /** @schedule decision - mastery_level READ：当前掌握度 baseline（用于算法增量） */
-    const currentMastery = subtask.mastery_level;
-    /** @schedule decision - mastery_level WRITE（算法输出）：FSRS 过渡后新掌握度 = current + improvement */
-    const newMastery = Math.min(1, currentMastery + improvement);
-
-    /** @schedule decision - FSRS next_state：状态机基于 learning_state + mastery_level 计算下一阶段 */
-    const newState = subtaskStateMachine.getNextState(
-      subtask.learning_state,
-      newMastery,
     );
 
     const now = new Date().toISOString();
@@ -396,25 +387,38 @@ export class SubtaskQuizIntegrationService {
       })
       .eq("id", session.id);
 
+    // 先更新作答卡片的 FSRS 状态，再基于 FSRS 重算掌握度（单一权威源）
+    await this.updateCardReviewStats(supabase, results, subtask.user_id);
+
+    /** @mastery display - 掌握度单一权威源：基于 study_cards FSRS 重算 */
+    const mastery = await masteryCalculationService.updateKnowledgePointMastery(
+      supabase,
+      subtask.knowledge_point_id,
+    );
+
+    /** @schedule decision - FSRS next_state：状态机基于 learning_state + mastery 计算下一阶段 */
+    const newState = subtaskStateMachine.getNextState(
+      subtask.learning_state,
+      mastery,
+    );
+
     await subtaskKnowledgeSyncService.syncSubtaskStateToKnowledgePoint(
       supabase,
       subtaskId,
       newState,
-      newMastery,
+      mastery,
     );
-
-    await this.updateCardReviewStats(supabase, results, subtask.user_id);
 
     logger.info("Practice completed", {
       subtaskId,
       accuracy,
-      masteryBefore: currentMastery,
-      masteryAfter: newMastery,
+      masteryBefore: subtask.mastery_level,
+      masteryAfter: mastery,
       newState,
     });
 
     return {
-      masteryLevel: newMastery,
+      masteryLevel: mastery,
       newState,
       correctCount,
       totalCount,
@@ -575,18 +579,8 @@ export class SubtaskQuizIntegrationService {
     const totalCount = results.length;
     const score = totalCount > 0 ? correctCount / totalCount : 0;
 
+    // 报告用作答得分率指标（不再作为掌握度增量来源，掌握度统一走 FSRS）
     const improvement = Math.min(score * QUIZ_WEIGHT, QUIZ_MAX_IMPROVEMENT);
-
-    /** @schedule decision - mastery_level READ：当前掌握度 baseline */
-    const currentMastery = subtask.mastery_level;
-    /** @schedule decision - mastery_level WRITE（算法输出）：测验后新掌握度 */
-    const newMastery = Math.min(1, currentMastery + improvement);
-
-    /** @schedule decision - FSRS next_state：状态机过渡 */
-    const newState = subtaskStateMachine.getNextState(
-      subtask.learning_state,
-      newMastery,
-    );
 
     const now = new Date().toISOString();
 
@@ -621,13 +615,7 @@ export class SubtaskQuizIntegrationService {
       })
       .eq("id", session.id);
 
-    await subtaskKnowledgeSyncService.syncSubtaskStateToKnowledgePoint(
-      supabase,
-      subtaskId,
-      newState,
-      newMastery,
-    );
-
+    // 先更新作答卡片的 FSRS 状态，再基于 FSRS 重算掌握度（单一权威源）
     await this.updateCardReviewStats(
       supabase,
       results.map((r) => ({
@@ -638,16 +626,35 @@ export class SubtaskQuizIntegrationService {
       subtask.user_id,
     );
 
+    /** @mastery display - 掌握度单一权威源：基于 study_cards FSRS 重算 */
+    const mastery = await masteryCalculationService.updateKnowledgePointMastery(
+      supabase,
+      subtask.knowledge_point_id,
+    );
+
+    /** @schedule decision - FSRS next_state：状态机基于 learning_state + mastery 计算下一阶段 */
+    const newState = subtaskStateMachine.getNextState(
+      subtask.learning_state,
+      mastery,
+    );
+
+    await subtaskKnowledgeSyncService.syncSubtaskStateToKnowledgePoint(
+      supabase,
+      subtaskId,
+      newState,
+      mastery,
+    );
+
     logger.info("Quiz completed", {
       subtaskId,
       score,
-      masteryBefore: currentMastery,
-      masteryAfter: newMastery,
+      masteryBefore: subtask.mastery_level,
+      masteryAfter: mastery,
       newState,
     });
 
     return {
-      masteryLevel: newMastery,
+      masteryLevel: mastery,
       newState,
       score,
       correctCount,

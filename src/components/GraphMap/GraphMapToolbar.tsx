@@ -14,6 +14,7 @@ import {
   Palette,
   Tags,
   Settings,
+  Trash2,
 } from "lucide-react";
 import type { GraphMapFilterMode } from "../../types";
 import { useIsMobile } from "../../hooks";
@@ -40,6 +41,8 @@ interface GraphMapToolbarProps {
   hoveredDomainId?: string | null;
   onHoverDomainChange?: (id: string | null) => void;
   onManageDomains?: () => void;
+  deleteMode: boolean;
+  onDeleteModeChange: (v: boolean) => void;
 }
 
 const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
@@ -62,6 +65,8 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
   hoveredDomainId,
   onHoverDomainChange,
   onManageDomains,
+  deleteMode,
+  onDeleteModeChange,
 }) => {
   const { t } = useTranslation();
   const deviceInfo = useIsMobile();
@@ -263,6 +268,21 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
                   <Tags className="w-4 h-4" />
                   {t("graphMap.toolbar.autoClassify")}
                 </button>
+                <button
+                  onClick={() => {
+                    onDeleteModeChange(!deleteMode);
+                    setShowMoreMenu(false);
+                  }}
+                  aria-pressed={deleteMode}
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm last:rounded-b-lg ${
+                    deleteMode
+                      ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                      : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                  }`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {deleteMode ? t("graphMap.toolbar.deleteModeOn") : t("graphMap.toolbar.deleteMode")}
+                </button>
               </div>
             )}
           </div>
@@ -273,6 +293,19 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
     if (isCompact) {
       return (
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => onDeleteModeChange(!deleteMode)}
+            aria-pressed={deleteMode}
+            className={`p-2 rounded-lg transition-colors ${
+              deleteMode
+                ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+            }`}
+            title={deleteMode ? t("graphMap.toolbar.deleteModeOn") : t("graphMap.toolbar.deleteMode")}
+            aria-label={deleteMode ? t("graphMap.toolbar.deleteModeOn") : t("graphMap.toolbar.deleteMode")}
+          >
+            <Trash2 className="w-5 h-5" aria-hidden="true" />
+          </button>
           <button
             onClick={onRefresh}
             disabled={isLoading}
@@ -315,6 +348,20 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
 
     return (
       <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => onDeleteModeChange(!deleteMode)}
+          aria-pressed={deleteMode}
+          className={`p-2 rounded-lg transition-colors ${
+            deleteMode
+              ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+              : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+          }`}
+          title={deleteMode ? t("graphMap.toolbar.deleteModeOn") : t("graphMap.toolbar.deleteMode")}
+          aria-label={deleteMode ? t("graphMap.toolbar.deleteModeOn") : t("graphMap.toolbar.deleteMode")}
+        >
+          <Trash2 className="w-5 h-5" aria-hidden="true" />
+        </button>
+
         <button
           onClick={onRefresh}
           disabled={isLoading}
@@ -458,6 +505,8 @@ const areEqual = (prev: GraphMapToolbarProps, next: GraphMapToolbarProps) => {
     prev.onFilterChange === next.onFilterChange &&
     prev.onReturnToGraph === next.onReturnToGraph &&
     prev.onManageDomains === next.onManageDomains &&
+    prev.deleteMode === next.deleteMode &&
+    prev.onDeleteModeChange === next.onDeleteModeChange &&
     prev.domains === next.domains &&
     prev.selectedDomainIds === next.selectedDomainIds &&
     prev.onDomainSelectionChange === next.onDomainSelectionChange &&

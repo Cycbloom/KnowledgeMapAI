@@ -22,6 +22,8 @@
     "domainGenerate": "Domain Generate",
     "autoClassify": "Auto Classify",
     "manageDomains": "Manage Domains",
+    "deleteMode": "Delete Mode",
+    "deleteModeOn": "Exit Delete Mode",
     "manage": "Manage",
     "rearrangeLayout": "Rearrange Layout",
     "layoutRearranged": "Layout rearranged and pinned"
@@ -61,6 +63,10 @@
   "graph": {
     "openGraph": "Open Graph",
     "openLearningMode": "Learning Mode",
+    "deleteGraphTitle": "Delete Graph",
+    "deleteGraphConfirm": "The graph will be moved to recycle bin and can be restored there. Delete this graph?",
+    "deleteGraphSuccess": "Graph deleted",
+    "deleteGraphFailed": "Failed to delete graph",
     "addRelation": "Add Relation",
     "selectRelated": "Select Related Graphs",
     "setDomain": "Set Domain",
@@ -181,6 +187,7 @@
   },
   "expansion": {
     "started": "Infinite expansion task started",
+    "stagedApplied": "This level saved and branches added",
     "startFailed": "Failed to start expansion",
     "depthFailed": "Depth expansion failed",
     "nodeExpandFailed": "Failed to expand node",

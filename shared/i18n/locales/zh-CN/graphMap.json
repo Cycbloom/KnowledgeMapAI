@@ -22,6 +22,8 @@
     "domainGenerate": "领域生成",
     "autoClassify": "自动分类",
     "manageDomains": "管理领域",
+    "deleteMode": "删除模式",
+    "deleteModeOn": "退出删除模式",
     "manage": "管理",
     "rearrangeLayout": "整理布局",
     "layoutRearranged": "布局已整理并固定"
@@ -61,6 +63,10 @@
   "graph": {
     "openGraph": "打开图谱",
     "openLearningMode": "学习模式",
+    "deleteGraphTitle": "删除图谱",
+    "deleteGraphConfirm": "删除后图谱将移入回收站，可在回收站恢复。确定删除该图谱吗？",
+    "deleteGraphSuccess": "图谱已删除",
+    "deleteGraphFailed": "删除图谱失败",
     "addRelation": "添加关系",
     "selectRelated": "选择关联图谱",
     "setDomain": "设置领域",
@@ -194,6 +200,7 @@
   },
   "expansion": {
     "started": "无限扩展任务已启动",
+    "stagedApplied": "本层已保存并添加分支",
     "startFailed": "启动扩展失败",
     "depthFailed": "深度拓展失败",
     "nodeExpandFailed": "展开节点失败",

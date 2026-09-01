@@ -375,6 +375,10 @@ router.post(
       ids,
       req.user.id,
     );
+    await cacheService.invalidateUserGraphsCache(req.user.id);
+    for (const id of ids) {
+      await cacheService.invalidateGraphCache(req.user.id, id);
+    }
     res.json({
       message: `已移至回收站 ${result.count} 个图谱`,
       count: result.count,

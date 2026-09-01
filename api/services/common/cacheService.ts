@@ -294,6 +294,9 @@ export const cacheService = {
       CacheKeys.USER_GRAPHS(userId),
       CacheKeys.USER_FAVORITES(userId),
       CacheKeys.USER_RECENT_GRAPHS(userId),
+      // 图谱地图数据由用户图谱派生，删除/新增/标签/领域变更时也需一并失效，
+      // 避免 /map 返回带已删图谱的旧缓存
+      CacheKeys.GRAPH_MAP(userId),
     ];
     const deleted = await cacheService.del(keys);
     logger.debug(`[Cache] Invalidated user graphs cache for user ${userId}: ${deleted} keys deleted`);

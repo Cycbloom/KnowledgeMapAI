@@ -14,6 +14,7 @@ import {
   ArrowUpRight,
   ArrowLeft,
   ArrowRight,
+  Trash2,
 } from "lucide-react";
 import { api } from "../services/api";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
@@ -154,6 +155,7 @@ export const GraphMap = () => {
     Set<string>
   >(new Set());
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1);
+  const [deleteMode, setDeleteMode] = useState(false);
   const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false);
   const [isAIExpansionOpen, setIsAIExpansionOpen] = useState(false);
   const [expansionProgress, setExpansionProgress] =
@@ -517,6 +519,36 @@ export const GraphMap = () => {
     }
   }, [multiSelectedGraphIds, queryClient, t, handleUndoBatchDelete]);
 
+  const handleDeleteGraph = useCallback(async (graphId: string) => {
+    if (!graphId) return;
+
+    if (!(await asyncConfirm({
+      title: t('graphMap.graph.deleteGraphTitle'),
+      message: t('graphMap.graph.deleteGraphConfirm'),
+      isDangerous: true,
+    }))) return;
+
+    try {
+      await api.graphs.delete(graphId);
+      const toastId = message.success(t('graphMap.graph.deleteGraphSuccess'), {
+        action: {
+          label: t('common.undo'),
+          onClick: () => {
+            message.dismiss(toastId);
+            void handleUndoBatchDelete([graphId]);
+          },
+        },
+      });
+      setSelectedGraphId(null);
+      setMultiSelectedGraphIds(new Set());
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : t('graphMap.graph.deleteGraphFailed');
+      message.error(errMsg);
+    }
+  }, [queryClient, t, handleUndoBatchDelete]);
+
   const handleBatchSetDomain = useCallback(async (domainId: string) => {
     const ids = Array.from(multiSelectedGraphIds);
     if (ids.length === 0) return;
@@ -635,6 +667,35 @@ export const GraphMap = () => {
       }
     },
     [selectedGraphId, queryClient, expansionSessionId, t],
+  );
+
+  const handleWidthExpandStart = useCallback(
+    async (config: {
+      max_depth: number;
+      max_graphs_per_level: number;
+      relation_types: GraphRelationType[];
+    }) => {
+      if (!selectedGraphId) throw new Error("no graph selected");
+      return api.graphs.infiniteExpandStart(selectedGraphId, config);
+    },
+    [selectedGraphId],
+  );
+
+  const handleWidthExpandNext = useCallback(async () => {
+    if (!selectedGraphId) throw new Error("no graph selected");
+    return api.graphs.infiniteExpandGenerate(selectedGraphId);
+  }, [selectedGraphId]);
+
+  const handleWidthExpandApply = useCallback(
+    async (selections: Array<{ key: string; action: "keep" | "final" | "skip" }>) => {
+      if (!selectedGraphId) throw new Error("no graph selected");
+      const res = await api.graphs.infiniteExpandApply(selectedGraphId, selections);
+      message.success(t('graphMap.expansion.stagedApplied'));
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      return res;
+    },
+    [selectedGraphId, queryClient, t],
   );
 
   // 订阅全局 SSE 事件总线，实时同步无限扩展后台任务进度到 AI 智能扩展面板。
@@ -1135,6 +1196,8 @@ export const GraphMap = () => {
         hoveredDomainId={effectiveHoveredDomainId}
         onHoverDomainChange={setHoveredDomainId}
         onManageDomains={() => setShowDomainManager(true)}
+        deleteMode={deleteMode}
+        onDeleteModeChange={setDeleteMode}
       />
 
       <div className="flex-1 relative">
@@ -1413,6 +1476,16 @@ export const GraphMap = () => {
                               </div>
                             </div>
                           )}
+
+                          {deleteMode && (
+                          <button
+                            onClick={() => { void handleDeleteGraph(graph.id); }}
+                            className="w-full mt-3 px-3 py-2 text-sm text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/60 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center gap-1.5"
+                          >
+                            <Trash2 className="w-4 h-4" aria-hidden="true" />
+                            {t('graphMap.graph.deleteGraphTitle')}
+                          </button>
+                        )}
                         </>
                       )}
 
@@ -1536,6 +1609,16 @@ export const GraphMap = () => {
                         {t('graphMap.graph.generateQuestionsDesc')}
                       </p>
 
+                      {deleteMode && (
+                        <button
+                          onClick={() => { void handleDeleteGraph(graph.id); }}
+                          className="w-full mt-3 px-3 py-2 text-sm text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/60 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <Trash2 className="w-4 h-4" aria-hidden="true" />
+                          {t('graphMap.graph.deleteGraphTitle')}
+                        </button>
+                      )}
+
                       {graphRelations.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                           <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
@@ -1655,6 +1738,9 @@ export const GraphMap = () => {
           onDepthExpand={handleDepthExpand}
           onDepthExpandNode={handleDepthExpandNode}
           onWidthExpand={handleInfiniteExpand}
+          onWidthExpandStart={handleWidthExpandStart}
+          onWidthExpandNext={handleWidthExpandNext}
+          onWidthExpandApply={handleWidthExpandApply}
           progress={expansionProgress}
           isRunning={isExpansionRunning}
           onEditPrompt={handleOpenPromptEditor}

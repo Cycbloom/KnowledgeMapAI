@@ -1,5 +1,4 @@
-import { Node, Edge } from '../../types';
-import { getLevel } from '../../utils/graph/graphUtils';
+import type { Node, Edge } from '../../types';
 import { message } from '../../utils/messageHelper';
 import { api } from '../../services/api';
 import { useStore } from '../../store/useStore';
@@ -11,9 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { createAsyncHandler } from '../../utils/asyncHandler';
 import {
   processExpandSuggestions,
-  getExistingTitles,
-  getCurrentChildrenTitles,
-  buildDefaultExpandPrompt
+  buildExpandRequest
 } from '../utils/nodeExpansionUtils';
 
 interface UseCombinedGraphAIOperationsProps {
@@ -79,22 +76,9 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
         const nodes = getNodesForGraph(currentGraphId);
         const edges = getEdgesForGraph(currentGraphId);
 
-        const parentLevel = getLevel(selectedNode, edges);
-
-        const existingTitles = getExistingTitles(nodes);
-        const currentChildrenTitles = getCurrentChildrenTitles(selectedNode.id, nodes, edges);
-
-        const expandPrompt = prompt || buildDefaultExpandPrompt(selectedNode.title);
-
-        const res = await aiExpandMutation.mutateAsync({
-          node_title: selectedNode.title,
-          node_content: selectedNode.content,
-          node_level: parentLevel,
-          existing_titles: existingTitles,
-          current_children: currentChildrenTitles,
-          expand_prompt: expandPrompt,
-          graph_id: currentGraphId
-        });
+        const res = await aiExpandMutation.mutateAsync(
+          buildExpandRequest({ selectedNode, nodes, edges, prompt, graphId: currentGraphId }),
+        );
 
         const result = await processExpandSuggestions({
           selectedNode,

@@ -159,3 +159,49 @@ export function getCurrentChildrenTitles(
 export function buildDefaultExpandPrompt(nodeTitle: string): string {
   return `请为 ${nodeTitle} 生成 3-5 个相关的子主题，每个子主题应该简洁明确`;
 }
+
+export interface BuildExpandRequestParams {
+  selectedNode: Node;
+  nodes: Node[];
+  edges: Edge[];
+  /** 用户自定义展开提示词；为空时使用默认提示词 */
+  prompt?: string;
+  graphId?: string;
+}
+
+/**
+ * 组装 AI 展开请求：统一计算 parentLevel / existingTitles / currentChildrenTitles /
+ * expandPrompt，避免 useGraphAIOperations 与 useCombinedGraphAIOperations 重复实现。
+ */
+export function buildExpandRequest({
+  selectedNode,
+  nodes,
+  edges,
+  prompt,
+  graphId,
+}: BuildExpandRequestParams): {
+  node_title: string;
+  node_content: string | undefined;
+  node_level: string;
+  existing_titles: string[];
+  current_children: string[];
+  expand_prompt: string;
+  graph_id?: string;
+} {
+  const parentLevel = getLevel(selectedNode, edges);
+
+  const existingTitles = getExistingTitles(nodes);
+  const currentChildrenTitles = getCurrentChildrenTitles(selectedNode.id, nodes, edges);
+
+  const expandPrompt = prompt || buildDefaultExpandPrompt(selectedNode.title);
+
+  return {
+    node_title: selectedNode.title,
+    node_content: selectedNode.content,
+    node_level: parentLevel,
+    existing_titles: existingTitles,
+    current_children: currentChildrenTitles,
+    expand_prompt: expandPrompt,
+    ...(graphId ? { graph_id: graphId } : {}),
+  };
+}

@@ -16,9 +16,7 @@ import { createAsyncHandler } from '../../utils/asyncHandler';
 import { useTranslation } from 'react-i18next';
 import {
   processExpandSuggestions,
-  getExistingTitles,
-  getCurrentChildrenTitles,
-  buildDefaultExpandPrompt
+  buildExpandRequest
 } from '../utils/nodeExpansionUtils';
 import { renderAiPromptTemplate } from '../utils/aiPromptTemplate';
 
@@ -152,21 +150,9 @@ export const useGraphAIOperations = ({
 
     await asyncHandler(
       async () => {
-        const parentLevel = getLevel(selectedNode, edges);
-
-        const existingTitles = getExistingTitles(nodes);
-        const currentChildrenTitles = getCurrentChildrenTitles(selectedNode.id, nodes, edges);
-
-        const expandPrompt = aiPrompt || buildDefaultExpandPrompt(selectedNode.title);
-
-        const res = await aiExpandMutation.mutateAsync({
-          node_title: selectedNode.title,
-          node_content: selectedNode.content,
-          node_level: parentLevel,
-          existing_titles: existingTitles,
-          current_children: currentChildrenTitles,
-          expand_prompt: expandPrompt,
-        });
+        const res = await aiExpandMutation.mutateAsync(
+          buildExpandRequest({ selectedNode, nodes, edges, prompt: aiPrompt }),
+        );
 
         const result = await processExpandSuggestions({
           selectedNode,

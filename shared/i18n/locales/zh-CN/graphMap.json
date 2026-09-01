@@ -60,6 +60,7 @@
   },
   "graph": {
     "openGraph": "打开图谱",
+    "openLearningMode": "学习模式",
     "addRelation": "添加关系",
     "selectRelated": "选择关联图谱",
     "setDomain": "设置领域",

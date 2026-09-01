@@ -60,6 +60,7 @@
   },
   "graph": {
     "openGraph": "Open Graph",
+    "openLearningMode": "Learning Mode",
     "addRelation": "Add Relation",
     "selectRelated": "Select Related Graphs",
     "setDomain": "Set Domain",

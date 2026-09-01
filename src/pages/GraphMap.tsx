@@ -1336,7 +1336,13 @@ export const GraphMap = () => {
                         >
                           {t('graphMap.graph.openGraph')}
                         </button>
-                        
+                        <button
+                          onClick={() => navigate(`/learning?graph_id=${graph.id}`)}
+                          className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg active:bg-slate-200 dark:active:bg-slate-600 transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <BookOpen className="w-4 h-4" aria-hidden="true" />
+                          {t('graphMap.graph.openLearningMode')}
+                        </button>
                       </div>
 
                       
@@ -1491,13 +1497,22 @@ export const GraphMap = () => {
                         </div>
                       )}
 
-                      <button
-                        onClick={() => navigate(`/graph/${graph.id}`)}
-                        className="w-full px-3 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
-                        {t('graphMap.graph.openGraph')}
-                      </button>
+                      <div className="flex gap-2 mb-1">
+                        <button
+                          onClick={() => navigate(`/graph/${graph.id}`)}
+                          className="flex-1 px-3 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
+                          {t('graphMap.graph.openGraph')}
+                        </button>
+                        <button
+                          onClick={() => navigate(`/learning?graph_id=${graph.id}`)}
+                          className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <BookOpen className="w-4 h-4" aria-hidden="true" />
+                          {t('graphMap.graph.openLearningMode')}
+                        </button>
+                      </div>
 
                       <button
                         onClick={() => setIsAIExpansionOpen(true)}

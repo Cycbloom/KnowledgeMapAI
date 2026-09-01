@@ -114,6 +114,9 @@ export {
   subtaskQuizIntegrationService,
   SubtaskQuizIntegrationService,
 } from "./subtaskQuizIntegration";
+export { SubtaskQuizQueryService } from "./subtaskQuizQueryService";
+export { SubtaskQuizGenerationService } from "./subtaskQuizGenerationService";
+export { SubtaskQuizSessionService } from "./subtaskQuizSessionService";
 export type {
   PracticeSession,
   PracticeResult,

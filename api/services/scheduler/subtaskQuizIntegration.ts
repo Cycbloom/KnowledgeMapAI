@@ -1,954 +1,118 @@
-/** @schedule decision - FSRS 过渡数学、练习/测验完成后 mastery_level 写入、状态机转换逻辑 */
+/** @schedule decision - 练习/测验集成入口：会话、生成、推荐、独立记录 */
 import { SupabaseClient } from "@supabase/supabase-js";
-import { logger } from "../../utils/logger";
-import { AppError } from "../../middleware/errorHandler";
-import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { StudyCard } from "../../../shared/types/common";
-import type { LearningState } from "../../../shared/types/scheduler";
 import type { QuizSet, QuizSetConfig } from "../../../shared/types/quiz";
-import { subtaskStateMachine } from "./subtaskStateMachine";
-import { subtaskKnowledgeSyncService } from "./subtaskKnowledgeSync";
-import type { IAIProviderService, CardDifficulty } from "./types";
-import { studyService } from "../study/studyService";
-import { masteryCalculationService } from "../study/masteryCalculationService";
-import { notDeleted } from '../common/softDeleteHelper';
-import { transactionExecutor } from "../../database/transactionExecutor";
-import { formatQuizSetTitle } from "../../../shared/constants/taskTitles";
-import { resolveLocalizedText } from "../../../shared/utils/localization";
+import type { IAIProviderService } from "./types";
+import { SubtaskQuizQueryService } from "./subtaskQuizQueryService";
+import { SubtaskQuizGenerationService } from "./subtaskQuizGenerationService";
+import { SubtaskQuizSessionService } from "./subtaskQuizSessionService";
 
-export interface PracticeSession {
-  id: string;
-  subtask_id: string;
-  knowledge_point_id: string;
-  cards: StudyCard[];
-  started_at: Date;
-  user_id: string;
-}
+// 类型 re-export：保持既有调用方从本文件导入类型
+export type {
+  PracticeSession,
+  PracticeResult,
+  QuizSession,
+  QuizResult,
+  PracticeCompletionResult,
+  QuizCompletionResult,
+} from "./subtaskQuizShared";
 
-export interface PracticeResult {
-  card_id: string;
-  correct: boolean;
-  time_spent: number;
-  user_answer?: string;
-}
-
-export interface QuizSession {
-  id: string;
-  subtask_id: string;
-  knowledge_point_id: string;
-  quiz_set_id: string;
-  cards: StudyCard[];
-  started_at: Date;
-  user_id: string;
-}
-
-export interface QuizResult {
-  card_id: string;
-  correct: boolean;
-  answer?: string;
-  time_spent: number;
-}
-
-export interface PracticeCompletionResult {
-  masteryLevel: number;
-  newState: LearningState;
-  correctCount: number;
-  totalCount: number;
-  accuracy: number;
-  improvement: number;
-}
-
-export interface QuizCompletionResult {
-  masteryLevel: number;
-  newState: LearningState;
-  score: number;
-  correctCount: number;
-  totalCount: number;
-  improvement: number;
-}
-
-interface SubtaskData {
-  id: string;
-  task_id: string;
-  knowledge_point_id: string;
-  learning_state: LearningState;
-  /** @schedule decision - mastery_level READ：用于 FSRS 过渡数学（状态机 getNextState + 增量计算 newMastery） */
-  mastery_level: number;
-  user_id: string;
-}
-
-interface KnowledgePointData {
-  id: string;
-  title: string;
-  content?: string;
-  graph_id?: string;
-}
-
-interface AIGeneratedCard {
-  question: string;
-  answer: string;
-  explanation?: string;
-  type?: string;
-  options?: string[];
-}
-
-interface CardToInsert {
-  knowledge_point_id: string;
-  question: string;
-  answer: string;
-  explanation?: string;
-  card_type: string;
-  difficulty: number;
-  options: string | null;
-  /** @schedule decision - due date：新卡首次复习时间 */
-  next_review: string;
-  user_id?: string;
-  graph_id?: string;
-  quiz_set_id?: string;
-  /** @schedule decision - FSRS CardState */
-  fsrs_state: string;
-  /** @schedule decision - FSRS Stability (S) */
-  fsrs_stability: number;
-  /** @schedule decision - FSRS Difficulty (D) */
-  fsrs_difficulty: number;
-  fsrs_elapsed_days: number;
-  fsrs_scheduled_days: number;
-  /** @schedule decision - FSRS Retrievability (R) 初始快照 */
-  fsrs_retrievability: number;
-}
-
-interface QuizSetCardWithStudyCard {
-  study_cards: StudyCard[];
-}
-
-const PRACTICE_WEIGHT = 0.1;
-const PRACTICE_MAX_IMPROVEMENT = 0.3;
-const QUIZ_WEIGHT = 0.2;
-const QUIZ_MAX_IMPROVEMENT = 0.4;
-
-interface SubtaskWithTaskId {
-  id: string;
-  task_id: string;
-  knowledge_point_id?: string;
-  learning_state?: string;
-  mastery_level?: number;
-}
-
-const LEARNING_SESSIONS_TABLE = "learning_sessions";
-const LEARNING_SESSION_RESULTS_TABLE = "learning_session_results";
-
+/**
+ * 练习/测验集成服务：对外聚合入口。
+ * 实现按职责拆分为 SubtaskQuizQueryService / SubtaskQuizGenerationService / SubtaskQuizSessionService。
+ */
 export class SubtaskQuizIntegrationService {
-  private aiProviderService: IAIProviderService | null = null;
+  private queryService: SubtaskQuizQueryService;
+  private generationService: SubtaskQuizGenerationService;
+  private sessionService: SubtaskQuizSessionService;
+
+  constructor() {
+    this.queryService = new SubtaskQuizQueryService();
+    this.generationService = new SubtaskQuizGenerationService(this.queryService);
+    this.sessionService = new SubtaskQuizSessionService(
+      this.queryService,
+      this.generationService,
+    );
+  }
 
   /**
    * 注入 AI 服务，用于解耦 scheduler 层对 ai 层的直接运行时依赖。
    * 应在 SubtaskQuizIntegrationService 实例化后、使用前调用。
    */
   setAIProviderService(service: IAIProviderService): void {
-    this.aiProviderService = service;
+    this.generationService.setAIProviderService(service);
   }
 
-  async getPracticeCards(
+  // ── Delegated to QueryService ──
+
+  getPracticeCards(
     supabase: SupabaseClient,
     knowledgePointId: string,
     difficulty?: 1 | 2,
   ): Promise<StudyCard[]> {
-    logger.info("Getting practice cards for knowledge point", {
-      knowledgePointId,
-      difficulty,
-    });
-
-    let query = supabase
-      .from("study_cards")
-      .select("*")
-      .eq("knowledge_point_id", knowledgePointId)
-      .order("created_at", { ascending: false });
-
-    if (difficulty !== undefined) {
-      const difficultyRange = difficulty === 1 ? [1, 2, 3] : [3, 4, 5];
-      query = query.in("difficulty", difficultyRange);
-    }
-
-    const { data: cards, error } = await query.limit(20);
-
-    if (error) {
-      logger.error("Failed to fetch practice cards", {
-        knowledgePointId,
-        error: error.message,
-      });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-        details: { originalError: error.message },
-      });
-    }
-
-    logger.info("Found practice cards", {
-      knowledgePointId,
-      count: cards?.length ?? 0,
-    });
-
-    return (cards as StudyCard[]) ?? [];
+    return this.queryService.getPracticeCards(supabase, knowledgePointId, difficulty);
   }
 
-  async getQuizSet(
+  getQuizSet(
     supabase: SupabaseClient,
     knowledgePointId: string,
   ): Promise<QuizSet | null> {
-    logger.info("Getting quiz set for knowledge point", {
-      knowledgePointId,
-    });
-
-    const { data: quizSets, error } = await supabase
-      .from("quiz_sets")
-      .select(
-        `
-        id,
-        user_id,
-        graph_id,
-        title,
-        description,
-        config,
-        status,
-        card_count,
-        created_at,
-        updated_at
-      `,
-      )
-      .contains("config->knowledgePointIds", JSON.stringify([knowledgePointId]))
-      .eq("status", "ready")
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    if (error) {
-      logger.error("Failed to fetch quiz set", {
-        knowledgePointId,
-        error: error.message,
-      });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-        details: { originalError: error.message },
-      });
-    }
-
-    if (!quizSets || quizSets.length === 0) {
-      logger.info("No quiz set found for knowledge point", {
-        knowledgePointId,
-      });
-      return null;
-    }
-
-    logger.info("Found quiz set for knowledge point", {
-      knowledgePointId,
-      quizSetId: quizSets[0].id,
-    });
-
-    return quizSets[0] as QuizSet;
+    return this.queryService.getQuizSet(supabase, knowledgePointId);
   }
 
-  async startPracticeSession(
-    supabase: SupabaseClient,
-    subtaskId: string,
-    knowledgePointId: string,
-  ): Promise<PracticeSession> {
-    logger.info("Starting practice session", {
-      subtaskId,
-      knowledgePointId,
-    });
+  // ── Delegated to GenerationService ──
 
-    const subtask = await this.getSubtaskData(supabase, subtaskId);
-
-    const cards = await this.getPracticeCards(supabase, knowledgePointId);
-
-    if (cards.length === 0) {
-      const generatedCards = await this.generatePracticeCards(
-        supabase,
-        knowledgePointId,
-        5,
-      );
-
-      if (generatedCards.length === 0) {
-        throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-          message:
-            "No practice cards available and failed to generate new ones",
-        });
-      }
-
-      cards.push(...generatedCards);
-    }
-
-    const sessionId = crypto.randomUUID();
-    const now = new Date().toISOString();
-
-    const { error: insertError } = await supabase
-      .from(LEARNING_SESSIONS_TABLE)
-      .insert({
-        id: sessionId,
-        session_type: "practice",
-        subtask_id: subtaskId,
-        knowledge_point_id: knowledgePointId,
-        user_id: subtask.user_id,
-        card_ids: cards.map((c) => c.id),
-        started_at: now,
-        status: "in_progress",
-      });
-
-    if (insertError) {
-      logger.error("Failed to create practice session", {
-        subtaskId,
-        error: insertError.message,
-      });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-        details: { originalError: insertError.message },
-      });
-    }
-
-    logger.info("Practice session created", {
-      sessionId,
-      subtaskId,
-      cardCount: cards.length,
-    });
-
-    return {
-      id: sessionId,
-      subtask_id: subtaskId,
-      knowledge_point_id: knowledgePointId,
-      cards,
-      started_at: new Date(now),
-      user_id: subtask.user_id,
-    };
-  }
-
-  async completePractice(
-    supabase: SupabaseClient,
-    subtaskId: string,
-    results: PracticeResult[],
-  ): Promise<PracticeCompletionResult> {
-    logger.info("Completing practice", {
-      subtaskId,
-      resultCount: results.length,
-    });
-
-    const subtask = await this.getSubtaskData(supabase, subtaskId);
-
-    const { data: session, error: sessionError } = await supabase
-      .from(LEARNING_SESSIONS_TABLE)
-      .select("*")
-      .eq("session_type", "practice")
-      .eq("subtask_id", subtaskId)
-      .eq("status", "in_progress")
-      .order("started_at", { ascending: false })
-      .limit(1)
-      .single();
-
-    if (sessionError || !session) {
-      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "No active practice session found",
-      });
-    }
-
-    const correctCount = results.filter((r) => r.correct).length;
-    const totalCount = results.length;
-    const accuracy = totalCount > 0 ? correctCount / totalCount : 0;
-
-    // 报告用作答正确率指标（不再作为掌握度增量来源，掌握度统一走 FSRS）
-    const improvement = Math.min(
-      accuracy * PRACTICE_WEIGHT,
-      PRACTICE_MAX_IMPROVEMENT,
-    );
-
-    const now = new Date().toISOString();
-
-    const resultsToInsert = results.map((r) => ({
-      session_id: session.id,
-      card_id: r.card_id,
-      correct: r.correct,
-      time_spent: r.time_spent,
-      user_answer: r.user_answer,
-      created_at: now,
-    }));
-
-    const { error: resultsError } = await supabase
-      .from(LEARNING_SESSION_RESULTS_TABLE)
-      .insert(resultsToInsert);
-
-    if (resultsError) {
-      logger.error("Failed to save practice results", {
-        subtaskId,
-        error: resultsError.message,
-      });
-    }
-
-    await supabase
-      .from(LEARNING_SESSIONS_TABLE)
-      .update({
-        status: "completed",
-        completed_at: now,
-        score: accuracy,
-        correct_count: correctCount,
-        total_count: totalCount,
-      })
-      .eq("id", session.id);
-
-    // 先更新作答卡片的 FSRS 状态，再基于 FSRS 重算掌握度（单一权威源）
-    await this.updateCardReviewStats(supabase, results, subtask.user_id);
-
-    /** @mastery display - 掌握度单一权威源：基于 study_cards FSRS 重算 */
-    const mastery = await masteryCalculationService.updateKnowledgePointMastery(
-      supabase,
-      subtask.knowledge_point_id,
-    );
-
-    /** @schedule decision - FSRS next_state：状态机基于 learning_state + mastery 计算下一阶段 */
-    const newState = subtaskStateMachine.getNextState(
-      subtask.learning_state,
-      mastery,
-    );
-
-    await subtaskKnowledgeSyncService.syncSubtaskStateToKnowledgePoint(
-      supabase,
-      subtaskId,
-      newState,
-      mastery,
-    );
-
-    logger.info("Practice completed", {
-      subtaskId,
-      accuracy,
-      masteryBefore: subtask.mastery_level,
-      masteryAfter: mastery,
-      newState,
-    });
-
-    return {
-      masteryLevel: mastery,
-      newState,
-      correctCount,
-      totalCount,
-      accuracy,
-      improvement,
-    };
-  }
-
-  async startQuizSession(
-    supabase: SupabaseClient,
-    subtaskId: string,
-    knowledgePointId: string,
-  ): Promise<QuizSession> {
-    logger.info("Starting quiz session", {
-      subtaskId,
-      knowledgePointId,
-    });
-
-    const subtask = await this.getSubtaskData(supabase, subtaskId);
-
-    let quizSet = await this.getQuizSet(supabase, knowledgePointId);
-
-    if (!quizSet) {
-      quizSet = await this.generateQuizSet(supabase, knowledgePointId, {
-        cardTypes: ["qa", "choice", "true_false"],
-        difficulty: "medium",
-        knowledgePointIds: [knowledgePointId],
-      });
-    }
-
-    const { data: quizSetCards, error: cardsError } = await supabase
-      .from("quiz_set_cards")
-      .select(
-        `
-        display_order,
-        study_cards (
-          id,
-          knowledge_point_id,
-          user_id,
-          graph_id,
-          source_graph_id,
-          question,
-          answer,
-          card_type,
-          options,
-          explanation,
-          difficulty,
-          last_reviewed,
-          next_review,
-          review_count,
-          fsrs_state,
-          fsrs_stability,
-          fsrs_difficulty,
-          fsrs_elapsed_days,
-          fsrs_scheduled_days,
-          fsrs_retrievability,
-          fsrs_last_review,
-          created_at
-        )
-      `,
-      )
-      .eq("quiz_set_id", quizSet.id)
-      .order("display_order", { ascending: true });
-
-    if (cardsError) {
-      logger.error("Failed to fetch quiz set cards", {
-        quizSetId: quizSet.id,
-        error: cardsError.message,
-      });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-        details: { originalError: cardsError.message },
-      });
-    }
-
-    const cards: StudyCard[] = (quizSetCards ?? [])
-      .flatMap((item: QuizSetCardWithStudyCard) => item.study_cards ?? []);
-
-    if (cards.length === 0) {
-      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "No cards available in quiz set",
-      });
-    }
-
-    const sessionId = crypto.randomUUID();
-    const now = new Date().toISOString();
-
-    const { error: insertError } = await supabase
-      .from(LEARNING_SESSIONS_TABLE)
-      .insert({
-        id: sessionId,
-        session_type: "quiz",
-        subtask_id: subtaskId,
-        knowledge_point_id: knowledgePointId,
-        quiz_set_id: quizSet.id,
-        user_id: subtask.user_id,
-        card_ids: cards.map((c) => c.id),
-        started_at: now,
-        status: "in_progress",
-      });
-
-    if (insertError) {
-      logger.error("Failed to create quiz session", {
-        subtaskId,
-        error: insertError.message,
-      });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-        details: { originalError: insertError.message },
-      });
-    }
-
-    logger.info("Quiz session created", {
-      sessionId,
-      subtaskId,
-      quizSetId: quizSet.id,
-      cardCount: cards.length,
-    });
-
-    return {
-      id: sessionId,
-      subtask_id: subtaskId,
-      knowledge_point_id: knowledgePointId,
-      quiz_set_id: quizSet.id,
-      cards,
-      started_at: new Date(now),
-      user_id: subtask.user_id,
-    };
-  }
-
-  async completeQuiz(
-    supabase: SupabaseClient,
-    subtaskId: string,
-    results: QuizResult[],
-  ): Promise<QuizCompletionResult> {
-    logger.info("Completing quiz", {
-      subtaskId,
-      resultCount: results.length,
-    });
-
-    const subtask = await this.getSubtaskData(supabase, subtaskId);
-
-    const { data: session, error: sessionError } = await supabase
-      .from(LEARNING_SESSIONS_TABLE)
-      .select("*")
-      .eq("session_type", "quiz")
-      .eq("subtask_id", subtaskId)
-      .eq("status", "in_progress")
-      .order("started_at", { ascending: false })
-      .limit(1)
-      .single();
-
-    if (sessionError || !session) {
-      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "No active quiz session found",
-      });
-    }
-
-    const correctCount = results.filter((r) => r.correct).length;
-    const totalCount = results.length;
-    const score = totalCount > 0 ? correctCount / totalCount : 0;
-
-    // 报告用作答得分率指标（不再作为掌握度增量来源，掌握度统一走 FSRS）
-    const improvement = Math.min(score * QUIZ_WEIGHT, QUIZ_MAX_IMPROVEMENT);
-
-    const now = new Date().toISOString();
-
-    const resultsToInsert = results.map((r) => ({
-      session_id: session.id,
-      card_id: r.card_id,
-      correct: r.correct,
-      user_answer: r.answer,
-      time_spent: r.time_spent,
-      created_at: now,
-    }));
-
-    const { error: resultsError } = await supabase
-      .from(LEARNING_SESSION_RESULTS_TABLE)
-      .insert(resultsToInsert);
-
-    if (resultsError) {
-      logger.error("Failed to save quiz results", {
-        subtaskId,
-        error: resultsError.message,
-      });
-    }
-
-    await supabase
-      .from(LEARNING_SESSIONS_TABLE)
-      .update({
-        status: "completed",
-        completed_at: now,
-        score,
-        correct_count: correctCount,
-        total_count: totalCount,
-      })
-      .eq("id", session.id);
-
-    // 先更新作答卡片的 FSRS 状态，再基于 FSRS 重算掌握度（单一权威源）
-    await this.updateCardReviewStats(
-      supabase,
-      results.map((r) => ({
-        card_id: r.card_id,
-        correct: r.correct,
-        time_spent: r.time_spent,
-      })),
-      subtask.user_id,
-    );
-
-    /** @mastery display - 掌握度单一权威源：基于 study_cards FSRS 重算 */
-    const mastery = await masteryCalculationService.updateKnowledgePointMastery(
-      supabase,
-      subtask.knowledge_point_id,
-    );
-
-    /** @schedule decision - FSRS next_state：状态机基于 learning_state + mastery 计算下一阶段 */
-    const newState = subtaskStateMachine.getNextState(
-      subtask.learning_state,
-      mastery,
-    );
-
-    await subtaskKnowledgeSyncService.syncSubtaskStateToKnowledgePoint(
-      supabase,
-      subtaskId,
-      newState,
-      mastery,
-    );
-
-    logger.info("Quiz completed", {
-      subtaskId,
-      score,
-      masteryBefore: subtask.mastery_level,
-      masteryAfter: mastery,
-      newState,
-    });
-
-    return {
-      masteryLevel: mastery,
-      newState,
-      score,
-      correctCount,
-      totalCount,
-      improvement,
-    };
-  }
-
-  async generatePracticeCards(
+  generatePracticeCards(
     supabase: SupabaseClient,
     knowledgePointId: string,
     count: number = 5,
   ): Promise<StudyCard[]> {
-    logger.info("Generating practice cards", {
-      knowledgePointId,
-      count,
-    });
-
-    const knowledgePoint = await this.getKnowledgePointData(
-      supabase,
-      knowledgePointId,
-    );
-
-    const { data: existingCards } = await supabase
-      .from("study_cards")
-      .select("question")
-      .eq("knowledge_point_id", knowledgePointId);
-
-    const existingQuestions = new Set(
-      (existingCards ?? []).map((c) => c.question),
-    );
-
-    try {
-      if (!this.aiProviderService) {
-        throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, { message: "AI provider service not configured" });
-      }
-      const aiResult = await this.aiProviderService.generateCards(
-        knowledgePoint.title,
-        knowledgePoint.content || "",
-        {
-          types: ["qa", "choice"],
-          count,
-          difficulty: "easy",
-          context:
-            "Practice mode: Generate simple questions for quick knowledge check",
-        },
-      );
-
-      const newCards: StudyCard[] = [];
-      const cardsToInsert: CardToInsert[] = [];
-
-      for (const card of aiResult.cards as AIGeneratedCard[]) {
-        if (existingQuestions.has(card.question)) {
-          continue;
-        }
-
-        cardsToInsert.push({
-          knowledge_point_id: knowledgePointId,
-          question: card.question,
-          answer: card.answer,
-          explanation: card.explanation,
-          card_type: card.type ?? "qa",
-          difficulty: 1,
-          options: card.options ? JSON.stringify(card.options) : null,
-          /** @schedule decision - due date：新生成卡首次复习时间 */
-          next_review: new Date().toISOString(),
-          /** @schedule decision - FSRS CardState 初始 New */
-          fsrs_state: "New",
-          /** @schedule decision - FSRS Stability (S) 初始值 */
-          fsrs_stability: 0,
-          /** @schedule decision - FSRS Difficulty (D) 初始值 */
-          fsrs_difficulty: 0,
-          fsrs_elapsed_days: 0,
-          fsrs_scheduled_days: 0,
-          /** @schedule decision - FSRS Retrievability (R) 初始快照 */
-          fsrs_retrievability: 0,
-        });
-      }
-
-      if (cardsToInsert.length > 0) {
-        const { data: insertedCards, error: insertError } = await supabase
-          .from("study_cards")
-          .insert(cardsToInsert)
-          .select("id");
-
-        if (insertError) {
-          logger.error("Failed to insert generated practice cards", {
-            knowledgePointId,
-            error: insertError.message,
-          });
-        } else {
-          for (let i = 0; i < cardsToInsert.length; i++) {
-            const inserted = insertedCards[i];
-            if (!inserted) continue;
-            newCards.push({
-              id: inserted.id,
-              knowledge_point_id: knowledgePointId,
-              question: cardsToInsert[i].question,
-              answer: cardsToInsert[i].answer,
-              card_type: cardsToInsert[i].card_type,
-              options: cardsToInsert[i].options,
-              explanation: cardsToInsert[i].explanation,
-              difficulty: cardsToInsert[i].difficulty,
-              next_review: cardsToInsert[i].next_review,
-              user_id: cardsToInsert[i].user_id ?? "",
-              graph_id: cardsToInsert[i].graph_id ?? knowledgePoint.graph_id ?? "",
-            } as unknown as StudyCard);
-          }
-        }
-      }
-
-      logger.info("Generated practice cards", {
-        knowledgePointId,
-        generatedCount: newCards.length,
-      });
-
-      return newCards;
-    } catch (error) {
-      logger.error("Failed to generate practice cards", {
-        knowledgePointId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return [];
-    }
+    return this.generationService.generatePracticeCards(supabase, knowledgePointId, count);
   }
 
-  async generateQuizSet(
+  generateQuizSet(
     supabase: SupabaseClient,
     knowledgePointId: string,
     config: QuizSetConfig,
   ): Promise<QuizSet> {
-    logger.info("Generating quiz set", {
-      knowledgePointId,
-      config,
-    });
-
-    const knowledgePoint = await this.getKnowledgePointData(
-      supabase,
-      knowledgePointId,
-    );
-
-    const userId = await this.getUserIdForKnowledgePoint(
-      supabase,
-      knowledgePointId,
-    );
-
-    const quizSetId = crypto.randomUUID();
-    const now = new Date().toISOString();
-
-    const { error: quizSetError } = await supabase.from("quiz_sets").insert({
-      id: quizSetId,
-      user_id: userId,
-      title: formatQuizSetTitle(resolveLocalizedText(knowledgePoint.title)),
-      description: `针对知识点 "${resolveLocalizedText(knowledgePoint.title)}" 的综合测验`,
-      config,
-      status: "generating",
-      card_count: 0,
-      created_at: now,
-      updated_at: now,
-    });
-
-    if (quizSetError) {
-      logger.error("Failed to create quiz set", {
-        knowledgePointId,
-        error: quizSetError.message,
-      });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-        details: { originalError: quizSetError.message },
-      });
-    }
-
-    try {
-      if (!this.aiProviderService) {
-        throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, { message: "AI provider service not configured" });
-      }
-      const difficultyMap: Record<string, CardDifficulty> = {
-        easy: "easy",
-        medium: "medium",
-        hard: "hard",
-        mixed: "mixed",
-      };
-
-      const aiResult = await this.aiProviderService.generateCards(
-        knowledgePoint.title,
-        knowledgePoint.content || "",
-        {
-          types: config.cardTypes,
-          count: config.cardTypes.reduce(
-            (sum, type) => sum + (config.cardsPerType?.[type] ?? 3),
-            0,
-          ),
-          difficulty: difficultyMap[config.difficulty] || "medium",
-          context: config.customPrompt,
-          userId,
-          graphId: knowledgePoint.graph_id,
-        },
-      );
-
-      const cardsToInsert: CardToInsert[] = (aiResult.cards as AIGeneratedCard[]).map((card) => ({
-        knowledge_point_id: knowledgePointId,
-        user_id: userId,
-        graph_id: knowledgePoint.graph_id,
-        question: card.question,
-        answer: card.answer,
-        explanation: card.explanation,
-        card_type: card.type || "qa",
-        difficulty:
-          config.difficulty === "mixed"
-            ? this.getRandomDifficulty()
-            : config.difficulty === "easy"
-              ? 1
-              : config.difficulty === "hard"
-                ? 4
-                : 2,
-        options: card.options ? JSON.stringify(card.options) : null,
-        quiz_set_id: quizSetId,
-        /** @schedule decision - due date：新卡首次复习时间 */
-        next_review: new Date().toISOString(),
-        /** @schedule decision - FSRS CardState 初始 New */
-        fsrs_state: "New",
-        /** @schedule decision - FSRS Stability (S) 初始值 */
-        fsrs_stability: 0,
-        /** @schedule decision - FSRS Difficulty (D) 初始值 */
-        fsrs_difficulty: 0,
-        fsrs_elapsed_days: 0,
-        fsrs_scheduled_days: 0,
-        /** @schedule decision - FSRS Retrievability (R) 初始快照 */
-        fsrs_retrievability: 0,
-      }));
-
-      const { data: insertedCards, error: insertError } = await supabase
-        .from("study_cards")
-        .insert(cardsToInsert)
-        .select("id");
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      const quizSetCardsToInsert = insertedCards.map(
-        (card: { id: string }, index: number) => ({
-          quiz_set_id: quizSetId,
-          card_id: card.id,
-          display_order: index + 1,
-        }),
-      );
-
-      await supabase.from("quiz_set_cards").insert(quizSetCardsToInsert);
-
-      await supabase
-        .from("quiz_sets")
-        .update({
-          status: "ready",
-          card_count: insertedCards.length,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", quizSetId);
-
-      const { data: quizSet, error: fetchError } = await supabase
-        .from("quiz_sets")
-        .select("*")
-        .eq("id", quizSetId)
-        .single();
-
-      if (fetchError || !quizSet) {
-        throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
-          details: { originalError: fetchError?.message },
-        });
-      }
-
-      logger.info("Quiz set generated", {
-        quizSetId,
-        cardCount: insertedCards.length,
-      });
-
-      return quizSet as QuizSet;
-    } catch (error) {
-      await supabase
-        .from("quiz_sets")
-        .update({ status: "draft" })
-        .eq("id", quizSetId);
-
-      logger.error("Failed to generate quiz set", {
-        knowledgePointId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-
-      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
-        message: "Failed to generate quiz cards",
-      });
-    }
+    return this.generationService.generateQuizSet(supabase, knowledgePointId, config);
   }
 
-  async getRecommendedActivity(
+  // ── Delegated to SessionService ──
+
+  startPracticeSession(
+    supabase: SupabaseClient,
+    subtaskId: string,
+    knowledgePointId: string,
+  ): Promise<import("./subtaskQuizShared").PracticeSession> {
+    return this.sessionService.startPracticeSession(supabase, subtaskId, knowledgePointId);
+  }
+
+  completePractice(
+    supabase: SupabaseClient,
+    subtaskId: string,
+    results: import("./subtaskQuizShared").PracticeResult[],
+  ): Promise<import("./subtaskQuizShared").PracticeCompletionResult> {
+    return this.sessionService.completePractice(supabase, subtaskId, results);
+  }
+
+  startQuizSession(
+    supabase: SupabaseClient,
+    subtaskId: string,
+    knowledgePointId: string,
+  ): Promise<import("./subtaskQuizShared").QuizSession> {
+    return this.sessionService.startQuizSession(supabase, subtaskId, knowledgePointId);
+  }
+
+  completeQuiz(
+    supabase: SupabaseClient,
+    subtaskId: string,
+    results: import("./subtaskQuizShared").QuizResult[],
+  ): Promise<import("./subtaskQuizShared").QuizCompletionResult> {
+    return this.sessionService.completeQuiz(supabase, subtaskId, results);
+  }
+
+  getRecommendedActivity(
     supabase: SupabaseClient,
     subtaskId: string,
   ): Promise<{
@@ -956,211 +120,10 @@ export class SubtaskQuizIntegrationService {
     reason: string;
     availableCards: number;
   }> {
-    const subtask = await this.getSubtaskData(supabase, subtaskId);
-    const { learning_state } = subtask;
-    /** @schedule decision - mastery_level READ：推荐活动分支判定（mastery >= 0.5 才触发 quiz） */
-    const { mastery_level } = subtask;
-
-    const cards = await this.getPracticeCards(
-      supabase,
-      subtask.knowledge_point_id,
-    );
-    const quizSet = await this.getQuizSet(supabase, subtask.knowledge_point_id);
-
-    if (learning_state === "learning" || learning_state === "review") {
-      return {
-        type: "practice",
-        reason: `当前处于${learning_state === "learning" ? "学习" : "复习"}阶段，建议进行练习巩固`,
-        availableCards: cards.length,
-      };
-    }
-
-    if (learning_state === "practice") {
-      if (mastery_level >= 0.5 && quizSet) {
-        return {
-          type: "quiz",
-          reason: "练习达标，可以开始测验检验学习成果",
-          availableCards: quizSet.card_count,
-        };
-      }
-      return {
-        type: "practice",
-        reason: "继续练习提升掌握度",
-        availableCards: cards.length,
-      };
-    }
-
-    if (learning_state === "quiz") {
-      if (quizSet) {
-        return {
-          type: "quiz",
-          reason: "进入测验阶段，检验学习成果",
-          availableCards: quizSet.card_count,
-        };
-      }
-      return {
-        type: "practice",
-        reason: "暂无测验题目，先进行练习",
-        availableCards: cards.length,
-      };
-    }
-
-    return {
-      type: "practice",
-      reason: "开始练习",
-      availableCards: cards.length,
-    };
+    return this.sessionService.getRecommendedActivity(supabase, subtaskId);
   }
 
-  private async getSubtaskData(
-    supabase: SupabaseClient,
-    subtaskId: string,
-  ): Promise<SubtaskData> {
-    const { data: subtask, error } = await supabase
-      .from("task_subtasks")
-      .select("id, task_id, knowledge_point_id, learning_state, knowledge_points(mastery_level)")
-      .eq("id", subtaskId)
-      .single();
-
-    if (error || !subtask) {
-      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "Subtask not found",
-        details: { subtaskId },
-      });
-    }
-
-    const { data: task } = await supabase
-      .from("user_tasks")
-      .select("user_id")
-      .eq("id", (subtask as SubtaskWithTaskId).task_id)
-      .single();
-
-    const raw = subtask as SubtaskWithTaskId & {
-      knowledge_points?: { mastery_level: number | null }[] | null;
-    };
-    return {
-      id: raw.id,
-      task_id: raw.task_id,
-      knowledge_point_id: raw.knowledge_point_id,
-      learning_state: raw.learning_state as LearningState,
-      /** @schedule decision - mastery_level READ：从 knowledge_points 读取（调度算法输入） */
-      mastery_level: raw.knowledge_points?.[0]?.mastery_level ?? 0,
-      user_id: task?.user_id ?? "",
-    } as SubtaskData;
-  }
-
-  private async getKnowledgePointData(
-    supabase: SupabaseClient,
-    knowledgePointId: string,
-  ): Promise<KnowledgePointData> {
-    const { data: kp, error } = await supabase
-      .from("knowledge_points")
-      .select("id, title, content")
-      .eq("id", knowledgePointId)
-      .single();
-
-    if (error || !kp) {
-      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-        message: "Knowledge point not found",
-        details: { knowledgePointId },
-      });
-    }
-
-    const { data: graphNode } = await notDeleted(supabase
-      .from("graph_nodes")
-      .select("graph_id")
-      .eq("knowledge_point_id", knowledgePointId)
-      )
-      .limit(1)
-      .single();
-
-    return {
-      ...kp,
-      graph_id: graphNode?.graph_id,
-    } as KnowledgePointData;
-  }
-
-  private async getUserIdForKnowledgePoint(
-    supabase: SupabaseClient,
-    knowledgePointId: string,
-  ): Promise<string> {
-    const { data: subtask } = await supabase
-      .from("task_subtasks")
-      .select("task_id")
-      .eq("knowledge_point_id", knowledgePointId)
-      .limit(1)
-      .single();
-
-    if (subtask) {
-      const { data: task } = await supabase
-        .from("user_tasks")
-        .select("user_id")
-        .eq("id", (subtask as SubtaskWithTaskId).task_id)
-        .single();
-
-      if (task?.user_id) {
-        return task.user_id;
-      }
-    }
-
-    const { data: graphNode } = await notDeleted(supabase
-      .from("graph_nodes")
-      .select("graph_id")
-      .eq("knowledge_point_id", knowledgePointId)
-      )
-      .limit(1)
-      .single();
-
-    if (graphNode?.graph_id) {
-      const { data: graph } = await supabase
-        .from("knowledge_graphs")
-        .select("owner_id")
-        .eq("id", graphNode.graph_id)
-        .single();
-
-      if (graph?.owner_id) {
-        return graph.owner_id;
-      }
-    }
-
-    throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
-      message: "Could not determine user for knowledge point",
-    });
-  }
-
-  private async updateCardReviewStats(
-    supabase: SupabaseClient,
-    results: Array<{ card_id: string; correct: boolean; time_spent: number }>,
-    userId: string,
-  ): Promise<void> {
-    for (const result of results) {
-      try {
-        const quality = result.correct ? 3 : 1;
-        await studyService.updateProgress(
-          supabase,
-          result.card_id,
-          quality,
-          userId,
-        );
-      } catch (error) {
-        logger.error("Failed to update card FSRS progress", {
-          cardId: result.card_id,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
-  }
-
-  private getRandomDifficulty(): number {
-    const difficulties = [1, 2, 3, 4, 5];
-    return difficulties[Math.floor(Math.random() * difficulties.length)];
-  }
-
-  /**
-   * 记录一次独立的测验作答（面向用户测验页，不依赖调度子任务）。
-   * 写入 learning_sessions(session_type='quiz') + learning_session_results。
-   */
-  async recordQuizAttempt(
+  recordQuizAttempt(
     supabase: SupabaseClient,
     userId: string,
     quizSetId: string,
@@ -1171,68 +134,7 @@ export class SubtaskQuizIntegrationService {
       time_spent?: number;
     }>,
   ): Promise<{ sessionId: string; score: number; correctCount: number; totalCount: number }> {
-    const { data: quizSet } = await supabase
-      .from("quiz_sets")
-      .select("id, config")
-      .eq("id", quizSetId)
-      .eq("user_id", userId)
-      .single();
-
-    const { data: cardRows } = await supabase
-      .from("quiz_set_cards")
-      .select("card_id")
-      .eq("quiz_set_id", quizSetId);
-
-    const cardIds = (cardRows ?? []).map((r) => r.card_id as string);
-    const config = (quizSet?.config ?? {}) as QuizSetConfig;
-    const knowledgePointId = config.knowledgePointIds?.[0] ?? null;
-
-    const totalCount = cardIds.length;
-    const correctCount = results.filter((r) => r.correct).length;
-    const score = totalCount > 0 ? correctCount / totalCount : 0;
-    const totalTime = results.reduce((sum, r) => sum + (r.time_spent ?? 0), 0);
-
-    const sessionId = await transactionExecutor.executeInTransaction(
-      async (client) => {
-        const sessionInsert = await client.query(
-          `INSERT INTO learning_sessions (session_type, knowledge_point_id, quiz_set_id, user_id, card_ids, started_at, completed_at, status, score, correct_count, total_count, total_time_spent)
-           VALUES ('quiz', $1, $2, $3, $4, NOW(), NOW(), 'completed', $5, $6, $7, $8)
-           RETURNING id`,
-          [
-            knowledgePointId,
-            quizSetId,
-            userId,
-            cardIds,
-            score,
-            correctCount,
-            totalCount,
-            totalTime,
-          ],
-        );
-
-        const sid = sessionInsert.rows[0]?.id as string;
-
-        for (const r of results) {
-          await client.query(
-            `INSERT INTO learning_session_results (session_id, card_id, correct, user_answer, time_spent)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [sid, r.card_id, r.correct, r.user_answer ?? null, r.time_spent ?? 0],
-          );
-        }
-
-        return sid;
-      },
-    );
-
-    logger.info("Quiz attempt recorded", {
-      quizSetId,
-      sessionId,
-      score,
-      correctCount,
-      totalCount,
-    });
-
-    return { sessionId, score, correctCount, totalCount };
+    return this.sessionService.recordQuizAttempt(supabase, userId, quizSetId, results);
   }
 }
 

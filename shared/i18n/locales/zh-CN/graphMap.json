@@ -24,6 +24,8 @@
     "manageDomains": "管理领域",
     "deleteMode": "删除模式",
     "deleteModeOn": "退出删除模式",
+    "showDomains": "显示领域",
+    "hideDomains": "隐藏领域",
     "manage": "管理",
     "rearrangeLayout": "整理布局",
     "layoutRearranged": "布局已整理并固定"

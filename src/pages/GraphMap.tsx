@@ -156,6 +156,7 @@ export const GraphMap = () => {
   >(new Set());
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1);
   const [deleteMode, setDeleteMode] = useState(false);
+  const [showDomains, setShowDomains] = useState(true);
   const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false);
   const [isAIExpansionOpen, setIsAIExpansionOpen] = useState(false);
   const [expansionProgress, setExpansionProgress] =
@@ -1198,6 +1199,8 @@ export const GraphMap = () => {
         onManageDomains={() => setShowDomainManager(true)}
         deleteMode={deleteMode}
         onDeleteModeChange={setDeleteMode}
+        showDomains={showDomains}
+        onToggleDomains={(v: boolean) => setShowDomains(v)}
       />
 
       <div className="flex-1 relative">
@@ -1221,6 +1224,7 @@ export const GraphMap = () => {
               focusDomainId={canvasFocusDomainId}
               onDomainPillClick={handleDomainPillClick}
               onDomainFocusClear={() => setClickedDomainId(null)}
+              showDomains={showDomains}
               domainColorMap={domainColorMap}
               domainIdToInfo={domainIdToInfo}
               graphDomainMap={graphDomainMap}

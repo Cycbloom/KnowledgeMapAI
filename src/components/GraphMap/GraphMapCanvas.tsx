@@ -76,6 +76,8 @@ interface GraphMapCanvasProps {
   onDomainPillClick?: (domainId: string) => void;
   /** 点击画布空白时清除领域点击高亮 */
   onDomainFocusClear?: () => void;
+  /** 是否显示领域渲染（凸包背景 + 领域标签） */
+  showDomains: boolean;
   domainColorMap?: Map<string, string>;
   domainIdToInfo?: Map<string, { name: string; color: string }>;
   graphDomainMap?: Map<string, Set<string>>;
@@ -112,6 +114,7 @@ export const GraphMapCanvas = forwardRef<
       focusDomainId = null,
       onDomainPillClick,
       onDomainFocusClear,
+      showDomains = true,
       domainColorMap = new Map(),
       domainIdToInfo,
       graphDomainMap = new Map(),
@@ -528,6 +531,7 @@ export const GraphMapCanvas = forwardRef<
               height={containerSize.height}
               gridStyle={gridStyle}
             />
+            {showDomains && (
             <DomainBackground
               layoutNodes={layout.nodes}
               graphs={graphs}
@@ -537,6 +541,7 @@ export const GraphMapCanvas = forwardRef<
               focusDomainId={focusDomainId ?? hoveredDomainId}
               domainIdToInfo={domainIdToInfo}
             />
+            )}
             <GraphEdges
               links={layout.links}
               edges={edges}
@@ -576,6 +581,7 @@ export const GraphMapCanvas = forwardRef<
               panMovedRef={panMovedRef}
             />
             {/* 领域胶囊标签层：置于节点之上，避免被节点遮挡，支持点击聚焦领域 */}
+            {showDomains && (
             <DomainBackground
               variant="labels"
               layoutNodes={layout.nodes}
@@ -587,6 +593,7 @@ export const GraphMapCanvas = forwardRef<
               domainIdToInfo={domainIdToInfo}
               onPillClick={onDomainPillClick}
             />
+            )}
           </g>
 
           <SelectionBox isSelecting={isSelecting} selectionBox={selectionBox} />

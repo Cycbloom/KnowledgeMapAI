@@ -15,6 +15,8 @@ import {
   Tags,
   Settings,
   Trash2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import type { GraphMapFilterMode } from "../../types";
 import { useIsMobile } from "../../hooks";
@@ -43,6 +45,8 @@ interface GraphMapToolbarProps {
   onManageDomains?: () => void;
   deleteMode: boolean;
   onDeleteModeChange: (v: boolean) => void;
+  showDomains: boolean;
+  onToggleDomains: (v: boolean) => void;
 }
 
 const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
@@ -67,6 +71,8 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
   onManageDomains,
   deleteMode,
   onDeleteModeChange,
+  showDomains,
+  onToggleDomains,
 }) => {
   const { t } = useTranslation();
   const deviceInfo = useIsMobile();
@@ -283,6 +289,21 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
                   <Trash2 className="w-4 h-4" />
                   {deleteMode ? t("graphMap.toolbar.deleteModeOn") : t("graphMap.toolbar.deleteMode")}
                 </button>
+                <button
+                  onClick={() => {
+                    onToggleDomains(!showDomains);
+                    setShowMoreMenu(false);
+                  }}
+                  aria-pressed={showDomains}
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm last:rounded-b-lg ${
+                    showDomains
+                      ? "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600"
+                      : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-600"
+                  }`}
+                >
+                  {showDomains ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  {showDomains ? t("graphMap.toolbar.hideDomains") : t("graphMap.toolbar.showDomains")}
+                </button>
               </div>
             )}
           </div>
@@ -293,6 +314,19 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
     if (isCompact) {
       return (
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => onToggleDomains(!showDomains)}
+            aria-pressed={showDomains}
+            className={`p-2 rounded-lg transition-colors ${
+              showDomains
+                ? "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                : "bg-slate-200 dark:bg-slate-600 text-gray-500 dark:text-gray-400"
+            }`}
+            title={showDomains ? t("graphMap.toolbar.hideDomains") : t("graphMap.toolbar.showDomains")}
+            aria-label={showDomains ? t("graphMap.toolbar.hideDomains") : t("graphMap.toolbar.showDomains")}
+          >
+            {showDomains ? <Eye className="w-5 h-5" aria-hidden="true" /> : <EyeOff className="w-5 h-5" aria-hidden="true" />}
+          </button>
           <button
             onClick={() => onDeleteModeChange(!deleteMode)}
             aria-pressed={deleteMode}
@@ -348,6 +382,19 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
 
     return (
       <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => onToggleDomains(!showDomains)}
+          aria-pressed={showDomains}
+          className={`p-2 rounded-lg transition-colors ${
+            showDomains
+              ? "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+              : "bg-slate-200 dark:bg-slate-600 text-gray-500 dark:text-gray-400"
+          }`}
+          title={showDomains ? t("graphMap.toolbar.hideDomains") : t("graphMap.toolbar.showDomains")}
+          aria-label={showDomains ? t("graphMap.toolbar.hideDomains") : t("graphMap.toolbar.showDomains")}
+        >
+          {showDomains ? <Eye className="w-5 h-5" aria-hidden="true" /> : <EyeOff className="w-5 h-5" aria-hidden="true" />}
+        </button>
         <button
           onClick={() => onDeleteModeChange(!deleteMode)}
           aria-pressed={deleteMode}
@@ -507,6 +554,8 @@ const areEqual = (prev: GraphMapToolbarProps, next: GraphMapToolbarProps) => {
     prev.onManageDomains === next.onManageDomains &&
     prev.deleteMode === next.deleteMode &&
     prev.onDeleteModeChange === next.onDeleteModeChange &&
+    prev.showDomains === next.showDomains &&
+    prev.onToggleDomains === next.onToggleDomains &&
     prev.domains === next.domains &&
     prev.selectedDomainIds === next.selectedDomainIds &&
     prev.onDomainSelectionChange === next.onDomainSelectionChange &&

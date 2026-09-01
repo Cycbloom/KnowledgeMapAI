@@ -24,6 +24,8 @@
     "manageDomains": "Manage Domains",
     "deleteMode": "Delete Mode",
     "deleteModeOn": "Exit Delete Mode",
+    "showDomains": "Show Domains",
+    "hideDomains": "Hide Domains",
     "manage": "Manage",
     "rearrangeLayout": "Rearrange Layout",
     "layoutRearranged": "Layout rearranged and pinned"

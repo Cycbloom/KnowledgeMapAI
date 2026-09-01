@@ -99,12 +99,13 @@ export const LearningMode = () => {
         stage: "learning",
         knowledgePointId: nodeId,
         taskId: linkedTask?.mainTaskId,
+        subtaskId: linkedTask?.subtaskId,
       });
     } else {
       setExecutionContext(null);
     }
     return () => setExecutionContext(null);
-  }, [nodeId, linkedTask?.mainTaskId]);
+  }, [nodeId, linkedTask?.mainTaskId, linkedTask?.subtaskId]);
 
   // Local state
   const [nodeTitle, setNodeTitle] = useState("");

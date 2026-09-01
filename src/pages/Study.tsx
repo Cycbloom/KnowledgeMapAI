@@ -149,9 +149,10 @@ export const Study = () => {
         stage: "quiz",
         knowledgePointId: nodeId,
         taskId: linkedTask?.mainTaskId,
+        subtaskId: linkedTask?.subtaskId,
       });
     }
-  }, [isQuizActiveView, nodeId, linkedTask?.mainTaskId]);
+  }, [isQuizActiveView, nodeId, linkedTask?.mainTaskId, linkedTask?.subtaskId]);
 
   // 庆祝动画:复习 session 结束时触发(Task 19.2)
   const { triggerCelebration } = useCelebration();

@@ -6,6 +6,10 @@ import {
   type ExecutionContext,
 } from "../../utils/executionSessionContext";
 import { useExecutionSessionStore } from "../../store/useExecutionSessionStore";
+import {
+  startFocusTimerForTask,
+  pauseFocusTimerForTask,
+} from "../../utils/focusTimerLink";
 
 /** 判断路径是否属于「学习/答题」活动集合（会话内可连续切换不结束） */
 function isLearningActivity(pathname: string): boolean {
@@ -31,6 +35,7 @@ export function ExecutionSessionBridge() {
   const { active, begin, end } = useExecutionSession();
   const inSetRef = useRef(false);
   const appliedKeyRef = useRef("");
+  const lastTaskIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const inLearning = isLearningActivity(location.pathname);
@@ -39,10 +44,12 @@ export function ExecutionSessionBridge() {
 
     if (inLearning) {
       inSetRef.current = true;
-      // 上下文已就绪且发生变化 → 开启/追加活动片段
+      // 上下文已就绪且发生变化 → 开启/追加活动片段，并联动番茄钟
       if (ctx && key !== appliedKeyRef.current) {
         appliedKeyRef.current = key;
+        lastTaskIdRef.current = ctx.taskId ?? null;
         begin(ctx);
+        if (ctx.taskId) startFocusTimerForTask(ctx.taskId, ctx.subtaskId);
       }
       return;
     }
@@ -51,6 +58,10 @@ export function ExecutionSessionBridge() {
     if (inSetRef.current || active) {
       inSetRef.current = false;
       appliedKeyRef.current = "";
+      if (lastTaskIdRef.current) {
+        pauseFocusTimerForTask(lastTaskIdRef.current);
+        lastTaskIdRef.current = null;
+      }
       end();
     }
   }, [location.pathname, ctxVersion, active, begin, end]);

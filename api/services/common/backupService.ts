@@ -9,6 +9,7 @@ import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { cacheService, CacheKeys } from './cacheService';
 import type { Database } from '@shared/types/database.generated';
 import { notDeleted } from './softDeleteHelper';
+import { asyncTaskService } from '../asyncTaskService';
 
 const BACKUP_DIR = process.env.BACKUP_DIR || './backups';
 const MAX_AUTO_SNAPSHOTS: Record<string, number> = {
@@ -1772,6 +1773,23 @@ export class BackupService {
       'nodes',
       'notification_settings',
     );
+
+    // 恢复完成后，自动后台补全缺失的 embedding（图谱 + 知识点）：
+    // 备份不存向量（避免体积膨胀/模型漂移），恢复后在线场景下重建，使查重与语义检索立即生效；
+    // 离线/无 key 时该任务优雅降级（嵌入保持为 null），可用既有「补全缺失 embedding」任务稍后重跑。
+    try {
+      await asyncTaskService.createTask(
+        userId,
+        "embedding_generation",
+        { scope: "all" },
+        "恢复后补全缺失嵌入",
+      );
+      logger.info(
+        `Enqueued embedding backfill after restore for user ${userId}`,
+      );
+    } catch (error) {
+      logger.warn("Failed to enqueue embedding backfill after restore", error);
+    }
 
     return stats;
   }

@@ -203,6 +203,61 @@ export class AsyncTaskService {
   }
 
   /**
+   * 门卫：AI 去重类操作（新建节点/深度拓展/宽度拓展等）前调用。
+   * 自动检测当前用户缺失 embedding 的知识点/图谱；若有缺口且没有进行中的
+   * embedding 补全任务，则自动入队一个全量补全任务，避免用户手动补全。
+   * @returns 是否检测到缺口并入队了补全任务
+   */
+  async ensureEmbeddingBackfill(userId: string): Promise<boolean> {
+    try {
+      const supabase = defaultClient;
+
+      // 快速检测缺口：缺失 embedding 的知识点 + 图谱
+      const [kpResult, graphResult] = await Promise.all([
+        supabase
+          .from("knowledge_points")
+          .select("id", { count: "exact", head: true })
+          .eq("owner_id", userId)
+          .is("embedding", null),
+        supabase
+          .from("knowledge_graphs")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .is("deleted_at", null)
+          .is("embedding", null),
+      ]);
+
+      const missing = (kpResult.count || 0) + (graphResult.count || 0);
+      if (missing === 0) return false;
+
+      // 已有进行中/排队的嵌入补全任务则跳过，避免重复排队
+      const { data: active } = await supabase
+        .from("system_tasks")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("task_type", "knowledge_sync")
+        .in("status", ["pending", "running"])
+        .limit(1);
+
+      if (active && active.length > 0) return false;
+
+      await this.createTask(
+        userId,
+        "embedding_generation",
+        { scope: "all" },
+        "缺失嵌入自动补全",
+      );
+      logger.info(
+        `Auto-enqueued embedding backfill for user ${userId} (${missing} missing)`,
+      );
+      return true;
+    } catch (error) {
+      logger.warn("ensureEmbeddingBackfill failed:", error);
+      return false;
+    }
+  }
+
+  /**
    * 异步处理任务：先通过 claimTask 原子抢占，再执行 processTask。
    *
    * 并发控制：全局 MAX_CONCURRENT=3 信号量，超过上限的任务保留 pending

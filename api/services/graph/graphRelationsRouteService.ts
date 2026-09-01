@@ -472,6 +472,10 @@ export class GraphRelationsRouteService {
     graphId: string,
     options: InfiniteExpansionOptions = {},
   ): Promise<{ taskId: string; status: string; message: string }> {
+    // 宽度拓展依赖图谱语义查重（checkDuplicateGraphTopic），
+    // 若有缺口则自动补全缺失的 embedding，避免出现同名/近似重复图谱
+    await asyncTaskService.ensureEmbeddingBackfill(userId);
+
     const {
       max_depth = 2,
       max_graphs_per_level = 3,

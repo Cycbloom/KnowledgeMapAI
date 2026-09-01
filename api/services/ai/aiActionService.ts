@@ -6,8 +6,8 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { getSupabaseAdmin } from '../../supabase';
 import { GRAPH_NODES_SELECT } from '../../utils/nodeHelpers';
-import { performanceMonitor, enrichMetadata } from './performanceMonitor';
-import { pricingService } from './pricingService';
+import { enrichMetadata } from './performanceMonitor';
+import { withAIMonitoring } from './aiMonitor';
 import { transactionExecutor } from '../../database/transactionExecutor';
 import { notDeleted } from '../common/softDeleteHelper';
 
@@ -317,40 +317,34 @@ export class AIActionService {
           actionName: action.name,
         });
 
-        const startTime = Date.now();
-        const completion = await provider.client.chat.completions.create({
-            messages: [
-                { role: 'system', content: 'You are a helpful knowledge graph assistant.' },
-                { role: 'user', content: prompt }
-            ],
-            model: provider.model,
-            response_format: action.target_mode !== 'show_result' ? { type: "json_object" } : undefined
-        });
-        const duration = Date.now() - startTime;
-
-        const usage = completion.usage;
-        if (usage) {
-          const cost = pricingService.calculateCost(
-            provider.providerType,
-            provider.model,
-            usage.prompt_tokens,
-            usage.completion_tokens,
-            0
-          );
-          await performanceMonitor.recordLog({
-            operation: 'ai_action_execute',
-            provider: provider.providerType,
-            model: provider.model,
-            inputTokens: usage.prompt_tokens,
-            outputTokens: usage.completion_tokens,
-            totalTokens: usage.prompt_tokens + usage.completion_tokens,
-            cachedInputTokens: 0,
-            duration,
-            success: true,
-            estimatedCost: cost,
-            metadata: enrichedMetadata,
-          });
-        }
+        // withAIMonitoring 统一记录 token/成本/耗时/成功率，替代手写 recordLog
+        const completion = await withAIMonitoring<{
+            choices: Array<{ message: { content: string | null } }>;
+            usage?: {
+                prompt_tokens?: number;
+                completion_tokens?: number;
+                prompt_tokens_details?: { cached_tokens?: number; audio_tokens?: number };
+                completion_tokens_details?: { reasoning_tokens?: number; audio_tokens?: number };
+            };
+        }>(
+            {
+                operation: 'ai_action_execute',
+                provider: provider.providerType,
+                model: provider.model,
+                metadata: enrichedMetadata,
+            },
+            async () => {
+                const completion = await provider.client.chat.completions.create({
+                    messages: [
+                        { role: 'system', content: 'You are a helpful knowledge graph assistant.' },
+                        { role: 'user', content: prompt }
+                    ],
+                    model: provider.model,
+                    response_format: action.target_mode !== 'show_result' ? { type: "json_object" } : undefined
+                });
+                return { result: completion, usage: completion.usage };
+            },
+        );
 
         const responseContent = completion.choices[0].message.content || '';
         

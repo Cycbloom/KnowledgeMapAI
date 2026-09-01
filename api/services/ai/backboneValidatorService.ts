@@ -5,8 +5,7 @@ import {
 } from "@shared/types/graph";
 import { logger } from "../../utils/logger";
 import { getAIProviderForTask } from "./factory";
-import { performanceMonitor } from "./performanceMonitor";
-import { pricingService } from "./pricingService";
+import { withAIMonitoring } from "./aiMonitor";
 import { parseAIResponse } from "./utils";
 import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../../shared/utils/retry";
 import { AppError } from "../../middleware/errorHandler";
@@ -457,8 +456,6 @@ export class BackboneValidatorService {
       model?: string;
     },
   ): Promise<ValidationResult> {
-    const startTime = Date.now();
-
     try {
       const provider = await getAIProviderForTask("text");
 
@@ -493,20 +490,43 @@ export class BackboneValidatorService {
         };
       };
 
-      const completion = await withTimeoutAndRetry(
-        () =>
-          client.chat.completions.create({
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-            model: options?.model || provider.model,
-            response_format: { type: "json_object" },
-            max_tokens: 2000,
-          }),
+      // withAIMonitoring 统一记录 token/成本/耗时/成功率（内层 withTimeoutAndRetry 负责重试）
+      const completion = await withAIMonitoring<{
+        choices: Array<{ message: { content: string | null } }>;
+        usage?: {
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          prompt_tokens_details?: { cached_tokens?: number };
+          completion_tokens_details?: { reasoning_tokens?: number };
+        };
+      }>(
         {
-          timeout: LONG_TIMEOUT,
-          maxRetries: 2,
+          operation: "backbone_validation",
+          provider: provider.providerType,
+          model: options?.model || provider.model,
+          metadata: {
+            userId: options?.userId,
+            graphId: options?.graphId,
+          },
+        },
+        async () => {
+          const completion = await withTimeoutAndRetry(
+            () =>
+              client.chat.completions.create({
+                messages: [
+                  { role: "system", content: systemPrompt },
+                  { role: "user", content: userPrompt },
+                ],
+                model: options?.model || provider.model,
+                response_format: { type: "json_object" },
+                max_tokens: 2000,
+              }),
+            {
+              timeout: LONG_TIMEOUT,
+              maxRetries: 2,
+            },
+          );
+          return { result: completion, usage: completion.usage };
         },
       );
 
@@ -548,72 +568,13 @@ export class BackboneValidatorService {
         }
       }
 
-      const inputTokens = completion.usage?.prompt_tokens || 0;
-      const outputTokens = completion.usage?.completion_tokens || 0;
-      const cachedInputTokens =
-        completion.usage?.prompt_tokens_details?.cached_tokens || 0;
-      const totalTokens = inputTokens + outputTokens;
-
-      const costBreakdown = pricingService.calculateDetailedCost(
-        provider.providerType,
-        options?.model || provider.model,
-        inputTokens,
-        outputTokens,
-        cachedInputTokens,
-      );
-
-      performanceMonitor.recordLog({
-        operation: "backbone_validation",
-        provider: provider.providerType,
-        model: options?.model || provider.model,
-        inputTokens,
-        outputTokens,
-        totalTokens,
-        estimatedCost: costBreakdown.totalCost,
-        duration: Date.now() - startTime,
-        success: true,
-        metadata: {
-          userId: options?.userId,
-          graphId: options?.graphId,
-        },
-        cachedInputTokens,
-        uncachedInputTokens: Math.max(0, inputTokens - cachedInputTokens),
-        reasoningTokens:
-          completion.usage?.completion_tokens_details?.reasoning_tokens || 0,
-        cacheHitRate:
-          inputTokens > 0
-            ? parseFloat(
-                ((cachedInputTokens / inputTokens) * 100).toFixed(2),
-              )
-            : 0,
-        costBreakdown,
-      });
-
       return {
         valid: corrections.length === 0 && errors.length === 0,
         corrections,
         errors,
       };
     } catch (error) {
-      const err = error as Error;
       logger.error("AI-based backbone validation failed", error);
-
-      performanceMonitor.recordLog({
-        operation: "backbone_validation",
-        provider: "openai",
-        model: options?.model || "unknown",
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-        estimatedCost: 0,
-        duration: Date.now() - startTime,
-        success: false,
-        errorMessage: err.message,
-        metadata: {
-          userId: options?.userId,
-          graphId: options?.graphId,
-        },
-      });
 
       logger.info("Falling back to rule-based validation");
       return this.validateNodes(nodes, options);

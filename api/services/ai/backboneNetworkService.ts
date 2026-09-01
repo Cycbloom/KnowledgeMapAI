@@ -6,10 +6,9 @@ import {
 } from "@shared/types/graph";
 import { getAIProviderForTask, getAIProvider } from "./factory";
 import { promptService } from "./promptService";
-import { performanceMonitor } from "./performanceMonitor";
-import { pricingService } from "./pricingService";
 import { logger } from "../../utils/logger";
 import { parseAIResponse } from "./utils";
+import { withAIMonitoring } from "./aiMonitor";
 import {
   withTimeoutAndRetry,
   TimeoutError,
@@ -94,80 +93,34 @@ export class BackboneNetworkService {
       return getMockBackbone(topic, effectiveIncludeModules, customModules);
     }
 
-    const startTime = Date.now();
+    const metadata = {
+      userId: options.userId,
+      graphId: options.graphId,
+      topic: options.topic,
+      templateType: effectiveIncludeModules.join(","),
+    };
 
     try {
-      const { result, usage } = await this.callAI(provider, {
-        ...options,
-        includeModules: effectiveIncludeModules,
-        customModules,
-      });
-
-      const inputTokens = usage?.prompt_tokens || 0;
-      const outputTokens = usage?.completion_tokens || 0;
-      const cachedInputTokens =
-        usage?.prompt_tokens_details?.cached_tokens || 0;
-      const uncachedInputTokens = Math.max(0, inputTokens - cachedInputTokens);
-      const reasoningTokens =
-        usage?.completion_tokens_details?.reasoning_tokens || 0;
-      const totalTokens = inputTokens + outputTokens;
-      const cacheHitRate =
-        inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
-
-      const costBreakdown = pricingService.calculateDetailedCost(
-        provider.providerType,
-        options.model || provider.model,
-        inputTokens,
-        outputTokens,
-        cachedInputTokens,
-      );
-
-      performanceMonitor.recordLog({
-        operation: "backbone_generation",
-        provider: provider.providerType,
-        model: options.model || provider.model,
-        inputTokens,
-        outputTokens,
-        totalTokens,
-        estimatedCost: costBreakdown.totalCost,
-        duration: Date.now() - startTime,
-        success: true,
-        metadata: {
-          userId: options.userId,
-          graphId: options.graphId,
-          topic: options.topic,
-          templateType: effectiveIncludeModules.join(","),
+      // withAIMonitoring 统一记录 token/成本/耗时/成功率，替代手写双 recordLog
+      const result = await withAIMonitoring<GenerateBackboneResult>(
+        {
+          operation: "backbone_generation",
+          provider: provider.providerType,
+          model: options.model || provider.model,
+          metadata,
         },
-        cachedInputTokens,
-        uncachedInputTokens,
-        reasoningTokens,
-        cacheHitRate: parseFloat(cacheHitRate.toFixed(2)),
-        costBreakdown,
-      });
+        () =>
+          this.callAI(provider, {
+            ...options,
+            includeModules: effectiveIncludeModules,
+            customModules,
+          }),
+      );
 
       return result;
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("[Backbone Network] AI Error:", error);
-
-      performanceMonitor.recordLog({
-        operation: "backbone_generation",
-        provider: provider.providerType,
-        model: options.model || provider.model,
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-        estimatedCost: 0,
-        duration: Date.now() - startTime,
-        success: false,
-        errorMessage: err.message,
-        metadata: {
-          userId: options.userId,
-          graphId: options.graphId,
-          topic: options.topic,
-          templateType: effectiveIncludeModules.join(","),
-        },
-      });
 
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);

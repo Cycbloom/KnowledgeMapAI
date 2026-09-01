@@ -2,9 +2,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   Note,
   NoteTemplate,
-  NoteType,
   CreateNoteInput,
   UpdateNoteInput,
+  CreateNoteTemplateInput,
   NoteListParams,
   NoteListFilters,
   GenerateDailySummaryResponse,
@@ -13,8 +13,6 @@ import type {
   CreateNodesFromConceptsRequest,
   CreateNodesFromConceptsResponse,
   CreatedNodeResult,
-  CreateNoteTemplateInput,
-  UpdateNoteTemplateInput,
   WritingAssistRequest,
   WritingAssistResponse,
   RefreshDailyAggregationResponse,
@@ -28,7 +26,6 @@ import {
   CAPTURE_MAX_CONCEPTS_LIMIT,
 } from '@shared/constants/capture';
 import { extractWikiLinks } from '@shared/utils/wikiLink';
-import { toLocalDateString } from '@shared/utils/dateFormat';
 import {
   extractAllBlockIds,
   findBlockContent,
@@ -55,37 +52,18 @@ import { knowledgePointService } from '../graph/knowledgePointService';
 import { graphNodeService } from '../graph/graphNodeService';
 import { blockRefService } from './blockRefService';
 import { sseService } from '../core/sseService';
-
-/**
- * notes 表 DB 行(snake_case,来自数据库)
- * 与 Note(camelCase)之间的转换由 mapRowToNote 完成
- */
-interface NoteRow {
-  id: string;
-  user_id: string;
-  title: string;
-  content: string;
-  type: NoteType;
-  date: string | null;
-  template_id: string | null;
-  tags: string[] | null;
-  is_pinned: boolean;
-  is_archived: boolean;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-}
-
-interface NoteTemplateRow {
-  id: string;
-  user_id: string | null;
-  name: string;
-  content: string;
-  is_default: boolean;
-  is_system: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import {
+  mapRowToNote,
+  getLocalDateString,
+  getDayStartIso,
+  getNextDayStartIso,
+  type NoteRow,
+  type DailyAggregation,
+  type NoteListResult,
+  type GetOrCreateDailyResult,
+} from './notesShared';
+import { notesDailyService } from './notesDailyService';
+import { notesTemplateService } from './notesTemplateService';
 
 interface NoteNodeLinkRow {
   id: string;
@@ -108,27 +86,6 @@ interface KnowledgePointRow {
   title: string;
 }
 
-/** Daily 模板渲染所需聚合数据(当日静态快照) */
-interface DailyAggregation {
-  reviewedCards: number;
-  completedTasks: number;
-  focusTimeMinutes: number;
-}
-
-/** 列表查询返回(含分页元信息) */
-export interface NoteListResult {
-  items: Note[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
-/** Daily 自动创建返回 */
-export interface GetOrCreateDailyResult {
-  note: Note;
-  created: boolean;
-}
-
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
@@ -137,62 +94,6 @@ const MAX_PAGE_SIZE = 100;
  * 截断到 2000 字符(避免过大存储,同时保留足够上下文)。
  */
 const CHUNK_TEXT_MAX_LENGTH = 2000;
-
-/**
- * 将数据库行(snake_case)映射为 Note 类型(camelCase)。
- * 字段映射与 shared/types/note.ts 的 Note 接口对齐。
- */
-const mapRowToNote = (row: NoteRow): Note => ({
-  id: row.id,
-  userId: row.user_id,
-  title: row.title,
-  content: row.content,
-  type: row.type,
-  date: row.date,
-  templateId: row.template_id,
-  tags: row.tags,
-  isPinned: row.is_pinned,
-  isArchived: row.is_archived,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-  deletedAt: row.deleted_at,
-});
-
-const mapRowToTemplate = (row: NoteTemplateRow): NoteTemplate => ({
-  id: row.id,
-  userId: row.user_id,
-  name: row.name,
-  content: row.content,
-  isDefault: row.is_default,
-  isSystem: row.is_system,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
-
-/**
- * 获取本时区当日的 YYYY-MM-DD 字符串。
- * 委托 shared/utils/dateFormat 的 toLocalDateString（与前端 NotesListPage 共用）。
- */
-const getLocalDateString = (date: Date = new Date()): string =>
-  toLocalDateString(date);
-
-/**
- * 将 Date 转为本地时区的当日 00:00:00 ISO 字符串(用于范围查询起点)。
- */
-const getDayStartIso = (dateStr: string): string => {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const start = new Date(y, m - 1, d, 0, 0, 0, 0);
-  return start.toISOString();
-};
-
-/**
- * 获取次日 00:00:00 ISO 字符串(范围查询上限,开区间)。
- */
-const getNextDayStartIso = (dateStr: string): string => {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const next = new Date(y, m - 1, d + 1, 0, 0, 0, 0);
-  return next.toISOString();
-};
 
 export class NotesService {
   // ============================================================
@@ -393,7 +294,6 @@ export class NotesService {
       });
 
     // 异步刷新 embedding(失败仅记录日志,不阻塞笔记创建主流程)
-    // 说明: refreshEmbedding 在 SubTask 1.3 实现,见类末尾
     await this.refreshEmbedding(supabase, note.id, note.content).catch((err) => {
       logger.warn('Notes create: refreshEmbedding failed', { userId, noteId: note.id, error: err });
     });
@@ -413,7 +313,6 @@ export class NotesService {
     data: UpdateNoteInput,
   ): Promise<Note> {
     // 先校验存在性(同时验证属主,跨用户返回 NOT_FOUND)
-    // P3: 捕获旧笔记内容,供 SSE block_updated 比对块文本变化
     const oldNote = await this.get(supabase, userId, id);
 
     const updateRow: Record<string, unknown> = {};
@@ -459,7 +358,6 @@ export class NotesService {
         });
 
       // content 变更时刷新 embedding(失败仅记录日志,不阻塞笔记更新主流程)
-      // 说明: refreshEmbedding 在 SubTask 1.3 实现,见类末尾
       await this.refreshEmbedding(supabase, note.id, note.content).catch((err) => {
         logger.warn('Notes update: refreshEmbedding failed', { userId, noteId: note.id, error: err });
       });
@@ -598,498 +496,68 @@ export class NotesService {
   }
 
   // ============================================================
-  // Daily Notes 自动创建
+  // 模板域委托(实现见 notesTemplateService)
+  // 保留同级方法名以保证路由/测试调用不变
   // ============================================================
 
-  /**
-   * 获取或创建今日 Daily Note。
-   * - 今日已存在则直接返回(created=false)
-   * - 不存在则查询用户默认模板(无则系统模板),渲染聚合变量后创建
-   */
-  async getOrCreateTodayDaily(
+  listTemplates(supabase: SupabaseClient, userId: string): Promise<NoteTemplate[]> {
+    return notesTemplateService.listTemplates(supabase, userId);
+  }
+
+  createTemplate(
+    supabase: SupabaseClient,
+    userId: string,
+    data: CreateNoteTemplateInput,
+  ): Promise<NoteTemplate> {
+    return notesTemplateService.createTemplate(supabase, userId, data);
+  }
+
+  updateTemplate(
+    supabase: SupabaseClient,
+    userId: string,
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<NoteTemplate> {
+    return notesTemplateService.updateTemplate(supabase, userId, id, data);
+  }
+
+  deleteTemplate(supabase: SupabaseClient, userId: string, id: string): Promise<void> {
+    return notesTemplateService.deleteTemplate(supabase, userId, id);
+  }
+
+  setDefaultTemplate(
+    supabase: SupabaseClient,
+    userId: string,
+    id: string,
+  ): Promise<NoteTemplate> {
+    return notesTemplateService.setDefaultTemplate(supabase, userId, id);
+  }
+
+  // ============================================================
+  // Daily Notes 域委托(实现见 notesDailyService)
+  // ============================================================
+
+  getOrCreateTodayDaily(
     supabase: SupabaseClient,
     userId: string,
   ): Promise<GetOrCreateDailyResult> {
-    const today = getLocalDateString();
-
-    // 1. 查今日 daily 是否存在(未软删除)
-    const { data: existing, error: existError } = await notDeleted(supabase
-      .from('notes')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('type', 'daily')
-      .eq('date', today)
-    ).maybeSingle();
-
-    if (existError) {
-      logger.error('getOrCreateTodayDaily: query existing error', { userId, today, error: existError });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { context: { userId, today } });
-    }
-
-    if (existing) {
-      return {
-        note: mapRowToNote(existing as unknown as NoteRow),
-        created: false,
-      };
-    }
-
-    // 2. 查用户默认模板,无则用系统模板
-    const template = await this.getDefaultTemplate(supabase, userId);
-
-    // 3. 渲染模板(聚合变量替换为当日静态快照)
-    const aggregation = await this.getDailyAggregation(supabase, userId, today);
-    const { title, content } = this.renderTemplate(template.content, today, aggregation);
-
-    // 4. 插入 notes 表
-    const insertRow: Record<string, unknown> = {
-      user_id: userId,
-      title,
-      content,
-      type: 'daily',
-      date: today,
-      template_id: template.id,
-      tags: [],
-      is_pinned: false,
-      is_archived: false,
-    };
-
-    const { data: inserted, error: insertError } = await supabase
-      .from('notes')
-      .insert(insertRow)
-      .select('*')
-      .single();
-
-    if (insertError) {
-      // 并发情况下另一请求可能已创建,再次查询返回已有
-      if (insertError.code === '23505') {
-        const { data: retry } = await notDeleted(supabase
-          .from('notes')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('type', 'daily')
-          .eq('date', today)
-        ).maybeSingle();
-        if (retry) {
-          return {
-            note: mapRowToNote(retry as unknown as NoteRow),
-            created: false,
-          };
-        }
-        throw new AppError(ErrorCodes.DATABASE_DUPLICATE_ENTRY, {
-          context: { userId, today },
-        });
-      }
-      logger.error('getOrCreateTodayDaily: insert error', { userId, today, error: insertError });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { context: { userId, today } });
-    }
-
-    return {
-      note: mapRowToNote(inserted as unknown as NoteRow),
-      created: true,
-    };
+    return notesDailyService.getOrCreateTodayDaily(supabase, userId);
   }
 
-  /**
-   * 获取用户默认模板(自定义默认优先,无则系统默认模板)。
-   * RLS 保证用户只能查到自己的 + 系统的。
-   */
-  private async getDefaultTemplate(
-    supabase: SupabaseClient,
-    userId: string,
-  ): Promise<NoteTemplate> {
-    // 1. 用户自定义默认模板
-    const { data: userDefault, error: userErr } = await supabase
-      .from('note_templates')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_default', true)
-      .maybeSingle();
-
-    if (userErr) {
-      logger.error('getDefaultTemplate: user default query error', { userId, error: userErr });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { context: { userId } });
-    }
-
-    if (userDefault) {
-      return mapRowToTemplate(userDefault as unknown as NoteTemplateRow);
-    }
-
-    // 2. 系统默认模板(is_system=true,由 seed 注入)
-    const { data: sysTemplate, error: sysErr } = await supabase
-      .from('note_templates')
-      .select('*')
-      .eq('is_system', true)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (sysErr) {
-      logger.error('getDefaultTemplate: system template query error', { userId, error: sysErr });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { context: { userId } });
-    }
-
-    if (!sysTemplate) {
-      // 兜底:数据库未 seed 系统模板时使用硬编码三段式(仅此一处例外,保证可用)
-      return {
-        id: '',
-        userId: null,
-        name: i18next.t("notes.api.defaults.templateName"),
-        content:
-          '# {{date}} 学习日志\n\n## 今日数据\n- 复习卡片: {{today_reviewed_cards}}\n- 完成任务: {{today_completed_tasks}}\n- 专注时长: {{today_focus_time}}\n\n## 今日学习\n\n## 今日复习\n\n## 今日反思\n',
-        isDefault: false,
-        isSystem: true,
-        createdAt: '',
-        updatedAt: '',
-      };
-    }
-
-    return mapRowToTemplate(sysTemplate as unknown as NoteTemplateRow);
-  }
-
-  /**
-   * 渲染模板:替换 {{date}}、{{today_reviewed_cards}}、{{today_completed_tasks}}、{{today_focus_time}} 为静态快照值。
-   * 聚合数据写入正文后不再变化(便于历史追溯)。
-   */
   renderTemplate(
     templateContent: string,
     dateStr: string,
     aggregation: DailyAggregation,
   ): { title: string; content: string } {
-    const content = templateContent
-      .replace(/\{\{date\}\}/g, dateStr)
-      .replace(/\{\{today_reviewed_cards\}\}/g, String(aggregation.reviewedCards))
-      .replace(/\{\{today_completed_tasks\}\}/g, String(aggregation.completedTasks))
-      .replace(/\{\{today_focus_time\}\}/g, String(aggregation.focusTimeMinutes));
-
-    // 从首行 H1 提取标题,无则用 "${date} 学习日志"
-    const titleMatch = content.match(/^#\s+(.+)$/m);
-    const title = titleMatch ? titleMatch[1].trim() : `${dateStr} 学习日志`;
-
-    return { title, content };
+    return notesDailyService.renderTemplate(templateContent, dateStr, aggregation);
   }
 
-  /**
-   * 获取 Daily 模板渲染所需的当日聚合数据(只读快照)。
-   * 各来源查询相互独立,单个失败不影响其他(记 0)。
-   */
-  private async getDailyAggregation(
+  private getDailyAggregation(
     supabase: SupabaseClient,
     userId: string,
     dateStr: string,
   ): Promise<DailyAggregation> {
-    const [reviewedCards, completedTasks, focusTimeMinutes] = await Promise.all([
-      this.getTodayReviewedCardsCount(supabase, userId, dateStr),
-      this.getTodayCompletedTasksCount(supabase, userId, dateStr),
-      this.getTodayFocusTimeMinutes(supabase, userId, dateStr),
-    ]);
-
-    return { reviewedCards, completedTasks, focusTimeMinutes };
-  }
-
-  /**
-   * 查今日复习卡数。
-   *
-   * 数据来源:study_cards 表(study_progress 表仅记录每图谱的进度汇总,
-   * 不含每日复习事件)。study_cards.last_reviewed 表示最近一次复习时间,
-   * 据此过滤"今日复习"的卡片。
-   */
-  private async getTodayReviewedCardsCount(
-    supabase: SupabaseClient,
-    userId: string,
-    dateStr: string,
-  ): Promise<number> {
-    const startIso = getDayStartIso(dateStr);
-    const endIso = getNextDayStartIso(dateStr);
-
-    const { count, error } = await supabase
-      .from('study_cards')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('last_reviewed', startIso)
-      .lt('last_reviewed', endIso);
-
-    if (error) {
-      logger.warn('getTodayReviewedCardsCount: query error, fallback to 0', { userId, dateStr, error });
-      return 0;
-    }
-
-    return count ?? 0;
-  }
-
-  /**
-   * 查今日完成任务数。
-   *
-   * 数据来源:task_executions 表(user_id + status='completed' + ended_at 今日)。
-   * ended_at 为可空字段,status='completed' 时应当已设置,失败时回退到 started_at。
-   */
-  private async getTodayCompletedTasksCount(
-    supabase: SupabaseClient,
-    userId: string,
-    dateStr: string,
-  ): Promise<number> {
-    const startIso = getDayStartIso(dateStr);
-    const endIso = getNextDayStartIso(dateStr);
-
-    // 优先按 ended_at 过滤;ended_at 为空时回退到 started_at
-    const { count, error } = await supabase
-      .from('task_executions')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('status', 'completed')
-      .or(`and(ended_at.gte.${startIso},ended_at.lt.${endIso}),and(ended_at.is.null,started_at.gte.${startIso},started_at.lt.${endIso})`);
-
-    if (error) {
-      logger.warn('getTodayCompletedTasksCount: query error, fallback to 0', { userId, dateStr, error });
-      return 0;
-    }
-
-    return count ?? 0;
-  }
-
-  /**
-   * 查今日专注时长(分钟)。
-   *
-   * 数据来源:focus_sessions 表(user_id + mode='focus' + started_at 今日)。
-   * duration 字段单位为秒,累加后转换为分钟(向下取整)。
-   */
-  private async getTodayFocusTimeMinutes(
-    supabase: SupabaseClient,
-    userId: string,
-    dateStr: string,
-  ): Promise<number> {
-    const startIso = getDayStartIso(dateStr);
-    const endIso = getNextDayStartIso(dateStr);
-
-    const { data, error } = await supabase
-      .from('focus_sessions')
-      .select('duration')
-      .eq('user_id', userId)
-      .eq('mode', 'focus')
-      .gte('started_at', startIso)
-      .lt('started_at', endIso);
-
-    if (error) {
-      logger.warn('getTodayFocusTimeMinutes: query error, fallback to 0', { userId, dateStr, error });
-      return 0;
-    }
-
-    const totalSeconds = (data ?? []).reduce(
-      (sum, row: { duration: number | null }) => sum + (row.duration ?? 0),
-      0,
-    );
-    return Math.floor(totalSeconds / 60);
-  }
-
-  // ============================================================
-  // 模板查询
-  // ============================================================
-
-  /**
-   * 查询用户可见模板(own OR is_system)。RLS 自动过滤。
-   */
-  async listTemplates(supabase: SupabaseClient, _userId: string): Promise<NoteTemplate[]> {
-    const { data, error } = await supabase
-      .from('note_templates')
-      .select('*')
-      .order('is_system', { ascending: false })
-      .order('is_default', { ascending: false })
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      logger.error('listTemplates: query error', { error });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { context: {} });
-    }
-
-    return (data ?? []).map((row) => mapRowToTemplate(row as unknown as NoteTemplateRow));
-  }
-
-  /**
-   * 创建自定义模板。user_id=当前用户,is_system=false。
-   * RLS 保证 user_id 必须为当前用户。
-   */
-  async createTemplate(
-    supabase: SupabaseClient,
-    userId: string,
-    data: CreateNoteTemplateInput,
-  ): Promise<NoteTemplate> {
-    const { data: inserted, error } = await supabase
-      .from('note_templates')
-      .insert({
-        user_id: userId,
-        name: data.name,
-        content: data.content,
-        is_default: false,
-        is_system: false,
-      })
-      .select('*')
-      .single();
-
-    if (error) {
-      logger.error('createTemplate: insert error', { userId, error });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { context: { userId } });
-    }
-
-    return mapRowToTemplate(inserted as unknown as NoteTemplateRow);
-  }
-
-  /**
-   * 更新自定义模板。
-   * - 校验存在性 + ownership(跨用户返回 NOT_FOUND)
-   * - is_system=true 模板返回 403(系统模板不可改)
-   */
-  async updateTemplate(
-    supabase: SupabaseClient,
-    userId: string,
-    id: string,
-    data: UpdateNoteTemplateInput,
-  ): Promise<NoteTemplate> {
-    // 1. 校验存在性 + 属主 + is_system
-    const existing = await this.getTemplateForOwner(supabase, userId, id);
-    if (existing.isSystem) {
-      throw new AppError(ErrorCodes.CANNOT_MODIFY_SYSTEM_TEMPLATE, {
-        context: { userId, id },
-      });
-    }
-
-    // 2. 执行更新
-    const updateRow: Record<string, unknown> = {};
-    if (data.name !== undefined) updateRow.name = data.name;
-    if (data.content !== undefined) updateRow.content = data.content;
-
-    if (Object.keys(updateRow).length === 0) {
-      // 无字段需要更新,直接返回当前模板
-      return existing;
-    }
-
-    const { data: updated, error } = await supabase
-      .from('note_templates')
-      .update(updateRow)
-      .eq('id', id)
-      .select('*')
-      .single();
-
-    if (error) {
-      logger.error('updateTemplate: update error', { userId, id, error });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { context: { userId, id } });
-    }
-
-    return mapRowToTemplate(updated as unknown as NoteTemplateRow);
-  }
-
-  /**
-   * 删除自定义模板。
-   * - 校验存在性 + ownership
-   * - is_system=true 模板返回 403(系统模板不可删)
-   */
-  async deleteTemplate(
-    supabase: SupabaseClient,
-    userId: string,
-    id: string,
-  ): Promise<void> {
-    // 1. 校验存在性 + 属主 + is_system
-    const existing = await this.getTemplateForOwner(supabase, userId, id);
-    if (existing.isSystem) {
-      throw new AppError(ErrorCodes.CANNOT_MODIFY_SYSTEM_TEMPLATE, {
-        context: { userId, id },
-      });
-    }
-
-    // 2. 执行删除
-    const { error } = await supabase
-      .from('note_templates')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      logger.error('deleteTemplate: delete error', { userId, id, error });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { context: { userId, id } });
-    }
-  }
-
-  /**
-   * 设为默认模板。
-   * - 校验存在性 + ownership + is_system=false(系统模板不可设默认)
-   * - 事务:UPDATE 其他同 user 模板 is_default=false,UPDATE 该模板 is_default=true
-   *
-   * 实现:由于 Supabase JS 客户端不支持原生事务,通过两条 UPDATE 顺序执行;
-   * 单一用户并发场景极低,且由 idx_note_templates_user_default 唯一索引兜底
-   * (若并发导致同时存在两个 is_default=true,后续创建时 DB 会拒绝)。
-   */
-  async setDefaultTemplate(
-    supabase: SupabaseClient,
-    userId: string,
-    id: string,
-  ): Promise<NoteTemplate> {
-    // 1. 校验存在性 + 属主 + is_system
-    const existing = await this.getTemplateForOwner(supabase, userId, id);
-    if (existing.isSystem) {
-      throw new AppError(ErrorCodes.CANNOT_MODIFY_SYSTEM_TEMPLATE, {
-        context: { userId, id },
-      });
-    }
-
-    // 2. 取消同用户其他模板的默认标记
-    const { error: clearError } = await supabase
-      .from('note_templates')
-      .update({ is_default: false })
-      .eq('user_id', userId)
-      .neq('id', id);
-
-    if (clearError) {
-      logger.error('setDefaultTemplate: clear other defaults error', { userId, id, error: clearError });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { context: { userId, id } });
-    }
-
-    // 3. 设置当前模板为默认
-    const { data: updated, error: updateError } = await supabase
-      .from('note_templates')
-      .update({ is_default: true })
-      .eq('id', id)
-      .select('*')
-      .single();
-
-    if (updateError) {
-      logger.error('setDefaultTemplate: set default error', { userId, id, error: updateError });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { context: { userId, id } });
-    }
-
-    return mapRowToTemplate(updated as unknown as NoteTemplateRow);
-  }
-
-  /**
-   * 查询单个模板并校验属主(跨用户返回 NOT_FOUND)。
-   * RLS 已保证用户只能查到自己的 + 系统的;此处显式校验 ownership 用于
-   * update/delete/setDefault 场景(系统模板可见但不可改)。
-   */
-  private async getTemplateForOwner(
-    supabase: SupabaseClient,
-    userId: string,
-    id: string,
-  ): Promise<NoteTemplate> {
-    const { data, error } = await supabase
-      .from('note_templates')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-
-    if (error) {
-      logger.error('getTemplateForOwner: query error', { userId, id, error });
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { context: { userId, id } });
-    }
-
-    if (!data) {
-      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { context: { userId, id } });
-    }
-
-    const template = mapRowToTemplate(data as unknown as NoteTemplateRow);
-
-    // 系统模板对所有用户可见,但 ownership 校验时:系统模板视为"共享只读",
-    // 调用方根据 isSystem 判断是否允许修改。其他模板必须 user_id === userId。
-    if (!template.isSystem && template.userId !== userId) {
-      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { context: { userId, id } });
-    }
-
-    return template;
+    return notesDailyService.getDailyAggregation(supabase, userId, dateStr);
   }
 
   // ============================================================
@@ -1330,7 +798,6 @@ export class NotesService {
 
       if (upsertError) {
         logger.warn('refreshEmbedding: upsert error', { noteId, error: upsertError });
-        
       }
     } catch (err) {
       logger.warn('refreshEmbedding: unexpected error', { noteId, error: err });

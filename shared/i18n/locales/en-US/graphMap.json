@@ -21,14 +21,22 @@
     "createGraph": "Create Graph",
     "domainGenerate": "Domain Generate",
     "autoClassify": "Auto Classify",
+    "crossGraphPath": "Learning Path",
     "manageDomains": "Manage Domains",
     "deleteMode": "Delete Mode",
     "deleteModeOn": "Exit Delete Mode",
     "showDomains": "Show Domains",
     "hideDomains": "Hide Domains",
+    "showLearningPath": "Show Learning Order",
+    "hideLearningPath": "Hide Learning Order",
     "manage": "Manage",
     "rearrangeLayout": "Rearrange Layout",
     "layoutRearranged": "Layout rearranged and pinned"
+  },
+  "crossGraph": {
+    "generated": "Cross-graph learning path generated with {{count}} graphs",
+    "pathReused": "Cross-graph learning path exists, {{count}} graphs to learn",
+    "generateFailed": "Failed to generate cross-graph learning path"
   },
   "autoClassify": {
     "title": "Auto Classify Domains",

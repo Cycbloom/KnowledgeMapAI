@@ -30,6 +30,10 @@ interface GraphNodesProps {
   nodeShape?: NodeShape;
   centerDotShape?: CenterDotShape;
   nodeGlow?: boolean;
+  /** 跨图谱学习路径：graphId → 1-based 学习顺序（叠加序号徽章） */
+  learningOrderMap?: Map<string, number>;
+  /** 跨图谱学习路径中「当前/下一个待学图谱」（脉冲高亮） */
+  learningPathCurrentGraphId?: string | null;
   onGraphClick?: (graph: Graph | null) => void;
   onMultiSelectGraph?: (
     graphId: string,
@@ -65,6 +69,8 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
   nodeShape,
   centerDotShape,
   nodeGlow,
+  learningOrderMap,
+  learningPathCurrentGraphId,
   onGraphClick,
   onMultiSelectGraph,
   setFocusedGraphId,
@@ -214,6 +220,9 @@ const GraphNodesComponent: React.FC<GraphNodesProps> = ({
               nodeShape={nodeShape}
               centerDotShape={centerDotShape}
               nodeGlow={nodeGlow}
+              learningOrder={learningOrderMap?.get(node.id)}
+              isInLearningPath={learningOrderMap?.has(node.id) ?? false}
+              learningPathHighlighted={learningPathCurrentGraphId === node.id}
             />
           </g>
         );
@@ -271,6 +280,8 @@ const areEqual = (prev: GraphNodesProps, next: GraphNodesProps) => {
     prev.nodeShape === next.nodeShape &&
     prev.centerDotShape === next.centerDotShape &&
     prev.nodeGlow === next.nodeGlow &&
+    prev.learningOrderMap === next.learningOrderMap &&
+    prev.learningPathCurrentGraphId === next.learningPathCurrentGraphId &&
     prev.containerWidth === next.containerWidth &&
     prev.containerHeight === next.containerHeight &&
     prev.onGraphClick === next.onGraphClick &&

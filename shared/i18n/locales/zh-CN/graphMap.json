@@ -21,14 +21,22 @@
     "createGraph": "创建图谱",
     "domainGenerate": "领域生成",
     "autoClassify": "自动分类",
+    "crossGraphPath": "学习路径",
     "manageDomains": "管理领域",
     "deleteMode": "删除模式",
     "deleteModeOn": "退出删除模式",
     "showDomains": "显示领域",
     "hideDomains": "隐藏领域",
+    "showLearningPath": "显示学习顺序",
+    "hideLearningPath": "隐藏学习顺序",
     "manage": "管理",
     "rearrangeLayout": "整理布局",
     "layoutRearranged": "布局已整理并固定"
+  },
+  "crossGraph": {
+    "generated": "已生成跨图谱学习路径，共 {{count}} 张图谱",
+    "pathReused": "已有跨图谱学习路径，待学 {{count}} 张图谱",
+    "generateFailed": "生成跨图谱学习路径失败"
   },
   "autoClassify": {
     "title": "自动分类领域",

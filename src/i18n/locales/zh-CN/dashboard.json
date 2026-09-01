@@ -71,6 +71,18 @@
     "createOrImport": "创建一个新的知识图谱，或导入现有的 Markdown/JSON/OPML 文件。",
     "createFirst": "创建第一个图谱"
   },
+  "crossGraph": {
+    "title": "跨图谱学习路径",
+    "progress": "已完成 {{completed}} / {{total}} 张图谱",
+    "next": "下一步：{{title}}",
+    "allDone": "路径已完成，可开始复习或设定新目标",
+    "viewPath": "查看学习路径",
+    "emptyTitle": "还没有跨图谱学习路径",
+    "emptyDesc": "基于图谱地图的前置/扩展/相关关系，自动生成图谱级学习顺序",
+    "generate": "生成学习路径",
+    "generated": "已生成跨图谱学习路径，共 {{count}} 张图谱",
+    "generateFailed": "生成跨图谱学习路径失败"
+  },
   "firstRunHint": {
     "title": "欢迎使用 KnowledgeMap",
     "description": "点击这里创建你的第一个知识图谱",

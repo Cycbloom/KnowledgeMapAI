@@ -11,12 +11,17 @@ import {
   Inbox,
   RefreshCw,
   AlertCircle,
+  Route,
 } from "lucide-react";
 import { useSchedulerOrchestrator } from "../hooks/scheduler/useSchedulerOrchestrator";
 import { useSchedulerQueues } from "../hooks/scheduler/useScheduler";
 import { useTheme, useIsMobile } from "../hooks";
+import { useCrossGraphSummary } from "../hooks/queries/useLearningPathQueries";
 import { TodayReview } from "../components/capture/TodayReview";
 import { EmptyState } from "../components/common";
+import { learningPathsApi } from "../services/api/learningPaths";
+import { message } from "../utils/messageHelper";
+import { getErrorMessage } from "../utils/errors";
 import type { QueueData } from "@shared/types";
 
 /**
@@ -58,6 +63,28 @@ export const Dashboard = () => {
   const boxClass = isDark
     ? "bg-slate-800 border-slate-700"
     : "bg-white border-gray-200";
+
+  // 跨图谱学习路径概览（大调度）：首页学习路径面板数据源
+  const {
+    data: crossGraph,
+    isLoading: crossGraphLoading,
+  } = useCrossGraphSummary();
+
+  /** 生成跨图谱学习路径（大调度），生成后跳转路径详情 */
+  const handleGenerateCrossGraph = async () => {
+    try {
+      const result = await learningPathsApi.generateCrossGraph();
+      const data = result.data;
+      message.success(
+        t("dashboard.crossGraph.generated", { count: data.totalGraphs }),
+      );
+      navigate(`/learning-paths/${data.pathId}`);
+    } catch (error: unknown) {
+      const errMsg =
+        getErrorMessage(error) || t("dashboard.crossGraph.generateFailed");
+      message.error(errMsg);
+    }
+  };
 
   // 待办队列：始终反映紧急/重要/常规队列里的活跃任务，避免调度决策为空时首页无内容
   const { data: queueData } = useSchedulerQueues();
@@ -302,6 +329,114 @@ export const Dashboard = () => {
                   onClick={() => navigate("/study")}
                 />
               ) : null}
+            </section>
+
+            {/* 跨图谱学习路径（大调度）面板 */}
+            <section className={`rounded-2xl border shadow-sm overflow-hidden ${boxClass}`}>
+              <div
+                className={`px-5 py-3 flex items-center gap-2 border-b ${
+                  isDark ? "border-slate-700" : "border-gray-200"
+                }`}
+              >
+                <Route size={16} className="text-primary-500" />
+                <span className="font-medium text-sm">
+                  {t("dashboard.crossGraph.title")}
+                </span>
+              </div>
+              <div className="p-5">
+                {crossGraphLoading ? (
+                  <div className="animate-pulse space-y-3">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3" />
+                    <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded" />
+                  </div>
+                ) : crossGraph ? (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1.5">
+                        <span className="truncate">
+                          {t("dashboard.crossGraph.progress", {
+                            completed: crossGraph.completedGraphs,
+                            total: crossGraph.totalGraphs,
+                          })}
+                        </span>
+                        <span className="shrink-0 ml-2 font-medium tabular-nums">
+                          {crossGraph.totalGraphs > 0
+                            ? Math.round(
+                                (crossGraph.completedGraphs /
+                                  crossGraph.totalGraphs) *
+                                  100,
+                              )
+                            : 0}
+                          %
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
+                        <div
+                          className="h-full rounded-full bg-primary-500 transition-all"
+                          style={{
+                            width: `${
+                              crossGraph.totalGraphs > 0
+                                ? (crossGraph.completedGraphs /
+                                    crossGraph.totalGraphs) *
+                                  100
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {crossGraph.nextGraph ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(`/learning-paths/${crossGraph.pathId}`)
+                        }
+                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
+                      >
+                        <span className="flex-1 min-w-0 truncate text-left">
+                          {t("dashboard.crossGraph.next", {
+                            title: crossGraph.nextGraph.graphTitle,
+                          })}
+                        </span>
+                        <ArrowRight size={15} className="shrink-0" />
+                      </button>
+                    ) : (
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {t("dashboard.crossGraph.allDone")}
+                      </p>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(`/learning-paths/${crossGraph.pathId}`)
+                      }
+                      className="w-full px-3 py-2 rounded-lg border text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+                    >
+                      {t("dashboard.crossGraph.viewPath")}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <EmptyState
+                      icon={<Route size={24} />}
+                      title={t("dashboard.crossGraph.emptyTitle")}
+                      description={t("dashboard.crossGraph.emptyDesc")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleGenerateCrossGraph();
+                      }}
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
+                    >
+                      {t("dashboard.crossGraph.generate")}
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
             </section>
 
             {/* 今日回顾 / 捕获箱 */}

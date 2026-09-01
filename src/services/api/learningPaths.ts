@@ -148,6 +148,57 @@ export interface CreateLearningPathInput {
   }>;
 }
 
+/** 跨图谱学习路径（大调度）图谱级阶段 */
+export interface CrossGraphStage {
+  graphId: string;
+  graphTitle: string;
+  order: number;
+  priority: "high" | "medium" | "low";
+  reason: string;
+  isCompleted: boolean;
+  completion: number;
+  prerequisites: string[];
+}
+
+/** 跨图谱学习路径生成结果 */
+export interface CrossGraphPathResult {
+  pathId: string;
+  pathTitle?: string;
+  totalGraphs: number;
+  pendingGraphs: number;
+  completedGraphs: number;
+  stages: CrossGraphStage[];
+  suggestions: string[];
+  pathReused: boolean;
+}
+
+/** 跨图路径中「下一个该学的图谱」 */
+export interface NextCrossGraph {
+  graphId: string;
+  graphTitle: string;
+  order: number;
+  completion: number;
+  nodeCount: number;
+}
+
+/** 跨图路径概览（首页「下一步」/学习路径面板） */
+export interface CrossGraphSummary {
+  pathId: string;
+  pathTitle?: string;
+  totalGraphs: number;
+  completedGraphs: number;
+  pendingGraphs: number;
+  nextGraph: NextCrossGraph | null;
+  /** 按顺序排列的图谱级阶段（含完成态），供图谱地图叠加学习顺序 */
+  stages: Array<{
+    graphId: string;
+    graphTitle: string;
+    order: number;
+    completion: number;
+    isCompleted: boolean;
+  }>;
+}
+
 export interface UpdateLearningPathInput {
   title?: string;
   description?: string;
@@ -305,6 +356,30 @@ export const learningPathsApi = {
       method: "POST",
       body: JSON.stringify(options || {}),
     }),
+
+  generateCrossGraph: (data?: {
+    daily_time_minutes?: number;
+    title?: string;
+    force?: boolean;
+    target_goal?: string;
+  }) =>
+    request<{ success: boolean; data: CrossGraphPathResult }>(
+      "/learning-paths/generate-cross-graph",
+      {
+        method: "POST",
+        body: JSON.stringify(data || {}),
+      },
+    ),
+
+  getNextCrossGraph: () =>
+    request<{ success: boolean; data: NextCrossGraph | null }>(
+      "/learning-paths/cross-graph/next",
+    ),
+
+  getCrossGraphSummary: () =>
+    request<{ success: boolean; data: CrossGraphSummary | null }>(
+      "/learning-paths/cross-graph/summary",
+    ),
 };
 
 export const learningPathApi = {

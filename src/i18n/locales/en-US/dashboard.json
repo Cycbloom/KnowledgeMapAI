@@ -71,6 +71,18 @@
     "createOrImport": "Create a new knowledge graph, or import existing Markdown/JSON/OPML files.",
     "createFirst": "Create First Graph"
   },
+  "crossGraph": {
+    "title": "Cross-Graph Learning Path",
+    "progress": "{{completed}} / {{total}} graphs done",
+    "next": "Next: {{title}}",
+    "allDone": "Path completed — start reviewing or set a new goal",
+    "viewPath": "View Learning Path",
+    "emptyTitle": "No cross-graph learning path yet",
+    "emptyDesc": "Auto-generate a graph-level learning order from prerequisite / extension / related relations on the graph map",
+    "generate": "Generate Learning Path",
+    "generated": "Cross-graph learning path generated with {{count}} graphs",
+    "generateFailed": "Failed to generate cross-graph learning path"
+  },
   "firstRunHint": {
     "title": "Welcome to KnowledgeMap",
     "description": "Click here to create your first knowledge graph",

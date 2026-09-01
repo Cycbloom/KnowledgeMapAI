@@ -21,6 +21,8 @@ import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { queryKeys } from "../hooks/queries/config";
 import { useGraphData } from "../hooks/queries";
 import { tasksApi } from "../services/api/tasks";
+import { learningPathsApi } from "../services/api/learningPaths";
+import { useCrossGraphSummary } from "../hooks/queries/useLearningPathQueries";
 import { useAutoClassifyNotificationStore } from "../store/useAutoClassifyNotificationStore";
 import { useAutoClassifyPanelStore } from "../store/useAutoClassifyPanelStore";
 import { useIsMobile } from "../hooks/common/useIsMobile";
@@ -150,13 +152,30 @@ export const GraphMap = () => {
   const [selectedGraphId, setSelectedGraphId] = useState<string | null>(
     fromGraphId,
   );
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [showDomains, setShowDomains] = useState(true);
+  // 跨图谱学习路径顺序叠加开关（默认开启，存在路径时在画布节点上显示序号徽章/当前高亮）
+  const [showLearningPath, setShowLearningPath] = useState(true);
   const { data: selectedGraphData } = useGraphData(selectedGraphId ?? "");
+
+  // 跨图谱学习路径概览：用于在图谱地图画布上叠加学习顺序徽章 + 当前图谱高亮
+  const { data: crossGraphSummary } = useCrossGraphSummary();
+  const learningOrderMap = useMemo(() => {
+    const m = new Map<string, number>();
+    crossGraphSummary?.stages?.forEach((s) => m.set(s.graphId, s.order + 1));
+    return m;
+  }, [crossGraphSummary]);
+  const learningPathCurrentGraphId =
+    showLearningPath && crossGraphSummary?.nextGraph?.graphId
+      ? crossGraphSummary.nextGraph.graphId
+      : null;
+  const effectiveLearningOrderMap = showLearningPath
+    ? learningOrderMap
+    : undefined;
   const [multiSelectedGraphIds, setMultiSelectedGraphIds] = useState<
     Set<string>
   >(new Set());
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1);
-  const [deleteMode, setDeleteMode] = useState(false);
-  const [showDomains, setShowDomains] = useState(true);
   const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false);
   const [isAIExpansionOpen, setIsAIExpansionOpen] = useState(false);
   const [expansionProgress, setExpansionProgress] =
@@ -464,6 +483,29 @@ export const GraphMap = () => {
   const panelTaskId = useAutoClassifyPanelStore((s) =>
     s.open ? s.taskId : null,
   );
+
+  /** 生成跨图谱学习路径（大调度）：自动生成后跳转到学习路径详情 */
+  const handleGenerateCrossGraph = useCallback(async () => {
+    try {
+      const result = await learningPathsApi.generateCrossGraph();
+      const data = result.data;
+      if (data.pathReused) {
+        message.info(
+          t("graphMap.crossGraph.pathReused", { count: data.pendingGraphs }),
+        );
+      } else {
+        message.success(
+          t("graphMap.crossGraph.generated", { count: data.totalGraphs }),
+        );
+      }
+      navigate(`/learning-paths/${data.pathId}`);
+    } catch (error: unknown) {
+      const errMsg =
+        getErrorMessage(error) || t("graphMap.crossGraph.generateFailed");
+      message.error(errMsg);
+    }
+  }, [t, navigate]);
+
   useEffect(() => {
     if (!panelTaskId) return;
     useAutoClassifyPanelStore.getState().clearOpen();
@@ -1201,6 +1243,9 @@ export const GraphMap = () => {
         onDeleteModeChange={setDeleteMode}
         showDomains={showDomains}
         onToggleDomains={(v: boolean) => setShowDomains(v)}
+        onGenerateCrossGraph={handleGenerateCrossGraph}
+        showLearningPath={showLearningPath}
+        onToggleLearningPath={(v: boolean) => setShowLearningPath(v)}
       />
 
       <div className="flex-1 relative">
@@ -1235,6 +1280,8 @@ export const GraphMap = () => {
               centerDotShape={centerDotShape}
               nodeGlow={nodeGlow}
               gridStyle={gridStyle}
+              learningOrderMap={effectiveLearningOrderMap}
+              learningPathCurrentGraphId={learningPathCurrentGraphId}
             />
           </ErrorBoundary>
         </Suspense>

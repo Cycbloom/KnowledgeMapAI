@@ -17,6 +17,7 @@ import {
   Trash2,
   Eye,
   EyeOff,
+  Route,
 } from "lucide-react";
 import type { GraphMapFilterMode } from "../../types";
 import { useIsMobile } from "../../hooks";
@@ -47,6 +48,9 @@ interface GraphMapToolbarProps {
   onDeleteModeChange: (v: boolean) => void;
   showDomains: boolean;
   onToggleDomains: (v: boolean) => void;
+  onGenerateCrossGraph?: () => void;
+  showLearningPath?: boolean;
+  onToggleLearningPath?: (v: boolean) => void;
 }
 
 const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
@@ -73,6 +77,9 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
   onDeleteModeChange,
   showDomains,
   onToggleDomains,
+  onGenerateCrossGraph,
+  showLearningPath,
+  onToggleLearningPath,
 }) => {
   const { t } = useTranslation();
   const deviceInfo = useIsMobile();
@@ -274,6 +281,18 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
                   <Tags className="w-4 h-4" />
                   {t("graphMap.toolbar.autoClassify")}
                 </button>
+                {onGenerateCrossGraph && (
+                  <button
+                    onClick={() => {
+                      onGenerateCrossGraph();
+                      setShowMoreMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30"
+                  >
+                    <Route className="w-4 h-4" />
+                    {t("graphMap.toolbar.crossGraphPath")}
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     onDeleteModeChange(!deleteMode);
@@ -304,6 +323,21 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
                   {showDomains ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   {showDomains ? t("graphMap.toolbar.hideDomains") : t("graphMap.toolbar.showDomains")}
                 </button>
+                {onToggleLearningPath && (
+                  <button
+                    onClick={() => {
+                      onToggleLearningPath(!showLearningPath);
+                      setShowMoreMenu(false);
+                    }}
+                    aria-pressed={!!showLearningPath}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm last:rounded-b-lg text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30"
+                  >
+                    <Route className="w-4 h-4" />
+                    {showLearningPath
+                      ? t("graphMap.toolbar.hideLearningPath")
+                      : t("graphMap.toolbar.showLearningPath")}
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -327,6 +361,29 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
           >
             {showDomains ? <Eye className="w-5 h-5" aria-hidden="true" /> : <EyeOff className="w-5 h-5" aria-hidden="true" />}
           </button>
+          {onToggleLearningPath && (
+            <button
+              onClick={() => onToggleLearningPath(!showLearningPath)}
+              aria-pressed={!!showLearningPath}
+              className={`p-2 rounded-lg transition-colors ${
+                showLearningPath
+                  ? "text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30"
+                  : "bg-slate-200 dark:bg-slate-600 text-gray-500 dark:text-gray-400"
+              }`}
+              title={
+                showLearningPath
+                  ? t("graphMap.toolbar.hideLearningPath")
+                  : t("graphMap.toolbar.showLearningPath")
+              }
+              aria-label={
+                showLearningPath
+                  ? t("graphMap.toolbar.hideLearningPath")
+                  : t("graphMap.toolbar.showLearningPath")
+              }
+            >
+              <Route className="w-5 h-5" aria-hidden="true" />
+            </button>
+          )}
           <button
             onClick={() => onDeleteModeChange(!deleteMode)}
             aria-pressed={deleteMode}
@@ -368,6 +425,16 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
           >
             <Tags className="w-5 h-5" aria-hidden="true" />
           </button>
+          {onGenerateCrossGraph && (
+            <button
+              onClick={onGenerateCrossGraph}
+              className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg"
+              title={t("graphMap.toolbar.crossGraphPath")}
+              aria-label={t("graphMap.toolbar.crossGraphPath")}
+            >
+              <Route className="w-5 h-5" aria-hidden="true" />
+            </button>
+          )}
           <button
             onClick={onOpenStyleSettings}
             className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg"
@@ -395,6 +462,29 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
         >
           {showDomains ? <Eye className="w-5 h-5" aria-hidden="true" /> : <EyeOff className="w-5 h-5" aria-hidden="true" />}
         </button>
+        {onToggleLearningPath && (
+          <button
+            onClick={() => onToggleLearningPath(!showLearningPath)}
+            aria-pressed={!!showLearningPath}
+            className={`p-2 rounded-lg transition-colors ${
+              showLearningPath
+                ? "text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30"
+                : "bg-slate-200 dark:bg-slate-600 text-gray-500 dark:text-gray-400"
+            }`}
+            title={
+              showLearningPath
+                ? t("graphMap.toolbar.hideLearningPath")
+                : t("graphMap.toolbar.showLearningPath")
+            }
+            aria-label={
+              showLearningPath
+                ? t("graphMap.toolbar.hideLearningPath")
+                : t("graphMap.toolbar.showLearningPath")
+            }
+          >
+            <Route className="w-5 h-5" aria-hidden="true" />
+          </button>
+        )}
         <button
           onClick={() => onDeleteModeChange(!deleteMode)}
           aria-pressed={deleteMode}
@@ -436,6 +526,17 @@ const GraphMapToolbarComponent: React.FC<GraphMapToolbarProps> = ({
         >
           <Tags className="w-5 h-5" aria-hidden="true" />
         </button>
+
+        {onGenerateCrossGraph && (
+          <button
+            onClick={onGenerateCrossGraph}
+            className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
+            title={t("graphMap.toolbar.crossGraphPath")}
+            aria-label={t("graphMap.toolbar.crossGraphPath")}
+          >
+            <Route className="w-5 h-5" aria-hidden="true" />
+          </button>
+        )}
 
         <button
           onClick={onOpenStyleSettings}
@@ -554,6 +655,9 @@ const areEqual = (prev: GraphMapToolbarProps, next: GraphMapToolbarProps) => {
     prev.onManageDomains === next.onManageDomains &&
     prev.deleteMode === next.deleteMode &&
     prev.onDeleteModeChange === next.onDeleteModeChange &&
+    prev.onGenerateCrossGraph === next.onGenerateCrossGraph &&
+    prev.showLearningPath === next.showLearningPath &&
+    prev.onToggleLearningPath === next.onToggleLearningPath &&
     prev.showDomains === next.showDomains &&
     prev.onToggleDomains === next.onToggleDomains &&
     prev.domains === next.domains &&

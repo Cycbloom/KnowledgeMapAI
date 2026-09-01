@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
-import { LearningPathStatus, type NodeStatus } from "../../services/api/learningPaths";
+import { LearningPathStatus, type CrossGraphSummary, type NodeStatus } from "../../services/api/learningPaths";
 
 export const learningPathKeys = {
   all: ["learningPaths"] as const,
@@ -9,6 +9,9 @@ export const learningPathKeys = {
     [...learningPathKeys.lists(), status] as const,
   details: () => [...learningPathKeys.all, "detail"] as const,
   detail: (id: string) => [...learningPathKeys.details(), id] as const,
+  /** 详情页专用 mapped key：与 useLearningPath(原始数据) 分开缓存，避免键冲突导致数据类型不匹配 */
+  mappedDetail: (id: string) =>
+    [...learningPathKeys.all, "detail-mapped", id] as const,
   progress: (id: string) => [...learningPathKeys.all, "progress", id] as const,
   plans: (id: string) => [...learningPathKeys.all, "plans", id] as const,
 };
@@ -21,6 +24,21 @@ export const useLearningPaths = (status?: LearningPathStatus) => {
       return Array.isArray(result) ? result : [];
     },
     staleTime: 1000 * 60 * 5,
+  });
+};
+
+/** 跨图谱学习路径概览（首页「下一步」/学习路径面板） */
+export const useCrossGraphSummary = () => {
+  return useQuery({
+    queryKey: [...learningPathKeys.all, "crossGraphSummary"] as const,
+    queryFn: async () => {
+      const result = (await api.learningPaths.getCrossGraphSummary()) as {
+        success: boolean;
+        data: CrossGraphSummary | null;
+      };
+      return result.data ?? null;
+    },
+    staleTime: 1000 * 60 * 2,
   });
 };
 

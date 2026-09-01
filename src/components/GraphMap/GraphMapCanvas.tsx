@@ -81,6 +81,10 @@ interface GraphMapCanvasProps {
   domainColorMap?: Map<string, string>;
   domainIdToInfo?: Map<string, { name: string; color: string }>;
   graphDomainMap?: Map<string, Set<string>>;
+  /** 跨图谱学习路径：graphId → 1-based 学习顺序（叠加序号徽章） */
+  learningOrderMap?: Map<string, number>;
+  /** 跨图谱学习路径中「当前/下一个待学图谱」（脉冲高亮） */
+  learningPathCurrentGraphId?: string | null;
 }
 
 export const GraphMapCanvas = forwardRef<
@@ -118,6 +122,8 @@ export const GraphMapCanvas = forwardRef<
       domainColorMap = new Map(),
       domainIdToInfo,
       graphDomainMap = new Map(),
+      learningOrderMap,
+      learningPathCurrentGraphId,
     },
     ref,
   ) => {
@@ -571,6 +577,8 @@ export const GraphMapCanvas = forwardRef<
               nodeShape={nodeShape}
               centerDotShape={centerDotShape}
               nodeGlow={nodeGlow}
+              learningOrderMap={learningOrderMap}
+              learningPathCurrentGraphId={learningPathCurrentGraphId}
               onGraphClick={onGraphClick}
               onMultiSelectGraph={onMultiSelectGraph}
               setFocusedGraphId={setFocusedGraphId}

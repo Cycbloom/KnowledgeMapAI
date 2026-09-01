@@ -20,6 +20,7 @@ import {
   getCurrentChildrenTitles,
   buildDefaultExpandPrompt
 } from '../utils/nodeExpansionUtils';
+import { renderAiPromptTemplate } from '../utils/aiPromptTemplate';
 
 interface AIExpandResult {
   suggestions: Array<{
@@ -107,27 +108,7 @@ export const useGraphAIOperations = ({
         if (!prompt && selectedNode) {
           const nodeAiPrompt = selectedNode.properties?.ai_prompt;
           if (nodeAiPrompt && typeof nodeAiPrompt === 'string') {
-            prompt = nodeAiPrompt.replace(/{主题}/g, selectedNode.title || '');
-
-            const parentNode = nodes.find(n => n.id === edges.find(e => e.target_knowledge_point_id === selectedNode.id)?.source_knowledge_point_id);
-            if (parentNode) {
-              prompt = prompt.replace(/{父节点内容}/g, parentNode.content || parentNode.title || '');
-            }
-
-            // 预构建父节点出边目标集合，替代 nodes.filter 内 edges.some 的 O(nodes×edges) 扫描（降为 O(nodes)）
-            const parentOutTargets = new Set<string>(
-              edges
-                .filter(e => e.source_knowledge_point_id === parentNode?.id)
-                .map(e => e.target_knowledge_point_id),
-            );
-            const siblingNodes = nodes.filter(n =>
-              n.id !== selectedNode.id &&
-              parentOutTargets.has(n.id)
-            );
-            if (siblingNodes.length > 0) {
-              const siblingContent = siblingNodes.map(n => `- ${n.title}: ${n.content || ''}`).join('\n');
-              prompt = prompt.replace(/{兄弟节点内容}/g, siblingContent);
-            }
+            prompt = renderAiPromptTemplate(nodeAiPrompt, selectedNode, nodes, edges);
           }
         }
 

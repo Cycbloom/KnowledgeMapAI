@@ -1,14 +1,13 @@
 import { Router, type Response } from "express";
 import { requireAuth, optionalAuth, type AuthedRequest, type OptionalAuthRequest } from "../middleware/auth";
 import { collaboratorService } from "../services/graph";
-import { logger } from "../utils/logger";
+import { asyncHandler } from "../utils/asyncHandler";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 
 const router = Router();
 
-router.get("/:invitationToken/info", optionalAuth, async (req: OptionalAuthRequest, res: Response) => {
-  try {
+router.get("/:invitationToken/info", optionalAuth, asyncHandler(async (req: OptionalAuthRequest, res: Response) => {
     const { invitationToken } = req.params;
     if (!req.supabase) {
       throw new AppError("Supabase client not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
@@ -20,15 +19,9 @@ router.get("/:invitationToken/info", optionalAuth, async (req: OptionalAuthReque
     }
 
     res.json(result.data);
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    logger.error("获取邀请信息失败:", error);
-    throw new AppError("获取邀请信息失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
-});
+}));
 
-router.post("/graphs/:graphId/share", requireAuth, async (req: AuthedRequest, res: Response) => {
-  try {
+router.post("/graphs/:graphId/share", requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("未授权", 401, ErrorCodes.AUTH_UNAUTHORIZED);
@@ -44,15 +37,9 @@ router.post("/graphs/:graphId/share", requireAuth, async (req: AuthedRequest, re
     }
 
     res.json(result.data);
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    logger.error("生成分享链接失败:", error);
-    throw new AppError("生成分享链接失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
-});
+}));
 
-router.post("/:invitationToken/join", requireAuth, async (req: AuthedRequest, res: Response) => {
-  try {
+router.post("/:invitationToken/join", requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("未授权", 401, ErrorCodes.AUTH_UNAUTHORIZED);
@@ -66,11 +53,6 @@ router.post("/:invitationToken/join", requireAuth, async (req: AuthedRequest, re
     }
 
     res.json(result.data);
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    logger.error("加入协作失败:", error);
-    throw new AppError("加入协作失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
-});
+}));
 
 export default router;

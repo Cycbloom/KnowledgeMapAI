@@ -1,36 +1,29 @@
 import { Router, Response } from 'express';
 import { requireAuth, type AuthedRequest } from '../middleware/auth';
 import { promptService } from '../services/ai';
+import { asyncHandler } from '../utils/asyncHandler';
 import { AppError } from '../middleware/errorHandler';
 import { ErrorCodes } from '../../shared/types/errorCodes';
-import { logger } from '../utils/logger';
 
 const router = Router();
 
 // Get all templates for the current user and optional graph
 // Returns all raw rows, frontend can organize them by code
-router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
   const { graph_id } = req.query;
   const userId = req.user.id;
   const supabase = req.supabase;
 
-  try {
-    const result = await promptService.list(supabase, {
-      userId,
-      graphId: graph_id as string | undefined
-    });
+  const result = await promptService.list(supabase, {
+    userId,
+    graphId: graph_id as string | undefined
+  });
 
-    res.json(result);
-
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    logger.error('Get Prompts Error:', error);
-    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
-});
+  res.json(result);
+}));
 
 // Create or Update a template
-router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.post('/', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
   const { code, scope, template_content, graph_id } = req.body;
   const userId = req.user.id;
   const supabase = req.supabase;
@@ -62,57 +55,37 @@ router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
     throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
   }
 
-  try {
-    const data = await promptService.saveTemplate(supabase, {
-      code,
-      scope: safeScope,
-      user_id: userId,
-      graph_id: safeScope === 'graph' ? graph_id : null,
-      template_content
-    });
+  const data = await promptService.saveTemplate(supabase, {
+    code,
+    scope: safeScope,
+    user_id: userId,
+    graph_id: safeScope === 'graph' ? graph_id : null,
+    template_content
+  });
 
-    res.json(data);
-
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    logger.error('Save Prompt Error:', error);
-    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
-});
+  res.json(data);
+}));
 
 // Delete a template (Reset to default)
-router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.delete('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
   const { id } = req.params;
   const supabase = req.supabase;
 
-  try {
-    await promptService.deleteTemplate(supabase, id);
+  await promptService.deleteTemplate(supabase, id);
 
-    res.json({ success: true });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    logger.error('Delete Prompt Error:', error);
-    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
-});
+  res.json({ success: true });
+}));
 
 // Optimize Prompt using AI
-router.post('/optimize', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.post('/optimize', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
   const { template_content, instruction } = req.body;
   
   if (!template_content) {
     throw new AppError('模板内容不能为空', 400, ErrorCodes.VALIDATION_ERROR);
   }
 
-  try {
-    const optimizedContent = await promptService.optimizeWithAI(template_content, instruction);
-    res.json({ optimized_content: optimizedContent });
-
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    logger.error('Optimize Prompt Error:', error);
-    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
-});
+  const optimizedContent = await promptService.optimizeWithAI(template_content, instruction);
+  res.json({ optimized_content: optimizedContent });
+}));
 
 export default router;

@@ -8,6 +8,7 @@ import { uuidParamsSchema } from "../../schemas/index";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { AppError } from "../../middleware/errorHandler";
 import { logger } from "../../utils/logger";
+import { asyncHandler } from "../../utils/asyncHandler";
 import { relationDiscoveryService, domainExpansionService, graphExpansionService } from "../../services/graph";
 import { z } from "zod";
 
@@ -152,54 +153,42 @@ router.post(
   "/batch-initialize",
   requireAuth,
   validate({ body: batchInitializeSchema }),
-  async (req: AuthedRequest, res: Response) => {
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
     const { graph_ids, style = "academic", session_id } = req.body;
     const userId = req.user.id;
     const supabase = req.supabase;
 
-    try {
-      const result = await graphExpansionService.batchInitialize(
-        supabase,
-        userId,
-        graph_ids,
-        style,
-        session_id,
-      );
+    const result = await graphExpansionService.batchInitialize(
+      supabase,
+      userId,
+      graph_ids,
+      style,
+      session_id,
+    );
 
-      res.json(result);
-    } catch (error: unknown) {
-      if (error instanceof AppError) throw error;
-      const message = error instanceof Error ? error.message : "批量初始化失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
-  },
+    res.json(result);
+  }),
 );
 
 router.post(
   "/:id/initialize",
   requireAuth,
   validate({ params: uuidParamsSchema, body: initializeGraphSchema }),
-  async (req: AuthedRequest, res: Response) => {
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { style = "academic" } = req.body;
     const userId = req.user.id;
     const supabase = req.supabase;
 
-    try {
-      const result = await graphExpansionService.initializeGraph(
-        supabase,
-        userId,
-        id,
-        style,
-      );
+    const result = await graphExpansionService.initializeGraph(
+      supabase,
+      userId,
+      id,
+      style,
+    );
 
-      res.json(result);
-    } catch (error: unknown) {
-      if (error instanceof AppError) throw error;
-      const message = error instanceof Error ? error.message : "初始化图谱失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
-  },
+    res.json(result);
+  }),
 );
 
 router.post(
@@ -264,56 +253,42 @@ router.post(
   "/:graphId/nodes/validate-backbone",
   requireAuth,
   validate({ params: uuidParamsSchema, body: validateBackboneSchema }),
-  async (req: AuthedRequest, res: Response) => {
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const { nodes, context, useAI } = req.body;
     const userId = req.user.id;
     const supabase = req.supabase;
 
-    try {
-      const result = await graphExpansionService.validateBackbone(
-        supabase,
-        userId,
-        graphId,
-        nodes,
-        context,
-        useAI,
-      );
+    const result = await graphExpansionService.validateBackbone(
+      supabase,
+      userId,
+      graphId,
+      nodes,
+      context,
+      useAI,
+    );
 
-      res.json(result);
-    } catch (error: unknown) {
-      if (error instanceof AppError) throw error;
-      const message =
-        error instanceof Error ? error.message : "骨干节点验证失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
-  },
+    res.json(result);
+  }),
 );
 
 router.post(
   "/:graphId/fix-backbone-modules",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthedRequest, res: Response) => {
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const userId = req.user.id;
     const supabase = req.supabase;
 
-    try {
-      const result = await graphExpansionService.fixBackboneModules(
-        supabase,
-        userId,
-        graphId,
-      );
+    const result = await graphExpansionService.fixBackboneModules(
+      supabase,
+      userId,
+      graphId,
+    );
 
-      res.json(result);
-    } catch (error: unknown) {
-      if (error instanceof AppError) throw error;
-      const message =
-        error instanceof Error ? error.message : "修复骨干模块失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
-  },
+    res.json(result);
+  }),
 );
 
 router.get(

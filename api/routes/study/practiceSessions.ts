@@ -3,9 +3,7 @@ import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { subtaskQuizIntegrationService } from "../../services/scheduler";
-import { logger } from "../../utils/logger";
-import { AppError } from "../../middleware/errorHandler";
-import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { asyncHandler } from "../../utils/asyncHandler";
 
 const router = Router();
 
@@ -27,45 +25,31 @@ router.post(
   "/",
   requireAuth,
   validate({ body: startPracticeSchema }),
-  async (req: AuthedRequest, res: Response) => {
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
     const { subtask_id, knowledge_point_id } = req.body;
-    try {
-      const session = await subtaskQuizIntegrationService.startPracticeSession(
-        req.supabase,
-        subtask_id,
-        knowledge_point_id,
-      );
-      res.status(201).json({ success: true, data: session });
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      const errorMessage = error instanceof Error ? error.message : "创建练习会话失败";
-      logger.error("Start practice session error:", error);
-      throw new AppError(errorMessage, 400, ErrorCodes.VALIDATION_ERROR);
-    }
-  },
+    const session = await subtaskQuizIntegrationService.startPracticeSession(
+      req.supabase,
+      subtask_id,
+      knowledge_point_id,
+    );
+    res.status(201).json({ success: true, data: session });
+  }),
 );
 
 router.post(
   "/:id/complete",
   requireAuth,
   validate({ body: completePracticeSchema }),
-  async (req: AuthedRequest, res: Response) => {
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
     const { results } = req.body;
     const subtaskId = req.params.id;
-    try {
-      const completionResult = await subtaskQuizIntegrationService.completePractice(
-        req.supabase,
-        subtaskId,
-        results,
-      );
-      res.json({ success: true, data: completionResult });
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      const errorMessage = error instanceof Error ? error.message : "完成练习会话失败";
-      logger.error("Complete practice session error:", error);
-      throw new AppError(errorMessage, 400, ErrorCodes.VALIDATION_ERROR);
-    }
-  },
+    const completionResult = await subtaskQuizIntegrationService.completePractice(
+      req.supabase,
+      subtaskId,
+      results,
+    );
+    res.json({ success: true, data: completionResult });
+  }),
 );
 
 export default router;

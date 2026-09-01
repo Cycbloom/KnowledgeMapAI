@@ -2,6 +2,7 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { supabaseManagementApi } from "../../services/supabase/managementApi";
 import { logger } from "../../utils/logger";
+import { asyncHandler } from '../../utils/asyncHandler';
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 
@@ -64,89 +65,75 @@ router.get(
 router.post(
   "/create-project",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const { accessToken, organizationSlug, projectName, dbPassword, region } = req.body as {
-        accessToken?: string;
-        organizationSlug?: string;
-        projectName?: string;
-        dbPassword?: string;
-        region?: string;
-      };
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { accessToken, organizationSlug, projectName, dbPassword, region } = req.body as {
+      accessToken?: string;
+      organizationSlug?: string;
+      projectName?: string;
+      dbPassword?: string;
+      region?: string;
+    };
 
-      if (!accessToken || !organizationSlug || !projectName || !dbPassword || !region) {
-        throw new AppError(
-          "Missing required fields: accessToken, organizationSlug, projectName, dbPassword, region",
-          400,
-          ErrorCodes.VALIDATION_ERROR,
-        );
-      }
-
-      const project = await supabaseManagementApi.createProject(accessToken, {
-        organizationSlug,
-        projectName,
-        dbPassword,
-        region,
-      });
-
-      try {
-        await supabaseManagementApi.waitForProjectReady(accessToken, project.ref);
-      } catch {
-        throw new AppError("Project creation timed out", 408, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-      }
-
-      const credentials = await supabaseManagementApi.getProjectCredentials(
-        accessToken,
-        project.ref,
-        dbPassword,
+    if (!accessToken || !organizationSlug || !projectName || !dbPassword || !region) {
+      throw new AppError(
+        "Missing required fields: accessToken, organizationSlug, projectName, dbPassword, region",
+        400,
+        ErrorCodes.VALIDATION_ERROR,
       );
-
-      res.json(credentials);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      const message = error instanceof Error ? error.message : String(error);
-      logger.error("Failed to create project:", error);
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
-  },
+
+    const project = await supabaseManagementApi.createProject(accessToken, {
+      organizationSlug,
+      projectName,
+      dbPassword,
+      region,
+    });
+
+    try {
+      await supabaseManagementApi.waitForProjectReady(accessToken, project.ref);
+    } catch {
+      throw new AppError("Project creation timed out", 408, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+
+    const credentials = await supabaseManagementApi.getProjectCredentials(
+      accessToken,
+      project.ref,
+      dbPassword,
+    );
+
+    res.json(credentials);
+  }),
 );
 
 router.post(
   "/quick-setup",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const { accessToken, organizationSlug, projectName, dbPassword, region } = req.body as {
-        accessToken?: string;
-        organizationSlug?: string;
-        projectName?: string;
-        dbPassword?: string;
-        region?: string;
-      };
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { accessToken, organizationSlug, projectName, dbPassword, region } = req.body as {
+      accessToken?: string;
+      organizationSlug?: string;
+      projectName?: string;
+      dbPassword?: string;
+      region?: string;
+    };
 
-      if (!accessToken || !organizationSlug || !projectName || !dbPassword || !region) {
-        throw new AppError(
-          "Missing required fields: accessToken, organizationSlug, projectName, dbPassword, region",
-          400,
-          ErrorCodes.VALIDATION_ERROR,
-        );
-      }
-
-      const result = await supabaseManagementApi.quickSetup(accessToken, {
-        organizationSlug,
-        projectName,
-        dbPassword,
-        region,
-      });
-
-      res.json(result);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      const message = error instanceof Error ? error.message : String(error);
-      logger.error("Failed to quick setup:", error);
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    if (!accessToken || !organizationSlug || !projectName || !dbPassword || !region) {
+      throw new AppError(
+        "Missing required fields: accessToken, organizationSlug, projectName, dbPassword, region",
+        400,
+        ErrorCodes.VALIDATION_ERROR,
+      );
     }
-  },
+
+    const result = await supabaseManagementApi.quickSetup(accessToken, {
+      organizationSlug,
+      projectName,
+      dbPassword,
+      region,
+    });
+
+    res.json(result);
+  }),
 );
 
 export default router;

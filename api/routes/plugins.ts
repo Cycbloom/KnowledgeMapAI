@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { kernel } from "../app";
 import { requireAuth, type AuthRequest } from "../middleware/auth";
-import { logger } from "../utils/logger";
+import { asyncHandler } from "../utils/asyncHandler";
 import { PluginStoreService } from "../services/kernel";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -100,7 +100,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
   res.json({ success: true, data: installedPlugins });
 });
 
-router.post("/:name/activate", requireAuth, async (req, res) => {
+router.post("/:name/activate", requireAuth, asyncHandler(async (req, res) => {
   const { name } = req.params;
   const entry = kernel.getPlugin(name);
 
@@ -113,18 +113,11 @@ router.post("/:name/activate", requireAuth, async (req, res) => {
     return;
   }
 
-  try {
-    await kernel.activatePlugin(name);
-    res.json({ success: true, data: { name, state: "active" } });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    const message = error instanceof Error ? error.message : "Unknown error";
-    logger.error(`[Plugins] Failed to activate "${name}": ${message}`);
-    throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
-});
+  await kernel.activatePlugin(name);
+  res.json({ success: true, data: { name, state: "active" } });
+}));
 
-router.post("/:name/deactivate", requireAuth, async (req, res) => {
+router.post("/:name/deactivate", requireAuth, asyncHandler(async (req, res) => {
   const { name } = req.params;
   const entry = kernel.getPlugin(name);
 
@@ -137,15 +130,8 @@ router.post("/:name/deactivate", requireAuth, async (req, res) => {
     return;
   }
 
-  try {
-    await kernel.deactivatePlugin(name);
-    res.json({ success: true, data: { name, state: "inactive" } });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    const message = error instanceof Error ? error.message : "Unknown error";
-    logger.error(`[Plugins] Failed to deactivate "${name}": ${message}`);
-    throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-  }
-});
+  await kernel.deactivatePlugin(name);
+  res.json({ success: true, data: { name, state: "inactive" } });
+}));
 
 export default router;

@@ -10,6 +10,7 @@ import type {
   GraphMapData,
   GraphRelation,
   NodeRelationSuggestion,
+  WidthExpansionCandidate,
 } from "@shared/types";
 import type { CreateGraphData, UpdateGraphData } from "@shared/types/api";
 import type {
@@ -167,6 +168,34 @@ export interface IGraphsApi {
       node_depth?: number;
     },
   ): Promise<unknown>;
+
+  infiniteExpandStart(
+    graphId: string,
+    data: {
+      max_depth?: number;
+      max_graphs_per_level?: number;
+      relation_types?: string[];
+    },
+  ): Promise<{
+    candidates: WidthExpansionCandidate[];
+    reachesMaxDepth: boolean;
+    job: unknown;
+  }>;
+
+  infiniteExpandGenerate(
+    graphId: string,
+  ): Promise<{ candidates: WidthExpansionCandidate[]; reachesMaxDepth: boolean }>;
+
+  infiniteExpandApply(
+    graphId: string,
+    selections: Array<{ key: string; action: "keep" | "final" | "skip" }>,
+  ): Promise<{
+    frontier: Array<{ graph_id: string; title: string }>;
+    depth: number;
+    reachesMaxDepth: boolean;
+    created: number;
+    applied: Record<string, string>;
+  }>;
 
   analyzeDomain(
     domain: string,

@@ -2,6 +2,7 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { graphRelationsRouteService } from "../services/graph";
+import { widthExpansionService } from "../services/graph/widthExpansionService";
 import { z } from "zod";
 
 const router = Router();
@@ -137,6 +138,69 @@ const infiniteExpansionSchema = z.object({
   node_depth: z.number().min(1).max(3).optional().default(2),
 });
 
+const applySelectionSchema = z.object({
+  selections: z
+    .array(
+      z.object({
+        key: z.string().min(1),
+        action: z.enum(["keep", "final", "skip"]),
+      }),
+    )
+    .min(1),
+});
+
+// 分步交互式宽度拓展：启动（生成第 1 层候选）
+router.post(
+  "/:graphId/infinite-expand/start",
+  requireAuth,
+  validate(infiniteExpansionSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { graphId } = req.params;
+    const { max_depth, max_graphs_per_level, relation_types } = req.body;
+    const data = await widthExpansionService.start(
+      req.supabase,
+      req.user.id,
+      graphId,
+      { max_depth, max_graphs_per_level, relation_types },
+    );
+    res.json(data);
+  },
+);
+
+// 分步交互式宽度拓展：生成当前前沿的下一层候选（不落库）
+router.post(
+  "/:graphId/infinite-expand/generate",
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    const { graphId } = req.params;
+    const data = await widthExpansionService.next(
+      req.supabase,
+      req.user.id,
+      graphId,
+    );
+    res.json(data);
+  },
+);
+
+// 分步交互式宽度拓展：应用本层选择（保留/终点/跳过），返回新的前沿
+router.post(
+  "/:graphId/infinite-expand/apply",
+  requireAuth,
+  validate(applySelectionSchema),
+  async (req: AuthedRequest, res: Response) => {
+    const { graphId } = req.params;
+    const { selections } = req.body;
+    const data = await widthExpansionService.apply(
+      req.supabase,
+      req.user.id,
+      graphId,
+      selections as Array<{ key: string; action: "keep" | "final" | "skip" }>,
+    );
+    res.json(data);
+  },
+);
+
+// 一次性后台宽度拓展（保留旧接口兼容）
 router.post(
   "/:graphId/infinite-expand",
   requireAuth,

@@ -11,6 +11,7 @@ import type {
   GraphMapData,
   GraphRelation,
   NodeRelationSuggestion,
+  WidthExpansionCandidate,
 } from "@shared/types/graph";
 import type {
   CreateGraphData,
@@ -272,6 +273,59 @@ export const graphsApi: IGraphsApi = {
     request<unknown>(`/graphs/${graphId}/infinite-expand`, {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  infiniteExpandStart: (
+    graphId: string,
+    data: {
+      max_depth?: number;
+      max_graphs_per_level?: number;
+      relation_types?: string[];
+    },
+  ): Promise<{
+    candidates: WidthExpansionCandidate[];
+    reachesMaxDepth: boolean;
+    job: unknown;
+  }> =>
+    request<{
+      candidates: WidthExpansionCandidate[];
+      reachesMaxDepth: boolean;
+      job: unknown;
+    }>(`/graphs/${graphId}/infinite-expand/start`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  infiniteExpandGenerate: (
+    graphId: string,
+  ): Promise<{
+    candidates: WidthExpansionCandidate[];
+    reachesMaxDepth: boolean;
+  }> =>
+    request<{ candidates: WidthExpansionCandidate[]; reachesMaxDepth: boolean }>(
+      `/graphs/${graphId}/infinite-expand/generate`,
+      { method: "POST" },
+    ),
+
+  infiniteExpandApply: (
+    graphId: string,
+    selections: Array<{ key: string; action: "keep" | "final" | "skip" }>,
+  ): Promise<{
+    frontier: Array<{ graph_id: string; title: string }>;
+    depth: number;
+    reachesMaxDepth: boolean;
+    created: number;
+    applied: Record<string, string>;
+  }> =>
+    request<{
+      frontier: Array<{ graph_id: string; title: string }>;
+      depth: number;
+      reachesMaxDepth: boolean;
+      created: number;
+      applied: Record<string, string>;
+    }>(`/graphs/${graphId}/infinite-expand/apply`, {
+      method: "POST",
+      body: JSON.stringify({ selections }),
     }),
 
   analyzeDomain: (

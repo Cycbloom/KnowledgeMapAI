@@ -281,7 +281,23 @@
       "initGraph": "Initializing graph...",
       "expandingCore": "Expanding core nodes...",
       "expandingNode": "Expanding \"{{title}}\"...",
-      "completed": "Complete"
+      "completed": "Complete",
+      "widthStartFirst": "Generate First Level",
+      "widthConfirm": "Confirm & Save This Level",
+      "widthNext": "Generate Next Level",
+      "widthGenerating": "Generating candidate graphs...",
+      "widthFrontierProgress": "Analyzing {{count}} graphs",
+      "widthApplying": "Applying this level and computing branches...",
+      "widthLevelTitle": "Candidates · Level {{depth}}",
+      "widthPickHint": "Choose keep / terminal / skip",
+      "widthNoCandidates": "No expandable candidates in this level",
+      "widthReuseHint": "A similar graph already exists; keeping will reuse it",
+      "widthKeep": "Keep",
+      "widthFinal": "Terminal",
+      "widthSkip": "Skip",
+      "widthNextHint": "This level is saved. Click \"Generate next level\" to continue; only kept, non-terminal candidates expand further.",
+      "widthDone": "Width expansion complete",
+      "widthDoneDesc": "Created {{created}} new graphs. Terminal graphs will not expand further."
     }
   },
   "toolbar": {

@@ -714,6 +714,18 @@ export const mobileGraphsApi: IGraphsApi = {
     throw new NotSupportedError("infiniteExpand");
   },
 
+  infiniteExpandStart: async () => {
+    throw new NotSupportedError("infiniteExpandStart");
+  },
+
+  infiniteExpandGenerate: async () => {
+    throw new NotSupportedError("infiniteExpandGenerate");
+  },
+
+  infiniteExpandApply: async () => {
+    throw new NotSupportedError("infiniteExpandApply");
+  },
+
   analyzeDomain: async (
     _domain: string,
     _count?: number,

@@ -91,6 +91,18 @@ export type GraphRelationType =
   | "related"
   | "cross_domain";
 
+/** 分步交互式宽度拓展：某一层的一个候选图谱 */
+export interface WidthExpansionCandidate {
+  key: string;
+  title: string;
+  description: string;
+  relation_type: "prerequisite" | "extension" | "related";
+  parent_graph_id: string;
+  parent_title: string;
+  /** 库中已有相同/近似图谱时，保留会复用该 id 而非新建 */
+  reuse_existing_id?: string;
+}
+
 export type RelationSource = "manual" | "ai_discovered" | "ai_suggested";
 
 export type LearningOrder = "source_first" | "target_first" | "parallel";

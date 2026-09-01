@@ -281,7 +281,23 @@
       "initGraph": "正在初始化图谱...",
       "expandingCore": "正在展开核心节点...",
       "expandingNode": "正在展开「{{title}}」...",
-      "completed": "完成"
+      "completed": "完成",
+      "widthStartFirst": "生成首层候选",
+      "widthConfirm": "确认并保存本层",
+      "widthNext": "生成下一层",
+      "widthGenerating": "正在生成候选图谱...",
+      "widthFrontierProgress": "正在分析 {{count}} 个图谱",
+      "widthApplying": "正在保存本层并计算分支...",
+      "widthLevelTitle": "第 {{depth}} 层候选",
+      "widthPickHint": "选择保留 / 终点 / 跳过",
+      "widthNoCandidates": "本层没有可拓展的候选",
+      "widthReuseHint": "库中已有相近图谱，保留时将复用",
+      "widthKeep": "保留",
+      "widthFinal": "终点",
+      "widthSkip": "跳过",
+      "widthNextHint": "本层已保存。点击「生成下一层」继续拓展，只有保留且非终点的候选会继续往下拓展。",
+      "widthDone": "宽度拓展完成",
+      "widthDoneDesc": "已创建 {{created}} 个新图谱。设为终点的图谱不会再往下拓展。"
     }
   },
   "toolbar": {

@@ -37,6 +37,8 @@ const realtimeQueryConfig = {
 function invalidateTaskChange(queryClient: ReturnType<typeof useQueryClient>, taskId?: string) {
   queryClient.invalidateQueries({ queryKey: queryKeys.schedulerTasks() });
   queryClient.invalidateQueries({ queryKey: queryKeys.queues() });
+  // 任务/队列变化会影响「下一步」调度决策，一并失效避免首页 next-step 停留旧数据
+  queryClient.invalidateQueries({ queryKey: queryKeys.schedulerNextStep() });
   if (taskId) {
     queryClient.invalidateQueries({ queryKey: queryKeys.schedulerTask(taskId) });
   }
@@ -46,6 +48,7 @@ function invalidateTaskChange(queryClient: ReturnType<typeof useQueryClient>, ta
 function invalidateTaskCompletion(queryClient: ReturnType<typeof useQueryClient>, taskId?: string) {
   queryClient.invalidateQueries({ queryKey: queryKeys.schedulerTasks() });
   queryClient.invalidateQueries({ queryKey: queryKeys.queues() });
+  queryClient.invalidateQueries({ queryKey: queryKeys.schedulerNextStep() });
   queryClient.invalidateQueries({ queryKey: queryKeys.stats() });
   queryClient.invalidateQueries({ queryKey: queryKeys.heatmap() });
   if (taskId) {

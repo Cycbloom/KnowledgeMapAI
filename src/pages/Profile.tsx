@@ -41,6 +41,10 @@ export const Profile = () => {
       queryClient.invalidateQueries({ queryKey: ['studyCards'] }),
       queryClient.invalidateQueries({ queryKey: queryKeys.statistics }),
       queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+      // 备份导入/恢复会重写任务、队列与路径，需让首页「下一步」也失效后重新调度，
+      // 否则 staleTime 内的 next-step 缓存不及时反映新数据（需 force reload 才更新）。
+      queryClient.invalidateQueries({ queryKey: queryKeys.scheduler() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedulerNextStep() }),
     ]);
   };
 

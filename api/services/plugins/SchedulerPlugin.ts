@@ -1,9 +1,6 @@
 import type { Plugin, KernelAPI } from "../kernel/types";
 import { schedulerCronService } from "../scheduler/core/cronService";
 import { schedulerSubscribers } from "../scheduler/core/subscribers";
-import { achievementSubscriber } from "../core/subscribers/achievementSubscriber";
-import { learningProgressSubscriber } from "../core/subscribers/learningProgressSubscriber";
-import { reviewSchedulerSubscriber } from "../core/subscribers/reviewSchedulerSubscriber";
 import { getSupabaseAdmin } from "../../supabase";
 import schedulerRouter from "../../routes/scheduler/index";
 import tasksRouter from "../../routes/tasks";
@@ -34,17 +31,14 @@ export const SchedulerPlugin: Plugin = {
   },
 
   async onActivate(): Promise<void> {
+    // schedulerSubscribers.initialize 一并注册效率统计及成就/学习进度/复习调度订阅器，
+    // 避免此处重复 initialize 导致同一事件被处理两次。
     schedulerSubscribers.initialize(getSupabaseAdmin());
-    achievementSubscriber.initialize();
-    learningProgressSubscriber.initialize();
-    reviewSchedulerSubscriber.initialize();
     schedulerCronService.start();
   },
 
   async onDeactivate(): Promise<void> {
-    achievementSubscriber.destroy();
-    learningProgressSubscriber.destroy();
-    reviewSchedulerSubscriber.destroy();
+    schedulerSubscribers.destroy();
     schedulerCronService.stop();
   },
 };

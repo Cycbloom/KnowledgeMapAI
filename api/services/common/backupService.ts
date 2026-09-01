@@ -382,8 +382,11 @@ export async function createBackup(
   const userDir = path.join(BACKUP_DIR, userId);
   await fs.mkdir(userDir, { recursive: true });
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const fileName = `${type}_${timestamp}.json`;
+  // 使用东八区（UTC+8）本地时间格式化时间戳
+  const now = new Date();
+  const beijingDate = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  const isoBeijing = beijingDate.toISOString().replace(/[:.]/g, '-');
+  const fileName = `${type}_${isoBeijing}.json`;
   const filePath = path.join(userDir, fileName);
 
   const content = JSON.stringify(backupData, null, 2);

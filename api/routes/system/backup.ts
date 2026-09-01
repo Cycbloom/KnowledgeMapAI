@@ -97,9 +97,13 @@ router.get("/export", requireAuth, async (req: AuthedRequest, res: Response) => 
     const content = await fs.readFile(result.filePath, "utf-8");
 
     res.setHeader("Content-Type", "application/json");
+    // 使用东八区（UTC+8）本地日期格式化文件名
+    const now = new Date();
+    const beijingDate = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const dateStr = beijingDate.toISOString().split("T")[0];
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="knowledgemap-backup-${new Date().toISOString().split("T")[0]}.json"`,
+      `attachment; filename="knowledgemap-backup-${dateStr}.json"`,
     );
     res.send(content);
   } catch (error) {

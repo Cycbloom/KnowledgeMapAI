@@ -90,7 +90,11 @@ export const Profile = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `knowledgemap-backup-${new Date().toISOString().split('T')[0]}.json`;
+      // 使用东八区（UTC+8）本地日期格式化文件名
+      const now = new Date();
+      const beijingDate = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+      const dateStr = beijingDate.toISOString().split('T')[0];
+      a.download = `knowledgemap-backup-${dateStr}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

@@ -34,6 +34,8 @@ export { ConceptModuleService } from "./conceptModuleService";
 export { ConceptHierarchyService } from "./conceptHierarchyService";
 export { graphDomainService } from './graphDomainService';
 export { domainService } from './domainService';
+export { DomainCrudService } from "./domainCrudService";
+export { DomainAiService } from "./domainAiService";
 export { conceptAnalysisService, ConceptAnalysisService } from "./conceptAnalysisService";
 export type {
   AnalysisOptions,

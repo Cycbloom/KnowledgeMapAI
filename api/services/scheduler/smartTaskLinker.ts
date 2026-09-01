@@ -7,6 +7,7 @@ import { getSupabaseAdmin } from "../../supabase";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { resolveLocalizedText } from "../../../shared/utils/localization";
+import { formatStudyTaskTitle } from "../../../shared/constants/taskTitles";
 import type { AppEvent, GraphCreatedPayload } from "../../../shared/types/events";
 
 export interface LinkedTaskResult {
@@ -169,11 +170,117 @@ class SmartTaskLinker {
       }
     }
 
+    // 孤立知识点（不在任何图谱）：创建/复用独立「学习」任务，保证直学也有时长锚点，
+    // 否则 beginActivity 自动挂靠拿不到 taskId，本次学习不记时。
+    const isolatedTask = await this.getOrCreateStandaloneLearningTask(
+      supabase,
+      userId,
+      knowledgePointId,
+      options?.title,
+    );
+    if (isolatedTask) {
+      return {
+        taskId: isolatedTask.id,
+        taskTitle: isolatedTask.title,
+        source: "auto_generated" as const,
+        subtaskId: undefined,
+        learningState: "learning",
+      };
+    }
+
     return {
       taskId: "",
       taskTitle: options?.title || "未知任务",
       source: "auto_generated" as const,
     };
+  }
+
+  /**
+   * 孤立知识点（不在任何图谱）的直学锚点：创建/复用一条独立「学习」任务。
+   * 同一知识点复用（task_type='learning' + knowledge_point_id 精确匹配），避免重复建任务。
+   */
+  private async getOrCreateStandaloneLearningTask(
+    supabase: SupabaseClient,
+    userId: string,
+    knowledgePointId: string,
+    title?: string,
+  ): Promise<{ id: string; title: string } | null> {
+    try {
+      const { data: existing } = await supabase
+        .from("user_tasks")
+        .select("id, title")
+        .eq("user_id", userId)
+        .eq("knowledge_point_id", knowledgePointId)
+        .eq("task_type", "learning")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        return {
+          id: (existing as { id: string }).id,
+          title: (existing as { title: string }).title,
+        };
+      }
+
+      const kpTitle =
+        title ??
+        (await this.resolveKnowledgePointTitle(supabase, knowledgePointId));
+      const { data: created, error } = await supabase
+        .from("user_tasks")
+        .insert({
+          user_id: userId,
+          title: formatStudyTaskTitle(kpTitle || knowledgePointId),
+          knowledge_point_id: knowledgePointId,
+          task_type: "learning",
+          queue_level: 1,
+          estimated_duration: 30,
+          position: 0,
+          status: "pending",
+          context: {},
+        })
+        .select("id, title")
+        .single();
+
+      if (error || !created) {
+        logger.warn("[SmartTaskLinker] standalone learning task creation failed", {
+          knowledgePointId,
+          error: error?.message,
+        });
+        return null;
+      }
+      logger.info("[SmartTaskLinker] created standalone learning task for isolated KP", {
+        knowledgePointId,
+        taskId: (created as { id: string }).id,
+      });
+      return {
+        id: (created as { id: string }).id,
+        title: (created as { title: string }).title,
+      };
+    } catch (error) {
+      logger.warn("[SmartTaskLinker] standalone learning task creation error", {
+        knowledgePointId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
+
+  private async resolveKnowledgePointTitle(
+    supabase: SupabaseClient,
+    knowledgePointId: string,
+  ): Promise<string> {
+    const { data } = await supabase
+      .from("knowledge_points")
+      .select("title")
+      .eq("id", knowledgePointId)
+      .maybeSingle();
+    if (!data) return "";
+    // knowledge_points.title 为 JSONB 本地化对象，需解析为可读文本
+    return resolveLocalizedText(
+      (data as { title: string | Record<string, string> | null }).title,
+    );
   }
 
   private async getGraphNodes(supabase: SupabaseClient, graphId: string) {

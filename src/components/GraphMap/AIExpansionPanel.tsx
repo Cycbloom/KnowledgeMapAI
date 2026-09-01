@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Sparkles, Network, ChevronDown, ChevronUp, Check, Settings2, Layers, GitBranch, BookOpen, Briefcase, GraduationCap, PenTool, Link, Plus } from 'lucide-react';
+import { X, Loader2, Sparkles, Network, ChevronDown, ChevronUp, Check, Settings2, Layers, GitBranch, BookOpen, Briefcase, GraduationCap, PenTool, Link, Plus, Lock } from 'lucide-react';
 import type { GraphRelationType, InfiniteExpansionProgress } from '../../types';
 import { useFocusTrap } from '../../hooks/common/useFocusTrap';
 import { useEscapeKey } from '../../hooks/common/useEscapeKey';
@@ -135,6 +135,8 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
   );
   const [autoGenerateNodes, setAutoGenerateNodes] = useState(false);
   const [nodeDepth, setNodeDepth] = useState(2);
+  // 图内已有节点时，深度拓展默认锁定（通常只生成一次），需解锁后才能再次生成
+  const [depthUnlocked, setDepthUnlocked] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -179,6 +181,10 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
     setIsSubmitting(true);
     try {
       if (mode === 'depth') {
+        if (hasNodes && !depthUnlocked) {
+          setIsSubmitting(false);
+          return;
+        }
         if (depthStyle === 'custom' && !customPrompt.trim()) {
           setIsSubmitting(false);
           return;
@@ -249,6 +255,8 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
   useEffect(() => {
     if (isOpen) {
       setDepthProgress({ status: 'idle', currentStep: '', nodesCreated: 0 });
+      // 每次打开弹窗都需重新解锁：图内已有节点时深度拓展默认回到锁定态
+      setDepthUnlocked(false);
     }
   }, [isOpen]);
 
@@ -330,7 +338,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <Layers className="w-4 h-4 text-primary-500" />
-                    <span className="font-medium text-gray-900 dark:text-white">{t('graphEditor.graphMap.aiExpansion.depthExpansion')}</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{t('graphEditor.graphMap.aiExpansion.depthExpansion')}</span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {t('graphEditor.graphMap.aiExpansion.depthExpansionDesc')}
@@ -701,26 +709,46 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
-              {progress?.status === 'completed' ? t('graphEditor.graphMap.aiExpansion.close') : t('graphEditor.graphMap.aiExpansion.cancel')}
+              {mode === 'depth'
+                ? depthProgress.status === 'completed'
+                  ? t('graphEditor.graphMap.aiExpansion.close')
+                  : t('graphEditor.graphMap.aiExpansion.cancel')
+                : progress?.status === 'completed'
+                  ? t('graphEditor.graphMap.aiExpansion.close')
+                  : t('graphEditor.graphMap.aiExpansion.cancel')}
             </button>
-            {progress?.status !== 'completed' && progress?.status !== 'running' && (
-              <button
-                onClick={handleSubmit}
-                disabled={(mode === 'depth' && depthStyle === 'custom' && !customPrompt.trim()) || (mode === 'width' && selectedRelationTypes.length === 0) || isSubmitting || isRunning}
-                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {t('graphEditor.graphMap.aiExpansion.starting')}
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    {t('graphEditor.graphMap.aiExpansion.startExpand')}
-                  </>
+            {progress?.status !== 'running' && (mode === 'depth' ? depthProgress.status !== 'completed' : progress?.status !== 'completed') && (
+              <div className="flex items-center gap-2">
+                {mode === 'depth' && hasNodes && !depthUnlocked && (
+                  <button
+                    onClick={() => setDepthUnlocked(true)}
+                    disabled={isSubmitting || isRunning}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={t('graphEditor.graphMap.aiExpansion.depthLockedHint')}
+                  >
+                    <Lock className="w-4 h-4" />
+                    {t('graphEditor.graphMap.aiExpansion.unlockDepth')}
+                  </button>
                 )}
-              </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={(mode === 'depth' && ((depthStyle === 'custom' && !customPrompt.trim()) || (hasNodes && !depthUnlocked))) || (mode === 'width' && selectedRelationTypes.length === 0) || isSubmitting || isRunning}
+                  className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {t('graphEditor.graphMap.aiExpansion.starting')}
+                    </>
+                  ) : (
+                    <>
+                      {mode === 'depth' && hasNodes && !depthUnlocked && <Lock className="w-4 h-4" />}
+                      <Sparkles className="w-4 h-4" />
+                      {t('graphEditor.graphMap.aiExpansion.startExpand')}
+                    </>
+                  )}
+                </button>
+              </div>
             )}
           </div>
         </motion.div>

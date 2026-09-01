@@ -19,7 +19,10 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../services/api";
+import { queryKeys } from "../../../hooks/queries/config";
 import { UserTaskDetail } from "../../../types";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../../../utils/formatters";
 import { message as messageHelper } from "../../../utils/messageHelper";
@@ -51,14 +54,42 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const [activeTab, setActiveTab] = useState<WorkTab>("overview");
   const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
   const { t } = useTranslation();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+
+  /** 开始/暂停/完成等状态变更后失效调度相关缓存，使任务调度页/首页反映最新状态 */
+  const invalidateSchedulerChange = (taskId?: string) => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.schedulerTasks() });
+    queryClient.invalidateQueries({ queryKey: queryKeys.queues() });
+    queryClient.invalidateQueries({ queryKey: queryKeys.schedulerNextStep() });
+    if (taskId) {
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedulerTask(taskId) });
+    }
+  };
 
   const tablistId = useId();
   const tabIdPrefix = `${tablistId}-tab`;
   const panelIdPrefix = `${tablistId}-panel`;
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
+  // 首页「继续学习」入口：携带 autoStartTask 状态，加载后自动开始/继续任务
+  // pending 首次开始；paused 恢复继续（都走 start 端点置为 in_progress）
+  const shouldAutoStart =
+    (location.state as { autoStartTask?: boolean } | null)?.autoStartTask === true;
+  const autoStartHandled = useRef(false);
+
+  useEffect(() => {
+    if (shouldAutoStart && task && !autoStartHandled.current &&
+        (task.status === "pending" || task.status === "paused")) {
+      autoStartHandled.current = true;
+      void handleStartTask();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldAutoStart, task]);
+
   useEffect(() => {
     loadTaskDetail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId]);
 
   const loadTaskDetail = async () => {
@@ -79,6 +110,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     try {
       await api.scheduler.start(task.id);
       messageHelper.success(t('scheduler.taskWorkbench.taskStarted'));
+      invalidateSchedulerChange(task.id);
       loadTaskDetail();
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.taskStartFailed');
@@ -91,6 +123,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     try {
       await api.scheduler.pause(task.id);
       messageHelper.success(t('scheduler.taskWorkbench.taskPaused'));
+      invalidateSchedulerChange(task.id);
       loadTaskDetail();
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.taskPauseFailed');
@@ -103,6 +136,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     try {
       await api.scheduler.complete(task.id);
       messageHelper.success(t('scheduler.taskWorkbench.taskCompleted'));
+      invalidateSchedulerChange(task.id);
       loadTaskDetail();
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.taskCompleteFailed');

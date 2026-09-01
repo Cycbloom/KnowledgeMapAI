@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,7 +13,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useSchedulerOrchestrator } from "../hooks/scheduler/useSchedulerOrchestrator";
-import { orchestratorApi } from "../services/api/modules/scheduler/orchestrator";
 import { useSchedulerQueues } from "../hooks/scheduler/useScheduler";
 import { useTheme, useIsMobile } from "../hooks";
 import { TodayReview } from "../components/capture/TodayReview";
@@ -34,13 +33,12 @@ export const Dashboard = () => {
   const { isMobile } = useIsMobile();
   const navigate = useNavigate();
   const { nextStep } = useSchedulerOrchestrator();
-  const [actionLoading, setActionLoading] = useState(false);
 
   const decision = nextStep.data;
   const decisionLoading = nextStep.isLoading;
 
-  /** 执行「下一步」：复习跳学习中心；进度经 getNextActionForTask 取直达地址 */
-  const handleGoNext = async () => {
+  /** 执行「下一步」：复习跳学习中心；进度跳任务详情并自动开始任务 */
+  const handleGoNext = () => {
     if (!decision) return;
     if (decision.type === "review" && decision.review) {
       const { knowledgePointId, graphId } = decision.review;
@@ -50,22 +48,10 @@ export const Dashboard = () => {
       return;
     }
     if (decision.type === "progress" && decision.progress) {
-      setActionLoading(true);
-      try {
-        const result = await orchestratorApi.getNextActionForTask(
-          decision.progress.taskId,
-        );
-        const url = result?.action?.url;
-        if (url) {
-          navigate(url);
-          return;
-        }
-      } catch {
-        /* 失败落到调度器 */
-      } finally {
-        setActionLoading(false);
-      }
-      navigate("/scheduler");
+      // 直达任务详情，传入 autoStartTask 状态让 TaskWorkbench 自动「开始任务」
+      navigate(`/scheduler/task/${decision.progress.taskId}`, {
+        state: { autoStartTask: true },
+      });
     }
   };
 
@@ -208,10 +194,9 @@ export const Dashboard = () => {
                   <button
                     type="button"
                     onClick={() => { void handleGoNext(); }}
-                    disabled={actionLoading}
-                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
                   >
-                    {actionLoading ? t("scheduler.home.loading") : t("scheduler.home.startLearning")}
+                    {t("scheduler.home.startLearning")}
                     <ArrowRight size={16} />
                   </button>
                 </div>

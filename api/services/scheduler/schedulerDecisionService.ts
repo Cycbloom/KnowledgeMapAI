@@ -6,6 +6,7 @@ import { taskRecommendationService } from "./taskRecommendationService";
 import { learningFlowService } from "./learningFlowService";
 import { subtaskStateMachine } from "./subtaskStateMachine";
 import { executionService } from "./executionService";
+import { resolveLocalizedText } from "../../../shared/utils/localization";
 import type { StateHistoryEntry } from "../../../shared/types/scheduler";
 import { notDeleted } from "../common/softDeleteHelper";
 
@@ -623,7 +624,8 @@ class SchedulerDecisionService {
 
     const titleById = new Map<string, string>();
     for (const kp of kpRows ?? []) {
-      titleById.set(kp.id, kp.title);
+      // knowledge_points.title 为 JSONB 本地化对象，需解析为可读文本再展示
+      titleById.set(kp.id, resolveLocalizedText(kp.title));
     }
 
     const nowMs = now.getTime();

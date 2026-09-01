@@ -10,9 +10,9 @@ import type {
 import { subtaskStateMachine } from "./subtaskStateMachine";
 import { subtaskKnowledgeSyncService } from "./subtaskKnowledgeSync";
 import { subtaskQuizIntegrationService } from "./subtaskQuizIntegration";
+import { executionService } from "./executionService";
 import { reviewTaskService } from "./reviewTaskService";
 import { masteryCalculationService } from "../study/masteryCalculationService";
-import { notDeleted } from "../common/softDeleteHelper";
 import type { CreateReviewTaskData } from "../../../shared/types/reviewTask";
 
 export type NextActivityType = "practice" | "quiz" | "review";
@@ -93,7 +93,7 @@ class LearningFlowService {
     const stateHistory: StateHistoryEntry[] = subtask?.state_history ?? [];
     const nextState = this.planInitialStage(mastery, stateHistory);
 
-    // 4. 同步子任务状态 + 写入 state_history + 触达学习进度事件
+    // 4. 同步子任务状态 + 写入 state_history + 触达学习进度事件，并回写阶段推进的待计时片段
     if (subtask && subtask.learning_state === "learning") {
       await subtaskKnowledgeSyncService.syncSubtaskStateToKnowledgePoint(
         supabase,
@@ -101,6 +101,7 @@ class LearningFlowService {
         nextState,
         mastery,
       );
+      await this.recordStageAdvancement(supabase, userId, subtask, nextState);
     }
 
     // 5. 创建首次复习卡片（幂等，已存在时静默跳过）
@@ -136,7 +137,7 @@ class LearningFlowService {
     supabase: SupabaseClient,
     input: CompleteReviewInput,
   ): Promise<CompleteReviewResult> {
-    const { subtaskId } = input;
+    const { userId, subtaskId } = input;
     const subtask = await this.fetchSubtask(supabase, subtaskId);
 
     // 复习后重算掌握度
@@ -155,6 +156,7 @@ class LearningFlowService {
         nextState,
         mastery,
       );
+      await this.recordStageAdvancement(supabase, userId, subtask, nextState);
     }
 
     const nextActivity = await this.buildNextActivity(supabase, subtaskId);
@@ -186,12 +188,11 @@ class LearningFlowService {
     supabase: SupabaseClient,
     knowledgePointId: string,
   ): Promise<ResolvedSubtask | null> {
-    const { data } = await notDeleted(
-      supabase
-        .from("task_subtasks")
-        .select("id, task_id, knowledge_point_id, learning_state, state_history")
-        .eq("knowledge_point_id", knowledgePointId),
-    )
+    // 注意：task_subtasks 无 deleted_at 列，不能用 notDeleted() 过滤，否则查询报 42703 失败
+    const { data } = await supabase
+      .from("task_subtasks")
+      .select("id, task_id, knowledge_point_id, learning_state, state_history")
+      .eq("knowledge_point_id", knowledgePointId)
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -229,6 +230,30 @@ class LearningFlowService {
       learning_state: data.learning_state as LearningState,
       state_history: (data.state_history ?? []) as StateHistoryEntry[],
     };
+  }
+
+  /** 阶段推进回写：向开会话追加待计时片段（与 subtaskStateMachine 行为一致），尽力而为不阻塞主流程 */
+  private async recordStageAdvancement(
+    supabase: SupabaseClient,
+    userId: string,
+    subtask: ResolvedSubtask,
+    stage: LearningState,
+  ): Promise<void> {
+    try {
+      if (!subtask.task_id) return;
+      await executionService.createPendingForStage(supabase, userId, {
+        taskId: subtask.task_id,
+        subtaskId: subtask.id,
+        knowledgePointId: subtask.knowledge_point_id,
+        stage,
+      });
+    } catch (error) {
+      logger.warn("[LearningFlow] pending stage writeback skipped", {
+        subtaskId: subtask.id,
+        stage,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   private async ensureFirstReviewCard(

@@ -38,6 +38,12 @@ vi.mock("../reviewTaskService", () => ({
   },
 }));
 
+vi.mock("../executionService", () => ({
+  executionService: {
+    createPendingForStage: vi.fn().mockResolvedValue(null),
+  },
+}));
+
 vi.mock("../../study/masteryCalculationService", () => ({
   masteryCalculationService: {
     updateKnowledgePointMastery: vi.fn().mockResolvedValue(0.35),
@@ -55,6 +61,7 @@ import {
 import {
   reviewTaskService,
 } from "../reviewTaskService";
+import { executionService } from "../executionService";
 import {
   masteryCalculationService,
 } from "../../study/masteryCalculationService";
@@ -114,6 +121,17 @@ describe("LearningFlowService (S1)", () => {
       expect(
         subtaskKnowledgeSyncService.syncSubtaskStateToKnowledgePoint,
       ).toHaveBeenCalledWith(supabase, "subtask-1", "practice", 0.35);
+      // 阶段推进需回写待计时片段（与 subtaskStateMachine 行为一致）
+      expect(executionService.createPendingForStage).toHaveBeenCalledWith(
+        supabase,
+        "user-1",
+        {
+          taskId: "task-1",
+          subtaskId: "subtask-1",
+          knowledgePointId: "kp-1",
+          stage: "practice",
+        },
+      );
       // 创建首次复习卡片
       expect(reviewTaskService.createFirstReviewTask).toHaveBeenCalled();
       // 返回下一步推荐活动
@@ -137,6 +155,8 @@ describe("LearningFlowService (S1)", () => {
       expect(
         subtaskKnowledgeSyncService.syncSubtaskStateToKnowledgePoint,
       ).not.toHaveBeenCalled();
+      // 无子任务 → 不触发阶段 pending 回写
+      expect(executionService.createPendingForStage).not.toHaveBeenCalled();
       // 仍应尝试创建首次复习卡片
       expect(reviewTaskService.createFirstReviewTask).toHaveBeenCalled();
     });
@@ -184,6 +204,17 @@ describe("LearningFlowService (S1)", () => {
       expect(
         subtaskKnowledgeSyncService.syncSubtaskStateToKnowledgePoint,
       ).toHaveBeenCalledWith(supabase, "subtask-1", "practice", 0.35);
+      // 复习完成推进阶段也需回写待计时片段
+      expect(executionService.createPendingForStage).toHaveBeenCalledWith(
+        supabase,
+        "user-1",
+        {
+          taskId: "task-1",
+          subtaskId: "subtask-1",
+          knowledgePointId: "kp-1",
+          stage: "practice",
+        },
+      );
       expect(result.nextActivity.type).toBe("practice");
     });
 
@@ -206,6 +237,8 @@ describe("LearningFlowService (S1)", () => {
       });
 
       expect(result.nextState).toBe("review");
+      // 非真实迁移（learning → review 兜底）不触发 pending 回写
+      expect(executionService.createPendingForStage).not.toHaveBeenCalled();
     });
   });
 });

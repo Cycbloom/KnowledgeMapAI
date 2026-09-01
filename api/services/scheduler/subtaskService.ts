@@ -300,13 +300,8 @@ export class SubtaskService {
       throw new AppError(result.error || i18next.t("scheduler.subtask.errors.transitionFailed"), 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
-    await subtaskKnowledgeSyncService.syncSubtaskStateToKnowledgePoint(
-      supabase,
-      subtaskId,
-      toState,
-      masteryLevel,
-    );
-
+    // subtaskStateMachine.transition 已统一完成 状态流转 + 掌握度写入 + 阶段 pending 回写，
+    // 此处不再重复 syncSubtaskStateToKnowledgePoint，避免 state_history / mastery 双写不一致。
     return result.subtask;
   }
 

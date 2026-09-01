@@ -11,6 +11,7 @@ export { nodeRelationDiscoveryService, NodeRelationDiscoveryService } from './no
 export type { NodeRelationSuggestion } from '../../../shared/types/graph-edge';
 export { backlinkService, BacklinkService } from './backlinkService';
 export { graphVersionService, GraphVersionService } from './graphVersionService';
+export { GraphVersionBranchService } from './graphVersionBranchService';
 export { knowledgePointService, KnowledgePointService } from './knowledgePointService';
 export type { ListKnowledgePointsOptions, ListPublicKnowledgePointsOptions, PaginatedResult, SubmitPublicOptions, AutoReviewResult, PendingKnowledgePointItem, CreateKnowledgePointData, UpdateKnowledgePointData, SimilarKnowledgePointResult, KnowledgePointGraph } from './knowledgePointService';
 export { knowledgePointVersionService, KnowledgePointVersionService } from './knowledgePointVersionService';

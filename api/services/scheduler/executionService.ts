@@ -111,7 +111,9 @@ export class ExecutionService {
   /**
    * 开始/延续一次学习活动会话。
    * - 无开会话 → 新建一条 in_progress 会话并开始计时。
-   * - 开会话且上下文(kp/kind)变化 → 收尾上一片段并追加新片段。
+   * - 开会话且跨任务（ctx.taskId 与开会话 task 不同）→ 结束旧会话并为其开新会话，
+   *   保证时长归属正确（如复习打断跳到另一图谱时，复习时长记到对应任务）。
+   * - 开会话且上下文(kp/kind)变化（同任务内）→ 收尾上一片段并追加新片段。
    * - 上下文一致 → 幂等 no-op。
    */
   async beginActivity(
@@ -123,10 +125,22 @@ export class ExecutionService {
     const open = await this.findOpen(client, userId);
 
     if (open) {
+      // 跨任务切换：解析新锚点，能建新会话才结束旧会话（结算到旧任务）
+      if (ctx.taskId && open.task_id && ctx.taskId !== open.task_id) {
+        const anchor = await this.resolveTaskAnchor(client, userId, ctx);
+        if (anchor.taskId) {
+          await this.endSession(client, userId, open.id);
+          return this.createNewSession(client, userId, ctx, anchor);
+        }
+      }
+
       const openNorm = this.normalize(open);
       const current = this.currentSlice(openNorm.activity_log);
+      // 仅当最后一段是「已开始计时」的活跃片段才算同一上下文；
+      // 待计时标记片段（started_at 为空）不视为活跃，进入真实活动时需另起计时段。
       const sameContext =
         !!current &&
+        !!current.started_at &&
         current.kind === ctx.kind &&
         (current.knowledge_point_id ?? null) ===
           (ctx.knowledgePointId ?? null) &&
@@ -152,10 +166,75 @@ export class ExecutionService {
     }
 
     // 自动挂靠任务：直接学习某知识点（无指定任务/子任务）时，解析并绑定所属任务与子任务，
-    // 让时长有记账锚点、调度能接管焦点；孤立知识点（无图谱/无法建任务）则本次不记时。
+    // 让时长有记账锚点、调度能接管焦点；完全孤立知识点无法建任务时本次不记时。
     const anchor = await this.resolveTaskAnchor(client, userId, ctx);
+    return this.createNewSession(client, userId, ctx, anchor);
+  }
 
+  /**
+   * 在既有会话内追加一个新活动片段（收尾当前片段）。用于会话内切换知识点/学习↔做题。
+   * 跨任务切换时结束旧会话并为其开新会话，避免时长挂到旧任务。
+   */
+  async appendSlice(
+    client: SupabaseClient,
+    userId: string,
+    executionId: string,
+    ctx: SessionActivityContext,
+  ): Promise<TaskExecution> {
+    const exec = await this.getRaw(client, userId, executionId);
+
+    // 跨任务切换：先解析新锚点，能建新会话才结束旧会话（结算到旧任务）
+    if (ctx.taskId && exec.task_id && ctx.taskId !== exec.task_id) {
+      const anchor = await this.resolveTaskAnchor(client, userId, ctx);
+      if (anchor.taskId) {
+        await this.endSession(client, userId, executionId);
+        const fresh = await this.createNewSession(client, userId, ctx, anchor);
+        if (fresh) return fresh;
+      }
+    }
+
+    const normalized = this.normalize(exec);
+    const now = new Date().toISOString();
+    const current = this.currentSlice(normalized.activity_log);
+    // 同任务同上下文幂等：最后一段是「已开始计时」的同 kind/kp 活跃片段则 no-op，
+    // 避免 linkedTask 解析后 bridge 以相同上下文重新 begin 产生重复切片。
+    const sameContext =
+      !!current &&
+      !!current.started_at &&
+      current.kind === ctx.kind &&
+      (current.knowledge_point_id ?? null) ===
+        (ctx.knowledgePointId ?? null) &&
+      !current.ended_at;
+    if (sameContext) return normalized;
+
+    const closedLog = this.finalizeCurrentSlice(normalized.activity_log, now);
+    const activityLog: ActivitySlice[] = [
+      ...closedLog,
+      {
+        kind: ctx.kind,
+        knowledge_point_id: ctx.knowledgePointId,
+        started_at: now,
+      },
+    ];
+    const updates: Partial<Omit<TaskExecution, "id" | "task_id" | "user_id">> =
+      {
+        activity_log: activityLog,
+        stage: ctx.stage ?? normalized.stage,
+        knowledge_point_id: ctx.knowledgePointId ?? normalized.knowledge_point_id,
+        subtask_id: ctx.subtaskId ?? normalized.subtask_id,
+      };
+    return this.updateExecution(client, executionId, updates);
+  }
+
+  /** 为某活动上下文新建一条 in_progress 会话（含自动挂靠的任务/子任务锚点）。 */
+  private async createNewSession(
+    client: SupabaseClient,
+    userId: string,
+    ctx: SessionActivityContext,
+    anchor: { taskId?: string; subtaskId?: string },
+  ): Promise<TaskExecution | null> {
     if (!anchor.taskId) return null;
+    const now = new Date().toISOString();
     const newExecution = await this.createExecution(client, {
       task_id: anchor.taskId,
       user_id: userId,
@@ -174,37 +253,6 @@ export class ExecutionService {
       status: "in_progress",
     });
     return this.normalize(newExecution);
-  }
-
-  /**
-   * 在既有会话内追加一个新活动片段（收尾当前片段）。用于会话内切换知识点/学习↔做题。
-   */
-  async appendSlice(
-    client: SupabaseClient,
-    userId: string,
-    executionId: string,
-    ctx: SessionActivityContext,
-  ): Promise<TaskExecution> {
-    const exec = await this.getRaw(client, userId, executionId);
-    const normalized = this.normalize(exec);
-    const now = new Date().toISOString();
-    const closedLog = this.finalizeCurrentSlice(normalized.activity_log, now);
-    const activityLog: ActivitySlice[] = [
-      ...closedLog,
-      {
-        kind: ctx.kind,
-        knowledge_point_id: ctx.knowledgePointId,
-        started_at: now,
-      },
-    ];
-    const updates: Partial<Omit<TaskExecution, "id" | "task_id" | "user_id">> =
-      {
-        activity_log: activityLog,
-        stage: ctx.stage ?? normalized.stage,
-        knowledge_point_id: ctx.knowledgePointId ?? normalized.knowledge_point_id,
-        subtask_id: ctx.subtaskId ?? normalized.subtask_id,
-      };
-    return this.updateExecution(client, executionId, updates);
   }
 
   /**
@@ -249,8 +297,9 @@ export class ExecutionService {
   }
 
   /**
-   * 阶段推进回写：向开会话追加一个待计时(pending)片段；无开会话则新建 pending 执行行。
+   * 阶段推进回写：向开会话追加一个待计时(pending)片段；无开会话则跳过（不生成空壳独立行）。
    * started_at 保持 null → 时长贡献 0，体现「阶段开始不计时」。
+   * 无开会话时阶段推进只落在子任务 state_history 上，避免执行记录出现无开始时间/无时长的混乱条目。
    */
   async createPendingForStage(
     client: SupabaseClient,
@@ -259,44 +308,31 @@ export class ExecutionService {
   ): Promise<TaskExecution | null> {
     const open = await this.findOpen(client, userId);
 
-    if (open) {
-      const openNorm = this.normalize(open);
-      const activityLog: ActivitySlice[] = [
-        ...(openNorm.activity_log ?? []),
-        {
-          kind: ctx.stage,
-          knowledge_point_id: ctx.knowledgePointId ?? openNorm.knowledge_point_id,
-          started_at: null,
-        },
-      ];
-      const updates: Partial<Omit<TaskExecution, "id" | "task_id" | "user_id">> =
-        {
-          activity_log: activityLog,
-          stage: ctx.stage,
-          knowledge_point_id: ctx.knowledgePointId ?? openNorm.knowledge_point_id,
-          subtask_id: ctx.subtaskId ?? openNorm.subtask_id,
-        };
-      return this.updateExecution(client, openNorm.id, updates);
+    if (!open) return null;
+
+    const openNorm = this.normalize(open);
+    const last = this.currentSlice(openNorm.activity_log);
+    // 幂等：最后一段已是同阶段的待计时标记则不再重复追加
+    if (last && !last.started_at && last.kind === ctx.stage) {
+      return openNorm;
     }
 
-    if (!ctx.taskId) return null;
-    return this.createExecution(client, {
-      task_id: ctx.taskId,
-      user_id: userId,
-      subtask_id: ctx.subtaskId,
-      knowledge_point_id: ctx.knowledgePointId,
-      stage: ctx.stage,
-      activity_log: [
-        {
-          kind: ctx.stage,
-          knowledge_point_id: ctx.knowledgePointId,
-          started_at: null,
-        },
-      ],
-      started_at: null,
-      queue_level: 0,
-      status: "pending",
-    });
+    const activityLog: ActivitySlice[] = [
+      ...(openNorm.activity_log ?? []),
+      {
+        kind: ctx.stage,
+        knowledge_point_id: ctx.knowledgePointId ?? openNorm.knowledge_point_id,
+        started_at: null,
+      },
+    ];
+    const updates: Partial<Omit<TaskExecution, "id" | "task_id" | "user_id">> =
+      {
+        activity_log: activityLog,
+        stage: ctx.stage,
+        knowledge_point_id: ctx.knowledgePointId ?? openNorm.knowledge_point_id,
+        subtask_id: ctx.subtaskId ?? openNorm.subtask_id,
+      };
+    return this.updateExecution(client, openNorm.id, updates);
   }
 
   /**

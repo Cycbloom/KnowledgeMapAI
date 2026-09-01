@@ -106,6 +106,8 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
         return t('scheduler.executionRecords.statusLabels.interrupted');
       case "time_slice_ended":
         return t('scheduler.executionRecords.statusLabels.time_slice_ended');
+      case "pending":
+        return t('scheduler.executionRecords.statusLabels.pending');
       default:
         return t('scheduler.executionRecords.statusLabels.unknown');
     }
@@ -151,11 +153,15 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
 
   const sliceBreakdown = (log?: ActivitySlice[]): Record<string, number> | null => {
     if (!Array.isArray(log) || log.length === 0) return null;
-    return log.reduce<Record<string, number>>((acc, s) => {
+    const breakdown = log.reduce<Record<string, number>>((acc, s) => {
+      // 待计时标记片段（started_at 为空）不计入时长明细，避免「阶段 0s」噪音
+      if (!s.started_at) return acc;
       const key = stageLabels[s.kind] ?? s.kind;
       acc[key] = (acc[key] ?? 0) + (s.duration_seconds ?? 0);
       return acc;
     }, {});
+    if (Object.keys(breakdown).length === 0) return null;
+    return breakdown;
   };
 
   const renderSliceBreakdown = (log?: ActivitySlice[]): React.ReactNode => {

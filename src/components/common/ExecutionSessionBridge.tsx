@@ -14,7 +14,9 @@ function isLearningActivity(pathname: string): boolean {
 
 function contextKey(ctx: ExecutionContext | null): string {
   if (!ctx) return "";
-  return `${ctx.kind}|${ctx.knowledgePointId ?? ""}|${ctx.stage ?? ""}`;
+  // 含 taskId：跨任务切换（如复习打断跳到另一图谱）时，linkedTask 解析出不同任务
+  // 后 key 变化，bridge 才会重新 begin 触发跨任务会话切换。
+  return `${ctx.kind}|${ctx.knowledgePointId ?? ""}|${ctx.stage ?? ""}|${ctx.taskId ?? ""}`;
 }
 
 /**

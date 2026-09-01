@@ -635,9 +635,10 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                       </div>
                     )}
                     {widthPhase !== 'done' && (<>
+                    {widthPhase === 'review' && (<>
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {t('graphEditor.graphMap.aiExpansion.widthLevelTitle', { depth: widthDepth })}
+                        {t('graphEditor.graphMap.aiExpansion.widthLevelTitle', { depth: widthDepth, max: maxDepth })}
                       </h4>
                       <span className="text-xs text-gray-500 dark:text-gray-400">{t('graphEditor.graphMap.aiExpansion.widthPickHint')}</span>
                     </div>
@@ -680,6 +681,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                         </>
                       )}
                     </div>
+                    </>)}
                     {widthPhase === 'next' && (
                       <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-xs text-emerald-700 dark:text-emerald-400">{t('graphEditor.graphMap.aiExpansion.widthNextHint')}</div>
                     )}
@@ -907,7 +909,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                 ? depthProgress.status === 'completed'
                   ? t('graphEditor.graphMap.aiExpansion.close')
                   : t('graphEditor.graphMap.aiExpansion.cancel')
-                : progress?.status === 'completed'
+                : (mode === 'width' ? widthPhase === 'done' : progress?.status === 'completed')
                   ? t('graphEditor.graphMap.aiExpansion.close')
                   : t('graphEditor.graphMap.aiExpansion.cancel')}
             </button>

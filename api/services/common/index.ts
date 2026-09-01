@@ -8,6 +8,7 @@ export {
   runAutoBackup,
 } from "./backupService";
 export type { BackupSnapshot } from "./backupService";
+export { backupRestoreService, BackupRestoreService } from "./backupRestoreService";
 export { syncExistingBackups } from "./backupSyncService";
 export { templateService, TEMPLATE_CATEGORIES } from "./templateService";
 export type {

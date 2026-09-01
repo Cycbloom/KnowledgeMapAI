@@ -23,7 +23,9 @@
     "queueQ0": "Urgent",
     "queueQ1": "Important",
     "queueQ2": "Regular",
-    "statusInProgress": "In progress"
+    "statusInProgress": "In progress",
+    "nextSubtask": "Learning: {{title}}",
+    "subtaskProgressLabel": "{{completed}} / {{total}} done"
   },
   "calendar": "Calendar",
   "newTask": "New Task",
@@ -1351,6 +1353,7 @@
       "completed": "Completed",
       "interrupted": "Interrupted",
       "time_slice_ended": "Time Slice Ended",
+      "pending": "Pending",
       "unknown": "Unknown"
     }
   },

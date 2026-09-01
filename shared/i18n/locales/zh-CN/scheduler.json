@@ -23,7 +23,9 @@
     "queueQ0": "紧急",
     "queueQ1": "重要",
     "queueQ2": "常规",
-    "statusInProgress": "进行中"
+    "statusInProgress": "进行中",
+    "nextSubtask": "当前学到：{{title}}",
+    "subtaskProgressLabel": "已完成 {{completed}} / {{total}}"
   },
   "calendar": "日历",
   "newTask": "新建任务",
@@ -1377,6 +1379,7 @@
       "completed": "已完成",
       "interrupted": "中断",
       "time_slice_ended": "时间片结束",
+      "pending": "待计时",
       "unknown": "未知"
     }
   },

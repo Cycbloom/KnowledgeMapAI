@@ -97,7 +97,7 @@ const AutoClassifyDomainPanelComponent: React.FC<
     );
   }, []);
 
-  const handleApply = useCallback(async () => {
+  const handleApply = useCallback(() => {
     const selected = workDomains.filter(
       (d) => d.checked && d.name.trim().length >= 2 && d.graph_ids.length > 0,
     );
@@ -106,28 +106,31 @@ const AutoClassifyDomainPanelComponent: React.FC<
       return;
     }
 
-    setStatus("applying");
-    try {
-      const result = await domainsApi.applyClassify({
-        domains: selected.map((d) => ({
-          name: d.name.trim(),
-          description: d.description?.trim(),
-          graph_ids: d.graph_ids,
-        })),
-      });
-      message.success(
-        t("graphMap.autoClassify.appliedSuccess", {
-          count: result.created.length,
-        }),
-      );
-      onApplied();
-    } catch (error: unknown) {
-      const errMsg =
-        getErrorMessage(error) || t("graphMap.autoClassify.applyFailed");
-      message.error(errMsg);
-      setStatus("review");
-    }
-  }, [workDomains, t, onApplied]);
+    const payload = selected.map((d) => ({
+      name: d.name.trim(),
+      description: d.description?.trim(),
+      graph_ids: d.graph_ids,
+    }));
+
+    // 立即关闭窗口，领域创建在后台静默运行；全部完成后统一刷新领域/图谱显示
+    onClose();
+    void (async () => {
+      try {
+        const result = await domainsApi.applyClassify({ domains: payload });
+        message.success(
+          t("graphMap.autoClassify.appliedSuccess", {
+            count: result.created.length,
+          }),
+        );
+      } catch (error: unknown) {
+        const errMsg =
+          getErrorMessage(error) || t("graphMap.autoClassify.applyFailed");
+        message.error(errMsg);
+      } finally {
+        onApplied();
+      }
+    })();
+  }, [workDomains, t, onClose, onApplied]);
 
   if (!isOpen) return null;
 

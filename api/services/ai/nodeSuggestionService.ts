@@ -276,6 +276,7 @@ export async function generateGraphSkeleton(
 ): Promise<{
   root: GeneratedSkeletonNode;
   coreNodes: GeneratedSkeletonNode[];
+  description?: string;
 }> {
   const {
     topic,
@@ -392,11 +393,12 @@ export async function generateGraphSkeleton(
 
   const content = completion.choices[0].message.content;
   let parsed: {
+    description?: string | null;
     root?: GeneratedSkeletonNode | null;
     coreNodes?: GeneratedSkeletonNode[] | null;
   };
   try {
-    parsed = JSON.parse(content || '{"root": null, "coreNodes": []}');
+    parsed = JSON.parse(content || '{"description": "", "root": null, "coreNodes": []}');
   } catch (_e) {
     logger.error("JSON Parse Error in graph skeleton generation:", {
       contentSnippet: content?.slice(-100),
@@ -415,5 +417,10 @@ export async function generateGraphSkeleton(
         content: `${topic}的核心概念和知识体系`,
       },
     coreNodes: parsed.coreNodes || [],
+    description:
+      typeof parsed.description === "string" &&
+      parsed.description.trim()
+        ? parsed.description.trim()
+        : undefined,
   };
 }

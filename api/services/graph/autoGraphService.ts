@@ -70,6 +70,7 @@ export interface InitGraphResult {
     content: string;
   };
   coreNodes: AIGeneratedNode[];
+  description?: string;
 }
 
 export interface ExpandNodeParams {
@@ -1240,6 +1241,33 @@ export class AutoGraphService {
       sessionId,
     });
 
+    // 深度拓展（或首次初始化）时，将 AI 生成的详细图谱描述回写至图谱记录，
+    // 使图谱介绍更丰富（区别于宽度拓展的简略单句描述）；语言跟随模型输出的 {{outputLanguage}}
+    const description =
+      typeof skeleton.description === "string" && skeleton.description.trim()
+        ? skeleton.description.trim()
+        : undefined;
+
+    if (graphId && description) {
+      const { error: descErr } = await supabase
+        .from("knowledge_graphs")
+        .update({ description })
+        .eq("id", graphId);
+
+      if (descErr) {
+        logger.warn(
+          "Failed to update graph description after graph init/expansion",
+          descErr,
+        );
+      } else {
+        // 描述已变更，主动失效用户图谱列表与图谱地图缓存，确保前端拉到最新描述
+        cacheService.del([
+          CacheKeys.USER_GRAPHS(userId),
+          CacheKeys.GRAPH_MAP(userId),
+        ]);
+      }
+    }
+
     return {
       sessionId,
       root: {
@@ -1247,6 +1275,7 @@ export class AutoGraphService {
         content: skeleton.root.content || "",
       },
       coreNodes: skeleton.coreNodes as AIGeneratedNode[],
+      description,
     };
   }
 

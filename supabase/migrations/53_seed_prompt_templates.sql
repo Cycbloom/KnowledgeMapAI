@@ -239,6 +239,7 @@ This is the FIRST step of progressive graph building. You MUST output a single J
 
 **CRITICAL: Output JSON Format**
 {
+  "description": "Detailed multi-sentence introduction of this knowledge domain (describe its scope, major branches, prerequisites and application value; 3-5 sentences, ~150-250 characters, NOT a single sentence)",
   "root": {
     "title": "Root Node Title",
     "content": "Comprehensive overview of the topic (100-150 words)",
@@ -254,7 +255,11 @@ Requirements:
 - **Exact counts**: 1 root, 3-5 core nodes. `coreNodes` array must NEVER be empty.
 - Every node object (`root` and each `coreNodes[i]`) MUST contain `title`, `content`, and `summary` (all strings, never null/empty).
 - `summary`: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
+- `description`: 图谱的详细介绍（3-5 句、约 150-250 字），说明该领域涵盖的内容、主要分支、前置知识与实际应用价值。要写得充实丰富，**不要只写一句话**。语言必须为 **{{outputLanguage}}**。
 - Root node should cover the topic comprehensively. Core nodes should be the distinct major branches of the topic (not synonyms of the root).
+
+## Output Language
+根节点、核心节点以及 `description` 的全部文本（title/content/summary/description）都必须使用 **{{outputLanguage}}** 输出。
 
 {{#if isCustom}}
 ## Custom Instructions

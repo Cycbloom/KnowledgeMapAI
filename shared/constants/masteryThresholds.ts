@@ -29,16 +29,3 @@ export const MASTERY_STATE_MAPPING: Record<string, { min: number; max: number }>
   practice: { min: MASTERY_THRESHOLDS.REVIEW_PRACTICE, max: MASTERY_THRESHOLDS.PRACTICE_QUIZ },
   quiz: { min: MASTERY_THRESHOLDS.PRACTICE_QUIZ, max: 1.0 },
 } as const;
-
-/**
- * 遗忘衰减默认配置
- *
- * reviewThreshold: 低于此阈值的知识点需要复习
- * minMastery: 掌握度下限
- * decayBaseFactor: 无 FSRS 数据时的衰减基准因子
- */
-export const DEFAULT_DECAY_CONFIG = {
-  reviewThreshold: MASTERY_THRESHOLDS.REVIEW_PRACTICE,
-  minMastery: 0,
-  decayBaseFactor: 10,
-} as const;

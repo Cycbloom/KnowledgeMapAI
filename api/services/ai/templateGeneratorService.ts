@@ -9,8 +9,7 @@ import {
 } from "@shared/types/graph";
 import { getAIProviderForTask, getAIProvider } from "./factory";
 import { promptService } from "./promptService";
-import { performanceMonitor } from "./performanceMonitor";
-import { pricingService } from "./pricingService";
+import { withAIMonitoring } from "./aiMonitor";
 import { logger } from "../../utils/logger";
 import { parseAIResponse } from "./utils";
 import {
@@ -567,76 +566,25 @@ export class TemplateGeneratorService {
       return getMockTemplates(topic, templateType);
     }
 
-    const startTime = Date.now();
-
     try {
-      const { result, usage } = await this.callAI(provider, options);
-
-      const inputTokens = usage?.prompt_tokens || 0;
-      const outputTokens = usage?.completion_tokens || 0;
-      const cachedInputTokens =
-        usage?.prompt_tokens_details?.cached_tokens || 0;
-      const uncachedInputTokens = Math.max(0, inputTokens - cachedInputTokens);
-      const reasoningTokens =
-        usage?.completion_tokens_details?.reasoning_tokens || 0;
-      const totalTokens = inputTokens + outputTokens;
-      const cacheHitRate =
-        inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
-
-      const costBreakdown = pricingService.calculateDetailedCost(
-        provider.providerType,
-        options.model || provider.model,
-        inputTokens,
-        outputTokens,
-        cachedInputTokens,
-      );
-
-      performanceMonitor.recordLog({
-        operation: "template_generation",
-        provider: provider.providerType,
-        model: options.model || provider.model,
-        inputTokens,
-        outputTokens,
-        totalTokens,
-        estimatedCost: costBreakdown.totalCost,
-        duration: Date.now() - startTime,
-        success: true,
-        metadata: {
-          userId: options.userId,
-          graphId: options.graphId,
-          topic: options.topic,
-          templateType: options.templateType,
+      // withAIMonitoring 统一记录 token/成本/耗时/成功率，替代手写双 recordLog
+      return await withAIMonitoring<GenerateTemplatesResult>(
+        {
+          operation: "template_generation",
+          provider: provider.providerType,
+          model: options.model || provider.model,
+          metadata: {
+            userId: options.userId,
+            graphId: options.graphId,
+            topic: options.topic,
+            templateType: options.templateType,
+          },
         },
-        cachedInputTokens,
-        uncachedInputTokens,
-        reasoningTokens,
-        cacheHitRate: parseFloat(cacheHitRate.toFixed(2)),
-        costBreakdown,
-      });
-
-      return result;
+        () => this.callAI(provider, options),
+      );
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("[Template Generator] AI Error:", error);
-
-      performanceMonitor.recordLog({
-        operation: "template_generation",
-        provider: provider.providerType,
-        model: options.model || provider.model,
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-        estimatedCost: 0,
-        duration: Date.now() - startTime,
-        success: false,
-        errorMessage: err.message,
-        metadata: {
-          userId: options.userId,
-          graphId: options.graphId,
-          topic: options.topic,
-          templateType: options.templateType,
-        },
-      });
 
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);

@@ -11,8 +11,6 @@ import { withAIMonitoring } from "./aiMonitor";
 import { withTimeoutAndRetry, TimeoutError, RetryError, DEFAULT_TIMEOUT, LONG_TIMEOUT } from "../../../shared/utils/retry";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
-import { performanceMonitor } from "./performanceMonitor";
-import { pricingService } from "./pricingService";
 import { getMockResponse } from "./mock";
 import { promptService, getLanguageInstruction } from "./promptService";
 import { learningMaterialSchemaService } from "./learningMaterialSchemaService";
@@ -67,72 +65,45 @@ export class ContentGenerationService {
       model: provider.model,
     });
 
-    const startTime = Date.now();
     try {
-      return await dedupedRequest(requestKey, async () => {
-        const completion = await withTimeoutAndRetry(
-          () =>
-            provider.client.chat.completions.create({
-              messages: [
-                {
-                  role: "system",
-                  content: systemPrompt,
-                },
-                { role: "user", content: userPrompt },
-              ],
-              model: provider.model,
-            }),
-          {
-            timeout: LONG_TIMEOUT,
-            maxRetries: 3,
-            onRetry: (attempt, error) => {
-              logger.warn(
-                `Generate Podcast Script retry attempt ${attempt}: ${error.message}`,
-              );
-            },
-          },
-        );
-
-        const inputTokens = completion.usage?.prompt_tokens || 0;
-        const outputTokens = completion.usage?.completion_tokens || 0;
-        const totalTokens = inputTokens + outputTokens;
-        const estimatedCost = pricingService.calculateCost(
-          provider.providerType,
-          provider.model,
-          inputTokens,
-          outputTokens,
-        );
-
-        await performanceMonitor.recordLog({
+      // withAIMonitoring 统一记录 token/成本/耗时/成功率（含重试后的成功重试链路，
+      // 需计费的是最终实际执行的请求；dedupedRequest 保证并发去重）
+      return await withAIMonitoring<string>(
+        {
           operation: "generate_podcast_script",
           provider: provider.providerType,
           model: provider.model,
-          inputTokens,
-          outputTokens,
-          totalTokens,
-          estimatedCost,
-          duration: Date.now() - startTime,
-          success: true,
-        });
-
-        return completion.choices[0].message.content || "";
-      });
+        },
+        () =>
+          dedupedRequest(requestKey, async () => {
+            const completion = await withTimeoutAndRetry(
+              () =>
+                provider.client.chat.completions.create({
+                  messages: [
+                    {
+                      role: "system",
+                      content: systemPrompt,
+                    },
+                    { role: "user", content: userPrompt },
+                  ],
+                  model: provider.model,
+                }),
+              {
+                timeout: LONG_TIMEOUT,
+                maxRetries: 3,
+                onRetry: (attempt, error) => {
+                  logger.warn(
+                    `Generate Podcast Script retry attempt ${attempt}: ${error.message}`,
+                  );
+                },
+              },
+            );
+            return { result: completion.choices[0].message.content || "", usage: completion.usage };
+          }),
+      );
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Generate Podcast Script Error:", error);
-
-      await performanceMonitor.recordLog({
-        operation: "generate_podcast_script",
-        provider: provider.providerType,
-        model: provider.model,
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-        estimatedCost: 0,
-        duration: Date.now() - startTime,
-        success: false,
-        errorMessage: err.message,
-      });
 
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);

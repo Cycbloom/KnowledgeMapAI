@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { usePersistedListState } from "../common/usePersistedListState";
 import { useSearch } from "../common/useSearch";
 import { useUrlSearchParams } from "../common/useUrlSearchParams";
+import { useListSelection } from "../common/useListSelection";
 import type { Graph } from "@shared/types";
 import type { SearchResult } from "../../services/api/search";
 
@@ -104,7 +105,6 @@ export function useDashboardFilters({
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showFABMenu, setShowFABMenu] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = usePersistedListState<SortBy>(
     "dashboard-sortBy",
     "updatedAt",
@@ -310,51 +310,33 @@ export function useDashboardFilters({
     return filteredGraphs.slice(start, start + graphsPerPage);
   }, [filteredGraphs, currentPage, graphsPerPage]);
 
-  // 单趟统计分页选中情况，替代 every/some 分别扫描的 O(2*paginatedGraphs) 扫描
-  const pageSelection = useMemo(() => {
-    let selectedCount = 0;
-    const total = paginatedGraphs.length;
-    for (const g of paginatedGraphs) {
-      if (selectedIds.has(g.id)) selectedCount++;
-    }
-    return {
-      isAllSelected: total > 0 && selectedCount === total,
-      isPartialSelected: selectedCount > 0 && selectedCount < total,
-    };
-  }, [paginatedGraphs, selectedIds]);
-  const { isAllSelected, isPartialSelected } = pageSelection;
+  // 复用通用选择状态管理：传入分页 id 用于全选/半选判断；
+  // 全局 selectedCount 仍取 selectedIds.size（可能包含跨页选择）
+  const paginatedGraphIds = useMemo(
+    () => paginatedGraphs.map((g) => g.id),
+    [paginatedGraphs],
+  );
+  const {
+    selectedIds,
+    selectionState,
+    toggleId,
+    toggleSelectAll,
+    clear,
+  } = useListSelection(paginatedGraphIds);
+  const { isAllSelected, isPartialSelected } = selectionState;
   const selectedCount = selectedIds.size;
 
-  const toggleSelect = (id: string) => {
-    const newSet = new Set(selectedIds);
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-    }
-    setSelectedIds(newSet);
-  };
-
-  const toggleSelectAll = () => {
-    if (isAllSelected) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(paginatedGraphs.map((g) => g.id)));
-    }
-  };
-
-  const clearSelection = () => {
-    setSelectedIds(new Set());
-  };
+  const toggleSelect = toggleId;
+  const clearSelection = clear;
 
   const enterSelectMode = () => {
     setIsSelectMode(true);
-    setSelectedIds(new Set());
+    clear();
   };
 
   const exitSelectMode = () => {
     setIsSelectMode(false);
-    setSelectedIds(new Set());
+    clear();
   };
 
   return {

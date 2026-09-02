@@ -359,6 +359,18 @@ export const cacheService = {
   },
 
   /**
+   * 仅失效某图的节点缓存（含用户级与公共 public 两份）。
+   * 多处服务在仅变更节点数据但未改动整体图结构时调用，统一双删避免各自散写。
+   */
+  invalidateGraphNodesCache: async (userId: string, graphId: string): Promise<void> => {
+    await Promise.all([
+      cacheService.del(CacheKeys.GRAPH_NODES(userId, graphId)),
+      cacheService.del(CacheKeys.GRAPH_NODES("public", graphId)),
+    ]);
+    logger.debug(`[Cache] Invalidated graph nodes cache for user ${userId}, graph ${graphId} (incl. public)`);
+  },
+
+  /**
    * 失效结构相关缓存（增删节点/边后调用）
    * 包括：GRAPH_NODES + GRAPH_NODE_STATUS + GRAPH_MAP + GRAPH_TAGS + GRAPH_DOMAINS + GRAPH_LITERATURE
    */

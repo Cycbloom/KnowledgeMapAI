@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { aiService } from "../ai/aiService";
 import { logger } from "../../utils/logger";
-import { cacheService, CacheKeys } from "../common/cacheService";
+import { cacheService } from "../common/cacheService";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { notDeleted } from '../common/softDeleteHelper';
@@ -283,8 +283,7 @@ ${conceptList}
       }
     }
 
-    await cacheService.del(CacheKeys.GRAPH_NODES(userId, graphId));
-    await cacheService.del(CacheKeys.GRAPH_NODES("public", graphId));
+    await cacheService.invalidateGraphNodesCache(userId, graphId);
 
     logger.info("Hierarchy relations applied", {
       graphId,

@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
-import { cacheService, CacheKeys } from "../common/cacheService";
+import { cacheService } from "../common/cacheService";
 import { notDeleted } from '../common/softDeleteHelper';
 import {
   conceptSimilarityService,
@@ -511,8 +511,7 @@ export class ConceptMergeService {
     );
 
     if (userId) {
-      await cacheService.del(CacheKeys.GRAPH_NODES(userId, graphId));
-      await cacheService.del(CacheKeys.GRAPH_NODES("public", graphId));
+      await cacheService.invalidateGraphNodesCache(userId, graphId);
     }
 
     return result;

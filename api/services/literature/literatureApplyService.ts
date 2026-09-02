@@ -3,7 +3,7 @@ import { logger } from '../../utils/logger';
 import { conceptAggregationService, normalizeTitle } from '../graph/conceptAggregationService';
 import { autoGraphService } from '../graph/autoGraphService';
 import { aiService } from '../ai/aiService';
-import { cacheService, CacheKeys } from '../common/cacheService';
+import { cacheService } from '../common/cacheService';
 import { performanceMonitor } from '../ai/performanceMonitor';
 import {
   BackboneModule,
@@ -797,8 +797,7 @@ class LiteratureApplyService {
           updated_at: new Date().toISOString(),
         }, { onConflict: "graph_id" });
 
-      await cacheService.del(CacheKeys.GRAPH_NODES(userId, graphId));
-      await cacheService.del(CacheKeys.GRAPH_NODES("public", graphId));
+      await cacheService.invalidateGraphNodesCache(userId, graphId);
 
       const duration = Date.now() - startTime;
 

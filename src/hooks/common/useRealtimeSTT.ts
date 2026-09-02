@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from '@/store/useStore';
 import { getElectronApiUrl } from '@/config/electronConfig';
+import { bytesToBase64 } from '@/utils/bytesToBase64';
 
 interface RealtimeSTTState {
   isListening: boolean;
@@ -151,7 +152,7 @@ export const useRealtimeSTT = (): UseRealtimeSTTReturn => {
         workletNode.port.onmessage = (e: MessageEvent) => {
           if (ws.readyState === WebSocket.OPEN) {
             const pcmBuffer = e.data as ArrayBuffer;
-            const base64 = arrayBufferToBase64(pcmBuffer);
+            const base64 = bytesToBase64(new Uint8Array(pcmBuffer));
             ws.send(JSON.stringify({
               event_id: nextEventId(),
               type: 'input_audio_buffer.append',
@@ -240,14 +241,3 @@ export const useRealtimeSTT = (): UseRealtimeSTTReturn => {
     resetTranscript,
   };
 };
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  const chunkSize = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize);
-    binary += String.fromCharCode.apply(null, Array.from(chunk));
-  }
-  return btoa(binary);
-}

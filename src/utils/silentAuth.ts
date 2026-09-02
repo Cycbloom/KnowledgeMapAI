@@ -1,4 +1,5 @@
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
+import { bytesToBase64 } from './bytesToBase64';
 
 /**
  * 无感知会话（专属用户）工具
@@ -17,7 +18,7 @@ interface OwnerCredentials {
 const generateRandomPassword = (): string => {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
-  return btoa(String.fromCharCode(...bytes));
+  return bytesToBase64(bytes);
 };
 
 const generateCredentials = (): OwnerCredentials => ({

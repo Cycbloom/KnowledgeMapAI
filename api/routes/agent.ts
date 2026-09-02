@@ -7,6 +7,7 @@ import { allTools } from "../services/agent/tools";
 import { logger } from "../utils/logger";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
+import { setSSEHeaders } from "./ai/utils";
 
 const createSessionSchema = z.object({
   skill_id: z.string().optional(),
@@ -140,9 +141,7 @@ router.post(
     const { custom_prompt } = req.body;
 
     // Set SSE headers
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    setSSEHeaders(res);
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
 
@@ -180,9 +179,7 @@ router.post(
     const { id } = req.params;
 
     // Set SSE headers
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    setSSEHeaders(res);
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
 

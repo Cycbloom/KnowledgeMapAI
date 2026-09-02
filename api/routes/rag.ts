@@ -6,6 +6,7 @@ import { ragService, performanceMonitor, enrichMetadata, getAIProviderForTask } 
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { setSSEHeaders } from './ai/utils';
 
 const router = Router();
 
@@ -91,9 +92,7 @@ router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: Au
   const { message, graph_id, current_node_id, history, provider, model, language, session_id, use_graph_context, graph_hops, search_mode } = req.body;
   const sessionId = session_id || crypto.randomUUID();
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
+  setSSEHeaders(res);
   res.setHeader('X-Session-Id', sessionId);
 
   try {

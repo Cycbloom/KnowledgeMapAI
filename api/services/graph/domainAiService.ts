@@ -3,6 +3,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
 import { aiService } from "../ai/aiService";
+import { parseAIJson } from "../ai/utils";
 import { getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
 import { notDeleted } from '../common/softDeleteHelper';
@@ -53,11 +54,11 @@ ${description ? `领域描述：${description}` : ""}
         { role: "user", content: prompt },
       ]);
 
-      let parsed: { color: string; reason: string };
-      try {
-        const cleaned = response.replace(/```json\n?|\n?```/g, "").trim();
-        parsed = JSON.parse(cleaned);
-      } catch {
+      const parsed = parseAIJson<{ color: string; reason: string } | null>(
+        response,
+        null,
+      );
+      if (!parsed?.color) {
         logger.warn("AI 返回的 JSON 解析失败，使用默认颜色", {
           name,
           rawResponse: response.slice(0, 200),
@@ -151,15 +152,11 @@ ${domains.map((d, i) => `${i + 1}. ${d.name}${d.description ? ` (${d.description
         { timeout: 30000 },
       );
 
-      let parsed: Array<{ id: string; name: string; confidence: number; reason: string }>;
-      try {
-        const jsonMatch = response.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) {
-          throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, { message: i18next.t("graphMap.domains.errors.extractJsonFailed") });
-        }
-        parsed = JSON.parse(jsonMatch[0]);
-      } catch (parseError) {
-        logger.warn("AI 推荐响应解析失败", { response, error: parseError instanceof Error ? parseError.message : String(parseError) });
+      const parsed = parseAIJson<
+        Array<{ id: string; name: string; confidence: number; reason: string }>
+      >(response, []);
+      if (parsed.length === 0) {
+        logger.warn("AI 推荐响应解析失败", { response });
         return { recommendations: [] };
       }
 

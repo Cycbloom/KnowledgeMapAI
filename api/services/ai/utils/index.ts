@@ -5,6 +5,31 @@ import { ErrorCodes } from "../../../../shared/types/errorCodes";
 export { extractTokenUsage } from "./tokenUtils";
 export { normalizeGeneratedCardAnswers } from "./cardAnswerNormalizer";
 
+/**
+ * 宽松解析 AI 输出中的 JSON（对象或数组）。
+ * 与严格版 parseAIResponse 不同：内容为空或解析失败时不抛错，返回传入的 fallback。
+ * 适合"AI 返回常夹带说明文字、失败时降级用默认值"的场景，内部复用 cleanJsonString 剥离 code fence。
+ */
+export function parseAIJson<T>(content: string, fallback: T): T {
+  if (!content || content.trim() === "") {
+    return fallback;
+  }
+  try {
+    return JSON.parse(cleanJsonString(content)) as T;
+  } catch {
+    // 继续尝试正则兜底
+  }
+  try {
+    const match = content.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    if (match) {
+      return JSON.parse(match[0]) as T;
+    }
+  } catch {
+    // 忽略，最终返回 fallback
+  }
+  return fallback;
+}
+
 export const cleanJsonString = (str: string): string => {
   let cleaned = str.trim();
 

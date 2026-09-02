@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { aiService } from "../ai/aiService";
+import { parseAIJson } from "../ai/utils";
 import { logger } from "../../utils/logger";
 import { cacheService } from "../common/cacheService";
 import { AppError } from "../../middleware/errorHandler";
@@ -66,13 +67,11 @@ ${conceptList}
         return [];
       }
 
-      const jsonMatch = response.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) {
+      const suggestions = parseAIJson<HierarchySuggestion[]>(response, []);
+      if (suggestions.length === 0) {
         logger.warn("Failed to parse hierarchy suggestions from AI response");
         return [];
       }
-
-      const suggestions: HierarchySuggestion[] = JSON.parse(jsonMatch[0]);
 
       const validSuggestions = suggestions.filter(
         (s) =>

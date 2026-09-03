@@ -16,10 +16,11 @@ test.describe("关键用户旅程冒烟测试", () => {
   test("登录后应跳转到仪表板并显示图谱列表区", async ({
     authenticatedPage: page,
   }) => {
-    // 登录后不应停留在 /login（Dashboard 现直接挂载在 / 路由）
+    // 登录后不应停留在 /login（Dashboard 现挂载在 /dashboard 路由）
     await expect(page).not.toHaveURL(/\/login/, { timeout: 10000 });
 
-    // 仪表板应显示图谱相关内容（Dashboard 标题,兼容中英文 locale）
+    // 导航到图谱列表页（/dashboard），断言图谱相关内容（Dashboard 标题,兼容中英文 locale）
+    await page.goto("/dashboard");
     await expect(
       page.getByText(/My Knowledge Graphs|我的知识图谱/).first(),
     ).toBeVisible({ timeout: 10000 });

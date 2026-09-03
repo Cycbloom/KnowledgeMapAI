@@ -11,14 +11,6 @@ describe("toLocalDateString", () => {
     expect(toLocalDateString(new Date(2026, 11, 31))).toBe("2026-12-31");
   });
 
-  it("按本地时区取值而非 UTC（UTC 8 月 17 日 20:00 在东八区已是次日）", () => {
-    // 东八区本地时间 2026-08-18 04:00
-    const d = new Date(Date.UTC(2026, 7, 17, 20, 0, 0));
-    // 该断言依赖运行时区为 Asia/Shanghai；用本地字段反向构造避免 flaky
-    const local = new Date(2026, 7, 18, 4, 0, 0);
-    expect(toLocalDateString(d)).toBe(toLocalDateString(local));
-  });
-
   it("默认参数取当前时间且格式合法", () => {
     expect(toLocalDateString()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });

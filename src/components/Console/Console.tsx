@@ -246,6 +246,7 @@ export const Console: React.FC<ConsoleProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
+            data-testid="console-panel"
             className={`fixed bottom-4 right-4 w-[600px] max-h-[70vh] rounded-xl shadow-2xl border overflow-hidden z-50 flex flex-col ${
               isDark
                 ? 'bg-slate-900 border-slate-700'

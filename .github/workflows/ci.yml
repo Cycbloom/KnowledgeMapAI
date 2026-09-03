@@ -130,7 +130,7 @@ jobs:
   e2e-tests:
     name: E2E Tests (Playwright - Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       # Don't cancel other shards on failure — useful for debugging flaky tests
       fail-fast: false

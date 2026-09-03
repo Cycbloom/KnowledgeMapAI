@@ -148,9 +148,11 @@ test.describe("专题研究图谱骨干节点测试", () => {
 
     // 使用画布内的 getByText 替代全局 text= 选择器：页面其它区域（如侧边栏大纲、
     // 节点详情面板）可能展示同名节点标题，全局匹配会因 strict mode 命中多个元素而失败。
+    // 画布内每个节点的标题同时出现在 SVG <text> 与 <title>（tooltip/a11y）中，
+    // <title> 是隐藏元素；用 text[font-size] 限定可见的 <text> 节点文本。
     const canvas = page.locator('[data-tour="canvas"]');
     for (const title of BACKBONE_NODE_TITLES) {
-      const nodeText = canvas.getByText(title, { exact: true });
+      const nodeText = canvas.locator('text[font-size]').getByText(title, { exact: true });
       await expect(nodeText).toBeVisible({ timeout: 10000 });
     }
   });

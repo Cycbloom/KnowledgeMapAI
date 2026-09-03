@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -16,13 +16,46 @@ import {
 import { useSchedulerOrchestrator } from "../hooks/scheduler/useSchedulerOrchestrator";
 import { useSchedulerQueues } from "../hooks/scheduler/useScheduler";
 import { useTheme, useIsMobile } from "../hooks";
-import { useCrossGraphSummary } from "../hooks/queries/useLearningPathQueries";
+import {
+  useLearningPaths,
+  useLearningPath,
+} from "../hooks/queries/useLearningPathQueries";
 import { TodayReview } from "../components/capture/TodayReview";
 import { EmptyState } from "../components/common";
-import { learningPathsApi } from "../services/api/learningPaths";
+import { learningPathsApi, type LearningPathResponse } from "../services/api/learningPaths";
 import { message } from "../utils/messageHelper";
 import { getErrorMessage } from "../utils/errors";
-import type { QueueData } from "@shared/types";
+import type { QueueData, UserTask } from "@shared/types";
+
+/** 首页学习路径切换器选择记忆 key */
+const HOME_SELECTED_PATH_KEY = "km-home-selected-path";
+
+/** 将队列任务按所选学习路径的节点顺序（图级）排序；未匹配任务归入 others */
+function orderTasksByPath(
+  tasks: UserTask[],
+  nodes?: Array<{ graph_id?: string; order_index?: number }>,
+): { orderedTasks: UserTask[]; otherTasks: UserTask[] } {
+  const firstIndex = new Map<string, number>();
+  for (const n of nodes ?? []) {
+    const g = n?.graph_id;
+    const cur = firstIndex.get(g ?? "");
+    if (g && (cur === undefined || (n.order_index ?? 0) < cur)) {
+      firstIndex.set(g, n.order_index ?? 0);
+    }
+  }
+  const orderedTasks = tasks
+    .filter((t) => t.graph_id && firstIndex.has(t.graph_id))
+    .map((t) => {
+      const g = t.graph_id as string;
+      return { t, order: firstIndex.get(g) as number };
+    })
+    .sort((a, b) => a.order - b.order)
+    .map((x) => x.t);
+  const otherTasks = tasks.filter(
+    (t) => !t.graph_id || !firstIndex.has(t.graph_id),
+  );
+  return { orderedTasks, otherTasks };
+}
 
 /**
  * 首页（调度大展板）
@@ -64,11 +97,46 @@ export const Dashboard = () => {
     ? "bg-slate-800 border-slate-700"
     : "bg-white border-gray-200";
 
-  // 跨图谱学习路径概览（大调度）：首页学习路径面板数据源
-  const {
-    data: crossGraph,
-    isLoading: crossGraphLoading,
-  } = useCrossGraphSummary();
+  // —— 学习路径切换器：多条 active 路径 + 选择记忆 ——
+  const { data: activePaths } = useLearningPaths("active");
+  const activeList = useMemo(
+    () =>
+      Array.isArray(activePaths) ? (activePaths as LearningPathResponse[]) : [],
+    [activePaths],
+  );
+  const [selectedId, setSelectedIdState] = useState<string | null>(() => {
+    const stored = localStorage.getItem(HOME_SELECTED_PATH_KEY);
+    return stored && stored.length > 0 ? stored : null;
+  });
+
+  // 有效选中：记忆的仍在列表则用之，否则回退跨图谱→第一条 active
+  const effectivePathId = useMemo(() => {
+    if (activeList.some((p) => p?.id === selectedId)) return selectedId;
+    return (
+      activeList.find((p) => p?.path_type === "cross_graph")?.id ??
+      activeList[0]?.id ??
+      null
+    );
+  }, [activeList, selectedId]);
+
+  // storedId 失效时回退默认并清理记忆
+  useEffect(() => {
+    if (selectedId !== effectivePathId) {
+      setSelectedIdState(effectivePathId);
+    }
+  }, [selectedId, effectivePathId]);
+
+  const selectPath = (id: string) => {
+    setSelectedIdState(id);
+    try {
+      localStorage.setItem(HOME_SELECTED_PATH_KEY, id);
+    } catch {
+      /* localStorage 不可用时静默忽略 */
+    }
+  };
+
+  // 所选路径节点（nodes 已按 order_index 排序，含 graph_id），用于队列排序
+  const { data: selectedPathDetail } = useLearningPath(effectivePathId ?? "");
 
   /** 生成跨图谱学习路径（大调度），生成后跳转路径详情 */
   const handleGenerateCrossGraph = async () => {
@@ -96,6 +164,15 @@ export const Dashboard = () => {
     );
   }, [queueData]);
 
+  // 无选中路径 → 直接展示完整队列；否则按路径节点顺序排列 + 归集「其他」
+  const { orderedTasks, otherTasks } = useMemo(
+    () =>
+      effectivePathId
+        ? orderTasksByPath(queueTasks, selectedPathDetail?.nodes)
+        : { orderedTasks: queueTasks, otherTasks: [] },
+    [queueTasks, effectivePathId, selectedPathDetail],
+  );
+
   const qLabel = (level: number) =>
     level === 0
       ? t("scheduler.home.queueQ0")
@@ -117,6 +194,44 @@ export const Dashboard = () => {
     if (!sp || !sp.total) return undefined;
     return Math.min(100, Math.round((sp.completed / sp.total) * 100));
   }, [decision]);
+
+  /** 待办队列单行：点击进详情；右侧「开始学习」按钮由用户手动选择该图谱开始学习 */
+  const renderTaskRow = (task: UserTask) => (
+    <li
+      key={task.id}
+      className="flex items-center gap-2 px-5 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+    >
+      <button
+        type="button"
+        onClick={() => navigate(`/scheduler/task/${task.id}`)}
+        className="flex-1 min-w-0 flex items-center gap-3 text-left"
+      >
+        <span className={`px-2 py-0.5 rounded text-[10px] font-medium shrink-0 ${qBadgeClass(task.queue_level)}`}>
+          {qLabel(task.queue_level)}
+        </span>
+        <span className="flex-1 min-w-0 text-sm text-slate-800 dark:text-slate-200 truncate">
+          {task.title}
+        </span>
+        {task.status === "in_progress" ? (
+          <span className="text-[10px] text-primary-500 shrink-0">
+            {t("scheduler.home.statusInProgress")}
+          </span>
+        ) : null}
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          navigate(`/scheduler/task/${task.id}`, {
+            state: { autoStartTask: true },
+          })
+        }
+        className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium transition-colors"
+      >
+        <GraduationCap size={13} />
+        {t("scheduler.home.startLearning")}
+      </button>
+    </li>
+  );
 
   return (
     <div
@@ -280,27 +395,15 @@ export const Dashboard = () => {
                 </p>
               ) : (
                 <ul className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                  {queueTasks.slice(0, 8).map((task) => (
-                    <li key={task.id}>
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/scheduler/task/${task.id}`)}
-                        className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
-                      >
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-medium shrink-0 ${qBadgeClass(task.queue_level)}`}>
-                          {qLabel(task.queue_level)}
-                        </span>
-                        <span className="flex-1 min-w-0 text-sm text-slate-800 dark:text-slate-200 truncate">
-                          {task.title}
-                        </span>
-                        {task.status === "in_progress" ? (
-                          <span className="text-[10px] text-primary-500 shrink-0">
-                            {t("scheduler.home.statusInProgress")}
-                          </span>
-                        ) : null}
-                      </button>
-                    </li>
-                  ))}
+                  {orderedTasks.slice(0, 8).map((task) => renderTaskRow(task))}
+                  {otherTasks.length > 0 ? (
+                    <>
+                      <li className="px-5 py-2 text-xs text-slate-400 dark:text-slate-500">
+                        {t("dashboard.learningPathSwitcher.others")}
+                      </li>
+                      {otherTasks.slice(0, 8).map((task) => renderTaskRow(task))}
+                    </>
+                  ) : null}
                 </ul>
               )}
             </section>
@@ -331,7 +434,7 @@ export const Dashboard = () => {
               ) : null}
             </section>
 
-            {/* 跨图谱学习路径（大调度）面板 */}
+            {/* 学习路径切换器（多条 active 路径） */}
             <section className={`rounded-2xl border shadow-sm overflow-hidden ${boxClass}`}>
               <div
                 className={`px-5 py-3 flex items-center gap-2 border-b ${
@@ -340,102 +443,86 @@ export const Dashboard = () => {
               >
                 <Route size={16} className="text-primary-500" />
                 <span className="font-medium text-sm">
-                  {t("dashboard.crossGraph.title")}
+                  {t("dashboard.learningPathSwitcher.title")}
                 </span>
               </div>
-              <div className="p-5">
-                {crossGraphLoading ? (
-                  <div className="animate-pulse space-y-3">
-                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3" />
-                    <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded" />
-                  </div>
-                ) : crossGraph ? (
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1.5">
-                        <span className="truncate">
-                          {t("dashboard.crossGraph.progress", {
-                            completed: crossGraph.completedGraphs,
-                            total: crossGraph.totalGraphs,
-                          })}
-                        </span>
-                        <span className="shrink-0 ml-2 font-medium tabular-nums">
-                          {crossGraph.totalGraphs > 0
-                            ? Math.round(
-                                (crossGraph.completedGraphs /
-                                  crossGraph.totalGraphs) *
-                                  100,
-                              )
-                            : 0}
-                          %
-                        </span>
-                      </div>
-                      <div className="h-1.5 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
-                        <div
-                          className="h-full rounded-full bg-primary-500 transition-all"
-                          style={{
-                            width: `${
-                              crossGraph.totalGraphs > 0
-                                ? (crossGraph.completedGraphs /
-                                    crossGraph.totalGraphs) *
-                                  100
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {crossGraph.nextGraph ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(`/learning-paths/${crossGraph.pathId}`)
-                        }
-                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
-                      >
-                        <span className="flex-1 min-w-0 truncate text-left">
-                          {t("dashboard.crossGraph.next", {
-                            title: crossGraph.nextGraph.graphTitle,
-                          })}
-                        </span>
-                        <ArrowRight size={15} className="shrink-0" />
-                      </button>
-                    ) : (
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {t("dashboard.crossGraph.allDone")}
-                      </p>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(`/learning-paths/${crossGraph.pathId}`)
-                      }
-                      className="w-full px-3 py-2 rounded-lg border text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
-                    >
-                      {t("dashboard.crossGraph.viewPath")}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
+              <div className="p-3 space-y-2">
+                {activeList.length === 0 ? (
+                  <div className="p-2">
                     <EmptyState
                       icon={<Route size={24} />}
                       title={t("dashboard.crossGraph.emptyTitle")}
                       description={t("dashboard.crossGraph.emptyDesc")}
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void handleGenerateCrossGraph();
-                      }}
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
-                    >
-                      {t("dashboard.crossGraph.generate")}
-                      <ArrowRight size={14} />
-                    </button>
                   </div>
+                ) : (
+                  activeList.map((path) => {
+                    const isSelected = path.id === effectivePathId;
+                    const total = path.nodes_count ?? 0;
+                    const completed = path.completed_nodes_count ?? 0;
+                    const pct =
+                      total > 0 ? Math.round((completed / total) * 100) : 0;
+                    const remaining = Math.max(total - completed, 0);
+                    return (
+                      <button
+                        key={path.id}
+                        type="button"
+                        onClick={() => selectPath(path.id)}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl border transition-all ${
+                          isSelected
+                            ? "bg-primary-50 dark:bg-primary-900/30 border-primary-400 dark:border-primary-500/60 ring-1 ring-primary-400/40"
+                            : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-primary-400"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="flex-1 min-w-0 truncate text-sm font-medium text-slate-800 dark:text-slate-200">
+                            {path.title}
+                          </span>
+                          <span className="shrink-0 text-[10px] tabular-nums text-slate-500 dark:text-slate-400">
+                            {t("dashboard.learningPathSwitcher.progress", {
+                              completed,
+                              total,
+                            })}
+                          </span>
+                        </div>
+                        <div className="mt-2 h-1.5 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-600">
+                          <div
+                            className="h-full rounded-full bg-primary-500 transition-all"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          {remaining > 0
+                            ? t("dashboard.learningPathSwitcher.remaining", {
+                                count: remaining,
+                              })
+                            : t("dashboard.learningPathSwitcher.allDone")}
+                        </div>
+                      </button>
+                    );
+                  })
                 )}
+              </div>
+              <div className="px-3 pb-3 space-y-2">
+                {effectivePathId ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/learning-paths/${effectivePathId}`)}
+                    className="w-full px-3 py-2 rounded-lg border text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+                  >
+                    {t("dashboard.crossGraph.viewPath")}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleGenerateCrossGraph();
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
+                >
+                  {t("dashboard.crossGraph.generate")}
+                  <ArrowRight size={14} />
+                </button>
               </div>
             </section>
 

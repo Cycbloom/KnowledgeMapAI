@@ -159,6 +159,12 @@ describe("useCardReviewLogic", () => {
   it("错题重练推进到下一张时应重置 showAnswer 与 selectedOption", async () => {
     const { result } = renderHook_();
     act(() => { result.current.startCardReview([makeCard({ id: "1" }), makeCard({ id: "2" })]); });
+    // 记录起始状态：startCardReview 会对少数的卡片走随机洗牌，因此不假设当前卡的具体 id，
+    // 只记录"当前卡的 id"与"当前索引"，后续断言还原实际行为而非固定位置。
+    const answeredId = result.current.currentCard?.id;
+    expect(answeredId).toBeDefined();
+    const startIndex = result.current.currentCardIndex;
+    const startLength = result.current.quizCards.length;
     // 模拟：用户已作答并翻面
     act(() => {
       result.current.setShowAnswer(true);
@@ -166,12 +172,12 @@ describe("useCardReviewLogic", () => {
     });
     await act(async () => { await result.current.handleRate(1); });
     // 答错触发重练：索引前进，且下一张卡必须处于未翻面、无选中状态
-    expect(result.current.currentCardIndex).toBe(1);
+    expect(result.current.currentCardIndex).toBe(startIndex + 1);
     expect(result.current.showAnswer).toBe(false);
     expect(result.current.selectedOption).toBeNull();
-    // 该卡被插到队尾，等待再次练习
-    expect(result.current.quizCards).toHaveLength(3);
-    expect(result.current.quizCards[2].id).toBe("1");
+    // 刚答错的卡被插到队尾，等待再次练习（队列长度 +1）
+    expect(result.current.quizCards).toHaveLength(startLength + 1);
+    expect(result.current.quizCards[result.current.quizCards.length - 1].id).toBe(answeredId);
   });
 
   it("handleRate 在 mutation 失败时应该发布错误消息", async () => {

@@ -71,6 +71,10 @@ interface AIExpansionPanelProps {
   isRunning?: boolean;
   onEditPrompt?: (mode: ExpansionMode) => void;
   hasNodes?: boolean;
+  /** 仅深度拓展：隐藏宽度拓展入口，强制 depth 模式 */
+  depthOnly?: boolean;
+  /** 深度拓展全流程（init + 逐节点 expand）完成后触发，宿主可借此刷新依赖新节点的数据 */
+  onDepthExpandCompleted?: () => void;
 }
 
 const styleOptionDefs = [
@@ -131,9 +135,13 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
   isRunning = false,
   onEditPrompt,
   hasNodes = false,
+  depthOnly = false,
+  onDepthExpandCompleted,
 }) => {
   const { t } = useTranslation();
-  const [mode, setMode] = useState<ExpansionMode>(hasNodes ? 'width' : 'depth');
+  const [mode, setMode] = useState<ExpansionMode>(
+    depthOnly ? 'depth' : hasNodes ? 'width' : 'depth',
+  );
 
   const [depthStyle, setDepthStyle] = useState<DepthStyle>('academic');
   const [customPrompt, setCustomPrompt] = useState('');
@@ -334,6 +342,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
         }
 
         setDepthProgress({ status: 'completed', currentStep: t('graphEditor.graphMap.aiExpansion.completed'), nodesCreated: result?.coreNodes.length || 0 });
+        onDepthExpandCompleted?.();
       } else {
         if (selectedRelationTypes.length === 0) return;
         await onWidthExpand({
@@ -438,7 +447,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('graphEditor.graphMap.aiExpansion.expansionMethod')}
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className={`grid gap-2 ${depthOnly ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 <button
                   onClick={() => setMode('depth')}
                   disabled={isRunning}
@@ -456,23 +465,25 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                     {t('graphEditor.graphMap.aiExpansion.depthExpansionDesc')}
                   </p>
                 </button>
-                <button
-                  onClick={() => setMode('width')}
-                  disabled={isRunning}
-                  className={`p-3 rounded-lg border-2 transition-all text-left ${
-                    mode === 'width'
-                      ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                  } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <GitBranch className="w-4 h-4 text-emerald-600" />
-                    <span className="font-medium text-gray-900 dark:text-white">{t('graphEditor.graphMap.aiExpansion.widthExpansion')}</span>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {t('graphEditor.graphMap.aiExpansion.widthExpansionDesc')}
-                  </p>
-                </button>
+                {!depthOnly ? (
+                  <button
+                    onClick={() => setMode('width')}
+                    disabled={isRunning}
+                    className={`p-3 rounded-lg border-2 transition-all text-left ${
+                      mode === 'width'
+                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                    } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <GitBranch className="w-4 h-4 text-emerald-600" />
+                      <span className="font-medium text-gray-900 dark:text-white">{t('graphEditor.graphMap.aiExpansion.widthExpansion')}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {t('graphEditor.graphMap.aiExpansion.widthExpansionDesc')}
+                    </p>
+                  </button>
+                ) : null}
               </div>
             </div>
 

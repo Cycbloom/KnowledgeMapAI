@@ -16,6 +16,7 @@ import {
   Pencil,
   ChevronRight,
   Plus,
+  Network,
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { TaskSubtask } from "../../../types";
@@ -24,6 +25,10 @@ import { EmptyState } from "../../common/EmptyState";
 import { MasteryProgressBar } from "../MasteryProgressBar";
 import { useKnowledgePointMastery } from "@/hooks/useKnowledgePointMastery";
 import { useQuestionConfigModal } from "@/hooks/useQuestionConfigModal";
+import { useGraphData } from "../../../hooks/queries";
+import { useStore } from "../../../store/useStore";
+import { message } from "../../../utils/messageHelper";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 import type {
   LoopsDecision,
   SmallLoopDecision,
@@ -45,6 +50,10 @@ interface OverviewTabProps {
   graphId?: string;
   status?: string;
   onGoSubtasks?: () => void;
+  /** 由宿主（TaskWorkbench）在深度拓展完成后递增，触发本组件重载子任务列表 */
+  subtaskReloadKey?: number;
+  /** 批量深度拓展创建的后台任务 id 上报给宿主，供其监听完成后再刷新 */
+  onExpansionTasksCreated?: (taskIds: string[]) => void;
 }
 
 const STAGES: LearningState[] = ["learning", "review", "practice", "quiz"];
@@ -58,6 +67,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   graphId,
   status,
   onGoSubtasks,
+  subtaskReloadKey,
+  onExpansionTasksCreated,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -73,6 +84,74 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       })
     | undefined
   >(undefined);
+
+  // —— 图谱深度拓展：批量 expand_graph 后台任务 ——
+  // 复用 useGraphData 拿节点/边：识别顶层(core)节点并枚举，复用图编辑器 depth 拓展逻辑
+  const { data: graphData } = useGraphData(graphId ?? "");
+  const graphNodes = useMemo(() => graphData?.nodes ?? [], [graphData]);
+  const graphsEdges = useMemo(() => graphData?.edges ?? [], [graphData]);
+  const coreNodes = useMemo(
+    () => graphNodes.filter((n) => n?.level === "core"),
+    [graphNodes],
+  );
+  const hasCore = coreNodes.length > 0;
+
+  /** 深度拓展顶层(core)节点：逐个创建 expand_graph 后台任务（复用图编辑器 logic） */
+  const handleDeepExpand = async () => {
+    if (!graphId) return undefined;
+    if (coreNodes.length === 0) return undefined;
+    if (!(await asyncConfirm({
+      title: t("scheduler.taskWorkbench.overview.deepExpandConfirmTitle"),
+      message: t("scheduler.taskWorkbench.overview.deepExpandConfirmMsg", {
+        count: coreNodes.length,
+      }),
+    }))) {
+      return undefined;
+    }
+
+    const aiText = useStore.getState().user?.profile?.settings?.ai_config?.text;
+    const provider = aiText?.provider;
+    const model = aiText?.model;
+    const existingTitles = graphNodes.map((n) => n.title);
+    let created = 0;
+    const createdTaskIds: string[] = [];
+    try {
+      for (const node of coreNodes) {
+        // 现有子节点标题（目标节点直接出边）
+        const childIds = new Set<string>();
+        for (const e of graphsEdges) {
+          if (e.source_knowledge_point_id === node.id) {
+            childIds.add(e.target_knowledge_point_id);
+          }
+        }
+        const childTitles = graphNodes
+          .filter((n) => childIds.has(n.id))
+          .map((n) => n.title);
+        const createdTask = (await api.tasks.create({
+          type: "expand_graph",
+          payload: {
+            graph_id: graphId,
+            node_id: node.id,
+            node_title: node.title,
+            node_content: node.content,
+            existing_nodes: existingTitles,
+            child_nodes: childTitles,
+            provider,
+            model,
+          },
+        })) as { id?: string } | null;
+        if (createdTask?.id) createdTaskIds.push(createdTask.id);
+        created += 1;
+      }
+      // 上报创建的后台任务 id，由宿主监听全部完成后刷新任务/子任务
+      if (createdTaskIds.length > 0) onExpansionTasksCreated?.(createdTaskIds);
+      message.success(t("scheduler.taskWorkbench.overview.deepExpandStart", { count: created }));
+    } catch (error: unknown) {
+      message.error(t("scheduler.taskWorkbench.overview.deepExpandFail"));
+      console.error("Failed to create expand_graph tasks:", error);
+    }
+    return undefined;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -95,7 +174,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId]);
 
   const loadSubtasks = async () => {
@@ -113,6 +191,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     loadSubtasks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId]);
+
+  // 深度拓展完成后由宿主递增 subtaskReloadKey → 重新加载子任务
+  useEffect(() => {
+    if (subtaskReloadKey === undefined) return;
+    loadSubtasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtaskReloadKey]);
 
   const kpIds = useMemo(
     () => Array.from(new Set(subtasks.map((s) => s.knowledge_point_id))),
@@ -254,13 +339,26 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               {t("scheduler.taskWorkbench.overview.bigLoopTitle")}
             </h3>
           </div>
-          <button
-            onClick={() => navigate(createQuizForGraph(graphId))}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg border border-primary-200 dark:border-primary-500/30 transition-colors"
-          >
-            <Pencil size={13} />
-            {t("scheduler.taskWorkbench.overview.createQuiz")}
-          </button>
+          <div className="flex items-center gap-2">
+            {hasCore && graphId ? (
+              <button
+                type="button"
+                onClick={() => { void handleDeepExpand(); }}
+                title={t("scheduler.taskWorkbench.overview.deepExpandHint")}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg border border-primary-200 dark:border-primary-500/30 transition-colors"
+              >
+                <Network size={13} />
+                {t("scheduler.taskWorkbench.overview.deepExpand")}
+              </button>
+            ) : null}
+            <button
+              onClick={() => navigate(createQuizForGraph(graphId))}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg border border-primary-200 dark:border-primary-500/30 transition-colors"
+            >
+              <Pencil size={13} />
+              {t("scheduler.taskWorkbench.overview.createQuiz")}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-3">

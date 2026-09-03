@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useId, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import React, { useState, useEffect, useCallback, useId, useRef, useMemo, lazy, Suspense, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   ArrowLeft,
   Edit,
@@ -17,12 +17,15 @@ import {
   LayoutDashboard,
   Flame,
   CalendarClock,
+  Plus,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../services/api";
 import { queryKeys } from "../../../hooks/queries/config";
+import { useGraphData, useGraph } from "../../../hooks/queries";
+import { useTaskSettledInvalidator } from "../../../hooks/scheduler/useTaskSettledInvalidator";
 import { UserTaskDetail } from "../../../types";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../../../utils/formatters";
 import { message as messageHelper } from "../../../utils/messageHelper";
@@ -35,6 +38,12 @@ import { NotesTab } from "./NotesTab";
 import { OverviewTab } from "./OverviewTab";
 import { SaveAsTemplateModal } from "../SaveAsTemplateModal";
 import { Skeleton, SkeletonCard } from "@/components/common";
+
+const AIExpansionPanel = lazy(() =>
+  import("../../GraphMap/AIExpansionPanel").then((module) => ({
+    default: module.AIExpansionPanel,
+  })),
+);
 
 type WorkTab = "overview" | "notes" | "subtasks" | "executions" | "progress";
 
@@ -56,6 +65,176 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const { t } = useTranslation();
   const location = useLocation();
   const queryClient = useQueryClient();
+
+  // —— 深度拓展后台任务完成后，实时刷新任务详情列表（OverviewTab / SubtaskList） ——
+  const [subtaskReloadKey, setSubtaskReloadKey] = useState(0);
+  const [expansionTaskIds, setExpansionTaskIds] = useState<string[]>([]);
+
+  /** 深度拓展创建的后台任务全部终态后：递增 reloadKey 触发子任务列表重载，并刷新图谱缓存 */
+  useTaskSettledInvalidator({
+    taskIds: expansionTaskIds,
+    onAllSettled: () => {
+      setSubtaskReloadKey((prev) => prev + 1);
+      if (graphId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
+      }
+    },
+  });
+
+  const handleExpansionTasksCreated = useCallback((taskIds: string[]) => {
+    if (taskIds.length === 0) return;
+    setExpansionTaskIds((prev) => [...prev, ...taskIds]);
+  }, []);
+
+  const depthExpandReloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** 「生成节点」面板深度拓展完成后，同步刷新子任务进度列表。该路径无后台任务 id，
+   *  一次 init + 多次 expand 同步落库；子任务由后端 node_created 异步补建，故稍作延迟再重载。 */
+  const handleDepthExpandCompleted = useCallback(() => {
+    if (depthExpandReloadTimer.current) clearTimeout(depthExpandReloadTimer.current);
+    depthExpandReloadTimer.current = setTimeout(() => {
+      setSubtaskReloadKey((prev) => prev + 1);
+    }, 800);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (depthExpandReloadTimer.current) clearTimeout(depthExpandReloadTimer.current);
+    };
+  }, []);
+
+  // —— 空图「生成节点」：AI 智能拓展面板（仅深度），放在底部操作栏左端 ——
+  const graphId = task?.graph_id;
+  const { data: graphData } = useGraphData(graphId ?? "");
+  const graphNodes = useMemo(() => graphData?.nodes ?? [], [graphData]);
+  const coreNodes = useMemo(
+    () => graphNodes.filter((n) => n?.level === "core"),
+    [graphNodes],
+  );
+  const hasCore = coreNodes.length > 0;
+  const graphLoaded = graphData !== undefined;
+  // 空图/仅 root 无顶层节点 → 底部显示「生成节点」
+  const showGenerateNodes = !!graphId && graphLoaded && !hasCore;
+  const [aiExpansionOpen, setAiExpansionOpen] = useState(false);
+  const { data: graphMeta } = useGraph(graphId ?? "");
+  const graphTitle = graphMeta?.title ?? "";
+
+  const openGenerateNodes = () => {
+    if (!graphId) return;
+    setAiExpansionOpen(true);
+  };
+
+  /** 深展面板：初始化空图谱（生成 root + core 节点），复用 autoGraph.init + saveNodes */
+  const handleDepthExpand = async (config: {
+    style: "academic" | "practical" | "beginner" | "custom";
+    customPrompt?: string;
+    sources?: string[];
+    depth: number;
+  }): Promise<{
+    root: { title: string; content?: string };
+    coreNodes: Array<{ id?: string; title: string; content?: string }>;
+  } | null> => {
+    if (!graphId) return null;
+    try {
+      const result = await api.autoGraph.init({
+        topic: graphTitle,
+        style: config.style,
+        customPrompt: config.customPrompt,
+        sources: config.sources,
+        graph_id: graphId,
+      });
+      const nodes = [
+        { title: result.root.title, content: result.root.content, level: "root" },
+        ...result.coreNodes.map((n) => ({
+          title: n.title,
+          content: n.content,
+          level: n.level || "core",
+          parentId: "temp-0",
+        })),
+      ];
+      const saveResult = (await api.autoGraph.saveNodes({
+        graph_id: graphId,
+        nodes,
+      })) as { nodeMapping?: Record<string, { graphNodeId: string }> };
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
+      if (saveResult.nodeMapping) {
+        const coreNodesWithIds = result.coreNodes
+          .map((n, i) => ({
+            ...n,
+            id: saveResult.nodeMapping?.[`temp-${i + 1}`]?.graphNodeId,
+          }))
+          .filter((n): n is typeof n & { id: string } => Boolean(n.id));
+        return { root: result.root, coreNodes: coreNodesWithIds };
+      }
+      return { root: result.root, coreNodes: result.coreNodes };
+    } catch (error: unknown) {
+      console.error("Failed to init graph via AI panel:", error);
+      throw error;
+    }
+  };
+
+  /** 深展面板：对某 core 节点扩展子节点，复用 autoGraph.expand + saveNodes */
+  const handleDepthExpandNode = async (config: {
+    nodeId: string;
+    nodeTitle: string;
+    nodeContent?: string;
+    nodeLevel?: string;
+    style: "academic" | "practical" | "beginner" | "custom";
+    customPrompt?: string;
+    existingChildren?: Array<{ title: string }>;
+  }): Promise<Array<{ id?: string; title: string; content?: string }> | null> => {
+    if (!graphId) return null;
+    try {
+      const result = await api.autoGraph.expand({
+        node_id: config.nodeId,
+        node_title: config.nodeTitle,
+        node_content: config.nodeContent,
+        node_level: config.nodeLevel,
+        graph_id: graphId,
+        style: config.style,
+        customPrompt: config.customPrompt,
+        existing_children: config.existingChildren,
+      });
+      if (result.children.length > 0) {
+        const nodes = result.children.map((n) => ({
+          title: n.title,
+          content: n.content,
+          level: n.level || "sub",
+          parentId: config.nodeId,
+        }));
+        await api.autoGraph.saveNodes({ graph_id: graphId, nodes });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
+        return result.children;
+      }
+      return null;
+    } catch (error: unknown) {
+      console.error("Failed to expand node via AI panel:", error);
+      throw error;
+    }
+  };
+
+  /** 深展面板宽度（占位）：后端已有 infinite-expand 宽度后台任务 */
+  const handleWidthExpand = async (config: {
+    max_depth: number;
+    max_graphs_per_level: number;
+    relation_types: string[];
+    auto_generate_nodes: boolean;
+    node_depth: number;
+  }): Promise<void> => {
+    if (!graphId) return;
+    try {
+      await api.graphs.infiniteExpand(graphId, {
+        max_depth: config.max_depth,
+        max_graphs_per_level: config.max_graphs_per_level,
+        relation_types: config.relation_types,
+        auto_generate_nodes: config.auto_generate_nodes,
+        node_depth: config.node_depth,
+      });
+      messageHelper.success(t('scheduler.taskWorkbench.taskStarted'));
+    } catch (error: unknown) {
+      messageHelper.error(t('scheduler.taskWorkbench.taskStartFailed'));
+      console.error("Failed to start width expansion:", error);
+    }
+  };
 
   /** 开始/暂停/完成等状态变更后失效调度相关缓存，使任务调度页/首页反映最新状态 */
   const invalidateSchedulerChange = (taskId?: string) => {
@@ -613,6 +792,8 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                   graphId={task.graph_id}
                   status={task.status}
                   onGoSubtasks={() => setActiveTab("subtasks")}
+                  subtaskReloadKey={subtaskReloadKey}
+                  onExpansionTasksCreated={handleExpansionTasksCreated}
                 />
               </div>
             )}
@@ -641,7 +822,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 tabIndex={0}
                 className="h-full overflow-y-auto"
               >
-                <SubtaskList taskId={task.id} graphId={task.graph_id} />
+                <SubtaskList taskId={task.id} graphId={task.graph_id} subtaskReloadKey={subtaskReloadKey} />
               </div>
             )}
 
@@ -688,6 +869,16 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
             )}
           </div>
           <div className="flex items-center gap-3">
+            {showGenerateNodes && (
+              <button
+                type="button"
+                onClick={openGenerateNodes}
+                className="flex items-center gap-2 px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t('scheduler.taskWorkbench.overview.generateNodes')}
+              </button>
+            )}
             {task.status === "pending" && (
               <button
                 onClick={handleStartTask}
@@ -745,6 +936,22 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           }}
         />
       )}
+
+      {/* 空图「生成节点」AI 智能拓展面板（仅深度） */}
+      <Suspense fallback={null}>
+        <AIExpansionPanel
+          isOpen={aiExpansionOpen && !!graphId}
+          onClose={() => setAiExpansionOpen(false)}
+          sourceGraphId={graphId ?? ""}
+          sourceGraphTitle={graphTitle}
+          onDepthExpand={handleDepthExpand}
+          onDepthExpandNode={handleDepthExpandNode}
+          onWidthExpand={handleWidthExpand}
+          hasNodes={false}
+          depthOnly
+          onDepthExpandCompleted={handleDepthExpandCompleted}
+        />
+      </Suspense>
     </div>
   );
 };

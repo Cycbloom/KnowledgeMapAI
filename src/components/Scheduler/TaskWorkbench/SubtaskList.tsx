@@ -52,6 +52,8 @@ interface SubtaskListProps {
   knowledgePointId?: string;
   graphId?: string;
   className?: string;
+  /** 深度拓展完成后由宿主递增，触发本组件重载子任务列表 */
+  subtaskReloadKey?: number;
 }
 
 interface KnowledgePoint {
@@ -64,6 +66,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
   knowledgePointId: defaultKnowledgePointId,
   graphId,
   className = "",
+  subtaskReloadKey,
 }) => {
   const navigate = useNavigate();
   const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
@@ -105,6 +108,13 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     // 切换 task 后重置选择
     setSelectedKpIds(new Set());
   }, [taskId]);
+
+  // 深度拓展完成后由宿主递增 subtaskReloadKey → 重新加载子任务
+  useEffect(() => {
+    if (subtaskReloadKey === undefined) return;
+    loadSubtasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtaskReloadKey]);
 
   const toggleSelect = (kpId: string) => {
     setSelectedKpIds((prev) => {

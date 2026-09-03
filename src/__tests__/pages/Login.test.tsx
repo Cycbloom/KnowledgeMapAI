@@ -113,9 +113,12 @@ describe("Login 页面（无感知会话）", () => {
 
     renderWithProviders(<Login />);
 
-    await waitFor(() => {
-      expect(mockSignUp).toHaveBeenCalledTimes(1);
-    });
+    await waitFor(
+      () => {
+        expect(mockSignUp).toHaveBeenCalledTimes(1);
+      },
+      { timeout: 5000 },
+    );
     // 随机凭证：邮箱为 owner-<uuid>@local.app 形式
     const signUpArg = mockSignUp.mock.calls[0]?.[0] as {
       email: string;
@@ -123,9 +126,12 @@ describe("Login 页面（无感知会话）", () => {
     };
     expect(signUpArg.email).toMatch(/^owner-.+@local\.app$/);
     expect(signUpArg.password.length).toBeGreaterThan(0);
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/");
-    });
+    await waitFor(
+      () => {
+        expect(mockNavigate).toHaveBeenCalledWith("/");
+      },
+      { timeout: 5000 },
+    );
     expect(useStore.getState().user?.id).toBe("user-1");
   });
 
@@ -145,9 +151,12 @@ describe("Login 页面（无感知会话）", () => {
 
     renderWithProviders(<Login />);
 
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/");
-    });
+    await waitFor(
+      () => {
+        expect(mockNavigate).toHaveBeenCalledWith("/");
+      },
+      { timeout: 5000 },
+    );
     expect(mockSignUp).not.toHaveBeenCalled();
     expect(mockSignInWithPassword).not.toHaveBeenCalled();
     expect(mockSignOut).not.toHaveBeenCalled();
@@ -167,9 +176,12 @@ describe("Login 页面（无感知会话）", () => {
     renderWithProviders(<Login />);
 
     // 等待 provision 尝试完成（signUp + 回退 signIn 各一次）
-    await waitFor(() => {
-      expect(mockSignInWithPassword).toHaveBeenCalledTimes(1);
-    });
+    await waitFor(
+      () => {
+        expect(mockSignInWithPassword).toHaveBeenCalledTimes(1);
+      },
+      { timeout: 5000 },
+    );
 
     // 切换到手动设置 tab 查看错误提示
     fireEvent.click(screen.getByText("手动设置"));

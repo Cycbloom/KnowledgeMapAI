@@ -14,6 +14,12 @@ const commandInput = 'input[placeholder*="命令"], input[placeholder*="command"
 const helpHint = 'text=/输入 help 查看可用命令|Enter help to see available commands/';
 const historyButton = 'button[title="历史记录"], button[title="History"]';
 const clearOutputButton = 'button[title="清空输出"], button[title="Clear Output"]';
+// 控制台面板作用域：页面上可能存在其它包含 "KnowledgeMap" 文本的区域（如品牌标题），
+// 全局 text=/KnowledgeMap/ 会因 strict mode 匹配到多个元素而失败。
+// 所有命令输出/历史断言都必须限定在面板内。
+function getConsolePanel(page: Page) {
+  return page.getByTestId('console-panel');
+}
 
 // 等待 Dashboard 内容可见后通过快捷键打开控制台。
 // authenticatedPage fixture 仅等待 page load 事件，React 应用和 useGlobalShortcuts
@@ -28,10 +34,21 @@ async function openConsole(page: Page) {
     (res) => res.url().includes('/api/v1/graphs'),
     { timeout: 15000 },
   ).catch(() => {});
-  // 等待 useGlobalShortcuts 注册 Control+Shift+P 监听器
-  await page.waitForTimeout(500);
-  await page.keyboard.press('Control+Shift+P');
-  await expect(page.locator(consoleTitle)).toBeVisible({ timeout: 5000 });
+  // 打开控制台：useGlobalShortcuts 监听器在慢环境（CI）下注册延迟不定，
+  // 固定等待 + 单次按键会偶发失败。改为轮询重试：反复按 Ctrl+Shift+P，
+  // 直到控制台可见（每次尝试间留出监听器注册与 React 渲染的时间）。
+  const title = page.locator(consoleTitle);
+  for (let attempt = 0; attempt < 6; attempt++) {
+    await page.keyboard.press('Control+Shift+P');
+    try {
+      await title.waitFor({ state: 'visible', timeout: 1500 });
+      return;
+    } catch {
+      // 未打开，稍等后重试（可能 toggle 反向后再次打开）
+      await page.waitForTimeout(500);
+    }
+  }
+  await expect(title).toBeVisible({ timeout: 5000 });
 }
 
 test.describe('控制台功能测试', () => {
@@ -68,7 +85,7 @@ test.describe('控制台命令执行测试', () => {
     await input.press('Enter');
 
     // help 输出中硬编码 "📖 KnowledgeMap 控制台"
-    await expect(page.locator('text=/KnowledgeMap/')).toBeVisible({ timeout: 5000 });
+    await expect(getConsolePanel(page).locator('text=/KnowledgeMap/')).toBeVisible({ timeout: 5000 });
   });
 
   test('应该执行 version 命令', async ({ page }) => {
@@ -77,7 +94,7 @@ test.describe('控制台命令执行测试', () => {
     await input.press('Enter');
 
     // version 输出中硬编码 "📦 KnowledgeMap 控制台"
-    await expect(page.locator('text=/KnowledgeMap/')).toBeVisible({ timeout: 5000 });
+    await expect(getConsolePanel(page).locator('text=/KnowledgeMap/')).toBeVisible({ timeout: 5000 });
   });
 
   test('应该显示未知命令错误', async ({ page }) => {
@@ -94,7 +111,7 @@ test.describe('控制台命令执行测试', () => {
 
     await input.fill('help');
     await input.press('Enter');
-    await expect(page.locator('text=/KnowledgeMap/')).toBeVisible({ timeout: 5000 });
+    await expect(getConsolePanel(page).locator('text=/KnowledgeMap/')).toBeVisible({ timeout: 5000 });
 
     await input.fill('history');
     await input.press('Enter');
@@ -114,8 +131,9 @@ test.describe('控制台命令历史测试', () => {
     const historyBtn = page.locator(historyButton);
     await historyBtn.click();
 
-    // ConsoleHistory 组件中硬编码 "历史记录" 标题文本
-    await expect(page.locator('text=历史记录')).toBeVisible({ timeout: 3000 });
+    // ConsoleHistory 组件中硬编码 "历史记录" 标题文本（en-US 为 "History"）。
+    // 用 ^...$ 精确匹配，避免同时命中空状态标题 "No History"（含 "History" 子串）触发 strict mode。
+    await expect(getConsolePanel(page).locator('text=/^(历史记录|History)$/')).toBeVisible({ timeout: 3000 });
   });
 
   test('应该在历史记录中显示执行的命令', async ({ page }) => {
@@ -165,8 +183,8 @@ test.describe('控制台命令历史测试', () => {
     const historyBtn = page.locator(historyButton);
     await historyBtn.click();
 
-    // ConsoleHistory 搜索框 placeholder 硬编码为 "搜索..."
-    const searchInput = page.locator('input[placeholder="搜索..."]');
+    // ConsoleHistory 搜索框 placeholder（zh: 搜索... / en: Search...）
+    const searchInput = page.locator('input[placeholder*="搜索"], input[placeholder*="Search"]');
     await searchInput.fill('version');
 
     // 使用 button 限定选择器，避免匹配输出区域的表格单元格
@@ -186,7 +204,7 @@ test.describe('控制台自动补全测试', () => {
     await input.fill('h');
 
     // 输入 "h" 后应显示以 h 开头的命令建议（help, history, home）
-    await expect(page.locator('text=help')).toBeVisible({ timeout: 3000 });
+    await expect(getConsolePanel(page).locator('text=help')).toBeVisible({ timeout: 3000 });
   });
 
   test('应该通过 Tab 选择建议', async ({ page }) => {
@@ -204,7 +222,7 @@ test.describe('控制台自动补全测试', () => {
     // ConsoleInput 的 useEffect 更新补全建议（React 状态时序问题）。
     // "hel" 能可靠触发建议面板渲染（与 "应该通过 Tab 选择建议" 测试一致）。
     await input.fill('hel');
-    await expect(page.locator('text=/个建议/')).toBeVisible({ timeout: 3000 });
+    await expect(getConsolePanel(page).locator('text=/个建议|suggestions/')).toBeVisible({ timeout: 3000 });
 
     await input.press('ArrowDown');
     await input.press('Enter');
@@ -217,11 +235,11 @@ test.describe('控制台自动补全测试', () => {
     const input = page.locator(commandInput);
     await input.fill('h');
 
-    await expect(page.locator('text=help')).toBeVisible({ timeout: 3000 });
+    await expect(getConsolePanel(page).locator('text=help')).toBeVisible({ timeout: 3000 });
 
     await input.press('Escape');
 
-    await expect(page.locator('text=help')).not.toBeVisible({ timeout: 2000 });
+    await expect(getConsolePanel(page).locator('text=help')).not.toBeVisible({ timeout: 2000 });
   });
 });
 
@@ -269,13 +287,13 @@ test.describe('控制台输出测试', () => {
     await input.fill('help');
     await input.press('Enter');
 
-    await expect(page.locator('text=/KnowledgeMap/')).toBeVisible({ timeout: 5000 });
+    await expect(getConsolePanel(page).locator('text=/KnowledgeMap/')).toBeVisible({ timeout: 5000 });
 
     // 点击清空输出按钮（非 clear 命令），调用 clearOutput() 清空
     const clearBtn = page.locator(clearOutputButton);
     await clearBtn.click();
 
     // 输出为空后显示帮助提示
-    await expect(page.locator(helpHint)).toBeVisible({ timeout: 3000 });
+    await expect(getConsolePanel(page).locator(helpHint)).toBeVisible({ timeout: 3000 });
   });
 });

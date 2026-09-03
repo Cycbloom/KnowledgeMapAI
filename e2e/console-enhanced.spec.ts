@@ -20,6 +20,11 @@ const scrollMore = 'text=/向上滚动查看更多历史记录|Scroll up to view
 // ConsoleOutput 的滚动容器选择器（限定在 Console 面板 .fixed.bottom-4.right-4 内，
 // 避免匹配 Dashboard 等其他页面中同样使用 h-full.overflow-y-auto.custom-scrollbar 的容器）
 const outputScrollContainer = '.fixed.bottom-4.right-4 .h-full.overflow-y-auto.custom-scrollbar';
+// 控制台面板作用域：页面上可能存在其它包含相同文本的区域（如品牌标题），
+// 全局 text=/.../ 会因 strict mode 匹配到多个元素而失败。命令输出/补全断言须限定在面板内。
+function getConsolePanel(page: Page) {
+  return page.getByTestId('console-panel');
+}
 
 // 等待 Dashboard 内容可见后通过快捷键打开控制台。
 // authenticatedPage fixture 仅等待 page load 事件，React 应用和 useGlobalShortcuts
@@ -34,10 +39,21 @@ async function openConsole(page: Page) {
     (res) => res.url().includes('/api/v1/graphs'),
     { timeout: 15000 },
   ).catch(() => {});
-  // 等待 useGlobalShortcuts 注册 Control+Shift+P 监听器
-  await page.waitForTimeout(500);
-  await page.keyboard.press('Control+Shift+P');
-  await expect(page.locator(consoleTitle)).toBeVisible({ timeout: 5000 });
+  // 打开控制台：useGlobalShortcuts 监听器在慢环境（CI）下注册延迟不定，
+  // 固定等待 + 单次按键会偶发失败。改为轮询重试：反复按 Ctrl+Shift+P，
+  // 直到控制台可见（每次尝试间留出监听器注册与 React 渲染的时间）。
+  const title = page.locator(consoleTitle);
+  for (let attempt = 0; attempt < 6; attempt++) {
+    await page.keyboard.press('Control+Shift+P');
+    try {
+      await title.waitFor({ state: 'visible', timeout: 1500 });
+      return;
+    } catch {
+      // 未打开，稍等后重试（可能 toggle 反向后再次打开）
+      await page.waitForTimeout(500);
+    }
+  }
+  await expect(title).toBeVisible({ timeout: 5000 });
 }
 
 test.describe('控制台日志折叠功能测试', () => {
@@ -89,7 +105,7 @@ test.describe('控制台历史命令导航功能测试', () => {
     // ConsoleInput 的 useEffect 更新补全建议（React 状态时序问题）。
     // "hel" 能可靠触发建议面板渲染（与 Tab 选择建议的测试一致）。
     await input.fill('hel');
-    await expect(page.locator('text=/个建议/')).toBeVisible({ timeout: 3000 });
+    await expect(getConsolePanel(page).locator('text=/个建议|suggestions/')).toBeVisible({ timeout: 3000 });
 
     await input.press('ArrowUp');
     await input.press('Tab');

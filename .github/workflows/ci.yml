@@ -53,6 +53,14 @@ jobs:
         # 在运行测试前为系统 Node.js 重新编译。
         run: npm rebuild better-sqlite3
 
+      - name: Provision better-sqlite3 Node-ABI copy
+        # vitest 通过别名把 better-sqlite3 指向 .toolcache/better-sqlite3-node（Node ABI 副本），
+        # 该目录仅存在于本地（被 gitignore）。CI 是全新检出，必须显式提供：
+        # 将刚为重编译为系统 Node ABI 的 node_modules 副本同步到该路径。
+        run: |
+          mkdir -p .toolcache/better-sqlite3-node
+          cp -r node_modules/better-sqlite3/. .toolcache/better-sqlite3-node/
+
       - name: Run Tests (with coverage)
         run: npm run test:coverage
 

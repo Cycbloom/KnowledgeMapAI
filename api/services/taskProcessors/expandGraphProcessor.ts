@@ -12,6 +12,7 @@ import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers";
 import { getNextLevel } from "../../utils/levelUtils";
 import { notDeleted } from "../common/softDeleteHelper";
 import { cacheService, CacheKeys } from "../common/cacheService";
+import { graphTaskService } from "../scheduler/graphTaskService";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -257,6 +258,22 @@ export class ExpandGraphProcessor implements TaskProcessor {
       if (graphId) {
         await cacheService.del(CacheKeys.GRAPH_NODES(userId, graphId));
         await cacheService.del(CacheKeys.GRAPH_NODES("public", graphId));
+      }
+
+      // 深度拓展新建了知识点 → 同步图谱大任务：为每个新知识点补建子任务并重算大任务进度。
+      // expand_graph 走 RPC 直建节点不会发 node_created，故此处显式调用同步。
+      if (graphId) {
+        try {
+          await graphTaskService.syncTaskWithGraphChanges(supabase, graphId);
+        } catch (err) {
+          logger.warn(
+            "[ExpandGraphProcessor] sync task after expansion failed",
+            {
+              graphId,
+              error: err instanceof Error ? err.message : String(err),
+            },
+          );
+        }
       }
 
       logger.info(

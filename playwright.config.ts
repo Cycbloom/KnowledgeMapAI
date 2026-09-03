@@ -75,7 +75,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'npm run server:start',
-      url: `http://localhost:${apiPort}/api/health/system`,
+      url: `http://localhost:${apiPort}/api/v1/health/system`,
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
       stdout: 'pipe',

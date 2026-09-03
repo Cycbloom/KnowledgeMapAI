@@ -31,10 +31,15 @@ vi.mock("../../utils/supabase", () => ({
   resetSupabaseClient: vi.fn(),
 }));
 
-vi.mock("@/config/authConfig", async () => {
+// 用与 Login.tsx 相同的相对路径 mock authConfig，避免依赖 @/ 别名。
+// @/ 别名在 vitest 的模块解析里未必与组件实际使用的相对 import 归一化成同一
+// 模块 ID；若不归一化，mock 不会生效，组件会走真实 isSupabaseConfigured()
+// （依赖 VITE_SUPABASE_URL 环境变量）。CI 无该环境变量时会返回 false，
+// 导致 ensureOwnerSession 从未执行、三个 auth mock 都不被调用。
+vi.mock("../../config/authConfig", async () => {
   const actual =
-    await vi.importActual<typeof import("@/config/authConfig")>(
-      "@/config/authConfig",
+    await vi.importActual<typeof import("../../config/authConfig")>(
+      "../../config/authConfig",
     );
   return {
     ...actual,

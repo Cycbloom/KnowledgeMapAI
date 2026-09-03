@@ -49,9 +49,8 @@ async function switchToQuadrantView(page: Page): Promise<void> {
 async function switchToMindmapView(page: Page): Promise<void> {
   const viewDropdown = page.getByRole("button", { name: /^视图$|^View$/ });
   await viewDropdown.click();
-  const mindmapItem = page.getByRole("button", {
-    name: /^思维导图$|^Mind Map$/,
-  });
+  // 视图项带键盘快捷键后缀（如 "Mind Map Ctrl+1"），用子串匹配而非精确匹配
+  const mindmapItem = page.getByRole("button", { name: /Mind Map|思维导图/ });
   await mindmapItem.click();
   await page.waitForTimeout(500);
 }
@@ -173,11 +172,11 @@ test.describe("象限视图测试", () => {
 
     await switchToQuadrantView(page);
 
-    // QuadrantCanvas 的缩放指示器使用硬编码中文 "缩放: NN%"
-    const zoomIndicator = page.locator("text=/缩放.*%/");
+    // QuadrantCanvas 缩放指示器（zh: "缩放: NN%" / en: "Zoom: NN%"，locale 决定）
+    const zoomIndicator = page.locator("text=/缩放.*%|Zoom:.*%/");
     await expect(zoomIndicator).toBeVisible({ timeout: 5000 });
 
-    // QuadrantCanvas 底部右侧有 3 个缩放按钮（放大、缩小、重置）
+    // QuadrantCanvas 底部右侧有 3 个缩放按钮（放大、缩小、重置）。
     const zoomButtons = page.locator(
       ".absolute.bottom-4.right-4 button:has(svg)",
     );

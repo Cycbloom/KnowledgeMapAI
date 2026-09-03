@@ -201,6 +201,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 
   return (
     <motion.nav
+      data-testid="mobile-bottom-nav"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "tween", duration: 0.3 }}

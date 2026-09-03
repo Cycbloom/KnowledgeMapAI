@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 const MOBILE_PORTRAIT = { width: 390, height: 844 };
 const MOBILE_LANDSCAPE = { width: 844, height: 390 };
@@ -21,14 +21,17 @@ test.describe('移动端体验测试', () => {
     expect(viewport?.height).toBe(MOBILE_PORTRAIT.height);
   });
 
-  test('应该显示移动端底部导航', async ({ page }) => {
+  test('应该显示移动端底部导航', async ({ authenticatedPage: page }) => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
 
-    const bottomNav = page.locator('[class*="MobileBottomNav"], [data-testid="mobile-bottom-nav"], nav').first();
+    // 精确定位底部导航：页面顶部有 Breadcrumb 等其它 <nav>，用 testid 避免匹配错误
+    const bottomNav = page.locator('[data-testid="mobile-bottom-nav"]');
     await expect(bottomNav).toBeVisible({ timeout: 5000 });
 
+    // 导航项由 kernel 插件异步加载（未认证时为空），等待至少一个可点击项出现
+    await expect(bottomNav.locator('a, button').first()).toBeVisible({ timeout: 10000 });
     const navItems = await bottomNav.locator('a, button').all();
     expect(navItems.length).toBeGreaterThan(0);
 

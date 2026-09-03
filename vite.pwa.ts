@@ -1,8 +1,39 @@
 import { VitePWA } from "vite-plugin-pwa";
+import type { Plugin } from "vite";
+
+/**
+ * Electron 构建使用：提供 `virtual:pwa-register/react` 虚拟模块的解析，
+ * 使其能被打包（App.tsx 中 <LazyUpdatePrompt> 始终会被编译进 chunk，
+ * 即使 electron 运行时条件渲染为不挂载）。Electron 端不注册 Service Worker，
+ * 因此该 stub 的 `useRegisterSW` 返回永远不触发更新的 no-op 状态。
+ */
+function electronPwaStubPlugin(): Plugin {
+  const virtualId = "virtual:pwa-register/react";
+  const resolvedId = "\0" + virtualId;
+  return {
+    name: "electron-pwa-stub",
+    resolveId(id) {
+      if (id === virtualId) return resolvedId;
+    },
+    load(id) {
+      if (id === resolvedId) {
+        return `
+          export function useRegisterSW() {
+            return {
+              needRefresh: [false, () => undefined],
+              offlineReady: [false, () => undefined],
+              updateServiceWorker: async () => undefined,
+            };
+          }
+        `;
+      }
+    },
+  };
+}
 
 export function getPwaPlugins(isElectronBuild: boolean) {
   if (isElectronBuild) {
-    return [];
+    return [electronPwaStubPlugin()];
   }
 
   return [

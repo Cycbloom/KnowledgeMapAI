@@ -190,9 +190,12 @@ export class KnowledgePointService {
         const newTitleHash = computeTextHash(resolvedTitle);
         await cacheService.del(CacheKeys.EMBEDDING(newTitleHash));
       }
-      // 删除原标题的缓存（标题变更后旧缓存不再有效）
-      if (oldTitle && oldTitle !== resolvedTitle) {
-        const oldTitleHash = computeTextHash(oldTitle);
+      // 删除原标题的缓存（标题变更后旧缓存不再有效）。
+      // oldTitle 来自 JSONB 列（可能为语言映射对象），须先解析为字符串再计算哈希，
+      // 否则 computeTextHash 会对对象调用 Hash.update 抛错，导致更新节点标题 500。
+      const resolvedOldTitle = resolveLocalizedText(oldTitle);
+      if (resolvedOldTitle && resolvedOldTitle !== resolvedTitle) {
+        const oldTitleHash = computeTextHash(resolvedOldTitle);
         await cacheService.del(CacheKeys.EMBEDDING(oldTitleHash));
       }
     }

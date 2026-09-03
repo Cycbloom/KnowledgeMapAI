@@ -9,7 +9,7 @@ import type { Plugin } from "vite";
  */
 function electronPwaStubPlugin(): Plugin {
   const virtualId = "virtual:pwa-register/react";
-  const resolvedId = "\0" + virtualId;
+  const resolvedId = `\u0000${virtualId}`;
   return {
     name: "electron-pwa-stub",
     resolveId(id) {

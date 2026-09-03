@@ -1,11 +1,11 @@
 name: Setup Environment
-description: Checkout code, setup Node.js 20 with npm cache, and install dependencies
+description: Setup Node.js 20 with npm cache, and install dependencies
 
+# 注意：本 action 不再执行 checkout。本地自定义 action 需要在 runner 上先有代码才能被解析，
+# 因此每个 job 都必须在使用本 action 之前显式执行 actions/checkout。
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:

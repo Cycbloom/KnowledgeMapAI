@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
 
       - name: Lint
@@ -44,6 +45,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
 
       - name: Build Electron (Windows)
@@ -64,6 +66,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
 
       - name: Build Electron (macOS)
@@ -86,6 +89,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
 
       - name: Install Linux Dependencies

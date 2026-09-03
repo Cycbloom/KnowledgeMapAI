@@ -83,6 +83,13 @@
     "generated": "已生成跨图谱学习路径，共 {{count}} 张图谱",
     "generateFailed": "生成跨图谱学习路径失败"
   },
+  "learningPathSwitcher": {
+    "title": "学习路径",
+    "progress": "{{completed}}/{{total}}",
+    "remaining": "待学 {{count}} 个",
+    "allDone": "全部完成",
+    "others": "其他"
+  },
   "firstRunHint": {
     "title": "欢迎使用 KnowledgeMap",
     "description": "点击这里创建你的第一个知识图谱",

@@ -83,6 +83,13 @@
     "generated": "Cross-graph learning path generated with {{count}} graphs",
     "generateFailed": "Failed to generate cross-graph learning path"
   },
+  "learningPathSwitcher": {
+    "title": "Learning Path",
+    "progress": "{{completed}}/{{total}}",
+    "remaining": "{{count}} to learn",
+    "allDone": "All done",
+    "others": "Others"
+  },
   "firstRunHint": {
     "title": "Welcome to KnowledgeMap",
     "description": "Click here to create your first knowledge graph",

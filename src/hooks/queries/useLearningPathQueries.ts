@@ -51,6 +51,7 @@ export const useLearningPath = (id: string) => {
         nodes?: Array<{
           id: string;
           knowledge_point_id?: string;
+          graph_id?: string;
           title: string;
           description?: string;
           status?: NodeStatus;

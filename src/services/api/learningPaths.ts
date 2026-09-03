@@ -59,6 +59,9 @@ export interface LearningPathResponse {
   updated_at: string;
   nodes?: LearningPathNodeResponse[];
   progress?: LearningPathProgressSummary;
+  /** list 接口平铺返回的计数（有 internal 项目使用） */
+  nodes_count?: number;
+  completed_nodes_count?: number;
 }
 
 /**

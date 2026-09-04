@@ -5,6 +5,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { smartTaskLinker } from "./smartTaskLinker";
 import { learningPathService } from "../study/learningPathService";
+import { pathSchedulerService } from "./planning/pathSchedulerService";
 import { DEFAULT_LEARNING_PATH_TITLE } from "../../../shared/constants/taskTitles";
 
 export interface NextScheduledSubtask {
@@ -64,6 +65,9 @@ class GraphLearningLauncherService {
       path.id,
     );
 
+    // 3.5 全自动排课（fire-and-forget，不阻塞学习启动）
+    void this.triggerAutoPlan(supabase, userId, path.id);
+
     // 4. 已按路径排序的子任务列表 + 首个待执行子任务
     const totalSubtaskIds = await this.listOrderedSubtaskIds(supabase, graphTaskId);
     const nextSubtask = await this.findNextSubtask(supabase, graphTaskId);
@@ -88,6 +92,22 @@ class GraphLearningLauncherService {
       pathReused: !!existingPath,
       reordered,
     };
+  }
+
+  private async triggerAutoPlan(
+    supabase: SupabaseClient,
+    userId: string,
+    pathId: string,
+  ): Promise<void> {
+    try {
+      await pathSchedulerService.planPath(supabase, userId, pathId);
+      logger.info("[GraphLearningLauncher] auto plan path done", { pathId });
+    } catch (error) {
+      logger.warn("[GraphLearningLauncher] auto plan path failed", {
+        pathId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   private async findActivePathForGraph(

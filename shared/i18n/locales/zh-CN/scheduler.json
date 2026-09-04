@@ -1715,7 +1715,9 @@
       "execution": "执行记录"
     },
     "executionSummary": "✓ {{title}}",
-    "executionDescription": "实际执行时间: {{minutes}} 分钟"
+    "executionDescription": "实际执行时间: {{minutes}} 分钟",
+    "pathSchedule": "路径排课",
+    "pathScheduleDesc": "路径排课 · {{count}} 个学习目标"
   },
   "systemTask": {
     "errors": {

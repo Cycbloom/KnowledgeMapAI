@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import i18next from "i18next";
 import { toIcsUtcTimestamp } from "@shared/utils/dateFormat";
+import { resolveLocalizedText } from "../../../shared/utils/localization";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -148,7 +149,88 @@ class CalendarService {
       status: task.status,
     }));
 
+    // 路径排课图层：学习路径知识点排期（learning_path_schedule）
+    const scheduleEvents = await this.getScheduleEvents(
+      supabase,
+      userId,
+      start,
+      end,
+    );
+    if (scheduleEvents.length > 0) events.push(...scheduleEvents);
+
     return events;
+  }
+
+  /**
+   * 路径排课事件（只含 learning_path_schedule，供前端日历「路径排课」图层）。
+   * 同一知识库按日期聚合，事件携带 knowledgePointId / scheduledDate 供跳转与去重。
+   */
+  async getScheduleEvents(
+    supabase: SupabaseClient,
+    userId: string,
+    start?: string,
+    end?: string,
+  ): Promise<
+    Array<{
+      id: string;
+      title: string;
+      description: string;
+      start: string;
+      end: string;
+      allDay: boolean;
+      type: "path_schedule";
+      color: string;
+      status: string | null;
+      estimated_duration: undefined;
+      knowledgePointId: string | null;
+      scheduledDate: string | null;
+    }
+  >> {
+    const scheduleStart = start ? start.slice(0, 10) : undefined;
+    const scheduleEnd = end ? end.slice(0, 10) : undefined;
+
+    let scheduleQuery = supabase
+      .from("learning_path_schedule")
+      .select("id, knowledge_point_id, scheduled_date, source_path_ids, status, knowledge_points(title)")
+      .eq("user_id", userId);
+
+    if (scheduleStart) {
+      scheduleQuery = scheduleQuery.gte("scheduled_date", scheduleStart);
+    }
+    if (scheduleEnd) {
+      scheduleQuery = scheduleQuery.lte("scheduled_date", scheduleEnd);
+    }
+
+    const { data: schedule, error: scheduleError } = await scheduleQuery;
+    if (scheduleError) return [];
+    if (!schedule || schedule.length === 0) return [];
+
+    return schedule.map((row) => {
+      const kp = (
+        row as unknown as {
+          knowledge_points?: { title?: string | Record<string, string> } | null;
+        }
+      ).knowledge_points;
+      return {
+        id: `schedule-${row.id}`,
+        title: resolveLocalizedText(kp?.title),
+        description: i18next.t("scheduler.calendarService.pathScheduleDesc", {
+          count:
+            row.source_path_ids && row.source_path_ids.length > 0
+              ? row.source_path_ids.length
+              : 1,
+        }),
+        start: `${row.scheduled_date}T00:00:00.000Z`,
+        end: `${row.scheduled_date}T23:59:59.000Z`,
+        allDay: true,
+        type: "path_schedule",
+        color: "purple",
+        status: row.status,
+        estimated_duration: undefined,
+        knowledgePointId: row.knowledge_point_id,
+        scheduledDate: row.scheduled_date,
+      };
+    });
   }
 
   private generateICSContent(tasks: CalendarTask[], executions: CalendarExecution[]): string {

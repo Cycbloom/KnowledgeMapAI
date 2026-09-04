@@ -15,6 +15,14 @@ import { notDeleted } from "../common/softDeleteHelper";
 /** 记忆打断阈值：到期复习队列里 overdue 卡片达到该数量时，优先中断当前学习去复习 */
 export const REVIEW_INTERRUPT_OVERDUE_THRESHOLD = 3;
 
+/** 统一 YYYY-MM-DD 本地日期字符串（本地时钟，避免 UTC 偏移） */
+function toDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export interface DueReviewItem {
   cardId: string;
   knowledgePointId: string;
@@ -257,15 +265,18 @@ class SchedulerDecisionService {
         }
       }
     }
-    return this.pickSubtask(supabase, taskId);
+    return this.pickSubtask(supabase, taskId, userId);
   }
 
   /**
    * 小循环：默认按 position 挑任务下第一个待执行子任务。
+   * 当提供 userId 且存在「路径排课」（计划驱动执行）时，优先选择：
+   *   知识点排期=今天 或 已过期未完成 的子任务；无排期命中时回退到原 position 逻辑。
    */
   private async pickSubtask(
     supabase: SupabaseClient,
     taskId: string,
+    userId?: string,
   ): Promise<
     | {
         id: string;
@@ -286,20 +297,88 @@ class SchedulerDecisionService {
       .eq("task_id", taskId)
       .not("learning_path_node_id", "is", null)
       .in("status", ["pending", "in_progress"])
-      .order("position", { ascending: true })
-      .limit(1);
+      .order("position", { ascending: true });
 
-    const raw = data?.[0];
+    const rows = data ?? [];
+    if (rows.length === 0) return undefined;
+
+    const raw = userId
+      ? await this.pickBySchedulePriority(supabase, userId, rows)
+      : rows[0];
     return raw ? this.mapSubtask(raw) : undefined;
+  }
+
+  /**
+   * 计划驱动执行：在待执行子任务中，优先选择「其知识点排期=今天或已过期未完成」的子任务。
+   * 无排期命中（或排期查询异常）时回退到第一个（原 position 逻辑）。
+   */
+  private async pickBySchedulePriority(
+    supabase: SupabaseClient,
+    userId: string,
+    rows: Array<{
+      id: string;
+      title?: string;
+      knowledge_point_id?: string | null;
+      learning_state?: string;
+      position?: number | null;
+      state_history?: StateHistoryEntry[] | null;
+      knowledge_points?: { mastery_level: number | null }[] | null;
+    }>,
+  ): Promise<
+    | {
+        id: string;
+        title?: string;
+        knowledge_point_id?: string | null;
+        learning_state?: string;
+        position?: number | null;
+        state_history?: StateHistoryEntry[] | null;
+        knowledge_points?: { mastery_level: number | null }[] | null;
+      }
+    | undefined
+  > {
+    const priority = await this.schedulePriorityKpIds(supabase, userId, new Date());
+    if (!priority || priority.size === 0) return rows[0];
+
+    const prefer = rows.find(
+      (r) => !!r.knowledge_point_id && priority.has(r.knowledge_point_id),
+    );
+    return prefer ?? rows[0];
+  }
+
+  /** 查询用户「排期=今天或已过期未完成」的知识点集合；无排期数据返回 null（回退原逻辑） */
+  private async schedulePriorityKpIds(
+    supabase: SupabaseClient,
+    userId: string,
+    now: Date,
+  ): Promise<Set<string> | null> {
+    const { data, error } = await supabase
+      .from("learning_path_schedule")
+      .select("knowledge_point_id")
+      .eq("user_id", userId)
+      .lte("scheduled_date", toDateString(now))
+      .in("status", ["scheduled", "completed"]);
+
+    if (error) {
+      logger.warn("[SchedulerDecision] schedulePriorityKpIds error", {
+        error: error.message,
+      });
+      return null;
+    }
+    if (!data || data.length === 0) return null;
+    const set = new Set<string>();
+    for (const r of data) {
+      if (r.knowledge_point_id) set.add(r.knowledge_point_id);
+    }
+    return set;
   }
 
   private mapSubtask(
     raw: {
       id: string;
-      title?: string;
-      knowledge_point_id?: string;
-      learning_state?: string;
-      position?: number;
+      title?: string | null;
+      knowledge_point_id?: string | null;
+      learning_state?: string | null;
+      position?: number | null;
       state_history?: StateHistoryEntry[] | null;
       knowledge_points?: { mastery_level: number | null }[] | null;
     },
@@ -312,7 +391,7 @@ class SchedulerDecisionService {
     mastery: number;
     stateHistory?: StateHistoryEntry[];
   } {
-    const rawLearningState = raw.learning_state;
+    const rawLearningState = raw.learning_state ?? undefined;
     const learningState = ["learning", "review", "practice", "quiz"].includes(
       rawLearningState ?? "",
     )
@@ -321,10 +400,10 @@ class SchedulerDecisionService {
 
     return {
       id: raw.id,
-      title: raw.title,
-      knowledgePointId: raw.knowledge_point_id,
+      title: raw.title ?? undefined,
+      knowledgePointId: raw.knowledge_point_id ?? undefined,
       learningState,
-      position: raw.position,
+      position: raw.position ?? undefined,
       mastery: raw.knowledge_points?.[0]?.mastery_level ?? 0,
       stateHistory: raw.state_history ?? [],
     };
@@ -581,7 +660,14 @@ class SchedulerDecisionService {
     const progressCandidates = recommendations.filter(
       (rec) => rec.task.task_type === "graph_learning",
     );
-    const topRec = progressCandidates[0] ?? recommendations[0];
+    // 排期窗口优先级：已到/已过窗口的图优先推进，未到窗口的压后（无排期信息则行为不变）
+    const orderedCandidates = await this.reorderByScheduleWindow(
+      supabase,
+      userId,
+      now,
+      progressCandidates,
+    );
+    const topRec = orderedCandidates[0] ?? recommendations[0];
     if (!topRec) return null;
 
     const task = topRec.task;
@@ -594,6 +680,65 @@ class SchedulerDecisionService {
       deadline: task.deadline ?? undefined,
       score: topRec.score,
     };
+  }
+
+  /**
+   * 大循环：排期窗口优先级因子。
+   * 依据图谱 active 学习路径的窗口(scheduled_start_date)，把已到/已过期窗口的图排到前面，
+   * 未到窗口的图压后；无排期信息或少于2个候选时保持原顺序（安全回退）。
+   */
+  private async reorderByScheduleWindow<T extends { task: { graph_id?: string | null } }>(
+    supabase: SupabaseClient,
+    userId: string,
+    now: Date,
+    candidates: T[],
+  ): Promise<T[]> {
+    if (candidates.length < 2) return candidates;
+    const graphIds = Array.from(
+      new Set(
+        candidates
+          .map((c) => c.task.graph_id)
+          .filter((g): g is string => !!g),
+      ),
+    );
+    if (graphIds.length === 0) return candidates;
+
+    const today = toDateString(now);
+    const startedByGraph = new Map<string, boolean>();
+    const { data, error } = await supabase
+      .from("learning_paths")
+      .select("source_graph_id, scheduled_start_date")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .in("source_graph_id", graphIds)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      logger.warn("[SchedulerDecision] reorderByScheduleWindow error", {
+        error: error.message,
+      });
+      return candidates;
+    }
+    for (const row of data ?? []) {
+      const gid = row.source_graph_id as string | null;
+      if (!gid || startedByGraph.has(gid)) continue;
+      startedByGraph.set(
+        gid,
+        !row.scheduled_start_date ||
+          row.scheduled_start_date <= today,
+      );
+    }
+
+    if (startedByGraph.size === 0) return candidates;
+
+    const started: T[] = [];
+    const notStarted: T[] = [];
+    for (const c of candidates) {
+      const gid = c.task.graph_id;
+      if (gid && startedByGraph.get(gid) === false) notStarted.push(c);
+      else started.push(c);
+    }
+    return notStarted.length > 0 ? [...started, ...notStarted] : candidates;
   }
 
   /**

@@ -38,9 +38,13 @@ export interface CalendarEvent {
   /** 从 UserTask.scheduled_end 映射 */
   end?: UserTask["scheduled_end"];
   /** 从 UserTask.tags 计算：包含"study"→study，包含"review"→review，否则→task */
-  type: "task" | "study" | "review" | "other";
+  type: "task" | "study" | "review" | "other" | "path_schedule";
   /** 从 UserTask.priority 计算：4→red，3→orange，其他→blue */
   color?: string;
+  /** 路径排课事件特有字段：知识点 ID（用于跳转学习） */
+  knowledgePointId?: string | null;
+  /** 路径排课事件特有字段：排期日期 */
+  scheduledDate?: string | null;
   /** 从 UserTask.scheduled_start 计算：无 scheduled_start 时为 true */
   allDay?: boolean;
   /** 从 UserTask.estimated_duration 映射 */

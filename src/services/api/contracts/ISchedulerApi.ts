@@ -5,6 +5,7 @@ import type {
   NextStepDecision,
   SmallLoopDecision,
 } from "../modules/scheduler/orchestrator";
+import type { CalendarScheduleEvent } from "../modules/scheduler/calendarSchedule";
 import type {
   StartActivityData,
   AppendActivityData,
@@ -312,6 +313,13 @@ export interface ISchedulerSystemTasksApi {
   getSystemTaskStats: () => Promise<SystemTaskStats>;
 }
 
+export interface ISchedulerCalendarScheduleApi {
+  getScheduleEvents: (
+    start?: string,
+    end?: string,
+  ) => Promise<CalendarScheduleEvent[]>;
+}
+
 // --- Combined type ---
 
 export type ISchedulerApi = ISchedulerTasksApi &
@@ -331,4 +339,5 @@ export type ISchedulerApi = ISchedulerTasksApi &
   ISchedulerPathTasksApi &
   ISchedulerActivitiesApi &
   ISchedulerOrchestratorApi &
-  ISchedulerSystemTasksApi;
+  ISchedulerSystemTasksApi &
+  ISchedulerCalendarScheduleApi;

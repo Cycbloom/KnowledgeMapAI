@@ -39,6 +39,9 @@ export type {
   SystemTaskStats,
 } from "./systemTasks";
 
+export { calendarScheduleApi } from "./calendarSchedule";
+export type { CalendarScheduleEvent } from "./calendarSchedule";
+
 export type {
   UserTask,
   TaskType,
@@ -84,6 +87,7 @@ import { pathTasksApi } from "./pathTasks";
 import { activitiesApi } from "./activities";
 import { orchestratorApi } from "./orchestrator";
 import { systemTasksApi } from "./systemTasks";
+import { calendarScheduleApi } from "./calendarSchedule";
 
 export const schedulerApi = {
   ...tasksApi,
@@ -104,6 +108,7 @@ export const schedulerApi = {
   ...activitiesApi,
   ...orchestratorApi,
   ...systemTasksApi,
+  ...calendarScheduleApi,
 };
 
 // Type assertion to ensure schedulerApi satisfies ISchedulerApi at compile time

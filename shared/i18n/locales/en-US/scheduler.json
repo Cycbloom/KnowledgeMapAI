@@ -1715,7 +1715,9 @@
       "execution": "Execution Record"
     },
     "executionSummary": "✓ {{title}}",
-    "executionDescription": "Actual execution time: {{minutes}} minutes"
+    "executionDescription": "Actual execution time: {{minutes}} minutes",
+    "pathSchedule": "Path Schedule",
+    "pathScheduleDesc": "Path schedule · {{count}} learning goal(s)"
   },
   "systemTask": {
     "errors": {

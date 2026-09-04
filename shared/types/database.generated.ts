@@ -1713,6 +1713,67 @@ export type Database = {
           },
         ]
       }
+      learning_path_schedule: {
+        Row: {
+          created_at: string | null
+          estimated_time: number | null
+          id: string
+          knowledge_point_id: string
+          path_id: string | null
+          scheduled_date: string
+          source_path_ids: string[] | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          estimated_time?: number | null
+          id?: string
+          knowledge_point_id: string
+          path_id?: string | null
+          scheduled_date: string
+          source_path_ids?: string[] | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          estimated_time?: number | null
+          id?: string
+          knowledge_point_id?: string
+          path_id?: string | null
+          scheduled_date?: string
+          source_path_ids?: string[] | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_path_schedule_knowledge_point_id_fkey"
+            columns: ["knowledge_point_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_points"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_path_schedule_path_id_fkey"
+            columns: ["path_id"]
+            isOneToOne: false
+            referencedRelation: "learning_paths"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_path_schedule_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       learning_session_results: {
         Row: {
           card_id: string

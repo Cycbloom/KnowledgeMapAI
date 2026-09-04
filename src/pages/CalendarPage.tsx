@@ -5,6 +5,7 @@ import { useTheme } from "../hooks";
 import {
   useCalendarNavigation,
   useCalendarEvents,
+  useCalendarScheduleEvents,
   useCalendarExecutions,
   useCalendarActivityStats,
   useCalendarDailyActivities,
@@ -44,14 +45,24 @@ export const CalendarPage: React.FC = () => {
     goToToday,
   } = useCalendarNavigation();
 
-  const { data: events = [], isLoading: eventsLoading } =
-    useCalendarEvents(calendarMode);
-  const { data: executions = [] } = useCalendarExecutions();
-
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const startDate = `${year}-${String(month + 1).padStart(2, "0")}-01`;
   const endDate = new Date(year, month + 1, 0).toISOString().split("T")[0];
+
+  const { data: events = [], isLoading: eventsLoading } =
+    useCalendarEvents(calendarMode);
+  const { data: scheduleEvents = [] } = useCalendarScheduleEvents(
+    calendarMode,
+    startDate,
+    endDate,
+  );
+  const { data: executions = [] } = useCalendarExecutions();
+
+  // 合并路径排课图层（path_schedule）
+  const combinedEvents = calendarMode === "plan"
+    ? [...events, ...scheduleEvents]
+    : events;
 
   const { data: activityStats = [] } = useCalendarActivityStats(
     calendarMode === "history" ? startDate : "",
@@ -80,6 +91,12 @@ export const CalendarPage: React.FC = () => {
   );
 
   const handleEventClick = useCallback((event: CalendarEvent) => {
+    if (event.type === "path_schedule") {
+      if (event.knowledgePointId) {
+        routerNavigate(`/study?node_id=${encodeURIComponent(event.knowledgePointId)}`);
+      }
+      return;
+    }
     if (event.id) routerNavigate(`/scheduler/task/${event.id}`);
   }, [routerNavigate]);
 
@@ -109,6 +126,8 @@ export const CalendarPage: React.FC = () => {
 
   const handleEventDrop = useCallback(
     async (dropInfo: EventDropInfo) => {
+      // 路径排课事件不是任务，不支持拖拽改期
+      if (dropInfo.eventId.startsWith("schedule-")) return;
       try {
         const updateData: { scheduled_start: string; scheduled_end?: string } = {
           scheduled_start: dropInfo.newStart.toISOString(),
@@ -158,7 +177,7 @@ export const CalendarPage: React.FC = () => {
           <CalendarContent
             viewType={viewType}
             currentDate={currentDate}
-            events={events}
+            events={combinedEvents}
             executions={executions}
             calendarMode={calendarMode}
             showSubtasks={showSubtasks}

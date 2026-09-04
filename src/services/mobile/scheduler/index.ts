@@ -310,4 +310,7 @@ export const mobileSchedulerApi: ISchedulerApi = {
   retrySystemTask: notSupported("retrySystemTask"),
   cancelSystemTask: notSupported("cancelSystemTask"),
   getSystemTaskStats: notSupported("getSystemTaskStats"),
+
+  // --- ISchedulerCalendarScheduleApi (not supported on mobile) ---
+  getScheduleEvents: notSupported("getScheduleEvents"),
 };

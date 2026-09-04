@@ -1,6 +1,7 @@
 export {
   useCalendarEvents,
 } from "./useCalendarEvents";
+export { useCalendarScheduleEvents } from "./useCalendarScheduleEvents";
 export { useCalendarExecutions } from "./useCalendarExecutions";
 export {
   useCalendarActivityStats,

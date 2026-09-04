@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { goalDrivenPathService } from "../../services/study/goalDrivenPathService";
+import { asyncTaskService } from "../../services/asyncTaskService";
 import { setSSEHeaders } from "../ai/utils";
 
 const router = Router();
@@ -123,37 +124,22 @@ router.post(
   },
 );
 
-// 生成候选跨图谱学习路径
+// 生成候选跨图谱学习路径（后台任务）：右侧面板可关闭，完成后从任务 output_data 回填续接
 router.post(
   "/cross-graph/goal/variants",
   requireAuth,
   validate({ body: generateVariantsSchema }),
   async (req: AuthedRequest, res: Response) => {
-    const {
-      target_goal,
-      conversation_transcript,
-      daily_time_minutes,
-      variant_count,
-      provider,
-      model,
-      selected_graph_ids,
-      selected_domain_ids,
-    } = req.body;
-    const result = await goalDrivenPathService.generateVariants(
-      req.supabase,
+    const task = await asyncTaskService.createTask(
       req.user.id,
-      {
-        targetGoal: target_goal,
-        conversationTranscript: conversation_transcript,
-        dailyMinutes: daily_time_minutes,
-        variantCount: variant_count,
-        provider,
-        model,
-        selectedGraphIds: selected_graph_ids,
-        selectedDomainIds: selected_domain_ids,
-      },
+      "cross_graph_path_variants",
+      { ...req.body },
+      "生成候选学习路径",
     );
-    res.json({ success: true, data: result });
+    res.json({
+      success: true,
+      data: { taskId: task.id, taskType: "cross_graph_path_variants" },
+    });
   },
 );
 

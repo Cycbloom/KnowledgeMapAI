@@ -17,6 +17,7 @@ import "./taskProcessors/expandGraphProcessor.js";
 import "./taskProcessors/translateNodesProcessor.js";
 import "./taskProcessors/discoverNodeRelationsProcessor.js";
 import "./taskProcessors/autoClassifyDomainsProcessor.js";
+import "./taskProcessors/crossGraphVariantProcessor.js";
 
 export interface TaskProgress {
   stage?: string;
@@ -99,6 +100,7 @@ export class AsyncTaskService {
       "translate_nodes": "ai_generation",
       "discover_node_relations": "ai_generation",
       "auto_classify_domains": "ai_generation",
+      "cross_graph_path_variants": "ai_generation",
     };
     return typeMap[type] || "ai_generation";
   }

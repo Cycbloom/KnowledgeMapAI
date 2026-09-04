@@ -36,6 +36,9 @@ import {
 } from "../../routes/ai/utils";
 import type { AuthRequest } from "../../middleware/auth";
 
+/** 一次喂给 AI 的图谱列表上限：超大图谱地图时不无限膨胀输入（正常规模不触发，关系仍全量用于排序） */
+export const CROSS_GRAPH_INPUT_CAP = 80;
+
 export type VariantEmphasis = "goal_oriented" | "systematic" | "quick_overview";
 
 export interface VariantStage {
@@ -56,6 +59,21 @@ export interface CrossGraphPathVariant {
   totalEstimatedMinutes?: number;
   stages: VariantStage[];
   suggestions: string[];
+}
+
+/** 图谱地图选中内容的解析模型（含一跳/二跳邻居展开） */
+interface SelectionModel {
+  hasSelection: boolean;
+  /** 用户直接选中的图谱（最优先） */
+  selectedGraphs: Array<{ id: string; title: string }>;
+  /** 一跳邻居（次优先，含关系类型详情） */
+  oneHopGraphs: Array<{ id: string; title: string; relationTypes: string[] }>;
+  /** 二跳邻居（简要参照，最多 30 个，含标题） */
+  twoHopGraphs: Array<{ id: string; title: string }>;
+  /** 选中 + 一跳邻居的组合 id（用于规则回退排优先） */
+  priorityGraphIds: string[];
+  /** 选中的领域及其成员图谱标题 */
+  selectedDomains: Array<{ name: string; graphTitles: string[] }>;
 }
 
 class GoalDrivenPathService {
@@ -153,10 +171,11 @@ class GoalDrivenPathService {
         supabase,
         req.user.id,
       );
-      const selectionContext = await this.buildSelectionContext(supabase, req.user.id, {
+      const selectionModel = await this.buildSelectionModel(supabase, req.user.id, {
         selectedGraphIds: options.selectedGraphIds,
         selectedDomainIds: options.selectedDomainIds,
       });
+      const selectionContext = this.selectionModelToContext(selectionModel);
 
       const systemPrompt = await promptService.getRenderedPrompt(
         getSupabaseAdmin(),
@@ -231,18 +250,30 @@ class GoalDrivenPathService {
 
     const domainNameMap = await this.loadDomainNameMap(supabase, graphsRaw);
     const domainSummary = this.buildDomainSummary(graphsRaw, domainNameMap);
-    const selectionContext = await this.buildSelectionContext(supabase, userId, {
-      selectedGraphIds: opts?.selectedGraphIds,
-      selectedDomainIds: opts?.selectedDomainIds,
-    });
+    const selectionModel = await this.buildSelectionModel(
+      supabase,
+      userId,
+      {
+        selectedGraphIds: opts?.selectedGraphIds,
+        selectedDomainIds: opts?.selectedDomainIds,
+      },
+    );
+    const selectionContext = this.selectionModelToContext(selectionModel);
+
+    const ruleSelection = selectionModel.hasSelection
+      ? {
+          // 规则回退也纳入一跳邻居：选中图最优先，邻居次之
+          priorityGraphIds: selectionModel.priorityGraphIds,
+          selectedDomainIds: opts?.selectedDomainIds,
+        }
+      : undefined;
 
     if (!provider.hasKey) {
       return {
         suggestedGoals: this.ruleSuggestGoals(
           graphsRaw,
           domainNameMap,
-          opts?.selectedGraphIds,
-          opts?.selectedDomainIds,
+          ruleSelection,
         ),
       };
     }
@@ -305,8 +336,7 @@ ${domainSummary}
         suggestedGoals: this.ruleSuggestGoals(
           graphsRaw,
           domainNameMap,
-          opts?.selectedGraphIds,
-          opts?.selectedDomainIds,
+          ruleSelection,
         ),
       };
     } catch (error) {
@@ -318,8 +348,7 @@ ${domainSummary}
         suggestedGoals: this.ruleSuggestGoals(
           graphsRaw,
           domainNameMap,
-          opts?.selectedGraphIds,
-          opts?.selectedDomainIds,
+          ruleSelection,
         ),
       };
     }
@@ -401,11 +430,18 @@ ${domainSummary}
       },
     );
 
+    const selectionModel = await this.buildSelectionModel(supabase, userId, {
+      selectedGraphIds: opts.selectedGraphIds,
+      selectedDomainIds: opts.selectedDomainIds,
+    });
+    const selectionContext = this.selectionModelToContext(selectionModel);
+
     const fallback = () => {
       const rule = generateCrossGraphRulePath(graphs, relations);
+      // 规则回退优先：选中图最前，一跳邻居次之
       const stages = this.prioritizeSelectedStages(
         rule.stages,
-        opts.selectedGraphIds,
+        selectionModel.priorityGraphIds,
       );
       return {
         variants: [rulePathToVariant("systematic", stages, rule.suggestions)],
@@ -420,10 +456,6 @@ ${domainSummary}
       supabase,
       userId,
     );
-    const selectionContext = await this.buildSelectionContext(supabase, userId, {
-      selectedGraphIds: opts.selectedGraphIds,
-      selectedDomainIds: opts.selectedDomainIds,
-    });
 
     const systemPrompt = await promptService.getRenderedPrompt(
       getSupabaseAdmin(),
@@ -468,7 +500,7 @@ ${domainSummary}
         ],
         model: opts.model || provider.model,
         response_format: { type: "json_object" },
-        max_tokens: 8192,
+        max_tokens: 32000,
       });
 
       const content = completion.choices[0].message.content || "";
@@ -541,28 +573,18 @@ ${domainSummary}
       });
     }
 
-    // 归档旧 active 跨图路径，避免同时存在两个 active（大调度以最新为准）
-    const existing =
-      await crossGraphLearningPathService.findActiveCrossGraphPath(
-        supabase,
-        userId,
-      );
-    let archivedOld = false;
-    if (existing) {
-      await learningPathService.updateLearningPath(
-        supabase,
-        existing.id,
-        userId,
-        { status: "archived" },
-      );
-      archivedOld = true;
-    }
+    // 允许多条 active 跨图路径按「目标」并存：不同目标各自成路径，不归档旧路径。
+    // （大调度对多路径的选择/切换由调度层后续适配，这里只保证生成链路允许多条并存。）
+    const archivedOld = false;
 
     const savedPath = await learningPathService.createLearningPath(
       supabase,
       userId,
       {
-        title: opts.variant.name,
+        // 路径名体现学习目标，而非固定的「系统全面」等文案；目标过长时截断
+        title: opts.targetGoal
+          ? `${opts.targetGoal.trim().slice(0, 30)} · 学习路径`
+          : opts.variant.name,
         description: opts.variant.description,
         goal: opts.targetGoal,
         path_type: "cross_graph",
@@ -606,22 +628,21 @@ ${domainSummary}
   }
 
   /** 无 AI key / AI 失败时，按领域聚合生成覆盖多图谱/领域的规则建议目标；
-   *  若用户在图谱地图上选中了图谱/领域，则优先围绕选中元素生成目标。 */
+   *  若用户在图谱地图上选中了图谱/领域，则优先围绕选中元素（含一跳邻居）生成目标。 */
   private ruleSuggestGoals(
     graphsRaw: Array<Record<string, unknown>>,
     domainNameMap: Map<string, string>,
-    selectedGraphIds?: string[],
-    selectedDomainIds?: string[],
+    selection?: { priorityGraphIds?: string[]; selectedDomainIds?: string[] },
   ): string[] {
-    const selectedIdSet = new Set(selectedGraphIds ?? []);
-    const selectedDomainSet = new Set(selectedDomainIds ?? []);
-    const hasSelection = selectedIdSet.size > 0 || selectedDomainSet.size > 0;
+    const priorityIdSet = new Set(selection?.priorityGraphIds ?? []);
+    const selectedDomainSet = new Set(selection?.selectedDomainIds ?? []);
+    const hasSelection = priorityIdSet.size > 0 || selectedDomainSet.size > 0;
 
     if (hasSelection) {
       return this.ruleSuggestGoalsForSelection(
         graphsRaw,
         domainNameMap,
-        selectedIdSet,
+        priorityIdSet,
         selectedDomainSet,
       );
     }
@@ -646,18 +667,20 @@ ${domainSummary}
     return goals.slice(0, 6);
   }
 
-  /** 围绕用户在图谱地图上选中的图谱/领域生成目标建议 */
+  /** 围绕用户在图谱地图上选中的图谱（含一跳邻居）/领域生成目标建议 */
   private ruleSuggestGoalsForSelection(
     graphsRaw: Array<Record<string, unknown>>,
     domainNameMap: Map<string, string>,
-    selectedIdSet: Set<string>,
+    priorityIdSet: Set<string>,
     selectedDomainSet: Set<string>,
   ): string[] {
     const goals: string[] = [];
 
-    // 选中的图谱（画布节点）导向
+    // 选中的图谱（画布节点）+ 一跳邻居导向
     const selectedGraphTitles = graphsRaw
-      .filter((raw) => selectedIdSet.has((raw as { id: string }).id))
+      .filter((raw) =>
+        priorityIdSet.has((raw as { id: string }).id),
+      )
       .map(
         (raw) =>
           (raw as { title?: string }).title ?? (raw as { id: string }).id,
@@ -667,7 +690,7 @@ ${domainSummary}
         `围绕选中的图谱「${selectedGraphTitles.slice(0, 4).join("、")}」系统掌握其核心知识`,
       );
       goals.push(
-        `以选中的「${selectedGraphTitles[0]}」为起点，按前置关系扩展到关联图谱，形成完整知识网络`,
+        `以选中的「${selectedGraphTitles[0]}」为核心，连同其直接关联图谱一起学习，形成完整知识网络`,
       );
     }
 
@@ -785,65 +808,185 @@ ${domainSummary}
   }
 
   /**
-   * 构建「图谱地图选中内容」：把用户在图谱地图上选中的图谱（画布节点）与
-   * 领域整理成结构化文本，作为学习路径创建的主要上下文注入 AI 提示词。
-   * 无选中时返回空串。
+   * 构建「图谱地图选中内容」模型：把用户在图谱地图上选中的图谱（画布节点）与
+   * 领域解析成结构化模型，并基于图谱关系做 BFS 展开一跳（详细）/二跳（简要）邻居。
+   * 作为学习路径创建的主要上下文注入 AI 提示词。无选中时返回空模型。
    */
-  private async buildSelectionContext(
+  private async buildSelectionModel(
     supabase: SupabaseClient,
     userId: string,
     selection: { selectedGraphIds?: string[]; selectedDomainIds?: string[] },
-  ): Promise<string> {
+  ): Promise<SelectionModel> {
+    const empty: SelectionModel = {
+      hasSelection: false,
+      selectedGraphs: [],
+      oneHopGraphs: [],
+      twoHopGraphs: [],
+      priorityGraphIds: [],
+      selectedDomains: [],
+    };
+
     const selectedGraphIds = selection.selectedGraphIds ?? [];
     const selectedDomainIds = selection.selectedDomainIds ?? [];
     if (selectedGraphIds.length === 0 && selectedDomainIds.length === 0) {
-      return "";
+      return empty;
     }
 
     const mapData = await graphCrudService.getGraphMap(supabase, userId);
     const graphsRaw = (mapData.graphs ?? []) as Array<Record<string, unknown>>;
     const domainNameMap = await this.loadDomainNameMap(supabase, graphsRaw);
 
-    const selectedGraphSet = new Set(selectedGraphIds);
-    const selectedDomainSet = new Set(selectedDomainIds);
+    const graphById = new Map<string, { id: string; title: string }>();
+    for (const raw of graphsRaw) {
+      const id = (raw as { id: string }).id;
+      graphById.set(id, {
+        id,
+        title: (raw as { title?: string }).title ?? id,
+      });
+    }
+
+    const selectedSet = new Set(selectedGraphIds);
+    const selectedGraphs = selectedGraphIds
+      .map((id) => graphById.get(id))
+      .filter((g): g is { id: string; title: string } => !!g);
+
+    // 图谱关系 → 无向邻接表（图的关联不分方向）
+    const adjacency = new Map<string, Map<string, Set<string>>>();
+    const addEdge = (a: string, b: string, type: string) => {
+      if (a === b) return;
+      let fromMap = adjacency.get(a);
+      if (!fromMap) {
+        fromMap = new Map();
+        adjacency.set(a, fromMap);
+      }
+      let set = fromMap.get(b);
+      if (!set) {
+        set = new Set();
+        fromMap.set(b, set);
+      }
+      set.add(type);
+    };
+    for (const r of mapData.relations ?? []) {
+      const rel = r as {
+        source_graph_id: string;
+        target_graph_id: string;
+        relation_type?: string;
+      };
+      const type = rel.relation_type ?? "related";
+      addEdge(rel.source_graph_id, rel.target_graph_id, type);
+      addEdge(rel.target_graph_id, rel.source_graph_id, type);
+    }
+
+    // BFS 一跳：与任一选中图直接相邻
+    const oneHopMap = new Map<string, Set<string>>();
+    for (const id of selectedGraphIds) {
+      const neighbors = adjacency.get(id);
+      if (!neighbors) continue;
+      for (const [nid, types] of neighbors) {
+        if (selectedSet.has(nid)) continue;
+        const acc = oneHopMap.get(nid) ?? new Set<string>();
+        types.forEach((t) => acc.add(t));
+        oneHopMap.set(nid, acc);
+      }
+    }
+    const oneHopGraphs = Array.from(oneHopMap.entries())
+      .map(([id, types]) => {
+        const g = graphById.get(id);
+        return g
+          ? { id, title: g.title, relationTypes: Array.from(types) }
+          : null;
+      })
+      .filter((g): g is { id: string; title: string; relationTypes: string[] } => !!g)
+      .sort((a, b) => a.title.localeCompare(b.title, "zh"));
+
+    // BFS 二跳：一跳邻居的邻居，去掉已选中/一跳；简要参照，限 30 个
+    const oneHopSet = new Set(oneHopMap.keys());
+    const twoHopSet = new Set<string>();
+    for (const id of oneHopSet) {
+      const neighbors = adjacency.get(id);
+      if (!neighbors) continue;
+      for (const nid of neighbors.keys()) {
+        if (!selectedSet.has(nid) && !oneHopSet.has(nid)) {
+          twoHopSet.add(nid);
+        }
+      }
+    }
+    const twoHopGraphs = Array.from(twoHopSet)
+      .map((id) => graphById.get(id))
+      .filter((g): g is { id: string; title: string } => !!g)
+      .sort((a, b) => a.title.localeCompare(b.title, "zh"))
+      .slice(0, 30);
+
+    // 选中的领域
+    const selectedDomainNames = Array.from(new Set(selectedDomainIds))
+      .map((id) => domainNameMap.get(id))
+      .filter((n): n is string => !!n);
+    const selectedDomains = selectedDomainNames.map((name) => {
+      const graphTitles = graphsRaw
+        .filter((raw) => {
+          const ids =
+            (raw as { domainIds?: string[] }).domainIds ??
+            (raw as { domain_ids?: string[] }).domain_ids ??
+            [];
+          return ids.some((did) => selectedDomainIds.includes(did));
+        })
+        .map(
+          (raw) =>
+            (raw as { title?: string }).title ?? (raw as { id: string }).id,
+        );
+      return { name, graphTitles };
+    });
+
+    const priorityGraphIds = Array.from(
+      new Set([...selectedGraphIds, ...oneHopSet]),
+    );
+
+    return {
+      hasSelection: true,
+      selectedGraphs,
+      oneHopGraphs,
+      twoHopGraphs,
+      priorityGraphIds,
+      selectedDomains,
+    };
+  }
+
+  /** 把选择模型渲染成「图谱地图选中内容」文本（无选中返回空串） */
+  private selectionModelToContext(model: SelectionModel): string {
+    if (!model.hasSelection) return "";
     const lines: string[] = [];
 
-    // 选中的图谱（画布节点）
-    const selectedGraphs = graphsRaw.filter((raw) =>
-      selectedGraphSet.has((raw as { id: string }).id),
-    );
-    if (selectedGraphs.length > 0) {
-      const titles = selectedGraphs.map(
-        (raw) =>
-          (raw as { title?: string }).title ?? (raw as { id: string }).id,
-      );
+    if (model.selectedGraphs.length > 0) {
       lines.push(
-        `- 用户当前选中的图谱（${selectedGraphs.length} 个，应作为最优先学习对象）: ${titles.join("、")}`,
+        `- 用户当前选中的图谱（${model.selectedGraphs.length} 个，最优先学习对象）: ${model.selectedGraphs.map((g) => g.title).join("、")}`,
       );
     }
 
-    // 选中的领域
-    const selectedDomainNames = Array.from(selectedDomainSet)
-      .map((id) => domainNameMap.get(id))
-      .filter((n): n is string => !!n);
-    if (selectedDomainNames.length > 0) {
-      const domainLines = selectedDomainNames.map((name) => {
-        const graphTitles = graphsRaw
-          .filter((raw) => {
-            const ids =
-              (raw as { domainIds?: string[] }).domainIds ??
-              (raw as { domain_ids?: string[] }).domain_ids ??
-              [];
-            return ids.some((did) => selectedDomainSet.has(did));
-          })
-          .map(
-            (raw) =>
-              (raw as { title?: string }).title ?? (raw as { id: string }).id,
-          );
-        return `- 领域「${name}」: ${graphTitles.join("、") || "（无图谱）"}`;
-      });
+    if (model.oneHopGraphs.length > 0) {
+      const detail = model.oneHopGraphs
+        .map((g) => `  - ${g.title}（${g.relationTypes.join("/")}）`)
+        .join("\n");
       lines.push(
-        `- 用户当前选中的领域（${selectedDomainNames.length} 个，应作为重点学习范围）:\n${domainLines.join("\n")}`,
+        `- 与选中图谱直接相邻的图谱（距离1，次优先，可围绕选中展开）:\n${detail}`,
+      );
+    }
+
+    if (model.twoHopGraphs.length > 0) {
+      const titles = model.twoHopGraphs.map((g) => g.title).join("、");
+      lines.push(
+        `- 更远的关联图谱（距离2，简要参照，不必重点覆盖）: ${titles}`,
+      );
+    }
+
+    if (model.selectedDomains.length > 0) {
+      const domainLines = model.selectedDomains
+        .map(
+          (d) =>
+            `- 领域「${d.name}」: ${d.graphTitles.join("、") || "（无图谱）"}`,
+        )
+        .join("\n");
+      lines.push(
+        `- 用户当前选中的领域（${model.selectedDomains.length} 个，重点学习范围）:\n${domainLines}`,
       );
     }
 
@@ -875,6 +1018,9 @@ ${domainSummary}
     dailyMinutes: number,
     selectionContext: string,
   ): string {
+    // 输入控制：避免超大图谱地图一次性塞爆 prompt（关系仍全量用于排序，仅列举列表截断）
+    const listedGraphs = graphs.slice(0, CROSS_GRAPH_INPUT_CAP);
+    const omitted = graphs.length - listedGraphs.length;
     const graphById = new Map(graphs.map((g) => [g.title.toLowerCase(), g]));
     const edgesInfo = relations.map((r) => ({
       source: graphById.get(r.sourceGraphId.toLowerCase())?.title ?? r.sourceGraphId,
@@ -891,14 +1037,18 @@ ${selectionContext}
 
     return `请根据以下图谱地图与学习目标，生成 ${dailyMinutes} 分钟/天预算下的候选跨图谱学习路径。
 学习目标：${targetGoal}
-${selectionInstruction}图谱列表（含所属领域 domainNames）：${JSON.stringify(graphs, null, 2)}
-图谱关系（source → target，含前置/扩展/相关）：${JSON.stringify(edgesInfo, null, 2)}
+${selectionInstruction}图谱列表（含所属领域 domainNames）：${JSON.stringify(listedGraphs, null, 2)}
+${
+        omitted > 0
+          ? `另有 ${omitted} 张图谱未在上方列出，仅在与目标强相关时才纳入，否则不要收录：`
+          : ""
+      }图谱关系（source → target，含前置/扩展/相关）：${JSON.stringify(edgesInfo, null, 2)}
 
 要求：
-1. 每个变体输出 2-4 条整体建议（suggestions）；
-2. 每个变体内 path 的 nodeTitle 必须使用输入中的精确图谱标题；
-3. 为每张图给出 priority（high/medium/low）与简短 reason（≤20 字）与 estimatedTime（分钟，5-60）；
-4. 未列出的图谱系统会自动补到末尾，不必强行覆盖全部图谱；
+1. 先评估每张图谱与学习目标的相关性，只把**与目标直接相关的图谱**纳入 path，与其无关的图谱**不要放入**（path 即完整子图，不会自动补齐未选中的图谱）；
+2. 每个变体输出 2-4 条整体建议（suggestions）；
+3. 每个变体内 path 的 nodeTitle 必须使用输入中的精确图谱标题；
+4. 为每张图给出 priority（high/medium/low）与简短 reason（≤20 字）与 estimatedTime（分钟，5-60）；
 5. 排序时尽量让同一领域的图谱相邻，先按领域组织再按前置关系推进。`;
   }
 
@@ -1009,20 +1159,8 @@ export function normalizeVariants(
       });
     }
 
-    // 未命中图谱（标题改动/新增）追加到末尾
-    for (const g of graphs) {
-      if (!seen.has(g.graphId)) {
-        stages.push({
-          graphId: g.graphId,
-          graphTitle: g.title,
-          order: stages.length,
-          priority:
-            g.completion >= CROSS_GRAPH_COMPLETION_THRESHOLD ? "low" : "medium",
-          reason: "补充图谱",
-          estimatedTime: 30,
-        });
-      }
-    }
+    // 严格子图：仅保留 AI 判定的与目标相关的图谱，不自动补齐未选中的。
+    // 因此 paths 中未出现的图谱一律不纳入 —— 路径即目标的子图。
 
     if (stages.length === 0) continue;
 

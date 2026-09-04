@@ -55,7 +55,7 @@ describe("normalizeVariants（AI 变体归一化）", () => {
     graph("g3", "自然语言处理", 0, 3),
   ];
 
-  it("精确标题匹配，未命中的图谱追加到末尾", () => {
+  it("精确标题匹配，严格子图只保留 AI 选中的图谱", () => {
     const variants = normalizeVariants(
       [
         {
@@ -72,16 +72,13 @@ describe("normalizeVariants（AI 变体归一化）", () => {
     );
 
     expect(variants).toHaveLength(1);
-    expect(variants[0].stages.map((s) => s.graphId)).toEqual(["g1", "g2", "g3"]);
+    // 未在 path 中列出的 g3 不再自动补到末尾 → 子图仅含 g1/g2
+    expect(variants[0].stages.map((s) => s.graphId)).toEqual(["g1", "g2"]);
     expect(variants[0].stages[0].estimatedTime).toBe(40);
-    // 已完成的 g2 未命中时本应补末尾，但此处命中 g2 → priority 保留 AI 值
     expect(variants[0].stages[1].priority).toBe("medium");
-    // 未命中补末尾的 g3：未完成 → medium
-    expect(variants[0].stages[2].priority).toBe("medium");
-    expect(variants[0].stages[2].reason).toBe("补充图谱");
   });
 
-  it("模糊标题匹配 + 同一变体内重复图谱去重", () => {
+  it("模糊标题匹配 + 同一变体内重复图谱去重（严格子图）", () => {
     const variants = normalizeVariants(
       [
         {
@@ -98,7 +95,7 @@ describe("normalizeVariants（AI 变体归一化）", () => {
       graphs,
     );
 
-    expect(variants[0].stages.map((s) => s.graphId)).toEqual(["g1", "g2", "g3"]);
+    expect(variants[0].stages.map((s) => s.graphId)).toEqual(["g1"]);
     expect(variants[0].stages.filter((s) => s.graphId === "g1")).toHaveLength(1);
   });
 
@@ -118,16 +115,13 @@ describe("normalizeVariants（AI 变体归一化）", () => {
     expect(variants[0].stages[0].estimatedTime).toBe(240);
   });
 
-  it("未命中图谱补末尾时已完成图谱标记为 low", () => {
-    // 只列出 g1，g2(已完成)/g3 补末尾
+  it("只列出 g1 时，严格子图不含未命中的 g2/g3", () => {
     const variants = normalizeVariants(
       [{ id: "x", name: "X", path: [{ nodeTitle: "机器学习基础", priority: "high", estimatedTime: 30 }] }],
       graphs,
     );
 
-    expect(variants[0].stages.map((s) => s.graphId)).toEqual(["g1", "g2", "g3"]);
-    expect(variants[0].stages[1].priority).toBe("low"); // g2 已完成
-    expect(variants[0].stages[2].priority).toBe("medium"); // g3 未完成
+    expect(variants[0].stages.map((s) => s.graphId)).toEqual(["g1"]);
   });
 });
 
@@ -225,6 +219,43 @@ describe("goalDrivenPathService.suggestGoals（学习目标建议）", () => {
       true,
     );
   });
+
+  it("无 AI key 且选中图谱时，一跳邻居也进入规则建议（次优先）", async () => {
+    vi.mocked(graphCrudService.getGraphMap).mockResolvedValue({
+      graphs: [
+        { id: "g1", title: "机器学习基础", node_count: 5, domainIds: ["d1"] },
+        { id: "g2", title: "深度学习", node_count: 4, domainIds: ["d1"] },
+        { id: "g3", title: "前端基础", node_count: 3 },
+      ],
+      relations: [
+        {
+          source_graph_id: "g1",
+          target_graph_id: "g2",
+          relation_type: "extension",
+        },
+      ],
+    } as never);
+
+    const result = await goalDrivenPathService.suggestGoals(
+      mockSupabase as never,
+      "user-1",
+      { selectedGraphIds: ["g1"] },
+    );
+
+    expect(result.suggestedGoals.length).toBeGreaterThan(0);
+    expect(result.suggestedGoals.length).toBeLessThanOrEqual(6);
+    // 选中图 g1 与其一跳邻居 g2 都出现在建议中
+    expect(
+      result.suggestedGoals.some((g) => g.includes("机器学习基础")),
+    ).toBe(true);
+    expect(result.suggestedGoals.some((g) => g.includes("深度学习"))).toBe(
+      true,
+    );
+    // 二跳范围外的前端基础不应出现
+    expect(
+      result.suggestedGoals.some((g) => g.includes("前端基础")),
+    ).toBe(false);
+  });
 });
 
 describe("goalDrivenPathService.saveVariant（保存选中候选）", () => {
@@ -280,12 +311,12 @@ describe("goalDrivenPathService.saveVariant（保存选中候选）", () => {
     expect(result.pathId).toBe("new-path-1");
   });
 
-  it("存在旧 active 路径时先归档再创建，archivedOld=true", async () => {
+  it("存在旧 active 路径时不再归档，允许多条按目标并存", async () => {
     vi.mocked(crossGraphLearningPathService.findActiveCrossGraphPath).mockResolvedValue(
       { id: "old-path-1", title: "旧路径" },
     );
 
-    await goalDrivenPathService.saveVariant({} as never, "user-1", {
+    const result = await goalDrivenPathService.saveVariant({} as never, "user-1", {
       variant: {
         id: "goal",
         name: "目标导向",
@@ -295,19 +326,11 @@ describe("goalDrivenPathService.saveVariant（保存选中候选）", () => {
       },
     });
 
-    // 归档旧路径
-    expect(learningPathService.updateLearningPath).toHaveBeenCalledWith(
-      expect.anything(),
-      "old-path-1",
-      "user-1",
-      { status: "archived" },
-    );
-    // 再创建新路径
+    // 不归档旧 active 路径（多条目标路径并存）
+    expect(learningPathService.updateLearningPath).not.toHaveBeenCalled();
+    // 直接创建新路径
     expect(learningPathService.createLearningPath).toHaveBeenCalled();
-    // 归档发生在创建之前
-    const updateCall = vi.mocked(learningPathService.updateLearningPath).mock.invocationCallOrder[0];
-    const createCall = vi.mocked(learningPathService.createLearningPath).mock.invocationCallOrder[0];
-    expect(updateCall).toBeLessThan(createCall);
+    expect(result.archivedOld).toBe(false);
   });
 
   it("空 stages 抛出校验错误", async () => {

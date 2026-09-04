@@ -270,9 +270,10 @@ export async function generateCrossGraphAIPath(
 图谱关系（source → target，含前置/扩展/相关）：${JSON.stringify(edgesInfo, null, 2)}
 
 要求：
-1. 先学前置/基础图谱，再学依赖它的扩展图谱；同层图谱按重要性与完成度排序（未完成的优先）；
-2. 每个图谱给出 priority（high/medium/low）、reason（简短中文理由）、estimatedTime（分钟）、prerequisites（前置图谱标题，用输入中的精确标题）；
-3. 返回 JSON：{"path":[{"nodeTitle":"...","priority":"high","reason":"...","estimatedTime":30,"prerequisites":[]}],"suggestions":["..."]}`;
+1. 先评估每张图谱与「学习目标」的相关性，只把**与目标直接相关的图谱**列入 path，与其无关的图谱**不要放入**，也不要补充未选中的图谱（path 即完整子图）；
+2. 先学前置/基础图谱，再学依赖它的扩展图谱；同层图谱按重要性与完成度排序（未完成的优先）；
+3. 每个图谱给出 priority（high/medium/low）、reason（简短中文理由）、estimatedTime（分钟）、prerequisites（前置图谱标题，用输入中的精确标题）；
+4. 返回 JSON：{"path":[{"nodeTitle":"...","priority":"high","reason":"...","estimatedTime":30,"prerequisites":[]}],"suggestions":["..."]}`;
 
   try {
     const completion = await provider.client.chat.completions.create({
@@ -282,7 +283,7 @@ export async function generateCrossGraphAIPath(
       ],
       model: provider.model,
       response_format: { type: "json_object" },
-      max_tokens: 4000,
+      max_tokens: 32000,
     });
 
     const content = completion.choices[0].message.content;
@@ -319,21 +320,8 @@ export async function generateCrossGraphAIPath(
       });
     }
 
-    // 未命中图谱（标题改动/新增）追加到末尾，保证路径覆盖全部图谱
-    for (const g of graphs) {
-      if (!seen.has(g.graphId)) {
-        stages.push({
-          graphId: g.graphId,
-          graphTitle: g.title,
-          order: stages.length,
-          priority: g.completion >= CROSS_GRAPH_COMPLETION_THRESHOLD ? "low" : "medium",
-          reason: "补充图谱",
-          isCompleted: g.completion >= CROSS_GRAPH_COMPLETION_THRESHOLD,
-          completion: g.completion,
-          prerequisites: [],
-        });
-      }
-    }
+    // 严格子图：仅保留 AI 判定的与目标相关的图谱，不自动补齐未选中的图谱。
+    // （路径即子图：相关性由 AI 判断，未纳入即视为与目标无关。）
 
     return {
       stages,

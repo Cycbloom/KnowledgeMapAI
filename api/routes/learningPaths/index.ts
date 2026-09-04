@@ -6,6 +6,7 @@ import nodesRoutes from "./nodes";
 import progressRoutes from "./progress";
 import plansRoutes from "./plans";
 import generationRoutes from "./generation";
+import goalDialogRoutes from "./goalDialog";
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use("/", nodesRoutes);
 router.use("/", progressRoutes);
 router.use("/", plansRoutes);
 router.use("/", generationRoutes);
+router.use("/", goalDialogRoutes);
 
 export default router;

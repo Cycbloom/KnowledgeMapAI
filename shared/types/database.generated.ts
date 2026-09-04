@@ -1318,7 +1318,7 @@ export type Database = {
           properties?: Json | null
           source_knowledge_point_id?: string | null
           summary?: Json | null
-          title: Json
+          title?: Json
           total_study_duration?: number | null
           updated_at?: string | null
           visibility?:
@@ -4135,6 +4135,7 @@ export type Database = {
         Args: {
           p_content?: string
           p_graph_id: string
+          p_language?: string
           p_level?: string
           p_properties?: Json
           p_title: string

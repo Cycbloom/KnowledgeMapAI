@@ -337,6 +337,24 @@ export class ChatService {
     );
   }
 
+  /**
+   * 通用流式对话（供其它 AI 服务复用）：转发到私有的 streamChatCompletion，
+   * 复用 AI 监控 + 逐 chunk 超时保护。非单图上下文场景（如跨图谱目标对话）使用。
+   */
+  async streamMessages(
+    res: Response,
+    provider: AIProvider,
+    messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
+    model: string,
+    options: {
+      operation: string;
+      metadata: Record<string, unknown>;
+      sessionId: string;
+    },
+  ): Promise<void> {
+    await this.streamChatCompletion(res, provider, messages, model, options);
+  }
+
   async chatStream(
     req: AuthRequest,
     res: Response,

@@ -1,0 +1,1053 @@
+/**
+ * 目标驱动跨图谱学习路径服务。
+ *
+ * 职责：
+ * 1. 构建「图谱地图摘要」（图谱标题/节点数/完成度/描述）供 AI 对话与候选生成使用；
+ * 2. dialogStream：AI 对话澄清用户学习目标（SSE 流式，复用 chatService 流式循环）；
+ * 3. generateVariants：结合图谱地图 + 澄清后的目标，一次生成多条候选跨图谱学习路径；
+ * 4. saveVariant：保存用户选中的候选路径（归档旧 active 跨图路径，落库 cross_graph）。
+ */
+import { SupabaseClient } from "@supabase/supabase-js";
+import type { Response } from "express";
+import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
+import type { AIProviderType } from "@shared/types";
+import { graphCrudService } from "../graph/graphCrudService";
+import { crossGraphLearningPathService } from "./crossGraphLearningPathService";
+import { learningPathService } from "./learningPathService";
+import {
+  generateCrossGraphRulePath,
+  CROSS_GRAPH_COMPLETION_THRESHOLD,
+  type CrossGraphNodeInput,
+  type CrossGraphRelationInput,
+  type CrossGraphStage,
+} from "./crossGraphPathAlgorithms";
+import { getAIProvider, getAIProviderForTask } from "../ai/factory";
+import { promptService } from "../ai/promptService";
+import { chatService } from "../ai/chatService";
+import { getSupabaseAdmin } from "../../supabase";
+import { getMockResponse } from "../ai/mock";
+import { parseAIResponse } from "../ai/utils";
+import {
+  sendStreamChunk,
+  sendStreamDone,
+  sendStreamError,
+} from "../../routes/ai/utils";
+import type { AuthRequest } from "../../middleware/auth";
+
+export type VariantEmphasis = "goal_oriented" | "systematic" | "quick_overview";
+
+export interface VariantStage {
+  graphId: string;
+  graphTitle: string;
+  order: number;
+  priority: "high" | "medium" | "low";
+  reason: string;
+  estimatedTime: number;
+}
+
+export interface CrossGraphPathVariant {
+  id: string;
+  name: string;
+  description: string;
+  emphasis: VariantEmphasis;
+  estimatedWeeks?: number;
+  totalEstimatedMinutes?: number;
+  stages: VariantStage[];
+  suggestions: string[];
+}
+
+class GoalDrivenPathService {
+  /**
+   * 构建图谱地图摘要（供 AI 对话 / 候选生成）。每图一行，描述截断，可设上限防止上下文过大。
+   */
+  async buildGraphContextSummary(
+    supabase: SupabaseClient,
+    userId: string,
+    opts?: { cap?: number },
+  ): Promise<string> {
+    const cap = opts?.cap ?? 40;
+    const mapData = await graphCrudService.getGraphMap(supabase, userId);
+    const graphsRaw = mapData.graphs ?? [];
+    if (graphsRaw.length === 0) return "图谱地图为空";
+
+    const graphIds = graphsRaw.map((g) => (g as { id: string }).id);
+    const completionMap =
+      await crossGraphLearningPathService.computeGraphCompletions(
+        supabase,
+        userId,
+        graphIds,
+      );
+    // 领域 id → 名称映射：让 AI 对话 / 建议目标 / 候选路径感知领域
+    const domainNameMap = await this.loadDomainNameMap(supabase, graphsRaw);
+
+    const lines: string[] = [];
+    for (const raw of graphsRaw.slice(0, cap)) {
+      const g = raw as {
+        id: string;
+        title?: string;
+        description?: string;
+        node_count?: number;
+        nodes_count?: number;
+        domainIds?: string[];
+        domain_ids?: string[];
+      };
+      const title = g.title ?? g.id;
+      const nodeCount = g.node_count ?? g.nodes_count ?? 0;
+      const completion = completionMap.get(g.id) ?? 0;
+      const domainNames = (g.domainIds ?? g.domain_ids ?? [])
+        .map((id) => domainNameMap.get(id))
+        .filter((n): n is string => !!n);
+      const domainPart =
+        domainNames.length > 0 ? `、领域: ${domainNames.join("/")}` : "";
+      const desc = (g.description ?? "").trim();
+      const descPart = desc ? ` · ${desc.slice(0, 60)}` : "";
+      lines.push(
+        `- 【${title}】(知识点: ${nodeCount}${domainPart}、完成度: ${Math.round(completion * 100)}%)${descPart}`,
+      );
+    }
+    if (graphsRaw.length > cap) {
+      lines.push(
+        `另有 ${graphsRaw.length - cap} 张图谱未列出（未命中标题的图谱会自动补到路径末尾）`,
+      );
+    }
+    return lines.join("\n");
+  }
+
+  /**
+   * AI 对话澄清学习目标（SSE 流式）。
+   * 无 AI key 时回退到本地 mock 文本，保证流程可走通。
+   */
+  async dialogStream(
+    req: AuthRequest,
+    res: Response,
+    options: {
+      message: string;
+      history?: Array<{ role: string; content: string }>;
+      provider?: string;
+      model?: string;
+      language?: string;
+      sessionId: string;
+      selectedGraphIds?: string[];
+      selectedDomainIds?: string[];
+    },
+  ): Promise<void> {
+    try {
+      const provider = options.provider
+        ? await getAIProvider(options.provider as AIProviderType)
+        : await getAIProviderForTask("text");
+
+      if (!provider.hasKey) {
+        await this.streamMock(res, String(getMockResponse("chat", options.message)));
+        return;
+      }
+
+      const supabase = req.supabase;
+      if (!supabase) {
+        sendStreamError(res, "未授权", ErrorCodes.AUTH_UNAUTHORIZED);
+        return;
+      }
+
+      const graphContextSummary = await this.buildGraphContextSummary(
+        supabase,
+        req.user.id,
+      );
+      const selectionContext = await this.buildSelectionContext(supabase, req.user.id, {
+        selectedGraphIds: options.selectedGraphIds,
+        selectedDomainIds: options.selectedDomainIds,
+      });
+
+      const systemPrompt = await promptService.getRenderedPrompt(
+        getSupabaseAdmin(),
+        "cross_graph_goal_dialog",
+        { graphContextSummary, selectionContext },
+        req.user.id,
+        undefined,
+        options.language,
+      );
+
+      const messages: Array<{
+        role: "user" | "assistant" | "system";
+        content: string;
+      }> = [
+        { role: "system", content: systemPrompt },
+        ...(options.history ?? []).map((msg) => ({
+          role: msg.role as "user" | "assistant" | "system",
+          content: msg.content,
+        })),
+        { role: "user", content: options.message },
+      ];
+
+      const model = options.model || provider.model;
+
+      await chatService.streamMessages(res, provider, messages, model, {
+        operation: "cross_graph_goal_dialog",
+        metadata: {
+          userId: req.user.id,
+          graphId: undefined,
+          topic: options.message.slice(0, 50),
+        },
+        sessionId: options.sessionId,
+      });
+      sendStreamDone(res);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error("[GoalDrivenPath] dialog stream error:", error);
+      sendStreamError(
+        res,
+        err.message || "AI 对话失败",
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      );
+    }
+  }
+
+  /**
+   * 基于图谱地图生成学习目标建议（复用 learning_path_questions 的"建议目标"职责）。
+   * 上下文包含：图谱地图逐图概览 + 领域分布聚合，确保建议目标覆盖多个图谱/领域。
+   * 无 AI key / 解析失败时回退到按领域聚合的规则建议。
+   */
+  async suggestGoals(
+    supabase: SupabaseClient,
+    userId: string,
+    opts?: {
+      provider?: string;
+      model?: string;
+      selectedGraphIds?: string[];
+      selectedDomainIds?: string[];
+    },
+  ): Promise<{ suggestedGoals: string[] }> {
+    const provider = opts?.provider
+      ? await getAIProvider(opts.provider as AIProviderType)
+      : await getAIProviderForTask("text");
+
+    const mapData = await graphCrudService.getGraphMap(supabase, userId);
+    const graphsRaw = mapData.graphs ?? [];
+    if (graphsRaw.length === 0) {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+        message: "图谱地图为空，无法生成目标建议",
+      });
+    }
+
+    const domainNameMap = await this.loadDomainNameMap(supabase, graphsRaw);
+    const domainSummary = this.buildDomainSummary(graphsRaw, domainNameMap);
+    const selectionContext = await this.buildSelectionContext(supabase, userId, {
+      selectedGraphIds: opts?.selectedGraphIds,
+      selectedDomainIds: opts?.selectedDomainIds,
+    });
+
+    if (!provider.hasKey) {
+      return {
+        suggestedGoals: this.ruleSuggestGoals(
+          graphsRaw,
+          domainNameMap,
+          opts?.selectedGraphIds,
+          opts?.selectedDomainIds,
+        ),
+      };
+    }
+
+    const graphContextSummary = await this.buildGraphContextSummary(
+      supabase,
+      userId,
+    );
+
+    const systemPrompt = await promptService.getRenderedPrompt(
+      getSupabaseAdmin(),
+      "cross_graph_goal_suggest",
+      { graphContextSummary, domainSummary, selectionContext },
+      userId,
+      undefined,
+      undefined,
+    );
+
+    const selectionInstruction = selectionContext
+      ? `用户已在图谱地图上选中了特定图谱/领域（见下方「图谱地图选中内容」），学习目标必须围绕这些选中元素展开，优先覆盖选中的图谱与领域，其次再补充关联内容。`
+      : "";
+    const userMessage = `请根据以下图谱地图概览与领域分布，生成 5-6 个学习目标建议：
+${selectionInstruction}
+${selectionContext ? `图谱地图选中内容：\n${selectionContext}\n` : ""}
+图谱地图概览：
+${graphContextSummary}
+
+领域分布：
+${domainSummary}
+
+要求：
+1. 目标之间要明显不同，覆盖多种学习意图（如快速概览、系统入门、实践项目、深入掌握、考试/求职、兴趣探索）；
+2. 每个目标应覆盖多个图谱/领域（引用 2-4 个图谱标题），不要只围绕单个图谱；
+3. 结合图谱完成度与前置关系，优先推荐可填补知识缺口的目标；
+4. 每个目标 20-50 字，简洁有动力，避免重复相近的表述。`;
+
+    try {
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        model: opts?.model || provider.model,
+        response_format: { type: "json_object" },
+        max_tokens: 1000,
+      });
+
+      const content = completion.choices[0].message.content || "";
+      const parsed = parseAIResponse<{ suggestedGoals?: string[] }>(
+        content,
+        "cross_graph_goal_suggest",
+      );
+      const goals = (parsed.suggestedGoals ?? [])
+        .map((g) => String(g).trim())
+        .filter(Boolean)
+        .slice(0, 6);
+
+      if (goals.length > 0) return { suggestedGoals: goals };
+      return {
+        suggestedGoals: this.ruleSuggestGoals(
+          graphsRaw,
+          domainNameMap,
+          opts?.selectedGraphIds,
+          opts?.selectedDomainIds,
+        ),
+      };
+    } catch (error) {
+      logger.error(
+        "[GoalDrivenPath] suggestGoals failed, fallback to rule:",
+        error,
+      );
+      return {
+        suggestedGoals: this.ruleSuggestGoals(
+          graphsRaw,
+          domainNameMap,
+          opts?.selectedGraphIds,
+          opts?.selectedDomainIds,
+        ),
+      };
+    }
+  }
+
+  /**
+   * 生成候选跨图谱学习路径变体（一次调用返回多条，不同侧重）。
+   * 无 AI key / 解析失败时回退为规则算法生成的单条「系统全面」变体。
+   */
+  async generateVariants(
+    supabase: SupabaseClient,
+    userId: string,
+    opts: {
+      targetGoal: string;
+      conversationTranscript?: string;
+      dailyMinutes?: number;
+      variantCount?: number;
+      provider?: string;
+      model?: string;
+      selectedGraphIds?: string[];
+      selectedDomainIds?: string[];
+    },
+  ): Promise<{ variants: CrossGraphPathVariant[] }> {
+    const provider = opts.provider
+      ? await getAIProvider(opts.provider as AIProviderType)
+      : await getAIProviderForTask("text");
+
+    const dailyMinutes = opts.dailyMinutes ?? 30;
+    const variantCount = Math.min(3, Math.max(2, opts.variantCount ?? 3));
+
+    const mapData = await graphCrudService.getGraphMap(supabase, userId);
+    const graphsRaw = mapData.graphs ?? [];
+    if (graphsRaw.length === 0) {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+        message: "图谱地图为空，无法生成候选路径",
+      });
+    }
+
+    const graphIds = graphsRaw.map((g) => (g as { id: string }).id);
+    const completionMap =
+      await crossGraphLearningPathService.computeGraphCompletions(
+        supabase,
+        userId,
+        graphIds,
+      );
+
+    const graphs: CrossGraphNodeInput[] = graphsRaw.map((g) => {
+      const raw = g as {
+        id: string;
+        title?: string;
+        description?: string;
+        node_count?: number;
+        nodes_count?: number;
+        domainIds?: string[];
+        domain_ids?: string[];
+      };
+      return {
+        graphId: raw.id,
+        title: raw.title ?? raw.id,
+        description: raw.description ?? undefined,
+        nodeCount: raw.node_count ?? raw.nodes_count ?? 0,
+        completion: completionMap.get(raw.id) ?? 0,
+        domainIds: raw.domainIds ?? raw.domain_ids ?? [],
+      };
+    });
+
+    const relations: CrossGraphRelationInput[] = (mapData.relations ?? []).map(
+      (r) => {
+        const raw = r as {
+          source_graph_id: string;
+          target_graph_id: string;
+          relation_type: string;
+        };
+        return {
+          sourceGraphId: raw.source_graph_id,
+          targetGraphId: raw.target_graph_id,
+          relationType: (raw.relation_type ?? "related") as CrossGraphRelationInput["relationType"],
+        };
+      },
+    );
+
+    const fallback = () => {
+      const rule = generateCrossGraphRulePath(graphs, relations);
+      const stages = this.prioritizeSelectedStages(
+        rule.stages,
+        opts.selectedGraphIds,
+      );
+      return {
+        variants: [rulePathToVariant("systematic", stages, rule.suggestions)],
+      };
+    };
+
+    if (!provider.hasKey) {
+      return fallback();
+    }
+
+    const graphContextSummary = await this.buildGraphContextSummary(
+      supabase,
+      userId,
+    );
+    const selectionContext = await this.buildSelectionContext(supabase, userId, {
+      selectedGraphIds: opts.selectedGraphIds,
+      selectedDomainIds: opts.selectedDomainIds,
+    });
+
+    const systemPrompt = await promptService.getRenderedPrompt(
+      getSupabaseAdmin(),
+      "cross_graph_path_variants",
+      {
+        graphContextSummary,
+        selectionContext,
+        targetGoal: opts.targetGoal,
+        conversationTranscript: opts.conversationTranscript ?? "",
+        variantCount,
+        dailyTimeMinutes: dailyMinutes,
+      },
+      userId,
+      undefined,
+      undefined,
+    );
+
+    // 领域 id → 名称映射：让候选路径生成感知领域
+    const domainNameMap = await this.loadDomainNameMap(supabase, graphsRaw);
+
+    const userMessage = this.buildVariantsUserMessage(
+      graphs.map((g) => ({
+        title: g.title,
+        nodeCount: g.nodeCount,
+        completion: Math.round(g.completion * 100) / 100,
+        isCompleted: g.completion >= CROSS_GRAPH_COMPLETION_THRESHOLD,
+        domainNames: g.domainIds
+          .map((id) => domainNameMap.get(id))
+          .filter((n): n is string => !!n),
+      })),
+      relations,
+      opts.targetGoal,
+      dailyMinutes,
+      selectionContext,
+    );
+
+    try {
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        model: opts.model || provider.model,
+        response_format: { type: "json_object" },
+        max_tokens: 8192,
+      });
+
+      const content = completion.choices[0].message.content || "";
+      const parsed = parseAIResponse<{
+        variants?: Array<Record<string, unknown>>;
+        suggestions?: string[];
+      }>(content, "cross_graph_path_variants");
+
+      const variants = this.normalizeVariants(parsed.variants ?? [], graphs);
+
+      if (variants.length === 0) {
+        logger.warn("[GoalDrivenPath] no valid variants parsed, fallback to rule");
+        return fallback();
+      }
+      return { variants };
+    } catch (error) {
+      logger.error(
+        "[GoalDrivenPath] generateVariants failed, fallback to rule:",
+        error,
+      );
+      return fallback();
+    }
+  }
+
+  /**
+   * 保存用户选中的候选路径：先归档旧 active 跨图路径，再创建新的 cross_graph 路径。
+   */
+  async saveVariant(
+    supabase: SupabaseClient,
+    userId: string,
+    opts: {
+      variant: {
+        id: string;
+        name: string;
+        description?: string;
+        emphasis?: string;
+        stages: Array<{
+          graph_id: string;
+          graph_title: string;
+          order: number;
+          priority: "high" | "medium" | "low";
+          reason?: string;
+          estimated_time: number;
+        }>;
+      };
+      targetGoal?: string;
+      dailyMinutes?: number;
+    },
+  ): Promise<{
+    pathId: string;
+    pathTitle: string;
+    stages: VariantStage[];
+    archivedOld: boolean;
+  }> {
+    const stages: VariantStage[] = opts.variant.stages
+      .slice()
+      .sort((a, b) => a.order - b.order)
+      .map((s, index) => ({
+        graphId: s.graph_id,
+        graphTitle: s.graph_title,
+        order: index,
+        priority: s.priority,
+        reason: s.reason ?? "",
+        estimatedTime: s.estimated_time,
+      }));
+
+    if (stages.length === 0) {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+        message: "候选路径为空，无法保存",
+      });
+    }
+
+    // 归档旧 active 跨图路径，避免同时存在两个 active（大调度以最新为准）
+    const existing =
+      await crossGraphLearningPathService.findActiveCrossGraphPath(
+        supabase,
+        userId,
+      );
+    let archivedOld = false;
+    if (existing) {
+      await learningPathService.updateLearningPath(
+        supabase,
+        existing.id,
+        userId,
+        { status: "archived" },
+      );
+      archivedOld = true;
+    }
+
+    const savedPath = await learningPathService.createLearningPath(
+      supabase,
+      userId,
+      {
+        title: opts.variant.name,
+        description: opts.variant.description,
+        goal: opts.targetGoal,
+        path_type: "cross_graph",
+        ai_generated: true,
+        daily_minutes_target: opts.dailyMinutes,
+        nodes: stages.map((s, index) => ({
+          graph_id: s.graphId,
+          order_index: index,
+          title: s.graphTitle,
+          description: s.reason,
+          estimated_time: s.estimatedTime,
+          is_milestone: s.priority === "high",
+        })),
+      },
+    );
+
+    logger.info("[GoalDrivenPath] saved variant", {
+      userId,
+      pathId: savedPath.id,
+      archivedOld,
+      stageCount: stages.length,
+    });
+
+    return {
+      pathId: savedPath.id,
+      pathTitle: savedPath.title,
+      stages,
+      archivedOld,
+    };
+  }
+
+  // ── 私有工具 ───────────────────────────────────────────────
+
+  private async streamMock(res: Response, content: string): Promise<void> {
+    const chunks = content.split("");
+    for (const chunk of chunks) {
+      sendStreamChunk(res, chunk);
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    }
+    sendStreamDone(res);
+  }
+
+  /** 无 AI key / AI 失败时，按领域聚合生成覆盖多图谱/领域的规则建议目标；
+   *  若用户在图谱地图上选中了图谱/领域，则优先围绕选中元素生成目标。 */
+  private ruleSuggestGoals(
+    graphsRaw: Array<Record<string, unknown>>,
+    domainNameMap: Map<string, string>,
+    selectedGraphIds?: string[],
+    selectedDomainIds?: string[],
+  ): string[] {
+    const selectedIdSet = new Set(selectedGraphIds ?? []);
+    const selectedDomainSet = new Set(selectedDomainIds ?? []);
+    const hasSelection = selectedIdSet.size > 0 || selectedDomainSet.size > 0;
+
+    if (hasSelection) {
+      return this.ruleSuggestGoalsForSelection(
+        graphsRaw,
+        domainNameMap,
+        selectedIdSet,
+        selectedDomainSet,
+      );
+    }
+
+    const entries = this.groupGraphsByDomain(graphsRaw, domainNameMap);
+    const goals: string[] = [];
+    for (const entry of entries.slice(0, 3)) {
+      const sample = entry.titles.slice(0, 3).join("、");
+      goals.push(`系统掌握「${entry.name}」领域的核心图谱（${sample}）`);
+    }
+    if (entries.length >= 2) {
+      goals.push(
+        `将「${entries[0].name}」与「${entries[1].name}」知识结合，完成一个综合实践项目`,
+      );
+    }
+    if (entries.length >= 3) {
+      goals.push(
+        `先建立全部图谱的整体概览，再深入「${entries[0].name}」领域`,
+      );
+    }
+    goals.push("对整个图谱地图建立系统性概览，形成知识网络");
+    return goals.slice(0, 6);
+  }
+
+  /** 围绕用户在图谱地图上选中的图谱/领域生成目标建议 */
+  private ruleSuggestGoalsForSelection(
+    graphsRaw: Array<Record<string, unknown>>,
+    domainNameMap: Map<string, string>,
+    selectedIdSet: Set<string>,
+    selectedDomainSet: Set<string>,
+  ): string[] {
+    const goals: string[] = [];
+
+    // 选中的图谱（画布节点）导向
+    const selectedGraphTitles = graphsRaw
+      .filter((raw) => selectedIdSet.has((raw as { id: string }).id))
+      .map(
+        (raw) =>
+          (raw as { title?: string }).title ?? (raw as { id: string }).id,
+      );
+    if (selectedGraphTitles.length > 0) {
+      goals.push(
+        `围绕选中的图谱「${selectedGraphTitles.slice(0, 4).join("、")}」系统掌握其核心知识`,
+      );
+      goals.push(
+        `以选中的「${selectedGraphTitles[0]}」为起点，按前置关系扩展到关联图谱，形成完整知识网络`,
+      );
+    }
+
+    // 选中的领域导向
+    const selectedDomainNames = Array.from(selectedDomainSet)
+      .map((id) => domainNameMap.get(id))
+      .filter((n): n is string => !!n);
+    if (selectedDomainNames.length > 0) {
+      goals.push(
+        `深入掌握「${selectedDomainNames.slice(0, 3).join("、")}」领域的知识体系`,
+      );
+      const domainGraphTitles = graphsRaw
+        .filter((raw) => {
+          const ids =
+            (raw as { domainIds?: string[] }).domainIds ??
+            (raw as { domain_ids?: string[] }).domain_ids ??
+            [];
+          return ids.some((id) => selectedDomainSet.has(id));
+        })
+        .slice(0, 4)
+        .map(
+          (raw) =>
+            (raw as { title?: string }).title ?? (raw as { id: string }).id,
+        );
+      if (domainGraphTitles.length > 0) {
+        goals.push(
+          `结合「${domainGraphTitles.join("、")}」完成一个综合实践项目，学以致用`,
+        );
+      }
+    }
+
+    // 补充系统性目标，保证覆盖完整知识网络
+    goals.push("对整个图谱地图建立系统性概览，将选中内容与全局知识衔接");
+    return goals.slice(0, 6);
+  }
+
+  /** 按领域聚合图谱标题（id → 名称），按图谱数量降序，未分类放最后 */
+  private groupGraphsByDomain(
+    graphsRaw: Array<Record<string, unknown>>,
+    domainNameMap: Map<string, string>,
+  ): Array<{ name: string; titles: string[] }> {
+    const byDomain = new Map<string, string[]>();
+    const uncategorized: string[] = [];
+    for (const raw of graphsRaw) {
+      const g = raw as {
+        id: string;
+        title?: string;
+        domainIds?: string[];
+        domain_ids?: string[];
+      };
+      const title = g.title ?? g.id;
+      const ids = g.domainIds ?? g.domain_ids ?? [];
+      if (ids.length === 0) {
+        uncategorized.push(title);
+        continue;
+      }
+      for (const id of ids) {
+        const name = domainNameMap.get(id) ?? "未分类";
+        const list = byDomain.get(name) ?? [];
+        list.push(title);
+        byDomain.set(name, list);
+      }
+    }
+    const entries = Array.from(byDomain.entries())
+      .map(([name, titles]) => ({ name, titles }))
+      .sort((a, b) => b.titles.length - a.titles.length);
+    if (uncategorized.length > 0) {
+      entries.push({ name: "未分类", titles: uncategorized });
+    }
+    return entries;
+  }
+
+  /** 领域分布摘要（供 AI 建议目标参考） */
+  private buildDomainSummary(
+    graphsRaw: Array<Record<string, unknown>>,
+    domainNameMap: Map<string, string>,
+  ): string {
+    const entries = this.groupGraphsByDomain(graphsRaw, domainNameMap);
+    if (entries.length === 0) return "（无领域信息）";
+    return entries
+      .map(
+        (e) =>
+          `- 领域「${e.name}」(${e.titles.length} 张): ${e.titles.join("、")}`,
+      )
+      .join("\n");
+  }
+
+  /** 从图谱的 domainIds 批量查询领域名称（id → name） */
+  private async loadDomainNameMap(
+    supabase: SupabaseClient,
+    graphsRaw: Array<Record<string, unknown>>,
+  ): Promise<Map<string, string>> {
+    const ids = new Set<string>();
+    for (const raw of graphsRaw) {
+      const arr =
+        (raw as { domainIds?: string[]; domain_ids?: string[] }).domainIds ??
+        (raw as { domainIds?: string[]; domain_ids?: string[] }).domain_ids ??
+        [];
+      for (const id of arr) ids.add(id);
+    }
+    if (ids.size === 0) return new Map();
+
+    const { data } = await supabase
+      .from("domains")
+      .select("id, name")
+      .in("id", Array.from(ids));
+    const map = new Map<string, string>();
+    (data ?? []).forEach((d) => {
+      map.set(
+        (d as { id: string }).id,
+        (d as { name: string }).name,
+      );
+    });
+    return map;
+  }
+
+  /**
+   * 构建「图谱地图选中内容」：把用户在图谱地图上选中的图谱（画布节点）与
+   * 领域整理成结构化文本，作为学习路径创建的主要上下文注入 AI 提示词。
+   * 无选中时返回空串。
+   */
+  private async buildSelectionContext(
+    supabase: SupabaseClient,
+    userId: string,
+    selection: { selectedGraphIds?: string[]; selectedDomainIds?: string[] },
+  ): Promise<string> {
+    const selectedGraphIds = selection.selectedGraphIds ?? [];
+    const selectedDomainIds = selection.selectedDomainIds ?? [];
+    if (selectedGraphIds.length === 0 && selectedDomainIds.length === 0) {
+      return "";
+    }
+
+    const mapData = await graphCrudService.getGraphMap(supabase, userId);
+    const graphsRaw = (mapData.graphs ?? []) as Array<Record<string, unknown>>;
+    const domainNameMap = await this.loadDomainNameMap(supabase, graphsRaw);
+
+    const selectedGraphSet = new Set(selectedGraphIds);
+    const selectedDomainSet = new Set(selectedDomainIds);
+    const lines: string[] = [];
+
+    // 选中的图谱（画布节点）
+    const selectedGraphs = graphsRaw.filter((raw) =>
+      selectedGraphSet.has((raw as { id: string }).id),
+    );
+    if (selectedGraphs.length > 0) {
+      const titles = selectedGraphs.map(
+        (raw) =>
+          (raw as { title?: string }).title ?? (raw as { id: string }).id,
+      );
+      lines.push(
+        `- 用户当前选中的图谱（${selectedGraphs.length} 个，应作为最优先学习对象）: ${titles.join("、")}`,
+      );
+    }
+
+    // 选中的领域
+    const selectedDomainNames = Array.from(selectedDomainSet)
+      .map((id) => domainNameMap.get(id))
+      .filter((n): n is string => !!n);
+    if (selectedDomainNames.length > 0) {
+      const domainLines = selectedDomainNames.map((name) => {
+        const graphTitles = graphsRaw
+          .filter((raw) => {
+            const ids =
+              (raw as { domainIds?: string[] }).domainIds ??
+              (raw as { domain_ids?: string[] }).domain_ids ??
+              [];
+            return ids.some((did) => selectedDomainSet.has(did));
+          })
+          .map(
+            (raw) =>
+              (raw as { title?: string }).title ?? (raw as { id: string }).id,
+          );
+        return `- 领域「${name}」: ${graphTitles.join("、") || "（无图谱）"}`;
+      });
+      lines.push(
+        `- 用户当前选中的领域（${selectedDomainNames.length} 个，应作为重点学习范围）:\n${domainLines.join("\n")}`,
+      );
+    }
+
+    return lines.join("\n");
+  }
+
+  /** 规则回退路径中，把用户选中的图谱阶段提前到靠前位置（保持相对顺序稳定） */
+  private prioritizeSelectedStages(
+    stages: CrossGraphStage[],
+    selectedGraphIds?: string[],
+  ): CrossGraphStage[] {
+    const selectedSet = new Set(selectedGraphIds ?? []);
+    if (selectedSet.size === 0) return stages;
+    const selected = stages.filter((s) => selectedSet.has(s.graphId));
+    const rest = stages.filter((s) => !selectedSet.has(s.graphId));
+    return [...selected, ...rest];
+  }
+
+  private buildVariantsUserMessage(
+    graphs: Array<{
+      title: string;
+      nodeCount: number;
+      completion: number;
+      isCompleted: boolean;
+      domainNames?: string[];
+    }>,
+    relations: CrossGraphRelationInput[],
+    targetGoal: string,
+    dailyMinutes: number,
+    selectionContext: string,
+  ): string {
+    const graphById = new Map(graphs.map((g) => [g.title.toLowerCase(), g]));
+    const edgesInfo = relations.map((r) => ({
+      source: graphById.get(r.sourceGraphId.toLowerCase())?.title ?? r.sourceGraphId,
+      target: graphById.get(r.targetGraphId.toLowerCase())?.title ?? r.targetGraphId,
+      relationship: r.relationType,
+    }));
+
+    const selectionInstruction = selectionContext
+      ? `用户在图谱地图上选中的图谱/领域应作为候选路径的优先对象，把它们放在靠前位置并赋予 high/medium 优先级；已完成(>=0.85)的选中图谱可放末尾但目标仍以它们为核心。
+图谱地图选中内容：
+${selectionContext}
+`
+      : "";
+
+    return `请根据以下图谱地图与学习目标，生成 ${dailyMinutes} 分钟/天预算下的候选跨图谱学习路径。
+学习目标：${targetGoal}
+${selectionInstruction}图谱列表（含所属领域 domainNames）：${JSON.stringify(graphs, null, 2)}
+图谱关系（source → target，含前置/扩展/相关）：${JSON.stringify(edgesInfo, null, 2)}
+
+要求：
+1. 每个变体输出 2-4 条整体建议（suggestions）；
+2. 每个变体内 path 的 nodeTitle 必须使用输入中的精确图谱标题；
+3. 为每张图给出 priority（high/medium/low）与简短 reason（≤20 字）与 estimatedTime（分钟，5-60）；
+4. 未列出的图谱系统会自动补到末尾，不必强行覆盖全部图谱；
+5. 排序时尽量让同一领域的图谱相邻，先按领域组织再按前置关系推进。`;
+  }
+
+  /**
+   * 归一化 AI 返回的变体数组。
+   * 逻辑见模块级导出函数 normalizeVariants。
+   */
+  private normalizeVariants(
+    rawVariants: Array<Record<string, unknown>>,
+    graphs: CrossGraphNodeInput[],
+  ): CrossGraphPathVariant[] {
+    return normalizeVariants(rawVariants, graphs);
+  }
+}
+
+export const goalDrivenPathService = new GoalDrivenPathService();
+export { GoalDrivenPathService };
+
+/** 规则算法阶段 → 变体结构（无 AI key / AI 失败时的保底） */
+export function rulePathToVariant(
+  emphasis: VariantEmphasis,
+  stages: CrossGraphStage[],
+  suggestions: string[],
+): CrossGraphPathVariant {
+  const name =
+    emphasis === "systematic"
+      ? "系统全面"
+      : emphasis === "goal_oriented"
+        ? "目标导向"
+        : "快速概览";
+  const description =
+    emphasis === "systematic"
+      ? "严格按前置依赖覆盖全部图谱的系统学习顺序"
+      : emphasis === "goal_oriented"
+        ? "聚焦目标相关图谱的目标驱动学习顺序"
+        : "先建立全局概览再深入的高效学习顺序";
+  return {
+    id: emphasis,
+    name,
+    description,
+    emphasis,
+    stages: stages.map((s) => ({
+      graphId: s.graphId,
+      graphTitle: s.graphTitle,
+      order: s.order,
+      priority: s.priority,
+      reason: s.reason,
+      estimatedTime: 30,
+    })),
+    suggestions,
+  };
+}
+
+/**
+ * 归一化 AI 返回的变体数组：
+ * 1. 每个变体的 path 按标题匹配图谱（精确→模糊），命中带 graphId；
+ * 2. 未命中的图谱追加到末尾（保证覆盖全部图谱，与 generateCrossGraphAIPath 行为一致）；
+ * 3. 同一变体内重复出现的图谱去重。
+ */
+export function normalizeVariants(
+  rawVariants: Array<Record<string, unknown>>,
+  graphs: CrossGraphNodeInput[],
+): CrossGraphPathVariant[] {
+  const graphByLowerTitle = new Map(
+    graphs.map((g) => [g.title.toLowerCase(), g]),
+  );
+
+  const resolveGraph = (title: string): CrossGraphNodeInput | undefined => {
+    const lower = title.toLowerCase();
+    const exact = graphByLowerTitle.get(lower);
+    if (exact) return exact;
+    return graphs.find(
+      (g) =>
+        g.title.toLowerCase().includes(lower) ||
+        lower.includes(g.title.toLowerCase()),
+    );
+  };
+
+  const variants: CrossGraphPathVariant[] = [];
+  for (const raw of rawVariants) {
+    const rawPath = Array.isArray(raw.path)
+      ? (raw.path as Array<Record<string, unknown>>)
+      : [];
+    const seen = new Set<string>();
+    const stages: VariantStage[] = [];
+
+    for (const item of rawPath) {
+      const title = item?.nodeTitle ? String(item.nodeTitle) : "";
+      if (!title) continue;
+      const graph = resolveGraph(title);
+      if (!graph || seen.has(graph.graphId)) continue;
+      seen.add(graph.graphId);
+      stages.push({
+        graphId: graph.graphId,
+        graphTitle: graph.title,
+        order: stages.length,
+        priority:
+          item.priority === "low"
+            ? "low"
+            : item.priority === "medium"
+              ? "medium"
+              : "high",
+        reason: item.reason ? String(item.reason).slice(0, 60) : "",
+        estimatedTime:
+          typeof item.estimatedTime === "number" && item.estimatedTime > 0
+            ? Math.min(240, Math.max(5, Math.round(item.estimatedTime)))
+            : 30,
+      });
+    }
+
+    // 未命中图谱（标题改动/新增）追加到末尾
+    for (const g of graphs) {
+      if (!seen.has(g.graphId)) {
+        stages.push({
+          graphId: g.graphId,
+          graphTitle: g.title,
+          order: stages.length,
+          priority:
+            g.completion >= CROSS_GRAPH_COMPLETION_THRESHOLD ? "low" : "medium",
+          reason: "补充图谱",
+          estimatedTime: 30,
+        });
+      }
+    }
+
+    if (stages.length === 0) continue;
+
+    const emphasis: VariantEmphasis =
+      raw.emphasis === "goal_oriented" || raw.emphasis === "quick_overview"
+        ? raw.emphasis
+        : "systematic";
+
+    variants.push({
+      id: raw.id ? String(raw.id) : emphasis,
+      name: raw.name ? String(raw.name) : emphasis,
+      description: raw.description ? String(raw.description) : "",
+      emphasis,
+      estimatedWeeks:
+        typeof raw.estimatedWeeks === "number" ? raw.estimatedWeeks : undefined,
+      totalEstimatedMinutes:
+        typeof raw.totalEstimatedMinutes === "number"
+          ? raw.totalEstimatedMinutes
+          : undefined,
+      stages,
+      suggestions: Array.isArray(raw.suggestions)
+        ? raw.suggestions.map((s) => String(s))
+        : [],
+    });
+  }
+
+  return variants;
+}

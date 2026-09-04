@@ -86,7 +86,7 @@ interface NoteSearchRow {
 }
 
 /**
- * match_notes RPC 返回行（与 34_notes_match_function.sql RETURNS TABLE 对齐）。
+ * match_notes RPC 返回行（与 23_notes_embedding.sql RETURNS TABLE 对齐）。
  * - id: note_embeddings.id
  * - note_id: 关联笔记 ID（前端跳转用）
  * - chunk_text: 笔记内容快照（用于检索结果摘要）

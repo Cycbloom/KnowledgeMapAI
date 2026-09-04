@@ -14,27 +14,10 @@ CREATE TABLE IF NOT EXISTS sync_operations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 启用 RLS
-ALTER TABLE sync_operations ENABLE ROW LEVEL SECURITY;
 
--- 用户只能读写自己的 sync_operations
-CREATE POLICY "Users can view own sync_operations"
-  ON sync_operations FOR SELECT
-  USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert own sync_operations"
-  ON sync_operations FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete own sync_operations"
-  ON sync_operations FOR DELETE
-  USING (auth.uid() = user_id);
 
--- 索引
-CREATE INDEX IF NOT EXISTS idx_sync_operations_user_client
-  ON sync_operations(user_id, client_op_id);
-CREATE INDEX IF NOT EXISTS idx_sync_operations_user_applied
-  ON sync_operations(user_id, applied_at DESC);
 
 -- 注释
 COMMENT ON TABLE sync_operations IS '记录 mobileSyncService 应用的操作历史，通过 client_op_id 支持幂等性';

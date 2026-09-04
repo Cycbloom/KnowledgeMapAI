@@ -26,45 +26,7 @@ COMMENT ON COLUMN graph_backbone_modules.color IS '模块颜色';
 COMMENT ON COLUMN graph_backbone_modules.description IS '模块描述';
 COMMENT ON COLUMN graph_backbone_modules.display_order IS '显示顺序';
 
-CREATE INDEX IF NOT EXISTS idx_graph_backbone_modules_graph_id ON graph_backbone_modules(graph_id);
-CREATE INDEX IF NOT EXISTS idx_graph_backbone_modules_module_type ON graph_backbone_modules(module_type);
 
--- =====================================================
--- Row Level Security（与 knowledge_graphs 权限模型一致）
--- =====================================================
-ALTER TABLE graph_backbone_modules ENABLE ROW LEVEL SECURITY;
 
--- 读取：本人图谱 / 公开图谱 / 协作者图谱
-CREATE POLICY "view accessible backbone modules"
-  ON graph_backbone_modules FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM knowledge_graphs
-      WHERE knowledge_graphs.id = graph_backbone_modules.graph_id
-        AND (
-          knowledge_graphs.user_id = auth.uid()
-          OR knowledge_graphs.is_public = true
-          OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
-        )
-    )
-  );
 
--- 写入/更新/删除：仅本人图谱
-CREATE POLICY "manage own backbone modules"
-  ON graph_backbone_modules FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM knowledge_graphs
-      WHERE knowledge_graphs.id = graph_backbone_modules.graph_id
-        AND knowledge_graphs.user_id = auth.uid()
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM knowledge_graphs
-      WHERE knowledge_graphs.id = graph_backbone_modules.graph_id
-        AND knowledge_graphs.user_id = auth.uid()
-    )
-  );
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON graph_backbone_modules TO authenticated;

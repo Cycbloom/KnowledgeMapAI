@@ -22,18 +22,6 @@ COMMENT ON COLUMN revoked_tokens.user_id IS 'token 所属用户 ID，用于级�
 COMMENT ON COLUMN revoked_tokens.expires_at IS '原 refreshToken 的过期时间，到期后可由清理任务删除';
 COMMENT ON COLUMN revoked_tokens.revoked_at IS '撤销时间，默认 now()';
 
--- 索引：token_hash 已通过 UNIQUE 约束自动建立唯一索引，此处补充一个非唯一索引以便
--- 后续清理任务按 hash 批量查询。原 spec 期望使用 WHERE revoked_at > now() - interval '30 days'
--- 作为部分索引谓词，但 PostgreSQL 不允许在部分索引中使用 STABLE 函数（now()），
--- 故退化为常规索引；30 天清理由独立清理任务保证。
-CREATE INDEX IF NOT EXISTS idx_revoked_tokens_token_hash ON revoked_tokens(token_hash);
 
--- RLS 策略：用户只能查询自己的 revoked_tokens
-ALTER TABLE revoked_tokens ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own revoked tokens"
-  ON revoked_tokens FOR SELECT
-  USING (auth.uid() = user_id);
 
--- Grants: service role 拥有完全访问权限（后端 API 使用 admin client）
-GRANT ALL ON revoked_tokens TO service_role;

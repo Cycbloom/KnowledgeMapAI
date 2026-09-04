@@ -87,81 +87,18 @@ COMMENT ON COLUMN agent_pending_actions.status IS '操作状态：pending(待确
 COMMENT ON COLUMN agent_pending_actions.result IS '执行结果，JSONB格式';
 COMMENT ON COLUMN agent_pending_actions.executed_at IS '执行时间';
 
--- Indexes
-CREATE INDEX IF NOT EXISTS idx_agent_sessions_user_id ON agent_sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_agent_sessions_status ON agent_sessions(status);
-CREATE INDEX IF NOT EXISTS idx_agent_messages_session_id ON agent_messages(session_id);
-CREATE INDEX IF NOT EXISTS idx_agent_messages_session_ts ON agent_messages(session_id, timestamp ASC);
-CREATE INDEX IF NOT EXISTS idx_agent_tool_calls_session_id ON agent_tool_calls(session_id);
-CREATE INDEX IF NOT EXISTS idx_agent_tool_calls_session_ts ON agent_tool_calls(session_id, timestamp ASC);
-CREATE INDEX IF NOT EXISTS idx_agent_pending_actions_session_id ON agent_pending_actions(session_id);
-CREATE INDEX IF NOT EXISTS idx_agent_pending_actions_status ON agent_pending_actions(status);
 
--- RLS policies
-ALTER TABLE agent_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agent_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agent_tool_calls ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agent_pending_actions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own agent sessions"
-  ON agent_sessions FOR SELECT
-  USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own agent sessions"
-  ON agent_sessions FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own agent sessions"
-  ON agent_sessions FOR UPDATE
-  USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own agent sessions"
-  ON agent_sessions FOR DELETE
-  USING (auth.uid() = user_id);
 
--- agent_messages, agent_tool_calls, agent_pending_actions 通过 session 的 user_id 间接控制
-CREATE POLICY "Users can view messages of their own sessions"
-  ON agent_messages FOR SELECT
-  USING (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_messages.session_id AND agent_sessions.user_id = auth.uid()));
 
-CREATE POLICY "Users can insert messages to their own sessions"
-  ON agent_messages FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_messages.session_id AND agent_sessions.user_id = auth.uid()));
 
-CREATE POLICY "Users can view tool calls of their own sessions"
-  ON agent_tool_calls FOR SELECT
-  USING (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_tool_calls.session_id AND agent_sessions.user_id = auth.uid()));
 
-CREATE POLICY "Users can insert tool calls to their own sessions"
-  ON agent_tool_calls FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_tool_calls.session_id AND agent_sessions.user_id = auth.uid()));
 
-CREATE POLICY "Users can update tool calls of their own sessions"
-  ON agent_tool_calls FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_tool_calls.session_id AND agent_sessions.user_id = auth.uid()));
 
-CREATE POLICY "Users can view pending actions of their own sessions"
-  ON agent_pending_actions FOR SELECT
-  USING (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_pending_actions.session_id AND agent_sessions.user_id = auth.uid()));
 
-CREATE POLICY "Users can insert pending actions to their own sessions"
-  ON agent_pending_actions FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_pending_actions.session_id AND agent_sessions.user_id = auth.uid()));
 
-CREATE POLICY "Users can update pending actions of their own sessions"
-  ON agent_pending_actions FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_pending_actions.session_id AND agent_sessions.user_id = auth.uid()));
 
--- Triggers
--- 自动更新 updated_at
-CREATE TRIGGER trg_agent_sessions_updated_at
-  BEFORE UPDATE ON agent_sessions
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
 
--- Grants
--- Service role has full access (for backend API)
-GRANT ALL ON agent_sessions TO service_role;
-GRANT ALL ON agent_messages TO service_role;
-GRANT ALL ON agent_tool_calls TO service_role;
-GRANT ALL ON agent_pending_actions TO service_role;

@@ -20,6 +20,9 @@
 -- =====================================================
 
 -- =====================================================
+-- match_notes 检索函数、RLS、索引、触发器分别归拢至 31_functions.sql /
+-- 30_rls_policies.sql / 29_indexes.sql / 32_triggers.sql
+
 -- 1. note_embeddings 表
 -- =====================================================
 CREATE TABLE IF NOT EXISTS note_embeddings (
@@ -40,88 +43,3 @@ COMMENT ON COLUMN note_embeddings.chunk_text IS '笔记正文快照（截断前 
 COMMENT ON COLUMN note_embeddings.sparse_embedding IS '笔记内容的稀疏向量（SPLADE 风格，总维度 1000000），用于关键词/术语精确匹配检索';
 COMMENT ON COLUMN note_embeddings.created_at IS '首次生成 embedding 的时间';
 COMMENT ON COLUMN note_embeddings.updated_at IS '最近一次刷新 embedding 的时间';
-
--- 索引: note_id 普通索引 (按笔记查 embedding 用)
-CREATE INDEX IF NOT EXISTS idx_note_embeddings_note_id ON note_embeddings(note_id);
-
--- 索引: embedding 向量索引 (余弦距离, 与 document_chunks 一致使用 hnsw + vector_cosine_ops)
-CREATE INDEX IF NOT EXISTS idx_note_embeddings_embedding
-  ON note_embeddings USING hnsw (embedding vector_cosine_ops);
-
--- =====================================================
--- 2. RLS 行级安全策略
--- 通过 note_id JOIN notes 验证 user_id (参考 32_notes.sql 的 note_node_links 模式)
--- =====================================================
-ALTER TABLE note_embeddings ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own note embeddings" ON note_embeddings FOR SELECT USING (
-  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_embeddings.note_id AND notes.user_id = auth.uid())
-);
-CREATE POLICY "Users can insert own note embeddings" ON note_embeddings FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_embeddings.note_id AND notes.user_id = auth.uid())
-);
-CREATE POLICY "Users can update own note embeddings" ON note_embeddings FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_embeddings.note_id AND notes.user_id = auth.uid())
-);
-CREATE POLICY "Users can delete own note embeddings" ON note_embeddings FOR DELETE USING (
-  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_embeddings.note_id AND notes.user_id = auth.uid())
-);
-
--- =====================================================
--- 3. 触发器 (updated_at 自动更新, 参考 15_triggers.sql 风格)
--- =====================================================
-DROP TRIGGER IF EXISTS note_embeddings_updated_at ON note_embeddings;
-CREATE TRIGGER note_embeddings_updated_at
-  BEFORE UPDATE ON note_embeddings
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- =====================================================
--- 4. match_notes 向量检索函数
--- (原 34_notes_match_function.sql，已合并)
--- 风格与 14_functions.sql 中的 match_knowledge_points / match_document_chunks 一致。
--- 函数仅返回当前用户未软删除笔记的 embedding 命中，
--- RLS 已在上方通过 note_id JOIN notes 验证 user_id，
--- 此处再显式过滤 n.user_id = p_user_id AND n.deleted_at IS NULL 做双重保险。
--- =====================================================
-
--- 参数与 match_knowledge_points 对齐: query_embedding / match_threshold / match_count / p_user_id
--- 注意: p_user_id 必须给 DEFAULT NULL（PostgreSQL 要求有默认值的参数之后所有参数也有默认值），
---       调用方 ragSearchService.noteSemanticSearch 已显式传 user_id，不会走到默认值。
-CREATE OR REPLACE FUNCTION match_notes (
-  query_embedding vector(1024),
-  match_threshold float DEFAULT 0.5,
-  match_count int DEFAULT 10,
-  p_user_id uuid DEFAULT NULL
-)
-RETURNS TABLE (
-  id uuid,
-  note_id uuid,
-  chunk_text text,
-  title text,
-  similarity float
-)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    ne.id,
-    ne.note_id,
-    ne.chunk_text,
-    n.title,
-    1 - (ne.embedding <=> query_embedding) as similarity
-  FROM note_embeddings ne
-  JOIN notes n ON n.id = ne.note_id
-  WHERE n.user_id = p_user_id
-    AND n.deleted_at IS NULL
-    AND ne.embedding IS NOT NULL
-    AND 1 - (ne.embedding <=> query_embedding) > match_threshold
-  ORDER BY ne.embedding <=> query_embedding
-  LIMIT match_count;
-END;
-$$;
-
-COMMENT ON FUNCTION match_notes IS '笔记内容向量检索函数，按用户隔离，返回未软删除笔记的 embedding 命中（含 chunk_text 摘要与 title）';
-
--- 授予 authenticated 角色执行权限（与 16_grants.sql 中 match_knowledge_points 风格一致）
-GRANT EXECUTE ON FUNCTION match_notes(vector(1024), float, int, uuid) TO authenticated;

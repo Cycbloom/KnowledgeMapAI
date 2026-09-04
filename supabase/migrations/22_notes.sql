@@ -34,13 +34,6 @@ COMMENT ON COLUMN note_templates.content IS '模板 Markdown 正文，含 {{date
 COMMENT ON COLUMN note_templates.is_default IS '是否为该用户的默认模板（每个 user_id 同时只能一个）';
 COMMENT ON COLUMN note_templates.is_system IS '是否为系统默认模板（不可删、不可改）';
 
--- 唯一约束: 每个 user_id 同时只能有一个 is_default=true（系统模板 user_id 为 NULL 不受约束）
-CREATE UNIQUE INDEX IF NOT EXISTS idx_note_templates_user_default
-  ON note_templates(user_id) WHERE is_default = TRUE AND user_id IS NOT NULL;
-
--- 索引
-CREATE INDEX IF NOT EXISTS idx_note_templates_user_id ON note_templates(user_id);
-
 -- =====================================================
 -- 2. notes 表
 -- =====================================================
@@ -74,16 +67,6 @@ COMMENT ON COLUMN notes.is_pinned IS '是否置顶（列表置顶优先）';
 COMMENT ON COLUMN notes.is_archived IS '是否归档（归档后不出现在“全部”视图）';
 COMMENT ON COLUMN notes.deleted_at IS '软删除时间，非 null 表示已进入回收站';
 
--- 唯一约束: type='daily' 时 (user_id, date) 唯一（仅未软删除行）
-CREATE UNIQUE INDEX IF NOT EXISTS idx_notes_daily_user_date
-  ON notes(user_id, date) WHERE type = 'daily' AND deleted_at IS NULL;
-
--- 索引
-CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id);
-CREATE INDEX IF NOT EXISTS idx_notes_user_updated ON notes(user_id, updated_at DESC);
-CREATE INDEX IF NOT EXISTS idx_notes_user_type ON notes(user_id, type);
-CREATE INDEX IF NOT EXISTS idx_notes_deleted_at ON notes(deleted_at);
-
 -- =====================================================
 -- 3. note_node_links 表（挂载关系，多对多）
 -- =====================================================
@@ -101,60 +84,7 @@ COMMENT ON COLUMN note_node_links.note_id IS '笔记 ID，引用 notes(id)，删
 COMMENT ON COLUMN note_node_links.node_id IS '图节点 ID，引用 graph_nodes(id)，删除节点时级联删除';
 COMMENT ON COLUMN note_node_links.graph_id IS '冗余图谱 ID，便于按图谱批量查询挂载关系';
 
--- 索引
-CREATE INDEX IF NOT EXISTS idx_note_node_links_node_id ON note_node_links(node_id);
-CREATE INDEX IF NOT EXISTS idx_note_node_links_note_id ON note_node_links(note_id);
-CREATE INDEX IF NOT EXISTS idx_note_node_links_graph_id ON note_node_links(graph_id);
-
--- =====================================================
--- 4. RLS 行级安全策略
--- =====================================================
-
--- notes: user_id = auth.uid() 才能访问自己的
-ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own notes" ON notes FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own notes" ON notes FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own notes" ON notes FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own notes" ON notes FOR DELETE USING (auth.uid() = user_id);
-
--- note_node_links: 通过 note_id JOIN notes 验证 user_id
-ALTER TABLE note_node_links ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own note node links" ON note_node_links FOR SELECT USING (
-  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_node_links.note_id AND notes.user_id = auth.uid())
-);
-CREATE POLICY "Users can insert own note node links" ON note_node_links FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_node_links.note_id AND notes.user_id = auth.uid())
-);
-CREATE POLICY "Users can delete own note node links" ON note_node_links FOR DELETE USING (
-  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_node_links.note_id AND notes.user_id = auth.uid())
-);
-
--- note_templates: 用户能查所有可见模板（自己的 + 系统的），只能改/删自己的
-ALTER TABLE note_templates ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own or system note templates" ON note_templates FOR SELECT USING (
-  auth.uid() = user_id OR is_system = TRUE
-);
-CREATE POLICY "Users can insert own note templates" ON note_templates FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own note templates" ON note_templates FOR UPDATE USING (
-  auth.uid() = user_id AND is_system = FALSE
-);
-CREATE POLICY "Users can delete own note templates" ON note_templates FOR DELETE USING (
-  auth.uid() = user_id AND is_system = FALSE
-);
-
--- =====================================================
--- 5. 触发器 (updated_at 自动更新，参考 15_triggers.sql 风格)
--- =====================================================
-DROP TRIGGER IF EXISTS notes_updated_at ON notes;
-CREATE TRIGGER notes_updated_at
-  BEFORE UPDATE ON notes
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-DROP TRIGGER IF EXISTS note_templates_updated_at ON note_templates;
-CREATE TRIGGER note_templates_updated_at
-  BEFORE UPDATE ON note_templates
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
+-- RLS/索引/授权分别归拢至 30_rls_policies.sql / 29_indexes.sql / 33_grants.sql；
 -- note_node_links 仅有 created_at，无 updated_at，不需要触发器
 
 -- =====================================================

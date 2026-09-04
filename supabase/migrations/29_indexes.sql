@@ -297,3 +297,247 @@ CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_user_id ON ai_performance_logs(user_
 CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_session_created ON ai_performance_logs(session_id, created_at DESC);
 
 
+
+-- ==== from 05_graph_structure.sql ====
+-- B1 双向链接：反向链接查询索引（查谁引用了某 knowledge_point）
+CREATE INDEX IF NOT EXISTS idx_edges_backlinks ON edges(target_knowledge_point_id, relationship_type, deleted_at);
+
+-- B1 双向链接：正向链接查询索引（查某 knowledge_point 引用了谁）
+CREATE INDEX IF NOT EXISTS idx_edges_outlinks ON edges(source_knowledge_point_id, relationship_type, deleted_at);
+
+COMMENT ON INDEX idx_edges_backlinks IS 'B1 双向链接：加速反向链接查询（target_knowledge_point_id + relationship_type + deleted_at）';
+
+COMMENT ON INDEX idx_edges_outlinks IS 'B1 双向链接：加速正向链接查询（source_knowledge_point_id + relationship_type + deleted_at）';
+
+
+-- ==== from 08_scheduler_tasks.sql ====
+CREATE INDEX IF NOT EXISTS idx_user_tasks_source ON user_tasks(source);
+
+
+-- ==== from 11_ai_and_prompts.sql ====
+-- 部分唯一索引：修复 NULL 值问题
+-- System 级别：同一 code 只能有一条记录
+CREATE UNIQUE INDEX IF NOT EXISTS idx_prompt_templates_system_unique 
+  ON prompt_templates(code) 
+  WHERE scope = 'system' AND user_id IS NULL AND graph_id IS NULL;
+
+-- User/Graph 级别：同一 (code, scope, user_id, graph_id) 组合唯一
+CREATE UNIQUE INDEX IF NOT EXISTS idx_prompt_templates_user_graph_unique 
+  ON prompt_templates(code, scope, user_id, graph_id) 
+  WHERE scope != 'system';
+
+
+-- ==== from 12_focus_and_notifications.sql ====
+CREATE INDEX IF NOT EXISTS idx_user_activities_user_id ON user_activities(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_user_activities_type ON user_activities(activity_type);
+
+CREATE INDEX IF NOT EXISTS idx_user_activities_started_at ON user_activities(started_at);
+
+CREATE INDEX IF NOT EXISTS idx_user_activities_knowledge_point_id ON user_activities(knowledge_point_id);
+
+
+-- ==== from 13_plugin_marketplace.sql ====
+CREATE INDEX IF NOT EXISTS idx_installed_plugins_user ON installed_plugins(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_installed_plugins_name ON installed_plugins(plugin_name);
+
+CREATE INDEX IF NOT EXISTS idx_plugin_ratings_plugin ON plugin_ratings(plugin_name);
+
+
+-- ==== from 14_practice_quiz_sessions.sql ====
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_learning_sessions_user_id ON learning_sessions(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_learning_sessions_subtask_id ON learning_sessions(subtask_id);
+
+CREATE INDEX IF NOT EXISTS idx_learning_sessions_kp_id ON learning_sessions(knowledge_point_id);
+
+CREATE INDEX IF NOT EXISTS idx_learning_sessions_status ON learning_sessions(status);
+
+CREATE INDEX IF NOT EXISTS idx_learning_sessions_user_started ON learning_sessions(user_id, started_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_learning_session_results_session_id ON learning_session_results(session_id);
+
+CREATE INDEX IF NOT EXISTS idx_learning_session_results_card_id ON learning_session_results(card_id);
+
+
+-- ==== from 15_system_tasks.sql ====
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_system_tasks_user_id ON system_tasks(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_system_tasks_status ON system_tasks(status);
+
+CREATE INDEX IF NOT EXISTS idx_system_tasks_task_type ON system_tasks(task_type);
+
+CREATE INDEX IF NOT EXISTS idx_system_tasks_scheduled_at ON system_tasks(scheduled_at) WHERE status = 'pending';
+
+-- 为 claim 查询优化：WHERE id = ? AND status = 'pending'
+CREATE INDEX IF NOT EXISTS idx_system_tasks_claimed_at ON system_tasks(claimed_at) WHERE status = 'running';
+
+CREATE INDEX IF NOT EXISTS idx_system_tasks_runtime_progress_gin
+  ON system_tasks USING GIN (runtime_progress)
+  WHERE runtime_progress IS NOT NULL AND runtime_progress <> '{}'::jsonb;
+
+
+-- ==== from 16_graph_backbone_modules.sql ====
+CREATE INDEX IF NOT EXISTS idx_graph_backbone_modules_graph_id ON graph_backbone_modules(graph_id);
+
+CREATE INDEX IF NOT EXISTS idx_graph_backbone_modules_module_type ON graph_backbone_modules(module_type);
+
+
+-- ==== from 17_document_chunks.sql ====
+CREATE INDEX IF NOT EXISTS idx_document_chunks_embedding
+  ON document_chunks USING hnsw (embedding vector_cosine_ops);
+
+CREATE INDEX IF NOT EXISTS idx_document_chunks_kp_id
+  ON document_chunks(knowledge_point_id);
+
+
+-- ==== from 18_graph_version_control.sql ====
+CREATE INDEX IF NOT EXISTS idx_graph_events_graph_created ON graph_events(graph_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_graph_events_event_type ON graph_events(event_type);
+
+CREATE INDEX IF NOT EXISTS idx_graph_events_batch_id ON graph_events(batch_id) WHERE batch_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_graph_events_operator_id ON graph_events(operator_id);
+
+CREATE INDEX IF NOT EXISTS idx_graph_snapshots_graph_created ON graph_snapshots(graph_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_graph_snapshots_type ON graph_snapshots(snapshot_type);
+
+CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_branch ON knowledge_graphs(parent_graph_id) WHERE is_branch = true;
+
+
+-- ==== from 19_agent_sessions.sql ====
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_agent_sessions_user_id ON agent_sessions(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_agent_sessions_status ON agent_sessions(status);
+
+CREATE INDEX IF NOT EXISTS idx_agent_messages_session_id ON agent_messages(session_id);
+
+CREATE INDEX IF NOT EXISTS idx_agent_messages_session_ts ON agent_messages(session_id, timestamp ASC);
+
+CREATE INDEX IF NOT EXISTS idx_agent_tool_calls_session_id ON agent_tool_calls(session_id);
+
+CREATE INDEX IF NOT EXISTS idx_agent_tool_calls_session_ts ON agent_tool_calls(session_id, timestamp ASC);
+
+CREATE INDEX IF NOT EXISTS idx_agent_pending_actions_session_id ON agent_pending_actions(session_id);
+
+CREATE INDEX IF NOT EXISTS idx_agent_pending_actions_status ON agent_pending_actions(status);
+
+
+-- ==== from 20_sync_operations.sql ====
+-- 索引
+CREATE INDEX IF NOT EXISTS idx_sync_operations_user_client
+  ON sync_operations(user_id, client_op_id);
+
+CREATE INDEX IF NOT EXISTS idx_sync_operations_user_applied
+  ON sync_operations(user_id, applied_at DESC);
+
+
+-- ==== from 21_revoked_tokens.sql ====
+-- 索引：token_hash 已通过 UNIQUE 约束自动建立唯一索引，此处补充一个非唯一索引以便
+-- 后续清理任务按 hash 批量查询。原 spec 期望使用 WHERE revoked_at > now() - interval '30 days'
+-- 作为部分索引谓词，但 PostgreSQL 不允许在部分索引中使用 STABLE 函数（now()），
+-- 故退化为常规索引；30 天清理由独立清理任务保证。
+CREATE INDEX IF NOT EXISTS idx_revoked_tokens_token_hash ON revoked_tokens(token_hash);
+
+
+-- ==== from 22_notes.sql ====
+-- 唯一约束: 每个 user_id 同时只能有一个 is_default=true（系统模板 user_id 为 NULL 不受约束）
+CREATE UNIQUE INDEX IF NOT EXISTS idx_note_templates_user_default
+  ON note_templates(user_id) WHERE is_default = TRUE AND user_id IS NOT NULL;
+
+-- 索引
+CREATE INDEX IF NOT EXISTS idx_note_templates_user_id ON note_templates(user_id);
+
+-- 唯一约束: type='daily' 时 (user_id, date) 唯一（仅未软删除行）
+CREATE UNIQUE INDEX IF NOT EXISTS idx_notes_daily_user_date
+  ON notes(user_id, date) WHERE type = 'daily' AND deleted_at IS NULL;
+
+-- 索引
+CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_notes_user_updated ON notes(user_id, updated_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_notes_user_type ON notes(user_id, type);
+
+CREATE INDEX IF NOT EXISTS idx_notes_deleted_at ON notes(deleted_at);
+
+-- 索引
+CREATE INDEX IF NOT EXISTS idx_note_node_links_node_id ON note_node_links(node_id);
+
+CREATE INDEX IF NOT EXISTS idx_note_node_links_note_id ON note_node_links(note_id);
+
+CREATE INDEX IF NOT EXISTS idx_note_node_links_graph_id ON note_node_links(graph_id);
+
+
+-- ==== from 23_notes_embedding.sql ====
+-- 索引: note_id 普通索引 (按笔记查 embedding 用)
+CREATE INDEX IF NOT EXISTS idx_note_embeddings_note_id ON note_embeddings(note_id);
+
+-- 索引: embedding 向量索引 (余弦距离, 与 document_chunks 一致使用 hnsw + vector_cosine_ops)
+CREATE INDEX IF NOT EXISTS idx_note_embeddings_embedding
+  ON note_embeddings USING hnsw (embedding vector_cosine_ops);
+
+
+-- ==== from 24_note_block_refs.sql ====
+-- 索引
+CREATE INDEX IF NOT EXISTS idx_note_block_refs_source ON note_block_refs(source_note_id);
+
+CREATE INDEX IF NOT EXISTS idx_note_block_refs_target ON note_block_refs(target_note_id);
+
+-- target_block_id 索引：供 SSE 推送反向查询（源块更新时找所有引用方）
+CREATE INDEX IF NOT EXISTS idx_note_block_refs_target_block ON note_block_refs(target_block_id);
+
+
+-- ==== from 25_audit_logs.sql ====
+CREATE INDEX IF NOT EXISTS idx_audit_logs_event_type ON audit_logs(event_type);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+
+
+-- ==== from 26_error_reports.sql ====
+CREATE INDEX IF NOT EXISTS idx_error_reports_timestamp ON error_reports(timestamp DESC);
+
+CREATE INDEX IF NOT EXISTS idx_error_reports_user_id ON error_reports(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_error_reports_message ON error_reports(message);
+
+
+-- ==== from 27_literature_sources.sql ====
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_literature_sources_graph_id ON literature_sources(graph_id);
+
+CREATE INDEX IF NOT EXISTS idx_literature_sources_title ON literature_sources(title);
+
+CREATE INDEX IF NOT EXISTS idx_literature_sources_doi ON literature_sources(doi);
+
+CREATE INDEX IF NOT EXISTS idx_literature_sources_type ON literature_sources(type);
+
+CREATE INDEX IF NOT EXISTS idx_literature_sources_year ON literature_sources(year);
+
+
+-- ==== from 28_learning_material_schemas.sql ====
+-- 索引：加速按 (scope, user_id, graph_id) 查询
+CREATE INDEX IF NOT EXISTS idx_lms_scope_user_graph
+  ON learning_material_schemas(scope, user_id, graph_id);
+
+-- 索引：每个用户/图谱只能有一个 is_default=true
+CREATE UNIQUE INDEX IF NOT EXISTS idx_lms_user_default_unique
+  ON learning_material_schemas(user_id)
+  WHERE scope = 'user' AND is_default = true AND user_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_lms_graph_default_unique
+  ON learning_material_schemas(graph_id)
+  WHERE scope = 'graph' AND is_default = true AND graph_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_lms_system_default_unique
+  ON learning_material_schemas(scope)
+  WHERE scope = 'system' AND is_default = true;
+

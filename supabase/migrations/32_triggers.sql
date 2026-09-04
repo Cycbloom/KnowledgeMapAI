@@ -155,3 +155,59 @@ DROP TRIGGER IF EXISTS on_user_created_queues ON users;
 CREATE TRIGGER on_user_created_queues
   AFTER INSERT ON users
   FOR EACH ROW EXECUTE FUNCTION create_default_queues_for_user();
+
+-- ==== from 13_plugin_marketplace.sql ====
+CREATE TRIGGER installed_plugins_updated_at
+  BEFORE UPDATE ON installed_plugins
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ==== from 14_practice_quiz_sessions.sql ====
+-- Triggers (在 15_triggers.sql 之后执行，需在此创建以避免迁移顺序问题)
+CREATE TRIGGER learning_sessions_updated_at
+  BEFORE UPDATE ON learning_sessions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ==== from 15_system_tasks.sql ====
+-- Trigger: auto-update updated_at
+CREATE TRIGGER system_tasks_updated_at
+  BEFORE UPDATE ON system_tasks
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ==== from 19_agent_sessions.sql ====
+-- Triggers
+-- 自动更新 updated_at
+CREATE TRIGGER trg_agent_sessions_updated_at
+  BEFORE UPDATE ON agent_sessions
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ==== from 22_notes.sql ====
+DROP TRIGGER IF EXISTS notes_updated_at ON notes;
+CREATE TRIGGER notes_updated_at
+  BEFORE UPDATE ON notes
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS note_templates_updated_at ON note_templates;
+CREATE TRIGGER note_templates_updated_at
+  BEFORE UPDATE ON note_templates
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ==== from 23_notes_embedding.sql ====
+DROP TRIGGER IF EXISTS note_embeddings_updated_at ON note_embeddings;
+CREATE TRIGGER note_embeddings_updated_at
+  BEFORE UPDATE ON note_embeddings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ==== from 27_literature_sources.sql ====
+DROP TRIGGER IF EXISTS on_update_literature_sources ON literature_sources;
+CREATE TRIGGER on_update_literature_sources
+  BEFORE UPDATE ON literature_sources
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+

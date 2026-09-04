@@ -122,13 +122,4 @@ COMMENT ON COLUMN templates.generation_config IS 'AI生成配置：风格、深�
 COMMENT ON COLUMN templates.tags IS '模板标签数组，用于分类和搜索';
 COMMENT ON COLUMN templates.difficulty IS '模板难度：easy, medium, hard';
 
--- 部分唯一索引：修复 NULL 值问题
--- System 级别：同一 code 只能有一条记录
-CREATE UNIQUE INDEX IF NOT EXISTS idx_prompt_templates_system_unique 
-  ON prompt_templates(code) 
-  WHERE scope = 'system' AND user_id IS NULL AND graph_id IS NULL;
 
--- User/Graph 级别：同一 (code, scope, user_id, graph_id) 组合唯一
-CREATE UNIQUE INDEX IF NOT EXISTS idx_prompt_templates_user_graph_unique 
-  ON prompt_templates(code, scope, user_id, graph_id) 
-  WHERE scope != 'system';

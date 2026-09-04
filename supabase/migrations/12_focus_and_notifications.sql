@@ -110,7 +110,3 @@ COMMENT ON COLUMN user_activities.activity_type IS '活动类型：focus_study, 
 COMMENT ON COLUMN user_activities.duration IS '活动持续时间（秒）';
 COMMENT ON COLUMN user_activities.metadata IS '活动额外数据，如评分、模式等';
 
-CREATE INDEX IF NOT EXISTS idx_user_activities_user_id ON user_activities(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_activities_type ON user_activities(activity_type);
-CREATE INDEX IF NOT EXISTS idx_user_activities_started_at ON user_activities(started_at);
-CREATE INDEX IF NOT EXISTS idx_user_activities_knowledge_point_id ON user_activities(knowledge_point_id);

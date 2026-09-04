@@ -2056,3 +2056,43 @@ BEGIN
   LIMIT match_count;
 END;
 $$;
+
+-- ==== from 23_notes_embedding.sql ====
+-- 参数与 match_knowledge_points 对齐: query_embedding / match_threshold / match_count / p_user_id
+-- 注意: p_user_id 必须给 DEFAULT NULL（PostgreSQL 要求有默认值的参数之后所有参数也有默认值），
+--       调用方 ragSearchService.noteSemanticSearch 已显式传 user_id，不会走到默认值。
+CREATE OR REPLACE FUNCTION match_notes (
+  query_embedding vector(1024),
+  match_threshold float DEFAULT 0.5,
+  match_count int DEFAULT 10,
+  p_user_id uuid DEFAULT NULL
+)
+RETURNS TABLE (
+  id uuid,
+  note_id uuid,
+  chunk_text text,
+  title text,
+  similarity float
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    ne.id,
+    ne.note_id,
+    ne.chunk_text,
+    n.title,
+    1 - (ne.embedding <=> query_embedding) as similarity
+  FROM note_embeddings ne
+  JOIN notes n ON n.id = ne.note_id
+  WHERE n.user_id = p_user_id
+    AND n.deleted_at IS NULL
+    AND ne.embedding IS NOT NULL
+    AND 1 - (ne.embedding <=> query_embedding) > match_threshold
+  ORDER BY ne.embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$$;
+COMMENT ON FUNCTION match_notes IS '笔记内容向量检索函数，按用户隔离，返回未软删除笔记的 embedding 命中（含 chunk_text 摘要与 title）';
+

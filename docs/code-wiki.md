@@ -161,7 +161,7 @@ KnowledgeMap/
 │   └── sync/                 # 同步引擎共享类型
 │
 ├── supabase/                 # 数据库
-│   └── migrations/           # 47 个迁移文件 (00-99)
+│   └── migrations/           # 44 个迁移文件 (00-33 schema, 50-59 seed)
 │
 ├── docs/                     # 文档
 ├── e2e/                      # Playwright E2E 测试
@@ -667,44 +667,48 @@ graph_event_type       -- node_created/updated/deleted, edge_created/updated/del
 graph_snapshot_type    -- auto | manual | pre_rollback | pre_ai_expand | pre_batch_delete
 ```
 
-### 8.2 核心表 (47 个迁移文件)
+### 8.2 核心表 (44 个迁移文件)
+
+迁移文件按"域文件在前、横切文件殿后、seed 独立段"组织：
+**00–28** 业务域建表，**29–33** 横切（索引/RLS/函数/触发器/授权），**50–59** 种子数据。
 
 | 迁移文件 | 表/功能 | 说明 |
 |---------|---------|------|
-| 01_core_users | `users` | 用户资料 (扩展 auth.users) |
-| 02_knowledge_graph | `knowledge_graphs`, `knowledge_graph_contents` | 图谱主表 + 内容子表 |
-| 03_knowledge_points | `knowledge_points` | 知识点 |
-| 04_graph_structure | `graph_nodes`, `graph_edges`, `graph_entities` | 图结构 |
-| 05_domains | `domains`, `collaborators` | 知识域 + 协作 |
-| 06_study_cards | `study_cards`, `study_progress` | 学习卡片 + FSRS 状态 |
-| 07_scheduler_tasks | `user_tasks`, `task_executions`, `task_tags`, `queues`, `task_schedules`, `task_subtasks`, `task_links`, `task_reviews`, `task_templates`, `scheduler_weight_profiles` | 任务调度系统 |
-| 08_learning_paths | `learning_paths`, `learning_path_nodes` | 学习路径 |
-| 09_gamification | `achievements`, `user_achievements`, `user_levels` | 成就系统 |
-| 10_ai_prompts | `prompts` | AI 提示模板 |
-| 11_focus | `focus_sessions`, `notifications` | 专注 + 通知 |
-| 12_indexes | 性能索引 | 查询优化 |
-| 13_rls_policies | RLS 策略 | 行级安全 |
-| 14_functions | 数据库函数 | 存储过程 |
-| 15_triggers | 触发器 | 自动更新 updated_at |
-| 16_grants | 权限 | 服务角色权限 |
-| 17_plugin_marketplace | `plugins` | 插件市场 |
-| 18_quiz_sessions | `quiz_sessions` | 测验会话 |
-| 19_system_tasks | `system_tasks` | 系统后台任务 |
-| 20_graph_backbone | `graph_backbone_modules` | 知识图谱骨架 |
-| 21_pgvector_search | 向量搜索函数 | 语义搜索 |
-| 22_concept_aliases | `concept_aliases` | 概念别名 |
-| 26_document_chunks | `document_chunks` | 文档分块 |
-| 27_graph_version | `graph_versions`, `graph_branches`, `graph_snapshots` | 版本控制 |
-| 28_agent_sessions | `agent_executions`, `agent_sessions` | AI Agent |
-| 29_sync_operations | `sync_operations` | 同步操作记录 |
-| 30_revoked_tokens | `revoked_tokens` | 令牌撤销 |
-| 32_notes | `notes` | 笔记 |
-| 33_notes_embedding | `notes_embedding` | 笔记向量 |
-| 34_notes_match | 笔记搜索函数 | 笔记全文搜索 |
-| 35_note_block_refs | `note_block_refs` | 笔记块引用 |
-| 36_audit_logs | `audit_logs` | 审计日志 |
-| 37_error_reports | `error_reports` | 错误报告 |
-| 50-59_seed_* | 种子数据 | 初始/测试数据 |
+| 00_extensions_and_types | 扩展与枚举 | pgvector / pg_trgm / 自定义类型 |
+| 01_shared_functions | 共享函数 | `update_updated_at_column`、`is_graph_collaborator` |
+| 02_core_users | `users` | 用户资料 (扩展 auth.users) |
+| 03_knowledge_graph | `knowledge_graphs`, `knowledge_graph_contents` | 图谱主表 + 内容子表 |
+| 04_knowledge_points | `knowledge_points`, `knowledge_point_versions` | 知识点 + 版本 |
+| 05_graph_structure | `graph_nodes`, `edges`, `relationship_types` | 图结构 |
+| 06_domains_and_collaboration | `domains`, `graph_collaborators` | 知识域 + 协作 |
+| 07_study_and_cards | `quiz_sets`, `study_cards`, `study_progress` | 学习卡片 + FSRS 状态 |
+| 08_scheduler_tasks | `user_tasks`, `task_executions`, `task_tags`, `queues`, `task_schedules`, `task_subtasks`, `task_links`, `task_reviews`, `task_templates`, `scheduler_weight_profiles` | 任务调度系统 |
+| 09_learning_paths | `learning_paths`, `learning_path_nodes`, `learning_path_schedule` | 学习路径 + 排课 |
+| 10_gamification | `achievements`, `user_achievements`, `user_levels` | 成就系统 |
+| 11_ai_and_prompts | `prompt_templates`, `ai_actions`, `ai_performance_logs` | AI 提示模板与动作 |
+| 12_focus_and_notifications | `focus_sessions`, `notifications` | 专注 + 通知 |
+| 13_plugin_marketplace | `installed_plugins`, `plugin_ratings` | 插件市场 |
+| 14_practice_quiz_sessions | `learning_sessions` | 测验/练习会话 |
+| 15_system_tasks | `system_tasks` | 系统后台任务 |
+| 16_graph_backbone | `graph_backbone_modules` | 知识图谱骨架 |
+| 17_document_chunks | `document_chunks` | 文档分块 |
+| 18_graph_version | `graph_versions`, `graph_branches`, `graph_snapshots` | 版本控制 |
+| 19_agent_sessions | `agent_executions`, `agent_sessions` | AI Agent |
+| 20_sync_operations | `sync_operations` | 同步操作记录 |
+| 21_revoked_tokens | `revoked_tokens` | 令牌撤销 |
+| 22_notes | `notes`, `note_templates`, `note_node_links` | 笔记 |
+| 23_notes_embedding | `note_embeddings` | 笔记向量 |
+| 24_note_block_refs | `note_block_refs` | 笔记块引用 |
+| 25_audit_logs | `audit_logs` | 审计日志 |
+| 26_error_reports | `error_reports` | 错误报告 |
+| 27_literature_sources | `literature_sources` | 文献来源 |
+| 28_learning_material_schemas | 学习材料章节方案 | 预设章节结构 |
+| 29_indexes | 性能索引（全量归拢） | 查询优化 |
+| 30_rls_policies | RLS 策略（全量归拢） | 行级安全 |
+| 31_functions | 数据库函数（全量归拢） | RPC / 触发函数 |
+| 32_triggers | 触发器（全量归拢） | updated_at / 默认数据 |
+| 33_grants | 权限（全量归拢） | 角色授权 |
+| 50-59_seed_* | 种子数据 | 初始/系统数据 |
 
 ---
 

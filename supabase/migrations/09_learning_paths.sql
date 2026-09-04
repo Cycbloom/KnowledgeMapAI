@@ -168,11 +168,4 @@ COMMENT ON COLUMN learning_path_schedule.source_path_ids IS '来源路径数组�
 COMMENT ON COLUMN learning_path_schedule.estimated_time IS '预估学习时长（分钟）';
 COMMENT ON COLUMN learning_path_schedule.status IS '排期状态：scheduled(待学)/completed(已完成)/skipped(已跳过)';
 
-ALTER TABLE learning_path_schedule ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own schedule" ON learning_path_schedule FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own schedule" ON learning_path_schedule FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own schedule" ON learning_path_schedule FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own schedule" ON learning_path_schedule FOR DELETE USING (auth.uid() = user_id);
 
-GRANT ALL PRIVILEGES ON learning_path_schedule TO authenticated;
-GRANT SELECT ON learning_path_schedule TO authenticated;

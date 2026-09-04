@@ -24,10 +24,4 @@ COMMENT ON TABLE error_reports IS '前端错误遥测表，记录浏览器运行
 COMMENT ON COLUMN error_reports.message IS '错误消息（截断到 1000 字符以内）';
 COMMENT ON COLUMN error_reports.metadata IS '附加元数据（如来源类型 console.error / unhandledrejection，或组件栈）';
 
-CREATE INDEX IF NOT EXISTS idx_error_reports_timestamp ON error_reports(timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_error_reports_user_id ON error_reports(user_id);
-CREATE INDEX IF NOT EXISTS idx_error_reports_message ON error_reports(message);
 
--- RLS：遥测错误可能含栈/URL 等内部信息，默认仅允许服务端
--- （getSupabaseAdmin 作为 service_role 绕过 RLS）写入与读取，普通客户端不可读写。
-ALTER TABLE error_reports ENABLE ROW LEVEL SECURITY;

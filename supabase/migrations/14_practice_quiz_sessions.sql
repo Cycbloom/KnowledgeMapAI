@@ -56,84 +56,16 @@ COMMENT ON COLUMN learning_session_results.correct IS '是否答对';
 COMMENT ON COLUMN learning_session_results.user_answer IS '用户答案';
 COMMENT ON COLUMN learning_session_results.time_spent IS '答题耗时（秒）';
 
--- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_learning_sessions_user_id ON learning_sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_learning_sessions_subtask_id ON learning_sessions(subtask_id);
-CREATE INDEX IF NOT EXISTS idx_learning_sessions_kp_id ON learning_sessions(knowledge_point_id);
-CREATE INDEX IF NOT EXISTS idx_learning_sessions_status ON learning_sessions(status);
-CREATE INDEX IF NOT EXISTS idx_learning_sessions_user_started ON learning_sessions(user_id, started_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_learning_session_results_session_id ON learning_session_results(session_id);
-CREATE INDEX IF NOT EXISTS idx_learning_session_results_card_id ON learning_session_results(card_id);
 
--- Row Level Security
-ALTER TABLE learning_sessions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own learning sessions"
-  ON learning_sessions FOR SELECT
-  USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert own learning sessions"
-  ON learning_sessions FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update own learning sessions"
-  ON learning_sessions FOR UPDATE
-  USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete own learning sessions"
-  ON learning_sessions FOR DELETE
-  USING (auth.uid() = user_id);
 
-ALTER TABLE learning_session_results ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own learning session results"
-  ON learning_session_results FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM learning_sessions
-      WHERE learning_sessions.id = learning_session_results.session_id
-      AND learning_sessions.user_id = auth.uid()
-    )
-  );
 
-CREATE POLICY "Users can insert own learning session results"
-  ON learning_session_results FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM learning_sessions
-      WHERE learning_sessions.id = learning_session_results.session_id
-      AND learning_sessions.user_id = auth.uid()
-    )
-  );
 
-CREATE POLICY "Users can update own learning session results"
-  ON learning_session_results FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM learning_sessions
-      WHERE learning_sessions.id = learning_session_results.session_id
-      AND learning_sessions.user_id = auth.uid()
-    )
-  );
 
-CREATE POLICY "Users can delete own learning session results"
-  ON learning_session_results FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM learning_sessions
-      WHERE learning_sessions.id = learning_session_results.session_id
-      AND learning_sessions.user_id = auth.uid()
-    )
-  );
 
--- Triggers (在 15_triggers.sql 之后执行，需在此创建以避免迁移顺序问题)
-CREATE TRIGGER learning_sessions_updated_at
-  BEFORE UPDATE ON learning_sessions
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Grants (在 16_grants.sql 之后执行，需在此创建以避免迁移顺序问题)
-GRANT SELECT ON learning_sessions TO authenticated;
-GRANT ALL PRIVILEGES ON learning_sessions TO authenticated;
-GRANT SELECT ON learning_session_results TO authenticated;
-GRANT ALL PRIVILEGES ON learning_session_results TO authenticated;

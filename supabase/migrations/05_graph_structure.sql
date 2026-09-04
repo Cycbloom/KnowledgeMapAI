@@ -51,14 +51,8 @@ COMMENT ON COLUMN edges.custom_line_style IS '线型：solid, dashed, dotted, do
 COMMENT ON COLUMN edges.show_arrow IS '是否显示箭头，null表示根据关系类型自动判断';
 COMMENT ON COLUMN edges.deleted_at IS '软删除时间，非null表示已删除';
 
--- B1 双向链接：反向链接查询索引（查谁引用了某 knowledge_point）
-CREATE INDEX IF NOT EXISTS idx_edges_backlinks ON edges(target_knowledge_point_id, relationship_type, deleted_at);
 
--- B1 双向链接：正向链接查询索引（查某 knowledge_point 引用了谁）
-CREATE INDEX IF NOT EXISTS idx_edges_outlinks ON edges(source_knowledge_point_id, relationship_type, deleted_at);
 
-COMMENT ON INDEX idx_edges_backlinks IS 'B1 双向链接：加速反向链接查询（target_knowledge_point_id + relationship_type + deleted_at）';
-COMMENT ON INDEX idx_edges_outlinks IS 'B1 双向链接：加速正向链接查询（source_knowledge_point_id + relationship_type + deleted_at）';
 
 CREATE TABLE IF NOT EXISTS relationship_types (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

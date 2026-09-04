@@ -527,14 +527,18 @@ KnowledgeMap Web 端通过 VitePWA + Workbox 提供 PWA 能力，支持离线访
 
 | 序号范围 | 用途 | 示例 |
 |---------|------|------|
-| 00-35 | Schema 定义（表、索引、RLS、函数、触发器） | `02_knowledge_graph.sql`、`13_rls_policies.sql`、`32_notes.sql` |
-| 50-99 | Seed 数据（测试用户、模板、成就、Prompt 等） | `50_seed_app_settings.sql`、`99_seed_test_user.sql` |
+| 00-01 | 扩展、类型与共享函数 | `00_extensions_and_types.sql`、`01_shared_functions.sql` |
+| 02-28 | 业务域建表（表 + 列注释） | `03_knowledge_graph.sql`、`09_learning_paths.sql` |
+| 29-33 | 横切关注点（全量归拢） | `29_indexes.sql`、`30_rls_policies.sql`、`31_functions.sql`、`32_triggers.sql`、`33_grants.sql` |
+| 50-59 | Seed 数据（系统模板、成就、Prompt 等） | `50_seed_app_settings.sql`、`53_seed_prompt_templates.sql` |
 
 **迁移文件管理规则**：
 
-- 所有 schema 变更**直接修改对应的模块化文件**，不创建新的增量迁移文件
-- 新增业务域时，使用下一个可用序号（Schema 在 36-49 之间，Seed 在 60-98 之间，序号留有间隔便于插入）
+- 所有 schema 变更**直接修改对应的模块化文件**，不创建新的增量迁移文件；新字段直接并入该表的 `CREATE TABLE` 语句，禁止新建 `ALTER TABLE ... ADD COLUMN` 增量文件
+- 新索引加入 `29_indexes.sql`，新 RLS 策略加入 `30_rls_policies.sql`，新函数加入 `31_functions.sql`，新触发器加入 `32_triggers.sql`，新授权加入 `33_grants.sql`
+- 新增业务域（建表）时，使用 02-28 中下一个可用序号；新增 seed 数据时使用 50-59 中下一个可用序号
 - 文件命名使用 `kebab-case` 或 `snake_case`，与现有文件保持一致
+- 修改后运行 `npm run db:local:reset` 验证迁移能从空库一次性完整跑通
 
 ### 6.3 类型生成
 
@@ -554,7 +558,7 @@ npm run db:check-types
 
 ### 6.4 Seed 数据
 
-- `npm run db:local:reset` 会自动应用所有 `supabase/migrations/` 下编号 50–99 的 SQL seed
+- `npm run db:local:reset` 会自动应用所有 `supabase/migrations/` 下编号 50–59 的 SQL seed
 - 业务 seed 数据（成就、模板、Prompt、关系类型）通过 `50-59_seed_*.sql` 注入
 - 单独插入额外测试数据（5 个演示图谱、30+ 卡片、每日/周期任务、成就、专注统计）：
   ```bash

@@ -36,37 +36,3 @@ COMMENT ON TABLE plugin_ratings IS '插件评分与评价';
 COMMENT ON COLUMN plugin_ratings.plugin_name IS '被评价的插件标识名称';
 COMMENT ON COLUMN plugin_ratings.rating IS '评分（1-5）';
 COMMENT ON COLUMN plugin_ratings.review IS '用户文字评价';
-
--- =====================================================
--- Row Level Security
--- =====================================================
-
--- Installed plugins RLS
-ALTER TABLE installed_plugins ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own installed plugins" ON installed_plugins FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own installed plugins" ON installed_plugins FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own installed plugins" ON installed_plugins FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own installed plugins" ON installed_plugins FOR DELETE USING (auth.uid() = user_id);
-
--- Plugin ratings RLS
-ALTER TABLE plugin_ratings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can read plugin ratings" ON plugin_ratings FOR SELECT USING (TRUE);
-CREATE POLICY "Users can insert own plugin ratings" ON plugin_ratings FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own plugin ratings" ON plugin_ratings FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own plugin ratings" ON plugin_ratings FOR DELETE USING (auth.uid() = user_id);
-
--- =====================================================
--- Indexes
--- =====================================================
-
-CREATE INDEX IF NOT EXISTS idx_installed_plugins_user ON installed_plugins(user_id);
-CREATE INDEX IF NOT EXISTS idx_installed_plugins_name ON installed_plugins(plugin_name);
-CREATE INDEX IF NOT EXISTS idx_plugin_ratings_plugin ON plugin_ratings(plugin_name);
-
--- =====================================================
--- Triggers
--- =====================================================
-
-CREATE TRIGGER installed_plugins_updated_at
-  BEFORE UPDATE ON installed_plugins
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

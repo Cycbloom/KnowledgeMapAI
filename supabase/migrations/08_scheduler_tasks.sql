@@ -69,7 +69,6 @@ COMMENT ON COLUMN user_tasks.graph_id IS '关联的图谱ID（task_type=graph_le
 COMMENT ON COLUMN user_tasks.context IS 'Task context and metadata (JSONB for flexible task-type-specific data)';
 COMMENT ON COLUMN user_tasks.source IS 'Task source: user (manual), import, template, system_recommendation';
 
-CREATE INDEX IF NOT EXISTS idx_user_tasks_source ON user_tasks(source);
 
 -- Task executions table (execution history)
 CREATE TABLE IF NOT EXISTS task_executions (

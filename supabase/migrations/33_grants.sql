@@ -204,3 +204,52 @@ GRANT EXECUTE ON FUNCTION match_knowledge_points_sparse(sparsevec, float, int, u
 GRANT EXECUTE ON FUNCTION match_knowledge_points_sparse_global(sparsevec, float, int, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION match_document_chunks_sparse(sparsevec, float, int, uuid, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION match_notes_sparse(sparsevec, float, int, uuid) TO authenticated;
+-- ==== from 09_learning_paths.sql ====
+GRANT ALL PRIVILEGES ON learning_path_schedule TO authenticated;
+
+GRANT SELECT ON learning_path_schedule TO authenticated;
+
+
+-- ==== from 14_practice_quiz_sessions.sql ====
+-- Grants (在 16_grants.sql 之后执行，需在此创建以避免迁移顺序问题)
+GRANT SELECT ON learning_sessions TO authenticated;
+
+GRANT ALL PRIVILEGES ON learning_sessions TO authenticated;
+
+GRANT SELECT ON learning_session_results TO authenticated;
+
+GRANT ALL PRIVILEGES ON learning_session_results TO authenticated;
+
+
+-- ==== from 16_graph_backbone_modules.sql ====
+GRANT SELECT, INSERT, UPDATE, DELETE ON graph_backbone_modules TO authenticated;
+
+
+-- ==== from 19_agent_sessions.sql ====
+-- Grants
+-- Service role has full access (for backend API)
+GRANT ALL ON agent_sessions TO service_role;
+
+GRANT ALL ON agent_messages TO service_role;
+
+GRANT ALL ON agent_tool_calls TO service_role;
+
+GRANT ALL ON agent_pending_actions TO service_role;
+
+
+-- ==== from 21_revoked_tokens.sql ====
+-- Grants: service role 拥有完全访问权限（后端 API 使用 admin client）
+GRANT ALL ON revoked_tokens TO service_role;
+
+
+-- ==== from 23_notes_embedding.sql ====
+-- 授予 authenticated 角色执行权限（与 16_grants.sql 中 match_knowledge_points 风格一致）
+GRANT EXECUTE ON FUNCTION match_notes(vector(1024), float, int, uuid) TO authenticated;
+
+
+-- ==== from 24_note_block_refs.sql ====
+-- =====================================================
+-- 3. GRANT 权限
+-- =====================================================
+GRANT SELECT, INSERT, UPDATE, DELETE ON note_block_refs TO authenticated;
+

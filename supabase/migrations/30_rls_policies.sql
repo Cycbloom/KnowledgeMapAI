@@ -589,3 +589,587 @@ CREATE POLICY "Users can update own task reviews" ON task_reviews FOR UPDATE USI
 CREATE POLICY "Users can delete own task reviews" ON task_reviews FOR DELETE USING (auth.uid() = user_id);
 
 
+
+-- ==== from 09_learning_paths.sql ====
+ALTER TABLE learning_path_schedule ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own schedule" ON learning_path_schedule FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own schedule" ON learning_path_schedule FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own schedule" ON learning_path_schedule FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own schedule" ON learning_path_schedule FOR DELETE USING (auth.uid() = user_id);
+
+
+-- ==== from 13_plugin_marketplace.sql ====
+-- Installed plugins RLS
+ALTER TABLE installed_plugins ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own installed plugins" ON installed_plugins FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own installed plugins" ON installed_plugins FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own installed plugins" ON installed_plugins FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own installed plugins" ON installed_plugins FOR DELETE USING (auth.uid() = user_id);
+
+-- Plugin ratings RLS
+ALTER TABLE plugin_ratings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read plugin ratings" ON plugin_ratings FOR SELECT USING (TRUE);
+
+CREATE POLICY "Users can insert own plugin ratings" ON plugin_ratings FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own plugin ratings" ON plugin_ratings FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own plugin ratings" ON plugin_ratings FOR DELETE USING (auth.uid() = user_id);
+
+
+-- ==== from 14_practice_quiz_sessions.sql ====
+-- Row Level Security
+ALTER TABLE learning_sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own learning sessions"
+  ON learning_sessions FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own learning sessions"
+  ON learning_sessions FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own learning sessions"
+  ON learning_sessions FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own learning sessions"
+  ON learning_sessions FOR DELETE
+  USING (auth.uid() = user_id);
+
+ALTER TABLE learning_session_results ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own learning session results"
+  ON learning_session_results FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM learning_sessions
+      WHERE learning_sessions.id = learning_session_results.session_id
+      AND learning_sessions.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can insert own learning session results"
+  ON learning_session_results FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM learning_sessions
+      WHERE learning_sessions.id = learning_session_results.session_id
+      AND learning_sessions.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can update own learning session results"
+  ON learning_session_results FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM learning_sessions
+      WHERE learning_sessions.id = learning_session_results.session_id
+      AND learning_sessions.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can delete own learning session results"
+  ON learning_session_results FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM learning_sessions
+      WHERE learning_sessions.id = learning_session_results.session_id
+      AND learning_sessions.user_id = auth.uid()
+    )
+  );
+
+
+-- ==== from 15_system_tasks.sql ====
+-- RLS Policies
+ALTER TABLE system_tasks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own system tasks"
+  ON system_tasks FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own system tasks"
+  ON system_tasks FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own system tasks"
+  ON system_tasks FOR DELETE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Service role can manage all system tasks"
+  ON system_tasks FOR ALL
+  USING (auth.role() = 'service_role');
+
+
+-- ==== from 16_graph_backbone_modules.sql ====
+-- =====================================================
+-- Row Level Security（与 knowledge_graphs 权限模型一致）
+-- =====================================================
+ALTER TABLE graph_backbone_modules ENABLE ROW LEVEL SECURITY;
+
+-- 读取：本人图谱 / 公开图谱 / 协作者图谱
+CREATE POLICY "view accessible backbone modules"
+  ON graph_backbone_modules FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM knowledge_graphs
+      WHERE knowledge_graphs.id = graph_backbone_modules.graph_id
+        AND (
+          knowledge_graphs.user_id = auth.uid()
+          OR knowledge_graphs.is_public = true
+          OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
+        )
+    )
+  );
+
+-- 写入/更新/删除：仅本人图谱
+CREATE POLICY "manage own backbone modules"
+  ON graph_backbone_modules FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM knowledge_graphs
+      WHERE knowledge_graphs.id = graph_backbone_modules.graph_id
+        AND knowledge_graphs.user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM knowledge_graphs
+      WHERE knowledge_graphs.id = graph_backbone_modules.graph_id
+        AND knowledge_graphs.user_id = auth.uid()
+    )
+  );
+
+
+-- ==== from 17_document_chunks.sql ====
+-- Enable Row Level Security
+ALTER TABLE document_chunks ENABLE ROW LEVEL SECURITY;
+
+-- document_chunks 通过 knowledge_point_id 外键关联 knowledge_points，策略参照 knowledge_points 模式：
+-- SELECT: owner_id 匹配 OR visibility='public' OR 在 public graph 内
+-- INSERT/UPDATE/DELETE: 仅 owner
+CREATE POLICY "Users can view own document_chunks" ON document_chunks FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_points
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_points.owner_id = auth.uid()
+  )
+  OR EXISTS (
+    SELECT 1 FROM knowledge_points
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_points.visibility = 'public'
+  )
+  OR EXISTS (
+    SELECT 1 FROM knowledge_points
+    JOIN graph_nodes ON graph_nodes.knowledge_point_id = knowledge_points.id
+    JOIN knowledge_graphs ON knowledge_graphs.id = graph_nodes.graph_id
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_graphs.is_public = true
+    AND graph_nodes.deleted_at IS NULL
+  )
+);
+
+CREATE POLICY "Users can insert own document_chunks" ON document_chunks FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_points
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_points.owner_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Users can update own document_chunks" ON document_chunks FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_points
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_points.owner_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Users can delete own document_chunks" ON document_chunks FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_points
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_points.owner_id = auth.uid()
+  )
+);
+
+
+-- ==== from 18_graph_version_control.sql ====
+-- Graph Snapshots
+ALTER TABLE graph_snapshots ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view accessible graph snapshots" ON graph_snapshots FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_snapshots.graph_id
+    AND (
+      knowledge_graphs.user_id = auth.uid()
+      OR knowledge_graphs.is_public = true
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
+    )
+  )
+);
+
+CREATE POLICY "Users can insert own graph snapshots" ON graph_snapshots FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_snapshots.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Users can update own graph snapshots" ON graph_snapshots FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_snapshots.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Users can delete own graph snapshots" ON graph_snapshots FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_snapshots.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+-- Graph Events
+ALTER TABLE graph_events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view accessible graph events" ON graph_events FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_events.graph_id
+    AND (
+      knowledge_graphs.user_id = auth.uid()
+      OR knowledge_graphs.is_public = true
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
+    )
+  )
+);
+
+CREATE POLICY "Users can insert own graph events" ON graph_events FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_events.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Users can update own graph events" ON graph_events FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_events.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Users can delete own graph events" ON graph_events FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = graph_events.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
+
+-- ==== from 19_agent_sessions.sql ====
+-- RLS policies
+ALTER TABLE agent_sessions ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE agent_messages ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE agent_tool_calls ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE agent_pending_actions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own agent sessions"
+  ON agent_sessions FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own agent sessions"
+  ON agent_sessions FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own agent sessions"
+  ON agent_sessions FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own agent sessions"
+  ON agent_sessions FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- agent_messages, agent_tool_calls, agent_pending_actions 通过 session 的 user_id 间接控制
+CREATE POLICY "Users can view messages of their own sessions"
+  ON agent_messages FOR SELECT
+  USING (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_messages.session_id AND agent_sessions.user_id = auth.uid()));
+
+CREATE POLICY "Users can insert messages to their own sessions"
+  ON agent_messages FOR INSERT
+  WITH CHECK (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_messages.session_id AND agent_sessions.user_id = auth.uid()));
+
+CREATE POLICY "Users can view tool calls of their own sessions"
+  ON agent_tool_calls FOR SELECT
+  USING (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_tool_calls.session_id AND agent_sessions.user_id = auth.uid()));
+
+CREATE POLICY "Users can insert tool calls to their own sessions"
+  ON agent_tool_calls FOR INSERT
+  WITH CHECK (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_tool_calls.session_id AND agent_sessions.user_id = auth.uid()));
+
+CREATE POLICY "Users can update tool calls of their own sessions"
+  ON agent_tool_calls FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_tool_calls.session_id AND agent_sessions.user_id = auth.uid()));
+
+CREATE POLICY "Users can view pending actions of their own sessions"
+  ON agent_pending_actions FOR SELECT
+  USING (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_pending_actions.session_id AND agent_sessions.user_id = auth.uid()));
+
+CREATE POLICY "Users can insert pending actions to their own sessions"
+  ON agent_pending_actions FOR INSERT
+  WITH CHECK (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_pending_actions.session_id AND agent_sessions.user_id = auth.uid()));
+
+CREATE POLICY "Users can update pending actions of their own sessions"
+  ON agent_pending_actions FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM agent_sessions WHERE agent_sessions.id = agent_pending_actions.session_id AND agent_sessions.user_id = auth.uid()));
+
+
+-- ==== from 20_sync_operations.sql ====
+-- 启用 RLS
+ALTER TABLE sync_operations ENABLE ROW LEVEL SECURITY;
+
+-- 用户只能读写自己的 sync_operations
+CREATE POLICY "Users can view own sync_operations"
+  ON sync_operations FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own sync_operations"
+  ON sync_operations FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own sync_operations"
+  ON sync_operations FOR DELETE
+  USING (auth.uid() = user_id);
+
+
+-- ==== from 21_revoked_tokens.sql ====
+-- RLS 策略：用户只能查询自己的 revoked_tokens
+ALTER TABLE revoked_tokens ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own revoked tokens"
+  ON revoked_tokens FOR SELECT
+  USING (auth.uid() = user_id);
+
+
+-- ==== from 22_notes.sql ====
+-- notes: user_id = auth.uid() 才能访问自己的
+ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own notes" ON notes FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own notes" ON notes FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own notes" ON notes FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own notes" ON notes FOR DELETE USING (auth.uid() = user_id);
+
+-- note_node_links: 通过 note_id JOIN notes 验证 user_id
+ALTER TABLE note_node_links ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own note node links" ON note_node_links FOR SELECT USING (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_node_links.note_id AND notes.user_id = auth.uid())
+);
+
+CREATE POLICY "Users can insert own note node links" ON note_node_links FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_node_links.note_id AND notes.user_id = auth.uid())
+);
+
+CREATE POLICY "Users can delete own note node links" ON note_node_links FOR DELETE USING (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_node_links.note_id AND notes.user_id = auth.uid())
+);
+
+-- note_templates: 用户能查所有可见模板（自己的 + 系统的），只能改/删自己的
+ALTER TABLE note_templates ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own or system note templates" ON note_templates FOR SELECT USING (
+  auth.uid() = user_id OR is_system = TRUE
+);
+
+CREATE POLICY "Users can insert own note templates" ON note_templates FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own note templates" ON note_templates FOR UPDATE USING (
+  auth.uid() = user_id AND is_system = FALSE
+);
+
+CREATE POLICY "Users can delete own note templates" ON note_templates FOR DELETE USING (
+  auth.uid() = user_id AND is_system = FALSE
+);
+
+
+-- ==== from 23_notes_embedding.sql ====
+-- =====================================================
+-- 2. RLS 行级安全策略
+-- 通过 note_id JOIN notes 验证 user_id (参考 32_notes.sql 的 note_node_links 模式)
+-- =====================================================
+ALTER TABLE note_embeddings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own note embeddings" ON note_embeddings FOR SELECT USING (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_embeddings.note_id AND notes.user_id = auth.uid())
+);
+
+CREATE POLICY "Users can insert own note embeddings" ON note_embeddings FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_embeddings.note_id AND notes.user_id = auth.uid())
+);
+
+CREATE POLICY "Users can update own note embeddings" ON note_embeddings FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_embeddings.note_id AND notes.user_id = auth.uid())
+);
+
+CREATE POLICY "Users can delete own note embeddings" ON note_embeddings FOR DELETE USING (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_embeddings.note_id AND notes.user_id = auth.uid())
+);
+
+
+-- ==== from 24_note_block_refs.sql ====
+-- =====================================================
+-- 2. RLS 行级安全策略（双向校验：source_note 与 target_note 均属当前用户）
+-- =====================================================
+ALTER TABLE note_block_refs ENABLE ROW LEVEL SECURITY;
+
+-- SELECT：source 与 target 均属当前用户
+CREATE POLICY "note_block_refs_select_own" ON note_block_refs FOR SELECT USING (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_block_refs.source_note_id AND notes.user_id = auth.uid())
+  AND
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_block_refs.target_note_id AND notes.user_id = auth.uid())
+);
+
+-- INSERT：source 与 target 均属当前用户
+CREATE POLICY "note_block_refs_insert_own" ON note_block_refs FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_block_refs.source_note_id AND notes.user_id = auth.uid())
+  AND
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_block_refs.target_note_id AND notes.user_id = auth.uid())
+);
+
+-- UPDATE：source 与 target 均属当前用户（USING 控制可更新行，WITH CHECK 控制更新后状态）
+CREATE POLICY "note_block_refs_update_own" ON note_block_refs FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_block_refs.source_note_id AND notes.user_id = auth.uid())
+  AND
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_block_refs.target_note_id AND notes.user_id = auth.uid())
+) WITH CHECK (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_block_refs.source_note_id AND notes.user_id = auth.uid())
+  AND
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_block_refs.target_note_id AND notes.user_id = auth.uid())
+);
+
+-- DELETE：source 或 target 任一方属当前用户即可删除（允许任一方属主解除引用关系）
+CREATE POLICY "note_block_refs_delete_own" ON note_block_refs FOR DELETE USING (
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_block_refs.source_note_id AND notes.user_id = auth.uid())
+  OR
+  EXISTS (SELECT 1 FROM notes WHERE notes.id = note_block_refs.target_note_id AND notes.user_id = auth.uid())
+);
+
+
+-- ==== from 25_audit_logs.sql ====
+-- RLS：默认仅允许写入（service_role 绕过 RLS 由服务端写入），普通用户仅可读自己的审计记录
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own audit logs" ON audit_logs FOR SELECT USING (auth.uid() = user_id);
+
+
+-- ==== from 26_error_reports.sql ====
+-- RLS：遥测错误可能含栈/URL 等内部信息，默认仅允许服务端
+-- （getSupabaseAdmin 作为 service_role 绕过 RLS）写入与读取，普通客户端不可读写。
+ALTER TABLE error_reports ENABLE ROW LEVEL SECURITY;
+
+
+-- ==== from 27_literature_sources.sql ====
+-- RLS Policies
+ALTER TABLE literature_sources ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view literature sources for their graphs"
+  ON literature_sources FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM knowledge_graphs
+      WHERE knowledge_graphs.id = literature_sources.graph_id
+        AND (
+          knowledge_graphs.user_id = auth.uid()
+          OR knowledge_graphs.is_public = true
+        )
+    )
+  );
+
+CREATE POLICY "Users can insert literature sources for their own graphs"
+  ON literature_sources FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM knowledge_graphs
+      WHERE knowledge_graphs.id = literature_sources.graph_id
+        AND knowledge_graphs.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can update literature sources for their own graphs"
+  ON literature_sources FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM knowledge_graphs
+      WHERE knowledge_graphs.id = literature_sources.graph_id
+        AND knowledge_graphs.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can delete literature sources for their own graphs"
+  ON literature_sources FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM knowledge_graphs
+      WHERE knowledge_graphs.id = literature_sources.graph_id
+        AND knowledge_graphs.user_id = auth.uid()
+    )
+  );
+
+
+-- ==== from 28_learning_material_schemas.sql ====
+-- =====================================================
+-- RLS Policies
+-- =====================================================
+ALTER TABLE learning_material_schemas ENABLE ROW LEVEL SECURITY;
+
+-- System schemas: 所有登录用户可见
+CREATE POLICY "System learning schemas are viewable by everyone"
+  ON learning_material_schemas FOR SELECT
+  USING (scope = 'system');
+
+-- Graph-level schemas: 对应图谱内用户可见（图谱所有权在 service 层校验）
+CREATE POLICY "Users can view graph-level learning schemas"
+  ON learning_material_schemas FOR SELECT
+  USING (scope = 'graph' AND auth.uid() = user_id);
+
+-- User-level schemas: 只有拥有者可见
+CREATE POLICY "Users can view their own learning schemas"
+  ON learning_material_schemas FOR SELECT
+  USING (scope = 'user' AND auth.uid() = user_id);
+
+-- User/Graph schema 写入: 只有拥有者
+CREATE POLICY "Users can insert their own learning schemas"
+  ON learning_material_schemas FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own learning schemas"
+  ON learning_material_schemas FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own learning schemas"
+  ON learning_material_schemas FOR DELETE
+  USING (auth.uid() = user_id);
+

@@ -19,10 +19,4 @@ COMMENT ON TABLE audit_logs IS '安全审计日志表，记录登录成功/失�
 COMMENT ON COLUMN audit_logs.event_type IS '安全事件类型：LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT, PASSWORD_CHANGE, ACCOUNT_DELETE, PERMISSION_CHANGE, API_KEY_CHANGE, SENSITIVE_READ';
 COMMENT ON COLUMN audit_logs.details IS '事件详情（敏感字段已脱敏）';
 
-CREATE INDEX IF NOT EXISTS idx_audit_logs_event_type ON audit_logs(event_type);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
 
--- RLS：默认仅允许写入（service_role 绕过 RLS 由服务端写入），普通用户仅可读自己的审计记录
-ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own audit logs" ON audit_logs FOR SELECT USING (auth.uid() = user_id);

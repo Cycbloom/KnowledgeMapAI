@@ -23,6 +23,7 @@ import {
   type CrossGraphRelationInput,
   type CrossGraphStage,
 } from "./crossGraphPathAlgorithms";
+import { searchSimilarGraphs } from "../../utils/similaritySearch";
 import { getAIProvider, getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
 import { chatService } from "../ai/chatService";
@@ -79,15 +80,19 @@ interface SelectionModel {
 class GoalDrivenPathService {
   /**
    * 构建图谱地图摘要（供 AI 对话 / 候选生成）。每图一行，描述截断，可设上限防止上下文过大。
+   * @param graphsOverride 可选：外部已取到的图谱数组（如已按目标语义排序），传入则复用其顺序与数据，避免重复查库；
+   *                       省略时内部走 getGraphMap 自取。
    */
   async buildGraphContextSummary(
     supabase: SupabaseClient,
     userId: string,
-    opts?: { cap?: number },
+    opts?: { cap?: number; graphsOverride?: Array<Record<string, unknown>> },
   ): Promise<string> {
     const cap = opts?.cap ?? 40;
-    const mapData = await graphCrudService.getGraphMap(supabase, userId);
-    const graphsRaw = mapData.graphs ?? [];
+    const graphsRaw =
+      opts?.graphsOverride ??
+      (await graphCrudService.getGraphMap(supabase, userId)).graphs ??
+      [];
     if (graphsRaw.length === 0) return "图谱地图为空";
 
     const graphIds = graphsRaw.map((g) => (g as { id: string }).id);
@@ -278,9 +283,11 @@ class GoalDrivenPathService {
       };
     }
 
+    // 目标建议必须覆盖全部图谱，避免前 N 张之外的图谱被遗漏（cap 传入全量）
     const graphContextSummary = await this.buildGraphContextSummary(
       supabase,
       userId,
+      { cap: graphsRaw.length },
     );
 
     const systemPrompt = await promptService.getRenderedPrompt(
@@ -318,7 +325,9 @@ ${domainSummary}
         ],
         model: opts?.model || provider.model,
         response_format: { type: "json_object" },
-        max_tokens: 1000,
+        // 调大 token 上限：deepseek 系模型 max_tokens 为 thinking + 正文合计上限，
+        // 过小会挤占正文导致建议空/缺项；与 generateVariants 保持一致的 32000
+        max_tokens: 32000,
       });
 
       const content = completion.choices[0].message.content || "";
@@ -395,7 +404,16 @@ ${domainSummary}
         graphIds,
       );
 
-    const graphs: CrossGraphNodeInput[] = graphsRaw.map((g) => {
+    // 用学习目标语义检索图谱，把与目标相关的图谱排到前面，
+    // 确保截取图谱列表（CROSS_GRAPH_INPUT_CAP）时优先纳入相关图谱，而非按最后使用时间机械截取
+    const orderedGraphsRaw = await this.rankGraphsByRelevance(
+      supabase,
+      userId,
+      opts.targetGoal,
+      graphsRaw,
+    );
+
+    const graphs: CrossGraphNodeInput[] = orderedGraphsRaw.map((g) => {
       const raw = g as {
         id: string;
         title?: string;
@@ -455,6 +473,8 @@ ${domainSummary}
     const graphContextSummary = await this.buildGraphContextSummary(
       supabase,
       userId,
+      // 复用已按目标语义排序的图谱顺序，system 概览同样相关图谱优先
+      { graphsOverride: orderedGraphsRaw },
     );
 
     const systemPrompt = await promptService.getRenderedPrompt(
@@ -764,6 +784,55 @@ ${domainSummary}
   }
 
   /** 领域分布摘要（供 AI 建议目标参考） */
+  private async rankGraphsByRelevance(
+    supabase: SupabaseClient,
+    userId: string,
+    targetGoal: string,
+    graphsRaw: Array<Record<string, unknown>>,
+  ): Promise<Array<Record<string, unknown>>> {
+    try {
+      // 用目标语义检索图谱：返回按相似度降序的相关图谱。
+      // 低阈值+大 limit 尽量纳入更多候选；无 embedding / 未命中的图谱保持原顺序靠后兜底。
+      const { similarGraphs } = await searchSimilarGraphs(
+        supabase,
+        userId,
+        targetGoal,
+        {
+          threshold: 0.3,
+          limit: Math.max(CROSS_GRAPH_INPUT_CAP, graphsRaw.length),
+        },
+      );
+      const hits = similarGraphs ?? [];
+      if (hits.length === 0) return graphsRaw;
+
+      const hitIdSet = new Set(hits.map((h) => h.id));
+      const ranked: Array<Record<string, unknown>> = [];
+      const rankedIds = new Set<string>();
+      // 相关图谱在前（保持相似度降序）
+      for (const h of hits) {
+        const graph = graphsRaw.find(
+          (g) => (g as { id: string }).id === h.id,
+        );
+        if (graph && !rankedIds.has(h.id)) {
+          ranked.push(graph);
+          rankedIds.add(h.id);
+        }
+      }
+      // 未命中/无 embedding 的图谱按原顺序补在后面，避免遗漏
+      for (const g of graphsRaw) {
+        const id = (g as { id: string }).id;
+        if (!hitIdSet.has(id)) ranked.push(g);
+      }
+      return ranked;
+    } catch (error) {
+      logger.warn(
+        "[GoalDrivenPath] rankGraphsByRelevance failed, keep default order:",
+        error,
+      );
+      return graphsRaw;
+    }
+  }
+
   private buildDomainSummary(
     graphsRaw: Array<Record<string, unknown>>,
     domainNameMap: Map<string, string>,

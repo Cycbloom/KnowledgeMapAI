@@ -6,6 +6,7 @@ import { contextWindowManager } from "./contextWindowManager";
 import { notDeleted } from '../common/softDeleteHelper';
 import { ragSearchService } from "./ragSearchService";
 import { ragChatService } from "./ragChatService";
+import { queryRewriteService } from "./queryRewriteService";
 
 interface GraphNodeWithKnowledge {
   knowledge_point_id: string;
@@ -185,10 +186,19 @@ export class RAGService {
     // 默认使用 hybrid 模式
     const effectiveSearchMode = searchMode ?? "hybrid";
 
+    // Query Rewrite：把口语化问题改写为检索友好表达，提升语义/稀疏召回命中率。
+    // - 仅 hybrid/semantic 模式启用（keyword 模式依赖原文词面匹配，改写反而引入噪声）
+    // - 改写失败回退原文，不阻塞检索
+    // - 改写只影响检索，最终 chat 仍用用户原文
+    const searchQuery =
+      effectiveSearchMode === "keyword"
+        ? query
+        : await queryRewriteService.rewrite(query, userId);
+
     // P1 Task 5.2: 并行查 notes embedding（与图谱搜索并行，避免阻塞）
     // noteSemanticSearch 内部已做容错（失败返回 []），这里直接 await 即可。
     // 提前启动 promise，与下方图谱检索并行执行，降低整体延迟。
-    const noteResultsPromise = this.noteSemanticSearch(query, userId, {
+    const noteResultsPromise = this.noteSemanticSearch(searchQuery, userId, {
       matchThreshold: 0.3,
       matchCount: 5,
     }).catch((err) => {
@@ -254,7 +264,7 @@ export class RAGService {
           relationshipType: r.relationshipType,
         }));
       } else {
-        searchResults = await this.semanticSearch(query, userId, {
+        searchResults = await this.semanticSearch(searchQuery, userId, {
           graphId,
           matchThreshold: 0.3,
           matchCount: 10,
@@ -307,7 +317,7 @@ export class RAGService {
         }));
       } else {
         // 无图谱上下文时，使用 hybridSearch，graphSources 为 undefined
-        const hybridResults = await this.hybridSearch(query, userId, {
+        const hybridResults = await this.hybridSearch(searchQuery, userId, {
           graphId,
           matchThreshold: 0.3,
           matchCount: 10,

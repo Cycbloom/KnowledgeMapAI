@@ -32,6 +32,8 @@ export const CacheKeys = {
   GRAPH_LITERATURE: (graphId: string, moduleFilter?: string) => `graph_literature_${graphId}${moduleFilter ? `_${moduleFilter}` : ''}`,
   SEARCH_SIMILAR: (textHash: string, userId: string) => `search_similar_${textHash}_${userId}`,
   EMBEDDING: (textHash: string) => `embedding_gen_${textHash}`,
+  // 稀疏向量独立缓存键，避免与 dense embedding 缓存（EMBEDDING）混用导致类型错位
+  SPARSE_EMBEDDING: (textHash: string) => `sparse_embedding_gen_${textHash}`,
   LEARNING_SCHEMA: (id: string) => `learning_schema_${id}`,
   LEARNING_SCHEMA_LIST: (userId: string, graphId: string = "none") =>
     `learning_schema_list_${userId}_${graphId}`,

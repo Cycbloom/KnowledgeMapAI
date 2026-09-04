@@ -3,6 +3,7 @@ import { aiService } from './aiService';
 import { getProviderForTask } from './config';
 import { logger } from '../../utils/logger';
 import { resolveLocalizedText, type LocalizedText } from '../../../shared/utils/localization';
+import { serializeSparse } from '../../utils/sparse';
 
 const BATCH_SIZE = 20;
 const EMBEDDING_DELAY_MS = 100;
@@ -64,11 +65,17 @@ export class EmbeddingService {
 
           // RLS 的 INSERT WITH CHECK (auth.uid() = owner_id) 会校验 upsert 待插入行，
           // 必须显式携带 owner_id，否则该列为 NULL 导致 42501 违反行级安全策略
-          const upsertBatch: { id: string; owner_id: string; embedding: number[] }[] = [];
+          const upsertBatch: { id: string; owner_id: string; embedding: number[]; sparse_embedding: string | null }[] = [];
           for (let j = 0; j < batch.length; j++) {
             const embedding = embeddings[j];
             if (embedding) {
-              upsertBatch.push({ id: batch[j].id, owner_id: batch[j].owner_id, embedding });
+              const sparse = await aiService.generateSparseEmbedding(texts[j]);
+              upsertBatch.push({
+                id: batch[j].id,
+                owner_id: batch[j].owner_id,
+                embedding,
+                sparse_embedding: sparse ? serializeSparse(sparse) : null,
+              });
             } else {
               failed++;
             }
@@ -216,9 +223,14 @@ export class EmbeddingService {
         return false;
       }
 
+      const sparse = await aiService.generateSparseEmbedding(kp.title);
+
       const { error: updateError } = await supabase
         .from('knowledge_points')
-        .update({ embedding })
+        .update({
+          embedding,
+          sparse_embedding: sparse ? serializeSparse(sparse) : null,
+        })
         .eq('id', knowledgePointId);
 
       if (updateError) {
@@ -310,9 +322,13 @@ export class EmbeddingService {
           const embeddings = await aiService.generateEmbeddingsBatch(texts);
           for (let j = 0; j < batchGraphs.length; j++) {
             if (embeddings[j]) {
+              const sparse = await aiService.generateSparseEmbedding(texts[j]);
               const { error: updateError } = await supabase
                 .from('knowledge_graphs')
-                .update({ embedding: embeddings[j] })
+                .update({
+                  embedding: embeddings[j],
+                  sparse_embedding: sparse ? serializeSparse(sparse) : null,
+                })
                 .eq('id', batchGraphs[j].id);
               if (updateError) {
                 logger.error(`Failed to update graph embedding for ${batchGraphs[j].id}:`, updateError);

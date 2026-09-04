@@ -54,6 +54,11 @@ export class AIService {
     return embeddingOps.generateEmbeddingsBatch(texts);
   }
 
+  /** 生成稀疏向量（SPLADE 风格）。provider 不支持时返回 null，不抛出。 */
+  async generateSparseEmbedding(text: string) {
+    return embeddingOps.generateSparseEmbedding(text);
+  }
+
   // === 对话与辅导 (ChatService) ===
   async chat(
     messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,

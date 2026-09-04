@@ -49,6 +49,16 @@ Return a JSON object with a 'cards' array. Each card object must have:
 - 'options' (Array for 'choice'/'multi_choice'/'select_from_options'/'matching'/'ordering' types)`;
 
 export const DEFAULT_PROMPTS: Record<string, string> = {
+  query_rewrite: `你是检索查询改写专家。把用户的自然语言提问改写为更适合向量/关键词检索的查询文本。
+
+要求：
+1. 提取核心概念与关键术语，去除口语、客套和冗余表达
+2. 保留专业术语、型号、编号、专有名词原文
+3. 输出为简短的一句话查询（一般不超过 30 字），不要任何解释或前后缀
+4. 若原问题本身已是简洁检索式表达，直接原样输出
+
+用户提问：
+{{query}}`,
   auto_graph_expand: `You are a knowledge graph expert. Expand a node by generating its child nodes.
 
 ## Task

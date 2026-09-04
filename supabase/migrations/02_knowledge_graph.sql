@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
   is_branch BOOLEAN DEFAULT false,
   last_used_at TIMESTAMPTZ DEFAULT NOW(),
   embedding vector(1024),
+  sparse_embedding sparsevec(1000000),
   deleted_at TIMESTAMPTZ DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -31,6 +32,7 @@ COMMENT ON COLUMN knowledge_graphs.parent_graph_id IS '父图谱ID，用于子�
 COMMENT ON COLUMN knowledge_graphs.is_branch IS '是否为分支图谱';
 COMMENT ON COLUMN knowledge_graphs.last_used_at IS '最后使用时间，用于排序';
 COMMENT ON COLUMN knowledge_graphs.embedding IS '图谱嵌入向量，用于语义搜索';
+COMMENT ON COLUMN knowledge_graphs.sparse_embedding IS '图谱稀疏向量（SPLADE 风格，总维度 1000000），用于关键词/术语精确匹配检索';
 COMMENT ON COLUMN knowledge_graphs.deleted_at IS '软删除时间，非null表示已删除';
 COMMENT ON COLUMN knowledge_graphs.template_type IS '图谱模板类型，如 topic_research, knowledge_tree 等';
 COMMENT ON COLUMN knowledge_graphs.tags IS '图谱级标签，用于 Dashboard 筛选与管理';

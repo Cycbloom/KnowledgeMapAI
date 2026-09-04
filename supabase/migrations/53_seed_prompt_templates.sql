@@ -1293,3 +1293,16 @@ INSERT INTO prompt_templates (code, scope, user_id, graph_id, template_content, 
 7. Return only the JSON object defined in the output schema.
 
 Respond in {{outputLanguage}}.', NOW(), NOW());
+
+-- 检索查询改写（RAG 检索前置：自然语言问题 → 检索友好查询）
+INSERT INTO prompt_templates (code, scope, user_id, graph_id, template_content, created_at, updated_at) VALUES
+('query_rewrite', 'system', null, null, '你是检索查询改写专家。把用户的自然语言提问改写为更适合向量/关键词检索的查询文本。
+
+要求：
+1. 提取核心概念与关键术语，去除口语、客套和冗余表达
+2. 保留专业术语、型号、编号、专有名词原文
+3. 输出为简短的一句话查询（一般不超过 30 字），不要任何解释或前后缀
+4. 若原问题本身已是简洁检索式表达，直接原样输出
+
+用户提问：
+{{query}}', NOW(), NOW());

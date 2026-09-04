@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS note_embeddings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   note_id UUID NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
   embedding vector(1024) NOT NULL,
+  sparse_embedding sparsevec(1000000),
   chunk_text TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -36,6 +37,7 @@ COMMENT ON TABLE note_embeddings IS '笔记 embedding 表，用于笔记内容�
 COMMENT ON COLUMN note_embeddings.note_id IS '笔记 ID，引用 notes(id)，删除笔记时级联删除';
 COMMENT ON COLUMN note_embeddings.embedding IS '笔记内容向量嵌入，维度 1024，与 document_chunks 一致';
 COMMENT ON COLUMN note_embeddings.chunk_text IS '笔记正文快照（截断前 N 字符），用于检索结果摘要展示';
+COMMENT ON COLUMN note_embeddings.sparse_embedding IS '笔记内容的稀疏向量（SPLADE 风格，总维度 1000000），用于关键词/术语精确匹配检索';
 COMMENT ON COLUMN note_embeddings.created_at IS '首次生成 embedding 的时间';
 COMMENT ON COLUMN note_embeddings.updated_at IS '最近一次刷新 embedding 的时间';
 

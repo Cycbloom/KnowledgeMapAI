@@ -76,6 +76,17 @@ export interface EmbeddingData {
   object: string;
 }
 
+/** 稀疏向量条目：维度索引 + 数值（仅非零元素）。来自 doubao-embedding-vision 的 sparse_embedding */
+export interface SparseEmbeddingItem {
+  /** 维度索引 */
+  index: number;
+  /** 非零维度对应的数值 */
+  value: number;
+}
+
+/** 稀疏向量：非零元素列表，用于 pgvector sparsevec 列存储 */
+export type SparseVector = SparseEmbeddingItem[];
+
 export interface EmbeddingResponse {
   object: string;
   data: EmbeddingData[];
@@ -120,6 +131,8 @@ export interface AIProvider {
   providerType: AIProviderType;
   hasKey: boolean;
   createEmbedding?: (text: string) => Promise<number[] | null>;
+  /** 生成稀疏向量（SPLADE 风格）。provider 不支持时可省略，上层调用方需兜底。 */
+  createSparseEmbedding?: (text: string) => Promise<SparseVector | null>;
   synthesizeSpeech?: (
     text: string,
     voice?: string,

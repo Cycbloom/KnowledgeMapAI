@@ -4,6 +4,7 @@ import { withEmbeddingMonitoring } from "./aiMonitor";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import type { SparseVector } from "@shared/types";
 import { cacheService, CacheKeys, CacheTTL, computeTextHash } from "../common/cacheService";
 
 export class EmbeddingOps {
@@ -106,6 +107,50 @@ export class EmbeddingOps {
       CacheTTL.SEARCH,
       ['embedding']
     ) as Promise<number[] | null>;
+  }
+
+  /**
+   * 生成稀疏向量（SPLADE 风格）。
+   *
+   * 优先走 provider.createSparseEmbedding（火山 multimodal 端点同源返回 sparse，
+   * 且 createEmbedding 已缓存同文本的 dense+sparse）；provider 不支持时返回 null。
+   * 失败一律返回 null，不抛出（sparse 是增强通道，缺省不阻塞主链路）。
+   */
+  async generateSparseEmbedding(text: string): Promise<SparseVector | null> {
+    if (!text || text.trim().length === 0) return null;
+
+    const textHash = computeTextHash(text);
+    const cacheKey = CacheKeys.SPARSE_EMBEDDING(textHash);
+
+    return cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const provider = await getAIProviderForTask("embedding");
+        if (!provider.hasKey) {
+          logger.warn(
+            `[EmbeddingOps] Provider has no API key configured; skip sparse embedding`,
+          );
+          return null;
+        }
+
+        const createSparse = provider.createSparseEmbedding;
+        if (!createSparse) {
+          return null;
+        }
+
+        try {
+          return await createSparse.call(provider, text);
+        } catch (error) {
+          logger.warn("[EmbeddingOps] generateSparseEmbedding failed", {
+            provider: provider.providerType,
+            message: error instanceof Error ? error.message : String(error),
+          });
+          return null;
+        }
+      },
+      CacheTTL.SEARCH,
+      ['embedding']
+    ) as Promise<SparseVector | null>;
   }
 
   async generateEmbeddingsBatch(texts: string[]): Promise<(number[] | null)[]> {

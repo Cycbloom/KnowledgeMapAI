@@ -42,6 +42,7 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { notDeleted } from '../common/softDeleteHelper';
 import { embeddingOps } from '../ai/embeddingOps';
+import { serializeSparse } from '../../utils/sparse';
 import { promptService } from '../ai/promptService';
 import { getAIProviderForTask } from '../ai/factory';
 import { performanceMonitor } from '../ai/performanceMonitor';
@@ -782,6 +783,9 @@ export class NotesService {
         return;
       }
 
+      // 同步生成稀疏向量（provider 不支持时为 null，sparse 通道缺省不阻塞）
+      const sparse = await embeddingOps.generateSparseEmbedding(content);
+
       // chunk_text 截断到最大长度, 用于检索结果摘要展示
       const chunkText = content.slice(0, CHUNK_TEXT_MAX_LENGTH);
 
@@ -791,6 +795,7 @@ export class NotesService {
           {
             note_id: noteId,
             embedding,
+            sparse_embedding: sparse ? serializeSparse(sparse) : null,
             chunk_text: chunkText,
           },
           { onConflict: 'note_id' },

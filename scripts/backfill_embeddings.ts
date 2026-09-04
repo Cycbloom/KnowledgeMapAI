@@ -48,9 +48,14 @@ async function backfillEmbeddings() {
       const embedding = await aiService.generateEmbedding(textToEmbed);
 
       if (embedding) {
+        // 同步生成稀疏向量（provider 不支持时返回 null，sparse 通道缺省不阻塞）
+        const sparse = await aiService.generateSparseEmbedding(textToEmbed);
         const { error: updateError } = await getSupabaseAdmin()
           .from('knowledge_points')
-          .update({ embedding })
+          .update({
+            embedding,
+            sparse_embedding: sparse ? serializeSparse(sparse) : null,
+          })
           .eq('id', node.id);
 
         if (updateError) {

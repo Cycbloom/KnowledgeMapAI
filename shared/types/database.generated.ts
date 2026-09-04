@@ -486,6 +486,7 @@ export type Database = {
           embedding: string | null
           id: string
           knowledge_point_id: string
+          sparse_embedding: string | null
         }
         Insert: {
           chunk_index: number
@@ -494,6 +495,7 @@ export type Database = {
           embedding?: string | null
           id?: string
           knowledge_point_id: string
+          sparse_embedding?: string | null
         }
         Update: {
           chunk_index?: number
@@ -502,6 +504,7 @@ export type Database = {
           embedding?: string | null
           id?: string
           knowledge_point_id?: string
+          sparse_embedding?: string | null
         }
         Relationships: [
           {
@@ -1154,6 +1157,7 @@ export type Database = {
           last_used_at: string | null
           parent_graph_id: string | null
           settings: Json | null
+          sparse_embedding: string | null
           tags: string[] | null
           task_id: string | null
           template_type: string | null
@@ -1176,6 +1180,7 @@ export type Database = {
           last_used_at?: string | null
           parent_graph_id?: string | null
           settings?: Json | null
+          sparse_embedding?: string | null
           tags?: string[] | null
           task_id?: string | null
           template_type?: string | null
@@ -1198,6 +1203,7 @@ export type Database = {
           last_used_at?: string | null
           parent_graph_id?: string | null
           settings?: Json | null
+          sparse_embedding?: string | null
           tags?: string[] | null
           task_id?: string | null
           template_type?: string | null
@@ -1317,6 +1323,7 @@ export type Database = {
           owner_id: string
           properties?: Json | null
           source_knowledge_point_id?: string | null
+          sparse_embedding?: string | null
           summary?: Json | null
           title?: Json
           total_study_duration?: number | null
@@ -1338,6 +1345,7 @@ export type Database = {
           owner_id?: string
           properties?: Json | null
           source_knowledge_point_id?: string | null
+          sparse_embedding?: string | null
           summary?: Json | null
           title?: Json
           total_study_duration?: number | null
@@ -2027,6 +2035,7 @@ export type Database = {
           embedding: string
           id: string
           note_id: string
+          sparse_embedding: string | null
           updated_at: string
         }
         Insert: {
@@ -2035,6 +2044,7 @@ export type Database = {
           embedding: string
           id?: string
           note_id: string
+          sparse_embedding?: string | null
           updated_at?: string
         }
         Update: {
@@ -2043,6 +2053,7 @@ export type Database = {
           embedding?: string
           id?: string
           note_id?: string
+          sparse_embedding?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -4386,6 +4397,66 @@ export type Database = {
           match_threshold?: number
           p_user_id?: string
           query_embedding: string
+        }
+        Returns: {
+          chunk_text: string
+          id: string
+          note_id: string
+          similarity: number
+          title: string
+        }[]
+      }
+      match_document_chunks_sparse: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_graph_id?: string
+          p_user_id?: string
+          query_sparse: string
+        }
+        Returns: {
+          chunk_index: number
+          content: string
+          id: string
+          knowledge_point_id: string
+          similarity: number
+        }[]
+      }
+      match_knowledge_points_sparse: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_graph_id?: string
+          p_user_id?: string
+          query_sparse: string
+        }
+        Returns: {
+          content: string
+          id: string
+          similarity: number
+          title: string
+        }[]
+      }
+      match_knowledge_points_sparse_global: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_user_id?: string
+          query_sparse: string
+        }
+        Returns: {
+          content: string
+          id: string
+          similarity: number
+          title: string
+        }[]
+      }
+      match_notes_sparse: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_user_id?: string
+          query_sparse: string
         }
         Returns: {
           chunk_text: string

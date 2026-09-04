@@ -7,6 +7,7 @@ import { notDeleted } from '../common/softDeleteHelper';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { resolveLocalizedText, type LocalizedText } from '../../../shared/utils/localization';
+import { serializeSparse } from '../../utils/sparse';
 
 const BATCH_SIZE = 20;
 const EMBEDDING_DELAY_MS = 100;
@@ -148,9 +149,14 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
 
           for (let j = 0; j < batch.length; j++) {
             if (embeddings[j]) {
+              // 同步生成稀疏向量（provider 不支持时返回 null，sparse 通道缺省不阻塞）
+              const sparse = await aiService.generateSparseEmbedding(batch[j].title);
               const { error: updateError } = await supabase
                 .from('knowledge_points')
-                .update({ embedding: embeddings[j] })
+                .update({
+                  embedding: embeddings[j],
+                  sparse_embedding: sparse ? serializeSparse(sparse) : null,
+                })
                 .eq('id', batch[j].id);
 
               if (updateError) {
@@ -231,9 +237,14 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
 
             for (let k = 0; k < insertedChunks.length; k++) {
               if (chunkEmbeddings[k]) {
+                // 分块同样生成稀疏向量，供分块级关键词检索
+                const chunkSparse = await aiService.generateSparseEmbedding(insertedChunks[k].content);
                 const { error: updateChunkError } = await supabase
                   .from('document_chunks')
-                  .update({ embedding: chunkEmbeddings[k] })
+                  .update({
+                    embedding: chunkEmbeddings[k],
+                    sparse_embedding: chunkSparse ? serializeSparse(chunkSparse) : null,
+                  })
                   .eq('id', insertedChunks[k].id);
 
                 if (updateChunkError) {
@@ -262,9 +273,13 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
 
             for (let j = 0; j < batch.length; j++) {
               if (embeddings[j]) {
+                const sparse = await aiService.generateSparseEmbedding(batch[j].title);
                 const { error: updateError } = await supabase
                   .from('knowledge_graphs')
-                  .update({ embedding: embeddings[j] })
+                  .update({
+                    embedding: embeddings[j],
+                    sparse_embedding: sparse ? serializeSparse(sparse) : null,
+                  })
                   .eq('id', batch[j].id);
 
                 if (updateError) {

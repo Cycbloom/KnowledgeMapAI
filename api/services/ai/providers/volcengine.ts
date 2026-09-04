@@ -1,16 +1,20 @@
 import { BaseAIProvider } from './base';
-import type { AIProviderConfig } from '@shared/types';
+import type { AIProviderConfig, SparseVector } from '@shared/types';
 import { providerRegistry } from '../providerRegistry';
 import { logger } from '../../../utils/logger';
 import { AppError } from '../../../middleware/errorHandler';
 import { ErrorCodes } from '../../../../shared/types/errorCodes';
 
 export class VolcengineProvider extends BaseAIProvider {
+  // multimodal 端点一次请求同时返回 dense + sparse。dense 走 createEmbedding 返回，
+  // sparse 同步缓存到 textHash → sparse 供 createSparseEmbedding 复用（零额外 API 调用）。
+  private sparseCache = new Map<string, { value: SparseVector; at: number }>();
+  private static SPARSE_CACHE_TTL_MS = 10 * 60 * 1000;
+
   constructor(config: AIProviderConfig) {
     super('volcengine', config);
   }
 
-  // Override to support dimensions parameter for Volcengine embedding
   async createEmbedding(text: string) {
     if (!this.embeddingModel) {
       logger.warn('[Volcengine] embedding model not configured');
@@ -139,7 +143,13 @@ export class VolcengineProvider extends BaseAIProvider {
 
       const rawText = await response.text();
       let data: {
-        data?: { embedding?: number[] } | Array<{ embedding?: number[] }>;
+        data?: {
+          embedding?: number[];
+          sparse_embedding?: { index: number; value: number }[];
+        } | Array<{
+          embedding?: number[];
+          sparse_embedding?: { index: number; value: number }[];
+        }>;
       };
       try {
         data = JSON.parse(rawText) as typeof data;
@@ -151,6 +161,20 @@ export class VolcengineProvider extends BaseAIProvider {
         throw new AppError(ErrorCodes.AI_INVALID_RESPONSE, {
           message: 'Volcengine returned non-JSON response for multimodal embedding',
         });
+      }
+
+      // 同时解析 sparse_embedding（与 dense 同源一次返回），缓存供 createSparseEmbedding 复用。
+      const sparseCandidate =
+        !Array.isArray(data?.data) && data?.data
+          ? data.data
+          : Array.isArray(data?.data) && data.data.length > 0
+            ? data.data[0]
+            : undefined;
+      if (sparseCandidate) {
+        const sparse = sparseCandidate.sparse_embedding;
+        if (Array.isArray(sparse) && sparse.length > 0) {
+          this.sparseCache.set(text, { value: sparse, at: Date.now() });
+        }
       }
 
       if (data?.data && !Array.isArray(data.data) && data.data.embedding) {
@@ -184,6 +208,88 @@ export class VolcengineProvider extends BaseAIProvider {
         message:
           error instanceof Error ? error.message : 'Volcengine multimodal embedding error',
       });
+    }
+  }
+
+  /**
+   * 生成稀疏向量（SPLADE 风格，doubao-embedding-vision 的 sparse_embedding）。
+   *
+   * multimodal 端点一次请求同时返回 dense + sparse，dense 已由 createEmbedding 返回并
+   * 在此方法被调用前大概率已缓存（索引阶段先写 dense 再写 sparse）。因此这里优先查
+   * sparseCache；缓存未命中时再显式调用一次 multimodal 端点解析 sparse，不做 dense 返回。
+   */
+  async createSparseEmbedding(text: string): Promise<SparseVector | null> {
+    if (!this.embeddingModel || !this.embeddingModel.includes('vision')) {
+      logger.warn('[Volcengine] sparse embedding requires a vision/multimodal embedding model');
+      return null;
+    }
+
+    // 1. 命中缓存（由 createEmbedding 的 createMultimodalEmbedding 填充）
+    const cached = this.sparseCache.get(text);
+    if (
+      cached &&
+      Date.now() - cached.at < VolcengineProvider.SPARSE_CACHE_TTL_MS
+    ) {
+      return cached.value;
+    }
+
+    // 2. 缓存已过期或未填充：显式调用 multimodal 端点。payload 与 createMultimodalEmbedding 一致，
+    //    但这里只需 sparse，仍复用同一 endpoint 以保持同源向量。
+    try {
+      const endpoint = `${this.client.baseURL}/embeddings/multimodal`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.client.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.embeddingModel,
+          input: [{ type: 'text', text }],
+          encoding_format: 'float',
+          sparse_embedding: { type: 'enabled' },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error('[Volcengine] sparse embedding HTTP error', {
+          statusCode: response.status,
+          responseSample: errorText.slice(0, 300),
+        });
+        return null;
+      }
+
+      const rawText = await response.text();
+      const json = JSON.parse(rawText) as {
+        data?: {
+          sparse_embedding?: { index: number; value: number }[];
+        } | Array<{
+          sparse_embedding?: { index: number; value: number }[];
+        }>;
+      };
+
+      const obj =
+        !Array.isArray(json?.data) && json?.data
+          ? json.data
+          : Array.isArray(json?.data) && json.data.length > 0
+            ? json.data[0]
+            : undefined;
+      const sparse = obj?.sparse_embedding;
+      if (Array.isArray(sparse) && sparse.length > 0) {
+        this.sparseCache.set(text, { value: sparse, at: Date.now() });
+        return sparse;
+      }
+
+      logger.warn('[Volcengine] sparse embedding returned empty', {
+        responseSample: rawText.slice(0, 200),
+      });
+      return null;
+    } catch (error) {
+      logger.error('[Volcengine] sparse embedding fetch error', {
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return null;
     }
   }
 }

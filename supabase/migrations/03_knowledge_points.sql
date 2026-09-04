@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS knowledge_points (
   keywords JSONB DEFAULT '{}'::jsonb,
   properties JSONB DEFAULT '{}',
   embedding vector(1024),
+  sparse_embedding sparsevec(1000000),
   visibility knowledge_point_visibility DEFAULT 'private',
   owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   mastery_level DECIMAL(3,2) DEFAULT 0,
@@ -33,6 +34,7 @@ COMMENT ON COLUMN knowledge_points.learning_material IS '按语言 key 的学习
 COMMENT ON COLUMN knowledge_points.properties IS '自定义属性，JSON格式';
 COMMENT ON COLUMN knowledge_points.title IS '按语言 key 的标题对象，结构: {"zh-CN":"标题", "en-US":"Title"}，zh-CN 为基础语言';
 COMMENT ON COLUMN knowledge_points.content IS '按语言 key 的内容对象，结构同 title';
+COMMENT ON COLUMN knowledge_points.sparse_embedding IS '知识点稀疏向量（SPLADE 风格，最多 16000 非零元素），与 embedding 同源生成，用于关键词/术语精确匹配检索';
 COMMENT ON COLUMN knowledge_points.summary IS '按语言 key 的摘要对象，结构同 title';
 
 ALTER TABLE knowledge_points ADD COLUMN IF NOT EXISTS source_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL;

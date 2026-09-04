@@ -89,6 +89,20 @@ describe("crossGraphPathAlgorithms（跨图谱排序）", () => {
     expect(stages).toHaveLength(2);
   });
 
+  it("同领域图谱相邻：优先选择与上一个已排图谱同领域的", () => {
+    const { stages } = generateCrossGraphRulePath(
+      [
+        { graphId: "A1", title: "A1", nodeCount: 3, completion: 0.2, domainIds: ["d1"] },
+        { graphId: "A2", title: "A2", nodeCount: 2, completion: 0.2, domainIds: ["d1"] },
+        { graphId: "B1", title: "B1", nodeCount: 2, completion: 0.2, domainIds: ["d2"] },
+      ],
+      [],
+    );
+    const order = stages.map((s) => s.graphId);
+    // 首个按节点数降序（A1=3 领先）后，同领域 d1 的 A2 紧跟其后，再切换 d2
+    expect(order).toEqual(["A1", "A2", "B1"]);
+  });
+
   it("完成度阈值常量生效", () => {
     expect(CROSS_GRAPH_COMPLETION_THRESHOLD).toBe(0.85);
   });

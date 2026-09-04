@@ -101,12 +101,21 @@ export function generateCrossGraphRulePath(
   const isCompletedNode = (g: CrossGraphNodeInput) =>
     g.completion >= CROSS_GRAPH_COMPLETION_THRESHOLD;
 
-  // 就绪层排序：未完成优先 → 完成度升序 → 节点数降序 → 标题
+  // 就绪层排序：同领域相邻 → 未完成优先 → 完成度升序 → 节点数降序 → 标题
+  // lastDomainIds 记录上一个已排图谱的领域，优先选择与其同领域的图谱，让路径按领域分组推进
+  let lastDomainIds: string[] = [];
+  const hasDomainOverlap = (g: CrossGraphNodeInput) =>
+    lastDomainIds.length > 0 &&
+    g.domainIds.some((id) => lastDomainIds.includes(id));
+
   const sortReady = (list: string[]) => {
     return list.sort((aId, bId) => {
       const a = nodeById.get(aId);
       const b = nodeById.get(bId);
       if (!a || !b) return 0;
+      const aSame = hasDomainOverlap(a);
+      const bSame = hasDomainOverlap(b);
+      if (aSame !== bSame) return aSame ? -1 : 1;
       if (isCompletedNode(a) !== isCompletedNode(b)) {
         return isCompletedNode(a) ? 1 : -1;
       }
@@ -131,6 +140,7 @@ export function generateCrossGraphRulePath(
     if (visited.has(next)) continue;
     visited.add(next);
     ordered.push(next);
+    lastDomainIds = nodeById.get(next)?.domainIds ?? [];
 
     for (const childId of childMap.get(next) ?? []) {
       const newDegree = (inDegree.get(childId) ?? 1) - 1;

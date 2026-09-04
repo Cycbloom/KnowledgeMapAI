@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useUser } from '../hooks/queries';
 import { useLogoutMutation } from '../hooks/mutations';
 import { queryKeys } from '../hooks/queries/config';
+import { learningPathKeys } from '../hooks/queries/useLearningPathQueries';
 import { useStore } from '../store/useStore';
 import { LogOut, User, Settings as SettingsIcon, ExternalLink, Database, Download, Upload, AlertTriangle, Trash2, RotateCcw, Clock, Plus, RefreshCw } from 'lucide-react';
 import { backupApi, BackupSnapshot } from '../services/api/backup';
@@ -45,6 +46,9 @@ export const Profile = () => {
       // 否则 staleTime 内的 next-step 缓存不及时反映新数据（需 force reload 才更新）。
       queryClient.invalidateQueries({ queryKey: queryKeys.scheduler() }),
       queryClient.invalidateQueries({ queryKey: queryKeys.schedulerNextStep() }),
+      // 备份导入/恢复会重写学习路径（list/detail/crossGraphSummary 等），
+      // 需整体失效 learningPathKeys.all，否则首页学习路径沿用旧缓存不显示（force reload 才恢复）。
+      queryClient.invalidateQueries({ queryKey: learningPathKeys.all }),
     ]);
   };
 

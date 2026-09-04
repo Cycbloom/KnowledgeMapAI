@@ -28,6 +28,7 @@ import {
 } from "../hooks/queries/useLearningPathQueries";
 import { useAutoClassifyNotificationStore } from "../store/useAutoClassifyNotificationStore";
 import { useAutoClassifyPanelStore } from "../store/useAutoClassifyPanelStore";
+import { useGoalDialogVariantOpenStore } from "../store/useGoalDialogVariantOpenStore";
 import { useIsMobile } from "../hooks/common/useIsMobile";
 import { ErrorBoundary, Skeleton, Loading } from "../components/common";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
@@ -206,6 +207,9 @@ export const GraphMap = () => {
   const [isDomainGeneratorOpen, setIsDomainGeneratorOpen] = useState(false);
   const [isAutoClassifyOpen, setIsAutoClassifyOpen] = useState(false);
   const [autoClassifyTaskId, setAutoClassifyTaskId] = useState<string | null>(null);
+  const [goalDialogVariantTaskId, setGoalDialogVariantTaskId] = useState<
+    string | null
+  >(null);
   const [domainBatchSessionId, setDomainBatchSessionId] = useState<string | null>(null);
   const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false);
   const [isGenerateCardsModalOpen, setIsGenerateCardsModalOpen] =
@@ -577,6 +581,18 @@ export const GraphMap = () => {
     setAutoClassifyTaskId(panelTaskId);
     setIsAutoClassifyOpen(true);
   }, [panelTaskId]);
+
+  // 由「生成候选路径」后台任务完成通知「继续」请求打开目标驱动面板并回填变体
+  const goalDialogOpenRequest = useGoalDialogVariantOpenStore((s) =>
+    s.open ? s.taskId : null,
+  );
+
+  useEffect(() => {
+    if (!goalDialogOpenRequest) return;
+    useGoalDialogVariantOpenStore.getState().clearOpen();
+    setGoalDialogVariantTaskId(goalDialogOpenRequest);
+    setIsGoalDialogOpen(true);
+  }, [goalDialogOpenRequest]);
 
   const handleUndoBatchDelete = useCallback(async (ids: string[]) => {
     try {
@@ -2148,10 +2164,14 @@ export const GraphMap = () => {
     <Suspense fallback={null}>
       <GoalDrivenPathDialog
         isOpen={isGoalDialogOpen}
-        onClose={() => setIsGoalDialogOpen(false)}
+        onClose={() => {
+          setIsGoalDialogOpen(false);
+          setGoalDialogVariantTaskId(null);
+        }}
         onSaved={handlePathSaved}
         onQuickGenerate={handleQuickGenerate}
         context={goalDialogContext}
+        initialVariantTaskId={goalDialogVariantTaskId}
       />
     </Suspense>
 

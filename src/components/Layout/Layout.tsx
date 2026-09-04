@@ -42,6 +42,9 @@ import { useRelationDiscoveryNotificationStore } from "../../store/useRelationDi
 import { AutoClassifyNotification } from "../GraphMap/AutoClassifyNotification";
 import { useAutoClassifyNotificationStore } from "../../store/useAutoClassifyNotificationStore";
 import { useAutoClassifyPanelStore } from "../../store/useAutoClassifyPanelStore";
+import { GoalDialogVariantNotification } from "../GraphMap/GoalDialogVariantNotification";
+import { useGoalDialogVariantNotificationStore } from "../../store/useGoalDialogVariantNotificationStore";
+import { useGoalDialogVariantOpenStore } from "../../store/useGoalDialogVariantOpenStore";
 import { EmbeddingBackfillToast } from "../Notifications/EmbeddingBackfillToast";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
@@ -535,6 +538,22 @@ export const Layout = () => {
     useAutoClassifyNotificationStore.getState().clearNotice();
   }, []);
 
+  const goalVariantNotice = useGoalDialogVariantNotificationStore(
+    (s) => s.notice,
+  );
+
+  const handleGoalVariantContinue = useCallback(() => {
+    const notice = useGoalDialogVariantNotificationStore.getState().notice;
+    if (!notice) return;
+    useGoalDialogVariantNotificationStore.getState().clearNotice();
+    useGoalDialogVariantOpenStore.getState().requestOpen(notice.taskId);
+    navigate("/graph-map");
+  }, [navigate]);
+
+  const handleGoalVariantClose = useCallback(() => {
+    useGoalDialogVariantNotificationStore.getState().clearNotice();
+  }, []);
+
   if (!!token && !user && isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -794,6 +813,11 @@ export const Layout = () => {
             notice={autoClassifyNotice}
             onClose={handleAutoClassifyClose}
             onContinue={handleAutoClassifyContinue}
+          />
+          <GoalDialogVariantNotification
+            notice={goalVariantNotice}
+            onClose={handleGoalVariantClose}
+            onContinue={handleGoalVariantContinue}
           />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
           {isHelpOpen && (

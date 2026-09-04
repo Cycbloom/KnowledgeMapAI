@@ -511,7 +511,13 @@ export const learningPathsApi = {
     }
   },
 
-  generateVariants: (data: {
+  /**
+   * 提交「生成候选跨图谱学习路径」后台任务。
+   *
+   * AI 生成较耗时，改为后台任务执行：返回 taskId，前端可关闭面板；
+   * 任务完成后经 SSE 通知，再从任务 output_data 回填变体列表续接。
+   */
+  generateVariantsBackground: (data: {
     target_goal: string;
     conversation_transcript?: string;
     daily_time_minutes?: number;
@@ -521,7 +527,7 @@ export const learningPathsApi = {
     selected_graph_ids?: string[];
     selected_domain_ids?: string[];
   }) =>
-    request<{ success: boolean; data: { variants: CrossGraphPathVariant[] } }>(
+    request<{ success: boolean; data: { taskId: string; taskType: string } }>(
       "/learning-paths/cross-graph/goal/variants",
       { method: "POST", body: JSON.stringify(data) },
     ),

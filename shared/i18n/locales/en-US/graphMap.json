@@ -66,6 +66,9 @@
       "saved": "Cross-graph learning path saved",
       "saveFailed": "Failed to save, please retry",
       "generationFailed": "Failed to generate candidate paths, please retry",
+      "submittedBackground": "Candidate generation submitted to background. You can close the panel and we'll notify you when it's ready",
+      "loadVariantsFailed": "Failed to load candidate paths, please retry",
+      "variantStillGenerating": "Candidate paths are still generating, please try again later",
       "regenerate": "Regenerate",
       "quickGenerate": "Skip wizard, quick generate",
       "sendFailed": "Chat failed, please retry",
@@ -81,6 +84,12 @@
         "goalOriented": "Goal-oriented",
         "systematic": "Systematic",
         "quickOverview": "Quick overview"
+      },
+      "notification": {
+        "generating": "Generating candidate learning paths…",
+        "completed": "Candidate paths ready, {{count}} options",
+        "failed": "Failed to generate candidate paths",
+        "continue": "Continue with candidate paths"
       }
     }
   },

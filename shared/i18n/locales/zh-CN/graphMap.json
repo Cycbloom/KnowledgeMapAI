@@ -66,6 +66,9 @@
       "saved": "已保存跨图谱学习路径",
       "saveFailed": "保存失败，请重试",
       "generationFailed": "候选路径生成失败，请重试",
+      "submittedBackground": "候选路径已提交后台生成，可关闭面板，完成后右下角会通知您",
+      "loadVariantsFailed": "加载候选路径失败，请重试",
+      "variantStillGenerating": "候选路径仍在生成中，请稍后再试",
       "regenerate": "重新生成",
       "quickGenerate": "跳过向导，快速生成",
       "sendFailed": "对话失败，请重试",
@@ -81,6 +84,12 @@
         "goalOriented": "目标导向",
         "systematic": "系统全面",
         "quickOverview": "快速概览"
+      },
+      "notification": {
+        "generating": "正在生成候选学习路径…",
+        "completed": "候选路径已生成，共 {{count}} 条",
+        "failed": "候选路径生成失败",
+        "continue": "继续选择候选路径"
       }
     }
   },

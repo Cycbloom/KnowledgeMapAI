@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useId } from "react";
+import React, { useState, useRef, useEffect, useCallback, useId, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
@@ -18,11 +18,13 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { learningPathsApi, type CrossGraphPathVariant } from "../../services/api/learningPaths";
+import { api } from "../../services/api";
 import { message } from "../../utils/messageHelper";
 import { getErrorMessage } from "../../utils/errors";
 import { useFocusTrap } from "../../hooks/common/useFocusTrap";
 import { useEscapeKey } from "../../hooks/common/useEscapeKey";
 import { useSpeechRecognition } from "../../hooks/common/useSpeechRecognition";
+import { useGoalDialogVariantNotificationStore } from "../../store/useGoalDialogVariantNotificationStore";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -47,6 +49,8 @@ interface GoalDrivenPathDialogProps {
   onQuickGenerate?: () => void;
   /** 图谱地图选中上下文（选中的图谱/领域），作为学习路径创建的主要上下文 */
   context?: GraphMapSelectionContext;
+  /** 后台生成候选路径任务的 id：由完成通知「继续」传入，打开后回填变体续接 */
+  initialVariantTaskId?: string | null;
 }
 
 const EMPHASIS_LABEL_KEYS = {
@@ -69,6 +73,7 @@ export const GoalDrivenPathDialog: React.FC<GoalDrivenPathDialogProps> = ({
   onSaved,
   onQuickGenerate,
   context,
+  initialVariantTaskId,
 }) => {
   const { t } = useTranslation();
   const [step, setStep] = useState<WizardStep>(1);
@@ -85,6 +90,8 @@ export const GoalDrivenPathDialog: React.FC<GoalDrivenPathDialogProps> = ({
   // Step3：候选路径
   const [variants, setVariants] = useState<CrossGraphPathVariant[] | null>(null);
   const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
+  const [isLoadingVariantsFromTask, setIsLoadingVariantsFromTask] =
+    useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   // Step4：保存
   const [dailyMinutes, setDailyMinutes] = useState(30);
@@ -92,11 +99,8 @@ export const GoalDrivenPathDialog: React.FC<GoalDrivenPathDialogProps> = ({
 
   const listRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  // 打开面板时快照选中的图谱/领域，避免面板打开后地图上的选中变化造成上下文漂移
-  const [activeContext, setActiveContext] = useState<GraphMapSelectionContext>({
-    selectedGraphs: [],
-    selectedDomains: [],
-  });
+  // 直接跟随地图上的实时选中：用户在地图上点选/切换节点或领域时，对话框上下文同步更新
+  const activeContext = context ?? { selectedGraphs: [], selectedDomains: [] };
   const hasActiveContext =
     activeContext.selectedGraphs.length > 0 ||
     activeContext.selectedDomains.length > 0;
@@ -173,34 +177,100 @@ export const GoalDrivenPathDialog: React.FC<GoalDrivenPathDialogProps> = ({
       setIsGeneratingVariants(false);
       setIsSaving(false);
       setSessionId(crypto.randomUUID());
-      setActiveContext(
-        context ?? { selectedGraphs: [], selectedDomains: [] },
-      );
-      void loadSuggestedGoals(
-        context ?? { selectedGraphs: [], selectedDomains: [] },
-      );
+      suggestSeqRef.current++;
+      loadedContextSignatureRef.current = contextSignature;
+      void loadSuggestedGoals();
     }
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadSuggestedGoals = async (ctx?: GraphMapSelectionContext) => {
-    const selection = ctx ?? activeContext;
+  // 打开面板时若带后台任务 id（完成通知「继续」进来的）：从任务 output_data
+  // 回填候选路径并直接跳到变体选择步骤续接（无需重走 Step1/Step2）
+  useEffect(() => {
+    if (!isOpen || !initialVariantTaskId) return;
+    let cancelled = false;
+    setIsLoadingVariantsFromTask(true);
+    (async () => {
+      try {
+        const task = (await api.ai.getTaskStatus(initialVariantTaskId)) as {
+          status?: string;
+          output_data?: { variants?: CrossGraphPathVariant[] };
+        };
+        if (cancelled) return;
+        const list = Array.isArray(task?.output_data?.variants)
+          ? task.output_data.variants
+          : [];
+        if (list.length > 0) {
+          setVariants(list);
+          setSelectedVariantId(null);
+          setStep(3);
+        } else if (task?.status === "failed") {
+          message.error(
+            t("graphMap.crossGraph.goalDialog.generationFailed"),
+          );
+        } else {
+          message.info(
+            t("graphMap.crossGraph.goalDialog.variantStillGenerating"),
+          );
+        }
+      } catch (error: unknown) {
+        if (cancelled) return;
+        const errMsg =
+          getErrorMessage(error) ||
+          t("graphMap.crossGraph.goalDialog.loadVariantsFailed");
+        message.error(errMsg);
+      } finally {
+        if (!cancelled) setIsLoadingVariantsFromTask(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, initialVariantTaskId, t]);
+
+  // 建议请求序号守卫：丢弃过期响应（用户快速切换节点时，旧请求可能后到）
+  const suggestSeqRef = useRef(0);
+  const loadSuggestedGoals = useCallback(async () => {
+    const seq = ++suggestSeqRef.current;
     setIsLoadingSuggest(true);
     try {
       const result = await learningPathsApi.suggestGoals({
-        selected_graph_ids: selection.selectedGraphs.map((g) => g.id),
-        selected_domain_ids: selection.selectedDomains.map((d) => d.id),
+        selected_graph_ids: activeContext.selectedGraphs.map((g) => g.id),
+        selected_domain_ids: activeContext.selectedDomains.map((d) => d.id),
       });
+      if (seq !== suggestSeqRef.current) return; // 过期响应丢弃
       setSuggestedGoals(result.data.suggestedGoals);
     } catch (error: unknown) {
+      if (seq !== suggestSeqRef.current) return;
       setSuggestedGoals([]);
       const errMsg =
         getErrorMessage(error) ||
         t("graphMap.crossGraph.goalDialog.suggestFailed");
       message.error(errMsg);
     } finally {
-      setIsLoadingSuggest(false);
+      if (seq === suggestSeqRef.current) setIsLoadingSuggest(false);
     }
-  };
+  }, [activeContext, t]);
+
+  // 地图上选中内容变化时，Step1 防抖重新拉取建议，让建议跟随切换
+  const contextSignature = useMemo(
+    () =>
+      [
+        activeContext.selectedGraphs.map((g) => g.id).join(","),
+        activeContext.selectedDomains.map((d) => d.id).join(","),
+      ].join("|"),
+    [activeContext],
+  );
+  const loadedContextSignatureRef = useRef("");
+
+  useEffect(() => {
+    if (!isOpen || step !== 1) return;
+    if (loadedContextSignatureRef.current === contextSignature) return;
+    loadedContextSignatureRef.current = contextSignature;
+    const timer = setTimeout(() => {
+      void loadSuggestedGoals();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [contextSignature, isOpen, step, loadSuggestedGoals]);
 
   // 自动滚动到底部
   useEffect(() => {
@@ -306,11 +376,10 @@ export const GoalDrivenPathDialog: React.FC<GoalDrivenPathDialogProps> = ({
   };
 
   const handleGenerateVariants = async () => {
+    if (isGeneratingVariants) return;
     setIsGeneratingVariants(true);
-    setVariants(null);
-    setSelectedVariantId(null);
     try {
-      const result = await learningPathsApi.generateVariants({
+      const result = await learningPathsApi.generateVariantsBackground({
         target_goal: targetGoal(),
         conversation_transcript: conversationTranscript(),
         daily_time_minutes: dailyMinutes,
@@ -318,8 +387,12 @@ export const GoalDrivenPathDialog: React.FC<GoalDrivenPathDialogProps> = ({
         selected_graph_ids: activeContext.selectedGraphs.map((g) => g.id),
         selected_domain_ids: activeContext.selectedDomains.map((d) => d.id),
       });
-      setVariants(result.data.variants);
-      setStep(3);
+      // 交给后台任务执行并跟踪完成：可关闭面板，完成后右下角通知「继续」续接
+      useGoalDialogVariantNotificationStore
+        .getState()
+        .startTracking(result.data.taskId);
+      message.success(t("graphMap.crossGraph.goalDialog.submittedBackground"));
+      onClose();
     } catch (error: unknown) {
       const errMsg =
         getErrorMessage(error) ||
@@ -714,7 +787,7 @@ export const GoalDrivenPathDialog: React.FC<GoalDrivenPathDialogProps> = ({
                 {t("graphMap.crossGraph.goalDialog.variantHint")}
               </p>
 
-              {isGeneratingVariants && (
+              {(isGeneratingVariants || isLoadingVariantsFromTask) && (
                 <div className="flex items-center gap-2 py-4 text-sm text-gray-500 dark:text-gray-400">
                   <Loader2 className="w-4 h-4 animate-spin text-primary-500" aria-hidden="true" />
                   {t("graphMap.crossGraph.goalDialog.generatingVariants")}

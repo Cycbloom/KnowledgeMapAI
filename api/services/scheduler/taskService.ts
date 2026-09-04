@@ -662,16 +662,19 @@ export class TaskService {
       const taskIds = tasks.map((t) => t.id);
       const { data: subtaskStats } = await client
         .from("task_subtasks")
-        .select("task_id, status")
-        .in("task_id", taskIds);
+        .select("id, task_id, title, description, status, priority, position, estimated_duration, actual_duration, due_date, completed_at, learning_path_node_id, knowledge_point_id, learning_state, last_state_change_at, state_history, created_at, updated_at, knowledge_points(mastery_level)")
+        .in("task_id", taskIds)
+        .order("position", { ascending: true });
 
+      const subtasksByTask = new Map<string, Record<string, unknown>[]>();
       const subtaskCounts = new Map<
         string,
         { total: number; completed: number }
       >();
       if (subtaskStats) {
         for (const st of subtaskStats) {
-          const existing = subtaskCounts.get(st.task_id) || {
+          const taskId = st.task_id as string;
+          const existing = subtaskCounts.get(taskId) || {
             total: 0,
             completed: 0,
           };
@@ -679,7 +682,19 @@ export class TaskService {
           if (st.status === "completed") {
             existing.completed++;
           }
-          subtaskCounts.set(st.task_id, existing);
+          subtaskCounts.set(taskId, existing);
+
+          const { knowledge_points, ...rest } = st as Record<string, unknown> & {
+            knowledge_points?: { mastery_level: number | null }[] | null;
+          };
+          const subtask = {
+            ...rest,
+            // mastery_level 单一来源：从 knowledge_points JOIN 提升到顶层，兼容既有 API 契约
+            mastery_level: knowledge_points?.[0]?.mastery_level ?? 0,
+          };
+          const list = subtasksByTask.get(taskId) ?? [];
+          list.push(subtask);
+          subtasksByTask.set(taskId, list);
         }
       }
 
@@ -689,6 +704,8 @@ export class TaskService {
         taskRecord.subtask_count = stats?.total || 0;
         taskRecord.subtask_completed = stats?.completed || 0;
         taskRecord.has_subtasks = (stats?.total || 0) > 0;
+        // 附挂完整子任务数组（含 mastery_level），供日历/任务列表展开子任务展示
+        taskRecord.subtasks = subtasksByTask.get(task.id) ?? [];
       }
     }
 

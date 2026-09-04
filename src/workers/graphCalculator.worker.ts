@@ -511,7 +511,9 @@ const calculateMindMapLayout = (
 
     domainIndexList.forEach((domain, idx) => {
       const angle = (idx / domainGroups.size) * Math.PI * 2;
-      const radius = Math.min(width, height) * 0.25;
+      // 领域焦点环半径加大，配合初始位置（0.3）使各领域区域在地图上更分散，
+      // 减少凸包/光晕的空间交叠，为前端「空间分区」提供更干净的领域分块
+      const radius = Math.min(width, height) * 0.3;
       domainCenters.set(domain, {
         x: width / 2 + Math.cos(angle) * radius,
         y: height / 2 + Math.sin(angle) * radius,
@@ -524,8 +526,9 @@ const calculateMindMapLayout = (
         if (domain && domainCenters.has(domain)) {
           const center = domainCenters.get(domain);
           if (center) {
-            node.vx = (node.vx || 0) + (center.x - (node.x ?? 0)) * alpha * 0.1;
-            node.vy = (node.vy || 0) + (center.y - (node.y ?? 0)) * alpha * 0.1;
+            // 领域聚集力系数上调，让同领域节点更紧贴焦点，领域间更远离
+            node.vx = (node.vx || 0) + (center.x - (node.x ?? 0)) * alpha * 0.14;
+            node.vy = (node.vy || 0) + (center.y - (node.y ?? 0)) * alpha * 0.14;
           }
         }
       });

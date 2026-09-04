@@ -142,15 +142,163 @@ interface DomainGroup {
   radius: number;
 }
 
+/** 分组原始结构：领域 -> 节点列表（尚未计算质心/外包圆半径） */
+interface DomainNodeGroup {
+  domainId: string;
+  domain: string;
+  nodes: LayoutNode[];
+}
+
+/** 计算每组质心与外包圆半径（光晕圆/凸包共用），生成最终 DomainGroup 列表 */
+function finalizeRegionGroups(groups: Map<string, DomainNodeGroup>): DomainGroup[] {
+  const result: DomainGroup[] = [];
+  groups.forEach((group) => {
+    if (group.nodes.length === 0) return;
+
+    let sumX = 0;
+    let sumY = 0;
+    group.nodes.forEach((node) => {
+      sumX += node.x;
+      sumY += node.y;
+    });
+    const centerX = sumX / group.nodes.length;
+    const centerY = sumY / group.nodes.length;
+
+    // 外接圆：半径 = 距质心最远的「节点盘外缘」距离，正好包住最外层节点
+    let maxOuter = 0;
+    group.nodes.forEach((node) => {
+      const dx = node.x - centerX;
+      const dy = node.y - centerY;
+      const rim = getNodeRimRadius(node.level ?? 'leaf');
+      const outer = Math.sqrt(dx * dx + dy * dy) + rim;
+      if (outer > maxOuter) maxOuter = outer;
+    });
+    // 少量视觉余量，圆刚好贴合而不互相压挤
+    result.push({
+      domainId: group.domainId,
+      domain: group.domain,
+      nodes: group.nodes,
+      centerX,
+      centerY,
+      radius: maxOuter + 8,
+    });
+  });
+  return result;
+}
+
+/**
+ * 空间分区：把每个节点只划给「其所属领域中质心最近」的那一个（类 k-means 迭代），
+ * 让各领域的凸包/光晕区域在空间上互不交叠，从根源消除多色半透明区域叠加混合的浑浊感。
+ * 跨领域归属仍保留在节点高亮/选中/链接逻辑里，这里只影响背景区域的归属。
+ */
+function partitionNodesByNearestDomain(groups: DomainGroup[], iterations = 4): DomainGroup[] {
+  if (groups.length <= 1) return groups;
+
+  // 节点 -> 所属领域集合（保留跨领域成员关系，仅用于候选集）
+  const nodeById = new Map<string, LayoutNode>();
+  const membership = new Map<string, string[]>();
+  groups.forEach((g) => {
+    g.nodes.forEach((n) => {
+      nodeById.set(n.id, n);
+      const list = membership.get(n.id);
+      if (list) {
+        if (!list.includes(g.domainId)) list.push(g.domainId);
+      } else {
+        membership.set(n.id, [g.domainId]);
+      }
+    });
+  });
+
+  const domainById = new Map(groups.map((g) => [g.domainId, g]));
+  const centroids = new Map<string, { x: number; y: number }>();
+  groups.forEach((g) => centroids.set(g.domainId, { x: g.centerX, y: g.centerY }));
+
+  const assignAll = (): Map<string, LayoutNode[]> => {
+    const assigned = new Map<string, LayoutNode[]>(groups.map((g) => [g.domainId, []]));
+    nodeById.forEach((node, id) => {
+      const own = membership.get(id);
+      if (!own) return;
+      let best = own[0];
+      let bestDist = Infinity;
+      for (const dId of own) {
+        const c = centroids.get(dId);
+        if (!c) continue;
+        const dx = node.x - c.x;
+        const dy = node.y - c.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < bestDist) {
+          bestDist = d2;
+          best = dId;
+        }
+      }
+      assigned.get(best)?.push(node);
+    });
+    return assigned;
+  };
+
+  // 迭代收敛：按最近质心重新归属后再重算质心，直到不再明显移动
+  for (let iter = 0; iter < iterations; iter++) {
+    const assigned = assignAll();
+    let moved = false;
+    assigned.forEach((nodes, dId) => {
+      if (nodes.length === 0) return;
+      let sumX = 0;
+      let sumY = 0;
+      nodes.forEach((n) => {
+        sumX += n.x;
+        sumY += n.y;
+      });
+      const nx = sumX / nodes.length;
+      const ny = sumY / nodes.length;
+      const c = centroids.get(dId);
+      if (!c || Math.abs(c.x - nx) > 0.5 || Math.abs(c.y - ny) > 0.5) {
+        centroids.set(dId, { x: nx, y: ny });
+        moved = true;
+      }
+    });
+    if (!moved) break;
+  }
+
+  // 用最终质心再归属一次，得到互不重叠的领域分区
+  const finalAssigned = assignAll();
+  const groupsOut = new Map<string, DomainNodeGroup>();
+  finalAssigned.forEach((nodes, dId) => {
+    if (nodes.length === 0) return;
+    groupsOut.set(dId, {
+      domainId: dId,
+      domain: domainById.get(dId)?.domain ?? dId,
+      nodes,
+    });
+  });
+  return finalizeRegionGroups(groupsOut);
+}
+
+/** 按选中领域/聚焦节点白名单过滤领域分组（labels 与背景区域共用） */
+function applyGroupFilters(
+  groups: DomainGroup[],
+  selectedDomainIds?: Set<string>,
+  visibleDomainIds?: Set<string> | null,
+): DomainGroup[] {
+  let result = groups;
+  if (selectedDomainIds && selectedDomainIds.size > 0) {
+    result = result.filter(group => selectedDomainIds.has(group.domainId));
+  }
+  // 聚焦节点时：只显示「被高亮节点中 ≥2 个属于该领域」的领域，消除无谓阴影遮罩
+  if (visibleDomainIds) {
+    result = result.filter(group => visibleDomainIds.has(group.domainId));
+  }
+  return result;
+}
+
 const DOMAIN_COLORS = [
-  { bg: 'rgba(99, 102, 241, 0.12)', text: 'rgba(99, 102, 241, 0.85)' },
-  { bg: 'rgba(16, 185, 129, 0.12)', text: 'rgba(16, 185, 129, 0.85)' },
-  { bg: 'rgba(245, 158, 11, 0.12)', text: 'rgba(245, 158, 11, 0.85)' },
-  { bg: 'rgba(239, 68, 68, 0.12)', text: 'rgba(239, 68, 68, 0.85)' },
-  { bg: 'rgba(139, 92, 246, 0.12)', text: 'rgba(139, 92, 246, 0.85)' },
-  { bg: 'rgba(236, 72, 153, 0.12)', text: 'rgba(236, 72, 153, 0.85)' },
-  { bg: 'rgba(6, 182, 212, 0.12)', text: 'rgba(6, 182, 212, 0.85)' },
-  { bg: 'rgba(132, 204, 22, 0.12)', text: 'rgba(132, 204, 22, 0.85)' },
+  'rgba(99, 102, 241, 0.85)',
+  'rgba(16, 185, 129, 0.85)',
+  'rgba(245, 158, 11, 0.85)',
+  'rgba(239, 68, 68, 0.85)',
+  'rgba(139, 92, 246, 0.85)',
+  'rgba(236, 72, 153, 0.85)',
+  'rgba(6, 182, 212, 0.85)',
+  'rgba(132, 204, 22, 0.85)',
 ];
 
 interface PillPlacement {
@@ -280,7 +428,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
   const { isDark } = useTheme();
 
   const domainGroups = useMemo(() => {
-    const groups: Map<string, DomainGroup> = new Map();
+    const groups = new Map<string, DomainNodeGroup>();
 
     // 预构建 graph 索引，将按 id 查找由 O(layoutNodes*graphs) 降为 O(1)
     const graphById = new Map(graphs.map(g => [g.id, g]));
@@ -296,60 +444,38 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
       ids.forEach((domainIdentifier: string) => {
         if (!domainIdentifier) return;
 
-        if (!groups.has(domainIdentifier)) {
-          groups.set(domainIdentifier, {
+        let group = groups.get(domainIdentifier);
+        if (!group) {
+          group = {
             domainId: domainIdentifier,
             domain: domainIdToInfo?.get(domainIdentifier)?.name || domainIdentifier,
             nodes: [],
-            centerX: 0,
-            centerY: 0,
-            radius: 0
-          });
+          };
+          groups.set(domainIdentifier, group);
         }
 
-        groups.get(domainIdentifier)?.nodes.push(node);
+        group.nodes.push(node);
       });
     });
 
-    groups.forEach(group => {
-      if (group.nodes.length === 0) return;
-
-      let sumX = 0, sumY = 0;
-      group.nodes.forEach(node => {
-        sumX += node.x;
-        sumY += node.y;
-      });
-      group.centerX = sumX / group.nodes.length;
-      group.centerY = sumY / group.nodes.length;
-
-      // 外接圆：半径 = 距质心最远的「节点盘外缘」距离，正好包住最外层节点，
-      // 避免 p85 + 大 padding + 放大系数把圆撑得过大
-      let maxOuter = 0;
-      group.nodes.forEach(node => {
-        const dx = node.x - group.centerX;
-        const dy = node.y - group.centerY;
-        const rim = getNodeRimRadius(node.level ?? 'leaf');
-        const outer = Math.sqrt(dx * dx + dy * dy) + rim;
-        if (outer > maxOuter) maxOuter = outer;
-      });
-      // 少量视觉余量，圆刚好贴合而不互相压挤
-      group.radius = maxOuter + 8;
-    });
-
-    return Array.from(groups.values());
+    return finalizeRegionGroups(groups);
   }, [layoutNodes, graphs, domainIdToInfo]);
 
-  const filteredGroups = useMemo(() => {
-    let groups = domainGroups;
-    if (selectedDomainIds && selectedDomainIds.size > 0) {
-      groups = groups.filter(group => selectedDomainIds.has(group.domainId));
-    }
-    // 聚焦节点时：只显示「被高亮节点中 ≥2 个属于该领域」的领域，消除无谓阴影遮罩
-    if (visibleDomainIds) {
-      groups = groups.filter(group => visibleDomainIds.has(group.domainId));
-    }
-    return groups;
-  }, [domainGroups, selectedDomainIds, visibleDomainIds]);
+  // 空间分区：背景区域（光晕圆 + 凸包）用「每节点仅归属最近领域质心」的划分，
+  // 使各领域区域互不交叠；标签/计数仍使用全成员 domainGroups
+  const regionGroups = useMemo(
+    () => partitionNodesByNearestDomain(domainGroups),
+    [domainGroups],
+  );
+
+  const filteredGroups = useMemo(
+    () => applyGroupFilters(domainGroups, selectedDomainIds, visibleDomainIds),
+    [domainGroups, selectedDomainIds, visibleDomainIds],
+  );
+  const filteredRegionGroups = useMemo(
+    () => applyGroupFilters(regionGroups, selectedDomainIds, visibleDomainIds),
+    [regionGroups, selectedDomainIds, visibleDomainIds],
+  );
 
   // 缩放模式改为连续过渡，避免在 zoomLevel=1.0 时硬切出现画面跳变
   // glowOpacity = 1（缩小态，≤0.85）→ 0（放大态，≥1.15）线性递减
@@ -371,15 +497,11 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
   // 胶囊位置按当前模式线性插值，缩小态→放大态位置变化也平滑
   const useZoomedOutPillPos = glowOpacity > 0.5;
 
-  const getColorsForDomain = (domainId: string): typeof DOMAIN_COLORS[0] => {
+  const getColorsForDomain = (domainId: string): string => {
     if (domainIdToInfo?.has(domainId)) {
       const info = domainIdToInfo.get(domainId);
       if (info) {
-        const color = info.color;
-        return {
-          bg: `${color}21`,
-          text: color,
-        };
+        return info.color;
       }
     }
     const index = domainGroups.findIndex(g => g.domainId === domainId);
@@ -497,7 +619,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
           height={pill.h}
           rx={pill.h / 2}
           fill={isDark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(255, 255, 255, 0.96)'}
-          stroke={colors.text}
+          stroke={colors}
           strokeOpacity={0.6}
           strokeWidth={1}
         />
@@ -514,7 +636,7 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
           {group.domain}
         </text>
         {/* 右侧实色计数徽章 */}
-        <circle cx={badgeCX} cy={pill.cy} r={badgeR} fill={colors.text} opacity={0.92} />
+        <circle cx={badgeCX} cy={pill.cy} r={badgeR} fill={colors} opacity={0.92} />
         <text
           x={badgeCX}
           y={pill.cy}
@@ -541,91 +663,58 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
 
   return (
     <g className="domain-backgrounds" style={{ pointerEvents: 'none' }}>
-      {/* 缩放 0.85-1.15 区间连续 blend：光晕圆淡出 + 凸包淡入同步进行，消除硬切跳变 */}
+      {/* 缩放 0.85-1.15 区间连续 blend：光晕区域淡出 + 凸包淡入同步进行，消除硬切跳变 */}
       {glowOpacity > 0.001 &&
-        filteredGroups.map((group) => {
+        filteredRegionGroups.map((group) => {
           const colors = getColorsForDomain(group.domainId);
           const gradientId = `glow-gradient-${group.domainId.replace(/\s+/g, '-')}`;
-          const blurId = `blur-${group.domainId.replace(/\s+/g, '-')}`;
 
           return (
             <g key={`glow-${group.domainId}`} opacity={glowOpacity * 0.95 * regionOpacityFor(group.domainId)}>
               <defs>
+                {/* 质心径向渐变（userSpaceOnUse，与凸包渐变一致）：中心深 → 边缘透明，
+                    不再用大半径圆盘 + 8px 模糊，避免相邻领域光晕互相压叠成浑浊阴影 */}
                 <radialGradient
                   id={gradientId}
-                  cx="50%"
-                  cy="50%"
-                  r="50%"
-                  fx="50%"
-                  fy="50%"
+                  cx={`${group.centerX}px`}
+                  cy={`${group.centerY}px`}
+                  r={`${group.radius * 1.4}px`}
+                  gradientUnits="userSpaceOnUse"
                 >
-                  <stop
-                    offset="0%"
-                    stopColor={colors.bg.replace('0.12', '0.20')}
-                    stopOpacity={1}
-                  />
-                  <stop
-                    offset="50%"
-                    stopColor={colors.bg}
-                    stopOpacity={0.8}
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor={colors.bg.replace('0.12', '0.02')}
-                    stopOpacity={0}
-                  />
+                  <stop offset="0%" stopColor={colors} stopOpacity="0.30" />
+                  <stop offset="55%" stopColor={colors} stopOpacity="0.13" />
+                  <stop offset="100%" stopColor={colors} stopOpacity="0.03" />
                 </radialGradient>
-                <filter
-                  id={blurId}
-                  x="-50%"
-                  y="-50%"
-                  width="200%"
-                  height="200%"
-                >
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="8" />
-                </filter>
               </defs>
 
-              {/* 柔和光晕圆 */}
-              <circle
-                cx={group.centerX}
-                cy={group.centerY}
-                r={group.radius}
+              {/* 领域区域：用圆盘凸包贴合节点群（替代大半径圆），缩小态也互不重叠；
+                  凸包内部空白可点击视为「领域内」，不穿透到 SVG 根 */}
+              <path
+                d={diskConvexHullPath(group.nodes)}
                 fill={`url(#${gradientId})`}
-                filter={`url(#${blurId})`}
+                stroke="none"
+                style={{ pointerEvents: 'auto' }}
               />
-              {/* 边界轮廓：移到 radius×0.98 的外圈（不再 0.88 穿节点），改为细实线 + 低透明 */}
-              <circle
-                cx={group.centerX}
-                cy={group.centerY}
-                r={group.radius * 0.98}
+              {/* 清晰实线边界：让缩小态的领域区块一眼可辨 */}
+              <path
+                d={diskConvexHullPath(group.nodes)}
                 fill="none"
-                stroke={colors.text}
-                strokeWidth={1}
-                strokeOpacity={0.18}
+                stroke={colors}
+                strokeWidth={1.5}
+                strokeOpacity={0.45}
               />
             </g>
           );
         })}
 
       {hullOpacity > 0.001 &&
-        filteredGroups.map((group) => {
+        filteredRegionGroups.map((group) => {
           const colors = getColorsForDomain(group.domainId);
-          const hullShadowId = `hull-shadow-${group.domainId.replace(/\s+/g, '-')}`;
           const hullGradientId = `hull-rg-${group.domainId.replace(/\s+/g, '-')}`;
 
           return (
             <g key={`block-${group.domainId}`} opacity={hullOpacity * regionOpacityFor(group.domainId)}>
               <defs>
-                <filter
-                  id={hullShadowId}
-                  x="-20%"
-                  y="-20%"
-                  width="140%"
-                  height="140%"
-                >
-                  <feDropShadow dx="0" dy="6" stdDeviation="10" floodColor={colors.text} floodOpacity="0.08" />
-                </filter>
                 {/* 质心径向渐变：中心深（55%）→ 边缘透明，层次比平面填色更 3D */}
                 <radialGradient
                   id={hullGradientId}
@@ -634,28 +723,27 @@ export const DomainBackground: React.FC<DomainBackgroundProps> = ({
                   r={`${group.radius * 1.4}px`}
                   gradientUnits="userSpaceOnUse"
                 >
-                  <stop offset="0%" stopColor={colors.text} stopOpacity="0.32" />
-                  <stop offset="55%" stopColor={colors.text} stopOpacity="0.14" />
-                  <stop offset="100%" stopColor={colors.text} stopOpacity="0.02" />
+                  <stop offset="0%" stopColor={colors} stopOpacity="0.32" />
+                  <stop offset="55%" stopColor={colors} stopOpacity="0.14" />
+                  <stop offset="100%" stopColor={colors} stopOpacity="0.02" />
                 </radialGradient>
               </defs>
-              {/* 内层填充：质心径向渐变 + 投影（圆盘凸包，圆弧完全包围最外层节点）
+              {/* 内层填充：质心径向渐变（去掉投影，避免相邻领域阴影堆叠成暗带）
                   可命中：点击凸包内部空白视为「领域内」，不穿透到 SVG 根，
                   从而不取消领域高亮（只有凸包外空白才取消） */}
               <path
                 d={diskConvexHullPath(group.nodes)}
                 fill={`url(#${hullGradientId})`}
                 stroke="none"
-                filter={`url(#${hullShadowId})`}
                 style={{ pointerEvents: 'auto' }}
               />
               {/* 虚线边框：更轻盈不抢视觉 */}
               <path
                 d={diskConvexHullPath(group.nodes)}
                 fill="none"
-                stroke={colors.text}
+                stroke={colors}
                 strokeWidth={1.5}
-                strokeOpacity={0.55}
+                strokeOpacity={0.6}
                 strokeDasharray="6 4"
               />
             </g>

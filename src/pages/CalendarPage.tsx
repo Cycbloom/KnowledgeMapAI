@@ -1,7 +1,9 @@
 import React, { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "../hooks";
+import { queryKeys } from "../hooks/queries/config";
 import {
   useCalendarNavigation,
   useCalendarEvents,
@@ -21,6 +23,14 @@ import { message } from "../utils/messageHelper";
 import { formatDate } from "../utils/formatters";
 import type { CalendarEvent, EventDropInfo, CalendarMode } from "../types/calendar";
 
+/** 本地时区 YYYY-MM-DD，与后端排期 scheduledDate 语义一致（避免 toISOString 的 UTC 偏移） */
+function toDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 interface QuickTaskFormData {
   title: string; description: string; deadline: Date;
   estimated_duration: number; priority: number; tags: string[];
@@ -30,6 +40,7 @@ export const CalendarPage: React.FC = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const routerNavigate = useNavigate();
+  const queryClient = useQueryClient();
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("plan");
   const [showSubtasks, setShowSubtasks] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -126,8 +137,29 @@ export const CalendarPage: React.FC = () => {
 
   const handleEventDrop = useCallback(
     async (dropInfo: EventDropInfo) => {
-      // 路径排课事件不是任务，不支持拖拽改期
-      if (dropInfo.eventId.startsWith("schedule-")) return;
+      // 路径排课事件：手动改期
+      if (dropInfo.eventId.startsWith("schedule-")) {
+        const scheduleId = dropInfo.eventId.slice("schedule-".length);
+        try {
+          const newDate = toDateKey(dropInfo.newStart);
+          await api.scheduler.reschedule(scheduleId, newDate);
+          // 刷新日历排期图层（含跨月缓存）与调度决策，让「下一步」感知新排期
+          await queryClient.invalidateQueries({
+            queryKey: ["calendar", "schedule"],
+          });
+          await queryClient.invalidateQueries({
+            queryKey: queryKeys.schedulerNextStep(),
+          });
+          message.success(t("calendar.pathScheduleMoved"));
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : t("calendar.pathScheduleMoveFailed");
+          message.error(errorMessage);
+        }
+        return;
+      }
       try {
         const updateData: { scheduled_start: string; scheduled_end?: string } = {
           scheduled_start: dropInfo.newStart.toISOString(),
@@ -144,7 +176,7 @@ export const CalendarPage: React.FC = () => {
         message.error(errorMessage);
       }
     },
-    [t],
+    [t, queryClient],
   );
 
   return (

@@ -103,6 +103,8 @@
     "cancel": "已取消拖动"
   },
   "executionTitle": "{{title}} - {{minutes}}分钟",
+  "pathScheduleMoved": "已移动路径排期",
+  "pathScheduleMoveFailed": "移动路径排期失败",
   "weekView": {
     "moveTo": "移动到 {{hour}}:00"
   }

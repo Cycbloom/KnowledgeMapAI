@@ -5,7 +5,10 @@ import type {
   NextStepDecision,
   SmallLoopDecision,
 } from "../modules/scheduler/orchestrator";
-import type { CalendarScheduleEvent } from "../modules/scheduler/calendarSchedule";
+import type {
+  CalendarScheduleEvent,
+  RescheduleResult,
+} from "../modules/scheduler/calendarSchedule";
 import type {
   StartActivityData,
   AppendActivityData,
@@ -318,6 +321,7 @@ export interface ISchedulerCalendarScheduleApi {
     start?: string,
     end?: string,
   ) => Promise<CalendarScheduleEvent[]>;
+  reschedule: (id: string, newDate: string) => Promise<RescheduleResult>;
 }
 
 // --- Combined type ---

@@ -251,6 +251,170 @@ class PathSchedulerService {
     return { pathId, scheduled, startDate: start, endDate: end };
   }
 
+  /**
+   * 手动改期：把某条排期（知识点+日期）整体移动到 newDate。
+   *
+   * - 目标日期空闲：直接更新当前行 scheduled_date。
+   * - 目标日期已被同知识点占用（唯一键冲突）：合并 — 目标行 source_path_ids
+   *   取并集，删除当前行（贴合「同知识点同一天只落一条排期」的全局去重语义）。
+   * - 学习窗口：对来源路径只扩不缩（newDate 超出窗口则向外扩展）。
+   */
+  async reschedule(
+    supabase: SupabaseClient,
+    userId: string,
+    scheduleId: string,
+    newDate: string,
+  ): Promise<{ id: string; knowledgePointId: string; scheduledDate: string; merged: boolean }> {
+    const { data: row, error: rowError } = await supabase
+      .from("learning_path_schedule")
+      .select("id, knowledge_point_id, scheduled_date, path_id, source_path_ids")
+      .eq("id", scheduleId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (rowError || !row || !row.knowledge_point_id) {
+      throw new AppError(
+        "learningPath.api.errors.notFound",
+        404,
+        ErrorCodes.RESOURCE_NOT_FOUND,
+      );
+    }
+
+    const kpId = row.knowledge_point_id as string;
+    // 归并来源路径：path_id（当前路径）+ source_path_ids（多路径复用）
+    const sources = Array.from(
+      new Set<string>([
+        ...((row.source_path_ids as string[] | null) ?? []),
+        ...(typeof row.path_id === "string" ? [row.path_id] : []),
+      ]),
+    );
+
+    const existing = (
+      await this.fetchExisting(supabase, userId, [kpId], [newDate])
+    ).get(`${kpId}|${newDate}`);
+
+    let id = row.id;
+    let merged = false;
+
+    if (existing && existing.id !== row.id) {
+      // 目标日期已被同知识点占用 → 合并来源并删除当前行
+      const mergedSources = Array.from(
+        new Set<string>([
+          ...((existing.source_path_ids as string[] | null) ?? []),
+          ...sources,
+        ]),
+      );
+      const { error: mergeError } = await supabase
+        .from("learning_path_schedule")
+        .update({ source_path_ids: mergedSources })
+        .eq("id", existing.id);
+      if (mergeError) {
+        throw new AppError(
+          "learningPath.api.errors.updateFailed",
+          500,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
+        );
+      }
+      const { error: deleteError } = await supabase
+        .from("learning_path_schedule")
+        .delete()
+        .eq("id", row.id)
+        .eq("user_id", userId);
+      if (deleteError) {
+        throw new AppError(
+          "learningPath.api.errors.updateFailed",
+          500,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
+        );
+      }
+      id = existing.id;
+      merged = true;
+    } else {
+      const { error: updateError } = await supabase
+        .from("learning_path_schedule")
+        .update({ scheduled_date: newDate })
+        .eq("id", row.id)
+        .eq("user_id", userId);
+      if (updateError) {
+        throw new AppError(
+          "learningPath.api.errors.updateFailed",
+          500,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
+        );
+      }
+    }
+
+    await this.extendWindow(supabase, userId, sources, newDate);
+
+    return { id, knowledgePointId: kpId, scheduledDate: newDate, merged };
+  }
+
+  /** 按来源路径查询学习窗口（learning_paths 即窗口） */
+  private async fetchWindow(
+    supabase: SupabaseClient,
+    userId: string,
+    pathIds: string[],
+  ): Promise<
+    Map<string, { scheduled_start_date: string | null; scheduled_end_date: string | null }>
+  > {
+    const map = new Map<
+      string,
+      { scheduled_start_date: string | null; scheduled_end_date: string | null }
+    >();
+    if (pathIds.length === 0) return map;
+    const { data, error } = await supabase
+      .from("learning_paths")
+      .select("id, scheduled_start_date, scheduled_end_date")
+      .eq("user_id", userId)
+      .in("id", pathIds);
+    if (error) {
+      logger.warn("[PathScheduler] fetch learning window failed", {
+        userId,
+        error: error.message,
+      });
+      return map;
+    }
+    for (const r of data ?? []) {
+      if (!r.id) continue;
+      map.set(r.id, {
+        scheduled_start_date: r.scheduled_start_date as string | null,
+        scheduled_end_date: r.scheduled_end_date as string | null,
+      });
+    }
+    return map;
+  }
+
+  /** 学习窗口只扩不缩：newDate 超出某来源路径窗口时向外扩展该路径起止日 */
+  private async extendWindow(
+    supabase: SupabaseClient,
+    userId: string,
+    pathIds: string[],
+    newDate: string,
+  ): Promise<void> {
+    if (pathIds.length === 0) return;
+    const windows = await this.fetchWindow(supabase, userId, pathIds);
+    for (const [pathId, w] of windows) {
+      const patch: { scheduled_start_date?: string; scheduled_end_date?: string } = {};
+      if (w.scheduled_start_date && newDate < w.scheduled_start_date) {
+        patch.scheduled_start_date = newDate;
+      }
+      if (w.scheduled_end_date && newDate > w.scheduled_end_date) {
+        patch.scheduled_end_date = newDate;
+      }
+      if (Object.keys(patch).length === 0) continue;
+      const { error } = await supabase
+        .from("learning_paths")
+        .update(patch)
+        .eq("id", pathId)
+        .eq("user_id", userId);
+      if (error) {
+        logger.warn("[PathScheduler] extend learning window failed", {
+          pathId,
+          error: error.message,
+        });
+      }
+    }
+  }
+
   /** 预取该用户相关知识点在相关日期内的已有排期，用于跨路径去重合并 */
   private async fetchExisting(
     supabase: SupabaseClient,

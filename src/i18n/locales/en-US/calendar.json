@@ -103,6 +103,8 @@
     "cancel": "Drag cancelled"
   },
   "executionTitle": "{{title}} - {{minutes}} min",
+  "pathScheduleMoved": "Path schedule moved",
+  "pathScheduleMoveFailed": "Failed to move path schedule",
   "weekView": {
     "moveTo": "Move to {{hour}}:00"
   }

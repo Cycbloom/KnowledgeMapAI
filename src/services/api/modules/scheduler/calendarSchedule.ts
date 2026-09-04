@@ -15,6 +15,14 @@ export interface CalendarScheduleEvent {
   scheduledDate: string | null;
 }
 
+/** 手动改期结果 */
+export interface RescheduleResult {
+  id: string;
+  knowledgePointId: string;
+  scheduledDate: string;
+  merged: boolean;
+}
+
 export const calendarScheduleApi = {
   getScheduleEvents: (
     start?: string,
@@ -28,4 +36,11 @@ export const calendarScheduleApi = {
       `/calendar/schedule${qs ? `?${qs}` : ""}`,
     );
   },
+
+  /** 手动改期：把某条路径排期移动到新日期 */
+  reschedule: (id: string, newDate: string): Promise<RescheduleResult> =>
+    requestData<RescheduleResult>(`/calendar/schedule/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ new_date: newDate }),
+    }),
 };

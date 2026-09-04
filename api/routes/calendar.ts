@@ -1,6 +1,7 @@
 import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../middleware/auth";
 import { calendarService } from "../services/scheduler";
+import { pathSchedulerService } from "../services/scheduler/planning/pathSchedulerService";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 
@@ -84,6 +85,35 @@ router.get(
       throw new AppError("Failed to fetch path schedule", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
+);
+
+router.patch(
+  "/schedule/:id",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+
+    const newDate = (req.body as { new_date?: unknown } | undefined)?.new_date;
+    if (typeof newDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+      throw new AppError("Invalid date", 400, ErrorCodes.VALIDATION_ERROR);
+    }
+
+    try {
+      const result = await pathSchedulerService.reschedule(
+        supabase,
+        req.user.id,
+        req.params.id,
+        newDate,
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError("Failed to reschedule path schedule", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+  },
 );
 
 router.get(

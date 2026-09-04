@@ -22,7 +22,10 @@ import { queryKeys } from "../hooks/queries/config";
 import { useGraphData } from "../hooks/queries";
 import { tasksApi } from "../services/api/tasks";
 import { learningPathsApi } from "../services/api/learningPaths";
-import { useCrossGraphSummary } from "../hooks/queries/useLearningPathQueries";
+import {
+  useCrossGraphSummary,
+  learningPathKeys,
+} from "../hooks/queries/useLearningPathQueries";
 import { useAutoClassifyNotificationStore } from "../store/useAutoClassifyNotificationStore";
 import { useAutoClassifyPanelStore } from "../store/useAutoClassifyPanelStore";
 import { useIsMobile } from "../hooks/common/useIsMobile";
@@ -47,6 +50,7 @@ import type {
   DiscoveryResult,
   IntelligentSuggestion,
 } from "../types";
+import type { GraphMapSelectionContext } from "../components/GraphMap/GoalDrivenPathDialog";
 
 const GraphMapCanvas = lazy(() =>
   import("../components/GraphMap/GraphMapCanvas").then((module) => ({
@@ -105,6 +109,12 @@ const AutoClassifyDomainPanel = lazy(() =>
 const BatchOperationPanel = lazy(() =>
   import("../components/GraphMap/BatchOperationPanel").then((module) => ({
     default: module.BatchOperationPanel,
+  }))
+);
+
+const GoalDrivenPathDialog = lazy(() =>
+  import("../components/GraphMap/GoalDrivenPathDialog").then((module) => ({
+    default: module.GoalDrivenPathDialog,
   }))
 );
 
@@ -211,6 +221,8 @@ export const GraphMap = () => {
   const [isBatchDomainPickerOpen, setIsBatchDomainPickerOpen] = useState(false);
   const [isBatchSettingDomain, setIsBatchSettingDomain] = useState(false);
   const [showDomainManager, setShowDomainManager] = useState(false);
+  // 目标驱动学习路径对话面板（AI 对话设定学习目标 → 候选路径）
+  const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
   // 领域 hover 联动：在左侧领域树上悬停某领域时，画布高亮对应领域节点
   const [hoveredDomainId, setHoveredDomainId] = useState<string | null>(null);
   // 点击画布领域标签选中的领域（单一选中，再次点击取消）
@@ -484,8 +496,46 @@ export const GraphMap = () => {
     s.open ? s.taskId : null,
   );
 
-  /** 生成跨图谱学习路径（大调度）：自动生成后跳转到学习路径详情 */
-  const handleGenerateCrossGraph = useCallback(async () => {
+  /** 生成跨图谱学习路径：打开 AI 对话面板（目标驱动 + 候选路径） */
+  const handleGenerateCrossGraph = useCallback(() => {
+    setIsGoalDialogOpen(true);
+  }, []);
+
+  // 图谱地图选中上下文：把用户选中的图谱（画布节点）+ 领域作为主要上下文，
+  // 传入学习路径创建，使建议/对话/候选路径更具针对性。
+  const goalDialogContext = useMemo<GraphMapSelectionContext>(() => {
+    const selectedGraphIds =
+      multiSelectedGraphIds.size > 0
+        ? Array.from(multiSelectedGraphIds)
+        : selectedGraphId
+          ? [selectedGraphId]
+          : [];
+    const selectedGraphs = selectedGraphIds
+      .map((id) => graphById.get(id))
+      .filter((g): g is Graph => !!g)
+      .map((g) => ({ id: g.id, title: g.title }));
+
+    const mergedDomainIds = new Set(selectedDomainIds);
+    if (clickedDomainId) mergedDomainIds.add(clickedDomainId);
+    const selectedDomains = Array.from(mergedDomainIds)
+      .map((id) => {
+        const info = domainIdToInfo.get(id);
+        return info ? { id, name: info.name } : null;
+      })
+      .filter((d): d is { id: string; name: string } => !!d);
+
+    return { selectedGraphs, selectedDomains };
+  }, [
+    multiSelectedGraphIds,
+    selectedGraphId,
+    graphById,
+    selectedDomainIds,
+    clickedDomainId,
+    domainIdToInfo,
+  ]);
+
+  /** 跳过对话：用规则算法快速生成跨图谱学习路径并跳转详情 */
+  const handleQuickGenerate = useCallback(async () => {
     try {
       const result = await learningPathsApi.generateCrossGraph();
       const data = result.data;
@@ -498,6 +548,7 @@ export const GraphMap = () => {
           t("graphMap.crossGraph.generated", { count: data.totalGraphs }),
         );
       }
+      setIsGoalDialogOpen(false);
       navigate(`/learning-paths/${data.pathId}`);
     } catch (error: unknown) {
       const errMsg =
@@ -505,6 +556,20 @@ export const GraphMap = () => {
       message.error(errMsg);
     }
   }, [t, navigate]);
+
+  /** 目标驱动候选路径保存成功：失效跨图概览 + 地图缓存并跳转详情 */
+  const handlePathSaved = useCallback(
+    (pathId: string) => {
+      setIsGoalDialogOpen(false);
+      queryClient.invalidateQueries({
+        queryKey: [...learningPathKeys.all, "crossGraphSummary"],
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
+      message.success(t("graphMap.crossGraph.goalDialog.saved"));
+      navigate(`/learning-paths/${pathId}`);
+    },
+    [queryClient, t, navigate],
+  );
 
   useEffect(() => {
     if (!panelTaskId) return;
@@ -2079,6 +2144,16 @@ export const GraphMap = () => {
       isOpen={showDomainManager}
       onClose={() => setShowDomainManager(false)}
     />
+
+    <Suspense fallback={null}>
+      <GoalDrivenPathDialog
+        isOpen={isGoalDialogOpen}
+        onClose={() => setIsGoalDialogOpen(false)}
+        onSaved={handlePathSaved}
+        onQuickGenerate={handleQuickGenerate}
+        context={goalDialogContext}
+      />
+    </Suspense>
 
     <Suspense fallback={null}>
       <AutoClassifyDomainPanel

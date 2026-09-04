@@ -1,4 +1,8 @@
-import { request } from "./client";
+import { request, getAIConfig, getApiUrl } from "./client";
+import { useStore } from "@/store/useStore";
+import { getAILanguage } from "@/hooks/ai/useAILanguage";
+import { logger } from "@/utils/logger";
+import { AppError, SharedErrorCodes } from "@/utils/errors";
 
 export type LearningPathStatus = "active" | "completed" | "paused" | "archived";
 export type NodeStatus = "pending" | "in_progress" | "completed" | "skipped";
@@ -202,6 +206,31 @@ export interface CrossGraphSummary {
   }>;
 }
 
+/** 目标驱动候选路径的侧重类型 */
+export type VariantEmphasis = "goal_oriented" | "systematic" | "quick_overview";
+
+/** 候选路径内的图谱级阶段 */
+export interface VariantStage {
+  graphId: string;
+  graphTitle: string;
+  order: number;
+  priority: "high" | "medium" | "low";
+  reason: string;
+  estimatedTime: number;
+}
+
+/** 目标驱动的候选跨图谱学习路径 */
+export interface CrossGraphPathVariant {
+  id: string;
+  name: string;
+  description: string;
+  emphasis: VariantEmphasis;
+  estimatedWeeks?: number;
+  totalEstimatedMinutes?: number;
+  stages: VariantStage[];
+  suggestions: string[];
+}
+
 export interface UpdateLearningPathInput {
   title?: string;
   description?: string;
@@ -383,6 +412,150 @@ export const learningPathsApi = {
     request<{ success: boolean; data: CrossGraphSummary | null }>(
       "/learning-paths/cross-graph/summary",
     ),
+
+  // ── 目标驱动候选路径（AI 对话 + 候选生成 + 保存）────────────
+
+  /**
+   * 图谱地图选中上下文：把用户在图谱地图上选中的图谱（节点）与领域作为
+   * 主要上下文传入学习路径创建，使建议/对话/候选路径更具针对性。
+   */
+  suggestGoals: (data?: {
+    provider?: string;
+    model?: string;
+    selected_graph_ids?: string[];
+    selected_domain_ids?: string[];
+  }) =>
+    request<{ success: boolean; data: { suggestedGoals: string[] } }>(
+      "/learning-paths/cross-graph/goal/suggest",
+      { method: "POST", body: JSON.stringify(data || {}) },
+    ),
+
+  dialogStream: async (
+    data: {
+      message: string;
+      history?: Array<{ role: "user" | "assistant"; content: string }>;
+      provider?: string;
+      model?: string;
+      language?: string;
+      session_id?: string;
+      selected_graph_ids?: string[];
+      selected_domain_ids?: string[];
+    },
+    onChunk: (content: string) => void,
+    signal?: AbortSignal,
+  ) => {
+    const config = getAIConfig("text");
+    const payload = { ...data, language: data.language || getAILanguage() };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+
+    const token = useStore.getState().token;
+    const apiUrl = await getApiUrl();
+    const response = await fetch(`${apiUrl}/learning-paths/cross-graph/goal/dialog`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+      ...(signal ? { signal } : {}),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        useStore.getState().setUser(null, null);
+      }
+      const errorText = await response.text();
+      throw new AppError(
+        errorText || "Goal dialog stream failed",
+        SharedErrorCodes.AI_PROVIDER_ERROR,
+        502,
+      );
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    if (!reader) return;
+
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const dataStr = line.replace("data: ", "");
+          if (dataStr === "[DONE]") return;
+          try {
+            const parsed = JSON.parse(dataStr);
+            if (parsed.content) onChunk(parsed.content);
+            if (parsed.error) {
+              throw new AppError(
+                parsed.error,
+                SharedErrorCodes.AI_INVALID_RESPONSE,
+                502,
+              );
+            }
+          } catch (e) {
+            if (signal?.aborted) {
+              throw e;
+            }
+            logger.error("Goal dialog stream parse error:", e);
+          }
+        }
+      }
+    }
+  },
+
+  generateVariants: (data: {
+    target_goal: string;
+    conversation_transcript?: string;
+    daily_time_minutes?: number;
+    variant_count?: number;
+    provider?: string;
+    model?: string;
+    selected_graph_ids?: string[];
+    selected_domain_ids?: string[];
+  }) =>
+    request<{ success: boolean; data: { variants: CrossGraphPathVariant[] } }>(
+      "/learning-paths/cross-graph/goal/variants",
+      { method: "POST", body: JSON.stringify(data) },
+    ),
+
+  saveVariant: (data: {
+    variant: {
+      id: string;
+      name: string;
+      description?: string;
+      emphasis?: VariantEmphasis;
+      stages: Array<{
+        graph_id: string;
+        graph_title: string;
+        order: number;
+        priority: "high" | "medium" | "low";
+        reason?: string;
+        estimated_time: number;
+      }>;
+    };
+    target_goal?: string;
+    daily_time_minutes?: number;
+  }) =>
+    request<{
+      success: boolean;
+      data: {
+        pathId: string;
+        pathTitle: string;
+        stages: VariantStage[];
+        archivedOld: boolean;
+      };
+    }>("/learning-paths/cross-graph/goal/save", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
 
 export const learningPathApi = {

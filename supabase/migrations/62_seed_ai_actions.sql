@@ -32,3 +32,17 @@ INSERT INTO ai_actions (name, description, icon, target_mode, scope, prompt_temp
 {{children}}',
    '{"includeChildren": true}')
 ON CONFLICT DO NOTHING;
+
+-- =====================================================
+-- 基础系统级 AI 动作（原 57_seed_triggers_and_defaults.sql，已合并）
+-- =====================================================
+INSERT INTO ai_actions (name, description, icon, target_mode, scope, prompt_template) VALUES
+  ('精炼内容', '将节点内容精炼为简洁的几句话', 'Minimize2', 'update_node', 'system', '请将以下内容精炼为3-5句话，保留核心观点和关键事实。直接返回精炼后的内容，不要有开场白。
+
+内容：
+{{nodeContent}}'),
+  ('反向辩驳', '提出该观点的反面论证或潜在缺陷', 'MessageSquareWarning', 'show_result', 'system', '请扮演一个批判性思维者，针对以下观点提出反面论证、潜在缺陷或被忽视的视角。
+
+观点：{{nodeTitle}}
+详细内容：{{nodeContent}}')
+ON CONFLICT DO NOTHING;

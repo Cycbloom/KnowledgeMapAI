@@ -149,3 +149,9 @@ DROP TRIGGER IF EXISTS study_cards_updated_at ON study_cards;
 CREATE TRIGGER study_cards_updated_at
   BEFORE UPDATE ON study_cards
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- 新用户创建时自动初始化默认队列（函数定义见 14_functions.sql）
+DROP TRIGGER IF EXISTS on_user_created_queues ON users;
+CREATE TRIGGER on_user_created_queues
+  AFTER INSERT ON users
+  FOR EACH ROW EXECUTE FUNCTION create_default_queues_for_user();

@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS user_tasks (
   progress_mode TEXT CHECK (progress_mode IN ('average', 'decreasing', 'increasing', 'custom')),
   progress_percentage INTEGER DEFAULT 0,
   parent_task_id UUID REFERENCES user_tasks(id),
-  context TEXT,
+  context JSONB DEFAULT '{}'::jsonb,
+  source TEXT DEFAULT 'user' CHECK (source IN ('user', 'import', 'template', 'system_recommendation')),
   scheduled_start TIMESTAMPTZ,
   scheduled_end TIMESTAMPTZ,
   notes TEXT,
@@ -66,16 +67,9 @@ COMMENT ON COLUMN user_tasks.progress_percentage IS 'Current progress percentage
 COMMENT ON COLUMN user_tasks.parent_task_id IS 'Parent task ID for periodic task instances';
 COMMENT ON COLUMN user_tasks.graph_id IS '关联的图谱ID（task_type=graph_learning 时使用），从原 context.graph_id 提升为正式列';
 COMMENT ON COLUMN user_tasks.context IS 'Task context and metadata (JSONB for flexible task-type-specific data)';
+COMMENT ON COLUMN user_tasks.source IS 'Task source: user (manual), import, template, system_recommendation';
 
--- Legacy column migration: 兼容旧 schema 版本的列类型变更
--- 这些列在旧版本中以不同类型存在，DROP + ADD 确保类型正确
--- 在新数据库初始化 (db reset) 时这些列从未创建，DROP IF EXISTS 是安全的空操作
--- 注: graph_id 已在表定义中作为正式列（带 FK），不再需要 DROP
-ALTER TABLE user_tasks DROP COLUMN IF EXISTS knowledge_point_count;
-ALTER TABLE user_tasks DROP COLUMN IF EXISTS auto_calculated_duration;
-ALTER TABLE user_tasks DROP COLUMN IF EXISTS auto_calculated_deadline;
-ALTER TABLE user_tasks ALTER COLUMN context TYPE JSONB USING COALESCE(context, '{}')::jsonb;
-ALTER TABLE user_tasks ALTER COLUMN context SET DEFAULT '{}'::jsonb;
+CREATE INDEX IF NOT EXISTS idx_user_tasks_source ON user_tasks(source);
 
 -- Task executions table (execution history)
 CREATE TABLE IF NOT EXISTS task_executions (
@@ -83,7 +77,7 @@ CREATE TABLE IF NOT EXISTS task_executions (
   task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   subtask_id UUID,
-  knowledge_point_id UUID,
+  knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL,
   stage TEXT,
   activity_log JSONB DEFAULT '[]'::jsonb,
   started_at TIMESTAMPTZ,
@@ -95,35 +89,8 @@ CREATE TABLE IF NOT EXISTS task_executions (
 );
 
 -- Existing database: idempotent column additions / constraint relaxation
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'subtask_id') THEN
-    ALTER TABLE task_executions ADD COLUMN subtask_id UUID;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'knowledge_point_id') THEN
-    ALTER TABLE task_executions ADD COLUMN knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'stage') THEN
-    ALTER TABLE task_executions ADD COLUMN stage TEXT;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'activity_log') THEN
-    ALTER TABLE task_executions ADD COLUMN activity_log JSONB DEFAULT '[]'::jsonb;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'updated_at') THEN
-    ALTER TABLE task_executions ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
-  END IF;
-  -- knowledge_point_id FK（列已存在时补充外键）
-  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'task_executions_knowledge_point_id_fkey') THEN
-    NULL;
-  ELSIF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'task_executions' AND column_name = 'knowledge_point_id') THEN
-    ALTER TABLE task_executions ADD CONSTRAINT task_executions_knowledge_point_id_fkey
-      FOREIGN KEY (knowledge_point_id) REFERENCES knowledge_points(id) ON DELETE SET NULL;
-  END IF;
-END $$;
-
-ALTER TABLE task_executions ALTER COLUMN started_at DROP NOT NULL;
-ALTER TABLE task_executions DROP CONSTRAINT IF EXISTS task_executions_status_check;
-ALTER TABLE task_executions ADD CONSTRAINT task_executions_status_check CHECK (status IN ('completed', 'interrupted', 'time_slice_ended', 'pending', 'in_progress'));
+-- 注: 列与约束已在上方 CREATE TABLE 中写成最终形态，此处仅保留
+-- knowledge_graphs.task_id 这一真实循环依赖（knowledge_graphs ↔ user_tasks）的补充外键。
 
 COMMENT ON TABLE task_executions IS 'Task execution history for tracking work sessions';
 COMMENT ON COLUMN task_executions.duration IS 'Execution duration in seconds';
@@ -257,13 +224,8 @@ COMMENT ON COLUMN task_subtasks.last_state_change_at IS 'Timestamp of last learn
 COMMENT ON COLUMN task_subtasks.state_history IS 'History of learning state transitions';
 
 -- task_executions.subtask_id FK（task_subtasks 已创建，故在此补充；列在 CREATE 阶段已存在）
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'task_executions_subtask_id_fkey') THEN
-    ALTER TABLE task_executions ADD CONSTRAINT task_executions_subtask_id_fkey
-      FOREIGN KEY (subtask_id) REFERENCES task_subtasks(id) ON DELETE SET NULL;
-  END IF;
-END $$;
+ALTER TABLE task_executions ADD CONSTRAINT task_executions_subtask_id_fkey
+  FOREIGN KEY (subtask_id) REFERENCES task_subtasks(id) ON DELETE SET NULL;
 
 -- Task links table
 CREATE TABLE IF NOT EXISTS task_links (

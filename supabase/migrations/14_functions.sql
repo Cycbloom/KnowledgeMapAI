@@ -1857,3 +1857,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 REVOKE EXECUTE ON FUNCTION truncate_table(TEXT) FROM PUBLIC, anon, authenticated;
+
+-- =====================================================
+-- 新用户默认队列（原 57_seed_triggers_and_defaults.sql，已合并）
+-- =====================================================
+CREATE OR REPLACE FUNCTION create_default_queues_for_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO queues (user_id, name, color, time_slice, priority) VALUES
+    (NEW.id, '紧急队列', 'cyan', 25, 0),
+    (NEW.id, '重要队列', 'emerald', 45, 1),
+    (NEW.id, '待办队列', 'amber', 90, 2);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

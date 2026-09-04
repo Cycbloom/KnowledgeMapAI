@@ -11,11 +11,13 @@ CREATE TABLE IF NOT EXISTS knowledge_points (
   summary JSONB DEFAULT '{}'::jsonb,
   learning_material JSONB DEFAULT '{}'::jsonb,
   keywords JSONB DEFAULT '{}'::jsonb,
+  aliases TEXT[] DEFAULT '{}',
   properties JSONB DEFAULT '{}',
   embedding vector(1024),
   sparse_embedding sparsevec(1000000),
   visibility knowledge_point_visibility DEFAULT 'private',
   owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  source_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL,
   mastery_level DECIMAL(3,2) DEFAULT 0,
   last_study_at TIMESTAMPTZ,
   total_study_duration INTEGER DEFAULT 0,
@@ -27,7 +29,9 @@ COMMENT ON TABLE knowledge_points IS '独立的知识点实体，支持跨图谱
 COMMENT ON COLUMN knowledge_points.visibility IS '知识点可见性：private(私有), public(公共), pending(待审核)';
 COMMENT ON COLUMN knowledge_points.owner_id IS '知识点所有者，引用 auth.users(id)，私有知识点仅所有者可见';
 COMMENT ON COLUMN knowledge_points.keywords IS '按语言 key 的关键词对象，结构: {"zh-CN": [{"term":"关键词", "importance":5, "category":"定义", "explanation":"简短解释"}], "en-US": [...]}';
-COMMENT ON COLUMN knowledge_points.mastery_level IS '知识点掌握度 (0.00-1.00)，用于评估知识点掌握程度';
+COMMENT ON COLUMN knowledge_points.mastery_level IS 'Derived display mastery (0.00~1.00 DECIMAL(3,2)) from associated study_cards via aggregateDisplayMastery(strategy=''stabilityWeighted''). @mastery display: badges / progress bars / graph node color. @schedule decision: soft learning-state routing fallback only. SINGLE WRITE SOURCE = masteryCalculationService.batchUpdateMasteryLevels / updateKnowledgePointMastery';
+COMMENT ON COLUMN knowledge_points.aliases IS '概念别名列表，用于同义词聚合和搜索匹配';
+COMMENT ON COLUMN knowledge_points.source_knowledge_point_id IS '分支知识点来源ID，记录该知识点是从哪个原始知识点复制而来，仅分支副本有值';
 COMMENT ON COLUMN knowledge_points.last_study_at IS '最后学习时间，用于计算复习间隔';
 COMMENT ON COLUMN knowledge_points.total_study_duration IS '累计学习时长（分钟）';
 COMMENT ON COLUMN knowledge_points.learning_material IS '按语言 key 的学习材料对象，结构: {"zh-CN": "中文材料", "en-US": "English material"}，新增语言只需增加 key';
@@ -36,9 +40,6 @@ COMMENT ON COLUMN knowledge_points.title IS '按语言 key 的标题对象，结
 COMMENT ON COLUMN knowledge_points.content IS '按语言 key 的内容对象，结构同 title';
 COMMENT ON COLUMN knowledge_points.sparse_embedding IS '知识点稀疏向量（SPLADE 风格，最多 16000 非零元素），与 embedding 同源生成，用于关键词/术语精确匹配检索';
 COMMENT ON COLUMN knowledge_points.summary IS '按语言 key 的摘要对象，结构同 title';
-
-ALTER TABLE knowledge_points ADD COLUMN IF NOT EXISTS source_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL;
-COMMENT ON COLUMN knowledge_points.source_knowledge_point_id IS '分支知识点来源ID，记录该知识点是从哪个原始知识点复制而来，仅分支副本有值';
 
 CREATE TABLE IF NOT EXISTS knowledge_point_versions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

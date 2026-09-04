@@ -198,3 +198,9 @@ GRANT EXECUTE ON FUNCTION find_missing_connections(UUID, INT) TO authenticated;
 GRANT EXECUTE ON FUNCTION rename_user_tag(UUID, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION merge_user_tags(UUID, TEXT[], TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION remove_user_tag(UUID, TEXT) TO authenticated;
+
+-- Sparse retrieval functions（原 70_sparse_retrieval.sql）
+GRANT EXECUTE ON FUNCTION match_knowledge_points_sparse(sparsevec, float, int, uuid, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION match_knowledge_points_sparse_global(sparsevec, float, int, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION match_document_chunks_sparse(sparsevec, float, int, uuid, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION match_notes_sparse(sparsevec, float, int, uuid) TO authenticated;

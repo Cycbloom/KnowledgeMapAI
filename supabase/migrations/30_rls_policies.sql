@@ -2,19 +2,6 @@
 -- Knowledge Map - Row Level Security Policies
 -- =====================================================
 
--- Helper function to check if user is a collaborator (breaks RLS circular dependency)
-CREATE OR REPLACE FUNCTION public.is_graph_collaborator(p_graph_id UUID, p_user_id UUID)
-RETURNS BOOLEAN AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM graph_collaborators
-    WHERE graph_id = p_graph_id
-    AND user_id = p_user_id
-    AND accepted_at IS NOT NULL
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
-
 -- Users
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own profile" ON users FOR SELECT USING (auth.uid() = id);

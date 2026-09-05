@@ -130,6 +130,11 @@ export function createApp(kernel?: Kernel): express.Express {
   const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:4173",
+    // Capacitor WebView 源：Android 端 androidScheme 为 https，页面源是 https://localhost；
+    // iOS 端默认页面源是 capacitor://localhost。移动端 App 以 Bearer 头鉴权并携带
+    // x-mobile-client 头（CSRF 中间件对其豁免），放行其跨域请求。
+    "https://localhost",
+    "capacitor://localhost",
     process.env.FRONTEND_URL,
   ].filter(Boolean) as string[];
 

@@ -59,6 +59,9 @@ export interface LearningPathResponse {
   ai_generated: boolean;
   status: LearningPathStatus;
   daily_minutes_target: number;
+  /** 学习窗口（P5 排课回写）：首末排期日；未排课时为 null/缺省 */
+  scheduled_start_date?: string | null;
+  scheduled_end_date?: string | null;
   created_at: string;
   updated_at: string;
   nodes?: LearningPathNodeResponse[];
@@ -66,6 +69,27 @@ export interface LearningPathResponse {
   /** list 接口平铺返回的计数（有 internal 项目使用） */
   nodes_count?: number;
   completed_nodes_count?: number;
+}
+
+/** 小路径日排课单节点结果（P5） */
+export interface PathScheduledNode {
+  nodeId: string;
+  knowledgePointId: string;
+  scheduledDate: string;
+  estimatedTime: number;
+  isMilestone: boolean;
+  /** 是否复用/合并已有排期（同知识点已被任何路径排期） */
+  merged: boolean;
+}
+
+/** 小路径日排课结果（P5，POST /:id/schedule 与 /:id/schedule/replan 响应） */
+export interface PathScheduleResponse {
+  pathId: string;
+  scheduled: PathScheduledNode[];
+  startDate?: string;
+  endDate?: string;
+  /** replan 响应额外携带：被清除归属的排期行数 */
+  clearedRows?: number;
 }
 
 /** 跨图学习路径周窗口（P2 两级排课） */
@@ -388,20 +412,14 @@ export const learningPathsApi = {
   getRecommendations: (graphId: string) =>
     request<LearningPathRecommendation[]>(`/learning-paths/recommendations?graph_id=${graphId}`),
 
-  autoSchedule: (
-    pathId: string,
-    options?: {
-      start_date?: string;
-      daily_minutes?: number;
-    },
-  ) =>
-    request<{
-      success: boolean;
-      main_task_id: string;
-      subtask_ids: string[];
-      total_tasks: number;
-      estimated_days: number;
-    }>(`/learning-paths/${pathId}/auto-schedule`, {
+  schedulePath: (pathId: string, options?: { start_date?: string }) =>
+    request<PathScheduleResponse>(`/learning-paths/${pathId}/schedule`, {
+      method: "POST",
+      body: JSON.stringify(options || {}),
+    }),
+
+  replanSchedule: (pathId: string, options?: { start_date?: string }) =>
+    request<PathScheduleResponse>(`/learning-paths/${pathId}/schedule/replan`, {
       method: "POST",
       body: JSON.stringify(options || {}),
     }),

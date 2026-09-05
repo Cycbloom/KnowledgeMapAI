@@ -285,11 +285,11 @@ describe('learningPathsApi', () => {
     });
   });
 
-  describe('autoSchedule - 可选 options 参数', () => {
+  describe('schedulePath - 日历排课（P5）', () => {
     it('应该在不传 options 时 body 为空对象 {}', async () => {
-      await learningPathsApi.autoSchedule('path-1');
+      await learningPathsApi.schedulePath('path-1');
       expect(request).toHaveBeenCalledWith(
-        '/learning-paths/path-1/auto-schedule',
+        '/learning-paths/path-1/schedule',
         {
           method: 'POST',
           body: JSON.stringify({}),
@@ -297,14 +297,36 @@ describe('learningPathsApi', () => {
       );
     });
 
-    it('应该在传 options 时传递 start_date 和 daily_minutes', async () => {
-      const options = {
-        start_date: '2026-07-23',
-        daily_minutes: 45,
-      };
-      await learningPathsApi.autoSchedule('path-1', options);
+    it('应该在传 options 时传递 start_date', async () => {
+      const options = { start_date: '2026-09-07' };
+      await learningPathsApi.schedulePath('path-1', options);
       expect(request).toHaveBeenCalledWith(
-        '/learning-paths/path-1/auto-schedule',
+        '/learning-paths/path-1/schedule',
+        {
+          method: 'POST',
+          body: JSON.stringify(options),
+        },
+      );
+    });
+  });
+
+  describe('replanSchedule - 从今天重排（P5）', () => {
+    it('应该以 POST 请求 /learning-paths/{id}/schedule/replan', async () => {
+      await learningPathsApi.replanSchedule('path-1');
+      expect(request).toHaveBeenCalledWith(
+        '/learning-paths/path-1/schedule/replan',
+        {
+          method: 'POST',
+          body: JSON.stringify({}),
+        },
+      );
+    });
+
+    it('应该支持指定 start_date', async () => {
+      const options = { start_date: '2026-09-07' };
+      await learningPathsApi.replanSchedule('path-1', options);
+      expect(request).toHaveBeenCalledWith(
+        '/learning-paths/path-1/schedule/replan',
         {
           method: 'POST',
           body: JSON.stringify(options),

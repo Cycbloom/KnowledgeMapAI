@@ -251,6 +251,11 @@
     "resume": "Resume",
     "nodeCount": "{{count}} nodes",
     "min": "min",
+    "scheduledWindow": "Scheduled {{start}} - {{end}}",
+    "scheduleToCalendar": "Schedule to Calendar",
+    "scheduling": "Scheduling...",
+    "scheduleSuccess": "Scheduled {{count}} knowledge points to calendar ({{start}} - {{end}})",
+    "scheduleFailed": "Failed to schedule, please try again later",
     "toolbar": {
       "aiPlan": "AI Plan",
       "settings": "Settings",

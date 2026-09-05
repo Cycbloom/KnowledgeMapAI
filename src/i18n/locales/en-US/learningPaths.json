@@ -34,7 +34,8 @@
     "noDescription": "No description",
     "progress": "Learning Progress",
     "nodes": "{{count}} nodes",
-    "dailyMinutes": "{{count}} min daily"
+    "dailyMinutes": "{{count}} min daily",
+    "scheduledWindow": "Scheduled {{start}} - {{end}}"
   },
   "time": {
     "minutes": "{{count}} min",
@@ -77,7 +78,11 @@
     "batchConvertPartialFailed": "{{count}} nodes failed to convert",
     "batchConvertFailed": "Batch conversion failed",
     "autoScheduleSuccess": "Master task created with {{total}} learning nodes, estimated {{days}} days to complete",
-    "autoScheduleFailed": "Auto scheduling failed",
+    "autoScheduleFailed": "Scheduling failed",
+    "scheduleSuccess": "Scheduled {{count}} knowledge points to calendar ({{start}} - {{end}})",
+    "replanScheduleTitle": "Replan from Today",
+    "replanScheduleConfirm": "This clears the existing calendar schedule of this path's unfinished nodes and repacks them from today within remaining capacity (manually dragged dates are also rescheduled). Continue?",
+    "replanScheduleSuccess": "Rescheduled {{count}} knowledge points from today (cleared {{cleared}} old rows), estimated to finish by {{end}}",
     "pathStatusUpdated": "Learning path status updated",
     "updateStatusFailed": "Failed to update status",
     "loadingPath": "Loading learning path...",

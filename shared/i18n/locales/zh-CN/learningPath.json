@@ -28,6 +28,9 @@
     "statusArchived": "已归档",
     "viewKnowledgeGraph": "查看知识图谱",
     "autoSchedule": "自动排程",
+    "scheduleToCalendar": "排入日历",
+    "replanSchedule": "从今天重排",
+    "scheduledWindow": "已排 {{start}} – {{end}}",
     "replanStageWindows": "重新规划周窗口",
     "pauseLearning": "暂停学习",
     "continueLearning": "继续学习",
@@ -51,6 +54,8 @@
   "pathActionBar": {
     "viewGraph": "查看图谱",
     "autoSchedule": "自动排程",
+    "scheduleToCalendar": "排入日历",
+    "replanSchedule": "从今天重排",
     "replanStageWindows": "重新规划周窗口",
     "pause": "暂停",
     "resume": "继续",

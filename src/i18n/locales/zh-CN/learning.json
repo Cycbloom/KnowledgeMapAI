@@ -252,6 +252,11 @@
     "resume": "继续",
     "nodeCount": "{{count}} 个节点",
     "min": "分钟",
+    "scheduledWindow": "已排 {{start}} – {{end}}",
+    "scheduleToCalendar": "排入日历",
+    "scheduling": "排课中...",
+    "scheduleSuccess": "已排入日历 {{count}} 个知识点（{{start}} – {{end}}）",
+    "scheduleFailed": "排课失败，请稍后重试",
     "toolbar": {
       "aiPlan": "AI 规划",
       "settings": "设置",

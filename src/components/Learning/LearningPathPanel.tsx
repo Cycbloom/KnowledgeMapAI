@@ -15,6 +15,7 @@ import {
   Play,
   Pause,
   Settings2,
+  CalendarClock,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
@@ -32,7 +33,7 @@ import {
   useDeleteLearningPathMutation,
   useUpdateLearningPathMutation,
 } from "../../hooks/mutations/useLearningPathMutations";
-import { LearningPathStatus } from "../../services/api/learningPaths";
+import { LearningPathStatus, type PathScheduleResponse } from "../../services/api/learningPaths";
 
 interface LearningPathStage {
   nodeId: string;
@@ -78,6 +79,8 @@ interface SavedLearningPath {
   ai_generated: boolean;
   status: LearningPathStatus;
   daily_minutes_target: number;
+  scheduled_start_date?: string | null;
+  scheduled_end_date?: string | null;
   created_at: string;
   updated_at: string;
   nodes_count?: number;
@@ -116,11 +119,12 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   const [dailyTime, setDailyTime] = useState(180);
   const [showSettings, setShowSettings] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [schedulingPathId, setSchedulingPathId] = useState<string | null>(null);
 
   const { handleError } = useError();
   const { recordActivity } = useActivityTracker();
 
-  const { data: savedPaths = [], isLoading: isLoadingPaths } =
+  const { data: savedPaths = [], isLoading: isLoadingPaths, refetch: refetchPaths } =
     useLearningPaths();
   const { data: selectedPathDetail } = useLearningPath(selectedPathId || "");
   const createMutation = useCreateLearningPathMutation();
@@ -255,9 +259,35 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
     }
   };
 
+  // P5 排期摘要：未排期路径可一键排入日历（保存即排失败时的兜底入口）
+  const handleSchedulePath = async (path: SavedLearningPath) => {
+    setSchedulingPathId(path.id);
+    try {
+      const result = (await api.learningPaths.schedulePath(path.id)) as PathScheduleResponse;
+      if (result.scheduled.length === 0 && !result.startDate) {
+        message.info(t("learning.learningPath.scheduleFailed"));
+      } else {
+        message.success(
+          t("learning.learningPath.scheduleSuccess", {
+            count: result.scheduled.length,
+            start: result.startDate ?? "—",
+            end: result.endDate ?? "—",
+          }),
+        );
+      }
+      await refetchPaths();
+    } catch (error) {
+      handleError(error, {
+        context: "SchedulePath",
+        fallbackMessage: t("learning.learningPath.scheduleFailed"),
+      });
+    } finally {
+      setSchedulingPathId(null);
+    }
+  };
+
   const handleDeletePath = async (pathId: string) => {
     if (!await asyncConfirm({ title: t('common.confirm.deleteTitle'), message: t("learning.learningPath.confirmDelete"), isDangerous: true })) return;
-
     try {
       await deleteMutation.mutateAsync(pathId);
       message.success(t("learning.learningPath.pathDeleted"));
@@ -678,6 +708,34 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                             </span>
                           )}
                         </div>
+
+                        {path.scheduled_start_date && path.scheduled_end_date ? (
+                          <div className="flex items-center gap-1 text-xs text-purple-500 mb-3">
+                            <CalendarClock className="w-3 h-3" />
+                            {t("learning.learningPath.scheduledWindow", {
+                              start: path.scheduled_start_date,
+                              end: path.scheduled_end_date,
+                            })}
+                          </div>
+                        ) : path.status === "active" ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleSchedulePath(path);
+                            }}
+                            disabled={schedulingPathId === path.id}
+                            className="mb-3 px-2 py-1 text-xs rounded flex items-center gap-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50 disabled:opacity-50"
+                          >
+                            {schedulingPathId === path.id ? (
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <CalendarClock className="w-3 h-3" />
+                            )}
+                            {schedulingPathId === path.id
+                              ? t("learning.learningPath.scheduling")
+                              : t("learning.learningPath.scheduleToCalendar")}
+                          </button>
+                        ) : null}
 
                         {path.progress_percentage !== undefined &&
                           path.progress_percentage > 0 && (

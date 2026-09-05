@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   BookOpen,
   CalendarClock,
+  CalendarRange,
   Loader2,
   Pause,
   Play,
@@ -15,6 +16,7 @@ interface PathActionBarProps {
   pathDetail: LearningPathDetail;
   isUpdating: boolean;
   onAutoSchedule: () => void;
+  onReplanSchedule?: () => void;
   onUpdatePathStatus: (status: "active" | "paused" | "archived") => void;
   onDeletePath: () => void;
 }
@@ -23,6 +25,7 @@ const PathActionBar: React.FC<PathActionBarProps> = ({
   pathDetail,
   isUpdating,
   onAutoSchedule,
+  onReplanSchedule,
   onUpdatePathStatus,
   onDeletePath,
 }) => {
@@ -54,8 +57,20 @@ const PathActionBar: React.FC<PathActionBarProps> = ({
             )}
             {t(pathDetail.path_type === "cross_graph"
               ? 'learningPath.pathActionBar.replanStageWindows'
-              : 'learningPath.pathActionBar.autoSchedule')}
+              : 'learningPath.pathActionBar.scheduleToCalendar')}
           </button>
+          {pathDetail.path_type !== "cross_graph" &&
+            pathDetail.scheduled_end_date &&
+            onReplanSchedule && (
+              <button
+                onClick={onReplanSchedule}
+                disabled={isUpdating}
+                className="px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 flex items-center gap-2 disabled:opacity-50"
+              >
+                <CalendarRange className="w-4 h-4" />
+                {t('learningPath.pathActionBar.replanSchedule')}
+              </button>
+            )}
         </div>
 
         <div className="flex items-center gap-2">

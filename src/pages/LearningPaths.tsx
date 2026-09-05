@@ -24,6 +24,7 @@ import {
   TrendingUp,
   MoreVertical,
   CalendarClock,
+  CalendarRange,
   BookOpen,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -85,6 +86,8 @@ interface LearningPathItem {
   status: LearningPathStatus;
   path_type?: "single_graph" | "cross_graph";
   daily_minutes_target: number;
+  scheduled_start_date?: string | null;
+  scheduled_end_date?: string | null;
   source_graph_id?: string;
   created_at: string;
   updated_at: string;
@@ -200,14 +203,36 @@ export const LearningPaths = () => {
 
   const handleAutoSchedule = async (path: LearningPathItem) => {
     try {
-      const result = await learningPathsApi.autoSchedule(path.id, {
-        start_date: new Date().toISOString(),
-        daily_minutes: path.daily_minutes_target || 180,
-      });
+      // P5 日历排课：幂等，已有排期的知识点日期不动；失败不阻塞（大路径走 stage-windows）
+      const result = await learningPathsApi.schedulePath(path.id);
       message.success(
-        t("learningPaths.detail.autoScheduleSuccess", {
-          total: result.total_tasks,
-          days: result.estimated_days,
+        t("learningPaths.detail.scheduleSuccess", {
+          count: result.scheduled.length,
+          start: result.startDate ? formatDate(result.startDate) : "—",
+          end: result.endDate ? formatDate(result.endDate) : "—",
+        }),
+      );
+      await refetch();
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : t("learningPaths.detail.autoScheduleFailed");
+      message.error(errMsg);
+    }
+  };
+
+  const handleReplanSchedule = async (path: LearningPathItem) => {
+    const confirmed = await asyncConfirm({
+      title: t("learningPaths.detail.replanScheduleTitle"),
+      message: t("learningPaths.detail.replanScheduleConfirm"),
+    });
+    if (!confirmed) return;
+
+    try {
+      const result = await learningPathsApi.replanSchedule(path.id);
+      message.success(
+        t("learningPaths.detail.replanScheduleSuccess", {
+          count: result.scheduled.length,
+          cleared: result.clearedRows ?? 0,
+          end: result.endDate ? formatDate(result.endDate) : "—",
         }),
       );
       await refetch();
@@ -443,8 +468,22 @@ export const LearningPaths = () => {
                             <CalendarClock className="w-4 h-4" />
                             {path.path_type === "cross_graph"
                               ? t("learningPath.pathHeader.replanStageWindows")
-                              : t("learningPath.pathHeader.autoSchedule")}
+                              : t("learningPath.pathHeader.scheduleToCalendar")}
                           </button>
+                          {path.path_type !== "cross_graph" &&
+                            path.scheduled_end_date && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuId(null);
+                                  void handleReplanSchedule(path);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
+                              >
+                                <CalendarRange className="w-4 h-4" />
+                                {t("learningPath.pathHeader.replanSchedule")}
+                              </button>
+                            )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -532,6 +571,17 @@ export const LearningPaths = () => {
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <Calendar size={14} />
                       <span>{formatDate(path.target_date)}</span>
+                    </div>
+                  )}
+                  {path.scheduled_start_date && path.scheduled_end_date && (
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <CalendarRange size={14} />
+                      <span>
+                        {t("learningPaths.card.scheduledWindow", {
+                          start: formatDate(path.scheduled_start_date),
+                          end: formatDate(path.scheduled_end_date),
+                        })}
+                      </span>
                     </div>
                   )}
                 </div>

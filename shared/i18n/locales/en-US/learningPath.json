@@ -28,6 +28,9 @@
     "statusArchived": "Archived",
     "viewKnowledgeGraph": "View Knowledge Graph",
     "autoSchedule": "Auto Schedule",
+    "scheduleToCalendar": "Schedule to Calendar",
+    "replanSchedule": "Replan from Today",
+    "scheduledWindow": "Scheduled {{start}} – {{end}}",
     "replanStageWindows": "Replan Stage Windows",
     "pauseLearning": "Pause Learning",
     "continueLearning": "Continue Learning",
@@ -51,6 +54,8 @@
   "pathActionBar": {
     "viewGraph": "View Graph",
     "autoSchedule": "Auto Schedule",
+    "scheduleToCalendar": "Schedule to Calendar",
+    "replanSchedule": "Replan from Today",
     "replanStageWindows": "Replan Stage Windows",
     "pause": "Pause",
     "resume": "Resume",

@@ -34,7 +34,8 @@
     "noDescription": "暂无描述",
     "progress": "学习进度",
     "nodes": "{{count}} 个节点",
-    "dailyMinutes": "每日 {{count}} 分钟"
+    "dailyMinutes": "每日 {{count}} 分钟",
+    "scheduledWindow": "已排 {{start}} – {{end}}"
   },
   "time": {
     "minutes": "{{count}} 分钟",
@@ -77,7 +78,11 @@
     "batchConvertPartialFailed": "{{count}} 个节点转换失败",
     "batchConvertFailed": "批量转换失败",
     "autoScheduleSuccess": "已创建主任务，包含 {{total}} 个学习节点，预计 {{days}} 天完成",
-    "autoScheduleFailed": "自动排程失败",
+    "autoScheduleFailed": "排程失败",
+    "scheduleSuccess": "已排入日历 {{count}} 个知识点（{{start}} – {{end}}）",
+    "replanScheduleTitle": "从今天重排",
+    "replanScheduleConfirm": "将清除该路径未完成节点的现有日历排期，并从今天按剩余容量重新排课（手动拖拽过的日期也会重排）。确定继续吗？",
+    "replanScheduleSuccess": "已从今天重排 {{count}} 个知识点（清理 {{cleared}} 条旧排期），预计 {{end}} 完成",
     "pathStatusUpdated": "学习路径状态已更新",
     "updateStatusFailed": "更新状态失败",
     "loadingPath": "加载学习路径...",

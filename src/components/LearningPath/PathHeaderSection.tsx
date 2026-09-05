@@ -11,6 +11,7 @@ import {
   Archive,
   Trash2,
   CalendarClock,
+  CalendarRange,
   MoreVertical,
   ArrowLeft,
 } from "lucide-react";
@@ -24,6 +25,7 @@ interface PathHeaderSectionProps {
   showActions: string | null;
   onShowActionsChange: (value: string | null) => void;
   onAutoSchedule: () => void;
+  onReplanSchedule?: () => void;
   onUpdatePathStatus: (status: "active" | "paused" | "archived") => void;
   onDeletePath: () => void;
 }
@@ -34,6 +36,7 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
   showActions,
   onShowActionsChange,
   onAutoSchedule,
+  onReplanSchedule,
   onUpdatePathStatus,
   onDeletePath,
 }) => {
@@ -111,6 +114,15 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                     {t('learningPaths.pathType.crossGraph')}
                   </span>
                 )}
+                {pathDetail.scheduled_start_date && pathDetail.scheduled_end_date && (
+                  <span className="flex items-center gap-1">
+                    <CalendarRange className="w-4 h-4" />
+                    {t('learningPath.pathHeader.scheduledWindow', {
+                      start: formatDate(pathDetail.scheduled_start_date),
+                      end: formatDate(pathDetail.scheduled_end_date),
+                    })}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -156,8 +168,22 @@ const PathHeaderSection: React.FC<PathHeaderSectionProps> = ({
                       <CalendarClock className="w-4 h-4" />
                       {pathDetail.path_type === "cross_graph"
                         ? t('learningPath.pathHeader.replanStageWindows')
-                        : t('learningPath.pathHeader.autoSchedule')}
+                        : t('learningPath.pathHeader.scheduleToCalendar')}
                     </button>
+                    {pathDetail.path_type !== "cross_graph" &&
+                      pathDetail.scheduled_end_date &&
+                      onReplanSchedule && (
+                        <button
+                          onClick={() => {
+                            onShowActionsChange(null);
+                            onReplanSchedule();
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
+                        >
+                          <CalendarRange className="w-4 h-4" />
+                          {t('learningPath.pathHeader.replanSchedule')}
+                        </button>
+                      )}
                     <button
                       onClick={() => {
                         onShowActionsChange(null);

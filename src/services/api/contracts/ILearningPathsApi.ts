@@ -86,7 +86,8 @@ export interface ILearningPathsApi {
   generateFromGraph(data: GeneratePathInput): Promise<unknown>;
   adjust(id: string, data: { reason: string; node_ref_id?: string; adjustment_type: "insert" | "remove" | "reorder" | "difficulty" }): Promise<unknown>;
   getRecommendations(graphId: string): Promise<unknown>;
-  autoSchedule(pathId: string, options?: { start_date?: string; daily_minutes?: number }): Promise<unknown>;
+  schedulePath(pathId: string, options?: { start_date?: string }): Promise<unknown>;
+  replanSchedule(pathId: string, options?: { start_date?: string }): Promise<unknown>;
   getStageWindows(pathId: string): Promise<unknown>;
   replanStageWindows(pathId: string, options?: { start_date?: string }): Promise<unknown>;
   postponeStageWindows(pathId: string): Promise<unknown>;

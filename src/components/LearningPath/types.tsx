@@ -95,6 +95,9 @@ export interface LearningPathDetail {
   target_knowledge_point_id?: string;
   daily_minutes_target?: number;
   target_completion_date?: string;
+  /** 学习窗口（P5 排课回写）：首末排期日；未排课时缺省 */
+  scheduled_start_date?: string | null;
+  scheduled_end_date?: string | null;
   created_at: string;
   updated_at: string;
   nodes: LearningPathNode[];

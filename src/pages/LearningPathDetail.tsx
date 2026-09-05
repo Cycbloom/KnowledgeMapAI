@@ -25,11 +25,13 @@ import type {
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { SkeletonCard } from "@/components/common";
 import { message } from "../utils/messageHelper";
+import { formatDate as formatDateUtil } from "../utils/formatters";
 
 const LearningPathDetailPage: React.FC = () => {
   const { t } = useTranslation();
   const { id: pathId } = useParams<{ id: string }>();
   const { goBack } = useNavigateBack();
+  const formatDate = (dateStr: string) => formatDateUtil(dateStr);
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
@@ -91,6 +93,8 @@ const LearningPathDetailPage: React.FC = () => {
       target_knowledge_point_id: undefined,
       daily_minutes_target: r.daily_minutes_target as number,
       target_completion_date: r.target_date as string,
+      scheduled_start_date: (r.scheduled_start_date as string | null) ?? null,
+      scheduled_end_date: (r.scheduled_end_date as string | null) ?? null,
       created_at: r.created_at as string,
       updated_at: r.updated_at as string,
       nodes: mappedNodes,
@@ -256,17 +260,53 @@ const LearningPathDetailPage: React.FC = () => {
           }),
         );
       } else {
-        const result = await learningPathsApi.autoSchedule(pathId, {
-          start_date: new Date().toISOString(),
-          daily_minutes: pathDetail.daily_minutes_target || 180,
-        });
-        message.success(t("learningPaths.detail.autoScheduleSuccess", { total: result.total_tasks, days: result.estimated_days }));
+        // P5 保存即排后此处通常为补排：幂等，已有排期的知识点日期不动
+        const result = await learningPathsApi.schedulePath(pathId);
+        message.success(
+          t("learningPaths.detail.scheduleSuccess", {
+            count: result.scheduled.length,
+            start: result.startDate ? formatDate(result.startDate) : "—",
+            end: result.endDate ? formatDate(result.endDate) : "—",
+          }),
+        );
       }
 
       await queryClient.invalidateQueries({ queryKey: learningPathKeys.mappedDetail(pathId ?? "") });
     } catch (error) {
       handleError(error, {
         context: "AutoSchedule",
+        fallbackMessage: t("learningPaths.detail.autoScheduleFailed"),
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleReplanSchedule = async () => {
+    if (!pathId || !pathDetail || pathDetail.path_type === "cross_graph") return;
+
+    const confirmed = await asyncConfirm({
+      title: t("learningPaths.detail.replanScheduleTitle"),
+      message: t("learningPaths.detail.replanScheduleConfirm"),
+    });
+    if (!confirmed) return;
+
+    setIsUpdating(true);
+    try {
+      // P5 滞后恢复：清掉本路径未来的排期归属，从未完成节点按剩余容量从今天重排
+      const result = await learningPathsApi.replanSchedule(pathId);
+      message.success(
+        t("learningPaths.detail.replanScheduleSuccess", {
+          count: result.scheduled.length,
+          cleared: result.clearedRows ?? 0,
+          end: result.endDate ? formatDate(result.endDate) : "—",
+        }),
+      );
+
+      await queryClient.invalidateQueries({ queryKey: learningPathKeys.mappedDetail(pathId ?? "") });
+    } catch (error) {
+      handleError(error, {
+        context: "ReplanSchedule",
         fallbackMessage: t("learningPaths.detail.autoScheduleFailed"),
       });
     } finally {
@@ -390,6 +430,7 @@ const LearningPathDetailPage: React.FC = () => {
           showActions={showActions}
           onShowActionsChange={setShowActions}
           onAutoSchedule={handleAutoSchedule}
+          onReplanSchedule={handleReplanSchedule}
           onUpdatePathStatus={handleUpdatePathStatus}
           onDeletePath={handleDeletePath}
         />
@@ -446,6 +487,7 @@ const LearningPathDetailPage: React.FC = () => {
           pathDetail={pathDetail}
           isUpdating={isUpdating}
           onAutoSchedule={handleAutoSchedule}
+          onReplanSchedule={handleReplanSchedule}
           onUpdatePathStatus={handleUpdatePathStatus}
           onDeletePath={handleDeletePath}
         />

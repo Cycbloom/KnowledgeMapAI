@@ -5,6 +5,7 @@ import { rerankingService } from "./rerankingService";
 import { reciprocalRankFusion, type RankedItem } from "../../utils/rrf";
 import { serializeSparse } from "../../utils/sparse";
 import { notDeleted } from '../common/softDeleteHelper';
+import { resolveLocalizedText, type LocalizedText } from "../../../shared/utils/localization";
 import type { TraversalFunction, RAGSearchResult, GraphRAGSearchResult } from "./ragService";
 
 export class RAGSearchService {
@@ -473,7 +474,170 @@ export class RAGSearchService {
   }
 
   /**
-   * 混合检索：并行执行向量检索 + 关键词检索 + 图遍历 + 稀疏向量检索，使用 RRF 融合排序
+   * 分块稀疏检索：对 document_chunks 的 sparse_embedding 做内积检索，命中的子块
+   * 映射回父知识点（id = knowledge_point_id）参与混合融合。知识点向量只覆盖 title
+   * 摘要，分块保留原文细节，能命中摘要丢失的精确术语/编号/代码名。
+   * 同一知识点的多个子块只保留排名最靠前的一条；provider 不支持或失败时返回 []。
+   */
+  async chunkSparseSearch(
+    query: string,
+    userId: string,
+    options: {
+      graphId?: string;
+      matchCount?: number;
+    } = {},
+  ): Promise<RAGSearchResult[]> {
+    const { graphId, matchCount = 10 } = options;
+    const candidateCount = Math.max(matchCount * 3, 20);
+
+    try {
+      const sparse = await this.aiService.generateSparseEmbedding(query);
+      if (!sparse || sparse.length === 0) {
+        return [];
+      }
+      const querySparseText = serializeSparse(sparse);
+
+      const supabase = getSupabaseAdmin();
+      const result = await supabase.rpc("match_document_chunks_sparse", {
+        query_sparse: querySparseText,
+        match_threshold: 0.0,
+        match_count: candidateCount,
+        p_user_id: userId,
+        p_graph_id: graphId ?? null,
+      });
+
+      if (result.error || !result.data) {
+        logger.warn("Chunk sparse RAG search failed or returned no data", {
+          error: result.error,
+        });
+        return [];
+      }
+
+      const rows = result.data as {
+        id: string;
+        knowledge_point_id: string;
+        chunk_index: number;
+        content: string;
+        similarity: number;
+      }[];
+
+      // RPC 按相似度降序返回，首次出现即该知识点排名最靠前的子块
+      const bestPerKp = new Map<string, (typeof rows)[number]>();
+      for (const row of rows) {
+        if (!bestPerKp.has(row.knowledge_point_id)) {
+          bestPerKp.set(row.knowledge_point_id, row);
+        }
+      }
+      if (bestPerKp.size === 0) return [];
+
+      const kpIds = [...bestPerKp.keys()];
+      const { data: kps } = await supabase
+        .from("knowledge_points")
+        .select("id, title")
+        .in("id", kpIds);
+      const kpTitleById = new Map<string, string>();
+      for (const kp of (kps || []) as { id: string; title: LocalizedText }[]) {
+        kpTitleById.set(kp.id, resolveLocalizedText(kp.title));
+      }
+
+      let results: RAGSearchResult[] = [...bestPerKp.values()].map((row) => ({
+        id: row.knowledge_point_id,
+        title: kpTitleById.get(row.knowledge_point_id) || "",
+        content: row.content,
+        similarity: row.similarity,
+        graphId: graphId || "",
+      }));
+
+      // 未指定图谱时补齐知识点所属图谱，与 semanticSearch 的全局分支对齐
+      if (!graphId) {
+        const { data: graphNodes } = await notDeleted(supabase
+          .from("graph_nodes")
+          .select("knowledge_point_id, graph_id")
+          .in("knowledge_point_id", kpIds)
+          );
+        const kpToGraphId = new Map<string, string>();
+        for (const gn of (graphNodes || []) as {
+          knowledge_point_id: string;
+          graph_id: string;
+        }[]) {
+          if (!kpToGraphId.has(gn.knowledge_point_id)) {
+            kpToGraphId.set(gn.knowledge_point_id, gn.graph_id);
+          }
+        }
+        results = results.map((r) => ({
+          ...r,
+          graphId: kpToGraphId.get(r.id) || "",
+        }));
+      }
+
+      return results.slice(0, matchCount);
+    } catch (err) {
+      logger.warn("Chunk sparse RAG search error", { err });
+      return [];
+    }
+  }
+
+  /**
+   * 笔记稀疏检索：对 note_embeddings.sparse_embedding 做内积检索，与
+   * noteSemanticSearch 互补（精确术语命中 vs 语义命中）。id 为 note_id 便于前端跳转；
+   * 失败返回 []，不阻塞主链路。
+   */
+  async noteSparseSearch(
+    query: string,
+    userId: string,
+    options: {
+      matchCount?: number;
+    } = {},
+  ): Promise<RAGSearchResult[]> {
+    const { matchCount = 5 } = options;
+
+    try {
+      const sparse = await this.aiService.generateSparseEmbedding(query);
+      if (!sparse || sparse.length === 0) {
+        return [];
+      }
+      const querySparseText = serializeSparse(sparse);
+
+      const supabase = getSupabaseAdmin();
+      const result = await supabase.rpc("match_notes_sparse", {
+        query_sparse: querySparseText,
+        match_threshold: 0.0,
+        match_count: Math.max(matchCount * 2, 10),
+        p_user_id: userId,
+      });
+
+      if (result.error || !result.data) {
+        logger.warn("Note sparse RAG search failed or returned no data", {
+          error: result.error,
+        });
+        return [];
+      }
+
+      const data = result.data as {
+        id: string;
+        note_id: string;
+        chunk_text: string | null;
+        title: string | null;
+        similarity: number;
+      }[];
+
+      return data.slice(0, matchCount).map((row) => ({
+        id: row.note_id,
+        title: row.title || "",
+        content: row.chunk_text || "",
+        similarity: row.similarity,
+        graphId: "",
+        type: "note" as const,
+      }));
+    } catch (err) {
+      logger.warn("Note sparse RAG search error", { err });
+      return [];
+    }
+  }
+
+  /**
+   * 混合检索：并行执行向量检索 + 关键词检索 + 稀疏向量检索 + 分块稀疏检索，
+   * 图谱模式下再叠加图遍历，使用 RRF 融合排序
    */
   async hybridSearch(
     query: string,
@@ -484,6 +648,8 @@ export class RAGSearchService {
       matchCount?: number;
       graphHops?: number;
       relationshipTypes?: string[];
+      /** 用户原始查询：keyword 通道依赖原文词面匹配（LIKE），不吃 query rewrite */
+      originalQuery?: string;
     } = {},
   ): Promise<GraphRAGSearchResult[]> {
     const {
@@ -492,20 +658,29 @@ export class RAGSearchService {
       matchCount = 10,
       graphHops,
       relationshipTypes,
+      originalQuery,
     } = options;
 
-    // 并行执行向量检索 + 关键词检索 + 稀疏向量检索
-    const [semanticResults, keywordResults, sparseResults] = await Promise.all([
+    // 语义/稀疏通道用改写后的 query（扩展召回），关键词通道用原始 query
+    // （改写会替换口语表达，而 LIKE 只认原文词面，用改写词反而降低命中率）
+    const keywordQuery = originalQuery ?? query;
+
+    // 并行执行向量检索 + 关键词检索 + 稀疏向量检索 + 分块稀疏检索
+    const [semanticResults, keywordResults, sparseResults, chunkSparseResults] = await Promise.all([
       this.semanticSearch(query, userId, {
         graphId,
         matchThreshold,
         matchCount,
       }),
-      this.keywordSearch(query, userId, {
+      this.keywordSearch(keywordQuery, userId, {
         graphId,
         matchCount,
       }),
       this.sparseSearch(query, userId, {
+        graphId,
+        matchCount,
+      }),
+      this.chunkSparseSearch(query, userId, {
         graphId,
         matchCount,
       }),
@@ -607,6 +782,34 @@ export class RAGSearchService {
         return { id: r.id, score: r.similarity, data };
       });
 
+    // 分块稀疏检索路：子块已映射回父知识点，content 取命中子块原文
+    const chunkSparseRanked: RankedItem<{
+      hopDistance: number;
+      relationshipPath: string;
+      relationshipType: string;
+      graphId: string;
+      title: string;
+      content: string;
+      similarity: number;
+    }>[] = chunkSparseResults
+      .sort((a, b) => b.similarity - a.similarity)
+      .map((r) => {
+        const existing = originalDataMap.get(r.id);
+        const data = {
+          hopDistance: existing?.hopDistance ?? 0,
+          relationshipPath: existing?.relationshipPath ?? "",
+          relationshipType: existing?.relationshipType ?? "",
+          graphId: r.graphId,
+          title: r.title,
+          content: r.content,
+          similarity: r.similarity,
+        };
+        if (!originalDataMap.has(r.id)) {
+          originalDataMap.set(r.id, data);
+        }
+        return { id: r.id, score: r.similarity, data };
+      });
+
     const rankedLists: RankedItem<{
       hopDistance: number;
       relationshipPath: string;
@@ -615,18 +818,19 @@ export class RAGSearchService {
       title: string;
       content: string;
       similarity: number;
-    }>[][] = [semanticRanked, keywordRanked, sparseRanked];
+    }>[][] = [semanticRanked, keywordRanked, sparseRanked, chunkSparseRanked];
 
     // 当 graphId 指定且 graphTraversal 已配置时，额外并行执行图遍历
     if (graphId && this.graphTraversal) {
       try {
         const supabase = getSupabaseAdmin();
-        // 合并向量/关键词/稀疏检索的 ID 作为图遍历的种子节点
+        // 合并向量/关键词/稀疏/分块稀疏检索的 ID 作为图遍历的种子节点
         const seedIds = [
           ...new Set([
             ...semanticResults.map((r) => r.id),
             ...keywordResults.map((r) => r.id),
             ...sparseResults.map((r) => r.id),
+            ...chunkSparseResults.map((r) => r.id),
           ]),
         ];
 

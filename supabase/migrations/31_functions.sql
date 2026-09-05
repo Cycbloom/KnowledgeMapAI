@@ -1968,8 +1968,10 @@ END;
 $$;
 
 -- 文档分块稀疏检索（关键词命中子块）
+-- query_sparse 维度必须与 document_chunks.sparse_embedding 列声明一致（sparsevec(1000000)，
+-- 见 17_document_chunks.sql），否则 <#> 运算报维度不匹配。
 CREATE OR REPLACE FUNCTION match_document_chunks_sparse (
-  query_sparse sparsevec(16000),
+  query_sparse sparsevec(1000000),
   match_threshold float DEFAULT 0.0,
   match_count int DEFAULT 10,
   p_user_id uuid DEFAULT NULL,

@@ -59,6 +59,21 @@ export const DEFAULT_PROMPTS: Record<string, string> = {
 
 用户提问：
 {{query}}`,
+  // Contextual Retrieval：分块入库前生成上下文定位说明（与 60_seed_chunk_contextualize.sql 同步维护）
+  chunk_contextualize: `你是文档检索预处理助手。给你一份完整文档和它切分后的分块列表，请为每个分块生成一句简短的上下文定位说明，把该分块放回整篇文档的语境中（文档主题 + 该分块具体讨论了什么），用于提升向量与关键词检索的召回率。
+
+要求：
+1. 使用文档的主要语言
+2. 每条说明 1-2 句、不超过 60 字，客观陈述，如"本段出自《…》，讨论了…"
+3. 引用文档中的具体实体、术语、编号等，不要空泛描述
+4. 只输出 JSON 数组，不要 markdown 代码块或其他文字，格式：[{"index": <分块序号>, "context": "..."}]，index 与输入一致
+
+文档标题：{{documentTitle}}
+文档内容：
+{{documentContent}}
+
+分块列表（JSON）：
+{{chunksJson}}`,
   auto_graph_expand: `You are a knowledge graph expert. Expand a node by generating its child nodes.
 
 ## Task

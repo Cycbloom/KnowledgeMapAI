@@ -133,6 +133,20 @@ export class RAGService {
     return ragSearchService.noteSemanticSearch(query, userId, options);
   }
 
+  /**
+   * 笔记稀疏检索：委托给 ragSearchService.noteSparseSearch，
+   * 与 noteSemanticSearch 互补（精确术语命中），结果同样 type='note'。
+   */
+  async noteSparseSearch(
+    query: string,
+    userId: string,
+    options: {
+      matchCount?: number;
+    } = {},
+  ): Promise<RAGSearchResult[]> {
+    return ragSearchService.noteSparseSearch(query, userId, options);
+  }
+
   async hybridSearch(
     query: string,
     userId: string,
@@ -142,6 +156,7 @@ export class RAGService {
       matchCount?: number;
       graphHops?: number;
       relationshipTypes?: string[];
+      originalQuery?: string;
     } = {},
   ): Promise<GraphRAGSearchResult[]> {
     return ragSearchService.hybridSearch(query, userId, options);
@@ -198,11 +213,18 @@ export class RAGService {
     // P1 Task 5.2: 并行查 notes embedding（与图谱搜索并行，避免阻塞）
     // noteSemanticSearch 内部已做容错（失败返回 []），这里直接 await 即可。
     // 提前启动 promise，与下方图谱检索并行执行，降低整体延迟。
+    // 笔记稀疏检索（精确术语命中）与语义检索并行，结果合并去重后互补。
     const noteResultsPromise = this.noteSemanticSearch(searchQuery, userId, {
       matchThreshold: 0.3,
       matchCount: 5,
     }).catch((err) => {
       logger.warn("RAG buildContext: noteSemanticSearch failed", { err });
+      return [] as RAGSearchResult[];
+    });
+    const noteSparsePromise = this.noteSparseSearch(searchQuery, userId, {
+      matchCount: 3,
+    }).catch((err) => {
+      logger.warn("RAG buildContext: noteSparseSearch failed", { err });
       return [] as RAGSearchResult[];
     });
 
@@ -227,7 +249,7 @@ export class RAGService {
     if (effectiveSearchMode === "semantic") {
       // 语义检索模式：保持原有逻辑（向后兼容）
       if (useGraphContext && graphId) {
-        const graphResults = await this.graphAugmentedSearch(query, userId, {
+        const graphResults = await this.graphAugmentedSearch(searchQuery, userId, {
           graphId,
           matchThreshold: 0.3,
           matchCount: 10,
@@ -280,11 +302,14 @@ export class RAGService {
       // 混合检索模式（hybrid，默认）
       if (useGraphContext && graphId) {
         // 有图谱上下文时，使用 hybridSearch 获取结果，分离种子节点和扩展节点
-        const hybridResults = await this.hybridSearch(query, userId, {
+        // 语义/稀疏通道用改写后的 searchQuery；originalQuery 供 keyword 通道
+        // 保留原文词面匹配（LIKE 不吃改写）
+        const hybridResults = await this.hybridSearch(searchQuery, userId, {
           graphId,
           matchThreshold: 0.3,
           matchCount: 10,
           graphHops,
+          originalQuery: query,
         });
 
         for (const r of hybridResults) {
@@ -321,6 +346,7 @@ export class RAGService {
           graphId,
           matchThreshold: 0.3,
           matchCount: 10,
+          originalQuery: query,
         });
 
         // hybridSearch 可能返回含图关联信息的结果，保留原始数据
@@ -336,11 +362,19 @@ export class RAGService {
       }
     }
 
-    // P1 Task 5.2: 等待笔记语义检索结果，合并到 searchResults
-    // noteResults 已在搜索模式分支前并行启动，此处 await 不会阻塞图谱检索。
-    const noteResults = await noteResultsPromise;
-    if (noteResults.length > 0) {
-      searchResults = [...searchResults, ...noteResults];
+    // P1 Task 5.2: 等待笔记检索结果，合并到 searchResults
+    // 语义命中在前，稀疏命中补充精确术语命中；同一笔记（id 重复）保留语义结果
+    const [noteResults, noteSparseResults] = await Promise.all([
+      noteResultsPromise,
+      noteSparsePromise,
+    ]);
+    const seenNoteIds = new Set(noteResults.map((r) => r.id));
+    const mergedNoteResults = [
+      ...noteResults,
+      ...noteSparseResults.filter((r) => !seenNoteIds.has(r.id)),
+    ].slice(0, 5);
+    if (mergedNoteResults.length > 0) {
+      searchResults = [...searchResults, ...mergedNoteResults];
     }
 
     let currentNodeContext: string | undefined;

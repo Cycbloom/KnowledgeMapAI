@@ -1263,8 +1263,9 @@ export class BackupRestoreService {
       'notification_settings',
     );
 
-    // 恢复完成后，自动后台补全缺失的 embedding（图谱 + 知识点）：
-    // 备份不存向量（避免体积膨胀/模型漂移），恢复后在线场景下重建，使查重与语义检索立即生效；
+    // 恢复完成后，自动后台补全缺失的 embedding（知识点 + 分块 + 图谱 + 笔记）：
+    // 备份不存向量也不含 document_chunks/note_embeddings 表（避免体积膨胀/模型漂移），
+    // 恢复后在线场景下全量重建（dense + sparse），使查重与语义/稀疏检索立即生效；
     // 离线/无 key 时该任务优雅降级（嵌入保持为 null），可用既有「补全缺失 embedding」任务稍后重跑。
     try {
       await asyncTaskService.createTask(

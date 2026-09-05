@@ -482,6 +482,7 @@ export type Database = {
         Row: {
           chunk_index: number
           content: string
+          context: string | null
           created_at: string | null
           embedding: string | null
           id: string
@@ -491,6 +492,7 @@ export type Database = {
         Insert: {
           chunk_index: number
           content: string
+          context?: string | null
           created_at?: string | null
           embedding?: string | null
           id?: string
@@ -500,6 +502,7 @@ export type Database = {
         Update: {
           chunk_index?: number
           content?: string
+          context?: string | null
           created_at?: string | null
           embedding?: string | null
           id?: string

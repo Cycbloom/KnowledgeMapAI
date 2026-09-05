@@ -8,11 +8,29 @@ import { ErrorCodes } from '../../../../shared/types/errorCodes';
 export class VolcengineProvider extends BaseAIProvider {
   // multimodal 端点一次请求同时返回 dense + sparse。dense 走 createEmbedding 返回，
   // sparse 同步缓存到 textHash → sparse 供 createSparseEmbedding 复用（零额外 API 调用）。
+  // 缓存有上限：索引大批 chunk 时以全文为 key，无界增长会持续吃进程内存。
   private sparseCache = new Map<string, { value: SparseVector; at: number }>();
   private static SPARSE_CACHE_TTL_MS = 10 * 60 * 1000;
+  private static SPARSE_CACHE_MAX_ENTRIES = 500;
 
   constructor(config: AIProviderConfig) {
     super('volcengine', config);
+  }
+
+  /** 写入 sparse 缓存：先清理过期项，超上限时按写入顺序淘汰最旧条目 */
+  private setSparseCache(text: string, value: SparseVector): void {
+    const now = Date.now();
+    for (const [key, entry] of this.sparseCache) {
+      if (now - entry.at >= VolcengineProvider.SPARSE_CACHE_TTL_MS) {
+        this.sparseCache.delete(key);
+      }
+    }
+    while (this.sparseCache.size >= VolcengineProvider.SPARSE_CACHE_MAX_ENTRIES) {
+      const oldest = this.sparseCache.keys().next().value;
+      if (oldest === undefined) break;
+      this.sparseCache.delete(oldest);
+    }
+    this.sparseCache.set(text, { value, at: now });
   }
 
   async createEmbedding(text: string) {
@@ -173,7 +191,7 @@ export class VolcengineProvider extends BaseAIProvider {
       if (sparseCandidate) {
         const sparse = sparseCandidate.sparse_embedding;
         if (Array.isArray(sparse) && sparse.length > 0) {
-          this.sparseCache.set(text, { value: sparse, at: Date.now() });
+          this.setSparseCache(text, sparse);
         }
       }
 
@@ -219,7 +237,12 @@ export class VolcengineProvider extends BaseAIProvider {
    * sparseCache；缓存未命中时再显式调用一次 multimodal 端点解析 sparse，不做 dense 返回。
    */
   async createSparseEmbedding(text: string): Promise<SparseVector | null> {
-    if (!this.embeddingModel || !this.embeddingModel.includes('vision')) {
+    // 与 createEmbedding 的 multimodal 端点判定条件保持一致：
+    // 模型名含 multimodal 而不含 vision 时，dense 正常但 sparse 若此处不放行会静默为 null
+    const isMultimodal =
+      this.embeddingModel?.includes('vision') ||
+      this.embeddingModel?.includes('multimodal');
+    if (!this.embeddingModel || !isMultimodal) {
       logger.warn('[Volcengine] sparse embedding requires a vision/multimodal embedding model');
       return null;
     }
@@ -277,7 +300,7 @@ export class VolcengineProvider extends BaseAIProvider {
             : undefined;
       const sparse = obj?.sparse_embedding;
       if (Array.isArray(sparse) && sparse.length > 0) {
-        this.sparseCache.set(text, { value: sparse, at: Date.now() });
+        this.setSparseCache(text, sparse);
         return sparse;
       }
 

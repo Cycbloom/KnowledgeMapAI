@@ -45,6 +45,8 @@ import { useAutoClassifyPanelStore } from "../../store/useAutoClassifyPanelStore
 import { GoalDialogVariantNotification } from "../GraphMap/GoalDialogVariantNotification";
 import { useGoalDialogVariantNotificationStore } from "../../store/useGoalDialogVariantNotificationStore";
 import { useGoalDialogVariantOpenStore } from "../../store/useGoalDialogVariantOpenStore";
+import { GraphExpansionNotification } from "../GraphMap/GraphExpansionNotification";
+import { useGraphExpansionNotificationStore } from "../../store/useGraphExpansionNotificationStore";
 import { EmbeddingBackfillToast } from "../Notifications/EmbeddingBackfillToast";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
@@ -92,6 +94,9 @@ const LazyQuickCaptureModal = React.lazy(() =>
  * Supabase types `user_metadata` as a generic record; this narrows it to the
  * fields actually accessed in the UI.
  */
+// 移动端抽屉需收敛的入口（画布/创建型，桌面侧边栏不受影响）
+const MOBILE_DRAWER_HIDDEN_PATHS = new Set(["/graph-map", "/templates"]);
+
 interface UserMetadata {
   name?: string;
   full_name?: string;
@@ -426,6 +431,11 @@ export const Layout = () => {
 
   const navItems = layoutNavItems;
 
+  // 移动端抽屉收敛：隐藏大图/模板等画布或创建型入口（桌面侧边栏不受影响）
+  const mobileDrawerItems = isMobile
+    ? navItems.filter((item) => !MOBILE_DRAWER_HIDDEN_PATHS.has(item.path))
+    : navItems;
+
   const queryClient = useQueryClient();
   const getPrefetchHandler = useCallback(
     (path: string): (() => void) => {
@@ -552,6 +562,23 @@ export const Layout = () => {
 
   const handleGoalVariantClose = useCallback(() => {
     useGoalDialogVariantNotificationStore.getState().clearNotice();
+  }, []);
+
+  const graphExpansionNotice = useGraphExpansionNotificationStore(
+    (s) => s.notice,
+  );
+
+  const handleGraphExpansionContinue = useCallback(() => {
+    const notice = useGraphExpansionNotificationStore.getState().notice;
+    if (!notice) return;
+    useGraphExpansionNotificationStore.getState().clearNotice();
+    queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
+    queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+    navigate(notice.origin || "/graph-map");
+  }, [navigate, queryClient]);
+
+  const handleGraphExpansionClose = useCallback(() => {
+    useGraphExpansionNotificationStore.getState().clearNotice();
   }, []);
 
   if (!!token && !user && isUserLoading) {
@@ -785,7 +812,7 @@ export const Layout = () => {
               <MobileSidebarDrawer
                 isOpen={isMobileDrawerOpen}
                 onClose={() => setIsMobileDrawerOpen(false)}
-                navItems={navItems}
+                navItems={mobileDrawerItems}
                 isDark={isDark}
                 currentPath={location.pathname}
                 onPrefetch={getPrefetchHandler}
@@ -818,6 +845,11 @@ export const Layout = () => {
             notice={goalVariantNotice}
             onClose={handleGoalVariantClose}
             onContinue={handleGoalVariantContinue}
+          />
+          <GraphExpansionNotification
+            notice={graphExpansionNotice}
+            onClose={handleGraphExpansionClose}
+            onContinue={handleGraphExpansionContinue}
           />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
           {isHelpOpen && (

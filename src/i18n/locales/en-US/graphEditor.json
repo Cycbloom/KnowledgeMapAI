@@ -282,6 +282,16 @@
       "expandingCore": "Expanding core nodes...",
       "expandingNode": "Expanding \"{{title}}\"...",
       "completed": "Complete",
+      "submitted": "Submitted. AI is generating in the background; a notification will appear in the bottom-right when done",
+      "notification": {
+        "generating": "AI is expanding in the background…",
+        "generatingProgress": "AI is expanding… {{progress}}%",
+        "completedDeep": "Depth expansion complete: {{nodes}} new knowledge points",
+        "completedWidth": "Width expansion complete: {{graphs}} new graphs, {{nodes}} knowledge points",
+        "failed": "AI expansion failed",
+        "viewGraphs": "View graphs",
+        "viewNodes": "View nodes"
+      },
       "widthStartFirst": "Generate First Level",
       "widthConfirm": "Confirm & Save This Level",
       "widthNext": "Generate Next Level",

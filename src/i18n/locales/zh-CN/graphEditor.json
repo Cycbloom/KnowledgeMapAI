@@ -282,6 +282,16 @@
       "expandingCore": "正在展开核心节点...",
       "expandingNode": "正在展开「{{title}}」...",
       "completed": "完成",
+      "submitted": "已提交，AI 正在后台生成中，完成后右下角会弹出通知",
+      "notification": {
+        "generating": "AI 正在智能拓展…",
+        "generatingProgress": "AI 正在智能拓展… {{progress}}%",
+        "completedDeep": "深度拓展完成，新增 {{nodes}} 个知识点",
+        "completedWidth": "宽度拓展完成，新增 {{graphs}} 个图谱、{{nodes}} 个知识点",
+        "failed": "智能拓展失败",
+        "viewGraphs": "查看图谱",
+        "viewNodes": "查看节点"
+      },
       "widthStartFirst": "生成首层候选",
       "widthConfirm": "确认并保存本层",
       "widthNext": "生成下一层",

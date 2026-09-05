@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Sparkles, Network, ChevronDown, ChevronUp, Check, Settings2, Layers, GitBranch, BookOpen, Briefcase, GraduationCap, PenTool, Link, Plus, Lock } from 'lucide-react';
 import type { GraphRelationType, InfiniteExpansionProgress } from '../../types';
-import type { WidthExpansionCandidate } from '@shared/types/graph';
 import { useFocusTrap } from '../../hooks/common/useFocusTrap';
 import { useEscapeKey } from '../../hooks/common/useEscapeKey';
 
@@ -39,15 +38,6 @@ interface AIExpansionPanelProps {
     sources?: string[];
     depth: number;
   }) => Promise<ExpansionResult | null>;
-  onDepthExpandNode?: (config: {
-    nodeId: string;
-    nodeTitle: string;
-    nodeContent?: string;
-    nodeLevel?: string;
-    style: DepthStyle;
-    customPrompt?: string;
-    existingChildren?: { title: string }[];
-  }) => Promise<ExpansionResultNode[] | null>;
   onWidthExpand: (config: {
     max_depth: number;
     max_graphs_per_level: number;
@@ -55,26 +45,12 @@ interface AIExpansionPanelProps {
     auto_generate_nodes: boolean;
     node_depth: number;
   }) => Promise<void>;
-  onWidthExpandStart?: (config: {
-    max_depth: number;
-    max_graphs_per_level: number;
-    relation_types: GraphRelationType[];
-  }) => Promise<{ candidates: WidthExpansionCandidate[]; reachesMaxDepth: boolean }>;
-  onWidthExpandNext?: () => Promise<{ candidates: WidthExpansionCandidate[]; reachesMaxDepth: boolean }>;
-  onWidthExpandApply?: (selections: Array<{ key: string; action: "keep" | "final" | "skip" }>) => Promise<{
-    frontier: Array<{ graph_id: string; title: string }>;
-    depth: number;
-    reachesMaxDepth: boolean;
-    created: number;
-  }>;
   progress?: InfiniteExpansionProgress | null;
   isRunning?: boolean;
   onEditPrompt?: (mode: ExpansionMode) => void;
   hasNodes?: boolean;
   /** 仅深度拓展：隐藏宽度拓展入口，强制 depth 模式 */
   depthOnly?: boolean;
-  /** 深度拓展全流程（init + 逐节点 expand）完成后触发，宿主可借此刷新依赖新节点的数据 */
-  onDepthExpandCompleted?: () => void;
 }
 
 const styleOptionDefs = [
@@ -126,17 +102,12 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
   sourceGraphTitle,
   sourceGraphDescription: _sourceGraphDescription,
   onDepthExpand,
-  onDepthExpandNode,
   onWidthExpand,
-  onWidthExpandStart,
-  onWidthExpandNext,
-  onWidthExpandApply,
   progress,
   isRunning = false,
   onEditPrompt,
   hasNodes = false,
   depthOnly = false,
-  onDepthExpandCompleted,
 }) => {
   const { t } = useTranslation();
   const [mode, setMode] = useState<ExpansionMode>(
@@ -162,21 +133,10 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
   // 图内已有节点时，深度拓展默认锁定（通常只生成一次），需解锁后才能再次生成
   const [depthUnlocked, setDepthUnlocked] = useState(false);
 
-  // —— 分步交互式宽度拓展状态 ——
-  const [widthPhase, setWidthPhase] = useState<
-    "config" | "review" | "next" | "done"
-  >("config");
-  const [widthCandidates, setWidthCandidates] = useState<WidthExpansionCandidate[]>([]);
-  const [widthChoices, setWidthChoices] = useState<Record<string, "keep" | "final" | "skip">>({});
-  const [widthDepth, setWidthDepth] = useState(0);
-  const [widthCreated, setWidthCreated] = useState(0);
-  const [widthLoadingMsg, setWidthLoadingMsg] = useState("");
-  const [widthFrontierCount, setWidthFrontierCount] = useState(0);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [depthProgress, setDepthProgress] = useState<{
-    status: 'idle' | 'init' | 'expanding' | 'completed';
+    status: 'idle' | 'submitted' | 'completed';
     currentStep: string;
     nodesCreated: number;
     error?: string;
@@ -212,85 +172,6 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
     setSources(prev => prev.filter((_, i) => i !== index));
   };
 
-  const widthSetChoice = (key: string, action: "keep" | "final" | "skip") => {
-    setWidthChoices((prev) => ({ ...prev, [key]: action }));
-  };
-
-  const widthInitChoices = (cands: WidthExpansionCandidate[]) => {
-    const choices: Record<string, "keep" | "final" | "skip"> = {};
-    cands.forEach((c) => (choices[c.key] = "keep"));
-    setWidthChoices(choices);
-  };
-
-  const runWidthStart = async () => {
-    if (selectedRelationTypes.length === 0 || !onWidthExpandStart) return;
-    setIsSubmitting(true);
-    setWidthLoadingMsg(t('graphEditor.graphMap.aiExpansion.widthGenerating'));
-    try {
-      const res = await onWidthExpandStart({
-        max_depth: maxDepth,
-        max_graphs_per_level: maxGraphsPerLevel,
-        relation_types: selectedRelationTypes,
-      });
-      setWidthCandidates(res.candidates);
-      widthInitChoices(res.candidates);
-      setWidthDepth(1);
-      setWidthCreated(0);
-      setWidthFrontierCount(1);
-      setWidthPhase("review");
-    } catch (error) {
-      console.error("width expansion start failed:", error);
-    } finally {
-      setIsSubmitting(false);
-      setWidthLoadingMsg("");
-    }
-  };
-
-  const runWidthApply = async () => {
-    if (!onWidthExpandApply) return;
-    setIsSubmitting(true);
-    setWidthLoadingMsg(t('graphEditor.graphMap.aiExpansion.widthApplying'));
-    try {
-      const selections = widthCandidates.map((c) => ({
-        key: c.key,
-        action: widthChoices[c.key] || "skip",
-      }));
-      const res = await onWidthExpandApply(selections);
-      setWidthDepth(res.depth);
-      setWidthCreated((prev) => prev + res.created);
-      setWidthFrontierCount(res.frontier.length);
-      if (res.reachesMaxDepth || res.frontier.length === 0) {
-        setWidthPhase("done");
-      } else {
-        setWidthPhase("next");
-      }
-    } catch (error) {
-      console.error("width expansion apply failed:", error);
-    } finally {
-      setIsSubmitting(false);
-      setWidthLoadingMsg("");
-    }
-  };
-
-  const runWidthNext = async () => {
-    if (!onWidthExpandNext) return;
-    setIsSubmitting(true);
-    setWidthLoadingMsg(t('graphEditor.graphMap.aiExpansion.widthGenerating'));
-    try {
-      const res = await onWidthExpandNext();
-      setWidthCandidates(res.candidates);
-      widthInitChoices(res.candidates);
-      // 下一层候选，层数 +1（第 1 层由 runWidthStart 设置）
-      setWidthDepth((prev) => prev + 1);
-      setWidthPhase("review");
-    } catch (error) {
-      console.error("width expansion next failed:", error);
-    } finally {
-      setIsSubmitting(false);
-      setWidthLoadingMsg("");
-    }
-  };
-
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
@@ -303,48 +184,22 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
           setIsSubmitting(false);
           return;
         }
-        
-        setDepthProgress({ status: 'init', currentStep: t('graphEditor.graphMap.aiExpansion.initGraph'), nodesCreated: 0 });
 
-        const result = await onDepthExpand({
+        // 完全后台化：提交单个递归构建后台任务，宿主负责 startTracking 右下角通知
+        await onDepthExpand({
           style: depthStyle,
           customPrompt: depthStyle === 'custom' ? customPrompt : undefined,
           sources: sources.length > 0 ? sources : undefined,
           depth: depthLevel,
         });
 
-        if (result && onDepthExpandNode && depthLevel > 1) {
-          setDepthProgress({ status: 'expanding', currentStep: t('graphEditor.graphMap.aiExpansion.expandingCore'), nodesCreated: result.coreNodes.length });
-
-          for (const coreNode of result.coreNodes) {
-            setDepthProgress(prev => ({
-              ...prev,
-              currentStep: t('graphEditor.graphMap.aiExpansion.expandingNode', { title: coreNode.title }),
-            }));
-
-            const children = await onDepthExpandNode({
-              nodeId: coreNode.id || coreNode.title,
-              nodeTitle: coreNode.title,
-              nodeContent: coreNode.content,
-              nodeLevel: 'core',
-              style: depthStyle,
-              customPrompt: depthStyle === 'custom' ? customPrompt : undefined,
-              existingChildren: [],
-            });
-
-            if (children) {
-              setDepthProgress(prev => ({
-                ...prev,
-                nodesCreated: prev.nodesCreated + children.length
-              }));
-            }
-          }
-        }
-
-        setDepthProgress({ status: 'completed', currentStep: t('graphEditor.graphMap.aiExpansion.completed'), nodesCreated: result?.coreNodes.length || 0 });
-        onDepthExpandCompleted?.();
+        setDepthProgress({ status: 'submitted', currentStep: t('graphEditor.graphMap.aiExpansion.submitted'), nodesCreated: 0 });
       } else {
-        if (selectedRelationTypes.length === 0) return;
+        if (selectedRelationTypes.length === 0) {
+          setIsSubmitting(false);
+          return;
+        }
+        // 宽度拓展：后台批量任务（infinite_graph_expansion），宿主负责 startTracking 右下角通知
         await onWidthExpand({
           max_depth: maxDepth,
           max_graphs_per_level: maxGraphsPerLevel,
@@ -352,10 +207,12 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
           auto_generate_nodes: autoGenerateNodes,
           node_depth: nodeDepth,
         });
+
+        setDepthProgress({ status: 'submitted', currentStep: t('graphEditor.graphMap.aiExpansion.submitted'), nodesCreated: 0 });
       }
     } catch (error) {
       console.error('Failed to start expansion:', error);
-      setDepthProgress(prev => ({ ...prev, status: 'idle', error: String(error) }));
+      setDepthProgress(prev => ({ ...prev, status: 'idle', error: error instanceof Error ? error.message : String(error) }));
     } finally {
       setIsSubmitting(false);
     }
@@ -372,12 +229,6 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
       setDepthProgress({ status: 'idle', currentStep: '', nodesCreated: 0 });
       // 每次打开弹窗都需重新解锁：图内已有节点时深度拓展默认回到锁定态
       setDepthUnlocked(false);
-      // 重置宽度拓展分步流程状态
-      setWidthPhase('config');
-      setWidthCandidates([]);
-      setWidthChoices({});
-      setWidthDepth(0);
-      setWidthCreated(0);
     }
   }, [isOpen]);
 
@@ -634,88 +485,6 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                 exit={{ opacity: 0, height: 0 }}
                 className="space-y-4"
               >
-                {widthPhase !== 'config' ? (
-                  <>
-                    {widthPhase === 'done' && (
-                      <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center gap-2">
-                        <Check className="w-5 h-5 text-green-500" />
-                        <div>
-                          <p className="text-sm font-medium text-green-700 dark:text-green-300">{t('graphEditor.graphMap.aiExpansion.widthDone')}</p>
-                          <p className="text-xs text-green-600 dark:text-green-400">{t('graphEditor.graphMap.aiExpansion.widthDoneDesc', { created: widthCreated })}</p>
-                        </div>
-                      </div>
-                    )}
-                    {widthPhase !== 'done' && (<>
-                    {widthPhase === 'review' && (<>
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {t('graphEditor.graphMap.aiExpansion.widthLevelTitle', { depth: widthDepth, max: maxDepth })}
-                      </h4>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('graphEditor.graphMap.aiExpansion.widthPickHint')}</span>
-                    </div>
-                    <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
-                      {widthCandidates.length === 0 && (
-                        <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                          {t('graphEditor.graphMap.aiExpansion.widthNoCandidates')}
-                        </div>
-                      )}
-                      {widthCandidates.length > 0 && (
-                        <>
-                          {widthCandidates.map(c => {
-                            const action = widthChoices[c.key] || 'keep';
-                            return (
-                              <div key={c.key} className={`p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-700 ${action === 'skip' ? 'opacity-60' : ''}`}>
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium text-sm text-gray-900 dark:text-white truncate">{c.title}</span>
-                                      <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-                                        {t(`graphEditor.graphMap.aiExpansion.relation${c.relation_type === 'prerequisite' ? 'Prerequisite' : c.relation_type === 'extension' ? 'Extension' : 'Related'}`)}
-                                      </span>
-                                    </div>
-                                    {c.description && (
-                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{c.description}</p>
-                                    )}
-                                    {c.reuse_existing_id && (
-                                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{t('graphEditor.graphMap.aiExpansion.widthReuseHint')}</p>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-col gap-1 shrink-0">
-                                    <button onClick={() => widthSetChoice(c.key, 'keep')} className={`px-2 py-1 text-xs rounded ${action === 'keep' ? 'bg-emerald-600 text-white' : 'bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300'}`}>{t('graphEditor.graphMap.aiExpansion.widthKeep')}</button>
-                                    <button onClick={() => widthSetChoice(c.key, 'final')} className={`px-2 py-1 text-xs rounded ${action === 'final' ? 'bg-amber-500 text-white' : 'bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300'}`}>{t('graphEditor.graphMap.aiExpansion.widthFinal')}</button>
-                                    <button onClick={() => widthSetChoice(c.key, 'skip')} className={`px-2 py-1 text-xs rounded ${action === 'skip' ? 'bg-gray-400 text-white' : 'bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300'}`}>{t('graphEditor.graphMap.aiExpansion.widthSkip')}</button>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </>
-                      )}
-                    </div>
-                    </>)}
-                    {widthPhase === 'next' && (
-                      <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-xs text-emerald-700 dark:text-emerald-400">{t('graphEditor.graphMap.aiExpansion.widthNextHint')}</div>
-                    )}
-                    </>)}
-                    {widthLoadingMsg && (
-                      <div className="space-y-2 p-3 rounded-lg bg-gray-50 dark:bg-slate-700">
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>{widthLoadingMsg}</span>
-                          {widthFrontierCount > 0 && (
-                            <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">
-                              {t('graphEditor.graphMap.aiExpansion.widthFrontierProgress', { count: widthFrontierCount })}
-                            </span>
-                          )}
-                        </div>
-                        <div className="h-1.5 w-full bg-gray-200 dark:bg-slate-600 rounded-full overflow-hidden">
-                          <div className="h-full w-1/3 bg-primary-500 rounded-full animate-pulse" />
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {t('graphEditor.graphMap.aiExpansion.relationType')}
@@ -839,8 +608,6 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                     </p>
                   )}
                 </div>
-                  </>
-                )}
               </motion.div>
             )}
 
@@ -920,46 +687,11 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                 ? depthProgress.status === 'completed'
                   ? t('graphEditor.graphMap.aiExpansion.close')
                   : t('graphEditor.graphMap.aiExpansion.cancel')
-                : (mode === 'width' ? widthPhase === 'done' : progress?.status === 'completed')
+                : (depthProgress.status === 'submitted' || progress?.status === 'completed')
                   ? t('graphEditor.graphMap.aiExpansion.close')
                   : t('graphEditor.graphMap.aiExpansion.cancel')}
             </button>
-            {mode === 'width' && onWidthExpandStart ? (
-              widthPhase !== 'done' && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    if (widthPhase === 'config') void runWidthStart();
-                    else if (widthPhase === 'review') void runWidthApply();
-                    else if (widthPhase === 'next') void runWidthNext();
-                  }}
-                  disabled={
-                    isSubmitting || isRunning ||
-                    selectedRelationTypes.length === 0 ||
-                    (widthPhase === 'review' && !widthCandidates.some(c => (widthChoices[c.key] || 'keep') !== 'skip'))
-                  }
-                  className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {t('graphEditor.graphMap.aiExpansion.starting')}
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      {widthPhase === 'next'
-                        ? t('graphEditor.graphMap.aiExpansion.widthNext')
-                        : widthPhase === 'review'
-                          ? t('graphEditor.graphMap.aiExpansion.widthConfirm')
-                          : t('graphEditor.graphMap.aiExpansion.widthStartFirst')}
-                    </>
-                  )}
-                </button>
-              </div>
-              )
-            ) : (
-            progress?.status !== 'running' && (mode === 'depth' ? depthProgress.status !== 'completed' : progress?.status !== 'completed') && (
+            {depthProgress.status !== 'submitted' && progress?.status !== 'running' && (
               <div className="flex items-center gap-2">
                 {mode === 'depth' && hasNodes && !depthUnlocked && (
                   <button
@@ -991,7 +723,6 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                   )}
                 </button>
               </div>
-            )
             )}
           </div>
         </motion.div>

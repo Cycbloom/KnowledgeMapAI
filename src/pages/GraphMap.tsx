@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef, useId } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -28,6 +28,7 @@ import {
 } from "../hooks/queries/useLearningPathQueries";
 import { useAutoClassifyNotificationStore } from "../store/useAutoClassifyNotificationStore";
 import { useAutoClassifyPanelStore } from "../store/useAutoClassifyPanelStore";
+import { useGraphExpansionNotificationStore } from "../store/useGraphExpansionNotificationStore";
 import { useGoalDialogVariantOpenStore } from "../store/useGoalDialogVariantOpenStore";
 import { useIsMobile } from "../hooks/common/useIsMobile";
 import { ErrorBoundary, Skeleton, Loading } from "../components/common";
@@ -119,22 +120,6 @@ const GoalDrivenPathDialog = lazy(() =>
   }))
 );
 
-interface CoreNode {
-  title: string;
-  content?: string;
-  level?: string;
-  backboneModule?: string;
-  needsRefinement?: boolean;
-  color?: string;
-  id?: string;
-}
-
-interface ChildNode {
-  title: string;
-  content?: string;
-  level?: string;
-}
-
 interface PromptTemplate {
   code: string;
   template_content?: string;
@@ -151,6 +136,7 @@ interface PromptListResult {
 export const GraphMap = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { isMobile } = useIsMobile();
@@ -192,7 +178,6 @@ export const GraphMap = () => {
   const [expansionProgress, setExpansionProgress] =
     useState<InfiniteExpansionProgress | null>(null);
   const [isExpansionRunning, setIsExpansionRunning] = useState(false);
-  const [expansionSessionId, setExpansionSessionId] = useState<string | null>(null);
   // 当前 AI 智能扩展(宽度扩展)后台任务的 id，用于按任务过滤 SSE 进度
   const [infiniteTaskId, setInfiniteTaskId] = useState<string | null>(null);
   const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
@@ -770,6 +755,15 @@ export const GraphMap = () => {
         )) as { taskId?: string } | null;
         if (result?.taskId) {
           setInfiniteTaskId(result.taskId);
+          // 全局跟踪 + 右下角完成通知（跨路由存活），允许用户关闭面板
+          useGraphExpansionNotificationStore.getState().startTracking(
+            result.taskId,
+            {
+              mode: "width",
+              graphId: selectedGraphId,
+              origin: location.pathname + location.search,
+            },
+          );
         }
         message.success(t('graphMap.expansion.started'));
         setIsExpansionRunning(true);
@@ -790,36 +784,7 @@ export const GraphMap = () => {
         throw error;
       }
     },
-    [selectedGraphId, queryClient, expansionSessionId, t],
-  );
-
-  const handleWidthExpandStart = useCallback(
-    async (config: {
-      max_depth: number;
-      max_graphs_per_level: number;
-      relation_types: GraphRelationType[];
-    }) => {
-      if (!selectedGraphId) throw new Error("no graph selected");
-      return api.graphs.infiniteExpandStart(selectedGraphId, config);
-    },
-    [selectedGraphId],
-  );
-
-  const handleWidthExpandNext = useCallback(async () => {
-    if (!selectedGraphId) throw new Error("no graph selected");
-    return api.graphs.infiniteExpandGenerate(selectedGraphId);
-  }, [selectedGraphId]);
-
-  const handleWidthExpandApply = useCallback(
-    async (selections: Array<{ key: string; action: "keep" | "final" | "skip" }>) => {
-      if (!selectedGraphId) throw new Error("no graph selected");
-      const res = await api.graphs.infiniteExpandApply(selectedGraphId, selections);
-      message.success(t('graphMap.expansion.stagedApplied'));
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-      return res;
-    },
-    [selectedGraphId, queryClient, t],
+    [selectedGraphId, queryClient, location, t],
   );
 
   // 订阅全局 SSE 事件总线，实时同步无限扩展后台任务进度到 AI 智能扩展面板。
@@ -924,65 +889,35 @@ export const GraphMap = () => {
       customPrompt?: string;
       sources?: string[];
       depth: number;
-    }): Promise<{ root: { title: string; content: string }; coreNodes: CoreNode[] } | null> => {
+    }): Promise<null> => {
       if (!selectedGraphId) return null;
 
       try {
         const graph = graphById.get(selectedGraphId);
         if (!graph) return null;
 
-        const result = await api.autoGraph.init({
-          topic: graph.title,
-          style: config.style,
-          customPrompt: config.customPrompt,
-          sources: config.sources,
-          graph_id: selectedGraphId,
+        // 完全后台化：提交递归构建后台任务（recursive_graph_generation），
+        // 由处理器完成骨架 + 逐层扩展；全局 store 跟踪并弹出右下角完成通知。
+        const task = await tasksApi.create({
+          type: "recursive_graph_generation",
+          payload: {
+            graph_id: selectedGraphId,
+            topic: graph.title,
+            depth: Math.min(config.depth, 3),
+            style: config.style,
+            customPrompt: config.customPrompt,
+            sources: config.sources,
+          },
         });
 
-        setExpansionSessionId(result.sessionId);
+        useGraphExpansionNotificationStore.getState().startTracking(task.id, {
+          mode: "depth",
+          graphId: selectedGraphId,
+          origin: location.pathname + location.search,
+        });
 
-        if (result.root && result.coreNodes) {
-          const nodes = [
-            {
-              title: result.root.title,
-              content: result.root.content,
-              level: "root",
-            },
-            ...result.coreNodes.map((n: CoreNode) => ({
-              title: n.title,
-              content: n.content,
-              level: n.level || "core",
-              // core 挂到 root 下：root 在 calculateNodePositions 中恒为 temp-0
-              parentId: "temp-0",
-              backboneModule: n.backboneModule,
-              needsRefinement: n.needsRefinement,
-              color: n.color,
-            })),
-          ];
-
-          const saveResult = await api.autoGraph.saveNodes({
-            graph_id: selectedGraphId,
-            nodes,
-          }) as { nodeMapping?: Record<string, { graphNodeId: string }> };
-
-          queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
-
-          if (saveResult.nodeMapping) {
-            const nodeMapping = saveResult.nodeMapping;
-            const coreNodesWithIds = result.coreNodes.map(
-              (n: CoreNode, index: number) => {
-                const tempId = `temp-${index + 1}`;
-                return {
-                  ...n,
-                  id: nodeMapping[tempId]?.graphNodeId,
-                };
-              },
-            );
-            return { root: result.root, coreNodes: coreNodesWithIds };
-          }
-
-          return { root: result.root, coreNodes: result.coreNodes };
-        }
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
+        message.success(t('graphMap.expansion.started'));
         return null;
       } catch (error: unknown) {
         const errMsg = error instanceof Error ? error.message : t('graphMap.expansion.depthFailed');
@@ -990,59 +925,7 @@ export const GraphMap = () => {
         throw error;
       }
     },
-    [selectedGraphId, graphs, queryClient, t],
-  );
-
-  const handleDepthExpandNode = useCallback(
-    async (config: {
-      nodeId: string;
-      nodeTitle: string;
-      nodeContent?: string;
-      nodeLevel?: string;
-      style: "academic" | "practical" | "beginner" | "custom";
-      customPrompt?: string;
-      existingChildren?: { title: string }[];
-    }): Promise<ChildNode[] | null> => {
-      if (!selectedGraphId) return null;
-
-      try {
-        const result = await api.autoGraph.expand({
-          node_id: config.nodeId,
-          node_title: config.nodeTitle,
-          node_content: config.nodeContent,
-          node_level: config.nodeLevel,
-          graph_id: selectedGraphId,
-          style: config.style,
-          customPrompt: config.customPrompt,
-          existing_children: config.existingChildren,
-          session_id: expansionSessionId || undefined,
-        });
-
-        if (result.children && result.children.length > 0) {
-          const nodes = result.children.map((n: ChildNode) => ({
-            title: n.title,
-            content: n.content,
-            level: n.level || "sub",
-            parentId: config.nodeId,
-          }));
-
-          await api.autoGraph.saveNodes({
-            graph_id: selectedGraphId,
-            nodes,
-          });
-
-          queryClient.invalidateQueries({ queryKey: queryKeys.graphMap() });
-
-          return result.children;
-        }
-        return null;
-      } catch (error: unknown) {
-        const errMsg = error instanceof Error ? error.message : t('graphMap.expansion.nodeExpandFailed');
-        message.error(errMsg);
-        throw error;
-      }
-    },
-    [selectedGraphId, queryClient, expansionSessionId, t],
+    [selectedGraphId, graphById, queryClient, location, t],
   );
 
   const handleOpenPromptEditor = useCallback(
@@ -1868,11 +1751,7 @@ export const GraphMap = () => {
             graphById.get(selectedGraphId ?? '')?.description || ""
           }
           onDepthExpand={handleDepthExpand}
-          onDepthExpandNode={handleDepthExpandNode}
           onWidthExpand={handleInfiniteExpand}
-          onWidthExpandStart={handleWidthExpandStart}
-          onWidthExpandNext={handleWidthExpandNext}
-          onWidthExpandApply={handleWidthExpandApply}
           progress={expansionProgress}
           isRunning={isExpansionRunning}
           onEditPrompt={handleOpenPromptEditor}

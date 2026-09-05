@@ -23,6 +23,8 @@ interface RecursiveGraphPayload {
   topic: string;
   depth?: number;
   style?: string;
+  customPrompt?: string;
+  sources?: string[];
   batchSessionId?: string;
   [key: string]: unknown;
 }
@@ -57,7 +59,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         userId,
       );
 
-      const { graph_id, topic, depth = 3, style = "academic" } = payload;
+      const { graph_id, topic, depth = 3, style = "academic", customPrompt, sources } = payload;
 
       logger.info(
         `Processing graph ${graph_id} with topic "${topic}", depth ${depth}, style ${style}`,
@@ -131,6 +133,8 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         {
           topic,
           style: style as "academic" | "practical" | "beginner" | "custom",
+          customPrompt,
+          sources,
           provider,
           userId,
           graphId: graph_id,
@@ -244,6 +248,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
               nodeContent: "",
               nodeLevel: "core",
               style: style as "academic" | "practical" | "beginner" | "custom",
+              customPrompt,
               provider,
               userId,
               graphId: graph_id,
@@ -330,6 +335,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
               nodeContent: "",
               nodeLevel: "sub",
               style: style as "academic" | "practical" | "beginner" | "custom",
+              customPrompt,
               provider,
               userId,
               graphId: graph_id,

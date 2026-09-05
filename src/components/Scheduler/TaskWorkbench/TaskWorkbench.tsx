@@ -24,6 +24,8 @@ import { useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../services/api";
 import { queryKeys } from "../../../hooks/queries/config";
+import { tasksApi } from "../../../services/api/tasks";
+import { useGraphExpansionNotificationStore } from "../../../store/useGraphExpansionNotificationStore";
 import { useGraphData, useGraph } from "../../../hooks/queries";
 import { useTaskSettledInvalidator } from "../../../hooks/scheduler/useTaskSettledInvalidator";
 import { UserTaskDetail } from "../../../types";
@@ -86,22 +88,6 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     setExpansionTaskIds((prev) => [...prev, ...taskIds]);
   }, []);
 
-  const depthExpandReloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** 「生成节点」面板深度拓展完成后，同步刷新子任务进度列表。该路径无后台任务 id，
-   *  一次 init + 多次 expand 同步落库；子任务由后端 node_created 异步补建，故稍作延迟再重载。 */
-  const handleDepthExpandCompleted = useCallback(() => {
-    if (depthExpandReloadTimer.current) clearTimeout(depthExpandReloadTimer.current);
-    depthExpandReloadTimer.current = setTimeout(() => {
-      setSubtaskReloadKey((prev) => prev + 1);
-    }, 800);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (depthExpandReloadTimer.current) clearTimeout(depthExpandReloadTimer.current);
-    };
-  }, []);
-
   // —— 空图「生成节点」：AI 智能拓展面板（仅深度），放在底部操作栏左端 ——
   const graphId = task?.graph_id;
   const { data: graphData } = useGraphData(graphId ?? "");
@@ -123,91 +109,39 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     setAiExpansionOpen(true);
   };
 
-  /** 深展面板：初始化空图谱（生成 root + core 节点），复用 autoGraph.init + saveNodes */
+  /** 深展面板：提交递归构建后台任务（recursive_graph_generation），后台生成 + 右下角通知 */
   const handleDepthExpand = async (config: {
     style: "academic" | "practical" | "beginner" | "custom";
     customPrompt?: string;
     sources?: string[];
     depth: number;
-  }): Promise<{
-    root: { title: string; content?: string };
-    coreNodes: Array<{ id?: string; title: string; content?: string }>;
-  } | null> => {
+  }): Promise<null> => {
     if (!graphId) return null;
     try {
-      const result = await api.autoGraph.init({
-        topic: graphTitle,
-        style: config.style,
-        customPrompt: config.customPrompt,
-        sources: config.sources,
-        graph_id: graphId,
+      const task = await tasksApi.create({
+        type: "recursive_graph_generation",
+        payload: {
+          graph_id: graphId,
+          topic: graphTitle,
+          depth: Math.min(config.depth, 3),
+          style: config.style,
+          customPrompt: config.customPrompt,
+          sources: config.sources,
+        },
       });
-      const nodes = [
-        { title: result.root.title, content: result.root.content, level: "root" },
-        ...result.coreNodes.map((n) => ({
-          title: n.title,
-          content: n.content,
-          level: n.level || "core",
-          parentId: "temp-0",
-        })),
-      ];
-      const saveResult = (await api.autoGraph.saveNodes({
-        graph_id: graphId,
-        nodes,
-      })) as { nodeMapping?: Record<string, { graphNodeId: string }> };
+      // 注册该深度任务，任务终态后自动重载子任务列表 + 刷新图谱缓存
+      handleExpansionTasksCreated([task.id]);
+      useGraphExpansionNotificationStore.getState().startTracking(task.id, {
+        mode: "depth",
+        graphId,
+        origin: location.pathname + location.search,
+      });
+      // 后台完成后由处理器补建子任务并重算大任务进度，此处预失效一次
       queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
-      if (saveResult.nodeMapping) {
-        const coreNodesWithIds = result.coreNodes
-          .map((n, i) => ({
-            ...n,
-            id: saveResult.nodeMapping?.[`temp-${i + 1}`]?.graphNodeId,
-          }))
-          .filter((n): n is typeof n & { id: string } => Boolean(n.id));
-        return { root: result.root, coreNodes: coreNodesWithIds };
-      }
-      return { root: result.root, coreNodes: result.coreNodes };
-    } catch (error: unknown) {
-      console.error("Failed to init graph via AI panel:", error);
-      throw error;
-    }
-  };
-
-  /** 深展面板：对某 core 节点扩展子节点，复用 autoGraph.expand + saveNodes */
-  const handleDepthExpandNode = async (config: {
-    nodeId: string;
-    nodeTitle: string;
-    nodeContent?: string;
-    nodeLevel?: string;
-    style: "academic" | "practical" | "beginner" | "custom";
-    customPrompt?: string;
-    existingChildren?: Array<{ title: string }>;
-  }): Promise<Array<{ id?: string; title: string; content?: string }> | null> => {
-    if (!graphId) return null;
-    try {
-      const result = await api.autoGraph.expand({
-        node_id: config.nodeId,
-        node_title: config.nodeTitle,
-        node_content: config.nodeContent,
-        node_level: config.nodeLevel,
-        graph_id: graphId,
-        style: config.style,
-        customPrompt: config.customPrompt,
-        existing_children: config.existingChildren,
-      });
-      if (result.children.length > 0) {
-        const nodes = result.children.map((n) => ({
-          title: n.title,
-          content: n.content,
-          level: n.level || "sub",
-          parentId: config.nodeId,
-        }));
-        await api.autoGraph.saveNodes({ graph_id: graphId, nodes });
-        queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
-        return result.children;
-      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedulerTasks() });
       return null;
     } catch (error: unknown) {
-      console.error("Failed to expand node via AI panel:", error);
+      console.error("Failed to submit depth expansion via AI panel:", error);
       throw error;
     }
   };
@@ -222,13 +156,20 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   }): Promise<void> => {
     if (!graphId) return;
     try {
-      await api.graphs.infiniteExpand(graphId, {
+      const res = (await api.graphs.infiniteExpand(graphId, {
         max_depth: config.max_depth,
         max_graphs_per_level: config.max_graphs_per_level,
         relation_types: config.relation_types,
         auto_generate_nodes: config.auto_generate_nodes,
         node_depth: config.node_depth,
-      });
+      })) as { taskId?: string } | null;
+      if (res?.taskId) {
+        useGraphExpansionNotificationStore.getState().startTracking(res.taskId, {
+          mode: "width",
+          graphId,
+          origin: location.pathname + location.search,
+        });
+      }
       messageHelper.success(t('scheduler.taskWorkbench.taskStarted'));
     } catch (error: unknown) {
       messageHelper.error(t('scheduler.taskWorkbench.taskStartFailed'));
@@ -945,11 +886,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           sourceGraphId={graphId ?? ""}
           sourceGraphTitle={graphTitle}
           onDepthExpand={handleDepthExpand}
-          onDepthExpandNode={handleDepthExpandNode}
           onWidthExpand={handleWidthExpand}
           hasNodes={false}
           depthOnly
-          onDepthExpandCompleted={handleDepthExpandCompleted}
         />
       </Suspense>
     </div>

@@ -82,6 +82,7 @@ data/*.db-wal
 .env.*.local
 .jwt_secret
 .env.check
+.env.mobile
 
 # Seed runtime artifacts (live bcrypt login for demo owner — never commit)
 .seed-owner-credentials.json

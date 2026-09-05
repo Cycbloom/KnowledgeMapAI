@@ -300,6 +300,45 @@ describe("AsyncTaskService - initialize (启动恢复 + 并发控制)", () => {
       });
     });
 
+    it("恢复滞留的 cross_graph_path_variants 任务时还原为 cross_graph_path_variants processor 而非 generate_questions", async () => {
+      // 回归测试：候选路径生成任务被后台化后，title 必须等于 processor 类型 key，
+      // 否则 getOriginalTaskType 会误分发到 generate_questions，导致重试/重启后
+      // 永远无法重新生成候选路径。
+      vi.mocked(getProcessor).mockImplementation((type: string) => {
+        if (type === "cross_graph_path_variants") return {} as never;
+        return undefined;
+      });
+      const task = createStalledTask({
+        id: "task-variants",
+        task_type: "ai_generation",
+        title: "cross_graph_path_variants",
+        input_data: {
+          target_goal: "精通微积分",
+          selected_graph_ids: ["g-1", "g-2"],
+          provider: "deepseek-v4-flash",
+        },
+      });
+      mockState.fetchResult = { data: [task], error: null };
+      mockState.updateResults = [{ data: [task], error: null }];
+
+      await service.initialize();
+
+      await vi.waitFor(() => {
+        expect(processTaskSpy).not.toHaveBeenCalledWith(
+          "task-variants",
+          "user-1",
+          "generate_questions",
+          expect.anything(),
+        );
+        expect(processTaskSpy).toHaveBeenCalledWith(
+          "task-variants",
+          "user-1",
+          "cross_graph_path_variants",
+          expect.objectContaining({ target_goal: "精通微积分" }),
+        );
+      });
+    });
+
     it("fetch 返回错误时不执行恢复且不抛出", async () => {
       mockState.fetchResult = {
         data: null,

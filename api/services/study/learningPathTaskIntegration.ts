@@ -128,6 +128,14 @@ export class LearningPathTaskIntegration {
       throw new AppError(i18next.t("learningPath.api.errors.nodeAccessDenied"), 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
+    if (!node.knowledge_point_id) {
+      throw new AppError(
+        i18next.t("learningPath.api.errors.createSubtaskFailed"),
+        400,
+        ErrorCodes.VALIDATION_MISSING_FIELD,
+      );
+    }
+
     const { data: subtask, error: subtaskError } = await supabase
       .from("task_subtasks")
       .insert({
@@ -139,6 +147,7 @@ export class LearningPathTaskIntegration {
         position,
         estimated_duration: node.estimated_time,
         learning_path_node_id: node.id,
+        knowledge_point_id: node.knowledge_point_id,
       })
       .select("id")
       .single();
@@ -255,6 +264,14 @@ export class LearningPathTaskIntegration {
       throw new AppError(i18next.t("learningPath.api.errors.notFound"), 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
+    if (path.path_type === "cross_graph") {
+      throw new AppError(
+        i18next.t("learningPath.api.errors.crossGraphUseStageWindows"),
+        400,
+        ErrorCodes.VALIDATION_ERROR,
+      );
+    }
+
     const { data: nodes, error: nodesError } = await supabase
       .from("learning_path_nodes")
       .select("*")
@@ -277,7 +294,7 @@ export class LearningPathTaskIntegration {
     }
 
     const dailyMinutes =
-      options?.daily_minutes ?? path.daily_minutes_target ?? 30;
+      options?.daily_minutes ?? path.daily_minutes_target ?? 180;
     const startDate = options?.start_date
       ? new Date(options.start_date)
       : new Date();
@@ -508,8 +525,8 @@ export class LearningPathTaskIntegration {
           for (const node of sortedNodes) {
             if (scheduledNodes.has(node.id)) {
               const { rows: subtaskRows } = await client.query(
-                `INSERT INTO task_subtasks (task_id, title, description, status, priority, position, estimated_duration, learning_path_node_id)
-                 VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7)
+                `INSERT INTO task_subtasks (task_id, title, description, status, priority, position, estimated_duration, learning_path_node_id, knowledge_point_id)
+                 VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8)
                  RETURNING id`,
                 [
                   mainTaskId,
@@ -519,6 +536,7 @@ export class LearningPathTaskIntegration {
                   subtaskPosition,
                   node.estimated_time || 30,
                   node.id,
+                  node.knowledge_point_id,
                 ],
               );
 

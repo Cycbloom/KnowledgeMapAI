@@ -1,6 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import i18next from "i18next";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { notDeleted } from '../common/softDeleteHelper';
 import {
   formatStudyTaskTitle,
@@ -228,15 +230,23 @@ class AutoTaskGenerator {
     let title = formatPathNodeSubtaskTitle(DEFAULT_KNOWLEDGE_POINT_LABEL);
     if (options?.title) {
       title = options.title;
-    } else {
-      const { data: node } = await supabase
-        .from("learning_path_nodes")
-        .select("title")
-        .eq("id", pathNodeId)
-        .single();
-      if (node?.title) {
-        title = node.title;
-      }
+    }
+    const { data: node } = await supabase
+      .from("learning_path_nodes")
+      .select("title, knowledge_point_id")
+      .eq("id", pathNodeId)
+      .single();
+    if (node?.title && !options?.title) {
+      title = node.title;
+    }
+
+    const knowledgePointId = node?.knowledge_point_id;
+    if (!knowledgePointId) {
+      throw new AppError(
+        i18next.t("learningPath.api.errors.createSubtaskFailed"),
+        400,
+        ErrorCodes.VALIDATION_MISSING_FIELD,
+      );
     }
 
     const { data: subtask, error } = await supabase
@@ -248,6 +258,7 @@ class AutoTaskGenerator {
         priority: 5,
         estimated_duration: options?.estimatedTime || 25,
         learning_path_node_id: pathNodeId,
+        knowledge_point_id: knowledgePointId,
       })
       .select()
       .single();

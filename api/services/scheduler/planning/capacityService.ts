@@ -14,7 +14,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../../utils/logger";
 
-export const DEFAULT_DAILY_CAPACITY_MINUTES = 60;
+export const DEFAULT_DAILY_CAPACITY_MINUTES = 240;
 export const DEFAULT_REVIEW_BUFFER_RATIO = 0.2;
 /** 配额下限：预算被高优先级路径占满时，低优先级路径仍保留的可排分钟数（硬约束仍由日负载检查兜底） */
 export const MIN_PATH_QUOTA_MINUTES = 10;
@@ -133,7 +133,7 @@ class CapacityService {
     for (const p of sorted) {
       const target = p.daily_minutes_target && p.daily_minutes_target > 0
         ? p.daily_minutes_target
-        : 30;
+        : 180;
       const quota = Math.max(
         Math.min(target, remaining),
         Math.min(target, MIN_PATH_QUOTA_MINUTES),

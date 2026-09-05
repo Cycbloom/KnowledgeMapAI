@@ -44,7 +44,7 @@ class GraphLearningLauncherService {
     graphId: string,
     options?: { daily_minutes?: number },
   ): Promise<StartLearningForGraphResult> {
-    const dailyMinutes = options?.daily_minutes ?? 30;
+    const dailyMinutes = options?.daily_minutes ?? 180;
 
     // 1. 确保图谱大任务（含每知识点子任务）
     const graphTask = await smartTaskLinker.getOrCreateTaskForGraph(

@@ -44,7 +44,7 @@ export class LearningPathCrudService {
               input.path_type || "single_graph",
               input.total_estimated_time || 0,
               input.ai_generated || false,
-              input.daily_minutes_target || 30,
+              input.daily_minutes_target || 180,
             ],
           );
 
@@ -107,7 +107,7 @@ export class LearningPathCrudService {
         path_type: input.path_type || "single_graph",
         total_estimated_time: input.total_estimated_time || 0,
         ai_generated: input.ai_generated || false,
-        daily_minutes_target: input.daily_minutes_target || 30,
+        daily_minutes_target: input.daily_minutes_target || 180,
         status: "active",
       })
       .select()

@@ -12,9 +12,21 @@
 -- 全局每日学习预算与复习缓冲（每用户一行，见 08_scheduler_tasks.sql task_settings）
 ALTER TABLE task_settings ADD COLUMN IF NOT EXISTS daily_capacity_minutes INTEGER DEFAULT 60;
 ALTER TABLE task_settings ADD COLUMN IF NOT EXISTS review_buffer_ratio NUMERIC DEFAULT 0.2;
+-- 默认全局日容量 60 → 240（4 小时/天）；已存在的行在部署时由 SQL 一并更新
+ALTER TABLE task_settings ALTER COLUMN daily_capacity_minutes SET DEFAULT 240;
+
+-- 跨图图谱时间估算参数（P4 参数化，折中方案）：
+--   图谱分钟 = graph_estimated_node_count × node_learning_minutes × (1 + graph_extra_time_ratio)
+--   默认 30 × 40 × 1.25 = 1500 分钟 ≈ 25 小时/图谱
+ALTER TABLE task_settings ADD COLUMN IF NOT EXISTS graph_estimated_node_count INTEGER DEFAULT 30;
+ALTER TABLE task_settings ADD COLUMN IF NOT EXISTS node_learning_minutes INTEGER DEFAULT 40;
+ALTER TABLE task_settings ADD COLUMN IF NOT EXISTS graph_extra_time_ratio NUMERIC DEFAULT 0.25;
 
 COMMENT ON COLUMN task_settings.daily_capacity_minutes IS '全局每日学习预算（分钟），跨路径共享；路径配额按 priority/target_date 依次分配';
 COMMENT ON COLUMN task_settings.review_buffer_ratio IS '每日预算中预留给复习的比例（0-1），排课可排学习分钟 = 配额 × (1 - ratio)';
+COMMENT ON COLUMN task_settings.graph_estimated_node_count IS '每张图谱按深度拓展后的估算知识点数（跨图路径未生成知识点时使用）';
+COMMENT ON COLUMN task_settings.node_learning_minutes IS '每个知识点预计学习时长（分钟），覆盖学习/上课主体时间';
+COMMENT ON COLUMN task_settings.graph_extra_time_ratio IS '图谱总时长的额外缓冲比例（练习/复习/测验等）；图谱分钟 = 节点数 × 每节点分钟 × (1 + ratio)';
 
 ALTER TABLE learning_paths ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 0;
 

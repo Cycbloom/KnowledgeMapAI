@@ -20,7 +20,7 @@ const generatePathSchema = z.object({
   learning_style: z
     .enum(["sequential", "exploratory", "focused", "custom"])
     .default("sequential"),
-  daily_time_minutes: z.number().min(5).max(240).default(30),
+  daily_time_minutes: z.number().min(5).max(240).default(180),
   current_knowledge: z.string().max(1000).optional(),
   provider: z.string().optional(),
   model: z.string().optional(),
@@ -36,7 +36,7 @@ const generatePreviewPathSchema = z.object({
   learning_style: z
     .enum(["sequential", "exploratory", "focused", "custom"])
     .default("sequential"),
-  daily_time_minutes: z.number().min(5).max(240).default(30),
+  daily_time_minutes: z.number().min(5).max(240).default(180),
   current_knowledge: z.string().max(1000).optional(),
   provider: z.string().optional(),
   model: z.string().optional(),

@@ -356,7 +356,7 @@ export class LearningPathDailyPlan {
       );
     }
 
-    const dailyMinutesTarget = path.daily_minutes_target || 30;
+    const dailyMinutesTarget = path.daily_minutes_target || 180;
     const plans: LearningPlan[] = [];
     const nodeQueue = [...orderedNodes];
     const now = new Date().toISOString();

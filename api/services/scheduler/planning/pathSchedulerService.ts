@@ -97,7 +97,7 @@ class PathSchedulerService {
     // P1 全局容量：预算 + 复习缓冲 + 路径配额（节奏）
     const { dailyCapacityMinutes, reviewBufferRatio } =
       await capacityService.getCapacitySettings(supabase, userId);
-    const dailyTarget = path.daily_minutes_target || 30;
+    const dailyTarget = path.daily_minutes_target || 180;
     const pathQuota = Math.min(dailyTarget, dailyCapacityMinutes);
     const paceCap = Math.max(
       1,

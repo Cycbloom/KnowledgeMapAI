@@ -14,6 +14,7 @@ vi.mock("../../../study/learningPathService", () => ({
 
 import { pathSchedulerService } from "../pathSchedulerService";
 import { learningPathService } from "../../../study/learningPathService";
+import { capacityService } from "../capacityService";
 
 interface MockQueryChainWithUpsert extends MockQueryChain {
   upsert: ReturnType<typeof vi.fn>;
@@ -64,11 +65,20 @@ function upsertRows(chain: MockQueryChainWithUpsert): Array<Record<string, unkno
 
 describe("PathSchedulerService 容量感知装箱（P1 统一计划体系）", () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    vi.restoreAllMocks();
+    // 显式固定全局容量默认值（当前产品默认 240），个别用例覆盖为 60 验证顺延
+    vi.spyOn(capacityService, "getCapacitySettings").mockResolvedValue({
+      dailyCapacityMinutes: 240,
+      reviewBufferRatio: 0.2,
+    });
   });
 
   it("当日已被其它路径占用且超出全局预算时，顺延到空闲日", async () => {
-    // 2026-01-01 已被其它路径排 45 分钟；全局默认预算 60 → 30 分钟节点放不下
+    // 2026-01-01 已被其它路径排 45 分钟；预算 60 → 30 分钟节点放不下
+    vi.spyOn(capacityService, "getCapacitySettings").mockResolvedValue({
+      dailyCapacityMinutes: 60,
+      reviewBufferRatio: 0.2,
+    });
     const { supabase, chain } = mockSupabase([
       { scheduled_date: "2026-01-01", estimated_time: 45, status: "scheduled" },
     ]);
@@ -118,6 +128,10 @@ describe("PathSchedulerService 容量感知装箱（P1 统一计划体系）", (
   it("知识点已被其它路径排期（不同日期）时复用原日期并归并来源，不重复排期", async () => {
     // kp1 已被 p2 排在 2026-01-03，占 50 分钟 → 本路径 kp1 复用该日，
     // kp2 因该日负载 50+30 超预算 60 顺延到 01-04
+    vi.spyOn(capacityService, "getCapacitySettings").mockResolvedValue({
+      dailyCapacityMinutes: 60,
+      reviewBufferRatio: 0.2,
+    });
     const { supabase, chain } = mockSupabase([
       {
         id: "s9",
@@ -270,6 +284,11 @@ describe("PathSchedulerService.reschedule 全局容量校验", () => {
   }
 
   it("目标日已排负载 + 本行时长超出全局预算时抛 409", async () => {
+    // reschedule 走模块层 capacityService，需显式覆盖全局预算为 60
+    vi.spyOn(capacityService, "getCapacitySettings").mockResolvedValue({
+      dailyCapacityMinutes: 60,
+      reviewBufferRatio: 0.2,
+    });
     const currentRow = {
       id: "s1",
       knowledge_point_id: "kp-1",

@@ -312,7 +312,7 @@ src/store/
 
 ### 7.2 代码复用
 
-- **移动端 API 层共享**：`src/services/mobile/` 和 `src/services/api/modules/scheduler/` 存在大量重复的模式代码，未来可考虑提取共享基类
+- **三端同构**：`src/services/mobile/` 休眠的 Supabase 直连层已于移动端重构阶段 4 删除，手机/Web/Electron 共用 `src/services/api` 单一代码路径，仅 `VITE_API_BASE_URL` 决定后端地址
 
 ### 7.3 根目录卫生
 

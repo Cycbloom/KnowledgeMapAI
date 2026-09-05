@@ -7,7 +7,7 @@ import {
   useDeleteLearningPathMutation,
   useUpdateLearningPathMutation,
 } from "../hooks/mutations/useLearningPathMutations";
-import { LearningPathStatus } from "../services/api/learningPaths";
+import { LearningPathStatus, learningPathsApi } from "../services/api/learningPaths";
 import {
   Plus,
   Trash2,
@@ -22,7 +22,11 @@ import {
   CheckCircle2,
   Archive,
   TrendingUp,
+  MoreVertical,
+  CalendarClock,
+  BookOpen,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useTheme } from "../hooks";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/formatters";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
@@ -80,6 +84,7 @@ interface LearningPathItem {
   ai_generated: boolean;
   status: LearningPathStatus;
   daily_minutes_target: number;
+  source_graph_id?: string;
   created_at: string;
   updated_at: string;
   node_count?: number;
@@ -102,6 +107,7 @@ export const LearningPaths = () => {
 
   const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [selectedStatus, setSelectedStatus] = useState<PathStatus>("all");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newPathTitle, setNewPathTitle] = useState("");
   const [newPathDescription, setNewPathDescription] = useState("");
@@ -111,6 +117,7 @@ export const LearningPaths = () => {
 
   const createModalRef = useFocusTrap<HTMLDivElement>({ enabled: isCreating });
   useEscapeKey(() => setIsCreating(false), isCreating);
+  useEscapeKey(() => setOpenMenuId(null), openMenuId !== null);
   const createPathTitleId = useId();
 
   // 搜索+状态过滤前置计算并缓存，避免每次渲染重复扫描 paths（原每次渲染 O(paths) 全量过滤）
@@ -186,6 +193,25 @@ export const LearningPaths = () => {
       message.success(t("learningPaths.messages.statusUpdated"));
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : t("learningPaths.messages.statusUpdateFailed");
+      message.error(errMsg);
+    }
+  };
+
+  const handleAutoSchedule = async (path: LearningPathItem) => {
+    try {
+      const result = await learningPathsApi.autoSchedule(path.id, {
+        start_date: new Date().toISOString(),
+        daily_minutes: path.daily_minutes_target || 30,
+      });
+      message.success(
+        t("learningPaths.detail.autoScheduleSuccess", {
+          total: result.total_tasks,
+          days: result.estimated_days,
+        }),
+      );
+      await refetch();
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : t("learningPaths.detail.autoScheduleFailed");
       message.error(errMsg);
     }
   };
@@ -342,16 +368,105 @@ export const LearningPaths = () => {
                       </div>
                     </div>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeletePath(path);
-                    }}
-                    className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    title={t("learningPaths.actions.delete")}
-                  >
-                    <Trash2 size={16} className="text-red-500" />
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuId(openMenuId === path.id ? null : path.id);
+                      }}
+                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+
+                    {openMenuId === path.id && (
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(null);
+                        }}
+                      />
+                    )}
+                    <AnimatePresence>
+                      {openMenuId === path.id && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-700 rounded-lg shadow-lg border dark:border-slate-500 py-1 z-20"
+                        >
+                          {path.source_graph_id && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                navigate(`/graphs/${path.source_graph_id}`);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
+                            >
+                              <BookOpen className="w-4 h-4" />
+                              {t("learningPath.pathHeader.viewKnowledgeGraph")}
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuId(null);
+                              void handleAutoSchedule(path);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
+                          >
+                            <CalendarClock className="w-4 h-4" />
+                            {t("learningPath.pathHeader.autoSchedule")}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuId(null);
+                              void handleStatusChange(
+                                path,
+                                path.status === "active" ? "paused" : "active",
+                              );
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
+                          >
+                            {path.status === "active" ? (
+                              <Pause className="w-4 h-4" />
+                            ) : (
+                              <Play className="w-4 h-4" />
+                            )}
+                            {path.status === "active"
+                              ? t("learningPath.pathHeader.pauseLearning")
+                              : t("learningPath.pathHeader.continueLearning")}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuId(null);
+                              void handleStatusChange(path, "archived");
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2"
+                          >
+                            <Archive className="w-4 h-4" />
+                            {t("learningPath.pathHeader.archive")}
+                          </button>
+                          <hr className="my-1 dark:border-slate-500" />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuId(null);
+                              void handleDeletePath(path);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            {t("learningPath.pathHeader.delete")}
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
 
                 <p

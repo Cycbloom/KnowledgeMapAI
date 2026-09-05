@@ -1,5 +1,7 @@
 // Inline types for Literature API
 
+import type { LiteratureSourceDB } from "@shared/types/graph";
+
 export type ConceptType =
   | "method"
   | "mechanism"
@@ -110,6 +112,9 @@ export interface LiteratureApplyResponse {
 }
 
 export interface ILiteratureApi {
+  /** 某图谱的文献来源列表（P5 收敛：GraphOutline 原直查 Supabase） */
+  listSources(graphId: string): Promise<LiteratureSourceDB[]>;
+
   extractMetadata(data: {
     content?: string;
     url?: string;

@@ -124,7 +124,7 @@ export const GraphOutline = React.memo(function GraphOutline({
         const sources = await api.literature.listSources(graphId);
         if (sources.length > 0) {
           const map = new Map<string, LiteratureSourceDB>();
-          sources.forEach((source) => {
+          sources.forEach((source: LiteratureSourceDB) => {
             map.set(source.title, source);
           });
           setLiteratureSourcesMap(map);

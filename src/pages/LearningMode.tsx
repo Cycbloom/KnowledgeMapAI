@@ -131,7 +131,7 @@ export const LearningMode = () => {
   const [isOverviewEditModalOpen, setIsOverviewEditModalOpen] = useState(false);
   const [isSchemaEditorOpen, setIsSchemaEditorOpen] = useState(false);
   const [selectedSchemaId, setSelectedSchemaId] = useState<string | undefined>(undefined);
-  const [generateProgress, setGenerateProgress] = useState<{
+  const [generateProgress] = useState<{
     current: number; total: number; isGenerating: boolean;
   } | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);

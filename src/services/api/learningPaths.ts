@@ -1,8 +1,6 @@
-import { request, getAIConfig, getApiUrl } from "./client";
-import { useStore } from "@/store/useStore";
+import { request, getAIConfig } from "./client";
 import { getAILanguage } from "@/hooks/ai/useAILanguage";
-import { logger } from "@/utils/logger";
-import { AppError, SharedErrorCodes } from "@/utils/errors";
+import { createStreamHandler } from "../shared/streamHandler";
 
 export type LearningPathStatus = "active" | "completed" | "paused" | "archived";
 export type NodeStatus = "pending" | "in_progress" | "completed" | "skipped";
@@ -504,66 +502,14 @@ export const learningPathsApi = {
     if (!payload.provider && config.provider) payload.provider = config.provider;
     if (!payload.model && config.model) payload.model = config.model;
 
-    const token = useStore.getState().token;
-    const apiUrl = await getApiUrl();
-    const response = await fetch(`${apiUrl}/learning-paths/cross-graph/goal/dialog`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify(payload),
-      ...(signal ? { signal } : {}),
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        useStore.getState().setUser(null, null);
-      }
-      const errorText = await response.text();
-      throw new AppError(
-        errorText || "Goal dialog stream failed",
-        SharedErrorCodes.AI_PROVIDER_ERROR,
-        502,
-      );
-    }
-
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
-    if (!reader) return;
-
-    let buffer = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n\n");
-      buffer = lines.pop() || "";
-
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const dataStr = line.replace("data: ", "");
-          if (dataStr === "[DONE]") return;
-          try {
-            const parsed = JSON.parse(dataStr);
-            if (parsed.content) onChunk(parsed.content);
-            if (parsed.error) {
-              throw new AppError(
-                parsed.error,
-                SharedErrorCodes.AI_INVALID_RESPONSE,
-                502,
-              );
-            }
-          } catch (e) {
-            if (signal?.aborted) {
-              throw e;
-            }
-            logger.error("Goal dialog stream parse error:", e);
-          }
-        }
-      }
-    }
+    // 统一走 streamRequest（唯一 SSE 出口）：鉴权/CSRF/移动端头/401 清登录态
+    // 由 streamHandler 内聚，错误事件（含 [DONE]）在此统一处理
+    await createStreamHandler(
+      "/learning-paths/cross-graph/goal/dialog",
+      payload,
+      onChunk,
+      { signal },
+    );
   },
 
   /**

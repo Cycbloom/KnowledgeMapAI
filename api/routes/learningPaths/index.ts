@@ -8,6 +8,7 @@ import plansRoutes from "./plans";
 import generationRoutes from "./generation";
 import goalDialogRoutes from "./goalDialog";
 import stageWindowsRoutes from "./stageWindows";
+import schedulingRoutes from "./scheduling";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/", plansRoutes);
 router.use("/", generationRoutes);
 router.use("/", goalDialogRoutes);
 router.use("/", stageWindowsRoutes);
+router.use("/", schedulingRoutes);
 
 export default router;

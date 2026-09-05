@@ -56,13 +56,17 @@
 | Tab | 路由 | 说明 |
 |---|---|---|
 | 今日 | `/` | **改造首屏**：今日任务 + 知识点列表 + 番茄钟入口 |
+| 图谱列表 | `/graphs` | 2026-09-06 追加：进入具体图谱/学习上下文前的中间态选择页 |
 | 学习 | `/study` | 闪卡 / 专注模式 / 错题重练 / 题库入口 |
 | 日历 | `/calendar` | 排期窗口、知识点聚合展示（只读） |
 | 统计 | `/statistics` | 掌握度、连续打卡、经验等级 |
 | 更多 | `More` | notes / learning-paths / achievements 等收进 |
 
+共 6 项（5 个 `main` tab + 更多按钮）。
+
 **分类变更**（`src/config/routeConfig.ts`）：
 - `graph-map`：`category` 从 `main` 改为 `more`（大图不作主入口）
+- `graphs`：`category` 从 `more` 改为 `main`（图谱列表中间态上提为主 tab，位于今日与学习之间）
 - `calendar`：`category` 从 `more` 改为 `main`（排期主线上提）
 
 **导航收敛**：`MobileSidebarDrawer` 的更多菜单仅保留移动端适用项，隐藏 semantics 上不适合移动端的入口（如 graph-map 的画布类工具定位弱化）。

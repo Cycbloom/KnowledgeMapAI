@@ -174,9 +174,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const activeMenuItemId =
     isMoreOpen && moreNavItems.length > 0 ? menuItemId(activeMenuIndex) : undefined;
 
+  // 6 个 tab（5 个 main + 更多）必须放进 360dp 宽的屏幕：min-w 收到 44px、px 收到 2，
+  // 且 label 禁止换行——否则空间不足时"学习中心"这类 4 字标签会逐字换行竖排。
   const getNavItemClass = (path: string) => {
     const active = isActive(path);
-    return `flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] min-h-[44px] ${
+    return `flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg min-w-[44px] min-h-[44px] ${
       active
         ? isDark
           ? "text-primary-400 bg-primary-950/50"
@@ -188,7 +190,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   };
 
   const getMoreButtonClass = () => {
-    return `flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] min-h-[44px] ${
+    return `flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg min-w-[44px] min-h-[44px] ${
       isMoreActive
         ? isDark
           ? "text-primary-400 bg-primary-950/50"
@@ -234,7 +236,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 className="flex flex-col items-center"
               >
                 <item.icon size={20} strokeWidth={isActive(item.to) ? 2.5 : 2} aria-hidden="true" />
-                <span className="text-[10px] font-medium">{t(item.labelKey)}</span>
+                <span className="text-[10px] font-medium whitespace-nowrap">{t(item.labelKey)}</span>
               </motion.div>
             </Link>
           </motion.div>
@@ -261,7 +263,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 aria-hidden="true"
               />
             </motion.div>
-            <span className="text-[10px] font-medium">{t('common.more')}</span>
+            <span className="text-[10px] font-medium whitespace-nowrap">{t('common.more')}</span>
           </motion.button>
 
           <AnimatePresence>

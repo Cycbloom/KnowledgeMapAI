@@ -275,7 +275,9 @@ export const routeRegistrations: RouteRegistration[] = [
 /** 静态侧边/底部导航配置，按 order 升序（与原 getNavItems() 排序结果一致）。 */
 export const navItems: NavItemRegistration[] = [
   { path: "/", label: "layout.home", icon: "Home", order: 1, category: "main" },
-  { path: "/graphs", label: "layout.graphs", icon: "BookOpen", order: 2, category: "more" },
+  // 移动端主 tab（2026-09-06）：图谱列表作为进入具体图谱前的中间态选择页，
+  // 提为主 tab 后底部导航共 6 项（5 个 main + 更多）。桌面侧边栏不受 category 影响。
+  { path: "/graphs", label: "layout.graphs", icon: "BookOpen", order: 2, category: "main" },
   { path: "/graph-map", label: "layout.graphMap", icon: "Network", order: 3, category: "more" },
   { path: "/notes", label: "layout.notes", icon: "NotebookPen", order: 5, category: "more" },
   { path: "/study", label: "layout.studyCenter", icon: "GraduationCap", order: 10, category: "main" },

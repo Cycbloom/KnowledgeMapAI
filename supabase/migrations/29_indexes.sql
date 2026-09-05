@@ -546,8 +546,3 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_lms_system_default_unique
 -- 日负载聚合：按用户+日期聚合排期分钟数（全局日容量检查）
 CREATE INDEX IF NOT EXISTS idx_learning_path_schedule_user_date
   ON learning_path_schedule(user_id, scheduled_date);
-
--- 跨图路径 stage 周窗口
-CREATE INDEX IF NOT EXISTS idx_lpsw_user_week
-  ON learning_path_stage_windows(user_id, week_start_date);
-CREATE INDEX IF NOT EXISTS idx_lpsw_path ON learning_path_stage_windows(path_id);

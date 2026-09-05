@@ -1172,11 +1172,3 @@ CREATE POLICY "Users can update their own learning schemas"
 CREATE POLICY "Users can delete their own learning schemas"
   ON learning_material_schemas FOR DELETE
   USING (auth.uid() = user_id);
-
-
--- ==== from 34_scheduler_capacity.sql ====
-ALTER TABLE learning_path_stage_windows ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own stage windows" ON learning_path_stage_windows FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own stage windows" ON learning_path_stage_windows FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own stage windows" ON learning_path_stage_windows FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own stage windows" ON learning_path_stage_windows FOR DELETE USING (auth.uid() = user_id);

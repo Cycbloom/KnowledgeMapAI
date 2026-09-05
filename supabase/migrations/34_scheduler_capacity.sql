@@ -43,3 +43,21 @@ COMMENT ON COLUMN learning_path_stage_windows.week_start_date IS '窗口起始�
 COMMENT ON COLUMN learning_path_stage_windows.week_end_date IS '窗口结束日（周日）';
 COMMENT ON COLUMN learning_path_stage_windows.planned_minutes IS '该 stage 的预估时长（分钟），由 stage estimated_time 装箱时写入';
 COMMENT ON COLUMN learning_path_stage_windows.status IS 'planned=待学, in_progress=进行中, completed=达标, skipped=跳过';
+
+-- ==== learning_path_stage_windows 索引 ====
+CREATE INDEX IF NOT EXISTS idx_lpsw_user_week
+  ON learning_path_stage_windows(user_id, week_start_date);
+CREATE INDEX IF NOT EXISTS idx_lpsw_path ON learning_path_stage_windows(path_id);
+
+-- ==== learning_path_stage_windows RLS ====
+ALTER TABLE learning_path_stage_windows ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own stage windows" ON learning_path_stage_windows FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own stage windows" ON learning_path_stage_windows FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own stage windows" ON learning_path_stage_windows FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own stage windows" ON learning_path_stage_windows FOR DELETE USING (auth.uid() = user_id);
+
+-- ==== learning_path_stage_windows 触发器 ====
+DROP TRIGGER IF EXISTS learning_path_stage_windows_updated_at ON learning_path_stage_windows;
+CREATE TRIGGER learning_path_stage_windows_updated_at
+  BEFORE UPDATE ON learning_path_stage_windows
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

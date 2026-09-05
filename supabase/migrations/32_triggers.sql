@@ -210,10 +210,3 @@ CREATE TRIGGER on_update_literature_sources
   BEFORE UPDATE ON literature_sources
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
-
--- ==== from 34_scheduler_capacity.sql ====
-DROP TRIGGER IF EXISTS learning_path_stage_windows_updated_at ON learning_path_stage_windows;
-CREATE TRIGGER learning_path_stage_windows_updated_at
-  BEFORE UPDATE ON learning_path_stage_windows
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

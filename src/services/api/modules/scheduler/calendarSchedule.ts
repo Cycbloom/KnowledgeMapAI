@@ -39,6 +39,26 @@ export interface ReviewProjectionEvent {
   scheduledDate: string;
 }
 
+/** 跨图路径周窗口事件（图谱级阶段，整周块，只读） */
+export interface StageWindowEvent {
+  id: string;
+  title: string;
+  description: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+  type: "stage_window";
+  color: string;
+  status: string | null;
+  graphId: string | null;
+  pathId: string;
+  scheduledDate: string;
+  /** 数据库阶段序号（0-based，与 learning_path_nodes.order_index 对齐） */
+  stageIndex: number;
+  /** 图谱学习大任务 id（knowledge_graphs.task_id），点击跳转任务详情；空图谱可能为 null */
+  taskId: string | null;
+}
+
 export const calendarScheduleApi = {
   getScheduleEvents: (
     start?: string,
@@ -64,6 +84,20 @@ export const calendarScheduleApi = {
     const qs = query.toString();
     return requestData<ReviewProjectionEvent[]>(
       `/calendar/review-projections${qs ? `?${qs}` : ""}`,
+    );
+  },
+
+  /** 跨图路径周窗口（图谱级阶段，整周块，只读） */
+  getStageWindows: (
+    start?: string,
+    end?: string,
+  ): Promise<StageWindowEvent[]> => {
+    const query = new URLSearchParams();
+    if (start) query.set("start", start);
+    if (end) query.set("end", end);
+    const qs = query.toString();
+    return requestData<StageWindowEvent[]>(
+      `/calendar/stage-windows${qs ? `?${qs}` : ""}`,
     );
   },
 

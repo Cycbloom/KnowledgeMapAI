@@ -2,6 +2,15 @@
   "title": "Task Scheduler",
   "subtitle": "Three-Level Feedback Queue · Smart Time Management",
   "regionLabel": "Scheduler main area",
+  "mobileToday": {
+    "title": "Today",
+    "knowledgePointsTitle": "Today's Knowledge Points",
+    "tagScheduled": "Scheduled",
+    "tagReview": "Review",
+    "tagBoth": "Scheduled · Review",
+    "kpEmpty": "Nothing to study today yet. Create a learning task from a graph.",
+    "startFocus": "Start Focus"
+  },
   "home": {
     "title": "Home",
     "homeHint": "System plans your learning rhythm; start today's study here",
@@ -1719,7 +1728,9 @@
     "pathSchedule": "Path Schedule",
     "pathScheduleDesc": "Path schedule · {{count}} learning goal(s)",
     "reviewProjection": "Review due",
-    "reviewProjectionDesc": "~{{count}} cards due · about {{minutes}} min"
+    "reviewProjectionDesc": "~{{count}} cards due · about {{minutes}} min",
+    "stageWindow": "Graph Stage",
+    "stageWindowDesc": "{{pathTitle}} · {{minutes}} min planned"
   },
   "systemTask": {
     "errors": {

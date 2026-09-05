@@ -350,6 +350,99 @@ class CalendarService {
     });
   }
 
+  /**
+   * 跨图学习路径周窗口（图谱级阶段，P2 两级排课）→ 整周日历事件。
+   * 只读展示：窗口由 planStageWindows / replan / postpone 维护，日历层不写。
+   */
+  async getStageWindows(
+    supabase: SupabaseClient,
+    userId: string,
+    start?: string,
+    end?: string,
+  ): Promise<
+    Array<{
+      id: string;
+      title: string;
+      description: string;
+      start: string;
+      end: string;
+      allDay: boolean;
+      type: "stage_window";
+      color: string;
+      status: string | null;
+      graphId: string | null;
+      pathId: string;
+      scheduledDate: string;
+      stageIndex: number;
+      /** 图谱学习大任务 id（knowledge_graphs.task_id），用于点击跳转任务详情 */
+      taskId: string | null;
+    }>
+  > {
+    const startStr = start ? start.slice(0, 10) : undefined;
+    const endStr = end ? end.slice(0, 10) : undefined;
+
+    let query = supabase
+      .from("learning_path_stage_windows")
+      .select(
+        "id, path_id, stage_index, graph_id, week_start_date, week_end_date, planned_minutes, status, learning_paths!inner(title), knowledge_graphs(title, task_id)",
+      )
+      .eq("user_id", userId)
+      .order("stage_index", { ascending: true });
+
+    if (startStr) {
+      query = query.gte("week_end_date", startStr);
+    }
+    if (endStr) {
+      query = query.lte("week_start_date", endStr);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      logger.warn("[CalendarService] fetch stage windows failed", {
+        userId,
+        error: error.message,
+      });
+      return [];
+    }
+    if (!data || data.length === 0) return [];
+
+    return (data as Array<Record<string, unknown>>).map((row) => {
+      const path = row.learning_paths as
+        | { title?: string | Record<string, string> }
+        | null
+        | undefined;
+      const graph = row.knowledge_graphs as
+        | { title?: string | Record<string, string>; task_id?: string | null }
+        | null
+        | undefined;
+      const title =
+        resolveLocalizedText(graph?.title) ||
+        i18next.t("scheduler.calendarService.stageWindow");
+      return {
+        id: `stage-${row.id}`,
+        title,
+        description: i18next.t(
+          "scheduler.calendarService.stageWindowDesc",
+          {
+            pathTitle: resolveLocalizedText(path?.title) || "",
+            minutes: Number(row.planned_minutes) || 0,
+          },
+        ),
+        start: `${row.week_start_date}T00:00:00.000Z`,
+        end: `${row.week_end_date}T23:59:59.000Z`,
+        allDay: true,
+        type: "stage_window" as const,
+        color: "indigo",
+        status: (row.status as string | null) ?? null,
+        graphId: (row.graph_id as string | null) ?? null,
+        pathId: row.path_id as string,
+        scheduledDate: row.week_start_date as string,
+        stageIndex: Number(row.stage_index) || 0,
+        taskId: graph?.task_id ?? null,
+      };
+    });
+  }
+
   private generateICSContent(tasks: CalendarTask[], executions: CalendarExecution[]): string {
     const now = new Date();
     const timestamp = toIcsUtcTimestamp(now);

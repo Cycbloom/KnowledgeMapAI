@@ -314,5 +314,6 @@ export const mobileSchedulerApi: ISchedulerApi = {
   // --- ISchedulerCalendarScheduleApi (not supported on mobile) ---
   getScheduleEvents: notSupported("getScheduleEvents"),
   getReviewProjections: notSupported("getReviewProjections"),
+  getStageWindows: notSupported("getStageWindows"),
   reschedule: notSupported("reschedule"),
 };

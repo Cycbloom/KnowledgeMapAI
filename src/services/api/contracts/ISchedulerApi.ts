@@ -9,6 +9,7 @@ import type {
   CalendarScheduleEvent,
   ReviewProjectionEvent,
   RescheduleResult,
+  StageWindowEvent,
 } from "../modules/scheduler/calendarSchedule";
 import type {
   StartActivityData,
@@ -326,6 +327,10 @@ export interface ISchedulerCalendarScheduleApi {
     start?: string,
     end?: string,
   ) => Promise<ReviewProjectionEvent[]>;
+  getStageWindows: (
+    start?: string,
+    end?: string,
+  ) => Promise<StageWindowEvent[]>;
   reschedule: (id: string, newDate: string) => Promise<RescheduleResult>;
 }
 

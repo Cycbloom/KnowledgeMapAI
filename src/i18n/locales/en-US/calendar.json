@@ -8,6 +8,7 @@
   "day": "Day",
   "schedule": "Schedule",
   "plan": "Plan",
+  "stageWindowBands": "Graph Stage Plan",
   "history": "History",
   "showSubtasks": "Show Subtasks",
   "hideSubtasks": "Hide Subtasks",

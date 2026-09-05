@@ -20,6 +20,7 @@ interface CalendarContentProps {
   currentDate: Date;
   events: CalendarEvent[];
   executions: ExecutionEvent[];
+  stageWindowBands?: CalendarEvent[];
   calendarMode: CalendarMode;
   showSubtasks: boolean;
   activityStats: DailyActivityStats[];
@@ -36,6 +37,7 @@ export const CalendarContent: React.FC<CalendarContentProps> = ({
   currentDate,
   events,
   executions,
+  stageWindowBands = [],
   calendarMode,
   showSubtasks,
   activityStats,
@@ -65,6 +67,7 @@ export const CalendarContent: React.FC<CalendarContentProps> = ({
             currentDate={currentDate}
             events={events}
             executions={executions}
+            stageWindowBands={stageWindowBands}
             onDateSelect={onDateSelect}
             onEventClick={onEventClick}
             onAddEvent={onAddEvent}
@@ -78,6 +81,7 @@ export const CalendarContent: React.FC<CalendarContentProps> = ({
             currentDate={currentDate}
             events={events}
             executions={executions}
+            stageWindowBands={stageWindowBands}
             onDateSelect={onDateSelect}
             onEventClick={onEventClick}
             onAddEvent={onAddEvent}

@@ -3,6 +3,7 @@ export {
 } from "./useCalendarEvents";
 export { useCalendarScheduleEvents } from "./useCalendarScheduleEvents";
 export { useCalendarReviewProjections } from "./useCalendarReviewProjections";
+export { useCalendarStageWindows } from "./useCalendarStageWindows";
 export { useCalendarExecutions } from "./useCalendarExecutions";
 export {
   useCalendarActivityStats,

@@ -38,11 +38,15 @@ export interface CalendarEvent {
   /** 从 UserTask.scheduled_end 映射 */
   end?: UserTask["scheduled_end"];
   /** 从 UserTask.tags 计算：包含"study"→study，包含"review"→review，否则→task */
-  type: "task" | "study" | "review" | "other" | "path_schedule" | "review_projection";
+  type: "task" | "study" | "review" | "other" | "path_schedule" | "review_projection" | "stage_window";
   /** 从 UserTask.priority 计算：4→red，3→orange，其他→blue */
   color?: string;
   /** 路径排课事件特有字段：知识点 ID（用于跳转学习） */
   knowledgePointId?: string | null;
+  /** 周窗口事件特有字段：图谱 ID（用于跳转图谱） */
+  graphId?: string | null;
+  /** 周窗口事件特有字段：所属路径 ID */
+  pathId?: string;
   /** 路径排课事件特有字段：排期日期 */
   scheduledDate?: string | null;
   /** 从 UserTask.scheduled_start 计算：无 scheduled_start 时为 true */
@@ -63,6 +67,12 @@ export interface CalendarEvent {
   subtask_completed?: UserTask["subtask_completed"];
   /** 从 UserTask.has_subtasks 映射 */
   has_subtasks?: UserTask["has_subtasks"];
+  /** 周窗口/路径排课事件特有字段：阶段状态（planned/in_progress/completed/skipped） */
+  status?: string | null;
+  /** 周窗口事件特有字段：数据库阶段序号（0-based，显示时 +1） */
+  stageIndex?: number;
+  /** 周窗口事件特有字段：图谱学习大任务 id（点击跳转任务详情） */
+  taskId?: string | null;
 }
 
 export interface ActivityTypeConfig {

@@ -9,6 +9,7 @@ import {
   useCalendarEvents,
   useCalendarScheduleEvents,
   useCalendarReviewProjections,
+  useCalendarStageWindows,
   useCalendarExecutions,
   useCalendarActivityStats,
   useCalendarDailyActivities,
@@ -74,9 +75,15 @@ export const CalendarPage: React.FC = () => {
     startDate,
     endDate,
   );
+  const { data: stageWindows = [] } = useCalendarStageWindows(
+    calendarMode,
+    startDate,
+    endDate,
+  );
   const { data: executions = [] } = useCalendarExecutions();
 
   // 合并路径排课（path_schedule）与复习到期预测（review_projection）图层
+  // （周窗口 stage_window 不走逐日事件，由月/周视图的阶段条层渲染）
   const combinedEvents = calendarMode === "plan"
     ? [...events, ...scheduleEvents, ...reviewProjections]
     : events;
@@ -108,6 +115,15 @@ export const CalendarPage: React.FC = () => {
   );
 
   const handleEventClick = useCallback((event: CalendarEvent) => {
+    if (event.type === "stage_window") {
+      // 优先跳图谱学习大任务详情；该图谱尚无学习任务时回退到图谱编辑器
+      if (event.taskId) {
+        routerNavigate(`/scheduler/task/${event.taskId}`);
+      } else if (event.graphId) {
+        routerNavigate(`/graph/${event.graphId}`);
+      }
+      return;
+    }
     if (event.type === "path_schedule" || event.type === "review_projection") {
       if (event.knowledgePointId) {
         routerNavigate(`/study?node_id=${encodeURIComponent(event.knowledgePointId)}`);
@@ -145,6 +161,10 @@ export const CalendarPage: React.FC = () => {
     async (dropInfo: EventDropInfo) => {
       // 复习到期预测是只读投影（随评分自变），不支持拖动改期
       if (dropInfo.eventId.startsWith("review-")) {
+        return;
+      }
+      // 周窗口是只读展示（由 replan/postpone 维护），不支持拖动改期
+      if (dropInfo.eventId.startsWith("stage-")) {
         return;
       }
       // 路径排课事件：手动改期
@@ -221,6 +241,7 @@ export const CalendarPage: React.FC = () => {
             currentDate={currentDate}
             events={combinedEvents}
             executions={executions}
+            stageWindowBands={calendarMode === "plan" ? stageWindows : []}
             calendarMode={calendarMode}
             showSubtasks={showSubtasks}
             activityStats={activityStats}

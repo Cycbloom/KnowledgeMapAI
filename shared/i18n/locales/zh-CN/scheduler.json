@@ -2,6 +2,15 @@
   "title": "任务调度器",
   "subtitle": "三层反馈队列 · 智能时间管理",
   "regionLabel": "调度器主区域",
+  "mobileToday": {
+    "title": "今日",
+    "knowledgePointsTitle": "今日知识点",
+    "tagScheduled": "排期",
+    "tagReview": "复习",
+    "tagBoth": "排期 · 复习",
+    "kpEmpty": "今天还没有要学习的知识点，去图谱创建一个学习任务吧",
+    "startFocus": "开始专注"
+  },
   "home": {
     "title": "首页",
     "homeHint": "系统为你规划学习节奏，从这里开始今天的学习",
@@ -1719,7 +1728,9 @@
     "pathSchedule": "路径排课",
     "pathScheduleDesc": "路径排课 · {{count}} 个学习目标",
     "reviewProjection": "到期复习",
-    "reviewProjectionDesc": "预计 {{count}} 张卡片到期 · 约 {{minutes}} 分钟"
+    "reviewProjectionDesc": "预计 {{count}} 张卡片到期 · 约 {{minutes}} 分钟",
+    "stageWindow": "图谱阶段",
+    "stageWindowDesc": "{{pathTitle}} · 计划 {{minutes}} 分钟"
   },
   "systemTask": {
     "errors": {

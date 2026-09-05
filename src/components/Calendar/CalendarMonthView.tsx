@@ -9,12 +9,22 @@ import {
   DailyActivityStats,
 } from "../../types/calendar";
 import { CalendarSubtaskStack } from "./CalendarSubtaskStack";
+import {
+  formatBandRange,
+  getStageBgColor,
+  getStageHoverColor,
+  getStageStatusStyle,
+  getStageStatusLabel,
+  computeStageIndices,
+  buildStageTooltip,
+} from "../../utils/stageBandStyle";
 import type { TaskSubtask } from "@shared/types";
 
 interface CalendarMonthViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   executions: ExecutionEvent[];
+  stageWindowBands?: CalendarEvent[];
   onDateSelect: (date: Date) => void;
   onEventClick: (event: CalendarEvent) => void;
   onAddEvent: (date: Date) => void;
@@ -28,6 +38,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   currentDate,
   events,
   executions,
+  stageWindowBands = [],
   onDateSelect,
   onEventClick,
   onAddEvent,
@@ -152,6 +163,74 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
     return days;
   }, [currentDate, events, executions]);
 
+  // 阶段条（周窗口甘特条）：只保留与本月相交的窗口，按 42 格坐标计算横跨位置
+  // 同一路径内检测重叠区间并分层（lane），重叠色块分到不同行，避免互相覆盖
+  const stageBands = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const monthStart = new Date(year, month, 1);
+    const startPadding = monthStart.getDay();
+    const totalCells = 42;
+
+    const parseDay = (iso: string): Date => {
+      const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+      return new Date(y, m - 1, d, 0, 0, 0, 0);
+    };
+
+    const stageIndices = computeStageIndices(stageWindowBands);
+
+    const items = stageWindowBands.flatMap((band) => {
+      if (!band.start || !band.end) return [];
+      const bandStart = parseDay(band.start);
+      const bandEnd = parseDay(band.end);
+      const start = bandStart < monthStart ? monthStart : bandStart;
+      const end = new Date(year, month + 1, 0);
+      const clippedEnd = bandEnd > end ? end : bandEnd;
+      if (start > clippedEnd) return [];
+      const startCol = startPadding + (start.getDate() - 1);
+      const endCol = startPadding + (clippedEnd.getDate() - 1);
+      return [
+        {
+          band,
+          stageIndex: stageIndices.get(band.id) ?? 0,
+          startCol,
+          endCol,
+          leftPct: (startCol / totalCells) * 100,
+          widthPct: ((endCol - startCol + 1) / totalCells) * 100,
+        },
+      ];
+    });
+
+    const byPath = new Map<string, typeof items>();
+    items.forEach((it) => {
+      const key = it.band.pathId ?? "default";
+      const list = byPath.get(key);
+      if (list) list.push(it);
+      else byPath.set(key, [it]);
+    });
+
+    // 层叠分配：同一路径内按 startCol 升序，贪心放入第一个空闲层（startCol > 已占用 endCol 视为不重叠）
+    return Array.from(byPath.values()).map((list) => {
+      const sorted = list.slice().sort((a, b) => a.startCol - b.startCol);
+      const laneEnds: number[] = [];
+      const withLane = sorted.map((it) => {
+        const laneIdx = laneEnds.findIndex((end) => it.startCol > end);
+        const lane = laneIdx === -1 ? laneEnds.length : laneIdx;
+        laneEnds[lane] = it.endCol;
+        return { ...it, lane };
+      });
+      const byLane = new Map<number, typeof withLane>();
+      withLane.forEach((r) => {
+        const laneList = byLane.get(r.lane);
+        if (laneList) laneList.push(r);
+        else byLane.set(r.lane, [r]);
+      });
+      return Array.from(byLane.values()).map((laneList) =>
+        laneList.sort((a, b) => a.stageIndex - b.stageIndex),
+      );
+    });
+  }, [stageWindowBands, currentDate]);
+
   const getEventColor = (event: CalendarEvent) => {
     switch (event.type) {
       case "task":
@@ -164,6 +243,8 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
         return "bg-purple-500";
       case "review_projection":
         return "bg-orange-500";
+      case "stage_window":
+        return "bg-indigo-500";
       default:
         return "bg-gray-500";
     }
@@ -183,6 +264,62 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
           </div>
         ))}
       </div>
+
+      {calendarMode === "plan" && stageBands.length > 0 && (
+        <div className={`mb-2 rounded-lg px-2 py-1.5 ${isDark ? "bg-slate-900/50" : "bg-gray-100"}`}>
+          <div className="text-[10px] uppercase tracking-wide text-gray-400 mb-1">
+            {t("calendar.stageWindowBands")}
+          </div>
+          <div className="space-y-1">
+            {stageBands.map((pathGroup, groupIdx) => (
+              <div key={groupIdx} className="space-y-1">
+                {pathGroup.map((row, rowIdx) => (
+                  <div key={rowIdx} className="relative h-6">
+                    {row.map(({ band, stageIndex, leftPct, widthPct }) => {
+                      const statusStyle = getStageStatusStyle(band.status);
+                      const statusLabel = getStageStatusLabel(band.status);
+                      const bgColor = getStageBgColor(stageIndex, isDark);
+                      const hoverColor = getStageHoverColor(stageIndex, isDark);
+                      return (
+                        <button
+                          key={band.id}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEventClick(band);
+                          }}
+                          className={`absolute top-0 h-full text-white text-[10px] px-1.5 rounded text-left cursor-pointer transition-colors flex items-center gap-1 overflow-hidden ${statusStyle.opacity} ${statusStyle.pulse ? "animate-pulse" : ""}`}
+                          style={{
+                            left: `${leftPct}%`,
+                            width: `calc(${widthPct}% - 1px)`,
+                            backgroundColor: bgColor,
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = hoverColor;
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = bgColor;
+                          }}
+                          title={buildStageTooltip(band, stageIndex)}
+                        >
+                          <span className="flex-shrink-0 w-3.5 h-3.5 rounded-full bg-white/25 flex items-center justify-center text-[9px] font-bold leading-none">
+                            {stageIndex + 1}
+                          </span>
+                          {statusLabel && (
+                            <span className="flex-shrink-0 text-[9px]">{statusLabel}</span>
+                          )}
+                          <span className={`truncate ${statusStyle.textDecor}`}>{band.title}</span>
+                          <span className="opacity-80 flex-shrink-0">{formatBandRange(band.start, band.end)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-7 flex-1 gap-1">
         {monthData.map((day, index) => (

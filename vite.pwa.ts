@@ -32,7 +32,10 @@ function electronPwaStubPlugin(): Plugin {
 }
 
 export function getPwaPlugins(isElectronBuild: boolean) {
-  if (isElectronBuild) {
+  // 移动端构建与 Electron 同理：Capacitor 从设备本地加载资源，不需要 Service Worker
+  // （SW 预缓存反而会在 App 发版后让 WebView 使用过期的 chunk）。且单一 vendor chunk
+  // 超出 workbox 预缓存上限会导致构建失败，故移动端使用同一 stub。
+  if (isElectronBuild || process.env.MOBILE_BUILD === "true") {
     return [electronPwaStubPlugin()];
   }
 

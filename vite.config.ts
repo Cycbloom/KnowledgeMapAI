@@ -7,6 +7,18 @@ import { getPwaPlugins } from "./vite.pwa";
 import { visualizer } from "rollup-plugin-visualizer";
 
 function getChunkStrategy(id: string): string | undefined {
+  // 移动端构建：资源从设备本地存储加载，细粒度 vendor 拆分的并行下载/缓存收益为零。
+  // 且拆分产生的 vendor-* chunk 间循环（vendor-react ↔ vendor-mermaid、vendor-charts ↔
+  // vendor-react，见下方 onwarn 注释）在移动端入口的模块求值顺序下会以
+  // "Cannot access 'z5' before initialization"（TDZ）形式在启动时崩溃——React 无法挂载，
+  // App 永远停在 index.html 的静态 spinner（2026-09-05 实测）。故移动端把全部
+  // node_modules 合并为单一 vendor chunk，从根上消除 chunk 间循环初始化。
+  if (process.env.MOBILE_BUILD === "true") {
+    if (id.includes("node_modules")) return "vendor";
+    if (id.includes("src/services/mobile")) return "mobile-only";
+    return undefined;
+  }
+
   if (!id.includes("node_modules")) {
     if (id.includes("src/services/mobile")) return "mobile-only";
     return undefined;
@@ -211,8 +223,10 @@ export default defineConfig({
       //   2. vendor-react -> vendor-mermaid -> vendor-react
       //      mermaid 生态（含 react-markdown / remark-* / unified 等）与
       //      react 生态（@emotion / stylis / react-* 等）相互引用。
-      // 这些循环在运行时由 Rollup 通过 lazy module init 正确处理，无功能影响；
-      // 修复需合并 chunk（与 Task 14 bundle 拆分目标冲突）或重构第三方库（不可行），
+      // 这些循环在 Web 端入口下由 Rollup 通过 lazy module init 正确处理；
+      // 但 2026-09-05 实测：移动端入口（MOBILE_BUILD）下该循环会导致启动期 TDZ 崩溃
+      // （"Cannot access 'z5' before initialization"），已通过移动端分支的单一 vendor
+      // chunk 规避（见 getChunkStrategy）。修复需合并 chunk（与 Task 14 bundle 拆分目标冲突）或重构第三方库（不可行），
       // 故保留抑制。详见 .trae/specs/polish-ux-r16-perf-bundle-slimming/tasks.md Task 16。
       onwarn(warning, warn) {
         if (warning.message.includes("Circular chunk")) {

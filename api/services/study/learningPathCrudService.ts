@@ -4,6 +4,7 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { transactionExecutor } from "../../database/transactionExecutor";
+import { pathSchedulerService } from "../scheduler/planning/pathSchedulerService";
 import type {
   CreateLearningPathInput,
   LearningPath,
@@ -85,6 +86,7 @@ export class LearningPathCrudService {
 
         const result = await this.getLearningPath(supabase, pathId, userId);
         if (!result) throw new AppError(ErrorCodes.RESOURCE_PATH_NOT_FOUND, { message: "Learning path not found after creation" });
+        this.triggerAutoPlan(supabase, userId, pathId, input.path_type);
         return result;
       } catch (txError) {
         logger.warn('Transaction failed in createLearningPath, falling back to non-transactional operations', { error: txError });
@@ -156,7 +158,27 @@ export class LearningPathCrudService {
 
     const result = await this.getLearningPath(supabase, path.id, userId);
     if (!result) throw new AppError(ErrorCodes.RESOURCE_PATH_NOT_FOUND, { message: "Learning path not found after creation" });
+    this.triggerAutoPlan(supabase, userId, path.id, input.path_type);
     return result;
+  }
+
+  /**
+   * P5 保存即排：single_graph 路径创建后自动写入日历排期（fire-and-forget，
+   * 与大路径"保存后排周窗口"模式对称）。planPath 幂等：重复调用复用原日期。
+   */
+  private triggerAutoPlan(
+    supabase: SupabaseClient,
+    userId: string,
+    pathId: string,
+    pathType?: "single_graph" | "cross_graph",
+  ): void {
+    if ((pathType ?? "single_graph") !== "single_graph") return;
+    void pathSchedulerService.planPath(supabase, userId, pathId).catch((err) => {
+      logger.warn("[LearningPathCrud] auto plan after create failed", {
+        pathId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
   }
 
   async getLearningPaths(
@@ -181,6 +203,8 @@ export class LearningPathCrudService {
         ai_generated,
         status,
         daily_minutes_target,
+        scheduled_start_date,
+        scheduled_end_date,
         created_at,
         updated_at
       `,

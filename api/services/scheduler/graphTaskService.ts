@@ -4,6 +4,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { formatStudyGraphTaskTitle } from "../../../shared/constants/taskTitles";
 import { smartTaskLinker } from "./smartTaskLinker";
+import { pathSchedulerService } from "./planning/pathSchedulerService";
 import { notDeleted } from '../common/softDeleteHelper';
 
 const MINUTES_PER_KNOWLEDGE_POINT = 30;
@@ -235,6 +236,20 @@ export class GraphTaskService {
       graph.user_id || "",
       graphId,
     );
+
+    // P5 排期补齐：知识点变化（深度/宽度拓展、手动增删节点）后，把未入路径的
+    // 知识点追加为路径节点并补排。已有排期的知识点复用原日期，新知识点装箱进
+    // 剩余容量；无 active 小路径时 no-op。fire-and-forget，不阻塞任务同步。
+    if (graph.user_id) {
+      void pathSchedulerService
+        .backfillGraphPathSchedule(supabase, graph.user_id, graphId)
+        .catch((err) => {
+          logger.warn("[GraphTaskService] backfill path schedule failed", {
+            graphId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+    }
 
     logger.info("[GraphTaskService] Task synced with graph changes:", {
       taskId: graph.task_id,

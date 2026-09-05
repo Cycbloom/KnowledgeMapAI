@@ -14,6 +14,9 @@ export interface LearningPath {
   ai_generated: boolean;
   status: "active" | "completed" | "paused" | "archived";
   daily_minutes_target: number;
+  /** 学习窗口（P5 排课回写）：首末排期日；未排课时为 null */
+  scheduled_start_date?: string | null;
+  scheduled_end_date?: string | null;
   created_at: string;
   updated_at: string;
   nodes?: LearningPathNode[];
@@ -133,6 +136,8 @@ export interface LearningPathWithNodeCount {
   ai_generated: boolean;
   status: string;
   daily_minutes_target: number;
+  scheduled_start_date: string | null;
+  scheduled_end_date: string | null;
   created_at: string;
   updated_at: string;
   nodes_count: number;
